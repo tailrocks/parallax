@@ -1,4 +1,5 @@
 mod cli;
+mod closure_final;
 mod command;
 mod dependencies;
 pub mod diagnostic;

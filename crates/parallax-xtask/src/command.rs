@@ -3,6 +3,7 @@ use std::{path::Path, process::Command as Process};
 use anyhow::{Context, Result, bail};
 
 use crate::cli::{Cli, Command, DocsAction, FacadeAction, Output, SemconvAction};
+use crate::closure_final;
 use crate::dependencies::{self, Selection};
 use crate::docs_links;
 use crate::facade;
@@ -27,6 +28,7 @@ pub(crate) fn execute(cli: Cli) -> Result<()> {
         }
         Command::NextestEvidence { profile } => nextest_evidence::run(&root, &profile, cli.output),
         Command::Health => policy::health(&root, cli.output),
+        Command::ClosureFinal { dry_run } => closure_final::run(&root, dry_run),
         Command::Facade { action } => execute_facade(&root, action),
         Command::Semconv {
             action,

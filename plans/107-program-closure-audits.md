@@ -14,7 +14,20 @@
 - **Depends on**: Every other actionable indexed plan; all blockers freshly rechecked
 - **Category**: validation / closure / plan lifecycle
 - **Planned at**: `a1d8bf82`, revised 2026-07-12
-- **Status**: TODO
+- **Status**: IN PROGRESS
+
+## Current Evidence
+
+- 2026-07-15: Step 0 now has a repository-owned `cargo xtask closure-final`
+  verifier and a read-only aggregate CI lane. Before mechanical closure, the
+  lane executes passing/tampered fixtures; after Plan 107 is removed it
+  automatically verifies the real commit. The verifier binds two distinct
+  auditor trailers to C0, C1, and the pushed tree, checks DCO and the single
+  Codex co-author trailer, requires C1's exact four evidence paths, restricts
+  the closure diff to the mechanical allowlist, hashes and validates both JSON
+  packets, and rejects any remaining numbered plan not marked BLOCKED. All 69
+  xtask tests, strict xtask Clippy, Actionlint, workflow-policy fixtures, Rust
+  formatting, structural policy, and the explicit dry-run command pass locally.
 
 ## Why
 

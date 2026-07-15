@@ -132,7 +132,7 @@ work.
 | [111](111-redaction-pipeline-and-a6-gate.md) | Build the source-aware fail-closed runtime redactor and prove the A6 gate | P1 | L | 099, 101, 104 | BLOCKED: prerequisite chain incomplete |
 | [116](116-retention-and-prune-lifecycle.md) | Reconcile data retention and make `prune` truthfully reclaim eligible data | P1 | L | 093, 097, 099; 105 soft | BLOCKED: operator-approved lifecycle contract is absent |
 | [106](106-evidence-pinning-ttl-spike.md) | Design and live-test evidence pinning beyond telemetry TTL | P2 | M | 092, 104, 116 | BLOCKED: prerequisite chain incomplete |
-| [107](107-program-closure-audits.md) | Run independent source audits and verify the mechanical closure commit | P1 | M | Every other actionable indexed plan; all blockers freshly rechecked | TODO |
+| [107](107-program-closure-audits.md) | Run independent source audits and verify the mechanical closure commit | P1 | M | Every other actionable indexed plan; all blockers freshly rechecked | IN PROGRESS |
 
 ### Cross-Repository Playground And Test Reporting
 

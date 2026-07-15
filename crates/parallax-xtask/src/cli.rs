@@ -64,6 +64,12 @@ pub(crate) enum Command {
     },
     /// Report noisy structural metrics without failing policy.
     Health,
+    /// Verify the final mechanical closure commit and auditor attestations.
+    ClosureFinal {
+        /// Exercise passing and tampered fixtures before the closure commit exists.
+        #[arg(long)]
+        dry_run: bool,
+    },
     /// Refresh or verify syntax-derived crate facade manifests.
     Facade {
         #[command(subcommand)]
