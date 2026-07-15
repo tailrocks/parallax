@@ -1,0 +1,6 @@
+name: fixture-unknown-import
+description: Negative fixture for an import that matches no dependency group.
+schema_url: https://tailrocks.dev/schemas/fixture-unknown-import/1.0.0
+dependencies:
+  - name: missing-registry
+    registry_path: telemetry/semconv/fixtures/registry-that-does-not-exist

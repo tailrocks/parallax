@@ -5,9 +5,9 @@
 use parallax_proto::collector_trace::ExportTraceServiceRequest;
 use parallax_proto::common::{AnyValue, KeyValue, any_value};
 use parallax_proto::resource::Resource;
-use parallax_proto::semconv;
 use parallax_proto::trace::span::Link;
 use parallax_proto::trace::{ResourceSpans, ScopeSpans, Span, Status};
+use parallax_semconv as semconv;
 use prost::Message as _;
 
 fn str_attr(key: &str, value: &str) -> KeyValue {

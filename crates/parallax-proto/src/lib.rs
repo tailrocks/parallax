@@ -13,4 +13,5 @@ pub use opentelemetry_proto::tonic::metrics::v1 as metrics;
 pub use opentelemetry_proto::tonic::resource::v1 as resource;
 pub use opentelemetry_proto::tonic::trace::v1 as trace;
 
-pub mod semconv;
+#[cfg(test)]
+mod tests;

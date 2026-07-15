@@ -1,5 +1,3 @@
-#![expect(clippy::too_many_lines, reason = "measured integration scenario")]
-
 use super::*;
 use crate::resolvers::test_support::*;
 use crate::{RequestMemo, build_schema, execute};
@@ -54,30 +52,8 @@ async fn runs_list_stats_match_single_run() {
     store.push_spans(spans);
     store
         .write_error_events(vec![
-            ErrorEventRow {
-                ts_nanos: 2_000_000_000,
-                service: "api".into(),
-                fingerprint: "fp-a".into(),
-                error_type: "Error".into(),
-                message: "boom-a".into(),
-                stacktrace: None,
-                source: ErrorSource::SpanStatus,
-                trace_id: "ta1".into(),
-                span_id: "run-a-s0".into(),
-                attributes: serde_json::Value::Null,
-            },
-            ErrorEventRow {
-                ts_nanos: 2_100_000_000,
-                service: "api".into(),
-                fingerprint: "fp-c".into(),
-                error_type: "Error".into(),
-                message: "boom-c".into(),
-                stacktrace: None,
-                source: ErrorSource::SpanStatus,
-                trace_id: "tc2".into(),
-                span_id: "run-c-s1".into(),
-                attributes: serde_json::Value::Null,
-            },
+            run_error(2_000_000_000, "fp-a", "boom-a", "ta1", "run-a-s0"),
+            run_error(2_100_000_000, "fp-c", "boom-c", "tc2", "run-c-s1"),
         ])
         .await
         .unwrap();
@@ -119,6 +95,7 @@ async fn runs_list_stats_match_single_run() {
             store: context.store.clone(),
             metadata: context.metadata.clone(),
             otlp_grpc_port: 4317,
+            otlp_http_port: 4318,
             memo: RequestMemo::default(),
         };
         let q = juniper::http::GraphQLRequest::new(
@@ -140,5 +117,26 @@ async fn runs_list_stats_match_single_run() {
             ),
             by_id[run_id],
         );
+    }
+}
+
+fn run_error(
+    ts_nanos: u128,
+    fingerprint: &str,
+    message: &str,
+    trace_id: &str,
+    span_id: &str,
+) -> ErrorEventRow {
+    ErrorEventRow {
+        ts_nanos,
+        service: "api".into(),
+        fingerprint: fingerprint.into(),
+        error_type: "Error".into(),
+        message: message.into(),
+        stacktrace: None,
+        source: ErrorSource::SpanStatus,
+        trace_id: trace_id.into(),
+        span_id: span_id.into(),
+        attributes: serde_json::Value::Null,
     }
 }

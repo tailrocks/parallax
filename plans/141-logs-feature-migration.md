@@ -24,7 +24,7 @@
 - **Depends on**: 100, 129, 132, 144, 145, 146, 149, 152, 153
 - **Category**: TypeScript / logs / feature migration
 - **Planned at**: `e3e7997`, 2026-07-12
-- **Status**: TODO
+- **Status**: BLOCKED — upstream UI foundation and browser plans are incomplete
 
 ## Why This Matters
 

@@ -27,7 +27,7 @@
 - **Depends on**: 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 149, 150, 152, 153
 - **Category**: TypeScript / architecture verification / final closure
 - **Planned at**: `e3e7997`, 2026-07-12
-- **Status**: TODO
+- **Status**: BLOCKED — all feature migrations and runtime foundations are incomplete
 
 ## Why This Matters
 

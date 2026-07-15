@@ -27,7 +27,7 @@
 - **Depends on**: 134, 135, 136, 137, 138, 139, 140, 141, 142, 145, 146, 149, 150, 152, 153
 - **Category**: TypeScript / app / layout / shell migration
 - **Planned at**: `e3e7997`, 2026-07-12
-- **Status**: TODO
+- **Status**: BLOCKED — every feature and UI contract dependency remains incomplete
 
 ## Why This Matters
 

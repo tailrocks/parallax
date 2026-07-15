@@ -13,7 +13,7 @@
 - **Depends on**: 099, 101, 104
 - **Category**: security / redaction / agent evidence
 - **Planned at**: `eefa4617`, 2026-07-12
-- **Status**: TODO
+- **Status**: BLOCKED — Plan 104 canonical evidence-contract approval is absent
 
 ## Why
 

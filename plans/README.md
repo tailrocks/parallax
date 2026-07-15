@@ -56,34 +56,33 @@ Every plan must preserve these non-negotiable Parallax constraints:
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | P2 | M | upstream `greptimedb-ingester` native-TLS/plaintext feature fix | BLOCKED: `greptimedb-ingester` hard-enables rustls through tonic `tls-ring` |
-| [125](125-native-trace-fingerprint-deviation.md) | Resolve the unpopulated native trace fingerprint deviation and migration contract | P2 | M | 093, 097, 099, 104 | TODO |
+| [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | P2 | M | upstream `greptimedb-ingester` native-TLS/plaintext feature fix | BLOCKED: 2026-07-15 latest `greptimedb-ingester` 0.18.0 still hard-enables rustls through tonic `tls-ring` |
+| [125](125-native-trace-fingerprint-deviation.md) | Resolve the unpopulated native trace fingerprint deviation and migration contract | P2 | M | 093, 097, 099, 104 | BLOCKED: Plan 104 approval and live stable/nightly GreptimeDB probes unavailable |
 
 ### Foundation And Delivery
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [102](102-deterministic-release-pipeline.md) | Unify deterministic preview/stable packaging, symbols, and release verification | P1 | L | 094, 096, 101 | IN PROGRESS |
+| [102](102-deterministic-release-pipeline.md) | Prove the deterministic release pipeline externally | P1 | S | 094, 096, 101; repository protection + post-merge preview | BLOCKED: stable environment/tag protection absent and current preview predates implementation |
 
 ### Quality Tooling And Rust
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [119](119-semconv-registry-codegen.md) | Generate checked-in Rust/Java/TypeScript semantic-convention constants from one registry | P2 | M | 095, 096, 100, 101, 126 | TODO |
 
 ### TypeScript Toolchain, Architecture, Boundary, And Test Foundations
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | [128](128-typescript-static-and-runtime-safety.md) | Enforce strict TypeScript static safety | P1 | L | 095, 101, 131 | BLOCKED |
-| [129](129-frontend-test-architecture.md) | Build deterministic forced-Bun Vitest characterization and separated test ownership | P1 | L | 094, 101, 128 | TODO |
-| [100](100-ui-feature-architecture.md) | Establish the TypeScript layer graph, ownership ledger, facades, and placement policy | P1 | L | 095, 101, 128, 129 | TODO |
-| [152](152-graphql-contract-foundation.md) | Establish the generated GraphQL contract foundation | P1 | L | 095, 100, 101, 128, 129, 130 | TODO |
-| [153](153-runtime-boundary-foundation.md) | Establish non-GraphQL runtime boundary foundations | P1 | L | 095, 100, 101, 128, 129, 130 | TODO |
-| [132](132-playwright-bun-foundation.md) | Establish a Bun-only Playwright test foundation | P1 | L | 094, 101, 128, 129 | TODO |
-| [144](144-playwright-product-contracts-and-ci.md) | Make fixture-backed Playwright product contracts a required CI gate | P1 | L | 094, 101, 128, 129, 132 | TODO |
-| [145](145-playwright-real-stack-integration.md) | Prove critical UI flows against managed GreptimeDB and isolated Turso | P1 | L | 093, 101, 132, 144 | TODO |
-| [146](146-playwright-cross-browser-accessibility-visual.md) | Establish cross-browser, mobile, accessibility, and visual Playwright gates | P1 | L | 101, 132, 144, 145 | TODO |
+| [129](129-frontend-test-architecture.md) | Validate the deterministic Vitest foundation cross-platform | P1 | S | 094, 101, 128; macOS evidence | BLOCKED: Plan 128 and exact-head macOS validation |
+| [100](100-ui-feature-architecture.md) | Establish the TypeScript layer graph, ownership ledger, facades, and placement policy | P1 | L | 095, 101, 128, 129 | BLOCKED: prerequisite chain incomplete |
+| [152](152-graphql-contract-foundation.md) | Establish the generated GraphQL contract foundation | P1 | L | 095, 100, 101, 128, 129, 130 | BLOCKED: prerequisite chain incomplete |
+| [153](153-runtime-boundary-foundation.md) | Establish non-GraphQL runtime boundary foundations | P1 | L | 095, 100, 101, 128, 129, 130 | BLOCKED: prerequisite chain incomplete |
+| [132](132-playwright-bun-foundation.md) | Establish a Bun-only Playwright test foundation | P1 | L | 094, 101, 128, 129 | BLOCKED: prerequisite chain incomplete |
+| [144](144-playwright-product-contracts-and-ci.md) | Make fixture-backed Playwright product contracts a required CI gate | P1 | L | 094, 101, 128, 129, 132 | BLOCKED: prerequisite chain incomplete |
+| [145](145-playwright-real-stack-integration.md) | Prove critical UI flows against managed GreptimeDB and isolated Turso | P1 | L | 093, 101, 132, 144 | BLOCKED: prerequisite chain incomplete |
+| [146](146-playwright-cross-browser-accessibility-visual.md) | Establish cross-browser, mobile, accessibility, and visual Playwright gates | P1 | L | 101, 132, 144, 145 | BLOCKED: prerequisite chain incomplete |
 
 ### TypeScript Capability And Feature Migrations
 
@@ -97,43 +96,43 @@ work.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [149](149-route-less-capability-foundation.md) | Establish route-less UI capabilities before feature moves | P1 | L | 100, 129, 152, 153 | TODO |
-| [134](134-investigations-feature-migration.md) | Migrate investigations behind a strict feature facade | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO |
-| [135](135-sql-feature-migration.md) | Migrate the SQL workspace behind decoded feature boundaries | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO |
-| [136](136-ecosystem-feature-migration.md) | Migrate ecosystem topology into a bounded feature | P1 | M | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO |
-| [137](137-dashboards-feature-migration.md) | Migrate dashboards into decoded model and API boundaries | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO |
-| [138](138-services-feature-migration.md) | Move services into one bounded feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO |
-| [139](139-issues-feature-migration.md) | Move issues and stacktrace ownership into one feature | P1 | L | 100, 129, 132, 134, 144, 145, 146, 149, 152, 153 | TODO |
-| [141](141-logs-feature-migration.md) | Move logs and the reusable log table into one feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO |
-| [140](140-runs-feature-migration.md) | Move runs, sessions, and live observation into one feature | P1 | L | 100, 129, 132, 134, 141, 144, 145, 146, 149, 152, 153 | TODO |
-| [142](142-traces-feature-migration.md) | Move trace search, analysis, and inspection into one feature | P1 | XL | 100, 129, 132, 134, 144, 145, 146, 149, 152, 153 | TODO |
-| [150](150-overview-feature-migration.md) | Move overview into one bounded feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO |
-| [143](143-app-layout-shell-migration.md) | Move app, layout, and shell behind explicit boundaries | P1 | XL | 134, 135, 136, 137, 138, 139, 140, 141, 142, 145, 146, 149, 150, 152, 153 | TODO |
-| [151](151-ui-architecture-final-closure.md) | Verify and close the final UI architecture | P1 | L | 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 149, 150, 152, 153 | TODO |
+| [149](149-route-less-capability-foundation.md) | Establish route-less UI capabilities before feature moves | P1 | L | 100, 129, 152, 153 | BLOCKED: prerequisite chain incomplete |
+| [134](134-investigations-feature-migration.md) | Migrate investigations behind a strict feature facade | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
+| [135](135-sql-feature-migration.md) | Migrate the SQL workspace behind decoded feature boundaries | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
+| [136](136-ecosystem-feature-migration.md) | Migrate ecosystem topology into a bounded feature | P1 | M | 100, 129, 132, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
+| [137](137-dashboards-feature-migration.md) | Migrate dashboards into decoded model and API boundaries | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
+| [138](138-services-feature-migration.md) | Move services into one bounded feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
+| [139](139-issues-feature-migration.md) | Move issues and stacktrace ownership into one feature | P1 | L | 100, 129, 132, 134, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
+| [141](141-logs-feature-migration.md) | Move logs and the reusable log table into one feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
+| [140](140-runs-feature-migration.md) | Move runs, sessions, and live observation into one feature | P1 | L | 100, 129, 132, 134, 141, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
+| [142](142-traces-feature-migration.md) | Move trace search, analysis, and inspection into one feature | P1 | XL | 100, 129, 132, 134, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
+| [150](150-overview-feature-migration.md) | Move overview into one bounded feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
+| [143](143-app-layout-shell-migration.md) | Move app, layout, and shell behind explicit boundaries | P1 | XL | 134, 135, 136, 137, 138, 139, 140, 141, 142, 145, 146, 149, 150, 152, 153 | BLOCKED: prerequisite chain incomplete |
+| [151](151-ui-architecture-final-closure.md) | Verify and close the final UI architecture | P1 | L | 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 149, 150, 152, 153 | BLOCKED: prerequisite chain incomplete |
 
 ### UI State, Performance, And Product Gaps
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [133](133-ui-tanstack-query-cache.md) | Replace the UI TTL cache with feature-owned TanStack Query | P1 | L | 095, 101, 128, 129, 132, 144, 145, 151 | TODO |
-| [147](147-ui-live-data-performance.md) | Make live telemetry updates typed, bounded, and identity-stable | P1 | L | 095, 101, 129, 133, 140, 141, 142, 145, 151 | TODO |
-| [148](148-ui-bundle-performance.md) | Enforce route-owned production chunks and deterministic bundle budgets | P1 | L | 095, 100, 101, 105, 132, 133, 144, 146, 147, 151 | TODO |
-| [105](105-metric-overview-and-trends.md) | Replace metric stubs and reconcile CLI, native-name, and metric-only service contracts | P2 | M | 097, 099, 133, 151 | TODO |
+| [133](133-ui-tanstack-query-cache.md) | Replace the UI TTL cache with feature-owned TanStack Query | P1 | L | 095, 101, 128, 129, 132, 144, 145, 151 | BLOCKED: prerequisite chain incomplete |
+| [147](147-ui-live-data-performance.md) | Make live telemetry updates typed, bounded, and identity-stable | P1 | L | 095, 101, 129, 133, 140, 141, 142, 145, 151 | BLOCKED: prerequisite chain incomplete |
+| [148](148-ui-bundle-performance.md) | Enforce route-owned production chunks and deterministic bundle budgets | P1 | L | 095, 100, 101, 105, 132, 133, 144, 146, 147, 151 | BLOCKED: prerequisite chain incomplete |
+| [105](105-metric-overview-and-trends.md) | Replace metric stubs and reconcile CLI, native-name, and metric-only service contracts | P2 | M | 097, 099, 133, 151 | BLOCKED: prerequisite chain incomplete |
 
 ### Dependencies, Tests, And Performance
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [103](103-property-fuzz-and-performance.md) | Add focused Rust/UI property/fuzz corpora and measured performance/allocation gates | P2 | L | 097, 099, 101, 104, 133, 147, 148 | TODO |
+| [103](103-property-fuzz-and-performance.md) | Add focused Rust/UI property/fuzz corpora and measured performance/allocation gates | P2 | L | 097, 099, 101, 104, 133, 147, 148 | BLOCKED: prerequisite chain incomplete |
 
 ### Evidence Contracts And Closure
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [111](111-redaction-pipeline-and-a6-gate.md) | Build the source-aware fail-closed runtime redactor and prove the A6 gate | P1 | L | 099, 101, 104 | TODO |
-| [116](116-retention-and-prune-lifecycle.md) | Reconcile data retention and make `prune` truthfully reclaim eligible data | P1 | L | 093, 097, 099; 105 soft | TODO |
-| [106](106-evidence-pinning-ttl-spike.md) | Design and live-test evidence pinning beyond telemetry TTL | P2 | M | 092, 104, 116 | TODO |
-| [107](107-program-closure-audits.md) | Run independent source audits and verify the mechanical closure commit | P1 | M | Every other actionable indexed plan; all blockers freshly rechecked | TODO |
+| [111](111-redaction-pipeline-and-a6-gate.md) | Build the source-aware fail-closed runtime redactor and prove the A6 gate | P1 | L | 099, 101, 104 | BLOCKED: prerequisite chain incomplete |
+| [116](116-retention-and-prune-lifecycle.md) | Reconcile data retention and make `prune` truthfully reclaim eligible data | P1 | L | 093, 097, 099; 105 soft | BLOCKED: operator-approved lifecycle contract is absent |
+| [106](106-evidence-pinning-ttl-spike.md) | Design and live-test evidence pinning beyond telemetry TTL | P2 | M | 092, 104, 116 | BLOCKED: prerequisite chain incomplete |
+| [107](107-program-closure-audits.md) | Run independent source audits and verify the mechanical closure commit | P1 | M | Every other actionable indexed plan; all blockers freshly rechecked | BLOCKED: C0 freeze criteria unmet while direct blockers remain |
 
 ### Cross-Repository Playground And Test Reporting
 
@@ -151,8 +150,8 @@ CI-provider API collection; 155 consumes OTLP-ingested telemetry only.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [154](154-playground-capability-and-test-observability.md) | Playground full-capability coverage and test observability | P1 | XL | soft 105, 111, 119 | TODO |
-| [155](155-test-reporting-surface.md) | Test reporting and test observability surface | P1 | XL | 149, 152, 153; soft 104, 119, 121, 124, 140 | TODO |
+| [154](154-playground-capability-and-test-observability.md) | Validate playground observability on the live fan-out | P1 | M | Docker host + five backends | BLOCKED: Docker-less host cannot run collector-backed acceptance |
+| [155](155-test-reporting-surface.md) | Test reporting and test observability surface | P1 | XL | 149, 152, 153; soft 104, 119, 121, 124, 140 | BLOCKED: prerequisite chain incomplete |
 
 ### Triggered Or Operator-Blocked Work
 
@@ -171,7 +170,7 @@ invent the missing product or operator decision.
 | [118](118-sentry-envelope-migration-adapter.md) | 093, 099, 104, 111, 116 | Operator opens Sentry-compatible ingest after evidence makes it the next adoption constraint | BLOCKED: compatibility scope and demand trigger not open |
 | [120](120-agent-session-capture-adapters.md) | 099, 104, 111, 119 | Operator selects and opens one coding-agent session capture adapter | BLOCKED: adapter/tool/version/consent scope not open |
 | [121](121-deploy-and-change-context-collectors.md) | 099, 104, 109, 111, 116 | Operator selects and opens one deploy/change provider integration | BLOCKED: provider/auth/claim scope not open |
-| [122](122-playground-residual-program.md) | 105, 111, 119, 151 | Operator names the companion repository branch and exact remaining cross-repo scope | BLOCKED: cross-repository branch/scope not authorized |
+| [122](122-playground-residual-program.md) | 105, 111, 119, 151 | Plans 105, 111, and 151 complete their product contracts | BLOCKED: cross-repository branch/scope authorized 2026-07-15; upstream product dependencies remain |
 | [123](123-fixer-outcome-loop.md) | 104, 111, 120, 121 | Operator opens a separate fixer after A1/A2/A3/redaction gates | BLOCKED: autonomous-fixer scope and prerequisites not open |
 | [124](124-ci-and-flaky-test-evidence-collector.md) | 099, 104, 111, 121 | Operator selects and opens product CI-provider collection | BLOCKED: provider/repository/permission scope not open |
 

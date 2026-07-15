@@ -23,6 +23,7 @@ parallax-greptime = { workspace = true }
 parallax-ingest = { workspace = true }
 parallax-metadata = { workspace = true }
 parallax-proto = { workspace = true }
+parallax-semconv = { workspace = true }
 parallax-spool = { workspace = true }
 parallax-storage = { workspace = true }
 prost = { workspace = true }

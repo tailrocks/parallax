@@ -48,6 +48,7 @@ pub struct ApiContext {
     pub store: Arc<dyn TelemetryStore>,
     pub metadata: Arc<dyn MetadataStore>,
     pub otlp_grpc_port: u16,
+    pub otlp_http_port: u16,
     pub memo: RequestMemo,
 }
 
@@ -108,6 +109,10 @@ impl Query {
 
     fn otlp_grpc_port(context: &ApiContext) -> i32 {
         i32::from(context.otlp_grpc_port)
+    }
+
+    fn otlp_http_port(context: &ApiContext) -> i32 {
+        i32::from(context.otlp_http_port)
     }
 
     /// Whole-system counters for an inclusive time window. Counts are strings

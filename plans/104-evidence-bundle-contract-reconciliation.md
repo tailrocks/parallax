@@ -28,6 +28,13 @@ Option B (research graph as `bundle-v2`), Option C (versioned envelope around
 the V1 dossier), or reject all three with a replacement scope; they must also
 name approver and approval date. Steps 3–5 are forbidden until then.
 
+Fresh audit on 2026-07-15 at `691cf17`: the decision record still has
+`status = "pending-operator-approval"`, while `canonical_model`,
+`contract_version`, `compatibility_window`, `migration_behavior`,
+`approved_by`, and `approval_date` remain `UNRESOLVED`. No later operator
+message in the active plan program selects A, B, C, or a replacement. The
+fail-closed decision gate and Step-2 STOP condition therefore remain active.
+
 ## Why
 
 The research model and shipped `bundle-v1` schema describe materially different

@@ -3135,6 +3135,7 @@ version = "0.1.0-dev"
 dependencies = [
  "parallax-model",
  "parallax-proto",
+ "parallax-semconv",
  "regex",
  "serde_json",
  "sha2",
@@ -3162,7 +3163,11 @@ version = "0.1.0-dev"
 dependencies = [
  "anyhow",
  "clap",
+ "opentelemetry",
+ "opentelemetry-otlp",
+ "opentelemetry_sdk",
  "parallax-model",
+ "parallax-semconv",
  "parallax-server",
  "reqwest",
  "serde",
@@ -3200,6 +3205,7 @@ dependencies = [
  "futures-util",
  "parallax-model",
  "parallax-proto",
+ "parallax-semconv",
  "parallax-storage",
  "reqwest",
  "serde_json",
@@ -3213,6 +3219,7 @@ version = "0.1.0-dev"
 dependencies = [
  "parallax-model",
  "parallax-proto",
+ "parallax-semconv",
  "serde_json",
 ]
 
@@ -3238,7 +3245,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "parallax-model",
- "parallax-proto",
+ "parallax-semconv",
  "parallax-storage",
  "serde_json",
  "tempfile",
@@ -3260,7 +3267,13 @@ name = "parallax-proto"
 version = "0.1.0-dev"
 dependencies = [
  "opentelemetry-proto",
+ "parallax-semconv",
+ "prost",
 ]
+
+[[package]]
+name = "parallax-semconv"
+version = "0.1.0-dev"
 
 [[package]]
 name = "parallax-server"
@@ -3283,6 +3296,7 @@ dependencies = [
  "parallax-ingest",
  "parallax-metadata",
  "parallax-proto",
+ "parallax-semconv",
  "parallax-spool",
  "parallax-storage",
  "parallax-test-support",
@@ -3323,6 +3337,7 @@ dependencies = [
  "bytes",
  "parallax-model",
  "parallax-proto",
+ "parallax-semconv",
  "serde_json",
  "thiserror 2.0.18",
 ]
@@ -3336,6 +3351,7 @@ dependencies = [
  "bytes",
  "parallax-model",
  "parallax-proto",
+ "parallax-semconv",
  "parallax-storage",
  "serde_json",
  "tokio",
@@ -3363,8 +3379,10 @@ dependencies = [
  "quick-xml",
  "quote",
  "ra-ap-rustc_lexer",
+ "semver",
  "serde",
  "serde_json",
+ "serde_norway",
  "sha2",
  "syn",
  "tar",
@@ -4222,6 +4240,19 @@ dependencies = [
  "serde",
  "serde_core",
  "zmij",
+]
+
+[[package]]
+name = "serde_norway"
+version = "0.9.42"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e408f29489b5fd500fab51ff1484fc859bb655f32c671f307dcd733b72e8168c"
+dependencies = [
+ "indexmap",
+ "itoa",
+ "ryu",
+ "serde",
+ "unsafe-libyaml-norway",
 ]
 
 [[package]]
@@ -5425,6 +5456,12 @@ dependencies = [
  "crypto-common",
  "subtle",
 ]
+
+[[package]]
+name = "unsafe-libyaml-norway"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b39abd59bf32521c7f2301b52d05a6a2c975b6003521cbd0c6dc1582f0a22104"
 
 [[package]]
 name = "url"

@@ -10,6 +10,22 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Validate macOS SDK identity
+      shell: bash
+      env:
+        SDK_VERSION: ${{ inputs.version }}
+        SDK_SHA256: ${{ inputs.sha256 }}
+      run: |
+        set -euo pipefail
+        [[ "$SDK_VERSION" =~ ^[0-9]+\.[0-9]+$ ]] || {
+          echo "invalid macOS SDK version: $SDK_VERSION" >&2
+          exit 1
+        }
+        [[ "$SDK_SHA256" =~ ^[0-9a-f]{64}$ ]] || {
+          echo "macOS SDK SHA-256 must be exactly 64 lowercase hex characters" >&2
+          exit 1
+        }
+
     - name: Cache macOS SDK archive
       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:

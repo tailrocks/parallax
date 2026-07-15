@@ -1,3 +1,4 @@
+use crate::release::Channel;
 use clap::{ArgGroup, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
@@ -63,10 +64,31 @@ pub(crate) enum Command {
     },
     /// Report noisy structural metrics without failing policy.
     Health,
+    /// Verify the final mechanical closure commit and auditor attestations.
+    ClosureFinal {
+        /// Exercise passing and tampered fixtures before the closure commit exists.
+        #[arg(long)]
+        dry_run: bool,
+    },
     /// Refresh or verify syntax-derived crate facade manifests.
     Facade {
         #[command(subcommand)]
         action: FacadeAction,
+    },
+    /// Generate or verify checked-in semantic-convention artifacts.
+    Semconv {
+        #[command(subcommand)]
+        action: SemconvAction,
+        /// Optional checkout of the linked telemetry playground repository.
+        #[arg(long)]
+        playground_root: Option<PathBuf>,
+    },
+    /// Validate a release channel/version identity before an expensive build.
+    ReleaseValidate {
+        #[arg(long)]
+        version: String,
+        #[arg(long, value_enum)]
+        channel: Channel,
     },
     /// Package one built binary through the deterministic release implementation.
     ReleasePackage {
@@ -74,6 +96,12 @@ pub(crate) enum Command {
         binary: PathBuf,
         #[arg(long)]
         archive: PathBuf,
+        #[arg(long)]
+        target: String,
+        #[arg(long)]
+        version: String,
+        #[arg(long, value_enum)]
+        channel: Channel,
         #[arg(long)]
         source_epoch: u64,
     },
@@ -85,6 +113,8 @@ pub(crate) enum Command {
         target: String,
         #[arg(long)]
         version: String,
+        #[arg(long, value_enum)]
+        channel: Channel,
         #[arg(long)]
         source_epoch: u64,
         #[arg(long, default_value = "target/dist")]
@@ -123,6 +153,14 @@ pub(crate) enum DocsAction {
 pub(crate) enum FacadeAction {
     Refresh,
     Check,
+}
+
+#[derive(Debug, Subcommand)]
+pub(crate) enum SemconvAction {
+    /// Compare deterministic generated output with the checked-in artifacts.
+    Check,
+    /// Explicitly refresh checked-in artifacts from the registry.
+    Generate,
 }
 
 #[cfg(test)]

@@ -130,6 +130,12 @@ jobs:
             echo "version=${base_version}-preview.${commit_count}+${short_sha}"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Validate preview release identity
+        if: steps.filter.outputs.source == 'true'
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: cargo xtask release-validate --version "$VERSION" --channel preview
+
   build-preview:
     needs: source-changed
     if: needs.source-changed.outputs.source == 'true'
@@ -246,6 +252,9 @@ jobs:
           mise exec -- cargo xtask release-package \
             --binary "target/${TARGET}/release/parallax" \
             --archive "$archive" \
+            --target "$TARGET" \
+            --version "${{ needs.source-changed.outputs.version }}" \
+            --channel preview \
             --source-epoch "$source_epoch"
           echo "archive=$archive" >> "$GITHUB_OUTPUT"
           echo "source_epoch=$source_epoch" >> "$GITHUB_OUTPUT"

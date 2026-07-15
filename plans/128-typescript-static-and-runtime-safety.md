@@ -43,8 +43,10 @@ feature.
 
 ## Current Evidence
 
-- `ui/tsconfig.json` omits `noPropertyAccessFromIndexSignature`,
-  `isolatedModules`, and forced module detection.
+- `ui/tsconfig.json` now enforces `noPropertyAccessFromIndexSignature`,
+  `isolatedModules`, and `moduleDetection: "force"`; the normal strict
+  application typecheck passes with those options. The remaining work is the
+  separate third-party declaration graph described below.
 - `skipLibCheck` remains enabled. A full declaration probe exposes third-party
   incompatibilities that must be solved as one mutually compatible dependency
   set rather than hidden with ambient declarations.
@@ -57,6 +59,16 @@ feature.
 - Plan 131 inventories and enables the final native/type-aware Oxlint rules.
   This plan consumes that inventory and closes only the remaining application
   policy gaps; it does not introduce another linter or compiler.
+- 2026-07-14: direct TanStack patch releases and the published `ws`/Babel type
+  packages were updated through Bun. They remove ordinary missing-declaration
+  diagnostics but do not resolve the remaining four upstream TS7 declaration
+  owners recorded in the validation note; no declaration patch or compiler
+  weakening was introduced.
+- 2026-07-14: a further Bun-only compatible stable refresh (Base UI 1.6.0,
+  React 19.2.7, Vite 8.1.4, Vitest 4.1.10, Tailwind 4.3.2, and shadcn 4.13.0)
+  keeps the normal strict UI lanes green but reproduces the same four
+  full-declaration owners. The validation note records the exact package paths
+  and confirms no safe source-level workaround exists.
 
 ## Fixed Decisions
 
@@ -115,7 +127,7 @@ Out of scope:
 | Compiler | `cd ui && bun run typecheck` | TypeScript 7 exits zero with full declaration checking |
 | Native lint | `cd ui && bun run lint:native` | warnings, stale directives, parse errors, and zero selection fail |
 | Type-aware lint | `cd ui && bun run lint:type-aware` | typed rule fixtures and full project pass |
-| Static policy | `cargo xtask policy --only ui.typescript-static-safety` | ratchets, ownership, state, and Result rules pass |
+| Static policy | `cargo xtask policy --only typescript` | ratchets, ownership, state, and Result rules pass |
 | UI regression | `cd ui && bun run test:ci && bun run build` | existing behavior remains green |
 | Aggregate | `cargo xtask ci --fast` | required static diagnostics are represented once |
 

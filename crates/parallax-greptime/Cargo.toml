@@ -21,6 +21,7 @@ bytes = { workspace = true }
 futures-util = { workspace = true }
 parallax-model = { workspace = true }
 parallax-proto = { workspace = true }
+parallax-semconv = { workspace = true }
 parallax-storage = { workspace = true }
 reqwest = { workspace = true }
 serde_json = { workspace = true }

@@ -23,7 +23,7 @@
 - **Depends on**: 095, 100, 101, 128, 129, 130
 - **Category**: TypeScript / runtime safety / platform boundaries
 - **Planned at**: `e3e7997`, 2026-07-12
-- **Status**: TODO
+- **Status**: BLOCKED — Plans 100, 128, and 129 are not complete
 
 ## Why This Matters
 

@@ -13,7 +13,7 @@
 - **Depends on**: 092, 104, 116
 - **Category**: evidence retention / storage / product contract
 - **Planned at**: `eefa4617`, 2026-07-12
-- **Status**: TODO
+- **Status**: BLOCKED — Plan 104 approval and Plan 116 lifecycle approval are absent
 
 ## Why
 

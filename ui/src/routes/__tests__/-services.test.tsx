@@ -1,15 +1,8 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
-import {
-  Outlet,
-  RouterProvider,
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  defaultParseSearch,
-} from "@tanstack/react-router"
+import { cleanup, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
+import { defaultParseSearch } from "@tanstack/react-router"
 import { afterEach, describe, expect, it } from "vitest"
 
 import { customRange, resolvePreset } from "@/lib/range"
@@ -21,6 +14,7 @@ import {
 import type { ServicesData } from "@/routes/services"
 import { ServiceDetailContent } from "@/routes/services.$service"
 import type { ServiceDetailData } from "@/routes/services.$service"
+import { renderTestRouter } from "@/test/router"
 
 afterEach(cleanup)
 
@@ -120,51 +114,11 @@ const detailFixture: ServiceDetailData = {
 }
 
 function renderWithRouter(component: React.ReactNode, path = "/services") {
-  window.scrollTo = () => {}
-  window.matchMedia = () =>
-    ({
-      matches: false,
-      media: "",
-      onchange: null,
-      addListener() {},
-      removeListener() {},
-      addEventListener() {},
-      removeEventListener() {},
-      dispatchEvent: () => true,
-    }) as MediaQueryList
-
-  const rootRoute = createRootRoute({ component: Outlet })
-  const servicesRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/services",
-    component: () => component,
+  return renderTestRouter(component, {
+    componentPaths: ["/services", "/services/$service"],
+    initialPath: path,
+    targetPaths: ["/traces/$traceId", "/traces"],
   })
-  const serviceRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/services/$service",
-    component: () => component,
-  })
-  const tracesRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/traces/$traceId",
-    component: () => null,
-  })
-  const tracesIndexRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/traces",
-    component: () => null,
-  })
-  const router = createRouter({
-    routeTree: rootRoute.addChildren([
-      servicesRoute,
-      serviceRoute,
-      tracesRoute,
-      tracesIndexRoute,
-    ]),
-    history: createMemoryHistory({ initialEntries: [path] }),
-  })
-
-  return render(<RouterProvider router={router} />)
 }
 
 describe("Services route", () => {
@@ -235,7 +189,9 @@ describe("Services route", () => {
       to: custom.toNanos,
     })
   })
+})
 
+describe("Service detail route", () => {
   it("renders detail stats and hides infra band without CPU/memory", async () => {
     renderWithRouter(
       <ServiceDetailContent
@@ -322,6 +278,7 @@ describe("Services route", () => {
   })
 
   it("opens trace exemplar popovers from latency markers", async () => {
+    const user = userEvent.setup()
     renderWithRouter(
       <ServiceDetailContent
         service="api gateway"
@@ -346,7 +303,7 @@ describe("Services route", () => {
       "/services/api%20gateway"
     )
 
-    fireEvent.click(
+    await user.click(
       await screen.findByRole("button", {
         name: /trace exemplar trace-exemplar/i,
       })

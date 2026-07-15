@@ -18,7 +18,7 @@
 - **Depends on**: 094, 101, 128, 129
 - **Category**: TypeScript / Playwright / test infrastructure
 - **Planned at**: `e3e7997`, revised 2026-07-12
-- **Status**: TODO
+- **Status**: BLOCKED — Plans 128 and 129 are not complete
 
 ## Why This Matters
 

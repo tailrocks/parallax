@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react"
+import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { RangePicker } from "@/components/console/range-picker"
@@ -23,6 +24,7 @@ describe("RangePicker", () => {
   }
 
   it("emits preset and custom calendar ranges", async () => {
+    const user = userEvent.setup()
     const now = new Date(2026, 0, 15, 12, 0, 0, 0).getTime()
     vi.spyOn(Date, "now").mockReturnValue(now)
     const onChange = vi.fn()
@@ -30,14 +32,14 @@ describe("RangePicker", () => {
       <RangePicker value={resolvePreset("24h", now)} onChange={onChange} />
     )
 
-    fireEvent.click(screen.getByRole("button", { name: /Last 24h/i }))
-    fireEvent.click(await screen.findByRole("button", { name: /Last hour/i }))
+    await user.click(screen.getByRole("button", { name: /Last 24h/i }))
+    await user.click(await screen.findByRole("button", { name: /Last hour/i }))
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ key: "1h" })
     )
 
-    fireEvent.click(dayButton("10"))
-    fireEvent.click(dayButton("12"))
+    await user.click(dayButton("10"))
+    await user.click(dayButton("12"))
 
     const custom = onChange.mock.calls.at(-1)?.[0]
     if (!custom) throw new Error("missing custom range")

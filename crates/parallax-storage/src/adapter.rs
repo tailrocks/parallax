@@ -2,7 +2,7 @@
 //! `TelemetryStore`; product code never sees an engine.
 
 use crate::model::*;
-use parallax_proto::semconv;
+use parallax_semconv as semconv;
 use std::collections::HashMap;
 use std::ops::RangeInclusive;
 
@@ -250,12 +250,12 @@ pub fn span_field_key_allowed(key: &str) -> bool {
         || lower.contains("stacktrace")
         || lower == "db.statement"
         || lower == "db.query.text"
-        || lower == "graphql.document"
+        || lower == semconv::GRAPHQL_DOCUMENT
         || lower == "url.full"
         || lower == "url.query"
         || lower == "process.command_args"
         || lower == "resource.process.command_args"
-        || lower == "shell.command"
+        || lower == semconv::SHELL_COMMAND
         || lower.ends_with(".body")
         || lower.ends_with("_body")
         || lower.ends_with(".message")

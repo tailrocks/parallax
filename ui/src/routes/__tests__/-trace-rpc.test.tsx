@@ -1,14 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
-import {
-  Outlet,
-  RouterProvider,
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-} from "@tanstack/react-router"
+import { cleanup, render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it } from "vitest"
 
 import type { SpanLink } from "@/lib/api"
@@ -20,28 +13,9 @@ import {
   TraceRpcSection,
 } from "@/routes/traces.$traceId"
 import type { SpanEvent } from "@/routes/traces.$traceId"
+import { renderTestRouter } from "@/test/router"
 
 afterEach(cleanup)
-
-function renderWithRouter(component: React.ReactNode) {
-  window.scrollTo = () => {}
-  const rootRoute = createRootRoute({ component: Outlet })
-  const indexRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/",
-    component: () => component,
-  })
-  const traceRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "traces/$traceId",
-    component: () => null,
-  })
-  const router = createRouter({
-    routeTree: rootRoute.addChildren([indexRoute, traceRoute]),
-    history: createMemoryHistory({ initialEntries: ["/"] }),
-  })
-  return render(<RouterProvider router={router} />)
-}
 
 function event(index: number): SpanEvent {
   return {
@@ -75,7 +49,8 @@ const stream: RpcStreamInfo = {
 }
 
 describe("trace RPC inspector helpers", () => {
-  it("caps inspector events and expands on demand", () => {
+  it("caps inspector events and expands on demand", async () => {
+    const user = userEvent.setup()
     render(
       <InspectorEventList
         events={Array.from({ length: 60 }, (_, index) => event(index))}
@@ -83,21 +58,25 @@ describe("trace RPC inspector helpers", () => {
     )
 
     expect(screen.getAllByTestId("inspector-event")).toHaveLength(25)
-    fireEvent.click(screen.getByRole("button", { name: /show all 60 events/i }))
+    await user.click(
+      screen.getByRole("button", { name: /show all 60 events/i })
+    )
     expect(screen.getAllByTestId("inspector-event")).toHaveLength(60)
   })
 
   it("caps inspector links and expands on demand", async () => {
-    renderWithRouter(
+    const user = userEvent.setup()
+    renderTestRouter(
       <InspectorLinksList
         links={Array.from({ length: 60 }, (_, index) => link(index))}
         linkedTraceById={new Map()}
         rangeSearch={{ range: "24h" }}
-      />
+      />,
+      { targetPaths: ["/traces/$traceId"] }
     )
 
     expect(await screen.findAllByTestId("trace-link-edge")).toHaveLength(25)
-    fireEvent.click(screen.getByRole("button", { name: /show all 60 links/i }))
+    await user.click(screen.getByRole("button", { name: /show all 60 links/i }))
     expect(screen.getAllByTestId("trace-link-edge")).toHaveLength(60)
   })
 

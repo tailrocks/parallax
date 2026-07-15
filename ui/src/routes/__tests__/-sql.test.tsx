@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react"
+import { cleanup, render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import {
   Outlet,
   RouterProvider,
@@ -9,51 +10,38 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { SnippetsMenu, SqlResultBody, targetForCell } from "@/routes/sql"
+import {
+  EXAMPLES,
+  Route as SqlRoute,
+  SnippetsMenu,
+  SqlResultBody,
+  targetForCell,
+} from "@/routes/sql"
+import { renderTestRouter } from "@/test/router"
+
+afterEach(cleanup)
 
 function renderWithRouter(component: React.ReactNode) {
-  const rootRoute = createRootRoute({ component: Outlet })
-  const indexRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/",
-    component: () => component,
+  return renderTestRouter(component, {
+    targetPaths: [
+      "/traces/$traceId",
+      "/runs/$runId",
+      "/issues/$fingerprint",
+      "/services/$service",
+    ],
   })
-  const traceRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "traces/$traceId",
-    component: () => null,
-  })
-  const runRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "runs/$runId",
-    component: () => null,
-  })
-  const issueRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "issues/$fingerprint",
-    component: () => null,
-  })
-  const serviceRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "services/$service",
-    component: () => null,
-  })
-  const router = createRouter({
-    routeTree: rootRoute.addChildren([
-      indexRoute,
-      traceRoute,
-      runRoute,
-      issueRoute,
-      serviceRoute,
-    ]),
-    history: createMemoryHistory({ initialEntries: ["/"] }),
-  })
-  return render(<RouterProvider router={router} />)
 }
 
 describe("SQL result helpers", () => {
+  it("keeps SQL examples on real table names", () => {
+    const banned = /\botel_spans\b|\botel_logs\b|\botel_metrics_points\b/
+    for (const example of EXAMPLES) {
+      expect(example.sql).not.toMatch(banned)
+    }
+  })
+
   it("maps supported id columns to route targets", () => {
     expect(targetForCell("trace_id", "trace-a", {})).toEqual({
       to: "/traces/$traceId",
@@ -113,8 +101,30 @@ describe("SQL result helpers", () => {
   })
 })
 
+describe("SQL route", () => {
+  it("renders SQL keyboard hint and examples menu", async () => {
+    const rootRoute = createRootRoute({ component: Outlet })
+    const component = SqlRoute.options.component!
+    const sqlRoute = createRoute({
+      getParentRoute: () => rootRoute,
+      path: "/sql",
+      component,
+    })
+    const router = createRouter({
+      routeTree: rootRoute.addChildren([sqlRoute]),
+      history: createMemoryHistory({ initialEntries: ["/sql"] }),
+    })
+
+    render(<RouterProvider router={router} />)
+    expect(await screen.findByText("⌘")).toBeTruthy()
+    expect(screen.getByText("Enter")).toBeTruthy()
+    expect(screen.getByRole("button", { name: /examples/i })).toBeTruthy()
+  })
+})
+
 describe("SnippetsMenu", () => {
   it("dispatches select, save, and delete actions", async () => {
+    const user = userEvent.setup()
     const snippet = {
       id: "snippet-1",
       name: "Errors",
@@ -134,16 +144,16 @@ describe("SnippetsMenu", () => {
       />
     )
 
-    fireEvent.click(await screen.findByText("Snippets"))
-    fireEvent.click((await screen.findAllByText("Errors"))[0]!)
+    await user.click(await screen.findByText("Snippets"))
+    await user.click((await screen.findAllByText("Errors"))[0]!)
     expect(onSelect).toHaveBeenCalledWith(snippet)
 
-    fireEvent.click(await screen.findByText("Snippets"))
-    fireEvent.click(await screen.findByText("Save current snippet"))
+    await user.click(await screen.findByText("Snippets"))
+    await user.click(await screen.findByText("Save current snippet"))
     expect(onSave).toHaveBeenCalled()
 
-    fireEvent.click(await screen.findByText("Snippets"))
-    fireEvent.click((await screen.findAllByText("Errors")).at(-1)!)
+    await user.click(await screen.findByText("Snippets"))
+    await user.click((await screen.findAllByText("Errors")).at(-1)!)
     expect(onDelete).toHaveBeenCalledWith("snippet-1")
   })
 })

@@ -2,7 +2,6 @@ schema_version = 1
 
 [roots]
 "lib.rs" = [
-    "mod semconv",
     "use opentelemetry_proto::tonic::collector::logs::v1 as collector_logs",
     "use opentelemetry_proto::tonic::collector::metrics::v1 as collector_metrics",
     "use opentelemetry_proto::tonic::collector::trace::v1 as collector_trace",

@@ -20,3 +20,7 @@ opentelemetry-proto = { version = "0.32", features = [
     "metrics",
     "with-serde",
 ] }
+
+[dev-dependencies]
+parallax-semconv.workspace = true
+prost.workspace = true

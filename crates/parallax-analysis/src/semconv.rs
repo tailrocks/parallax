@@ -1,6 +1,6 @@
-//! Temporary semantic-convention names until Plan 119 generates the registry crate.
+//! Analysis-facing import boundary for registry-generated semantic conventions.
 
-pub use parallax_proto::semconv::*;
+pub use parallax_semconv::*;
 
 #[cfg(test)]
 mod tests;

@@ -1,20 +1,13 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, render, screen } from "@testing-library/react"
-import {
-  Outlet,
-  RouterProvider,
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-} from "@tanstack/react-router"
+import { cleanup, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { graphqlCached } from "@/lib/api"
 import type { ResolvedRange } from "@/lib/range"
 import { OverviewContent, latencyBands, loadOverview } from "@/routes/index"
 import type { OverviewData } from "@/routes/index"
+import { renderTestRouter } from "@/test/router"
 
 vi.mock("@/lib/api", () => {
   return {
@@ -126,51 +119,13 @@ function zeroFixture(): OverviewData {
 }
 
 function renderWithRouter(component: React.ReactNode) {
-  window.scrollTo = () => {}
-  window.matchMedia = () =>
-    ({
-      matches: false,
-      media: "",
-      onchange: null,
-      addListener() {},
-      removeListener() {},
-      addEventListener() {},
-      removeEventListener() {},
-      dispatchEvent: () => true,
-    }) as MediaQueryList
-
-  const rootRoute = createRootRoute({ component: Outlet })
-  const indexRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/",
-    component: () => component,
+  return renderTestRouter(component, {
+    targetPaths: [
+      "/issues/$fingerprint",
+      "/traces/$traceId",
+      "/services/$service",
+    ],
   })
-  const issueRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "issues/$fingerprint",
-    component: () => null,
-  })
-  const traceRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "traces/$traceId",
-    component: () => null,
-  })
-  const serviceRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "services/$service",
-    component: () => null,
-  })
-  const router = createRouter({
-    routeTree: rootRoute.addChildren([
-      indexRoute,
-      issueRoute,
-      traceRoute,
-      serviceRoute,
-    ]),
-    history: createMemoryHistory({ initialEntries: ["/"] }),
-  })
-
-  return render(<RouterProvider router={router} />)
 }
 
 describe("Overview route", () => {

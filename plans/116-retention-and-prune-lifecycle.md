@@ -13,7 +13,7 @@
 - **Depends on**: 093, 097, 099; 105 soft
 - **Category**: retention / storage lifecycle / CLI
 - **Planned at**: `eefa4617`, 2026-07-12
-- **Status**: TODO
+- **Status**: BLOCKED
 
 ## Why
 
@@ -49,6 +49,21 @@ pin/reachability protection, logical-versus-physical reclaim promise,
 confirmation policy, compatibility/migration behavior, and approval date. Add a
 decision-policy fixture that fails missing, draft, rejected, or incomplete
 approval.
+
+## Current Blocker Evidence (2026-07-14)
+
+`docs/research/decisions/retention-and-prune-contract.md` does not exist.
+The current V1 scope explicitly says `parallax prune` reclaims spool segments
+only and assigns immediate physical reclaim to this plan. No approved record
+names the required data-class ownership, resolved/unresolved policy, pin
+protection, cross-store recovery, or truthful physical-reclaim promise.
+Consequently Steps 2-5 remain forbidden; this plan contains no safe
+implementation work until the operator supplies the required approved contract.
+
+Fresh audit on 2026-07-15 at `691cf17`: repository search still finds no
+`docs/research/decisions/retention-and-prune-contract.md`, and no operator
+approval names the destructive lifecycle fields required by Step 1. The
+spool-only implementation remains authoritative and no deletion work is safe.
 
 Steps 2-5 are forbidden until that exact record is approved. If approval is
 unavailable, rejects every proposal, or changes storage/product scope, mark this

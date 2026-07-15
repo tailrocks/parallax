@@ -22,20 +22,31 @@ if rg -n '(@tanstack/eslint-config|typescript-eslint|@typescript-eslint|eslint-p
 fi
 [[ ! -e "$ui/eslint.config.js" ]]
 [[ ! -e "$ui/eslint.config.mjs" ]]
+forbidden=$(git -C "$root" ls-files '*.js' '*.jsx' '*.mjs' '*.cjs' '*.mts' '*.cts' | while read -r path; do
+  [[ ! -e "$root/$path" ]] || printf '%s\n' "$path"
+done)
+if [[ -n "$forbidden" ]]; then
+  printf '%s\n' "$forbidden"
+  printf 'tracked JavaScript source/config is forbidden; use strict TypeScript\n' >&2
+  exit 1
+fi
 
 hash_stream() {
   shasum -a 256 | awk '{print $1}'
 }
 
 selected=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --debug=files .)
-[[ $(printf '%s\n' "$selected" | wc -l | tr -d ' ') == 151 ]]
-[[ $(printf '%s\n' "$selected" | hash_stream) == ebb965980822201e59b37286bdef0e3933901795ad6a77e5fd1c5c6d22ed1bbe ]]
+[[ $(printf '%s\n' "$selected" | wc -l | tr -d ' ') == 163 ]]
+[[ $(printf '%s\n' "$selected" | hash_stream) == e25e246ddaffb213d6735eb0111ec5c7813bbf91dae9b67f076c8546fa59c49f ]]
 
 config=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --print-config)
-[[ $(printf '%s\n' "$config" | hash_stream) == ebcc47b1b91ce91f0e19cc0f260992e656cbddd6a0a1d9d1ab73aa9b837fc04d ]]
+[[ $(printf '%s\n' "$config" | hash_stream) == 94ea10d824fd58b6f2a9ac34b5074cc181949e864cea923d193b19fcaaac5316 ]]
 ts_config=$(cd "$ui" && bun ./node_modules/typescript/bin/tsc --showConfig)
-[[ $(printf '%s\n' "$ts_config" | hash_stream) == 791dd062c6bd4a032c40ca61236ac00646eaa9b70068c8d1d14a5cf1c2382c35 ]]
+[[ $(printf '%s\n' "$ts_config" | hash_stream) == a1b7ebf783bceaff79d1ee433696afcd3697d397fc4ba90ceeaf2e975a2a2882 ]]
 [[ $(jq -r '.compilerOptions.noPropertyAccessFromIndexSignature' <<<"$ts_config") == true ]]
+[[ $(jq -r '.compilerOptions.strict' <<<"$ts_config") == true ]]
+[[ $(jq -r '.compilerOptions.allowJs' <<<"$ts_config") == false ]]
+[[ $(jq -r '.compilerOptions.checkJs' <<<"$ts_config") == false ]]
 [[ $(jq -r '.compilerOptions.isolatedModules' <<<"$ts_config") == true ]]
 [[ $(jq -r '.compilerOptions.moduleDetection' <<<"$ts_config") == force ]]
 [[ $(jq -r '.compilerOptions.erasableSyntaxOnly' <<<"$ts_config") == true ]]
@@ -114,4 +125,4 @@ cycle_output=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint -A all -D import
 }
 rg -F 'import(no-cycle)' <<<"$cycle_output" >/dev/null
 
-printf 'TypeScript/Oxlint contract passed (151 selected files, 19 rule fixtures)\n'
+printf 'TypeScript/Oxlint contract passed (163 selected files, 19 rule fixtures)\n'

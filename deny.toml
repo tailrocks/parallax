@@ -28,7 +28,7 @@ confidence-threshold = 0.93
 [[licenses.clarify]]
 crate = "cfg_block@0.1.1"
 expression = "Apache-2.0"
-license-files = [{ path = "LICENSE", hash = 0x0 }]
+license-files = [{ path = "LICENSE", hash = 0xc9663a1e }]
 
 [licenses.private]
 ignore = false

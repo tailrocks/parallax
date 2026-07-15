@@ -100,7 +100,6 @@ impl GreptimeStore {
             self.sql(&statement).await?;
         }
         self.migrate_metric_exemplars(metrics_ttl).await?;
-        self.try_traces_deviations().await;
         self.try_logs_deviations().await;
         self.reconcile_ttls(metrics_ttl, error_events_ttl).await;
         Ok(())
@@ -323,16 +322,6 @@ impl GreptimeStore {
         }
     }
 
-    /// Traces deviation: a `fingerprint` column for cross-signal correlation.
-    async fn try_traces_deviations(&self) {
-        self.try_deviations([
-            // Contract and migration ownership:
-            // plans/125-native-trace-fingerprint-deviation.md.
-            r#"ALTER TABLE opentelemetry_traces ADD COLUMN "fingerprint" STRING"#,
-        ])
-        .await;
-    }
-
     /// Logs deviations: SKIPPING on trace_id; ADD COLUMN repair for extract-key
     /// fields. Body FULLTEXT is native-default on ≥1.1 (no ALTER).
     async fn try_logs_deviations(&self) {
@@ -364,15 +353,19 @@ impl GreptimeStore {
         crate::outcomes::warn_error(self.sql(&sql).await, "logs TTL reconcile");
     }
 
-    /// Apply the traces deviations once per process, after the first traces
-    /// forward has auto-created `opentelemetry_traces`.
+    /// Reconcile native trace retention once per process after the first trace
+    /// forward auto-creates `opentelemetry_traces`.
+    ///
+    /// Fingerprint-to-trace correlation is owned by the derived `error_events`
+    /// relation. Existing native nullable `fingerprint` columns are inert
+    /// legacy schema: no query reads them and startup never backfills or drops
+    /// a native table column without a separately live-proven migration.
     pub(super) async fn ensure_traces_deviations(&self) {
         if self
             .traces_deviations_done
             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
             .is_ok()
         {
-            self.try_traces_deviations().await;
             let sql = format!(
                 "ALTER TABLE opentelemetry_traces SET 'ttl' = '{}'",
                 escape(&self.traces_ttl)

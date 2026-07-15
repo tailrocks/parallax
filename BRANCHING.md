@@ -6,7 +6,7 @@ Parallax uses **one active branch at a time**. Do not create side branches.
 
 | Rule | Detail |
 |------|--------|
-| **Active branch** | `main` (after PR #19 merge; implement branch deleted) |
+| **Active branch** | `codex/active-plan-closure-7f3c` (operator-authorized 2026-07-14 implementation branch; one PR to `main`) |
 | **Never** | Create new branches; open a second PR; split work across named side branches |
 | **Subagents** | Same branch as the main agent; restate the rule in every spawn prompt |
 
@@ -15,7 +15,7 @@ When the operator later asks for a PR, use **one** named branch only, open
 
 ### For the main agent and every subagent
 
-1. Stay on the active branch (`main` unless the operator says otherwise).
+1. Stay on the active branch (`codex/active-plan-closure-7f3c` unless the operator says otherwise).
 2. Commit and push **only** there.
 3. Do **not** run `git checkout -b`, `git switch -c`, or create remote branches.
 4. Do **not** open a new GitHub PR unless the operator asked and none exists yet.

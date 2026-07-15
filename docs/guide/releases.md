@@ -17,7 +17,20 @@ Pass a supported target triple to rehearse a cross build. The script builds the
 embedded UI, uses Zig/cargo-zigbuild with the native-TLS vendored OpenSSL path,
 packages the same binary twice, and fails unless both archive digests match. It
 writes the archive and bare-hash `.sha256` under `target/dist/` and never
-publishes.
+publishes. The script explicitly selects the non-publishable `rehearsal`
+channel and produces the versioned archive shape. Every package caller must
+select exactly one `--channel preview|stable|rehearsal`. Preview requires a
+`<version>-preview.<ordinal>+<source>` version and
+`parallax-<target>.tar.gz`; stable requires a release version without
+prerelease or build metadata and `parallax-<version>-<target>.tar.gz`.
+Rehearsal accepts development SemVer and the versioned name, but published
+verification derives only preview or stable from the trusted source ref, so a
+rehearsal can never satisfy the publication contract.
+
+Release workflows run `cargo xtask release-validate` in their metadata gate,
+before any test or cross-build matrix starts. This rejects a preview identity
+without its ordinal/source metadata and rejects stable versions containing any
+prerelease or build metadata before release resources are spent.
 
 ## Verify published preview assets
 
@@ -58,6 +71,9 @@ target format or architecture, missing line or symbol tables, mismatched
 embedded version identity, checksum or CycloneDX digest drift, a missing
 Sigstore bundle, the wrong workflow certificate identity, self-hosted
 provenance, or a different source commit/ref.
+Preview verification accepts only `refs/heads/main` plus the unversioned
+preview name. Stable verification accepts only the exact
+`refs/tags/v<version>` plus its versioned archive name.
 
 ## Publication authority
 

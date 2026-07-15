@@ -1,0 +1,21 @@
+groups:
+  - id: parallax.registry
+    type: attribute_group
+    brief: Parallax-owned cross-repository semantic-convention attributes.
+    stability: stable
+    attributes:
+      - id: parallax.run.id
+        type: string
+        brief: Stable identifier for the Parallax run that emitted a signal.
+        examples: [run-20260714-0001]
+        stability: stable
+      - id: parallax.lab
+        type: string
+        brief: Marks telemetry emitted by an explicit comparison-lab run.
+        examples: ["1"]
+        stability: stable
+      - id: parallax.source
+        type: string
+        brief: Source that supplied a Parallax observation.
+        examples: [otlp]
+        stability: stable

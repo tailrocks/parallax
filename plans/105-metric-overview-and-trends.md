@@ -12,7 +12,7 @@
 - **Depends on**: 097, 099, 133, 151
 - **Category**: metrics / API / UI
 - **Planned at**: `eefa4617`, 2026-07-12
-- **Status**: TODO
+- **Status**: BLOCKED — Plans 133 and 151 are incomplete
 
 ## Why
 

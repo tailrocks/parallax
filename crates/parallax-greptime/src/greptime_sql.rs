@@ -1,4 +1,4 @@
-use parallax_proto::semconv;
+use parallax_semconv as semconv;
 
 pub(crate) fn escape(text: &str) -> String {
     text.replace('\'', "''")

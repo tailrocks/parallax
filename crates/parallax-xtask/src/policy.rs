@@ -11,6 +11,7 @@ mod structural;
 )]
 #[expect(clippy::too_many_lines, reason = "compiler analysis")]
 mod typescript;
+mod ui_tests;
 
 use std::path::Path;
 
@@ -25,11 +26,11 @@ pub(crate) fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()>
     if let Some(rule) = only
         && !matches!(
             rule,
-            "architecture" | "typescript" | "product" | "structural"
+            "architecture" | "typescript" | "product" | "structural" | "ui.tests"
         )
     {
         bail!(
-            "unknown policy family `{rule}`; available: architecture, product, structural, typescript"
+            "unknown policy family `{rule}`; available: architecture, product, structural, typescript, ui.tests"
         );
     }
     let ratchet = config::Ratchet::load(&root.join("ratchet.toml"))?;
@@ -45,6 +46,9 @@ pub(crate) fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()>
     }
     if only.is_none() || only == Some("structural") {
         findings.extend(structural::check_workspace(root, &ratchet)?);
+    }
+    if only.is_none() || only == Some("ui.tests") {
+        findings.extend(ui_tests::check_workspace(root)?);
     }
     if only.is_none() {
         findings.extend(docs::check_workspace(root, &ratchet)?);

@@ -14,7 +14,38 @@
 - **Depends on**: Every other actionable indexed plan; all blockers freshly rechecked
 - **Category**: validation / closure / plan lifecycle
 - **Planned at**: `a1d8bf82`, revised 2026-07-12
-- **Status**: TODO
+- **Status**: BLOCKED — C0 cannot freeze while direct operator, upstream,
+  platform, release-cycle, and live-host conditions remain open
+
+## Current Evidence
+
+- 2026-07-15: Step 0 now has a repository-owned `cargo xtask closure-final`
+  verifier and a read-only aggregate CI lane. Before mechanical closure, the
+  lane executes passing/tampered fixtures; after Plan 107 is removed it
+  automatically verifies the real commit. The verifier binds two distinct
+  auditor trailers to C0, C1, and the pushed tree, checks DCO and the single
+  Codex co-author trailer, requires C1's exact four same-date evidence paths,
+  restricts the closure diff to the mechanical allowlist, hashes and validates
+  both JSON packets, proves program-file/authorization retirement and the
+  remaining plan/index BLOCKED bijection, and accepts future closure dates.
+  Packet validation is fail-closed over the exact top-level schema and requires
+  a clean independent audit, non-empty tool versions, passing commands with
+  output bytes bound to their hashes, repository artifact hashes verified
+  against safe relative paths, structured finding/exception arrays, and fresh
+  blocked-trigger records; hollow, extra-field, path traversal, or tampered
+  packets fail. C1 must add rather than modify all four same-date packets, each
+  JSON packet must hash its matching Markdown report, and both auditors must
+  record the full aggregate command.
+  The final lane runs the repository-owned `scripts/ci/closure-baseline.sh`,
+  which mirrors the complete Shared Verification block, before structural
+  verification with every required pinned tool. Workflow fixtures require
+  every published baseline command and the executable bit. All 72 xtask tests,
+  strict xtask Clippy, Actionlint, workflow/classifier fixtures, Rust
+  formatting, structural policy, and the explicit dry-run command pass locally.
+- 2026-07-15: the fresh direct/dependency blocker matrix is preserved in
+  [`docs/research/validation/2026-07-15-active-plan-blocker-audit.md`](../docs/research/validation/2026-07-15-active-plan-blocker-audit.md).
+  No other product plan is ready, so Criteria for Freezing C0 are not met and
+  Steps 1–7 cannot honestly begin.
 
 ## Why
 

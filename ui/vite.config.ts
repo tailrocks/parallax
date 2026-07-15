@@ -7,7 +7,8 @@ import tailwindcss from "@tailwindcss/vite"
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
   test: {
-    include: ["src/**/*.test.{ts,tsx}"],
+    include: ["src/**/*.test.{ts,tsx}", "tests/harness/**/*.test.{ts,tsx}"],
+    exclude: ["tests/e2e/**"],
     setupFiles: ["src/test/setup.ts"],
     server: {
       // Bun executes Vitest in this repository. Inline Zod so Vite transforms

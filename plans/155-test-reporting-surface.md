@@ -20,7 +20,7 @@
   (deploy/change joins), 124 (CI-provider enrichment), 140 (Runs feature)
 - **Category**: product capability / ingest derivation / UI surface
 - **Planned at**: `8f24808`, 2026-07-14
-- **Status**: TODO
+- **Status**: BLOCKED — Plans 149, 152, and 153 are not complete
 
 ## Why
 

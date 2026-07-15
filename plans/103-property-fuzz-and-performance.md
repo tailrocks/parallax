@@ -12,7 +12,7 @@
 - **Depends on**: 097, 099, 101, 104, 133, 147, 148
 - **Category**: testing / fuzzing / performance
 - **Planned at**: `a1d8bf82`, revised 2026-07-12
-- **Status**: TODO
+- **Status**: BLOCKED — Plan 104 approval and Plans 133/147/148 are incomplete
 
 ## Why
 

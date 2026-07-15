@@ -1,14 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
-import {
-  Outlet,
-  RouterProvider,
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-} from "@tanstack/react-router"
+import { cleanup, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { nav } from "@/components/nav"
@@ -16,6 +9,7 @@ import { PageHeader } from "@/components/page-header"
 import { ParallaxShell } from "@/components/parallax-shell"
 import { RouteErrorPanel } from "@/components/route-fallbacks"
 import { graphql } from "@/lib/api"
+import { renderTestRouter } from "@/test/router"
 
 vi.mock("@/lib/api", () => ({
   graphql: vi.fn().mockImplementation(async (query: string) => {
@@ -27,55 +21,16 @@ vi.mock("@/lib/api", () => ({
   }),
 }))
 
-class ResizeObserverMock {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-}
-
-globalThis.ResizeObserver = ResizeObserverMock
-window.HTMLElement.prototype.scrollIntoView = vi.fn()
-
 function renderWithRouter(component: React.ReactNode, initialEntries = ["/"]) {
-  window.scrollTo = () => {}
-  window.matchMedia = () =>
-    ({
-      matches: false,
-      media: "",
-      onchange: null,
-      addListener() {},
-      removeListener() {},
-      addEventListener() {},
-      removeEventListener() {},
-      dispatchEvent: () => true,
-    }) as MediaQueryList
-  const rootRoute = createRootRoute({
-    component: Outlet,
+  return renderTestRouter(component, {
+    componentPaths: ["/", "/dashboards"],
+    initialPath: initialEntries[0] ?? "/",
   })
-  const indexRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/",
-    component: () => component,
-  })
-  const dashboardsRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "dashboards",
-    component: () => component,
-  })
-  const routeTree = rootRoute.addChildren([indexRoute, dashboardsRoute])
-  const router = createRouter({
-    routeTree,
-    history: createMemoryHistory({ initialEntries }),
-  })
-
-  return render(<RouterProvider router={router} />)
 }
+
+afterEach(cleanup)
 
 describe("shell primitives", () => {
-  afterEach(() => {
-    cleanup()
-  })
-
   it("renders PageHeader breadcrumb shape", async () => {
     const item = nav[0]!
     renderWithRouter(
@@ -105,8 +60,11 @@ describe("shell primitives", () => {
       expect(item.activeIcon).toBeDefined()
     }
   })
+})
 
+describe("shell integration", () => {
   it("keeps the styled error fallback inside the shell", async () => {
+    const user = userEvent.setup()
     renderWithRouter(
       <ParallaxShell>
         <RouteErrorPanel error={new Error("offline")} reset={() => {}} />
@@ -114,7 +72,7 @@ describe("shell primitives", () => {
     )
 
     expect(await screen.findByLabelText("Parallax home")).toBeTruthy()
-    fireEvent.click(screen.getByRole("button", { name: /search/i }))
+    await user.click(screen.getByRole("button", { name: /search/i }))
     expect(await screen.findByPlaceholderText(/search pages/i)).toBeTruthy()
     expect(screen.getByText("Parallax API did not answer")).toBeTruthy()
     expect(screen.getByText("offline")).toBeTruthy()
@@ -136,6 +94,7 @@ describe("shell primitives", () => {
   })
 
   it("keeps the sidebar shortcut independent from the command palette shortcut", async () => {
+    const user = userEvent.setup()
     const { container } = renderWithRouter(
       <ParallaxShell>
         <div>Dashboard content</div>
@@ -147,10 +106,10 @@ describe("shell primitives", () => {
     expect(sidebar).toBeTruthy()
     expect(sidebar.getAttribute("data-state")).toBe("expanded")
 
-    fireEvent.keyDown(window, { key: "b", metaKey: true })
+    await user.keyboard("{Meta>}b{/Meta}")
     expect(sidebar.getAttribute("data-state")).toBe("collapsed")
 
-    fireEvent.keyDown(window, { key: "k", metaKey: true })
+    await user.keyboard("{Meta>}k{/Meta}")
     expect(
       (await screen.findAllByPlaceholderText(/search pages/i)).length
     ).toBeGreaterThan(0)

@@ -74,8 +74,10 @@ headers; post-create `ALTER TABLE … ADD COLUMN` / `ADD … INVERTED INDEX | FU
 
 ## Per-signal decisions (adopt-then-customize)
 
-- **Traces → ADOPT native `opentelemetry_traces`.** Strictly better than hand-rolled. `ALTER`-add only
-  cross-signal columns native lacks (e.g. `fingerprint`).
+- **Traces → ADOPT native `opentelemetry_traces`.** Strictly better than hand-rolled. The canonical
+  fingerprint-to-trace/span relation is the derived `error_events` record; do
+  not add a native trace `fingerprint` column. Any legacy nullable column is
+  inert and unsupported until a separately live-proven, data-safe migration.
 - **Logs → ADOPT native `opentelemetry_logs`**, with Plan 084 corrections (pre-create + extract-keys
   + SKIPPING on `trace_id`; body FULLTEXT is native-default on engine ≥1.1).
 - **Metrics → ADOPT the native metric engine fully (PromQL-native).** Rely on explicit-bucket

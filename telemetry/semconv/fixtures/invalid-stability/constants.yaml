@@ -1,0 +1,10 @@
+groups:
+  - id: fixture.invalid_stability
+    type: attribute_group
+    brief: Negative fixture for an invalid stability value.
+    stability: not-a-stability
+    attributes:
+      - id: fixture.attribute
+        type: string
+        brief: Fixture attribute.
+        stability: stable

@@ -1,21 +1,8 @@
 /* @vitest-environment jsdom */
 
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react"
-import {
-  Outlet,
-  RouterProvider,
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  defaultParseSearch,
-} from "@tanstack/react-router"
+import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
+import { defaultParseSearch } from "@tanstack/react-router"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { customRange } from "@/lib/range"
@@ -26,7 +13,7 @@ import {
   parseLayout,
   serializeWidgets,
 } from "@/routes/dashboards.index"
-import { EXAMPLES, Route as SqlRoute } from "@/routes/sql"
+import { renderTestRouter } from "@/test/router"
 
 const apiMock = vi.hoisted(() => ({
   defaultGraphql: vi.fn((query: string) => {
@@ -51,8 +38,8 @@ vi.mock("@/lib/api", () => ({
   graphqlCached: apiMock.graphql,
 }))
 
-afterEach(cleanup)
 afterEach(() => {
+  cleanup()
   apiMock.graphql.mockReset()
   apiMock.graphql.mockImplementation(apiMock.defaultGraphql)
 })
@@ -64,14 +51,7 @@ function parseHref(href: string) {
   return { search: defaultParseSearch(url.search), url }
 }
 
-describe("final sweep", () => {
-  it("keeps SQL examples on real table names", () => {
-    const banned = /\botel_spans\b|\botel_logs\b|\botel_metrics_points\b/
-    for (const example of EXAMPLES) {
-      expect(example.sql).not.toMatch(banned)
-    }
-  })
-
+describe("dashboard contracts", () => {
   it("preserves dashboard widget unknown fields", () => {
     const widgets = parseLayout(
       '[{"metric":"process.cpu.utilization","agg":"avg","chart":"line","custom":true}]'
@@ -117,36 +97,21 @@ describe("final sweep", () => {
       to: custom.toNanos,
     })
 
-    const rootRoute = createRootRoute({ component: Outlet })
-    const indexRoute = createRoute({
-      getParentRoute: () => rootRoute,
-      path: "/",
-      component: () => (
-        <DashboardCards
-          dashboards={[
-            {
-              id: "dash-a",
-              name: "checkout ops",
-              layout: '[{"metric":"process.cpu.utilization"}]',
-              updatedAtNanos: "1",
-            },
-          ]}
-          detailSearch={detailSearch}
-          onRemove={() => {}}
-        />
-      ),
-    })
-    const detailRoute = createRoute({
-      getParentRoute: () => rootRoute,
-      path: "/dashboards/$dashboardId",
-      component: () => null,
-    })
-    const router = createRouter({
-      routeTree: rootRoute.addChildren([indexRoute, detailRoute]),
-      history: createMemoryHistory({ initialEntries: ["/"] }),
-    })
-
-    render(<RouterProvider router={router} />)
+    renderTestRouter(
+      <DashboardCards
+        dashboards={[
+          {
+            id: "dash-a",
+            name: "checkout ops",
+            layout: '[{"metric":"process.cpu.utilization"}]',
+            updatedAtNanos: "1",
+          },
+        ]}
+        detailSearch={detailSearch}
+        onRemove={() => {}}
+      />,
+      { targetPaths: ["/dashboards/$dashboardId"] }
+    )
     const { search, url } = parseHref(
       (await screen.findByRole("link", { name: "checkout ops" })).getAttribute(
         "href"
@@ -189,6 +154,7 @@ describe("final sweep", () => {
   })
 
   it("passes custom ranges through dashboard create navigation", async () => {
+    const user = userEvent.setup()
     const custom = customRange("1500000000", "4000000000")
     const detailSearch = dashboardRangeSearch({
       range: custom.key,
@@ -211,14 +177,13 @@ describe("final sweep", () => {
       />
     )
 
-    fireEvent.click(screen.getByRole("button", { name: /new dashboard/i }))
-    fireEvent.change(screen.getByPlaceholderText("checkout ops"), {
-      target: { value: "checkout ops" },
-    })
-    fireEvent.change(screen.getByPlaceholderText("Search metrics"), {
-      target: { value: "process.cpu.utilization" },
-    })
-    fireEvent.click(screen.getByRole("button", { name: "Create" }))
+    await user.click(screen.getByRole("button", { name: /new dashboard/i }))
+    await user.type(screen.getByPlaceholderText("checkout ops"), "checkout ops")
+    await user.type(
+      screen.getByPlaceholderText("Search metrics"),
+      "process.cpu.utilization"
+    )
+    await user.click(screen.getByRole("button", { name: "Create" }))
 
     await waitFor(() =>
       expect(onCreated).toHaveBeenCalledWith("dash-new", {
@@ -227,36 +192,5 @@ describe("final sweep", () => {
         to: custom.toNanos,
       })
     )
-  })
-
-  it("renders SQL keyboard hint and examples menu", async () => {
-    window.matchMedia = () =>
-      ({
-        matches: false,
-        media: "",
-        onchange: null,
-        addListener() {},
-        removeListener() {},
-        addEventListener() {},
-        removeEventListener() {},
-        dispatchEvent: () => true,
-      }) as MediaQueryList
-
-    const rootRoute = createRootRoute({ component: Outlet })
-    const component = SqlRoute.options.component!
-    const sqlRoute = createRoute({
-      getParentRoute: () => rootRoute,
-      path: "/sql",
-      component,
-    })
-    const router = createRouter({
-      routeTree: rootRoute.addChildren([sqlRoute]),
-      history: createMemoryHistory({ initialEntries: ["/sql"] }),
-    })
-
-    render(<RouterProvider router={router} />)
-    expect(await screen.findByText("⌘")).toBeTruthy()
-    expect(screen.getByText("Enter")).toBeTruthy()
-    expect(screen.getByRole("button", { name: /examples/i })).toBeTruthy()
   })
 })

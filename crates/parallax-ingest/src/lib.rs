@@ -15,7 +15,7 @@ use parallax_proto::common::{AnyValue, KeyValue};
 use parallax_proto::metrics::exemplar::Value as ExemplarValue;
 use parallax_proto::metrics::metric::Data;
 use parallax_proto::metrics::number_data_point::Value as NumberValue;
-use parallax_proto::semconv;
+use parallax_semconv as semconv;
 
 mod logs;
 mod metrics;

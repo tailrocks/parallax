@@ -1,0 +1,13 @@
+# The versioned, repository-owned semantic-convention contract.
+# Weaver validates the OpenTelemetry-shaped overlay; parallax-xtask renders the
+# checked-in language artifacts without making ordinary product builds depend on
+# Weaver, Docker, or the network.
+format: parallax-semconv/v1
+name: io.tailrocks.parallax
+description: Shared Parallax and telemetry-playground semantic conventions.
+schema_url: https://opentelemetry.io/schemas/1.40.0
+upstream:
+  name: opentelemetry
+  registry: https://github.com/open-telemetry/semantic-conventions.git
+  model: model
+contract: ../contract.yaml

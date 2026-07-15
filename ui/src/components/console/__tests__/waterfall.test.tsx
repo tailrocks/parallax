@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { cleanup, render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
@@ -69,7 +70,8 @@ describe("TraceWaterfall", () => {
     expect(screen.getAllByTestId("trace-minimap-bar")).toHaveLength(2)
   })
 
-  it("moves selection with j/k and arrow keys", () => {
+  it("moves selection with j/k and arrow keys", async () => {
+    const user = userEvent.setup()
     const onSelect = vi.fn()
     const { container, rerender } = render(
       <TraceWaterfall
@@ -80,23 +82,29 @@ describe("TraceWaterfall", () => {
     )
     const waterfall = container.querySelector("[tabindex='0']")
     expect(waterfall).toBeTruthy()
+    if (!(waterfall instanceof HTMLElement)) {
+      throw new Error("waterfall keyboard target is not an HTMLElement")
+    }
+    waterfall.focus()
 
-    fireEvent.keyDown(waterfall!, { key: "j" })
+    await user.keyboard("j")
     expect(onSelect).toHaveBeenLastCalledWith("root")
 
     rerender(
       <TraceWaterfall spans={spans} selectedId="root" onSelect={onSelect} />
     )
-    fireEvent.keyDown(waterfall!, { key: "ArrowDown" })
+    await user.keyboard("{ArrowDown}")
     expect(onSelect).toHaveBeenLastCalledWith("child")
 
     rerender(
       <TraceWaterfall spans={spans} selectedId="child" onSelect={onSelect} />
     )
-    fireEvent.keyDown(waterfall!, { key: "k" })
+    await user.keyboard("k")
     expect(onSelect).toHaveBeenLastCalledWith("root")
   })
+})
 
+describe("TraceWaterfall modes", () => {
   it("highlights critical-path span rows", () => {
     render(
       <TraceWaterfall
@@ -163,7 +171,8 @@ describe("TraceWaterfall", () => {
     expect(screen.getAllByTestId("trace-lane-header")).toHaveLength(3)
   })
 
-  it("selects spans from the minimap", () => {
+  it("selects spans from the minimap", async () => {
+    const user = userEvent.setup()
     const onSelect = vi.fn()
     render(
       <TraceWaterfall
@@ -173,7 +182,7 @@ describe("TraceWaterfall", () => {
       />
     )
 
-    fireEvent.click(screen.getAllByTestId("trace-minimap-bar")[1]!)
+    await user.click(screen.getAllByTestId("trace-minimap-bar")[1]!)
     expect(onSelect).toHaveBeenCalledWith("child")
   })
 })

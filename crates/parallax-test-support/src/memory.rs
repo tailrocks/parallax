@@ -24,7 +24,7 @@ use crate::normalizers::{LogNormalizer, TraceNormalizer};
 use parallax_model::*;
 use parallax_proto::collector_logs::ExportLogsServiceRequest;
 use parallax_proto::collector_trace::ExportTraceServiceRequest;
-use parallax_proto::semconv;
+use parallax_semconv as semconv;
 use parallax_storage::adapter::{
     self, ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow,
     FIELD_KEYS_CAP, FIELD_TOP_VALUES_CAP, FieldKey, FieldSource, FieldStats, FieldValueCount,

@@ -85,9 +85,10 @@ Registry content:
 
 Rust:
 
-- Generate a constants module matching
-  `libs/playground-telemetry/src/semconv.rs` and
-  `crates/parallax-proto/src/semconv.rs`.
+- Generate a dependency-free `parallax-semconv` leaf crate plus the companion
+  `libs/playground-telemetry/src/semconv.rs` output. The historical
+  `parallax-proto/src/semconv.rs` compatibility re-export was removed after all
+  Rust consumers migrated directly to the leaf crate.
 - Use `build.rs` or a checked-in generated file. Checked-in output is safer for
   this repo because CI and local dev should not need Docker or Weaver installed.
 - Tracing macro field names like `otel.kind` and quoted dotted fields still need
@@ -110,9 +111,26 @@ Validation:
   exists.
 - Keep existing Rust/TS/Java freeze tests until generated files are proven.
 
-## Decision And Implementation Ownership
+## Decision And Implemented Contract
 
-The research recommendation was GO, subject to measured scope and repository
-policy. Plan 119 is the sole execution queue for the YAML registry, checked-in
-Rust/Java/TypeScript constants, regeneration/diff CI, and any later Java
-deduplication. The shapes above are inputs to that plan, not authorization.
+The recommendation was implemented on 2026-07-15. The repository-owned
+`telemetry/semconv/contract.yaml` is the single input to a deterministic xtask
+generator. It emits the dependency-free `parallax-semconv` crate and the
+checked-in TypeScript, companion Rust, and companion Java constants; ordinary
+product builds consume those files without Weaver, Docker, or network access.
+
+`cargo xtask semconv check` validates the overlay with pinned Weaver, exercises
+invalid-schema fixtures, regenerates into temporary storage, compares every
+artifact byte-for-byte, rejects legacy Rust ownership and mutable playground
+wire literals, and supports the versioned JSON diagnostic envelope. The shared
+wire-contract fixture is executed by TypeScript and Java consumers, while a
+Rust OTLP protobuf round trip freezes representative emitted names and values.
+Registry changes route to both Rust and UI CI lanes, whose policy job installs
+the pinned Weaver tool and runs the same read-only check. The companion
+repository's native Rust, Bun, and Gradle gates compile and test the checked-in
+outputs independently of generation.
+
+The implementation intentionally uses repository-owned renderers instead of
+Weaver templates: Weaver remains the schema validator, while the small local
+renderers give all three target languages one reviewed, deterministic contract
+without coupling product builds to an external generator lifecycle.

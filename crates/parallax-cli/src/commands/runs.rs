@@ -4,6 +4,84 @@ use super::forwarding::*;
 use super::output::*;
 use crate::OutputFormat;
 use crate::client::{Client, gql_str};
+use opentelemetry::KeyValue;
+use opentelemetry::trace::{Span as _, Status, Tracer as _, TracerProvider as _};
+use opentelemetry_otlp::WithExportConfig as _;
+use opentelemetry_sdk::trace::{IdGenerator as _, RandomIdGenerator, SdkTracerProvider};
+
+struct RunSessionSpan {
+    provider: SdkTracerProvider,
+    span: opentelemetry_sdk::trace::Span,
+}
+
+impl RunSessionSpan {
+    fn start(
+        endpoint: &str,
+        protocol: &str,
+        run_id: &str,
+        command: Option<&str>,
+    ) -> anyhow::Result<Self> {
+        let exporter = if protocol == OTLP_HTTP_PROTOCOL {
+            let endpoint = if endpoint.trim_end_matches('/').ends_with("/v1/traces") {
+                endpoint.to_string()
+            } else {
+                format!("{}/v1/traces", endpoint.trim_end_matches('/'))
+            };
+            opentelemetry_otlp::SpanExporter::builder()
+                .with_http()
+                .with_endpoint(endpoint)
+                .build()?
+        } else {
+            opentelemetry_otlp::SpanExporter::builder()
+                .with_tonic()
+                .with_endpoint(endpoint)
+                .build()?
+        };
+        let provider = SdkTracerProvider::builder()
+            .with_simple_exporter(exporter)
+            .build();
+        let tracer = provider.tracer("parallax-cli");
+        let mut span = tracer.start("parallax.run.session");
+        span.set_attribute(KeyValue::new(
+            parallax_semconv::PARALLAX_RUN_ID,
+            run_id.to_string(),
+        ));
+        if let Some(command) = command {
+            span.set_attribute(KeyValue::new("process.command", command.to_string()));
+        }
+        Ok(Self { provider, span })
+    }
+
+    fn traceparent(&self) -> String {
+        traceparent(self.span.span_context())
+    }
+
+    fn finish(mut self, exit_code: i32) {
+        self.span
+            .set_attribute(KeyValue::new("process.exit.code", i64::from(exit_code)));
+        if exit_code != 0 {
+            self.span
+                .set_status(Status::error(format!("child exited with {exit_code}")));
+        }
+        self.span.end();
+        if let Err(error) = self.provider.shutdown() {
+            tracing::warn!(%error, "failed to flush run-session span");
+        }
+    }
+}
+
+fn traceparent(context: &opentelemetry::trace::SpanContext) -> String {
+    format!("00-{}-{}-01", context.trace_id(), context.span_id())
+}
+
+pub(super) fn generated_traceparent() -> String {
+    let generator = RandomIdGenerator::default();
+    format!(
+        "00-{}-{}-01",
+        generator.new_trace_id(),
+        generator.new_span_id()
+    )
+}
 
 /// `parallax run start [--otlp-forward <target>] [--print-env] [-- <command…>]`
 ///
@@ -17,13 +95,19 @@ pub(crate) async fn run_start(
     print_env: bool,
 ) -> anyhow::Result<i32> {
     let run_id = new_run_id();
-    let default_parallax_endpoint = parallax_endpoint_from_server(client).await?;
-    let fwd = resolve_forward(forward.as_deref(), &default_parallax_endpoint)?;
+    let parallax_endpoints = parallax_endpoints_from_server(client).await?;
+    let fwd = resolve_forward(forward.as_deref(), &parallax_endpoints.grpc)?;
     let attrs = forward_resource_attrs(&run_id, fwd.compare);
-    let pairs = otel_env_pairs(&fwd.endpoint, fwd.protocol, &attrs);
+    let mut pairs = otel_env_pairs(&fwd.endpoint, fwd.protocol, &attrs);
+    pairs.push(("PARALLAX_RUN_ID", run_id.clone()));
+    pairs.push((
+        "PARALLAX_OTLP_HTTP_TRACES_ENDPOINT",
+        http_traces_endpoint(&fwd, &parallax_endpoints.http_traces),
+    ));
 
     // Dry-run: print the env we *would* inject, run nothing, record nothing.
     if print_env && !command.is_empty() {
+        pairs.push(("TRACEPARENT", generated_traceparent()));
         for (key, value) in &pairs {
             println!("export {key}={value}");
         }
@@ -31,7 +115,9 @@ pub(crate) async fn run_start(
     }
 
     let command_str = (!command.is_empty()).then(|| command.join(" "));
-    client
+    let session =
+        RunSessionSpan::start(&fwd.endpoint, fwd.protocol, &run_id, command_str.as_deref())?;
+    if let Err(error) = client
         .graphql(&format!(
             r#"mutation {{ runStart(runId: "{}", command: {}, startedAtNanos: "{}") }}"#,
             gql_str(&run_id),
@@ -41,7 +127,12 @@ pub(crate) async fn run_start(
                 .unwrap_or_else(|| "null".to_string()),
             now_nanos()
         ))
-        .await?;
+        .await
+    {
+        session.finish(-1);
+        return Err(error);
+    }
+    pairs.push(("TRACEPARENT", session.traceparent()));
 
     if command.is_empty() {
         // Bare mode: print exports for the developer to source.
@@ -49,9 +140,21 @@ pub(crate) async fn run_start(
             println!("export {key}={value}");
         }
         println!("# run id: {run_id}  (finish with: parallax run finish {run_id} <exit-code>)");
+        session.finish(0);
         return Ok(0);
     }
 
+    execute_child(client, &command, &pairs, &fwd, session, &run_id).await
+}
+
+async fn execute_child(
+    client: &Client,
+    command: &[String],
+    pairs: &[(&str, String)],
+    fwd: &Forward,
+    session: RunSessionSpan,
+    run_id: &str,
+) -> anyhow::Result<i32> {
     // Wrapper mode: inject env, run the child, capture the exit code.
     println!("Parallax run id: {run_id}");
     println!("command: {}", command.join(" "));
@@ -68,7 +171,7 @@ pub(crate) async fn run_start(
     println!("live: parallax run watch {run_id}");
     let mut cmd = tokio::process::Command::new(&command[0]);
     cmd.args(&command[1..]);
-    for (key, value) in &pairs {
+    for (key, value) in pairs {
         cmd.env(key, value);
     }
     // Always attempt runFinish even when the child fails to spawn, so the run
@@ -82,10 +185,12 @@ pub(crate) async fn run_start(
     let finish = client
         .graphql(&format!(
             r#"mutation {{ runFinish(runId: "{}", endedAtNanos: "{}", exitCode: {exit_code}) }}"#,
-            gql_str(&run_id),
+            gql_str(run_id),
             now_nanos()
         ))
         .await;
+
+    session.finish(exit_code);
 
     status?; // propagate spawn error AFTER finishing the run
     finish?;

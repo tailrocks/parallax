@@ -13,9 +13,6 @@ publish = false
 [lints]
 workspace = true
 
-[package.metadata.cargo-shear]
-ignored-paths = ["src/commands/tests.rs"]
-
 [[bin]]
 name = "parallax"
 path = "src/main.rs"
@@ -30,10 +27,14 @@ cross-release-vendored = [
 ]
 
 [dependencies]
+parallax-semconv = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true }
 parallax-server = { workspace = true }
 parallax-model = { workspace = true }
+opentelemetry = { workspace = true }
+opentelemetry-otlp = { workspace = true }
+opentelemetry_sdk = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

@@ -87,6 +87,11 @@ jobs:
           esac
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
+      - name: Validate stable release identity
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: cargo xtask release-validate --version "$VERSION" --channel stable
+
   test:
     needs: check-version
     uses: ./.github/workflows/ci.yml
@@ -205,6 +210,9 @@ jobs:
           mise exec -- cargo xtask release-package \
             --binary "target/${TARGET}/release/parallax" \
             --archive "$archive" \
+            --target "$TARGET" \
+            --version "$VERSION" \
+            --channel stable \
             --source-epoch "$source_epoch"
           echo "archive=$archive" >> "$GITHUB_OUTPUT"
           echo "source_epoch=$source_epoch" >> "$GITHUB_OUTPUT"
