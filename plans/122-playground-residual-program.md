@@ -15,8 +15,31 @@
 - **Category**: cross-repository playground / validation / demos
 - **Planned at**: `eefa4617`, 2026-07-12
 - **Status**: BLOCKED
-- **Blocker**: The operator has not named an authorized active branch and exact
-  residual scope for the companion repository under the current one-branch rule.
+- **Blocker**: Plans 105, 111, and 151 remain unfinished. Their product
+  contracts must land before this downstream residual program can retain or
+  implement any scenario.
+
+## Authorization record (2026-07-15)
+
+The operator authorized this cross-repository execution under the one-branch
+rule:
+
+- **Parallax repository/path**:
+  `/Users/donbeave/Projects/tailrocks/parallax-project/parallax`, branch
+  `codex/active-plan-closure-7f3c`, baseline `6be96bd`.
+- **Companion repository/path**:
+  `/Users/donbeave/Projects/tailrocks/parallax-project/parallax-telemetry-playground`,
+  the same branch, baseline `7ea914d`, tracked by the linked playground pull
+  request.
+- **Allowed residual scope**: all work explicitly in this plan's Scope section
+  that is required to complete the current Parallax program, including
+  cross-repository source, fixture, generated-semconv, documentation, and
+  local-test changes. CI/CD work remains deferred until implementation is
+  otherwise complete.
+
+This clears the former branch/scope blocker and satisfies the first done
+criterion. It does not bypass the declared dependency order or authorize a new
+stack component, product claim, or server-scale benchmark.
 
 ## Why
 
@@ -82,7 +105,7 @@ Out of scope:
 
 ## Done Criteria
 
-- [ ] Operator-approved companion branch/baseline/scope is recorded.
+- [x] Operator-approved companion branch/baseline/scope is recorded.
 - [ ] Every historical row is classified; no completed phase is replayed.
 - [ ] Each retained scenario has an exact cross-repository contract and fixture.
 - [ ] Progress/readiness, reset, failure, and redaction behavior is deterministic.

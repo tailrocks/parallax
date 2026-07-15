@@ -171,7 +171,7 @@ invent the missing product or operator decision.
 | [118](118-sentry-envelope-migration-adapter.md) | 093, 099, 104, 111, 116 | Operator opens Sentry-compatible ingest after evidence makes it the next adoption constraint | BLOCKED: compatibility scope and demand trigger not open |
 | [120](120-agent-session-capture-adapters.md) | 099, 104, 111, 119 | Operator selects and opens one coding-agent session capture adapter | BLOCKED: adapter/tool/version/consent scope not open |
 | [121](121-deploy-and-change-context-collectors.md) | 099, 104, 109, 111, 116 | Operator selects and opens one deploy/change provider integration | BLOCKED: provider/auth/claim scope not open |
-| [122](122-playground-residual-program.md) | 105, 111, 119, 151 | Operator names the companion repository branch and exact remaining cross-repo scope | BLOCKED: cross-repository branch/scope not authorized |
+| [122](122-playground-residual-program.md) | 105, 111, 119, 151 | Plans 105, 111, and 151 complete their product contracts | BLOCKED: cross-repository branch/scope authorized 2026-07-15; upstream product dependencies remain |
 | [123](123-fixer-outcome-loop.md) | 104, 111, 120, 121 | Operator opens a separate fixer after A1/A2/A3/redaction gates | BLOCKED: autonomous-fixer scope and prerequisites not open |
 | [124](124-ci-and-flaky-test-evidence-collector.md) | 099, 104, 111, 121 | Operator selects and opens product CI-provider collection | BLOCKED: provider/repository/permission scope not open |
 
