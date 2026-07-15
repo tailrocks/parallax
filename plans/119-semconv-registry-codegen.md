@@ -72,6 +72,13 @@ reviewable generated source and reproducible offline builds.
   that formatter-compatible layout. Root xtask tests (58), strict
   clippy, cross-repository drift checking, root UI formatting/tests/build, and
   companion web tests/build pass locally.
+- 2026-07-15: added a representative product OTLP protobuf round-trip instead
+  of relying only on generated-source equality. `parallax-proto` constructs,
+  encodes, and decodes a trace carrying registry-generated resource, run, test,
+  and GraphQL names/values, then asserts the exact wire strings survive. The
+  locked proto test and strict all-target proto clippy pass locally; the same
+  constants remain tied to the Java/TypeScript consumers by the versioned
+  cross-repository fixture.
 
 ## Scope
 

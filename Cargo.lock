@@ -3274,6 +3274,7 @@ version = "0.1.0-dev"
 dependencies = [
  "opentelemetry-proto",
  "parallax-semconv",
+ "prost",
 ]
 
 [[package]]

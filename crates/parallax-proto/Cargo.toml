@@ -21,3 +21,6 @@ opentelemetry-proto = { version = "0.32", features = [
     "metrics",
     "with-serde",
 ] }
+
+[dev-dependencies]
+prost.workspace = true
