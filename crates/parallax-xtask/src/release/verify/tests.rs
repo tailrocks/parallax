@@ -148,6 +148,17 @@ fn checksum_and_sbom_fail_closed() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     std::fs::write(
+        &sbom_path,
+        serde_json::to_vec(&serde_json::json!({
+            "bomFormat": "CycloneDX",
+            "specVersion": "1.6",
+            "metadata": {"component": {"name": file_name(&archive_path)?, "version": format!("sha256:{digest}")}}
+        }))?,
+    )?;
+    let hollow_sbom = verify_sbom(&archive_path, file_name(&archive_path)?, &digest).is_err();
+    write_sbom(&sbom_path, file_name(&archive_path)?, &digest)?;
+
+    std::fs::write(
         sidecar(&archive_path, "sha256"),
         format!("{}\n", "0".repeat(64)),
     )?;
@@ -179,6 +190,7 @@ fn checksum_and_sbom_fail_closed() -> Result<(), Box<dyn std::error::Error>> {
 
     let actual = (
         valid,
+        hollow_sbom,
         bad_checksum,
         uppercase_without_newline,
         multiline_checksum,
@@ -188,7 +200,18 @@ fn checksum_and_sbom_fail_closed() -> Result<(), Box<dyn std::error::Error>> {
         malformed_sbom,
         missing_sbom,
     );
-    let expected = ((true, true), true, true, true, true, true, true, true, true);
+    let expected = (
+        (true, true),
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+    );
     if actual != expected {
         return Err(format!("release sidecar verification mismatch: {actual:?}").into());
     }
@@ -316,7 +339,13 @@ fn write_sbom(path: &Path, name: &str, digest: &str) -> Result<()> {
         serde_json::to_vec(&serde_json::json!({
             "bomFormat": "CycloneDX",
             "specVersion": "1.6",
-            "metadata": {"component": {"name": name, "version": format!("sha256:{digest}")}}
+            "serialNumber": "urn:uuid:00000000-0000-4000-8000-000000000000",
+            "version": 1,
+            "metadata": {
+                "timestamp": "2026-07-15T00:00:00Z",
+                "component": {"type": "file", "name": name, "version": format!("sha256:{digest}")},
+                "tools": {"components": [{"type": "application", "author": "anchore", "name": "syft", "version": SYFT_VERSION}]}
+            }
         }))?,
     )?;
     Ok(())

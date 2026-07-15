@@ -103,6 +103,14 @@
   determinism primitive remains separately fixture-tested without compressing
   a large debug test executable. All 15 release-focused tests and strict
   all-target xtask clippy pass locally.
+- 2026-07-15: strengthened SBOM verification beyond two self-asserted metadata
+  strings. The verifier now requires a versioned CycloneDX 1.6 document with a
+  UUID serial, generation timestamp, file root component, exact archive
+  name/digest, and an application-tool inventory naming the mise-pinned Syft
+  1.45.1 producer; a fixture locks the mise/verifier version together and a
+  hollow but name/digest-matching SBOM fails closed. A local Syft 1.45.1 scan
+  confirmed this exact metadata/tool shape on Linux arm64. All 15
+  release-focused tests and strict all-target xtask clippy pass locally.
 
 ## Why
 

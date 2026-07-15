@@ -245,7 +245,9 @@ fn release_callers_use_one_packager_and_verified_sdk() -> Result<(), String> {
         include_str!("../../../../.github/actions/sign-and-attest-archive/action.yml")
             .contains("--source-name \"$(basename \"${ARCHIVE}\")\"")
             && include_str!("../../../../.github/actions/sign-and-attest-archive/action.yml")
-                .contains("--source-version \"sha256:${digest}\""),
+                .contains("--source-version \"sha256:${digest}\"")
+            && include_str!("../../../../mise.toml")
+                .contains(&format!("syft = \"{}\"", verify::SYFT_VERSION)),
         !stable.contains("workflow_dispatch:")
             && stable.contains("STABLE_RELEASE_ENABLED")
             && stable.contains("environment: stable-release"),
