@@ -23,6 +23,7 @@ struct Matrix {
 #[derive(Debug, Deserialize)]
 struct Ratchets {
     fire_event_calls: usize,
+    raw_router_builders: usize,
 }
 
 #[derive(Debug, Deserialize)]
@@ -39,6 +40,7 @@ struct Entry {
     required_environment: String,
     status: String,
     fire_event_reason: Option<String>,
+    raw_router_reason: Option<String>,
     legacy_handoff: Option<LegacyHandoff>,
 }
 
@@ -78,6 +80,7 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
 
     let discovered = discover_tests(root)?;
     let mut fire_event_calls = 0;
+    let mut raw_router_builders = 0;
     for (path, test_ids) in &discovered {
         if path.starts_with("ui/src/test/") {
             findings.push(finding(
@@ -86,6 +89,9 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
             ));
         }
         fire_event_calls += check_test_source(root, path, &mut findings)?;
+        raw_router_builders += fs::read_to_string(root.join(path))?
+            .match_indices("createMemoryHistory(")
+            .count();
         match represented.get(path) {
             Some(expected) if expected == test_ids => {}
             Some(expected) => findings.push(finding(
@@ -115,6 +121,15 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
             &format!(
                 "fireEvent call count is {fire_event_calls}, matrix ratchet is {}",
                 matrix.ratchets.fire_event_calls
+            ),
+        ));
+    }
+    if raw_router_builders != matrix.ratchets.raw_router_builders {
+        findings.push(finding(
+            "ui.tests.router-ratchet",
+            &format!(
+                "raw router builder count is {raw_router_builders}, matrix ratchet is {}",
+                matrix.ratchets.raw_router_builders
             ),
         ));
     }
@@ -303,6 +318,7 @@ fn validate_entry(
         ));
     }
     validate_fire_event_reason(root, entry, findings);
+    validate_raw_router_reason(root, entry, findings);
     let target = represented.entry(entry.test_file.clone()).or_default();
     for test_id in &entry.test_ids {
         if !target.insert(test_id.clone()) {
@@ -313,6 +329,26 @@ fn validate_entry(
         }
     }
     Ok(())
+}
+
+fn validate_raw_router_reason(root: &Path, entry: &Entry, findings: &mut Vec<Finding>) {
+    let Ok(source) = fs::read_to_string(root.join(&entry.test_file)) else {
+        return;
+    };
+    let has_builder = source.contains("createMemoryHistory(");
+    let has_reason = entry
+        .raw_router_reason
+        .as_deref()
+        .is_some_and(|reason| !reason.trim().is_empty());
+    if has_builder != has_reason {
+        findings.push(finding(
+            "ui.tests.router-reason",
+            &format!(
+                "entry `{}` must own an exact reason iff it builds a raw router",
+                entry.id
+            ),
+        ));
+    }
 }
 
 fn validate_fire_event_reason(root: &Path, entry: &Entry, findings: &mut Vec<Finding>) {

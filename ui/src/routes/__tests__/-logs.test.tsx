@@ -9,15 +9,7 @@ import {
   within,
 } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import {
-  Outlet,
-  RouterProvider,
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  defaultParseSearch,
-} from "@tanstack/react-router"
+import { defaultParseSearch } from "@tanstack/react-router"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { useState } from "react"
 
@@ -38,6 +30,7 @@ import {
   contextWindow,
   parseSavedViewState,
 } from "@/routes/logs"
+import { renderTestRouter } from "@/test/router"
 
 const range: ResolvedRange = {
   key: "7d",
@@ -70,27 +63,9 @@ const log: LogDoc = {
 afterEach(cleanup)
 
 function renderWithRouter(component: React.ReactNode) {
-  const rootRoute = createRootRoute({ component: Outlet })
-  const indexRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/",
-    component: () => component,
+  return renderTestRouter(component, {
+    targetPaths: ["/traces/$traceId", "/runs/$runId"],
   })
-  const traceRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "traces/$traceId",
-    component: () => null,
-  })
-  const runRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "runs/$runId",
-    component: () => null,
-  })
-  const router = createRouter({
-    routeTree: rootRoute.addChildren([indexRoute, traceRoute, runRoute]),
-    history: createMemoryHistory({ initialEntries: ["/"] }),
-  })
-  return render(<RouterProvider router={router} />)
 }
 
 function renderLogsHost(

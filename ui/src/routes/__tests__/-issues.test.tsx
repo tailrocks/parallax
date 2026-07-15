@@ -1,21 +1,14 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, render, screen } from "@testing-library/react"
-import {
-  Outlet,
-  RouterProvider,
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  defaultParseSearch,
-} from "@tanstack/react-router"
+import { cleanup, screen } from "@testing-library/react"
+import { defaultParseSearch } from "@tanstack/react-router"
 import { afterEach, describe, expect, it } from "vitest"
 
 import { customRange, resolvePreset } from "@/lib/range"
 import { IssuesContent } from "@/routes/issues.index"
 import type { IssuesData } from "@/routes/issues.index"
 import { IssueDetailContent } from "@/routes/issues.$fingerprint"
+import { renderTestRouter } from "@/test/router"
 
 afterEach(cleanup)
 
@@ -84,38 +77,11 @@ const detailFixture = {
 }
 
 function renderWithRouter(component: React.ReactNode, path = "/issues") {
-  const rootRoute = createRootRoute({ component: Outlet })
-  const issuesRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/issues",
-    component: () => component,
+  return renderTestRouter(component, {
+    componentPaths: ["/issues", "/issues/$fingerprint"],
+    initialPath: path,
+    targetPaths: ["/traces/$traceId", "/runs/$runId"],
   })
-  const issueRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/issues/$fingerprint",
-    component: () => component,
-  })
-  const traceRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/traces/$traceId",
-    component: () => null,
-  })
-  const runRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/runs/$runId",
-    component: () => null,
-  })
-  const router = createRouter({
-    routeTree: rootRoute.addChildren([
-      issuesRoute,
-      issueRoute,
-      traceRoute,
-      runRoute,
-    ]),
-    history: createMemoryHistory({ initialEntries: [path] }),
-  })
-
-  return render(<RouterProvider router={router} />)
 }
 
 describe("Issues route", () => {

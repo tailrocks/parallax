@@ -1,15 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import {
-  Outlet,
-  RouterProvider,
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-} from "@tanstack/react-router"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { nav } from "@/components/nav"
@@ -17,6 +9,7 @@ import { PageHeader } from "@/components/page-header"
 import { ParallaxShell } from "@/components/parallax-shell"
 import { RouteErrorPanel } from "@/components/route-fallbacks"
 import { graphql } from "@/lib/api"
+import { renderTestRouter } from "@/test/router"
 
 vi.mock("@/lib/api", () => ({
   graphql: vi.fn().mockImplementation(async (query: string) => {
@@ -29,26 +22,10 @@ vi.mock("@/lib/api", () => ({
 }))
 
 function renderWithRouter(component: React.ReactNode, initialEntries = ["/"]) {
-  const rootRoute = createRootRoute({
-    component: Outlet,
+  return renderTestRouter(component, {
+    componentPaths: ["/", "/dashboards"],
+    initialPath: initialEntries[0] ?? "/",
   })
-  const indexRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/",
-    component: () => component,
-  })
-  const dashboardsRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "dashboards",
-    component: () => component,
-  })
-  const routeTree = rootRoute.addChildren([indexRoute, dashboardsRoute])
-  const router = createRouter({
-    routeTree,
-    history: createMemoryHistory({ initialEntries }),
-  })
-
-  return render(<RouterProvider router={router} />)
 }
 
 describe("shell primitives", () => {

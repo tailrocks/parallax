@@ -2,15 +2,7 @@
 
 import { cleanup, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import {
-  Outlet,
-  RouterProvider,
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  defaultParseSearch,
-} from "@tanstack/react-router"
+import { defaultParseSearch } from "@tanstack/react-router"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { customRange } from "@/lib/range"
@@ -21,6 +13,7 @@ import {
   parseLayout,
   serializeWidgets,
 } from "@/routes/dashboards.index"
+import { renderTestRouter } from "@/test/router"
 
 const apiMock = vi.hoisted(() => ({
   defaultGraphql: vi.fn((query: string) => {
@@ -104,36 +97,21 @@ describe("dashboard contracts", () => {
       to: custom.toNanos,
     })
 
-    const rootRoute = createRootRoute({ component: Outlet })
-    const indexRoute = createRoute({
-      getParentRoute: () => rootRoute,
-      path: "/",
-      component: () => (
-        <DashboardCards
-          dashboards={[
-            {
-              id: "dash-a",
-              name: "checkout ops",
-              layout: '[{"metric":"process.cpu.utilization"}]',
-              updatedAtNanos: "1",
-            },
-          ]}
-          detailSearch={detailSearch}
-          onRemove={() => {}}
-        />
-      ),
-    })
-    const detailRoute = createRoute({
-      getParentRoute: () => rootRoute,
-      path: "/dashboards/$dashboardId",
-      component: () => null,
-    })
-    const router = createRouter({
-      routeTree: rootRoute.addChildren([indexRoute, detailRoute]),
-      history: createMemoryHistory({ initialEntries: ["/"] }),
-    })
-
-    render(<RouterProvider router={router} />)
+    renderTestRouter(
+      <DashboardCards
+        dashboards={[
+          {
+            id: "dash-a",
+            name: "checkout ops",
+            layout: '[{"metric":"process.cpu.utilization"}]',
+            updatedAtNanos: "1",
+          },
+        ]}
+        detailSearch={detailSearch}
+        onRemove={() => {}}
+      />,
+      { targetPaths: ["/dashboards/$dashboardId"] }
+    )
     const { search, url } = parseHref(
       (await screen.findByRole("link", { name: "checkout ops" })).getAttribute(
         "href"

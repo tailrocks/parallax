@@ -1,20 +1,13 @@
 /* @vitest-environment jsdom */
 
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react"
+import { act, cleanup, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import {
-  Outlet,
-  RouterProvider,
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-} from "@tanstack/react-router"
 import { useState } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { CommandPalette } from "@/components/console/command-palette"
 import { graphql } from "@/lib/api"
+import { renderTestRouter } from "@/test/router"
 
 vi.mock("@/lib/api", () => ({
   graphql: vi.fn(),
@@ -67,66 +60,19 @@ function PaletteHarness() {
 }
 
 function renderWithRouter(component: React.ReactNode, initialPath = "/") {
-  const rootRoute = createRootRoute({
-    component: () => (
-      <>
-        {component}
-        <Outlet />
-      </>
-    ),
+  return renderTestRouter(component, {
+    componentPaths: [
+      "/",
+      "/logs",
+      "/traces",
+      "/traces/$traceId",
+      "/runs/$runId",
+      "/issues/$fingerprint",
+      "/services/$service",
+    ],
+    initialPath,
+    layout: true,
   })
-  const indexRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/",
-    component: () => null,
-  })
-  const logsRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "logs",
-    component: () => null,
-  })
-  const tracesRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "traces",
-    component: () => null,
-  })
-  const traceRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "traces/$traceId",
-    component: () => null,
-  })
-  const runRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "runs/$runId",
-    component: () => null,
-  })
-  const issueRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "issues/$fingerprint",
-    component: () => null,
-  })
-  const serviceRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "services/$service",
-    component: () => null,
-  })
-  const router = createRouter({
-    routeTree: rootRoute.addChildren([
-      indexRoute,
-      logsRoute,
-      tracesRoute,
-      traceRoute,
-      runRoute,
-      issueRoute,
-      serviceRoute,
-    ]),
-    history: createMemoryHistory({ initialEntries: [initialPath] }),
-  })
-
-  return {
-    router,
-    ...render(<RouterProvider router={router} />),
-  }
 }
 
 describe("CommandPalette", () => {

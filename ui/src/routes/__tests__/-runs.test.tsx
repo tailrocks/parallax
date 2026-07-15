@@ -1,14 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, render, screen } from "@testing-library/react"
-import {
-  Outlet,
-  RouterProvider,
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-} from "@tanstack/react-router"
+import { cleanup, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
@@ -25,6 +17,7 @@ import {
   loadRunDetail,
   snapshotFromNanos,
 } from "@/routes/runs.$runId"
+import { renderTestRouter } from "@/test/router"
 
 vi.mock("@/lib/api", async (importOriginal) => {
   const actual = await importOriginal()
@@ -74,38 +67,11 @@ const merged = mergeRuns(
 const data: RunsData = { rows: merged }
 
 function renderWithRouter(component: React.ReactNode, path = "/runs") {
-  const rootRoute = createRootRoute({ component: Outlet })
-  const runsRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/runs",
-    component: () => component,
+  return renderTestRouter(component, {
+    componentPaths: ["/runs", "/runs/$runId"],
+    initialPath: path,
+    targetPaths: ["/issues/$fingerprint", "/traces/$traceId"],
   })
-  const runRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/runs/$runId",
-    component: () => component,
-  })
-  const issueRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/issues/$fingerprint",
-    component: () => null,
-  })
-  const traceRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/traces/$traceId",
-    component: () => null,
-  })
-  const router = createRouter({
-    routeTree: rootRoute.addChildren([
-      runsRoute,
-      runRoute,
-      issueRoute,
-      traceRoute,
-    ]),
-    history: createMemoryHistory({ initialEntries: [path] }),
-  })
-
-  return render(<RouterProvider router={router} />)
 }
 
 describe("Runs route", () => {

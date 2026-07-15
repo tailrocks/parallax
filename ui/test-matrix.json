@@ -1,7 +1,8 @@
 {
   "schema_version": 1,
   "ratchets": {
-    "fire_event_calls": 7
+    "fire_event_calls": 7,
+    "raw_router_builders": 1
   },
   "private_route_imports": [
     {
@@ -1004,6 +1005,7 @@
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented",
+      "raw_router_reason": "Attaches the generated SQL route component and loader contract to its real parent route",
       "legacy_handoff": {
         "current_path": "ui/src/routes/__tests__/-sql.test.tsx",
         "destination_owner": "features/sql",
@@ -1189,7 +1191,8 @@
       "layer": "component",
       "test_file": "ui/tests/harness/router.test.tsx",
       "test_ids": [
-        "creates isolated memory history for sequential renders"
+        "creates isolated memory history for sequential renders",
+        "supports a shared layout across explicit routes"
       ],
       "required_environment": "jsdom",
       "status": "implemented"

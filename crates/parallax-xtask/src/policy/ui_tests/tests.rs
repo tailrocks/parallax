@@ -29,7 +29,7 @@ fn rejects_test_id_drift() -> Result<(), Box<dyn std::error::Error>> {
         temp.path().join("ui/test-matrix.json"),
         r#"{
   "schema_version": 1,
-  "ratchets": { "fire_event_calls": 0 },
+  "ratchets": { "fire_event_calls": 0, "raw_router_builders": 0 },
   "private_route_imports": [],
   "entries": [{
     "id": "vitest-001",

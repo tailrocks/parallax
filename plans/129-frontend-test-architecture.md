@@ -165,6 +165,15 @@ component, route, and future browser evidence.
   intervals alongside real timeouts. All 45 files / 184 tests pass under
   forced Bun; TypeScript, both Oxlint lanes, Oxfmt, matrix policy/tests, strict
   xtask Clippy, and diff hygiene pass locally.
+- 2026-07-15: generalized `renderTestRouter` to own explicit component paths,
+  inert navigation targets, initial locations, and persistent layout routes.
+  Shell, command palette, top movers, dashboard, issues, logs, overview, runs,
+  services, and ordinary SQL tests no longer construct memory routers. The
+  only raw builder attaches the generated SQL route/loader contract to its real
+  parent; the matrix owns its exact reason and a count-one ratchet. Harness
+  self-tests cover layout routing. All 45 files / 185 tests pass under forced
+  Bun; TypeScript, both Oxlint lanes, Oxfmt, matrix policy/tests, strict xtask
+  Clippy, and diff hygiene pass locally.
 
 ## Fixed Test Topology
 

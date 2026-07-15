@@ -19,47 +19,19 @@ import {
   SqlResultBody,
   targetForCell,
 } from "@/routes/sql"
+import { renderTestRouter } from "@/test/router"
 
 afterEach(cleanup)
 
 function renderWithRouter(component: React.ReactNode) {
-  const rootRoute = createRootRoute({ component: Outlet })
-  const indexRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/",
-    component: () => component,
+  return renderTestRouter(component, {
+    targetPaths: [
+      "/traces/$traceId",
+      "/runs/$runId",
+      "/issues/$fingerprint",
+      "/services/$service",
+    ],
   })
-  const traceRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "traces/$traceId",
-    component: () => null,
-  })
-  const runRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "runs/$runId",
-    component: () => null,
-  })
-  const issueRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "issues/$fingerprint",
-    component: () => null,
-  })
-  const serviceRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "services/$service",
-    component: () => null,
-  })
-  const router = createRouter({
-    routeTree: rootRoute.addChildren([
-      indexRoute,
-      traceRoute,
-      runRoute,
-      issueRoute,
-      serviceRoute,
-    ]),
-    history: createMemoryHistory({ initialEntries: ["/"] }),
-  })
-  return render(<RouterProvider router={router} />)
 }
 
 describe("SQL result helpers", () => {

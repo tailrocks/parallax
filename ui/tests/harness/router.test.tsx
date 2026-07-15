@@ -18,4 +18,14 @@ describe("test router harness", () => {
     expect(await screen.findByText("second router")).toBeTruthy()
     expect(second.history.location.pathname).toBe("/")
   })
+
+  it("supports a shared layout across explicit routes", async () => {
+    const rendered = renderTestRouter(<p>persistent layout</p>, {
+      componentPaths: ["/", "/next"],
+      initialPath: "/next",
+      layout: true,
+    })
+    expect(await screen.findByText("persistent layout")).toBeTruthy()
+    expect(rendered.history.location.pathname).toBe("/next")
+  })
 })

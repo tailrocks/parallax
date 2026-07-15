@@ -1,14 +1,6 @@
 /* @vitest-environment jsdom */
 
 import { cleanup, render, screen } from "@testing-library/react"
-import {
-  Outlet,
-  RouterProvider,
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-} from "@tanstack/react-router"
 import { afterEach, describe, expect, it } from "vitest"
 
 import {
@@ -17,7 +9,7 @@ import {
   moverSentence,
 } from "@/components/console/top-movers"
 import type { ServiceMoverInput } from "@/components/console/top-movers"
-import { rangeSearchSchema } from "@/lib/range"
+import { renderTestRouter } from "@/test/router"
 import type { ResolvedRange } from "@/lib/range"
 
 const range: ResolvedRange = {
@@ -29,23 +21,9 @@ const range: ResolvedRange = {
 afterEach(cleanup)
 
 function renderWithRouter(component: React.ReactNode) {
-  const rootRoute = createRootRoute({ component: Outlet })
-  const indexRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/",
-    component: () => component,
+  return renderTestRouter(component, {
+    targetPaths: ["/services/$service"],
   })
-  const serviceRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "services/$service",
-    validateSearch: (search) => rangeSearchSchema.parse(search),
-    component: () => null,
-  })
-  const router = createRouter({
-    routeTree: rootRoute.addChildren([indexRoute, serviceRoute]),
-    history: createMemoryHistory({ initialEntries: ["/"] }),
-  })
-  return render(<RouterProvider router={router} />)
 }
 
 describe("computeMovers", () => {
