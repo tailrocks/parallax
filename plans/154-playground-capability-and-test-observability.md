@@ -543,6 +543,13 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   intercepted assertion or harness error escapes, instead of exporting a
   contradictory passing suite. Payment, catalog, and fulfillment Gradle suites
   all pass locally under the attached OTel Java agent.
+- 2026-07-15: fixed the Playwright W4 parentage gap in companion commit
+  `2a7226f`. The reporter now starts the real exported test span at
+  `onTestBegin` and publishes its actual W3C carrier through a bounded,
+  per-test, crash-cleaned file handoff; the worker fixture injects that carrier
+  into the browser. Browser and backend spans are therefore descendants of the
+  test span rather than siblings beneath an unexported synthetic parent. Eight
+  Vitest cases, production build/typecheck, and seven-test discovery pass.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
