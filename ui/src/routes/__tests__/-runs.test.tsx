@@ -74,19 +74,6 @@ const merged = mergeRuns(
 const data: RunsData = { rows: merged }
 
 function renderWithRouter(component: React.ReactNode, path = "/runs") {
-  window.scrollTo = () => {}
-  window.matchMedia = () =>
-    ({
-      matches: false,
-      media: "",
-      onchange: null,
-      addListener() {},
-      removeListener() {},
-      addEventListener() {},
-      removeEventListener() {},
-      dispatchEvent: () => true,
-    }) as MediaQueryList
-
   const rootRoute = createRootRoute({ component: Outlet })
   const runsRoute = createRoute({
     getParentRoute: () => rootRoute,

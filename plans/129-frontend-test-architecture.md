@@ -81,6 +81,18 @@ component, route, and future browser evidence.
   handoffs. Positive real-repository validation and a stale-name negative
   fixture pass; both policy tests, strict xtask Clippy, formatting, and diff
   hygiene are green locally.
+- 2026-07-15: centralized the remaining browser harness state. Fifteen test
+  files no longer redefine `scrollTo`/`matchMedia`, and shell/command-palette
+  no longer own duplicate `ResizeObserver`/`scrollIntoView` shims. The shared
+  setup now provides those contracts plus jsdom's missing empty
+  `Element.getAnimations()` behavior; the latter fixed four Base UI
+  post-cleanup exceptions exposed by the stricter global lifecycle. The
+  `ui.tests` policy now rejects local shim duplication, test bodies under
+  harness-only `src/test`, unrecorded legacy topology, and final `/tests/`
+  files that retain legacy handoffs. Its negative fixture exercises both stale
+  IDs and shim duplication. All 41 files / 175 tests pass under forced Bun with
+  zero unhandled errors; TypeScript, both Oxlint lanes, Oxfmt, focused xtask
+  tests, strict xtask Clippy, policy, and diff hygiene pass locally.
 
 ## Fixed Test Topology
 

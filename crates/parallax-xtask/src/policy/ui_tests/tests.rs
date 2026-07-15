@@ -21,7 +21,10 @@ fn rejects_test_id_drift() -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let test_path = temp.path().join("ui/src/routes/__tests__/sample.test.ts");
     fs::create_dir_all(test_path.parent().expect("test path has parent"))?;
-    fs::write(&test_path, "it(\"actual behavior\", () => {});\n")?;
+    fs::write(
+        &test_path,
+        "window.scrollTo = () => {};\nit(\"actual behavior\", () => {});\n",
+    )?;
     fs::write(
         temp.path().join("ui/test-matrix.json"),
         r#"{
@@ -54,6 +57,11 @@ fn rejects_test_id_drift() -> Result<(), Box<dyn std::error::Error>> {
         findings
             .iter()
             .any(|finding| finding.rule_id == "ui.tests.ids")
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|finding| finding.rule_id == "ui.tests.harness")
     );
     Ok(())
 }

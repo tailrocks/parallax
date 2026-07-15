@@ -84,19 +84,6 @@ const detailFixture = {
 }
 
 function renderWithRouter(component: React.ReactNode, path = "/issues") {
-  window.scrollTo = () => {}
-  window.matchMedia = () =>
-    ({
-      matches: false,
-      media: "",
-      onchange: null,
-      addListener() {},
-      removeListener() {},
-      addEventListener() {},
-      removeEventListener() {},
-      dispatchEvent: () => true,
-    }) as MediaQueryList
-
   const rootRoute = createRootRoute({ component: Outlet })
   const issuesRoute = createRoute({
     getParentRoute: () => rootRoute,

@@ -120,19 +120,6 @@ const detailFixture: ServiceDetailData = {
 }
 
 function renderWithRouter(component: React.ReactNode, path = "/services") {
-  window.scrollTo = () => {}
-  window.matchMedia = () =>
-    ({
-      matches: false,
-      media: "",
-      onchange: null,
-      addListener() {},
-      removeListener() {},
-      addEventListener() {},
-      removeEventListener() {},
-      dispatchEvent: () => true,
-    }) as MediaQueryList
-
   const rootRoute = createRootRoute({ component: Outlet })
   const servicesRoute = createRoute({
     getParentRoute: () => rootRoute,

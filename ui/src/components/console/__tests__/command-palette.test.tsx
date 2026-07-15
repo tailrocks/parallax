@@ -26,15 +26,6 @@ vi.mock("@/lib/api", () => ({
   graphql: vi.fn(),
 }))
 
-class ResizeObserverMock {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-}
-
-globalThis.ResizeObserver = ResizeObserverMock
-window.HTMLElement.prototype.scrollIntoView = vi.fn()
-
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
@@ -82,19 +73,6 @@ function PaletteHarness() {
 }
 
 function renderWithRouter(component: React.ReactNode, initialPath = "/") {
-  window.scrollTo = () => {}
-  window.matchMedia = () =>
-    ({
-      matches: false,
-      media: "",
-      onchange: null,
-      addListener() {},
-      removeListener() {},
-      addEventListener() {},
-      removeEventListener() {},
-      dispatchEvent: () => true,
-    }) as MediaQueryList
-
   const rootRoute = createRootRoute({
     component: () => (
       <>

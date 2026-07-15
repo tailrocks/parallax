@@ -130,18 +130,6 @@ describe("SQL result helpers", () => {
 
 describe("SQL route", () => {
   it("renders SQL keyboard hint and examples menu", async () => {
-    window.matchMedia = () =>
-      ({
-        matches: false,
-        media: "",
-        onchange: null,
-        addListener() {},
-        removeListener() {},
-        addEventListener() {},
-        removeEventListener() {},
-        dispatchEvent: () => true,
-      }) as MediaQueryList
-
     const rootRoute = createRootRoute({ component: Outlet })
     const component = SqlRoute.options.component!
     const sqlRoute = createRoute({

@@ -24,7 +24,6 @@ import type { SpanEvent } from "@/routes/traces.$traceId"
 afterEach(cleanup)
 
 function renderWithRouter(component: React.ReactNode) {
-  window.scrollTo = () => {}
   const rootRoute = createRootRoute({ component: Outlet })
   const indexRoute = createRoute({
     getParentRoute: () => rootRoute,

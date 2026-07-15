@@ -30,7 +30,6 @@ const range: ResolvedRange = {
 }
 
 function renderWithRouter(component: React.ReactNode) {
-  window.scrollTo = () => {}
   const rootRoute = createRootRoute({ component: Outlet })
   const indexRoute = createRoute({
     getParentRoute: () => rootRoute,

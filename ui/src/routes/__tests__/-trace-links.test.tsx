@@ -15,7 +15,6 @@ import { LinkedTraceEdges, TraceCompareResult } from "@/routes/traces.$traceId"
 import type { SpanLink, TraceDiff, TraceSummary } from "@/lib/api"
 
 function renderWithRouter(component: React.ReactNode) {
-  window.scrollTo = () => {}
   const rootRoute = createRootRoute({ component: Outlet })
   const indexRoute = createRoute({
     getParentRoute: () => rootRoute,

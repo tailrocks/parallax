@@ -31,7 +31,7 @@ struct Entry {
     test_ids: Vec<String>,
     required_environment: String,
     status: String,
-    legacy_handoff: LegacyHandoff,
+    legacy_handoff: Option<LegacyHandoff>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -62,6 +62,13 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
 
     let discovered = discover_tests(root)?;
     for (path, test_ids) in &discovered {
+        if path.starts_with("ui/src/test/") {
+            findings.push(finding(
+                "ui.tests.topology",
+                &format!("test body `{path}` is inside the harness-only src/test directory"),
+            ));
+        }
+        check_local_harness(root, path, &mut findings)?;
         match represented.get(path) {
             Some(expected) if expected == test_ids => {}
             Some(expected) => findings.push(finding(
@@ -131,20 +138,27 @@ fn validate_entry(
             &format!("entry `{}` has an invalid required field", entry.id),
         ));
     }
-    let handoff = &entry.legacy_handoff;
-    if !entry.test_file.contains("/__tests__/")
-        || handoff.current_path != entry.test_file
-        || handoff.destination_owner != entry.scenario_owner
-        || handoff.removal_plan != entry.delivery_plan
-        || handoff.created != "2026-07-15"
-        || handoff.expires != format!("plan-{}-completion", entry.delivery_plan)
-    {
+    if entry.test_file.contains("/__tests__/") {
+        let valid_handoff = entry.legacy_handoff.as_ref().is_some_and(|handoff| {
+            handoff.current_path == entry.test_file
+                && handoff.destination_owner == entry.scenario_owner
+                && handoff.removal_plan == entry.delivery_plan
+                && handoff.created == "2026-07-15"
+                && handoff.expires == format!("plan-{}-completion", entry.delivery_plan)
+        });
+        if !valid_handoff {
+            findings.push(finding(
+                "ui.tests.handoff",
+                &format!(
+                    "entry `{}` has a broad or inconsistent legacy handoff",
+                    entry.id
+                ),
+            ));
+        }
+    } else if !entry.test_file.contains("/tests/") || entry.legacy_handoff.is_some() {
         findings.push(finding(
-            "ui.tests.handoff",
-            &format!(
-                "entry `{}` has a broad or inconsistent legacy handoff",
-                entry.id
-            ),
+            "ui.tests.topology",
+            &format!("entry `{}` is outside the final tests/ topology", entry.id),
         ));
     }
     if !root.join(&entry.test_file).is_file() || entry.test_ids.is_empty() {
@@ -162,6 +176,24 @@ fn validate_entry(
             findings.push(finding(
                 "ui.tests.ids",
                 &format!("duplicate test ID `{test_id}` in `{}`", entry.test_file),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn check_local_harness(root: &Path, path: &str, findings: &mut Vec<Finding>) -> Result<()> {
+    let source = fs::read_to_string(root.join(path))?;
+    for forbidden in [
+        "window.scrollTo =",
+        "window.matchMedia =",
+        "globalThis.ResizeObserver =",
+        "HTMLElement.prototype.scrollIntoView =",
+    ] {
+        if source.contains(forbidden) {
+            findings.push(finding(
+                "ui.tests.harness",
+                &format!("`{path}` duplicates shared browser shim `{forbidden}`"),
             ));
         }
     }

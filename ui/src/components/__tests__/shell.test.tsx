@@ -27,28 +27,7 @@ vi.mock("@/lib/api", () => ({
   }),
 }))
 
-class ResizeObserverMock {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-}
-
-globalThis.ResizeObserver = ResizeObserverMock
-window.HTMLElement.prototype.scrollIntoView = vi.fn()
-
 function renderWithRouter(component: React.ReactNode, initialEntries = ["/"]) {
-  window.scrollTo = () => {}
-  window.matchMedia = () =>
-    ({
-      matches: false,
-      media: "",
-      onchange: null,
-      addListener() {},
-      removeListener() {},
-      addEventListener() {},
-      removeEventListener() {},
-      dispatchEvent: () => true,
-    }) as MediaQueryList
   const rootRoute = createRootRoute({
     component: Outlet,
   })
