@@ -350,6 +350,10 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   syntax, catalog dispatch, web unit tests (six), and five-test Playwright
   discovery pass locally; requests, browser execution, k6, and backend
   rendering remain final live-host work.
+- `b772e22` makes that completeness claim a local executable contract. The
+  non-Docker checker syntax-validates every shell driver and proves all 45
+  catalog IDs map to present executable drivers (with the declared Bun
+  TypeScript exception); the runbook records the command.
 - `0f7bb7c` corrects B6 to exercise the real `cacheLeak` flagd transition:
   the driver starts flagd plus recommendation, changes only that default
   variant, drives requests without the legacy `leak` query override, and
