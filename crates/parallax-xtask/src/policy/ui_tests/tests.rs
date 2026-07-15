@@ -3,17 +3,23 @@ use std::fs;
 use super::{check_workspace, test_id};
 
 #[test]
-fn extracts_only_named_top_level_test_calls() {
-    assert_eq!(
+fn extracts_only_named_top_level_test_calls() -> Result<(), String> {
+    let actual = (
         test_id("  it(\"keeps behavior\", () => {}"),
-        Some("keeps behavior".into())
-    );
-    assert_eq!(
         test_id("test(\"maps value\", () => {})"),
-        Some("maps value".into())
+        test_id("describe(\"group\", () => {})"),
+        test_id("it.each([])(\"variant\", () => {})"),
     );
-    assert_eq!(test_id("describe(\"group\", () => {})"), None);
-    assert_eq!(test_id("it.each([])(\"variant\", () => {})"), None);
+    let expected = (
+        Some("keeps behavior".into()),
+        Some("maps value".into()),
+        None,
+        None,
+    );
+    if actual != expected {
+        return Err(format!("test ID extraction mismatch: {actual:?}"));
+    }
+    Ok(())
 }
 
 #[test]
@@ -61,40 +67,22 @@ fn rejects_test_id_drift() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     let findings = check_workspace(temp.path())?;
-    assert!(
-        findings
-            .iter()
-            .any(|finding| finding.rule_id == "ui.tests.ids")
-    );
-    assert!(
-        findings
-            .iter()
-            .any(|finding| finding.rule_id == "ui.tests.harness")
-    );
-    assert!(
-        findings
-            .iter()
-            .any(|finding| finding.rule_id == "ui.tests.antipattern")
-    );
-    assert!(
-        findings
-            .iter()
-            .any(|finding| finding.rule_id == "ui.tests.private-route")
-    );
-    assert!(
-        findings
-            .iter()
-            .any(|finding| finding.rule_id == "ui.tests.contract")
-    );
-    assert!(
-        findings
-            .iter()
-            .any(|finding| finding.rule_id == "ui.tests.catalog")
-    );
-    assert!(
-        findings
-            .iter()
-            .any(|finding| finding.rule_id == "ui.tests.lint")
-    );
+    let actual = findings
+        .iter()
+        .map(|finding| finding.rule_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    for required in [
+        "ui.tests.ids",
+        "ui.tests.harness",
+        "ui.tests.antipattern",
+        "ui.tests.private-route",
+        "ui.tests.contract",
+        "ui.tests.catalog",
+        "ui.tests.lint",
+    ] {
+        if !actual.contains(required) {
+            return Err(format!("missing expected finding `{required}`").into());
+        }
+    }
     Ok(())
 }
