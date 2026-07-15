@@ -14,7 +14,8 @@
 - **Depends on**: Every other actionable indexed plan; all blockers freshly rechecked
 - **Category**: validation / closure / plan lifecycle
 - **Planned at**: `a1d8bf82`, revised 2026-07-12
-- **Status**: IN PROGRESS
+- **Status**: BLOCKED — C0 cannot freeze while direct operator, upstream,
+  platform, release-cycle, and live-host conditions remain open
 
 ## Current Evidence
 
@@ -28,6 +29,10 @@
   packets, and rejects any remaining numbered plan not marked BLOCKED. All 69
   xtask tests, strict xtask Clippy, Actionlint, workflow-policy fixtures, Rust
   formatting, structural policy, and the explicit dry-run command pass locally.
+- 2026-07-15: the fresh direct/dependency blocker matrix is preserved in
+  [`docs/research/validation/2026-07-15-active-plan-blocker-audit.md`](../docs/research/validation/2026-07-15-active-plan-blocker-audit.md).
+  No other product plan is ready, so Criteria for Freezing C0 are not met and
+  Steps 1–7 cannot honestly begin.
 
 ## Why
 
