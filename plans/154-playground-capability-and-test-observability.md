@@ -361,6 +361,11 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   implemented IDs missing from `scenarios/README.md`. The portable checker now
   proves README, printed catalog, and dispatcher contain the same 45 IDs before
   resolving every mapped driver and checking shell syntax.
+- 2026-07-15: reconciled W3's topology count after W2 added storefront. The
+  companion has 10 app services (seven Rust and three Java), and source
+  inventory finds tests in every app service plus the CLI and web. The
+  playground workflow remains the explicitly deferred CI/CD slice; no workflow
+  pass is claimed.
 - `0f7bb7c` corrects B6 to exercise the real `cacheLeak` flagd transition:
   the driver starts flagd plus recommendation, changes only that default
   variant, drives requests without the legacy `leak` query override, and
@@ -811,7 +816,7 @@ Out of scope:
 - [ ] Juniper storefront service exists with per-resolver GraphQL semconv
       spans; A23/A24 scripts run; Java `QuoteStream` + Java gRPC client hop
       exist.
-- [ ] Every service (9 app services + cli + web) has passing tests wired into
+- [ ] Every service (10 app services + cli + web) has passing tests wired into
       a playground CI workflow.
 - [ ] Test runs on all three stacks emit OTel spans with the shared `test.*` /
       `cicd.*` constants, parented under a `parallax run` session; the W4 §19
