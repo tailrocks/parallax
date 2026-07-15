@@ -28,7 +28,45 @@ pub(crate) struct CheckReport {
 
 pub(crate) fn check(root: &Path, playground_root: Option<&Path>) -> Result<CheckReport> {
     check_weaver(root)?;
+    check_rust_ownership(root)?;
     check_generated_artifacts(root, playground_root)
+}
+
+fn check_rust_ownership(root: &Path) -> Result<()> {
+    let compatibility = root.join("crates/parallax-proto/src/semconv.rs");
+    if compatibility.exists() {
+        bail!(
+            "obsolete semantic-convention compatibility module `{}` must stay removed",
+            compatibility.display()
+        );
+    }
+    check_rust_sources(&root.join("crates"))
+}
+
+fn check_rust_sources(directory: &Path) -> Result<()> {
+    for entry in fs::read_dir(directory)
+        .with_context(|| format!("read Rust ownership directory `{}`", directory.display()))?
+    {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_dir() {
+            check_rust_sources(&path)?;
+        } else if path.extension().is_some_and(|extension| extension == "rs") {
+            let source = fs::read_to_string(&path)
+                .with_context(|| format!("read Rust source `{}`", path.display()))?;
+            if source.lines().any(|line| {
+                let line = line.trim_start();
+                (line.starts_with("use ") || line.starts_with("pub use "))
+                    && line.contains("parallax_proto::semconv")
+            }) {
+                bail!(
+                    "Rust source `{}` imports semantic conventions through parallax-proto; depend on parallax-semconv directly",
+                    path.display()
+                );
+            }
+        }
+    }
+    Ok(())
 }
 
 fn check_generated_artifacts(root: &Path, playground_root: Option<&Path>) -> Result<CheckReport> {
@@ -390,7 +428,10 @@ fn write(path: &Path, contents: &str) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Constant, check_generated_artifacts, generate_at, render_typescript, validate};
+    use super::{
+        Constant, check_generated_artifacts, check_rust_ownership, generate_at, render_typescript,
+        validate,
+    };
     use std::fs;
     use tempfile::TempDir;
 
@@ -458,6 +499,34 @@ mod tests {
             error
                 .to_string()
                 .contains("stale semantic-convention artifact")
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn rust_ownership_rejects_proto_bridge_and_indirect_imports() -> anyhow::Result<()> {
+        let root = TempDir::new()?;
+        let proto = root.path().join("crates/parallax-proto/src");
+        let consumer = root.path().join("crates/consumer/src");
+        fs::create_dir_all(&proto)?;
+        fs::create_dir_all(&consumer)?;
+        fs::write(
+            consumer.join("lib.rs"),
+            "use parallax_semconv as semconv;\n",
+        )?;
+        check_rust_ownership(root.path())?;
+
+        fs::write(proto.join("semconv.rs"), "pub use parallax_semconv::*;\n")?;
+        let bridge = check_rust_ownership(root.path()).expect_err("compatibility bridge fails");
+        assert!(bridge.to_string().contains("must stay removed"));
+        fs::remove_file(proto.join("semconv.rs"))?;
+
+        fs::write(consumer.join("lib.rs"), "use parallax_proto::semconv;\n")?;
+        let indirect = check_rust_ownership(root.path()).expect_err("indirect import fails");
+        assert!(
+            indirect
+                .to_string()
+                .contains("depend on parallax-semconv directly")
         );
         Ok(())
     }

@@ -91,6 +91,12 @@ reviewable generated source and reproducible offline builds.
   now depend directly on `parallax-semconv`; repository search finds no old
   imports. Locked all-target checks and strict clippy pass across all eight
   affected crates.
+- 2026-07-15: made the final Rust ownership state part of the read-only
+  semconv gate. `cargo xtask semconv check` now rejects recreation of
+  `parallax-proto/src/semconv.rs` and any Rust `use` that reaches conventions
+  through `parallax_proto::semconv`. Positive and both negative fixtures pass,
+  strict xtask clippy is clean, and the real cross-repository deterministic
+  check passes at the pushed tree.
 
 ## Scope
 
