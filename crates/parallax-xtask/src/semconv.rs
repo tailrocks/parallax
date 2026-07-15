@@ -107,18 +107,14 @@ fn check_weaver(root: &Path) -> Result<()> {
     }
 
     let fixtures_root = root.join("telemetry/semconv/fixtures");
-    let mut fixtures = fs::read_dir(&fixtures_root)
-        .with_context(|| format!("read Weaver fixtures `{}`", fixtures_root.display()))?
-        .filter_map(Result::ok)
-        .filter(|entry| entry.file_type().is_ok_and(|kind| kind.is_dir()))
-        .map(|entry| entry.path())
-        .collect::<Vec<_>>();
-    fixtures.sort();
-    ensure!(
-        fixtures.len() >= 3,
-        "Weaver negative fixture set must cover stability, type, and references"
-    );
-    for fixture in fixtures {
+    for name in [
+        "invalid-stability",
+        "invalid-type",
+        "unknown-import",
+        "unknown-reference",
+    ] {
+        let fixture = fixtures_root.join(name);
+        ensure!(fixture.is_dir(), "missing Weaver negative fixture `{name}`");
         let output = run_weaver(root, &fixture)?;
         ensure!(
             !output.status.success(),
