@@ -451,18 +451,19 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   the assertion retry, an opt-in Playwright test now times out only on its
   first attempt and passes on retry, yielding the reporter's `harness_error`
   branch. Bun build/typecheck, seven Vitest tests, and discovery of all seven
-  Playwright journeys pass locally; browser execution remains host-library
-  blocked.
-- Fresh execution on 2026-07-14 confirms the browser blocker is environmental,
-  not a test failure: `bun x playwright test --project=chromium --grep 'home
-  to checkout'` completes the Bun web-server build/typecheck and then fails at
-  `browserType.launch` because this container lacks Chromium's required
-  system libraries (`libglib2.0`, `libnss3`, `libatk`, `libgbm`, and related
-  runtime dependencies). No source workaround or non-Bun runner is allowed;
-  rerun the seven-test acceptance fixture on a browser-capable host.
-- `eb76c60` aligns the companion verification runbook with that distinction:
-  Rust, clean Java suites, Bun build/Vitest, and Playwright discovery are
-  local facts; browser execution is expressly named as host-capability work.
+  Playwright journeys pass locally.
+- 2026-07-15: unblocked local Chromium execution without changing the product
+  or requiring Docker/system installation. The arm64 container's missing
+  shared libraries were downloaded and extracted into a user-owned temporary
+  runtime, with a matching minimal Fontconfig configuration. Under that
+  ephemeral runtime, `bun x playwright test --project=chromium` passes all
+  five normal journeys (two W4 retry fixtures correctly skip by default).
+  With `PLAYGROUND_TEST_FLAKY_FIXTURE=1 PLAYWRIGHT_RETRIES=1`, both deliberate
+  fixtures fail on their first attempt and pass on retry: the assertion case
+  records the intended assertion failure and the timeout case records the
+  intended harness timeout. Browser execution is therefore no longer a local
+  host-library blocker; collector-backed trace inspection and live backend
+  fan-out remain final acceptance work.
 - After the W3 boundary sweep, the complete Rust `nextest` CI profile passes
   57 tests across 11 binaries. Its freshly generated JUnit XML is accepted by
   `playground test-report` as 57 passing test cases with no implicit local
