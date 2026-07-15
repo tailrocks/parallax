@@ -22,6 +22,7 @@ pub const EXCEPTION_STACKTRACE: &str = "exception.stacktrace";
 pub const EXCEPTION_ESCAPED: &str = "exception.escaped";
 pub const ERROR_TYPE: &str = "error.type";
 pub const PARALLAX_RUN_ID: &str = "parallax.run.id";
+pub const PARALLAX_LAB: &str = "parallax.lab";
 pub const PARALLAX_SOURCE: &str = "parallax.source";
 pub const JACKIN_OPERATION: &str = "jackin.operation";
 pub const REQUEST_DURATION_METRICS: &[&str] =

@@ -20,6 +20,7 @@ constants:
   - { id: exception.escaped, rust: EXCEPTION_ESCAPED, typescript: EXCEPTION_ESCAPED, java: EXCEPTION_ESCAPED, value: exception.escaped, owner: parallax }
   - { id: error.type, rust: ERROR_TYPE, typescript: ERROR_TYPE, java: ERROR_TYPE, value: error.type, owner: shared }
   - { id: parallax.run.id, rust: PARALLAX_RUN_ID, typescript: PARALLAX_RUN_ID, java: PARALLAX_RUN_ID, value: parallax.run.id, owner: shared }
+  - { id: parallax.lab, rust: PARALLAX_LAB, typescript: PARALLAX_LAB, java: PARALLAX_LAB, value: parallax.lab, owner: parallax }
   - { id: parallax.source, rust: PARALLAX_SOURCE, typescript: PARALLAX_SOURCE, java: PARALLAX_SOURCE, value: parallax.source, owner: parallax }
   - { id: jackin.operation, rust: JACKIN_OPERATION, typescript: JACKIN_OPERATION, java: JACKIN_OPERATION, value: jackin.operation, owner: parallax }
   - { id: parallax.request.duration.metrics, rust: REQUEST_DURATION_METRICS, typescript: REQUEST_DURATION_METRICS, java: REQUEST_DURATION_METRICS, values: [http.server.request.duration, rpc.server.duration], owner: parallax }

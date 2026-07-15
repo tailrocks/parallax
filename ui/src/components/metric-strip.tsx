@@ -10,6 +10,11 @@ import {
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
 import { formatBytes, formatTimeShort } from "@/lib/format"
+import {
+  CPU_METRICS,
+  MEMORY_METRICS,
+  TOKIO_RUNTIME_ALIVE_TASKS,
+} from "@/shared/semconv"
 
 interface MetricPoint {
   tsNanos: string
@@ -134,9 +139,9 @@ export function MetricStrip({
         Record<string, Array<{ points: MetricPoint[] }> | undefined>
       >(
         `{
-        cpu: metricSeries(name: "process.cpu.utilization", ${args}) { points { tsNanos value } }
-        memory: metricSeries(name: "process.memory.usage", ${args}) { points { tsNanos value } }
-        tasks: metricSeries(name: "tokio.runtime.alive_tasks", ${args}) { points { tsNanos value } }
+        cpu: metricSeries(name: "${CPU_METRICS[0]}", ${args}) { points { tsNanos value } }
+        memory: metricSeries(name: "${MEMORY_METRICS[0]}", ${args}) { points { tsNanos value } }
+        tasks: metricSeries(name: "${TOKIO_RUNTIME_ALIVE_TASKS}", ${args}) { points { tsNanos value } }
       }`,
         { signal: controller.signal }
       )

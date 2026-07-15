@@ -97,6 +97,13 @@ reviewable generated source and reproducible offline builds.
   through `parallax_proto::semconv`. Positive and both negative fixtures pass,
   strict xtask clippy is clean, and the real cross-repository deterministic
   check passes at the pushed tree.
+- 2026-07-15: closed additional production-consumer ownership gaps found by a
+  literal audit. The registry now owns the CLI-emitted `parallax.lab` overlay;
+  CLI forwarding, storage sensitivity rules, SQL run navigation, GraphQL trace
+  parsing, service exemplars, and runtime metric queries consume generated
+  Rust/TypeScript constants without changing wire values. Cross-repository
+  regeneration is deterministic; 23 affected Rust tests, strict clippy,
+  TypeScript checking, formatting, and 15 focused UI tests pass locally.
 
 ## Scope
 

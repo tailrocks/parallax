@@ -23,6 +23,7 @@ public final class Semconv {
     public static final String EXCEPTION_ESCAPED = "exception.escaped";
     public static final String ERROR_TYPE = "error.type";
     public static final String PARALLAX_RUN_ID = "parallax.run.id";
+    public static final String PARALLAX_LAB = "parallax.lab";
     public static final String PARALLAX_SOURCE = "parallax.source";
     public static final String JACKIN_OPERATION = "jackin.operation";
     public static final String[] REQUEST_DURATION_METRICS = {"http.server.request.duration", "rpc.server.duration", };

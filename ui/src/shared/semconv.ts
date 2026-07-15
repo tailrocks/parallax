@@ -20,6 +20,7 @@ export const EXCEPTION_STACKTRACE = "exception.stacktrace" as const
 export const EXCEPTION_ESCAPED = "exception.escaped" as const
 export const ERROR_TYPE = "error.type" as const
 export const PARALLAX_RUN_ID = "parallax.run.id" as const
+export const PARALLAX_LAB = "parallax.lab" as const
 export const PARALLAX_SOURCE = "parallax.source" as const
 export const JACKIN_OPERATION = "jackin.operation" as const
 export const REQUEST_DURATION_METRICS = [

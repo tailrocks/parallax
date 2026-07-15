@@ -1,6 +1,7 @@
 //! OTLP forwarding resolution, injected environment, and display time helpers.
 
 use crate::client::Client;
+use parallax_semconv as semconv;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Rotel target for `--otlp-forward rotel` and `PARALLAX_OTLP_FORWARD=rotel`.
@@ -110,14 +111,16 @@ pub(crate) async fn parallax_endpoint_from_server(client: &Client) -> anyhow::Re
 
 /// Child resource attributes: run ID plus comparison labels when forwarding.
 pub(crate) fn forward_resource_attrs(run_id: &str, compare: bool) -> String {
-    let mut attrs = format!("parallax.run.id={run_id}");
+    let mut attrs = format!("{}={run_id}", semconv::PARALLAX_RUN_ID);
     if compare {
         let env = std::env::var("PARALLAX_ENV")
             .ok()
             .filter(|v| !v.is_empty())
             .unwrap_or_else(|| "lab".to_string());
         attrs.push_str(&format!(
-            ",parallax.lab=1,deployment.environment.name={env}"
+            ",{}=1,{}={env}",
+            semconv::PARALLAX_LAB,
+            semconv::DEPLOYMENT_ENVIRONMENT_NAME
         ));
     }
     attrs

@@ -156,7 +156,7 @@ export function buildGraphqlOperations(
         Boolean(
           stringAttr(
             attrBySpanId.get(span.spanId) ?? {},
-            "graphql.operation.type"
+            GRAPHQL_OPERATION_TYPE
           )
         )
       )
@@ -169,14 +169,14 @@ export function buildGraphqlOperations(
 
   for (const span of spans) {
     const attributes = attrBySpanId.get(span.spanId) ?? {}
-    const fieldName = stringAttr(attributes, "graphql.field.name")
+    const fieldName = stringAttr(attributes, GRAPHQL_FIELD_NAME)
     if (!fieldName) continue
     const operationSpanId = nearestOperationSpanId(span, byId, operationIds)
     if (!operationSpanId) continue
     const entry: FieldEntry = {
       span,
       fieldName,
-      pathAttr: stringAttr(attributes, "graphql.field.path"),
+      pathAttr: stringAttr(attributes, GRAPHQL_FIELD_PATH),
       operationSpanId,
       path: "",
       parentPath: null,
@@ -272,9 +272,9 @@ export function buildGraphqlOperations(
       return {
         operationSpanId,
         operationType:
-          stringAttr(attributes, "graphql.operation.type") ?? "graphql",
-        operationName: stringAttr(attributes, "graphql.operation.name"),
-        document: stringAttr(attributes, "graphql.document"),
+          stringAttr(attributes, GRAPHQL_OPERATION_TYPE) ?? "graphql",
+        operationName: stringAttr(attributes, GRAPHQL_OPERATION_NAME),
+        document: stringAttr(attributes, GRAPHQL_DOCUMENT),
         durationNs: durationNs(operationSpan),
         fieldErrors: fields.filter((field) => field.hasError).length,
         roots: roots.sort(compareNodes).map(finalizeNode),
@@ -291,3 +291,10 @@ export function buildGraphqlOperations(
       return a.operationSpanId.localeCompare(b.operationSpanId)
     })
 }
+import {
+  GRAPHQL_DOCUMENT,
+  GRAPHQL_FIELD_NAME,
+  GRAPHQL_FIELD_PATH,
+  GRAPHQL_OPERATION_NAME,
+  GRAPHQL_OPERATION_TYPE,
+} from "@/shared/semconv"
