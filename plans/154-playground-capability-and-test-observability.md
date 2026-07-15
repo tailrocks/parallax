@@ -553,6 +553,17 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   Follow-up `fe5338a` namespaces the handoff directory by run identity so
   concurrent observable sessions cannot overwrite one another; nine Vitest
   cases and the production build/typecheck pass.
+- 2026-07-15: completed the missing Parallax-side run-session producer contract
+  in root commit `3c95d71` and companion consumer wiring in `2ab64ba`.
+  `parallax run start` now exports a real `parallax.run.session` parent for the
+  wrapped process lifetime and injects its W3C `TRACEPARENT`, the plain run ID,
+  and the server-reported OTLP/HTTP traces endpoint. The GraphQL API exposes
+  both dynamically bound receiver ports; compare-mode browser export uses
+  Rotel's paired HTTP receiver rather than bypassing fan-out. The observable
+  wrapper enables Rust's opt-in in-process bridge and maps the HTTP endpoint
+  into the Playwright reporter. Focused CLI/API/server tests, strict clippy,
+  shell syntax, and missing-carrier fail-closed behavior pass locally; the
+  collector-backed multi-backend inspection remains the final acceptance gate.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
