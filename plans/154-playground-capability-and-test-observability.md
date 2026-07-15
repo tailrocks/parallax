@@ -354,7 +354,9 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   non-Docker checker syntax-validates every shell driver and proves all 45
   catalog IDs map to present executable drivers (with the declared Bun
   TypeScript exception); the runbook records the command. `7ebe16b` removes
-  GNU-only shell utility flags so the same gate runs on macOS and Linux.
+  GNU-only shell utility flags, and `c66ca92` removes Bash 4-only arrays. The
+  gate now runs under macOS Bash 3 and Linux Bash while comparing exact
+  ID-to-driver mappings.
 - `ae0079d` repairs the second scenario catalog after the gate exposed ten
   implemented IDs missing from `scenarios/README.md`. The portable checker now
   proves README, printed catalog, and dispatcher contain the same 45 IDs before
