@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { cleanup, render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import {
   Outlet,
   RouterProvider,
@@ -151,6 +152,7 @@ describe("SQL route", () => {
 
 describe("SnippetsMenu", () => {
   it("dispatches select, save, and delete actions", async () => {
+    const user = userEvent.setup()
     const snippet = {
       id: "snippet-1",
       name: "Errors",
@@ -170,16 +172,16 @@ describe("SnippetsMenu", () => {
       />
     )
 
-    fireEvent.click(await screen.findByText("Snippets"))
-    fireEvent.click((await screen.findAllByText("Errors"))[0]!)
+    await user.click(await screen.findByText("Snippets"))
+    await user.click((await screen.findAllByText("Errors"))[0]!)
     expect(onSelect).toHaveBeenCalledWith(snippet)
 
-    fireEvent.click(await screen.findByText("Snippets"))
-    fireEvent.click(await screen.findByText("Save current snippet"))
+    await user.click(await screen.findByText("Snippets"))
+    await user.click(await screen.findByText("Save current snippet"))
     expect(onSave).toHaveBeenCalled()
 
-    fireEvent.click(await screen.findByText("Snippets"))
-    fireEvent.click((await screen.findAllByText("Errors")).at(-1)!)
+    await user.click(await screen.findByText("Snippets"))
+    await user.click((await screen.findAllByText("Errors")).at(-1)!)
     expect(onDelete).toHaveBeenCalledWith("snippet-1")
   })
 })

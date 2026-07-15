@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { cleanup, render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import {
   Outlet,
   RouterProvider,
@@ -86,6 +87,7 @@ describe("shell primitives", () => {
   })
 
   it("keeps the styled error fallback inside the shell", async () => {
+    const user = userEvent.setup()
     renderWithRouter(
       <ParallaxShell>
         <RouteErrorPanel error={new Error("offline")} reset={() => {}} />
@@ -93,7 +95,7 @@ describe("shell primitives", () => {
     )
 
     expect(await screen.findByLabelText("Parallax home")).toBeTruthy()
-    fireEvent.click(screen.getByRole("button", { name: /search/i }))
+    await user.click(screen.getByRole("button", { name: /search/i }))
     expect(await screen.findByPlaceholderText(/search pages/i)).toBeTruthy()
     expect(screen.getByText("Parallax API did not answer")).toBeTruthy()
     expect(screen.getByText("offline")).toBeTruthy()
@@ -115,6 +117,7 @@ describe("shell primitives", () => {
   })
 
   it("keeps the sidebar shortcut independent from the command palette shortcut", async () => {
+    const user = userEvent.setup()
     const { container } = renderWithRouter(
       <ParallaxShell>
         <div>Dashboard content</div>
@@ -126,10 +129,10 @@ describe("shell primitives", () => {
     expect(sidebar).toBeTruthy()
     expect(sidebar.getAttribute("data-state")).toBe("expanded")
 
-    fireEvent.keyDown(window, { key: "b", metaKey: true })
+    await user.keyboard("{Meta>}b{/Meta}")
     expect(sidebar.getAttribute("data-state")).toBe("collapsed")
 
-    fireEvent.keyDown(window, { key: "k", metaKey: true })
+    await user.keyboard("{Meta>}k{/Meta}")
     expect(
       (await screen.findAllByPlaceholderText(/search pages/i)).length
     ).toBeGreaterThan(0)

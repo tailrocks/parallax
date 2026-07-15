@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "ratchets": {
-    "fire_event_calls": 44
+    "fire_event_calls": 7
   },
   "entries": [
     {
@@ -376,6 +376,7 @@
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented",
+      "fire_event_reason": "Raw chart-brush pointer phase and coordinate primitives are not modeled by user-event",
       "legacy_handoff": {
         "current_path": "ui/src/components/console/__tests__/use-chart-brush.test.tsx",
         "destination_owner": "shared/charts",

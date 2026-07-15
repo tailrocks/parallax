@@ -37,6 +37,7 @@ struct Entry {
     test_ids: Vec<String>,
     required_environment: String,
     status: String,
+    fire_event_reason: Option<String>,
     legacy_handoff: Option<LegacyHandoff>,
 }
 
@@ -192,6 +193,7 @@ fn validate_entry(
             ),
         ));
     }
+    validate_fire_event_reason(root, entry, findings);
     let target = represented.entry(entry.test_file.clone()).or_default();
     for test_id in &entry.test_ids {
         if !target.insert(test_id.clone()) {
@@ -202,6 +204,26 @@ fn validate_entry(
         }
     }
     Ok(())
+}
+
+fn validate_fire_event_reason(root: &Path, entry: &Entry, findings: &mut Vec<Finding>) {
+    let Ok(source) = fs::read_to_string(root.join(&entry.test_file)) else {
+        return;
+    };
+    let fire_events = source.match_indices("fireEvent.").count();
+    let has_reason = entry
+        .fire_event_reason
+        .as_deref()
+        .is_some_and(|reason| !reason.trim().is_empty());
+    if (fire_events > 0) != has_reason {
+        findings.push(finding(
+            "ui.tests.fire-event-reason",
+            &format!(
+                "entry `{}` must own an exact reason iff its file uses fireEvent",
+                entry.id
+            ),
+        ));
+    }
 }
 
 fn check_test_source(root: &Path, path: &str, findings: &mut Vec<Finding>) -> Result<usize> {

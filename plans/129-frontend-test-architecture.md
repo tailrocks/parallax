@@ -141,6 +141,16 @@ component, route, and future browser evidence.
   retaining low-level mechanics for later classification. All 45 files / 182
   tests pass under forced Bun; TypeScript, both Oxlint lanes, Oxfmt, matrix
   policy/tests, strict xtask Clippy, and diff hygiene pass locally.
+- 2026-07-15: completed the semantic-interaction migration for ordinary UI
+  behavior. Shell, command palette, waterfall, logs, services, and SQL tests
+  now use one `userEvent.setup()` session per test for clicks, typing, keyboard
+  shortcuts, focus movement, and context menus. The exact `fireEvent` ratchet
+  fell from 44 to 7; every remaining call belongs to the chart-brush harness's
+  raw pointer phase/coordinate simulation, and the matrix validator now
+  requires that low-level exception reason on exactly the owning entry. All 45
+  files / 182 tests pass under forced Bun; TypeScript, both Oxlint lanes,
+  Oxfmt, matrix policy/tests, strict xtask Clippy, and diff hygiene pass
+  locally.
 
 ## Fixed Test Topology
 

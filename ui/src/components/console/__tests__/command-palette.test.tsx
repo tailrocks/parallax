@@ -1,13 +1,7 @@
 /* @vitest-environment jsdom */
 
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react"
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import {
   Outlet,
   RouterProvider,
@@ -137,62 +131,63 @@ function renderWithRouter(component: React.ReactNode, initialPath = "/") {
 
 describe("CommandPalette", () => {
   it("opens with Cmd/Ctrl+K and closes with Escape", async () => {
+    const user = userEvent.setup()
     mockPaletteData()
     renderWithRouter(<PaletteHarness />)
 
     await act(async () => {})
-    fireEvent.keyDown(window, { key: "k", metaKey: true })
+    await user.keyboard("{Meta>}k{/Meta}")
     const input = await screen.findByPlaceholderText(/search pages/i)
     expect(input).toBeTruthy()
 
-    fireEvent.keyDown(input, { key: "Escape" })
+    await user.keyboard("{Escape}")
     await waitFor(() =>
       expect(screen.queryByPlaceholderText(/search pages/i)).toBeNull()
     )
   })
 
   it("filters pages and navigates on selection", async () => {
+    const user = userEvent.setup()
     mockPaletteData()
     const { router } = renderWithRouter(<PaletteHarness />)
 
     await act(async () => {})
-    fireEvent.keyDown(window, { key: "k", ctrlKey: true })
+    await user.keyboard("{Control>}k{/Control}")
     const input = await screen.findByPlaceholderText(/search pages/i)
-    fireEvent.change(input, { target: { value: "logs" } })
-    fireEvent.click(await screen.findByText("Logs"))
+    await user.type(input, "logs")
+    await user.click(await screen.findByText("Logs"))
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/logs"))
   })
 
   it("shows id jump entries for trace and ambiguous 16-hex ids", async () => {
+    const user = userEvent.setup()
     mockPaletteData()
     renderWithRouter(<PaletteHarness />)
 
     await act(async () => {})
-    fireEvent.keyDown(window, { key: "k", metaKey: true })
+    await user.keyboard("{Meta>}k{/Meta}")
     const input = await screen.findByPlaceholderText(/search pages/i)
-    fireEvent.change(input, {
-      target: { value: "53e97e432cbb9280841b90ca56c4e4c4" },
-    })
+    await user.type(input, "53e97e432cbb9280841b90ca56c4e4c4")
     expect(await screen.findByText(/Open trace 53e97e/)).toBeTruthy()
 
-    fireEvent.change(input, { target: { value: "a7a77b573b7261a1" } })
+    await user.clear(input)
+    await user.type(input, "a7a77b573b7261a1")
     expect(await screen.findByText(/Open run a7a77b/)).toBeTruthy()
     expect(screen.getByText(/Open issue a7a77b/)).toBeTruthy()
     expect(screen.getByText(/Search traces for span a7a77b/)).toBeTruthy()
   })
 
   it("navigates from logs to a pasted trace id", async () => {
+    const user = userEvent.setup()
     mockPaletteData()
     const { router } = renderWithRouter(<PaletteHarness />, "/logs")
 
     await act(async () => {})
-    fireEvent.keyDown(window, { key: "k", metaKey: true })
+    await user.keyboard("{Meta>}k{/Meta}")
     const input = await screen.findByPlaceholderText(/search pages/i)
-    fireEvent.change(input, {
-      target: { value: "53e97e432cbb9280841b90ca56c4e4c4" },
-    })
-    fireEvent.click(await screen.findByText(/Open trace 53e97e/))
+    await user.type(input, "53e97e432cbb9280841b90ca56c4e4c4")
+    await user.click(await screen.findByText(/Open trace 53e97e/))
 
     await waitFor(() =>
       expect(router.state.location.pathname).toBe(

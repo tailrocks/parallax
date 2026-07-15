@@ -3,12 +3,12 @@
 import {
   act,
   cleanup,
-  fireEvent,
   render,
   screen,
   waitFor,
   within,
 } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import {
   Outlet,
   RouterProvider,
@@ -179,12 +179,13 @@ describe("logs redesign helpers", () => {
   })
 
   it("offers the event column in the menu", async () => {
+    const user = userEvent.setup()
     const onChange = vi.fn()
     render(<ColumnMenu columns={["service", "trace"]} onChange={onChange} />)
 
-    fireEvent.click(screen.getByRole("button", { name: /columns/i }))
+    await user.click(screen.getByRole("button", { name: /columns/i }))
     expect(await screen.findByText("event")).toBeTruthy()
-    fireEvent.click(screen.getByText("event"))
+    await user.click(screen.getByText("event"))
     expect(onChange).toHaveBeenCalledWith(["service", "trace", "event"])
   })
 })
@@ -233,6 +234,7 @@ describe("LogsTable", () => {
   })
 
   it("renders date-aware time for multi-day ranges and opens the sheet", async () => {
+    const user = userEvent.setup()
     renderWithRouter(
       <LogsTable
         logs={[log]}
@@ -246,7 +248,7 @@ describe("LogsTable", () => {
     expect(
       screen.getByRole("link", { name: "Trace trace-a" }).getAttribute("href")
     ).toBe("/traces/trace-a?range=7d")
-    fireEvent.click(screen.getByText("checkout failed"))
+    await user.click(screen.getByText("checkout failed"))
     expect(await screen.findByText("Log document")).toBeTruthy()
     expect(screen.getByText("event.name")).toBeTruthy()
     expect(screen.getByText("@observed")).toBeTruthy()
@@ -278,6 +280,7 @@ describe("LogsTable", () => {
   })
 
   it("opens the document sheet from keyboard row activation", async () => {
+    const user = userEvent.setup()
     const { container } = renderWithRouter(
       <LogsTable logs={[log]} range={range} columns={["service", "trace"]} />
     )
@@ -286,12 +289,13 @@ describe("LogsTable", () => {
 
     row.focus()
     expect(document.activeElement).toBe(row)
-    fireEvent.keyDown(row, { key: "Enter" })
+    await user.keyboard("{Enter}")
 
     expect(await screen.findByText("Log document")).toBeTruthy()
   })
 
   it("highlights the anchor row and exposes the context action", async () => {
+    const user = userEvent.setup()
     const onShowContext = vi.fn()
     const { container } = renderWithRouter(
       <LogsTable
@@ -306,14 +310,15 @@ describe("LogsTable", () => {
     const row = container.querySelector("tbody tr")
     expect(row?.getAttribute("data-anchor")).toBe("true")
 
-    fireEvent.click(within(container).getByText("checkout failed"))
-    fireEvent.click(await screen.findByText("Show context (±30s)"))
+    await user.click(within(container).getByText("checkout failed"))
+    await user.click(await screen.findByText("Show context (±30s)"))
     expect(onShowContext).toHaveBeenCalledWith(log)
   })
 })
 
 describe("SavedViewsMenu", () => {
   it("renders saved views and dispatches select/delete/save actions", async () => {
+    const user = userEvent.setup()
     const view = {
       id: "view-1",
       name: "Errors",
@@ -333,17 +338,17 @@ describe("SavedViewsMenu", () => {
       />
     )
 
-    fireEvent.click(await screen.findByText("Views"))
-    fireEvent.click((await screen.findAllByText("Errors"))[0]!)
+    await user.click(await screen.findByText("Views"))
+    await user.click((await screen.findAllByText("Errors"))[0]!)
     expect(onSelect).toHaveBeenCalledWith(view)
 
-    fireEvent.click(await screen.findByText("Views"))
-    fireEvent.click(await screen.findByText("Save current view"))
+    await user.click(await screen.findByText("Views"))
+    await user.click(await screen.findByText("Save current view"))
     expect(onSave).toHaveBeenCalled()
 
-    fireEvent.click(await screen.findByText("Views"))
+    await user.click(await screen.findByText("Views"))
     const deleteItems = await screen.findAllByText("Errors")
-    fireEvent.click(deleteItems.at(-1)!)
+    await user.click(deleteItems.at(-1)!)
     expect(onDelete).toHaveBeenCalledWith("view-1")
   })
 })
