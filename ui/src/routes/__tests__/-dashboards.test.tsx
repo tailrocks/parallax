@@ -26,7 +26,6 @@ import {
   parseLayout,
   serializeWidgets,
 } from "@/routes/dashboards.index"
-import { EXAMPLES, Route as SqlRoute } from "@/routes/sql"
 
 const apiMock = vi.hoisted(() => ({
   defaultGraphql: vi.fn((query: string) => {
@@ -64,14 +63,7 @@ function parseHref(href: string) {
   return { search: defaultParseSearch(url.search), url }
 }
 
-describe("final sweep", () => {
-  it("keeps SQL examples on real table names", () => {
-    const banned = /\botel_spans\b|\botel_logs\b|\botel_metrics_points\b/
-    for (const example of EXAMPLES) {
-      expect(example.sql).not.toMatch(banned)
-    }
-  })
-
+describe("dashboard contracts", () => {
   it("preserves dashboard widget unknown fields", () => {
     const widgets = parseLayout(
       '[{"metric":"process.cpu.utilization","agg":"avg","chart":"line","custom":true}]'
@@ -227,36 +219,5 @@ describe("final sweep", () => {
         to: custom.toNanos,
       })
     )
-  })
-
-  it("renders SQL keyboard hint and examples menu", async () => {
-    window.matchMedia = () =>
-      ({
-        matches: false,
-        media: "",
-        onchange: null,
-        addListener() {},
-        removeListener() {},
-        addEventListener() {},
-        removeEventListener() {},
-        dispatchEvent: () => true,
-      }) as MediaQueryList
-
-    const rootRoute = createRootRoute({ component: Outlet })
-    const component = SqlRoute.options.component!
-    const sqlRoute = createRoute({
-      getParentRoute: () => rootRoute,
-      path: "/sql",
-      component,
-    })
-    const router = createRouter({
-      routeTree: rootRoute.addChildren([sqlRoute]),
-      history: createMemoryHistory({ initialEntries: ["/sql"] }),
-    })
-
-    render(<RouterProvider router={router} />)
-    expect(await screen.findByText("⌘")).toBeTruthy()
-    expect(screen.getByText("Enter")).toBeTruthy()
-    expect(screen.getByRole("button", { name: /examples/i })).toBeTruthy()
   })
 })

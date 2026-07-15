@@ -22,7 +22,7 @@
 - **Depends on**: 094, 101, 128
 - **Category**: TypeScript / React / unit and integration testing
 - **Planned at**: `e3e7997`, revised 2026-07-12
-- **Status**: TODO
+- **Status**: IN PROGRESS
 
 ## Why This Matters
 
@@ -59,6 +59,13 @@ component, route, and future browser evidence.
 - Current route coverage omits a complete durable matrix for ecosystem,
   investigations, cross-route navigation, cache/reconnect, and all failure
   states.
+- 2026-07-15: the mandatory forced-Bun baseline passes all 41 files and 175
+  tests with no runtime diagnostic output. The first ownership slice deletes
+  the mixed `-final-sweep.test.tsx`, moves its two SQL cases into the existing
+  `-sql.test.tsx`, and moves its six dashboard cases into the sole authorized
+  `-dashboards.test.tsx` legacy file without changing assertions. The split
+  exposed and fixed SQL's order-dependent DOM leak by adding explicit cleanup.
+  Both focused files pass 11 tests; TypeScript, Oxfmt, and diff hygiene pass.
 
 ## Fixed Test Topology
 

@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import {
   Outlet,
   RouterProvider,
@@ -9,9 +9,17 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { SnippetsMenu, SqlResultBody, targetForCell } from "@/routes/sql"
+import {
+  EXAMPLES,
+  Route as SqlRoute,
+  SnippetsMenu,
+  SqlResultBody,
+  targetForCell,
+} from "@/routes/sql"
+
+afterEach(cleanup)
 
 function renderWithRouter(component: React.ReactNode) {
   const rootRoute = createRootRoute({ component: Outlet })
@@ -54,6 +62,13 @@ function renderWithRouter(component: React.ReactNode) {
 }
 
 describe("SQL result helpers", () => {
+  it("keeps SQL examples on real table names", () => {
+    const banned = /\botel_spans\b|\botel_logs\b|\botel_metrics_points\b/
+    for (const example of EXAMPLES) {
+      expect(example.sql).not.toMatch(banned)
+    }
+  })
+
   it("maps supported id columns to route targets", () => {
     expect(targetForCell("trace_id", "trace-a", {})).toEqual({
       to: "/traces/$traceId",
@@ -110,6 +125,39 @@ describe("SQL result helpers", () => {
       "/traces/trace-a",
     ])
     expect(screen.getByText("null").closest("a")).toBeNull()
+  })
+})
+
+describe("SQL route", () => {
+  it("renders SQL keyboard hint and examples menu", async () => {
+    window.matchMedia = () =>
+      ({
+        matches: false,
+        media: "",
+        onchange: null,
+        addListener() {},
+        removeListener() {},
+        addEventListener() {},
+        removeEventListener() {},
+        dispatchEvent: () => true,
+      }) as MediaQueryList
+
+    const rootRoute = createRootRoute({ component: Outlet })
+    const component = SqlRoute.options.component!
+    const sqlRoute = createRoute({
+      getParentRoute: () => rootRoute,
+      path: "/sql",
+      component,
+    })
+    const router = createRouter({
+      routeTree: rootRoute.addChildren([sqlRoute]),
+      history: createMemoryHistory({ initialEntries: ["/sql"] }),
+    })
+
+    render(<RouterProvider router={router} />)
+    expect(await screen.findByText("⌘")).toBeTruthy()
+    expect(screen.getByText("Enter")).toBeTruthy()
+    expect(screen.getByRole("button", { name: /examples/i })).toBeTruthy()
   })
 })
 
