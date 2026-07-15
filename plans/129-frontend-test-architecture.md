@@ -33,17 +33,16 @@ browser shims, reset hooks, and opt-in timer tracking. Normal interactions use
 mechanics. Test bodies are separated from production/harness code, and every
 legacy path/private import has one expiring feature-plan owner.
 
-At root commit `37be404`, Linux arm64 passes:
+At root commit `2b4fd44`, Linux arm64 passes:
 
 - `cd ui && bun run --bun test:ci` — 45 files, 188 tests, zero unexpected
   diagnostics;
 - TypeScript, native and type-aware Oxlint, and Oxfmt checks;
 - `cargo xtask policy --only ui.tests` and both policy fixtures;
 - strict all-target/all-feature xtask clippy and Rust formatting.
+- `cargo xtask ci --fast`, including the production UI build.
 
-The Plan 129-owned structural findings are zero. The repository fast aggregate
-continues into separately owned structural findings and therefore does not yet
-prove whole-program closure.
+The Plan 129-owned and repository-wide structural findings are zero.
 
 ## Durable Outputs
 
@@ -62,9 +61,7 @@ These remain after plan retirement and are consumed by Plans 100, 132-153.
    prove Bun process ancestry with no Node descendant, and exercise the
    missing-runtime/lock, implicit-install, injected-Node, and zero-selection
    negative gates.
-3. Run the owned commands plus `cargo xtask ci --fast` after the remaining
-   structural owners close. Preserve exact-head evidence, then delete this plan
-   and its index row.
+3. Preserve exact-head evidence, then delete this plan and its index row.
 
 ## STOP Conditions
 
