@@ -1,14 +1,13 @@
-use std::{collections::BTreeMap, fs, path::Path, process::Command};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fs,
+    path::Path,
+    process::Command,
+};
 
 use anyhow::{Context, Result, ensure};
 use sha2::{Digest, Sha256};
 
-const EVIDENCE_PATHS: [&str; 4] = [
-    "docs/research/validation/2026-07-15-active-plans-closure-a.json",
-    "docs/research/validation/2026-07-15-active-plans-closure-a.md",
-    "docs/research/validation/2026-07-15-active-plans-closure-b.json",
-    "docs/research/validation/2026-07-15-active-plans-closure-b.md",
-];
 const CLOSURE_PATHS: [&str; 8] = [
     "AGENTS.md",
     "PROJECT_STRUCTURE.md",
@@ -58,9 +57,11 @@ fn verify_repository(root: &Path) -> Result<()> {
     let b = trailer(&message, "Closure-Audit-B")?;
     validate_commit_trailers(&message)?;
     validate_attestations(&a, &b, &c0, &parent, &tree)?;
-    validate_paths(&git_paths(root, &c0, &parent)?, &EVIDENCE_PATHS, true)?;
+    let evidence_paths = git_paths(root, &c0, &parent)?;
+    let evidence_date = validate_evidence_paths(&evidence_paths)?;
     validate_paths(&git_paths(root, &parent, &head)?, &CLOSURE_PATHS, false)?;
-    validate_evidence(root, &c0, &a, &b)?;
+    validate_evidence(root, &evidence_date, &c0, &a, &b)?;
+    validate_program_files_retired(root)?;
     validate_remaining_plans(root)?;
     Ok(())
 }
@@ -186,10 +187,51 @@ fn validate_paths(actual: &[String], allowed: &[&str], exact: bool) -> Result<()
     Ok(())
 }
 
-fn validate_evidence(root: &Path, c0: &str, a: &Attestation, b: &Attestation) -> Result<()> {
+fn validate_evidence_paths(actual: &[String]) -> Result<String> {
+    ensure!(
+        actual.len() == 4,
+        "evidence commit must change exactly four paths"
+    );
+    let prefix = "docs/research/validation/";
+    let suffixes = [
+        "-active-plans-closure-a.json",
+        "-active-plans-closure-a.md",
+        "-active-plans-closure-b.json",
+        "-active-plans-closure-b.md",
+    ];
+    let first = actual[0]
+        .strip_prefix(prefix)
+        .context("closure evidence is outside the validation directory")?;
+    let date = first
+        .strip_suffix(suffixes[0])
+        .context("closure evidence filename is invalid")?;
+    ensure!(valid_date(date), "closure evidence date is not YYYY-MM-DD");
+    let expected = suffixes
+        .iter()
+        .map(|suffix| format!("{prefix}{date}{suffix}"))
+        .collect::<Vec<_>>();
+    ensure!(actual == expected, "evidence diff paths differ: {actual:?}");
+    Ok(date.to_owned())
+}
+
+fn valid_date(value: &str) -> bool {
+    value.len() == 10
+        && value.bytes().enumerate().all(|(index, byte)| match index {
+            4 | 7 => byte == b'-',
+            _ => byte.is_ascii_digit(),
+        })
+}
+
+fn validate_evidence(
+    root: &Path,
+    date: &str,
+    c0: &str,
+    a: &Attestation,
+    b: &Attestation,
+) -> Result<()> {
     for (suffix, attestation) in [("a", a), ("b", b)] {
         let path = root.join(format!(
-            "docs/research/validation/2026-07-15-active-plans-closure-{suffix}.json"
+            "docs/research/validation/{date}-active-plans-closure-{suffix}.json"
         ));
         let source = fs::read(&path)?;
         let digest = format!("{:x}", Sha256::digest(&source));
@@ -215,7 +257,46 @@ fn validate_evidence(root: &Path, c0: &str, a: &Attestation, b: &Attestation) ->
     Ok(())
 }
 
+fn validate_program_files_retired(root: &Path) -> Result<()> {
+    for path in [
+        "plans/107-program-closure-audits.md",
+        "plans/ENGINEERING-STANDARDS.md",
+        "plans/GOAL.md",
+        "plans/IMPLEMENTATION.md",
+        "plans/OXC-IMPLEMENTATION.md",
+    ] {
+        ensure!(
+            !root.join(path).exists(),
+            "program file `{path}` still exists"
+        );
+    }
+    for (path, forbidden) in [
+        (
+            "AGENTS.md",
+            ["plans/GOAL.md", "codex/active-plan-closure-7f3c"],
+        ),
+        (
+            "PROJECT_STRUCTURE.md",
+            ["plans/GOAL.md", "codex/active-plan-closure-7f3c"],
+        ),
+        (
+            "plans/README.md",
+            ["GOAL.md", "107-program-closure-audits.md"],
+        ),
+    ] {
+        let source = fs::read_to_string(root.join(path))?;
+        for marker in forbidden {
+            ensure!(
+                !source.contains(marker),
+                "retired program marker `{marker}` remains in `{path}`"
+            );
+        }
+    }
+    Ok(())
+}
+
 fn validate_remaining_plans(root: &Path) -> Result<()> {
+    let mut files = BTreeSet::new();
     for entry in fs::read_dir(root.join("plans"))? {
         let path = entry?.path();
         let Some(name) = path.file_name().and_then(|name| name.to_str()) else {
@@ -232,7 +313,29 @@ fn validate_remaining_plans(root: &Path) -> Result<()> {
             source.contains("- **Status**: BLOCKED"),
             "remaining plan `{name}` is not BLOCKED"
         );
+        files.insert(name.to_owned());
     }
+    let index = fs::read_to_string(root.join("plans/README.md"))?;
+    let mut rows = BTreeSet::new();
+    for line in index.lines().filter(|line| line.starts_with("| [")) {
+        let Some((_, target)) = line.split_once("](") else {
+            continue;
+        };
+        let Some((target, _)) = target.split_once(')') else {
+            continue;
+        };
+        if target.len() >= 4
+            && target[..3].chars().all(|char| char.is_ascii_digit())
+            && target.ends_with(".md")
+        {
+            ensure!(
+                line.contains("| BLOCKED"),
+                "remaining plan index row `{target}` is not BLOCKED"
+            );
+            rows.insert(target.to_owned());
+        }
+    }
+    ensure!(files == rows, "remaining plan file/index bijection differs");
     Ok(())
 }
 

@@ -24,11 +24,14 @@
   lane executes passing/tampered fixtures; after Plan 107 is removed it
   automatically verifies the real commit. The verifier binds two distinct
   auditor trailers to C0, C1, and the pushed tree, checks DCO and the single
-  Codex co-author trailer, requires C1's exact four evidence paths, restricts
-  the closure diff to the mechanical allowlist, hashes and validates both JSON
-  packets, and rejects any remaining numbered plan not marked BLOCKED. All 69
-  xtask tests, strict xtask Clippy, Actionlint, workflow-policy fixtures, Rust
-  formatting, structural policy, and the explicit dry-run command pass locally.
+  Codex co-author trailer, requires C1's exact four same-date evidence paths,
+  restricts the closure diff to the mechanical allowlist, hashes and validates
+  both JSON packets, proves program-file/authorization retirement and the
+  remaining plan/index BLOCKED bijection, and accepts future closure dates.
+  The final lane runs `cargo xtask ci --full` before structural verification
+  with every required pinned tool. All 71 xtask tests, strict xtask Clippy,
+  Actionlint, workflow/classifier fixtures, Rust formatting, structural policy,
+  and the explicit dry-run command pass locally.
 - 2026-07-15: the fresh direct/dependency blocker matrix is preserved in
   [`docs/research/validation/2026-07-15-active-plan-blocker-audit.md`](../docs/research/validation/2026-07-15-active-plan-blocker-audit.md).
   No other product plan is ready, so Criteria for Freezing C0 are not met and
