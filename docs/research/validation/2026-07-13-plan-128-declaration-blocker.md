@@ -126,3 +126,18 @@ and an incompatible TanStack devtools line). No declaration patch, ambient
 module, unused adapter dependency, assertion, exclusion, or compiler weakening
 was introduced. Plan 128's upstream-compatible-release STOP condition remains
 exactly reproduced.
+
+## Fresh reproduction (2026-07-15, branch head `6ff52fe`)
+
+The mandatory probe was repeated after Plan 119 closed. `bun outdated` still
+offers no compatible update for any declaration owner; its only candidates are
+TanStack devtools 0.8.1, jsdom 29.1.1, Oxfmt 0.59.0, and Oxlint 1.74.0.
+The full TypeScript 7 check reproduces the same Redux Toolkit, Tabler Icons,
+TanStack Router Core, and unplugin/webpack optional-adapter diagnostics.
+
+Current TypeScript compiler documentation was also rechecked through Context7:
+`skipLibCheck` bypasses type checking for every declaration file and can hide
+dependency conflicts, so retaining it cannot satisfy this plan's full-graph
+criterion. No source, declaration, lockfile, or compiler configuration was
+changed by this probe. The upstream-compatible-release STOP condition remains
+active.
