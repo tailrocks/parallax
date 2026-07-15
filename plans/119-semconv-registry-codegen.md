@@ -117,6 +117,18 @@ reviewable generated source and reproducible offline builds.
   attribute reference to fail under pinned Weaver 0.24.2 after the real
   registry passes. The cross-repository check, four focused xtask tests,
   formatting, and strict clippy pass locally.
+- 2026-07-15: closed the W4 test-observability ownership gap exposed by the
+  acceptance verifier. Root commit `349dd3a` adds generated cross-language
+  constants for VCS revision, parameters, attempt identity/ordinal/total,
+  configuration dimensions, failure event/message/stack/kind, and the fixed
+  pass/fail and assertion/harness taxonomy values. Companion commit `203fdda`
+  migrates the Rust JUnit converter/resource builder/GraphQL verifier, Java
+  JUnit extension and acceptance fixture, and Playwright reporter to those
+  generated constants. Raw spellings remain only in checked-in generated
+  outputs, Gradle's pre-compilation resource-attribute configuration, and
+  deliberate wire fixtures. Cross-repository deterministic checking, generated
+  OTLP round-trip tests, 34 playground Rust tests, strict clippy, nine web
+  tests plus production build/typecheck, and the payment Gradle suite pass.
 
 ## Scope
 

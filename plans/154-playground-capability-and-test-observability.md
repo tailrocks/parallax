@@ -577,6 +577,12 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   failures. All 15 locked CLI tests, strict all-target CLI clippy, shell syntax,
   and invalid-argument behavior pass locally. Executing the verifier against
   all five live fan-out backends remains the collector-backed acceptance gate.
+- 2026-07-15: root `349dd3a` and companion `203fdda` move the verifier's full
+  W4 identity/retry/configuration/failure payload into Plan 119's generated
+  cross-language registry. The Rust converter and verifier, Java extension,
+  and Playwright reporter no longer maintain local runtime spellings for those
+  attributes or taxonomy values; generation and executable wire fixtures now
+  keep the producer and acceptance consumer synchronized.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
