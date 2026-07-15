@@ -47,6 +47,12 @@
   `sha256:9d744cf76159352b3ff498e7d60558b66db816b7231f706131c025980da9c80a`.
   This proves the action's producer flags and verifier expectations agree on
   real archive bytes without publishing an artifact.
+- 2026-07-15: expanded the local fail-closed archive verifier fixtures beyond
+  checksum/SBOM/object corruption. Independently generated archives with a
+  nested binary path, non-executable mode, wrong source epoch, or an extra
+  entry now each fail `read_binary`; no fixture relies on the production
+  packager to manufacture malformed input. All 10 release-focused xtask tests
+  pass and strict all-target xtask clippy is clean on Linux arm64.
 
 ## Why
 

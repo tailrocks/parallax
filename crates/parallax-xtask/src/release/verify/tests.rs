@@ -122,6 +122,66 @@ fn checksum_and_sbom_fail_closed() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[test]
+fn archive_layout_tampering_fails_closed() -> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let target = host_target()?;
+    let cases = [
+        ("wrong-path", "bin/parallax", 0o755, 1_700_000_000, false),
+        ("wrong-mode", "parallax", 0o644, 1_700_000_000, false),
+        ("wrong-owner-time", "parallax", 0o755, 1_700_000_001, false),
+        ("extra-entry", "parallax", 0o755, 1_700_000_000, true),
+    ];
+    for (name, path, mode, mtime, extra) in cases {
+        let archive_path = temp.path().join(format!("{name}.tar.gz"));
+        write_archive_fixture(&archive_path, path, mode, mtime, extra)?;
+        let spec = spec(archive_path, target, env!("CARGO_PKG_VERSION"));
+        if read_binary(&spec).is_ok() {
+            return Err(format!("tampered archive `{name}` unexpectedly passed").into());
+        }
+    }
+    Ok(())
+}
+
+fn write_archive_fixture(
+    path: &Path,
+    entry_path: &str,
+    mode: u32,
+    mtime: u64,
+    extra: bool,
+) -> Result<()> {
+    use flate2::Compression;
+    use flate2::write::GzEncoder;
+    use tar::{Builder, EntryType, Header};
+
+    let encoder = GzEncoder::new(std::fs::File::create(path)?, Compression::default());
+    let mut builder = Builder::new(encoder);
+    {
+        let mut append = |name: &str| -> Result<()> {
+            let payload = b"fixture";
+            let mut header = Header::new_gnu();
+            header.set_path(name)?;
+            header.set_mode(mode);
+            header.set_uid(0);
+            header.set_gid(0);
+            header.set_mtime(mtime);
+            header.set_username("root")?;
+            header.set_groupname("root")?;
+            header.set_entry_type(EntryType::Regular);
+            header.set_size(payload.len() as u64);
+            header.set_cksum();
+            builder.append(&header, payload.as_slice())?;
+            Ok(())
+        };
+        append(entry_path)?;
+        if extra {
+            append("unexpected")?;
+        }
+    }
+    builder.finish()?;
+    Ok(())
+}
+
 fn write_sbom(path: &Path, name: &str, digest: &str) -> Result<()> {
     std::fs::write(
         path,
