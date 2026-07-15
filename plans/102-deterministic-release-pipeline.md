@@ -76,6 +76,12 @@
   metadata, and a host-specific OS byte now fail even if an alternate producer
   recomputes sidecars. All 11 release-focused tests and strict all-target xtask
   clippy pass locally.
+- 2026-07-15: made cosign and GitHub provenance bindings directly testable
+  without contacting either service. Pure argument builders now have an exact
+  regression fixture covering the finalized archive/bundle, certificate
+  identity and OIDC issuer, repository/workflow, source commit/ref, and denial
+  of self-hosted-runner attestations. All 12 release-focused tests and strict
+  all-target xtask clippy pass locally.
 
 ## Why
 

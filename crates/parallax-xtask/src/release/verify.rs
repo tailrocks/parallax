@@ -1,4 +1,4 @@
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -38,39 +38,41 @@ pub(super) fn local(spec: &VerifySpec) -> Result<()> {
 }
 
 pub(super) fn signature(spec: &VerifySpec) -> Result<()> {
-    run(
-        "cosign",
-        &[
-            OsStr::new("verify-blob"),
-            OsStr::new("--bundle"),
-            bundle_path(&spec.archive).as_os_str(),
-            OsStr::new("--certificate-identity"),
-            OsStr::new(&spec.signer_identity),
-            OsStr::new("--certificate-oidc-issuer"),
-            OsStr::new(OIDC_ISSUER),
-            spec.archive.as_os_str(),
-        ],
-    )
+    run("cosign", &signature_arguments(spec))
 }
 
 pub(super) fn provenance(spec: &VerifySpec) -> Result<()> {
-    run(
-        "gh",
-        &[
-            OsStr::new("attestation"),
-            OsStr::new("verify"),
-            spec.archive.as_os_str(),
-            OsStr::new("--repo"),
-            OsStr::new(&spec.repository),
-            OsStr::new("--signer-workflow"),
-            OsStr::new(&spec.signer_workflow),
-            OsStr::new("--source-digest"),
-            OsStr::new(&spec.source_commit),
-            OsStr::new("--source-ref"),
-            OsStr::new(&spec.source_ref),
-            OsStr::new("--deny-self-hosted-runners"),
-        ],
-    )
+    run("gh", &provenance_arguments(spec))
+}
+
+fn signature_arguments(spec: &VerifySpec) -> Vec<OsString> {
+    vec![
+        "verify-blob".into(),
+        "--bundle".into(),
+        bundle_path(&spec.archive).into_os_string(),
+        "--certificate-identity".into(),
+        spec.signer_identity.clone().into(),
+        "--certificate-oidc-issuer".into(),
+        OIDC_ISSUER.into(),
+        spec.archive.as_os_str().to_owned(),
+    ]
+}
+
+fn provenance_arguments(spec: &VerifySpec) -> Vec<OsString> {
+    vec![
+        "attestation".into(),
+        "verify".into(),
+        spec.archive.as_os_str().to_owned(),
+        "--repo".into(),
+        spec.repository.clone().into(),
+        "--signer-workflow".into(),
+        spec.signer_workflow.clone().into(),
+        "--source-digest".into(),
+        spec.source_commit.clone().into(),
+        "--source-ref".into(),
+        spec.source_ref.clone().into(),
+        "--deny-self-hosted-runners".into(),
+    ]
 }
 
 fn verify_checksum(path: &Path) -> Result<String> {
@@ -230,7 +232,7 @@ fn verify_symbolication(binary: &[u8], object: &object::File<'_>) -> Result<()> 
     bail!("release line tables cannot resolve any text symbol to a source line")
 }
 
-fn run(program: &str, arguments: &[&OsStr]) -> Result<()> {
+fn run(program: &str, arguments: &[OsString]) -> Result<()> {
     let status = Command::new(program)
         .args(arguments)
         .status()

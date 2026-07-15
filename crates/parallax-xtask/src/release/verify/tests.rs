@@ -1,6 +1,50 @@
 use super::*;
 
 #[test]
+fn external_verifiers_bind_every_release_identity() -> Result<(), Box<dyn std::error::Error>> {
+    let archive = PathBuf::from("release/parallax-aarch64-unknown-linux-gnu.tar.gz");
+    let spec = spec(
+        archive.clone(),
+        "aarch64-unknown-linux-gnu",
+        env!("CARGO_PKG_VERSION"),
+    );
+    let signature = signature_arguments(&spec);
+    let provenance = provenance_arguments(&spec);
+
+    assert_eq!(
+        signature,
+        [
+            OsString::from("verify-blob"),
+            OsString::from("--bundle"),
+            OsString::from(format!("{}.bundle", archive.display())),
+            OsString::from("--certificate-identity"),
+            OsString::from(&spec.signer_identity),
+            OsString::from("--certificate-oidc-issuer"),
+            OsString::from(OIDC_ISSUER),
+            archive.as_os_str().to_owned(),
+        ]
+    );
+    assert_eq!(
+        provenance,
+        [
+            OsString::from("attestation"),
+            OsString::from("verify"),
+            archive.as_os_str().to_owned(),
+            OsString::from("--repo"),
+            OsString::from(&spec.repository),
+            OsString::from("--signer-workflow"),
+            OsString::from(&spec.signer_workflow),
+            OsString::from("--source-digest"),
+            OsString::from(&spec.source_commit),
+            OsString::from("--source-ref"),
+            OsString::from(&spec.source_ref),
+            OsString::from("--deny-self-hosted-runners"),
+        ]
+    );
+    Ok(())
+}
+
+#[test]
 fn recognizes_native_and_compressed_line_tables() -> Result<(), String> {
     let actual = [
         ".debug_line",
