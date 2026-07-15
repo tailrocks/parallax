@@ -550,6 +550,9 @@ are dead claims. A15/A16/A17 are impossible on the Java tier as deployed.
   into the browser. Browser and backend spans are therefore descendants of the
   test span rather than siblings beneath an unexported synthetic parent. Eight
   Vitest cases, production build/typecheck, and seven-test discovery pass.
+  Follow-up `fe5338a` namespaces the handoff directory by run identity so
+  concurrent observable sessions cannot overwrite one another; nine Vitest
+  cases and the production build/typecheck pass.
 3. **Rust HTTP semconv absent**: manual axum spans carry no
    `http.request.method` / `http.route` / `http.response.status_code` and no
    `http.server.request.duration` histogram. Backend HTTP/service views and
