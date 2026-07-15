@@ -144,12 +144,13 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
-          install_args: "rust bun"
+          install_args: "rust bun github:open-telemetry/weaver"
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - run: bun ci
         working-directory: ui
       - run: cargo xtask policy --output github
       - run: cargo xtask facade check
+      - run: cargo xtask semconv check
 
   fmt:
     needs: changes

@@ -69,7 +69,6 @@ Every plan must preserve these non-negotiable Parallax constraints:
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [119](119-semconv-registry-codegen.md) | Generate checked-in Rust/Java/TypeScript semantic-convention constants from one registry | P2 | M | 095, 096, 100, 101, 126 | IN PROGRESS |
 
 ### TypeScript Toolchain, Architecture, Boundary, And Test Foundations
 

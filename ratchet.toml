@@ -420,6 +420,11 @@ class = "product"
 tier = 0
 
 [[architecture.packages]]
+name = "parallax-semconv"
+class = "product"
+tier = 0
+
+[[architecture.packages]]
 name = "parallax-model"
 class = "product"
 tier = 0
@@ -1176,6 +1181,11 @@ metric = "rust.assertions"
 scope = "crates/parallax-xtask/src/command.rs"
 ceiling = 1
 
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-xtask/src/semconv/tests.rs"
+ceiling = 6
+
 
 
 
@@ -1865,7 +1875,12 @@ ceiling = 2
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-proto/facade.toml"
-ceiling = 9
+ceiling = 8
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = "crates/parallax-semconv/facade.toml"
+ceiling = 111
 
 [[limits]]
 metric = "rust.public-root-items"

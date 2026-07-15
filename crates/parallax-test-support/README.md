@@ -2,7 +2,7 @@
 schema_version = 1
 package = "parallax-test-support"
 class = "test-support"
-dependencies = ["parallax-model", "parallax-proto", "parallax-storage"]
+dependencies = ["parallax-model", "parallax-proto", "parallax-semconv", "parallax-storage"]
 facade_roots = ["lib.rs"]
 +++
 

@@ -3,7 +3,7 @@ schema_version = 1
 package = "parallax-proto"
 class = "product"
 tier = 0
-dependencies = []
+dependencies = ["parallax-semconv"]
 facade_roots = ["lib.rs"]
 +++
 

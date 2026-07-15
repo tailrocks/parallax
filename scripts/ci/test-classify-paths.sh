@@ -24,6 +24,7 @@ assert_case "UI only" 'rust=false ui=true workflows=false advisory=false release
 assert_case "shared toolchain" 'rust=true ui=true workflows=true advisory=true release=true security=false docs=false' mise.toml
 assert_case "shared CI" 'rust=true ui=true workflows=true advisory=true release=false security=true docs=true' .github/workflows/ci.yml
 assert_case "shared ratchet" 'rust=true ui=true workflows=false advisory=false release=false security=false docs=false' ratchet.toml
+assert_case "semantic contract" 'rust=true ui=true workflows=false advisory=false release=false security=false docs=false' telemetry/semconv/contract.yaml
 assert_case "release only" 'rust=false ui=false workflows=true advisory=false release=true security=true docs=false' .github/workflows/preview.yml
 assert_case "deleted path" 'rust=false ui=true workflows=false advisory=false release=true security=false docs=false' ui/src/deleted.ts
 assert_case "rename paths" 'rust=true ui=true workflows=false advisory=false release=true security=false docs=false' crates/old.rs ui/src/new.ts
@@ -32,4 +33,4 @@ assert_case "mixed paths" 'rust=true ui=true workflows=true advisory=true releas
 if ((failures)); then
   exit 1
 fi
-printf 'classifier fixtures passed (11 cases)\n'
+printf 'classifier fixtures passed (12 cases)\n'

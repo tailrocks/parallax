@@ -3,7 +3,7 @@ schema_version = 1
 package = "parallax-greptime"
 class = "product"
 tier = 2
-dependencies = ["parallax-model", "parallax-proto", "parallax-storage"]
+dependencies = ["parallax-model", "parallax-proto", "parallax-semconv", "parallax-storage"]
 facade_roots = ["lib.rs"]
 +++
 

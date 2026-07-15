@@ -18,12 +18,12 @@ classify() {
       ;;
   esac
   case "$path" in
-    .cargo/*|Cargo.toml|Cargo.lock|rust-toolchain.toml|ratchet.toml|crates/*|poc/*)
+    .cargo/*|Cargo.toml|Cargo.lock|rust-toolchain.toml|ratchet.toml|telemetry/semconv/*|crates/*|poc/*)
       rust=true
       ;;
   esac
   case "$path" in
-    ratchet.toml|ui/*)
+    ratchet.toml|telemetry/semconv/*|ui/*)
       ui=true
       ;;
   esac

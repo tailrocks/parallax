@@ -29,6 +29,10 @@ if rg -n '^\s*permissions:\s*write-all' "$workflows"; then
   printf 'write-all workflow permission found\n' >&2
   failures=$((failures + 1))
 fi
+rg '^      - run: cargo xtask semconv check$' "$workflows/ci.yml" >/dev/null || {
+  printf 'policy lane does not enforce generated semantic conventions\n' >&2
+  failures=$((failures + 1))
+}
 
 if ((failures)); then
   exit 1
