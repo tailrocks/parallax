@@ -50,6 +50,44 @@ Every plan must preserve these non-negotiable Parallax constraints:
 - Apache-2.0 throughout.
 - One active branch; no per-plan or per-agent branches.
 
+## Execution Preflight (verified live, 2026-07-17)
+
+Facts an executor may rely on without re-deriving; re-verify only on failure:
+
+- **Host**: operator's macOS arm64 machine. Docker 29.4.0 running (16 GB
+  RAM, >600 GB free disk) — the playground's 14-container stack fits.
+  `mise` 2026.7.7, cargo 1.97.0, bun 1.3.14, cargo-nextest present.
+- **Push rights**: the `gh`-authenticated account has admin on
+  `tailrocks/parallax`, `tailrocks/parallax-telemetry-playground`, and
+  `tailrocks/homebrew-parallax`; direct pushes to `main` succeed (parallax's
+  ruleset is bypassed by admin — proven by live pushes 2026-07-17;
+  playground has no protection). PR creation + merge via `gh` works.
+- **Branches authorized (operator, 2026-07-17)**: Wave 1 =
+  `feature/unified-cli-observability` (both repos, one PR each). Wave 2 =
+  `feature/maple-informed-ui` (both repos, one PR each), **pre-authorized**
+  — start it only after the Wave-1 PRs merge. Plan/doc commits go straight
+  to `main`.
+- **Live-engine test lanes**: the real-GreptimeDB tests download and cache
+  the engine themselves (`target/greptime-test-bin/`) and are gated behind
+  `#[ignore]` — run them with `cargo nextest run --run-ignored all -E
+  'binary(/greptime/)'` (or the per-test `cargo test … -- --ignored`
+  documented in each test header). A plan's "live engine" verification means
+  this shape; a zero-test selection is a command-shape error, not a pass.
+- **Browser verification**: run the program from a Claude Code session with
+  the Chrome automation tools connected (agent browser / Chrome DevTools
+  MCP) — plans 157/159/160/162-168 require real-browser evidence. If the
+  browser tools are unavailable, that specific verification step is blocked;
+  do not fake screenshots.
+- **No external credentials are required for Waves 1-2.** Optional only:
+  a real Slack webhook URL for plan 167's live-delivery test (a local HTTP
+  listener otherwise suffices, as the plan specifies). The jackin
+  repository/PR #793 is NOT a dependency — the playground simulates the
+  contract.
+- **Sole operator-gated leftovers** (outside Waves 1-2, remain BLOCKED by
+  design): plans 102, 104, 106-126 range items listed under "Triggered Or
+  Operator-Blocked Work", plus the 128 TypeScript-7 external blocker chain.
+  They do not block Wave 1 or Wave 2.
+
 ## Active Plans
 
 ### Storage
@@ -193,8 +231,9 @@ Plan 154's remaining sweep consumes the plan-158 emitter contract.
 Reference analysis of `github.com/MapleTechLabs/maple` (deep /improve run,
 2026-07-17; three-agent survey of its web UI, design system, and query
 layer). Wave 2 executes AFTER the Wave-1 (156-161) PR merges, on ONE
-operator-authorized branch (proposed `feature/maple-informed-ui`), ONE
-Parallax PR plus ONE linked playground PR for the new scenarios
+branch `feature/maple-informed-ui` (pre-authorized by the operator
+2026-07-17 — see Execution Preflight), ONE Parallax PR plus ONE linked
+playground PR for the new scenarios
 (`f-attrs`, `l-patterns`, `eco-external`, `a-breach-*`, `a-recover`,
 `m-labels`). Non-interactive default selection: the seven highest-leverage
 adoptions were planned; the deferred list below records what was
@@ -239,7 +278,7 @@ CI-provider API collection; 155 consumes OTLP-ingested telemetry only.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [154](154-playground-capability-and-test-observability.md) | Validate playground observability on the live fan-out | P1 | M | Docker host + five backends | BLOCKED: Docker-less host cannot run collector-backed acceptance |
+| [154](154-playground-capability-and-test-observability.md) | Validate playground observability on the live fan-out | P1 | M | Five backends; Parallax arm → plan 159 | BLOCKED: multi-backend arm needs operator credentials for Maple/SigNoz/OpenObserve/Sentry (Docker is available since 2026-07-17) |
 | [155](155-test-reporting-surface.md) | Test reporting and test observability surface | P1 | XL | 149, 152, 153; soft 104, 119, 121, 124, 140 | BLOCKED: prerequisite chain incomplete |
 
 ### Triggered Or Operator-Blocked Work

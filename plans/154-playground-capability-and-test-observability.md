@@ -14,8 +14,11 @@
   and the linked playground branch
 - **Category**: cross-repository playground / live validation
 - **Planned at**: `cb7c514`, revised 2026-07-15
-- **Status**: BLOCKED — this arm64 host has no Docker; collector-backed
-  Parallax/Maple/SigNoz/OpenObserve/Sentry evidence cannot be produced locally
+- **Status**: BLOCKED — multi-backend arm only. Docker IS available on the
+  operator host as of 2026-07-17 (see plans/README.md Execution Preflight);
+  the Parallax-backend acceptance arm is executed by plan 159. What remains
+  blocked here is the Maple/SigNoz/OpenObserve/Sentry fan-out, which needs
+  operator-provided backend credentials/config for those four externals
 
 ## Contract reconciliation (2026-07-17)
 

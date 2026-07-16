@@ -30,9 +30,16 @@ GraphQL assertions and browser evidence (plan 159) before the PR opens.
 
 Secondary objective: after the vertical merges, execute Wave 2 (plans
 162-168, the Maple-informed UI evolution — see its section in
-`plans/README.md`) on its own single authorized branch and PR pair, then
-continue every remaining actionable plan under the same rules, honoring
-genuine blockers.
+`plans/README.md`) on the pre-authorized branch `feature/maple-informed-ui`
+(same name in the playground; one Parallax PR + one linked playground PR),
+then continue every remaining actionable plan under the same rules,
+honoring genuine blockers.
+
+Before the first plan, read `plans/README.md#execution-preflight-verified-live-2026-07-17`
+— it records the verified host facts (Docker, toolchains, push rights,
+live-engine test invocation shape, browser-tooling requirement) and the
+only operator-gated leftovers. Do not re-derive or second-guess those
+facts unless a command contradicts them.
 
 ## Sources And Scope
 
