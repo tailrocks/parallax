@@ -45,7 +45,7 @@ export const Route = createFileRoute("/ecosystem")({
           toNanos: "${range.toNanos}"
           maxTraces: 100
         ) {
-          nodes { name lastSeenNanos spanCount errorCount p95Ms }
+          nodes { name kind lastSeenNanos spanCount errorCount p95Ms }
           edges { source target callCount errorCount p50Ms p95Ms }
         }
       }

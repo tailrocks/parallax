@@ -426,8 +426,8 @@ function TracePage() {
             <span className="font-mono">{traceId}</span>
             {invocationId ? (
               <Link
-                to="/runs/$runId"
-                params={{ runId: invocationId }}
+                to="/invocations/$invocationId"
+                params={{ invocationId }}
                 search={detailRangeSearch}
                 className={buttonVariants({ variant: "outline", size: "xs" })}
               >

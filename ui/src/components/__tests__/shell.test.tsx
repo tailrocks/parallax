@@ -15,7 +15,7 @@ vi.mock("@/lib/api", () => ({
   graphql: vi.fn().mockImplementation(async (query: string) => {
     if (query.includes("{ services }")) return { services: [] }
     if (query.includes("tracesPage")) {
-      return { tracesPage: { items: [] }, runs: [] }
+      return { tracesPage: { items: [] }, invocations: [] }
     }
     return { dashboards: [] }
   }),

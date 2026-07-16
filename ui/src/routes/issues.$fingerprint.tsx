@@ -315,8 +315,8 @@ export function IssueDetailContent({
         </Link>
         {traceRunId ? (
           <Link
-            to="/runs/$runId"
-            params={{ runId: traceRunId }}
+            to="/invocations/$invocationId"
+            params={{ invocationId: traceRunId }}
             search={rangeLinkSearch(range)}
             className="inline-flex"
           >

@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router"
+import { IconTerminal2, IconWorld } from "@tabler/icons-react"
 
 import { Badge } from "@/components/ui/badge"
 import type { ServiceMapEdge, ServiceMapNode } from "@/lib/api"
@@ -63,6 +64,7 @@ function layoutNodes(
         const y = ((index + 1) * HEIGHT) / (sorted.length + 1)
         return {
           name,
+          kind: "service" as const,
           lastSeenNanos: "0",
           spanCount: "0",
           errorCount: "0",
@@ -149,7 +151,15 @@ export function EcosystemGraph({
           {formatCount(positioned.length)} services ·{" "}
           {formatCount(edges.length)} edges
         </span>
-        <Badge variant="secondary">trace-path</Badge>
+        <span className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <IconTerminal2 className="size-3.5 text-violet-500" /> cli
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <IconWorld className="size-3.5 text-sky-500" /> browser
+          </span>
+          <Badge variant="secondary">trace-path</Badge>
+        </span>
       </div>
       <div className="relative min-h-[28rem] overflow-hidden rounded-lg border bg-background">
         <svg
@@ -183,30 +193,57 @@ export function EcosystemGraph({
 
         {positioned.map((node) => {
           const errors = count(node.errorCount)
-          return (
-            <Link
-              key={node.name}
-              to="/services/$service"
-              params={{ service: node.name }}
-              search={rangeLinkSearch(range)}
-              className={cn(
-                "absolute flex flex-col gap-1 rounded-lg border bg-card px-3 py-2 text-sm shadow-sm hover:bg-muted/50",
-                errors > 0 && "border-rose-500/50"
-              )}
-              style={{
-                left: `${((node.x - NODE_WIDTH / 2) / WIDTH) * 100}%`,
-                top: `${((node.y - NODE_HEIGHT / 2) / HEIGHT) * 100}%`,
-                width: NODE_WIDTH,
-                minHeight: NODE_HEIGHT,
-              }}
-            >
-              <span className="truncate font-medium">{node.name}</span>
+          const className = cn(
+            "absolute flex flex-col gap-1 rounded-lg border bg-card px-3 py-2 text-sm shadow-sm hover:bg-muted/50",
+            errors > 0 && "border-rose-500/50"
+          )
+          const style = {
+            left: `${((node.x - NODE_WIDTH / 2) / WIDTH) * 100}%`,
+            top: `${((node.y - NODE_HEIGHT / 2) / HEIGHT) * 100}%`,
+            width: NODE_WIDTH,
+            minHeight: NODE_HEIGHT,
+          }
+          const body = (
+            <>
+              <span className="inline-flex min-w-0 items-center gap-1.5 font-medium">
+                {node.kind === "cli" ? (
+                  <IconTerminal2 className="size-3.5 shrink-0 text-violet-500" />
+                ) : node.kind === "browser" ? (
+                  <IconWorld className="size-3.5 shrink-0 text-sky-500" />
+                ) : null}
+                <span className="truncate">{node.name}</span>
+              </span>
               <span className="text-xs text-muted-foreground tabular-nums">
                 {formatCount(count(node.spanCount))} spans
                 {node.p95Ms != null
                   ? ` · p95 ${formatDurationNs(node.p95Ms * 1_000_000)}`
                   : ""}
               </span>
+            </>
+          )
+          if (node.kind === "cli") {
+            return (
+              <Link
+                key={node.name}
+                to="/invocations"
+                search={{ q: node.name }}
+                className={className}
+                style={style}
+              >
+                {body}
+              </Link>
+            )
+          }
+          return (
+            <Link
+              key={node.name}
+              to="/services/$service"
+              params={{ service: node.name }}
+              search={rangeLinkSearch(range)}
+              className={className}
+              style={style}
+            >
+              {body}
             </Link>
           )
         })}

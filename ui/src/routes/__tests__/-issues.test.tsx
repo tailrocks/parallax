@@ -80,7 +80,7 @@ function renderWithRouter(component: React.ReactNode, path = "/issues") {
   return renderTestRouter(component, {
     componentPaths: ["/issues", "/issues/$fingerprint"],
     initialPath: path,
-    targetPaths: ["/traces/$traceId", "/runs/$runId"],
+    targetPaths: ["/traces/$traceId", "/invocations/$invocationId"],
   })
 }
 
@@ -165,7 +165,9 @@ describe("Issues route", () => {
     expect(
       screen
         .getAllByRole("link")
-        .some((link) => link.getAttribute("href") === "/runs/run-a?range=24h")
+        .some(
+          (link) => link.getAttribute("href") === "/invocations/run-a?range=24h"
+        )
     ).toBe(true)
     expect(
       screen

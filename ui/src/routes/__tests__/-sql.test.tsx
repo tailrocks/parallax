@@ -27,7 +27,7 @@ function renderWithRouter(component: React.ReactNode) {
   return renderTestRouter(component, {
     targetPaths: [
       "/traces/$traceId",
-      "/runs/$runId",
+      "/invocations/$invocationId",
       "/issues/$fingerprint",
       "/services/$service",
     ],
@@ -54,12 +54,12 @@ describe("SQL result helpers", () => {
       }
     )
     expect(targetForCell('"cli.invocation.id"', "run-a", {})).toEqual({
-      to: "/runs/$runId",
-      params: { runId: "run-a" },
+      to: "/invocations/$invocationId",
+      params: { invocationId: "run-a" },
     })
     expect(targetForCell("invocation_id", "run-b", {})).toEqual({
-      to: "/runs/$runId",
-      params: { runId: "run-b" },
+      to: "/invocations/$invocationId",
+      params: { invocationId: "run-b" },
     })
     expect(targetForCell("span_id", "span-a", {})).toBeNull()
     expect(targetForCell("trace_id", "null", {})).toBeNull()
@@ -96,7 +96,7 @@ describe("SQL result helpers", () => {
     )
     expect(links).toEqual([
       "/traces/trace-a",
-      "/runs/run-a",
+      "/invocations/run-a",
       "/services/checkout",
       "/issues/fp-a",
       "/traces/trace-a",

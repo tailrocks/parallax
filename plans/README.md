@@ -273,7 +273,7 @@ Plan 154's remaining sweep consumes the plan-158 emitter contract.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [157](157-cli-invocation-observability-ui.md) | CLI-invocation observability UI: invocation hub, sessions/screens/actions, cycles/jobs, ecosystem kinds | P1 | XL | 156 (DONE 2026-07-17) | TODO |
+| [157](157-cli-invocation-observability-ui.md) | CLI-invocation observability UI: invocation hub, sessions/screens/actions, cycles/jobs, ecosystem kinds | P1 | XL | 156 (DONE 2026-07-17) | IN PROGRESS — list + hub + journey + re-keyed consumers landed; browser verification against live data pending |
 | [158](158-playground-unified-cli-contract.md) | Playground migration to the neutral contract + interactive/jobs/cycles simulation | P1 | L | 156 registry (DONE) | TODO |
 | [161](161-playground-corner-case-matrix.md) | Playground corner-case corpus: one scripted scenario per UI rendering risk | P1 | M | 158 | TODO |
 | [160](160-ui-defect-audit-and-repair.md) | UI defect audit & repair against the corpus; generic-attributes conformance sweep | P1 | L | 156 (DONE), 157, 161 | TODO |

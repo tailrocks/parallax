@@ -448,8 +448,8 @@ export function LogsTable({
                   <Chip
                     render={
                       <Link
-                        to="/runs/$runId"
-                        params={{ runId: selected.invocationId }}
+                        to="/invocations/$invocationId"
+                        params={{ invocationId: selected.invocationId }}
                         search={detailSearch}
                         aria-label={`Run ${selected.invocationId}`}
                       />
@@ -489,8 +489,8 @@ export function LogsTable({
                           </Link>
                         ) : key === "run_id" ? (
                           <Link
-                            to="/runs/$runId"
-                            params={{ runId: value }}
+                            to="/invocations/$invocationId"
+                            params={{ invocationId: value }}
                             search={detailSearch}
                             className="underline underline-offset-4"
                           >

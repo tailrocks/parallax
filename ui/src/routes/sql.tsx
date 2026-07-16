@@ -159,7 +159,7 @@ function cellValue(row: Record<string, string>, keys: string[]) {
 
 export type SqlCellTarget =
   | { to: "/traces/$traceId"; params: { traceId: string } }
-  | { to: "/runs/$runId"; params: { runId: string } }
+  | { to: "/invocations/$invocationId"; params: { invocationId: string } }
   | { to: "/issues/$fingerprint"; params: { fingerprint: string } }
   | { to: "/services/$service"; params: { service: string } }
 
@@ -183,7 +183,7 @@ export function targetForCell(
     normalized === CLI_INVOCATION_ID
   ) {
     // Plan 157 owns the /invocations route rename; keep link target until then.
-    return { to: "/runs/$runId", params: { runId: value } }
+    return { to: "/invocations/$invocationId", params: { invocationId: value } }
   }
   if (normalized === "fingerprint") {
     return { to: "/issues/$fingerprint", params: { fingerprint: value } }

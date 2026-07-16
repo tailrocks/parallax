@@ -81,8 +81,8 @@ export const primaryNav: NavItem[] = [
 
 export const workspaceNav: NavItem[] = [
   {
-    href: "/runs",
-    label: "Runs",
+    href: "/invocations",
+    label: "CLI Apps",
     icon: IconTerminal2,
     activeIcon: IconTerminal2,
     iconClassName:

@@ -64,7 +64,7 @@ afterEach(cleanup)
 
 function renderWithRouter(component: React.ReactNode) {
   return renderTestRouter(component, {
-    targetPaths: ["/traces/$traceId", "/runs/$runId"],
+    targetPaths: ["/traces/$traceId", "/invocations/$invocationId"],
   })
 }
 
@@ -234,7 +234,7 @@ describe("LogsTable", () => {
     ).toContain("/traces/trace-a?range=7d")
     expect(
       screen.getByRole("link", { name: /run run-a/i }).getAttribute("href")
-    ).toBe("/runs/run-a?range=7d")
+    ).toBe("/invocations/run-a?range=7d")
   })
 })
 

@@ -32,7 +32,7 @@ type StaticRoute =
   | "/ecosystem"
   | "/logs"
   | "/services"
-  | "/runs"
+  | "/invocations"
   | "/dashboards"
   | "/investigations"
   | "/sql"
@@ -74,7 +74,7 @@ function pageRoute(href: string): StaticRoute | null {
     case "/ecosystem":
     case "/logs":
     case "/services":
-    case "/runs":
+    case "/invocations":
     case "/dashboards":
     case "/investigations":
     case "/sql":
@@ -88,8 +88,8 @@ function idLabel(guess: IdGuess) {
   switch (guess.kind) {
     case "trace":
       return `Open trace ${guess.id}`
-    case "run":
-      return `Open run ${guess.id}`
+    case "invocation":
+      return `Open invocation ${guess.id}`
     case "fingerprint":
       return `Open issue ${guess.id}`
     case "span-in-trace":
@@ -101,7 +101,7 @@ function idIcon(guess: IdGuess) {
   switch (guess.kind) {
     case "trace":
       return IconAffiliate
-    case "run":
+    case "invocation":
       return IconTerminal2
     case "fingerprint":
       return IconBug
@@ -174,7 +174,7 @@ export function CommandPalette({
     setRecent({ status: "loading", data: emptyRecent })
     void graphql<{
       tracesPage: { items: RecentTrace[] }
-      runs: RecentRun[]
+      invocations: RecentRun[]
     }>(
       `
         {
@@ -187,7 +187,7 @@ export function CommandPalette({
               hasError
             }
           }
-          runs(limit: 5) {
+          invocations(limit: 5) {
             invocationId
             command
             status
@@ -204,7 +204,7 @@ export function CommandPalette({
           status: "ready",
           data: {
             traces: data.tracesPage.items,
-            runs: data.runs,
+            runs: data.invocations,
           },
         })
       )
@@ -230,8 +230,11 @@ export function CommandPalette({
           params: { traceId: guess.id },
         })
         break
-      case "run":
-        void navigate({ to: "/runs/$runId", params: { runId: guess.id } })
+      case "invocation":
+        void navigate({
+          to: "/invocations/$invocationId",
+          params: { invocationId: guess.id },
+        })
         break
       case "fingerprint":
         void navigate({
@@ -365,8 +368,8 @@ export function CommandPalette({
               onSelect={() => {
                 close()
                 void navigate({
-                  to: "/runs/$runId",
-                  params: { runId: run.invocationId },
+                  to: "/invocations/$invocationId",
+                  params: { invocationId: run.invocationId },
                 })
               }}
             >

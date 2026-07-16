@@ -2,100 +2,154 @@
   "schema_version": 1,
   "ratchets": {
     "fire_event_calls": 7,
-    "legacy_handoffs": 41,
+    "legacy_handoffs": 43,
     "raw_router_builders": 1,
-    "test_cases": 188,
-    "test_files": 45
+    "test_cases": 198,
+    "test_files": 47
   },
   "private_route_imports": [
     {
       "test_file": "ui/src/routes/__tests__/-dashboards.test.tsx",
       "module": "@/routes/dashboards.index",
-      "symbols": ["DashboardCards", "DashboardCreateDialog", "dashboardRangeSearch", "parseLayout", "serializeWidgets"],
+      "symbols": [
+        "DashboardCards",
+        "DashboardCreateDialog",
+        "dashboardRangeSearch",
+        "parseLayout",
+        "serializeWidgets"
+      ],
       "removal_plan": 137
     },
     {
-      "test_file": "ui/src/routes/__tests__/-issues.test.tsx",
-      "module": "@/routes/issues.index",
-      "symbols": ["IssuesContent", "IssuesData"],
-      "removal_plan": 139
+      "test_file": "ui/src/routes/__tests__/-invocations.test.tsx",
+      "module": "@/routes/invocations.index",
+      "symbols": [
+        "InvocationsContent",
+        "filterInvocationsByRange"
+      ],
+      "removal_plan": 140
     },
     {
       "test_file": "ui/src/routes/__tests__/-issues.test.tsx",
       "module": "@/routes/issues.$fingerprint",
-      "symbols": ["IssueDetailContent"],
+      "symbols": [
+        "IssueDetailContent"
+      ],
+      "removal_plan": 139
+    },
+    {
+      "test_file": "ui/src/routes/__tests__/-issues.test.tsx",
+      "module": "@/routes/issues.index",
+      "symbols": [
+        "IssuesContent",
+        "IssuesData"
+      ],
       "removal_plan": 139
     },
     {
       "test_file": "ui/src/routes/__tests__/-logs.test.tsx",
       "module": "@/routes/logs",
-      "symbols": ["ColumnMenu", "SavedViewsMenu", "contextWindow", "parseSavedViewState"],
+      "symbols": [
+        "ColumnMenu",
+        "SavedViewsMenu",
+        "contextWindow",
+        "parseSavedViewState"
+      ],
       "removal_plan": 141
     },
     {
       "test_file": "ui/src/routes/__tests__/-overview.test.tsx",
       "module": "@/routes/index",
-      "symbols": ["OverviewContent", "OverviewData", "latencyBands", "loadOverview"],
+      "symbols": [
+        "OverviewContent",
+        "OverviewData",
+        "latencyBands",
+        "loadOverview"
+      ],
       "removal_plan": 150
-    },
-    {
-      "test_file": "ui/src/routes/__tests__/-runs.test.tsx",
-      "module": "@/routes/runs.index",
-      "symbols": ["RunsContent", "RunsData", "durationNs", "filterRunsByRange", "mergeRuns", "statusTone"],
-      "removal_plan": 140
-    },
-    {
-      "test_file": "ui/src/routes/__tests__/-runs.test.tsx",
-      "module": "@/routes/runs.$runId",
-      "symbols": ["RunDetailContent", "loadRunDetail", "snapshotFromNanos"],
-      "removal_plan": 140
     },
     {
       "test_file": "ui/src/routes/__tests__/-services.test.tsx",
       "module": "@/routes/services",
-      "symbols": ["ServicesData", "ServicesIndexContent", "serviceErrorRate", "serviceHref"],
+      "symbols": [
+        "ServicesData",
+        "ServicesIndexContent",
+        "serviceErrorRate",
+        "serviceHref"
+      ],
       "removal_plan": 138
     },
     {
       "test_file": "ui/src/routes/__tests__/-services.test.tsx",
       "module": "@/routes/services.$service",
-      "symbols": ["ServiceDetailContent", "ServiceDetailData"],
+      "symbols": [
+        "ServiceDetailContent",
+        "ServiceDetailData"
+      ],
       "removal_plan": 138
     },
     {
       "test_file": "ui/src/routes/__tests__/-sql.test.tsx",
       "module": "@/routes/sql",
-      "symbols": ["EXAMPLES", "Route as SqlRoute", "SnippetsMenu", "SqlResultBody", "targetForCell"],
+      "symbols": [
+        "EXAMPLES",
+        "Route as SqlRoute",
+        "SnippetsMenu",
+        "SqlResultBody",
+        "targetForCell"
+      ],
       "removal_plan": 135
     },
     {
       "test_file": "ui/src/routes/__tests__/-trace-graphql.test.tsx",
       "module": "@/routes/traces.$traceId",
-      "symbols": ["TraceGraphqlSection"],
+      "symbols": [
+        "TraceGraphqlSection"
+      ],
       "removal_plan": 142
     },
     {
       "test_file": "ui/src/routes/__tests__/-trace-links.test.tsx",
       "module": "@/routes/traces.$traceId",
-      "symbols": ["LinkedTraceEdges", "TraceCompareResult"],
+      "symbols": [
+        "LinkedTraceEdges",
+        "TraceCompareResult"
+      ],
       "removal_plan": 142
     },
     {
       "test_file": "ui/src/routes/__tests__/-trace-rpc.test.tsx",
       "module": "@/routes/traces.$traceId",
-      "symbols": ["InspectorEventList", "InspectorLinksList", "SpanEvent", "TraceErrorCallout", "TraceRpcSection"],
+      "symbols": [
+        "InspectorEventList",
+        "InspectorLinksList",
+        "SpanEvent",
+        "TraceErrorCallout",
+        "TraceRpcSection"
+      ],
       "removal_plan": 142
     },
     {
       "test_file": "ui/src/routes/__tests__/-trace-view-modes.test.tsx",
       "module": "@/routes/traces.$traceId",
-      "symbols": ["ClockSkewBanner", "TraceViewModeToggle", "validateTraceDetailSearch"],
+      "symbols": [
+        "ClockSkewBanner",
+        "TraceViewModeToggle",
+        "validateTraceDetailSearch"
+      ],
       "removal_plan": 142
     },
     {
       "test_file": "ui/src/routes/__tests__/-traces-search.test.tsx",
       "module": "@/routes/traces.index",
-      "symbols": ["TraceTable", "paramToTraceSort", "patchTracesSearch", "traceDetailSearch", "traceSortToParam", "validateTracesSearch"],
+      "symbols": [
+        "TraceTable",
+        "paramToTraceSort",
+        "patchTracesSearch",
+        "traceDetailSearch",
+        "traceSortToParam",
+        "validateTracesSearch"
+      ],
       "removal_plan": 142
     }
   ],
@@ -940,23 +994,24 @@
     {
       "id": "vitest-034",
       "surface": "features/runs",
-      "risk": "Run merging, filtering, detail snapshots, and evidence links can be inconsistent",
+      "risk": "Invocation merging, filtering, status derivation, and live-trace prepends can be inconsistent",
       "scenario_owner": "features/runs",
       "lane_owner": "vitest/route",
       "delivery_plan": 140,
       "layer": "route-contract",
-      "test_file": "ui/src/routes/__tests__/-runs.test.tsx",
+      "test_file": "ui/src/routes/__tests__/-invocations.test.tsx",
       "test_ids": [
-        "merges registered and observed rows with duration/error fallbacks",
-        "filters rows by activity window overlap",
-        "renders list error and duration columns",
-        "renders detail stat row and download action",
-        "bounds runtimeSnapshot fromNanos to the run start and omits bundle"
+        "renders merged rows with mode, status, outcome, and links",
+        "toggles live mode through the search params",
+        "shows the empty state when nothing matches",
+        "keeps rows overlapping the window and open-ended running rows",
+        "sums event counts per stable error type, sorted",
+        "prepends unseen live traces and aggregates spans per trace"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented",
       "legacy_handoff": {
-        "current_path": "ui/src/routes/__tests__/-runs.test.tsx",
+        "current_path": "ui/src/routes/__tests__/-invocations.test.tsx",
         "destination_owner": "features/runs",
         "removal_plan": 140,
         "created": "2026-07-15",
@@ -1202,6 +1257,57 @@
       ],
       "required_environment": "jsdom",
       "status": "implemented"
+    },
+    {
+      "id": "vitest-070",
+      "surface": "features/runs",
+      "risk": "Invocation status/duration/merge helpers can misclassify lifecycle states",
+      "scenario_owner": "features/runs",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 140,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/-invocation.test.ts",
+      "test_ids": [
+        "derives the full matrix",
+        "uses now while running and end when finished",
+        "labels one_shot readably and passes the rest through",
+        "prefers registered rows while keeping observed telemetry counts"
+      ],
+      "required_environment": "bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/-invocation.test.ts",
+        "destination_owner": "features/runs",
+        "removal_plan": 140,
+        "created": "2026-07-15",
+        "expires": "plan-140-completion"
+      }
+    },
+    {
+      "id": "vitest-071",
+      "surface": "features/runs",
+      "risk": "Journey interleave or error-to-screen attribution can drop or misplace entries",
+      "scenario_owner": "features/runs",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 140,
+      "layer": "component",
+      "test_file": "ui/src/components/console/invocations/__tests__/-session-journey.test.tsx",
+      "test_ids": [
+        "interleaves entries chronologically",
+        "attributes errors to the screen whose visit interval contains them",
+        "keeps unattributable errors in an outside-any-screen bucket",
+        "drops errors outside the session window",
+        "marks an open session without a session-end entry"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/invocations/__tests__/-session-journey.test.tsx",
+        "destination_owner": "features/runs",
+        "removal_plan": 140,
+        "created": "2026-07-15",
+        "expires": "plan-140-completion"
+      }
     }
   ]
 }

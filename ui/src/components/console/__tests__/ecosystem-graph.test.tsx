@@ -10,6 +10,7 @@ import { renderTestRouter } from "@/test/router"
 
 const nodes: ServiceMapNode[] = [
   {
+    kind: "service" as const,
     name: "A",
     lastSeenNanos: "100",
     spanCount: "10",
@@ -17,6 +18,7 @@ const nodes: ServiceMapNode[] = [
     p95Ms: 20,
   },
   {
+    kind: "service" as const,
     name: "B",
     lastSeenNanos: "120",
     spanCount: "5",

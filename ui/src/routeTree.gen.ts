@@ -15,14 +15,14 @@ import { Route as LogsRouteImport } from './routes/logs'
 import { Route as EcosystemRouteImport } from './routes/ecosystem'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TracesIndexRouteImport } from './routes/traces.index'
-import { Route as RunsIndexRouteImport } from './routes/runs.index'
 import { Route as IssuesIndexRouteImport } from './routes/issues.index'
+import { Route as InvocationsIndexRouteImport } from './routes/invocations.index'
 import { Route as InvestigationsIndexRouteImport } from './routes/investigations.index'
 import { Route as DashboardsIndexRouteImport } from './routes/dashboards.index'
 import { Route as TracesTraceIdRouteImport } from './routes/traces.$traceId'
 import { Route as ServicesServiceRouteImport } from './routes/services.$service'
-import { Route as RunsRunIdRouteImport } from './routes/runs.$runId'
 import { Route as IssuesFingerprintRouteImport } from './routes/issues.$fingerprint'
+import { Route as InvocationsInvocationIdRouteImport } from './routes/invocations.$invocationId'
 import { Route as InvestigationsInvestigationIdRouteImport } from './routes/investigations.$investigationId'
 import { Route as DashboardsDashboardIdRouteImport } from './routes/dashboards.$dashboardId'
 
@@ -56,14 +56,14 @@ const TracesIndexRoute = TracesIndexRouteImport.update({
   path: '/traces/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RunsIndexRoute = RunsIndexRouteImport.update({
-  id: '/runs/',
-  path: '/runs/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IssuesIndexRoute = IssuesIndexRouteImport.update({
   id: '/issues/',
   path: '/issues/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvocationsIndexRoute = InvocationsIndexRouteImport.update({
+  id: '/invocations/',
+  path: '/invocations/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvestigationsIndexRoute = InvestigationsIndexRouteImport.update({
@@ -86,14 +86,14 @@ const ServicesServiceRoute = ServicesServiceRouteImport.update({
   path: '/$service',
   getParentRoute: () => ServicesRoute,
 } as any)
-const RunsRunIdRoute = RunsRunIdRouteImport.update({
-  id: '/runs/$runId',
-  path: '/runs/$runId',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IssuesFingerprintRoute = IssuesFingerprintRouteImport.update({
   id: '/issues/$fingerprint',
   path: '/issues/$fingerprint',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvocationsInvocationIdRoute = InvocationsInvocationIdRouteImport.update({
+  id: '/invocations/$invocationId',
+  path: '/invocations/$invocationId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvestigationsInvestigationIdRoute =
@@ -116,14 +116,14 @@ export interface FileRoutesByFullPath {
   '/sql': typeof SqlRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/investigations/$investigationId': typeof InvestigationsInvestigationIdRoute
+  '/invocations/$invocationId': typeof InvocationsInvocationIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
-  '/runs/$runId': typeof RunsRunIdRoute
   '/services/$service': typeof ServicesServiceRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
   '/dashboards/': typeof DashboardsIndexRoute
   '/investigations/': typeof InvestigationsIndexRoute
+  '/invocations/': typeof InvocationsIndexRoute
   '/issues/': typeof IssuesIndexRoute
-  '/runs/': typeof RunsIndexRoute
   '/traces/': typeof TracesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -134,14 +134,14 @@ export interface FileRoutesByTo {
   '/sql': typeof SqlRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/investigations/$investigationId': typeof InvestigationsInvestigationIdRoute
+  '/invocations/$invocationId': typeof InvocationsInvocationIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
-  '/runs/$runId': typeof RunsRunIdRoute
   '/services/$service': typeof ServicesServiceRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
   '/dashboards': typeof DashboardsIndexRoute
   '/investigations': typeof InvestigationsIndexRoute
+  '/invocations': typeof InvocationsIndexRoute
   '/issues': typeof IssuesIndexRoute
-  '/runs': typeof RunsIndexRoute
   '/traces': typeof TracesIndexRoute
 }
 export interface FileRoutesById {
@@ -153,14 +153,14 @@ export interface FileRoutesById {
   '/sql': typeof SqlRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/investigations/$investigationId': typeof InvestigationsInvestigationIdRoute
+  '/invocations/$invocationId': typeof InvocationsInvocationIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
-  '/runs/$runId': typeof RunsRunIdRoute
   '/services/$service': typeof ServicesServiceRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
   '/dashboards/': typeof DashboardsIndexRoute
   '/investigations/': typeof InvestigationsIndexRoute
+  '/invocations/': typeof InvocationsIndexRoute
   '/issues/': typeof IssuesIndexRoute
-  '/runs/': typeof RunsIndexRoute
   '/traces/': typeof TracesIndexRoute
 }
 export interface FileRouteTypes {
@@ -173,14 +173,14 @@ export interface FileRouteTypes {
     | '/sql'
     | '/dashboards/$dashboardId'
     | '/investigations/$investigationId'
+    | '/invocations/$invocationId'
     | '/issues/$fingerprint'
-    | '/runs/$runId'
     | '/services/$service'
     | '/traces/$traceId'
     | '/dashboards/'
     | '/investigations/'
+    | '/invocations/'
     | '/issues/'
-    | '/runs/'
     | '/traces/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -191,14 +191,14 @@ export interface FileRouteTypes {
     | '/sql'
     | '/dashboards/$dashboardId'
     | '/investigations/$investigationId'
+    | '/invocations/$invocationId'
     | '/issues/$fingerprint'
-    | '/runs/$runId'
     | '/services/$service'
     | '/traces/$traceId'
     | '/dashboards'
     | '/investigations'
+    | '/invocations'
     | '/issues'
-    | '/runs'
     | '/traces'
   id:
     | '__root__'
@@ -209,14 +209,14 @@ export interface FileRouteTypes {
     | '/sql'
     | '/dashboards/$dashboardId'
     | '/investigations/$investigationId'
+    | '/invocations/$invocationId'
     | '/issues/$fingerprint'
-    | '/runs/$runId'
     | '/services/$service'
     | '/traces/$traceId'
     | '/dashboards/'
     | '/investigations/'
+    | '/invocations/'
     | '/issues/'
-    | '/runs/'
     | '/traces/'
   fileRoutesById: FileRoutesById
 }
@@ -228,13 +228,13 @@ export interface RootRouteChildren {
   SqlRoute: typeof SqlRoute
   DashboardsDashboardIdRoute: typeof DashboardsDashboardIdRoute
   InvestigationsInvestigationIdRoute: typeof InvestigationsInvestigationIdRoute
+  InvocationsInvocationIdRoute: typeof InvocationsInvocationIdRoute
   IssuesFingerprintRoute: typeof IssuesFingerprintRoute
-  RunsRunIdRoute: typeof RunsRunIdRoute
   TracesTraceIdRoute: typeof TracesTraceIdRoute
   DashboardsIndexRoute: typeof DashboardsIndexRoute
   InvestigationsIndexRoute: typeof InvestigationsIndexRoute
+  InvocationsIndexRoute: typeof InvocationsIndexRoute
   IssuesIndexRoute: typeof IssuesIndexRoute
-  RunsIndexRoute: typeof RunsIndexRoute
   TracesIndexRoute: typeof TracesIndexRoute
 }
 
@@ -282,18 +282,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TracesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/runs/': {
-      id: '/runs/'
-      path: '/runs'
-      fullPath: '/runs/'
-      preLoaderRoute: typeof RunsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/issues/': {
       id: '/issues/'
       path: '/issues'
       fullPath: '/issues/'
       preLoaderRoute: typeof IssuesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invocations/': {
+      id: '/invocations/'
+      path: '/invocations'
+      fullPath: '/invocations/'
+      preLoaderRoute: typeof InvocationsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/investigations/': {
@@ -324,18 +324,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServicesServiceRouteImport
       parentRoute: typeof ServicesRoute
     }
-    '/runs/$runId': {
-      id: '/runs/$runId'
-      path: '/runs/$runId'
-      fullPath: '/runs/$runId'
-      preLoaderRoute: typeof RunsRunIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/issues/$fingerprint': {
       id: '/issues/$fingerprint'
       path: '/issues/$fingerprint'
       fullPath: '/issues/$fingerprint'
       preLoaderRoute: typeof IssuesFingerprintRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invocations/$invocationId': {
+      id: '/invocations/$invocationId'
+      path: '/invocations/$invocationId'
+      fullPath: '/invocations/$invocationId'
+      preLoaderRoute: typeof InvocationsInvocationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/investigations/$investigationId': {
@@ -375,13 +375,13 @@ const rootRouteChildren: RootRouteChildren = {
   SqlRoute: SqlRoute,
   DashboardsDashboardIdRoute: DashboardsDashboardIdRoute,
   InvestigationsInvestigationIdRoute: InvestigationsInvestigationIdRoute,
+  InvocationsInvocationIdRoute: InvocationsInvocationIdRoute,
   IssuesFingerprintRoute: IssuesFingerprintRoute,
-  RunsRunIdRoute: RunsRunIdRoute,
   TracesTraceIdRoute: TracesTraceIdRoute,
   DashboardsIndexRoute: DashboardsIndexRoute,
   InvestigationsIndexRoute: InvestigationsIndexRoute,
+  InvocationsIndexRoute: InvocationsIndexRoute,
   IssuesIndexRoute: IssuesIndexRoute,
-  RunsIndexRoute: RunsIndexRoute,
   TracesIndexRoute: TracesIndexRoute,
 }
 export const routeTree = rootRouteImport

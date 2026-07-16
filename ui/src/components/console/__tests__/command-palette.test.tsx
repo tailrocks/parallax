@@ -37,7 +37,7 @@ function mockPaletteData() {
               },
             ],
           },
-          runs: [
+          invocations: [
             {
               invocationId: "run-a",
               command: "cargo test",
@@ -66,7 +66,7 @@ function renderWithRouter(component: React.ReactNode, initialPath = "/") {
       "/logs",
       "/traces",
       "/traces/$traceId",
-      "/runs/$runId",
+      "/invocations/$invocationId",
       "/issues/$fingerprint",
       "/services/$service",
     ],
@@ -121,7 +121,7 @@ describe("CommandPalette entity navigation", () => {
 
     await user.clear(input)
     await user.type(input, "a7a77b573b7261a1")
-    expect(await screen.findByText(/Open run a7a77b/)).toBeTruthy()
+    expect(await screen.findByText(/Open invocation a7a77b/)).toBeTruthy()
     expect(screen.getByText(/Open issue a7a77b/)).toBeTruthy()
     expect(screen.getByText(/Search traces for span a7a77b/)).toBeTruthy()
   })
