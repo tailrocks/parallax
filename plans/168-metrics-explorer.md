@@ -117,6 +117,17 @@ current query spec. Everything URL-encoded (`q/type/agg/where/groupBy/step`).
 graduation params; exemplar deep-linking redesign; new metric ingestion;
 SLOs/Apdex (defer — record in index rejected/deferred list).
 
+## Git workflow
+
+- Work directly on `main` in BOTH repositories — no branches, no pull requests (operator
+  delivery model, 2026-07-17; see plans/README.md Execution Preflight).
+- Commit OFTEN: one small green slice per commit (a step, a component, a
+  fixed defect), Conventional Commits, DCO `-s`, exactly one agent trailer.
+- **Push to `main` immediately after every commit** — never batch pushes,
+  never hold local-only work; never push a slice whose targeted checks are
+  red. The parallax ruleset's "Bypassed rule violations" push notice is
+  expected.
+
 ## Steps
 
 ### Step 0: Decision record

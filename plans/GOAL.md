@@ -69,9 +69,11 @@ section of `plans/README.md` binds every executor of plans 105, 140, 141,
 For each ready plan: run its drift check, mark it `IN PROGRESS`, implement
 its complete scope, run every stated verification and done criterion, then
 retire it per the lifecycle (delete file + index row in the same commit,
-preserving durable evidence). Commit green durable slices with Conventional
-Commits, DCO sign-off, and exactly one agent-product trailer; push after
-every durable commit. A STOP condition blocks only that plan: preserve
+preserving durable evidence). **Commit often — small green slices** (a step,
+a component, a fixed defect per commit) with Conventional Commits, DCO
+sign-off, and exactly one agent-product trailer, and **push each commit to
+`main` immediately, in whichever repository the change lives** — never batch
+pushes or hold local-only work. A STOP condition blocks only that plan: preserve
 reproducible evidence, shrink the file to unfinished work, mark `BLOCKED`,
 continue independent ready work. Never stub a gate, never claim an unrun
 check passed, never invent an operator decision.

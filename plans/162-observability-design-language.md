@@ -139,6 +139,17 @@ treatment keeps its shadows), scanline/dot-grid textures.
 redesign; per-page feature work (plans 163-168); shadcn primitive edits
 except additive utility classes.
 
+## Git workflow
+
+- Work directly on `main` — no branches, no pull requests (operator
+  delivery model, 2026-07-17; see plans/README.md Execution Preflight).
+- Commit OFTEN: one small green slice per commit (a step, a component, a
+  fixed defect), Conventional Commits, DCO `-s`, exactly one agent trailer.
+- **Push to `main` immediately after every commit** — never batch pushes,
+  never hold local-only work; never push a slice whose targeted checks are
+  red. The parallax ruleset's "Bypassed rule violations" push notice is
+  expected.
+
 ## Steps
 
 ### Step 1: Tokens + pure color lib

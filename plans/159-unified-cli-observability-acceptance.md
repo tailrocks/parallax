@@ -82,6 +82,17 @@ branch), each as its own commit.
 this is not a GreptimeDB-vs-ClickHouse benchmark), multi-backend fan-out
 (plan 154), retention/prune, release gates (plan 102).
 
+## Git workflow
+
+- Work directly on `main` in the parallax repo (evidence docs) and the playground where its steps touch it — no branches, no pull requests (operator
+  delivery model, 2026-07-17; see plans/README.md Execution Preflight).
+- Commit OFTEN: one small green slice per commit (a step, a component, a
+  fixed defect), Conventional Commits, DCO `-s`, exactly one agent trailer.
+- **Push to `main` immediately after every commit** — never batch pushes,
+  never hold local-only work; never push a slice whose targeted checks are
+  red. The parallax ruleset's "Bypassed rule violations" push notice is
+  expected.
+
 ## Steps
 
 ### Step 1: Bring-up

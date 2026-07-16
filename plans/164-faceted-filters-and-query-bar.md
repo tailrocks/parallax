@@ -120,6 +120,17 @@ clone `https://github.com/MapleTechLabs/maple` for detail):
 keep working, gaining the new params transparently), SQL console, dashboard
 filtering, metrics page (plan 168).
 
+## Git workflow
+
+- Work directly on `main` in BOTH repositories — no branches, no pull requests (operator
+  delivery model, 2026-07-17; see plans/README.md Execution Preflight).
+- Commit OFTEN: one small green slice per commit (a step, a component, a
+  fixed defect), Conventional Commits, DCO `-s`, exactly one agent trailer.
+- **Push to `main` immediately after every commit** — never batch pushes,
+  never hold local-only work; never push a slice whose targeted checks are
+  red. The parallax ruleset's "Bypassed rule violations" push notice is
+  expected.
+
 ## Steps
 
 ### Step 1: Backend facets + attributeFilters + durationStats
