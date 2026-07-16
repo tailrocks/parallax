@@ -107,18 +107,46 @@ pub(crate) async fn service_map(
 ) -> FieldResult<ServiceMap> {
     let (from, to) = parse_range(&from_nanos, &to_nanos)?;
     let max_traces = clamp_limit(max_traces, 50).min(SERVICE_MAP_TRACE_CAP);
-    let (services, edges) = tokio::try_join!(
+    let (services, edges, invocations, catalog) = tokio::try_join!(
         context.store.service_summaries(from..=to),
         context.store.service_map(from..=to, max_traces),
+        context
+            .store
+            .observed_invocations(crate::MAX_ROWS, from..=to),
+        context.store.service_catalog(from..=to),
     )
     .map_err(crate::internal_field_err)?;
+    // Node kinds are derived from generic signals only: a service whose
+    // telemetry carried `cli.invocation.id` is a CLI application; a webjs SDK
+    // is a browser; everything else is a service.
+    let cli_services: std::collections::BTreeSet<&str> = invocations
+        .iter()
+        .map(|invocation| invocation.service.as_str())
+        .filter(|service| !service.is_empty())
+        .collect();
+    let browser_services: std::collections::BTreeSet<&str> = catalog
+        .iter()
+        .filter(|row| row.telemetry_sdk_language.as_deref() == Some("webjs"))
+        .map(|row| row.name.as_str())
+        .collect();
+    let kind_for = |name: &str| {
+        if cli_services.contains(name) {
+            "cli".to_string()
+        } else if browser_services.contains(name) {
+            "browser".to_string()
+        } else {
+            "service".to_string()
+        }
+    };
     let mut nodes: BTreeMap<String, ServiceNodeData> = services
         .into_iter()
         .map(|service| {
+            let kind = kind_for(&service.name);
             (
                 service.name.clone(),
                 ServiceNodeData {
                     name: service.name,
+                    kind,
                     last_seen_nanos: service.last_seen_nanos,
                     span_count: service.span_count,
                     error_count: service.error_count,
@@ -133,6 +161,7 @@ pub(crate) async fn service_map(
                 .entry(service.clone())
                 .or_insert_with(|| ServiceNodeData {
                     name: service.clone(),
+                    kind: kind_for(service),
                     last_seen_nanos: 0,
                     span_count: 0,
                     error_count: 0,

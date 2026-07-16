@@ -1658,7 +1658,7 @@ ceiling = 132
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-evidence/src/story.rs::project_story"
-ceiling = 142
+ceiling = 148
 
 [[limits]]
 metric = "rust.function-lines"

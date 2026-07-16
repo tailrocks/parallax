@@ -62,8 +62,8 @@ pub fn project_story(
             beat: StoryBeat {
                 ts_nanos: span.ts_nanos,
                 lane: lane.clone(),
-                kind: "span.start".to_string(),
-                title: span.name.clone(),
+                kind: span_start_kind(span),
+                title: span_start_title(span),
                 trace_id: span.trace_id.clone(),
                 span_id: Some(span.span_id.clone()),
                 severity: None,
@@ -141,12 +141,18 @@ pub fn project_story(
             .and_then(|span| span_order.get(&span.span_id).copied())
             .unwrap_or(usize::MAX.saturating_sub(index));
         let is_error = log.severity_num >= 17 || log.severity_text.eq_ignore_ascii_case("ERROR");
+        let (kind, title) = journey_log_beat(log).unwrap_or_else(|| {
+            (
+                if is_error { "error" } else { "log" }.to_string(),
+                log_title(log),
+            )
+        });
         beats.push(SortableBeat {
             beat: StoryBeat {
                 ts_nanos: log.ts_nanos,
                 lane: lane_for(&log.service, &log.resource),
-                kind: if is_error { "error" } else { "log" }.to_string(),
-                title: log_title(log),
+                kind,
+                title,
                 trace_id: log.trace_id.clone(),
                 span_id: non_empty(log.span_id.clone()),
                 severity: non_empty(log.severity_text.clone()),
@@ -170,6 +176,80 @@ pub fn project_story(
             .then_with(|| a.beat.span_id.cmp(&b.beat.span_id))
     });
     beats.into_iter().map(|beat| beat.beat).collect()
+}
+
+/// Generic CLI-journey spans get first-class beat kinds so the story reads
+/// as a narrative (plan 157 journey requirement).
+fn span_start_kind(span: &SpanRow) -> String {
+    match span.name.as_str() {
+        name if name == semconv::UI_ACTION_SPAN_NAME => "ui.action".to_string(),
+        name if name == semconv::BACKGROUND_CYCLE_SPAN_NAME => "background.cycle".to_string(),
+        _ if span
+            .attributes
+            .get(semconv::JOB_ID)
+            .and_then(Value::as_str)
+            .is_some() =>
+        {
+            "job".to_string()
+        }
+        _ => "span.start".to_string(),
+    }
+}
+
+fn span_start_title(span: &SpanRow) -> String {
+    let attr = |key: &str| {
+        span.attributes
+            .get(key)
+            .and_then(Value::as_str)
+            .map(str::to_string)
+    };
+    match span.name.as_str() {
+        name if name == semconv::UI_ACTION_SPAN_NAME => attr(semconv::UI_ACTION_NAME)
+            .map(|action| format!("action {action}"))
+            .unwrap_or_else(|| span.name.clone()),
+        name if name == semconv::BACKGROUND_CYCLE_SPAN_NAME => attr(semconv::BACKGROUND_CYCLE_NAME)
+            .map(|cycle| format!("cycle {cycle}"))
+            .unwrap_or_else(|| span.name.clone()),
+        _ => attr(semconv::JOB_ID)
+            .map(|job| {
+                let job_type = attr(semconv::JOB_TYPE).unwrap_or_else(|| "job".to_string());
+                format!("{job_type} {job}")
+            })
+            .unwrap_or_else(|| span.name.clone()),
+    }
+}
+
+/// Typed journey log events become session/screen beats instead of plain logs.
+fn journey_log_beat(log: &LogRow) -> Option<(String, String)> {
+    let screen = log
+        .attributes
+        .get(semconv::APP_SCREEN_ID)
+        .and_then(Value::as_str);
+    match log.event_name.as_str() {
+        name if name == semconv::SESSION_START_EVENT_NAME => Some((
+            "session.start".to_string(),
+            format!(
+                "session {} started",
+                log.session_id.as_deref().unwrap_or("(unknown)")
+            ),
+        )),
+        name if name == semconv::SESSION_END_EVENT_NAME => Some((
+            "session.end".to_string(),
+            format!(
+                "session {} ended",
+                log.session_id.as_deref().unwrap_or("(unknown)")
+            ),
+        )),
+        name if name == semconv::UI_SCREEN_ENTERED_EVENT_NAME => Some((
+            "screen.entered".to_string(),
+            format!("entered {}", screen.unwrap_or("(unknown screen)")),
+        )),
+        name if name == semconv::UI_SCREEN_EXITED_EVENT_NAME => Some((
+            "screen.exited".to_string(),
+            format!("exited {}", screen.unwrap_or("(unknown screen)")),
+        )),
+        _ => None,
+    }
 }
 
 fn adjusted_start(

@@ -116,6 +116,7 @@ impl ServiceCatalogRow {
 #[derive(Clone)]
 pub(crate) struct ServiceNodeData {
     pub(super) name: String,
+    pub(super) kind: String,
     pub(super) last_seen_nanos: u128,
     pub(super) span_count: u64,
     pub(super) error_count: u64,
@@ -128,6 +129,10 @@ pub(crate) struct ServiceNode(pub(crate) ServiceNodeData);
 impl ServiceNode {
     fn name(&self) -> &str {
         &self.0.name
+    }
+    /// cli | browser | service — derived from generic signals only.
+    fn kind(&self) -> &str {
+        &self.0.kind
     }
     fn last_seen_nanos(&self) -> String {
         nanos_string(self.0.last_seen_nanos)

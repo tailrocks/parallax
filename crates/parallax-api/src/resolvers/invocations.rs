@@ -202,6 +202,19 @@ impl Invocation {
             self.stats(context).await?.trace_ids.len() as u64
         ))
     }
+    /// Interactive sessions observed inside this invocation.
+    async fn session_count(&self, context: &ApiContext) -> FieldResult<i32> {
+        let sessions = context
+            .store
+            .sessions_by_invocation(
+                &self.record.invocation_id,
+                retained_recent_range(),
+                MAX_ROWS,
+            )
+            .await
+            .map_err(crate::internal_field_err)?;
+        Ok(saturate_i32(sessions.len() as u64))
+    }
     /// Grouped issues whose events fell inside this run's traces.
     async fn issues(&self, context: &ApiContext) -> FieldResult<Vec<Issue>> {
         let stats = self.stats(context).await?;
