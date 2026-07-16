@@ -188,6 +188,41 @@ Plan 154's remaining sweep consumes the plan-158 emitter contract.
 | [160](160-ui-defect-audit-and-repair.md) | UI defect audit & repair against the corpus; generic-attributes conformance sweep | P1 | L | 156, 157, 161 | TODO |
 | [159](159-unified-cli-observability-acceptance.md) | Live acceptance: coverage matrix, GraphQL assertions, journey + usability browser evidence | P1 | M | 156, 157, 158, 160, 161 | TODO |
 
+### Wave 2 — Maple-Informed UI Evolution (operator /improve directive, 2026-07-17)
+
+Reference analysis of `github.com/MapleTechLabs/maple` (deep /improve run,
+2026-07-17; three-agent survey of its web UI, design system, and query
+layer). Wave 2 executes AFTER the Wave-1 (156-161) PR merges, on ONE
+operator-authorized branch (proposed `feature/maple-informed-ui`), ONE
+Parallax PR plus ONE linked playground PR for the new scenarios
+(`f-attrs`, `l-patterns`, `eco-external`, `a-breach-*`, `a-recover`,
+`m-labels`). Non-interactive default selection: the seven highest-leverage
+adoptions were planned; the deferred list below records what was
+consciously not planned. Every plan verifies in the browser against the
+playground per the `ui/AGENTS.md` checklist (installed by plan 162), and
+respects the generic-attributes-only invariant — no vendor-specific
+inference (Maple's Hyperdrive/PlanetScale logic is explicitly not copied).
+
+| Plan | Title | Priority | Effort | Depends on | Status |
+|------|-------|----------|--------|------------|--------|
+| [162](162-observability-design-language.md) | Three-axis semantic color system + density/motion/empty-state craft rules | P1 | M | Wave 1 merged | TODO |
+| [163](163-trace-timeline-interactions.md) | Trace timeline viewport reducer: drag-zoom/pan, color-by, self-time, flamegraph | P1 | XL | 160, 162 | TODO |
+| [164](164-faceted-filters-and-query-bar.md) | Faceted filters with counts, p50/p95 duration presets, where-clause editor | P1 | L | 156, 162 | TODO |
+| [165](165-logs-power-features.md) | Logs: brush-zoom histogram, pinned attribute columns, Drain pattern grouping | P2 | L | 162, 164 | TODO |
+| [166](166-service-map-v2.md) | Service map v2: ELK layout, focus/declutter, external db/queue/http nodes | P1 | L | 156, 157, 162 | TODO |
+| [167](167-alerting-v1.md) | Alerting v1: rules, evaluator, incidents, webhook/slack destinations | P1 | XL | 156, 162; soft 164 | TODO |
+| [168](168-metrics-explorer.md) | Metrics explorer: catalog, breakdown, graduation to dashboards/alerts | P2 | L | 162, 164; soft 167; reconciles 105 | TODO |
+
+Considered and deferred (recorded so they are not re-audited): session
+replay / rrweb studio (large new subsystem; browser corpus first),
+AI triage + chat + MCP tool catalog page (product MCP is operator-gated by
+plan 112), anomaly detection (needs alerting v1 baseline first),
+org/multi-tenancy + billing surfaces (V2 scope, plan 109 gate), Expo mobile
+app, demo-seed onboarding (playground covers it), ReactFlow adoption (the
+hand-rolled SVG renderer stays; only ELK layout is adopted), Maple's
+mono-as-body typography and amber theme (Parallax keeps its identity),
+Apdex/SLO pages (revisit after 167 proves value).
+
 ### Cross-Repository Playground And Test Reporting
 
 Plan 154 is the operator-directed (2026-07-14) expansion program for the
@@ -286,6 +321,12 @@ all actionable plans --------------------------> 107
 158 -------------------------------------------> 161
 156 + 157 + 161 -------------------------------> 160
 156 + 157 + 158 + 160 + 161 -------------------> 159
+
+Wave 2 (after 156-161 merge):
+159 (Wave 1 merged) ---------------------------> 162
+160 + 162 -------------------------------------> 163
+156 + 162 -------------------------------------> 164, 166, 167
+162 + 164 -------------------------------------> 165, 168
 ```
 
 The 156→159 vertical (one branch, one Parallax PR + one linked playground PR)

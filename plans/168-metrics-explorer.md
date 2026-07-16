@@ -1,0 +1,188 @@
+# Plan 168: Metrics explorer — browse catalog, detail view with group-by breakdown, graduation to dashboards and alerts
+
+> **Executor instructions**: Follow this plan step by step. Read `ui/AGENTS.md`
+> (browser-verification checklist applies after every step against playground
+> metric scenarios). Read plan 105's decision gate first — this plan builds
+> the product surface on top of whatever metric-summary contract 105
+> records; if 105's decision record does not exist yet, execute 105's
+> decision step as part of Step 0 here (same operator authority, recorded in
+> `docs/research/decisions/metric-summary-contract.md`). STOP conditions
+> binding. Update this plan's status row in `plans/README.md` when done.
+>
+> **Drift check (run first)**:
+> `git diff --stat <wave2-base>..HEAD -- crates/parallax-api crates/parallax-greptime ui/src/routes ui/src/components/nav.ts plans/105-metric-overview-and-trends.md`
+> `<wave2-base>` = the Wave-1 merge commit.
+
+## Status
+
+- **Priority**: P2
+- **Effort**: L
+- **Risk**: MED (depends on the plan-105 contract decision; native
+  per-metric tables have sharp edges)
+- **Depends on**: plans 162, 164 (attributeFilters + where-editor reuse),
+  167 (alert graduation target — soft: graduation button hidden if 167
+  absent); reconciles plan 105
+- **Category**: direction / product / metrics
+- **Planned at**: `2288011`, 2026-07-17
+
+## Why this matters
+
+Metrics are Parallax's weakest signal today: they surface only inside
+dashboards, the service detail page, and the invocation MetricStrip — there
+is no way to answer "what metrics exist, what does this one look like,
+broken down by what?". The reference product's metric explorer closes
+exactly that loop and adds the key retention move: a query you built while
+exploring **graduates** into a dashboard widget or an alert rule in one
+click, so exploration output is never thrown away.
+
+## Reference (self-contained)
+
+From Maple (`apps/web/src/routes/metrics`, `metric-detail.tsx`,
+`metric-graduation-actions.tsx`): metrics index = searchable browse
+grid/table (name, type, unit, services emitting it, datapoint freshness);
+metric detail = chart + query controls (aggregation legal for the metric
+type — sum/rate for monotonic sums, avg/min/max for gauges, percentile for
+histograms; where-filter; group-by attribute; bucket step) + breakdown
+panel (top series by the group-by; clicking a series appends a
+where-filter) + metadata panel (services, first/last seen, datapoint
+counts) + graduation actions (add-to-dashboard, create-alert) carrying the
+current query spec. Everything URL-encoded (`q/type/agg/where/groupBy/step`).
+
+## Current state
+
+(verified at `2288011`)
+
+- Backend already exposes the primitives (`crates/parallax-api/src/lib.rs`):
+  `metric_names (:258)`, `metric_labels (:261)`, `metric_label_values
+  (:264)`, `metric_series (:278)`, `histogram_quantile (:282)`,
+  `metric_exemplars (:285)`; GreptimeDB native per-metric tables resolved by
+  `crates/parallax-greptime/src/greptime_sql.rs:43 native_metric_base` /
+  `:55 metric_table_candidates` (histograms split `_bucket/_count/_sum`).
+- Plan 105 (`plans/105-metric-overview-and-trends.md`) is decision-gated:
+  metric summary contract (eligible kinds, NaN/stale handling, trend
+  buckets, native-name mapping, metric-only service discovery) +
+  the `parallax metrics --invocation` CLI decision. This plan does NOT
+  duplicate 105's overview/trend stubs work; it builds the explorer
+  surface, and both consume the same decision record.
+- UI: no `/metrics` route; nav has no Metrics entry; dashboards
+  (`routes/dashboards.*`) have widget editing where graduation lands;
+  plan-167 alert create form is URL-initializable.
+- Playground `m-shapes` scenario (plan 161) provides counter reset, gauge
+  gaps, exponential + explicit histograms, exemplars.
+
+## Contract decisions (fixed)
+
+1. Explorer is read-only over native tables — no new storage.
+2. Aggregation legality is typed per metric kind (sum→rate/increase/sum;
+   gauge→avg/min/max/last; histogram→p50/p95/p99/avg via
+   `histogram_quantile`); illegal combinations are unrepresentable in the
+   UI (select options filtered by kind).
+3. Rate for monotonic sums = window-function delta over series identity
+   (attribute-set fingerprint), computed in `parallax-greptime` SQL;
+   counter resets clamp to ≥0 (test against `m-shapes`).
+4. Graduation passes a serialized query spec via URL params to the
+   dashboard widget editor and the alert form (`signal_type=metric`);
+   no hidden state channel.
+5. Generic-attributes-only: group-by/where operate on whatever label keys
+   exist — no special-cased metric names beyond the semconv constants
+   already used for RED charts.
+
+## Commands you will need
+
+| Purpose | Command | Expected on success |
+|---|---|---|
+| Backend | `cargo nextest run --locked -p parallax-greptime -p parallax-api` | pass |
+| Live engine | `cargo nextest run --locked -p parallax-server -E 'binary(/greptime/)'` | pass |
+| UI gates | `cd ui && bun run typecheck && bun run lint && bun run check && bun run --bun test:ci && bun run build` | exit 0 |
+| Corpus | playground `scenarios/run.sh m-shapes` + demo load | metrics present |
+
+## Scope
+
+**In scope:**
+- `crates/parallax-greptime` — metric catalog query (names + kind + unit +
+  emitting services + last datapoint), rate/increase helpers with reset
+  clamping, group-by series query (top-N by current window).
+- `crates/parallax-api` — `metricCatalog(q, kind, limit)`,
+  `metricQuery(spec)` (single entry point the explorer, dashboards, and
+  alerts share), tests.
+- `ui/src` — `/metrics` + `/metrics/$metricName` routes, nav entry
+  (primaryNav, chart icon), browse table (search + kind filter), detail
+  view (controls + Recharts chart with plan-162 tokens + incomplete-bucket
+  dashed tail + breakdown panel + metadata + graduation buttons), URL
+  schemas.
+- `plans/105-metric-overview-and-trends.md` — reconciliation edit: its
+  overview/trend stub work now consumes `metricQuery`; note added.
+
+**Out of scope:** dashboard builder changes beyond accepting the
+graduation params; exemplar deep-linking redesign; new metric ingestion;
+SLOs/Apdex (defer — record in index rejected/deferred list).
+
+## Steps
+
+### Step 0: Decision record
+
+If `docs/research/decisions/metric-summary-contract.md` absent, write it
+per plan 105's Decision Gate (window, eligible kinds, NaN/stale, buckets,
+native-name mapping, metric-only service discovery, `--invocation` CLI
+verdict), stamped operator-directive 2026-07-17 (this /improve directive
+authorizes the explorer; the record makes it durable).
+
+**Verify**: decision file exists with all gate items answered.
+
+### Step 1: Catalog + query backend
+
+Queries + GraphQL + live-engine tests against `m-shapes`: catalog lists the
+seeded metrics with correct kinds; rate clamps the counter reset; histogram
+p95 sane; group-by top-N returns the seeded label split.
+
+**Verify**: cargo lanes pass.
+
+### Step 2: Browse + detail UI
+
+Routes, controls (kind-filtered aggregations), breakdown click-to-filter,
+metadata, incomplete-bucket dashed tail (last bucket rendered as a dashed
+continuation series), URL round-trip.
+
+**Verify**: component/route tests; UI gates green.
+
+### Step 3: Graduation + browser closure
+
+Add-to-dashboard (opens widget editor pre-filled) and create-alert (opens
+plan-167 form pre-filled; hidden when 167 absent). Browser walk per
+checklist against `m-shapes` + demo load: browse → open a histogram → p95 +
+group-by service → click a series to filter → graduate to alert →
+screenshots to `docs/research/validation/2026-07-wave2/168/`.
+
+**Verify**: evidence complete; permalink reload reproduces the exact chart.
+
+## Playground verification
+
+`m-shapes` (plan 161) covers reset/gaps/histograms/exemplars. New scenario
+(linked PR): `m-labels` — one gauge + one sum emitted with a 3-value label
+(`region` ∈ eu/us/ap, fixed proportions) so group-by breakdown output is
+exactly assertable.
+
+## Done criteria
+
+- [ ] Decision record exists; plan 105 reconciled (note added, no
+  duplicated scope).
+- [ ] Backend lanes green incl. reset-clamp and group-by live tests.
+- [ ] UI gates green; browser evidence incl. graduation round-trip and
+  permalink reproduction.
+- [ ] `m-labels` scenario + matrix row landed (linked PR).
+- [ ] `plans/README.md` status row updated.
+
+## STOP conditions
+
+- Native per-metric table name resolution fails for corpus metric names
+  (unicode/dots edge cases) — report exact names; table-mapping changes are
+  a 105-contract matter.
+- Rate-over-window SQL unsupported by the pinned GreptimeDB version —
+  report the exact error + version; do not emulate with client-side math.
+- Graduation requires dashboard-builder changes beyond accepting params.
+
+## Maintenance notes
+
+- `metricQuery(spec)` is the single metric read path — dashboards (133-era
+  work), alerts (167), and the explorer must not fork their own metric SQL.
+- Reviewer focus: aggregation legality typing, reset clamping, URL schema.

@@ -28,9 +28,11 @@ foremost) with browser verification after every implemented feature, and
 proves the whole coverage matrix live on the operator's Docker host with
 GraphQL assertions and browser evidence (plan 159) before the PR opens.
 
-Secondary objective: after the vertical merges, continue executing every
-remaining actionable plan indexed by `plans/README.md` under the same rules
-as before, honoring genuine blockers.
+Secondary objective: after the vertical merges, execute Wave 2 (plans
+162-168, the Maple-informed UI evolution — see its section in
+`plans/README.md`) on its own single authorized branch and PR pair, then
+continue every remaining actionable plan under the same rules, honoring
+genuine blockers.
 
 ## Sources And Scope
 
