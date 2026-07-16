@@ -62,7 +62,7 @@ import {
 import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
 
-/** Live feed span — derived from shared `Span` (+ `runId` on the wire). */
+/** Live feed span — derived from shared `Span` (+ `invocationId` on the wire). */
 type SpanDoc = LiveSpan
 
 type TraceSort =

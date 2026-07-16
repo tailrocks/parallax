@@ -101,7 +101,7 @@ function MetricPanel({ panel }: { panel: Panel }) {
 export function MetricStrip({
   title,
   service,
-  runId,
+  invocationId,
   fromNanos,
   toNanos,
   stepSeconds,
@@ -109,7 +109,7 @@ export function MetricStrip({
 }: {
   title: string
   service?: string | undefined
-  runId?: string | undefined
+  invocationId?: string | undefined
   fromNanos: string
   toNanos: string
   stepSeconds: number
@@ -129,8 +129,8 @@ export function MetricStrip({
         ? ((BigInt(Date.now()) + 30_000n) * 1_000_000n).toString()
         : toNanos
       const scope = [
-        runId ? `runId: "${gqlString(runId)}"` : "",
-        !runId && service ? `service: "${gqlString(service)}"` : "",
+        invocationId ? `invocationId: "${gqlString(invocationId)}"` : "",
+        !invocationId && service ? `service: "${gqlString(service)}"` : "",
       ]
         .filter(Boolean)
         .join(", ")
@@ -185,7 +185,7 @@ export function MetricStrip({
       activeController?.abort()
       if (timer) clearInterval(timer)
     }
-  }, [service, runId, fromNanos, toNanos, stepSeconds, live, pageVisible])
+  }, [service, invocationId, fromNanos, toNanos, stepSeconds, live, pageVisible])
 
   if (!panels || panels.every((panel) => panel.points.length === 0)) {
     return null
@@ -196,7 +196,7 @@ export function MetricStrip({
         <CardTitle className="text-sm">
           {title}{" "}
           <span className="font-normal text-muted-foreground">
-            ({runId ? "this run's points" : "service-scoped"})
+            ({invocationId ? "this run's points" : "service-scoped"})
           </span>
         </CardTitle>
       </CardHeader>

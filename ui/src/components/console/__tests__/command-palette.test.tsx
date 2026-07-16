@@ -39,7 +39,7 @@ function mockPaletteData() {
           },
           runs: [
             {
-              runId: "run-a",
+              invocationId: "run-a",
               command: "cargo test",
               status: "finished",
               startedAtNanos: "1719999980000000000",

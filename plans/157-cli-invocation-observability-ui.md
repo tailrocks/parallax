@@ -31,12 +31,18 @@
 
 ### Landed by Grok (preliminary) — full UI still peer-owned
 
-Minimal compile unblock only (plan 156 deleted `PARALLAX_RUN_ID` from
-semconv):
-- `ui/src/routes/sql.tsx` + `-sql.test.tsx`: SQL presets and `targetForCell`
-  use `CLI_INVOCATION_ID` / `invocation_id`; link target still `/runs/$runId`
-  until this plan renames routes to invocations.
+Wire-contract unblock so UI talks to plan-156 GraphQL/SSE (not product UX):
+- `ui/src/routes/sql.tsx` + `-sql.test.tsx`: SQL presets / `targetForCell` use
+  `CLI_INVOCATION_ID` / `invocation_id`.
+- Runs list/detail + shared API selections: GraphQL
+  `invocations`/`observedInvocations`/`invocation(invocationId)` /
+  `tracesByInvocation`/`logsByInvocation`/`story(invocationId)` / etc.; log
+  `LOG_FIELDS` and span live types use `invocationId`; SSE query
+  `invocation_id=`.
+- **Routes still `/runs` and `/runs/$runId`** (param key `runId`) — full
+  rename + hub/journey/live toggles remain this plan’s core work.
 - Regenerated `ui/src/shared/semconv.ts` ships with plan 156.
+- `bun run typecheck` green; vitest `-runs`/`-sql` green.
 
 **Peer: implement full invocation hub, session journey, live toggles, route
 rename `/runs`→`/invocations`, browser checks with `agent-browser`.** Do not

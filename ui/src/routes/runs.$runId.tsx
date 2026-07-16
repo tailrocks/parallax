@@ -60,7 +60,7 @@ interface RunIssue {
 }
 
 interface RunRecordData {
-  runId: string
+  invocationId: string
   command: string | null
   status: string
   exitCode: number | null
@@ -117,11 +117,13 @@ export function snapshotFromNanos(
   return (BigInt(nowMs) * 1_000_000n - DAY_NS).toString()
 }
 
-export async function loadRunDetail(runId: string, nowMs = Date.now()) {
-  const escaped = gqlString(runId)
-  const { run } = await graphqlCached<{ run: RunRecordData | null }>(
-    `{ run(runId: "${escaped}") {
-         runId command status exitCode startedAtNanos endedAtNanos
+export async function loadRunDetail(invocationId: string, nowMs = Date.now()) {
+  const escaped = gqlString(invocationId)
+  const { invocation: run } = await graphqlCached<{
+    invocation: RunRecordData | null
+  }>(
+    `{ invocation(invocationId: "${escaped}") {
+         invocationId command status exitCode startedAtNanos endedAtNanos
          errorCount traceCount
          issues { fingerprint title errorType status eventCount }
        } }`
@@ -129,25 +131,25 @@ export async function loadRunDetail(runId: string, nowMs = Date.now()) {
   const toNanos = (BigInt(nowMs) * 1_000_000n + 60_000_000_000n).toString()
   const fromNanos = snapshotFromNanos(run?.startedAtNanos, nowMs)
   const rest = await graphqlCached<{
-    tracesByRun: RunTraceSummary[]
-    logsByRun: LogDoc[]
+    tracesByInvocation: RunTraceSummary[]
+    logsByInvocation: LogDoc[]
     story: StoryBeat[]
     runtimeSnapshot: RuntimeMetric[]
     agentSession: AgentSessionData | null
   }>(
-    `{ tracesByRun(runId: "${escaped}") {
+    `{ tracesByInvocation(invocationId: "${escaped}") {
          traceId rootName service startNanos durationNs spanCount hasError
        }
-       logsByRun(runId: "${escaped}", limit: 200) {
+       logsByInvocation(invocationId: "${escaped}", limit: 200) {
          ${LOG_FIELDS}
        }
-       story(runId: "${escaped}") {
+       story(invocationId: "${escaped}") {
          tsNanos lane kind title traceId spanId severity durationNs
        }
-       runtimeSnapshot(runId: "${escaped}", fromNanos: "${fromNanos}", toNanos: "${toNanos}", stepSeconds: 5) {
+       runtimeSnapshot(invocationId: "${escaped}", fromNanos: "${fromNanos}", toNanos: "${toNanos}", stepSeconds: 5) {
          family metric unit points { tsNanos value }
        }
-       agentSession(runId: "${escaped}") {
+       agentSession(invocationId: "${escaped}") {
          rootSpanId truncated totalInputTokens totalOutputTokens errorCount
          steps {
            spanId traceId kind name startNanos durationNs isError
@@ -157,8 +159,8 @@ export async function loadRunDetail(runId: string, nowMs = Date.now()) {
   )
   return {
     run,
-    tracesByRun: rest.tracesByRun,
-    logsByRun: rest.logsByRun,
+    tracesByInvocation: rest.tracesByInvocation,
+    logsByInvocation: rest.logsByInvocation,
     story: rest.story,
     runtimeSnapshot: rest.runtimeSnapshot,
     agentSession: rest.agentSession,
@@ -173,13 +175,14 @@ export const Route = createFileRoute("/runs/$runId")({
     from: searchString(search["from"]),
     to: searchString(search["to"]),
   }),
+  // Route param stays $runId until plan 157 renames paths; wire id is invocation.
   loader: ({ params }) => loadRunDetail(params.runId),
   component: RunDetailPage,
 })
 
-function runRow(run: RunRecordData, runId: string): RunRow {
+function runRow(run: RunRecordData, invocationId: string): RunRow {
   return {
-    runId,
+    invocationId,
     source: "cli",
     command: run.command,
     service: null,
@@ -198,13 +201,13 @@ function runRow(run: RunRecordData, runId: string): RunRow {
 function RunDetailPage() {
   const {
     run: loadedRun,
-    tracesByRun,
-    logsByRun,
+    tracesByInvocation,
+    logsByInvocation,
     story,
     runtimeSnapshot,
     agentSession,
   } = Route.useLoaderData()
-  const { runId } = Route.useParams()
+  const { runId: invocationId } = Route.useParams()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const range = resolveRangeSearch(search)
@@ -217,7 +220,7 @@ function RunDetailPage() {
 
   const runLogs = useMemo(
     () =>
-      [...logsByRun, ...liveLogs]
+      [...logsByInvocation, ...liveLogs]
         .sort((a, b) =>
           BigInt(a.tsNanos) < BigInt(b.tsNanos)
             ? 1
@@ -226,14 +229,14 @@ function RunDetailPage() {
               : 0
         )
         .slice(0, 500),
-    [logsByRun, liveLogs]
+    [logsByInvocation, liveLogs]
   )
 
   const logStreamUrl = live
-    ? `/v1/logs/stream?run_id=${encodeURIComponent(runId)}`
+    ? `/v1/logs/stream?invocation_id=${encodeURIComponent(invocationId)}`
     : null
   const spanStreamUrl = live
-    ? `/v1/traces/stream?run_id=${encodeURIComponent(runId)}`
+    ? `/v1/traces/stream?invocation_id=${encodeURIComponent(invocationId)}`
     : null
 
   const logStatus = useLiveStream<LogDoc>({
@@ -268,26 +271,26 @@ function RunDetailPage() {
     if (!live || !pageVisible) return
     const timer = setInterval(() => {
       void graphql<{
-        run: RunRecordData | null
-      }>(`{ run(runId: "${gqlString(runId)}") {
-             runId command status exitCode startedAtNanos endedAtNanos
+        invocation: RunRecordData | null
+      }>(`{ invocation(invocationId: "${gqlString(invocationId)}") {
+             invocationId command status exitCode startedAtNanos endedAtNanos
              errorCount traceCount
              issues { fingerprint title errorType status eventCount }
            } }`)
         .then((data) => {
-          if (data.run) setPolledRun(data.run)
+          if (data.invocation) setPolledRun(data.invocation)
         })
         // Live polling tolerates transient API failures; next interval retries.
         .catch(() => {})
     }, 10_000)
     return () => clearInterval(timer)
-  }, [live, runId, pageVisible])
+  }, [live, invocationId, pageVisible])
 
   return (
     <RunDetailContent
-      runId={runId}
+      invocationId={invocationId}
       run={run}
-      traces={tracesByRun}
+      traces={tracesByInvocation}
       logs={runLogs}
       story={story}
       runtimeSnapshot={runtimeSnapshot}
@@ -312,7 +315,7 @@ function RunDetailPage() {
 }
 
 export function RunDetailContent({
-  runId,
+  invocationId,
   run,
   traces,
   logs,
@@ -330,7 +333,7 @@ export function RunDetailContent({
   streamActive = false,
   onLive,
 }: {
-  runId: string
+  invocationId: string
   run: RunRecordData | null
   traces: RunTraceSummary[]
   logs: LogDoc[]
@@ -349,7 +352,7 @@ export function RunDetailContent({
 }) {
   const empty = !run && traces.length === 0 && logs.length === 0
   const runsBack = navItem("/runs")!
-  const row = run ? runRow(run, runId) : null
+  const row = run ? runRow(run, invocationId) : null
   const [lazyBundle, setLazyBundle] = useState<string | null>(
     bundle?.markdown ?? null
   )
@@ -366,7 +369,7 @@ export function RunDetailContent({
     setBundleError(null)
     void graphql<{
       bundle: { markdown: string } | null
-    }>(`{ bundle(runId: "${gqlString(runId)}") { markdown } }`)
+    }>(`{ bundle(invocationId: "${gqlString(invocationId)}") { markdown } }`)
       .then((data) => {
         if (cancelled) return
         setLazyBundle(data.bundle?.markdown ?? null)
@@ -381,7 +384,7 @@ export function RunDetailContent({
     return () => {
       cancelled = true
     }
-  }, [runId, bundle?.markdown])
+  }, [invocationId, bundle?.markdown])
 
   if (empty) {
     return (
@@ -397,14 +400,14 @@ export function RunDetailContent({
     <div className="space-y-4">
       <PageHeader
         back={runsBack}
-        title={runId}
-        titleTrailing={<CopyButton value={runId} />}
+        title={invocationId}
+        titleTrailing={<CopyButton value={invocationId} />}
         description={
           run?.command ? <code>{run.command}</code> : "Observed telemetry run"
         }
         actions={
           <>
-            <PinButton kind="run" label={runId} />
+            <PinButton kind="run" label={invocationId} />
             <Button
               size="sm"
               variant={live ? "secondary" : "outline"}
@@ -417,7 +420,7 @@ export function RunDetailContent({
               ) : null}
             </Button>
             {lazyBundle ? (
-              <DownloadBundle runId={runId} markdown={lazyBundle} />
+              <DownloadBundle invocationId={invocationId} markdown={lazyBundle} />
             ) : null}
           </>
         }
@@ -436,7 +439,7 @@ export function RunDetailContent({
               title="Run observation stream"
               description="Streaming this run's logs and finished spans while metrics follow now."
               count={liveLogs.length + liveSpans.length}
-              endpoint={`/v1/*/stream?run_id=${runId}`}
+              endpoint={`/v1/*/stream?invocation_id=${invocationId}`}
               active={streamActive}
             >
               <LiveEventStack
@@ -471,7 +474,7 @@ export function RunDetailContent({
           {run ? (
             <MetricStrip
               title="Process metrics"
-              runId={runId}
+              invocationId={invocationId}
               fromNanos={(
                 BigInt(run.startedAtNanos) - 30_000_000_000n
               ).toString()}
@@ -506,7 +509,7 @@ export function RunDetailContent({
             </Card>
           ) : null}
           <BundleCard
-            runId={runId}
+            invocationId={invocationId}
             markdown={lazyBundle}
             loading={bundleLoading}
             error={bundleError}
@@ -680,12 +683,12 @@ function TracesCard({
 }
 
 function BundleCard({
-  runId,
+  invocationId,
   markdown,
   loading,
   error,
 }: {
-  runId: string
+  invocationId: string
   markdown: string | null
   loading: boolean
   error: string | null
@@ -697,7 +700,7 @@ function BundleCard({
         {markdown ? (
           <div className="flex items-center gap-1">
             <CopyButton value={markdown} />
-            <DownloadBundle runId={runId} markdown={markdown} />
+            <DownloadBundle invocationId={invocationId} markdown={markdown} />
           </div>
         ) : null}
       </CardHeader>
@@ -727,10 +730,10 @@ function BundleCard({
 }
 
 function DownloadBundle({
-  runId,
+  invocationId,
   markdown,
 }: {
-  runId: string
+  invocationId: string
   markdown: string
 }) {
   return (
@@ -745,7 +748,7 @@ function DownloadBundle({
         const url = URL.createObjectURL(blob)
         const anchor = document.createElement("a")
         anchor.href = url
-        anchor.download = `parallax-bundle-${runId}.md`
+        anchor.download = `parallax-bundle-${invocationId}.md`
         anchor.click()
         URL.revokeObjectURL(url)
       }}

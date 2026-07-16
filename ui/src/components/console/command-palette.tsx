@@ -46,7 +46,7 @@ interface RecentTrace {
 }
 
 interface RecentRun {
-  runId: string
+  invocationId: string
   command: string | null
   status: string
   startedAtNanos: string
@@ -188,7 +188,7 @@ export function CommandPalette({
             }
           }
           runs(limit: 5) {
-            runId
+            invocationId
             command
             status
             startedAtNanos
@@ -360,19 +360,19 @@ export function CommandPalette({
           ))}
           {recent.data.runs.map((run) => (
             <CommandItem
-              key={run.runId}
-              value={`run ${run.command ?? ""} ${run.runId}`}
+              key={run.invocationId}
+              value={`run ${run.command ?? ""} ${run.invocationId}`}
               onSelect={() => {
                 close()
                 void navigate({
                   to: "/runs/$runId",
-                  params: { runId: run.runId },
+                  params: { runId: run.invocationId },
                 })
               }}
             >
               <IconTerminal2 />
               <span className="min-w-0 flex-1 truncate">
-                {run.command ?? run.runId}
+                {run.command ?? run.invocationId}
               </span>
               {run.errorCount > 0 ? (
                 <CommandShortcut>{run.errorCount} errors</CommandShortcut>

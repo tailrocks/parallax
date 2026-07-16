@@ -42,7 +42,7 @@ afterEach(() => {
 const merged = mergeRuns(
   [
     {
-      runId: "run-a",
+      invocationId: "run-a",
       command: "cargo test",
       status: "finished",
       exitCode: 1,
@@ -54,7 +54,7 @@ const merged = mergeRuns(
   ],
   [
     {
-      runId: "run-b",
+      invocationId: "run-b",
       service: "worker",
       firstNanos: "2000000000",
       lastNanos: "5000000000",
@@ -77,35 +77,35 @@ function renderWithRouter(component: React.ReactNode, path = "/runs") {
 describe("Runs route", () => {
   it("merges registered and observed rows with duration/error fallbacks", () => {
     expect(merged).toHaveLength(2)
-    expect(merged.find((row) => row.runId === "run-a")?.errorCount).toBe(2)
-    expect(durationNs(merged.find((row) => row.runId === "run-a")!)).toBe(
+    expect(merged.find((row) => row.invocationId === "run-a")?.errorCount).toBe(2)
+    expect(durationNs(merged.find((row) => row.invocationId === "run-a")!)).toBe(
       "2000000000"
     )
-    expect(statusTone(merged.find((row) => row.runId === "run-a")!)).toBe(
+    expect(statusTone(merged.find((row) => row.invocationId === "run-a")!)).toBe(
       "rose"
     )
-    expect(merged.find((row) => row.runId === "run-b")?.errorCount).toBeNull()
+    expect(merged.find((row) => row.invocationId === "run-b")?.errorCount).toBeNull()
   })
 
   it("filters rows by activity window overlap", () => {
     const rows = [
       {
         ...merged[0]!,
-        runId: "inside",
+        invocationId: "inside",
         startedAtNanos: "2000000000",
         endedAtNanos: "3000000000",
         lastNanos: "3000000000",
       },
       {
         ...merged[0]!,
-        runId: "before",
+        invocationId: "before",
         startedAtNanos: "1000000000",
         endedAtNanos: "1200000000",
         lastNanos: "1200000000",
       },
       {
         ...merged[0]!,
-        runId: "running",
+        invocationId: "running",
         status: "running" as const,
         startedAtNanos: "3500000000",
         endedAtNanos: null,
@@ -114,7 +114,7 @@ describe("Runs route", () => {
     ]
 
     expect(
-      filterRunsByRange(rows, range, "5000000000").map((row) => row.runId)
+      filterRunsByRange(rows, range, "5000000000").map((row) => row.invocationId)
     ).toEqual(["inside", "running"])
   })
 
@@ -152,9 +152,9 @@ describe("Runs route", () => {
   it("renders detail stat row and download action", async () => {
     renderWithRouter(
       <RunDetailContent
-        runId="run-a"
+        invocationId="run-a"
         run={{
-          runId: "run-a",
+          invocationId: "run-a",
           command: "cargo test",
           status: "finished",
           exitCode: 1,
@@ -225,8 +225,8 @@ describe("Runs route", () => {
 
     vi.mocked(graphqlCached)
       .mockResolvedValueOnce({
-        run: {
-          runId: "run-a",
+        invocation: {
+          invocationId: "run-a",
           command: "cargo test",
           status: "finished",
           exitCode: 0,
@@ -238,8 +238,8 @@ describe("Runs route", () => {
         },
       })
       .mockResolvedValueOnce({
-        tracesByRun: [],
-        logsByRun: [],
+        tracesByInvocation: [],
+        logsByInvocation: [],
         story: [],
         runtimeSnapshot: [],
         agentSession: null,

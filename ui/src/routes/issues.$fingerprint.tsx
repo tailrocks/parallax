@@ -93,8 +93,8 @@ function rangeHours(range: ResolvedRange): number {
   return Math.max(1, Math.ceil(Number(ns / 3_600_000_000_000n)))
 }
 
-function shortRunId(runId: string) {
-  return runId.length > 8 ? `${runId.slice(0, 8)}...` : runId
+function shortRunId(invocationId: string) {
+  return invocationId.length > 8 ? `${invocationId.slice(0, 8)}...` : invocationId
 }
 
 export async function loadIssueDetail(
@@ -124,10 +124,10 @@ export async function loadIssueDetail(
   if (traceId) {
     try {
       const correlated = await graphqlCached<{
-        trace: { spans: { resource: string; runId: string | null }[] } | null
+        trace: { spans: { resource: string; invocationId: string | null }[] } | null
         logsByTrace: BreadcrumbLog[]
       }>(
-        `{ trace(traceId: "${gqlString(traceId)}") { spans { resource runId } }
+        `{ trace(traceId: "${gqlString(traceId)}") { spans { resource invocationId } }
            logsByTrace(traceId: "${gqlString(traceId)}") { tsNanos severityText body } }`
       )
       resource = JSON.parse(
@@ -137,7 +137,7 @@ export async function loadIssueDetail(
       releaseVersion =
         typeof version === "string" && version.trim() ? version.trim() : null
       breadcrumbs = correlated.logsByTrace.slice(-12)
-      traceRunId = correlated.trace?.spans.find((s) => s.runId)?.runId ?? null
+      traceRunId = correlated.trace?.spans.find((s) => s.invocationId)?.invocationId ?? null
     } catch {
       // Trace may have aged out; issue detail still renders.
     }
@@ -383,7 +383,7 @@ export function IssueDetailContent({
         <MetricStrip
           title="Metrics around latest event"
           service={issue.service}
-          runId={traceRunId ?? undefined}
+          invocationId={traceRunId ?? undefined}
           fromNanos={(BigInt(latest.tsNanos) - 300_000_000_000n).toString()}
           toNanos={(BigInt(latest.tsNanos) + 300_000_000_000n).toString()}
           stepSeconds={30}

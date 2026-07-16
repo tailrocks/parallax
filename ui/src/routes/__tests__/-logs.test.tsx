@@ -54,7 +54,7 @@ const log: LogDoc = {
   body: "checkout failed",
   traceId: "trace-a",
   spanId: "span-a",
-  runId: "run-a",
+  invocationId: "run-a",
   scopeName: "seed",
   attributes: '{"error":"boom"}',
   resource: '{"service.name":"checkout"}',

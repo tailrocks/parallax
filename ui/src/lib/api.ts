@@ -155,7 +155,7 @@ export interface Span {
 
 /** Full GraphQL selection for a log row (`LogDoc` / `logs` connection). */
 export const LOG_FIELDS =
-  "tsNanos eventName observedTsNanos service severityNum severityText body traceId spanId runId scopeName attributes resource"
+  "tsNanos eventName observedTsNanos service severityNum severityText body traceId spanId invocationId scopeName attributes resource"
 
 /** Full GraphQL selection for a stored span (`Span`). */
 export const SPAN_FIELDS =
@@ -164,10 +164,10 @@ export const SPAN_FIELDS =
 /**
  * Live SSE span from `/v1/traces/stream`.
  *
- * Matches `Span` and adds `runId` (the live serializer always emits it;
+ * Matches `Span` and adds `invocationId` (the live serializer always emits it;
  * `parentSpanId` is present on the wire — unlike the former inline `SpanDoc`).
  */
-export type LiveSpan = Span & { runId: string | null }
+export type LiveSpan = Span & { invocationId: string | null }
 
 export interface SpanLink {
   traceId: string
@@ -291,7 +291,7 @@ export interface LogRecord {
 }
 
 export interface Run {
-  runId: string
+  invocationId: string
   command: string | null
   status: string
   exitCode: number | null
@@ -299,7 +299,7 @@ export interface Run {
 }
 
 export interface ObservedRun {
-  runId: string
+  invocationId: string
   service: string
   firstNanos: string
   lastNanos: string

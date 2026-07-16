@@ -104,7 +104,7 @@ export interface MetricExemplar {
   value: number
   traceId: string
   spanId: string
-  runId: string | null
+  invocationId: string | null
   attributes: string
 }
 
@@ -194,10 +194,10 @@ export async function loadServiceDetail(service: string, range: ResolvedRange) {
         instanceCount
       }
       httpDurationExemplars: metricExemplars(name: "${Semconv.HTTP_SERVER_REQUEST_DURATION}", service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", limit: 50) {
-        tsNanos service name value traceId spanId runId attributes
+        tsNanos service name value traceId spanId invocationId attributes
       }
       rpcDurationExemplars: metricExemplars(name: "${Semconv.REQUEST_DURATION_METRICS[1]}", service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", limit: 50) {
-        tsNanos service name value traceId spanId runId attributes
+        tsNanos service name value traceId spanId invocationId attributes
       }
       runtimeSnapshot(service: "${escaped}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", stepSeconds: ${stepSeconds}) {
         family metric unit points { tsNanos value }

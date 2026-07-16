@@ -292,7 +292,7 @@ describe("Service detail route", () => {
               value: 120,
               traceId: "trace-exemplar",
               spanId: "span-exemplar",
-              runId: "run-a",
+              invocationId: "run-a",
               attributes: "{}",
             },
           ],

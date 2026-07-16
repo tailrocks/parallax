@@ -41,7 +41,7 @@ export interface LogDoc {
   body: string
   traceId: string
   spanId: string
-  runId: string | null
+  invocationId: string | null
   scopeName: string
   attributes: string
   resource: string
@@ -112,7 +112,7 @@ function docFields(log: LogDoc): Array<[string, string]> {
   if (observed) rows.splice(log.eventName ? 3 : 2, 0, observed)
   if (log.traceId) rows.push(["trace_id", log.traceId])
   if (log.spanId) rows.push(["span_id", log.spanId])
-  if (log.runId) rows.push(["run_id", log.runId])
+  if (log.invocationId) rows.push(["run_id", log.invocationId])
   if (log.scopeName) rows.push(["scope.name", log.scopeName])
   for (const [prefix, json] of [
     ["", log.attributes],
@@ -444,18 +444,18 @@ export function LogsTable({
                     trace {selected.traceId.slice(0, 12)}
                   </Chip>
                 ) : null}
-                {selected.runId ? (
+                {selected.invocationId ? (
                   <Chip
                     render={
                       <Link
                         to="/runs/$runId"
-                        params={{ runId: selected.runId }}
+                        params={{ runId: selected.invocationId }}
                         search={detailSearch}
-                        aria-label={`Run ${selected.runId}`}
+                        aria-label={`Run ${selected.invocationId}`}
                       />
                     }
                   >
-                    run {selected.runId.slice(0, 12)}
+                    run {selected.invocationId.slice(0, 12)}
                   </Chip>
                 ) : null}
               </div>

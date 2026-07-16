@@ -93,7 +93,7 @@ import { cn } from "@/lib/utils"
 interface TraceSpan extends WaterfallSpan, GraphqlTraceSpan, RpcTraceSpan {
   tsNanos: string
   traceId: string
-  runId: string | null
+  invocationId: string | null
   links: string
   typedLinks: SpanLink[]
   events: string
@@ -191,7 +191,7 @@ export const Route = createFileRoute("/traces/$traceId")({
     }>(
       `{ trace(traceId: "${traceId}") {
            spans { tsNanos service traceId name kind statusCode statusMessage durationNs
-                   spanId parentSpanId runId links typedLinks { traceId spanId attributes }
+                   spanId parentSpanId invocationId links typedLinks { traceId spanId attributes }
                    events attributes resource }
          }
          linkedTraces(traceId: "${traceId}") {
@@ -328,7 +328,7 @@ function TracePage() {
       BigInt(a.tsNanos) < BigInt(b.tsNanos) ? -1 : 1
     )[0]!
   const tracesBack = navItem("/traces")
-  const runId = spans.find((span) => span.runId)?.runId ?? null
+  const invocationId = spans.find((span) => span.invocationId)?.invocationId ?? null
   const services = Array.from(new Set(spans.map((span) => span.service))).sort()
   const failedSpans = spans.filter(
     (span) => span.statusCode === "STATUS_CODE_ERROR"
@@ -423,15 +423,15 @@ function TracePage() {
         description={
           <span className="flex flex-wrap items-center gap-1.5">
             <span className="font-mono">{traceId}</span>
-            {runId ? (
+            {invocationId ? (
               <Link
                 to="/runs/$runId"
-                params={{ runId }}
+                params={{ runId: invocationId }}
                 search={detailRangeSearch}
                 className={buttonVariants({ variant: "outline", size: "xs" })}
               >
                 <IconExternalLink />
-                run {runId.slice(0, 12)}
+                invocation {invocationId.slice(0, 12)}
               </Link>
             ) : null}
             {services.map((service) => (
@@ -578,7 +578,7 @@ function TracePage() {
               <MetricStrip
                 title="Metrics around this trace"
                 service={rootSpan.service}
-                runId={runId ?? undefined}
+                invocationId={invocationId ?? undefined}
                 fromNanos={(window.startNs - 300_000_000_000n).toString()}
                 toNanos={(
                   window.startNs +

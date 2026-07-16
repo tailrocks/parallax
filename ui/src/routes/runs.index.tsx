@@ -34,7 +34,7 @@ import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
 
 interface RunRecord {
-  runId: string
+  invocationId: string
   command: string | null
   status: string
   exitCode: number | null
@@ -45,7 +45,7 @@ interface RunRecord {
 }
 
 export interface RunRow {
-  runId: string
+  invocationId: string
   source: "cli" | "external"
   command: string | null
   service: string | null
@@ -98,12 +98,12 @@ export function statusTone(
 
 export function mergeRuns(
   runs: RunRecord[],
-  observedRuns: ObservedRun[]
+  observedInvocations: ObservedRun[]
 ): RunRow[] {
   const rows = new Map<string, RunRow>()
-  for (const observed of observedRuns) {
-    rows.set(observed.runId, {
-      runId: observed.runId,
+  for (const observed of observedInvocations) {
+    rows.set(observed.invocationId, {
+      invocationId: observed.invocationId,
       source: "external",
       command: null,
       service: observed.service,
@@ -119,9 +119,9 @@ export function mergeRuns(
     })
   }
   for (const run of runs) {
-    const observed = rows.get(run.runId)
-    rows.set(run.runId, {
-      runId: run.runId,
+    const observed = rows.get(run.invocationId)
+    rows.set(run.invocationId, {
+      invocationId: run.invocationId,
       source: "cli",
       command: run.command,
       service: observed?.service ?? null,
@@ -182,13 +182,13 @@ export const Route = createFileRoute("/runs/")({
     return result
   },
   loader: async () => {
-    const { runs, observedRuns } = await graphqlCached<{
-      runs: RunRecord[]
-      observedRuns: ObservedRun[]
+    const { invocations, observedInvocations } = await graphqlCached<{
+      invocations: RunRecord[]
+      observedInvocations: ObservedRun[]
     }>(`
       {
-        runs {
-          runId
+        invocations {
+          invocationId
           command
           status
           exitCode
@@ -197,8 +197,8 @@ export const Route = createFileRoute("/runs/")({
           errorCount
           traceCount
         }
-        observedRuns {
-          runId
+        observedInvocations {
+          invocationId
           service
           firstNanos
           lastNanos
@@ -207,7 +207,9 @@ export const Route = createFileRoute("/runs/")({
         }
       }
     `)
-    return { rows: mergeRuns(runs, observedRuns) } satisfies RunsData
+    return {
+      rows: mergeRuns(invocations, observedInvocations),
+    } satisfies RunsData
   },
   component: RunsPage,
 })
@@ -232,10 +234,10 @@ function RunsPage() {
       search={search}
       range={range}
       onSearch={setSearch}
-      onRun={(runId) =>
+      onRun={(invocationId) =>
         void navigate({
           to: "/runs/$runId",
-          params: { runId },
+          params: { runId: invocationId },
           search: rangeLinkSearch(range),
         })
       }
@@ -254,14 +256,14 @@ export function RunsContent({
   search: RunsSearch
   range: ResolvedRange
   onSearch: (patch: RunsSearchPatch) => void
-  onRun: (runId: string) => void
+  onRun: (invocationId: string) => void
 }) {
   const query = search.q?.toLowerCase() ?? ""
   const rowsInWindow = filterRunsByRange(data.rows, range)
   const rows = rowsInWindow.filter((row) => {
     const matchesStatus = !search.status || row.status === search.status
     const haystack =
-      `${row.runId} ${row.command ?? ""} ${row.service ?? ""}`.toLowerCase()
+      `${row.invocationId} ${row.command ?? ""} ${row.service ?? ""}`.toLowerCase()
     return matchesStatus && haystack.includes(query)
   })
   const detailSearch = rangeLinkSearch(range)
@@ -350,28 +352,28 @@ export function RunsContent({
                 const errors = row.errorCount ?? 0
                 return (
                   <TableRow
-                    key={row.runId}
+                    key={row.invocationId}
                     className={cn(
                       "cursor-pointer",
                       errors > 0 &&
                         "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]"
                     )}
-                    onClick={() => onRun(row.runId)}
+                    onClick={() => onRun(row.invocationId)}
                   >
                     <TableCell>
                       <div className="flex min-w-0 items-center gap-2">
                         <Link
                           to="/runs/$runId"
-                          params={{ runId: row.runId }}
+                          params={{ runId: row.invocationId }}
                           search={detailSearch}
                           className="min-w-0 hover:underline"
                           onClick={(event) => event.stopPropagation()}
                         >
                           <code className="block max-w-44 truncate text-xs">
-                            {row.runId}
+                            {row.invocationId}
                           </code>
                         </Link>
-                        <CopyButton value={row.runId} />
+                        <CopyButton value={row.invocationId} />
                         <Badge variant="secondary">{row.source}</Badge>
                       </div>
                     </TableCell>
@@ -391,7 +393,7 @@ export function RunsContent({
                       ) : (
                         <Link
                           to="/runs/$runId"
-                          params={{ runId: row.runId }}
+                          params={{ runId: row.invocationId }}
                           search={detailSearch}
                           className="hover:underline"
                           onClick={(event) => event.stopPropagation()}
@@ -413,7 +415,7 @@ export function RunsContent({
                       ) : (
                         <Link
                           to="/runs/$runId"
-                          params={{ runId: row.runId }}
+                          params={{ runId: row.invocationId }}
                           search={detailSearch}
                           className="hover:underline"
                           onClick={(event) => event.stopPropagation()}
