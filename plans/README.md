@@ -74,11 +74,13 @@ Facts an executor may rely on without re-deriving; re-verify only on failure:
   'binary(/greptime/)'` (or the per-test `cargo test … -- --ignored`
   documented in each test header). A plan's "live engine" verification means
   this shape; a zero-test selection is a command-shape error, not a pass.
-- **Browser verification**: run the program from a Claude Code session with
-  the Chrome automation tools connected (agent browser / Chrome DevTools
-  MCP) — plans 157/159/160/162-168 require real-browser evidence. If the
-  browser tools are unavailable, that specific verification step is blocked;
-  do not fake screenshots.
+- **Browser verification (operator, 2026-07-17): the agent browser is the
+  designated tool.** All real-browser evidence — walkthroughs, usability
+  checklist passes, screenshots, console captures — is produced with the
+  agent browser (Chrome automation available in the executor's session;
+  Chrome DevTools MCP is the fallback surface). Plans 157/159/160/162-168
+  require this evidence. If the browser tooling is unavailable, that
+  specific verification step is blocked; do not fake screenshots.
 - **No external credentials are required for Waves 1-2.** Optional only:
   a real Slack webhook URL for plan 167's live-delivery test (a local HTTP
   listener otherwise suffices, as the plan specifies). The jackin
