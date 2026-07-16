@@ -13,16 +13,20 @@ and use only these branches. Do not create any other branch, worktree branch,
 remote branch, or pull request. Plan/index/document maintenance commits
 continue to land directly on `main` as before.
 
-Primary objective: execute plans 156, 157, 158, and 159 (the Unified CLI
-Observability vertical in `plans/README.md`) **completely and one-shot,
-without operator questions** — every decision needed is fixed inside those
-plans. The vertical replaces the `parallax.run.id` runs surface with generic
-CLI-application observability (`cli.invocation.id`, `session.id`, `app.mode`,
-`ui.*` events, `background.cycle`, jobs, `gen_ai.*`, bounded
-`outcome`/`error.type`), builds the invocation hub UI with per-page real-time
-toggles, migrates the playground emitters, and proves the whole loop live on
-the operator's Docker host with GraphQL assertions and browser evidence
-(plan 159) before the PR opens.
+Primary objective: execute plans 156, 157, 158, 161, 160, and 159 (the
+Unified CLI Observability vertical in `plans/README.md`) **completely and
+one-shot, without operator questions** — every decision needed is fixed
+inside those plans. The vertical removes `parallax.run.id` support entirely
+and replaces the runs surface with generic CLI-application observability
+(`cli.invocation.id`, `session.id`, `app.mode`, `ui.*` events,
+`background.cycle`, jobs, `gen_ai.*`, bounded `outcome`/`error.type` —
+generic attributes only, application-specific keys are display-only opaque
+data), builds the invocation hub UI with per-page real-time toggles and the
+session journey view, extends the playground with the corner-case corpus,
+audits and fixes every UI display defect (span rendering inside traces
+foremost) with browser verification after every implemented feature, and
+proves the whole coverage matrix live on the operator's Docker host with
+GraphQL assertions and browser evidence (plan 159) before the PR opens.
 
 Secondary objective: after the vertical merges, continue executing every
 remaining actionable plan indexed by `plans/README.md` under the same rules

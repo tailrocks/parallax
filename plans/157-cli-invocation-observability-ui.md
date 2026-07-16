@@ -27,7 +27,7 @@
   agent conversations, plus service/CLI/browser topology — with a
   user-controlled real-time toggle on every live view. Ships in the ONE
   authorized PR (branch `feature/unified-cli-observability`) together with
-  plans 156 and 159.
+  plans 156 and 160 (159 provides the closing evidence).
 
 ## Why this matters
 
@@ -162,13 +162,30 @@ Tabs (search param `tab`, zod-validated):
    sequence), `uiActions` table (action name, screen, duration, outcome,
    trace link), conversations (`conversations(invocationId)`: agent name,
    provider, span count, first/last, token totals; selecting one renders the
-   existing `agent-session` step timeline via `agentSession`).
+   existing `agent-session` step timeline via `agentSession`), and the
+   **Journey view** (below).
 6. **Jobs & Cycles** — `backgroundCycles` summary table (name, runs, error
    count, p50/p95, last trace link) + `jobs` table (job id short, type,
    producer time, attempts with outcome chips, trace links).
 Empty states: every tab has an explicit "nothing yet — this invocation has
 not emitted X" empty card; the hub renders for **observed-only** invocations
 (no registration row) without error.
+
+**Journey view (operator requirement, 2026-07-17)** — per session, one
+chronological narrative answering "what happened to this user": interleaved,
+time-ordered entries built purely from generic signals — `session.start` →
+screen entered/exited (with dwell) → `ui.action` (name, outcome, widget
+context from `app.widget.*` when present) → **errors and exceptions placed on
+the screen where they happened** (attribution: error/exception event or
+error-status span whose timestamp falls inside a screen visit of the same
+session/invocation; unattributable errors render in an "outside any screen"
+bucket, never dropped) → `session.end`. Every entry links onward (action →
+trace, error → issue/trace, screen → filtered logs). The journey must answer,
+from the UI alone: which screen the user was on, where they moved, and on
+which screen/widget an error hit. Same component works for any emitter that
+sends the generic events — no jackin-specific logic (generic-attributes-only
+invariant: application-specific keys appear only inside generic
+attribute-list views).
 
 **Ecosystem upgrade** — `serviceMap` nodes gain `kind: cli | browser |
 service` (plan 156 derives: cli = service emitted spans carrying
@@ -183,6 +200,31 @@ Legend row added. Everything else (layout, edges) unchanged.
 hex shape; command palette lists recent invocations; `sql.tsx targetForCell`
 matches `invocation_id`/`cli.invocation.id` column names (drop
 `parallax.run.id`).
+
+## Browser verification protocol (binding on every step)
+
+Operator requirement (2026-07-17): each implemented feature is verified in a
+real browser against live playground data before the next step starts — not
+only at the end. Concretely, after each step below: run `parallax serve` +
+the playground corpus (plan 161 scenarios once available, plan 158 sims
+otherwise), open the affected pages with the browser-automation tooling, and
+check every item of this list, capturing one screenshot per page state into
+`docs/research/validation/2026-07-unified-cli-observability/ui/steps/`:
+
+1. Data correctness — every value on screen traceable to the seeded corpus;
+   nothing silently missing that the corpus emitted.
+2. Links — every row/chip/badge navigates somewhere sensible (no dead ends).
+3. States — loading, empty, and error states each seen at least once.
+4. Layout — no clipped/overlapping/overflowing elements at 1440px and 375px
+   widths; long values (commands, ids, attribute values) truncate with
+   tooltips, never break layout.
+5. Live behavior — toggles start/stop streams visibly; no duplicate rows; no
+   scroll jumping while streaming.
+6. Console — zero errors/warnings in the browser console during the walk.
+
+A failed item is fixed (or routed to plan 156/160 when out of this plan's
+scope) before proceeding. This same checklist is the usability bar plans 159
+and 160 assert.
 
 ## Commands you will need
 
@@ -206,8 +248,9 @@ matches `invocation_id`/`cli.invocation.id` column names (drop
   `invocation-status-badge.tsx`, `invocation-header.tsx`,
   `invocation-overview-tab.tsx`, `invocation-traces-tab.tsx`,
   `invocation-logs-tab.tsx`, `invocation-errors-tab.tsx`,
-  `sessions-tab.tsx`, `screen-visit-lane.tsx`, `ui-actions-table.tsx`,
-  `conversations-panel.tsx`, `jobs-cycles-tab.tsx` + colocated `__tests__/`.
+  `sessions-tab.tsx`, `screen-visit-lane.tsx`, `session-journey.tsx`,
+  `ui-actions-table.tsx`, `conversations-panel.tsx`, `jobs-cycles-tab.tsx`
+  + colocated `__tests__/`.
 - `src/lib/api.ts` (types: `Invocation`, `Session`, `ScreenVisit`,
   `UiAction`, `BackgroundCycleSummary`, `Job`, `Conversation`; `LiveSpan`
   and `LOG_FIELDS` field renames), `src/lib/quick-jump.ts`,
@@ -273,9 +316,12 @@ detail (metadata first, then tab data), `tab`+`live` search params, and the
 six tab components. Reuse `use-live-stream` for Traces/Logs tabs with
 `?invocation_id=`; master Live switch feeds each tab. Sessions & UI tab and
 Jobs & Cycles tab render from the plan-156 fields with explicit empty states.
-Conversations panel wraps the existing `agent-session` timeline for the
-selected conversation. Every table row links onward (trace → `/traces/$id`,
-issue → `/issues/$fp`, session → filters logs tab).
+`session-journey.tsx` builds the journey narrative as a pure function over
+(session events, screen visits, actions, errors) — unit-testable without the
+DOM; error→screen attribution is a pure interval lookup. Conversations panel
+wraps the existing `agent-session` timeline for the selected conversation.
+Every table row links onward (trace → `/traces/$id`, issue → `/issues/$fp`,
+session → filters logs tab).
 
 **Verify**: component tests per tab (fixture-driven; assert empty states,
 links, live-buffer caps at 300, no session/screen data for a one_shot
@@ -320,6 +366,10 @@ walk (check devtools console).
   breakdown, sessions Gantt pairing (open session renders "active"), actions
   table links, conversations token totals, jobs attempt outcomes, all empty
   states.
+- `-session-journey.test.tsx` — chronological interleave; error attributed to
+  the screen whose visit interval contains it; error outside any visit lands
+  in the unattributed bucket (never dropped); widget context rendered when
+  present; every entry's link target.
 - Ecosystem: extend the existing ecosystem test with node kinds + cli-node
   link target.
 - Pattern exemplar: the old `-runs.test.tsx` fixture style; timers via
@@ -336,7 +386,11 @@ walk (check devtools console).
 - [ ] `parallax.run.id` appears nowhere in `ui/src` except (possibly) the
   generated semconv legacy constant (`grep -rn "parallax.run.id" ui/src`).
 - [ ] Screenshots recorded under
-  `docs/research/validation/2026-07-unified-cli-observability/ui/`.
+  `docs/research/validation/2026-07-unified-cli-observability/ui/` including
+  the per-step protocol captures (`ui/steps/`), all six checklist items
+  passing for every tab.
+- [ ] Journey view answers screen→screen→error attribution from seeded data
+  (browser-verified capture included).
 - [ ] `plans/README.md` status row updated.
 
 ## STOP conditions

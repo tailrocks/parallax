@@ -31,7 +31,7 @@
 
 Plans 156/157 rename the correlation contract before this plan starts: the
 inspector's resource/span attributes carry `cli.invocation.id` (legacy
-`parallax.run.id` only inside the TTL fallback window), trace→run links
+`parallax.run.id` support is removed entirely), trace→run links
 become trace→`/invocations/$invocationId`, and PRODUCER/CONSUMER job spans
 (`job.id`/`job.type`) plus `background.cycle` roots are expected span shapes.
 Re-characterize the baseline at the post-157 head; "run" reads as

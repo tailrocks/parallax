@@ -144,10 +144,27 @@ and becomes a generic CLI-application observability platform keyed on
 screen/action events, `background.cycle` roots, PRODUCER/CONSUMER `job.id`
 traces, `gen_ai.*` conversations, and bounded `outcome`/`error.type`.
 Delivery: ONE implementation branch `feature/unified-cli-observability`, ONE
-Parallax PR (plans 156, 157, 159) plus ONE linked playground PR (plan 158).
-This vertical is deliberately independent of the blocked 128→151 chain: it
-builds on current UI conventions; plan 140 later migrates the new surface
-behind a feature facade.
+Parallax PR (plans 156, 157, 160; 159 evidence) plus ONE linked playground PR
+(plans 158, 161). This vertical is deliberately independent of the blocked
+128→151 chain: it builds on current UI conventions; plan 140 later migrates
+the new surface behind a feature facade.
+
+Second operator directive (2026-07-17), binding on every executor:
+- **No legacy support**: `parallax.run.id` (and every `parallax.*`/vendor
+  telemetry key) is removed entirely — not read, not written, not COALESCEd.
+- **Generic attributes only**: Parallax business functionality exists only
+  over generic keys (`cli.*`, `session.*`, `app.*`, `ui.*`, `job.*`,
+  `gen_ai.*`, standard semconv). Application-specific attributes are
+  display-only opaque data in generic attribute views — never special-cased
+  in queries, resolvers, or UI logic.
+- **Browser-verified features**: every implemented UI feature is verified in
+  a real browser against live playground data before the next step (plan
+  157's six-item protocol: data correctness, links, states, layout,
+  live behavior, clean console). Known display defects — span rendering
+  inside traces foremost — are audited and fixed under plan 160 against the
+  plan-161 corner-case corpus, including the generic session journey view
+  (which screen the user was on, where they moved, on which screen/widget
+  the error hit).
 
 Contract reconciliation for existing plans (binding on their executors):
 every `parallax.run.id` / `runId` / `$runId` / `runs`-field reference in
@@ -167,7 +184,9 @@ Plan 154's remaining sweep consumes the plan-158 emitter contract.
 | [156](156-unified-cli-observability-contract.md) | Neutral `cli.invocation.id` contract across semconv, ingest, storage, API | P1 | L | — | TODO |
 | [157](157-cli-invocation-observability-ui.md) | CLI-invocation observability UI: invocation hub, sessions/screens/actions, cycles/jobs, ecosystem kinds | P1 | XL | 156 | TODO |
 | [158](158-playground-unified-cli-contract.md) | Playground migration to the neutral contract + interactive/jobs/cycles simulation | P1 | L | 156 (registry step) | TODO |
-| [159](159-unified-cli-observability-acceptance.md) | Live acceptance: playground fan-in, GraphQL assertions, browser evidence | P1 | M | 156, 157, 158 | TODO |
+| [161](161-playground-corner-case-matrix.md) | Playground corner-case corpus: one scripted scenario per UI rendering risk | P1 | M | 158 | TODO |
+| [160](160-ui-defect-audit-and-repair.md) | UI defect audit & repair against the corpus; generic-attributes conformance sweep | P1 | L | 156, 157, 161 | TODO |
+| [159](159-unified-cli-observability-acceptance.md) | Live acceptance: coverage matrix, GraphQL assertions, journey + usability browser evidence | P1 | M | 156, 157, 158, 160, 161 | TODO |
 
 ### Cross-Repository Playground And Test Reporting
 
@@ -264,7 +283,9 @@ The main restructuring path is:
 all actionable plans --------------------------> 107
 
 156 -------------------------------------------> 157, 158
-156 + 157 + 158 -------------------------------> 159
+158 -------------------------------------------> 161
+156 + 157 + 161 -------------------------------> 160
+156 + 157 + 158 + 160 + 161 -------------------> 159
 ```
 
 The 156→159 vertical (one branch, one Parallax PR + one linked playground PR)
@@ -376,17 +397,17 @@ plans only when the trigger becomes true:
 | Broader newtype rollout | The single ID pilot proves value without wire/persistence churn |
 | Stable Homebrew formula mutation | Stable-release readiness is explicitly opened |
 | External broker / Iggy | A supported server profile proves the current spool/in-process design cannot meet an approved replay/isolation SLO and the operator opens broker scope |
-| Legacy `parallax.run.id` read-only fallback (ingest priority + query COALESCE + extract-keys tail + playground env fallback) | Remove after the playground PR (plan 158) and jackin❯'s cutover are the only supported emitters AND one full telemetry TTL window has passed since plan 156 shipped |
 
 Accepted decisions such as native tables, no rustls, no Node, no docs site,
 and no automatic update branches are repository policy, not unfinished plans.
 
 ## Findings Considered And Rejected (2026-07-17 restructuring)
 
-- **Keep `parallax.run.id` as the primary key with a translation shim** —
-  rejected: jackin❯'s cutover already deleted it upstream; a shim entrenches
-  the vendor key the operator explicitly retired. A read-only fallback with a
-  recorded removal trigger replaces it.
+- **Keep `parallax.run.id` in any form — primary key, translation shim, or
+  read-only fallback** — rejected: jackin❯'s cutover already deleted it
+  upstream, and the operator's second directive (2026-07-17) removes support
+  entirely; a legacy-only emitter is unsupported by design (plan 159 asserts
+  the negative).
 - **GraphQL subscriptions for real-time views** — rejected: SSE is a
   deliberate architecture decision (`crates/parallax-server/src/live.rs:6`);
   the real-time toggle rides the existing SSE + poll patterns.

@@ -96,9 +96,9 @@ conversations, ecosystem kinds) renders from playground data, including
    invocation id — they correlate by trace, exactly like production.
 2. `parallax.run.id`, `parallax.session.id`, `parallax.execution.layer`,
    `parallax.agent.id`, `cron.invocation.id`, bare `cli.command` are
-   **removed** from emission (constants may survive in generated modules
-   until Parallax's contract.yaml drops them; emission code stops using
-   them).
+   **removed entirely** — plan 156 deletes their contract.yaml rows, so the
+   regenerated modules no longer contain them; no emission, no fallback
+   reads, anywhere (operator, 2026-07-17: generic attributes only).
 3. `app.mode` values map: `drive`→`one_shot`, `cron`→`one_shot` (each firing
    is an invocation), `daemon`→`daemon`, container layer→`capsule`, new
    `console` mode→`interactive`.
@@ -198,10 +198,10 @@ compile against the regenerated modules.
 nothing (ids are not Resource); add an `invocation` module minting
 `cli.invocation.id`/`session.id` UUIDs, ambient storage (OnceLock), and
 helpers `stamp_invocation(span)` / log-attr injection so root spans and logs
-carry the ids; env carrier reads/writes `CLI_INVOCATION_ID` (keep reading
-`PARALLAX_RUN_ID` as fallback for one transition release, emitting nothing).
-Long-running services (`checkout` etc.) simply never call the mint —
-`init(service)` gains no new required arguments.
+carry the ids; env carrier reads/writes `CLI_INVOCATION_ID` only —
+`PARALLAX_RUN_ID` is neither read nor written. Long-running services
+(`checkout` etc.) simply never call the mint — `init(service)` gains no new
+required arguments.
 
 **Verify**: `cargo nextest run -p playground-telemetry` → new tests: root
 span carries the id; resource does NOT; child env carrier round-trips.
@@ -243,14 +243,13 @@ outcome mapping, screen-visit pairing; manual:
 ### Step 5: Test-observability re-key + scripts + docs
 
 `test_report.rs`/`test_verify.rs`/`observable-test-session.sh`/compose env/
-`.env.example`: `PARALLAX_RUN_ID` → `CLI_INVOCATION_ID` (accept old name as
-fallback, warn once); `test_verify` queries the renamed GraphQL fields
-(`invocation`, `tracesByInvocation` — plan 156's SDL). Update the four doc
-files to the neutral vocabulary.
+`.env.example`: `PARALLAX_RUN_ID` → `CLI_INVOCATION_ID`, hard rename, no
+fallback; `test_verify` queries the renamed GraphQL fields (`invocation`,
+`tracesByInvocation` — plan 156's SDL). Update the four doc files to the
+neutral vocabulary.
 
-**Verify**: `rg -n "PARALLAX_RUN_ID|parallax\.run\.id|parallax\.session\.id|parallax\.agent\.id|parallax\.execution\.layer|cron\.invocation\.id" --type rust --type ts --type java`
-→ matches only in the explicit fallback-read sites and generated legacy
-constants; full playground test suite green.
+**Verify**: `rg -n "PARALLAX_RUN_ID|parallax\.run\.id|parallax\.session\.id|parallax\.agent\.id|parallax\.execution\.layer|cron\.invocation\.id"`
+→ zero matches repo-wide (docs included); full playground test suite green.
 
 ## Test plan
 
@@ -300,5 +299,6 @@ Stop and report back (do not improvise) if:
 - Reviewer focus: ids on root spans/logs but never Resource for the CLI; no
   invocation id on long-running service resources; producer/consumer job ids
   equal across process boundaries (Kafka headers).
-- The `PARALLAX_RUN_ID`/legacy fallback reads get removed together with
-  Parallax's ingest fallback (one trigger, recorded in the Parallax index).
+- No legacy key survives anywhere (operator, 2026-07-17); if an external
+  tool still exports `parallax.run.id`, it is unsupported — do not add
+  compatibility reads back.

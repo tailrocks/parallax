@@ -7,10 +7,10 @@
 > `plans/README.md` and store the evidence bundle under
 > `docs/research/validation/2026-07-unified-cli-observability/`.
 >
-> **Drift check (run first)**: plans 156, 157, and 158 must be implemented on
-> branch `feature/unified-cli-observability` (both repos) before this plan
-> starts. `git log --oneline -10` on both branches must show their commits;
-> otherwise STOP.
+> **Drift check (run first)**: plans 156, 157, 158, 160, and 161 must be
+> implemented on branch `feature/unified-cli-observability` (both repos)
+> before this plan starts. `git log --oneline -20` on both branches must show
+> their commits; otherwise STOP.
 
 ## Status
 
@@ -20,7 +20,9 @@
   docs)
 - **Depends on**: plans/156-unified-cli-observability-contract.md,
   plans/157-cli-invocation-observability-ui.md,
-  plans/158-playground-unified-cli-contract.md
+  plans/158-playground-unified-cli-contract.md,
+  plans/160-ui-defect-audit-and-repair.md,
+  plans/161-playground-corner-case-matrix.md
 - **Category**: tests / acceptance
 - **Planned at**: commit `39f172c`, 2026-07-17
 
@@ -92,14 +94,22 @@ data dir; 14 containers healthy.
 
 ### Step 2: Generate the corpus
 
-Run, capturing exit codes: k6/demo baseline for ~2 minutes OR
-`scenarios/run.sh` ids covering happy path + one failure scenario; each CLI
+Run, capturing exit codes: k6/demo baseline for ~2 minutes; the full
+corner-case sweep `scenarios/run.sh --all-corner-cases` (plan 161); each CLI
 mode once (`drive`, `cron`, `daemon` for ≥60 s so cycles fire, `console
---seconds 30`); one real browser session on `:5173` (add to cart → checkout);
+--seconds 30`); the journey scenarios `j-happy`/`j-error`/`j-reattach`/
+`j-parallel`; one real browser session on `:5173` (add to cart → checkout);
 one observable test session (nextest bridge).
 
 **Verify**: every command exit 0; note each minted invocation id (the CLI
 prints it — plan 158 keeps ids visible in progress output).
+
+The acceptance target is the **coverage matrix**: emitter kinds {CLI
+one_shot, CLI interactive, CLI daemon, capsule layer, HTTP microservice,
+gRPC service, GraphQL gateway, Kafka producer/consumer, browser frontend} ×
+surfaces {invocation list/hub, journey, traces/waterfall, logs, metrics,
+errors/issues, ecosystem}. Steps 3-4 must leave no matrix cell unvisited;
+the write-up records the cell → evidence mapping.
 
 ### Step 3: Machine assertions over GraphQL
 
@@ -120,25 +130,38 @@ Write `docs/research/validation/2026-07-unified-cli-observability/assert.sh`
    agent + provider names.
 6. `logsByInvocation`/`tracesByInvocation` non-empty for the drive run;
    `serviceMap` includes nodes of kind `cli`, `browser`, and `service`.
-7. Negative: a query filtering the legacy field name fails schema validation
-   (`run(runId:)` unknown field), and no ingested resource for the CLI runs
-   carries `parallax.run.id` (probe via the `sql` field over
-   `opentelemetry_traces`).
+7. Journey: for the `j-error` scenario, `screenVisits` + the error signal
+   place the failure inside the `checkout` visit with `app.widget.*`
+   context; for `j-outside`, the error resolves to no visit; `j-reattach`
+   yields a ≥3-link `session.previous_id` chain; `j-parallel` yields 3
+   distinct concurrent invocations with non-bleeding signal sets (each
+   invocation's `logsByInvocation` contains only its own ids).
+8. Negative: a query using the legacy field name fails schema validation
+   (`run(runId:)` unknown field); no ingested signal from the corpus carries
+   `parallax.run.id`/`parallax.session.id` (probe via the `sql` field over
+   `opentelemetry_traces` and `opentelemetry_logs`); a hand-posted OTLP span
+   carrying ONLY `parallax.run.id` does NOT appear in `invocations`
+   (unsupported by design).
 
 **Verify**: `bash assert.sh` exits 0; JSON outputs stored beside it.
 
 ### Step 4: Browser evidence
 
-Drive the UI (browser automation or manual): capture screenshots of
+Drive the UI (browser automation or manual), applying plan 157's six-item
+usability checklist on every page visited: capture screenshots of
 (a) `/invocations` list with the running daemon pulsing and mode badges;
 (b) console-run hub Overview; (c) Traces tab streaming with Live ON (two
 captures ≥10 s apart showing growth); (d) Logs tab live tail; (e) Errors tab
 after the failure scenario; (f) Sessions & UI tab with the screen-visit lane;
-(g) Jobs & Cycles tab; (h) `/ecosystem` with cli/browser/service kinds;
-(i) a trace detail reached from the hub with the invocation back-link.
+(g) the `j-error` **Journey view** showing the error attributed to the
+checkout screen/widget; (h) Jobs & Cycles tab; (i) `/ecosystem` with
+cli/browser/service kinds; (j) a trace detail reached from the hub with the
+invocation back-link; (k) the `t-wide` waterfall scrolled mid-trace and
+(l) the `t-orphan` tree showing detached spans (plan-160 fixes holding).
 Confirm zero browser-console errors during the walk (capture the console).
 
-**Verify**: nine named PNGs in the evidence dir; console log capture clean.
+**Verify**: twelve named PNGs in the evidence dir; checklist results per
+page recorded; console log capture clean.
 
 ### Step 5: Write-up + closure
 
@@ -154,11 +177,13 @@ pushed.
 
 ## Done criteria
 
-- [ ] `assert.sh` exit 0 with stored outputs (all 7 assertion groups).
-- [ ] Nine UI screenshots + clean browser console captured.
+- [ ] `assert.sh` exit 0 with stored outputs (all 8 assertion groups).
+- [ ] Twelve UI screenshots + per-page usability checklist + clean browser
+  console captured; no coverage-matrix cell unvisited.
 - [ ] Ready banner + compose health captured.
-- [ ] Evidence README written; playground `VERIFICATION.md` updated.
-- [ ] Discovered defects fixed under plans 156-158 (own commits) and
+- [ ] Evidence README written (incl. the coverage-matrix cell → evidence
+  mapping); playground `VERIFICATION.md` updated.
+- [ ] Discovered defects fixed under plans 156-158/160-161 (own commits) and
   re-asserted — no known-red assertion at closure.
 - [ ] `plans/README.md` status row updated.
 

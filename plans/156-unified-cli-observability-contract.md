@@ -52,11 +52,12 @@ neutral, semconv-1.43-aligned vocabulary is:
 Parallax's whole "runs" pipeline is keyed on the single resource attribute
 `parallax.run.id`. When jackin❯ ships, Parallax would show nothing. This plan
 makes `cli.invocation.id`/`session.id` the first-class correlation contract in
-the backend, keeps a read-only legacy fallback for `parallax.run.id` data still
-inside the telemetry TTL, and exposes the new signal families (sessions,
-screens, actions, cycles, jobs, conversations) over GraphQL so plan 157 can
-build the product surface. It also stops deriving issue fingerprints from the
-dead `jackin.operation` key.
+the backend, **removes `parallax.run.id` support entirely** (operator,
+2026-07-17: generic attributes only — no vendor key, no read fallback, no
+translation), and exposes the new signal families (sessions, screens, actions,
+cycles, jobs, conversations) over GraphQL so plan 157 can build the product
+surface. It also stops deriving issue fingerprints from the dead
+`jackin.operation` key.
 
 ## Current state
 
@@ -142,12 +143,16 @@ dead `jackin.operation` key.
    root-span/log **attributes** (jackin's shape — never Resource), then
    **resource attributes** (generic wrapped emitters, Parallax's own wrapper).
    One helper owns this lookup order.
-2. **Legacy fallback is read-only**: `parallax.run.id` is still *read* (ingest
-   fallback + query-side COALESCE) so pre-cutover data inside the telemetry
-   TTL keeps resolving, but Parallax never *emits* it, the UI never names it,
-   and no new code path may depend on it. Remove the fallback when the
-   playground (plan 158) and jackin are the only supported emitters and one
-   TTL window has passed — record that trigger in the index ledger.
+2. **`parallax.run.id` support is removed entirely** (operator, 2026-07-17):
+   not read, not written, not translated, not COALESCEd. Pre-cutover data
+   carrying only the legacy key becomes unreachable by design; the emitters
+   Parallax supports (jackin❯, the plan-158 playground, its own wrapper) all
+   speak the neutral key. **Generic attributes only** is a binding invariant:
+   Parallax implements business functionality only over generic keys
+   (`cli.*`, `session.*`, `app.*`, `ui.*`, `job.*`, `gen_ai.*`, standard
+   semconv); application-specific attributes (any vendor namespace) may only
+   ever be *displayed* as opaque attributes in generic attribute views, never
+   special-cased in queries, resolvers, or UI logic.
 3. **`session.id`** becomes a second extracted correlation column on logs and
    a queried span attribute on traces; session boundaries come from
    `session.start`/`session.end` log events (`event.name` column), never from
@@ -216,8 +221,9 @@ do not guess.)
 ## Git workflow
 
 - Branch: `feature/unified-cli-observability` (operator-authorized
-  2026-07-17; the ONE implementation branch for plans 156–159). Never commit
-  to `main`; one Parallax PR ships plans 156+157+159 together.
+  2026-07-17; the ONE implementation branch for plans 156–161). Never commit
+  to `main`; one Parallax PR ships plans 156+157+160 (with 159's evidence)
+  together; plans 158+161 ship in the one linked playground PR.
 - Conventional Commits, DCO `-s`, exactly one agent trailer, push after every
   durable commit. Suggested first subject:
   `feat(semconv): adopt neutral cli.invocation.id contract`.
@@ -239,10 +245,10 @@ In `telemetry/semconv/contract.yaml` (and the matching Weaver overlay under
   values, `gen_ai.agent.name`, `gen_ai.conversation.id`,
   `gen_ai.provider.name`, `process.exit.code`, span names `cli.command`,
   `app.startup`, `app.shutdown`, `ui.action`.
-- Keep `parallax.run.id` with a comment marking it **legacy read-only**
-  (rename its rust const to `LEGACY_PARALLAX_RUN_ID` if the generator supports
-  a rename; otherwise keep the name and add the comment).
-- Delete the `jackin.operation` row.
+- Delete the `parallax.run.id`, `parallax.session.id`,
+  `parallax.execution.layer`, `parallax.agent.id`, and `jackin.operation`
+  rows (generic-attributes-only invariant; the playground stops emitting
+  them in plan 158, same branch pair).
 - Run `cargo xtask semconv generate`; commit the regenerated
   `parallax-semconv/src/lib.rs` and `ui/src/shared/semconv.ts` untouched by
   hand.
@@ -259,14 +265,13 @@ In `crates/parallax-ingest/src/lib.rs` replace `run_id()` with:
 ```rust
 /// Resolve the CLI invocation id. Priority: explicit span/log attribute
 /// (the jackin shape — ids never live on Resource there), then resource
-/// attribute (generic wrapped emitters), then the legacy parallax.run.id
-/// resource attribute (read-only fallback inside the telemetry TTL).
+/// attribute (generic wrapped emitters). No legacy key is consulted.
 fn invocation_id(signal_attrs: &[KeyValue], resource_attrs: &[KeyValue]) -> Option<String>
 ```
 
 with lookup order `CLI_INVOCATION_ID` in `signal_attrs`, then in
-`resource_attrs`, then `PARALLAX_RUN_ID` in `resource_attrs`. Add the parallel
-`session_id()` (`SESSION_ID`, same order, no legacy fallback). Thread both
+`resource_attrs` — no legacy key anywhere. Add the parallel `session_id()`
+(`SESSION_ID`, same order). Thread both
 through `normalize_traces`/`normalize_logs`/`normalize_metrics`: rename row
 fields `run_id` → `invocation_id`, add `session_id: Option<String>` to
 `SpanRow` and `LogRow` (`crates/parallax-model/src/types.rs`). For spans, the
@@ -277,18 +282,21 @@ resource group — keep that shape, just widen the sources). Update
 
 **Verify**: `cargo nextest run --locked -p parallax-ingest -p parallax-model`
 → all pass, including new cases: id on root-span attrs only; id on resource
-only; legacy key only; both (new wins); session id present/absent.
+only; both (signal attr wins); **legacy `parallax.run.id` only → no
+invocation resolved** (negative test); session id present/absent.
 
 ### Step 3: Storage columns and queries
 
 `crates/parallax-greptime`:
 - `ingest.rs`: extract-keys header becomes
-  `service.name,cli.invocation.id,session.id,event.name,observed_ts_nanos,parallax.run.id`
-  (legacy key last, kept for the fallback window).
+  `service.name,cli.invocation.id,session.id,event.name,observed_ts_nanos`
+  (no legacy key).
 - `lifecycle.rs`: pre-create promoted columns `"cli.invocation.id"` (SKIPPING
-  INDEX) and `"session.id"` (SKIPPING INDEX) on `opentelemetry_logs` alongside
-  the existing `"parallax.run.id"`; add the repair-ALTER path for existing
-  installs (model on the existing `:337` repair). Create
+  INDEX) and `"session.id"` (SKIPPING INDEX) on `opentelemetry_logs`; drop
+  `"parallax.run.id"` from the fresh-install DDL (an already-existing column
+  on old installs is left in place but never read or written); add the
+  repair-ALTER path for the two new columns on existing installs (model on
+  the existing `:337` repair). Create
   `invocation_metric_points` with `invocation_id` replacing `run_id`
   (same shape otherwise); on bootstrap, if legacy `run_metric_points` exists,
   `INSERT INTO invocation_metric_points SELECT ts, run_id, service, name,
@@ -299,16 +307,15 @@ only; legacy key only; both (new wins); session id present/absent.
 - Query layer: rename `run_store.rs` functions to invocation terms.
   `observed_invocations()` unions:
   - traces: `COALESCE(span-attr column "cli.invocation.id",
-    resource_attributes."cli.invocation.id",
-    resource_attributes."parallax.run.id")` — confirm the exact column shape
-    the `greptime_trace_v1` pipeline produces for span attributes with the
-    live-engine test before writing SQL (per
+    resource_attributes."cli.invocation.id")` — confirm the exact column
+    shape the `greptime_trace_v1` pipeline produces for span attributes with
+    the live-engine test before writing SQL (per
     `docs/research/decisions/native-otel-tables.md` every attribute gets its
     own column; the ident helpers live in `greptime_sql.rs:15-30`);
-  - logs: `COALESCE("cli.invocation.id", "parallax.run.id")` over the promoted
-    columns.
-  `spans_by_invocation` filters the same COALESCE; `logs_by_invocation`
+  - logs: the promoted `"cli.invocation.id"` column.
+  `spans_by_invocation` filters the same expression; `logs_by_invocation`
   likewise (`signal_queries.rs`, `query_sql.rs:176`, `transport.rs:316`).
+  No query anywhere names `parallax.run.id`.
 - New projection queries (all bounded by limit + time window, all reading
   native tables only):
   - `sessions_by_invocation(invocation_id)` — from `opentelemetry_logs` where
@@ -338,9 +345,10 @@ only; legacy key only; both (new wins); session id present/absent.
 `cargo nextest run --locked -p parallax-server -E 'binary(/greptime/)'` → pass
 against a live engine, including one new live test proving (a) a span whose
 ROOT carries `cli.invocation.id` as a span attribute resolves via
-`observed_invocations`, (b) a legacy resource-attr-only emitter still
-resolves, (c) the extract-keys promotion fills the `"cli.invocation.id"` log
-column, and (d) `invocation_metric_points` receives the migrated legacy rows.
+`observed_invocations`, (b) a `cli.invocation.id` resource-attr-only emitter
+resolves while a `parallax.run.id`-only emitter does NOT, (c) the
+extract-keys promotion fills the `"cli.invocation.id"` log column, and (d)
+`invocation_metric_points` receives the migrated legacy rows.
 
 ### Step 4: Turso invocations
 
@@ -428,12 +436,12 @@ that `invocations` GraphQL returns.
 
 ### Step 7: Workspace closure
 
-Full sweep: `grep -rn "PARALLAX_RUN_ID\|parallax.run.id" crates/ --include='*.rs'`
-must show only (a) the semconv constant definition, (b) the ingest legacy
-fallback, (c) greptime COALESCE/read paths + legacy DDL column, (d) fixtures
-that explicitly test the fallback. Everything else is a defect. Update
-`docs/research/decisions/native-otel-tables.md` extraction rows
-(`cli.invocation.id`/`session.id` mechanism + legacy note) in the same commit.
+Full sweep: `grep -rn "PARALLAX_RUN_ID\|parallax.run.id\|parallax.session.id\|parallax.agent.id\|parallax.execution.layer" crates/ ui/src telemetry/ --include='*.rs' --include='*.ts' --include='*.tsx' --include='*.yaml'`
+must show only the negative-test fixtures that prove the legacy key is
+ignored. Everything else — constants, extraction, DDL, queries, docs — is a
+defect. Update `docs/research/decisions/native-otel-tables.md` extraction
+rows (`cli.invocation.id`/`session.id` mechanism; legacy mechanism deleted)
+in the same commit.
 
 **Verify**: `cargo xtask ci --fast` → exit 0; grep audit above clean.
 
@@ -455,7 +463,7 @@ that explicitly test the fallback. Everything else is a defect. Update
 - [ ] `cargo xtask ci --fast` exits 0; live-greptime lane green.
 - [ ] `grep -rn "jackin" crates/ --include='*.rs' | grep -v "jackin❯"` → no
   attribute-key matches (prose mentions of the product name are fine).
-- [ ] Step-7 grep audit shows legacy key only in the allowed fallback sites.
+- [ ] Step-7 grep audit shows the legacy keys only in negative-test fixtures.
 - [ ] GraphQL exposes `invocations`/`invocation`/`sessions`/`screen_visits`/
   `ui_actions`/`background_cycles`/`jobs`/`conversations` and no `run`-named
   field (`grep -n "fn run\|observed_runs" crates/parallax-api/src/lib.rs` → 0).
@@ -486,10 +494,10 @@ Stop and report back (do not improvise) if:
 
 ## Maintenance notes
 
-- The legacy `parallax.run.id` fallback has a removal trigger recorded in the
-  index ledger — shrink-only, like every ratchet.
 - New extension keys (future jackin registry additions) enter through
   `telemetry/semconv/contract.yaml` + regeneration, never as string literals.
-- Reviewer focus: the ingest priority order (signal attr beats resource attr
-  beats legacy), COALESCE order in every storage query, and that no metric
-  path gained an invocation/session tag.
+  Vendor-namespaced keys never re-enter the contract — generic attributes
+  only; application-specific keys are display-only opaque attributes.
+- Reviewer focus: the ingest priority order (signal attr beats resource
+  attr), that zero code paths name the legacy keys, and that no metric path
+  gained an invocation/session tag.
