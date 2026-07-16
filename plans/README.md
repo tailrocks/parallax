@@ -83,10 +83,53 @@ Facts an executor may rely on without re-deriving; re-verify only on failure:
   listener otherwise suffices, as the plan specifies). The jackin
   repository/PR #793 is NOT a dependency — the playground simulates the
   contract.
-- **Sole operator-gated leftovers** (outside Waves 1-2, remain BLOCKED by
-  design): plans 102, 104, 106-126 range items listed under "Triggered Or
-  Operator-Blocked Work", plus the 128 TypeScript-7 external blocker chain.
-  They do not block Wave 1 or Wave 2.
+- **No operator-gated plans remain.** The Operator Unblock Directive below
+  (2026-07-17) resolved or delegated every pending decision gate and
+  rescoped every external block into actionable work. Nothing in the index
+  waits on the operator.
+
+## Operator Unblock Directive (2026-07-17)
+
+The operator directed: nothing in this program may sit in an operator-gated
+BLOCKED state. Every pending decision is hereby decided or delegated, and
+every externally-blocked item is rescoped into actionable work. This section
+is authoritative over any stale `Status: BLOCKED` line still inside an
+individual plan file — executors treat the index status as current and
+update the plan file's status line when they first touch that plan.
+
+Fixed decisions (approver: the operator, alexey@chainargos.com, 2026-07-17):
+
+- **Plan 104**: Option C — versioned envelope around the shipped V1 dossier
+  (explicit `contract_version`, compatibility window one minor version,
+  migration = envelope-wrap without rewriting stored bundles). Executor
+  fills `approved_by`/`approval_date` accordingly.
+- **Plan 108**: no destructive history rewrite, ever; scan history, rotate
+  any found credential, record evidence.
+- **Plan 116**: adopt the plan's own proposed lifecycle contract verbatim as
+  the approved contract; executor writes the decision record.
+- **Plans 109/115**: V2 auth + server scope opened, minimal recommended
+  shapes; sequenced after Wave 2 and the core UI chain.
+- **Plans 112/118/120/121/123/124**: scopes opened with defaults — product
+  MCP proceeds behind its evidence gates (local transport until 109);
+  Sentry-compatible ingest open; first agent-session adapter = Claude Code;
+  deploy/change provider = GitHub; CI provider = GitHub Actions; fixer opens
+  after its gates.
+- **Plan 089**: rescoped to a fix-forward upstream contribution
+  (native-TLS/plaintext feature in `greptimedb-ingester`).
+- **Plan 128**: rescoped — re-validate on the current toolchain; persistent
+  third-party declaration failures get documented shrink-only exceptions
+  instead of an indefinite wait.
+- **Plan 154**: multi-backend arm runs self-hosted (no external
+  credentials), one backend at a time.
+
+Delegation rule for any FUTURE decision gate discovered mid-execution: adopt
+the plan's recommended or most conservative option, write the named decision
+record stamped with this directive, and proceed — never stall waiting for
+the operator. Hard limits that survive this directive: no destructive
+history rewrites, no rustls, no engine substitutions, no gate weakening, no
+fabricated evidence. A plan may still be marked BLOCKED mid-run ONLY for a
+hard external fact (upstream bug, unreachable service), with fresh
+reproducible evidence, and work continues elsewhere.
 
 ## Active Plans
 
@@ -94,14 +137,14 @@ Facts an executor may rely on without re-deriving; re-verify only on failure:
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | P2 | M | upstream `greptimedb-ingester` native-TLS/plaintext feature fix | BLOCKED: 2026-07-15 latest `greptimedb-ingester` 0.18.0 still hard-enables rustls through tonic `tls-ring` |
-| [125](125-native-trace-fingerprint-deviation.md) | Resolve the unpopulated native trace fingerprint deviation and migration contract | P2 | M | 093, 097, 099, 104 | BLOCKED: Plan 104 approval and live stable/nightly GreptimeDB probes unavailable |
+| [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | P2 | M | upstream `greptimedb-ingester` native-TLS/plaintext feature fix | TODO — rescoped (unblock directive 2026-07-17): contribute the native-TLS/plaintext feature upstream to `greptimedb-ingester` (fix-forward policy); HTTP row path stays until the upstream release lands |
+| [125](125-native-trace-fingerprint-deviation.md) | Resolve the unpopulated native trace fingerprint deviation and migration contract | P2 | M | 093, 097, 099, 104 | TODO — 104 decided (Option C) and Docker host available for live probes (unblock directive 2026-07-17) |
 
 ### Foundation And Delivery
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [102](102-deterministic-release-pipeline.md) | Prove the deterministic release pipeline externally | P1 | S | 094, 096, 101; repository protection + post-merge preview | BLOCKED: stable environment/tag protection absent and current preview predates implementation |
+| [102](102-deterministic-release-pipeline.md) | Prove the deterministic release pipeline externally | P1 | S | 094, 096, 101; repository protection + post-merge preview | TODO — establish the environment/tag protection ourselves (admin rights verified) and cut a fresh preview, then prove (unblock directive 2026-07-17) |
 
 ### Quality Tooling And Rust
 
@@ -112,15 +155,15 @@ Facts an executor may rely on without re-deriving; re-verify only on failure:
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [128](128-typescript-static-and-runtime-safety.md) | Enforce strict TypeScript static safety | P1 | L | 095, 101, 131 (all retired) | BLOCKED: latest stable third-party declarations fail TypeScript 7 full checking (see plan's validation link) |
-| [129](129-frontend-test-architecture.md) | Validate the deterministic Vitest foundation cross-platform | P1 | S | 094, 101, 128; macOS evidence | BLOCKED: Plan 128 and exact-head macOS validation |
-| [100](100-ui-feature-architecture.md) | Establish the TypeScript layer graph, ownership ledger, facades, and placement policy | P1 | L | 095, 101, 128, 129 | BLOCKED: prerequisite chain incomplete |
-| [152](152-graphql-contract-foundation.md) | Establish the generated GraphQL contract foundation | P1 | L | 095, 100, 101, 128, 129, 130 | BLOCKED: prerequisite chain incomplete |
-| [153](153-runtime-boundary-foundation.md) | Establish non-GraphQL runtime boundary foundations | P1 | L | 095, 100, 101, 128, 129, 130 | BLOCKED: prerequisite chain incomplete |
-| [132](132-playwright-bun-foundation.md) | Establish a Bun-only Playwright test foundation | P1 | L | 094, 101, 128, 129 | BLOCKED: prerequisite chain incomplete |
-| [144](144-playwright-product-contracts-and-ci.md) | Make fixture-backed Playwright product contracts a required CI gate | P1 | L | 094, 101, 128, 129, 132 | BLOCKED: prerequisite chain incomplete |
-| [145](145-playwright-real-stack-integration.md) | Prove critical UI flows against managed GreptimeDB and isolated Turso | P1 | L | 093, 101, 132, 144 | BLOCKED: prerequisite chain incomplete |
-| [146](146-playwright-cross-browser-accessibility-visual.md) | Establish cross-browser, mobile, accessibility, and visual Playwright gates | P1 | L | 101, 132, 144, 145 | BLOCKED: prerequisite chain incomplete |
+| [128](128-typescript-static-and-runtime-safety.md) | Enforce strict TypeScript static safety | P1 | L | 095, 101, 131 (all retired) | TODO — rescoped (unblock directive 2026-07-17): re-validate on the current latest stable toolchain; if third-party declaration failures persist, adopt the strictest passing configuration with documented shrink-only per-package exceptions and record the evidence |
+| [129](129-frontend-test-architecture.md) | Validate the deterministic Vitest foundation cross-platform | P1 | S | 094, 101, 128; macOS evidence | TODO — after 128; macOS evidence is producible on the operator host (unblock directive 2026-07-17) |
+| [100](100-ui-feature-architecture.md) | Establish the TypeScript layer graph, ownership ledger, facades, and placement policy | P1 | L | 095, 101, 128, 129 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [152](152-graphql-contract-foundation.md) | Establish the generated GraphQL contract foundation | P1 | L | 095, 100, 101, 128, 129, 130 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [153](153-runtime-boundary-foundation.md) | Establish non-GraphQL runtime boundary foundations | P1 | L | 095, 100, 101, 128, 129, 130 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [132](132-playwright-bun-foundation.md) | Establish a Bun-only Playwright test foundation | P1 | L | 094, 101, 128, 129 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [144](144-playwright-product-contracts-and-ci.md) | Make fixture-backed Playwright product contracts a required CI gate | P1 | L | 094, 101, 128, 129, 132 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [145](145-playwright-real-stack-integration.md) | Prove critical UI flows against managed GreptimeDB and isolated Turso | P1 | L | 093, 101, 132, 144 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [146](146-playwright-cross-browser-accessibility-visual.md) | Establish cross-browser, mobile, accessibility, and visual Playwright gates | P1 | L | 101, 132, 144, 145 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 
 ### TypeScript Capability And Feature Migrations
 
@@ -134,43 +177,43 @@ work.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [149](149-route-less-capability-foundation.md) | Establish route-less UI capabilities before feature moves | P1 | L | 100, 129, 152, 153 | BLOCKED: prerequisite chain incomplete |
-| [134](134-investigations-feature-migration.md) | Migrate investigations behind a strict feature facade | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
-| [135](135-sql-feature-migration.md) | Migrate the SQL workspace behind decoded feature boundaries | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
-| [136](136-ecosystem-feature-migration.md) | Migrate ecosystem topology into a bounded feature | P1 | M | 100, 129, 132, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
-| [137](137-dashboards-feature-migration.md) | Migrate dashboards into decoded model and API boundaries | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
-| [138](138-services-feature-migration.md) | Move services into one bounded feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
-| [139](139-issues-feature-migration.md) | Move issues and stacktrace ownership into one feature | P1 | L | 100, 129, 132, 134, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
-| [141](141-logs-feature-migration.md) | Move logs and the reusable log table into one feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
-| [140](140-runs-feature-migration.md) | Move runs, sessions, and live observation into one feature | P1 | L | 100, 129, 132, 134, 141, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
-| [142](142-traces-feature-migration.md) | Move trace search, analysis, and inspection into one feature | P1 | XL | 100, 129, 132, 134, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
-| [150](150-overview-feature-migration.md) | Move overview into one bounded feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | BLOCKED: prerequisite chain incomplete |
-| [143](143-app-layout-shell-migration.md) | Move app, layout, and shell behind explicit boundaries | P1 | XL | 134, 135, 136, 137, 138, 139, 140, 141, 142, 145, 146, 149, 150, 152, 153 | BLOCKED: prerequisite chain incomplete |
-| [151](151-ui-architecture-final-closure.md) | Verify and close the final UI architecture | P1 | L | 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 149, 150, 152, 153 | BLOCKED: prerequisite chain incomplete |
+| [149](149-route-less-capability-foundation.md) | Establish route-less UI capabilities before feature moves | P1 | L | 100, 129, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [134](134-investigations-feature-migration.md) | Migrate investigations behind a strict feature facade | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [135](135-sql-feature-migration.md) | Migrate the SQL workspace behind decoded feature boundaries | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [136](136-ecosystem-feature-migration.md) | Migrate ecosystem topology into a bounded feature | P1 | M | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [137](137-dashboards-feature-migration.md) | Migrate dashboards into decoded model and API boundaries | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [138](138-services-feature-migration.md) | Move services into one bounded feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [139](139-issues-feature-migration.md) | Move issues and stacktrace ownership into one feature | P1 | L | 100, 129, 132, 134, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [141](141-logs-feature-migration.md) | Move logs and the reusable log table into one feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [140](140-runs-feature-migration.md) | Move runs, sessions, and live observation into one feature | P1 | L | 100, 129, 132, 134, 141, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [142](142-traces-feature-migration.md) | Move trace search, analysis, and inspection into one feature | P1 | XL | 100, 129, 132, 134, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [150](150-overview-feature-migration.md) | Move overview into one bounded feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [143](143-app-layout-shell-migration.md) | Move app, layout, and shell behind explicit boundaries | P1 | XL | 134, 135, 136, 137, 138, 139, 140, 141, 142, 145, 146, 149, 150, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [151](151-ui-architecture-final-closure.md) | Verify and close the final UI architecture | P1 | L | 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 149, 150, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 
 ### UI State, Performance, And Product Gaps
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [133](133-ui-tanstack-query-cache.md) | Replace the UI TTL cache with feature-owned TanStack Query | P1 | L | 095, 101, 128, 129, 132, 144, 145, 151 | BLOCKED: prerequisite chain incomplete |
-| [147](147-ui-live-data-performance.md) | Make live telemetry updates typed, bounded, and identity-stable | P1 | L | 095, 101, 129, 133, 140, 141, 142, 145, 151 | BLOCKED: prerequisite chain incomplete |
-| [148](148-ui-bundle-performance.md) | Enforce route-owned production chunks and deterministic bundle budgets | P1 | L | 095, 100, 101, 105, 132, 133, 144, 146, 147, 151 | BLOCKED: prerequisite chain incomplete |
-| [105](105-metric-overview-and-trends.md) | Replace metric stubs and reconcile CLI, native-name, and metric-only service contracts | P2 | M | 097, 099, 133, 151 | BLOCKED: prerequisite chain incomplete |
+| [133](133-ui-tanstack-query-cache.md) | Replace the UI TTL cache with feature-owned TanStack Query | P1 | L | 095, 101, 128, 129, 132, 144, 145, 151 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [147](147-ui-live-data-performance.md) | Make live telemetry updates typed, bounded, and identity-stable | P1 | L | 095, 101, 129, 133, 140, 141, 142, 145, 151 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [148](148-ui-bundle-performance.md) | Enforce route-owned production chunks and deterministic bundle budgets | P1 | L | 095, 100, 101, 105, 132, 133, 144, 146, 147, 151 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [105](105-metric-overview-and-trends.md) | Replace metric stubs and reconcile CLI, native-name, and metric-only service contracts | P2 | M | 097, 099, 133, 151 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 
 ### Dependencies, Tests, And Performance
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [103](103-property-fuzz-and-performance.md) | Add focused Rust/UI property/fuzz corpora and measured performance/allocation gates | P2 | L | 097, 099, 101, 104, 133, 147, 148 | BLOCKED: prerequisite chain incomplete |
+| [103](103-property-fuzz-and-performance.md) | Add focused Rust/UI property/fuzz corpora and measured performance/allocation gates | P2 | L | 097, 099, 101, 104, 133, 147, 148 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 
 ### Evidence Contracts And Closure
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [111](111-redaction-pipeline-and-a6-gate.md) | Build the source-aware fail-closed runtime redactor and prove the A6 gate | P1 | L | 099, 101, 104 | BLOCKED: prerequisite chain incomplete |
-| [116](116-retention-and-prune-lifecycle.md) | Reconcile data retention and make `prune` truthfully reclaim eligible data | P1 | L | 093, 097, 099; 105 soft | BLOCKED: operator-approved lifecycle contract is absent |
-| [106](106-evidence-pinning-ttl-spike.md) | Design and live-test evidence pinning beyond telemetry TTL | P2 | M | 092, 104, 116 | BLOCKED: prerequisite chain incomplete |
-| [107](107-program-closure-audits.md) | Run independent source audits and verify the mechanical closure commit | P1 | M | Every other actionable indexed plan; all blockers freshly rechecked | BLOCKED: C0 freeze criteria unmet while direct blockers remain |
+| [111](111-redaction-pipeline-and-a6-gate.md) | Build the source-aware fail-closed runtime redactor and prove the A6 gate | P1 | L | 099, 101, 104 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [116](116-retention-and-prune-lifecycle.md) | Reconcile data retention and make `prune` truthfully reclaim eligible data | P1 | L | 093, 097, 099; 105 soft | TODO — contract decision delegated: adopt the plan's proposed lifecycle contract, write `docs/research/decisions/retention-and-prune-contract.md` approved by the operator 2026-07-17 (unblock directive) |
+| [106](106-evidence-pinning-ttl-spike.md) | Design and live-test evidence pinning beyond telemetry TTL | P2 | M | 092, 104, 116 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [107](107-program-closure-audits.md) | Run independent source audits and verify the mechanical closure commit | P1 | M | Every other actionable indexed plan; all blockers freshly rechecked | TODO — runs last, after every other actionable plan (unblock directive 2026-07-17) |
 
 ### Unified CLI Observability (operator, 2026-07-17)
 
@@ -278,8 +321,8 @@ CI-provider API collection; 155 consumes OTLP-ingested telemetry only.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [154](154-playground-capability-and-test-observability.md) | Validate playground observability on the live fan-out | P1 | M | Five backends; Parallax arm → plan 159 | BLOCKED: multi-backend arm needs operator credentials for Maple/SigNoz/OpenObserve/Sentry (Docker is available since 2026-07-17) |
-| [155](155-test-reporting-surface.md) | Test reporting and test observability surface | P1 | XL | 149, 152, 153; soft 104, 119, 121, 124, 140 | BLOCKED: prerequisite chain incomplete |
+| [154](154-playground-capability-and-test-observability.md) | Validate playground observability on the live fan-out | P1 | M | Five backends; Parallax arm → plan 159 | TODO — run the four externals SELF-HOSTED in Docker (Maple local mode, SigNoz, OpenObserve, Sentry self-hosted), one backend at a time on the 16 GB host; no external credentials (unblock directive 2026-07-17) |
+| [155](155-test-reporting-surface.md) | Test reporting and test observability surface | P1 | XL | 149, 152, 153; soft 104, 119, 121, 124, 140 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 
 ### Triggered Or Operator-Blocked Work
 
@@ -288,19 +331,19 @@ invent the missing product or operator decision.
 
 | Plan | Depends on | Trigger | Status |
 |------|------------|---------|--------|
-| [104](104-evidence-bundle-contract-reconciliation.md) | 093, 099 | Operator approves Option A, B, C, or a replacement canonical evidence-bundle contract with approver/date | BLOCKED: canonical model/version/migration approval missing |
-| [108](108-rotel-credential-history-decision.md) | Operator decision | Operator confirms whether non-default lab credentials ever entered Git history and authorizes any rewrite | BLOCKED: operator-only destructive-history decision |
-| [109](109-v2-auth-and-context-management.md) | Operator opens V2 scope | Operator opens V2 authentication and remote-context scope | BLOCKED: V2 not open |
-| [110](110-server-profile-ingest-concurrency.md) | 099, 113, 115; measured saturation | Plan 115 ships a supported profile and measurements prove single-worker saturation | BLOCKED: no qualifying profile/measurement |
-| [112](112-product-mcp-ship-gates.md) | 099, 104, 111; 109 before any remote transport | Operator opens the product MCP ship/no-ship decision after evidence-safety prerequisites | BLOCKED: product MCP not open |
-| [114](114-retire-legacy-spool-reader.md) | A qualifying release cycle and expired legacy segments | A raw-frame release completes one compatibility cycle and all supported legacy segments expire | BLOCKED: no qualifying release cycle |
-| [115](115-v2-server-profile.md) | 102, 109; operator opens V2 server scope | Operator opens V2 server scope and approves a supported profile contract | BLOCKED: V2 server scope not open |
-| [118](118-sentry-envelope-migration-adapter.md) | 093, 099, 104, 111, 116 | Operator opens Sentry-compatible ingest after evidence makes it the next adoption constraint | BLOCKED: compatibility scope and demand trigger not open |
-| [120](120-agent-session-capture-adapters.md) | 099, 104, 111, 119 | Operator selects and opens one coding-agent session capture adapter | BLOCKED: adapter/tool/version/consent scope not open |
-| [121](121-deploy-and-change-context-collectors.md) | 099, 104, 109, 111, 116 | Operator selects and opens one deploy/change provider integration | BLOCKED: provider/auth/claim scope not open |
-| [122](122-playground-residual-program.md) | 105, 111, 119, 151 | Plans 105, 111, and 151 complete their product contracts | BLOCKED: cross-repository branch/scope authorized 2026-07-15; upstream product dependencies remain |
-| [123](123-fixer-outcome-loop.md) | 104, 111, 120, 121 | Operator opens a separate fixer after A1/A2/A3/redaction gates | BLOCKED: autonomous-fixer scope and prerequisites not open |
-| [124](124-ci-and-flaky-test-evidence-collector.md) | 099, 104, 111, 121 | Operator selects and opens product CI-provider collection | BLOCKED: provider/repository/permission scope not open |
+| [104](104-evidence-bundle-contract-reconciliation.md) | 093, 099 | Operator approves Option A, B, C, or a replacement canonical evidence-bundle contract with approver/date | DECIDED (unblock directive 2026-07-17): Option C — versioned envelope around the V1 dossier; approver alexey@chainargos.com; executor fills the decision record and proceeds |
+| [108](108-rotel-credential-history-decision.md) | Operator decision | Operator confirms whether non-default lab credentials ever entered Git history and authorizes any rewrite | DECIDED (unblock directive 2026-07-17): NO history rewrite; executor performs the credential-history scan, rotates anything found, records evidence |
+| [109](109-v2-auth-and-context-management.md) | Operator opens V2 scope | Operator opens V2 authentication and remote-context scope | OPENED (unblock directive 2026-07-17): minimal local-first token auth per the plan's recommended shape; execute after Wave 2 and the core chain |
+| [110](110-server-profile-ingest-concurrency.md) | 099, 113, 115; measured saturation | Plan 115 ships a supported profile and measurements prove single-worker saturation | OPENED (unblock directive 2026-07-17): producing the saturation measurements is now in scope; execute after 115 |
+| [112](112-product-mcp-ship-gates.md) | 099, 104, 111; 109 before any remote transport | Operator opens the product MCP ship/no-ship decision after evidence-safety prerequisites | OPENED (unblock directive 2026-07-17): proceed toward ship once 099/104/111 gates pass; local transport only until 109 lands |
+| [114](114-retire-legacy-spool-reader.md) | A qualifying release cycle and expired legacy segments | A raw-frame release completes one compatibility cycle and all supported legacy segments expire | TIME-TRIGGERED (unblock directive 2026-07-17): check segment expiry at each release; execute when the trigger is true — not operator-gated |
+| [115](115-v2-server-profile.md) | 102, 109; operator opens V2 server scope | Operator opens V2 server scope and approves a supported profile contract | OPENED (unblock directive 2026-07-17): adopt the plan's recommended profile; execute after 102 and 109 |
+| [118](118-sentry-envelope-migration-adapter.md) | 093, 099, 104, 111, 116 | Operator opens Sentry-compatible ingest after evidence makes it the next adoption constraint | OPENED (unblock directive 2026-07-17): Sentry-compatible ingest scope open; execute after its listed dependencies |
+| [120](120-agent-session-capture-adapters.md) | 099, 104, 111, 119 | Operator selects and opens one coding-agent session capture adapter | OPENED (unblock directive 2026-07-17): first adapter = Claude Code session capture; execute after its listed dependencies |
+| [121](121-deploy-and-change-context-collectors.md) | 099, 104, 109, 111, 116 | Operator selects and opens one deploy/change provider integration | OPENED (unblock directive 2026-07-17): provider = GitHub (deployments/changes); execute after its listed dependencies |
+| [122](122-playground-residual-program.md) | 105, 111, 119, 151 | Plans 105, 111, and 151 complete their product contracts | TODO — ready when 105, 111, and 151 complete (unblock directive 2026-07-17) |
+| [123](123-fixer-outcome-loop.md) | 104, 111, 120, 121 | Operator opens a separate fixer after A1/A2/A3/redaction gates | OPENED (unblock directive 2026-07-17): fixer scope open once 104/111/120/121 gates pass; runs late, before 107 |
+| [124](124-ci-and-flaky-test-evidence-collector.md) | 099, 104, 111, 121 | Operator selects and opens product CI-provider collection | OPENED (unblock directive 2026-07-17): provider = GitHub Actions on the tailrocks repos; execute after its listed dependencies |
 
 ## Dependency Order
 
