@@ -210,7 +210,7 @@ pub(crate) async fn invocation_finish(c: &Client, id: &str, code: i32) -> anyhow
     Ok(())
 }
 
-pub(crate) async fn run_list(client: &Client) -> anyhow::Result<()> {
+pub(crate) async fn invocation_list(client: &Client) -> anyhow::Result<()> {
     let response = client
         .graphql(r#"{ invocations { invocationId command status exitCode startedAtNanos } }"#)
         .await?;
@@ -245,7 +245,7 @@ pub(crate) async fn run_list(client: &Client) -> anyhow::Result<()> {
 
 /// `parallax run inspect <invocation_id>` — the invocation record plus its
 /// derived counts and grouped issues.
-pub(crate) async fn run_inspect(client: &Client, invocation_id: &str) -> anyhow::Result<()> {
+pub(crate) async fn invocation_inspect(client: &Client, invocation_id: &str) -> anyhow::Result<()> {
     let response = client
         .graphql(&format!(
             r#"{{ invocation(invocationId: "{}") {{ invocationId command status exitCode startedAtNanos endedAtNanos
@@ -287,7 +287,7 @@ pub(crate) async fn run_inspect(client: &Client, invocation_id: &str) -> anyhow:
 
 /// `parallax run bundle <invocation_id>` — the run-anchored evidence bundle
 /// (scope §2.4: the run model's bundle).
-pub(crate) async fn run_bundle(c: &Client, id: &str, fmt: OutputFormat) -> anyhow::Result<()> {
+pub(crate) async fn invocation_bundle(c: &Client, id: &str, fmt: OutputFormat) -> anyhow::Result<()> {
     let query = match fmt {
         OutputFormat::Markdown => format!(
             r#"{{ bundle(invocationId: "{}") {{ markdown canonicalHash }} }}"#,
@@ -310,7 +310,7 @@ pub(crate) async fn run_bundle(c: &Client, id: &str, fmt: OutputFormat) -> anyho
 
 /// `parallax run agent <invocation_id>` — run-scoped agent-session projection
 /// (tool steps, token totals). Null when no agent spans were detected.
-pub(crate) async fn run_agent_session(
+pub(crate) async fn invocation_agent_session(
     client: &Client,
     invocation_id: &str,
     format: OutputFormat,

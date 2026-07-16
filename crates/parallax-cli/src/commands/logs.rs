@@ -10,7 +10,7 @@ pub(crate) async fn logs(client: &Client, filter: LogsFilter<'_>) -> anyhow::Res
     if let Some(trace_id) = filter.trace {
         args.push(format!(r#"traceId: "{}""#, gql_str(trace_id)));
     }
-    if let Some(invocation_id) = filter.run {
+    if let Some(invocation_id) = filter.invocation {
         args.push(format!(r#"invocationId: "{}""#, gql_str(invocation_id)));
     }
     if let Some(service) = filter.service {
@@ -22,7 +22,7 @@ pub(crate) async fn logs(client: &Client, filter: LogsFilter<'_>) -> anyhow::Res
     if let Some(needle) = filter.grep {
         args.push(format!(r#"query: "{}""#, gql_str(needle)));
     }
-    if filter.trace.is_none() && filter.run.is_none() {
+    if filter.trace.is_none() && filter.invocation.is_none() {
         let from = now_nanos().saturating_sub(parse_since(filter.since)?);
         args.push(format!(r#"fromNanos: "{from}""#));
     }

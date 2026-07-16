@@ -8,7 +8,7 @@ use crate::client::{Client, gql_str};
 pub(crate) async fn traces(client: &Client, filter: TracesFilter<'_>) -> anyhow::Result<()> {
     // --run anchors on the run's traces (tracesByRun); other filters are
     // the browse query.
-    let (pointer, query) = match filter.run {
+    let (pointer, query) = match filter.invocation {
         Some(invocation_id) => (
             "/data/tracesByRun",
             format!(

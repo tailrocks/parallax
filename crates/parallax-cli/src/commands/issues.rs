@@ -8,10 +8,10 @@ use crate::client::{Client, gql_str};
 pub(crate) async fn issue_list(
     client: &Client,
     status: Option<&str>,
-    run: Option<&str>,
+    invocation: Option<&str>,
 ) -> anyhow::Result<()> {
     // Invocation scoping reads that invocation's issues; otherwise the filtered list.
-    let (pointer, query) = match run {
+    let (pointer, query) = match invocation {
         Some(invocation_id) => (
             "/data/invocation/issues",
             format!(
@@ -30,8 +30,15 @@ pub(crate) async fn issue_list(
         ),
     };
     let response = client.graphql(&query).await?;
-    if run.is_some() && response.pointer("/data/invocation").is_some_and(|v| v.is_null()) {
-        anyhow::bail!("invocation {} not found", run.unwrap_or_default());
+    if invocation.is_some()
+        && response
+            .pointer("/data/invocation")
+            .is_some_and(|v| v.is_null())
+    {
+        anyhow::bail!(
+            "invocation {} not found",
+            invocation.unwrap_or_default()
+        );
     }
     let mut issues = response
         .pointer(pointer)

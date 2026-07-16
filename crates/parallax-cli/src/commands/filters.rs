@@ -4,7 +4,7 @@
 /// scoping (trace/run/service/level/text/window) in one command.
 pub(crate) struct LogsFilter<'a> {
     pub trace: Option<&'a str>,
-    pub run: Option<&'a str>,
+    pub invocation: Option<&'a str>,
     pub service: Option<&'a str>,
     pub level: Option<&'a str>,
     pub grep: Option<&'a str>,
@@ -42,7 +42,7 @@ pub(crate) fn parse_since(since: &str) -> anyhow::Result<u128> {
 /// The CLI mirror of the UI Traces page filters.
 pub(crate) struct TracesFilter<'a> {
     pub service: Option<&'a str>,
-    pub run: Option<&'a str>,
+    pub invocation: Option<&'a str>,
     pub min_duration: Option<&'a str>,
     pub errors_only: bool,
     pub grep: Option<&'a str>,

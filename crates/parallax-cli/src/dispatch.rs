@@ -1,14 +1,14 @@
 //! Parsed-command dispatch, kept separate from clap declarations and runtime setup.
 
 use crate::client::{Client, gql_str, resolve_url};
-use crate::{Cli, Command, IssueCommand, RunCommand, TraceCommand, commands, doctor, runtime};
+use crate::{Cli, Command, InvocationCommand, IssueCommand, TraceCommand, commands, doctor, runtime};
 
 pub(crate) async fn execute(cli: Cli, runtime: runtime::Runtime) -> anyhow::Result<()> {
     let client =
         || -> anyhow::Result<Client> { Ok(Client::new(resolve_url(cli.context.as_deref())?)) };
     match cli.command {
         Command::Serve { .. } => runtime::serve(runtime).await,
-        Command::Run { command } => run(command, &client).await,
+        Command::Invocation { command } => invocation(command, &client).await,
         Command::Issue { command } => issue(command, &client).await,
         Command::Trace { command } => match command {
             TraceCommand::Inspect { trace_id } => {
@@ -17,7 +17,7 @@ pub(crate) async fn execute(cli: Cli, runtime: runtime::Runtime) -> anyhow::Resu
         },
         Command::Logs {
             trace,
-            run,
+            invocation,
             service,
             level,
             grep,
@@ -28,7 +28,7 @@ pub(crate) async fn execute(cli: Cli, runtime: runtime::Runtime) -> anyhow::Resu
         } => {
             let filter = commands::LogsFilter {
                 trace: trace.as_deref(),
-                run: run.as_deref(),
+                invocation: invocation.as_deref(),
                 service: service.as_deref(),
                 level: level.as_deref(),
                 grep: grep.as_deref(),
@@ -42,7 +42,7 @@ pub(crate) async fn execute(cli: Cli, runtime: runtime::Runtime) -> anyhow::Resu
             }
         }
         Command::Traces {
-            run,
+            invocation,
             service,
             min_duration,
             errors,
@@ -54,7 +54,7 @@ pub(crate) async fn execute(cli: Cli, runtime: runtime::Runtime) -> anyhow::Resu
         } => {
             let filter = commands::TracesFilter {
                 service: service.as_deref(),
-                run: run.as_deref(),
+                invocation: invocation.as_deref(),
                 min_duration: min_duration.as_deref(),
                 errors_only: errors,
                 grep: grep.as_deref(),
@@ -74,12 +74,12 @@ pub(crate) async fn execute(cli: Cli, runtime: runtime::Runtime) -> anyhow::Resu
     }
 }
 
-async fn run(
-    command: RunCommand,
+async fn invocation(
+    command: InvocationCommand,
     client: &impl Fn() -> anyhow::Result<Client>,
 ) -> anyhow::Result<()> {
     match command {
-        RunCommand::Start {
+        InvocationCommand::Start {
             otlp_forward,
             print_env,
             command,
@@ -87,24 +87,24 @@ async fn run(
             let code = commands::invocation_start(&client()?, command, otlp_forward, print_env).await?;
             std::process::exit(code);
         }
-        RunCommand::Finish { invocation_id, exit_code } => {
+        InvocationCommand::Finish { invocation_id, exit_code } => {
             commands::invocation_finish(&client()?, &invocation_id, exit_code).await
         }
-        RunCommand::List => commands::run_list(&client()?).await,
-        RunCommand::Inspect { invocation_id } => commands::run_inspect(&client()?, &invocation_id).await,
-        RunCommand::Bundle { invocation_id, format } => {
-            commands::run_bundle(&client()?, &invocation_id, format).await
+        InvocationCommand::List => commands::invocation_list(&client()?).await,
+        InvocationCommand::Inspect { invocation_id } => commands::invocation_inspect(&client()?, &invocation_id).await,
+        InvocationCommand::Bundle { invocation_id, format } => {
+            commands::invocation_bundle(&client()?, &invocation_id, format).await
         }
-        RunCommand::Agent { invocation_id, format } => {
-            commands::run_agent_session(&client()?, &invocation_id, format).await
+        InvocationCommand::Agent { invocation_id, format } => {
+            commands::invocation_agent_session(&client()?, &invocation_id, format).await
         }
-        RunCommand::Watch {
+        InvocationCommand::Watch {
             invocation_id,
             level,
             grep,
             watch_for,
         } => {
-            commands::run_watch(
+            commands::invocation_watch(
                 &client()?,
                 &invocation_id,
                 level.as_deref(),
@@ -121,8 +121,8 @@ async fn issue(
     client: &impl Fn() -> anyhow::Result<Client>,
 ) -> anyhow::Result<()> {
     match command {
-        IssueCommand::List { status, run } => {
-            commands::issue_list(&client()?, status.as_deref(), run.as_deref()).await
+        IssueCommand::List { status, invocation } => {
+            commands::issue_list(&client()?, status.as_deref(), invocation.as_deref()).await
         }
         IssueCommand::Context {
             fingerprint,

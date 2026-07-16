@@ -6,7 +6,7 @@ mod issues;
 mod live;
 mod logs;
 mod output;
-mod runs;
+mod invocations;
 mod sql;
 mod traces;
 
@@ -14,7 +14,7 @@ pub(crate) use filters::{LogsFilter, TracesFilter};
 pub(crate) use issues::*;
 pub(crate) use live::*;
 pub(crate) use logs::*;
-pub(crate) use runs::*;
+pub(crate) use invocations::*;
 pub(crate) use sql::*;
 pub(crate) use traces::*;
 

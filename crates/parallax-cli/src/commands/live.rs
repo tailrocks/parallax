@@ -85,7 +85,7 @@ pub(crate) async fn logs_follow(
     if let Some(trace_id) = filter.trace {
         params.push(("trace_id", trace_id.into()));
     }
-    if let Some(invocation_id) = filter.run {
+    if let Some(invocation_id) = filter.invocation {
         params.push(("invocation_id", invocation_id.into()));
     }
     let query = encode_query(&params);
@@ -126,7 +126,7 @@ pub(crate) async fn traces_follow(
     if let Some(needle) = filter.grep {
         params.push(("q", needle.into()));
     }
-    if let Some(invocation_id) = filter.run {
+    if let Some(invocation_id) = filter.invocation {
         params.push(("invocation_id", invocation_id.into()));
     }
     let query = encode_query(&params);
@@ -164,7 +164,7 @@ fn print_span_line(span: &serde_json::Value) {
 /// arrive (the CLI mirror of the run page's Live mode). `--for 30s` watches
 /// a fixed window and reports per-stream match counts — the agent
 /// verification loop for a specific run.
-pub(crate) async fn run_watch(
+pub(crate) async fn invocation_watch(
     client: &Client,
     invocation_id: &str,
     level: Option<&str>,
