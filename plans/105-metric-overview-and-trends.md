@@ -14,6 +14,15 @@
 - **Planned at**: `eefa4617`, 2026-07-12
 - **Status**: BLOCKED — Plans 133 and 151 are incomplete
 
+## Contract reconciliation (2026-07-17)
+
+Plan 156 replaces `parallax.run.id` with `cli.invocation.id` and renames
+`run_metric_points` to `invocation_metric_points` (`invocation_id` column).
+Author the still-undecided CLI metric contract as `parallax metrics
+--invocation`, never `--run`; run-scoped wording below reads as
+invocation-scoped. See plans/156-unified-cli-observability-contract.md and
+the Unified CLI Observability note in plans/README.md.
+
 ## Why
 
 `metric_point_count` is a documented zero stub and metric trend data is empty,

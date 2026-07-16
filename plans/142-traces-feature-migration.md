@@ -27,6 +27,16 @@
 - **Planned at**: `e3e7997`, 2026-07-12
 - **Status**: BLOCKED — upstream UI foundation, investigations, and browser plans are incomplete
 
+## Contract reconciliation (2026-07-17)
+
+Plans 156/157 rename the correlation contract before this plan starts: the
+inspector's resource/span attributes carry `cli.invocation.id` (legacy
+`parallax.run.id` only inside the TTL fallback window), trace→run links
+become trace→`/invocations/$invocationId`, and PRODUCER/CONSUMER job spans
+(`job.id`/`job.type`) plus `background.cycle` roots are expected span shapes.
+Re-characterize the baseline at the post-157 head; "run" reads as
+"invocation". See plans/156-unified-cli-observability-contract.md.
+
 ## Why This Matters
 
 The trace routes contain 2,252 lines, including the 1,500-line detail hotspot.

@@ -26,6 +26,16 @@
 - **Planned at**: `e3e7997`, 2026-07-12
 - **Status**: BLOCKED — upstream UI foundation and browser plans are incomplete
 
+## Contract reconciliation (2026-07-17)
+
+Plans 156/157 rename the correlation contract before this plan starts:
+`run_id` log field → `invocationId`, promoted log column
+`"parallax.run.id"` → `"cli.invocation.id"` (+`"session.id"`), run links →
+`/invocations/$invocationId`, SSE `?run_id=` → `?invocation_id=`. The
+baseline paths this plan freezes must be re-characterized at the post-157
+head; every "run" reference below reads as "invocation". See
+plans/156-unified-cli-observability-contract.md.
+
 ## Why This Matters
 
 The logs route and table contain 1,354 lines spanning search, queries, saved-view

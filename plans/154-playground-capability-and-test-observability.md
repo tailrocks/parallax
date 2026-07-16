@@ -17,6 +17,17 @@
 - **Status**: BLOCKED — this arm64 host has no Docker; collector-backed
   Parallax/Maple/SigNoz/OpenObserve/Sentry evidence cannot be produced locally
 
+## Contract reconciliation (2026-07-17)
+
+Plan 158 migrates the playground emitters to the neutral contract
+(`cli.invocation.id`, `session.id`, `app.mode`, `job.*`, generic `outcome`;
+`PARALLAX_RUN_ID` env → `CLI_INVOCATION_ID`). Plan 159 executes the
+Parallax-backend arm of this plan's remaining sweep on the operator's Docker
+host; this plan keeps only the multi-backend (Maple/SigNoz/OpenObserve/
+Sentry) matrix. `parallax run start` wording below reads as the renamed
+invocation wrapper. See plans/158-playground-unified-cli-contract.md and
+plans/159-unified-cli-observability-acceptance.md.
+
 ## Completed Contract
 
 The companion repository implements the complete source program:

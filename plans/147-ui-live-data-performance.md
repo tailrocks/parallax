@@ -23,6 +23,18 @@
 - **Planned at**: `e3e7997`, revised 2026-07-12
 - **Status**: BLOCKED — upstream cache, feature, browser, and final UI plans are incomplete
 
+## Contract reconciliation (2026-07-17)
+
+Plans 156/157 rename the live correlation contract before this plan starts:
+run-detail streams become invocation-hub streams
+(`/v1/logs/stream?invocation_id=`, `/v1/traces/stream?invocation_id=`, plus
+`session_id`), `runs.$runId.tsx` becomes `invocations.$invocationId.tsx`, and
+the 10 s status poll targets the renamed `invocation` field. Two additional
+live shapes exist (background-cycle and job spans inside the traces stream) —
+they reuse trace/span identity, no new identity contract. Re-characterize the
+baseline paths at the post-157 head; "run" reads as "invocation". See
+plans/157-cli-invocation-observability-ui.md.
+
 ## Why This Matters
 
 At the baseline, `ui/src/hooks/use-live-stream.ts:36-65` owns an EventSource,

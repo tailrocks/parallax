@@ -26,6 +26,21 @@
 - **Planned at**: `e3e7997`, 2026-07-12
 - **Status**: BLOCKED — upstream UI foundation, logs, investigations, and browser plans are incomplete
 
+## Contract reconciliation (2026-07-17)
+
+Plans 156/157 replace the runs surface this plan was written to move: the
+routes become `/invocations` + `/invocations/$invocationId`, the GraphQL
+fields and SSE params are renamed (`runId` → `invocationId`), the run/
+observed-run merge moves server-side, and new tabs (sessions/screens/actions,
+jobs/cycles, conversations) exist. At execution time this plan is re-baselined
+as the **invocations feature migration**: same migration discipline
+(behavior-preserving move behind `features/invocations` with explicit
+facades), applied to the post-157 surface. Re-run Step 0 characterization
+against that head; every "run" reference below reads as "invocation"; the
+agent-session model reads as the `gen_ai.*` conversations model. See
+plans/157-cli-invocation-observability-ui.md and the Unified CLI
+Observability note in plans/README.md.
+
 ## Why This Matters
 
 The run routes contain 1,216 lines and currently combine list normalization,

@@ -1,121 +1,80 @@
-# Complete The Active Plans Program In One PR
+# Ship Unified CLI Observability In One PR, Then Close The Remaining Program
 
 ## Authorization And Objective
 
-The operator explicitly authorizes exactly one implementation branch,
-`codex/active-plan-closure-7f3c`, and exactly one pull request from that branch
-to `main`. Create and use only that branch for this program. Do not create any
-other branch, worktree branch, remote branch, or pull request.
+The previous authorization (branch `codex/active-plan-closure-7f3c`, sole PR
+#20) completed and merged on 2026-07-15; that program is closed.
 
-Execute every actionable plan indexed by `plans/README.md`, honor genuine
-blockers, and prove the complete program at one validated pull-request head,
-then merge that one PR and verify the merged `main` commit. A phase, a green
-subset, a partial implementation, a commit, a push, or a status report is not
-completion. Continue automatically until the Done condition is mechanically
-proven or an exact operator/external decision prevents all honest progress.
+The operator (2026-07-17) authorizes exactly one new implementation branch,
+`feature/unified-cli-observability`, in the Parallax repository, with exactly
+one pull request from it to `main` — plus exactly one linked pull request on a
+branch of the same name in `tailrocks/parallax-telemetry-playground`. Create
+and use only these branches. Do not create any other branch, worktree branch,
+remote branch, or pull request. Plan/index/document maintenance commits
+continue to land directly on `main` as before.
+
+Primary objective: execute plans 156, 157, 158, and 159 (the Unified CLI
+Observability vertical in `plans/README.md`) **completely and one-shot,
+without operator questions** — every decision needed is fixed inside those
+plans. The vertical replaces the `parallax.run.id` runs surface with generic
+CLI-application observability (`cli.invocation.id`, `session.id`, `app.mode`,
+`ui.*` events, `background.cycle`, jobs, `gen_ai.*`, bounded
+`outcome`/`error.type`), builds the invocation hub UI with per-page real-time
+toggles, migrates the playground emitters, and proves the whole loop live on
+the operator's Docker host with GraphQL assertions and browser evidence
+(plan 159) before the PR opens.
+
+Secondary objective: after the vertical merges, continue executing every
+remaining actionable plan indexed by `plans/README.md` under the same rules
+as before, honoring genuine blockers.
 
 ## Sources And Scope
 
 Before editing and before each new plan, read `AGENTS.md`, `BRANCHING.md`,
 `COMMITS.md`, `PROJECT_STRUCTURE.md`, `plans/README.md`, this file,
-`plans/IMPLEMENTATION.md`, `plans/ENGINEERING-STANDARDS.md`,
-`plans/OXC-IMPLEMENTATION.md`, the selected plan and its dependencies, and
-the relevant source, tests, CI, manifests, and configuration. Read
-`ui/AGENTS.md` before UI work. Recheck version-sensitive library, framework,
-SDK, API, CLI, and cloud-service details in current official documentation via
-Context7. Use live evidence to correct stale mechanics; never silently change
-operator decisions, architecture, scope, or gates.
+`plans/IMPLEMENTATION.md`, `plans/ENGINEERING-STANDARDS.md`, the selected
+plan and its dependencies, and the relevant source, tests, CI, manifests, and
+configuration. Read `ui/AGENTS.md` before UI work. Recheck version-sensitive
+details in current official documentation via Context7. Use live evidence to
+correct stale mechanics; never silently change operator decisions,
+architecture, scope, or gates.
 
-Follow the dependency graph in `plans/README.md`. Parallelize only
-write-disjoint ready plans; otherwise serialize. Do not implement a `BLOCKED`
-plan before its exact trigger is proven. Preserve all non-negotiable repository
-constraints: GreptimeDB plus Turso only, GreptimeDB native raw-signal tables,
-native TLS only, Bun only for JavaScript and TypeScript, decode once and move
-ownership on the ingest hot path, Apache-2.0, and the UI rules.
+Preserve all non-negotiable repository constraints: GreptimeDB plus Turso
+only, GreptimeDB native raw-signal tables, native TLS only, Bun only for
+JavaScript and TypeScript, decode once and move ownership on the ingest hot
+path, Apache-2.0, progress narration for long-running commands, and the UI
+rules. The contract-reconciliation note in the Unified CLI Observability
+section of `plans/README.md` binds every executor of plans 105, 140, 141,
+142, 147, 154, and 155.
 
 ## Continuous Execution
 
-For each ready plan, inspect current behavior, mark it `IN PROGRESS`, implement
-its complete scope and required durable evidence, and run every stated test,
-machine-checkable Done Criterion, and removal gate. Use live manifests and
-configuration as command truth. Do not run a planned command before its owner
-creates and proves it; after that owner lands, a missing, hollow, or failing
-command prevents retirement. Never stub a gate, accept an empty test selection,
-replace a named live gate with a mock, or claim an unrun check passed.
+For each ready plan: run its drift check, mark it `IN PROGRESS`, implement
+its complete scope, run every stated verification and done criterion, then
+retire it per the lifecycle (delete file + index row in the same commit,
+preserving durable evidence). Commit green durable slices with Conventional
+Commits, DCO sign-off, and exactly one agent-product trailer; push after
+every durable commit. A STOP condition blocks only that plan: preserve
+reproducible evidence, shrink the file to unfinished work, mark `BLOCKED`,
+continue independent ready work. Never stub a gate, never claim an unrun
+check passed, never invent an operator decision.
 
-When a plan passes, preserve required durable evidence, delete its file and its
-index row in the same commit, re-read the index, and continue immediately with
-the next ready plan. Put newly discovered actionable work in a numbered plan
-before implementing it. Commit and push green durable slices to
-`codex/active-plan-closure-7f3c` with Conventional Commits, a separate
-`Signed-off-by` trailer, and exactly one trailer:
+## Verification And Done
 
-```text
-Co-authored-by: Codex <codex@openai.com>
-```
+The vertical's PR opens only after plan 159's evidence bundle is complete and
+the shared verification baseline in `plans/README.md#shared-verification`
+passes for the commands that exist at that head (UI browser lanes that plans
+132/144-146 have not yet created are not yet required). Merge when required
+CI is green, then verify merged `main` from a clean checkout and report PR
+URL, merged SHA, completed plans, and remaining blockers.
 
-After each push, report the plan/step, checks, SHA, blocker, and next ready
-work, then continue without waiting for confirmation. Do not pause for routine
-implementation decisions; use the fixed decisions in the plans and current
-official documentation.
-
-A STOP condition blocks only that plan. For a genuine upstream, operator,
-product-scope, cross-repository, release-cycle, or external blocker, freshly
-verify its exact trigger, preserve reproducible evidence, reduce the file to
-only unfinished work, mark it `BLOCKED`, commit and push it, and continue every
-independent ready plan. Do not invent an operator decision, authorize a
-destructive history rewrite, open V2 scope, choose a provider or credential,
-or bypass repository policy. Run Plan 107 only after every other actionable
-plan is completed or freshly proven blocked.
-
-## Verification And Integration
-
-At closure, run the complete `plans/README.md#shared-verification` command
-block from a clean checkout at the PR head. Every command must exit zero; tests
-must pass; format, lint, and type checks must emit no warnings; repeatability
-checks must agree; and required CI must be green for that exact pushed commit.
-Run every required real GreptimeDB/Turso, browser, release, tamper,
-performance, and artifact gate. Complete Plan 107's two independent
-clean-checkout audits, exact-tree attestations, and `closure-final` validation
-without weakening a gate.
-
-Before opening the PR, verify that every remaining blocked plan has fresh exact
-trigger evidence and no hidden actionable work. Delete all completed, rejected,
-or superseded plan files and index rows. Delete `plans/GOAL.md`,
-`plans/IMPLEMENTATION.md`, `plans/ENGINEERING-STANDARDS.md`, and
-`plans/OXC-IMPLEMENTATION.md` only when their documented completion conditions
-are mechanically satisfied. Verify repository search proves all remaining
-active plan material exists only in `plans/`.
-
-Open the sole PR from `codex/active-plan-closure-7f3c` to `main` only after the
-PR head passes all required validation. Merge it when required CI is green and
-the operator/repository merge policy permits it. Then verify the merged commit
-on `main` from a clean checkout and report the PR URL, merged SHA, completed
-plans, exact remaining blockers, and all verification results.
-
-## Done
-
-Completion is valid only when every condition in
-`plans/IMPLEMENTATION.md#completion-state` is mechanically true at the same
-validated PR head and, after merge, on the resulting `main` commit: all
-actionable plans passed and were removed with their index rows; each remaining
-blocked plan has freshly reproduced trigger evidence and no hidden actionable
-work; Plan 107's auditors agree; `closure-final` passes; completed temporary
-standards/run-contract files are retired; repository search finds no active
-plan material outside `plans/`; and the post-merge worktree is clean with local
-`main` equal to `origin/main`.
-
-Never infer success from prose, checkboxes, file existence, grep alone, one
-platform, or a subset of tests or plans. Report the commands, commit SHAs, CI
-result, attestations, blocked triggers, and searches that prove completion.
+The overall program's completion state remains
+`plans/IMPLEMENTATION.md#completion-state`. Plan 107 runs last and deletes
+this file in the final mechanical closure commit.
 
 ## STOP
 
-Stop globally only when Done is proven, the operator explicitly stops or
-replaces the goal, or no honest progress remains because an operator/external
-decision is required. In the last case, finish and push every independent
-ready plan, report exact reproducible evidence and the required decision as
-blocked, and do not claim completion. Stop and escalate rather than invent
-requirements, cross unopened scope, perform unauthorized destructive history
-changes, substitute forbidden technology, weaken a check, suppress a real
-failure, or claim an unrun gate passed.
+Stop globally only when the objectives are proven, the operator replaces this
+goal, or no honest progress remains without an operator/external decision. In
+that case finish and push every independent ready plan, report exact
+reproducible evidence and the required decision, and do not claim completion.

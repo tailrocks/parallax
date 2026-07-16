@@ -74,7 +74,7 @@ Every plan must preserve these non-negotiable Parallax constraints:
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [128](128-typescript-static-and-runtime-safety.md) | Enforce strict TypeScript static safety | P1 | L | 095, 101, 131 | BLOCKED |
+| [128](128-typescript-static-and-runtime-safety.md) | Enforce strict TypeScript static safety | P1 | L | 095, 101, 131 (all retired) | BLOCKED: latest stable third-party declarations fail TypeScript 7 full checking (see plan's validation link) |
 | [129](129-frontend-test-architecture.md) | Validate the deterministic Vitest foundation cross-platform | P1 | S | 094, 101, 128; macOS evidence | BLOCKED: Plan 128 and exact-head macOS validation |
 | [100](100-ui-feature-architecture.md) | Establish the TypeScript layer graph, ownership ledger, facades, and placement policy | P1 | L | 095, 101, 128, 129 | BLOCKED: prerequisite chain incomplete |
 | [152](152-graphql-contract-foundation.md) | Establish the generated GraphQL contract foundation | P1 | L | 095, 100, 101, 128, 129, 130 | BLOCKED: prerequisite chain incomplete |
@@ -133,6 +133,41 @@ work.
 | [116](116-retention-and-prune-lifecycle.md) | Reconcile data retention and make `prune` truthfully reclaim eligible data | P1 | L | 093, 097, 099; 105 soft | BLOCKED: operator-approved lifecycle contract is absent |
 | [106](106-evidence-pinning-ttl-spike.md) | Design and live-test evidence pinning beyond telemetry TTL | P2 | M | 092, 104, 116 | BLOCKED: prerequisite chain incomplete |
 | [107](107-program-closure-audits.md) | Run independent source audits and verify the mechanical closure commit | P1 | M | Every other actionable indexed plan; all blockers freshly rechecked | BLOCKED: C0 freeze criteria unmet while direct blockers remain |
+
+### Unified CLI Observability (operator, 2026-07-17)
+
+Operator directive: jackin❯'s `feature/unified-otel-observability` cutover
+removed `parallax.run.id` and every `jackin.*` key upstream (its plan 013 is
+DONE; its PR #793 is open). Parallax drops its vendor correlation attribute
+and becomes a generic CLI-application observability platform keyed on
+`cli.invocation.id`/`session.id` with `app.mode`, `cli.command.name`, `ui.*`
+screen/action events, `background.cycle` roots, PRODUCER/CONSUMER `job.id`
+traces, `gen_ai.*` conversations, and bounded `outcome`/`error.type`.
+Delivery: ONE implementation branch `feature/unified-cli-observability`, ONE
+Parallax PR (plans 156, 157, 159) plus ONE linked playground PR (plan 158).
+This vertical is deliberately independent of the blocked 128→151 chain: it
+builds on current UI conventions; plan 140 later migrates the new surface
+behind a feature facade.
+
+Contract reconciliation for existing plans (binding on their executors):
+every `parallax.run.id` / `runId` / `$runId` / `runs`-field reference in
+plans 105, 140, 141, 142, 147, 154, and 155 must be read as the plan-156
+contract (`cli.invocation.id` → `invocationId`, `/invocations/$invocationId`,
+`invocation_metric_points`, `session.id` sessions, renamed GraphQL fields).
+Plans 140-142 and 147 re-characterize their baselines after 156/157 land
+(their drift checks will fire — that drift is expected and resolved against
+the new surface, not reverted). Plan 155's "session = `parallax.run.id`"
+statements become `session.id`/`cli.invocation.id`; its result key becomes
+`(test_variant_key, cli.invocation.id, attempt)`. Plan 105's undecided
+`parallax metrics --run` contract must be authored against `--invocation`.
+Plan 154's remaining sweep consumes the plan-158 emitter contract.
+
+| Plan | Title | Priority | Effort | Depends on | Status |
+|------|-------|----------|--------|------------|--------|
+| [156](156-unified-cli-observability-contract.md) | Neutral `cli.invocation.id` contract across semconv, ingest, storage, API | P1 | L | — | TODO |
+| [157](157-cli-invocation-observability-ui.md) | CLI-invocation observability UI: invocation hub, sessions/screens/actions, cycles/jobs, ecosystem kinds | P1 | XL | 156 | TODO |
+| [158](158-playground-unified-cli-contract.md) | Playground migration to the neutral contract + interactive/jobs/cycles simulation | P1 | L | 156 (registry step) | TODO |
+| [159](159-unified-cli-observability-acceptance.md) | Live acceptance: playground fan-in, GraphQL assertions, browser evidence | P1 | M | 156, 157, 158 | TODO |
 
 ### Cross-Repository Playground And Test Reporting
 
@@ -227,7 +262,15 @@ The main restructuring path is:
 104 + 111 + 120 + 121 -- operator ------------> 123
 099 + 104 + 111 + 121 -- operator ------------> 124
 all actionable plans --------------------------> 107
+
+156 -------------------------------------------> 157, 158
+156 + 157 + 158 -------------------------------> 159
 ```
+
+The 156→159 vertical (one branch, one Parallax PR + one linked playground PR)
+runs independently of the 128 chain. Plans 105, 140, 141, 142, 147, 154, and
+155 additionally consume the plan-156 contract (see the Unified CLI
+Observability section note); their own dependency rows are unchanged.
 
 Plan 092 can run in parallel with 093. After 095, Rust test/module extraction
 removes structural blockers before the strict lint baseline. After 096,
@@ -333,6 +376,29 @@ plans only when the trigger becomes true:
 | Broader newtype rollout | The single ID pilot proves value without wire/persistence churn |
 | Stable Homebrew formula mutation | Stable-release readiness is explicitly opened |
 | External broker / Iggy | A supported server profile proves the current spool/in-process design cannot meet an approved replay/isolation SLO and the operator opens broker scope |
+| Legacy `parallax.run.id` read-only fallback (ingest priority + query COALESCE + extract-keys tail + playground env fallback) | Remove after the playground PR (plan 158) and jackin❯'s cutover are the only supported emitters AND one full telemetry TTL window has passed since plan 156 shipped |
 
 Accepted decisions such as native tables, no rustls, no Node, no docs site,
 and no automatic update branches are repository policy, not unfinished plans.
+
+## Findings Considered And Rejected (2026-07-17 restructuring)
+
+- **Keep `parallax.run.id` as the primary key with a translation shim** —
+  rejected: jackin❯'s cutover already deleted it upstream; a shim entrenches
+  the vendor key the operator explicitly retired. A read-only fallback with a
+  recorded removal trigger replaces it.
+- **GraphQL subscriptions for real-time views** — rejected: SSE is a
+  deliberate architecture decision (`crates/parallax-server/src/live.rs:6`);
+  the real-time toggle rides the existing SSE + poll patterns.
+- **Collector-side attribute translation (rewrite legacy keys at ingest into
+  the new key)** — rejected: mutating telemetry at ingest violates the
+  decode-once/zero-copy hot-path rule; read-path COALESCE achieves the same
+  compatibility without rewriting data.
+- **Gating the CLI-observability product surface on the 128→151 UI
+  architecture chain** — rejected: 128 is blocked on an external TypeScript 7
+  declaration issue with no ETA; the vertical lands on current conventions
+  and plan 140 (retitled at execution) migrates it later.
+- **Building the invocation index as a new GreptimeDB table** — rejected:
+  raw-signal tables are a hard STOP per
+  `docs/research/decisions/native-otel-tables.md`; invocations are query-time
+  projections over native tables plus Turso product state.

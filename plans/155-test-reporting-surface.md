@@ -22,6 +22,17 @@
 - **Planned at**: `8f24808`, 2026-07-14
 - **Status**: BLOCKED — Plans 149, 152, and 153 are not complete
 
+## Contract reconciliation (2026-07-17)
+
+Plan 156 renames the session correlation key before this plan starts: every
+"session = `parallax.run.id`" statement reads as "session invocation =
+`cli.invocation.id`" (the operator's warning stands — it links results to a
+session, never to test identity); the result key becomes
+`(test_variant_key, cli.invocation.id, attempt)`; `PARALLAX_RUN_ID` env
+forwarding becomes `CLI_INVOCATION_ID`; run start/finish + live SSE read as
+the renamed invocation mutations/streams. See
+plans/156-unified-cli-observability-contract.md.
+
 ## Why
 
 Operator direction (2026-07-14): Parallax is not only a telemetry viewer — it
