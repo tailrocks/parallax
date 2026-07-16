@@ -52,6 +52,10 @@ only when Done criteria hold.**
 - Pure projections: `crates/parallax-storage/src/projections.rs` (+ tests).
 - Analysis fingerprints: `CLI_COMMAND_NAME` instead of `jackin.operation`.
 - CLI GraphQL clients updated to new field names (was still `runStart`/`runs`).
+- CLI command surface rename (peer mid-flight finished by Grok):
+  `commands/invocations.rs`, `Command::Invocation` / `InvocationCommand`,
+  `--invocation` filters on logs/traces; GraphQL field names aligned
+  (`c688ad9`).
 - UI SQL templates/linkify: `CLI_INVOCATION_ID` (route still `/runs/$runId`
   until plan 157).
 - Decision doc: `docs/research/decisions/native-otel-tables.md` mechanism rows.
@@ -62,9 +66,8 @@ only when Done criteria hold.**
   `cargo nextest run --run-ignored all -E 'binary(/greptime/)'` (extract-keys,
   span-attr column, `invocation_metric_points` migration, projection SQL on
   engine).
-- [ ] CLI UX: file still `commands/runs.rs`; user-facing `parallax run *`
-  flags/help still say “run” in places — rename to `--invocation` / consistent
-  copy per step 6.
+- [ ] CLI help/copy polish; span name still `parallax.run.session` in
+  `invocations.rs` — rename if product wants neutral span name.
 - [ ] Memory store file still `memory/run_store.rs` (implements
   `InvocationStore`) — rename for clarity if desired.
 - [ ] Greptime projection SQL may be thin vs pure `projections.rs` — confirm
