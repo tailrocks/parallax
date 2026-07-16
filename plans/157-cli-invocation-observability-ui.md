@@ -29,6 +29,19 @@
   commits to `main` alongside plans 156 and 160 (159 provides the closing
   evidence); no branches, no pull requests (operator delivery model).
 
+### Landed by Grok (preliminary) — full UI still peer-owned
+
+Minimal compile unblock only (plan 156 deleted `PARALLAX_RUN_ID` from
+semconv):
+- `ui/src/routes/sql.tsx` + `-sql.test.tsx`: SQL presets and `targetForCell`
+  use `CLI_INVOCATION_ID` / `invocation_id`; link target still `/runs/$runId`
+  until this plan renames routes to invocations.
+- Regenerated `ui/src/shared/semconv.ts` ships with plan 156.
+
+**Peer: implement full invocation hub, session journey, live toggles, route
+rename `/runs`→`/invocations`, browser checks with `agent-browser`.** Do not
+mark DONE from this note.
+
 ## Why this matters
 
 The current "Runs" surface assumes Parallax's vendor attribute and a

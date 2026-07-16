@@ -20,7 +20,7 @@ pub(crate) struct IssueContextArgs {
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub(crate) struct AgentSessionArgs {
     /// Run id whose agent-session projection to show.
-    pub run_id: String,
+    pub invocation_id: String,
 }
 
 #[derive(Clone)]
@@ -66,7 +66,7 @@ impl SpikeServer {
         &self,
         Parameters(args): Parameters<AgentSessionArgs>,
     ) -> Result<CallToolResult, McpError> {
-        let session = gql::fetch_agent_session(&self.client, &args.run_id)
+        let session = gql::fetch_agent_session(&self.client, &args.invocation_id)
             .await
             .map_err(|e| McpError::internal_error(e.to_string(), None))?;
         // Mirror CLI JSON shape: compact re-serialize of the GraphQL object.

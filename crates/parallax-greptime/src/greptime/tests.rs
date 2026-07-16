@@ -13,57 +13,11 @@ fn escape_ident_doubles_double_quotes_only() {
 fn metric_exemplars_fresh_ddl_has_low_cardinality_primary_key() {
     let ddl = GreptimeStore::metric_exemplars_ddl(METRIC_EXEMPLARS_TABLE, "30d");
     assert!(ddl.contains(r#""trace_id" STRING SKIPPING INDEX"#));
-    assert!(ddl.contains(r#""run_id" STRING SKIPPING INDEX"#));
+    assert!(ddl.contains(r#""invocation_id" STRING SKIPPING INDEX"#));
     assert!(ddl.contains(r#"PRIMARY KEY ("service", "name")"#));
     assert!(!ddl.contains(r#"PRIMARY KEY ("service", "name", "trace_id"#));
     assert!(ddl.contains("append_mode = 'true'"));
     assert!(ddl.contains("ttl = '30d'"));
-}
-
-#[test]
-fn metric_exemplar_migration_states_cover_every_restart_boundary() {
-    let current = vec!["service".to_string(), "name".to_string()];
-    let legacy = vec![
-        "service".to_string(),
-        "name".to_string(),
-        "trace_id".to_string(),
-        "span_id".to_string(),
-    ];
-    let unknown = vec!["service".to_string(), "trace_id".to_string()];
-
-    assert_eq!(
-        exemplar_migration_state(None, false),
-        ExemplarMigrationState::Fresh
-    );
-    assert_eq!(
-        exemplar_migration_state(Some(&legacy), false),
-        ExemplarMigrationState::MigrateCanonical
-    );
-    // A create/copy/verify interruption still has the legacy canonical;
-    // any partial replacement is disposable and rebuilt by this state.
-    assert_eq!(
-        exemplar_migration_state(Some(&legacy), false),
-        ExemplarMigrationState::MigrateCanonical
-    );
-    // Interruption after the first rename leaves only the retained legacy
-    // source (plus a disposable replacement table).
-    assert_eq!(
-        exemplar_migration_state(None, true),
-        ExemplarMigrationState::ResumeFromLegacy
-    );
-    // Interruption after the second rename must reverify before cleanup.
-    assert_eq!(
-        exemplar_migration_state(Some(&current), true),
-        ExemplarMigrationState::CleanupLegacy
-    );
-    assert_eq!(
-        exemplar_migration_state(Some(&current), false),
-        ExemplarMigrationState::Complete
-    );
-    assert_eq!(
-        exemplar_migration_state(Some(&unknown), false),
-        ExemplarMigrationState::UnknownCanonical
-    );
 }
 
 #[test]

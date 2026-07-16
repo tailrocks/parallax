@@ -13,7 +13,7 @@ use crate::adapter::{
 };
 use crate::greptime_sql::{
     METRIC_BOOKKEEPING_COLUMNS, canonical_metric_display_name, escape, escape_ident,
-    log_service_name_expr, metric_name_sql_filter, metric_table_candidates, quoted_ident,
+    log_service_name_expr, metric_name_sql_filter, metric_table_candidates, quoted_ident, span_attr_ident, trace_attr_expr,
     resource_attr_ident, runtime_display_name, wire_attr_ident,
 };
 use crate::model::*;
@@ -31,7 +31,7 @@ mod lifecycle;
 mod metric_analytics;
 mod query_sql;
 mod row_decode;
-mod run_store;
+mod invocation_store;
 mod service_analytics;
 mod signal_analytics;
 mod signal_queries;
@@ -55,40 +55,7 @@ const METRIC_EXEMPLARS_TABLE: &str = "metric_exemplars";
 const METRIC_EXEMPLARS_REPLACEMENT: &str = "metric_exemplars_v2";
 const METRIC_EXEMPLARS_LEGACY: &str = "metric_exemplars_v1_legacy";
 const METRIC_EXEMPLAR_COLUMNS: &str =
-    r#""ts", "service", "name", "value", "trace_id", "span_id", "run_id", "attributes""#;
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum ExemplarMigrationState {
-    Fresh,
-    MigrateCanonical,
-    ResumeFromLegacy,
-    CleanupLegacy,
-    Complete,
-    UnknownCanonical,
-}
-
-fn exemplar_migration_state(
-    canonical_key: Option<&[String]>,
-    legacy_exists: bool,
-) -> ExemplarMigrationState {
-    const CURRENT: &[&str] = &["service", "name"];
-    const LEGACY: &[&str] = &["service", "name", "trace_id", "span_id"];
-    match canonical_key {
-        Some(key) if key.iter().map(String::as_str).eq(CURRENT.iter().copied()) => {
-            if legacy_exists {
-                ExemplarMigrationState::CleanupLegacy
-            } else {
-                ExemplarMigrationState::Complete
-            }
-        }
-        Some(key) if key.iter().map(String::as_str).eq(LEGACY.iter().copied()) => {
-            ExemplarMigrationState::MigrateCanonical
-        }
-        Some(_) => ExemplarMigrationState::UnknownCanonical,
-        None if legacy_exists => ExemplarMigrationState::ResumeFromLegacy,
-        None => ExemplarMigrationState::Fresh,
-    }
-}
+    r#""ts", "service", "name", "value", "trace_id", "span_id", "invocation_id", "attributes""#;
 
 #[derive(Debug)]
 pub struct GreptimeStore {

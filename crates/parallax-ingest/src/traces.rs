@@ -46,7 +46,9 @@ pub fn normalize_traces(request: &ExportTraceServiceRequest) -> Vec<SpanRow> {
             .map(|r| r.attributes.as_slice())
             .unwrap_or(&[]);
         let service = service_name(resource_attrs);
-        let run_id = run_id(resource_attrs);
+        let signal_attrs = root_span_attrs(rs);
+        let invocation_id = invocation_id(signal_attrs, resource_attrs);
+        let session_id = session_id(signal_attrs, resource_attrs);
         let resource_json = attributes_to_json(resource_attrs);
         for ss in &rs.scope_spans {
             let scope_name = ss
@@ -75,7 +77,8 @@ pub fn normalize_traces(request: &ExportTraceServiceRequest) -> Vec<SpanRow> {
                         span.end_time_unix_nano
                             .saturating_sub(span.start_time_unix_nano),
                     ),
-                    run_id: run_id.clone(),
+                    invocation_id: invocation_id.clone(),
+                    session_id: session_id.clone(),
                     scope_name: scope_name.clone(),
                     events: None,
                     links: links_to_json(&span.links),

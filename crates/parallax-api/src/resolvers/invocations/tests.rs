@@ -45,7 +45,7 @@ async fn runs_list_stats_match_single_run() {
                 1_000_000_000 + i as u128,
                 5_000,
             );
-            row.run_id = Some(run.into());
+            row.invocation_id = Some(run.into());
             spans.push(row);
         }
     }
@@ -58,16 +58,16 @@ async fn runs_list_stats_match_single_run() {
         .await
         .unwrap();
     let context = context_with_memory(store).await;
-    for (run_id, command) in [("run-a", "a"), ("run-b", "b"), ("run-c", "c")] {
+    for (invocation_id, command) in [("run-a", "a"), ("run-b", "b"), ("run-c", "c")] {
         context
             .metadata
-            .start_run(run_id, Some(command), 1_000_000_000)
+            .start_invocation(invocation_id, Some(command), None, 1_000_000_000)
             .await
             .unwrap();
     }
     let schema = build_schema();
     let list = juniper::http::GraphQLRequest::new(
-        r"{ runs { runId errorCount traceCount } }".into(),
+        r"{ invocations { invocationId errorCount traceCount } }".into(),
         None,
         None,
     );
@@ -75,12 +75,12 @@ async fn runs_list_stats_match_single_run() {
     assert!(error_messages(&list_json).is_empty(), "{list_json}");
     let mut by_id = std::collections::BTreeMap::new();
     for row in list_json
-        .pointer("/data/runs")
+        .pointer("/data/invocations")
         .and_then(|v| v.as_array())
         .unwrap()
     {
         by_id.insert(
-            row["runId"].as_str().unwrap().to_string(),
+            row["invocationId"].as_str().unwrap().to_string(),
             (
                 row["errorCount"].as_i64().unwrap(),
                 row["traceCount"].as_i64().unwrap(),
@@ -90,7 +90,7 @@ async fn runs_list_stats_match_single_run() {
     assert_eq!(by_id["run-a"], (1, 2));
     assert_eq!(by_id["run-b"], (0, 1));
     assert_eq!(by_id["run-c"], (1, 3));
-    for run_id in ["run-a", "run-b", "run-c"] {
+    for invocation_id in ["run-a", "run-b", "run-c"] {
         let single_ctx = ApiContext {
             store: context.store.clone(),
             metadata: context.metadata.clone(),
@@ -99,7 +99,7 @@ async fn runs_list_stats_match_single_run() {
             memo: RequestMemo::default(),
         };
         let q = juniper::http::GraphQLRequest::new(
-            format!(r#"{{ run(runId: "{run_id}") {{ errorCount traceCount }} }}"#),
+            format!(r#"{{ invocation(invocationId: "{invocation_id}") {{ errorCount traceCount }} }}"#),
             None,
             None,
         );
@@ -107,15 +107,15 @@ async fn runs_list_stats_match_single_run() {
         assert_eq!(
             (
                 single
-                    .pointer("/data/run/errorCount")
+                    .pointer("/data/invocation/errorCount")
                     .and_then(serde_json::Value::as_i64)
                     .unwrap(),
                 single
-                    .pointer("/data/run/traceCount")
+                    .pointer("/data/invocation/traceCount")
                     .and_then(serde_json::Value::as_i64)
                     .unwrap(),
             ),
-            by_id[run_id],
+            by_id[invocation_id],
         );
     }
 }

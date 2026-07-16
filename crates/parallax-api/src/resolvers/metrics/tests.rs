@@ -64,7 +64,7 @@ async fn metric_label_and_runtime_resolvers_query_memory_store() {
                         name: "process.cpu.utilization".into(),
                         value: 0.5,
                         is_monotonic: false,
-                        run_id: Some("run-a".into()),
+                        invocation_id: Some("run-a".into()),
                         attributes: serde_json::json!({
                             "runtime.name": "tokio",
                             "payment.method": "card",
@@ -77,7 +77,7 @@ async fn metric_label_and_runtime_resolvers_query_memory_store() {
                         name: "jvm.memory.used".into(),
                         value: 256.0,
                         is_monotonic: false,
-                        run_id: None,
+                        invocation_id: None,
                         attributes: serde_json::json!({
                             "runtime.name": "jvm"
                         }),
@@ -90,7 +90,7 @@ async fn metric_label_and_runtime_resolvers_query_memory_store() {
                         name: "process.cpu.utilization".into(),
                         value: index as f64,
                         is_monotonic: false,
-                        run_id: None,
+                        invocation_id: None,
                         attributes: serde_json::json!({
                             "runtime.name": format!("runtime-{index:03}")
                         }),
@@ -180,7 +180,7 @@ async fn metric_exemplars_resolver_returns_trace_links() {
                 value: 120.0,
                 trace_id: "trace-a".into(),
                 span_id: "span-a".into(),
-                run_id: Some("run-a".into()),
+                invocation_id: Some("run-a".into()),
                 attributes: serde_json::json!({"route": "/checkout"}),
             }],
             Default::default(),
@@ -200,7 +200,7 @@ async fn metric_exemplars_resolver_returns_trace_links() {
             service: "checkout"
             limit: 10
           ) {
-            tsNanos service name value traceId spanId runId attributes
+            tsNanos service name value traceId spanId invocationId attributes
           }
         }
         "#
@@ -224,7 +224,7 @@ async fn metric_exemplars_resolver_returns_trace_links() {
         Some(&serde_json::json!("span-a"))
     );
     assert_eq!(
-        json.pointer("/data/metricExemplars/0/runId"),
+        json.pointer("/data/metricExemplars/0/invocationId"),
         Some(&serde_json::json!("run-a"))
     );
     assert_eq!(

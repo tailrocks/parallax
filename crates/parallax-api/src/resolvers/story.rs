@@ -115,11 +115,11 @@ impl AgentStepOut {
 
 pub(crate) async fn agent_session(
     context: &ApiContext,
-    run_id: String,
+    invocation_id: String,
 ) -> FieldResult<Option<AgentSessionOut>> {
     let spans = context
         .store
-        .spans_by_run(&run_id, MAX_ROWS, retained_recent_range())
+        .spans_by_invocation(&invocation_id, MAX_ROWS, retained_recent_range())
         .await
         .map_err(crate::internal_field_err)?;
     let truncated = spans.len() == MAX_ROWS;
@@ -130,10 +130,10 @@ pub(crate) async fn agent_session(
 pub(crate) async fn story(
     context: &ApiContext,
     trace_id: Option<String>,
-    run_id: Option<String>,
+    invocation_id: Option<String>,
 ) -> FieldResult<Vec<StoryBeat>> {
     let trace_id = crate::validate_optional_trace_id(trace_id)?;
-    match (trace_id, run_id) {
+    match (trace_id, invocation_id) {
         (Some(trace_id), None) => {
             let (spans, logs) =
                 tokio::try_join!(context.spans_for(&trace_id), context.logs_for(&trace_id),)?;
@@ -142,12 +142,12 @@ pub(crate) async fn story(
                 .map(StoryBeat)
                 .collect())
         }
-        (None, Some(run_id)) => {
+        (None, Some(invocation_id)) => {
             let (spans, logs) = tokio::try_join!(
                 context
                     .store
-                    .spans_by_run(&run_id, MAX_ROWS, retained_recent_range()),
-                context.store.logs_by_run(&run_id, MAX_ROWS),
+                    .spans_by_invocation(&invocation_id, MAX_ROWS, retained_recent_range()),
+                context.store.logs_by_invocation(&invocation_id, MAX_ROWS),
             )
             .map_err(crate::internal_field_err)?;
             Ok(story::project_story(&spans, &logs, &[])
@@ -156,7 +156,7 @@ pub(crate) async fn story(
                 .collect())
         }
         _ => Err(field_err(
-            "story takes exactly one anchor: traceId or runId",
+            "story takes exactly one anchor: traceId or invocationId",
         )),
     }
 }

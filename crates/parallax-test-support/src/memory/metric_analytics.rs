@@ -8,7 +8,7 @@ impl MetricAnalyticsStore for MemoryStore {
         &self,
         name: &str,
         service: Option<&str>,
-        run_id: Option<&str>,
+        invocation_id: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
         agg: MetricAgg,
@@ -18,7 +18,7 @@ impl MetricAnalyticsStore for MemoryStore {
         for point in self.lock().metric_points.iter().filter(|p| {
             p.name == name
                 && service.is_none_or(|svc| p.service == svc)
-                && run_id.is_none_or(|id| p.run_id.as_deref() == Some(id))
+                && invocation_id.is_none_or(|id| p.invocation_id.as_deref() == Some(id))
                 && range.contains(&p.ts_nanos)
         }) {
             buckets

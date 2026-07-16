@@ -2,7 +2,7 @@ schema_version = 1
 
 [roots]
 "lib.rs" = [
-    "fn resource_run_ids",
+    "fn resource_invocation_ids",
     "use logs::{normalize_logs, promote_log_identity_attributes}",
     "use metrics::{NormalizedMetrics, normalize_metrics}",
     "use traces::normalize_traces",

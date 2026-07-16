@@ -341,8 +341,8 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
         "absent instruments yield empty series: {response}"
     );
 
-    // Run-scoped reads: a span emitted under a parallax.run.id resource
-    // attribute is reachable through tracesByRun.
+    // Run-scoped reads: a span emitted under a cli.invocation.id resource
+    // attribute is reachable through tracesByInvocation.
     let run_exporter = opentelemetry_otlp::SpanExporter::builder()
         .with_tonic()
         .with_endpoint(format!("http://{}", handle.otlp_grpc_addr))
@@ -354,7 +354,7 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
             opentelemetry_sdk::Resource::builder()
                 .with_attributes([
                     KeyValue::new("service.name", "m2-run-service"),
-                    KeyValue::new("parallax.run.id", "run_m2test"),
+                    KeyValue::new("cli.invocation.id", "run_m2test"),
                 ])
                 .build(),
         )
@@ -369,12 +369,12 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
         let response = graphql(
             &client,
             handle.api_addr,
-            r#"{ tracesByRun(runId: "run_m2test") {
+            r#"{ tracesByInvocation(invocationId: "run_m2test") {
                    traceId rootName service spanCount hasError } }"#,
         )
         .await;
         if response
-            .pointer("/data/tracesByRun/0/rootName")
+            .pointer("/data/tracesByInvocation/0/rootName")
             .and_then(|v| v.as_str())
             == Some("inside.the.run")
         {
@@ -385,13 +385,13 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
     }
     assert_eq!(
         run_traces
-            .pointer("/data/tracesByRun/0/service")
+            .pointer("/data/tracesByInvocation/0/service")
             .and_then(|v| v.as_str()),
         Some("m2-run-service"),
-        "run-tagged trace summarized through tracesByRun: {run_traces}"
+        "run-tagged trace summarized through tracesByInvocation: {run_traces}"
     );
     let run_trace_id = run_traces
-        .pointer("/data/tracesByRun/0/traceId")
+        .pointer("/data/tracesByInvocation/0/traceId")
         .and_then(|v| v.as_str())
         .expect("trace id in summary")
         .to_string();
@@ -400,68 +400,69 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
     let response = graphql(
         &client,
         handle.api_addr,
-        &format!(r#"{{ trace(traceId: "{run_trace_id}") {{ spans {{ name runId }} }} }}"#),
+        &format!(r#"{{ trace(traceId: "{run_trace_id}") {{ spans {{ name invocationId }} }} }}"#),
     )
     .await;
     assert_eq!(
         response
-            .pointer("/data/trace/spans/0/runId")
+            .pointer("/data/trace/spans/0/invocationId")
             .and_then(|v| v.as_str()),
         Some("run_m2test")
     );
 
-    // The worker auto-registered the externally-seen run id (no CLI
-    // runStart): run(runId) answers with status `external` and counts.
+    // The worker auto-registered the externally-seen invocation id (no CLI
+    // invocationStart): invocation(invocationId) answers with the derived
+    // lifecycle status (`running` while signals are fresh) and counts.
     let response = graphql(
         &client,
         handle.api_addr,
-        r#"{ run(runId: "run_m2test") {
-               runId status errorCount traceCount issues { fingerprint } } }"#,
+        r#"{ invocation(invocationId: "run_m2test") {
+               invocationId status errorCount traceCount issues { fingerprint } } }"#,
     )
     .await;
     assert_eq!(
         response
-            .pointer("/data/run/status")
+            .pointer("/data/invocation/status")
             .and_then(|v| v.as_str()),
-        Some("external"),
-        "externally-seen run auto-registered: {response}"
+        Some("running"),
+        "externally-seen invocation auto-registered: {response}"
     );
     assert_eq!(
-        response.pointer("/data/run/traceCount"),
+        response.pointer("/data/invocation/traceCount"),
         Some(&serde_json::json!(1))
     );
     assert_eq!(
-        response.pointer("/data/run/errorCount"),
+        response.pointer("/data/invocation/errorCount"),
         Some(&serde_json::json!(0))
     );
 
     let response = graphql(
         &client,
         handle.api_addr,
-        r"{ observedRuns(limit: 20) {
-               runId service spanCount logCount } }",
+        r"{ observedInvocations(limit: 20) {
+               invocationId service spanCount logCount } }",
     )
     .await;
     let observed_run = response
-        .pointer("/data/observedRuns")
+        .pointer("/data/observedInvocations")
         .and_then(|v| v.as_array())
         .and_then(|rows| {
             rows.iter()
-                .find(|row| row.get("runId").and_then(|v| v.as_str()) == Some("run_m2test"))
+                .find(|row| row.get("invocationId").and_then(|v| v.as_str()) == Some("run_m2test"))
         })
-        .expect("trace-only run appears in observedRuns");
+        .expect("trace-only run appears in observedInvocations");
     assert_eq!(
         observed_run.get("service").and_then(|v| v.as_str()),
         Some("m2-run-service"),
-        "observedRuns reads native trace resource run id: {response}"
+        "observedInvocations reads native trace resource run id: {response}"
     );
     assert_eq!(observed_run.get("spanCount"), Some(&serde_json::json!(1)));
 
-    // Run-anchored bundle (spec §8 bundle(runId:)) renders without errors.
+    // Run-anchored bundle (spec §8 bundle(invocationId:)) renders without errors.
     let response = graphql(
         &client,
         handle.api_addr,
-        r#"{ bundle(runId: "run_m2test") { markdown canonicalHash } }"#,
+        r#"{ bundle(invocationId: "run_m2test") { markdown canonicalHash } }"#,
     )
     .await;
     let markdown = response
@@ -497,7 +498,7 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
     let response = graphql(
         &client,
         handle.api_addr,
-        r#"{ bundle(fingerprint: "a", runId: "b") { markdown } }"#,
+        r#"{ bundle(fingerprint: "a", invocationId: "b") { markdown } }"#,
     )
     .await;
     assert!(

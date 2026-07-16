@@ -30,7 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { PARALLAX_RUN_ID } from "@/shared/semconv"
+import { CLI_INVOCATION_ID } from "@/shared/semconv"
 import { Input } from "@/components/ui/input"
 import { Kbd, KbdGroup } from "@/components/ui/kbd"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -99,19 +99,19 @@ GROUP BY severity_text
 ORDER BY lines DESC`,
   },
   {
-    label: "Run cross-section",
-    sql: `SELECT 'span linked to run log' AS signal, count(DISTINCT s.span_id) AS rows
+    label: "Invocation cross-section",
+    sql: `SELECT 'span linked to invocation log' AS signal, count(DISTINCT s.span_id) AS rows
 FROM opentelemetry_traces s
 JOIN opentelemetry_logs l ON l.trace_id = s.trace_id
-WHERE l."${PARALLAX_RUN_ID}" = '<run-id>'
+WHERE l."${CLI_INVOCATION_ID}" = '<invocation-id>'
 UNION ALL
 SELECT 'log', count(*)
 FROM opentelemetry_logs
-WHERE "${PARALLAX_RUN_ID}" = '<run-id>'
+WHERE "${CLI_INVOCATION_ID}" = '<invocation-id>'
 UNION ALL
 SELECT 'metric point', count(*)
-FROM run_metric_points
-WHERE run_id = '<run-id>'`,
+FROM invocation_metric_points
+WHERE invocation_id = '<invocation-id>'`,
   },
   {
     label: "Slowest root spans",
@@ -177,7 +177,12 @@ export function targetForCell(
     const traceId = cellValue(row, ["trace_id"])
     return traceId ? { to: "/traces/$traceId", params: { traceId } } : null
   }
-  if (normalized === "run_id" || normalized === PARALLAX_RUN_ID) {
+  if (
+    normalized === "run_id" ||
+    normalized === "invocation_id" ||
+    normalized === CLI_INVOCATION_ID
+  ) {
+    // Plan 157 owns the /invocations route rename; keep link target until then.
     return { to: "/runs/$runId", params: { runId: value } }
   }
   if (normalized === "fingerprint") {

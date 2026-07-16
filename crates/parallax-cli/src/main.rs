@@ -41,10 +41,10 @@ pub(crate) enum Command {
         #[arg(long)]
         config: Option<std::path::PathBuf>,
     },
-    /// Runs: bounded, inspectable execution units.
-    Run {
+    /// CLI invocations: bounded, inspectable execution units.
+    Invocation {
         #[command(subcommand)]
-        command: RunCommand,
+        command: InvocationCommand,
     },
     /// Grouped errors.
     Issue {
@@ -59,11 +59,11 @@ pub(crate) enum Command {
     /// Browse logs — the same filters as the UI's Logs page.
     Logs {
         /// Trace id to scope to.
-        #[arg(long, conflicts_with = "run")]
+        #[arg(long, conflicts_with = "invocation")]
         trace: Option<String>,
-        /// Run id to scope to.
+        /// Invocation id to scope to.
         #[arg(long)]
-        run: Option<String>,
+        invocation: Option<String>,
         /// Service name to scope to.
         #[arg(long)]
         service: Option<String>,
@@ -73,7 +73,7 @@ pub(crate) enum Command {
         /// Only lines whose body contains this substring.
         #[arg(long, alias = "query")]
         grep: Option<String>,
-        /// Time window, e.g. 15m, 2h, 7d (default 15m; ignored with --trace/--run).
+        /// Time window, e.g. 15m, 2h, 7d (default 15m; ignored with --trace/--invocation).
         #[arg(long, default_value = "15m")]
         since: String,
         /// Max lines (newest first).
@@ -89,9 +89,9 @@ pub(crate) enum Command {
     },
     /// Browse traces — the same filters as the UI's Traces page.
     Traces {
-        /// Run id to scope to (anchored read; other filters ignored).
+        /// Invocation id to scope to (anchored read; other filters ignored).
         #[arg(long)]
-        run: Option<String>,
+        invocation: Option<String>,
         /// Service name to scope to.
         #[arg(long)]
         service: Option<String>,
@@ -139,9 +139,9 @@ pub(crate) enum Command {
 }
 
 #[derive(Subcommand)]
-pub(crate) enum RunCommand {
-    /// Start a run. With `-- <command…>`: wrapper mode (injects `OTel` env,
-    /// captures the exit code). Without: prints exports to source.
+pub(crate) enum InvocationCommand {
+    /// Start an invocation. With `-- <command…>`: wrapper mode (injects `OTel`
+    /// env, captures the exit code). Without: prints exports to source.
     Start {
         /// Compare mode: forward child telemetry to a collector instead of
         /// Parallax. A URL, `rotel` (the configured hub), or `off`. Also settable
@@ -155,27 +155,27 @@ pub(crate) enum RunCommand {
         #[arg(last = true)]
         command: Vec<String>,
     },
-    /// Close a bare-mode run.
-    Finish { run_id: String, exit_code: i32 },
-    /// Show one run's record (status, counts, issues).
-    Inspect { run_id: String },
-    /// The run-anchored evidence bundle (Markdown by default; `--format json` for canonical JSON).
+    /// Close a bare-mode invocation.
+    Finish { invocation_id: String, exit_code: i32 },
+    /// Show one invocation's record (status, counts, issues).
+    Inspect { invocation_id: String },
+    /// The invocation-anchored evidence bundle (Markdown by default; `--format json` for canonical JSON).
     Bundle {
-        run_id: String,
+        invocation_id: String,
         #[arg(long = "format", value_enum, default_value = "markdown")]
         format: OutputFormat,
     },
-    /// Agent-session projection for a run (tool steps, token totals).
+    /// Agent-session projection for an invocation (tool steps, token totals).
     Agent {
-        run_id: String,
+        invocation_id: String,
         #[arg(long = "format", value_enum, default_value = "markdown")]
         format: OutputFormat,
     },
-    /// List recent runs.
+    /// List recent invocations.
     List,
-    /// Live tail of one run: new logs + finished spans, interleaved.
+    /// Live tail of one invocation: new logs + finished spans, interleaved.
     Watch {
-        run_id: String,
+        invocation_id: String,
         /// Minimum log severity: trace | debug | info | warn | error | fatal.
         #[arg(long)]
         level: Option<String>,
@@ -195,9 +195,9 @@ pub(crate) enum IssueCommand {
         /// Filter by workflow status (open | resolved).
         #[arg(long)]
         status: Option<String>,
-        /// Only issues whose events fell inside this run's traces.
+        /// Only issues whose events fell inside this invocation's traces.
         #[arg(long)]
-        run: Option<String>,
+        invocation: Option<String>,
     },
     /// The agent handoff: Markdown evidence for one issue (`--format json` for canonical JSON).
     Context {

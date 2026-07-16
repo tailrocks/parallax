@@ -20,6 +20,20 @@ pub(crate) fn wire_attr_ident(attribute: &str) -> String {
     quoted_ident(attribute)
 }
 
+pub(crate) fn span_attr_ident(attribute: &str) -> String {
+    quoted_ident(&semconv::span_column(attribute))
+}
+
+/// Trace-side correlation expression: an explicit root-span attribute (the
+/// jackin shape) wins over a resource attribute (generic wrapped emitters).
+pub(crate) fn trace_attr_expr(attribute: &str) -> String {
+    format!(
+        "COALESCE({}, {})",
+        span_attr_ident(attribute),
+        resource_attr_ident(attribute)
+    )
+}
+
 pub(crate) fn resource_json_get(attribute: &str) -> String {
     format!(
         r#"json_get_string("resource_attributes", '{}')"#,

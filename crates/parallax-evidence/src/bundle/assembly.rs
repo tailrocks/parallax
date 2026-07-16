@@ -1,13 +1,13 @@
 use super::*;
 
 /// What the bundle is anchored to (spec §8: exactly one of issue fingerprint,
-/// run id, trace id).
+/// invocation id, trace id).
 #[derive(Debug)]
 pub enum BundleAnchor {
     Issue(Box<Issue>),
-    Run {
-        run: Box<RunRecord>,
-        /// Grouped issues whose events fell inside the run's traces.
+    Invocation {
+        invocation: Box<InvocationRecord>,
+        /// Grouped issues whose events fell inside the invocation's traces.
         issues: Vec<Issue>,
     },
     Trace {
@@ -53,7 +53,7 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
     let mut missing = Vec::new();
 
     // Resolve the anchor into its sections and the primary issue.
-    let (anchor, run_section, primary_issue) = match &inputs.anchor {
+    let (anchor, invocation_section, primary_issue) = match &inputs.anchor {
         BundleAnchor::Issue(issue) => (
             Anchor {
                 kind: "issue",
@@ -62,7 +62,7 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
             None,
             Some(issue.as_ref().clone()),
         ),
-        BundleAnchor::Run { run, issues } => {
+        BundleAnchor::Invocation { invocation, issues } => {
             let primary = inputs
                 .events
                 .first()
@@ -71,19 +71,21 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
                 .cloned();
             (
                 Anchor {
-                    kind: "run",
-                    id: run.run_id.clone(),
+                    kind: "invocation",
+                    id: invocation.invocation_id.clone(),
                 },
-                Some(RunSection {
-                    run_id: run.run_id.clone(),
-                    command: run
+                Some(InvocationSection {
+                    invocation_id: invocation.invocation_id.clone(),
+                    command: invocation
                         .command
                         .as_deref()
                         .map(|command| redact(command, &mut redaction)),
-                    status: run.status.clone(),
-                    exit_code: run.exit_code,
-                    started_at_nanos: run.started_at_nanos.to_string(),
-                    ended_at_nanos: run.ended_at_nanos.map(|n| n.to_string()),
+                    app_mode: invocation.app_mode.clone(),
+                    outcome: invocation.outcome.clone(),
+                    status: invocation.status.clone(),
+                    exit_code: invocation.exit_code,
+                    started_at_nanos: invocation.started_at_nanos.to_string(),
+                    ended_at_nanos: invocation.ended_at_nanos.map(|n| n.to_string()),
                     issues: issues
                         .iter()
                         .map(|issue| issue_summary(issue, &mut redaction))
@@ -125,7 +127,7 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
     });
     if inputs.events.is_empty() {
         missing.push(match anchor.kind {
-            "run" => "no error events inside this run's traces".into(),
+            "invocation" => "no error events inside this invocation's traces".into(),
             "trace" => "no error events on this trace".into(),
             _ => "no stored error events for this fingerprint (check retention)".to_string(),
         });
@@ -182,7 +184,7 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
     if inputs.metric_windows.is_empty() {
         missing.push(
             "no process metrics in the anchor window — export process.cpu/process.memory \
-             gauges (run-tagged under the wrapper) for the cross-signal view"
+             gauges (invocation-tagged under the wrapper) for the cross-signal view"
                 .into(),
         );
     }
@@ -208,7 +210,7 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
         issue: primary_issue
             .as_ref()
             .map(|issue| issue_summary(issue, &mut redaction)),
-        run: run_section,
+        invocation: invocation_section,
         latest_event,
         trace,
         metric_windows: inputs.metric_windows,

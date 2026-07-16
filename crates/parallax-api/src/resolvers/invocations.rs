@@ -1,6 +1,6 @@
-#![expect(clippy::excessive_nesting, reason = "measured run resolver flow")]
+#![expect(clippy::excessive_nesting, reason = "measured invocation resolver flow")]
 
-//! GraphQL runs domain types and resolvers.
+//! GraphQL CLI-invocation domain types and resolvers.
 
 use juniper::{FieldResult, graphql_object};
 use parallax_storage::model;
@@ -12,12 +12,12 @@ use crate::{
 
 use crate::resolvers::issues::Issue;
 
-pub(crate) struct ObservedRun(pub(crate) parallax_storage::adapter::ObservedRun);
+pub(crate) struct ObservedInvocation(pub(crate) parallax_storage::adapter::ObservedInvocation);
 
 #[graphql_object(context = ApiContext)]
-impl ObservedRun {
-    fn run_id(&self) -> &str {
-        &self.0.run_id
+impl ObservedInvocation {
+    fn invocation_id(&self) -> &str {
+        &self.0.invocation_id
     }
     fn service(&self) -> &str {
         &self.0.service
@@ -36,44 +36,50 @@ impl ObservedRun {
     }
 }
 
-pub(crate) struct Run {
-    record: model::RunRecord,
+pub(crate) struct Invocation {
+    record: model::InvocationRecord,
     /// Trace ids + error events of this run, fetched once however many of
     /// the derived fields a query selects. Prefetched on list paths.
-    stats: tokio::sync::OnceCell<RunStats>,
+    stats: tokio::sync::OnceCell<InvocationStats>,
 }
 
-struct RunStats {
+struct InvocationStats {
     trace_ids: Vec<String>,
     events: Vec<model::ErrorEventRow>,
+    last_span_nanos: u128,
 }
 
-impl Run {
-    fn new(record: model::RunRecord) -> Self {
+/// An unfinished invocation with no signal newer than this is `stale`.
+const STALE_AFTER_NANOS: u128 = 5 * 60 * 1_000_000_000;
+
+impl Invocation {
+    fn new(record: model::InvocationRecord) -> Self {
         Self {
             record,
             stats: tokio::sync::OnceCell::new(),
         }
     }
 
-    fn with_stats(record: model::RunRecord, stats: RunStats) -> Self {
+    fn with_stats(record: model::InvocationRecord, stats: InvocationStats) -> Self {
         Self {
             record,
             stats: stats.into(),
         }
     }
 
-    async fn stats(&self, context: &ApiContext) -> FieldResult<&RunStats> {
+    async fn stats(&self, context: &ApiContext) -> FieldResult<&InvocationStats> {
         self.stats
             .get_or_try_init(|| async {
                 let spans = context
                     .store
-                    .spans_by_run(&self.record.run_id, MAX_ROWS, retained_recent_range())
+                    .spans_by_invocation(&self.record.invocation_id, MAX_ROWS, retained_recent_range())
                     .await
                     .map_err(crate::internal_field_err)?;
                 let mut trace_ids: Vec<String> = Vec::new();
                 let mut seen_trace_ids = HashSet::new();
+                let mut last_span_nanos = 0;
                 for span in &spans {
+                    last_span_nanos = last_span_nanos.max(span.ts_nanos);
                     let trace_id = span.trace_id.clone();
                     if seen_trace_ids.insert(trace_id.clone()) {
                         trace_ids.push(trace_id);
@@ -84,19 +90,25 @@ impl Run {
                     .error_events_by_traces(&trace_ids, MAX_ROWS)
                     .await
                     .map_err(crate::internal_field_err)?;
-                Ok(RunStats { trace_ids, events })
+                Ok(InvocationStats {
+                    trace_ids,
+                    events,
+                    last_span_nanos,
+                })
             })
             .await
     }
 }
 
-fn run_stats_from_spans(
+fn invocation_stats_from_spans(
     spans: &[model::SpanRow],
     events_by_trace: &HashMap<String, Vec<model::ErrorEventRow>>,
-) -> RunStats {
+) -> InvocationStats {
     let mut trace_ids: Vec<String> = Vec::new();
     let mut seen_trace_ids = HashSet::new();
+    let mut last_span_nanos = 0;
     for span in spans {
+        last_span_nanos = last_span_nanos.max(span.ts_nanos);
         let trace_id = span.trace_id.clone();
         if seen_trace_ids.insert(trace_id.clone()) {
             trace_ids.push(trace_id);
@@ -110,13 +122,17 @@ fn run_stats_from_spans(
     }
     events.sort_by_key(|event| std::cmp::Reverse(event.ts_nanos));
     events.truncate(MAX_ROWS);
-    RunStats { trace_ids, events }
+    InvocationStats {
+        trace_ids,
+        events,
+        last_span_nanos,
+    }
 }
 
 #[graphql_object(context = ApiContext)]
-impl Run {
-    fn run_id(&self) -> &str {
-        &self.record.run_id
+impl Invocation {
+    fn invocation_id(&self) -> &str {
+        &self.record.invocation_id
     }
     fn command(&self) -> Option<&str> {
         self.record.command.as_deref()
@@ -130,9 +146,44 @@ impl Run {
     fn exit_code(&self) -> Option<i32> {
         self.record.exit_code
     }
-    /// running | finished | external (auto-registered from telemetry).
-    fn status(&self) -> &str {
-        &self.record.status
+    /// one_shot | interactive | daemon | capsule, when registered.
+    fn app_mode(&self) -> Option<&str> {
+        self.record.app_mode.as_deref()
+    }
+    /// Bounded result taxonomy (success | failure | error | timeout | skip |
+    /// cancellation), when registered at finish.
+    fn outcome(&self) -> Option<&str> {
+        self.record.outcome.as_deref()
+    }
+    /// Derived lifecycle: running | finished | failed | stale. `failed` is a
+    /// finished invocation with a non-zero exit code; `stale` is an unfinished
+    /// invocation with no signal newer than five minutes.
+    async fn status(&self, context: &ApiContext) -> FieldResult<String> {
+        if self.record.ended_at_nanos.is_some() {
+            return Ok(if self.record.exit_code.unwrap_or(0) != 0 {
+                "failed".to_string()
+            } else {
+                "finished".to_string()
+            });
+        }
+        let now_nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let stale_floor = now_nanos.saturating_sub(STALE_AFTER_NANOS);
+        if self.record.started_at_nanos >= stale_floor {
+            return Ok("running".to_string());
+        }
+        let last_signal = self
+            .stats(context)
+            .await?
+            .last_span_nanos
+            .max(self.record.started_at_nanos);
+        Ok(if last_signal >= stale_floor {
+            "running".to_string()
+        } else {
+            "stale".to_string()
+        })
     }
     /// Error events derived inside this run's traces.
     async fn error_count(&self, context: &ApiContext) -> FieldResult<i32> {
@@ -164,52 +215,58 @@ impl Run {
     }
 }
 
-pub(crate) async fn run(context: &ApiContext, run_id: String) -> FieldResult<Option<Run>> {
+pub(crate) async fn invocation(
+    context: &ApiContext,
+    invocation_id: String,
+) -> FieldResult<Option<Invocation>> {
     Ok(context
         .metadata
-        .run(&run_id)
+        .invocation(&invocation_id)
         .await
         .map_err(crate::internal_field_err)?
-        .map(Run::new))
+        .map(Invocation::new))
 }
 
-pub(crate) async fn observed_runs(
+pub(crate) async fn observed_invocations(
     context: &ApiContext,
     limit: Option<i32>,
-) -> FieldResult<Vec<ObservedRun>> {
+) -> FieldResult<Vec<ObservedInvocation>> {
     let runs = context
         .store
-        .observed_runs(clamp_limit(limit, 50), retained_recent_range())
+        .observed_invocations(clamp_limit(limit, 50), retained_recent_range())
         .await
         .map_err(crate::internal_field_err)?;
-    Ok(runs.into_iter().map(ObservedRun).collect())
+    Ok(runs.into_iter().map(ObservedInvocation).collect())
 }
 
-pub(crate) async fn runs(context: &ApiContext, limit: Option<i32>) -> FieldResult<Vec<Run>> {
+pub(crate) async fn invocations(
+    context: &ApiContext,
+    limit: Option<i32>,
+) -> FieldResult<Vec<Invocation>> {
     let runs = context
         .metadata
-        .runs(clamp_limit(limit, 50))
+        .invocations(clamp_limit(limit, 50))
         .await
         .map_err(crate::internal_field_err)?;
     if runs.is_empty() {
         return Ok(Vec::new());
     }
-    let run_ids: Vec<String> = runs.iter().map(|run| run.run_id.clone()).collect();
-    let spans_by_run = context
+    let invocation_ids: Vec<String> = runs.iter().map(|run| run.invocation_id.clone()).collect();
+    let spans_by_invocation = context
         .store
-        .spans_by_runs(&run_ids, MAX_ROWS)
+        .spans_by_invocations(&invocation_ids, MAX_ROWS)
         .await
         .map_err(crate::internal_field_err)?;
     let mut all_trace_ids: Vec<String> = Vec::new();
     let mut seen_trace_ids = HashSet::new();
-    for spans in spans_by_run.values() {
+    for spans in spans_by_invocation.values() {
         for span in spans {
             if seen_trace_ids.insert(span.trace_id.clone()) {
                 all_trace_ids.push(span.trace_id.clone());
             }
         }
     }
-    let event_limit = MAX_ROWS.saturating_mul(run_ids.len().max(1));
+    let event_limit = MAX_ROWS.saturating_mul(invocation_ids.len().max(1));
     let events = context
         .store
         .error_events_by_traces(&all_trace_ids, event_limit)
@@ -225,20 +282,21 @@ pub(crate) async fn runs(context: &ApiContext, limit: Option<i32>) -> FieldResul
     Ok(runs
         .into_iter()
         .map(|record| {
-            let spans = spans_by_run
-                .get(&record.run_id)
+            let spans = spans_by_invocation
+                .get(&record.invocation_id)
                 .map(Vec::as_slice)
                 .unwrap_or(&[]);
-            let stats = run_stats_from_spans(spans, &events_by_trace);
-            Run::with_stats(record, stats)
+            let stats = invocation_stats_from_spans(spans, &events_by_trace);
+            Invocation::with_stats(record, stats)
         })
         .collect())
 }
 
-pub(crate) async fn run_start(
+pub(crate) async fn invocation_start(
     context: &ApiContext,
-    run_id: String,
+    invocation_id: String,
     command: Option<String>,
+    app_mode: Option<String>,
     started_at_nanos: String,
 ) -> FieldResult<bool> {
     let nanos: u128 = started_at_nanos
@@ -246,24 +304,25 @@ pub(crate) async fn run_start(
         .map_err(|_| field_err("invalid nanos"))?;
     context
         .metadata
-        .start_run(&run_id, command.as_deref(), nanos)
+        .start_invocation(&invocation_id, command.as_deref(), app_mode.as_deref(), nanos)
         .await
         .map_err(crate::internal_field_err)?;
     Ok(true)
 }
 
-pub(crate) async fn run_finish(
+pub(crate) async fn invocation_finish(
     context: &ApiContext,
-    run_id: String,
+    invocation_id: String,
     ended_at_nanos: String,
     exit_code: i32,
+    outcome: Option<String>,
 ) -> FieldResult<bool> {
     let nanos: u128 = ended_at_nanos
         .parse()
         .map_err(|_| field_err("invalid nanos"))?;
     context
         .metadata
-        .finish_run(&run_id, nanos, exit_code)
+        .finish_invocation(&invocation_id, nanos, exit_code, outcome.as_deref())
         .await
         .map_err(crate::internal_field_err)?;
     Ok(true)

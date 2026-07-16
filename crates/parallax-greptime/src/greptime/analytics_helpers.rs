@@ -87,7 +87,7 @@ impl GreptimeStore {
             "opentelemetry_traces_operations",
             "opentelemetry_logs",
             "error_events",
-            "run_metric_points",
+            "invocation_metric_points",
             METRIC_EXEMPLARS_TABLE,
             "greptime_physical_table",
         ];
@@ -135,7 +135,7 @@ impl GreptimeStore {
         // names are Prometheus-normalized.
         for row in self
             .sql_lenient(&format!(
-                r#"SELECT DISTINCT "name" FROM run_metric_points
+                r#"SELECT DISTINCT "name" FROM invocation_metric_points
                    WHERE "name" IS NOT NULL AND "name" != ''
                      AND "ts" >= {} AND "ts" <= {}"#,
                 sql_ts(*range.start()),

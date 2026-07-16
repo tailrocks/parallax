@@ -85,8 +85,8 @@ pub(crate) async fn logs_follow(
     if let Some(trace_id) = filter.trace {
         params.push(("trace_id", trace_id.into()));
     }
-    if let Some(run_id) = filter.run {
-        params.push(("run_id", run_id.into()));
+    if let Some(invocation_id) = filter.run {
+        params.push(("invocation_id", invocation_id.into()));
     }
     let query = encode_query(&params);
     tail_sse(
@@ -126,8 +126,8 @@ pub(crate) async fn traces_follow(
     if let Some(needle) = filter.grep {
         params.push(("q", needle.into()));
     }
-    if let Some(run_id) = filter.run {
-        params.push(("run_id", run_id.into()));
+    if let Some(invocation_id) = filter.run {
+        params.push(("invocation_id", invocation_id.into()));
     }
     let query = encode_query(&params);
     tail_sse(
@@ -159,32 +159,32 @@ fn print_span_line(span: &serde_json::Value) {
     );
 }
 
-/// `parallax run watch <run_id>` — the run-scoped combined live tail: new
+/// `parallax run watch <invocation_id>` — the run-scoped combined live tail: new
 /// log records and finished spans for one run id, interleaved as they
 /// arrive (the CLI mirror of the run page's Live mode). `--for 30s` watches
 /// a fixed window and reports per-stream match counts — the agent
 /// verification loop for a specific run.
 pub(crate) async fn run_watch(
     client: &Client,
-    run_id: &str,
+    invocation_id: &str,
     level: Option<&str>,
     grep: Option<&str>,
     for_window: Option<&str>,
 ) -> anyhow::Result<()> {
     println!(
-        "watching run {run_id} — live logs + spans{}",
+        "watching run {invocation_id} — live logs + spans{}",
         for_window
             .map(|w| format!(" for {w}"))
             .unwrap_or_else(|| " (Ctrl-C to stop)".into())
     );
-    let mut log_params: Vec<(&str, String)> = vec![("run_id", run_id.into())];
+    let mut log_params: Vec<(&str, String)> = vec![("invocation_id", invocation_id.into())];
     if let Some(level) = level {
         log_params.push(("severity_min", severity_min(level)?.to_string()));
     }
     if let Some(needle) = grep {
         log_params.push(("q", needle.into()));
     }
-    let span_params: Vec<(&str, String)> = vec![("run_id", run_id.into())];
+    let span_params: Vec<(&str, String)> = vec![("invocation_id", invocation_id.into())];
     let logs_path = format!("/v1/logs/stream{}", encode_query(&log_params));
     let spans_path = format!("/v1/traces/stream{}", encode_query(&span_params));
     let logs = tail_sse(client, &logs_path, for_window, "log event", |log| {

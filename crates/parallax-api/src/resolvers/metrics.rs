@@ -72,8 +72,8 @@ impl MetricExemplar {
     fn span_id(&self) -> &str {
         &self.0.span_id
     }
-    fn run_id(&self) -> Option<&str> {
-        self.0.run_id.as_deref()
+    fn invocation_id(&self) -> Option<&str> {
+        self.0.invocation_id.as_deref()
     }
     fn attributes(&self) -> String {
         self.0.attributes.to_string()
@@ -132,12 +132,12 @@ pub(crate) async fn services(context: &ApiContext) -> FieldResult<Vec<String>> {
 pub(crate) async fn runtime_snapshot(
     context: &ApiContext,
     service: Option<String>,
-    run_id: Option<String>,
+    invocation_id: Option<String>,
     from_nanos: String,
     to_nanos: String,
     step_seconds: i32,
 ) -> FieldResult<Vec<RuntimeMetric>> {
-    match (service.as_deref(), run_id.as_deref()) {
+    match (service.as_deref(), invocation_id.as_deref()) {
         (Some(_), Some(_)) | (None, None) => {
             return Err(field_err("runtimeSnapshot takes exactly one scope"));
         }
@@ -148,7 +148,7 @@ pub(crate) async fn runtime_snapshot(
         .store
         .runtime_snapshot(
             service.as_deref(),
-            run_id.as_deref(),
+            invocation_id.as_deref(),
             from..=to,
             step_nanos(Some(step_seconds)),
         )
@@ -164,7 +164,7 @@ pub(crate) async fn metric_series(
     from_nanos: String,
     to_nanos: String,
     service: Option<String>,
-    run_id: Option<String>,
+    invocation_id: Option<String>,
     group_by: Option<String>,
     step_seconds: Option<i32>,
     agg: Option<String>,
@@ -175,8 +175,8 @@ pub(crate) async fn metric_series(
         .ok_or_else(|| field_err("agg must be avg|min|max|sum|rate"))?;
     if let Some(group_by) = group_by {
         validate_metric_group_label(&group_by)?;
-        if run_id.is_some() {
-            return Err(field_err("runId with groupBy is not supported yet"));
+        if invocation_id.is_some() {
+            return Err(field_err("invocationId with groupBy is not supported yet"));
         }
         let groups = context
             .store
@@ -203,7 +203,7 @@ pub(crate) async fn metric_series(
             .metric_series(
                 &name,
                 service.as_deref(),
-                run_id.as_deref(),
+                invocation_id.as_deref(),
                 from..=to,
                 step_nanos(step_seconds),
                 agg,

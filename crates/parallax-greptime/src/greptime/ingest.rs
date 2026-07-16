@@ -9,7 +9,7 @@ impl crate::adapter::IngestStore for GreptimeStore {
     ) -> StorageResult<()> {
         // Forward the raw OTLP verbatim to the native traces endpoint; the
         // `greptime_trace_v1` pipeline auto-creates `opentelemetry_traces`. The
-        // decoded spans are the worker's tee (errors/live/runs), not stored here.
+        // decoded spans are the worker's tee (errors/live/invocations), not stored here.
         let hints = format!("ttl={},append_mode=true", self.traces_ttl);
         self.forward_otlp(
             "v1/traces",
@@ -30,13 +30,15 @@ impl crate::adapter::IngestStore for GreptimeStore {
         _request: &parallax_proto::collector_logs::ExportLogsServiceRequest,
         raw: bytes::Bytes,
     ) -> StorageResult<()> {
-        // The extract-keys header promotes run id and typed-log identity
-        // attributes to native columns in opentelemetry_logs.
+        // The extract-keys header promotes the invocation/session correlation
+        // ids and typed-log identity attributes to native columns in
+        // opentelemetry_logs.
         let hints = format!("ttl={},append_mode=true", self.logs_ttl);
         let extract_keys = format!(
-            "{},{},{},{}",
+            "{},{},{},{},{}",
             semconv::SERVICE_NAME,
-            semconv::PARALLAX_RUN_ID,
+            semconv::CLI_INVOCATION_ID,
+            semconv::SESSION_ID,
             semconv::EVENT_NAME,
             semconv::LOG_OBSERVED_TS_NANOS
         );
@@ -68,16 +70,16 @@ impl crate::adapter::IngestStore for GreptimeStore {
             .await
             .map_err(StorageError::transport)?;
         // Run-scoped points (Q6, Approach 2): the metric engine cannot hold a
-        // high-card `run_id` tag, so persist those points to `run_metric_points`
-        // where `run_id` is an indexed column.
+        // high-card `invocation_id` tag, so persist those points to `invocation_metric_points`
+        // where `invocation_id` is an indexed column.
         let values = points
             .iter()
-            .filter(|p| p.run_id.as_deref().is_some_and(|id| !id.is_empty()))
+            .filter(|p| p.invocation_id.as_deref().is_some_and(|id| !id.is_empty()))
             .map(|p| {
                 format!(
                     "({},'{}','{}','{}',{},{})",
                     p.ts_nanos, // TIMESTAMP(9): nanos
-                    escape(p.run_id.as_deref().unwrap_or_default()),
+                    escape(p.invocation_id.as_deref().unwrap_or_default()),
                     escape(&p.service),
                     escape(&p.name),
                     p.value,
@@ -86,8 +88,8 @@ impl crate::adapter::IngestStore for GreptimeStore {
             })
             .collect();
         self.insert(
-            "run_metric_points",
-            "\"ts\", \"run_id\", \"service\", \"name\", \"value\", \"attributes\"",
+            "invocation_metric_points",
+            "\"ts\", \"invocation_id\", \"service\", \"name\", \"value\", \"attributes\"",
             values,
         )
         .await?;
@@ -103,7 +105,7 @@ impl crate::adapter::IngestStore for GreptimeStore {
                     r.value,
                     escape(&r.trace_id),
                     escape(&r.span_id),
-                    opt_literal(&r.run_id),
+                    opt_literal(&r.invocation_id),
                     json_literal(&r.attributes),
                 )
             })

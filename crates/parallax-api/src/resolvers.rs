@@ -5,11 +5,12 @@ pub(crate) mod dashboards;
 pub(crate) mod fields;
 pub(crate) mod helpers;
 pub(crate) mod investigations;
+pub(crate) mod journeys;
 #[expect(clippy::too_many_lines, reason = "issue assembly")]
 pub(crate) mod issues;
 pub(crate) mod logs;
 pub(crate) mod metrics;
-pub(crate) mod runs;
+pub(crate) mod invocations;
 #[expect(
     clippy::cast_precision_loss,
     clippy::excessive_nesting,
@@ -31,6 +32,12 @@ pub(crate) use fields::FieldKey;
 pub(crate) use fields::FieldStats;
 pub(crate) use investigations::Investigation;
 pub(crate) use investigations::SavedView;
+pub(crate) use journeys::BackgroundCycleOut;
+pub(crate) use journeys::ConversationOut;
+pub(crate) use journeys::JobOut;
+pub(crate) use journeys::ScreenVisitOut;
+pub(crate) use journeys::SessionOut;
+pub(crate) use journeys::UiActionOut;
 pub(crate) use issues::BundleOut;
 pub(crate) use issues::Issue;
 pub(crate) use issues::IssueList;
@@ -40,8 +47,8 @@ pub(crate) use logs::LogRecord;
 pub(crate) use metrics::MetricExemplar;
 pub(crate) use metrics::RuntimeMetric;
 pub(crate) use metrics::Series;
-pub(crate) use runs::ObservedRun;
-pub(crate) use runs::Run;
+pub(crate) use invocations::ObservedInvocation;
+pub(crate) use invocations::Invocation;
 pub(crate) use services::Overview;
 pub(crate) use services::ReleaseWindow;
 pub(crate) use services::ServiceCatalogRow;

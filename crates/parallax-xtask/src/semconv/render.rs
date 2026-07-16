@@ -19,7 +19,7 @@ pub(super) fn render_rust(constants: &[Constant], include_freeze_test: bool) -> 
         }
     }
     output.push_str(
-        "\n#[must_use]\npub fn resource_json_path(attr: &str) -> String {\n    format!(r#\"$.\\\"{}\\\"\"#, attr.replace('\"', \"\\\\\\\"\"))\n}\n\n#[must_use]\npub fn resource_column(attr: &str) -> String {\n    format!(\"resource_attributes.{attr}\")\n}\n",
+        "\n#[must_use]\npub fn resource_json_path(attr: &str) -> String {\n    format!(r#\"$.\\\"{}\\\"\"#, attr.replace('\"', \"\\\\\\\"\"))\n}\n\n#[must_use]\npub fn resource_column(attr: &str) -> String {\n    format!(\"resource_attributes.{attr}\")\n}\n\n#[must_use]\npub fn span_column(attr: &str) -> String {\n    format!(\"span_attributes.{attr}\")\n}\n",
     );
     if include_freeze_test {
         output.push_str("\n#[cfg(test)]\nmod tests;\n");

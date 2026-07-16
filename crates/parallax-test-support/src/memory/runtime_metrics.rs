@@ -68,7 +68,7 @@ impl adapter::RuntimeMetricStore for MemoryStore {
     async fn runtime_snapshot(
         &self,
         service: Option<&str>,
-        run_id: Option<&str>,
+        invocation_id: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
     ) -> StorageResult<Vec<RuntimeMetricSeries>> {
@@ -81,7 +81,7 @@ impl adapter::RuntimeMetricStore for MemoryStore {
                 .metric_series(
                     &metric,
                     service,
-                    run_id,
+                    invocation_id,
                     range.clone(),
                     step_nanos,
                     MetricAgg::Avg,

@@ -31,7 +31,7 @@ pub(crate) fn render_bundle(format: OutputFormat, bundle: &serde_json::Value) ->
 /// Pure render decision for the agent-session projection.
 pub(crate) fn render_agent_session(
     format: OutputFormat,
-    run_id: &str,
+    invocation_id: &str,
     session: &serde_json::Value,
 ) -> (String, String) {
     match format {
@@ -41,7 +41,7 @@ pub(crate) fn render_agent_session(
         }
         OutputFormat::Markdown => {
             let mut out = String::new();
-            out.push_str(&format!("agent session for run {run_id}\n"));
+            out.push_str(&format!("agent session for run {invocation_id}\n"));
             out.push_str(&format!(
                 "  root:      {}\n",
                 session["rootSpanId"].as_str().unwrap_or("-")

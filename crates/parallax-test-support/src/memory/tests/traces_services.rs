@@ -78,7 +78,7 @@ async fn run_anchored_reads_keep_newest_limit_in_ascending_order() {
             "api",
             index,
         );
-        span.run_id = Some("run-1".into());
+        span.invocation_id = Some("run-1".into());
         spans.push(span);
         logs.push(log(Some("run-1"), index, 9));
     }
@@ -86,10 +86,10 @@ async fn run_anchored_reads_keep_newest_limit_in_ascending_order() {
     store.push_logs(logs);
 
     let spans = store
-        .spans_by_run("run-1", 200, 0..=u128::MAX)
+        .spans_by_invocation("run-1", 200, 0..=u128::MAX)
         .await
         .unwrap();
-    let logs = store.logs_by_run("run-1", 200).await.unwrap();
+    let logs = store.logs_by_invocation("run-1", 200).await.unwrap();
 
     assert_eq!(spans.len(), 200);
     assert_eq!(logs.len(), 200);
@@ -270,7 +270,8 @@ async fn overview_totals_and_signal_series_cover_seeded_window() {
         body: "bad".into(),
         trace_id: "t1".into(),
         span_id: "b".into(),
-        run_id: None,
+        invocation_id: None,
+        session_id: None,
         scope_name: String::new(),
         attributes: serde_json::Value::Null,
         resource: serde_json::Value::Null,

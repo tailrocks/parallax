@@ -1,9 +1,9 @@
-//! The metadata store: mutable product state (issues, runs, dashboards) per
-//! implementation spec §6. Turso is the engine.
+//! The metadata store: mutable product state (issues, invocations, dashboards)
+//! per implementation spec §6. Turso is the engine.
 
 use parallax_model::IssueOccurrence;
 use parallax_model::{
-    Dashboard, Investigation, Issue, IssueQuery, IssueSortKey, RunRecord, SavedView, TrendPoint,
+    Dashboard, Investigation, Issue, IssueQuery, IssueSortKey, InvocationRecord, SavedView, TrendPoint,
 };
 use parallax_semconv as semconv;
 use std::{collections::BTreeMap, path::Path};
@@ -12,7 +12,7 @@ use turso::Value;
 mod connection;
 mod occurrences;
 mod row;
-mod runs;
+mod invocations;
 mod saved_state;
 mod values;
 
@@ -33,13 +33,16 @@ CREATE TABLE IF NOT EXISTS issues (
   last_trace_id TEXT,
   tags          TEXT NOT NULL DEFAULT '{}'
 );
-CREATE TABLE IF NOT EXISTS runs (
-  run_id      TEXT PRIMARY KEY,
-  command     TEXT,
-  started_at  INTEGER NOT NULL,
-  ended_at    INTEGER,
-  exit_code   INTEGER,
-  status      TEXT NOT NULL DEFAULT 'running'
+DROP TABLE IF EXISTS runs;
+CREATE TABLE IF NOT EXISTS invocations (
+  invocation_id TEXT PRIMARY KEY,
+  command       TEXT,
+  app_mode      TEXT,
+  started_at    INTEGER NOT NULL,
+  ended_at      INTEGER,
+  exit_code     INTEGER,
+  outcome       TEXT,
+  status        TEXT NOT NULL DEFAULT 'running'
 );
 CREATE TABLE IF NOT EXISTS dashboards (
   id          TEXT PRIMARY KEY,

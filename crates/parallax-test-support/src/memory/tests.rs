@@ -17,7 +17,8 @@ fn span(trace: &str, span_id: &str, parent: Option<&str>, service: &str, ts: u12
         status_code: "STATUS_CODE_UNSET".into(),
         status_message: String::new(),
         duration_ns: 1_000,
-        run_id: None,
+        invocation_id: None,
+        session_id: None,
         scope_name: String::new(),
         events: None,
         links: serde_json::Value::Null,
@@ -54,7 +55,7 @@ fn error_event(service: &str, ts: u128) -> ErrorEventRow {
     }
 }
 
-fn log(run_id: Option<&str>, ts: u128, severity_num: i32) -> LogRow {
+fn log(invocation_id: Option<&str>, ts: u128, severity_num: i32) -> LogRow {
     LogRow {
         ts_nanos: ts,
         event_name: String::new(),
@@ -65,7 +66,8 @@ fn log(run_id: Option<&str>, ts: u128, severity_num: i32) -> LogRow {
         body: format!("log-{ts}"),
         trace_id: format!("trace-{ts}"),
         span_id: format!("span-{ts}"),
-        run_id: run_id.map(Into::into),
+        invocation_id: invocation_id.map(Into::into),
+        session_id: None,
         scope_name: String::new(),
         attributes: serde_json::Value::Null,
         resource: serde_json::Value::Null,

@@ -17,7 +17,7 @@ pub fn normalize_metrics(request: &ExportMetricsServiceRequest) -> NormalizedMet
             .as_ref()
             .map_or(&[][..], |r| r.attributes.as_slice());
         let service = service_name(resource_attrs);
-        let run_id = run_id(resource_attrs);
+        let invocation_id = invocation_id(&[], resource_attrs);
         for sm in &rm.scope_metrics {
             for metric in &sm.metrics {
                 match &metric.data {
@@ -26,14 +26,14 @@ pub fn normalize_metrics(request: &ExportMetricsServiceRequest) -> NormalizedMet
                             push_exemplars(
                                 &mut exemplars,
                                 &service,
-                                run_id.as_deref(),
+                                invocation_id.as_deref(),
                                 &metric.name,
                                 dp.time_unix_nano,
                                 &dp.exemplars,
                             );
                             points.push(number_point(
                                 &service,
-                                run_id.as_deref(),
+                                invocation_id.as_deref(),
                                 &metric.name,
                                 dp,
                                 false,
@@ -45,14 +45,14 @@ pub fn normalize_metrics(request: &ExportMetricsServiceRequest) -> NormalizedMet
                             push_exemplars(
                                 &mut exemplars,
                                 &service,
-                                run_id.as_deref(),
+                                invocation_id.as_deref(),
                                 &metric.name,
                                 dp.time_unix_nano,
                                 &dp.exemplars,
                             );
                             points.push(number_point(
                                 &service,
-                                run_id.as_deref(),
+                                invocation_id.as_deref(),
                                 &metric.name,
                                 dp,
                                 s.is_monotonic,
@@ -64,7 +64,7 @@ pub fn normalize_metrics(request: &ExportMetricsServiceRequest) -> NormalizedMet
                             push_exemplars(
                                 &mut exemplars,
                                 &service,
-                                run_id.as_deref(),
+                                invocation_id.as_deref(),
                                 &metric.name,
                                 dp.time_unix_nano,
                                 &dp.exemplars,
@@ -98,7 +98,7 @@ pub fn normalize_metrics(request: &ExportMetricsServiceRequest) -> NormalizedMet
 fn push_exemplars(
     rows: &mut Vec<MetricExemplarRow>,
     service: &str,
-    run_id: Option<&str>,
+    invocation_id: Option<&str>,
     name: &str,
     point_ts_nanos: u64,
     exemplars: &[parallax_proto::metrics::Exemplar],
@@ -122,7 +122,7 @@ fn push_exemplars(
             value,
             trace_id: hex(&exemplar.trace_id),
             span_id: hex(&exemplar.span_id),
-            run_id: run_id.map(str::to_string),
+            invocation_id: invocation_id.map(str::to_string),
             attributes: attributes_to_json(&exemplar.filtered_attributes),
         });
     }
@@ -138,7 +138,7 @@ fn exemplar_value(exemplar: &parallax_proto::metrics::Exemplar) -> Option<f64> {
 
 fn number_point(
     service: &str,
-    run_id: Option<&str>,
+    invocation_id: Option<&str>,
     name: &str,
     dp: &parallax_proto::metrics::NumberDataPoint,
     is_monotonic: bool,
@@ -154,7 +154,7 @@ fn number_point(
         name: name.to_string(),
         value,
         is_monotonic,
-        run_id: run_id.map(str::to_string),
+        invocation_id: invocation_id.map(str::to_string),
         attributes: attributes_to_json(&dp.attributes),
     }
 }

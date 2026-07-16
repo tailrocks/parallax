@@ -29,7 +29,7 @@ fn make_executable(path: &std::path::Path) -> anyhow::Result<()> {
 
 /// Tables Parallax is allowed to create itself in `GreptimeDB`. Everything else
 /// must be a native OTLP table the engine auto-created from a forward.
-const ALLOWED_EXTENSIONS: &[&str] = &["error_events", "run_metric_points", "metric_exemplars"];
+const ALLOWED_EXTENSIONS: &[&str] = &["error_events", "invocation_metric_points", "metric_exemplars"];
 
 /// The retired hand-rolled raw-signal tables — must never reappear.
 const RETIRED_RAW_TABLES: &[&str] = &[

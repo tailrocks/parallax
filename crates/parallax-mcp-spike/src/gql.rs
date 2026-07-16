@@ -70,22 +70,22 @@ pub(crate) struct BundleProjection {
     pub canonical_hash: String,
 }
 
-/// Fetch issue- or run-anchored bundle. Exactly one of `fingerprint` / `run_id`.
+/// Fetch issue- or run-anchored bundle. Exactly one of `fingerprint` / `invocation_id`.
 pub(crate) async fn fetch_bundle(
     client: &GraphqlClient,
     fingerprint: Option<&str>,
-    run_id: Option<&str>,
+    invocation_id: Option<&str>,
 ) -> anyhow::Result<BundleProjection> {
-    let query = match (fingerprint, run_id) {
+    let query = match (fingerprint, invocation_id) {
         (Some(fp), None) => format!(
             r#"{{ bundle(fingerprint: "{}") {{ json markdown canonicalHash }} }}"#,
             gql_str(fp)
         ),
         (None, Some(rid)) => format!(
-            r#"{{ bundle(runId: "{}") {{ json markdown canonicalHash }} }}"#,
+            r#"{{ bundle(invocationId: "{}") {{ json markdown canonicalHash }} }}"#,
             gql_str(rid)
         ),
-        _ => anyhow::bail!("fetch_bundle requires exactly one of fingerprint or run_id"),
+        _ => anyhow::bail!("fetch_bundle requires exactly one of fingerprint or invocation_id"),
     };
     let response = client.graphql(&query).await?;
     let Some(bundle) = response.pointer("/data/bundle").filter(|v| !v.is_null()) else {
@@ -101,25 +101,25 @@ pub(crate) async fn fetch_bundle(
 /// Agent-session projection (same GraphQL shape the CLI uses).
 pub(crate) async fn fetch_agent_session(
     client: &GraphqlClient,
-    run_id: &str,
+    invocation_id: &str,
 ) -> anyhow::Result<Value> {
     let response = client
         .graphql(&format!(
-            r#"{{ agentSession(runId: "{}") {{
+            r#"{{ agentSession(invocationId: "{}") {{
                 rootSpanId totalInputTokens totalOutputTokens errorCount truncated
                 steps {{
                   spanId traceId kind name startNanos durationNs isError
                   genAiOperation inputTokens outputTokens
                 }}
             }} }}"#,
-            gql_str(run_id)
+            gql_str(invocation_id)
         ))
         .await?;
     let Some(session) = response
         .pointer("/data/agentSession")
         .filter(|v| !v.is_null())
     else {
-        anyhow::bail!("no agent session detected for run {run_id}");
+        anyhow::bail!("no agent session detected for run {invocation_id}");
     };
     Ok(session.clone())
 }

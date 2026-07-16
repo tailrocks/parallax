@@ -136,8 +136,8 @@ pub(crate) async fn parallax_endpoints_from_server(
 }
 
 /// Child resource attributes: run ID plus comparison labels when forwarding.
-pub(crate) fn forward_resource_attrs(run_id: &str, compare: bool) -> String {
-    let mut attrs = format!("{}={run_id}", semconv::PARALLAX_RUN_ID);
+pub(crate) fn forward_resource_attrs(invocation_id: &str, compare: bool) -> String {
+    let mut attrs = format!("{}={invocation_id}", semconv::CLI_INVOCATION_ID);
     if compare {
         let env = std::env::var("PARALLAX_ENV")
             .ok()
@@ -200,7 +200,7 @@ pub(crate) fn now_nanos() -> u128 {
         .unwrap_or(0)
 }
 
-pub(crate) fn new_run_id() -> String {
+pub(crate) fn new_invocation_id() -> String {
     // Time-based id is enough for a single-user local tool.
     format!("{:x}", now_nanos())
 }

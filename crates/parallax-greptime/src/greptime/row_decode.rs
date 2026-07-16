@@ -11,12 +11,13 @@ pub(super) fn log_row_from_row(row: &[serde_json::Value]) -> LogRow {
         body: str_at(row, 4),
         trace_id: str_at(row, 5),
         span_id: str_at(row, 6),
-        run_id: opt_str_at(row, 7),
-        scope_name: str_at(row, 8),
-        attributes: json_at(row, 9),
-        resource: json_at(row, 10),
-        event_name: str_at(row, 11),
-        observed_ts_nanos: u128_at(row, 12),
+        invocation_id: opt_str_at(row, 7),
+        session_id: opt_str_at(row, 8),
+        scope_name: str_at(row, 9),
+        attributes: json_at(row, 10),
+        resource: json_at(row, 11),
+        event_name: str_at(row, 12),
+        observed_ts_nanos: u128_at(row, 13),
     }
 }
 
@@ -243,35 +244,43 @@ pub(super) fn u128_at(row: &[serde_json::Value], index: usize) -> u128 {
 }
 
 pub(super) fn absorb_observed_run(
-    runs: &mut HashMap<String, crate::adapter::ObservedRun>,
+    runs: &mut HashMap<String, crate::adapter::ObservedInvocation>,
     row: &[serde_json::Value],
     is_span: bool,
 ) -> Option<String> {
-    let run_id = str_at(row, 0);
-    if run_id.is_empty() {
+    let invocation_id = str_at(row, 0);
+    if invocation_id.is_empty() {
         return None;
     }
     let first = u128_at(row, 1);
     let last = u128_at(row, 2);
     let count = u128_at(row, 3) as u64;
     let entry = runs
-        .entry(run_id.clone())
-        .or_insert_with(|| crate::adapter::ObservedRun {
-            run_id: run_id.clone(),
+        .entry(invocation_id.clone())
+        .or_insert_with(|| crate::adapter::ObservedInvocation {
+            invocation_id: invocation_id.clone(),
             first_nanos: first,
             last_nanos: last,
             span_count: 0,
             log_count: 0,
             service: str_at(row, 4),
+            last_command: None,
+            app_mode: None,
         });
     entry.first_nanos = entry.first_nanos.min(first);
     entry.last_nanos = entry.last_nanos.max(last);
+    if entry.last_command.is_none() {
+        entry.last_command = opt_nonempty_str_at(row, 5);
+    }
+    if entry.app_mode.is_none() {
+        entry.app_mode = opt_nonempty_str_at(row, 6);
+    }
     if is_span {
         entry.span_count += count;
     } else {
         entry.log_count += count;
     }
-    Some(run_id)
+    Some(invocation_id)
 }
 
 pub(super) fn f64_at(row: &[serde_json::Value], index: usize) -> f64 {

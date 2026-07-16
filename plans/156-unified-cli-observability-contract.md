@@ -28,6 +28,53 @@
   branches, no pull requests (operator delivery model, see
   plans/README.md Execution Preflight).
 
+### Landed by Grok (preliminary) — peer verify/extend required
+
+**Do not treat this plan as DONE/retired yet.** Concurrent Claude Code WIP on
+the `runs`→`invocations` rename was integrated + residual gaps closed so the
+tree is pushable and green on non-live unit/integration tests. **Claude (or
+continuing agent): verify depth, live-engine lane, CLI UX rename, and retire
+only when Done criteria hold.**
+
+**Already landed (paths/behaviors):**
+- Semconv registry: `cli.invocation.id`, `session.*`, `app.mode`, `ui.*`,
+  `background.cycle`, `job.*`, `outcome*`, `gen_ai.*`; `parallax.run.id` /
+  `jackin.operation` removed from contract; generated
+  `parallax-semconv`, `ui/src/shared/semconv.ts`, Java.
+- Ingest: signal-then-resource `invocation_id`/`session_id`; **negative test**
+  proves legacy `parallax.run.id` alone resolves nothing
+  (`crates/parallax-ingest/src/tests.rs`).
+- Model/storage/API/Greptime/metadata: `invocation_id` fields,
+  `invocation_store`, Turso `invocations`, GraphQL
+  `invocation`/`invocations`/`observed_invocations`/`invocationStart`/
+  `invocationFinish` + journey queries (`sessions`, `screen_visits`,
+  `ui_actions`, `background_cycles`, `jobs`, `conversations`).
+- Pure projections: `crates/parallax-storage/src/projections.rs` (+ tests).
+- Analysis fingerprints: `CLI_COMMAND_NAME` instead of `jackin.operation`.
+- CLI GraphQL clients updated to new field names (was still `runStart`/`runs`).
+- UI SQL templates/linkify: `CLI_INVOCATION_ID` (route still `/runs/$runId`
+  until plan 157).
+- Decision doc: `docs/research/decisions/native-otel-tables.md` mechanism rows.
+- Facades refreshed.
+
+**Needs verify / deepen (peer):**
+- [ ] Full `cargo xtask ci --fast` + live greptime:
+  `cargo nextest run --run-ignored all -E 'binary(/greptime/)'` (extract-keys,
+  span-attr column, `invocation_metric_points` migration, projection SQL on
+  engine).
+- [ ] CLI UX: file still `commands/runs.rs`; user-facing `parallax run *`
+  flags/help still say “run” in places — rename to `--invocation` / consistent
+  copy per step 6.
+- [ ] Memory store file still `memory/run_store.rs` (implements
+  `InvocationStore`) — rename for clarity if desired.
+- [ ] Greptime projection SQL may be thin vs pure `projections.rs` — confirm
+  adapters call pure pairing and live SQL matches.
+- [ ] m2 live tests + API integration per new resolvers; Turso `runs`→
+  `invocations` migration test with seeded legacy row.
+- [ ] UI beyond sql.tsx is plan 157 (routes still `/runs`).
+- [ ] Index status row still TODO until Done criteria + live proof; **do not
+  flip DONE from this note alone**.
+
 ## Why this matters
 
 jackin❯ (the first large external emitter) has landed its unified-OTel cutover

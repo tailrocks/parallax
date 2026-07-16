@@ -1,6 +1,6 @@
 use crate::TursoMetadataStore;
 use parallax_model::{
-    Dashboard, Investigation, Issue, IssueOccurrence, IssueQuery, IssueSortKey, RunRecord,
+    Dashboard, Investigation, Issue, IssueOccurrence, IssueQuery, IssueSortKey, InvocationRecord,
     SavedView, TrendPoint,
 };
 use parallax_storage::metadata::{MetadataError, MetadataResult};
@@ -56,31 +56,40 @@ impl parallax_storage::metadata::MetadataStore for TursoMetadataStore {
             .await
             .map_err(MetadataError::internal)
     }
-    async fn start_run(
+    async fn start_invocation(
         &self,
         id: &str,
         command: Option<&str>,
+        app_mode: Option<&str>,
         started: u128,
     ) -> MetadataResult<()> {
-        Self::start_run(self, id, command, started)
+        Self::start_invocation(self, id, command, app_mode, started)
             .await
             .map_err(MetadataError::internal)
     }
-    async fn finish_run(&self, id: &str, ended: u128, code: i32) -> MetadataResult<()> {
-        Self::finish_run(self, id, ended, code)
+    async fn finish_invocation(
+        &self,
+        id: &str,
+        ended: u128,
+        code: i32,
+        outcome: Option<&str>,
+    ) -> MetadataResult<()> {
+        Self::finish_invocation(self, id, ended, code, outcome)
             .await
             .map_err(MetadataError::internal)
     }
-    async fn runs(&self, limit: usize) -> MetadataResult<Vec<RunRecord>> {
-        Self::runs(self, limit)
+    async fn invocations(&self, limit: usize) -> MetadataResult<Vec<InvocationRecord>> {
+        Self::invocations(self, limit)
             .await
             .map_err(MetadataError::internal)
     }
-    async fn run(&self, id: &str) -> MetadataResult<Option<RunRecord>> {
-        Self::run(self, id).await.map_err(MetadataError::internal)
+    async fn invocation(&self, id: &str) -> MetadataResult<Option<InvocationRecord>> {
+        Self::invocation(self, id)
+            .await
+            .map_err(MetadataError::internal)
     }
-    async fn ensure_run(&self, id: &str, first_seen: u128) -> MetadataResult<()> {
-        Self::ensure_run(self, id, first_seen)
+    async fn ensure_invocation(&self, id: &str, first_seen: u128) -> MetadataResult<()> {
+        Self::ensure_invocation(self, id, first_seen)
             .await
             .map_err(MetadataError::internal)
     }

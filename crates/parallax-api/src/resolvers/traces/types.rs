@@ -113,8 +113,8 @@ impl Span {
     fn duration_ns(&self) -> String {
         self.0.duration_ns.to_string()
     }
-    fn run_id(&self) -> Option<&str> {
-        self.0.run_id.as_deref()
+    fn invocation_id(&self) -> Option<&str> {
+        self.0.invocation_id.as_deref()
     }
     /// `OTel` span links as JSON — spans in other traces this span causally
     /// references (batch/async sub-operations).

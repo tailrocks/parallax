@@ -47,7 +47,8 @@ fn test_span(index: usize, error: bool, duration_us: u128) -> SpanRow {
         },
         status_message: String::new(),
         duration_ns: duration_us * 1_000,
-        run_id: None,
+        invocation_id: None,
+        session_id: None,
         scope_name: "test".to_string(),
         events: None,
         links: serde_json::Value::Null,
@@ -291,7 +292,7 @@ fn assembled_bundle_conforms_to_bundle_v1_schema() {
 
     let metric = MetricWindow::from_points(
         "process.cpu.utilization",
-        "run",
+        "invocation",
         1,
         60_000_000_000,
         15,
@@ -299,12 +300,14 @@ fn assembled_bundle_conforms_to_bundle_v1_schema() {
     )
     .expect("non-empty metric window");
 
-    let run = RunRecord {
-        run_id: "run_test".into(),
+    let run = InvocationRecord {
+        invocation_id: "run_test".into(),
         command: Some("PGPASSWORD=s3cr3t psql -c 'select 1'".into()),
         started_at_nanos: 1,
         ended_at_nanos: Some(2),
         exit_code: Some(1),
+        app_mode: Some("one_shot".into()),
+        outcome: Some("failure".into()),
         status: "failed".into(),
     };
 
@@ -318,7 +321,8 @@ fn assembled_bundle_conforms_to_bundle_v1_schema() {
         body: "Bearer eyJaaaaaaaaaa.bbbbbbbbbbbb.cccccccccccc leaked".into(),
         trace_id: "trace".into(),
         span_id: "span-0".into(),
-        run_id: Some("run_test".into()),
+        invocation_id: Some("run_test".into()),
+        session_id: None,
         scope_name: "test".into(),
         attributes: serde_json::Value::Null,
         resource: serde_json::Value::Null,
@@ -326,8 +330,8 @@ fn assembled_bundle_conforms_to_bundle_v1_schema() {
 
     let bundle = assemble(
         BundleInputs {
-            anchor: BundleAnchor::Run {
-                run: Box::new(run),
+            anchor: BundleAnchor::Invocation {
+                invocation: Box::new(run),
                 issues: vec![issue],
             },
             events: vec![event],
@@ -339,7 +343,7 @@ fn assembled_bundle_conforms_to_bundle_v1_schema() {
     );
 
     assert_eq!(bundle.schema_version, "bundle-v1");
-    assert!(bundle.run.is_some(), "run section present");
+    assert!(bundle.invocation.is_some(), "invocation section present");
     assert!(bundle.issue.is_some(), "primary issue present");
     assert!(bundle.trace.is_some(), "trace section present");
     assert!(!bundle.metric_windows.is_empty());
@@ -360,7 +364,7 @@ fn minimal_all_none_bundle_conforms_to_bundle_v1_schema() {
             id: "fp".into(),
         },
         issue: None,
-        run: None,
+        invocation: None,
         latest_event: None,
         trace: None,
         metric_windows: Vec::new(),

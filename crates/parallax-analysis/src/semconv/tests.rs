@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn shared_wire_names_are_frozen() {
-    assert_eq!(PARALLAX_RUN_ID, "parallax.run.id");
+    assert_eq!(CLI_INVOCATION_ID, "cli.invocation.id");
     assert_eq!(SERVICE_NAME, "service.name");
     assert_eq!(SERVICE_VERSION, "service.version");
     assert_eq!(DEPLOYMENT_ENVIRONMENT_NAME, "deployment.environment.name");

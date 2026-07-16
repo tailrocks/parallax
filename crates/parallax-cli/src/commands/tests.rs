@@ -239,13 +239,13 @@ fn endpoint_brackets_ipv6_api_host() {
 #[test]
 fn compare_adds_lab_attrs() {
     let attrs = forward_resource_attrs("abc123", true);
-    assert!(attrs.contains("parallax.run.id=abc123"));
+    assert!(attrs.contains("cli.invocation.id=abc123"));
     assert!(attrs.contains("parallax.lab=1"));
     assert!(attrs.contains("deployment.environment.name="));
 }
 
 #[test]
-fn default_mode_run_id_only() {
+fn default_mode_invocation_id_only() {
     let attrs = forward_resource_attrs("abc123", false);
-    assert_eq!(attrs, "parallax.run.id=abc123");
+    assert_eq!(attrs, "cli.invocation.id=abc123");
 }

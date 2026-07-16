@@ -31,7 +31,7 @@ use std::{collections::HashMap, sync::Arc};
 use resolvers::{
     AgentSessionOut, AttributeCompareRow, BundleOut, CriticalPath, Dashboard, EvidenceGap,
     FieldKey, FieldStats, Investigation, Issue, IssueList, IssueSort, LogRecord, MetricExemplar,
-    ObservedRun, Overview, Point, ReleaseWindow, Run, RuntimeMetric, SavedView, Series,
+    ObservedInvocation, Overview, Point, ReleaseWindow, Invocation, RuntimeMetric, SavedView, Series,
     ServiceCatalogRow, ServiceMap, ServiceOverview, ServiceSummary, SignalKind, SpanRed,
     SqlResultOut, StoryBeat, Trace, TraceDiff, TraceEventsOut, TraceList, TraceSort, TraceSummary,
     TrendPoint,
@@ -171,19 +171,19 @@ impl Query {
 
     /// Traces produced by one run, summarized (root span + aggregates),
     /// newest first. Open one via `trace(traceId:)`.
-    async fn traces_by_run(context: &ApiContext, run_id: String, limit: Option<i32>,) -> FieldResult<Vec<TraceSummary>> { resolvers::traces::traces_by_run(context, run_id, limit).await }
+    async fn traces_by_invocation(context: &ApiContext, invocation_id: String, limit: Option<i32>,) -> FieldResult<Vec<TraceSummary>> { resolvers::traces::traces_by_invocation(context, invocation_id, limit).await }
 
     /// Logs produced by one run.
-    async fn logs_by_run(context: &ApiContext, run_id: String, limit: Option<i32>,) -> FieldResult<Vec<LogRecord>> { resolvers::logs::logs_by_run(context, run_id, limit).await }
+    async fn logs_by_invocation(context: &ApiContext, invocation_id: String, limit: Option<i32>,) -> FieldResult<Vec<LogRecord>> { resolvers::logs::logs_by_invocation(context, invocation_id, limit).await }
 
     /// Agent-session projection for one run when `gen_ai` producer spans exist.
-    async fn agent_session(context: &ApiContext, run_id: String,) -> FieldResult<Option<AgentSessionOut>> { resolvers::story::agent_session(context, run_id).await }
+    async fn agent_session(context: &ApiContext, invocation_id: String,) -> FieldResult<Option<AgentSessionOut>> { resolvers::story::agent_session(context, invocation_id).await }
 
     /// Deterministic story timeline for exactly one trace or run anchor.
-    async fn story(context: &ApiContext, trace_id: Option<String>, run_id: Option<String>,) -> FieldResult<Vec<StoryBeat>> { resolvers::story::story(context, trace_id, run_id).await }
+    async fn story(context: &ApiContext, trace_id: Option<String>, invocation_id: Option<String>,) -> FieldResult<Vec<StoryBeat>> { resolvers::story::story(context, trace_id, invocation_id).await }
 
     /// Missing-evidence detector for exactly one trace or run anchor.
-    async fn evidence_gaps(context: &ApiContext, trace_id: Option<String>, run_id: Option<String>,) -> FieldResult<Vec<EvidenceGap>> { resolvers::fields::evidence_gaps(context, trace_id, run_id).await }
+    async fn evidence_gaps(context: &ApiContext, trace_id: Option<String>, invocation_id: Option<String>,) -> FieldResult<Vec<EvidenceGap>> { resolvers::fields::evidence_gaps(context, trace_id, invocation_id).await }
 
     /// Span-attribute overrepresentation in selected vs baseline windows.
     #[expect(clippy::too_many_arguments, reason = "GraphQL field filters are the public query contract")]
@@ -199,7 +199,7 @@ impl Query {
     /// first. `query` substring-matches the body; trace/run scoping
     /// composes with the other filters.
     #[expect(clippy::too_many_arguments, reason = "GraphQL log filters are the public query contract")]
-    async fn logs(context: &ApiContext, trace_id: Option<String>, run_id: Option<String>, service: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, severity_min: Option<i32>, severity_max: Option<i32>, query: Option<String>, limit: Option<i32>,) -> FieldResult<Vec<LogRecord>> { resolvers::logs::logs(context, trace_id, run_id, service, from_nanos, to_nanos, severity_min, severity_max, query, limit).await }
+    async fn logs(context: &ApiContext, trace_id: Option<String>, invocation_id: Option<String>, service: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, severity_min: Option<i32>, severity_max: Option<i32>, query: Option<String>, limit: Option<i32>,) -> FieldResult<Vec<LogRecord>> { resolvers::logs::logs(context, trace_id, invocation_id, service, from_nanos, to_nanos, severity_min, severity_max, query, limit).await }
 
     /// Logs surrounding one anchor timestamp, ascending.
     async fn logs_around(context: &ApiContext, anchor_nanos: String, window_seconds: Option<i32>, service: Option<String>, trace_id: Option<String>, limit: Option<i32>,) -> FieldResult<Vec<LogRecord>> { resolvers::logs::logs_around(context, anchor_nanos, window_seconds, service, trace_id, limit).await }
@@ -214,8 +214,27 @@ impl Query {
     #[expect(clippy::too_many_arguments, reason = "GraphQL log filters are the public query contract")]
     async fn log_count_series(context: &ApiContext, from_nanos: String, to_nanos: String, service: Option<String>, severity_min: Option<i32>, severity_max: Option<i32>, query: Option<String>, step_seconds: Option<i32>,) -> FieldResult<Vec<Point>> { resolvers::logs::log_count_series(context, from_nanos, to_nanos, service, severity_min, severity_max, query, step_seconds).await }
 
-    /// One run by id (wrapper-registered or auto-registered external).
-    async fn run(context: &ApiContext, run_id: String) -> FieldResult<Option<Run>> { resolvers::runs::run(context, run_id).await }
+    /// One CLI invocation by id (wrapper-registered or auto-registered external).
+    async fn invocation(context: &ApiContext, invocation_id: String) -> FieldResult<Option<Invocation>> { resolvers::invocations::invocation(context, invocation_id).await }
+
+    /// Interactive sessions observed inside one invocation, oldest first
+    /// (from `session.start`/`session.end` log events).
+    async fn sessions(context: &ApiContext, invocation_id: String) -> FieldResult<Vec<resolvers::SessionOut>> { resolvers::journeys::sessions(context, invocation_id).await }
+
+    /// Screen visits (entered/exited event pairs) for an invocation or session.
+    async fn screen_visits(context: &ApiContext, invocation_id: Option<String>, session_id: Option<String>,) -> FieldResult<Vec<resolvers::ScreenVisitOut>> { resolvers::journeys::screen_visits(context, invocation_id, session_id).await }
+
+    /// Bounded user-action root spans (`ui.action`) for one invocation.
+    async fn ui_actions(context: &ApiContext, invocation_id: String, limit: Option<i32>,) -> FieldResult<Vec<resolvers::UiActionOut>> { resolvers::journeys::ui_actions(context, invocation_id, limit).await }
+
+    /// Periodic daemon work grouped by cycle name (`background.cycle` spans).
+    async fn background_cycles(context: &ApiContext, invocation_id: Option<String>, from_nanos: String, to_nanos: String,) -> FieldResult<Vec<resolvers::BackgroundCycleOut>> { resolvers::journeys::background_cycles(context, invocation_id, from_nanos, to_nanos).await }
+
+    /// Detached jobs (producer/consumer span pairs sharing `job.id`).
+    async fn jobs(context: &ApiContext, invocation_id: Option<String>, from_nanos: String, to_nanos: String,) -> FieldResult<Vec<resolvers::JobOut>> { resolvers::journeys::jobs(context, invocation_id, from_nanos, to_nanos).await }
+
+    /// Agent conversations (`gen_ai.conversation.id` spans) in one invocation.
+    async fn conversations(context: &ApiContext, invocation_id: String) -> FieldResult<Vec<resolvers::ConversationOut>> { resolvers::journeys::conversations(context, invocation_id).await }
 
     /// One saved dashboard by id.
     async fn dashboard(context: &ApiContext, id: String) -> FieldResult<Option<Dashboard>> { resolvers::dashboards::dashboard(context, id).await }
@@ -228,10 +247,10 @@ impl Query {
     /// graceful absence.
     async fn service_overview(context: &ApiContext, service: String, from_nanos: String, to_nanos: String, step_seconds: Option<i32>,) -> FieldResult<ServiceOverview> { resolvers::services::service_overview(context, service, from_nanos, to_nanos, step_seconds).await }
 
-    /// Run ids observed in telemetry (any tool exporting `parallax.run.id`
+    /// Invocation ids observed in telemetry (any tool exporting `cli.invocation.id`
     /// — e.g. jackin'), newest activity first. Independent of wrapper
     /// registration: this is how external runs appear in the UI.
-    async fn observed_runs(context: &ApiContext, limit: Option<i32>,) -> FieldResult<Vec<ObservedRun>> { resolvers::runs::observed_runs(context, limit).await }
+    async fn observed_invocations(context: &ApiContext, limit: Option<i32>,) -> FieldResult<Vec<ObservedInvocation>> { resolvers::invocations::observed_invocations(context, limit).await }
 
     /// Recent traces (root span + aggregates), newest first.
     async fn recent_traces(context: &ApiContext, limit: Option<i32>,) -> FieldResult<Vec<TraceSummary>> { resolvers::traces::recent_traces(context, limit).await }
@@ -249,9 +268,9 @@ impl Query {
 
     /// The bounded, redacted, hypothesis-ranked evidence bundle — the agent
     /// handoff artifact assembling trace + logs + metric windows together.
-    /// Exactly one anchor: `fingerprint` (issue), `runId`, or `traceId`
+    /// Exactly one anchor: `fingerprint` (issue), `invocationId`, or `traceId`
     /// (spec §8). Null when the anchor does not exist.
-    async fn bundle(context: &ApiContext, fingerprint: Option<String>, run_id: Option<String>, trace_id: Option<String>, max_tokens: Option<i32>,) -> FieldResult<Option<BundleOut>> { resolvers::issues::bundle(context, fingerprint, run_id, trace_id, max_tokens).await }
+    async fn bundle(context: &ApiContext, fingerprint: Option<String>, invocation_id: Option<String>, trace_id: Option<String>, max_tokens: Option<i32>,) -> FieldResult<Option<BundleOut>> { resolvers::issues::bundle(context, fingerprint, invocation_id, trace_id, max_tokens).await }
 
     /// Distinct metric names seen by the store (drives the dashboard
     /// builder), optionally prefix-filtered.
@@ -267,15 +286,15 @@ impl Query {
     async fn services(context: &ApiContext) -> FieldResult<Vec<String>> { resolvers::metrics::services(context).await }
 
     /// Runtime metric lanes, scoped to exactly one service or run.
-    async fn runtime_snapshot(context: &ApiContext, service: Option<String>, run_id: Option<String>, from_nanos: String, to_nanos: String, step_seconds: i32,) -> FieldResult<Vec<RuntimeMetric>> { resolvers::metrics::runtime_snapshot(context, service, run_id, from_nanos, to_nanos, step_seconds).await }
+    async fn runtime_snapshot(context: &ApiContext, service: Option<String>, invocation_id: Option<String>, from_nanos: String, to_nanos: String, step_seconds: i32,) -> FieldResult<Vec<RuntimeMetric>> { resolvers::metrics::runtime_snapshot(context, service, invocation_id, from_nanos, to_nanos, step_seconds).await }
 
     /// Aggregated series for a point metric (gauge/sum); agg one of
     /// avg|min|max|sum|rate. With `groupBy` (an attribute key) one series
     /// per value; without it a single series with a null `groupValue`
-    /// (spec §8 `metricSeries`). `runId` scopes to points whose resource
-    /// carried `parallax.run.id` (run-anchored cross-analytics).
+    /// (spec §8 `metricSeries`). `invocationId` scopes to points whose resource
+    /// carried `cli.invocation.id` (run-anchored cross-analytics).
     #[expect(clippy::too_many_arguments, reason = "GraphQL metric filters are the public query contract")]
-    async fn metric_series(context: &ApiContext, name: String, from_nanos: String, to_nanos: String, service: Option<String>, run_id: Option<String>, group_by: Option<String>, step_seconds: Option<i32>, agg: Option<String>,) -> FieldResult<Vec<Series>> { resolvers::metrics::metric_series(context, name, from_nanos, to_nanos, service, run_id, group_by, step_seconds, agg).await }
+    async fn metric_series(context: &ApiContext, name: String, from_nanos: String, to_nanos: String, service: Option<String>, invocation_id: Option<String>, group_by: Option<String>, step_seconds: Option<i32>, agg: Option<String>,) -> FieldResult<Vec<Series>> { resolvers::metrics::metric_series(context, name, from_nanos, to_nanos, service, invocation_id, group_by, step_seconds, agg).await }
 
     /// Approximate quantile series from a histogram metric (q in 0..=1).
     #[expect(clippy::too_many_arguments, reason = "public GraphQL filter contract")]
@@ -293,7 +312,7 @@ impl Query {
     /// Named saved page states, most recently updated first.
     async fn saved_views(context: &ApiContext, page: Option<String>,) -> FieldResult<Vec<SavedView>> { resolvers::investigations::saved_views(context, page).await }
 
-    async fn runs(context: &ApiContext, limit: Option<i32>) -> FieldResult<Vec<Run>> { resolvers::runs::runs(context, limit).await }
+    async fn invocations(context: &ApiContext, limit: Option<i32>) -> FieldResult<Vec<Invocation>> { resolvers::invocations::invocations(context, limit).await }
 
 }
 
@@ -307,8 +326,8 @@ impl Mutation {
     /// issue (spec §8: `Issue!`).
     async fn issue_set_status(context: &ApiContext, fingerprint: String, status: String,) -> FieldResult<Issue> { resolvers::issues::issue_set_status(context, fingerprint, status).await }
 
-    /// Register a run (the CLI wrapper calls this before launching).
-    async fn run_start(context: &ApiContext, run_id: String, command: Option<String>, started_at_nanos: String,) -> FieldResult<bool> { resolvers::runs::run_start(context, run_id, command, started_at_nanos).await }
+    /// Register an invocation (the CLI wrapper calls this before launching).
+    async fn invocation_start(context: &ApiContext, invocation_id: String, command: Option<String>, app_mode: Option<String>, started_at_nanos: String,) -> FieldResult<bool> { resolvers::invocations::invocation_start(context, invocation_id, command, app_mode, started_at_nanos).await }
 
     /// Create or update a user dashboard; returns the saved dashboard
     /// (spec §8: `Dashboard!`).
@@ -329,8 +348,8 @@ impl Mutation {
     /// Delete a named saved page state.
     async fn saved_view_delete(context: &ApiContext, id: String) -> FieldResult<bool> { resolvers::investigations::saved_view_delete(context, id).await }
 
-    /// Close a run with the wrapped command's exit code.
-    async fn run_finish(context: &ApiContext, run_id: String, ended_at_nanos: String, exit_code: i32,) -> FieldResult<bool> { resolvers::runs::run_finish(context, run_id, ended_at_nanos, exit_code).await }
+    /// Close an invocation with the wrapped command's exit code and outcome.
+    async fn invocation_finish(context: &ApiContext, invocation_id: String, ended_at_nanos: String, exit_code: i32, outcome: Option<String>,) -> FieldResult<bool> { resolvers::invocations::invocation_finish(context, invocation_id, ended_at_nanos, exit_code, outcome).await }
 
 }
 

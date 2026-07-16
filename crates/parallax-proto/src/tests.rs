@@ -24,7 +24,7 @@ fn generated_constants_survive_otlp_protobuf_roundtrip() -> Result<(), String> {
                     span_id: vec![2; 8],
                     name: "semconv-wire-contract".into(),
                     attributes: vec![
-                        string_attribute(parallax_semconv::PARALLAX_RUN_ID, "run-fixture"),
+                        string_attribute(parallax_semconv::CLI_INVOCATION_ID, "run-fixture"),
                         string_attribute(parallax_semconv::TEST_CASE_RESULT_STATUS, "fail"),
                         string_attribute(parallax_semconv::GRAPHQL_FIELD_PATH, "Query.product"),
                     ],
@@ -54,7 +54,7 @@ fn generated_constants_survive_otlp_protobuf_roundtrip() -> Result<(), String> {
         .map(string_value)
         .collect::<Result<Vec<_>, _>>()?;
     let expected_attributes = vec![
-        (parallax_semconv::PARALLAX_RUN_ID, "run-fixture"),
+        (parallax_semconv::CLI_INVOCATION_ID, "run-fixture"),
         (parallax_semconv::TEST_CASE_RESULT_STATUS, "fail"),
         (parallax_semconv::GRAPHQL_FIELD_PATH, "Query.product"),
     ];

@@ -22,18 +22,104 @@ pub const FIELD_KEYS_CAP: usize = 200;
 pub const FIELD_TOP_VALUES_CAP: usize = 10;
 pub const SERVICE_MAP_TRACE_CAP: usize = 100;
 
-/// A run id observed in telemetry (spans/logs carrying `parallax.run.id`),
-/// whether or not the run was registered through the CLI wrapper. This is
-/// how externally-instrumented tools (e.g. jackin') appear in the runs UI.
+/// An invocation id observed in telemetry (spans/logs carrying
+/// `cli.invocation.id`), whether or not it was registered through the CLI
+/// wrapper. This is how externally-instrumented tools (e.g. jackin') appear
+/// in the invocations UI.
 #[derive(Debug, Clone)]
-pub struct ObservedRun {
-    pub run_id: String,
+pub struct ObservedInvocation {
+    pub invocation_id: String,
     pub first_nanos: u128,
     pub last_nanos: u128,
     pub span_count: u64,
     pub log_count: u64,
-    /// One service name seen under this run (display hint).
+    /// One service name seen under this invocation (display hint).
     pub service: String,
+    /// Latest `cli.command.name` seen on this invocation's root spans.
+    pub last_command: Option<String>,
+    /// `app.mode` seen on this invocation's root spans.
+    pub app_mode: Option<String>,
+}
+
+/// One interactive session inside an invocation, paired from
+/// `session.start` / `session.end` log events. An open session has no end.
+#[derive(Debug, Clone)]
+pub struct InvocationSession {
+    pub session_id: String,
+    pub previous_session_id: Option<String>,
+    pub start_nanos: u128,
+    pub end_nanos: Option<u128>,
+}
+
+/// One screen visit paired from `ui.screen.entered` / `ui.screen.exited`
+/// events by `ui.screen.visit.id`.
+#[derive(Debug, Clone)]
+pub struct ScreenVisit {
+    pub screen_id: String,
+    pub visit_id: String,
+    pub session_id: Option<String>,
+    pub navigation_sequence: Option<i64>,
+    pub transition_reason: Option<String>,
+    pub entered_nanos: u128,
+    pub exited_nanos: Option<u128>,
+}
+
+/// One bounded user action (`ui.action` root span).
+#[derive(Debug, Clone)]
+pub struct UiAction {
+    pub name: String,
+    pub screen_id: Option<String>,
+    pub session_id: Option<String>,
+    pub trace_id: String,
+    pub start_nanos: u128,
+    pub duration_ns: u128,
+    pub outcome: Option<String>,
+    pub has_error: bool,
+}
+
+/// Aggregate of one `background.cycle.name` family of periodic daemon spans.
+#[derive(Debug, Clone)]
+pub struct BackgroundCycleSummary {
+    pub name: String,
+    pub count: u64,
+    pub error_count: u64,
+    pub p50_ns: Option<f64>,
+    pub p95_ns: Option<f64>,
+    pub last_nanos: u128,
+    pub last_trace_id: String,
+}
+
+/// One consumer attempt of a detached job.
+#[derive(Debug, Clone)]
+pub struct JobAttempt {
+    pub start_nanos: u128,
+    pub duration_ns: u128,
+    pub outcome: Option<String>,
+    pub has_error: bool,
+    pub trace_id: String,
+}
+
+/// One detached job: producer span plus consumer attempts sharing `job.id`.
+#[derive(Debug, Clone)]
+pub struct JobSummary {
+    pub job_id: String,
+    pub job_type: Option<String>,
+    pub produced_nanos: Option<u128>,
+    pub attempts: Vec<JobAttempt>,
+    pub last_trace_id: String,
+}
+
+/// One agent conversation (`gen_ai.conversation.id`) summary.
+#[derive(Debug, Clone)]
+pub struct ConversationSummary {
+    pub conversation_id: String,
+    pub agent_name: Option<String>,
+    pub provider_name: Option<String>,
+    pub first_nanos: u128,
+    pub last_nanos: u128,
+    pub span_count: u64,
+    pub input_tokens: Option<f64>,
+    pub output_tokens: Option<f64>,
 }
 
 /// Result of a raw read-only SQL query against the engine (the GreptimeDB
@@ -313,7 +399,7 @@ pub fn attribute_compare_key_allowed(key: &str) -> bool {
 
     if matches!(
         compact.as_str(),
-        "trace_id" | "span_id" | "run_id" | "user_id" | "session_id" | "enduser_id"
+        "trace_id" | "span_id" | "invocation_id" | "user_id" | "session_id" | "enduser_id"
     ) {
         return false;
     }
@@ -325,7 +411,7 @@ pub fn attribute_compare_key_allowed(key: &str) -> bool {
         || lower.ends_with("_id")
         || compact.contains("trace_id")
         || compact.contains("span_id")
-        || compact.contains("run_id")
+        || compact.contains("invocation_id")
         || compact.contains("user_id")
         || compact.contains("session_id")
         || lower.contains("uuid")

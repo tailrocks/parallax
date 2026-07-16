@@ -116,7 +116,7 @@ pub fn derive_from_traces(request: &ExportTraceServiceRequest) -> Vec<ErrorEvent
                                     attr_str(&span.attributes, semconv::EXCEPTION_STACKTRACE)
                                         .map(str::to_string),
                                     u128::from(span.end_time_unix_nano),
-                                    attr_str(&span.attributes, semconv::JACKIN_OPERATION)
+                                    attr_str(&span.attributes, semconv::CLI_COMMAND_NAME)
                                         .map(str::to_string),
                                 )
                             })
@@ -137,9 +137,9 @@ pub fn derive_from_traces(request: &ExportTraceServiceRequest) -> Vec<ErrorEvent
                                 attr_str(&event.attributes, semconv::EXCEPTION_STACKTRACE)
                                     .map(str::to_string),
                                 u128::from(event.time_unix_nano),
-                                attr_str(&event.attributes, semconv::JACKIN_OPERATION)
+                                attr_str(&event.attributes, semconv::CLI_COMMAND_NAME)
                                     .or_else(|| {
-                                        attr_str(&span.attributes, semconv::JACKIN_OPERATION)
+                                        attr_str(&span.attributes, semconv::CLI_COMMAND_NAME)
                                     })
                                     .map(str::to_string),
                             ))
@@ -192,7 +192,7 @@ pub fn derive_from_logs(rows: &[LogRow]) -> Vec<ErrorEventRow> {
             continue;
         }
         let structured_error_type = json_attr_str(&row.attributes, semconv::ERROR_TYPE);
-        let operation = json_attr_str(&row.attributes, semconv::JACKIN_OPERATION);
+        let operation = json_attr_str(&row.attributes, semconv::CLI_COMMAND_NAME);
         let (source, error_type, message, stacktrace) = if has_exception_attrs {
             (
                 ErrorSource::LogException,

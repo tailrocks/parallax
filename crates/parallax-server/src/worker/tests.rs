@@ -8,7 +8,7 @@ use parallax_proto::metrics::{
 };
 use parallax_proto::resource::Resource;
 use parallax_proto::trace::{ResourceSpans, ScopeSpans, Span, Status, span, status};
-use parallax_storage::adapter::{MetricAnalyticsStore, RunStore, TraceStore};
+use parallax_storage::adapter::{MetricAnalyticsStore, InvocationStore, TraceStore};
 use parallax_test_support::builders::MemoryStore;
 use serde_json::json;
 use tokio::sync::oneshot;
@@ -50,7 +50,7 @@ fn metrics_request_with_exemplar() -> ExportMetricsServiceRequest {
             resource: Some(Resource {
                 attributes: vec![
                     string_kv("service.name", "checkout"),
-                    string_kv("parallax.run.id", "run-a"),
+                    string_kv("cli.invocation.id", "run-a"),
                 ],
                 ..Default::default()
             }),
@@ -86,7 +86,7 @@ fn trace_request_with_run_and_error() -> ExportTraceServiceRequest {
             resource: Some(Resource {
                 attributes: vec![
                     string_kv("service.name", "checkout"),
-                    string_kv("parallax.run.id", "run-failure-oracle"),
+                    string_kv("cli.invocation.id", "run-failure-oracle"),
                 ],
                 ..Default::default()
             }),
@@ -166,7 +166,7 @@ async fn characterize_failure_after(stage: FailureStage) -> (usize, usize, u64, 
     } else {
         0
     };
-    let runs = metadata.runs(10).await.expect("runs").len();
+    let runs = metadata.invocations(10).await.expect("invocations").len();
     (broadcasts, spans, issue_count, errors, runs)
 }
 
@@ -365,7 +365,7 @@ async fn metric_exemplar_round_trips_through_worker_and_store() {
     assert_eq!(rows[0].value, 120.0);
     assert_eq!(rows[0].trace_id, "abababababababababababababababab");
     assert_eq!(rows[0].span_id, "cdcdcdcdcdcdcdcd");
-    assert_eq!(rows[0].run_id.as_deref(), Some("run-a"));
+    assert_eq!(rows[0].invocation_id.as_deref(), Some("run-a"));
     assert_eq!(rows[0].attributes["route"], "/checkout");
 }
 

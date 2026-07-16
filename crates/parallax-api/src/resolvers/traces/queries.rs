@@ -83,14 +83,14 @@ pub(crate) async fn trace_compare(
     Ok(TraceDiff(trace_analysis::compare(&spans_a, &spans_b)))
 }
 
-pub(crate) async fn traces_by_run(
+pub(crate) async fn traces_by_invocation(
     context: &ApiContext,
-    run_id: String,
+    invocation_id: String,
     limit: Option<i32>,
 ) -> FieldResult<Vec<TraceSummary>> {
     let spans = context
         .store
-        .spans_by_run(&run_id, MAX_ROWS, retained_recent_range())
+        .spans_by_invocation(&invocation_id, MAX_ROWS, retained_recent_range())
         .await
         .map_err(crate::internal_field_err)?;
     let mut by_trace: Vec<(String, Vec<model::SpanRow>)> = Vec::new();

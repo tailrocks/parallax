@@ -5,13 +5,13 @@ fn preserves_load_bearing_wire_names() -> Result<(), String> {
     let actual = (
         SERVICE_NAME,
         EVENT_NAME,
-        PARALLAX_RUN_ID,
+        CLI_INVOCATION_ID,
         BUNDLE_WINDOW_METRICS,
     );
     let expected = (
         "service.name",
         "event.name",
-        "parallax.run.id",
+        "cli.invocation.id",
         &[
             "process.cpu.utilization",
             "process.memory.usage",

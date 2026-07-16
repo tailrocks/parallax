@@ -45,10 +45,10 @@ pub fn metric_group_label_allowed(label: &str) -> bool {
         "trace.id" | "run.id" | "user.id" | "session.id"
     ) && !matches!(
         compact.as_str(),
-        "trace_id" | "run_id" | "user_id" | "session_id"
+        "trace_id" | "invocation_id" | "user_id" | "session_id"
     ) && !matches!(
         leaf_compact.as_str(),
-        "trace_id" | "run_id" | "user_id" | "session_id"
+        "trace_id" | "invocation_id" | "user_id" | "session_id"
     )
 }
 
@@ -71,12 +71,12 @@ pub fn field_key_identifier_like(key: &str) -> bool {
 
     matches!(
         leaf_compact.as_str(),
-        "id" | "trace_id" | "span_id" | "run_id" | "user_id" | "session_id" | "enduser_id"
+        "id" | "trace_id" | "span_id" | "invocation_id" | "user_id" | "session_id" | "enduser_id"
     ) || lower.ends_with(".id")
         || lower.ends_with("_id")
         || compact.contains("trace_id")
         || compact.contains("span_id")
-        || compact.contains("run_id")
+        || compact.contains("invocation_id")
         || compact.contains("user_id")
         || compact.contains("session_id")
         || lower.contains("uuid")

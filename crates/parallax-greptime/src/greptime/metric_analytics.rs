@@ -6,7 +6,7 @@ impl MetricAnalyticsStore for GreptimeStore {
         &self,
         name: &str,
         service: Option<&str>,
-        run_id: Option<&str>,
+        invocation_id: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
         agg: MetricAgg,
@@ -18,10 +18,10 @@ impl MetricAnalyticsStore for GreptimeStore {
             MetricAgg::Max => "max",
             MetricAgg::Sum | MetricAgg::Rate => "sum",
         };
-        // Run-scoped reads hit the `run_metric_points` extension table (ns time
+        // Run-scoped reads hit the `invocation_metric_points` extension table (ns time
         // index, `value` column); aggregate reads hit the per-metric native
         // table (ms `greptime_timestamp`, `greptime_value`, `service_name` tag).
-        let rows = if let Some(run_id) = run_id {
+        let rows = if let Some(invocation_id) = invocation_id {
             let service_clause = service
                 .map(|svc| format!(r#" AND "service" = '{}'"#, escape(svc)))
                 .unwrap_or_default();
@@ -29,11 +29,11 @@ impl MetricAnalyticsStore for GreptimeStore {
             self.sql_arrow_lenient(&format!(
                 r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "ts") AS BIGINT)
                           AS "bucket_ns", {sql_agg}("value") AS "agg_value"
-                   FROM run_metric_points
-                   WHERE {name_filter} AND "run_id" = '{}'{service_clause}
+                   FROM invocation_metric_points
+                   WHERE {name_filter} AND "invocation_id" = '{}'{service_clause}
                      AND "ts" >= {} AND "ts" <= {}
                    GROUP BY "bucket_ns" ORDER BY "bucket_ns""#,
-                escape(run_id),
+                escape(invocation_id),
                 sql_ts(*range.start()),
                 sql_ts(*range.end()),
             ))
@@ -58,7 +58,7 @@ impl MetricAnalyticsStore for GreptimeStore {
             .await?
         };
         // Run-metric buckets are already nanos; native metric buckets are ms.
-        let scale = if run_id.is_some() { 1 } else { 1_000_000 };
+        let scale = if invocation_id.is_some() { 1 } else { 1_000_000 };
         let mut series: Vec<SeriesPoint> = rows
             .iter()
             .map(|row| SeriesPoint {
@@ -152,7 +152,7 @@ impl MetricAnalyticsStore for GreptimeStore {
         let rows = self
             .sql_lenient(&format!(
                 r#"SELECT CAST("ts" AS BIGINT) AS "ts_nanos",
-                          "service", "name", "value", "trace_id", "span_id", "run_id",
+                          "service", "name", "value", "trace_id", "span_id", "invocation_id",
                           json_to_string("attributes")
                    FROM {METRIC_EXEMPLARS_TABLE}
                    WHERE "name" = '{}' AND "ts" >= {} AND "ts" <= {}{service_clause}
@@ -172,7 +172,7 @@ impl MetricAnalyticsStore for GreptimeStore {
                 value: f64_at(row, 3),
                 trace_id: str_at(row, 4),
                 span_id: str_at(row, 5),
-                run_id: opt_str_at(row, 6),
+                invocation_id: opt_str_at(row, 6),
                 attributes: json_at(row, 7),
             })
             .collect())

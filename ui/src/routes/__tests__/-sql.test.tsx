@@ -53,9 +53,13 @@ describe("SQL result helpers", () => {
         params: { traceId: "trace-a" },
       }
     )
-    expect(targetForCell('"parallax.run.id"', "run-a", {})).toEqual({
+    expect(targetForCell('"cli.invocation.id"', "run-a", {})).toEqual({
       to: "/runs/$runId",
       params: { runId: "run-a" },
+    })
+    expect(targetForCell("invocation_id", "run-b", {})).toEqual({
+      to: "/runs/$runId",
+      params: { runId: "run-b" },
     })
     expect(targetForCell("span_id", "span-a", {})).toBeNull()
     expect(targetForCell("trace_id", "null", {})).toBeNull()
@@ -65,7 +69,7 @@ describe("SQL result helpers", () => {
     const result = {
       columns: [
         "trace_id",
-        '"parallax.run.id"',
+        '"cli.invocation.id"',
         "service_name",
         "fingerprint",
         "span_id",

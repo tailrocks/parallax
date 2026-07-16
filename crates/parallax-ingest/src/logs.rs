@@ -66,7 +66,6 @@ pub fn normalize_logs(request: &ExportLogsServiceRequest) -> Vec<LogRow> {
             .as_ref()
             .map_or(&[][..], |r| r.attributes.as_slice());
         let service = service_name(resource_attrs);
-        let run_id = run_id(resource_attrs);
         let resource_json = attributes_to_json(resource_attrs);
         for sl in &rl.scope_logs {
             let scope_name = sl
@@ -98,7 +97,8 @@ pub fn normalize_logs(request: &ExportLogsServiceRequest) -> Vec<LogRow> {
                     body,
                     trace_id: hex(&record.trace_id),
                     span_id: hex(&record.span_id),
-                    run_id: run_id.clone(),
+                    invocation_id: invocation_id(&record.attributes, resource_attrs),
+                    session_id: session_id(&record.attributes, resource_attrs),
                     scope_name: scope_name.clone(),
                     attributes: attributes_to_json(&record.attributes),
                     resource: resource_json.clone(),

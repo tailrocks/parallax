@@ -18,7 +18,7 @@ impl RunSessionSpan {
     fn start(
         endpoint: &str,
         protocol: &str,
-        run_id: &str,
+        invocation_id: &str,
         command: Option<&str>,
     ) -> anyhow::Result<Self> {
         let exporter = if protocol == OTLP_HTTP_PROTOCOL {
@@ -43,8 +43,8 @@ impl RunSessionSpan {
         let tracer = provider.tracer("parallax-cli");
         let mut span = tracer.start("parallax.run.session");
         span.set_attribute(KeyValue::new(
-            parallax_semconv::PARALLAX_RUN_ID,
-            run_id.to_string(),
+            parallax_semconv::CLI_INVOCATION_ID,
+            invocation_id.to_string(),
         ));
         if let Some(command) = command {
             span.set_attribute(KeyValue::new("process.command", command.to_string()));
@@ -88,18 +88,18 @@ pub(super) fn generated_traceparent() -> String {
 /// Default: child telemetry → Parallax's own receiver. Compare mode (forward set
 /// via flag or `PARALLAX_OTLP_FORWARD`): child telemetry → the collector (Rotel),
 /// which fans it out to every backend incl. Parallax for side-by-side comparison.
-pub(crate) async fn run_start(
+pub(crate) async fn invocation_start(
     client: &Client,
     command: Vec<String>,
     forward: Option<String>,
     print_env: bool,
 ) -> anyhow::Result<i32> {
-    let run_id = new_run_id();
+    let invocation_id = new_invocation_id();
     let parallax_endpoints = parallax_endpoints_from_server(client).await?;
     let fwd = resolve_forward(forward.as_deref(), &parallax_endpoints.grpc)?;
-    let attrs = forward_resource_attrs(&run_id, fwd.compare);
+    let attrs = forward_resource_attrs(&invocation_id, fwd.compare);
     let mut pairs = otel_env_pairs(&fwd.endpoint, fwd.protocol, &attrs);
-    pairs.push(("PARALLAX_RUN_ID", run_id.clone()));
+    pairs.push(("CLI_INVOCATION_ID", invocation_id.clone()));
     pairs.push((
         "PARALLAX_OTLP_HTTP_TRACES_ENDPOINT",
         http_traces_endpoint(&fwd, &parallax_endpoints.http_traces),
@@ -116,11 +116,11 @@ pub(crate) async fn run_start(
 
     let command_str = (!command.is_empty()).then(|| command.join(" "));
     let session =
-        RunSessionSpan::start(&fwd.endpoint, fwd.protocol, &run_id, command_str.as_deref())?;
+        RunSessionSpan::start(&fwd.endpoint, fwd.protocol, &invocation_id, command_str.as_deref())?;
     if let Err(error) = client
         .graphql(&format!(
-            r#"mutation {{ runStart(runId: "{}", command: {}, startedAtNanos: "{}") }}"#,
-            gql_str(&run_id),
+            r#"mutation {{ invocationStart(invocationId: "{}", command: {}, startedAtNanos: "{}") }}"#,
+            gql_str(&invocation_id),
             command_str
                 .as_deref()
                 .map(|c| format!("\"{}\"", gql_str(c)))
@@ -139,12 +139,12 @@ pub(crate) async fn run_start(
         for (key, value) in &pairs {
             println!("export {key}={value}");
         }
-        println!("# run id: {run_id}  (finish with: parallax run finish {run_id} <exit-code>)");
+        println!("# invocation id: {invocation_id}  (finish with: parallax run finish {invocation_id} <exit-code>)");
         session.finish(0);
         return Ok(0);
     }
 
-    execute_child(client, &command, &pairs, &fwd, session, &run_id).await
+    execute_child(client, &command, &pairs, &fwd, session, &invocation_id).await
 }
 
 async fn execute_child(
@@ -153,10 +153,10 @@ async fn execute_child(
     pairs: &[(&str, String)],
     fwd: &Forward,
     session: RunSessionSpan,
-    run_id: &str,
+    invocation_id: &str,
 ) -> anyhow::Result<i32> {
     // Wrapper mode: inject env, run the child, capture the exit code.
-    println!("Parallax run id: {run_id}");
+    println!("Parallax invocation id: {invocation_id}");
     println!("command: {}", command.join(" "));
     if fwd.compare {
         println!(
@@ -168,14 +168,14 @@ async fn execute_child(
     } else {
         println!("telemetry → Parallax {}", fwd.endpoint);
     }
-    println!("live: parallax run watch {run_id}");
+    println!("live: parallax run watch {invocation_id}");
     let mut cmd = tokio::process::Command::new(&command[0]);
     cmd.args(&command[1..]);
     for (key, value) in pairs {
         cmd.env(key, value);
     }
-    // Always attempt runFinish even when the child fails to spawn, so the run
-    // does not stay stuck in `running` forever.
+    // Always attempt invocationFinish even when the child fails to spawn, so
+    // the invocation does not stay stuck in `running` forever.
     let status = cmd.status().await;
     let exit_code = match &status {
         Ok(status) => status.code().unwrap_or(-1),
@@ -184,53 +184,53 @@ async fn execute_child(
 
     let finish = client
         .graphql(&format!(
-            r#"mutation {{ runFinish(runId: "{}", endedAtNanos: "{}", exitCode: {exit_code}) }}"#,
-            gql_str(run_id),
+            r#"mutation {{ invocationFinish(invocationId: "{}", endedAtNanos: "{}", exitCode: {exit_code}) }}"#,
+            gql_str(invocation_id),
             now_nanos()
         ))
         .await;
 
     session.finish(exit_code);
 
-    status?; // propagate spawn error AFTER finishing the run
+    status?; // propagate spawn error AFTER finishing the invocation
     finish?;
-    println!("Parallax run {run_id} finished with exit code {exit_code}");
-    println!("inspect: parallax run inspect {run_id}   issues: parallax issue list");
+    println!("Parallax invocation {invocation_id} finished with exit code {exit_code}");
+    println!("inspect: parallax run inspect {invocation_id}   issues: parallax issue list");
     Ok(exit_code)
 }
 
-pub(crate) async fn run_finish(c: &Client, id: &str, code: i32) -> anyhow::Result<()> {
+pub(crate) async fn invocation_finish(c: &Client, id: &str, code: i32) -> anyhow::Result<()> {
     c.graphql(&format!(
-        r#"mutation {{ runFinish(runId: "{}", endedAtNanos: "{}", exitCode: {code}) }}"#,
+        r#"mutation {{ invocationFinish(invocationId: "{}", endedAtNanos: "{}", exitCode: {code}) }}"#,
         gql_str(id),
         now_nanos()
     ))
     .await?;
-    println!("run {id} finished ({code})");
+    println!("invocation {id} finished ({code})");
     Ok(())
 }
 
 pub(crate) async fn run_list(client: &Client) -> anyhow::Result<()> {
     let response = client
-        .graphql(r#"{ runs { runId command status exitCode startedAtNanos } }"#)
+        .graphql(r#"{ invocations { invocationId command status exitCode startedAtNanos } }"#)
         .await?;
     let runs = response
-        .pointer("/data/runs")
+        .pointer("/data/invocations")
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
     if runs.is_empty() {
-        println!("no runs yet — start one with: parallax run start -- <command>");
+        println!("no invocations yet — start one with: parallax run start -- <command>");
         return Ok(());
     }
     println!(
         "{:<24} {:<10} {:>5}  {:<10} command",
-        "RUN", "STATUS", "EXIT", "STARTED"
+        "INVOCATION", "STATUS", "EXIT", "STARTED"
     );
     for run in runs {
         println!(
             "{:<24} {:<10} {:>5}  {:<10} {}",
-            run["runId"].as_str().unwrap_or("-"),
+            run["invocationId"].as_str().unwrap_or("-"),
             run["status"].as_str().unwrap_or("-"),
             run["exitCode"]
                 .as_i64()
@@ -243,20 +243,20 @@ pub(crate) async fn run_list(client: &Client) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// `parallax run inspect <run_id>` — the run's record plus its derived
-/// counts and grouped issues.
-pub(crate) async fn run_inspect(client: &Client, run_id: &str) -> anyhow::Result<()> {
+/// `parallax run inspect <invocation_id>` — the invocation record plus its
+/// derived counts and grouped issues.
+pub(crate) async fn run_inspect(client: &Client, invocation_id: &str) -> anyhow::Result<()> {
     let response = client
         .graphql(&format!(
-            r#"{{ run(runId: "{}") {{ runId command status exitCode startedAtNanos endedAtNanos
+            r#"{{ invocation(invocationId: "{}") {{ invocationId command status exitCode startedAtNanos endedAtNanos
                  errorCount traceCount issues {{ fingerprint title }} }} }}"#,
-            gql_str(run_id)
+            gql_str(invocation_id)
         ))
         .await?;
-    let Some(run) = response.pointer("/data/run").filter(|v| !v.is_null()) else {
-        anyhow::bail!("run {run_id} not found");
+    let Some(run) = response.pointer("/data/invocation").filter(|v| !v.is_null()) else {
+        anyhow::bail!("invocation {invocation_id} not found");
     };
-    println!("run {run_id}");
+    println!("invocation {invocation_id}");
     println!("  status:  {}", run["status"].as_str().unwrap_or("-"));
     println!("  command: {}", run["command"].as_str().unwrap_or("-"));
     println!(
@@ -271,7 +271,7 @@ pub(crate) async fn run_inspect(client: &Client, run_id: &str) -> anyhow::Result
     if let Some(issues) = run["issues"].as_array()
         && !issues.is_empty()
     {
-        println!("issues in this run:");
+        println!("issues in this invocation:");
         for issue in issues {
             println!(
                 "  {}  {}",
@@ -281,20 +281,20 @@ pub(crate) async fn run_inspect(client: &Client, run_id: &str) -> anyhow::Result
         }
         println!("context: parallax issue context <fingerprint>");
     }
-    println!("bundle: parallax run bundle {run_id}   traces: parallax trace inspect <trace_id>");
+    println!("bundle: parallax run bundle {invocation_id}   traces: parallax trace inspect <trace_id>");
     Ok(())
 }
 
-/// `parallax run bundle <run_id>` — the run-anchored evidence bundle
+/// `parallax run bundle <invocation_id>` — the run-anchored evidence bundle
 /// (scope §2.4: the run model's bundle).
 pub(crate) async fn run_bundle(c: &Client, id: &str, fmt: OutputFormat) -> anyhow::Result<()> {
     let query = match fmt {
         OutputFormat::Markdown => format!(
-            r#"{{ bundle(runId: "{}") {{ markdown canonicalHash }} }}"#,
+            r#"{{ bundle(invocationId: "{}") {{ markdown canonicalHash }} }}"#,
             gql_str(id)
         ),
         OutputFormat::Json => format!(
-            r#"{{ bundle(runId: "{}") {{ json canonicalHash }} }}"#,
+            r#"{{ bundle(invocationId: "{}") {{ json canonicalHash }} }}"#,
             gql_str(id)
         ),
     };
@@ -308,32 +308,32 @@ pub(crate) async fn run_bundle(c: &Client, id: &str, fmt: OutputFormat) -> anyho
     Ok(())
 }
 
-/// `parallax run agent <run_id>` — run-scoped agent-session projection
+/// `parallax run agent <invocation_id>` — run-scoped agent-session projection
 /// (tool steps, token totals). Null when no agent spans were detected.
 pub(crate) async fn run_agent_session(
     client: &Client,
-    run_id: &str,
+    invocation_id: &str,
     format: OutputFormat,
 ) -> anyhow::Result<()> {
     let response = client
         .graphql(&format!(
-            r#"{{ agentSession(runId: "{}") {{
+            r#"{{ agentSession(invocationId: "{}") {{
                 rootSpanId totalInputTokens totalOutputTokens errorCount truncated
                 steps {{
                   spanId traceId kind name startNanos durationNs isError
                   genAiOperation inputTokens outputTokens
                 }}
             }} }}"#,
-            gql_str(run_id)
+            gql_str(invocation_id)
         ))
         .await?;
     let Some(session) = response
         .pointer("/data/agentSession")
         .filter(|v| !v.is_null())
     else {
-        anyhow::bail!("no agent session detected for run {run_id}");
+        anyhow::bail!("no agent session detected for run {invocation_id}");
     };
-    let (stdout, stderr) = render_agent_session(format, run_id, session);
+    let (stdout, stderr) = render_agent_session(format, invocation_id, session);
     print!("{stdout}");
     eprint!("{stderr}");
     Ok(())

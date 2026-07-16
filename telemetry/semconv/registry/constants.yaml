@@ -4,10 +4,70 @@ groups:
     brief: Parallax-owned cross-repository semantic-convention attributes.
     stability: stable
     attributes:
-      - id: parallax.run.id
+      - id: cli.invocation.id
         type: string
-        brief: Stable identifier for the Parallax run that emitted a signal.
-        examples: [run-20260714-0001]
+        brief: Opaque unique identifier for one top-level CLI process invocation; the correlation domain for CLI-application telemetry.
+        examples: [7f9c1c9e-2f89-4f6e-9d5a-0b53a1c0f111]
+        stability: stable
+      - id: cli.command.name
+        type: string
+        brief: Bounded registry name of the executed CLI command, dotted subcommand path.
+        examples: [workspace.env.set]
+        stability: stable
+      - id: app.mode
+        type: string
+        brief: Execution mode of the CLI application invocation.
+        examples: [one_shot, interactive, daemon, capsule]
+        stability: stable
+      - id: session.previous_id
+        type: string
+        brief: Identifier of the interactive session that preceded the current one within an invocation.
+        examples: [3a1f7b3e-0f7a-4a5f-8f9f-1d2e3c4b5a69]
+        stability: stable
+      - id: app.screen.id
+        type: string
+        brief: Stable identifier of the interactive screen the user is on.
+        examples: [dashboard]
+        stability: stable
+      - id: ui.action.name
+        type: string
+        brief: Bounded name of a user-initiated interactive action.
+        examples: [submit_form]
+        stability: stable
+      - id: ui.screen.visit.id
+        type: string
+        brief: Unique identifier pairing a screen entered/exited event pair into one visit.
+        examples: [visit-000042]
+        stability: stable
+      - id: ui.navigation.sequence
+        type: int
+        brief: Monotonic ordinal of a screen visit within an invocation's navigation history.
+        examples: [4]
+        stability: stable
+      - id: ui.transition.reason
+        type: string
+        brief: Why the screen transition happened.
+        examples: [user_navigation, error_redirect]
+        stability: stable
+      - id: background.cycle.name
+        type: string
+        brief: Bounded name of substantive periodic daemon work.
+        examples: [sync.remotes]
+        stability: stable
+      - id: job.id
+        type: string
+        brief: Unique identifier of a detached job linking producer and consumer spans.
+        examples: [job-8c1d2e3f]
+        stability: stable
+      - id: job.type
+        type: string
+        brief: Bounded type name of a detached job.
+        examples: [index.rebuild]
+        stability: stable
+      - id: outcome
+        type: string
+        brief: Bounded result taxonomy for commands, actions, cycles, and jobs.
+        examples: [success, failure, error, timeout, skip, cancellation]
         stability: stable
       - id: parallax.lab
         type: string

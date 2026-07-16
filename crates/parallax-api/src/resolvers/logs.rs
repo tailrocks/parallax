@@ -38,8 +38,8 @@ impl LogRecord {
     fn span_id(&self) -> &str {
         &self.0.span_id
     }
-    fn run_id(&self) -> Option<&str> {
-        self.0.run_id.as_deref()
+    fn invocation_id(&self) -> Option<&str> {
+        self.0.invocation_id.as_deref()
     }
     fn scope_name(&self) -> &str {
         &self.0.scope_name
@@ -61,14 +61,14 @@ pub(crate) async fn logs_by_trace(
     Ok(logs.iter().cloned().map(LogRecord).collect())
 }
 
-pub(crate) async fn logs_by_run(
+pub(crate) async fn logs_by_invocation(
     context: &ApiContext,
-    run_id: String,
+    invocation_id: String,
     limit: Option<i32>,
 ) -> FieldResult<Vec<LogRecord>> {
     let logs = context
         .store
-        .logs_by_run(&run_id, clamp_limit(limit, 500))
+        .logs_by_invocation(&invocation_id, clamp_limit(limit, 500))
         .await
         .map_err(crate::internal_field_err)?;
     Ok(logs.into_iter().map(LogRecord).collect())
@@ -78,7 +78,7 @@ pub(crate) async fn logs_by_run(
 pub(crate) async fn logs(
     context: &ApiContext,
     trace_id: Option<String>,
-    run_id: Option<String>,
+    invocation_id: Option<String>,
     service: Option<String>,
     from_nanos: Option<String>,
     to_nanos: Option<String>,
@@ -97,15 +97,15 @@ pub(crate) async fn logs(
         None => u128::MAX,
     };
     let limit = clamp_limit(limit, 500);
-    let mut logs = match (&trace_id, &run_id) {
+    let mut logs = match (&trace_id, &invocation_id) {
         (Some(trace_id), _) => context
             .store
             .logs_by_trace(trace_id)
             .await
             .map_err(crate::internal_field_err)?,
-        (None, Some(run_id)) => context
+        (None, Some(invocation_id)) => context
             .store
-            .logs_by_run(run_id, MAX_ROWS)
+            .logs_by_invocation(invocation_id, MAX_ROWS)
             .await
             .map_err(crate::internal_field_err)?,
         (None, None) => {

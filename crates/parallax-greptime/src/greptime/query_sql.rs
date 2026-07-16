@@ -97,7 +97,7 @@ impl GreptimeStore {
                  SELECT {} AS "svc" FROM opentelemetry_logs
                  WHERE "timestamp" >= {} AND "timestamp" <= {}
                  UNION ALL
-                 SELECT "service" AS "svc" FROM run_metric_points
+                 SELECT "service" AS "svc" FROM invocation_metric_points
                  WHERE "ts" >= {} AND "ts" <= {}
                ) WHERE "svc" IS NOT NULL AND "svc" != ''
                ORDER BY "svc""#,
@@ -166,14 +166,15 @@ impl GreptimeStore {
             r#"SELECT CAST("timestamp" AS BIGINT) AS "ts_nanos",
                           {} AS "service",
                           "severity_number", "severity_text", "body", "trace_id", "span_id",
-                          {}, "scope_name",
+                          {}, {}, "scope_name",
                           "log_attributes",
                           "resource_attributes",
                           json_get_string("log_attributes", '{}') AS "event_name",
                           json_get_int("log_attributes", '{}') AS "observed_ts_nanos"
                    FROM opentelemetry_logs WHERE {where_clause}{order}{limit_clause}"#,
             log_service_name_expr(),
-            wire_attr_ident(semconv::PARALLAX_RUN_ID),
+            wire_attr_ident(semconv::CLI_INVOCATION_ID),
+            wire_attr_ident(semconv::SESSION_ID),
             semconv::resource_json_path(semconv::EVENT_NAME),
             semconv::resource_json_path(semconv::LOG_OBSERVED_TS_NANOS),
         )

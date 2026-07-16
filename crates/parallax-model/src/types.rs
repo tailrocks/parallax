@@ -14,7 +14,8 @@ pub struct SpanRow {
     pub status_code: String,
     pub status_message: String,
     pub duration_ns: u128,
-    pub run_id: Option<String>,
+    pub invocation_id: Option<String>,
+    pub session_id: Option<String>,
     pub scope_name: String,
     /// Raw `OTel` span events JSON (`[{name, time_unix_nano, attributes}]`) when
     /// the backing source projects it; absent sources default to no events.
@@ -39,7 +40,8 @@ pub struct LogRow {
     pub body: String,
     pub trace_id: String,
     pub span_id: String,
-    pub run_id: Option<String>,
+    pub invocation_id: Option<String>,
+    pub session_id: Option<String>,
     pub scope_name: String,
     pub attributes: serde_json::Value,
     pub resource: serde_json::Value,
@@ -52,7 +54,7 @@ pub struct MetricPointRow {
     pub name: String,
     pub value: f64,
     pub is_monotonic: bool,
-    pub run_id: Option<String>,
+    pub invocation_id: Option<String>,
     pub attributes: serde_json::Value,
 }
 
@@ -64,7 +66,7 @@ pub struct MetricExemplarRow {
     pub value: f64,
     pub trace_id: String,
     pub span_id: String,
-    pub run_id: Option<String>,
+    pub invocation_id: Option<String>,
     pub attributes: serde_json::Value,
 }
 
@@ -151,12 +153,14 @@ pub struct IssueQuery {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RunRecord {
-    pub run_id: String,
+pub struct InvocationRecord {
+    pub invocation_id: String,
     pub command: Option<String>,
+    pub app_mode: Option<String>,
     pub started_at_nanos: u128,
     pub ended_at_nanos: Option<u128>,
     pub exit_code: Option<i32>,
+    pub outcome: Option<String>,
     pub status: String,
 }
 

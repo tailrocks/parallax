@@ -76,7 +76,8 @@ pub(crate) struct StreamFilter {
     pub severity_min: Option<i32>,
     pub q: Option<String>,
     pub trace_id: Option<String>,
-    pub run_id: Option<String>,
+    pub invocation_id: Option<String>,
+    pub session_id: Option<String>,
 }
 
 impl StreamFilter {
@@ -86,9 +87,13 @@ impl StreamFilter {
             && self.q.as_deref().is_none_or(|n| log.body.contains(n))
             && self.trace_id.as_deref().is_none_or(|t| log.trace_id == t)
             && self
-                .run_id
+                .invocation_id
                 .as_deref()
-                .is_none_or(|r| log.run_id.as_deref() == Some(r))
+                .is_none_or(|r| log.invocation_id.as_deref() == Some(r))
+            && self
+                .session_id
+                .as_deref()
+                .is_none_or(|r| log.session_id.as_deref() == Some(r))
     }
 }
 
@@ -103,7 +108,8 @@ fn log_event(log: &LogRow) -> serde_json::Value {
         "body": log.body,
         "traceId": log.trace_id,
         "spanId": log.span_id,
-        "runId": log.run_id,
+        "invocationId": log.invocation_id,
+        "sessionId": log.session_id,
         "scopeName": log.scope_name,
         "attributes": log.attributes.to_string(),
         "resource": log.resource.to_string(),
@@ -152,7 +158,8 @@ pub(crate) struct SpanStreamFilter {
     /// Substring of the span name.
     pub q: Option<String>,
     pub trace_id: Option<String>,
-    pub run_id: Option<String>,
+    pub invocation_id: Option<String>,
+    pub session_id: Option<String>,
 }
 
 impl SpanStreamFilter {
@@ -165,9 +172,13 @@ impl SpanStreamFilter {
             && self.q.as_deref().is_none_or(|n| span.name.contains(n))
             && self.trace_id.as_deref().is_none_or(|t| span.trace_id == t)
             && self
-                .run_id
+                .invocation_id
                 .as_deref()
-                .is_none_or(|r| span.run_id.as_deref() == Some(r))
+                .is_none_or(|r| span.invocation_id.as_deref() == Some(r))
+            && self
+                .session_id
+                .as_deref()
+                .is_none_or(|r| span.session_id.as_deref() == Some(r))
     }
 }
 
@@ -182,7 +193,8 @@ fn span_event(span: &SpanRow) -> serde_json::Value {
         "kind": span.kind,
         "statusCode": span.status_code,
         "durationNs": span.duration_ns.to_string(),
-        "runId": span.run_id,
+        "invocationId": span.invocation_id,
+        "sessionId": span.session_id,
     })
 }
 

@@ -11,14 +11,14 @@ async fn agent_session_projects_run_scoped_agent_spans() {
     let store = Arc::new(MemoryStore::new());
     let mut root = span("agent", "trace-agent", "root", 1_000, 100);
     root.name = "invoke_agent".into();
-    root.run_id = Some("run-agent".into());
+    root.invocation_id = Some("run-agent".into());
     root.attributes = serde_json::json!({
         "gen_ai.operation.name": "invoke_agent"
     });
     let mut tool = span("agent", "trace-agent", "tool", 1_100, 25);
     tool.name = "execute_tool".into();
     tool.parent_span_id = Some("root".into());
-    tool.run_id = Some("run-agent".into());
+    tool.invocation_id = Some("run-agent".into());
     tool.attributes = serde_json::json!({
         "gen_ai.operation.name": "execute_tool",
         "tool.name": "inspect_repo",
@@ -27,7 +27,7 @@ async fn agent_session_projects_run_scoped_agent_spans() {
     let mut shell = span("agent", "trace-agent", "shell", 1_200, 25);
     shell.name = "execute_tool".into();
     shell.parent_span_id = Some("root".into());
-    shell.run_id = Some("run-agent".into());
+    shell.invocation_id = Some("run-agent".into());
     shell.status_code = "STATUS_CODE_ERROR".into();
     shell.attributes = serde_json::json!({
         "gen_ai.operation.name": "execute_tool",
@@ -37,7 +37,7 @@ async fn agent_session_projects_run_scoped_agent_spans() {
     });
     let mut unrelated = span("agent", "trace-other", "other", 1_050, 10);
     unrelated.name = "execute_tool".into();
-    unrelated.run_id = Some("run-other".into());
+    unrelated.invocation_id = Some("run-other".into());
     store.push_spans(vec![shell, unrelated, root, tool]);
 
     let schema = build_schema();
@@ -45,7 +45,7 @@ async fn agent_session_projects_run_scoped_agent_spans() {
     let request = juniper::http::GraphQLRequest::new(
         r#"
         {
-          agentSession(runId: "run-agent") {
+          agentSession(invocationId: "run-agent") {
             rootSpanId
             truncated
             totalInputTokens
@@ -56,7 +56,7 @@ async fn agent_session_projects_run_scoped_agent_spans() {
               genAiOperation inputTokens outputTokens
             }
           }
-          unrelated: agentSession(runId: "run-other") { rootSpanId }
+          unrelated: agentSession(invocationId: "run-other") { rootSpanId }
         }
         "#
         .into(),
@@ -116,11 +116,11 @@ async fn agent_session_projects_run_scoped_agent_spans() {
 async fn story_resolver_returns_trace_and_run_beats() {
     let store = Arc::new(MemoryStore::new());
     let mut root = span("api", "cccccccccccccccccccccccccccccccc", "root", 100, 50);
-    root.run_id = Some("run-story".into());
+    root.invocation_id = Some("run-story".into());
     root.name = "checkout".into();
     root.events = Some(r#"[{"name":"exception","timeUnixNano":"120"}]"#.into());
     let mut child = span("db", "cccccccccccccccccccccccccccccccc", "child", 110, 10);
-    child.run_id = Some("run-story".into());
+    child.invocation_id = Some("run-story".into());
     child.parent_span_id = Some("root".into());
     child.name = "SELECT orders".into();
     child.status_code = "STATUS_CODE_ERROR".into();
@@ -135,7 +135,8 @@ async fn story_resolver_returns_trace_and_run_beats() {
         body: "payment 123 failed".into(),
         trace_id: "cccccccccccccccccccccccccccccccc".into(),
         span_id: "child".into(),
-        run_id: Some("run-story".into()),
+        invocation_id: Some("run-story".into()),
+        session_id: None,
         scope_name: String::new(),
         attributes: serde_json::Value::Null,
         resource: serde_json::Value::Null,
@@ -149,7 +150,7 @@ async fn story_resolver_returns_trace_and_run_beats() {
           traceStory: story(traceId: "cccccccccccccccccccccccccccccccc") {
             tsNanos lane kind title traceId spanId severity durationNs
           }
-          runStory: story(runId: "run-story") {
+          runStory: story(invocationId: "run-story") {
             kind traceId spanId
           }
         }
@@ -189,7 +190,7 @@ async fn story_requires_exactly_one_anchor() {
     let schema = build_schema();
     let context = context_with_memory(Arc::new(MemoryStore::new())).await;
     let request = juniper::http::GraphQLRequest::new(
-        r#"{ story(traceId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", runId: "b") { kind } }"#.into(),
+        r#"{ story(traceId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", invocationId: "b") { kind } }"#.into(),
         None,
         None,
     );

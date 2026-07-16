@@ -434,9 +434,10 @@ async fn bundle_redacts_issue_title_culprit_and_run_command() {
 
     handle
         .metadata
-        .start_run(
+        .start_invocation(
             "run-secret",
             Some("deploy --token=Bearer SECRETVALUE123"),
+            None,
             2_000,
         )
         .await
@@ -444,7 +445,7 @@ async fn bundle_redacts_issue_title_culprit_and_run_command() {
     let response = graphql(
         &client,
         handle.api_addr,
-        r#"{ bundle(runId: "run-secret") { json markdown } }"#.to_string(),
+        r#"{ bundle(invocationId: "run-secret") { json markdown } }"#.to_string(),
     )
     .await;
     let json = response

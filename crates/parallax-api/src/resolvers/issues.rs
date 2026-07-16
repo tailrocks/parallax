@@ -53,7 +53,7 @@ pub(crate) async fn bundle_metric_windows(
     use parallax_evidence::bundle::{BundleAnchor, MetricWindow};
     const PAD_NANOS: u128 = 5 * 60 * 1_000_000_000;
     let (from, to, step_seconds, run_scope, service) =
-        if let BundleAnchor::Run { run, .. } = &inputs.anchor {
+        if let BundleAnchor::Invocation { invocation, .. } = &inputs.anchor {
             let last_activity = inputs
                 .trace_logs
                 .iter()
@@ -65,8 +65,8 @@ pub(crate) async fn bundle_metric_windows(
                         .map(|s| s.ts_nanos + s.duration_ns),
                 )
                 .max();
-            let start = run.started_at_nanos;
-            let end = run
+            let start = invocation.started_at_nanos;
+            let end = invocation
                 .ended_at_nanos
                 .into_iter()
                 .chain(last_activity)
@@ -76,7 +76,7 @@ pub(crate) async fn bundle_metric_windows(
                 start.saturating_sub(5_000_000_000),
                 end + 30_000_000_000,
                 5u32,
-                Some(run.run_id.clone()),
+                Some(invocation.invocation_id.clone()),
                 None,
             )
         } else {
@@ -88,7 +88,7 @@ pub(crate) async fn bundle_metric_windows(
             let Some(anchor_ts) = anchor_ts else {
                 return Ok(Vec::new());
             };
-            let run_id = inputs.trace_spans.iter().find_map(|s| s.run_id.clone());
+            let invocation_id = inputs.trace_spans.iter().find_map(|s| s.invocation_id.clone());
             let service = inputs
                 .trace_spans
                 .first()
@@ -98,12 +98,12 @@ pub(crate) async fn bundle_metric_windows(
                 anchor_ts.saturating_sub(PAD_NANOS),
                 anchor_ts + PAD_NANOS,
                 30u32,
-                run_id,
+                invocation_id,
                 service,
             )
         };
     let scope = if run_scope.is_some() {
-        "run"
+        "invocation"
     } else {
         "service"
     };
@@ -233,8 +233,8 @@ pub(crate) async fn issue_trend(
     Ok(points.into_iter().map(TrendPoint).collect())
 }
 
-fn validate_bundle_anchors(fingerprint: bool, run_id: bool, trace_id: bool) -> FieldResult<()> {
-    if [fingerprint, run_id, trace_id]
+fn validate_bundle_anchors(fingerprint: bool, invocation_id: bool, trace_id: bool) -> FieldResult<()> {
+    if [fingerprint, invocation_id, trace_id]
         .into_iter()
         .filter(|present| *present)
         .count()
@@ -243,7 +243,7 @@ fn validate_bundle_anchors(fingerprint: bool, run_id: bool, trace_id: bool) -> F
         Ok(())
     } else {
         Err(field_err(
-            "bundle takes exactly one anchor: fingerprint, runId, or traceId",
+            "bundle takes exactly one anchor: fingerprint, invocationId, or traceId",
         ))
     }
 }
@@ -251,14 +251,14 @@ fn validate_bundle_anchors(fingerprint: bool, run_id: bool, trace_id: bool) -> F
 pub(crate) async fn bundle(
     context: &ApiContext,
     fingerprint: Option<String>,
-    run_id: Option<String>,
+    invocation_id: Option<String>,
     trace_id: Option<String>,
     max_tokens: Option<i32>,
 ) -> FieldResult<Option<BundleOut>> {
     use parallax_evidence::bundle::{BundleAnchor, BundleInputs};
     let trace_id = crate::validate_optional_trace_id(trace_id)?;
     let max_tokens = usize::try_from(max_tokens.unwrap_or(10_000).max(500)).unwrap_or(10_000);
-    validate_bundle_anchors(fingerprint.is_some(), run_id.is_some(), trace_id.is_some())?;
+    validate_bundle_anchors(fingerprint.is_some(), invocation_id.is_some(), trace_id.is_some())?;
 
     let mut inputs = if let Some(fingerprint) = fingerprint {
         let Some(issue) = context
@@ -289,10 +289,10 @@ pub(crate) async fn bundle(
             trace_logs,
             metric_windows: Vec::new(),
         }
-    } else if let Some(run_id) = run_id {
+    } else if let Some(invocation_id) = invocation_id {
         let Some(run) = context
             .metadata
-            .run(&run_id)
+            .invocation(&invocation_id)
             .await
             .map_err(internal_field_err)?
         else {
@@ -300,7 +300,7 @@ pub(crate) async fn bundle(
         };
         let spans = context
             .store
-            .spans_by_run(&run_id, MAX_ROWS, retained_recent_range())
+            .spans_by_invocation(&invocation_id, MAX_ROWS, retained_recent_range())
             .await
             .map_err(internal_field_err)?;
         let mut trace_ids: Vec<String> = Vec::new();
@@ -335,12 +335,12 @@ pub(crate) async fn bundle(
         };
         let trace_logs = context
             .store
-            .logs_by_run(&run_id, 200)
+            .logs_by_invocation(&invocation_id, 200)
             .await
             .map_err(internal_field_err)?;
         BundleInputs {
-            anchor: BundleAnchor::Run {
-                run: Box::new(run),
+            anchor: BundleAnchor::Invocation {
+                invocation: Box::new(run),
                 issues,
             },
             events,

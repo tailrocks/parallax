@@ -9,7 +9,7 @@ use std::process::Command;
 pub(crate) struct CheckArgs {
     pub base_url: String,
     pub fingerprint: Option<String>,
-    pub run_id: Option<String>,
+    pub invocation_id: Option<String>,
     /// Path to the `parallax` CLI binary (default: look up on PATH).
     pub parallax_bin: String,
 }
@@ -26,11 +26,11 @@ pub(crate) async fn run(args: CheckArgs) -> anyhow::Result<()> {
             },
         });
     }
-    if let Some(rid) = &args.run_id {
+    if let Some(rid) = &args.invocation_id {
         cases.push(Case {
-            label: format!("run bundle run_id={rid}"),
+            label: format!("run bundle invocation_id={rid}"),
             kind: CaseKind::RunBundle {
-                run_id: rid.clone(),
+                invocation_id: rid.clone(),
             },
         });
     }
@@ -68,7 +68,7 @@ struct Case {
 
 enum CaseKind {
     IssueBundle { fingerprint: String },
-    RunBundle { run_id: String },
+    RunBundle { invocation_id: String },
 }
 
 async fn check_one(client: &GraphqlClient, args: &CheckArgs, case: &Case) -> anyhow::Result<()> {
@@ -77,7 +77,7 @@ async fn check_one(client: &GraphqlClient, args: &CheckArgs, case: &Case) -> any
         CaseKind::IssueBundle { fingerprint } => {
             gql::fetch_bundle(client, Some(fingerprint), None).await?
         }
-        CaseKind::RunBundle { run_id } => gql::fetch_bundle(client, None, Some(run_id)).await?,
+        CaseKind::RunBundle { invocation_id } => gql::fetch_bundle(client, None, Some(invocation_id)).await?,
     };
 
     // 2) Plain HTTP GraphQL (same client — second call; proves stability).
@@ -85,7 +85,7 @@ async fn check_one(client: &GraphqlClient, args: &CheckArgs, case: &Case) -> any
         CaseKind::IssueBundle { fingerprint } => {
             gql::fetch_bundle(client, Some(fingerprint), None).await?
         }
-        CaseKind::RunBundle { run_id } => gql::fetch_bundle(client, None, Some(run_id)).await?,
+        CaseKind::RunBundle { invocation_id } => gql::fetch_bundle(client, None, Some(invocation_id)).await?,
     };
 
     // 3) CLI: `parallax issue context` / `parallax run bundle` --format json
@@ -94,9 +94,9 @@ async fn check_one(client: &GraphqlClient, args: &CheckArgs, case: &Case) -> any
             &args.parallax_bin,
             &["issue", "context", fingerprint, "--format", "json"],
         )?,
-        CaseKind::RunBundle { run_id } => run_cli_json(
+        CaseKind::RunBundle { invocation_id } => run_cli_json(
             &args.parallax_bin,
-            &["run", "bundle", run_id, "--format", "json"],
+            &["run", "bundle", invocation_id, "--format", "json"],
         )?,
     };
 

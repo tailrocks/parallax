@@ -82,18 +82,28 @@ headers; post-create `ALTER TABLE … ADD COLUMN` / `ADD … INVERTED INDEX | FU
   + SKIPPING on `trace_id`; body FULLTEXT is native-default on engine ≥1.1).
 - **Metrics → ADOPT the native metric engine fully (PromQL-native).** Rely on explicit-bucket
   histograms; add a minimal extension only if ExponentialHistogram appears.
-- **`run_id`** — emitted as a resource attribute. Traces: free column `resource_attributes.parallax.run.id`.
-  Logs: promote to a column via `X-Greptime-Log-Extract-Keys: parallax.run.id`. Metrics: **never a
-  metric tag** (high-cardinality → series explosion).
-- **Run-scoped metrics → custom extension `run_metric_points`** (append table, `run_id STRING SKIPPING
-  INDEX`, `append_mode`, `flat` SST) — GreptimeDB's own high-cardinality pattern; the metric engine
-  stays run_id-free.
-- **`error_events`, `run_metric_points`, `metric_exemplars` → KEEP custom.** Product semantics; no
-  native raw-signal replacement. `metric_exemplars` is keyed only by the
-  low-cardinality `(service, name)` pair; trace/run correlation identifiers are
-  fields with skipping indexes only where reads justify them. Existing legacy
-  exemplar tables migrate through a verified replacement-and-rename sequence,
-  preserving the source until row and value parity succeeds.
+- **`cli.invocation.id` / `session.id`** (plan 156 neutral contract; replaces the retired
+  `parallax.run.id` resource attribute). Lookup priority on ingest: **signal attributes first**
+  (root-span / log attrs — jackin shape), then **resource attributes** (generic wrappers). The
+  legacy `parallax.run.id` key is never read, written, or COALESCE'd.
+  - Traces: span-attr column and/or free JSON `resource_attributes."cli.invocation.id"` (and
+    `session.id` likewise); query helpers in `greptime_sql` / `trace_store` /
+    `invocation_store`.
+  - Logs: promote via `X-Greptime-Log-Extract-Keys:
+    service.name,cli.invocation.id,session.id,event.name,observed_ts_nanos` with pre-created
+    SKIPPING INDEX columns on `opentelemetry_logs`.
+  - Metrics: **never metric tags** (high-cardinality → series explosion).
+- **Invocation-scoped metrics → custom extension `invocation_metric_points`** (append table,
+  `invocation_id STRING SKIPPING INDEX`, `append_mode`, `flat` SST) — GreptimeDB's own
+  high-cardinality pattern; the metric engine stays invocation_id-free. Fresh installs create
+  only the new table; bootstrap migrates legacy `run_metric_points` rows when present, then
+  drops that table.
+- **`error_events`, `invocation_metric_points`, `metric_exemplars` → KEEP custom.** Product
+  semantics; no native raw-signal replacement. `metric_exemplars` is keyed only by the
+  low-cardinality `(service, name)` pair; trace/invocation correlation identifiers are fields
+  with skipping indexes only where reads justify them. Existing legacy exemplar tables migrate
+  through a verified replacement-and-rename sequence, preserving the source until row and value
+  parity succeeds.
 
 ## Plan 084 — deterministic native logs schema (verified 2026-07-11, GreptimeDB v1.1.2)
 

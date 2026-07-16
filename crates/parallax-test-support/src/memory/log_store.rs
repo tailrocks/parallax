@@ -4,12 +4,12 @@ use super::*;
 
 #[async_trait::async_trait]
 impl adapter::LogStore for MemoryStore {
-    async fn logs_by_run(&self, run_id: &str, limit: usize) -> StorageResult<Vec<LogRow>> {
+    async fn logs_by_invocation(&self, invocation_id: &str, limit: usize) -> StorageResult<Vec<LogRow>> {
         let mut logs: Vec<LogRow> = self
             .lock()
             .logs
             .iter()
-            .filter(|l| l.run_id.as_deref() == Some(run_id))
+            .filter(|l| l.invocation_id.as_deref() == Some(invocation_id))
             .cloned()
             .collect();
         logs.sort_by_key(|l| std::cmp::Reverse(l.ts_nanos));

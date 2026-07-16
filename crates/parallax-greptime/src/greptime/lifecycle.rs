@@ -60,6 +60,7 @@ impl GreptimeStore {
                    "resource_schema_url" STRING NULL,
                    "service.name" STRING NULL,
                    {} STRING NULL SKIPPING INDEX,
+                   {} STRING NULL SKIPPING INDEX,
                    {} STRING NULL,
                    {} BIGINT NULL,
                    TIME INDEX ("timestamp"),
@@ -72,7 +73,8 @@ impl GreptimeStore {
                    'greptime.semantic.source' = 'opentelemetry',
                    ttl = '{}'
                  )"#,
-            wire_attr_ident(semconv::PARALLAX_RUN_ID),
+            wire_attr_ident(semconv::CLI_INVOCATION_ID),
+            wire_attr_ident(semconv::SESSION_ID),
             wire_attr_ident(semconv::EVENT_NAME),
             wire_attr_ident(semconv::LOG_OBSERVED_TS_NANOS),
             escape(&self.logs_ttl),
@@ -80,6 +82,9 @@ impl GreptimeStore {
         self.sql(&logs_create).await?;
 
         let statements = [
+            // Forward-only contract (operator, 2026-07-17): legacy run-keyed
+            // tables are dropped, never read or migrated.
+            "DROP TABLE IF EXISTS run_metric_points".to_string(),
             format!(
                 r#"CREATE TABLE IF NOT EXISTS error_events (
                    "ts" TIMESTAMP(9) NOT NULL, "service" STRING, "fingerprint" STRING,
@@ -89,8 +94,8 @@ impl GreptimeStore {
                  ) WITH (ttl = '{error_events_ttl}')"#
             ),
             format!(
-                r#"CREATE TABLE IF NOT EXISTS run_metric_points (
-                   "ts" TIMESTAMP(9) NOT NULL, "run_id" STRING SKIPPING INDEX,
+                r#"CREATE TABLE IF NOT EXISTS invocation_metric_points (
+                   "ts" TIMESTAMP(9) NOT NULL, "invocation_id" STRING SKIPPING INDEX,
                    "service" STRING, "name" STRING, "value" DOUBLE, "attributes" JSON,
                    TIME INDEX ("ts"), PRIMARY KEY ("service", "name")
                  ) WITH (append_mode = 'true', ttl = '{metrics_ttl}')"#
@@ -99,7 +104,7 @@ impl GreptimeStore {
         for statement in statements {
             self.sql(&statement).await?;
         }
-        self.migrate_metric_exemplars(metrics_ttl).await?;
+        self.ensure_metric_exemplars(metrics_ttl).await?;
         self.try_logs_deviations().await;
         self.reconcile_ttls(metrics_ttl, error_events_ttl).await;
         Ok(())
@@ -111,7 +116,7 @@ impl GreptimeStore {
                    "ts" TIMESTAMP(9) NOT NULL,
                    "service" STRING, "name" STRING, "value" DOUBLE,
                    "trace_id" STRING SKIPPING INDEX, "span_id" STRING,
-                   "run_id" STRING SKIPPING INDEX, "attributes" JSON,
+                   "invocation_id" STRING SKIPPING INDEX, "attributes" JSON,
                    TIME INDEX ("ts"), PRIMARY KEY ("service", "name")
                  ) WITH (append_mode = 'true', ttl = '{}')"#,
             escape(metrics_ttl)
@@ -128,153 +133,41 @@ impl GreptimeStore {
         Ok(rows.first().map(|row| u128_at(row, 0)).unwrap_or(0) == 1)
     }
 
-    async fn table_primary_key(&self, table: &str) -> anyhow::Result<Vec<String>> {
+    async fn table_columns(&self, table: &str) -> anyhow::Result<Vec<String>> {
         Ok(self
             .sql(&format!("DESCRIBE {}", quoted_ident(table)))
             .await?
             .iter()
-            .filter(|row| str_at(row, 2) == "PRI" && str_at(row, 5) == "TAG")
             .map(|row| str_at(row, 0))
             .collect())
     }
 
-    async fn table_count(&self, table: &str) -> anyhow::Result<u128> {
-        let rows = self
-            .sql(&format!("SELECT COUNT(*) FROM {}", quoted_ident(table)))
-            .await?;
-        Ok(rows.first().map(|row| u128_at(row, 0)).unwrap_or(0))
-    }
-
-    async fn verify_exemplar_copy(&self, source: &str, destination: &str) -> anyhow::Result<()> {
-        let source_count = self.table_count(source).await?;
-        let destination_count = self.table_count(destination).await?;
-        anyhow::ensure!(
-            source_count == destination_count,
-            "metric exemplar migration row-count mismatch: {source}={source_count}, {destination}={destination_count}"
-        );
-        let mismatches = self
-            .sql(&format!(
-                r#"SELECT COUNT(*) FROM (
-                       (SELECT {METRIC_EXEMPLAR_COLUMNS} FROM {source} EXCEPT
-                        SELECT {METRIC_EXEMPLAR_COLUMNS} FROM {destination})
-                       UNION ALL
-                       (SELECT {METRIC_EXEMPLAR_COLUMNS} FROM {destination} EXCEPT
-                        SELECT {METRIC_EXEMPLAR_COLUMNS} FROM {source})
-                   ) AS differences"#,
-                source = quoted_ident(source),
-                destination = quoted_ident(destination),
-            ))
-            .await?;
-        anyhow::ensure!(
-            mismatches.first().map(|row| u128_at(row, 0)).unwrap_or(0) == 0,
-            "metric exemplar migration changed values"
-        );
-        Ok(())
-    }
-
-    async fn migrate_metric_exemplars(&self, metrics_ttl: &str) -> anyhow::Result<()> {
-        let canonical_exists = self.table_exists(METRIC_EXEMPLARS_TABLE).await?;
-        let legacy_exists = self.table_exists(METRIC_EXEMPLARS_LEGACY).await?;
-        let canonical_key = if canonical_exists {
-            Some(self.table_primary_key(METRIC_EXEMPLARS_TABLE).await?)
-        } else {
-            None
-        };
-        let state = exemplar_migration_state(canonical_key.as_deref(), legacy_exists);
-
-        match state {
-            ExemplarMigrationState::Complete => {
-                if self.table_exists(METRIC_EXEMPLARS_REPLACEMENT).await? {
-                    self.sql(&format!(
-                        "DROP TABLE {}",
-                        quoted_ident(METRIC_EXEMPLARS_REPLACEMENT)
-                    ))
-                    .await?;
-                }
-                return Ok(());
-            }
-            ExemplarMigrationState::CleanupLegacy => {
-                self.verify_exemplar_copy(METRIC_EXEMPLARS_LEGACY, METRIC_EXEMPLARS_TABLE)
-                    .await?;
+    /// Forward-only exemplar table contract: any pre-`invocation_id` shape is
+    /// dropped (operator, 2026-07-17: no backward compatibility), then the
+    /// canonical table is created fresh.
+    async fn ensure_metric_exemplars(&self, metrics_ttl: &str) -> anyhow::Result<()> {
+        for legacy in [METRIC_EXEMPLARS_REPLACEMENT, METRIC_EXEMPLARS_LEGACY] {
+            self.sql(&format!("DROP TABLE IF EXISTS {}", quoted_ident(legacy)))
+                .await?;
+        }
+        if self.table_exists(METRIC_EXEMPLARS_TABLE).await? {
+            let columns = self.table_columns(METRIC_EXEMPLARS_TABLE).await?;
+            if !columns.iter().any(|column| column == "invocation_id") {
                 self.sql(&format!(
                     "DROP TABLE {}",
-                    quoted_ident(METRIC_EXEMPLARS_LEGACY)
+                    quoted_ident(METRIC_EXEMPLARS_TABLE)
                 ))
                 .await?;
-                if self.table_exists(METRIC_EXEMPLARS_REPLACEMENT).await? {
-                    self.sql(&format!(
-                        "DROP TABLE {}",
-                        quoted_ident(METRIC_EXEMPLARS_REPLACEMENT)
-                    ))
-                    .await?;
-                }
-                return Ok(());
             }
-            ExemplarMigrationState::Fresh => {
-                self.sql(&Self::metric_exemplars_ddl(
-                    METRIC_EXEMPLARS_TABLE,
-                    metrics_ttl,
-                ))
-                .await?;
-                return Ok(());
-            }
-            ExemplarMigrationState::UnknownCanonical => {
-                anyhow::bail!("metric_exemplars has an unknown primary-key shape")
-            }
-            ExemplarMigrationState::MigrateCanonical | ExemplarMigrationState::ResumeFromLegacy => {
-            }
-        }
-
-        let source = if state == ExemplarMigrationState::MigrateCanonical {
-            METRIC_EXEMPLARS_TABLE
-        } else {
-            METRIC_EXEMPLARS_LEGACY
-        };
-
-        if self.table_exists(METRIC_EXEMPLARS_REPLACEMENT).await? {
-            self.sql(&format!(
-                "DROP TABLE {}",
-                quoted_ident(METRIC_EXEMPLARS_REPLACEMENT)
-            ))
-            .await?;
         }
         self.sql(&Self::metric_exemplars_ddl(
-            METRIC_EXEMPLARS_REPLACEMENT,
+            METRIC_EXEMPLARS_TABLE,
             metrics_ttl,
         ))
         .await?;
-        self.sql(&format!(
-            "INSERT INTO {} ({METRIC_EXEMPLAR_COLUMNS}) SELECT {METRIC_EXEMPLAR_COLUMNS} FROM {}",
-            quoted_ident(METRIC_EXEMPLARS_REPLACEMENT),
-            quoted_ident(source)
-        ))
-        .await?;
-        self.verify_exemplar_copy(source, METRIC_EXEMPLARS_REPLACEMENT)
-            .await?;
-
-        if source == METRIC_EXEMPLARS_TABLE {
-            self.sql(&format!(
-                "ALTER TABLE {} RENAME {}",
-                quoted_ident(METRIC_EXEMPLARS_TABLE),
-                quoted_ident(METRIC_EXEMPLARS_LEGACY)
-            ))
-            .await?;
-        }
-        self.sql(&format!(
-            "ALTER TABLE {} RENAME {}",
-            quoted_ident(METRIC_EXEMPLARS_REPLACEMENT),
-            quoted_ident(METRIC_EXEMPLARS_TABLE)
-        ))
-        .await?;
-        self.verify_exemplar_copy(METRIC_EXEMPLARS_LEGACY, METRIC_EXEMPLARS_TABLE)
-            .await?;
-        self.sql(&format!(
-            "DROP TABLE {}",
-            quoted_ident(METRIC_EXEMPLARS_LEGACY)
-        ))
-        .await?;
         Ok(())
     }
+
 
     /// Apply configured retention TTLs via `ALTER TABLE … SET 'ttl'`.
     /// Per-metric native tables are excluded (TTL rides creation hints only).
@@ -283,7 +176,7 @@ impl GreptimeStore {
             ("opentelemetry_traces", self.traces_ttl.as_str()),
             ("opentelemetry_logs", self.logs_ttl.as_str()),
             ("error_events", error_events_ttl),
-            ("run_metric_points", metrics_ttl),
+            ("invocation_metric_points", metrics_ttl),
             (METRIC_EXEMPLARS_TABLE, metrics_ttl),
         ];
         for (table, ttl) in targets {
@@ -334,7 +227,19 @@ impl GreptimeStore {
             ),
             format!(
                 "ALTER TABLE opentelemetry_logs ADD COLUMN {} STRING",
-                wire_attr_ident(semconv::PARALLAX_RUN_ID)
+                wire_attr_ident(semconv::CLI_INVOCATION_ID)
+            ),
+            format!(
+                "ALTER TABLE opentelemetry_logs ADD COLUMN {} STRING",
+                wire_attr_ident(semconv::SESSION_ID)
+            ),
+            format!(
+                "ALTER TABLE opentelemetry_logs MODIFY COLUMN {} SET SKIPPING INDEX",
+                wire_attr_ident(semconv::CLI_INVOCATION_ID)
+            ),
+            format!(
+                "ALTER TABLE opentelemetry_logs MODIFY COLUMN {} SET SKIPPING INDEX",
+                wire_attr_ident(semconv::SESSION_ID)
             ),
             format!(
                 "ALTER TABLE opentelemetry_logs ADD COLUMN {} STRING",
@@ -371,6 +276,39 @@ impl GreptimeStore {
                 escape(&self.traces_ttl)
             );
             crate::outcomes::warn_error(self.sql(&sql).await, "traces TTL reconcile");
+            // Pre-create the correlation/projection attribute columns the
+            // invocation queries reference, so COALESCE over span + resource
+            // sources never hits "column not found" on sparse emitters. The
+            // greptime_trace_v1 pipeline widens the same columns on demand;
+            // these ALTERs are idempotent no-ops once any emitter stamped them.
+            let mut alters = Vec::new();
+            for attribute in [
+                semconv::CLI_INVOCATION_ID,
+                semconv::SESSION_ID,
+                semconv::CLI_COMMAND_NAME,
+                semconv::APP_MODE,
+                semconv::APP_SCREEN_ID,
+                semconv::UI_ACTION_NAME,
+                semconv::OUTCOME,
+                semconv::BACKGROUND_CYCLE_NAME,
+                semconv::JOB_ID,
+                semconv::JOB_TYPE,
+                semconv::GEN_AI_AGENT_NAME,
+                semconv::GEN_AI_CONVERSATION_ID,
+                semconv::GEN_AI_PROVIDER_NAME,
+            ] {
+                alters.push(format!(
+                    "ALTER TABLE opentelemetry_traces ADD COLUMN {} STRING",
+                    quoted_ident(&semconv::span_column(attribute))
+                ));
+            }
+            for attribute in [semconv::CLI_INVOCATION_ID, semconv::SESSION_ID] {
+                alters.push(format!(
+                    "ALTER TABLE opentelemetry_traces ADD COLUMN {} STRING",
+                    quoted_ident(&semconv::resource_column(attribute))
+                ));
+            }
+            self.try_deviations(alters).await;
         }
     }
 

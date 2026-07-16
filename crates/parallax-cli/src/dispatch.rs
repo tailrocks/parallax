@@ -84,29 +84,29 @@ async fn run(
             print_env,
             command,
         } => {
-            let code = commands::run_start(&client()?, command, otlp_forward, print_env).await?;
+            let code = commands::invocation_start(&client()?, command, otlp_forward, print_env).await?;
             std::process::exit(code);
         }
-        RunCommand::Finish { run_id, exit_code } => {
-            commands::run_finish(&client()?, &run_id, exit_code).await
+        RunCommand::Finish { invocation_id, exit_code } => {
+            commands::invocation_finish(&client()?, &invocation_id, exit_code).await
         }
         RunCommand::List => commands::run_list(&client()?).await,
-        RunCommand::Inspect { run_id } => commands::run_inspect(&client()?, &run_id).await,
-        RunCommand::Bundle { run_id, format } => {
-            commands::run_bundle(&client()?, &run_id, format).await
+        RunCommand::Inspect { invocation_id } => commands::run_inspect(&client()?, &invocation_id).await,
+        RunCommand::Bundle { invocation_id, format } => {
+            commands::run_bundle(&client()?, &invocation_id, format).await
         }
-        RunCommand::Agent { run_id, format } => {
-            commands::run_agent_session(&client()?, &run_id, format).await
+        RunCommand::Agent { invocation_id, format } => {
+            commands::run_agent_session(&client()?, &invocation_id, format).await
         }
         RunCommand::Watch {
-            run_id,
+            invocation_id,
             level,
             grep,
             watch_for,
         } => {
             commands::run_watch(
                 &client()?,
-                &run_id,
+                &invocation_id,
                 level.as_deref(),
                 grep.as_deref(),
                 watch_for.as_deref(),

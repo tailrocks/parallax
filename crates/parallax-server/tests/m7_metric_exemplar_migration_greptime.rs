@@ -15,7 +15,7 @@ const LEGACY_DDL: &str = r#"CREATE TABLE {table} (
     "ts" TIMESTAMP(9) NOT NULL,
     "service" STRING, "name" STRING, "value" DOUBLE,
     "trace_id" STRING, "span_id" STRING,
-    "run_id" STRING SKIPPING INDEX, "attributes" JSON,
+    "invocation_id" STRING SKIPPING INDEX, "attributes" JSON,
     TIME INDEX ("ts"),
     PRIMARY KEY ("service", "name", "trace_id", "span_id")
 ) WITH (append_mode = 'true', ttl = '7d')"#;
@@ -24,7 +24,7 @@ const CURRENT_DDL: &str = r#"CREATE TABLE {table} (
     "ts" TIMESTAMP(9) NOT NULL,
     "service" STRING, "name" STRING, "value" DOUBLE,
     "trace_id" STRING SKIPPING INDEX, "span_id" STRING,
-    "run_id" STRING SKIPPING INDEX, "attributes" JSON,
+    "invocation_id" STRING SKIPPING INDEX, "attributes" JSON,
     TIME INDEX ("ts"), PRIMARY KEY ("service", "name")
 ) WITH (append_mode = 'true', ttl = '7d')"#;
 
@@ -44,7 +44,7 @@ async fn insert_rows(store: &GreptimeStore, table: &str, rows: &str) {
     store
         .sql(&format!(
             r#"INSERT INTO {table}
-               ("ts", "service", "name", "value", "trace_id", "span_id", "run_id", "attributes")
+               ("ts", "service", "name", "value", "trace_id", "span_id", "invocation_id", "attributes")
                VALUES {rows}"#
         ))
         .await
@@ -106,14 +106,14 @@ async fn migrates_legacy_metric_exemplars_without_mutation() {
         .collect::<Vec<_>>()
         .join("\n");
     assert!(show_create.contains("trace_id"));
-    assert!(show_create.contains("run_id"));
+    assert!(show_create.contains("invocation_id"));
     assert!(show_create.matches("SKIPPING INDEX").count() >= 2);
     assert!(show_create.contains("append_mode = 'true'"));
     assert!(show_create.contains("ttl = '7days'"), "{show_create}");
 
     let rows = store
         .sql(
-            r#"SELECT CAST("ts" AS BIGINT) AS "ts_nanos", "trace_id", "span_id", "run_id",
+            r#"SELECT CAST("ts" AS BIGINT) AS "ts_nanos", "trace_id", "span_id", "invocation_id",
                       json_to_string("attributes")
                FROM metric_exemplars ORDER BY "ts""#,
         )
@@ -215,7 +215,7 @@ async fn migrates_legacy_metric_exemplars_without_mutation() {
                 value: 88.0,
                 trace_id: "trace-new".to_string(),
                 span_id: "span-new".to_string(),
-                run_id: Some("run-new".to_string()),
+                invocation_id: Some("run-new".to_string()),
                 attributes: serde_json::json!({"route": "/new"}),
             }],
             bytes::Bytes::new(),
@@ -234,7 +234,7 @@ async fn migrates_legacy_metric_exemplars_without_mutation() {
     assert_eq!(queried.len(), 1);
     assert_eq!(queried[0].trace_id, "trace-new");
     assert_eq!(queried[0].span_id, "span-new");
-    assert_eq!(queried[0].run_id.as_deref(), Some("run-new"));
+    assert_eq!(queried[0].invocation_id.as_deref(), Some("run-new"));
     assert_eq!(queried[0].attributes, serde_json::json!({"route": "/new"}));
     engine.stop();
 }

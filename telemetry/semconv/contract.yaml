@@ -20,10 +20,48 @@ constants:
   - { id: exception.stacktrace, rust: EXCEPTION_STACKTRACE, typescript: EXCEPTION_STACKTRACE, java: EXCEPTION_STACKTRACE, value: exception.stacktrace, owner: parallax }
   - { id: exception.escaped, rust: EXCEPTION_ESCAPED, typescript: EXCEPTION_ESCAPED, java: EXCEPTION_ESCAPED, value: exception.escaped, owner: parallax }
   - { id: error.type, rust: ERROR_TYPE, typescript: ERROR_TYPE, java: ERROR_TYPE, value: error.type, owner: shared }
-  - { id: parallax.run.id, rust: PARALLAX_RUN_ID, typescript: PARALLAX_RUN_ID, java: PARALLAX_RUN_ID, value: parallax.run.id, owner: shared }
+  - { id: cli.invocation.id, rust: CLI_INVOCATION_ID, typescript: CLI_INVOCATION_ID, java: CLI_INVOCATION_ID, value: cli.invocation.id, owner: shared }
+  - { id: cli.command.name, rust: CLI_COMMAND_NAME, typescript: CLI_COMMAND_NAME, java: CLI_COMMAND_NAME, value: cli.command.name, owner: shared }
+  - { id: app.mode, rust: APP_MODE, typescript: APP_MODE, java: APP_MODE, value: app.mode, owner: shared }
+  - { id: app.mode.one_shot, rust: APP_MODE_ONE_SHOT, typescript: APP_MODE_ONE_SHOT, java: APP_MODE_ONE_SHOT, value: one_shot, owner: shared }
+  - { id: app.mode.interactive, rust: APP_MODE_INTERACTIVE, typescript: APP_MODE_INTERACTIVE, java: APP_MODE_INTERACTIVE, value: interactive, owner: shared }
+  - { id: app.mode.daemon, rust: APP_MODE_DAEMON, typescript: APP_MODE_DAEMON, java: APP_MODE_DAEMON, value: daemon, owner: shared }
+  - { id: app.mode.capsule, rust: APP_MODE_CAPSULE, typescript: APP_MODE_CAPSULE, java: APP_MODE_CAPSULE, value: capsule, owner: shared }
+  - { id: session.previous_id, rust: SESSION_PREVIOUS_ID, typescript: SESSION_PREVIOUS_ID, java: SESSION_PREVIOUS_ID, value: session.previous_id, owner: shared }
+  - { id: session.start.event.name, rust: SESSION_START_EVENT_NAME, typescript: SESSION_START_EVENT_NAME, java: SESSION_START_EVENT_NAME, value: session.start, owner: shared }
+  - { id: session.end.event.name, rust: SESSION_END_EVENT_NAME, typescript: SESSION_END_EVENT_NAME, java: SESSION_END_EVENT_NAME, value: session.end, owner: shared }
+  - { id: ui.screen.entered.event.name, rust: UI_SCREEN_ENTERED_EVENT_NAME, typescript: UI_SCREEN_ENTERED_EVENT_NAME, java: UI_SCREEN_ENTERED_EVENT_NAME, value: ui.screen.entered, owner: shared }
+  - { id: ui.screen.exited.event.name, rust: UI_SCREEN_EXITED_EVENT_NAME, typescript: UI_SCREEN_EXITED_EVENT_NAME, java: UI_SCREEN_EXITED_EVENT_NAME, value: ui.screen.exited, owner: shared }
+  - { id: ui.widget.focused.event.name, rust: UI_WIDGET_FOCUSED_EVENT_NAME, typescript: UI_WIDGET_FOCUSED_EVENT_NAME, java: UI_WIDGET_FOCUSED_EVENT_NAME, value: ui.widget.focused, owner: shared }
+  - { id: ui.widget.unfocused.event.name, rust: UI_WIDGET_UNFOCUSED_EVENT_NAME, typescript: UI_WIDGET_UNFOCUSED_EVENT_NAME, java: UI_WIDGET_UNFOCUSED_EVENT_NAME, value: ui.widget.unfocused, owner: shared }
+  - { id: app.screen.id, rust: APP_SCREEN_ID, typescript: APP_SCREEN_ID, java: APP_SCREEN_ID, value: app.screen.id, owner: shared }
+  - { id: ui.action.name, rust: UI_ACTION_NAME, typescript: UI_ACTION_NAME, java: UI_ACTION_NAME, value: ui.action.name, owner: shared }
+  - { id: ui.screen.visit.id, rust: UI_SCREEN_VISIT_ID, typescript: UI_SCREEN_VISIT_ID, java: UI_SCREEN_VISIT_ID, value: ui.screen.visit.id, owner: shared }
+  - { id: ui.navigation.sequence, rust: UI_NAVIGATION_SEQUENCE, typescript: UI_NAVIGATION_SEQUENCE, java: UI_NAVIGATION_SEQUENCE, value: ui.navigation.sequence, owner: shared }
+  - { id: ui.transition.reason, rust: UI_TRANSITION_REASON, typescript: UI_TRANSITION_REASON, java: UI_TRANSITION_REASON, value: ui.transition.reason, owner: shared }
+  - { id: background.cycle.span.name, rust: BACKGROUND_CYCLE_SPAN_NAME, typescript: BACKGROUND_CYCLE_SPAN_NAME, java: BACKGROUND_CYCLE_SPAN_NAME, value: background.cycle, owner: shared }
+  - { id: background.cycle.name, rust: BACKGROUND_CYCLE_NAME, typescript: BACKGROUND_CYCLE_NAME, java: BACKGROUND_CYCLE_NAME, value: background.cycle.name, owner: shared }
+  - { id: job.id, rust: JOB_ID, typescript: JOB_ID, java: JOB_ID, value: job.id, owner: shared }
+  - { id: job.type, rust: JOB_TYPE, typescript: JOB_TYPE, java: JOB_TYPE, value: job.type, owner: shared }
+  - { id: outcome, rust: OUTCOME, typescript: OUTCOME, java: OUTCOME, value: outcome, owner: shared }
+  - { id: outcome.success, rust: OUTCOME_SUCCESS, typescript: OUTCOME_SUCCESS, java: OUTCOME_SUCCESS, value: success, owner: shared }
+  - { id: outcome.failure, rust: OUTCOME_FAILURE, typescript: OUTCOME_FAILURE, java: OUTCOME_FAILURE, value: failure, owner: shared }
+  - { id: outcome.error, rust: OUTCOME_ERROR, typescript: OUTCOME_ERROR, java: OUTCOME_ERROR, value: error, owner: shared }
+  - { id: outcome.timeout, rust: OUTCOME_TIMEOUT, typescript: OUTCOME_TIMEOUT, java: OUTCOME_TIMEOUT, value: timeout, owner: shared }
+  - { id: outcome.skip, rust: OUTCOME_SKIP, typescript: OUTCOME_SKIP, java: OUTCOME_SKIP, value: skip, owner: shared }
+  - { id: outcome.cancellation, rust: OUTCOME_CANCELLATION, typescript: OUTCOME_CANCELLATION, java: OUTCOME_CANCELLATION, value: cancellation, owner: shared }
+  - { id: gen_ai.agent.name, rust: GEN_AI_AGENT_NAME, typescript: GEN_AI_AGENT_NAME, java: GEN_AI_AGENT_NAME, value: gen_ai.agent.name, owner: shared }
+  - { id: gen_ai.conversation.id, rust: GEN_AI_CONVERSATION_ID, typescript: GEN_AI_CONVERSATION_ID, java: GEN_AI_CONVERSATION_ID, value: gen_ai.conversation.id, owner: shared }
+  - { id: gen_ai.provider.name, rust: GEN_AI_PROVIDER_NAME, typescript: GEN_AI_PROVIDER_NAME, java: GEN_AI_PROVIDER_NAME, value: gen_ai.provider.name, owner: shared }
+  - { id: gen_ai.usage.input_tokens, rust: GEN_AI_USAGE_INPUT_TOKENS, typescript: GEN_AI_USAGE_INPUT_TOKENS, java: GEN_AI_USAGE_INPUT_TOKENS, value: gen_ai.usage.input_tokens, owner: shared }
+  - { id: gen_ai.usage.output_tokens, rust: GEN_AI_USAGE_OUTPUT_TOKENS, typescript: GEN_AI_USAGE_OUTPUT_TOKENS, java: GEN_AI_USAGE_OUTPUT_TOKENS, value: gen_ai.usage.output_tokens, owner: shared }
+  - { id: process.exit.code, rust: PROCESS_EXIT_CODE, typescript: PROCESS_EXIT_CODE, java: PROCESS_EXIT_CODE, value: process.exit.code, owner: shared }
+  - { id: cli.command.span.name, rust: CLI_COMMAND_SPAN_NAME, typescript: CLI_COMMAND_SPAN_NAME, java: CLI_COMMAND_SPAN_NAME, value: cli.command, owner: shared }
+  - { id: app.startup.span.name, rust: APP_STARTUP_SPAN_NAME, typescript: APP_STARTUP_SPAN_NAME, java: APP_STARTUP_SPAN_NAME, value: app.startup, owner: shared }
+  - { id: app.shutdown.span.name, rust: APP_SHUTDOWN_SPAN_NAME, typescript: APP_SHUTDOWN_SPAN_NAME, java: APP_SHUTDOWN_SPAN_NAME, value: app.shutdown, owner: shared }
+  - { id: ui.action.span.name, rust: UI_ACTION_SPAN_NAME, typescript: UI_ACTION_SPAN_NAME, java: UI_ACTION_SPAN_NAME, value: ui.action, owner: shared }
   - { id: parallax.lab, rust: PARALLAX_LAB, typescript: PARALLAX_LAB, java: PARALLAX_LAB, value: parallax.lab, owner: parallax }
   - { id: parallax.source, rust: PARALLAX_SOURCE, typescript: PARALLAX_SOURCE, java: PARALLAX_SOURCE, value: parallax.source, owner: parallax }
-  - { id: jackin.operation, rust: JACKIN_OPERATION, typescript: JACKIN_OPERATION, java: JACKIN_OPERATION, value: jackin.operation, owner: parallax }
   - { id: parallax.request.duration.metrics, rust: REQUEST_DURATION_METRICS, typescript: REQUEST_DURATION_METRICS, java: REQUEST_DURATION_METRICS, values: [http.server.request.duration, rpc.server.duration], owner: parallax }
   - { id: http.request.method, rust: HTTP_REQUEST_METHOD, typescript: HTTP_REQUEST_METHOD, java: HTTP_REQUEST_METHOD, value: http.request.method, owner: playground }
   - { id: http.route, rust: HTTP_ROUTE, typescript: HTTP_ROUTE, java: HTTP_ROUTE, value: http.route, owner: playground }
@@ -40,7 +78,7 @@ constants:
   - { id: parallax.bundle.window.metrics, rust: BUNDLE_WINDOW_METRICS, typescript: BUNDLE_WINDOW_METRICS, java: BUNDLE_WINDOW_METRICS, values: [process.cpu.utilization, process.memory.usage, tokio.runtime.alive_tasks], owner: parallax }
   - { id: playground.namespace, rust: PLAYGROUND_NAMESPACE, typescript: PLAYGROUND_NAMESPACE, java: PLAYGROUND_NAMESPACE, value: playground, owner: playground }
   - { id: playground.default.environment, rust: DEFAULT_ENVIRONMENT, typescript: DEFAULT_ENVIRONMENT, java: DEFAULT_ENVIRONMENT, value: playground, owner: playground }
-  - { id: session.id, rust: SESSION_ID, typescript: SESSION_ID, java: SESSION_ID, value: session.id, owner: playground }
+  - { id: session.id, rust: SESSION_ID, typescript: SESSION_ID, java: SESSION_ID, value: session.id, owner: shared }
   - { id: app.screen.name, rust: APP_SCREEN_NAME, typescript: APP_SCREEN_NAME, java: APP_SCREEN_NAME, value: app.screen.name, owner: playground }
   - { id: app.widget.name, rust: APP_WIDGET_NAME, typescript: APP_WIDGET_NAME, java: APP_WIDGET_NAME, value: app.widget.name, owner: playground }
   - { id: telemetry.propagation.disabled, rust: TELEMETRY_PROPAGATION_DISABLED, typescript: TELEMETRY_PROPAGATION_DISABLED, java: TELEMETRY_PROPAGATION_DISABLED, value: telemetry.propagation.disabled, owner: playground }
@@ -50,9 +88,6 @@ constants:
   - { id: span.kind.internal, rust: SPAN_KIND_INTERNAL, typescript: SPAN_KIND_INTERNAL, java: SPAN_KIND_INTERNAL, value: internal, owner: playground }
   - { id: span.kind.producer, rust: SPAN_KIND_PRODUCER, typescript: SPAN_KIND_PRODUCER, java: SPAN_KIND_PRODUCER, value: producer, owner: playground }
   - { id: span.kind.consumer, rust: SPAN_KIND_CONSUMER, typescript: SPAN_KIND_CONSUMER, java: SPAN_KIND_CONSUMER, value: consumer, owner: playground }
-  - { id: parallax.session.id, rust: PARALLAX_SESSION_ID, typescript: PARALLAX_SESSION_ID, java: PARALLAX_SESSION_ID, value: parallax.session.id, owner: playground }
-  - { id: parallax.execution.layer, rust: PARALLAX_EXECUTION_LAYER, typescript: PARALLAX_EXECUTION_LAYER, java: PARALLAX_EXECUTION_LAYER, value: parallax.execution.layer, owner: playground }
-  - { id: parallax.agent.id, rust: PARALLAX_AGENT_ID, typescript: PARALLAX_AGENT_ID, java: PARALLAX_AGENT_ID, value: parallax.agent.id, owner: playground }
   - { id: gen_ai.operation.name, rust: GEN_AI_OPERATION_NAME, typescript: GEN_AI_OPERATION_NAME, java: GEN_AI_OPERATION_NAME, value: gen_ai.operation.name, owner: playground }
   - { id: tool.name, rust: TOOL_NAME, typescript: TOOL_NAME, java: TOOL_NAME, value: tool.name, owner: playground }
   - { id: shell.command, rust: SHELL_COMMAND, typescript: SHELL_COMMAND, java: SHELL_COMMAND, value: shell.command, owner: playground }

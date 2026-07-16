@@ -69,7 +69,8 @@ fn log_row(body: &str, attributes: serde_json::Value) -> LogRow {
         body: body.to_string(),
         trace_id: "trace".to_string(),
         span_id: "span".to_string(),
-        run_id: None,
+        invocation_id: None,
+        session_id: None,
         scope_name: "test".to_string(),
         attributes,
         resource: json!({}),
@@ -108,21 +109,21 @@ fn logs_prefer_structured_error_type_and_operation_for_fingerprint() {
             "capsule attach failed for jk-alpha-demo uid 501:0 id a1b2c3d4",
             json!({
                 "error.type": "jackin::CapsuleAttach",
-                "jackin.operation": "capsule.attach"
+                "cli.command.name": "capsule.attach"
             }),
         ),
         log_row(
             "capsule attach failed for jk-beta-demo uid 501:20 id de4dbeef",
             json!({
                 "error.type": "jackin::CapsuleAttach",
-                "jackin.operation": "capsule.attach"
+                "cli.command.name": "capsule.attach"
             }),
         ),
         log_row(
             "capsule attach failed for jk-beta-demo uid 501:20 id de4dbeef",
             json!({
                 "error.type": "jackin::CapsuleAttach",
-                "jackin.operation": "capsule.detach"
+                "cli.command.name": "capsule.detach"
             }),
         ),
     ];

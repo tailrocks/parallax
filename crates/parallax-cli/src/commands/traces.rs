@@ -9,11 +9,11 @@ pub(crate) async fn traces(client: &Client, filter: TracesFilter<'_>) -> anyhow:
     // --run anchors on the run's traces (tracesByRun); other filters are
     // the browse query.
     let (pointer, query) = match filter.run {
-        Some(run_id) => (
+        Some(invocation_id) => (
             "/data/tracesByRun",
             format!(
-                r#"{{ tracesByRun(runId: "{}", limit: {}) {{ traceId rootName service startNanos durationNs spanCount hasError }} }}"#,
-                gql_str(run_id),
+                r#"{{ tracesByRun(invocationId: "{}", limit: {}) {{ traceId rootName service startNanos durationNs spanCount hasError }} }}"#,
+                gql_str(invocation_id),
                 filter.limit
             ),
         ),

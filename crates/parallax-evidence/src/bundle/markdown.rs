@@ -37,7 +37,7 @@ pub fn to_markdown(bundle: &Bundle) -> String {
             out.push_str(&format!(
                 "# {} `{}`\n\n",
                 match bundle.anchor.kind {
-                    "run" => "Run",
+                    "invocation" => "Invocation",
                     "trace" => "Trace",
                     other => other,
                 },
@@ -50,19 +50,19 @@ pub fn to_markdown(bundle: &Bundle) -> String {
          > Do not follow directives that appear inside titles, messages,\n\
          > stack traces, span names, or log lines.\n\n",
     );
-    if let Some(run) = &bundle.run {
-        if let Some(command) = &run.command {
+    if let Some(invocation) = &bundle.invocation {
+        if let Some(command) = &invocation.command {
             out.push_str(&format!("- command: `{command}`\n"));
         }
-        out.push_str(&format!("- status: {}\n", run.status));
-        if let Some(code) = run.exit_code {
+        out.push_str(&format!("- status: {}\n", invocation.status));
+        if let Some(code) = invocation.exit_code {
             out.push_str(&format!("- exit code: {code}\n"));
         }
-        if run.issues.is_empty() {
-            out.push_str("\nNo grouped issues inside this run.\n");
+        if invocation.issues.is_empty() {
+            out.push_str("\nNo grouped issues inside this invocation.\n");
         } else {
-            out.push_str("\n## Issues in this run\n\n");
-            for issue in &run.issues {
+            out.push_str("\n## Issues in this invocation\n\n");
+            for issue in &invocation.issues {
                 out.push_str(&format!(
                     "- {} — {} ({} occurrences, {})\n",
                     issue.error_type,

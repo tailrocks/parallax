@@ -214,7 +214,7 @@ impl Worker {
     ) -> WorkerResult<()> {
         let errors = derive::derive_from_traces(request);
         if !progress.completed(EffectStage::Registration) {
-            self.register_runs(normalize::resource_run_ids(request))
+            self.register_runs(normalize::resource_invocation_ids(request))
                 .await?;
             progress.mark_completed(EffectStage::Registration);
         }
@@ -267,7 +267,7 @@ impl Worker {
         if !progress.completed(EffectStage::Registration) {
             self.register_runs(
                 logs.iter()
-                    .filter_map(|log| log.run_id.clone().map(|id| (id, log.ts_nanos))),
+                    .filter_map(|log| log.invocation_id.clone().map(|id| (id, log.ts_nanos))),
             )
             .await?;
             progress.mark_completed(EffectStage::Registration);
@@ -324,28 +324,28 @@ impl Worker {
 
     async fn register_runs(
         &self,
-        run_ids: impl Iterator<Item = (String, u128)>,
+        invocation_ids: impl Iterator<Item = (String, u128)>,
     ) -> Result<(), MetadataError> {
         let mut first_seen: HashMap<String, u128> = Default::default();
         {
             let seen = self.seen_runs.lock().await;
-            for (run_id, ts_nanos) in run_ids {
-                if run_id.is_empty() || seen.contains(&run_id) {
+            for (invocation_id, ts_nanos) in invocation_ids {
+                if invocation_id.is_empty() || seen.contains(&invocation_id) {
                     continue;
                 }
                 first_seen
-                    .entry(run_id)
+                    .entry(invocation_id)
                     .and_modify(|t| *t = (*t).min(ts_nanos))
                     .or_insert(ts_nanos);
             }
         }
-        for (run_id, ts_nanos) in first_seen {
-            self.metadata.ensure_run(&run_id, ts_nanos).await?;
+        for (invocation_id, ts_nanos) in first_seen {
+            self.metadata.ensure_invocation(&invocation_id, ts_nanos).await?;
             let mut seen = self.seen_runs.lock().await;
             if seen.len() > SEEN_RUNS_CAP {
                 seen.clear();
             }
-            seen.insert(run_id);
+            seen.insert(invocation_id);
         }
         Ok(())
     }

@@ -9,7 +9,7 @@
     "generator",
     "anchor",
     "issue",
-    "run",
+    "invocation",
     "latest_event",
     "trace",
     "metric_windows",
@@ -35,9 +35,9 @@
       "anyOf": [{ "$ref": "#/$defs/IssueSummary" }, { "type": "null" }],
       "description": "Primary grouped issue; null when the anchor has no correlated issue."
     },
-    "run": {
-      "anyOf": [{ "$ref": "#/$defs/RunSection" }, { "type": "null" }],
-      "description": "Present for run anchors; null for issue/trace anchors."
+    "invocation": {
+      "anyOf": [{ "$ref": "#/$defs/InvocationSection" }, { "type": "null" }],
+      "description": "Present for invocation anchors; null for issue/trace anchors."
     },
     "latest_event": {
       "anyOf": [{ "$ref": "#/$defs/EventDetail" }, { "type": "null" }]
@@ -87,12 +87,12 @@
       "properties": {
         "kind": {
           "type": "string",
-          "description": "Anchor kind. Shipped values: issue, run, trace."
+          "description": "Anchor kind. Shipped values: issue, invocation, trace."
         },
         "id": {
           "type": "string",
           "minLength": 1,
-          "description": "Issue fingerprint, run id, or trace id."
+          "description": "Issue fingerprint, invocation id, or trace id."
         }
       }
     },
@@ -119,11 +119,13 @@
         "last_seen_nanos": { "$ref": "#/$defs/nanosString" }
       }
     },
-    "RunSection": {
+    "InvocationSection": {
       "type": "object",
       "required": [
-        "run_id",
+        "invocation_id",
         "command",
+        "app_mode",
+        "outcome",
         "status",
         "exit_code",
         "started_at_nanos",
@@ -131,8 +133,10 @@
         "issues"
       ],
       "properties": {
-        "run_id": { "type": "string", "minLength": 1 },
+        "invocation_id": { "type": "string", "minLength": 1 },
         "command": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+        "app_mode": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+        "outcome": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
         "status": { "type": "string" },
         "exit_code": { "anyOf": [{ "type": "integer" }, { "type": "null" }] },
         "started_at_nanos": { "$ref": "#/$defs/nanosString" },
@@ -208,7 +212,7 @@
         "metric": { "type": "string", "minLength": 1 },
         "scope": {
           "type": "string",
-          "description": "Correlation scope. Shipped values: run, service."
+          "description": "Correlation scope. Shipped values: invocation, service."
         },
         "from_nanos": { "$ref": "#/$defs/nanosString" },
         "to_nanos": { "$ref": "#/$defs/nanosString" },

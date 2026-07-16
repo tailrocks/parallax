@@ -32,7 +32,8 @@ pub fn span(
         status_code: "STATUS_CODE_UNSET".into(),
         status_message: String::new(),
         duration_ns,
-        run_id: None,
+        invocation_id: None,
+        session_id: None,
         scope_name: String::new(),
         events: None,
         links: serde_json::Value::Null,
@@ -57,7 +58,8 @@ pub fn log_row(
         body: body.into(),
         trace_id: trace_id.into(),
         span_id: format!("span-{ts_nanos}"),
-        run_id: None,
+        invocation_id: None,
+        session_id: None,
         scope_name: String::new(),
         attributes: serde_json::Value::Null,
         resource: serde_json::Value::Null,
@@ -90,7 +92,7 @@ fn resource(service: &str) -> Resource {
     Resource {
         attributes: vec![
             string_kv("service.name", service),
-            string_kv("parallax.run.id", "run-conformance"),
+            string_kv("cli.invocation.id", "run-conformance"),
         ],
         ..Resource::default()
     }

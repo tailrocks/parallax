@@ -402,15 +402,15 @@ async fn external_runs_register_once() {
     let (_directory, path) = temp_db();
     let store = MetadataStore::open(path).await.expect("open");
     store
-        .ensure_run("jk-run-1", 5_000_000_000)
+        .ensure_invocation("jk-run-1", 5_000_000_000)
         .await
         .expect("ensure");
     store
-        .ensure_run("jk-run-1", 9_000_000_000)
+        .ensure_invocation("jk-run-1", 9_000_000_000)
         .await
         .expect("ensure again");
     let run = store
-        .run("jk-run-1")
+        .invocation("jk-run-1")
         .await
         .expect("run")
         .expect("registered");
@@ -419,14 +419,14 @@ async fn external_runs_register_once() {
 
     // A wrapper-started run keeps its own record.
     store
-        .start_run("run_cli", Some("cargo test"), 1_000_000_000)
+        .start_invocation("run_cli", Some("cargo test"), Some("one_shot"), 1_000_000_000)
         .await
         .expect("start");
     store
-        .ensure_run("run_cli", 2_000_000_000)
+        .ensure_invocation("run_cli", 2_000_000_000)
         .await
         .expect("ensure existing");
-    let cli_run = store.run("run_cli").await.expect("run").expect("present");
+    let cli_run = store.invocation("run_cli").await.expect("run").expect("present");
     assert_eq!(cli_run.status, "running");
     assert_eq!(cli_run.command.as_deref(), Some("cargo test"));
 }

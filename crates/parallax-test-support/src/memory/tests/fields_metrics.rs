@@ -223,7 +223,7 @@ async fn metric_exemplars_filters_by_metric_service_range_and_limit() {
                     value: 120.0,
                     trace_id: "trace-a".into(),
                     span_id: "span-a".into(),
-                    run_id: Some("run-a".into()),
+                    invocation_id: Some("run-a".into()),
                     attributes: serde_json::json!({"route": "/checkout"}),
                 },
                 MetricExemplarRow {
@@ -233,7 +233,7 @@ async fn metric_exemplars_filters_by_metric_service_range_and_limit() {
                     value: 90.0,
                     trace_id: "trace-b".into(),
                     span_id: "span-b".into(),
-                    run_id: None,
+                    invocation_id: None,
                     attributes: serde_json::Value::Null,
                 },
                 MetricExemplarRow {
@@ -243,7 +243,7 @@ async fn metric_exemplars_filters_by_metric_service_range_and_limit() {
                     value: 80.0,
                     trace_id: "trace-c".into(),
                     span_id: "span-c".into(),
-                    run_id: None,
+                    invocation_id: None,
                     attributes: serde_json::Value::Null,
                 },
             ],
@@ -259,7 +259,7 @@ async fn metric_exemplars_filters_by_metric_service_range_and_limit() {
 
     assert_eq!(rows.len(), 1);
     assert_eq!(rows[0].trace_id, "trace-a");
-    assert_eq!(rows[0].run_id.as_deref(), Some("run-a"));
+    assert_eq!(rows[0].invocation_id.as_deref(), Some("run-a"));
     assert_eq!(rows[0].attributes["route"], "/checkout");
 }
 
@@ -275,7 +275,7 @@ async fn metric_labels_values_and_runtime_snapshot_derive_from_points() {
                     name: "process.cpu.utilization".into(),
                     value: 0.42,
                     is_monotonic: false,
-                    run_id: Some("run-a".into()),
+                    invocation_id: Some("run-a".into()),
                     attributes: serde_json::json!({
                         "runtime.name": "tokio",
                         "payment.method": "card",
@@ -288,7 +288,7 @@ async fn metric_labels_values_and_runtime_snapshot_derive_from_points() {
                     name: "jvm.gc.time".into(),
                     value: 12.0,
                     is_monotonic: false,
-                    run_id: None,
+                    invocation_id: None,
                     attributes: serde_json::json!({
                         "payment.method": "wire"
                     }),
@@ -327,7 +327,7 @@ async fn metric_labels_values_and_runtime_snapshot_derive_from_points() {
             name: "process.cpu.utilization".into(),
             value: index as f64,
             is_monotonic: false,
-            run_id: None,
+            invocation_id: None,
             attributes: serde_json::json!({
                 "runtime.name": format!("runtime-{index:03}")
             }),
@@ -385,7 +385,7 @@ async fn attribute_compare_denies_identifier_keys() {
             serde_json::json!({
                 "service.version": "1.0.0",
                 "trace_id": "trace-baseline",
-                "run_id": "run-baseline",
+                "invocation_id": "run-baseline",
                 "session.id": "session-baseline",
                 "user.id": "user-baseline"
             }),
@@ -397,7 +397,7 @@ async fn attribute_compare_denies_identifier_keys() {
             serde_json::json!({
                 "service.version": "2.0.0",
                 "trace_id": "trace-selected",
-                "run_id": "run-selected",
+                "invocation_id": "run-selected",
                 "session.id": "session-selected",
                 "user.id": "user-selected"
             }),
@@ -405,7 +405,7 @@ async fn attribute_compare_denies_identifier_keys() {
     ]);
     let keys = vec![
         "trace_id".to_string(),
-        "run_id".to_string(),
+        "invocation_id".to_string(),
         "session.id".to_string(),
         "user.id".to_string(),
         "service.version".to_string(),
@@ -419,7 +419,7 @@ async fn attribute_compare_denies_identifier_keys() {
     assert!(rows.iter().all(|row| {
         !matches!(
             row.key.as_str(),
-            "trace_id" | "run_id" | "session.id" | "user.id"
+            "trace_id" | "invocation_id" | "session.id" | "user.id"
         )
     }));
     assert!(rows.iter().any(|row| row.key == "service.version"));

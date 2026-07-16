@@ -111,7 +111,7 @@ fn normalize_metrics_collects_number_and_histogram_exemplars() {
             resource: Some(parallax_proto::resource::Resource {
                 attributes: vec![
                     string_kv("service.name", "checkout"),
-                    string_kv("parallax.run.id", "run-a"),
+                    string_kv("cli.invocation.id", "run-a"),
                 ],
                 ..Default::default()
             }),
@@ -158,7 +158,7 @@ fn normalize_metrics_collects_number_and_histogram_exemplars() {
     assert_eq!(normalized.histograms.len(), 1);
     assert_eq!(normalized.exemplars.len(), 2);
     assert_eq!(normalized.exemplars[0].service, "checkout");
-    assert_eq!(normalized.exemplars[0].run_id.as_deref(), Some("run-a"));
+    assert_eq!(normalized.exemplars[0].invocation_id.as_deref(), Some("run-a"));
     assert_eq!(
         normalized.exemplars[0].trace_id,
         "01010101010101010101010101010101"
@@ -168,3 +168,127 @@ fn normalize_metrics_collects_number_and_histogram_exemplars() {
     assert_eq!(normalized.exemplars[1].name, "http.server.request.duration");
     assert_eq!(normalized.exemplars[1].value, 120.0);
 }
+
+fn trace_request(
+    resource_attrs: Vec<KeyValue>,
+    root_span_attrs: Vec<KeyValue>,
+) -> ExportTraceServiceRequest {
+    ExportTraceServiceRequest {
+        resource_spans: vec![parallax_proto::trace::ResourceSpans {
+            resource: Some(parallax_proto::resource::Resource {
+                attributes: resource_attrs,
+                ..Default::default()
+            }),
+            scope_spans: vec![parallax_proto::trace::ScopeSpans {
+                spans: vec![parallax_proto::trace::Span {
+                    trace_id: vec![0xab; 16],
+                    span_id: vec![0xcd; 8],
+                    name: "cli.command".into(),
+                    start_time_unix_nano: 1_000,
+                    end_time_unix_nano: 2_000,
+                    attributes: root_span_attrs,
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+            ..Default::default()
+        }],
+    }
+}
+
+fn log_request(
+    resource_attrs: Vec<KeyValue>,
+    log_attrs: Vec<KeyValue>,
+) -> ExportLogsServiceRequest {
+    ExportLogsServiceRequest {
+        resource_logs: vec![parallax_proto::logs::ResourceLogs {
+            resource: Some(parallax_proto::resource::Resource {
+                attributes: resource_attrs,
+                ..Default::default()
+            }),
+            scope_logs: vec![parallax_proto::logs::ScopeLogs {
+                log_records: vec![parallax_proto::logs::LogRecord {
+                    time_unix_nano: 1_000_000_000,
+                    attributes: log_attrs,
+                    body: Some(AnyValue {
+                        value: Some(AnyValueEnum::StringValue("hello".into())),
+                    }),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+            ..Default::default()
+        }],
+    }
+}
+
+#[test]
+fn normalize_traces_prefers_root_span_cli_invocation_id_over_resource() {
+    let request = trace_request(
+        vec![
+            string_kv("service.name", "checkout"),
+            string_kv(semconv::CLI_INVOCATION_ID, "from-resource"),
+        ],
+        vec![string_kv(semconv::CLI_INVOCATION_ID, "from-span")],
+    );
+    let rows = normalize_traces(&request);
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].invocation_id.as_deref(), Some("from-span"));
+}
+
+#[test]
+fn normalize_traces_accepts_resource_only_cli_invocation_id() {
+    let request = trace_request(
+        vec![
+            string_kv("service.name", "checkout"),
+            string_kv(semconv::CLI_INVOCATION_ID, "from-resource"),
+        ],
+        vec![],
+    );
+    let rows = normalize_traces(&request);
+    assert_eq!(rows[0].invocation_id.as_deref(), Some("from-resource"));
+}
+
+#[test]
+fn normalize_traces_ignores_legacy_parallax_run_id() {
+    // Operator 2026-07-17: parallax.run.id is never read.
+    let request = trace_request(
+        vec![
+            string_kv("service.name", "checkout"),
+            string_kv("parallax.run.id", "legacy-only"),
+        ],
+        vec![string_kv("parallax.run.id", "legacy-span")],
+    );
+    let rows = normalize_traces(&request);
+    assert_eq!(rows[0].invocation_id, None);
+}
+
+#[test]
+fn normalize_logs_resolves_session_id_signal_then_resource() {
+    let signal_wins = log_request(
+        vec![
+            string_kv("service.name", "checkout"),
+            string_kv(semconv::SESSION_ID, "sess-resource"),
+            string_kv(semconv::CLI_INVOCATION_ID, "inv-resource"),
+        ],
+        vec![
+            string_kv(semconv::SESSION_ID, "sess-log"),
+            string_kv(semconv::CLI_INVOCATION_ID, "inv-log"),
+        ],
+    );
+    let rows = normalize_logs(&signal_wins);
+    assert_eq!(rows[0].session_id.as_deref(), Some("sess-log"));
+    assert_eq!(rows[0].invocation_id.as_deref(), Some("inv-log"));
+
+    let resource_only = log_request(
+        vec![
+            string_kv("service.name", "checkout"),
+            string_kv(semconv::SESSION_ID, "sess-resource"),
+        ],
+        vec![],
+    );
+    let rows = normalize_logs(&resource_only);
+    assert_eq!(rows[0].session_id.as_deref(), Some("sess-resource"));
+    assert_eq!(rows[0].invocation_id, None);
+}
+

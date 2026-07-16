@@ -67,9 +67,9 @@ impl adapter::TraceStore for MemoryStore {
         Ok(summaries)
     }
 
-    async fn spans_by_run(
+    async fn spans_by_invocation(
         &self,
-        run_id: &str,
+        invocation_id: &str,
         limit: usize,
         _range: RangeInclusive<u128>,
     ) -> StorageResult<Vec<SpanRow>> {
@@ -77,7 +77,7 @@ impl adapter::TraceStore for MemoryStore {
             .lock()
             .spans
             .iter()
-            .filter(|s| s.run_id.as_deref() == Some(run_id))
+            .filter(|s| s.invocation_id.as_deref() == Some(invocation_id))
             .cloned()
             .collect();
         spans.sort_by_key(|s| std::cmp::Reverse(s.ts_nanos));
@@ -86,31 +86,31 @@ impl adapter::TraceStore for MemoryStore {
         Ok(spans)
     }
 
-    async fn spans_by_runs(
+    async fn spans_by_invocations(
         &self,
-        run_ids: &[String],
-        limit_per_run: usize,
+        invocation_ids: &[String],
+        limit_per_invocation: usize,
     ) -> StorageResult<HashMap<String, Vec<SpanRow>>> {
-        let wanted: HashSet<&str> = run_ids.iter().map(String::as_str).collect();
+        let wanted: HashSet<&str> = invocation_ids.iter().map(String::as_str).collect();
         let mut out: HashMap<String, Vec<SpanRow>> =
-            run_ids.iter().map(|id| (id.clone(), Vec::new())).collect();
-        if wanted.is_empty() || limit_per_run == 0 {
+            invocation_ids.iter().map(|id| (id.clone(), Vec::new())).collect();
+        if wanted.is_empty() || limit_per_invocation == 0 {
             return Ok(out);
         }
         for span in self.lock().spans.iter() {
-            let Some(run_id) = span.run_id.as_deref() else {
+            let Some(invocation_id) = span.invocation_id.as_deref() else {
                 continue;
             };
-            if !wanted.contains(run_id) {
+            if !wanted.contains(invocation_id) {
                 continue;
             }
-            out.entry(run_id.to_string())
+            out.entry(invocation_id.to_string())
                 .or_default()
                 .push(span.clone());
         }
         for spans in out.values_mut() {
             spans.sort_by_key(|s| std::cmp::Reverse(s.ts_nanos));
-            spans.truncate(limit_per_run);
+            spans.truncate(limit_per_invocation);
             spans.sort_by_key(|s| s.ts_nanos);
         }
         Ok(out)

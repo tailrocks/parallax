@@ -78,22 +78,27 @@ impl crate::adapter::TraceStore for GreptimeStore {
             .collect())
     }
 
-    async fn spans_by_run(
+    async fn spans_by_invocation(
         &self,
-        run_id: &str,
+        invocation_id: &str,
         limit: usize,
         range: RangeInclusive<u128>,
     ) -> StorageResult<Vec<SpanRow>> {
         if limit == 0 {
             return Ok(Vec::new());
         }
-        let escaped_run_id = escape(run_id);
+        let escaped_invocation_id = escape(invocation_id);
         let limit_clause = format!(" LIMIT {limit}");
-        let trace_run_column = resource_attr_ident(semconv::PARALLAX_RUN_ID);
+        let trace_invocation_column = trace_attr_expr(semconv::CLI_INVOCATION_ID);
         let mut native_missing = false;
         let mut spans = match self
             .select_spans(
-                &format!(r#"{trace_run_column} = '{escaped_run_id}'"#),
+                &format!(
+                    r#""trace_id" IN (
+                    SELECT DISTINCT "trace_id" FROM opentelemetry_traces
+                    WHERE {trace_invocation_column} = '{escaped_invocation_id}'
+                  )"#
+                ),
                 r#" ORDER BY "timestamp" DESC"#,
                 &limit_clause,
             )
@@ -115,8 +120,8 @@ impl crate::adapter::TraceStore for GreptimeStore {
                     WHERE {} = '{}'
                       AND "timestamp" >= {} AND "timestamp" <= {}
                   )"#,
-                        wire_attr_ident(semconv::PARALLAX_RUN_ID),
-                        escaped_run_id,
+                        wire_attr_ident(semconv::CLI_INVOCATION_ID),
+                        escaped_invocation_id,
                         sql_ts(*range.start()),
                         sql_ts(*range.end()),
                     ),
@@ -146,19 +151,19 @@ impl crate::adapter::TraceStore for GreptimeStore {
         Ok(spans)
     }
 
-    async fn spans_by_runs(
+    async fn spans_by_invocations(
         &self,
-        run_ids: &[String],
-        limit_per_run: usize,
+        invocation_ids: &[String],
+        limit_per_invocation: usize,
     ) -> StorageResult<HashMap<String, Vec<SpanRow>>> {
-        let mut out: HashMap<String, Vec<SpanRow>> = HashMap::with_capacity(run_ids.len());
-        for run_id in run_ids {
-            out.entry(run_id.clone()).or_default();
+        let mut out: HashMap<String, Vec<SpanRow>> = HashMap::with_capacity(invocation_ids.len());
+        for invocation_id in invocation_ids {
+            out.entry(invocation_id.clone()).or_default();
         }
-        if run_ids.is_empty() || limit_per_run == 0 {
+        if invocation_ids.is_empty() || limit_per_invocation == 0 {
             return Ok(out);
         }
-        let escaped = run_ids
+        let escaped = invocation_ids
             .iter()
             .filter(|id| !id.is_empty())
             .map(|id| format!("'{}'", escape(id)))
@@ -167,25 +172,32 @@ impl crate::adapter::TraceStore for GreptimeStore {
             return Ok(out);
         }
         let id_list = escaped.join(",");
-        let trace_run_column = resource_attr_ident(semconv::PARALLAX_RUN_ID);
+        let trace_invocation_column = trace_attr_expr(semconv::CLI_INVOCATION_ID);
+        // The correlation id is stamped on the root span (jackin shape) or the
+        // resource; children inherit their trace's id via the trace-window MAX.
         let sql = format!(
             r#"SELECT * FROM (
                  SELECT *, ROW_NUMBER() OVER (
-                   PARTITION BY {trace_run_column}
+                   PARTITION BY "invocation_group"
                    ORDER BY "timestamp" DESC
                  ) AS "rn"
-                 FROM opentelemetry_traces
-                 WHERE {trace_run_column} IN ({id_list})
-               ) WHERE "rn" <= {limit_per_run}
+                 FROM (
+                   SELECT *, MAX({trace_invocation_column}) OVER (
+                     PARTITION BY "trace_id"
+                   ) AS "invocation_group"
+                   FROM opentelemetry_traces
+                 )
+                 WHERE "invocation_group" IN ({id_list})
+               ) WHERE "rn" <= {limit_per_invocation}
                ORDER BY "timestamp" ASC"#
         );
         let result = match self.sql_with_schema_arrow_lenient(&sql).await {
             Ok(result) => result,
             Err(error) if is_missing_column(&error) => {
-                for run_id in run_ids {
+                for invocation_id in invocation_ids {
                     out.insert(
-                        run_id.clone(),
-                        self.spans_by_run(run_id, limit_per_run, 0..=u128::MAX)
+                        invocation_id.clone(),
+                        self.spans_by_invocation(invocation_id, limit_per_invocation, 0..=u128::MAX)
                             .await?,
                     );
                 }
@@ -211,15 +223,26 @@ impl crate::adapter::TraceStore for GreptimeStore {
                 status_code: cols.string("span_status_code", row),
                 status_message: cols.string("span_status_message", row),
                 duration_ns: cols.u128("duration_nano", row),
-                run_id: cols.opt_string(&semconv::resource_column(semconv::PARALLAX_RUN_ID), row),
+                invocation_id: cols.opt_string("invocation_group", row).or_else(|| {
+                    cols.opt_string(&semconv::span_column(semconv::CLI_INVOCATION_ID), row)
+                        .or_else(|| {
+                            cols.opt_string(
+                                &semconv::resource_column(semconv::CLI_INVOCATION_ID),
+                                row,
+                            )
+                        })
+                }),
+                session_id: cols
+                    .opt_string(&semconv::span_column(semconv::SESSION_ID), row)
+                    .or_else(|| cols.opt_string(&semconv::resource_column(semconv::SESSION_ID), row)),
                 scope_name: cols.string("scope_name", row),
                 events,
                 links: cols.json("span_links", row),
                 attributes,
                 resource,
             };
-            if let Some(run_id) = span.run_id.clone() {
-                out.entry(run_id).or_default().push(span);
+            if let Some(invocation_id) = span.invocation_id.clone() {
+                out.entry(invocation_id).or_default().push(span);
             }
         }
         Ok(out)

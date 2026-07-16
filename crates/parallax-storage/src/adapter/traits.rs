@@ -20,7 +20,7 @@ pub trait IngestStore: Send + Sync {
     ) -> StorageResult<()>;
     /// Ingest a metrics batch: forward the raw OTLP bytes to the native
     /// `/v1/otlp/v1/metrics` endpoint (per-metric metric-engine tables), then
-    /// persist the run-scoped subset of `points` into `run_metric_points`.
+    /// persist the run-scoped subset of `points` into `invocation_metric_points`.
     async fn ingest_metrics(
         &self,
         points: Vec<MetricPointRow>,
@@ -38,28 +38,28 @@ pub trait TraceStore: Send + Sync {
     /// Resolve summaries for span-link target trace ids.
     /// Returns at most one summary per id, preserving input order where possible.
     async fn traces_by_ids(&self, trace_ids: &[String]) -> StorageResult<Vec<TraceSummary>>;
-    /// Run-scoped read: every span tagged with one `parallax.run.id`.
+    /// Run-scoped read: every span tagged with one `cli.invocation.id`.
     /// `range` bounds the logs-table fallback scan (plan 085).
-    async fn spans_by_run(
+    async fn spans_by_invocation(
         &self,
-        run_id: &str,
+        invocation_id: &str,
         limit: usize,
         range: RangeInclusive<u128>,
     ) -> StorageResult<Vec<SpanRow>>;
-    /// Batched run-scoped span read: up to `limit_per_run` newest spans per
+    /// Batched run-scoped span read: up to `limit_per_invocation` newest spans per
     /// run id (then returned start-time ascending within each run). Default
-    /// loops `spans_by_run`; Greptime overrides with one windowed query.
-    async fn spans_by_runs(
+    /// loops `spans_by_invocation`; Greptime overrides with one windowed query.
+    async fn spans_by_invocations(
         &self,
-        run_ids: &[String],
-        limit_per_run: usize,
+        invocation_ids: &[String],
+        limit_per_invocation: usize,
     ) -> StorageResult<HashMap<String, Vec<SpanRow>>> {
-        let mut out = HashMap::with_capacity(run_ids.len());
+        let mut out = HashMap::with_capacity(invocation_ids.len());
         let range = 0..=u128::MAX;
-        for run_id in run_ids {
+        for invocation_id in invocation_ids {
             out.insert(
-                run_id.clone(),
-                self.spans_by_run(run_id, limit_per_run, range.clone())
+                invocation_id.clone(),
+                self.spans_by_invocation(invocation_id, limit_per_invocation, range.clone())
                     .await?,
             );
         }
@@ -69,8 +69,8 @@ pub trait TraceStore: Send + Sync {
 
 #[async_trait::async_trait]
 pub trait LogStore: Send + Sync {
-    /// Run-scoped read: every log tagged with one `parallax.run.id`.
-    async fn logs_by_run(&self, run_id: &str, limit: usize) -> StorageResult<Vec<LogRow>>;
+    /// Run-scoped read: every log tagged with one `cli.invocation.id`.
+    async fn logs_by_invocation(&self, invocation_id: &str, limit: usize) -> StorageResult<Vec<LogRow>>;
     /// Anchored read: every log of one trace, time ascending.
     async fn logs_by_trace(&self, trace_id: &str) -> StorageResult<Vec<LogRow>>;
 }
@@ -132,13 +132,13 @@ pub trait ServiceAnalyticsStore: Send + Sync {
 #[async_trait::async_trait]
 pub trait MetricAnalyticsStore: Send + Sync {
     /// Aggregated series for a point metric, bucketed by `step_nanos`.
-    /// `run_id` scopes to points whose resource carried `parallax.run.id`
+    /// `invocation_id` scopes to points whose resource carried `cli.invocation.id`
     /// (run-anchored cross-analytics: CPU/memory beside a run's traces).
     async fn metric_series(
         &self,
         name: &str,
         service: Option<&str>,
-        run_id: Option<&str>,
+        invocation_id: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
         agg: MetricAgg,
@@ -183,7 +183,7 @@ pub trait MetricAnalyticsStore: Send + Sync {
 }
 
 #[async_trait::async_trait]
-pub trait RunStore: Send + Sync {
+pub trait InvocationStore: Send + Sync {
     /// Error events for a fingerprint within a time range, newest first.
     async fn error_events_by_fingerprint(
         &self,
@@ -210,12 +210,58 @@ pub trait RunStore: Send + Sync {
         }
         Ok(events)
     }
-    /// Distinct run ids inside `range`, most recent activity first (plan 085).
-    async fn observed_runs(
+    /// Distinct invocation ids inside `range`, most recent activity first.
+    async fn observed_invocations(
         &self,
         limit: usize,
         range: RangeInclusive<u128>,
-    ) -> StorageResult<Vec<ObservedRun>>;
+    ) -> StorageResult<Vec<ObservedInvocation>>;
+    /// Sessions inside one invocation from `session.start`/`session.end` log
+    /// events, oldest first. An open session has `end_nanos = None`.
+    async fn sessions_by_invocation(
+        &self,
+        invocation_id: &str,
+        range: RangeInclusive<u128>,
+        limit: usize,
+    ) -> StorageResult<Vec<InvocationSession>>;
+    /// Screen visits paired by `ui.screen.visit.id` for an invocation and/or
+    /// session scope, navigation order ascending.
+    async fn screen_visits(
+        &self,
+        invocation_id: Option<&str>,
+        session_id: Option<&str>,
+        range: RangeInclusive<u128>,
+        limit: usize,
+    ) -> StorageResult<Vec<ScreenVisit>>;
+    /// `ui.action` root spans for one invocation, newest first.
+    async fn ui_actions(
+        &self,
+        invocation_id: &str,
+        range: RangeInclusive<u128>,
+        limit: usize,
+    ) -> StorageResult<Vec<UiAction>>;
+    /// `background.cycle` spans grouped by `background.cycle.name`.
+    async fn background_cycles(
+        &self,
+        invocation_id: Option<&str>,
+        range: RangeInclusive<u128>,
+        limit: usize,
+    ) -> StorageResult<Vec<BackgroundCycleSummary>>;
+    /// Detached jobs: spans carrying `job.id`, grouped into producer time and
+    /// consumer attempts, newest first.
+    async fn jobs(
+        &self,
+        invocation_id: Option<&str>,
+        range: RangeInclusive<u128>,
+        limit: usize,
+    ) -> StorageResult<Vec<JobSummary>>;
+    /// Agent conversations: spans carrying `gen_ai.conversation.id`.
+    async fn conversations(
+        &self,
+        invocation_id: &str,
+        range: RangeInclusive<u128>,
+        limit: usize,
+    ) -> StorageResult<Vec<ConversationSummary>>;
 }
 
 #[async_trait::async_trait]
@@ -300,7 +346,7 @@ pub trait RuntimeMetricStore: Send + Sync {
     async fn runtime_snapshot(
         &self,
         service: Option<&str>,
-        run_id: Option<&str>,
+        invocation_id: Option<&str>,
         range: RangeInclusive<u128>,
         step_nanos: u128,
     ) -> StorageResult<Vec<RuntimeMetricSeries>>;
@@ -356,7 +402,7 @@ pub trait TelemetryStore:
     + MetricStore
     + ServiceAnalyticsStore
     + MetricAnalyticsStore
-    + RunStore
+    + InvocationStore
     + TraceAnalyticsStore
     + LogAnalyticsStore
     + RuntimeMetricStore
@@ -373,7 +419,7 @@ impl<T> TelemetryStore for T where
         + MetricStore
         + ServiceAnalyticsStore
         + MetricAnalyticsStore
-        + RunStore
+        + InvocationStore
         + TraceAnalyticsStore
         + LogAnalyticsStore
         + RuntimeMetricStore

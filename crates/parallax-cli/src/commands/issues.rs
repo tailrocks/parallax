@@ -10,13 +10,13 @@ pub(crate) async fn issue_list(
     status: Option<&str>,
     run: Option<&str>,
 ) -> anyhow::Result<()> {
-    // Run scoping reads the run's issues; otherwise the filtered issue list.
+    // Invocation scoping reads that invocation's issues; otherwise the filtered list.
     let (pointer, query) = match run {
-        Some(run_id) => (
-            "/data/run/issues",
+        Some(invocation_id) => (
+            "/data/invocation/issues",
             format!(
-                r#"{{ run(runId: "{}") {{ issues {{ fingerprint title service status eventCount lastSeenNanos }} }} }}"#,
-                gql_str(run_id)
+                r#"{{ invocation(invocationId: "{}") {{ issues {{ fingerprint title service status eventCount lastSeenNanos }} }} }}"#,
+                gql_str(invocation_id)
             ),
         ),
         None => (
@@ -30,8 +30,8 @@ pub(crate) async fn issue_list(
         ),
     };
     let response = client.graphql(&query).await?;
-    if run.is_some() && response.pointer("/data/run").is_some_and(|v| v.is_null()) {
-        anyhow::bail!("run {} not found", run.unwrap_or_default());
+    if run.is_some() && response.pointer("/data/invocation").is_some_and(|v| v.is_null()) {
+        anyhow::bail!("invocation {} not found", run.unwrap_or_default());
     }
     let mut issues = response
         .pointer(pointer)

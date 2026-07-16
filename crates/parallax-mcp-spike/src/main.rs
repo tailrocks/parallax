@@ -35,7 +35,7 @@ enum Command {
         fingerprint: Option<String>,
         /// Run id for `parallax run bundle` (second anchor when available).
         #[arg(long)]
-        run_id: Option<String>,
+        invocation_id: Option<String>,
         /// Path to the `parallax` CLI binary.
         #[arg(long, default_value = "parallax")]
         parallax_bin: String,
@@ -64,13 +64,13 @@ async fn main() -> anyhow::Result<()> {
         Command::Serve => server::run_stdio(cli.url).await,
         Command::Check {
             fingerprint,
-            run_id,
+            invocation_id,
             parallax_bin,
         } => {
             check::run(check::CheckArgs {
                 base_url: cli.url,
                 fingerprint,
-                run_id,
+                invocation_id,
                 parallax_bin,
             })
             .await

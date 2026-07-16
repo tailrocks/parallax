@@ -3,7 +3,7 @@
 //! kernels) onto the live row model. The same JSON powers the GraphQL
 //! `bundle` field, the CLI's `issue context`, and the UI's bundle preview.
 
-use parallax_model::{ErrorEventRow, Issue, LogRow, RunRecord, SpanRow};
+use parallax_model::{ErrorEventRow, Issue, LogRow, InvocationRecord, SpanRow};
 use regex::Regex;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -31,11 +31,11 @@ pub struct Bundle {
     pub generator: &'static str,
     pub anchor: Anchor,
     /// The primary grouped issue — always present for issue anchors; for
-    /// run/trace anchors it is the issue behind the newest error event, when
-    /// any error occurred at all.
+    /// invocation/trace anchors it is the issue behind the newest error
+    /// event, when any error occurred at all.
     pub issue: Option<IssueSummary>,
-    /// Run context for run anchors (spec §8 `bundle(runId:)`).
-    pub run: Option<RunSection>,
+    /// Invocation context for invocation anchors (spec §8 `bundle(invocationId:)`).
+    pub invocation: Option<InvocationSection>,
     pub latest_event: Option<EventDetail>,
     pub trace: Option<TraceSection>,
     /// Correlated metric slices around the anchor (spec §8: trace + logs +
@@ -52,19 +52,21 @@ pub struct Bundle {
 #[derive(Debug, Serialize)]
 pub struct Anchor {
     pub kind: &'static str,
-    /// The anchoring identifier: issue fingerprint, run id, or trace id.
+    /// The anchoring identifier: issue fingerprint, invocation id, or trace id.
     pub id: String,
 }
 
 #[derive(Debug, Serialize)]
-pub struct RunSection {
-    pub run_id: String,
+pub struct InvocationSection {
+    pub invocation_id: String,
     pub command: Option<String>,
+    pub app_mode: Option<String>,
+    pub outcome: Option<String>,
     pub status: String,
     pub exit_code: Option<i32>,
     pub started_at_nanos: String,
     pub ended_at_nanos: Option<String>,
-    /// Every grouped issue whose events fell inside this run's traces.
+    /// Every grouped issue whose events fell inside this invocation's traces.
     pub issues: Vec<IssueSummary>,
 }
 
@@ -100,7 +102,7 @@ pub struct TraceSection {
 #[derive(Debug, Serialize)]
 pub struct MetricWindow {
     pub metric: String,
-    /// "run" (points tagged with the anchor's run id) or "service".
+    /// "invocation" (points tagged with the anchor's invocation id) or "service".
     pub scope: &'static str,
     pub from_nanos: String,
     pub to_nanos: String,

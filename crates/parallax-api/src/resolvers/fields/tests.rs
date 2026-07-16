@@ -11,7 +11,7 @@ async fn evidence_gaps_resolver_returns_trace_and_run_gaps() {
     let store = Arc::new(MemoryStore::new());
     let mut orphan = span("api", "dddddddddddddddddddddddddddddddd", "orphan", 100, 10);
     orphan.parent_span_id = Some("missing-parent".into());
-    orphan.run_id = Some("gap-run".into());
+    orphan.invocation_id = Some("gap-run".into());
     store.push_spans(vec![orphan]);
     store.push_logs(vec![LogRow {
         ts_nanos: 110,
@@ -23,7 +23,8 @@ async fn evidence_gaps_resolver_returns_trace_and_run_gaps() {
         body: "uncorrelated".into(),
         trace_id: "00000000000000000000000000000000".into(),
         span_id: String::new(),
-        run_id: Some("gap-run".into()),
+        invocation_id: Some("gap-run".into()),
+        session_id: None,
         scope_name: String::new(),
         attributes: serde_json::Value::Null,
         resource: serde_json::Value::Null,
@@ -37,7 +38,7 @@ async fn evidence_gaps_resolver_returns_trace_and_run_gaps() {
           traceGaps: evidenceGaps(traceId: "dddddddddddddddddddddddddddddddd") {
             kind subject detail
           }
-          runGaps: evidenceGaps(runId: "gap-run") {
+          runGaps: evidenceGaps(invocationId: "gap-run") {
             kind subject detail
           }
         }
@@ -76,7 +77,7 @@ async fn evidence_gaps_requires_exactly_one_anchor() {
     let schema = build_schema();
     let context = context_with_memory(Arc::new(MemoryStore::new())).await;
     let request = juniper::http::GraphQLRequest::new(
-        r#"{ evidenceGaps(traceId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", runId: "b") { kind } }"#
+        r#"{ evidenceGaps(traceId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", invocationId: "b") { kind } }"#
             .into(),
         None,
         None,

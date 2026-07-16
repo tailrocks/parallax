@@ -11,4 +11,5 @@ pub mod adapter;
 mod adapter_math;
 mod adapter_rules;
 pub mod metadata;
+pub mod projections;
 pub use parallax_model as model;

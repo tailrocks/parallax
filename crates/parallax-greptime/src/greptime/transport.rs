@@ -311,9 +311,21 @@ impl GreptimeStore {
                     status_code: cols.string("span_status_code", row),
                     status_message: cols.string("span_status_message", row),
                     duration_ns: cols.u128("duration_nano", row),
-                    // Native run id flattens to a resource-attribute column.
-                    run_id: cols
-                        .opt_string(&semconv::resource_column(semconv::PARALLAX_RUN_ID), row),
+                    // Correlation ids flatten to attribute columns; the
+                    // explicit span attribute (jackin shape) wins.
+                    invocation_id: cols
+                        .opt_string(&semconv::span_column(semconv::CLI_INVOCATION_ID), row)
+                        .or_else(|| {
+                            cols.opt_string(
+                                &semconv::resource_column(semconv::CLI_INVOCATION_ID),
+                                row,
+                            )
+                        }),
+                    session_id: cols
+                        .opt_string(&semconv::span_column(semconv::SESSION_ID), row)
+                        .or_else(|| {
+                            cols.opt_string(&semconv::resource_column(semconv::SESSION_ID), row)
+                        }),
                     scope_name: cols.string("scope_name", row),
                     events,
                     links: cols.json("span_links", row),

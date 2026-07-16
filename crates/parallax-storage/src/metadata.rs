@@ -2,7 +2,7 @@
 
 use async_trait::async_trait;
 use parallax_model::{
-    Dashboard, Investigation, Issue, IssueQuery, IssueSortKey, RunRecord, SavedView, TrendPoint,
+    Dashboard, Investigation, Issue, IssueQuery, IssueSortKey, InvocationRecord, SavedView, TrendPoint,
 };
 use thiserror::Error;
 
@@ -100,21 +100,28 @@ pub trait MetadataStore: Send + Sync {
         offset: usize,
     ) -> MetadataResult<(Vec<Issue>, usize)>;
     async fn set_issue_status(&self, fingerprint: &str, status: &str) -> MetadataResult<()>;
-    async fn start_run(
+    async fn start_invocation(
         &self,
-        run_id: &str,
+        invocation_id: &str,
         command: Option<&str>,
+        app_mode: Option<&str>,
         started_at_nanos: u128,
     ) -> MetadataResult<()>;
-    async fn finish_run(
+    async fn finish_invocation(
         &self,
-        run_id: &str,
+        invocation_id: &str,
         ended_at_nanos: u128,
         exit_code: i32,
+        outcome: Option<&str>,
     ) -> MetadataResult<()>;
-    async fn runs(&self, limit: usize) -> MetadataResult<Vec<RunRecord>>;
-    async fn run(&self, run_id: &str) -> MetadataResult<Option<RunRecord>>;
-    async fn ensure_run(&self, run_id: &str, first_seen_nanos: u128) -> MetadataResult<()>;
+    async fn invocations(&self, limit: usize) -> MetadataResult<Vec<InvocationRecord>>;
+    async fn invocation(&self, invocation_id: &str)
+    -> MetadataResult<Option<InvocationRecord>>;
+    async fn ensure_invocation(
+        &self,
+        invocation_id: &str,
+        first_seen_nanos: u128,
+    ) -> MetadataResult<()>;
     async fn dashboard_save(
         &self,
         id: &str,

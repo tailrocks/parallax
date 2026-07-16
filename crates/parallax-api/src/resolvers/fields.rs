@@ -143,10 +143,10 @@ impl EvidenceGap {
 pub(crate) async fn evidence_gaps(
     context: &ApiContext,
     trace_id: Option<String>,
-    run_id: Option<String>,
+    invocation_id: Option<String>,
 ) -> FieldResult<Vec<EvidenceGap>> {
     let trace_id = crate::validate_optional_trace_id(trace_id)?;
-    match (trace_id, run_id) {
+    match (trace_id, invocation_id) {
         (Some(trace_id), None) => {
             let (spans, logs) =
                 tokio::try_join!(context.spans_for(&trace_id), context.logs_for(&trace_id),)?;
@@ -155,12 +155,12 @@ pub(crate) async fn evidence_gaps(
                 .map(EvidenceGap)
                 .collect())
         }
-        (None, Some(run_id)) => {
+        (None, Some(invocation_id)) => {
             let (spans, logs) = tokio::try_join!(
                 context
                     .store
-                    .spans_by_run(&run_id, MAX_ROWS, retained_recent_range()),
-                context.store.logs_by_run(&run_id, MAX_ROWS),
+                    .spans_by_invocation(&invocation_id, MAX_ROWS, retained_recent_range()),
+                context.store.logs_by_invocation(&invocation_id, MAX_ROWS),
             )
             .map_err(crate::internal_field_err)?;
             Ok(gaps::detect_gaps(&spans, &logs)
@@ -169,7 +169,7 @@ pub(crate) async fn evidence_gaps(
                 .collect())
         }
         _ => Err(field_err(
-            "evidenceGaps takes exactly one anchor: traceId or runId",
+            "evidenceGaps takes exactly one anchor: traceId or invocationId",
         )),
     }
 }
