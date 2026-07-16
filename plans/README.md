@@ -74,13 +74,20 @@ Facts an executor may rely on without re-deriving; re-verify only on failure:
   'binary(/greptime/)'` (or the per-test `cargo test … -- --ignored`
   documented in each test header). A plan's "live engine" verification means
   this shape; a zero-test selection is a command-shape error, not a pass.
-- **Browser verification (operator, 2026-07-17): the agent browser is the
-  designated tool.** All real-browser evidence — walkthroughs, usability
-  checklist passes, screenshots, console captures — is produced with the
-  agent browser (Chrome automation available in the executor's session;
-  Chrome DevTools MCP is the fallback surface). Plans 157/159/160/162-168
-  require this evidence. If the browser tooling is unavailable, that
-  specific verification step is blocked; do not fake screenshots.
+- **Browser verification (operator, 2026-07-17): the `agent-browser` CLI is
+  the designated tool** — verified installed at
+  `/opt/homebrew/bin/agent-browser`, v0.32.1. Before the first browser step,
+  run `agent-browser skills get core --full` and follow its patterns. The
+  command surface covers everything the plans require: `open`/`snapshot`/
+  `click`/`find` for walkthroughs, `screenshot [path]` for evidence,
+  `console` + `errors` for the clean-console checklist item,
+  `set viewport 1440 900` / `set viewport 375 812` for the layout checks,
+  `set media dark|light [reduced-motion]` for theme/motion checks,
+  `diff screenshot --baseline` for visual comparisons, and
+  `record start|stop` for flow captures. Chrome DevTools MCP is the fallback
+  surface only if the CLI is unavailable. Plans 157/159/160/162-168 require
+  this evidence; if browser tooling is unavailable, that verification step
+  is blocked — do not fake screenshots.
 - **No external credentials are required for Waves 1-2.** Optional only:
   a real Slack webhook URL for plan 167's live-delivery test (a local HTTP
   listener otherwise suffices, as the plan specifies). The jackin
