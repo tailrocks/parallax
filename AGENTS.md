@@ -160,12 +160,13 @@ structure quickly.
 - When spawning, put this in the subagent prompt if the tool surface does not
   pin the model: *model = Grok 4.5 high only; never Composer*.
 
-**Active branch (operator, 2026-07-17):** plan/document maintenance commits
-land on `main`. The sole authorized implementation branch is
-`feature/unified-cli-observability` (same branch name in the playground);
-only its one Parallax PR and its one linked playground PR are allowed. The
-previous authorization (`codex/active-plan-closure-7f3c`, PR #20) merged
-2026-07-15 and is closed.
+**Active branch (operator, 2026-07-17, final):** `main`, in BOTH
+repositories (Parallax and the playground). The whole active plan program —
+implementation, plans, docs — lands as direct commits to `main`; creating
+any branch or pull request in either repository is forbidden. The parallax
+`main` ruleset is bypassed by admin rights (the push notice is expected).
+Earlier same-day feature-branch authorizations are revoked; the
+`codex/active-plan-closure-7f3c` / PR #20 era is closed.
 
 See [BRANCHING.md](BRANCHING.md) for the full policy.
 

@@ -11,7 +11,7 @@
 >
 > **Drift check (run first)**:
 > `git diff --stat <wave2-base>..HEAD -- crates/parallax-api crates/parallax-greptime ui/src/routes ui/src/components/nav.ts plans/105-metric-overview-and-trends.md`
-> `<wave2-base>` = the Wave-1 merge commit.
+> `<wave2-base>` = the `main` commit closing Wave 1 (plan 159's evidence commit).
 
 ## Status
 
@@ -158,7 +158,7 @@ screenshots to `docs/research/validation/2026-07-wave2/168/`.
 ## Playground verification
 
 `m-shapes` (plan 161) covers reset/gaps/histograms/exemplars. New scenario
-(linked PR): `m-labels` — one gauge + one sum emitted with a 3-value label
+(direct on the playground's main): `m-labels` — one gauge + one sum emitted with a 3-value label
 (`region` ∈ eu/us/ap, fixed proportions) so group-by breakdown output is
 exactly assertable.
 
@@ -169,7 +169,7 @@ exactly assertable.
 - [ ] Backend lanes green incl. reset-clamp and group-by live tests.
 - [ ] UI gates green; browser evidence incl. graduation round-trip and
   permalink reproduction.
-- [ ] `m-labels` scenario + matrix row landed (linked PR).
+- [ ] `m-labels` scenario + matrix row landed on the playground's main.
 - [ ] `plans/README.md` status row updated.
 
 ## STOP conditions

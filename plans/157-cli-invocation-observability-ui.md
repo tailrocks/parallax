@@ -25,9 +25,9 @@
   what is running now, every trace/span/log/error for one invocation, its
   interactive sessions/screens/actions, its background cycles and jobs, its
   agent conversations, plus service/CLI/browser topology — with a
-  user-controlled real-time toggle on every live view. Ships in the ONE
-  authorized PR (branch `feature/unified-cli-observability`) together with
-  plans 156 and 160 (159 provides the closing evidence).
+  user-controlled real-time toggle on every live view. Lands as direct
+  commits to `main` alongside plans 156 and 160 (159 provides the closing
+  evidence); no branches, no pull requests (operator delivery model).
 
 ## Why this matters
 
@@ -276,9 +276,9 @@ and 160 assert.
 
 ## Git workflow
 
-- Branch: `feature/unified-cli-observability` (same single branch as plan
-  156; one PR total). Conventional Commits, DCO `-s`, one agent trailer,
-  push after every durable commit. Suggested subjects:
+- Work directly on `main` (operator delivery model: no branches, no PRs).
+  Conventional Commits, DCO `-s`, one agent trailer,
+  push after every durable green commit. Suggested subjects:
   `feat(ui): invocations list and hub replace runs surface`,
   `feat(ui): ecosystem node kinds for cli and browser emitters`.
 
@@ -342,7 +342,7 @@ exit 0; full `bun run --bun test:ci` → pass.
 ### Step 5: Manual live QA on the real stack
 
 Start GreptimeDB+Turso-backed `parallax serve`, seed via plan 158's playground
-(or, if 158 is not yet merged, via the repo's OTLP test fixtures in
+(or, if 158 has not yet landed on the playground's main, via the repo's OTLP test fixtures in
 `crates/parallax-server/tests/support/harness.rs` replayed with a small
 script). Walk: list shows a running daemon invocation with pulsing status →
 open hub → Live on → logs/traces tabs stream → sessions tab shows an

@@ -7,7 +7,7 @@
 >
 > **Drift check (run first)**:
 > `git diff --stat <wave2-base>..HEAD -- ui/src/routes/logs.tsx ui/src/components/logs-table.tsx crates/parallax-analysis crates/parallax-api`
-> `<wave2-base>` = the Wave-1 merge commit; plan 162/164 drift on these files
+> `<wave2-base>` = the `main` commit closing Wave 1; plan 162/164 drift on these files
 > is expected.
 
 ## Status
@@ -92,7 +92,7 @@ needed) and the reference product runs it exactly that way.
 - `ui/src/components/logs-table.tsx` — pinned attribute columns
   (`?columns=`), inline attribute chips for unpinned keys, pin action in
   the document sheet, density/wrap.
-- Playground (linked PR): new scenario `l-patterns` — ≥20k lines from ~12
+- Playground (direct on its main): new scenario `l-patterns` — ≥20k lines from ~12
   templates with parameter churn (ids, ips, durations) + one "spiking"
   template, so clustering quality is assertable.
 
@@ -148,7 +148,7 @@ Screenshots to `docs/research/validation/2026-07-wave2/165/`.
 - [ ] UI gates green; brush/pin/density/pattern tests pass.
 - [ ] Browser evidence incl. URL-reload reproduction and live-tail still
   working alongside the new controls.
-- [ ] Playground `l-patterns` scenario + matrix row landed in the linked PR.
+- [ ] Playground `l-patterns` scenario + matrix row landed on the playground's main.
 - [ ] `plans/README.md` status row updated.
 
 ## STOP conditions

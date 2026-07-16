@@ -25,9 +25,9 @@
 - **Planned at**: Parallax `39f172c`, 2026-07-17
 - **Operator directive (2026-07-17)**: the playground is the realistic
   multi-architecture corpus (microservices + browser + CLI) that plans 157/159
-  visualize and verify against. It ships as ONE linked playground PR beside
-  the one Parallax PR (branch `feature/unified-cli-observability` in both
-  repos).
+  visualize and verify against. It lands as direct commits to the
+  playground's `main` (operator delivery model 2026-07-17: no branches, no
+  pull requests, in either repository).
 
 ## Why this matters
 
@@ -171,10 +171,9 @@ conversations, ecosystem kinds) renders from playground data, including
 
 ## Git workflow
 
-- Playground branch: `feature/unified-cli-observability` — the ONE linked
-  playground PR (operator-authorized 2026-07-17). Conventional Commits, DCO
-  `-s`, exactly one agent trailer, push after every commit. Never commit to
-  playground `main`.
+- Work directly on the playground's `main` (operator delivery model
+  2026-07-17: no branches, no pull requests). Conventional Commits, DCO
+  `-s`, exactly one agent trailer, push after every durable green commit.
 
 ## Steps
 
@@ -282,7 +281,7 @@ Stop and report back (do not improvise) if:
 - The semconv generator cannot express a needed row (value-set constants) —
   extend the generator in the Parallax repo first (plan 156's owner), do not
   hand-edit generated modules.
-- Plan 156's GraphQL renames are not merged into the branch yet when
+- Plan 156's GraphQL renames have not landed on parallax main yet when
   `test_verify` is re-keyed — coordinate ordering, do not point the verifier
   at legacy fields.
 - The Java OTel agent drops unknown span attributes (it must not — they are

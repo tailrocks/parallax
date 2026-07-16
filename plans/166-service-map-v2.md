@@ -7,7 +7,7 @@
 >
 > **Drift check (run first)**:
 > `git diff --stat <wave2-base>..HEAD -- ui/src/routes/ecosystem.tsx ui/src/components/console/ecosystem-graph.tsx crates/parallax-api crates/parallax-greptime`
-> `<wave2-base>` = the Wave-1 merge commit. Plan 157 added node kinds
+> `<wave2-base>` = the `main` commit closing Wave 1. Plan 157 added node kinds
 > (cli/browser/service) — that is the expected baseline.
 
 ## Status
@@ -173,7 +173,7 @@ record the skip in the status row.
 ## Playground verification
 
 Existing: `eco-full`, `p-kafka-lag`, demo k6 load. New scenario (linked
-playground PR, plan-161 discipline): `eco-external` — checkout calls a
+playground main, plan-161 discipline): `eco-external` — checkout calls a
 third-party HTTP API (httpbin container or an unroutable-but-attributed
 target) producing `server.address` client spans WITHOUT any instrumented
 server side, so the external-HTTP node class is assertable.
@@ -184,7 +184,7 @@ server side, so the external-HTTP node class is assertable.
 - [ ] Deterministic-layout test passes; UI gates green.
 - [ ] Browser evidence: database + queue + external-HTTP nodes, focus
   modes, traffic filter with hidden-count, error-rate chips.
-- [ ] `eco-external` scenario + matrix row landed in the linked PR.
+- [ ] `eco-external` scenario + matrix row landed on the playground's main.
 - [ ] No vendor-specific attribute logic anywhere
   (`grep -rn "hyperdrive\|planetscale" ui/src crates/` → 0).
 - [ ] `plans/README.md` status row updated.

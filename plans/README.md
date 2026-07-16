@@ -62,11 +62,12 @@ Facts an executor may rely on without re-deriving; re-verify only on failure:
   `tailrocks/homebrew-parallax`; direct pushes to `main` succeed (parallax's
   ruleset is bypassed by admin — proven by live pushes 2026-07-17;
   playground has no protection). PR creation + merge via `gh` works.
-- **Branches authorized (operator, 2026-07-17)**: Wave 1 =
-  `feature/unified-cli-observability` (both repos, one PR each). Wave 2 =
-  `feature/maple-informed-ui` (both repos, one PR each), **pre-authorized**
-  — start it only after the Wave-1 PRs merge. Plan/doc commits go straight
-  to `main`.
+- **Delivery model (operator, 2026-07-17, final — supersedes the same-day
+  branch authorizations)**: everything lands as direct commits to `main` in
+  BOTH repositories. No branches, no pull requests, ever, in either repo.
+  Push every durable green slice immediately; the parallax ruleset's
+  "Bypassed rule violations" push notice is expected. Wave 2 starts only
+  after plan 159 completes Wave 1's evidence.
 - **Live-engine test lanes**: the real-GreptimeDB tests download and cache
   the engine themselves (`target/greptime-test-bin/`) and are gated behind
   `#[ignore]` — run them with `cargo nextest run --run-ignored all -E
@@ -224,9 +225,10 @@ and becomes a generic CLI-application observability platform keyed on
 `cli.invocation.id`/`session.id` with `app.mode`, `cli.command.name`, `ui.*`
 screen/action events, `background.cycle` roots, PRODUCER/CONSUMER `job.id`
 traces, `gen_ai.*` conversations, and bounded `outcome`/`error.type`.
-Delivery: ONE implementation branch `feature/unified-cli-observability`, ONE
-Parallax PR (plans 156, 157, 160; 159 evidence) plus ONE linked playground PR
-(plans 158, 161). This vertical is deliberately independent of the blocked
+Delivery (operator, 2026-07-17, final): direct commits to `main` in BOTH
+repositories — no branches, no pull requests. Parallax side = plans 156,
+157, 160 (+159 evidence); playground side = plans 158, 161. This vertical is
+deliberately independent of the formerly-blocked
 128→151 chain: it builds on current UI conventions; plan 140 later migrates
 the new surface behind a feature facade.
 
@@ -273,10 +275,10 @@ Plan 154's remaining sweep consumes the plan-158 emitter contract.
 
 Reference analysis of `github.com/MapleTechLabs/maple` (deep /improve run,
 2026-07-17; three-agent survey of its web UI, design system, and query
-layer). Wave 2 executes AFTER the Wave-1 (156-161) PR merges, on ONE
-branch `feature/maple-informed-ui` (pre-authorized by the operator
-2026-07-17 — see Execution Preflight), ONE Parallax PR plus ONE linked
-playground PR for the new scenarios
+layer). Wave 2 executes AFTER Wave 1 (156-161) completes plan 159's
+evidence, as direct commits to `main` in both repositories (delivery model
+in Execution Preflight — no branches, no PRs), with the playground gaining
+the new scenarios
 (`f-attrs`, `l-patterns`, `eco-external`, `a-breach-*`, `a-recover`,
 `m-labels`). Non-interactive default selection: the seven highest-leverage
 adoptions were planned; the deferred list below records what was
@@ -411,7 +413,7 @@ Wave 2 (after 156-161 merge):
 162 + 164 -------------------------------------> 165, 168
 ```
 
-The 156→159 vertical (one branch, one Parallax PR + one linked playground PR)
+The 156→159 vertical (direct-to-main in both repositories)
 runs independently of the 128 chain. Plans 105, 140, 141, 142, 147, 154, and
 155 additionally consume the plan-156 contract (see the Unified CLI
 Observability section note); their own dependency rows are unchanged.

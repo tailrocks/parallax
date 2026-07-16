@@ -7,7 +7,8 @@
 >
 > **Drift check (run first)**:
 > `git diff --stat <wave2-base>..HEAD -- ui/src/components/console/trace-waterfall.tsx ui/src/lib/trace-tree.ts 'ui/src/routes/traces.$traceId.tsx'`
-> `<wave2-base>` = the Wave-1 merge commit. Plan 160's defect fixes to these
+> `<wave2-base>` = the `main` commit closing Wave 1 (plan 159's evidence
+> commit). Plan 160's defect fixes to these
 > files are the expected baseline; any OTHER drift → STOP.
 
 ## Status

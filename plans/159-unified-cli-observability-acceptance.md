@@ -8,9 +8,10 @@
 > `docs/research/validation/2026-07-unified-cli-observability/`.
 >
 > **Drift check (run first)**: plans 156, 157, 158, 160, and 161 must be
-> implemented on branch `feature/unified-cli-observability` (both repos)
-> before this plan starts. `git log --oneline -20` on both branches must show
-> their commits; otherwise STOP.
+> implemented on `main` (both repositories — the operator delivery model is
+> direct-to-main, no branches/PRs) before this plan starts.
+> `git log --oneline -30` on both repos' `main` must show their commits;
+> otherwise STOP.
 
 ## Status
 
@@ -28,7 +29,7 @@
 
 ## Why this matters
 
-The one-PR program (operator directive 2026-07-17) is done only when the
+The program (operator directive 2026-07-17, direct-to-main delivery) is done only when the
 whole loop is observed working: playground microservices + browser + CLI
 modes emit the neutral contract → Parallax ingests into GreptimeDB native
 tables → GraphQL serves invocations/sessions/screens/actions/cycles/jobs →
@@ -166,11 +167,11 @@ page recorded; console log capture clean.
 ### Step 5: Write-up + closure
 
 Write `docs/research/validation/2026-07-unified-cli-observability/README.md`:
-date, branch SHAs (both repos), what ran, assertion results table,
+date, `main` SHAs (both repos), what ran, assertion results table,
 screenshot index, deviations found and where they were fixed. Update the
 playground `VERIFICATION.md`. Tear down containers. If everything is green,
-this is the PR-readiness evidence for the one Parallax PR + linked
-playground PR.
+this is Wave 1's completion evidence (direct-to-main model; no PR is
+opened).
 
 **Verify**: evidence dir complete; `docker compose ps` empty; both branches
 pushed.

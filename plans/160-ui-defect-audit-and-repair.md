@@ -7,7 +7,7 @@
 > this plan's status row in `plans/README.md` when done.
 >
 > **Drift check (run first)**: plans 156, 157, 158, and 161 must be
-> implemented on branch `feature/unified-cli-observability` (both repos)
+> implemented on `main` (both repositories; direct-to-main delivery model)
 > before this plan starts (`git log --oneline -20` on both). The corpus ids
 > referenced below come from the playground's `docs/corner-case-matrix.md`;
 > if that file is absent, STOP.
@@ -114,9 +114,9 @@ branch before this plan runs)
 
 ## Git workflow
 
-- Branch `feature/unified-cli-observability` (same single PR). One commit per
-  defect fix (`fix(ui): D-007 orphan spans vanish from waterfall`), ledger
-  updated in the same commit.
+- Work directly on `main` (operator delivery model: no branches, no PRs).
+  One commit per defect fix (`fix(ui): D-007 orphan spans vanish from
+  waterfall`), ledger updated in the same commit, pushed when green.
 
 ## Steps
 

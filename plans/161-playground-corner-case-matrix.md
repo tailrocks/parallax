@@ -2,7 +2,7 @@
 
 > **Executor instructions**: This plan edits the companion repository
 > `tailrocks/parallax-telemetry-playground` on its
-> `feature/unified-cli-observability` branch, after plan 158. Follow step by
+> `main` branch (direct-to-main delivery model), after plan 158. Follow step by
 > step; every scenario gets a stable id, a runner script, and a documented
 > expected rendering. Honor STOP conditions; update this plan's status row in
 > `plans/README.md` (Parallax repo) when done.
@@ -23,8 +23,9 @@
   corner cases that every Parallax UI surface can be *proven* correct or
   *shown* broken from real data — parts of the current UI render incorrectly
   (span display inside traces is the known-worst area) and gaps only become
-  visible when a scenario exercises them. Ships in the ONE linked playground
-  PR beside plans 158's changes.
+  visible when a scenario exercises them. Lands as direct commits to the
+  playground's `main` beside plan 158's changes (operator delivery model:
+  no branches, no pull requests).
 
 ## Why this matters
 
@@ -146,8 +147,9 @@ load testing beyond `l-burst`/`t-wide` shapes, multi-backend concerns.
 
 ## Git workflow
 
-- Playground branch `feature/unified-cli-observability`; Conventional
-  Commits, DCO `-s`, one agent trailer, push per durable commit. Suggested:
+- Work directly on the playground's `main` (no branches, no PRs);
+  Conventional Commits, DCO `-s`, one agent trailer, push per durable green
+  commit. Suggested:
   `feat(scenarios): corner-case corpus for parallax ui verification`.
 
 ## Steps

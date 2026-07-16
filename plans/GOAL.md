@@ -1,17 +1,21 @@
-# Ship Unified CLI Observability In One PR, Then Close The Remaining Program
+# Ship Unified CLI Observability Directly On Main, Then Close The Remaining Program
 
 ## Authorization And Objective
 
 The previous authorization (branch `codex/active-plan-closure-7f3c`, sole PR
 #20) completed and merged on 2026-07-15; that program is closed.
 
-The operator (2026-07-17) authorizes exactly one new implementation branch,
-`feature/unified-cli-observability`, in the Parallax repository, with exactly
-one pull request from it to `main` — plus exactly one linked pull request on a
-branch of the same name in `tailrocks/parallax-telemetry-playground`. Create
-and use only these branches. Do not create any other branch, worktree branch,
-remote branch, or pull request. Plan/index/document maintenance commits
-continue to land directly on `main` as before.
+The operator (2026-07-17, superseding the same-day branch authorization)
+directs: **the entire program is implemented directly on `main`** in BOTH
+repositories — `tailrocks/parallax` and
+`tailrocks/parallax-telemetry-playground`. Do not create any branch,
+worktree branch, remote branch, or pull request, in either repository, for
+any part of this program. Every durable green slice is committed to `main`
+(DCO sign-off, exactly one agent trailer, Conventional Commits) and pushed
+immediately. The parallax `main` ruleset is bypassed by the operator's
+admin rights — the "Bypassed rule violations" notice on push is expected,
+not an error. Plan/index/document maintenance commits land on `main` the
+same way.
 
 Primary objective: execute plans 156, 157, 158, 161, 160, and 159 (the
 Unified CLI Observability vertical in `plans/README.md`) **completely and
@@ -26,12 +30,12 @@ session journey view, extends the playground with the corner-case corpus,
 audits and fixes every UI display defect (span rendering inside traces
 foremost) with browser verification after every implemented feature, and
 proves the whole coverage matrix live on the operator's Docker host with
-GraphQL assertions and browser evidence (plan 159) before the PR opens.
+GraphQL assertions and browser evidence (plan 159) before Wave 1 is
+declared complete.
 
-Secondary objective: after the vertical merges, execute Wave 2 (plans
-162-168, the Maple-informed UI evolution — see its section in
-`plans/README.md`) on the pre-authorized branch `feature/maple-informed-ui`
-(same name in the playground; one Parallax PR + one linked playground PR),
+Secondary objective: after plan 159's evidence completes Wave 1, execute
+Wave 2 (plans 162-168, the Maple-informed UI evolution — see its section in
+`plans/README.md`) the same way — directly on `main` in both repositories —
 then continue every remaining actionable plan under the same rules,
 honoring genuine blockers.
 
@@ -74,12 +78,16 @@ check passed, never invent an operator decision.
 
 ## Verification And Done
 
-The vertical's PR opens only after plan 159's evidence bundle is complete and
-the shared verification baseline in `plans/README.md#shared-verification`
-passes for the commands that exist at that head (UI browser lanes that plans
-132/144-146 have not yet created are not yet required). Merge when required
-CI is green, then verify merged `main` from a clean checkout and report PR
-URL, merged SHA, completed plans, and remaining blockers.
+There are no pull requests: `main` is the integration line in both
+repositories. Compensating discipline is therefore mandatory — never push a
+slice whose targeted checks are red, and run each plan's full gate set
+before retiring it. Wave 1 is complete only when plan 159's evidence bundle
+exists and the shared verification baseline in
+`plans/README.md#shared-verification` passes for the commands that exist at
+that head (UI browser lanes that plans 132/144-146 have not yet created are
+not yet required), verified from a clean checkout of `main`; report the
+verified SHA, completed plans, and remaining blockers. Wave 2 closes the
+same way at its final `main` SHA.
 
 The overall program's completion state remains
 `plans/IMPLEMENTATION.md#completion-state`. Plan 107 runs last and deletes

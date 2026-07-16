@@ -24,10 +24,9 @@
 - **Planned at**: commit `39f172c`, 2026-07-17
 - **Operator directive (2026-07-17)**: Parallax drops its vendor correlation
   attribute. Generic CLI-application observability replaces the `parallax.run.id`
-  special case. Implementation ships on the single authorized branch
-  `feature/unified-cli-observability` as ONE Parallax PR (with one linked
-  playground PR, plan 158). Plans 156, 157, 158, and 159 are that one PR's
-  work packets.
+  special case. Delivery: direct commits to `main` in both repositories — no
+  branches, no pull requests (operator delivery model, see
+  plans/README.md Execution Preflight).
 
 ## Why this matters
 
@@ -220,10 +219,9 @@ do not guess.)
 
 ## Git workflow
 
-- Branch: `feature/unified-cli-observability` (operator-authorized
-  2026-07-17; the ONE implementation branch for plans 156–161). Never commit
-  to `main`; one Parallax PR ships plans 156+157+160 (with 159's evidence)
-  together; plans 158+161 ship in the one linked playground PR.
+- Work directly on `main` (operator delivery model 2026-07-17: no branches,
+  no pull requests, in either repository). Push every durable green slice
+  immediately; never push a slice whose targeted checks are red.
 - Conventional Commits, DCO `-s`, exactly one agent trailer, push after every
   durable commit. Suggested first subject:
   `feat(semconv): adopt neutral cli.invocation.id contract`.

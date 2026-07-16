@@ -7,7 +7,7 @@
 >
 > **Drift check (run first)**:
 > `git diff --stat <wave2-base>..HEAD -- 'ui/src/routes/traces.index.tsx' ui/src/routes/logs.tsx 'ui/src/routes/invocations.index.tsx' ui/src/components/console/data-table.tsx crates/parallax-api`
-> `<wave2-base>` = the Wave-1 merge commit; plans 162/163 touching shared
+> `<wave2-base>` = the `main` commit closing Wave 1; plans 162/163 touching shared
 > components is expected drift.
 
 ## Status
@@ -161,7 +161,7 @@ Existing scenarios suffice: `eco-full` (service facets), `e-burst` (five
 error.type facet values), `p-grpc-err` (status facets), `l-bodies`/`l-burst`
 (severity + attribute filters), `j-parallel` (invocation facets: mode/
 command/outcome). One new scenario to add (extend the playground matrix per
-plan-161 discipline, same linked-PR): `f-attrs` — spans/logs carrying a
+plan-161 discipline, direct on the playground's main): `f-attrs` — spans/logs carrying a
 documented attribute set with known value distributions (e.g.
 `http.request.method` 70/20/10 GET/POST/DELETE) so facet counts and
 where-clause results are exactly assertable.

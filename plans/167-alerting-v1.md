@@ -8,7 +8,7 @@
 >
 > **Drift check (run first)**:
 > `git diff --stat <wave2-base>..HEAD -- crates/parallax-metadata crates/parallax-api crates/parallax-server ui/src/components/nav.ts`
-> `<wave2-base>` = the Wave-1 merge commit.
+> `<wave2-base>` = the `main` commit closing Wave 1 (plan 159's evidence commit).
 
 ## Status
 
@@ -144,7 +144,7 @@ complete and self-sufficient):
   mutations + `alertChecks(ruleId)`.
 - `ui/src` — `/alerts` (+ `/alerts/$ruleId`, `/alerts/incidents/$incidentId`,
   destinations section), nav entry, template presets, threshold-line chart.
-- Playground (linked PR): scenarios `a-breach-error-rate` (sustained >20%
+- Playground (direct on its main): scenarios `a-breach-error-rate` (sustained >20%
   error rate on one service for ≥3 min), `a-breach-p95` (sustained slow
   handler), `a-recover` (breach then recovery) + matrix rows.
 - Ready-banner line + config knobs (`[alerting] enabled`, intervals) in
@@ -223,7 +223,7 @@ webhook payload captures + screenshots; clean console.
 - [ ] End-to-end: breach → open incident → webhook; recovery → resolved →
   webhook, all captured.
 - [ ] Ready banner names the evaluator; config knobs documented.
-- [ ] Playground scenarios + matrix rows landed (linked PR).
+- [ ] Playground scenarios + matrix rows landed on the playground's main.
 - [ ] `plans/README.md` status row updated.
 
 ## STOP conditions

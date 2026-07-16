@@ -8,24 +8,24 @@
 >
 > **Drift check (run first)**:
 > `git diff --stat <wave2-base>..HEAD -- ui/src/styles.css ui/src/components ui/src/lib`
-> where `<wave2-base>` is the merge commit of the unified-CLI-observability PR
-> (plans 156-161). This plan assumes that PR is merged; if `/invocations`
-> routes do not exist, STOP.
+> where `<wave2-base>` is the `main` commit at which plan 159 recorded Wave
+> 1's completion evidence (plans 156-161; direct-to-main delivery). If
+> `/invocations` routes do not exist, STOP.
 
 ## Status
 
 - **Priority**: P1
 - **Effort**: M
 - **Risk**: LOW-MED (visual regression risk; no data-layer changes)
-- **Depends on**: plans 156-161 merged (Wave 1)
+- **Depends on**: plans 156-161 complete on `main` (Wave 1)
 - **Category**: direction / design / UI foundation
 - **Planned at**: `2288011`, 2026-07-17
-- **Wave 2 delivery (operator /improve directive, 2026-07-17)**: Maple
+- **Wave 2 delivery (operator directives, 2026-07-17)**: Maple
   (github.com/MapleTechLabs/maple) is the design reference. Wave 2 = plans
-  162-168, one branch (proposed `feature/maple-informed-ui`, operator
-  authorizes at execution start), one Parallax PR (+ one linked playground PR
-  when playground scenarios are extended). Every feature is verified in the
-  browser against the playground.
+  162-168, delivered as direct commits to `main` in both repositories — no
+  branches, no pull requests (operator delivery model, see plans/README.md
+  Execution Preflight). Every feature is verified in the browser against
+  the playground before the next step.
 
 ## Why this matters
 
