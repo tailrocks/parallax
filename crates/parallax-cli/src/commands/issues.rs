@@ -35,10 +35,7 @@ pub(crate) async fn issue_list(
             .pointer("/data/invocation")
             .is_some_and(|v| v.is_null())
     {
-        anyhow::bail!(
-            "invocation {} not found",
-            invocation.unwrap_or_default()
-        );
+        anyhow::bail!("invocation {} not found", invocation.unwrap_or_default());
     }
     let mut issues = response
         .pointer(pointer)

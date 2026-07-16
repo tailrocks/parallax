@@ -38,7 +38,7 @@ This decision is binding for agents and future implementation plans:
   focuses performance and compatibility work. Before creating a GreptimeDB pull request or adopting a
   custom raw-signal table, consult Ning / the GreptimeDB team with the research packet so the fix
   aligns with their roadmap instead of wasting their review time.
-- **Derived extension tables remain allowed.** Tables like `error_events`, `run_metric_points`, and
+- **Derived extension tables remain allowed.** Tables like `error_events`, `invocation_metric_points`, and
   `metric_exemplars` are Parallax product facts, not raw OTel replacements. They stay allowed only when
   they are derived from native signal data or in-process tees and are documented here.
 
@@ -95,15 +95,15 @@ headers; post-create `ALTER TABLE … ADD COLUMN` / `ADD … INVERTED INDEX | FU
   - Metrics: **never metric tags** (high-cardinality → series explosion).
 - **Invocation-scoped metrics → custom extension `invocation_metric_points`** (append table,
   `invocation_id STRING SKIPPING INDEX`, `append_mode`, `flat` SST) — GreptimeDB's own
-  high-cardinality pattern; the metric engine stays invocation_id-free. Fresh installs create
-  only the new table; bootstrap migrates legacy `run_metric_points` rows when present, then
-  drops that table.
+  high-cardinality pattern; the metric engine stays invocation_id-free. Forward-only contract
+  (operator, 2026-07-17: no backward compatibility): bootstrap creates the new table and drops
+  any legacy `run_metric_points` table without reading it.
 - **`error_events`, `invocation_metric_points`, `metric_exemplars` → KEEP custom.** Product
   semantics; no native raw-signal replacement. `metric_exemplars` is keyed only by the
   low-cardinality `(service, name)` pair; trace/invocation correlation identifiers are fields
-  with skipping indexes only where reads justify them. Existing legacy exemplar tables migrate
-  through a verified replacement-and-rename sequence, preserving the source until row and value
-  parity succeeds.
+  with skipping indexes only where reads justify them. Forward-only: any pre-`invocation_id`
+  exemplar table shape is dropped at bootstrap and recreated fresh; no legacy rows are read
+  or migrated.
 
 ## Plan 084 — deterministic native logs schema (verified 2026-07-11, GreptimeDB v1.1.2)
 

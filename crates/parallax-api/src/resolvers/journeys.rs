@@ -313,3 +313,6 @@ pub(crate) async fn conversations(
         .map(ConversationOut)
         .collect())
 }
+
+#[cfg(test)]
+mod tests;

@@ -4,7 +4,7 @@
 //! `poc/evidence-loop/src/derive.rs` with identical rules: span `exception`
 //! events, span ERROR status, ERROR/FATAL logs, and exception-attribute logs
 //! (the post-Span-Events encoding). Producer-stated `error.type` and
-//! `jackin.operation` attributes refine grouping when present.
+//! `cli.command.name` attributes refine grouping when present.
 
 use crate::fingerprint::fingerprint_with_operation;
 use crate::semconv;

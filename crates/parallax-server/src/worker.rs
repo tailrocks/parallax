@@ -340,7 +340,9 @@ impl Worker {
             }
         }
         for (invocation_id, ts_nanos) in first_seen {
-            self.metadata.ensure_invocation(&invocation_id, ts_nanos).await?;
+            self.metadata
+                .ensure_invocation(&invocation_id, ts_nanos)
+                .await?;
             let mut seen = self.seen_runs.lock().await;
             if seen.len() > SEEN_RUNS_CAP {
                 seen.clear();

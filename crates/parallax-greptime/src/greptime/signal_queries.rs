@@ -2,7 +2,11 @@ use super::*;
 
 #[async_trait::async_trait]
 impl crate::adapter::LogStore for GreptimeStore {
-    async fn logs_by_invocation(&self, invocation_id: &str, limit: usize) -> StorageResult<Vec<LogRow>> {
+    async fn logs_by_invocation(
+        &self,
+        invocation_id: &str,
+        limit: usize,
+    ) -> StorageResult<Vec<LogRow>> {
         let mut logs = self
             .select_logs(
                 &format!(

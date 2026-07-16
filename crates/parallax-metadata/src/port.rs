@@ -1,6 +1,6 @@
 use crate::TursoMetadataStore;
 use parallax_model::{
-    Dashboard, Investigation, Issue, IssueOccurrence, IssueQuery, IssueSortKey, InvocationRecord,
+    Dashboard, Investigation, InvocationRecord, Issue, IssueOccurrence, IssueQuery, IssueSortKey,
     SavedView, TrendPoint,
 };
 use parallax_storage::metadata::{MetadataError, MetadataResult};

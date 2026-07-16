@@ -255,18 +255,18 @@ pub(super) fn absorb_observed_run(
     let first = u128_at(row, 1);
     let last = u128_at(row, 2);
     let count = u128_at(row, 3) as u64;
-    let entry = runs
-        .entry(invocation_id.clone())
-        .or_insert_with(|| crate::adapter::ObservedInvocation {
-            invocation_id: invocation_id.clone(),
-            first_nanos: first,
-            last_nanos: last,
-            span_count: 0,
-            log_count: 0,
-            service: str_at(row, 4),
-            last_command: None,
-            app_mode: None,
-        });
+    let entry =
+        runs.entry(invocation_id.clone())
+            .or_insert_with(|| crate::adapter::ObservedInvocation {
+                invocation_id: invocation_id.clone(),
+                first_nanos: first,
+                last_nanos: last,
+                span_count: 0,
+                log_count: 0,
+                service: str_at(row, 4),
+                last_command: None,
+                app_mode: None,
+            });
     entry.first_nanos = entry.first_nanos.min(first);
     entry.last_nanos = entry.last_nanos.max(last);
     if entry.last_command.is_none() {

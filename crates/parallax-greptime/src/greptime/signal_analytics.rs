@@ -114,7 +114,14 @@ impl crate::adapter::RuntimeMetricStore for GreptimeStore {
                 let range = range.clone();
                 async move {
                     let points = self
-                        .metric_series(&metric, service, invocation_id, range, step_nanos, MetricAgg::Avg)
+                        .metric_series(
+                            &metric,
+                            service,
+                            invocation_id,
+                            range,
+                            step_nanos,
+                            MetricAgg::Avg,
+                        )
                         .await?;
                     Ok::<_, anyhow::Error>((metric, family, points))
                 }

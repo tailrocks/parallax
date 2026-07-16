@@ -55,33 +55,34 @@ impl adapter::InvocationStore for MemoryStore {
     ) -> StorageResult<Vec<adapter::ObservedInvocation>> {
         let inner = self.lock();
         let mut runs: HashMap<String, adapter::ObservedInvocation> = HashMap::new();
-        let mut absorb = |invocation_id: &Option<String>, ts: u128, service: &str, is_span: bool| {
-            if !range.contains(&ts) {
-                return;
-            }
-            let Some(invocation_id) = invocation_id.as_deref().filter(|r| !r.is_empty()) else {
-                return;
-            };
-            let entry = runs
-                .entry(invocation_id.to_owned())
-                .or_insert_with(|| adapter::ObservedInvocation {
-                    invocation_id: invocation_id.to_owned(),
-                    first_nanos: ts,
-                    last_nanos: ts,
-                    span_count: 0,
-                    log_count: 0,
-                    service: service.to_owned(),
-                    last_command: None,
-                    app_mode: None,
+        let mut absorb =
+            |invocation_id: &Option<String>, ts: u128, service: &str, is_span: bool| {
+                if !range.contains(&ts) {
+                    return;
+                }
+                let Some(invocation_id) = invocation_id.as_deref().filter(|r| !r.is_empty()) else {
+                    return;
+                };
+                let entry = runs.entry(invocation_id.to_owned()).or_insert_with(|| {
+                    adapter::ObservedInvocation {
+                        invocation_id: invocation_id.to_owned(),
+                        first_nanos: ts,
+                        last_nanos: ts,
+                        span_count: 0,
+                        log_count: 0,
+                        service: service.to_owned(),
+                        last_command: None,
+                        app_mode: None,
+                    }
                 });
-            entry.first_nanos = entry.first_nanos.min(ts);
-            entry.last_nanos = entry.last_nanos.max(ts);
-            if is_span {
-                entry.span_count += 1;
-            } else {
-                entry.log_count += 1;
-            }
-        };
+                entry.first_nanos = entry.first_nanos.min(ts);
+                entry.last_nanos = entry.last_nanos.max(ts);
+                if is_span {
+                    entry.span_count += 1;
+                } else {
+                    entry.log_count += 1;
+                }
+            };
         for span in &inner.spans {
             absorb(&span.invocation_id, span.ts_nanos, &span.service, true);
         }
@@ -127,8 +128,7 @@ impl adapter::InvocationStore for MemoryStore {
             .logs
             .iter()
             .filter(|log| {
-                log.invocation_id.as_deref() == Some(invocation_id)
-                    && range.contains(&log.ts_nanos)
+                log.invocation_id.as_deref() == Some(invocation_id) && range.contains(&log.ts_nanos)
             })
             .cloned()
             .collect();
@@ -148,10 +148,9 @@ impl adapter::InvocationStore for MemoryStore {
             .iter()
             .filter(|log| {
                 range.contains(&log.ts_nanos)
-                    && invocation_id
-                        .is_none_or(|invocation_id| {
-                            log.invocation_id.as_deref() == Some(invocation_id)
-                        })
+                    && invocation_id.is_none_or(|invocation_id| {
+                        log.invocation_id.as_deref() == Some(invocation_id)
+                    })
             })
             .cloned()
             .collect();
@@ -220,9 +219,7 @@ impl MemoryStore {
         let trace_ids: HashSet<&str> = inner
             .spans
             .iter()
-            .filter(|span| {
-                invocation_id.is_none_or(|id| span.invocation_id.as_deref() == Some(id))
-            })
+            .filter(|span| invocation_id.is_none_or(|id| span.invocation_id.as_deref() == Some(id)))
             .map(|span| span.trace_id.as_str())
             .collect();
         inner

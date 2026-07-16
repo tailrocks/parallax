@@ -197,8 +197,12 @@ impl crate::adapter::TraceStore for GreptimeStore {
                 for invocation_id in invocation_ids {
                     out.insert(
                         invocation_id.clone(),
-                        self.spans_by_invocation(invocation_id, limit_per_invocation, 0..=u128::MAX)
-                            .await?,
+                        self.spans_by_invocation(
+                            invocation_id,
+                            limit_per_invocation,
+                            0..=u128::MAX,
+                        )
+                        .await?,
                     );
                 }
                 return Ok(out);
@@ -234,7 +238,9 @@ impl crate::adapter::TraceStore for GreptimeStore {
                 }),
                 session_id: cols
                     .opt_string(&semconv::span_column(semconv::SESSION_ID), row)
-                    .or_else(|| cols.opt_string(&semconv::resource_column(semconv::SESSION_ID), row)),
+                    .or_else(|| {
+                        cols.opt_string(&semconv::resource_column(semconv::SESSION_ID), row)
+                    }),
                 scope_name: cols.string("scope_name", row),
                 events,
                 links: cols.json("span_links", row),

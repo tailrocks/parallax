@@ -77,7 +77,9 @@ async fn check_one(client: &GraphqlClient, args: &CheckArgs, case: &Case) -> any
         CaseKind::IssueBundle { fingerprint } => {
             gql::fetch_bundle(client, Some(fingerprint), None).await?
         }
-        CaseKind::RunBundle { invocation_id } => gql::fetch_bundle(client, None, Some(invocation_id)).await?,
+        CaseKind::RunBundle { invocation_id } => {
+            gql::fetch_bundle(client, None, Some(invocation_id)).await?
+        }
     };
 
     // 2) Plain HTTP GraphQL (same client — second call; proves stability).
@@ -85,7 +87,9 @@ async fn check_one(client: &GraphqlClient, args: &CheckArgs, case: &Case) -> any
         CaseKind::IssueBundle { fingerprint } => {
             gql::fetch_bundle(client, Some(fingerprint), None).await?
         }
-        CaseKind::RunBundle { invocation_id } => gql::fetch_bundle(client, None, Some(invocation_id)).await?,
+        CaseKind::RunBundle { invocation_id } => {
+            gql::fetch_bundle(client, None, Some(invocation_id)).await?
+        }
     };
 
     // 3) CLI: `parallax issue context` / `parallax run bundle` --format json

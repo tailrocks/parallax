@@ -88,7 +88,10 @@ pub(crate) async fn bundle_metric_windows(
             let Some(anchor_ts) = anchor_ts else {
                 return Ok(Vec::new());
             };
-            let invocation_id = inputs.trace_spans.iter().find_map(|s| s.invocation_id.clone());
+            let invocation_id = inputs
+                .trace_spans
+                .iter()
+                .find_map(|s| s.invocation_id.clone());
             let service = inputs
                 .trace_spans
                 .first()
@@ -233,7 +236,11 @@ pub(crate) async fn issue_trend(
     Ok(points.into_iter().map(TrendPoint).collect())
 }
 
-fn validate_bundle_anchors(fingerprint: bool, invocation_id: bool, trace_id: bool) -> FieldResult<()> {
+fn validate_bundle_anchors(
+    fingerprint: bool,
+    invocation_id: bool,
+    trace_id: bool,
+) -> FieldResult<()> {
     if [fingerprint, invocation_id, trace_id]
         .into_iter()
         .filter(|present| *present)
@@ -258,7 +265,11 @@ pub(crate) async fn bundle(
     use parallax_evidence::bundle::{BundleAnchor, BundleInputs};
     let trace_id = crate::validate_optional_trace_id(trace_id)?;
     let max_tokens = usize::try_from(max_tokens.unwrap_or(10_000).max(500)).unwrap_or(10_000);
-    validate_bundle_anchors(fingerprint.is_some(), invocation_id.is_some(), trace_id.is_some())?;
+    validate_bundle_anchors(
+        fingerprint.is_some(),
+        invocation_id.is_some(),
+        trace_id.is_some(),
+    )?;
 
     let mut inputs = if let Some(fingerprint) = fingerprint {
         let Some(issue) = context

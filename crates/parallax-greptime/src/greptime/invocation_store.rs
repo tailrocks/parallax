@@ -248,14 +248,13 @@ impl crate::adapter::InvocationStore for GreptimeStore {
         let spans = self
             .invocation_named_spans(
                 Some(invocation_id),
-                &format!(
-                    r#""span_name" = '{}'"#,
-                    semconv::UI_ACTION_SPAN_NAME
-                ),
+                &format!(r#""span_name" = '{}'"#, semconv::UI_ACTION_SPAN_NAME),
                 &range,
             )
             .await?;
-        Ok(parallax_storage::projections::project_ui_actions(&spans, limit))
+        Ok(parallax_storage::projections::project_ui_actions(
+            &spans, limit,
+        ))
     }
 
     async fn background_cycles(
@@ -267,10 +266,7 @@ impl crate::adapter::InvocationStore for GreptimeStore {
         let spans = self
             .invocation_named_spans(
                 invocation_id,
-                &format!(
-                    r#""span_name" = '{}'"#,
-                    semconv::BACKGROUND_CYCLE_SPAN_NAME
-                ),
+                &format!(r#""span_name" = '{}'"#, semconv::BACKGROUND_CYCLE_SPAN_NAME),
                 &range,
             )
             .await?;
@@ -306,13 +302,13 @@ impl crate::adapter::InvocationStore for GreptimeStore {
         let spans = self
             .invocation_named_spans(
                 Some(invocation_id),
-                &format!(
-                    r#"{conversation_column} IS NOT NULL AND {conversation_column} != ''"#
-                ),
+                &format!(r#"{conversation_column} IS NOT NULL AND {conversation_column} != ''"#),
                 &range,
             )
             .await?;
-        Ok(parallax_storage::projections::summarize_conversations(&spans, limit))
+        Ok(parallax_storage::projections::summarize_conversations(
+            &spans, limit,
+        ))
     }
 }
 

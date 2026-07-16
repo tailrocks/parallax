@@ -92,8 +92,10 @@ impl adapter::TraceStore for MemoryStore {
         limit_per_invocation: usize,
     ) -> StorageResult<HashMap<String, Vec<SpanRow>>> {
         let wanted: HashSet<&str> = invocation_ids.iter().map(String::as_str).collect();
-        let mut out: HashMap<String, Vec<SpanRow>> =
-            invocation_ids.iter().map(|id| (id.clone(), Vec::new())).collect();
+        let mut out: HashMap<String, Vec<SpanRow>> = invocation_ids
+            .iter()
+            .map(|id| (id.clone(), Vec::new()))
+            .collect();
         if wanted.is_empty() || limit_per_invocation == 0 {
             return Ok(out);
         }

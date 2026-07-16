@@ -168,7 +168,6 @@ impl GreptimeStore {
         Ok(())
     }
 
-
     /// Apply configured retention TTLs via `ALTER TABLE … SET 'ttl'`.
     /// Per-metric native tables are excluded (TTL rides creation hints only).
     async fn reconcile_ttls(&self, metrics_ttl: &str, error_events_ttl: &str) {

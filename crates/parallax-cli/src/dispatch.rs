@@ -1,7 +1,9 @@
 //! Parsed-command dispatch, kept separate from clap declarations and runtime setup.
 
 use crate::client::{Client, gql_str, resolve_url};
-use crate::{Cli, Command, InvocationCommand, IssueCommand, TraceCommand, commands, doctor, runtime};
+use crate::{
+    Cli, Command, InvocationCommand, IssueCommand, TraceCommand, commands, doctor, runtime,
+};
 
 pub(crate) async fn execute(cli: Cli, runtime: runtime::Runtime) -> anyhow::Result<()> {
     let client =
@@ -84,20 +86,26 @@ async fn invocation(
             print_env,
             command,
         } => {
-            let code = commands::invocation_start(&client()?, command, otlp_forward, print_env).await?;
+            let code =
+                commands::invocation_start(&client()?, command, otlp_forward, print_env).await?;
             std::process::exit(code);
         }
-        InvocationCommand::Finish { invocation_id, exit_code } => {
-            commands::invocation_finish(&client()?, &invocation_id, exit_code).await
-        }
+        InvocationCommand::Finish {
+            invocation_id,
+            exit_code,
+        } => commands::invocation_finish(&client()?, &invocation_id, exit_code).await,
         InvocationCommand::List => commands::invocation_list(&client()?).await,
-        InvocationCommand::Inspect { invocation_id } => commands::invocation_inspect(&client()?, &invocation_id).await,
-        InvocationCommand::Bundle { invocation_id, format } => {
-            commands::invocation_bundle(&client()?, &invocation_id, format).await
+        InvocationCommand::Inspect { invocation_id } => {
+            commands::invocation_inspect(&client()?, &invocation_id).await
         }
-        InvocationCommand::Agent { invocation_id, format } => {
-            commands::invocation_agent_session(&client()?, &invocation_id, format).await
-        }
+        InvocationCommand::Bundle {
+            invocation_id,
+            format,
+        } => commands::invocation_bundle(&client()?, &invocation_id, format).await,
+        InvocationCommand::Agent {
+            invocation_id,
+            format,
+        } => commands::invocation_agent_session(&client()?, &invocation_id, format).await,
         InvocationCommand::Watch {
             invocation_id,
             level,

@@ -164,17 +164,20 @@ pub fn project_ui_actions(spans: &[SpanRow], limit: usize) -> Vec<UiAction> {
     actions
 }
 
+#[expect(
+    clippy::cast_precision_loss,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "bounded display aggregate over MAX_ROWS-sized windows"
+)]
 fn percentile(sorted_ns: &[u128], q: f64) -> Option<f64> {
     if sorted_ns.is_empty() {
         return None;
     }
-    let rank = (q * (sorted_ns.len() - 1) as f64).round() as usize;
-    sorted_ns.get(rank.min(sorted_ns.len() - 1)).map(|v| {
-        #[expect(clippy::cast_precision_loss, reason = "display aggregate")]
-        {
-            *v as f64
-        }
-    })
+    let rank = (q * (sorted_ns.len() - 1) as f64).round().max(0.0) as usize;
+    sorted_ns
+        .get(rank.min(sorted_ns.len() - 1))
+        .map(|v| *v as f64)
 }
 
 /// `background.cycle` spans grouped by `background.cycle.name`, most recent
@@ -193,14 +196,11 @@ pub fn summarize_background_cycles(spans: &[SpanRow], limit: usize) -> Vec<Backg
     }
     let mut cycles: Vec<BackgroundCycleSummary> = groups
         .into_iter()
-        .map(|(name, spans)| {
+        .filter_map(|(name, spans)| {
             let mut durations: Vec<u128> = spans.iter().map(|span| span.duration_ns).collect();
             durations.sort_unstable();
-            let last = spans
-                .iter()
-                .max_by_key(|span| span.ts_nanos)
-                .expect("group is non-empty");
-            BackgroundCycleSummary {
+            let last = spans.iter().max_by_key(|span| span.ts_nanos)?;
+            Some(BackgroundCycleSummary {
                 name,
                 count: spans.len() as u64,
                 error_count: spans.iter().filter(|span| span_has_error(span)).count() as u64,
@@ -208,7 +208,7 @@ pub fn summarize_background_cycles(spans: &[SpanRow], limit: usize) -> Vec<Backg
                 p95_ns: percentile(&durations, 0.95),
                 last_nanos: last.ts_nanos,
                 last_trace_id: last.trace_id.clone(),
-            }
+            })
         })
         .collect();
     cycles.sort_by_key(|cycle| std::cmp::Reverse(cycle.last_nanos));
@@ -228,10 +228,10 @@ pub fn summarize_jobs(spans: &[SpanRow], limit: usize) -> Vec<JobSummary> {
     }
     let mut jobs: Vec<JobSummary> = groups
         .into_iter()
-        .map(|(job_id, mut spans)| {
+        .filter_map(|(job_id, mut spans)| {
             spans.sort_by_key(|span| span.ts_nanos);
-            let last = spans.last().expect("group is non-empty");
-            JobSummary {
+            let last = spans.last()?;
+            Some(JobSummary {
                 job_id,
                 job_type: spans
                     .iter()
@@ -253,7 +253,7 @@ pub fn summarize_jobs(spans: &[SpanRow], limit: usize) -> Vec<JobSummary> {
                     })
                     .collect(),
                 last_trace_id: last.trace_id.clone(),
-            }
+            })
         })
         .collect();
     jobs.sort_by_key(|job| {

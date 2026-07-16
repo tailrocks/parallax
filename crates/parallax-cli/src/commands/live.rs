@@ -159,7 +159,7 @@ fn print_span_line(span: &serde_json::Value) {
     );
 }
 
-/// `parallax run watch <invocation_id>` — the run-scoped combined live tail: new
+/// `parallax invocation watch <invocation_id>` — the invocation-scoped combined live tail: new
 /// log records and finished spans for one run id, interleaved as they
 /// arrive (the CLI mirror of the run page's Live mode). `--for 30s` watches
 /// a fixed window and reports per-stream match counts — the agent

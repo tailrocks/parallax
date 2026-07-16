@@ -419,14 +419,69 @@ async fn external_runs_register_once() {
 
     // A wrapper-started run keeps its own record.
     store
-        .start_invocation("run_cli", Some("cargo test"), Some("one_shot"), 1_000_000_000)
+        .start_invocation(
+            "run_cli",
+            Some("cargo test"),
+            Some("one_shot"),
+            1_000_000_000,
+        )
         .await
         .expect("start");
     store
         .ensure_invocation("run_cli", 2_000_000_000)
         .await
         .expect("ensure existing");
-    let cli_run = store.invocation("run_cli").await.expect("run").expect("present");
+    let cli_run = store
+        .invocation("run_cli")
+        .await
+        .expect("run")
+        .expect("present");
     assert_eq!(cli_run.status, "running");
     assert_eq!(cli_run.command.as_deref(), Some("cargo test"));
+}
+
+#[tokio::test]
+async fn legacy_runs_table_is_dropped_forward_only() {
+    // Operator 2026-07-17: no backward compatibility — a pre-cutover `runs`
+    // table is dropped at bootstrap, never read or migrated.
+    let (_directory, path) = temp_db();
+    {
+        let database = turso::Builder::new_local(path.to_str().expect("utf8 path"))
+            .build()
+            .await
+            .expect("open raw db");
+        let connection = database.connect().expect("connect raw db");
+        connection
+            .execute(
+                "CREATE TABLE runs (
+                   run_id TEXT PRIMARY KEY, command TEXT, started_at INTEGER NOT NULL,
+                   ended_at INTEGER, exit_code INTEGER, status TEXT NOT NULL DEFAULT 'running'
+                 )",
+                (),
+            )
+            .await
+            .expect("create legacy table");
+        connection
+            .execute(
+                "INSERT INTO runs (run_id, started_at) VALUES ('legacy-run', 1)",
+                (),
+            )
+            .await
+            .expect("seed legacy row");
+    }
+    let store = MetadataStore::open(&path).await.expect("open");
+    assert!(
+        store.invocations(10).await.expect("invocations").is_empty(),
+        "legacy runs rows must not surface as invocations"
+    );
+    let conn = store.conn.lock().await;
+    let mut rows = conn
+        .query(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'runs'",
+            (),
+        )
+        .await
+        .expect("query sqlite_master");
+    let row = rows.next().await.expect("next").expect("row");
+    assert_eq!(integer(&row, 0), 0, "legacy runs table must be dropped");
 }

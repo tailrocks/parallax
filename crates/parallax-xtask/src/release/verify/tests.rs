@@ -119,6 +119,7 @@ fn object_verification_rejects_target_version_and_corrupt_line_tables()
     Ok(())
 }
 
+#[cfg(target_os = "linux")]
 fn alternate_target(target: &str) -> &'static str {
     match target {
         "aarch64-unknown-linux-gnu" => "x86_64-unknown-linux-gnu",

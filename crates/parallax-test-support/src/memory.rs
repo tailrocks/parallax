@@ -1,6 +1,7 @@
 //! In-memory `TelemetryStore` for tests and explicit test-support builds only.
 
 mod error_analytics;
+mod invocation_store;
 mod log_analytics;
 mod log_count;
 mod log_store;
@@ -8,7 +9,6 @@ mod math;
 mod metric_analytics;
 mod metric_store;
 mod raw_sql;
-mod run_store;
 mod runtime_metrics;
 mod seed;
 mod service_analytics;

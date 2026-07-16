@@ -190,7 +190,8 @@ async fn story_requires_exactly_one_anchor() {
     let schema = build_schema();
     let context = context_with_memory(Arc::new(MemoryStore::new())).await;
     let request = juniper::http::GraphQLRequest::new(
-        r#"{ story(traceId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", invocationId: "b") { kind } }"#.into(),
+        r#"{ story(traceId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", invocationId: "b") { kind } }"#
+            .into(),
         None,
         None,
     );

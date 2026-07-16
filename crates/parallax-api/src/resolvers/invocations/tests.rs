@@ -99,7 +99,9 @@ async fn runs_list_stats_match_single_run() {
             memo: RequestMemo::default(),
         };
         let q = juniper::http::GraphQLRequest::new(
-            format!(r#"{{ invocation(invocationId: "{invocation_id}") {{ errorCount traceCount }} }}"#),
+            format!(
+                r#"{{ invocation(invocationId: "{invocation_id}") {{ errorCount traceCount }} }}"#
+            ),
             None,
             None,
         );

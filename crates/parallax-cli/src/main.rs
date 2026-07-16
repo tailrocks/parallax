@@ -156,7 +156,10 @@ pub(crate) enum InvocationCommand {
         command: Vec<String>,
     },
     /// Close a bare-mode invocation.
-    Finish { invocation_id: String, exit_code: i32 },
+    Finish {
+        invocation_id: String,
+        exit_code: i32,
+    },
     /// Show one invocation's record (status, counts, issues).
     Inspect { invocation_id: String },
     /// The invocation-anchored evidence bundle (Markdown by default; `--format json` for canonical JSON).

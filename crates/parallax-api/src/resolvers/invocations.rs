@@ -1,4 +1,7 @@
-#![expect(clippy::excessive_nesting, reason = "measured invocation resolver flow")]
+#![expect(
+    clippy::excessive_nesting,
+    reason = "measured invocation resolver flow"
+)]
 
 //! GraphQL CLI-invocation domain types and resolvers.
 
@@ -72,7 +75,11 @@ impl Invocation {
             .get_or_try_init(|| async {
                 let spans = context
                     .store
-                    .spans_by_invocation(&self.record.invocation_id, MAX_ROWS, retained_recent_range())
+                    .spans_by_invocation(
+                        &self.record.invocation_id,
+                        MAX_ROWS,
+                        retained_recent_range(),
+                    )
                     .await
                     .map_err(crate::internal_field_err)?;
                 let mut trace_ids: Vec<String> = Vec::new();
@@ -304,7 +311,12 @@ pub(crate) async fn invocation_start(
         .map_err(|_| field_err("invalid nanos"))?;
     context
         .metadata
-        .start_invocation(&invocation_id, command.as_deref(), app_mode.as_deref(), nanos)
+        .start_invocation(
+            &invocation_id,
+            command.as_deref(),
+            app_mode.as_deref(),
+            nanos,
+        )
         .await
         .map_err(crate::internal_field_err)?;
     Ok(true)

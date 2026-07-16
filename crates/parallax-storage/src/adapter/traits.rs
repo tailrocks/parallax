@@ -70,7 +70,11 @@ pub trait TraceStore: Send + Sync {
 #[async_trait::async_trait]
 pub trait LogStore: Send + Sync {
     /// Run-scoped read: every log tagged with one `cli.invocation.id`.
-    async fn logs_by_invocation(&self, invocation_id: &str, limit: usize) -> StorageResult<Vec<LogRow>>;
+    async fn logs_by_invocation(
+        &self,
+        invocation_id: &str,
+        limit: usize,
+    ) -> StorageResult<Vec<LogRow>>;
     /// Anchored read: every log of one trace, time ascending.
     async fn logs_by_trace(&self, trace_id: &str) -> StorageResult<Vec<LogRow>>;
 }

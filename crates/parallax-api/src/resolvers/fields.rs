@@ -157,9 +157,11 @@ pub(crate) async fn evidence_gaps(
         }
         (None, Some(invocation_id)) => {
             let (spans, logs) = tokio::try_join!(
-                context
-                    .store
-                    .spans_by_invocation(&invocation_id, MAX_ROWS, retained_recent_range()),
+                context.store.spans_by_invocation(
+                    &invocation_id,
+                    MAX_ROWS,
+                    retained_recent_range()
+                ),
                 context.store.logs_by_invocation(&invocation_id, MAX_ROWS),
             )
             .map_err(crate::internal_field_err)?;

@@ -158,7 +158,10 @@ fn normalize_metrics_collects_number_and_histogram_exemplars() {
     assert_eq!(normalized.histograms.len(), 1);
     assert_eq!(normalized.exemplars.len(), 2);
     assert_eq!(normalized.exemplars[0].service, "checkout");
-    assert_eq!(normalized.exemplars[0].invocation_id.as_deref(), Some("run-a"));
+    assert_eq!(
+        normalized.exemplars[0].invocation_id.as_deref(),
+        Some("run-a")
+    );
     assert_eq!(
         normalized.exemplars[0].trace_id,
         "01010101010101010101010101010101"
@@ -292,3 +295,64 @@ fn normalize_logs_resolves_session_id_signal_then_resource() {
     assert_eq!(rows[0].invocation_id, None);
 }
 
+fn trace_request_with_child(
+    resource_attrs: Vec<KeyValue>,
+    root_attrs: Vec<KeyValue>,
+) -> ExportTraceServiceRequest {
+    ExportTraceServiceRequest {
+        resource_spans: vec![parallax_proto::trace::ResourceSpans {
+            resource: Some(parallax_proto::resource::Resource {
+                attributes: resource_attrs,
+                ..Default::default()
+            }),
+            scope_spans: vec![parallax_proto::trace::ScopeSpans {
+                spans: vec![
+                    parallax_proto::trace::Span {
+                        trace_id: vec![1; 16],
+                        span_id: vec![2; 8],
+                        name: "root".to_string(),
+                        start_time_unix_nano: 10,
+                        end_time_unix_nano: 20,
+                        attributes: root_attrs,
+                        ..Default::default()
+                    },
+                    parallax_proto::trace::Span {
+                        trace_id: vec![1; 16],
+                        span_id: vec![3; 8],
+                        parent_span_id: vec![2; 8],
+                        name: "child".to_string(),
+                        start_time_unix_nano: 12,
+                        end_time_unix_nano: 18,
+                        ..Default::default()
+                    },
+                ],
+                ..Default::default()
+            }],
+            ..Default::default()
+        }],
+    }
+}
+
+#[test]
+fn root_span_attribute_wins_over_resource_attribute() {
+    let rows = normalize_traces(&trace_request_with_child(
+        vec![
+            string_kv("service.name", "cli"),
+            string_kv("cli.invocation.id", "inv-res"),
+        ],
+        vec![string_kv("cli.invocation.id", "inv-span")],
+    ));
+    for row in &rows {
+        assert_eq!(row.invocation_id.as_deref(), Some("inv-span"));
+    }
+}
+
+#[test]
+fn resource_invocation_ids_reads_root_span_attribute() {
+    let request = trace_request_with_child(
+        vec![string_kv("service.name", "cli")],
+        vec![string_kv("cli.invocation.id", "inv-root")],
+    );
+    let ids: Vec<(String, u128)> = resource_invocation_ids(&request).collect();
+    assert_eq!(ids, vec![("inv-root".to_string(), 10)]);
+}

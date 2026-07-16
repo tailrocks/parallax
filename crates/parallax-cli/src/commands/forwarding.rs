@@ -135,7 +135,7 @@ pub(crate) async fn parallax_endpoints_from_server(
     })
 }
 
-/// Child resource attributes: run ID plus comparison labels when forwarding.
+/// Child resource attributes: invocation id plus comparison labels when forwarding.
 pub(crate) fn forward_resource_attrs(invocation_id: &str, compare: bool) -> String {
     let mut attrs = format!("{}={invocation_id}", semconv::CLI_INVOCATION_ID);
     if compare {
@@ -201,8 +201,8 @@ pub(crate) fn now_nanos() -> u128 {
 }
 
 pub(crate) fn new_invocation_id() -> String {
-    // Time-based id is enough for a single-user local tool.
-    format!("{:x}", now_nanos())
+    // Opaque UUIDv4 per top-level CLI process (unified CLI contract).
+    uuid::Uuid::new_v4().to_string()
 }
 
 pub(crate) fn relative(nanos_str: &str) -> String {

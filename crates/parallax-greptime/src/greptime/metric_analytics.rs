@@ -58,7 +58,11 @@ impl MetricAnalyticsStore for GreptimeStore {
             .await?
         };
         // Run-metric buckets are already nanos; native metric buckets are ms.
-        let scale = if invocation_id.is_some() { 1 } else { 1_000_000 };
+        let scale = if invocation_id.is_some() {
+            1
+        } else {
+            1_000_000
+        };
         let mut series: Vec<SeriesPoint> = rows
             .iter()
             .map(|row| SeriesPoint {

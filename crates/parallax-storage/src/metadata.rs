@@ -2,7 +2,8 @@
 
 use async_trait::async_trait;
 use parallax_model::{
-    Dashboard, Investigation, Issue, IssueQuery, IssueSortKey, InvocationRecord, SavedView, TrendPoint,
+    Dashboard, Investigation, InvocationRecord, Issue, IssueQuery, IssueSortKey, SavedView,
+    TrendPoint,
 };
 use thiserror::Error;
 
@@ -115,8 +116,7 @@ pub trait MetadataStore: Send + Sync {
         outcome: Option<&str>,
     ) -> MetadataResult<()>;
     async fn invocations(&self, limit: usize) -> MetadataResult<Vec<InvocationRecord>>;
-    async fn invocation(&self, invocation_id: &str)
-    -> MetadataResult<Option<InvocationRecord>>;
+    async fn invocation(&self, invocation_id: &str) -> MetadataResult<Option<InvocationRecord>>;
     async fn ensure_invocation(
         &self,
         invocation_id: &str,

@@ -1,11 +1,6 @@
 use super::*;
 
-fn log(
-    ts: u128,
-    event: &str,
-    session: Option<&str>,
-    attributes: serde_json::Value,
-) -> LogRow {
+fn log(ts: u128, event: &str, session: Option<&str>, attributes: serde_json::Value) -> LogRow {
     LogRow {
         ts_nanos: ts,
         event_name: event.to_string(),

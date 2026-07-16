@@ -3,7 +3,7 @@
 //! kernels) onto the live row model. The same JSON powers the GraphQL
 //! `bundle` field, the CLI's `issue context`, and the UI's bundle preview.
 
-use parallax_model::{ErrorEventRow, Issue, LogRow, InvocationRecord, SpanRow};
+use parallax_model::{ErrorEventRow, InvocationRecord, Issue, LogRow, SpanRow};
 use regex::Regex;
 use serde::Serialize;
 use sha2::{Digest, Sha256};

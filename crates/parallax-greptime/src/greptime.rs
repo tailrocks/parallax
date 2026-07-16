@@ -13,8 +13,8 @@ use crate::adapter::{
 };
 use crate::greptime_sql::{
     METRIC_BOOKKEEPING_COLUMNS, canonical_metric_display_name, escape, escape_ident,
-    log_service_name_expr, metric_name_sql_filter, metric_table_candidates, quoted_ident, span_attr_ident, trace_attr_expr,
-    resource_attr_ident, runtime_display_name, wire_attr_ident,
+    log_service_name_expr, metric_name_sql_filter, metric_table_candidates, quoted_ident,
+    resource_attr_ident, runtime_display_name, span_attr_ident, trace_attr_expr, wire_attr_ident,
 };
 use crate::model::*;
 use parallax_semconv as semconv;
@@ -27,11 +27,11 @@ use tokio::sync::RwLock;
 
 mod analytics_helpers;
 mod ingest;
+mod invocation_store;
 mod lifecycle;
 mod metric_analytics;
 mod query_sql;
 mod row_decode;
-mod invocation_store;
 mod service_analytics;
 mod signal_analytics;
 mod signal_queries;

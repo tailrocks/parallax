@@ -3,16 +3,17 @@
 
 use parallax_model::IssueOccurrence;
 use parallax_model::{
-    Dashboard, Investigation, Issue, IssueQuery, IssueSortKey, InvocationRecord, SavedView, TrendPoint,
+    Dashboard, Investigation, InvocationRecord, Issue, IssueQuery, IssueSortKey, SavedView,
+    TrendPoint,
 };
 use parallax_semconv as semconv;
 use std::{collections::BTreeMap, path::Path};
 use turso::Value;
 
 mod connection;
+mod invocations;
 mod occurrences;
 mod row;
-mod invocations;
 mod saved_state;
 mod values;
 

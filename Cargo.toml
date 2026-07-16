@@ -89,6 +89,7 @@ semver = "1"
 sha2 = "0.10"
 tokio = { version = "1", features = ["full"] }
 tokio-stream = { version = "0.1", features = ["net", "sync"] }
+uuid = { version = "1", features = ["v4"] }
 urlencoding = "2"
 futures-core = "0.3"
 futures-util = "0.3"

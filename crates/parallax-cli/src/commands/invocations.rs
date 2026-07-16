@@ -1,4 +1,4 @@
-//! Run lifecycle, inspection, bundle, and agent-session commands.
+//! Invocation lifecycle, inspection, bundle, and agent-session commands.
 
 use super::forwarding::*;
 use super::output::*;
@@ -9,12 +9,12 @@ use opentelemetry::trace::{Span as _, Status, Tracer as _, TracerProvider as _};
 use opentelemetry_otlp::WithExportConfig as _;
 use opentelemetry_sdk::trace::{IdGenerator as _, RandomIdGenerator, SdkTracerProvider};
 
-struct RunSessionSpan {
+struct InvocationSessionSpan {
     provider: SdkTracerProvider,
     span: opentelemetry_sdk::trace::Span,
 }
 
-impl RunSessionSpan {
+impl InvocationSessionSpan {
     fn start(
         endpoint: &str,
         protocol: &str,
@@ -41,7 +41,7 @@ impl RunSessionSpan {
             .with_simple_exporter(exporter)
             .build();
         let tracer = provider.tracer("parallax-cli");
-        let mut span = tracer.start("parallax.run.session");
+        let mut span = tracer.start(parallax_semconv::CLI_COMMAND_SPAN_NAME);
         span.set_attribute(KeyValue::new(
             parallax_semconv::CLI_INVOCATION_ID,
             invocation_id.to_string(),
@@ -49,6 +49,10 @@ impl RunSessionSpan {
         if let Some(command) = command {
             span.set_attribute(KeyValue::new("process.command", command.to_string()));
         }
+        span.set_attribute(KeyValue::new(
+            parallax_semconv::APP_MODE,
+            parallax_semconv::APP_MODE_ONE_SHOT,
+        ));
         Ok(Self { provider, span })
     }
 
@@ -57,8 +61,18 @@ impl RunSessionSpan {
     }
 
     fn finish(mut self, exit_code: i32) {
-        self.span
-            .set_attribute(KeyValue::new("process.exit.code", i64::from(exit_code)));
+        self.span.set_attribute(KeyValue::new(
+            parallax_semconv::PROCESS_EXIT_CODE,
+            i64::from(exit_code),
+        ));
+        self.span.set_attribute(KeyValue::new(
+            parallax_semconv::OUTCOME,
+            if exit_code == 0 {
+                parallax_semconv::OUTCOME_SUCCESS
+            } else {
+                parallax_semconv::OUTCOME_FAILURE
+            },
+        ));
         if exit_code != 0 {
             self.span
                 .set_status(Status::error(format!("child exited with {exit_code}")));
@@ -83,7 +97,7 @@ pub(super) fn generated_traceparent() -> String {
     )
 }
 
-/// `parallax run start [--otlp-forward <target>] [--print-env] [-- <command…>]`
+/// `parallax invocation start [--otlp-forward <target>] [--print-env] [-- <command…>]`
 ///
 /// Default: child telemetry → Parallax's own receiver. Compare mode (forward set
 /// via flag or `PARALLAX_OTLP_FORWARD`): child telemetry → the collector (Rotel),
@@ -115,11 +129,15 @@ pub(crate) async fn invocation_start(
     }
 
     let command_str = (!command.is_empty()).then(|| command.join(" "));
-    let session =
-        RunSessionSpan::start(&fwd.endpoint, fwd.protocol, &invocation_id, command_str.as_deref())?;
+    let session = InvocationSessionSpan::start(
+        &fwd.endpoint,
+        fwd.protocol,
+        &invocation_id,
+        command_str.as_deref(),
+    )?;
     if let Err(error) = client
         .graphql(&format!(
-            r#"mutation {{ invocationStart(invocationId: "{}", command: {}, startedAtNanos: "{}") }}"#,
+            r#"mutation {{ invocationStart(invocationId: "{}", command: {}, appMode: "one_shot", startedAtNanos: "{}") }}"#,
             gql_str(&invocation_id),
             command_str
                 .as_deref()
@@ -139,7 +157,9 @@ pub(crate) async fn invocation_start(
         for (key, value) in &pairs {
             println!("export {key}={value}");
         }
-        println!("# invocation id: {invocation_id}  (finish with: parallax run finish {invocation_id} <exit-code>)");
+        println!(
+            "# invocation id: {invocation_id}  (finish with: parallax invocation finish {invocation_id} <exit-code>)"
+        );
         session.finish(0);
         return Ok(0);
     }
@@ -152,7 +172,7 @@ async fn execute_child(
     command: &[String],
     pairs: &[(&str, String)],
     fwd: &Forward,
-    session: RunSessionSpan,
+    session: InvocationSessionSpan,
     invocation_id: &str,
 ) -> anyhow::Result<i32> {
     // Wrapper mode: inject env, run the child, capture the exit code.
@@ -168,7 +188,7 @@ async fn execute_child(
     } else {
         println!("telemetry → Parallax {}", fwd.endpoint);
     }
-    println!("live: parallax run watch {invocation_id}");
+    println!("live: parallax invocation watch {invocation_id}");
     let mut cmd = tokio::process::Command::new(&command[0]);
     cmd.args(&command[1..]);
     for (key, value) in pairs {
@@ -182,9 +202,10 @@ async fn execute_child(
         Err(_) => -1,
     };
 
+    let outcome = if exit_code == 0 { "success" } else { "failure" };
     let finish = client
         .graphql(&format!(
-            r#"mutation {{ invocationFinish(invocationId: "{}", endedAtNanos: "{}", exitCode: {exit_code}) }}"#,
+            r#"mutation {{ invocationFinish(invocationId: "{}", endedAtNanos: "{}", exitCode: {exit_code}, outcome: "{outcome}") }}"#,
             gql_str(invocation_id),
             now_nanos()
         ))
@@ -195,13 +216,14 @@ async fn execute_child(
     status?; // propagate spawn error AFTER finishing the invocation
     finish?;
     println!("Parallax invocation {invocation_id} finished with exit code {exit_code}");
-    println!("inspect: parallax run inspect {invocation_id}   issues: parallax issue list");
+    println!("inspect: parallax invocation inspect {invocation_id}   issues: parallax issue list");
     Ok(exit_code)
 }
 
 pub(crate) async fn invocation_finish(c: &Client, id: &str, code: i32) -> anyhow::Result<()> {
+    let outcome = if code == 0 { "success" } else { "failure" };
     c.graphql(&format!(
-        r#"mutation {{ invocationFinish(invocationId: "{}", endedAtNanos: "{}", exitCode: {code}) }}"#,
+        r#"mutation {{ invocationFinish(invocationId: "{}", endedAtNanos: "{}", exitCode: {code}, outcome: "{outcome}") }}"#,
         gql_str(id),
         now_nanos()
     ))
@@ -220,7 +242,7 @@ pub(crate) async fn invocation_list(client: &Client) -> anyhow::Result<()> {
         .cloned()
         .unwrap_or_default();
     if runs.is_empty() {
-        println!("no invocations yet — start one with: parallax run start -- <command>");
+        println!("no invocations yet — start one with: parallax invocation start -- <command>");
         return Ok(());
     }
     println!(
@@ -243,7 +265,7 @@ pub(crate) async fn invocation_list(client: &Client) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// `parallax run inspect <invocation_id>` — the invocation record plus its
+/// `parallax invocation inspect <invocation_id>` — the invocation record plus its
 /// derived counts and grouped issues.
 pub(crate) async fn invocation_inspect(client: &Client, invocation_id: &str) -> anyhow::Result<()> {
     let response = client
@@ -253,7 +275,10 @@ pub(crate) async fn invocation_inspect(client: &Client, invocation_id: &str) -> 
             gql_str(invocation_id)
         ))
         .await?;
-    let Some(run) = response.pointer("/data/invocation").filter(|v| !v.is_null()) else {
+    let Some(run) = response
+        .pointer("/data/invocation")
+        .filter(|v| !v.is_null())
+    else {
         anyhow::bail!("invocation {invocation_id} not found");
     };
     println!("invocation {invocation_id}");
@@ -281,13 +306,19 @@ pub(crate) async fn invocation_inspect(client: &Client, invocation_id: &str) -> 
         }
         println!("context: parallax issue context <fingerprint>");
     }
-    println!("bundle: parallax run bundle {invocation_id}   traces: parallax trace inspect <trace_id>");
+    println!(
+        "bundle: parallax invocation bundle {invocation_id}   traces: parallax trace inspect <trace_id>"
+    );
     Ok(())
 }
 
-/// `parallax run bundle <invocation_id>` — the run-anchored evidence bundle
+/// `parallax invocation bundle <invocation_id>` — the run-anchored evidence bundle
 /// (scope §2.4: the run model's bundle).
-pub(crate) async fn invocation_bundle(c: &Client, id: &str, fmt: OutputFormat) -> anyhow::Result<()> {
+pub(crate) async fn invocation_bundle(
+    c: &Client,
+    id: &str,
+    fmt: OutputFormat,
+) -> anyhow::Result<()> {
     let query = match fmt {
         OutputFormat::Markdown => format!(
             r#"{{ bundle(invocationId: "{}") {{ markdown canonicalHash }} }}"#,
@@ -308,7 +339,7 @@ pub(crate) async fn invocation_bundle(c: &Client, id: &str, fmt: OutputFormat) -
     Ok(())
 }
 
-/// `parallax run agent <invocation_id>` — run-scoped agent-session projection
+/// `parallax invocation agent <invocation_id>` — invocation-scoped agent-session projection
 /// (tool steps, token totals). Null when no agent spans were detected.
 pub(crate) async fn invocation_agent_session(
     client: &Client,

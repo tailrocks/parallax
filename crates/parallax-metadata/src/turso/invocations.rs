@@ -94,7 +94,10 @@ impl TursoMetadataStore {
                 (invocation_id,),
             )
             .await?;
-        Ok(rows.next().await?.map(|row| Self::invocation_from_row(&row)))
+        Ok(rows
+            .next()
+            .await?
+            .map(|row| Self::invocation_from_row(&row)))
     }
 
     /// Auto-register an invocation id first seen in telemetry (no CLI

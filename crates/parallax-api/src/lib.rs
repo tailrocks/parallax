@@ -30,9 +30,9 @@ use std::{collections::HashMap, sync::Arc};
 
 use resolvers::{
     AgentSessionOut, AttributeCompareRow, BundleOut, CriticalPath, Dashboard, EvidenceGap,
-    FieldKey, FieldStats, Investigation, Issue, IssueList, IssueSort, LogRecord, MetricExemplar,
-    ObservedInvocation, Overview, Point, ReleaseWindow, Invocation, RuntimeMetric, SavedView, Series,
-    ServiceCatalogRow, ServiceMap, ServiceOverview, ServiceSummary, SignalKind, SpanRed,
+    FieldKey, FieldStats, Investigation, Invocation, Issue, IssueList, IssueSort, LogRecord,
+    MetricExemplar, ObservedInvocation, Overview, Point, ReleaseWindow, RuntimeMetric, SavedView,
+    Series, ServiceCatalogRow, ServiceMap, ServiceOverview, ServiceSummary, SignalKind, SpanRed,
     SqlResultOut, StoryBeat, Trace, TraceDiff, TraceEventsOut, TraceList, TraceSort, TraceSummary,
     TrendPoint,
 };
