@@ -94,7 +94,9 @@ function rangeHours(range: ResolvedRange): number {
 }
 
 function shortRunId(invocationId: string) {
-  return invocationId.length > 8 ? `${invocationId.slice(0, 8)}...` : invocationId
+  return invocationId.length > 8
+    ? `${invocationId.slice(0, 8)}...`
+    : invocationId
 }
 
 export async function loadIssueDetail(
@@ -124,7 +126,9 @@ export async function loadIssueDetail(
   if (traceId) {
     try {
       const correlated = await graphqlCached<{
-        trace: { spans: { resource: string; invocationId: string | null }[] } | null
+        trace: {
+          spans: { resource: string; invocationId: string | null }[]
+        } | null
         logsByTrace: BreadcrumbLog[]
       }>(
         `{ trace(traceId: "${gqlString(traceId)}") { spans { resource invocationId } }
@@ -137,7 +141,9 @@ export async function loadIssueDetail(
       releaseVersion =
         typeof version === "string" && version.trim() ? version.trim() : null
       breadcrumbs = correlated.logsByTrace.slice(-12)
-      traceRunId = correlated.trace?.spans.find((s) => s.invocationId)?.invocationId ?? null
+      traceRunId =
+        correlated.trace?.spans.find((s) => s.invocationId)?.invocationId ??
+        null
     } catch {
       // Trace may have aged out; issue detail still renders.
     }

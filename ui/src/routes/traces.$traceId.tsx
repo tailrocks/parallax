@@ -328,7 +328,8 @@ function TracePage() {
       BigInt(a.tsNanos) < BigInt(b.tsNanos) ? -1 : 1
     )[0]!
   const tracesBack = navItem("/traces")
-  const invocationId = spans.find((span) => span.invocationId)?.invocationId ?? null
+  const invocationId =
+    spans.find((span) => span.invocationId)?.invocationId ?? null
   const services = Array.from(new Set(spans.map((span) => span.service))).sort()
   const failedSpans = spans.filter(
     (span) => span.statusCode === "STATUS_CODE_ERROR"

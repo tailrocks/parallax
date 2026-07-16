@@ -420,7 +420,10 @@ export function RunDetailContent({
               ) : null}
             </Button>
             {lazyBundle ? (
-              <DownloadBundle invocationId={invocationId} markdown={lazyBundle} />
+              <DownloadBundle
+                invocationId={invocationId}
+                markdown={lazyBundle}
+              />
             ) : null}
           </>
         }

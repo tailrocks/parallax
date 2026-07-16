@@ -87,63 +87,33 @@ impl crate::adapter::TraceStore for GreptimeStore {
         if limit == 0 {
             return Ok(Vec::new());
         }
-        let escaped_invocation_id = escape(invocation_id);
         let limit_clause = format!(" LIMIT {limit}");
-        let trace_invocation_column = trace_attr_expr(semconv::CLI_INVOCATION_ID);
-        let mut native_missing = false;
-        let mut spans = match self
+        // Two-step read: resolve the invocation's trace ids first, then read
+        // whole traces by literal id list. A `trace_id IN (SELECT …)`
+        // semi-join returns zero rows on the live engine, so the id list is
+        // materialized client-side (bounded by MAX_ROWS).
+        let mut trace_ids = self.invocation_trace_ids(invocation_id, &range).await?;
+        if trace_ids.is_empty() {
+            trace_ids = self
+                .invocation_trace_ids_via_logs(invocation_id, &range)
+                .await?;
+        }
+        if trace_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let id_list = trace_ids
+            .iter()
+            .map(|trace_id| format!("'{}'", escape(trace_id)))
+            .collect::<Vec<_>>()
+            .join(",");
+        let mut spans = self
             .select_spans(
-                &format!(
-                    r#""trace_id" IN (
-                    SELECT DISTINCT "trace_id" FROM opentelemetry_traces
-                    WHERE {trace_invocation_column} = '{escaped_invocation_id}'
-                  )"#
-                ),
+                &format!(r#""trace_id" IN ({id_list})"#),
                 r#" ORDER BY "timestamp" DESC"#,
                 &limit_clause,
             )
             .await
-        {
-            Ok(spans) => spans,
-            Err(error) if is_missing_column(&error) => {
-                native_missing = true;
-                Vec::new()
-            }
-            Err(error) => return Err(error.into()),
-        };
-        if native_missing || spans.is_empty() {
-            let via_logs = match self
-                .select_spans(
-                    &format!(
-                        r#""trace_id" IN (
-                    SELECT DISTINCT "trace_id" FROM opentelemetry_logs
-                    WHERE {} = '{}'
-                      AND "timestamp" >= {} AND "timestamp" <= {}
-                  )"#,
-                        wire_attr_ident(semconv::CLI_INVOCATION_ID),
-                        escaped_invocation_id,
-                        sql_ts(*range.start()),
-                        sql_ts(*range.end()),
-                    ),
-                    r#" ORDER BY "timestamp" DESC"#,
-                    &limit_clause,
-                )
-                .await
-            {
-                Ok(spans) => spans,
-                Err(error) if is_missing_column(&error) => Vec::new(),
-                Err(error) => return Err(error.into()),
-            };
-            let mut seen: BTreeSet<(String, String)> = spans
-                .iter()
-                .map(|span| (span.trace_id.clone(), span.span_id.clone()))
-                .collect();
-            for span in via_logs {
-                if seen.insert((span.trace_id.clone(), span.span_id.clone())) {
-                    spans.push(span);
-                }
-            }
-        }
+            .map_err(StorageError::from)?;
         spans.sort_by_key(|span| span.ts_nanos);
         if spans.len() > limit {
             spans.drain(0..spans.len() - limit);

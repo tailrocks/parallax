@@ -77,14 +77,18 @@ function renderWithRouter(component: React.ReactNode, path = "/runs") {
 describe("Runs route", () => {
   it("merges registered and observed rows with duration/error fallbacks", () => {
     expect(merged).toHaveLength(2)
-    expect(merged.find((row) => row.invocationId === "run-a")?.errorCount).toBe(2)
-    expect(durationNs(merged.find((row) => row.invocationId === "run-a")!)).toBe(
-      "2000000000"
+    expect(merged.find((row) => row.invocationId === "run-a")?.errorCount).toBe(
+      2
     )
-    expect(statusTone(merged.find((row) => row.invocationId === "run-a")!)).toBe(
-      "rose"
-    )
-    expect(merged.find((row) => row.invocationId === "run-b")?.errorCount).toBeNull()
+    expect(
+      durationNs(merged.find((row) => row.invocationId === "run-a")!)
+    ).toBe("2000000000")
+    expect(
+      statusTone(merged.find((row) => row.invocationId === "run-a")!)
+    ).toBe("rose")
+    expect(
+      merged.find((row) => row.invocationId === "run-b")?.errorCount
+    ).toBeNull()
   })
 
   it("filters rows by activity window overlap", () => {
@@ -114,7 +118,9 @@ describe("Runs route", () => {
     ]
 
     expect(
-      filterRunsByRange(rows, range, "5000000000").map((row) => row.invocationId)
+      filterRunsByRange(rows, range, "5000000000").map(
+        (row) => row.invocationId
+      )
     ).toEqual(["inside", "running"])
   })
 

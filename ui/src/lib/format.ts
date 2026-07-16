@@ -83,7 +83,10 @@ export function formatDateTime(
   options: Intl.DateTimeFormatOptions = {}
 ): string {
   const date = dateFromNanos(value)
-  return cachedDateTimeFormat({
+  // Compose date and time separately: the combined pattern's literal joiner
+  // varies by ICU version ("Jan 1, …" vs "Jan 1 at …"), which breaks stable
+  // labels and their tests across runtimes.
+  const merged: Intl.DateTimeFormatOptions = {
     month: "short",
     day: "numeric",
     hour: "2-digit",
@@ -91,7 +94,37 @@ export function formatDateTime(
     second: "2-digit",
     hour12: false,
     ...options,
-  }).format(date)
+  }
+  const dateOptions: Intl.DateTimeFormatOptions = {}
+  const timeOptions: Intl.DateTimeFormatOptions = {}
+  for (const [key, value] of Object.entries(merged)) {
+    if (value === undefined) continue
+    if (["year", "month", "day", "weekday", "era", "timeZone"].includes(key)) {
+      Reflect.set(dateOptions, key, value)
+    }
+    if (
+      [
+        "hour",
+        "minute",
+        "second",
+        "hour12",
+        "hourCycle",
+        "fractionalSecondDigits",
+        "timeZone",
+        "timeZoneName",
+      ].includes(key)
+    ) {
+      Reflect.set(timeOptions, key, value)
+    }
+  }
+  const datePart = Object.keys(dateOptions).some((key) => key !== "timeZone")
+    ? cachedDateTimeFormat(dateOptions).format(date)
+    : ""
+  const timePart = Object.keys(timeOptions).some((key) => key !== "timeZone")
+    ? cachedDateTimeFormat(timeOptions).format(date)
+    : ""
+  if (datePart && timePart) return `${datePart}, ${timePart}`
+  return datePart || timePart
 }
 
 export function formatTimeShort(

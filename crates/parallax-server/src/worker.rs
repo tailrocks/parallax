@@ -45,7 +45,7 @@ const SEEN_RUNS_CAP: usize = 100_000;
 pub(crate) struct Worker {
     store: Arc<dyn IngestStore>,
     metadata: Arc<dyn MetadataStore>,
-    seen_runs: Arc<Mutex<HashSet<String>>>,
+    seen_invocations: Arc<Mutex<HashSet<String>>>,
     live: crate::live::LiveChannels,
     health: Arc<IngestHealth>,
     #[cfg(test)]
@@ -116,7 +116,7 @@ impl Worker {
         Self {
             store,
             metadata,
-            seen_runs: Arc::new(Mutex::new(HashSet::new())),
+            seen_invocations: Arc::new(Mutex::new(HashSet::new())),
             live,
             health,
             #[cfg(test)]
@@ -214,7 +214,7 @@ impl Worker {
     ) -> WorkerResult<()> {
         let errors = derive::derive_from_traces(request);
         if !progress.completed(EffectStage::Registration) {
-            self.register_runs(normalize::resource_invocation_ids(request))
+            self.register_invocations(normalize::resource_invocation_ids(request))
                 .await?;
             progress.mark_completed(EffectStage::Registration);
         }
@@ -265,7 +265,7 @@ impl Worker {
         let logs = normalize::normalize_logs(&request);
         let errors = derive::derive_from_logs(&logs);
         if !progress.completed(EffectStage::Registration) {
-            self.register_runs(
+            self.register_invocations(
                 logs.iter()
                     .filter_map(|log| log.invocation_id.clone().map(|id| (id, log.ts_nanos))),
             )
@@ -322,13 +322,13 @@ impl Worker {
         Ok(())
     }
 
-    async fn register_runs(
+    async fn register_invocations(
         &self,
         invocation_ids: impl Iterator<Item = (String, u128)>,
     ) -> Result<(), MetadataError> {
         let mut first_seen: HashMap<String, u128> = Default::default();
         {
-            let seen = self.seen_runs.lock().await;
+            let seen = self.seen_invocations.lock().await;
             for (invocation_id, ts_nanos) in invocation_ids {
                 if invocation_id.is_empty() || seen.contains(&invocation_id) {
                     continue;
@@ -343,7 +343,7 @@ impl Worker {
             self.metadata
                 .ensure_invocation(&invocation_id, ts_nanos)
                 .await?;
-            let mut seen = self.seen_runs.lock().await;
+            let mut seen = self.seen_invocations.lock().await;
             if seen.len() > SEEN_RUNS_CAP {
                 seen.clear();
             }

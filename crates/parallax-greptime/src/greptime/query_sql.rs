@@ -167,15 +167,17 @@ impl GreptimeStore {
                           {} AS "service",
                           "severity_number", "severity_text", "body", "trace_id", "span_id",
                           {}, {}, "scope_name",
-                          "log_attributes",
-                          "resource_attributes",
-                          json_get_string("log_attributes", '{}') AS "event_name",
-                          json_get_int("log_attributes", '{}') AS "observed_ts_nanos"
+                          json_to_string("log_attributes") AS "log_attributes",
+                          json_to_string("resource_attributes") AS "resource_attributes",
+                          COALESCE({}, json_get_string("log_attributes", '{}')) AS "event_name",
+                          COALESCE({}, json_get_int("log_attributes", '{}')) AS "observed_ts_nanos"
                    FROM opentelemetry_logs WHERE {where_clause}{order}{limit_clause}"#,
             log_service_name_expr(),
             wire_attr_ident(semconv::CLI_INVOCATION_ID),
             wire_attr_ident(semconv::SESSION_ID),
+            wire_attr_ident(semconv::EVENT_NAME),
             semconv::resource_json_path(semconv::EVENT_NAME),
+            wire_attr_ident(semconv::LOG_OBSERVED_TS_NANOS),
             semconv::resource_json_path(semconv::LOG_OBSERVED_TS_NANOS),
         )
     }
@@ -240,8 +242,11 @@ pub(super) fn is_missing_table(error: &anyhow::Error) -> bool {
 
 pub(super) fn is_missing_column(error: &anyhow::Error) -> bool {
     let message = error.to_string().to_ascii_lowercase();
-    (message.contains("column") || message.contains("field"))
-        && (message.contains("not found") || message.contains("not exist"))
+    // DataFusion planning reports missing columns as `No field named "…"`;
+    // other paths say "column/field … not found / does not exist".
+    message.contains("no field named")
+        || ((message.contains("column") || message.contains("field"))
+            && (message.contains("not found") || message.contains("not exist")))
 }
 
 pub(super) fn json_literal(value: &serde_json::Value) -> String {

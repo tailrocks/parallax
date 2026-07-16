@@ -134,8 +134,10 @@ fn golden_select_spans_and_logs_sql() {
     assert!(spans.contains("LIMIT 10"));
     let logs = GreptimeStore::select_logs_sql("1 = 1", "", " LIMIT 5");
     assert!(logs.contains("opentelemetry_logs"));
-    assert!(logs.contains("\"log_attributes\""));
-    assert!(!logs.contains("json_to_string"));
+    // JSON columns must cross the arrow wire as strings — a raw JSON column
+    // decodes to null (plan 156 live finding).
+    assert!(logs.contains(r#"json_to_string("log_attributes") AS "log_attributes""#));
+    assert!(logs.contains(r#"json_to_string("resource_attributes") AS "resource_attributes""#));
 }
 
 #[test]

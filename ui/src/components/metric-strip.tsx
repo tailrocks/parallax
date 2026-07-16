@@ -185,7 +185,15 @@ export function MetricStrip({
       activeController?.abort()
       if (timer) clearInterval(timer)
     }
-  }, [service, invocationId, fromNanos, toNanos, stepSeconds, live, pageVisible])
+  }, [
+    service,
+    invocationId,
+    fromNanos,
+    toNanos,
+    stepSeconds,
+    live,
+    pageVisible,
+  ])
 
   if (!panels || panels.every((panel) => panel.points.length === 0)) {
     return null

@@ -313,6 +313,66 @@ impl crate::adapter::InvocationStore for GreptimeStore {
 }
 
 impl GreptimeStore {
+    /// Distinct trace ids whose spans (root attribute or resource) carry one
+    /// invocation id, bounded by MAX_ROWS. Materialized client-side because a
+    /// `trace_id IN (SELECT …)` semi-join returns zero rows on the live
+    /// engine.
+    pub(super) async fn invocation_trace_ids(
+        &self,
+        invocation_id: &str,
+        range: &RangeInclusive<u128>,
+    ) -> StorageResult<Vec<String>> {
+        let sql = format!(
+            r#"SELECT DISTINCT "trace_id" FROM opentelemetry_traces
+               WHERE {} = '{}'
+                 AND "timestamp" >= {} AND "timestamp" <= {}
+               LIMIT {MAX_ROWS}"#,
+            trace_attr_expr(semconv::CLI_INVOCATION_ID),
+            escape(invocation_id),
+            sql_ts(*range.start()),
+            sql_ts(*range.end()),
+        );
+        match self.sql_lenient(&sql).await {
+            Ok(rows) => Ok(rows
+                .iter()
+                .filter_map(|row| row.first().and_then(|v| v.as_str()))
+                .filter(|id| !id.is_empty())
+                .map(str::to_string)
+                .collect()),
+            Err(error) if is_missing_column(&error) => Ok(Vec::new()),
+            Err(error) => Err(error.into()),
+        }
+    }
+
+    /// Trace ids correlated through log records carrying the invocation id
+    /// (fallback for emitters that only stamp logs).
+    pub(super) async fn invocation_trace_ids_via_logs(
+        &self,
+        invocation_id: &str,
+        range: &RangeInclusive<u128>,
+    ) -> StorageResult<Vec<String>> {
+        let sql = format!(
+            r#"SELECT DISTINCT "trace_id" FROM opentelemetry_logs
+               WHERE {} = '{}'
+                 AND "timestamp" >= {} AND "timestamp" <= {}
+               LIMIT {MAX_ROWS}"#,
+            wire_attr_ident(semconv::CLI_INVOCATION_ID),
+            escape(invocation_id),
+            sql_ts(*range.start()),
+            sql_ts(*range.end()),
+        );
+        match self.sql_lenient(&sql).await {
+            Ok(rows) => Ok(rows
+                .iter()
+                .filter_map(|row| row.first().and_then(|v| v.as_str()))
+                .filter(|id| !id.is_empty())
+                .map(str::to_string)
+                .collect()),
+            Err(error) if is_missing_column(&error) => Ok(Vec::new()),
+            Err(error) => Err(error.into()),
+        }
+    }
+
     /// Bounded typed-event log window for one invocation (projection input).
     async fn invocation_event_logs(
         &self,
@@ -366,14 +426,16 @@ impl GreptimeStore {
             extra_where.to_string(),
         ];
         if let Some(invocation_id) = invocation_id {
-            clauses.push(format!(
-                r#""trace_id" IN (
-                     SELECT DISTINCT "trace_id" FROM opentelemetry_traces
-                     WHERE {} = '{}'
-                   )"#,
-                trace_attr_expr(semconv::CLI_INVOCATION_ID),
-                escape(invocation_id)
-            ));
+            let trace_ids = self.invocation_trace_ids(invocation_id, range).await?;
+            if trace_ids.is_empty() {
+                return Ok(Vec::new());
+            }
+            let id_list = trace_ids
+                .iter()
+                .map(|trace_id| format!("'{}'", escape(trace_id)))
+                .collect::<Vec<_>>()
+                .join(",");
+            clauses.push(format!(r#""trace_id" IN ({id_list})"#));
         }
         match self
             .select_spans(
