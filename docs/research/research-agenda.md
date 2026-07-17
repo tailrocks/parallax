@@ -12,10 +12,10 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 140 (profitability fixer row: drop stale
-~$25–30/investigation; align Seer **$40**/contributor + Bits **AI Credits**
-~**$6.50–$8.45**/Investigate). Pass 139 = Maple/Odigos. A1/A2/A4 open; A6 open
-at mixed gate only.
+Last updated 2026-07-17 after pass 141 (deploy/change: ingest **shipped** plan
+121; causal claim still **`not_measured`**; GitHub API pin still **2022-11-28**
+vs newer docs dates). Pass 140 = profitability pricing fix. A1/A2/A4 open; A6
+open at mixed gate only.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in

@@ -12,6 +12,18 @@
 > **Pass 76:** GitHub REST latest version **`2026-03-10`** (docs.github.com API
 > versions page). Shipped code/fixtures still pin **`2022-11-28`** — supported
 > but not latest; upgrade on next expansion. Causal linkage-only rule holds.
+>
+> **Pass 141 (2026-07-17) — claim split + API version recheck:**
+>
+> | Layer | Status |
+> | --- | --- |
+> | Ingest/surface (plan 121) | **Shipped** — webhooks, backfill, Turso claim rows, GraphQL linkage-only adjacency; plan validation README |
+> | Causal product claim ("deploy caused regression") | Still **`not_measured`** — no `deploy-change-context-runs/<run_id>/` ledger |
+> | GitHub `X-GitHub-Api-Version` pin | Code still **`2022-11-28`** (`github_deploy.rs` / `github_actions.rs`) |
+> | Docs API versions page | Still lists **`2022-11-28`**; also newer dated versions including **`2026-03-10`** and **`2026-08-25`** — pin is **stale vs latest**, still supported |
+>
+> **Do not** market release-regression root cause from adjacency alone. Allowed:
+> "deploy/CI events can be linked as adjacency evidence."
 
 > **Implementation ownership (2026-07-17):** this file retains the provider,
 > edge-strength, privacy, claim-level, and measurement contracts. It is not an
