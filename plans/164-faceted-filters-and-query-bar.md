@@ -111,10 +111,20 @@ whether OR-within-dimension needs a backend argument.
   under the exact `logs_search` filter set, GreptimeDB + memory impls,
   GraphQL `logFacets`. 109 tests green.
 
+- Logs filter e2e coverage (`87951d7`/`562e150`): GraphQL-level proof that
+  a structured filter narrows `logs`, that `logCountSeries` tracks the
+  same filter, and that `logFacets` counts per value.
+- Client-side invocation facet counts (`42473b6`):
+  `ui/src/lib/invocation-facets.ts` — the invocations list filters loaded
+  rows client-side, so its sidebar counts the same in-window set (mode,
+  derived status, outcome, command, service; 24-cap). Pure, tested; peer
+  wires into `invocations.index.tsx` and decides whether a backend
+  `invocationFacets` is needed beyond the loaded page.
+
 Still open (full plan scope): live facet verification against `f-attrs`
-(70/20/10) + the facet-window cap decision; invocation facets
-and invocation filter compilation; live-engine narrowing
-+ injection assertions; logs/invocations route wiring (Step 3 remainder);
+(70/20/10) + the facet-window cap decision; live-engine narrowing
++ injection assertions; logs route wiring (in the primary executor's
+working tree at time of writing) + invocations route wiring;
 `F` keyboard
 shortcut; syntax-highlight overlay (editor currently plain input);
 browser evidence. The `f-attrs` playground scenario landed on the
