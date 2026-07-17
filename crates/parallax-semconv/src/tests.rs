@@ -23,3 +23,22 @@ fn preserves_load_bearing_wire_names() -> Result<(), String> {
     }
     Ok(())
 }
+
+proptest::proptest! {
+    #[test]
+    fn native_metric_table_names_use_only_greptime_safe_characters(name in ".*") {
+        let normalized = native_metric_table_base(&name);
+        proptest::prop_assert!(normalized
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || ch == '_'));
+        proptest::prop_assert_eq!(native_metric_table_base(&normalized), normalized);
+    }
+
+    #[test]
+    fn resource_json_paths_quote_the_attribute(attribute in "[^\\p{C}]*") {
+        let path = resource_json_path(&attribute);
+        proptest::prop_assert!(path.starts_with(r#"$.""#));
+        proptest::prop_assert!(path.ends_with('"'));
+        proptest::prop_assert!(!path.starts_with(r#"$.\\""#));
+    }
+}

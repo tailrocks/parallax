@@ -188,7 +188,20 @@ pub const TOKIO_RUNTIME_METRIC_NAMES: &[&str] = &[
 
 #[must_use]
 pub fn resource_json_path(attr: &str) -> String {
-    format!(r#"$.\"{}\""#, attr.replace('"', "\\\""))
+    format!(r#"$."{}""#, attr.replace('"', "\\\""))
+}
+
+#[must_use]
+pub fn native_metric_table_base(name: &str) -> String {
+    name.chars()
+        .map(|ch| {
+            if ch.is_ascii_alphanumeric() || ch == '_' {
+                ch
+            } else {
+                '_'
+            }
+        })
+        .collect()
 }
 
 #[must_use]
