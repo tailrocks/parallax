@@ -8185,3 +8185,6 @@ Not done.
 ### Run 331 — 2026-07-17 — time-range count
 
 `WHERE ts > now()-1 day` on spans1m: warm **~4–13 ms**. Interactive.
+
+### Run 332 — 2026-07-17 — not done
+
