@@ -170,6 +170,7 @@ managed quotes remain):
 | TimeSeries topk/last | **488** | still OK both builds |
 | still not done | **489** | top 5 open |
 | count-distinct recheck | **490** | GT 10ms / CH ~9–35ms |
+| still not done | **491** | top 5 open |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
