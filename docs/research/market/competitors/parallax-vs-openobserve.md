@@ -70,12 +70,12 @@ These overlap maximally on architecture — both Rust, single-binary, self-host,
 
 - **OpenObserve's AI (shipped, Enterprise-gated):**
   - **AI SRE** — background service for intelligent workflows, automated investigation, "always-available SRE." Enterprise + **BYO-LLM-key**.
-  - **140+-tool MCP server** — Claude/GPT/IDEs query logs/metrics/traces in natural language, create alerts, etc. **Enterprise-gated, write/destructive by default** (not read-only-safe).
+  - **MCP server (Enterprise only)** — live docs [openobserve.ai/docs/…/mcp](https://openobserve.ai/docs/integration/ai/mcp/) (pass **56**): explicitly **Enterprise edition**; requires `O2_AI_ENABLED=true`. Tool surface includes **search** (`SearchSQL`, PromQL, traces) **and large write/destructive sets** (⚠️ legend): Create/Delete **alerts**, **dashboards**, **streams**, **pipelines**, **users/roles**, **KV**, ingest `LogsIngestionJson`, etc. Categories documented: Alerts 28, Dashboards 20, Search 17, Auth, Pipelines, Streams, Traces, Users, … — **far beyond a read-only projection; no public “read-only MCP mode” product flag**. Docs recommend dedicated scoped user + confirm tool calls (security section).
   - **AI Assistant** (Enterprise).
   - **All AI/MCP features are Enterprise-gated** (AGPL core does not include them); **Sensitive Data Redaction is also Enterprise.**
 - **Parallax's claim (code-shipped, A1 value unproven):** bounded, redacted, agent-safe evidence bundle served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) — **read-only by design**, redaction as a first-class pre-exposure gate.
 
-**Honest verdict:** OpenObserve ships far more AI today (AI SRE + 140-tool MCP + assistant) than Parallax. On shipped AI, **OpenObserve leads.** But OpenObserve's AI is **Enterprise-gated + BYO-key + write-capable** — not the safe, bounded, self-hostable, read-only agent-context projection Parallax designs. That specific cell (free, read-only, redacted, bounded, agent-safe) stays unoccupied — but it is **unproven (A1 gate).** A real OpenObserve weakness, written plainly: its AI/MCP is paywalled and write-capable, not a safe open agent surface.
+**Honest verdict:** OpenObserve ships far more AI today (AI SRE + EE MCP with **dozens of mutating tools** + assistant) than Parallax. On shipped AI, **OpenObserve leads.** OpenObserve's AI is **Enterprise-gated + BYO-key + write-capable by design** — not a free read-only agent surface. That cell (free, read-only, redacted, bounded) stays unoccupied in O2 — Parallax designs it, value **unproven (A1)**. **No-bias:** O2's EE MCP is a mature, broad agent ops surface; Parallax cannot claim “MCP for obs” as unique — only the read-only/redacted/portable bundle posture.
 
 ## Architecture & deployment model — near-mirror, OpenObserve shipped
 
@@ -168,7 +168,7 @@ OpenObserve pricing is **public** ([openobserve.ai/pricing](https://openobserve.
 
 - **A1 gate vs OpenObserve AI SRE:** does a Parallax bounded bundle beat OpenObserve-AI-SRE-as-context for coding-agent fix outcomes? Unproven — and OpenObserve's shipped AI SRE is the direct competitor.
 - **Storage cost/perf:** measured GreptimeDB (Parallax) vs Parquet/DataFusion (OpenObserve) — ingest, query, cost-per-byte. Benchmark-dependent, unmeasured; ties to the GreptimeDB-vs-ClickHouse study.
-- **MCP-safety framing:** would OpenObserve add a read-only MCP mode? Track.
+- ~~MCP-safety / read-only mode~~ → **pass 56:** docs show **no public read-only MCP product mode**; EE MCP is write-heavy (DeleteStream, CreateAlert, …). Track if O2 later ships a restricted tool profile.
 - **AGPL → Apache risk:** unlikely, but track OpenObserve's license posture.
 
 ## Sources (accessed 2026-07-17)

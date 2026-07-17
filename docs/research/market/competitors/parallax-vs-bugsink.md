@@ -28,9 +28,10 @@
   release tracking, alerting). Positioned as "the simplest way to self-host error
   tracking" / a self-hosted Highlight alternative. **1,940★, v2.4.0 (2026-07-10),
   very active (pushed 2026-07-17).** **Open-core:** core self-host code is
-  source-available; `ee/` directory carries a separate (proprietary) EE license;
-  the `sentry/` directory is BSD-3-Clause (forked Sentry reference code) — hence
-  GitHub reports the license as `NOASSERTION` (mixed). Docker-first deploy.
+  **License (pass 56 RESOLVED from root LICENSE):** core outside `ee/`/`sentry/` is
+  **PolyForm Shield 1.0.0** (source-available with **noncompete** — cannot provide
+  a competing product); `ee/` proprietary; `sentry/` BSD-3-Clause. GitHub
+  `NOASSERTION` (mixed). **Not MIT/Apache.** Docker-first deploy.
   **Hosted Cloud is public-priced (EUR, per-event tiers); self-host core is free.**
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable
   **execution-context engine**: OTLP-native ingest of traces/logs/metrics +
@@ -111,9 +112,10 @@ verdict. Bugsink's backing store is unproven head-to-head vs GreptimeDB
 
 ## Openness, licensing & vendor lock-in
 
-- **Bugsink:** **open-core, source-available** — core self-host code is open;
-  `ee/` is proprietary (separate license); `sentry/` dir is BSD-3 (forked Sentry
-  code). GitHub `NOASSERTION` (mixed). **Less open than Parallax's Apache-2.0**
+- **Bugsink (pass 56):** **PolyForm Shield 1.0.0** core (noncompete on competing
+  products) + proprietary `ee/` + BSD-3 `sentry/`. GitHub `NOASSERTION`.
+  **Materially less permissive than Apache-2.0** — competitive-use restriction
+  is real (PolyForm Shield).
   (Parallax has no `ee/` paywall — it's uniformly Apache-2.0). **Hosted Cloud is
   public-priced** (see Pricing below); self-host core remains free.
 - **Parallax:** **Apache-2.0**, uniformly open, no EE paywall, OTLP-native,
@@ -195,11 +197,11 @@ Vendor markets **“80% cheaper at scale”** vs Sentry Hosted (claim, not indep
 - **A1 gate vs Bugsink:** for a team that "just needs self-hosted error tracking,"
   does Parallax's full-signal engine + bundle beat "run Bugsink + existing APM" for
   coding-agent incident fixes? **Unproven** — and Bugsink's simplicity is the high bar.
-- **Bugsink exact core + `ee/` license SPDX text** (GitHub `NOASSERTION`; confirm SPDX on repo files if asserting in legal copy).
+- ~~Bugsink exact core + `ee/` license~~ → **RESOLVED pass 56:** core **PolyForm Shield 1.0.0** + proprietary `ee/` + BSD-3 `sentry/` ([LICENSE](https://github.com/bugsink/bugsink/blob/master/LICENSE)).
 
 ## Sources (accessed 2026-07-17; pricing re-verified pass 41)
 
-- [github.com/bugsink/bugsink](https://github.com/bugsink/bugsink) — **1,940★**, Python/Django, last push 2026-07-17 (GitHub API); latest **v2.4.0** (2026-07-10); license `NOASSERTION` (open-core: core + proprietary `ee/` + BSD-3 `sentry/` fork).
+- [github.com/bugsink/bugsink](https://github.com/bugsink/bugsink) — **1,940★**, Python/Django, last push 2026-07-17; **v2.4.0**; LICENSE = **PolyForm Shield 1.0.0** core + proprietary `ee/` + BSD-3 `sentry/` (pass 56).
 - [bugsink.com](https://www.bugsink.com/) — live **Hosted + Self-hosted pricing** (EUR tiers above); [error tracking](https://www.bugsink.com/error-tracking/), [built to self-host](https://www.bugsink.com/built-to-self-host/), [Sentry-SDK compatible](https://www.bugsink.com/sentry-sdk-compatible/).
 - Parallax side: [Sentry-envelope ingest](parallax-vs-sentry.md) (`sentry_http.rs` shipped), [decisions/storage-engine.md](../../decisions/storage-engine.md), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).
 - Sibling (Sentry-alternative / error-tracking peers): [parallax-vs-sentry.md](parallax-vs-sentry.md) (the reference), [parallax-vs-highlight.md](parallax-vs-highlight.md) (wound down), [parallax-vs-rustrak.md](parallax-vs-rustrak.md) (Rust + mutating MCP, GPL-3.0). Other small Sentry-alts still watch-only: GlitchTip, Urgentry, GoSnag (legacy [alternatives-deep-analysis.md](../alternatives-deep-analysis.md)).

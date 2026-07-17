@@ -1,6 +1,6 @@
 # Parallax vs TMA1
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 54: **8th consecutive watch UNFIRED** — still **v0.2.0-alpha12 / 109★**; recent = GreptimeDB probe/install + session-detail perf / launchd only).
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 56: **9th consecutive watch UNFIRED** — still **v0.2.0-alpha12 / 109★**; recent = GreptimeDB probe/install + session-detail perf / launchd / codex hooks only).
 > Sources: [github.com/tma1-ai/tma1](https://github.com/tma1-ai/tma1), [tma1.ai](https://tma1.ai/), and the legacy [tma1-deep-research.md](../tma1-deep-research.md) (2026-06-22, a full source-code teardown) as the lead.
 >
 > **Bottom line up front:** TMA1 is the **single closest architectural competitor
@@ -168,7 +168,7 @@ Re-verify each pass. Direct collision if TMA1 adds any of:
 
 ## Open questions / what measurement would settle
 
-- ~~Exact latest TMA1 release~~ → **pinned v0.2.0-alpha12 (2026-07-17); 109★.** Watch triggers **8th consecutive UNFIRED** (passes 10/17/22/30/39/44/49/**54**): recent = GreptimeDB install probe + session-detail perf / launchd — **zero** prod-error / Sentry / redaction / outcome / deploy. Still local-dev scoped (**not** spun as TMA1 decline).
+- ~~Exact latest TMA1 release~~ → **pinned v0.2.0-alpha12; 109★.** Watch triggers **9th UNFIRED** (10/17/22/30/39/44/49/54/**56**): recent still install/perf/hooks — **zero** prod-error / Sentry / redaction / outcome / deploy. Local-dev scoped (**not** spun as decline).
 - **A1 gate vs TMA1:** if a team already runs TMA1 for local agent loops, does Parallax's production-incident bundle add measurable value, or does TMA1's narrower scope suffice for their job? Unproven.
 - **TMA1 production extension** — track the watch triggers above each pass.
 

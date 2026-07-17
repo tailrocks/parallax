@@ -1,6 +1,6 @@
 # Parallax vs Maple
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 46: Tinybird-decoupling watch **UNFIRED** — recent commits billing/UI/traces/API; hosted path still Tinybird-coupled per prior deep-dive).
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 56: Tinybird-decoupling watch **still UNFIRED** — recent = traces UI/alerts/service-map/perf; **v0.0.12 / 1,532★**; hosted still Tinybird-coupled per prior deep-dive).
 > Sources: [maple.dev](https://maple.dev/) + [pricing](https://maple.dev/pricing/) + [docs](https://maple.dev/docs), [github.com/MapleTechLabs/maple](https://github.com/MapleTechLabs/maple) (renamed from `Makisuo/maple`), and the legacy [maple-deep-research.md](../maple-deep-research.md) (2026-05-31) as a lead.
 >
 > **Bottom line up front:** Maple is the **local-experience benchmark** Parallax
@@ -45,7 +45,7 @@ Both single-binary-local-first, OTLP-native, Turso-metadata. The closest pair on
 
 ## Storage architecture — same metadata, different telemetry engine + a vendor coupling
 
-- **Maple:** **ClickHouse** everywhere — **Tinybird (managed ClickHouse)** for the hosted cloud fast-path, **chDB (embedded ClickHouse)** for local mode (`~/.maple/data`). **Metadata: SQLite via libSQL (Turso)** — same as Parallax. ⚠️ **The hosted fast-path is coupled to Tinybird** (a vendor) — Maple's cloud query engine is a managed service, not self-hosted ClickHouse. **Tinybird-decoupling watch UNFIRED (2026-07-17): scanned recent commits — recent Maple work is billing/commerce (Stripe invoices, estimated-cost breakdown), not storage; hosted fast-path still Tinybird-coupled.**
+- **Maple:** **ClickHouse** everywhere — **Tinybird (managed ClickHouse)** for the hosted cloud fast-path, **chDB (embedded ClickHouse)** for local mode (`~/.maple/data`). **Metadata: SQLite via libSQL (Turso)** — same as Parallax. ⚠️ **The hosted fast-path is coupled to Tinybird** (a vendor) — Maple's cloud query engine is a managed service, not self-hosted ClickHouse. **Tinybird-decoupling watch UNFIRED pass 56 (2026-07-17):** recent commits = traces UI, alerts API v2, service-map, Clerk rerender perf — **not** storage-vendor decoupling; hosted fast-path still Tinybird-coupled.
 - **Parallax:** **GreptimeDB** (native OTLP tables) + **Turso** metadata — both self-hosted-native, no vendor coupling for the fast path.
 
 **Verdict:** on the **Turso metadata choice, identical** (mutual validation). On the **telemetry engine**, a real split: Maple = ClickHouse (Tinybird-hosted for cloud / chDB for local); Parallax = GreptimeDB (self-hosted). **Parallax's edge: no vendor coupling on the fast path** (Maple's hosted performance depends on Tinybird). GreptimeDB-vs-ClickHouse cost/perf is benchmark-dependent/unmeasured (ties to the in-repo study). On proven-at-scale, **ClickHouse (Maple) is more battle-tested** than GreptimeDB.
