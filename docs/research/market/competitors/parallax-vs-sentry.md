@@ -41,7 +41,13 @@ These overlap most directly on **error tracking + tracing**. Sentry is a broad p
 
 ## Ingestion & transport — a real Sentry weakness Parallax targets
 
-- **OTLP (pass 47 + 56 + 59 + 63 + 65 + **96** + **143** re-verify):** Sentry **does** ingest OTLP — **still open beta** (docs callout). Supports **traces and logs** via OTLP; official docs still state verbatim **“Sentry does not support OTLP metrics at this time”** ([docs.sentry.io/concepts/otlp](https://docs.sentry.io/concepts/otlp/), 2026-07-17 pass **143** live fetch). Direct docs tree: traces + logs only (no metrics child). Not OTLP-native storage. Self-host latest still **`26.7.0`** (pass 87). **OTLP-metrics GA watch still UNFIRED.**
+- **OTLP (pass 47 + 56 + 59 + 63 + 65 + **96** + **143** + **183** re-verify):**
+  Sentry **does** ingest OTLP — **still open beta** (docs callout). Supports
+  **traces and logs** via OTLP; official docs still state verbatim **“Sentry does
+  not support OTLP metrics at this time”**
+  ([docs.sentry.io/concepts/otlp](https://docs.sentry.io/concepts/otlp/),
+  2026-07-18 pass **183** live fetch). Not OTLP-native storage. Self-host pin last
+  pass 87. **OTLP-metrics GA watch still UNFIRED.**
 - **Sentry envelope / DSN:** Sentry's native protocol. **Parallax now ships Sentry-envelope ingest** (`crates/parallax-ingest/src/sentry_envelope.rs` + `crates/parallax-server/src/sentry_http.rs`, verified against code 2026-07-17) — it receives Sentry SDK envelopes and derives `error_event`s (`ErrorSource::SentryEnvelope`). The ingest lane is **no longer "planned."** Sentry still wins on the 30-SDK fleet breadth + issue lifecycle, but Parallax speaks the envelope today.
 - **SDK fleet:** Sentry ships 30+ language/platform SDKs (web, iOS, Android, React Native, Flutter, Unity, game consoles) — the broadest in error tracking. Parallax relies on OTel SDKs **plus the shipped Sentry-envelope ingest path**. On SDK breadth, **Sentry still wins decisively** (30+ SDKs vs Parallax's envelope receiver — receiving envelopes ≠ matching the fleet).
 - **Self-host ingest:** Sentry ships **Relay** (an open ingestion proxy you can self-host in front of Sentry Cloud). Parallax's whole pipeline is self-hosted by design.
@@ -198,7 +204,7 @@ Sentry's entry is cheap (free / $26) and the per-error unit is small, but volume
 ## Open questions / what measurement would settle
 
 - **A1 gate vs Seer:** does a Parallax evidence bundle beat Seer-as-context (or raw context) for agent fix quality, measurably? Unproven; Seer is the direct shipped competitor to the thesis.
-- **Sentry OTLP metrics timeline:** metrics are a first-class Sentry product (2026 SDK path) but still **not via OTLP** — track OTLP metrics GA. **Pass 143 UNFIRED** (same primary sentence as pass 96).
+- **Sentry OTLP metrics timeline:** metrics are a first-class Sentry product (2026 SDK path) but still **not via OTLP** — track OTLP metrics GA. **Pass 183 UNFIRED** (same primary sentence as pass 96/143).
 - **Self-host cost/ops:** a measured Parallax-single-binary vs Sentry-self-hosted deploy + RAM + ops comparison at parity. Benchmark-dependent, unmeasured.
 
 ## Sources (accessed 2026-07-17)
