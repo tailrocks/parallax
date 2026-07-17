@@ -105,11 +105,11 @@ if needed; do not reopen.
    operations, attempt-chain history, mute/known/owner fields when schema exists.
 4. UI `features/tests`: list + detail + live session tree (after architecture
    owners; React Flow not required here).
-5. Flaky job over ingested results — pure invocation-chain evaluator landed;
-   bounded Turso candidate scan + result windows landed (port + fixtures);
-   residual scheduler loop that applies evaluate_flaky_evidence + state
-   upserts, and mute/known flags (no runner quarantine enforcement in V1).
-6. Runner adapters: nextest env normalization landed; residual nextest support
+5. ~~Flaky job over ingested results~~ — pure evaluator + Turso candidate scan
+   + result windows + `tick_once` server loop (60s) landed. Residual:
+   mute/known flags (no runner quarantine enforcement in V1).
+6. Runner adapters: nextest attempt-identity adapter landed; residual JUnit
+   listener jar, JUnit XML reconciliation gap-fill.
    crate/export lifecycle, JUnit listener jar, and JUnit XML reconciliation
    gap-fill.
 7. Live e2e vs plan 154 W4 playground payload; validation evidence under
