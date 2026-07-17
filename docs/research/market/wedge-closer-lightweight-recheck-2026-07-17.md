@@ -175,6 +175,17 @@ Full wedge combination **still not closed**.
 
 Full wedge combination **still not closed**.
 
+**Pass 249 recheck (2026-07-18):** **Traceway** + Sentry OTLP metrics kill —
+
+| Field | Value |
+| --- | --- |
+| Traceway | [tracewayapp/traceway](https://github.com/tracewayapp/traceway) still **1,024★**; latest tags still **`backend/v1.9.1` + `cli/v1.9.1`** (2026-07-15); `pushed_at` **2026-07-17** |
+| Traceway product | Still **OTLP/HTTP multi-signal** (logs/traces/metrics) + agent **skills** + exceptions/RUM/AI tracing (README) |
+| Traceway gaps (README probe) | **0** hits for Sentry envelope / portable redacted evidence bundle / fix-outcome / redaction contract |
+| [Sentry OTLP](https://docs.sentry.io/concepts/otlp/) | Page describes OTLP **traces and logs** (open beta). Explicit: **"Sentry does not support OTLP metrics at this time."** — kill **UNFIRED** |
+
+Full wedge combination **still not closed** (Traceway lacks Sentry envelope + portable redacted bundle + outcome; Sentry lacks OTLP metrics).
+
 **Pass 244 recheck (2026-07-18):** **Bugsink + Rustrak + GlitchTip** primary
 version/README hygiene (error-tracker peer cluster) —
 

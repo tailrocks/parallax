@@ -82,6 +82,10 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > mixed open). Related kills **unfired** (open ≠ failed). **Still GO (narrow
 > product).**
 >
+> **Pass 249 (2026-07-18) — GO reaffirm (wedge + Sentry OTLP).** Traceway still
+> lacks full combo; Sentry still no OTLP metrics. Wedge-close and Sentry OTLP
+> metrics kills **unfired**. **Still GO (narrow product).**
+>
 > **Narrow product identity holds.** Research program continues.
 
 ## Verdict
