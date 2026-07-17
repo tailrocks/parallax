@@ -16,6 +16,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true }
+jsonschema = { workspace = true }
 # Official MCP Rust SDK. Features deliberately exclude every reqwest/TLS path
 # (those default to rustls). Stdio transport needs no TLS. GraphQL is plain
 # HTTP via the workspace reqwest (native-tls).

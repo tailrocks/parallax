@@ -37,6 +37,21 @@ fn parse_output_schema(raw: &str) -> JsonObject {
     })
 }
 
+fn validate_bundle_contract(bundle: &Value) -> Result<(), McpError> {
+    let schema = Value::Object(parse_output_schema(include_str!(
+        "../../../schema/evidence-bundle.v2.schema.json"
+    )));
+    let validator = jsonschema::draft202012::options()
+        .should_validate_formats(true)
+        .should_ignore_unknown_formats(false)
+        .build(&schema)
+        .map_err(|_| safe_internal_error("bundle_schema_invalid"))?;
+    if !validator.is_valid(bundle) {
+        return Err(safe_internal_error("bundle_contract_mismatch"));
+    }
+    Ok(())
+}
+
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct IssueContextArgs {
@@ -171,9 +186,7 @@ fn bundle_tool_result(bundle: gql::BundleProjection) -> Result<CallToolResult, M
     // the parsed value when comparing hashes.
     let parsed: Value =
         serde_json::from_str(&bundle.json).map_err(|_| safe_internal_error("bundle_invalid"))?;
-    if parsed.get("schema_version").and_then(Value::as_str) != Some("bundle-v2") {
-        return Err(safe_internal_error("bundle_contract_mismatch"));
-    }
+    validate_bundle_contract(&parsed)?;
     let embedded_hash = parsed.get("canonical_hash").and_then(Value::as_str);
     let recomputed_hash = crate::check::recompute_canonical_hash(&bundle.json)
         .map_err(|_| safe_internal_error("bundle_hash_invalid"))?;
@@ -245,7 +258,16 @@ mod tests {
     fn valid_bundle_projection() -> gql::BundleProjection {
         let mut value = json!({
             "schema_version": "bundle-v2",
+            "bundle_id": "bundle-test",
+            "schema_ref": "parallax/evidence/bundle-v2",
+            "generated_at": "2026-07-17T00:00:00Z",
             "generator": "parallax/test",
+            "project": "test",
+            "window": {
+                "from": "2026-07-17T00:00:00Z",
+                "to": "2026-07-17T00:01:00Z"
+            },
+            "access": { "policy": "local-operator" },
             "data": { "schema_version": "bundle-v1", "evidence": "bounded" },
             "canonical_hash": null
         });
@@ -388,7 +410,16 @@ mod tests {
             encoded.get("structuredContent"),
             Some(&json!({
                 "schema_version": "bundle-v2",
+                "bundle_id": "bundle-test",
+                "schema_ref": "parallax/evidence/bundle-v2",
+                "generated_at": "2026-07-17T00:00:00Z",
                 "generator": "parallax/test",
+                "project": "test",
+                "window": {
+                    "from": "2026-07-17T00:00:00Z",
+                    "to": "2026-07-17T00:01:00Z"
+                },
+                "access": { "policy": "local-operator" },
                 "data": { "schema_version": "bundle-v1", "evidence": "bounded" },
                 "canonical_hash": canonical_hash
             }))
@@ -447,6 +478,22 @@ mod tests {
         let encoded = serde_json::to_string(&error).expect("serialize MCP error");
         assert!(encoded.contains("bundle_hash_mismatch"));
         assert!(!encoded.contains(forged));
+    }
+
+    #[test]
+    fn correctly_hashed_nonconforming_bundle_fails_closed() {
+        let mut projection = valid_bundle_projection();
+        let mut value: Value = serde_json::from_str(&projection.json).expect("bundle JSON");
+        value["unexpected"] = json!("seeded-secret");
+        let hash = crate::check::recompute_canonical_hash(&value.to_string()).expect("hash");
+        value["canonical_hash"] = json!(hash);
+        projection.json = value.to_string();
+        projection.canonical_hash = hash;
+
+        let error = bundle_tool_result(projection).expect_err("schema violation must fail");
+        let encoded = serde_json::to_string(&error).expect("serialize MCP error");
+        assert!(encoded.contains("bundle_contract_mismatch"));
+        assert!(!encoded.contains("seeded-secret"));
     }
 
     #[test]
