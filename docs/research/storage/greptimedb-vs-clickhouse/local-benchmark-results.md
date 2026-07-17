@@ -8201,3 +8201,6 @@ interactive at 50k; would grow with scale.
 
 `ORDER BY duration_ms DESC LIMIT 20`: GT warm **~9–14 ms**; CH **~6 ms**.
 Interactive both.
+
+### Run 336 — 2026-07-17 — not done
+
