@@ -20,6 +20,7 @@ dependency.** Narrower claims need care:
 | OSS Grafana / LGTM can run offline | **True for OSS core** | Self-host OSS is real; **Enterprise plugins/license keys** and Cloud AI features are separate — do **not** claim "all Grafana phones home" without a dated primary for a specific binary feature |
 | Grafana Assistant on self-managed | **UI yes / AI backend Cloud** | **Pass 77:** plugin + connect to Grafana Cloud stack required; not offline BYO-LLM — [incumbent-self-hosted-ai-recheck-2026-07-17.md](incumbent-self-hosted-ai-recheck-2026-07-17.md) |
 | OSS SigNoz / OpenObserve / Traceway / Rustrak / GlitchTip / Bugsink can air-gap | **True (product can)** | Self-host OSS peers; **none** ship Parallax-style portable redacted evidence bundle + outcome loop (passes 49–53) |
+| Langfuse self-host phone-home | **Default usage telemetry ON** | **Pass 107:** README — self-hosted instances report basic usage stats to centralized PostHog by default (not raw traces); opt-out documented. Not air-gap-clean without config. |
 | Full combination closed | **False** | No peer ships open portable redacted prod-incident bundle + outcome under air-gap |
 
 **Falsification:** a major incumbent ships **self-hosted, open (or source-available)
