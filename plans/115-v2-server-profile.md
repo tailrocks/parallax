@@ -23,9 +23,11 @@
 1. ~~ADR~~ landed (`docs/research/decisions/v2-server-profile.md`).
 2. ~~Validated example config composition~~ landed
    (`docs/research/validation/2026-07-plan-115-v2-server-profile/example-config.toml`
-   + `Config::load` unit gate). Still open: production non-loopback rehearsals
-   with operator TLS edge, graceful drain evidence.
-3. Live rehearsal: backup/restore, upgrade/rollback, disk pressure, retention.
+   + `Config::load` unit gate).
+3. ~~Rehearsal checklist~~ landed
+   (`docs/research/validation/2026-07-plan-115-v2-server-profile/rehearsal-checklist.md`).
+   Still open: **live** non-loopback/TLS-edge run logs, measured backup/restore/
+   upgrade/rollback/disk-pressure packets.
 4. Package via verified release pipeline; remote CLI acceptance for
    issue/bundle/trace.
 5. Publish load packet that can unblock plan 110 only after measured worker
