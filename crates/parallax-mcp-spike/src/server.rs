@@ -187,6 +187,7 @@ pub(crate) async fn run_stdio(base_url: String) -> anyhow::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rmcp::model::CallToolRequestParams;
 
     #[test]
     fn advertises_tools_without_unapproved_capabilities() {
@@ -399,6 +400,13 @@ mod tests {
                 .collect::<Vec<_>>(),
             ["parallax_agent_session_show", "parallax_issue_context"]
         );
+        for denied in ["run_shell", "dashboard_create"] {
+            let error = client
+                .call_tool(CallToolRequestParams::new(denied))
+                .await
+                .expect_err("forbidden tool must not resolve");
+            assert!(error.to_string().contains("tool not found"));
+        }
 
         client.cancel().await.expect("cancel client");
         server_task

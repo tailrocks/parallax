@@ -77,6 +77,8 @@ must not return in product output.
 - An in-memory stdio-equivalent wire fixture now proves MCP initialization,
   stable protocol negotiation, and the exact `tools/list` catalog. Codex and
   Claude registration/discovery fixtures remain unfinished.
+- The wire fixture also invokes representative forbidden shell and management
+  names and requires protocol-level `tool not found` failures.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded
