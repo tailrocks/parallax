@@ -231,6 +231,7 @@ managed quotes remain):
 | still not done | **549** | top 5 open |
 | milestone 550 | **550** | healthy; not done |
 | still not done | **551** | top 5 open |
+| PK identity export | **552** | all OK |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
