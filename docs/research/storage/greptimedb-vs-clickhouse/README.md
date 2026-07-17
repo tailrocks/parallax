@@ -141,6 +141,7 @@ managed quotes remain):
 | still not done | **459** | top 5 open |
 | TimeSeries rate hold | **460** | sum(rate)=1.5; increase no |
 | still not done | **461** | top 5 open |
+| time-range aged data | **462** | 0 rows; ~3ms both |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
