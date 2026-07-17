@@ -2,7 +2,25 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-05-25
+Research date: 2026-05-25 · **Recheck 2026-07-17 (pass 67)**
+
+> **Pass 67:** historical A7 "tiny tier first" discipline was a *pre-ship*
+> control. **V1 has since shipped** with a broad surface (OTLP+Sentry, GraphQL,
+> CLI, UI, MCP, evidence, alerting — see
+> [code-reality-ledger.md](../code-reality-ledger.md)). That is **not** an A7
+> failure by itself; it is a phase transition. **Current A7 residual:**
+>
+> 1. Active work only via numbered `plans/` (operator policy); no shadow
+>    implementation queues.
+> 2. Do **not** pull full autonomous fix-loop product (Detect/Dispatch/Learn
+>    L4/L5) into core until goals 1–2 + outcome measurement justify it
+>    (north-star remains design pressure).
+> 3. Do not re-open mandatory storage swaps or multi-engine product modes.
+> 4. New capture/UI surfaces must justify against audience ladder rungs 1–2.
+>
+> A7 claim level: **process discipline ongoing** (plans index), not a numeric
+> "scope budget green" ledger for the whole product — update this note when a
+> phase-budget ledger is re-introduced for post-V1 work.
 
 ## Purpose
 
