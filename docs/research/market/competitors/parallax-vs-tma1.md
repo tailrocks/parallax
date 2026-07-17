@@ -19,7 +19,7 @@
 
 ## What each product is
 
-- **TMA1** (`tma1-ai/tma1`) — **local-first observability for LLM/AI coding agents**: a single Go binary that embeds **GreptimeDB** (downloaded as a child process, `minRequiredVersion v1.0.2`), records every LLM call on the local machine, and routes observations back into the agent's next turn via hooks + a **read-only 7-tool MCP** (`get_context_bundle`, `get_session_state`, `get_anomalies`, `get_build_status`, `get_external_changes`, `get_project_state`, `get_peer_sessions`) + 6-rule anomaly detection. **Apache-2.0**, Go ~51% + vanilla-JS embedded dashboard (uPlot). **~98 GitHub stars, v0.2.0-alpha7 (2026-06-08) — alpha/pre-1.0.** Wired into Claude Code / Codex / Copilot CLI / OpenClaw. **No pricing/cloud/SaaS/auth/multi-tenant — explicitly local-only.** Org also ships `openfuse` (Langfuse→GreptimeDB fork). **Latest confirmed tag v0.2.0-alpha7; re-verify exact latest release (alpha cadence) next.**
+- **TMA1** (`tma1-ai/tma1`) — **local-first observability for LLM/AI coding agents**: a single Go binary that embeds **GreptimeDB** (downloaded as a child process, `minRequiredVersion v1.0.2`), records every LLM call on the local machine, and routes observations back into the agent's next turn via hooks + a **read-only 7-tool MCP** (`get_context_bundle`, `get_session_state`, `get_anomalies`, `get_build_status`, `get_external_changes`, `get_project_state`, `get_peer_sessions`) + 6-rule anomaly detection. **Apache-2.0**, Go ~51% + vanilla-JS embedded dashboard (uPlot). **109 GitHub stars, v0.2.0-alpha12 (2026-07-17) — alpha/pre-1.0; 5 alpha bumps since alpha7 (2026-06-08), fast cadence.** Wired into Claude Code / Codex / Copilot CLI / OpenClaw. **No pricing/cloud/SaaS/auth/multi-tenant — explicitly local-only.** Org also ships `openfuse` (Langfuse→GreptimeDB fork). **Latest confirmed tag v0.2.0-alpha12 (2026-07-17, GitHub API).**
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable **execution-context engine**: OTLP-native ingest of traces/logs/metrics + CLI/agent traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, serves bounded/redacted/schema-valid evidence bundles to humans and coding agents. GreptimeDB + Turso. **Pre-release.**
 
 These are the closest pair in the set. Both: single binary, embedded GreptimeDB, OTLP-native, read-only MCP for coding agents, Apache-2.0. The differences are scope + a few spine pieces TMA1 lacks.
@@ -100,7 +100,7 @@ Same shape (a typed object an agent reads); fundamentally different artifact. Do
 
 ## Scalability & performance
 
-- **TMA1:** alpha, ~98 stars, single-machine scale (it's local-first by design — scale = one dev machine). GreptimeDB itself is proven; TMA1's harness is pre-1.0.
+- **TMA1:** alpha, 109 stars, single-machine scale (it's local-first by design — scale = one dev machine). GreptimeDB itself is proven; TMA1's harness is pre-1.0.
 - **Parallax:** unproven at production scale; benchmark-dependent.
 
 **Verdict:** not comparable head-to-head — TMA1 is local-single-machine by design; Parallax targets production multi-entity. **Different scale regimes.**
@@ -160,7 +160,7 @@ Re-verify each pass. Direct collision if TMA1 adds any of:
 
 ## Open questions / what measurement would settle
 
-- **Exact latest TMA1 release** — pin from GitHub (alpha cadence; v0.2.0-alpha7 last confirmed 2026-06-08).
+- ~~Exact latest TMA1 release~~ → **pinned v0.2.0-alpha12 (2026-07-17, GitHub API); 5 alpha bumps since alpha7 — fast cadence. Watch triggers still unfired (no prod-error/Sentry/redaction/outcome/CI-deploy).**
 - **A1 gate vs TMA1:** if a team already runs TMA1 for local agent loops, does Parallax's production-incident bundle add measurable value, or does TMA1's narrower scope suffice for their job? Unproven.
 - **TMA1 production extension** — track the watch triggers above each pass.
 

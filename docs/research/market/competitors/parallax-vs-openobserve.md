@@ -17,7 +17,7 @@
 
 ## What each product is
 
-- **OpenObserve** ("O2") — open-source (**AGPL-3.0** core, relicensed from Apache-2.0 in Nov 2023), cloud-native observability platform unifying logs, metrics, traces, frontend/RUM (+ session replay), data pipelines, and LLM observability in a **single Rust binary**. Positioned as a Datadog/Splunk/Elasticsearch alternative; headline "140× lower storage cost" from Parquet-on-object-storage. Ships an **AI SRE** + **140+-tool MCP server** (Enterprise-gated, write/destructive by default). OpenObserve Inc.; Series A **$10M** (~2026-04-29, Nexus + Dell Technologies Capital). **Latest: v0.91.1** (downloads page, 2026-07); ~**20k GitHub stars** (July 2026). Rust engine (~26% by line; TS/Vue is the UI).
+- **OpenObserve** ("O2") — open-source (**AGPL-3.0** core, relicensed from Apache-2.0 in Nov 2023), cloud-native observability platform unifying logs, metrics, traces, frontend/RUM (+ session replay), data pipelines, and LLM observability in a **single Rust binary**. Positioned as a Datadog/Splunk/Elasticsearch alternative; headline "140× lower storage cost" from Parquet-on-object-storage. Ships an **AI SRE** + **140+-tool MCP server** (Enterprise-gated, write/destructive by default). OpenObserve Inc.; Series A **$10M** (~2026-04-29, Nexus + Dell Technologies Capital). **Latest: v0.91.2** (GitHub, 2026-07-17); **20,189 GitHub stars** (GitHub API, 2026-07-17). Rust engine (~26% by line; TS/Vue is the UI).
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable **execution-context engine**: OTLP-native ingest of traces/logs/metrics + CLI/agent traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, serves bounded/redacted evidence bundles to humans and coding agents. GreptimeDB + Turso. **Pre-release.**
 
 These overlap maximally on architecture — both Rust, single-binary, self-host, OTLP-native, object-storage-columnar. OpenObserve is the closest competitor on Parallax's own bet. The honest differentiator is product *intent*: OpenObserve is a general full-platform Datadog-alternative; Parallax is a narrow agent-context engine for production incidents.
@@ -172,7 +172,7 @@ OpenObserve pricing is **public** ([openobserve.ai/pricing](https://openobserve.
 
 ## Sources (accessed 2026-07-17)
 
-- [openobserve.ai](https://openobserve.ai/); [pricing](https://openobserve.ai/pricing/); [AI SRE](https://openobserve.ai/ai-sre/); [MCP server](https://openobserve.ai/mcp-server/); [downloads (v0.91.1)](https://openobserve.ai/downloads).
+- [openobserve.ai](https://openobserve.ai/); [pricing](https://openobserve.ai/pricing/); [AI SRE](https://openobserve.ai/ai-sre/); [MCP server](https://openobserve.ai/mcp-server/); [downloads (v0.91.2)](https://openobserve.ai/downloads); [GitHub releases](https://github.com/openobserve/openobserve/releases) — **v0.91.2 (2026-07-17), 20,189★** (API).
 - [github.com/openobserve/openobserve](https://github.com/openobserve/openobserve) (AGPL-3.0).
 - Legacy internal: [openobserve-deep-research.md](../openobserve-deep-research.md) (2026-06-22 — sources, architecture, Series A, tantivy correction).
 - Parallax side: [decisions/storage-engine.md](../../decisions/storage-engine.md), [storage/greptimedb-vs-clickhouse/](../../storage/greptimedb-vs-clickhouse/), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).

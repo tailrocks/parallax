@@ -16,7 +16,7 @@
 
 ## What each product is
 
-- **Coroot** — open-source (**Apache-2.0** core / Community; commercial **Enterprise** $1/CPU-core/mo) **eBPF-based observability + APM** with zero-instrumentation capture and AI Root Cause Analysis. Metrics/logs/traces/continuous-profiling/SLO alerting + predefined dashboards/inspections. Wedge = adoption friction: deploy the eBPF agent, a service map appears with no app code changes. Go ~61%. **~7.8k stars, v1.22.2 (2026-06-15) — re-verify exact latest tag.** Coroot Inc. (Palo Alto; Peter Zaitsev co-founder).
+- **Coroot** — open-source (**Apache-2.0** core / Community; commercial **Enterprise** $1/CPU-core/mo) **eBPF-based observability + APM** with zero-instrumentation capture and AI Root Cause Analysis. Metrics/logs/traces/continuous-profiling/SLO alerting + predefined dashboards/inspections. Wedge = adoption friction: deploy the eBPF agent, a service map appears with no app code changes. Go ~61%. **7,837 stars, v1.23.3 (2026-07-02) — pinned 2026-07-17 (GitHub API).** Coroot Inc. (Palo Alto; Peter Zaitsev co-founder).
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable **execution-context engine**: OTLP-native ingest of traces/logs/metrics + CLI/agent traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, serves bounded/redacted evidence bundles to humans and coding agents. GreptimeDB + Turso. **Pre-release.**
 
 Both Apache-2.0 OSS, self-hostable, with an agent/MCP surface and AI RCA. The overlap is real but the *signal source* differs fundamentally: Coroot = eBPF (protocol-level, no app code); Parallax = OTLP/Sentry (app-level, including errors).
@@ -88,7 +88,7 @@ Both Apache-2.0 OSS, self-hostable, with an agent/MCP surface and AI RCA. The ov
 
 ## Scalability & performance
 
-- **Coroot:** proven at scale (7.8k stars, K8s deployments, Peter Zaitsev-backed). ClickHouse+Prometheus battle-tested. Specific numbers vendor (AI benchmark published); not independently measured here.
+- **Coroot:** proven at scale (7,837 stars, K8s deployments, Peter Zaitsev-backed). ClickHouse+Prometheus battle-tested. Specific numbers vendor (AI benchmark published); not independently measured here.
 - **Parallax:** unproven; benchmark-dependent.
 
 **Verdict:** on **proven-at-scale, Coroot wins conclusively.**
