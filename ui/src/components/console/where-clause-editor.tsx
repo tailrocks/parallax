@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { IconFilter, IconX } from "@tabler/icons-react";
+import { useEffect, useMemo, useRef, useState } from "react"
+import { IconFilter, IconX } from "@tabler/icons-react"
 
-import { Button } from "@/components/ui/button";
-import { Kbd } from "@/components/ui/kbd";
+import { Button } from "@/components/ui/button"
+import { Kbd } from "@/components/ui/kbd"
 import {
   parseWhereClause,
   serializeWhereClause,
   WHERE_OPS,
   type WhereFilter,
-} from "@/lib/where-clause";
-import { cn } from "@/lib/utils";
+} from "@/lib/where-clause"
+import { cn } from "@/lib/utils"
 
 /** Plan 164 where-clause editor (preliminary). Monospace input, live parse
  * with inline error, autocomplete over keys/operators/values, ⌘Enter apply.
@@ -23,67 +23,67 @@ export function WhereClauseEditor({
   className,
   autoFocus,
 }: {
-  filters: WhereFilter[];
-  onApply: (filters: WhereFilter[]) => void;
-  keySuggestions?: string[];
+  filters: WhereFilter[]
+  onApply: (filters: WhereFilter[]) => void
+  keySuggestions?: string[]
   /** Top values for a key, from field_stats; sync cache lookup. */
-  valueSuggestionsFor?: (key: string) => string[];
-  className?: string;
-  autoFocus?: boolean;
+  valueSuggestionsFor?: (key: string) => string[]
+  className?: string
+  autoFocus?: boolean
 }) {
-  const [text, setText] = useState(() => serializeWhereClause(filters));
-  const [open, setOpen] = useState(false);
-  const [highlightIndex, setHighlightIndex] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [text, setText] = useState(() => serializeWhereClause(filters))
+  const [open, setOpen] = useState(false)
+  const [highlightIndex, setHighlightIndex] = useState(0)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    setText(serializeWhereClause(filters));
-  }, [filters]);
+    setText(serializeWhereClause(filters))
+  }, [filters])
 
-  const parsed = useMemo(() => parseWhereClause(text), [text]);
-  const error = parsed.ok ? null : parsed.error;
+  const parsed = useMemo(() => parseWhereClause(text), [text])
+  const error = parsed.ok ? null : parsed.error
 
   // Autocomplete context: what token is being typed at the end of the input.
   const suggestions = useMemo(() => {
-    const trimmed = text.replace(/\s+$/, "");
-    const tokens = trimmed === "" ? [] : trimmed.split(/\s+/);
-    const endsWithSpace = text !== trimmed;
-    const position = tokens.length % 4; // key, op, value, AND
-    const current = endsWithSpace ? "" : (tokens[tokens.length - 1] ?? "");
-    const slot = endsWithSpace ? position : Math.max(0, position - 1) % 4;
-    let pool: string[] = [];
+    const trimmed = text.replace(/\s+$/, "")
+    const tokens = trimmed === "" ? [] : trimmed.split(/\s+/)
+    const endsWithSpace = text !== trimmed
+    const position = tokens.length % 4 // key, op, value, AND
+    const current = endsWithSpace ? "" : (tokens[tokens.length - 1] ?? "")
+    const slot = endsWithSpace ? position : Math.max(0, position - 1) % 4
+    let pool: string[] = []
     if (slot === 0) {
-      pool = keySuggestions;
+      pool = keySuggestions
     } else if (slot === 1) {
-      pool = [...WHERE_OPS];
+      pool = [...WHERE_OPS]
     } else if (slot === 2) {
-      const key = tokens[tokens.length - (endsWithSpace ? 2 : 3)];
-      pool = key && valueSuggestionsFor ? valueSuggestionsFor(key) : [];
+      const key = tokens[tokens.length - (endsWithSpace ? 2 : 3)]
+      pool = key && valueSuggestionsFor ? valueSuggestionsFor(key) : []
     } else {
-      pool = ["AND"];
+      pool = ["AND"]
     }
-    const needle = current.toLowerCase();
+    const needle = current.toLowerCase()
     return pool
       .filter((entry) => entry.toLowerCase().startsWith(needle))
       .slice(0, 8)
-      .map((entry) => ({ entry, current }));
-  }, [text, keySuggestions, valueSuggestionsFor]);
+      .map((entry) => ({ entry, current }))
+  }, [text, keySuggestions, valueSuggestionsFor])
 
   const accept = (entry: string, current: string) => {
-    const base = current ? text.slice(0, text.length - current.length) : text;
-    const quoted = /\s/.test(entry) ? `"${entry}"` : entry;
-    setText(`${base}${quoted} `);
-    setOpen(true);
-    setHighlightIndex(0);
-    inputRef.current?.focus();
-  };
+    const base = current ? text.slice(0, text.length - current.length) : text
+    const quoted = /\s/.test(entry) ? `"${entry}"` : entry
+    setText(`${base}${quoted} `)
+    setOpen(true)
+    setHighlightIndex(0)
+    inputRef.current?.focus()
+  }
 
   const apply = () => {
     if (parsed.ok) {
-      onApply(parsed.filters);
-      setOpen(false);
+      onApply(parsed.filters)
+      setOpen(false)
     }
-  };
+  }
 
   return (
     <div className={cn("space-y-1", className)}>
@@ -99,45 +99,45 @@ export function WhereClauseEditor({
           aria-invalid={error != null}
           className={cn(
             "h-8 w-full rounded-md border bg-transparent pr-20 pl-8 font-mono text-xs outline-none focus:ring-1 focus:ring-ring",
-            error && text.trim() !== "" && "border-destructive",
+            error && text.trim() !== "" && "border-destructive"
           )}
           onChange={(event) => {
-            setText(event.target.value);
-            setOpen(true);
-            setHighlightIndex(0);
+            setText(event.target.value)
+            setOpen(true)
+            setHighlightIndex(0)
           }}
           onKeyDown={(event) => {
             if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-              event.preventDefault();
-              apply();
-              return;
+              event.preventDefault()
+              apply()
+              return
             }
             if (event.key === " " && event.ctrlKey) {
-              event.preventDefault();
-              setOpen(true);
-              return;
+              event.preventDefault()
+              setOpen(true)
+              return
             }
             if (!open || suggestions.length === 0) {
               if (event.key === "Enter") {
-                event.preventDefault();
-                apply();
+                event.preventDefault()
+                apply()
               }
-              return;
+              return
             }
             if (event.key === "ArrowDown") {
-              event.preventDefault();
-              setHighlightIndex((prev) => (prev + 1) % suggestions.length);
+              event.preventDefault()
+              setHighlightIndex((prev) => (prev + 1) % suggestions.length)
             } else if (event.key === "ArrowUp") {
-              event.preventDefault();
+              event.preventDefault()
               setHighlightIndex(
-                (prev) => (prev - 1 + suggestions.length) % suggestions.length,
-              );
+                (prev) => (prev - 1 + suggestions.length) % suggestions.length
+              )
             } else if (event.key === "Tab" || event.key === "Enter") {
-              event.preventDefault();
-              const chosen = suggestions[highlightIndex];
-              if (chosen) accept(chosen.entry, chosen.current);
+              event.preventDefault()
+              const chosen = suggestions[highlightIndex]
+              if (chosen) accept(chosen.entry, chosen.current)
             } else if (event.key === "Escape") {
-              setOpen(false);
+              setOpen(false)
             }
           }}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
@@ -158,11 +158,11 @@ export function WhereClauseEditor({
                 aria-selected={index === highlightIndex}
                 className={cn(
                   "cursor-pointer rounded px-2 py-1",
-                  index === highlightIndex && "bg-muted",
+                  index === highlightIndex && "bg-muted"
                 )}
                 onMouseDown={(event) => {
-                  event.preventDefault();
-                  accept(suggestion.entry, suggestion.current);
+                  event.preventDefault()
+                  accept(suggestion.entry, suggestion.current)
                 }}
               >
                 {suggestion.entry}
@@ -177,7 +177,7 @@ export function WhereClauseEditor({
         </p>
       ) : null}
     </div>
-  );
+  )
 }
 
 /** Applied where-clause shown as removable chips. */
@@ -186,11 +186,11 @@ export function WhereClauseChips({
   onRemove,
   className,
 }: {
-  filters: WhereFilter[];
-  onRemove: (index: number) => void;
-  className?: string;
+  filters: WhereFilter[]
+  onRemove: (index: number) => void
+  className?: string
 }) {
-  if (filters.length === 0) return null;
+  if (filters.length === 0) return null
   return (
     <div className={cn("flex flex-wrap items-center gap-1.5", className)}>
       {filters.map((filter, index) => (
@@ -212,5 +212,5 @@ export function WhereClauseChips({
         </span>
       ))}
     </div>
-  );
+  )
 }

@@ -1,45 +1,45 @@
-import { useEffect, useState } from "react";
-import { IconClock, IconX } from "@tabler/icons-react";
+import { useEffect, useState } from "react"
+import { IconClock, IconX } from "@tabler/icons-react"
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { formatDurationNs } from "@/lib/format";
-import { cn } from "@/lib/utils";
+} from "@/components/ui/popover"
+import { formatDurationNs } from "@/lib/format"
+import { cn } from "@/lib/utils"
 
 /** Plan 164 duration filter: preset chips seeded from the current result
  * window's duration stats plus debounced min/max ms inputs. Controlled —
  * parent owns the range (URL search params). */
 export type DurationRange = {
-  minMs?: number;
-  maxMs?: number;
-};
+  minMs?: number
+  maxMs?: number
+}
 
 export type DurationStats = {
-  p50Ms: number;
-  p95Ms: number;
-};
+  p50Ms: number
+  p95Ms: number
+}
 
-const DEBOUNCE_MS = 400;
+const DEBOUNCE_MS = 400
 
 export function durationSummary(range: DurationRange): string | null {
-  const { minMs, maxMs } = range;
+  const { minMs, maxMs } = range
   if (minMs != null && maxMs != null) {
-    return `${formatDurationNs(minMs * 1e6)} – ${formatDurationNs(maxMs * 1e6)}`;
+    return `${formatDurationNs(minMs * 1e6)} – ${formatDurationNs(maxMs * 1e6)}`
   }
-  if (minMs != null) return `≥ ${formatDurationNs(minMs * 1e6)}`;
-  if (maxMs != null) return `≤ ${formatDurationNs(maxMs * 1e6)}`;
-  return null;
+  if (minMs != null) return `≥ ${formatDurationNs(minMs * 1e6)}`
+  if (maxMs != null) return `≤ ${formatDurationNs(maxMs * 1e6)}`
+  return null
 }
 
 function parseMs(raw: string): number | undefined {
-  if (raw.trim() === "") return undefined;
-  const value = Number(raw);
-  return Number.isFinite(value) && value >= 0 ? value : undefined;
+  if (raw.trim() === "") return undefined
+  const value = Number(raw)
+  return Number.isFinite(value) && value >= 0 ? value : undefined
 }
 
 export function DurationFilter({
@@ -48,33 +48,33 @@ export function DurationFilter({
   onChange,
   className,
 }: {
-  range: DurationRange;
-  stats?: DurationStats;
-  onChange: (next: DurationRange) => void;
-  className?: string;
+  range: DurationRange
+  stats?: DurationStats
+  onChange: (next: DurationRange) => void
+  className?: string
 }) {
-  const [minText, setMinText] = useState(range.minMs?.toString() ?? "");
-  const [maxText, setMaxText] = useState(range.maxMs?.toString() ?? "");
+  const [minText, setMinText] = useState(range.minMs?.toString() ?? "")
+  const [maxText, setMaxText] = useState(range.maxMs?.toString() ?? "")
 
   useEffect(() => {
-    setMinText(range.minMs?.toString() ?? "");
-    setMaxText(range.maxMs?.toString() ?? "");
-  }, [range.minMs, range.maxMs]);
+    setMinText(range.minMs?.toString() ?? "")
+    setMaxText(range.maxMs?.toString() ?? "")
+  }, [range.minMs, range.maxMs])
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      const minMs = parseMs(minText);
-      const maxMs = parseMs(maxText);
-      if (minMs === range.minMs && maxMs === range.maxMs) return;
+      const minMs = parseMs(minText)
+      const maxMs = parseMs(maxText)
+      if (minMs === range.minMs && maxMs === range.maxMs) return
       onChange({
         ...(minMs === undefined ? {} : { minMs }),
         ...(maxMs === undefined ? {} : { maxMs }),
-      });
-    }, DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [minText, maxText, range.minMs, range.maxMs, onChange]);
+      })
+    }, DEBOUNCE_MS)
+    return () => clearTimeout(timer)
+  }, [minText, maxText, range.minMs, range.maxMs, onChange])
 
-  const summary = durationSummary(range);
+  const summary = durationSummary(range)
   const presets: Array<{ label: string; minMs: number }> = [
     ...(stats
       ? [
@@ -89,7 +89,7 @@ export function DurationFilter({
         ]
       : []),
     { label: "> 1s", minMs: 1000 },
-  ];
+  ]
 
   return (
     <Popover>
@@ -111,13 +111,13 @@ export function DurationFilter({
             aria-label="Clear duration filter"
             className="ml-0.5 rounded-full p-0.5 hover:bg-muted"
             onClick={(event) => {
-              event.stopPropagation();
-              onChange({});
+              event.stopPropagation()
+              onChange({})
             }}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
-                event.stopPropagation();
-                onChange({});
+                event.stopPropagation()
+                onChange({})
               }
             }}
           >
@@ -137,7 +137,7 @@ export function DurationFilter({
                 "h-6 rounded-full px-2 text-xs",
                 range.minMs === preset.minMs &&
                   range.maxMs === undefined &&
-                  "bg-muted font-medium",
+                  "bg-muted font-medium"
               )}
               onClick={() => onChange({ minMs: preset.minMs })}
             >
@@ -166,5 +166,5 @@ export function DurationFilter({
         </div>
       </PopoverContent>
     </Popover>
-  );
+  )
 }

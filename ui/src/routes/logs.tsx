@@ -27,10 +27,7 @@ import {
 import { z } from "zod"
 
 import { EmptyState } from "@/components/console/empty-state"
-import {
-  FacetSidebar,
-  type Facet,
-} from "@/components/console/facet-sidebar"
+import { FacetSidebar, type Facet } from "@/components/console/facet-sidebar"
 import { useDelayedLoading } from "@/components/console/hooks"
 import { RangePicker } from "@/components/console/range-picker"
 import { TableSkeleton } from "@/components/console/skeletons"
@@ -840,7 +837,9 @@ function LogsPage() {
               {!live && !search.anchor && !exhausted ? (
                 <div className="flex flex-col gap-2 border-t border-border/70 p-2">
                   {olderError ? (
-                    <p className="px-2 text-sm text-destructive">{olderError}</p>
+                    <p className="px-2 text-sm text-destructive">
+                      {olderError}
+                    </p>
                   ) : null}
                   <Button
                     type="button"

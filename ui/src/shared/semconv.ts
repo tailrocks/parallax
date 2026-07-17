@@ -110,11 +110,7 @@ export const APP_SCREEN_CHECKOUT = "checkout" as const
 export const UI_ACTION_CART_ADD = "cart.add" as const
 export const UI_ACTION_CHECKOUT_SUBMIT = "checkout.submit" as const
 export const UI_ACTION_SCREEN_BACK = "screen.back" as const
-export const GEN_AI_AGENT_NAMES = [
-  "claude",
-  "codex",
-  "amp",
-] as const
+export const GEN_AI_AGENT_NAMES = ["claude", "codex", "amp"] as const
 export const GEN_AI_PROVIDER_NAMES = [
   "anthropic",
   "openai",

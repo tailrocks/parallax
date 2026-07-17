@@ -1,30 +1,30 @@
-import { useMemo, useState } from "react";
-import { IconChevronDown, IconChevronRight, IconX } from "@tabler/icons-react";
+import { useMemo, useState } from "react"
+import { IconChevronDown, IconChevronRight, IconX } from "@tabler/icons-react"
 
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { ServiceDot } from "@/components/console/service-dot";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
+import { ServiceDot } from "@/components/console/service-dot"
+import { cn } from "@/lib/utils"
 
 /** Plan 164 facet model: one bounded dimension with per-value counts.
  * Semantics: multi-select ORs within a facet, ANDs across facets. */
 export type FacetValue = {
-  value: string;
-  count: number;
-};
+  value: string
+  count: number
+}
 
 export type Facet = {
-  dimension: string;
-  label: string;
-  values: FacetValue[];
+  dimension: string
+  label: string
+  values: FacetValue[]
   /** Render a ServiceDot swatch next to each value (service facets). */
-  serviceDots?: boolean;
+  serviceDots?: boolean
   /** Show an inline search box when the value list is long. */
-  searchable?: boolean;
-};
+  searchable?: boolean
+}
 
-const DEFAULT_MAX_VISIBLE = 8;
+const DEFAULT_MAX_VISIBLE = 8
 
 export function FacetSection({
   facet,
@@ -32,32 +32,32 @@ export function FacetSection({
   onToggle,
   maxVisible = DEFAULT_MAX_VISIBLE,
 }: {
-  facet: Facet;
-  selected: string[];
-  onToggle: (dimension: string, value: string) => void;
-  maxVisible?: number;
+  facet: Facet
+  selected: string[]
+  onToggle: (dimension: string, value: string) => void
+  maxVisible?: number
 }) {
-  const [collapsed, setCollapsed] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-  const [search, setSearch] = useState("");
+  const [collapsed, setCollapsed] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const [search, setSearch] = useState("")
 
   const filtered = useMemo(() => {
-    if (!search) return facet.values;
-    const needle = search.toLowerCase();
+    if (!search) return facet.values
+    const needle = search.toLowerCase()
     return facet.values.filter((entry) =>
-      entry.value.toLowerCase().includes(needle),
-    );
-  }, [facet.values, search]);
+      entry.value.toLowerCase().includes(needle)
+    )
+  }, [facet.values, search])
 
   // Selected values stay visible even beyond the maxVisible cut.
   const visible = expanded
     ? filtered
     : filtered.filter(
-        (entry, index) => index < maxVisible || selected.includes(entry.value),
-      );
-  const hiddenCount = filtered.length - visible.length;
+        (entry, index) => index < maxVisible || selected.includes(entry.value)
+      )
+  const hiddenCount = filtered.length - visible.length
 
-  const Chevron = collapsed ? IconChevronRight : IconChevronDown;
+  const Chevron = collapsed ? IconChevronRight : IconChevronDown
   return (
     <section className="space-y-1.5">
       <button
@@ -69,7 +69,7 @@ export function FacetSection({
         <Chevron className="size-3.5" />
         {facet.label}
         {selected.length > 0 ? (
-          <span className="ml-auto rounded-full bg-muted px-1.5 tabular-nums normal-case">
+          <span className="ml-auto rounded-full bg-muted px-1.5 normal-case tabular-nums">
             {selected.length}
           </span>
         ) : null}
@@ -85,13 +85,13 @@ export function FacetSection({
             />
           ) : null}
           {visible.map((entry) => {
-            const checked = selected.includes(entry.value);
+            const checked = selected.includes(entry.value)
             return (
               <label
                 key={entry.value}
                 className={cn(
                   "flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-sm hover:bg-muted/60",
-                  checked && "font-medium",
+                  checked && "font-medium"
                 )}
               >
                 <Checkbox
@@ -105,7 +105,7 @@ export function FacetSection({
                   {entry.count.toLocaleString()}
                 </span>
               </label>
-            );
+            )
           })}
           {hiddenCount > 0 ? (
             <Button
@@ -132,7 +132,7 @@ export function FacetSection({
         </div>
       )}
     </section>
-  );
+  )
 }
 
 /** Sidebar of facet sections. `selections` maps dimension to selected values.
@@ -144,15 +144,15 @@ export function FacetSidebar({
   onClear,
   className,
 }: {
-  facets: Facet[];
-  selections: Record<string, string[]>;
-  onToggle: (dimension: string, value: string) => void;
-  onClear?: () => void;
-  className?: string;
+  facets: Facet[]
+  selections: Record<string, string[]>
+  onToggle: (dimension: string, value: string) => void
+  onClear?: () => void
+  className?: string
 }) {
   const anySelected = Object.values(selections).some(
-    (values) => values.length > 0,
-  );
+    (values) => values.length > 0
+  )
   return (
     <aside className={cn("w-56 shrink-0 space-y-4", className)}>
       {onClear && anySelected ? (
@@ -176,53 +176,53 @@ export function FacetSidebar({
         />
       ))}
     </aside>
-  );
+  )
 }
 
 /** URL codec for facet selections: `dim:value` pairs, comma-joined. */
 export function facetSelectionsToParam(
-  selections: Record<string, string[]>,
+  selections: Record<string, string[]>
 ): string | undefined {
   const parts = Object.entries(selections)
     .flatMap(([dimension, values]) =>
-      values.map((value) => `${dimension}:${encodeURIComponent(value)}`),
+      values.map((value) => `${dimension}:${encodeURIComponent(value)}`)
     )
-    .sort();
-  return parts.length > 0 ? parts.join(",") : undefined;
+    .sort()
+  return parts.length > 0 ? parts.join(",") : undefined
 }
 
 export function facetSelectionsFromParam(
-  raw: string | undefined,
+  raw: string | undefined
 ): Record<string, string[]> {
-  if (!raw) return {};
-  const selections: Record<string, string[]> = {};
+  if (!raw) return {}
+  const selections: Record<string, string[]> = {}
   for (const part of raw.split(",")) {
-    const separator = part.indexOf(":");
-    if (separator <= 0) continue;
-    const dimension = part.slice(0, separator);
-    const value = decodeURIComponent(part.slice(separator + 1));
-    if (!value) continue;
-    const existing = selections[dimension] ?? [];
-    if (!existing.includes(value)) existing.push(value);
-    selections[dimension] = existing;
+    const separator = part.indexOf(":")
+    if (separator <= 0) continue
+    const dimension = part.slice(0, separator)
+    const value = decodeURIComponent(part.slice(separator + 1))
+    if (!value) continue
+    const existing = selections[dimension] ?? []
+    if (!existing.includes(value)) existing.push(value)
+    selections[dimension] = existing
   }
-  return selections;
+  return selections
 }
 
 export function toggleFacetValue(
   selections: Record<string, string[]>,
   dimension: string,
-  value: string,
+  value: string
 ): Record<string, string[]> {
-  const current = selections[dimension] ?? [];
+  const current = selections[dimension] ?? []
   const next = current.includes(value)
     ? current.filter((entry) => entry !== value)
-    : [...current, value];
-  const result = { ...selections };
+    : [...current, value]
+  const result = { ...selections }
   if (next.length === 0) {
-    delete result[dimension];
+    delete result[dimension]
   } else {
-    result[dimension] = next;
+    result[dimension] = next
   }
-  return result;
+  return result
 }

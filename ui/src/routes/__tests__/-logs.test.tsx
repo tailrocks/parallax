@@ -31,10 +31,7 @@ import {
   parseSavedViewState,
   validateLogsSearch,
 } from "@/routes/logs"
-import {
-  serializeWhereClause,
-  whereClauseFromSearch,
-} from "@/lib/where-clause"
+import { serializeWhereClause, whereClauseFromSearch } from "@/lib/where-clause"
 import { renderTestRouter } from "@/test/router"
 
 const range: ResolvedRange = {
