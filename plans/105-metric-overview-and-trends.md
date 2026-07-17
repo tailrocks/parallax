@@ -29,9 +29,13 @@ explicit inclusive windows, finite gauge/sum and one-row-per-explicit-
 histogram-export counting, ≤120 aligned trend buckets, fail-closed native-name
 collisions, bounded metric-only service discovery, and retained
 `parallax metrics --invocation`. The product-policy validator now fails closed
-when this record is missing, draft/rejected, lacks approval authority/date, or
-omits a required contract section; its positive and negative fixtures pass.
-Adapter/API/CLI compatibility and conformance evidence remain peer-owned.
+over the record SHA-256 and typed approved fields; positive, missing,
+malformed, incomplete, and per-field mutation fixtures pass. CLI prototyping
+proved `runtimeSnapshot` is not the contract path: it filters to recognized
+runtime families and fans out through the native catalog, so it would omit
+generic application metrics and violate bounded-query rules. The primary
+executor must first expose one bounded, typed API projection over all
+`invocation_metric_points`; then implement CLI snapshots through it.
 
 ## Why
 

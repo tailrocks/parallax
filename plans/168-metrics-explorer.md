@@ -45,12 +45,19 @@ Index status stays TODO.
   non-finite and histogram treatment, trend bucket cap, fail-closed native-name
   collision behavior, metric-only service discovery, GraphQL compatibility,
   and the retained `parallax metrics --invocation` promise. Plan 105 links the
-  record. `product.metric-decision` now enforces the record fail-closed with
-  positive and missing/draft/rejected/incomplete negative fixtures. Focused
-  xtask tests and strict xtask clippy pass; the full product-policy invocation
-  currently continues past this check then fails on the peer's concurrent,
-  unregistered `parallax-metadata/src/turso/alerts.rs` anyhow edge. Peer must
-  prove adapter/API/CLI conformance before treating Step 0 as closed.
+  record. `product.metric-decision` pins the Markdown SHA-256 and typed decision
+  fields with positive, missing, malformed, incomplete, and per-field mutation
+  fixtures. Focused xtask tests and strict xtask clippy pass. Peer must prove
+  adapter/API/CLI conformance before treating Step 0 as closed.
+- CLI prerequisite found during helper prototyping: do **not** implement
+  `parallax metrics --invocation` through `runtimeSnapshot`. That resolver
+  recognizes only runtime families and discovers native metric tables before
+  per-metric reads; it can falsely report a custom-only invocation as empty and
+  violates the contract's bounded/no-native-tag-scan rule. Step 1's canonical
+  `metricQuery` (or a dedicated typed projection sharing its single bounded
+  storage path) must expose all `invocation_metric_points` first. Peer then
+  wires the CLI with typed GraphQL DTOs, exact unknown/known-empty semantics,
+  effective step in JSON, retired `--run` rejection, and live snapshots.
 - `ui/src/lib/metric-aggregation.ts` (typecheck fixed at `90527b4`): typed
   aggregation legality per metric kind (contract decision 2 — illegal combos
   unrepresentable), `coerceAggregation`, `inferMetricKind`, `MetricQuerySpec`
