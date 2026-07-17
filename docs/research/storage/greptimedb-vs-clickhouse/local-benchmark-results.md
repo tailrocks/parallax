@@ -7848,3 +7848,8 @@ works on head; EXPLAIN format differs from 26.6 but mechanism same.
 
 Immediate SELECT after INSERT finds the row on both GT and CH (no flush wait).
 Re-confirms visible-on-write / freshness tie (Runs 166/191/229).
+
+### Run 260 — 2026-07-17 — GT nightly native protocol smoke
+
+GT `1.2.0` nightly: PromQL **200**, Jaeger **200**, greptime_identity POST **200**
+(affectedrows=1). Adopt-native surfaces match stable. No drift.
