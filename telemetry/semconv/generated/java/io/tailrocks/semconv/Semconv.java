@@ -72,6 +72,10 @@ public final class Semconv {
     public static final String URL_PATH = "url.path";
     public static final String HTTP_SERVER_REQUEST_DURATION = "http.server.request.duration";
     public static final String SERVER_ADDRESS = "server.address";
+    public static final String DB_SYSTEM_NAME = "db.system.name";
+    public static final String DB_SYSTEM = "db.system";
+    public static final String DB_NAMESPACE = "db.namespace";
+    public static final String DB_NAME = "db.name";
     public static final String MESSAGING_SYSTEM = "messaging.system";
     public static final String MESSAGING_DESTINATION_NAME = "messaging.destination.name";
     public static final String MESSAGING_OPERATION_NAME = "messaging.operation.name";

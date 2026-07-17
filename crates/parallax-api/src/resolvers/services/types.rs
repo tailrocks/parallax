@@ -117,6 +117,9 @@ impl ServiceCatalogRow {
 pub(crate) struct ServiceNodeData {
     pub(super) name: String,
     pub(super) kind: String,
+    /// Generic system label for derived external nodes (`postgresql`,
+    /// `kafka`, a host, …); `None` for instrumented services (plan 166).
+    pub(super) system: Option<String>,
     pub(super) last_seen_nanos: u128,
     pub(super) span_count: u64,
     pub(super) error_count: u64,
@@ -130,9 +133,14 @@ impl ServiceNode {
     fn name(&self) -> &str {
         &self.0.name
     }
-    /// cli | browser | service — derived from generic signals only.
+    /// cli | browser | service | database | queue | external — derived from
+    /// generic signals only.
     fn kind(&self) -> &str {
         &self.0.kind
+    }
+    /// System label for external dependency nodes (postgresql, kafka, host).
+    fn system(&self) -> Option<&str> {
+        self.0.system.as_deref()
     }
     fn last_seen_nanos(&self) -> String {
         nanos_string(self.0.last_seen_nanos)

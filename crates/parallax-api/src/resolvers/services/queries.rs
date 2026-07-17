@@ -107,13 +107,14 @@ pub(crate) async fn service_map(
 ) -> FieldResult<ServiceMap> {
     let (from, to) = parse_range(&from_nanos, &to_nanos)?;
     let max_traces = clamp_limit(max_traces, 50).min(SERVICE_MAP_TRACE_CAP);
-    let (services, edges, invocations, catalog) = tokio::try_join!(
+    let (services, mut edges, invocations, catalog, external) = tokio::try_join!(
         context.store.service_summaries(from..=to),
         context.store.service_map(from..=to, max_traces),
         context
             .store
             .observed_invocations(crate::MAX_ROWS, from..=to),
         context.store.service_catalog(from..=to),
+        context.store.external_dependency_edges(from..=to),
     )
     .map_err(crate::internal_field_err)?;
     // Node kinds are derived from generic signals only: a service whose
@@ -147,6 +148,7 @@ pub(crate) async fn service_map(
                 ServiceNodeData {
                     name: service.name,
                     kind,
+                    system: None,
                     last_seen_nanos: service.last_seen_nanos,
                     span_count: service.span_count,
                     error_count: service.error_count,
@@ -162,12 +164,44 @@ pub(crate) async fn service_map(
                 .or_insert_with(|| ServiceNodeData {
                     name: service.clone(),
                     kind: kind_for(service),
+                    system: None,
                     last_seen_nanos: 0,
                     span_count: 0,
                     error_count: 0,
                     p95_ms: None,
                 });
         }
+    }
+    // Plan 166: uninstrumented dependency nodes (database | queue | external)
+    // derived from generic CLIENT/PRODUCER span attributes. An instrumented
+    // service with the same name wins the node slot; the edge still points at
+    // that name so the graph never dangles.
+    for dependency in &external {
+        nodes
+            .entry(dependency.name.clone())
+            .and_modify(|node| {
+                if node.kind == dependency.kind.as_str() {
+                    node.span_count += dependency.call_count;
+                    node.error_count += dependency.error_count;
+                }
+            })
+            .or_insert_with(|| ServiceNodeData {
+                name: dependency.name.clone(),
+                kind: dependency.kind.as_str().to_string(),
+                system: dependency.system.clone(),
+                last_seen_nanos: 0,
+                span_count: dependency.call_count,
+                error_count: dependency.error_count,
+                p95_ms: Some(dependency.p95_ms),
+            });
+        edges.push(parallax_storage::adapter::ServiceEdge {
+            source: dependency.source.clone(),
+            target: dependency.name.clone(),
+            call_count: dependency.call_count,
+            error_count: dependency.error_count,
+            p50_ms: dependency.p50_ms,
+            p95_ms: dependency.p95_ms,
+        });
     }
     Ok(ServiceMap {
         nodes: nodes.into_values().collect(),

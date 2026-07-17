@@ -295,3 +295,122 @@ async fn service_map_resolver_returns_nodes_and_edges() {
         Some(&serde_json::json!("1"))
     );
 }
+
+#[tokio::test]
+async fn service_map_derives_external_dependency_nodes_from_generic_attributes() {
+    let store = Arc::new(MemoryStore::new());
+
+    // Database dependency: CLIENT span with db.* attributes, no child.
+    let mut db_client = span("checkout", "trace-db", "db-client", 100, 5_000_000);
+    db_client.kind = "SPAN_KIND_CLIENT".into();
+    db_client.attributes = serde_json::json!({
+        "db.system.name": "postgresql",
+        "db.namespace": "orders",
+        "server.address": "pg.internal"
+    });
+
+    // Queue dependency: PRODUCER span with messaging.* attributes, no child.
+    let mut producer = span("fulfillment", "trace-q", "producer", 110, 7_000_000);
+    producer.kind = "SPAN_KIND_PRODUCER".into();
+    producer.attributes = serde_json::json!({
+        "messaging.system": "kafka",
+        "messaging.destination.name": "shipments"
+    });
+
+    // External HTTP dependency: CLIENT span with only server.address.
+    let mut http_client = span("checkout", "trace-http", "http-client", 120, 9_000_000);
+    http_client.kind = "SPAN_KIND_CLIENT".into();
+    http_client.status_code = "STATUS_CODE_ERROR".into();
+    http_client.attributes = serde_json::json!({ "server.address": "api.stripe.test" });
+
+    // Instrumented pair (negative): CLIENT span whose SERVER child lives in
+    // another instrumented service must NOT create an external node.
+    let mut internal_client = span("checkout", "trace-int", "int-client", 130, 4_000_000);
+    internal_client.kind = "SPAN_KIND_CLIENT".into();
+    internal_client.attributes = serde_json::json!({ "server.address": "pricing.internal" });
+    let mut internal_server = span("pricing", "trace-int", "int-server", 131, 3_000_000);
+    internal_server.kind = "SPAN_KIND_SERVER".into();
+    internal_server.parent_span_id = Some("int-client".into());
+
+    store.push_spans(vec![
+        db_client,
+        producer,
+        http_client,
+        internal_client,
+        internal_server,
+    ]);
+
+    let schema = build_schema();
+    let context = context_with_memory(store).await;
+    let request = juniper::http::GraphQLRequest::new(
+        r#"
+        {
+          serviceMap(fromNanos: "0", toNanos: "200", maxTraces: 10) {
+            nodes { name kind system spanCount errorCount }
+            edges { source target callCount errorCount }
+          }
+        }
+        "#
+        .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, request).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(error_messages(&json).is_empty(), "serviceMap query: {json}");
+
+    let nodes = json
+        .pointer("/data/serviceMap/nodes")
+        .and_then(|value| value.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let node = |name: &str| {
+        nodes
+            .iter()
+            .find(|node| node["name"] == name)
+            .cloned()
+            .unwrap_or_else(|| panic!("node {name} missing: {json}"))
+    };
+
+    let database = node("orders");
+    assert_eq!(database["kind"], "database", "database node: {json}");
+    assert_eq!(database["system"], "postgresql", "database system: {json}");
+
+    let queue = node("shipments");
+    assert_eq!(queue["kind"], "queue", "queue node: {json}");
+    assert_eq!(queue["system"], "kafka", "queue system: {json}");
+
+    let external = node("api.stripe.test");
+    assert_eq!(external["kind"], "external", "external node: {json}");
+    assert_eq!(external["errorCount"], "1", "external errors: {json}");
+
+    // Instrumented pair stays an internal service edge — no external node.
+    assert!(
+        !nodes.iter().any(|node| node["name"] == "pricing.internal"),
+        "instrumented pair must not derive an external node: {json}"
+    );
+
+    let edges = json
+        .pointer("/data/serviceMap/edges")
+        .and_then(|value| value.as_array())
+        .cloned()
+        .unwrap_or_default();
+    assert!(
+        edges
+            .iter()
+            .any(|edge| edge["source"] == "checkout" && edge["target"] == "orders"),
+        "checkout → orders edge: {json}"
+    );
+    assert!(
+        edges
+            .iter()
+            .any(|edge| edge["source"] == "fulfillment" && edge["target"] == "shipments"),
+        "fulfillment → shipments edge: {json}"
+    );
+    assert!(
+        edges
+            .iter()
+            .any(|edge| edge["source"] == "checkout" && edge["target"] == "pricing"),
+        "instrumented checkout → pricing edge: {json}"
+    );
+}

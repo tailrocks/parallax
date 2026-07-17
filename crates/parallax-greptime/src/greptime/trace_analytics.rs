@@ -438,6 +438,44 @@ impl crate::adapter::TraceAnalyticsStore for GreptimeStore {
             .collect())
     }
 
+    async fn external_dependency_edges(
+        &self,
+        range: RangeInclusive<u128>,
+    ) -> StorageResult<Vec<ExternalDependencyEdge>> {
+        let existing_keys = self.discover_span_attribute_keys().await?;
+        let Some(sql) = Self::external_dependency_edges_sql(&range, &existing_keys, MAX_ROWS)
+        else {
+            return Ok(Vec::new());
+        };
+        let rows = self.sql_arrow_lenient(&sql).await?;
+        Ok(rows
+            .iter()
+            .filter_map(|row| {
+                let source = str_at(row, 0);
+                let kind = match str_at(row, 1).as_str() {
+                    "database" => ExternalNodeKind::Database,
+                    "queue" => ExternalNodeKind::Queue,
+                    "external" => ExternalNodeKind::External,
+                    _ => return None,
+                };
+                let name = str_at(row, 3);
+                if source.is_empty() || name.is_empty() {
+                    return None;
+                }
+                Some(ExternalDependencyEdge {
+                    source,
+                    kind,
+                    system: opt_str_at(row, 2).filter(|system| !system.is_empty()),
+                    name,
+                    call_count: u128_at(row, 4) as u64,
+                    error_count: u128_at(row, 5) as u64,
+                    p50_ms: f64_at(row, 6) / 1_000_000.0,
+                    p95_ms: f64_at(row, 7) / 1_000_000.0,
+                })
+            })
+            .collect())
+    }
+
     async fn error_events_by_traces(
         &self,
         trace_ids: &[String],

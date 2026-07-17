@@ -69,6 +69,10 @@ constants:
   - { id: url.path, rust: URL_PATH, typescript: URL_PATH, java: URL_PATH, value: url.path, owner: playground }
   - { id: http.server.request.duration, rust: HTTP_SERVER_REQUEST_DURATION, typescript: HTTP_SERVER_REQUEST_DURATION, java: HTTP_SERVER_REQUEST_DURATION, value: http.server.request.duration, owner: playground }
   - { id: server.address, rust: SERVER_ADDRESS, typescript: SERVER_ADDRESS, java: SERVER_ADDRESS, value: server.address, owner: playground }
+  - { id: db.system.name, rust: DB_SYSTEM_NAME, typescript: DB_SYSTEM_NAME, java: DB_SYSTEM_NAME, value: db.system.name, owner: parallax }
+  - { id: db.system, rust: DB_SYSTEM, typescript: DB_SYSTEM, java: DB_SYSTEM, value: db.system, owner: parallax }
+  - { id: db.namespace, rust: DB_NAMESPACE, typescript: DB_NAMESPACE, java: DB_NAMESPACE, value: db.namespace, owner: parallax }
+  - { id: db.name, rust: DB_NAME, typescript: DB_NAME, java: DB_NAME, value: db.name, owner: parallax }
   - { id: messaging.system, rust: MESSAGING_SYSTEM, typescript: MESSAGING_SYSTEM, java: MESSAGING_SYSTEM, value: messaging.system, owner: playground }
   - { id: messaging.destination.name, rust: MESSAGING_DESTINATION_NAME, typescript: MESSAGING_DESTINATION_NAME, java: MESSAGING_DESTINATION_NAME, value: messaging.destination.name, owner: playground }
   - { id: messaging.operation.name, rust: MESSAGING_OPERATION_NAME, typescript: MESSAGING_OPERATION_NAME, java: MESSAGING_OPERATION_NAME, value: messaging.operation.name, owner: playground }

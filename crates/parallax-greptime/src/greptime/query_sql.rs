@@ -165,6 +165,105 @@ impl GreptimeStore {
         )
     }
 
+    /// Plan-166 external-dependency derivation over CLIENT/PRODUCER spans
+    /// with no same-trace SERVER/CONSUMER child in another instrumented
+    /// service. Built from the set of `span_attributes.*` columns that
+    /// actually exist (wide columns appear only after first ingest;
+    /// referencing a missing one is a hard SQL error, not a NULL).
+    /// Returns `None` when no trigger attribute column exists yet.
+    /// The identity ladder mirrors `ui/src/lib/ecosystem-topology.ts`
+    /// `resolveExternalNode`: db.* → database, messaging.* → queue,
+    /// else server.address → external HTTP host.
+    pub(super) fn external_dependency_edges_sql(
+        range: &RangeInclusive<u128>,
+        existing_keys: &BTreeSet<String>,
+        edge_cap: usize,
+    ) -> Option<String> {
+        let attr = |key: &str| {
+            existing_keys.contains(key).then(|| {
+                format!(
+                    r#"NULLIF(CAST("client".{} AS STRING), '')"#,
+                    span_attr_ident(key)
+                )
+            })
+        };
+        let coalesce = |exprs: Vec<Option<String>>| -> Option<String> {
+            let present: Vec<String> = exprs.into_iter().flatten().collect();
+            match present.as_slice() {
+                [] => None,
+                [only] => Some(only.clone()),
+                _ => Some(format!("COALESCE({})", present.join(", "))),
+            }
+        };
+        let db_system = coalesce(vec![
+            attr(semconv::DB_SYSTEM_NAME),
+            attr(semconv::DB_SYSTEM),
+        ]);
+        let messaging_system = attr(semconv::MESSAGING_SYSTEM);
+        let server_address = attr(semconv::SERVER_ADDRESS);
+        if db_system.is_none() && messaging_system.is_none() && server_address.is_none() {
+            return None;
+        }
+        let null_string = || "CAST(NULL AS STRING)".to_string();
+        let database_name = coalesce(vec![
+            attr(semconv::DB_NAMESPACE),
+            attr(semconv::DB_NAME),
+            server_address.clone(),
+            db_system.clone(),
+        ])
+        .unwrap_or_else(null_string);
+        let queue_name = coalesce(vec![
+            attr(semconv::MESSAGING_DESTINATION_NAME),
+            messaging_system.clone(),
+        ])
+        .unwrap_or_else(null_string);
+        let db_system = db_system.unwrap_or_else(null_string);
+        let messaging_system = messaging_system.unwrap_or_else(null_string);
+        let server_address = server_address.unwrap_or_else(null_string);
+        let kind_expr = format!(
+            "CASE WHEN {db_system} IS NOT NULL THEN 'database' \
+                  WHEN {messaging_system} IS NOT NULL THEN 'queue' \
+                  WHEN {server_address} IS NOT NULL THEN 'external' END"
+        );
+        let system_expr = format!("COALESCE({db_system}, {messaging_system}, {server_address})");
+        let name_expr = format!(
+            "CASE WHEN {db_system} IS NOT NULL THEN {database_name} \
+                  WHEN {messaging_system} IS NOT NULL THEN {queue_name} \
+                  ELSE {server_address} END"
+        );
+        Some(format!(
+            r#"SELECT "source", "kind", "system", "name",
+                      COUNT(*) AS "call_count",
+                      SUM(CASE WHEN "status" = 'STATUS_CODE_ERROR' THEN 1 ELSE 0 END)
+                        AS "error_count",
+                      approx_percentile_cont("dur", 0.50) AS "p50_ns",
+                      approx_percentile_cont("dur", 0.95) AS "p95_ns"
+               FROM (
+                 SELECT "client"."service_name" AS "source",
+                        {kind_expr} AS "kind",
+                        {system_expr} AS "system",
+                        {name_expr} AS "name",
+                        "client"."span_status_code" AS "status",
+                        "client"."duration_nano" AS "dur"
+                 FROM opentelemetry_traces AS "client"
+                 LEFT JOIN opentelemetry_traces AS "child"
+                   ON "child"."trace_id" = "client"."trace_id"
+                  AND "child"."parent_span_id" = "client"."span_id"
+                  AND "child"."span_kind" IN ('SPAN_KIND_SERVER', 'SPAN_KIND_CONSUMER')
+                  AND "child"."service_name" != "client"."service_name"
+                  AND "child"."timestamp" >= {from} AND "child"."timestamp" <= {to}
+                 WHERE "client"."timestamp" >= {from} AND "client"."timestamp" <= {to}
+                   AND "client"."span_kind" IN ('SPAN_KIND_CLIENT', 'SPAN_KIND_PRODUCER')
+                   AND "child"."span_id" IS NULL
+               ) WHERE "kind" IS NOT NULL AND "name" IS NOT NULL AND "source" != ''
+               GROUP BY "source", "kind", "system", "name"
+               ORDER BY "call_count" DESC
+               LIMIT {edge_cap}"#,
+            from = sql_ts(*range.start()),
+            to = sql_ts(*range.end()),
+        ))
+    }
+
     pub(super) fn select_spans_sql(where_clause: &str, order: &str, limit_clause: &str) -> String {
         // `*` keeps the auto-widening `span_attributes.*` columns; the Json
         // columns are additionally projected through json_to_string because

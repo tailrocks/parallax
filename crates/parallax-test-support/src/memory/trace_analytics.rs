@@ -425,6 +425,105 @@ impl adapter::TraceAnalyticsStore for MemoryStore {
             .collect())
     }
 
+    async fn external_dependency_edges(
+        &self,
+        range: RangeInclusive<u128>,
+    ) -> StorageResult<Vec<adapter::ExternalDependencyEdge>> {
+        let spans = self.lock().spans.clone();
+        // (trace_id, parent_span_id) → services of SERVER/CONSUMER children.
+        let mut child_services: HashMap<(String, String), Vec<String>> = HashMap::new();
+        for span in spans.iter().filter(|span| {
+            matches!(
+                span.kind.as_str(),
+                "SPAN_KIND_SERVER" | "SPAN_KIND_CONSUMER"
+            )
+        }) {
+            let Some(parent_id) = span.parent_span_id.as_deref().filter(|id| !id.is_empty()) else {
+                continue;
+            };
+            child_services
+                .entry((span.trace_id.clone(), parent_id.to_string()))
+                .or_default()
+                .push(span.service.clone());
+        }
+        let attr = |span: &SpanRow, key: &str| -> Option<String> {
+            span.attributes
+                .as_object()
+                .and_then(|attributes| attributes.get(key))
+                .and_then(|value| value.as_str())
+                .map(str::to_string)
+                .filter(|value| !value.is_empty())
+        };
+        type EdgeKey = (String, adapter::ExternalNodeKind, Option<String>, String);
+        let mut grouped: BTreeMap<EdgeKey, (u64, u64, Vec<u128>)> = BTreeMap::new();
+        for span in spans.iter().filter(|span| {
+            range.contains(&span.ts_nanos)
+                && matches!(
+                    span.kind.as_str(),
+                    "SPAN_KIND_CLIENT" | "SPAN_KIND_PRODUCER"
+                )
+                && !span.service.is_empty()
+        }) {
+            let instrumented_pair = child_services
+                .get(&(span.trace_id.clone(), span.span_id.clone()))
+                .is_some_and(|services| services.iter().any(|service| *service != span.service));
+            if instrumented_pair {
+                continue;
+            }
+            // Identity ladder mirrors ui/src/lib/ecosystem-topology.ts
+            // resolveExternalNode and the GreptimeDB SQL derivation.
+            let db_system =
+                attr(span, semconv::DB_SYSTEM_NAME).or_else(|| attr(span, semconv::DB_SYSTEM));
+            let server_address = attr(span, semconv::SERVER_ADDRESS);
+            let (kind, system, name) = if let Some(db_system) = db_system {
+                let name = attr(span, semconv::DB_NAMESPACE)
+                    .or_else(|| attr(span, semconv::DB_NAME))
+                    .or_else(|| server_address.clone())
+                    .unwrap_or_else(|| db_system.clone());
+                (adapter::ExternalNodeKind::Database, Some(db_system), name)
+            } else if let Some(messaging) = attr(span, semconv::MESSAGING_SYSTEM) {
+                let name = attr(span, semconv::MESSAGING_DESTINATION_NAME)
+                    .unwrap_or_else(|| messaging.clone());
+                (adapter::ExternalNodeKind::Queue, Some(messaging), name)
+            } else if let Some(host) = server_address {
+                (
+                    adapter::ExternalNodeKind::External,
+                    Some(host.clone()),
+                    host,
+                )
+            } else {
+                continue;
+            };
+            let entry = grouped
+                .entry((span.service.clone(), kind, system, name))
+                .or_default();
+            entry.0 += 1;
+            if span.status_code == "STATUS_CODE_ERROR" {
+                entry.1 += 1;
+            }
+            entry.2.push(span.duration_ns);
+        }
+        Ok(grouped
+            .into_iter()
+            .map(
+                |((source, kind, system, name), (call_count, error_count, mut durations))| {
+                    let p50_ms = duration_quantile_ms(&mut durations, 0.5);
+                    let p95_ms = duration_quantile_ms(&mut durations, 0.95);
+                    adapter::ExternalDependencyEdge {
+                        source,
+                        kind,
+                        system,
+                        name,
+                        call_count,
+                        error_count,
+                        p50_ms,
+                        p95_ms,
+                    }
+                },
+            )
+            .collect())
+    }
+
     async fn error_events_by_traces(
         &self,
         trace_ids: &[String],

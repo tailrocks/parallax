@@ -323,6 +323,15 @@ pub trait TraceAnalyticsStore: Send + Sync {
         range: RangeInclusive<u128>,
         max_traces: usize,
     ) -> StorageResult<Vec<ServiceEdge>>;
+    /// Uninstrumented dependency edges (plan 166): CLIENT/PRODUCER spans with
+    /// no same-trace SERVER/CONSUMER child in another instrumented service,
+    /// grouped by (service, dependency identity). Identity ladder over generic
+    /// attributes only: `db.system.name`/`db.system` → database,
+    /// `messaging.system` → queue, else `server.address` → external HTTP.
+    async fn external_dependency_edges(
+        &self,
+        range: RangeInclusive<u128>,
+    ) -> StorageResult<Vec<ExternalDependencyEdge>>;
     /// Error events across a set of traces, newest first (run-anchored reads).
     async fn error_events_by_traces(
         &self,

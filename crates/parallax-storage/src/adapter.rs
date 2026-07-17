@@ -453,6 +453,41 @@ pub struct ServiceEdge {
     pub p95_ms: f64,
 }
 
+/// One service → uninstrumented-dependency edge (plan 166). `kind` is the
+/// derived node class (`database` | `queue` | `external`); `system` is the
+/// generic system label when one exists (`postgresql`, `kafka`, a host, …);
+/// `name` is the graph node identity resolved by the attribute ladder.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ExternalDependencyEdge {
+    pub source: String,
+    pub kind: ExternalNodeKind,
+    pub system: Option<String>,
+    pub name: String,
+    pub call_count: u64,
+    pub error_count: u64,
+    pub p50_ms: f64,
+    pub p95_ms: f64,
+}
+
+/// Derived class of an uninstrumented dependency node (plan 166).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ExternalNodeKind {
+    Database,
+    Queue,
+    External,
+}
+
+impl ExternalNodeKind {
+    /// GraphQL/UI wire value; extends plan 157's `cli|browser|service`.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Database => "database",
+            Self::Queue => "queue",
+            Self::External => "external",
+        }
+    }
+}
+
 pub fn span_field_key_allowed(key: &str) -> bool {
     let trimmed = key.trim();
     if trimmed.is_empty() || trimmed.len() > 160 {

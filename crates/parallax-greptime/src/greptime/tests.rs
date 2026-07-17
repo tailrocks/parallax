@@ -256,3 +256,63 @@ fn windowed_histogram_merge_uses_latest_cumulative() {
     assert!((total - 20.0_f64).abs() < 1e-9);
     let _ = quantile_from_cumulative(&bounds, 0.5);
 }
+
+#[test]
+fn external_dependency_sql_requires_a_trigger_column() {
+    let range = 0u128..=1_000u128;
+    let none: BTreeSet<String> = BTreeSet::new();
+    assert!(GreptimeStore::external_dependency_edges_sql(&range, &none, 100).is_none());
+    // Non-trigger attribute columns alone still produce no derivation.
+    let unrelated: BTreeSet<String> = ["http.route".to_string()].into_iter().collect();
+    assert!(GreptimeStore::external_dependency_edges_sql(&range, &unrelated, 100).is_none());
+}
+
+#[test]
+fn external_dependency_sql_builds_ladder_from_existing_columns_only() {
+    let range = 5u128..=99u128;
+    let keys: BTreeSet<String> = [
+        "db.system.name",
+        "db.namespace",
+        "messaging.system",
+        "messaging.destination.name",
+        "server.address",
+    ]
+    .into_iter()
+    .map(str::to_string)
+    .collect();
+    let sql = GreptimeStore::external_dependency_edges_sql(&range, &keys, 77).unwrap();
+    // Anti-join shape: CLIENT/PRODUCER spans with no cross-service
+    // SERVER/CONSUMER child in the same trace.
+    assert!(sql.contains(r#""client"."span_kind" IN ('SPAN_KIND_CLIENT', 'SPAN_KIND_PRODUCER')"#));
+    assert!(sql.contains(r#""child"."span_kind" IN ('SPAN_KIND_SERVER', 'SPAN_KIND_CONSUMER')"#));
+    assert!(sql.contains(r#""child"."span_id" IS NULL"#));
+    assert!(sql.contains(r#""child"."service_name" != "client"."service_name""#));
+    // Ladder columns qualified on the client side; db.system (legacy) and
+    // db.name are absent from the schema and must not be referenced.
+    assert!(sql.contains(r#""client"."span_attributes.db.system.name""#));
+    // Closing-quote match: the absent legacy `db.system` column must not be
+    // referenced (`db.system.name` above does not satisfy this substring).
+    assert!(!sql.contains(r#""span_attributes.db.system""#));
+    assert!(!sql.contains(r#""span_attributes.db.name""#));
+    assert!(sql.contains(r#""client"."span_attributes.messaging.destination.name""#));
+    assert!(sql.contains(r#""client"."span_attributes.server.address""#));
+    assert!(sql.contains("'database'"));
+    assert!(sql.contains("'queue'"));
+    assert!(sql.contains("'external'"));
+    assert!(sql.contains("LIMIT 77"));
+}
+
+#[test]
+fn external_dependency_sql_supports_partial_schemas() {
+    let range = 0u128..=10u128;
+    // Only the legacy db.system column exists: database rung still works and
+    // the name ladder falls back to the system value.
+    let keys: BTreeSet<String> = ["db.system".to_string()].into_iter().collect();
+    let sql = GreptimeStore::external_dependency_edges_sql(&range, &keys, 10).unwrap();
+    assert!(sql.contains(r#""client"."span_attributes.db.system""#));
+    assert!(sql.contains("'database'"));
+    // Absent rungs compile to NULL literals, not missing-column references.
+    assert!(!sql.contains("messaging"));
+    assert!(!sql.contains("server.address"));
+    assert!(sql.contains("CAST(NULL AS STRING)"));
+}
