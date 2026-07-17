@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 218 (Traceway still **1,024★/v1.9.1**; Uptrace
-**v2.1.0-beta.7/4,242★**; Traceloop **v0.62.1/7,307★** — combo/SDK-only; no full
-wedge close). Pass 217 = HolmesGPT. A1/A2/A4 open; A6 open at mixed gate only.
+Last updated 2026-07-18 after pass 219 (A3 adoption **zero**; A4/A6 still open;
+TMA1 **21st UNFIRED**; Maple Tinybird **UNFIRED**; A6 canary **ok**). Pass 218 =
+Traceway cohort. A1/A2/A4 open; A6 open at mixed gate only.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in

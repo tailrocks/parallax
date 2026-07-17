@@ -77,6 +77,13 @@ Upgrade path in §Falsification unchanged. GraphQL existence ≠ A4 gate.
 | GraphQL join identifiers in crates | **Still present** (`tracesByInvocation`, `logsByTrace`, `evidenceGaps`, …) |
 | Claim level | still **`not_measured`** for real messy telemetry |
 
+## Pass 219 addendum (2026-07-18)
+
+| Check | Result |
+| --- | --- |
+| `correlation-reliability-runs/` | **Still absent** |
+| Claim level | still **`not_measured`** |
+
 ## Uncertainty
 
 - Did not re-query live GraphQL schema introspection this pass; surface list taken from research implementation banner + **static code references** (pass 161/194).

@@ -51,6 +51,13 @@
 | Golden stability test | **`bundle_v1_golden_fixture_is_stable` ok** |
 | Industry “evidence/investigation schema” desk scan | GenAI/agent **trace** schemas and OTel GenAI semconv growing; **no** portable multi-signal redacted **investigation evidence-bundle** standard observed (aligns pass **157** OTel #1185 idle) |
 
+### Pass 219 (2026-07-18) — adoption re-probe
+
+| Probe | Result |
+| --- | --- |
+| Code search `$id` host | Still **total_count 6** (in-tree only) |
+| External adoption | Still **zero** |
+
 **A3 split holds:** schema **artifacts shipped**; **external adoption = zero** (moat unproven).
 
 **Implication:** `$id` is currently an **identifier**, not a **dereferenceable

@@ -118,6 +118,13 @@ Stars unchanged; **real release-line move** on backend only.
 | --- | --- | --- |
 | **Traceway** | **1,024★**; **`backend/v1.9.1` + `cli/v1.9.1`** still latest | OTLP multi-signal + agent path; **no** Sentry envelope / portable redacted bundle / outcome. Combo **not closed**. |
 
+**Pass 219 recheck (2026-07-18):** **TMA1 + Maple** —
+
+| Product | Pin | Watch |
+| --- | --- | --- |
+| **TMA1** | **109★** / **`v0.2.0-alpha12`** | **21st UNFIRED** prod-collision (no Sentry/redact/outcome) |
+| **Maple** | **1,532★** / **v0.0.12** | Tinybird-decoupling **UNFIRED** |
+
 **Pass 156 recheck (2026-07-18):** **Traceway-focused** wedge re-poll + Bugsink/Rustrak
 star-pin hygiene — combination **still not closed**.
 
