@@ -54,7 +54,9 @@ that trust decision.
 Unit coverage includes wire-level MCP initialization and `tools/list` over an
 in-memory stdio-equivalent duplex transport. Live Codex/Claude fixtures remain
 manual and unfinished.
-The API origin is restricted to credential-free plaintext loopback HTTP.
+The API origin is restricted to credential-free plaintext HTTP on literal
+loopback IPs; hostnames are rejected so DNS/hosts configuration cannot escape
+the local boundary.
 Authenticated remote transport remains deferred to Plan 109.
 HTTP redirects are disabled so loopback cannot bounce a request to a remote
 origin; connects time out after 5 seconds and calls after 30 seconds.

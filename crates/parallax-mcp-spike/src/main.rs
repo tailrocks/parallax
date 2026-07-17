@@ -107,8 +107,8 @@ mod tests {
     #[test]
     fn api_url_is_loopback_only_until_remote_auth_lands() {
         for accepted in [
-            "http://localhost:4000",
             "http://127.0.0.1:4000/",
+            "http://127.42.0.9:4000",
             "http://[::1]:4000",
         ] {
             assert!(
@@ -118,6 +118,7 @@ mod tests {
         }
         for denied in [
             "https://localhost:4000",
+            "http://localhost:4000",
             "http://example.com:4000",
             "http://user:secret@localhost:4000",
             "http://localhost:4000/graphql",

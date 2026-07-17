@@ -3,6 +3,7 @@
 use rmcp::schemars;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::net::IpAddr;
 use std::time::Duration;
 
 /// MCP returns both structured JSON and compatibility text, so use a tighter
@@ -76,10 +77,11 @@ impl GraphqlClient {
 pub(crate) fn normalize_local_base_url(raw: &str) -> anyhow::Result<String> {
     let url = reqwest::Url::parse(raw)
         .map_err(|error| anyhow::anyhow!("invalid MCP API URL: {error}"))?;
-    let local_host = matches!(
-        url.host_str(),
-        Some("localhost" | "127.0.0.1" | "::1" | "[::1]")
-    );
+    let local_host = url
+        .host_str()
+        .map(|host| host.trim_matches(['[', ']']))
+        .and_then(|host| host.parse::<IpAddr>().ok())
+        .is_some_and(|address| address.is_loopback());
     if url.scheme() != "http"
         || !local_host
         || !url.username().is_empty()
@@ -221,9 +223,13 @@ mod tests {
     #[test]
     fn client_constructor_enforces_loopback_origin() {
         GraphqlClient::new("http://127.0.0.1:4000".to_string()).expect("loopback");
+        GraphqlClient::new("http://127.42.0.9:4000".to_string()).expect("loopback range");
         let _remote = GraphqlClient::new("http://example.com:4000".to_string())
             .err()
             .expect("remote host");
+        let _localhost = GraphqlClient::new("http://localhost:4000".to_string())
+            .err()
+            .expect("DNS names are not literal loopback");
     }
 
     #[test]

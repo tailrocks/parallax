@@ -67,6 +67,8 @@ must not return in product output.
   missing/null/non-string contract fields instead of substituting empty text.
 - Loopback-origin enforcement now lives inside the GraphQL client constructor,
   preventing future internal callers from bypassing the CLI-level validation.
+- Only literal loopback IPs are accepted; even `localhost` is rejected so DNS
+  or hosts-file configuration cannot redirect the supposedly local transport.
 - Both preliminary tools advertise and test exact MCP annotations: read-only,
   non-destructive, idempotent, and closed-world.
 - Tool anchors are closed-schema and runtime bounded to 1–256 UTF-8 bytes;
