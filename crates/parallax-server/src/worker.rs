@@ -202,7 +202,26 @@ impl Worker {
             IngestItem::Metrics(request, raw) => {
                 self.process_metrics(request, raw, progress).await?;
             }
+            IngestItem::Sentry(event) => {
+                self.process_sentry(event, progress).await?;
+            }
         }
+        Ok(())
+    }
+
+    async fn process_sentry(
+        &self,
+        event: &ErrorEventRow,
+        progress: &mut EffectProgress,
+    ) -> WorkerResult<()> {
+        // No Greptime raw-signal table for Sentry (native OTLP tables only).
+        // Issue membership + error_event rows are the product stores.
+        if !progress.completed(EffectStage::IssueRecording) {
+            self.record_errors(vec![event.clone()]).await?;
+            progress.mark_completed(EffectStage::IssueRecording);
+        }
+        #[cfg(test)]
+        self.maybe_fail_after(FailureStage::IssueRecording).await?;
         Ok(())
     }
 
@@ -389,6 +408,9 @@ fn source_precedence(source: ErrorSource) -> u8 {
         ErrorSource::LogException => 1,
         ErrorSource::LogRecord => 2,
         ErrorSource::SpanStatus => 3,
+        // Sentry adapter rows lose to native OTLP exception evidence for the
+        // same (trace, span, fingerprint) key.
+        ErrorSource::SentryEnvelope => 4,
     }
 }
 

@@ -63,7 +63,8 @@ pub(crate) fn assemble_ingest(
     let workers = vec![
         tokio::spawn(worker.clone().run(Signal::Traces, receivers.traces)),
         tokio::spawn(worker.clone().run(Signal::Logs, receivers.logs)),
-        tokio::spawn(worker.run(Signal::Metrics, receivers.metrics)),
+        tokio::spawn(worker.clone().run(Signal::Metrics, receivers.metrics)),
+        tokio::spawn(worker.run(Signal::Sentry, receivers.sentry)),
     ];
     IngestRuntime {
         state,

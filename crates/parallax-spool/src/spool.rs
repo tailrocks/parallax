@@ -36,16 +36,25 @@ pub enum Signal {
     Traces,
     Logs,
     Metrics,
+    /// Durable accept records for the Sentry envelope adapter (plan 118).
+    /// Payload is the normalized error event JSON, not a raw envelope.
+    Sentry,
 }
 
 impl Signal {
-    const ALL: [Signal; 3] = [Signal::Traces, Signal::Logs, Signal::Metrics];
+    pub(crate) const ALL: [Signal; 4] = [
+        Signal::Traces,
+        Signal::Logs,
+        Signal::Metrics,
+        Signal::Sentry,
+    ];
 
     fn index(self) -> usize {
         match self {
             Signal::Traces => 0,
             Signal::Logs => 1,
             Signal::Metrics => 2,
+            Signal::Sentry => 3,
         }
     }
 
@@ -54,6 +63,7 @@ impl Signal {
             Signal::Traces => "traces.pspl",
             Signal::Logs => "logs.pspl",
             Signal::Metrics => "metrics.pspl",
+            Signal::Sentry => "sentry.pspl",
         }
     }
 
@@ -62,6 +72,8 @@ impl Signal {
             Signal::Traces => "traces.ndjson",
             Signal::Logs => "logs.ndjson",
             Signal::Metrics => "metrics.ndjson",
+            // Sentry signal never had an NDJSON legacy form.
+            Signal::Sentry => "sentry.ndjson",
         }
     }
 
@@ -70,6 +82,7 @@ impl Signal {
             Signal::Traces => "traces",
             Signal::Logs => "logs",
             Signal::Metrics => "metrics",
+            Signal::Sentry => "sentry",
         }
     }
 }
@@ -176,7 +189,7 @@ impl Spool {
 pub struct Spool {
     dir: PathBuf,
     max_segment_bytes: u64,
-    states: [Mutex<SignalState>; 3],
+    states: [Mutex<SignalState>; 4],
 }
 
 impl Spool {
@@ -190,20 +203,13 @@ impl Spool {
     ) -> anyhow::Result<Self> {
         let dir = dir.as_ref().to_path_buf();
         std::fs::create_dir_all(&dir)?;
-        let mut states = [
+        let empty = || {
             Mutex::new(SignalState {
                 size: 0,
                 file: None,
-            }),
-            Mutex::new(SignalState {
-                size: 0,
-                file: None,
-            }),
-            Mutex::new(SignalState {
-                size: 0,
-                file: None,
-            }),
-        ];
+            })
+        };
+        let mut states = [empty(), empty(), empty(), empty()];
         for signal in Signal::ALL {
             let size = dir
                 .join(signal.file_name())

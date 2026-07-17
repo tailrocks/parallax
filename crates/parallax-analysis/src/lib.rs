@@ -4,5 +4,6 @@ pub mod derive;
 pub mod fingerprint;
 pub mod log_patterns;
 pub mod semconv;
+pub mod sentry;
 pub mod span_events;
 pub mod trace_analysis;

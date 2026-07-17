@@ -55,7 +55,7 @@ pub(crate) struct QueueSnapshot {
 
 #[derive(Debug)]
 pub(crate) struct IngestHealth {
-    signals: [SignalState; 3],
+    signals: [SignalState; 4],
     enqueue_outcomes: Counter<u64>,
     enqueue_wait: Histogram<f64>,
     queue_age: Histogram<f64>,
@@ -80,6 +80,7 @@ impl IngestHealth {
                 SignalState::new("traces", capacity),
                 SignalState::new("logs", capacity),
                 SignalState::new("metrics", capacity),
+                SignalState::new("sentry", capacity),
             ],
             enqueue_outcomes: meter
                 .u64_counter("parallax.ingest.enqueue.outcomes")
@@ -203,7 +204,12 @@ impl IngestHealth {
     }
 
     pub(crate) fn observe_spool(&self, spool: &parallax_spool::Spool) -> std::io::Result<()> {
-        for signal in [Signal::Traces, Signal::Logs, Signal::Metrics] {
+        for signal in [
+            Signal::Traces,
+            Signal::Logs,
+            Signal::Metrics,
+            Signal::Sentry,
+        ] {
             let state = self.state(signal);
             let health = spool.health(signal, std::time::SystemTime::now())?;
             self.spool_bytes_gauge
@@ -270,6 +276,7 @@ impl IngestHealth {
             Signal::Traces => 0,
             Signal::Logs => 1,
             Signal::Metrics => 2,
+            Signal::Sentry => 3,
         }]
     }
 }

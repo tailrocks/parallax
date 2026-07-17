@@ -90,6 +90,8 @@ pub enum ErrorSource {
     SpanStatus,
     LogRecord,
     LogException,
+    /// Sentry envelope migration adapter (plan 118).
+    SentryEnvelope,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

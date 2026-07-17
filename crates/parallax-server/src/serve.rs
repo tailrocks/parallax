@@ -270,7 +270,12 @@ fn build_api_router(
                     host_guard_middleware,
                 )),
         )
-        .merge(otlp_http::router(ingest, config.limits.otlp_max_body_bytes));
+        .merge(otlp_http::router(ingest.clone(), config.limits.otlp_max_body_bytes))
+        .merge(crate::sentry_http::router(crate::sentry_http::SentryHttpState {
+            ingest,
+            config: config.sentry.clone(),
+            public_key: config.resolved_sentry_public_key(),
+        }));
     let ui_dist = if config.server.ui_dist.is_empty() {
         ["ui/dist/client", "../ui/dist/client"]
             .iter()

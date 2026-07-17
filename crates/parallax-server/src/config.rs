@@ -14,6 +14,34 @@ pub struct Config {
     pub limits: LimitsConfig,
     pub telemetry: TelemetryConfig,
     pub alerting: AlertingConfig,
+    /// Sentry envelope migration adapter (plan 118). Disabled by default.
+    pub sentry: SentryConfig,
+}
+
+/// Local project/public-key mapping for `POST /api/<project_id>/envelope/`.
+///
+/// A Sentry public key is a routing credential, not a user secret. Remote
+/// exposure still requires plan 109 bearer auth at the API boundary.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct SentryConfig {
+    /// When false, the envelope route returns 404.
+    pub enabled: bool,
+    /// Path project id clients put in the DSN path (e.g. `"1"`).
+    pub project_id: String,
+    /// Registered public key. Empty means no key is accepted (fail closed).
+    /// Override with env `PARALLAX_SENTRY_PUBLIC_KEY`.
+    pub public_key: String,
+}
+
+impl Default for SentryConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            project_id: "1".to_string(),
+            public_key: String::new(),
+        }
+    }
 }
 
 /// Alert evaluator + delivery worker (plan 167). Defaults keep alerting on
@@ -212,6 +240,20 @@ impl Config {
             std::env::var("PARALLAX_API_TOKEN").ok(),
             &self.server.api_token,
         )
+    }
+
+    /// Resolve the Sentry public key: env `PARALLAX_SENTRY_PUBLIC_KEY` wins.
+    #[must_use]
+    pub fn resolved_sentry_public_key(&self) -> Option<String> {
+        let env = std::env::var("PARALLAX_SENTRY_PUBLIC_KEY").ok();
+        env.as_deref()
+            .map(str::trim)
+            .filter(|v| !v.is_empty())
+            .map(str::to_string)
+            .or_else(|| {
+                let trimmed = self.sentry.public_key.trim();
+                (!trimmed.is_empty()).then(|| trimmed.to_string())
+            })
     }
 
     /// Ready-banner label that never includes the secret.

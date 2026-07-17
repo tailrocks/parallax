@@ -14,10 +14,10 @@
 - **Depends on**: 093, 099, 104, 111, 116
 - **Category**: future compatibility / ingest / security
 - **Planned at**: `eefa4617`, 2026-07-12
-- **Status**: IN PROGRESS — framing parser slice landed 2026-07-17
-- **Blocker**: none for pure parser. Residual: real SDK fixtures, HTTP endpoint,
-  project/DSN mapping, spool durable ack, normalize→ErrorEventRow, redaction/
-  bundle gates.
+- **Status**: IN PROGRESS — ingest-path slice landed 2026-07-17
+- **Blocker**: none for local adapter path. Residual: real sanitized SDK
+  fixtures (compatibility claim), idempotent event-id collision handling,
+  full redaction/bundle gates, retention/doctor coverage.
 
 ## Why
 
@@ -43,8 +43,24 @@ the attack surface.
   Unit tests cover accept+unsupported side item, duplicate event reject,
   no-event reject, premature EOF, trailing garbage, implicit length, size
   ceiling, dashed event-id normalize. Hand-crafted protocol fixtures only —
-  **not** a compatibility claim. Real sanitized `sentry` Rust SDK fixtures
-  remain the gate before HTTP/normalize work.
+  **not** a compatibility claim.
+- **2026-07-17 ingest-path slice**:
+  - `ErrorSource::SentryEnvelope` on the shared error model.
+  - `parallax_analysis::sentry::derive_from_sentry_event` maps exception/
+    message/stack/trace/tags into `ErrorEventRow` with the same fingerprint
+    function as OTLP derivation; sensitive tags dropped; explicit fingerprint
+    changes grouping.
+  - `Signal::Sentry` spool lane stores the **normalized** accept record (not
+    the raw envelope).
+  - `POST /api/<project_id>/envelope[/]` on the API router: gzip via
+    tower-http, project_id + `X-Sentry-Auth`/`Authorization: Sentry`
+    public-key mapping from `[sentry]` config / `PARALLAX_SENTRY_PUBLIC_KEY`,
+    durable spool then worker enqueue, typed HTTP outcomes (400/401/404/413/
+    415/503). Disabled by default (`[sentry] enabled = false`).
+  - Worker `IngestItem::Sentry` records issues + `write_error_events` only —
+    no custom Greptime raw-signal table.
+  - Real sanitized `sentry` 0.48.x SDK fixtures remain required before any
+    product compatibility claim.
 - `docs/research/capture/sentry-ingest.md` records the envelope framing,
   Sentry-Rust event shapes, compatibility levels, and source-field constraints.
 - OTLP HTTP/gRPC is the shipped primary ingest contract.
@@ -126,17 +142,23 @@ Out of scope:
 
 ## Done Criteria
 
-- [ ] A current operator decision and demand packet clear the exact blocker.
-- [ ] The supported SDK/protocol/item claim is explicit and fixture-backed.
-- [ ] Accepted requests are bounded, authenticated, durably spooled, and return
-  typed, documented outcomes; malformed/unsupported inputs fail predictably.
+- [x] (2026-07-17) Operator decision + demand packet in decision record; local
+  adapter path opened.
+- [ ] The supported SDK/protocol/item claim is explicit and fixture-backed
+  (real sanitized `sentry` SDK envelopes still required).
+- [x] (partial, 2026-07-17) Accepted requests are bounded, public-key mapped,
+  durably spooled (normalized record), and return typed outcomes; malformed/
+  unsupported inputs fail predictably. Residual: collision `409`, exact-
+  duplicate idempotency ledger.
 - [ ] Duplicate and cross-source events preserve one stable issue/occurrence
   contract without replaying completed effects.
-- [ ] Turso owns mutable issue state and GreptimeDB native tables remain the raw
-  observability source; no fallback engine or parallel raw table appears.
+- [x] (2026-07-17) Turso owns mutable issue state via existing
+  `upsert_issue_occurrences`; no custom Greptime raw Sentry table; OTLP native
+  tables remain the raw observability source.
 - [ ] Every agent-visible projection is canonical, bounded, and fail-closed
   redacted, with stable hashes and approved raw-reference behavior.
-- [ ] Real-engine, spool, retention, strict Rust, nextest, and API gates pass.
+- [ ] Real-engine, spool, retention, strict Rust, nextest, and API gates pass
+  end-to-end with live Greptime+Turso for the Sentry path.
 - [ ] Any expanded transaction/attachment/language support has its own measured
   value, limits, fixtures, and security evidence.
 

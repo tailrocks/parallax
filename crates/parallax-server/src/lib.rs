@@ -47,11 +47,12 @@ mod otlp_http;
 mod otlp_validation;
 mod outcomes;
 mod self_telemetry;
+mod sentry_http;
 mod serve;
 mod worker;
 
 pub use config::{
-    AlertingConfig, Config, LimitsConfig, RetentionConfig, ServerConfig, StorageConfig,
+    AlertingConfig, Config, LimitsConfig, RetentionConfig, SentryConfig, ServerConfig, StorageConfig,
     TelemetryConfig,
 };
 pub use errors::{
