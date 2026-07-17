@@ -715,7 +715,7 @@ parallax test explain com.company.CheckoutTest.shouldApplyDiscount
 Input:
 - OpenTelemetry traces/logs/metrics
 - derived Parallax error events from exception spans and ERROR/FATAL logs
-- Sentry envelope error events (shipped; plan 118 residual)
+- Sentry envelope error events (shipped; plan 118 DONE)
 - deploy metadata
 
 Output:

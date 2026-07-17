@@ -33,7 +33,7 @@ Recorded as durable intent, condensed from the operator's own words:
    figuring out what went wrong in production and fixing it. "Magically AI fixing all your bugs,"
    mostly without asking, is the hardest unclaimed problem in the industry — and the goal.
 2. **OpenTelemetry as far as it goes.** Collect everything an application can emit through the
-   standard protocol. Sentry envelope HTTP ingest now fills protocol gaps; plan 118 owns the
+   standard protocol. Sentry envelope HTTP ingest now fills protocol gaps; plan 118 closed the
    remaining migration-adapter work ([capture/sentry-ingest.md](../capture/sentry-ingest.md)).
 3. **Pre-aggregate, pre-process, structure.** Telemetry is shaped on the way in,
    then lands in GreptimeDB native observability tables plus approved derived

@@ -9,7 +9,7 @@
 
 > **Implementation ownership (2026-07-12):** this is a rolling market-evidence
 > record, not a product roadmap. Historical product recommendations are mapped to
-> plan 104 (bundle contract), blocked plan 118 (conditional Sentry migration),
+> plan 104 (bundle contract), closed plan 118 (Sentry envelope DONE),
 > and blocked plan 123 (fixer/outcome loop) in [`plans/`](../../../plans/).
 > Competitor refresh triggers authorize research updates only.
 

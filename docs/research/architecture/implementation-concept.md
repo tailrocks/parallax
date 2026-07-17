@@ -321,7 +321,7 @@ Tiny single-node:
 ```text
 Rust app / service / CLI / coding agent
   -> OTLP HTTP/gRPC endpoint
-  -> Sentry envelope event endpoint (shipped; plan 118 residual)
+  -> Sentry envelope event endpoint (shipped; plan 118 DONE)
   -> agent/CLI execution trace endpoint
   -> parallax-server
        - project-token auth / Sentry public-key validation
@@ -377,7 +377,7 @@ apps / collectors / CI systems / coding agents
 1. **Accept event.**
    - V1 OTLP traces/logs/metrics arrive over HTTP/gRPC.
    - Sentry envelopes arrive at `POST /api/:project_id/envelope/` (shipped;
-     plan 118 residual migration hardening).
+     plan 118 DONE; multi-SDK compatibility ledger unproven).
    - Ingest validates project token, size, and content type; Sentry path adds
      public-key / DSN-style validation.
 
@@ -679,7 +679,7 @@ Properties:
 - bounded local raw WAL;
 - CLI and HTTP API available from the same process, plus local-stdio MCP
   (`parallax-mcp`; remote deferred to Plan 109);
-- shipped Sentry envelope migration path (plan 118 residual hardening).
+- shipped Sentry envelope migration path (plan 118 DONE).
 
 This is the product that proves Parallax can be simpler than Sentry.
 That proof is measured by the

@@ -11,7 +11,7 @@ questions, this file is updated in the same change.
 **Implementation status, 2026-07-17:** V1 has shipped this shape: the Rust CLI/server, OTLP
 gRPC/HTTP ingest, GraphQL API, mandatory GreptimeDB + Turso storage, bounded redacted evidence,
 alerting/live streaming, and the full TanStack Start investigation UI are implemented. Sentry
-envelope HTTP ingest is implemented; its migration adapter remains plan 118. Local-stdio MCP
+envelope HTTP ingest is implemented; its migration residual closed as plan 118 (DONE). Local-stdio MCP
 (`parallax-mcp`) graduated plan 112 (DONE); remote MCP deferred to Plan 109. Historical build-order statements below are
 preserved as the record that led to V1.
 
@@ -47,7 +47,7 @@ given it at all. The end state this serves is the
 | World | What it got right | What Parallax takes |
 | --- | --- | --- |
 | **OpenTelemetry** | One vendor-neutral standard for emitting traces, logs, metrics | The only collection path: standard OTel SDKs + resource conventions, no proprietary SDK ([integration-contract.md](../architecture/integration-contract.md)) |
-| **Sentry** | Errors become grouped, deduplicated, workflow-ready *issues*, not log lines | Deterministic fingerprinting and issue workflow derived from OTLP; Sentry-envelope HTTP ingest is live, while the migration adapter remains active work |
+| **Sentry** | Errors become grouped, deduplicated, workflow-ready *issues*, not log lines | Deterministic fingerprinting and issue workflow derived from OTLP; Sentry-envelope HTTP ingest shipped (plan 118 DONE); multi-SDK matrix may remain unproven |
 | **Grafana** | Humans understand systems by looking *across* signals | The cross-signal investigation UI (plus Kibana's object-centric log view, Tempo's waterfall) — [simple-ui-v2.md](../architecture/simple-ui-v2.md) |
 
 The difference from all three: Parallax is designed **for AI first**. Every view a human gets is

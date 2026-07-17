@@ -43,7 +43,7 @@ Both OSS-origin, self-hostable, OTLP-native, with a columnar/search backend. The
 - **Beats/Elastic Agent:** legacy + current collectors alongside EDOT.
 - **Sentry envelope:** none.
 
-**Verdict:** on OTLP-native ingest, **tied in design; Elastic ships it.** On Sentry-envelope, **Parallax ships bounded envelope ingest** (plan 118 residual).
+**Verdict:** on OTLP-native ingest, **tied in design; Elastic ships it.** On Sentry-envelope, **Parallax ships bounded envelope ingest** (plan 118 DONE).
 
 ## Storage architecture — the central contrast
 

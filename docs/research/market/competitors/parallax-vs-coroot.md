@@ -42,7 +42,7 @@ Both Apache-2.0 OSS, self-hostable, with an agent/MCP surface and AI RCA. The ov
 - **eBPF zero-instrumentation:** Coroot's signature — deploy the node-agent DaemonSet, get a service map with no app changes. Parallax has **no eBPF story** (relies on OTel SDKs).
 - **Sentry envelope:** Coroot has **none**. Parallax plans compatibility.
 
-**Verdict:** on **eBPF zero-instrumentation adoption friction, Coroot wins decisively** (Parallax has none). On OTLP-native + Sentry-envelope, **Parallax ships both** (plan 118 residual).
+**Verdict:** on **eBPF zero-instrumentation adoption friction, Coroot wins decisively** (Parallax has none). On OTLP-native + Sentry-envelope, **Parallax ships both** (plan 118 DONE).
 
 ## Storage architecture
 

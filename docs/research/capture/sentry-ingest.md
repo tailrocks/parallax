@@ -4,8 +4,7 @@
 > `parallax-server/src/sentry_http.rs` implements HTTP ingest,
 > `parallax-ingest/src/sentry_envelope.rs` implements `parse_envelope` with
 > `EnvelopeOutcome`, `RejectReason`, and `UnsupportedItem`, and
-> `parallax-analysis/src/sentry.rs` projects accepted events. Plan 118 remains
-> active for migration-adapter completion, not creation of the core path.
+> `parallax-analysis/src/sentry.rs` projects accepted events. Plan **118 is DONE/deleted** (2026-07-17): fixture + ack + redaction + HTTP e2e landed; evidence under validation/2026-07-plan-118-sentry-envelope/.
 > Parallax remains OTLP-first and derives `error_event` rows from OpenTelemetry
 > exception span events, span error status, and ERROR/FATAL logs. The Sentry
 > path accepts envelopes and normalizes them into Parallax evidence without
@@ -444,7 +443,7 @@ context is easy to over-share.
 This note is a capture and compatibility design reference, not an active
 implementation plan. The conditional parser, gateway, normalization, grouping,
 correlation, expansion, and compatibility-test work has moved in full to
-[`plans/118-sentry-envelope-migration-adapter.md`](../../../plans/118-sentry-envelope-migration-adapter.md).
+[`docs/research/validation/2026-07-plan-118-sentry-envelope/README.md`](../validation/2026-07-plan-118-sentry-envelope/README.md).
 That plan remains blocked until the operator opens the scope and current demand
 evidence makes Sentry migration the next adoption constraint. Do not implement
 from this document or treat its historical phase ordering as authorization.

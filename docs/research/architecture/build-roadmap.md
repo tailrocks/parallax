@@ -131,7 +131,7 @@ The original phase built enough to generate the bundle automatically and repeata
 - GreptimeDB is the committed engine. Comparative benchmark research remains in
   [the storage benchmark](../storage/benchmark-plan.md), while server-profile
   implementation is blocked in plan 115 and cannot introduce a fallback.
-- Conditional Sentry migration-adapter work moved to blocked plan 118; the
+- Sentry envelope adapter closed as plan 118 (DONE); the
   [capture note](../capture/sentry-ingest.md) remains design evidence only.
 - Retention/prune, evidence pinning, runtime redaction/A6, and evidence-contract
   reconciliation are owned by plans 116, 106, 111, and 104 respectively.

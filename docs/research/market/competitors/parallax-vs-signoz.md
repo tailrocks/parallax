@@ -104,11 +104,11 @@ not yet shipped or proven.
   Migration from Sentry = re-instrument with OTel. Bear-case trigger
   ("SigNoz adds Sentry ingest") **has not fired.**
 - **Parallax: OTLP-native in V1; Sentry-envelope ingest is shipped**
-  (`sentry_http` + envelope parse/derive/ack; plan 118 residual migration
+  (`sentry_http` + envelope parse/derive/ack; plan 118 DONE
   hardening only). SigNoz has **no** Sentry-envelope path.
 
 > Both are OTLP-native. **Parallax alone claims the Sentry-envelope migration
-> lane** with a shipped ingest adapter; residual migration work is plan 118.
+> lane** with a shipped ingest adapter; plan 118 is DONE; multi-SDK matrix remains unproven.
 
 ### Storage architecture
 
@@ -261,7 +261,7 @@ self-hosted Parallax could undercut but that is unmeasured.
 ## Where Parallax intends an edge (scoped; mostly planned/unproven)
 
 1. **Single-binary local-first** — the one *real today* architectural edge (GreptimeDB+Turso, no ~5-container stack).
-2. **Sentry-compatible ingest lane** — shipped; plan 118 residual migration hardening.
+2. **Sentry-compatible ingest lane** — shipped; plan 118 DONE; multi-SDK compatibility ledger unproven.
 3. **Portable versioned redacted evidence bundle** — designed; **value unproven (A1 gate)**.
 4. **Fix-outcome loop** — designed; **unproven**.
 5. **Rust-first runtime-error capture** — real bet, early.

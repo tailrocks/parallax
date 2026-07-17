@@ -88,7 +88,7 @@ multi-coding-agent observability is live.
 
 > **Both OTLP-native; New Relic has been GA for ~5 years.** On OTLP maturity +
   ingest reversibility, New Relic wins. Parallax's only ingest edge is the
-  shipped Sentry-envelope path (plan 118 residual).
+  shipped Sentry-envelope path (plan 118 DONE).
 
 ### Storage architecture
 

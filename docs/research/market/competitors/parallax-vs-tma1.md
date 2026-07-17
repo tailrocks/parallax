@@ -51,10 +51,10 @@ Same shape (a typed object an agent reads); fundamentally different artifact. Do
 ## Ingestion & transport
 
 - **OTLP:** TMA1 runs an OTLP reverse-proxy on `:14318` into GreptimeDB native tables (logs/traces), uses the Flow engine for continuous aggregations, GreptimeDB-isms (`json_get_string`, `matches_term()` FULLTEXT, `uddsketch`, SKIPPING/INVERTED/FULLTEXT indexes). **Native GreptimeDB usage — the same engine Parallax chose.**
-- **Sentry envelope:** TMA1 has **none**. Parallax ships envelope ingest (plan 118 residual).
+- **Sentry envelope:** TMA1 has **none**. Parallax ships envelope ingest (plan 118 DONE).
 - **Capture:** TMA1 records local LLM calls via agent hooks (Claude Code/Codex/Copilot CLI/OpenClaw). Parallax captures CLI/agent/CI sessions + production OTLP.
 
-**Verdict:** on **embedded-GreptimeDB-OTLP-native ingest, tied in design; TMA1 ships it.** On Sentry-envelope + production capture, **Parallax ships envelope ingest** (plan 118 residual).
+**Verdict:** on **embedded-GreptimeDB-OTLP-native ingest, tied in design; TMA1 ships it.** On Sentry-envelope + production capture, **Parallax ships envelope ingest** (plan 118 DONE).
 
 ## Storage architecture — same engine, different metadata story
 

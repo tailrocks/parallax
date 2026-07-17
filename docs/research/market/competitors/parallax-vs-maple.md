@@ -41,7 +41,7 @@ Both single-binary-local-first, OTLP-native, Turso-metadata. The closest pair on
 - **Sentry envelope:** Maple has **none**. Parallax plans compatibility.
 - **Local mode capture:** single Bun binary + libchdb; standard OTel SDKs target `localhost:4318`.
 
-**Verdict:** on OTLP-native ingest, **tied in design; Maple ships it.** On Sentry-envelope, **Parallax ships bounded envelope ingest** (plan 118 residual).
+**Verdict:** on OTLP-native ingest, **tied in design; Maple ships it.** On Sentry-envelope, **Parallax ships bounded envelope ingest** (plan 118 DONE).
 
 ## Storage architecture — same metadata, different telemetry engine + a vendor coupling
 

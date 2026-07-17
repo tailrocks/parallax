@@ -6,7 +6,7 @@
 > and metrics over gRPC `:4317` and HTTP `:4318`, and `parallax-ingest`
 > normalizes all three signals without cloning telemetry on the hot path.
 > Sentry envelope HTTP ingest, envelope parsing, and Sentry event projection are
-> also implemented; Plan 118 now owns migration-adapter completion, not creation
+> also implemented; Plan 118 closed migration-adapter residual (DONE), not creation
 > of the core ingest path. The historical capture recommendations below remain
 > useful emitter guidance. Rust grouping/symbolication fixture claims remain
 > `not_measured` and are distinct from the shipped ingest capability.

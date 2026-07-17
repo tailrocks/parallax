@@ -20,7 +20,7 @@ features they provide**. It synthesizes the per-tool deep-dives, the
 Closeness is measured against Parallax's V1 product shape (per the vision/overview/local-first docs):
 
 1. **Rust-first**, self-hosted, **single binary**, "much simpler/cheaper than self-hosted Sentry".
-2. **OTLP-native first** (traces/logs/metrics); **Sentry envelope ingest = shipped** (plan 118 residual).
+2. **OTLP-native first** (traces/logs/metrics); **Sentry envelope ingest = shipped** (plan 118 DONE).
 3. Pipeline: **OTLP gateway → local spool/WAL (Iggy deferred) → Rust processors → GreptimeDB** (logs/traces/
    metrics/derived `error_event`) **+ Turso** metadata. *(2026-07-17 code SoT: no product Iggy path yet.)*
 4. **Derives its own `error_event`** from exception span-events, span error status, ERROR/FATAL logs —

@@ -3,7 +3,7 @@
 **Status:** implemented; compatibility wording remains fixture-version bounded
 **Decision date:** 2026-07-17  
 **Approver:** operator unblock directive (`plans/README.md`)  
-**Owner:** Plan 118
+**Owner:** closed — plan 118 DONE (2026-07-17)
 
 ## Decision
 

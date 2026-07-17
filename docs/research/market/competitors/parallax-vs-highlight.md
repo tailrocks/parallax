@@ -101,7 +101,7 @@ backend production telemetry Parallax's *design* is comparable but unshipped.
 
 > **Both OTLP-native.** Highlight's edge: **replay↔trace correlation** (the
 > persistent OTel session mapping) + a mature browser-SDK fleet. Parallax's edge:
-> general multi-signal + shipped Sentry envelope path (plan 118 residual).
+> general multi-signal + shipped Sentry envelope path (plan 118 DONE).
 
 ### Storage architecture
 

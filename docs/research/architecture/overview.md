@@ -16,7 +16,7 @@ Research date: 2026-05-24
 Historical note (2026-06-03 design posture, **superseded by code**): early research
 moved Sentry-compatible ingest to a "future adapter." **Current code (2026-07-17)
 ships bounded Sentry envelope HTTP ingest** (`POST /api/{project_id}/envelope/`)
-alongside OTLP; plan 118 remains only for migration-adapter hardening. V1 also
+alongside OTLP; plan 118 closed migration-adapter residual (DONE). V1 also
 derives `error_event` rows from exception span events, span error status, and
 ERROR/FATAL logs. See [API concept](api-concept.md) and
 [Local-first V1](local-first-v1.md).
@@ -53,7 +53,7 @@ Applications
 The product should not start as a full Sentry clone. It should start as a
 local OTLP evidence server and context API with deterministic grouping, nearby
 telemetry lookup, and a small operational footprint. Bounded Sentry-envelope
-ingest is now shipped; remaining migration-adapter work is plan 118 only.
+ingest is now shipped; plan 118 closed; further multi-SDK claims need new measurement not an active plan.
 
 ## Product Boundary
 
@@ -63,7 +63,7 @@ needs:
 | Need | Parallax stance |
 | --- | --- |
 | Keep standard telemetry setup | Accept OTLP for traces, logs, and metrics; derive Parallax error rows from exception/error evidence. |
-| Sentry envelope ingest | Shipped (`sentry_http` + envelope parse/derive/ack); plan 118 owns residual migration hardening. |
+| Sentry envelope ingest | Shipped (`sentry_http` + envelope parse/derive/ack); plan 118 closed residual migration hardening (DONE). |
 | Group recurring errors | Implement deterministic grouping first. |
 | Show what happened around an error | Correlate errors with logs, traces, metrics, releases, deploys, and host context. |
 | Keep cost predictable | Self-host with bounded retention, object storage where useful, and no SaaS event quota anxiety. |
@@ -583,7 +583,7 @@ The original sequence covered OTLP fixtures, normalized rows, deterministic
 grouping, GreptimeDB/Turso persistence, GraphQL/CLI access, and issue context.
 Those V1 surfaces shipped; this section no longer orders work. Plans 093 and
 104 are closed. Local-stdio product MCP graduated plan 112 (DONE). Residual
-Sentry migration hardening is plan 118; server-profile residual is plans 110 and
+Sentry migration residual closed as plan 118 (DONE); server-profile residual is plans 110 and
 115 (Plan 109 remains auth/context design residual where still open).
 
 The sequence was organized around this product question:
@@ -614,7 +614,7 @@ The note originally recommended this research direction:
 > Sentry-compatible ingestion as a future migration adapter.
 
 Current implementation policy narrows that direction to GreptimeDB plus Turso,
-with Sentry compatibility blocked in plan 118 until its explicit trigger clears.
+with Sentry envelope path shipped (plan 118 DONE); multi-SDK wording still ledger-gated.
 
 The CI failure context work remains useful as an adjacent agent-context workflow,
 but it is not the first wedge if the real pain is production Rust observability
