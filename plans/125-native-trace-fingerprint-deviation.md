@@ -40,7 +40,24 @@ adds schema drift, and leaves future queries unsure which relation is canonical.
   leaves legacy nullable native columns inert until a live-proven safe removal
   exists; it does not drop, backfill, or duplicate native raw writes.
 
-## Current Blocker (rechecked 2026-07-14)
+## Step 1 evidence landed (preliminary, helper agent 2026-07-17)
+
+Both prior blockers are lifted: plan 104 is DECIDED (Option C, unblock
+directive 2026-07-17) and Docker is verified on the operator host. Live
+probes on **stable v1.1.3** and **nightly v1.2.0-nightly-20260713** plus the
+consumer/query inventory are recorded in
+[docs/research/validation/2026-07-17-plan-125-fingerprint-probe.md](../docs/research/validation/2026-07-17-plan-125-fingerprint-probe.md)
+(raw SQL transcripts alongside). Key results: fresh native tables are clean;
+the legacy ADD reproduces; `DROP COLUMN "fingerprint"` succeeds and persists
+across restarts on both engines with no data loss; duplicate ADD/DROP fail
+closed (4003/4002 — convergence must guard on `information_schema`); and the
+never-written legacy column reads **non-NULL** for existing rows on both
+engines, so NULL-based consumers were never viable. No product reader of
+`opentelemetry_traces.fingerprint` exists at `0b470a4`. Peer/executor owns
+Steps 2–4: decision record + spec update, upgraded-real-legacy-dir check, and
+the guarded existing-install convergence implementation.
+
+## Current Blocker (rechecked 2026-07-14; superseded above)
 
 - Plan 104 remains fail-closed: its decision record has no operator-selected
   canonical evidence model/version, approver, or approval date. Plan 125's
