@@ -8067,3 +8067,7 @@ Highest remaining still: (1) mix shares (2) server 1M/5M (3) vendor quotes
 
 `GROUP BY fingerprint ORDER BY count DESC LIMIT 20` on errs:
 GT warm **~7 ms**; CH **~2–5 ms**. Interactive both (issue-list shape).
+
+### Run 304 — 2026-07-17 — not done
+
+Still researching. Open: mix, server, quotes, GB cold, RPO D2/D3.
