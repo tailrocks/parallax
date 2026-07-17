@@ -126,6 +126,10 @@ the helper objective; the peer executor owns the status transition.
   bounded checks now receive the same explicit zero-eligibility treatment via
   one bounded aggregate. Their alert-owner/user-delete lifecycles remain
   authoritative; normal prune gains no alert deletion capability.
+- `MetadataPruneStore::metadata_prune_items` now assembles all 13 current Turso
+  lifecycle classes behind one bounded deterministic facade with one shared
+  cutoff. Focused coverage pins complete class membership and ordering. Pin
+  reachability and journal-backed execution remain deliberately unwired.
 
 ## Historical Blocker Evidence (2026-07-14; superseded 2026-07-17)
 

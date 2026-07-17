@@ -1,5 +1,6 @@
 use super::super::*;
 use parallax_model::IssueOccurrence;
+use parallax_storage::MetadataPruneStore;
 use parallax_storage::{PruneClass, PruneExclusionKind, PruneStore};
 
 fn issue_occurrence<'a>(
@@ -17,6 +18,42 @@ fn issue_occurrence<'a>(
         trace_id: None,
         attributes,
     }
+}
+
+#[tokio::test]
+async fn metadata_discovery_assembles_every_current_turso_class_deterministically() {
+    let directory = tempfile::tempdir().expect("temporary directory");
+    let store = TursoMetadataStore::open(directory.path().join("metadata.db"))
+        .await
+        .expect("open metadata");
+
+    let items = MetadataPruneStore::metadata_prune_items(&store, 77)
+        .await
+        .expect("assemble metadata candidates");
+
+    assert_eq!(items.len(), 13);
+    assert!(items.iter().all(|item| item.cutoff_nanos == 77));
+    assert!(items.windows(2).all(|pair| {
+        (pair[0].class, pair[0].target.as_str()) <= (pair[1].class, pair[1].target.as_str())
+    }));
+    assert_eq!(
+        items.iter().map(|item| item.class).collect::<Vec<_>>(),
+        vec![
+            PruneClass::Issues,
+            PruneClass::IssueBuckets,
+            PruneClass::IssueOccurrences,
+            PruneClass::Invocations,
+            PruneClass::Dashboards,
+            PruneClass::Investigations,
+            PruneClass::SavedViews,
+            PruneClass::AlertRules,
+            PruneClass::AlertRuleStates,
+            PruneClass::AlertIncidents,
+            PruneClass::AlertDestinations,
+            PruneClass::AlertDeliveryEvents,
+            PruneClass::AlertChecks,
+        ]
+    );
 }
 
 #[tokio::test]
