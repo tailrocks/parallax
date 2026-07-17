@@ -1,5 +1,7 @@
 # Competitor Watch
 
+> Living competitor comparison: [`competitors/`](competitors/) (pass 54+).
+
 > **Superseded as the canonical comparison by [`competitors/`](competitors/)** —
 > see the [overview matrix](competitors/README.md) + [comparison set](competitors/comparison-set.md)
 > + the per-product `competitors/parallax-vs-<product>.md` deep-dives (30 products,

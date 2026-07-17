@@ -1,5 +1,7 @@
 # Wedge-closer recheck — lightweight + agent-first OSS (2026-07-17)
 
+> Canonical deep-dives: [Traceway](competitors/parallax-vs-traceway.md), [Rustrak](competitors/parallax-vs-rustrak.md), [GlitchTip](competitors/parallax-vs-glitchtip.md), [Bugsink](competitors/parallax-vs-bugsink.md) — pass 50–54.
+
 <!-- markdownlint-disable MD013 -->
 
 **Pass target:** research-agenda item **#4** — does a wedge-closer ship the
