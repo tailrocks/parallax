@@ -81,7 +81,9 @@
 - The state machine now lets both `Flaky` and consistently-failing `Broken`
   variants recover to `Fixed` only after the configured clean-pass threshold;
   the prior permanent-`Broken` behavior would have made scheduled evaluation
-  preserve stale failure state forever.
+  preserve stale failure state forever. The pure update proposal now takes one
+  typed evaluation config and binds the V1 defaults to three transitions and
+  the D6-required 30 clean passes (correcting a preliminary three-pass value).
 - The nextest adapter foundation now strictly normalizes the documented
   per-test process variables (`NEXTEST_*`, available since 0.9.116), retry
   bounds, unique attempt ID, optional `TRACEPARENT`, and the wrapper-provided

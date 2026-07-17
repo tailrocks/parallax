@@ -10,9 +10,17 @@ use std::num::NonZeroU32;
 #[must_use]
 pub fn default_flaky_policy() -> FlakyPolicy {
     FlakyPolicy {
-        transition_threshold: NonZeroU32::new(2).expect("nonzero"),
-        recovery_passes: NonZeroU32::new(3).expect("nonzero"),
+        transition_threshold: NonZeroU32::new(3).unwrap_or(NonZeroU32::MIN),
+        recovery_passes: NonZeroU32::new(30).unwrap_or(NonZeroU32::MIN),
     }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct FlakyEvaluationConfig {
+    pub evaluated_at_nanos: u128,
+    pub window_nanos: u128,
+    pub policy: FlakyPolicy,
+    pub min_consistent_failures: u32,
 }
 
 /// Outcome of evaluating one candidate variant inside a time window.
@@ -28,24 +36,21 @@ pub fn propose_flaky_state_update(
     variant_key: TestVariantKey,
     results: Vec<TestResultRecord>,
     previous: Option<&TestFlakyStateRecord>,
-    evaluated_at_nanos: u128,
-    window_nanos: u128,
-    policy: FlakyPolicy,
-    min_consistent_failures: u32,
+    config: FlakyEvaluationConfig,
 ) -> Result<FlakyStateUpdate, FlakyEvaluationError> {
     let evidence = evaluate_flaky_evidence(
         results,
-        evaluated_at_nanos,
-        window_nanos,
-        min_consistent_failures,
+        config.evaluated_at_nanos,
+        config.window_nanos,
+        config.min_consistent_failures,
     )?;
     let prior_state = previous.map(|row| row.state).unwrap_or(FlakyState::Healthy);
-    let next_state = prior_state.transition(evidence, policy);
+    let next_state = prior_state.transition(evidence, config.policy);
     let record = TestFlakyStateRecord {
         variant_key,
         state: next_state,
         evidence,
-        updated_at_nanos: evaluated_at_nanos,
+        updated_at_nanos: config.evaluated_at_nanos,
     };
     Ok(FlakyStateUpdate {
         previous: previous.map(|row| row.state),

@@ -97,7 +97,9 @@ fn invalid_bounds_and_duplicate_attempts_fail_closed() {
 
 #[test]
 fn propose_update_marks_flaky_on_intra_invocation_mix() {
-    use crate::test_flakiness::{default_flaky_policy, propose_flaky_state_update};
+    use crate::test_flakiness::{
+        FlakyEvaluationConfig, default_flaky_policy, propose_flaky_state_update,
+    };
     use parallax_model::FlakyState;
 
     let rows = vec![
@@ -105,8 +107,20 @@ fn propose_update_marks_flaky_on_intra_invocation_mix() {
         result("inv-1", 2, TestStatus::Passed, 11),
     ];
     let variant = TestVariantKey::from_str(&format!("tv1:{}", "a".repeat(64))).expect("variant");
-    let update = propose_flaky_state_update(variant, rows, None, 20, 20, default_flaky_policy(), 2)
-        .expect("update");
+    let policy = default_flaky_policy();
+    assert_eq!(policy.recovery_passes.get(), 30);
+    let update = propose_flaky_state_update(
+        variant,
+        rows,
+        None,
+        FlakyEvaluationConfig {
+            evaluated_at_nanos: 20,
+            window_nanos: 20,
+            policy,
+            min_consistent_failures: 2,
+        },
+    )
+    .expect("update");
     assert!(update.changed);
     assert_eq!(update.record.state, FlakyState::Flaky);
     assert!(update.record.evidence.intra_invocation_mix);
