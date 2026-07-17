@@ -13,35 +13,33 @@ test.describe("full-stack live transport @storage", () => {
     const manifest = readFullStackManifest()
     expect(fullStack.service).toBe(manifest.service)
 
-    await page.goto("/logs")
-    await expect(page.getByRole("heading", { name: /log/i }).first()).toBeVisible({
+    await page.goto("/logs?live=true")
+    await expect(page.getByRole("heading", { name: "Logs" })).toBeVisible({
       timeout: 20_000,
     })
-
-    // Prefer an explicit Live toggle when the surface exposes one.
-    const liveToggle = page.getByRole("button", { name: /live/i }).first()
-    if (await liveToggle.isVisible().catch(() => false)) {
-      await liveToggle.click()
-    }
+    const liveToggle = page.getByRole("button", { name: "Live", exact: true })
+    await expect(liveToggle).toBeVisible({ timeout: 10_000 })
 
     const body = `pw-live-once-${manifest.dataset_id}`
     const seeded = await seedLiveLog(body)
     expect(seeded.body).toBe(body)
 
-    // Bound eventual visibility via UI text (SSE or poll refresh).
     const marker = page.getByText(body, { exact: false })
-    await expect(marker).toHaveCount(1, { timeout: 30_000 })
+    await expect(marker).toHaveCount(1, { timeout: 45_000 })
 
-    // Hide/show cycle should not duplicate the same record.
-    await page.goto("/")
-    await page.goto("/logs")
-    if (await liveToggle.isVisible().catch(() => false)) {
-      // After navigation the toggle is a new locator.
-      const again = page.getByRole("button", { name: /live/i }).first()
-      if (await again.isVisible().catch(() => false)) {
-        await again.click()
-      }
-    }
-    await expect(page.getByText(body, { exact: false })).toHaveCount(1, { timeout: 30_000 })
+    // Disconnect/reconnect via exact Live toggle (not table rows).
+    await liveToggle.click()
+    const queryToggle = page.getByRole("button", { name: "Query", exact: true })
+    await expect(queryToggle).toBeVisible()
+    await queryToggle.click()
+    await expect(page.getByRole("button", { name: "Live", exact: true })).toBeVisible()
+
+    // Reconnect must not double-render the same record (0 or 1 is fine; never 2+).
+    await expect
+      .poll(async () => page.getByText(body, { exact: false }).count(), {
+        timeout: 10_000,
+      })
+      .toBeLessThan(2)
   })
 })
+

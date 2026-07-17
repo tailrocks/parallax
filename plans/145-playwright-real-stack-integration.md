@@ -22,7 +22,7 @@
 - **Depends on**: 093, 101, 132, 144
 - **Category**: tests / integration / GreptimeDB / Turso
 - **Planned at**: `e3e7997`, revised 2026-07-12
-- **Status**: IN PROGRESS — 132/144 done; host ports 24000-24003 occupied by greptime; scaffolding next when ports free (2026-07-17)
+- **Status**: IN PROGRESS — attach foundation green (3/3 full-stack specs on QA stack); residual CI/managed lifecycle/duration (2026-07-17)
 
 ## Why This Matters
 

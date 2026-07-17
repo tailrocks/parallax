@@ -1,28 +1,42 @@
-# Plan 145 — managed Greptime + Turso browser stack (host probe, 2026-07-17)
+# Plan 145 — managed Greptime + Turso browser stack (2026-07-17)
 
-## Host probe (this machine)
+## Evidence (live, this host)
 
-| Check | Result |
+| Item | Result |
 | --- | --- |
-| Fixed Greptime ports 24000–24003 | **occupied** by existing `greptime` PID (product/dev stack) |
-| Parallel second managed supervisor | blocked until ports free (plan fixed-port rule; one worker per host) |
-| Plan 132/144 Bun Playwright Chromium | available (prior evidence) |
-| `test:browser:full` project | not yet wired (blocked on free ports + lifecycle serve) |
+| QA stack reuse | Greptime stayed on 24000–24003; `parallax serve` restarted with fixed binary; attach mode used |
+| `PARALLAX_FULL_STACK_MODE=attach` | Seeds OTLP to `:4318`, GraphQL readiness on `:4000`, UI proxy on `:4175` |
+| SSE proxy | `/v1/*/stream` forwarded as byte stream (not buffered) |
+| `bun run test:browser:full` | **3 passed** (telemetry-discovery, storage-composition, live-transport) ~19s |
+| Product bug fixed | `service_names` / overview metric buckets no longer use open-ended range width as `date_bin` step (clamped to 1h / max 1d) — unblocked IssuesList `services` field |
 
-## What landed earlier (deps)
+## Commands run
 
-- Plan 132 foundation + plan 144 contracts-chromium + `browser_contracts_serve` (memory+Turso seam)
-- Greptime supervisor + `ensure_binary` in `parallax-server`
+```bash
+# after rebuilding parallax with greptime step clamp
+./target/debug/parallax serve --config /tmp/parallax-qa/config.toml
 
-## Next green slice (when ports free)
+cd ui && PARALLAX_FULL_STACK_MODE=attach \
+  PARALLAX_FULL_STACK_BASE_URL=http://127.0.0.1:4000 \
+  PARALLAX_FULL_STACK_OTLP_HTTP=http://127.0.0.1:4318 \
+  bun run test:browser:full
+# → 3 passed
+```
 
-1. `cargo xtask browser-full-stack-serve` — unique temp data dir, managed Greptime+Turso, runtime manifest
-2. `ui/tests/e2e/full-stack/{telemetry-discovery,storage-composition,live-transport}.spec.ts`
-3. `bun run test:browser:full` one worker
-4. Path-aware CI job + matrix `@storage` rows
+## Landed
 
-## STOP condition hit
+- `cargo xtask browser-full-stack-serve` + example harness (attach | managed)
+- OTLP seed builders in `parallax-test-support::browser::real_stack`
+- Playwright project `full-stack-chromium`, fixtures, three foundation specs
+- Matrix foundation + reserved rows (134–143, 150)
+- Policy `ui.browser-full-stack`
 
-Safe parallel / concurrent managed engines require free 24000–24003; host currently
-runs Greptime there. Do not kill foreign PID by port alone. Operator must stop the
-dev Greptime (or dedicate a CI runner) before full-stack browser lane can prove green.
+## Residual (plan stays active)
+
+- Managed (non-attach) cold/warm lifecycle lifecycle tests when ports free
+- Path-aware `browser-full-stack` CI job + scheduled storage workflow
+- Duration ratchets / repeated-run harness
+- Feature-owned reserved full-stack specs materialization (134–143/150)
+- Full command table twice from clean state
+
+Do **not** kill foreign Greptime by port alone; attach is the approved host path when 24000–24003 are occupied.

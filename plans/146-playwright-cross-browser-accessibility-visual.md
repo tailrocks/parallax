@@ -24,7 +24,7 @@
 - **Depends on**: 101, 132, 144, 145
 - **Category**: tests / compatibility / accessibility / visual
 - **Planned at**: `e3e7997`, revised 2026-07-12
-- **Status**: BLOCKED — waits on 145 config ownership; Chromium foundation ready (2026-07-17)
+- **Status**: IN PROGRESS — 145 Playwright config ownership landed; begin engine/a11y/visual projects (2026-07-17)
 
 ## Why This Matters
 

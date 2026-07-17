@@ -294,8 +294,10 @@ async fn proxy_api(State(state): State<ProxyState>, request: Request<Body>) -> R
         .uri()
         .path_and_query()
         .map(|pq| pq.as_str())
-        .unwrap_or("/");
+        .unwrap_or("/")
+        .to_string();
     let url = format!("{}{path_and_query}", state.upstream);
+    let stream_path = path_and_query.contains("/stream");
     let headers = request.headers().clone();
     let body = axum::body::to_bytes(request.into_body(), 16 * 1024 * 1024)
         .await
@@ -325,10 +327,20 @@ async fn proxy_api(State(state): State<ProxyState>, request: Request<Body>) -> R
                     }
                 }
             }
-            let bytes = upstream.bytes().await.unwrap_or_default();
-            response.body(Body::from(bytes)).unwrap_or_else(|_| {
-                (StatusCode::BAD_GATEWAY, "upstream body error").into_response()
-            })
+            if stream_path {
+                // SSE/live streams must not be buffered; forward the byte stream.
+                let stream = upstream.bytes_stream();
+                response
+                    .body(Body::from_stream(stream))
+                    .unwrap_or_else(|_| {
+                        (StatusCode::BAD_GATEWAY, "upstream stream error").into_response()
+                    })
+            } else {
+                let bytes = upstream.bytes().await.unwrap_or_default();
+                response.body(Body::from(bytes)).unwrap_or_else(|_| {
+                    (StatusCode::BAD_GATEWAY, "upstream body error").into_response()
+                })
+            }
         }
         Err(error) => (StatusCode::BAD_GATEWAY, format!("upstream: {error}")).into_response(),
     }
