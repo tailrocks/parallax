@@ -158,8 +158,10 @@ work in `plans/`.
   - GreptimeDB latest stable: **[`v1.1.3`](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.1.3)**
     (2026-07-17). Nightly: **`v1.2.0-nightly-20260706`**. Supersedes 2026-06-03/06-11 pins of
     `v1.0.2` / `v1.1.0-nightly-20260525`.
-  - ClickHouse feature-line pin **not re-fetched this pass** — leave prior `v26.5.x` note as
-    **stale until next ClickHouse pass**; do not invent a number.
+  - ClickHouse feature-line re-pin **2026-07-17 pass 60:** latest non-LTS feature tag observed
+    **`v26.6.1.1193-stable`** (2026-06-25); newest non-LTS patch date also shows
+    `v26.5.5.8-stable` (2026-07-01). Four-way rule = **feature line not LTS** → prefer **26.6.x**.
+    No performance claim.
   - Product stance unchanged: GreptimeDB + Turso mandatory; ClickHouse comparator only.
 - **Historical re-verify 2026-06-03 (official docs + GitHub releases — version pins superseded):**
   - GreptimeDB docs still describe a unified observability database for metrics, logs, and traces with

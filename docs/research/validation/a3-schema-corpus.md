@@ -1,6 +1,37 @@
 # A3 — Schema Adoption and Corpus Moat
 
-> A3 (one of the A1–A7 bear-case assumptions) holds that the open evidence schema plus the failure/fixer-outcome corpus becomes a compounding moat — and it is treated as existential and currently unproven. The gate is explicit that a schema is not a moat merely because it exists in Markdown: the adoption clock starts only once machine-readable artifacts (canonical JSON Schema at `schemas/evidence-bundle/v0.1.0/schema.json`, positive/negative fixtures, a validator command, a compatibility/semver policy, and a changelog) exist and a public release/tag lands, and even then only validated, non-operator producer/consumer integrations, workflow dependencies, and compatibility decisions count — never stars, forks, one-off operator demos, or product-language claims like SigNoz's "open investigation format" (the 2026-05-25 check found no published schema there). The corpus is a separate gate that only begins when bundles carry labeled outcomes, with thresholds of 5–10 hand-built (Phase 0), 25 fault-injected (tiny MVP), 100 across ≥3 repos/teams before any corpus-improves-agents claim, and 1,000 with recurrence tracking before any data-moat claim. The current Parallax claim level is `schema_draft`: there is no released JSON Schema artifact, validator, canonicalization command, fixture corpus, projection-equivalence harness, or MCP `outputSchema` fixture, so the A3 adoption clock has not started and the next durable boundary is a first `schema_release` event. Both proofs are bound to a public, source-linked ledger (`schema-adoption-results.md`, `corpus-outcome-results.md`): if an adoption or corpus event is not recorded with schema version, actor relationship, validation status, evidence hash, and count decision, it is learning signal at most, not moat evidence.
+> **Pass 60 recheck (2026-07-17): claim level corrected.** The May body below still
+> describes a pre-schema era. **Code reality:** machine-readable contracts ship at
+> [`schema/evidence-bundle.v1.schema.json`](../../../schema/evidence-bundle.v1.schema.json)
+> and
+> [`schema/evidence-bundle.v2.schema.json`](../../../schema/evidence-bundle.v2.schema.json)
+> (Draft 2020-12, `$id` set, versioning policy in
+> [`schema/README.md`](../../../schema/README.md)); golden fixture
+> `crates/parallax-evidence/fixtures/bundle-v1-golden.json`; **jsonschema**
+> validation in `crates/parallax-evidence` tests + plan_093 baseline; MCP crate
+> loads the same schemas. That is **`schema_artifacts_shipped`** (internal
+> `schema_release`-class *artifact* event — path is `schema/` not the historical
+> `schemas/…/v0.1.0/` table).
+>
+> **What is still unproven (A3 proper):**
+> - **External adoption = 0** (no non-operator producer/consumer, workflow
+>   dependency, or compatibility decision logged).
+> - **Public adoption/corpus ledgers** (`schema-adoption-results.md`,
+>   `corpus-outcome-results.md`) still **absent**.
+> - **Outcome corpus moat = 0** (labeled accepted/rejected/reverted/recurred
+>   rows for external or multi-team use not recorded).
+> - Competitor "open investigation format" marketing (SigNoz et al.) still
+>   **does not** equal a published portable schema (rechecked 2026-07-17).
+>
+> So: **artifact clock may start; adoption/moat clock has not.** Do not claim
+> schema gravity or corpus moat. See *Pass 60 claim boundary* below.
+>
+> Historical BLUF (superseded on claim level only): A3 holds that the open
+> evidence schema plus failure/fixer-outcome corpus becomes a compounding moat
+> — existential and currently **unproven for adoption/corpus**. Machine-readable
+> artifacts now exist; only validated non-operator integrations count as
+> adoption. Corpus thresholds unchanged (5–10 Phase 0 hand-built → 25 tiny MVP →
+> 100 across ≥3 repos → 1,000 with recurrence before data-moat language).
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
@@ -340,19 +371,31 @@ Internal sources:
 
 ### Current Claim Boundary
 
-Current Parallax claim level: `schema_draft`.
+#### Pass 60 claim boundary (2026-07-17) — supersedes the May `schema_draft` line
 
-This is intentionally narrow. The repository has a Markdown evidence-bundle
-draft, but no released JSON Schema artifact, schema changelog, canonicalization
-command, validator command, committed fixture corpus, projection-equivalence
-harness, or MCP `outputSchema` fixture. The A3 adoption clock has not started.
+| Claim layer | Level | Evidence | Still missing |
+| --- | --- | --- | --- |
+| Machine-readable schema | **`schema_artifacts_shipped`** | `schema/evidence-bundle.v{1,2}.schema.json` + `schema/README.md` versioning; golden fixture; `jsonschema` tests in `parallax-evidence`; MCP embeds schema paths | Public semver release *tag* dedicated to schema (optional); standalone CLI `validate` UX (tests are the current enforcer) |
+| External schema adoption | **`schema_adoption_none`** | No non-operator integration rows | First external producer/consumer + ledger file |
+| Failure/fix-outcome corpus | **`corpus_empty_public`** | Plan 123 offline residual exists in product code; **no** public corpus ledger with thresholds | Labeled multi-repo outcomes |
+| Overall A3 moat | **`unproven`** | — | External dependency + corpus growth |
 
-The next boundary is not another prose refinement. It is a first
-`schema_release` event that records the exact schema URI/hash, validator
-version, fixture hash, canonicalization method, changelog entry, release/tag or
-commit, and initial conformance command. Until that event exists, every
-integration, agent-demo, or bundle example must be marked `do_not_count` for
-schema adoption unless it is explicitly only an internal learning signal.
+**May 2026 text below claimed `schema_draft` / no JSON Schema — that claim is
+FALSE as of shipped V1 and must not be repeated as present tense.**
+
+The A3 **adoption** clock still has not produced a counted external event. Next
+boundary: create `docs/research/schema-adoption-results.md` with one honest
+`schema_release` snapshot (URI, file hash, validator crate version, fixture
+hash, commit) and keep every external attempt logged. Until external rows
+exist, every demo stays `do_not_count` for *moat*, while internal conformance
+counts for *artifact quality* only.
+
+### Historical Current Claim Boundary (2026-05 — superseded)
+
+~~Current Parallax claim level: `schema_draft`.~~
+
+~~The repository has a Markdown evidence-bundle draft, but no released JSON
+Schema artifact…~~ **Superseded by pass 60.** Keep only for audit trail.
 
 ### Why A3 Needs A Ledger
 

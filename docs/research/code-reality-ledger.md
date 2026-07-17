@@ -105,7 +105,7 @@ not override code.
 | --- | --- | --- |
 | A1 bundle value vs raw context | **unproven** | [validation/a1-bundle-value/](validation/a1-bundle-value/) |
 | A2 paying segment / demand | **partial desk; interviews open** | [validation/a2-user-demand.md](validation/a2-user-demand.md), monetization notes |
-| A3 schema adoption | open | [validation/a3-schema-corpus.md](validation/a3-schema-corpus.md) |
+| A3 schema adoption | **artifacts shipped** / **adoption open** | [validation/a3-schema-corpus.md](validation/a3-schema-corpus.md), [a3-schema-claim-recheck-2026-07-17.md](validation/a3-schema-claim-recheck-2026-07-17.md) — v1/v2 JSON Schema + tests exist; external adoption ledger empty |
 | A4 correlation reliability | design + partial code | [capture/correlation.md](capture/correlation.md) |
 | A5 stack | **decided shipped stack**; residual measurement | [decisions/stack-decision.md](decisions/stack-decision.md) |
 | A6 redaction red-team | residual | [capture/redaction.md](capture/redaction.md) |
