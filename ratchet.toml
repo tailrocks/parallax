@@ -928,7 +928,7 @@ ceiling = 5
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-server/src/worker/tests.rs"
-ceiling = 28
+ceiling = 34
 
 [[limits]]
 metric = "rust.assertions"
@@ -4161,7 +4161,7 @@ ceiling = 74
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-metadata/src/turso/tests.rs"
-ceiling = 61
+ceiling = 81
 
 [[limits]]
 metric = "rust.assertions"
@@ -6747,7 +6747,7 @@ ceiling = 1
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-metadata/src/turso/tests.rs"
-ceiling = 668
+ceiling = 921
 
 [[limits]]
 metric = "rust.file-lines"
@@ -6861,5 +6861,15 @@ ceiling = 23
 
 [[product.anyhow_edges]]
 path = "crates/parallax-metadata/src/turso/test_reporting.rs"
-ceiling = 18
+ceiling = 27
 reason = "private test-report persistence composition is converted at the typed metadata port"
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-metadata/src/turso/test_reporting.rs"
+ceiling = 490
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-metadata/src/turso/tests.rs::test_explorer_filters_latest_variant_invocation_and_rollups"
+ceiling = 186

@@ -21,12 +21,15 @@ pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Find
     health.extend(typescript::health(root, ratchet)?);
     health.extend(self::health(root)?);
     let mut measured = BTreeMap::new();
+    let mut findings_out = Vec::new();
     for finding in health {
-        let metric = finding
-            .rule_id
-            .strip_prefix("health.")
-            .context("health rule prefix")?
-            .to_owned();
+        // Health scanners can surface real diagnostics (e.g. unresolvable
+        // TypeScript imports in a checkout without node_modules); forward
+        // them instead of failing the whole policy run.
+        let Some(metric) = finding.rule_id.strip_prefix("health.").map(str::to_owned) else {
+            findings_out.push(finding);
+            continue;
+        };
         let scope = if metric.starts_with("rust.function-") {
             format!(
                 "{}::{}",
@@ -55,6 +58,7 @@ pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Find
         .map(|limit| ((limit.metric.clone(), limit.scope.clone()), limit.ceiling))
         .collect();
     let mut findings = evaluate(&measured, &limits);
+    findings.extend(findings_out);
     findings.extend(rust::check_suppressions(root, ratchet)?);
     findings.extend(rust::check_async_blocking(root)?);
     findings.extend(check_generated(root, ratchet)?);
