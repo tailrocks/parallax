@@ -7967,3 +7967,9 @@ GT `avg(val) GROUP BY service` during inserts: warm **~8–9 ms** (same as idle
 Major session advances: S3 pins+OpenDAL GET method, managed rates, RPO D1+runbook,
 workload-mix packet, server-tier runbook, harness logs.trace_id index, 50+ live
 re-verifies. **Open:** mix shares, server 1M/5M, vendor quotes, GB cold, RPO D2/D3.
+
+### Run 281 — 2026-07-17 — grouped-error last_value on errs
+
+`last_value(service ORDER BY ts) GROUP BY fingerprint` on errs (50k):
+GT warm **~7–10 ms**; CH `argMax` **~4 ms**. Both interactive for Sentry-style
+rollup shape (Run 156/160).
