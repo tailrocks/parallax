@@ -7159,3 +7159,8 @@ recursive CTE, append DELETE, density). No new containers.
 
 EXPLAIN shows Prewhere info for dual-predicate filter. Default settings confirmed.
 `query-execution-engine.md`.
+
+### Run 207 — 2026-07-17 — ReplacingMergeTree FINAL vs GT last_value
+
+CH plain shows dups until FINAL (with merges stopped); GT last_value returns latest.
+`dedup-and-update-semantics.md`.

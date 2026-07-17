@@ -151,3 +151,15 @@ burden**, where GreptimeDB makes it the default.
 - Cross-refs: `write-path-and-ingestion.md` (append_mode, schema-on-write
   `merge_mode='last_non_null'`), `compaction-and-merge.md`, `per-signal-verdict.md`
   (Q2 issue-history).
+
+## Run 207 (2026-07-17) — ReplacingMergeTree FINAL vs GT last_value (v1.1.3 / 26.6)
+
+| Engine | Behavior | Live |
+| --- | --- | --- |
+| CH `ReplacingMergeTree(ver)` + **STOP MERGES** | plain SELECT shows **dups** (count=3) | confirmed |
+| CH | `SELECT … FINAL` collapses to latest ver | id1→b, id2→c |
+| GT mito default PK | read-time latest / series points; `last_value(val ORDER BY ts)` | id1→b, id2→c |
+
+**No drift from Run 163:** CH upsert-table is eventual (needs FINAL/argMax until merge);
+GT time-series model is correct-by-default for latest via `last_value` (or read-path
+dedup for exact PK+ts). Mutable issue state still → Turso.
