@@ -8,6 +8,18 @@
 > `parallax-spool` and must be counted independently from GreptimeDB retained
 > bytes in future cost runs.
 
+> **Pass 91 research consume (2026-07-17) — Run 189 local density (not A5 pass):**
+> Benchmark agent measured **N=100k** four-way on-disk sizes on pins
+> GreptimeDB **`v1.1.3`** / ClickHouse **`v26.6.1.1193-stable`** (see
+> [compression-and-cost.md Run 189](greptimedb-vs-clickhouse/compression-and-cost.md)).
+> Directional ratios: GT denser on **logs** (~0.4× CH) and slight on **metrics**
+> (~0.92×); CH denser on **spans** (~1.7×) and indexed **errs** (~2.6× GT when GT
+> carries inverted `trace_id`). **No blanket density winner.** Absolute sizes at
+> 100k are tiny — use **ratios only**. This is **laptop preliminary smoke**, not
+> server-tier $/GB, not object-store PUT/GET/LIST economics, not mixed native
+> OTLP ingest, not Q6 p95/p99, not full A5 profile proof. Sized cost gate remains
+> **open / unproven** until those rows exist.
+
 > Object storage is available for both candidate engines (GreptimeDB and ClickHouse), but the storage-cost winner is still an open, workload-specific gate: it must be measured with identical generated data, fair schema tuning (no tuned ClickHouse codecs vs. unexamined GreptimeDB defaults), and provider-specific request/egress modeling across AWS S3, Cloudflare R2, and Backblaze B2. What is already decided is the economics: compressed object-storage retention is cheap — single-digit to low-hundreds of dollars per month from the tiny to large tier at 90-day retention, roughly 100x (two orders of magnitude) under ingest-priced SaaS such as Observe (~$0.49/GB) or SigNoz Cloud (~$0.30/GB). The non-obvious design finding, also decided, is that because Parallax re-reads history to build agent context, object-store egress pricing matters as much as storage pricing, so self-hosted deployments should default to a zero/low-egress store (R2 or B2) or co-locate compute rather than generic S3. Still open and gated by runnable benchmark measurement: per-signal compression ratios on real Parallax data, object counts, PUT/GET/LIST request costs, cold-read bytes, compaction amplification, local cache size, and the resulting provider cost projection — plus the cost-comparison pass target (GreptimeDB retained size + modeled object cost <= 1.2x ClickHouse on the small tier, or a clear speed/operability win) and the coupling rule that any size/cost winner failing the storage freshness and bundle-latency gate cannot become the default. Local smoke numbers (ClickHouse 28.9 MiB vs. GreptimeDB SST 38 MiB for 1M spans) are a warning, not a verdict, because that schema comparison was unfair. Provider list prices are current as of 2026-05-25 and are order-of-magnitude planning inputs, not quotes.
 
 This note consolidates the following previously-separate research files, each preserved in full below:
