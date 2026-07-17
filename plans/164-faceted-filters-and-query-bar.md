@@ -54,11 +54,29 @@ statuses intentionally untouched:
   (keys/ops/values/AND; Ctrl+Space open, Tab/Enter accept, ⌘Enter apply),
   `WhereClauseChips` removable chip row.
 
-Still open (full plan scope): Step 1 backend entirely (facet queries,
-`attributeFilters` compilation + parameterization proof, `durationStats`);
-route wiring + URL schemas (Step 3); `F` keyboard shortcut; syntax-highlight
-overlay (editor currently plain input); `f-attrs` playground scenario;
-browser evidence. Preliminary components are controlled/presentational —
+- Backend `attributeFilters` core (`9751982`, lands the complete set the
+  Grok note above prescribes — field + bridge in one green commit):
+  `AttributeFilter`/`AttributeFilterOp` (+ `parse`/`as_token`, pure
+  `matches()`) in `parallax-storage/src/adapter.rs`;
+  `TraceQuery.attribute_filters` (semantics: a trace matches when ≥1
+  in-window span satisfies ALL filters); GreptimeDB compiler
+  `parallax-greptime/src/greptime/attribute_filters.rs` (intrinsics → raw
+  columns, attribute keys → `span_attributes.*` gated by
+  `span_field_key_allowed` else `1 = 0`, escaped string literals, LIKE
+  wildcard escaping, numeric literals re-serialized from the parsed
+  number; golden unit tests incl. the `x' OR 1=1--` proof);
+  `traces_search` participation wiring via a shared
+  `trace_participation` helper; in-memory adapter parity
+  (`filter_matched_trace_ids`/`filter_observed_value`); API constructors
+  pass `Vec::new()` until the GraphQL argument lands. Clippy clean; 103
+  tests green across the four crates.
+
+Still open (full plan scope): GraphQL `attributeFilters` argument + input
+type; facet-count queries and `durationStats`; logs/invocations filter
+compilation (the compiler is span-table-only so far); live-engine narrowing
++ injection assertions; route wiring + URL schemas (Step 3); `F` keyboard
+shortcut; syntax-highlight overlay (editor currently plain input);
+`f-attrs` playground scenario; browser evidence. Preliminary components are controlled/presentational —
 verify their contracts against the GraphQL shapes you build and refactor
 freely; they carry no route or fetch coupling.
 
