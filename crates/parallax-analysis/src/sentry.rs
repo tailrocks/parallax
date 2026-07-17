@@ -25,8 +25,12 @@ pub fn derive_from_sentry_event(event: &Value) -> Option<ErrorEventRow> {
         .map(str::to_string);
     // Explicit SDK fingerprint is part of grouping when present and non-default.
     let operation = explicit_fp.or(operation);
-    let fingerprint =
-        fingerprint_with_operation(&error_type, &message, stacktrace.as_deref(), operation.as_deref());
+    let fingerprint = fingerprint_with_operation(
+        &error_type,
+        &message,
+        stacktrace.as_deref(),
+        operation.as_deref(),
+    );
     let service = service_name(object);
     let (trace_id, span_id) = trace_ids(object);
     let ts_nanos = timestamp_nanos(object);
@@ -356,12 +360,7 @@ mod tests {
         assert!(stack.starts_with("handle (src/lib.rs:42)"), "{stack}");
         assert!(stack.contains("main (src/main.rs:10)"), "{stack}");
         // Same fingerprint function as OTLP path for cross-source grouping.
-        let expected = fingerprint_with_operation(
-            "Panic",
-            "boom after 2000ms",
-            Some(&stack),
-            None,
-        );
+        let expected = fingerprint_with_operation("Panic", "boom after 2000ms", Some(&stack), None);
         assert_eq!(row.fingerprint, expected);
     }
 

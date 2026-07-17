@@ -1,6 +1,7 @@
 mod architecture;
 mod browser_contracts;
 mod browser_foundation;
+mod browser_full_stack;
 mod config;
 mod docs;
 mod product;
@@ -40,12 +41,13 @@ pub(crate) fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()>
                 | "ui.ratchets"
                 | "ui.browser-foundation"
                 | "ui.browser-contracts"
+                | "ui.browser-full-stack"
                 | "ui.graphql-contract"
                 | "ui.runtime-boundaries"
         )
     {
         bail!(
-            "unknown policy family `{rule}`; available: architecture, product, structural, typescript, ui.architecture, ui.browser-contracts, ui.browser-foundation, ui.graphql-contract, ui.ratchets, ui.runtime-boundaries, ui.tests"
+            "unknown policy family `{rule}`; available: architecture, product, structural, typescript, ui.architecture, ui.browser-contracts, ui.browser-foundation, ui.browser-full-stack, ui.graphql-contract, ui.ratchets, ui.runtime-boundaries, ui.tests"
         );
     }
     let ratchet = config::Ratchet::load(&root.join("ratchet.toml"))?;
@@ -76,6 +78,9 @@ pub(crate) fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()>
     }
     if only.is_none() || only == Some("ui.browser-contracts") {
         findings.extend(browser_contracts::check_workspace(root)?);
+    }
+    if only.is_none() || only == Some("ui.browser-full-stack") {
+        findings.extend(browser_full_stack::check_workspace(root)?);
     }
     if only.is_none() || only == Some("ui.graphql-contract") {
         findings.extend(ui_graphql_contract::check_workspace(root)?);

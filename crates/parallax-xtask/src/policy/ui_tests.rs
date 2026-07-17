@@ -379,8 +379,12 @@ fn validate_browser_entry(root: &Path, entry: &Entry, findings: &mut Vec<Finding
             | "playwright/full-stack"
             | "playwright/breadth"
     );
+    let valid_layer = matches!(
+        entry.layer.as_str(),
+        "browser-contract" | "browser-full-stack" | "browser-breadth"
+    );
     let valid_status = matches!(entry.status.as_str(), "implemented" | "reserved");
-    if entry.layer != "browser-contract"
+    if !valid_layer
         || !valid_lane
         || !valid_status
         || entry.risk.trim().is_empty()

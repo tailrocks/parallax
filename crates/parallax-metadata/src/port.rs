@@ -1,7 +1,8 @@
 use crate::TursoMetadataStore;
 use parallax_model::{
     Dashboard, Investigation, InvocationRecord, Issue, IssueOccurrence, IssueQuery, IssueSortKey,
-    SavedView, TrendPoint,
+    SavedView, TestCaseRecord, TestFlakyStateRecord, TestResultRecord, TestVariantRecord,
+    TrendPoint,
 };
 use parallax_storage::metadata::{MetadataError, MetadataResult};
 use parallax_storage::{
@@ -208,6 +209,53 @@ impl parallax_storage::metadata::MetadataStore for TursoMetadataStore {
     }
     async fn ensure_invocation(&self, id: &str, first_seen: u128) -> MetadataResult<()> {
         Self::ensure_invocation(self, id, first_seen)
+            .await
+            .map_err(MetadataError::internal)
+    }
+    async fn upsert_test_case(&self, record: &TestCaseRecord) -> MetadataResult<()> {
+        Self::upsert_test_case(self, record)
+            .await
+            .map_err(MetadataError::internal)
+    }
+    async fn upsert_test_variant(&self, record: &TestVariantRecord) -> MetadataResult<()> {
+        Self::upsert_test_variant(self, record)
+            .await
+            .map_err(MetadataError::internal)
+    }
+    async fn upsert_test_result(&self, record: &TestResultRecord) -> MetadataResult<()> {
+        Self::upsert_test_result(self, record)
+            .await
+            .map_err(MetadataError::internal)
+    }
+    async fn upsert_test_flaky_state(&self, record: &TestFlakyStateRecord) -> MetadataResult<()> {
+        Self::upsert_test_flaky_state(self, record)
+            .await
+            .map_err(MetadataError::internal)
+    }
+    async fn test_case(&self, key: &str) -> MetadataResult<Option<TestCaseRecord>> {
+        Self::test_case(self, key)
+            .await
+            .map_err(MetadataError::internal)
+    }
+    async fn test_variant(&self, key: &str) -> MetadataResult<Option<TestVariantRecord>> {
+        Self::test_variant(self, key)
+            .await
+            .map_err(MetadataError::internal)
+    }
+    async fn test_results_for_invocation(
+        &self,
+        invocation_id: &str,
+        limit: usize,
+    ) -> MetadataResult<Vec<TestResultRecord>> {
+        Self::test_results_for_invocation(self, invocation_id, limit)
+            .await
+            .map_err(MetadataError::internal)
+    }
+    async fn test_flaky_state(
+        &self,
+        variant_key: &str,
+    ) -> MetadataResult<Option<TestFlakyStateRecord>> {
+        Self::test_flaky_state(self, variant_key)
             .await
             .map_err(MetadataError::internal)
     }

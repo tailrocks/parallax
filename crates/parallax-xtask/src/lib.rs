@@ -1,5 +1,6 @@
 mod browser_contracts;
 mod browser_foundation;
+mod browser_full_stack;
 mod cli;
 mod closure_final;
 mod command;

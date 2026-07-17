@@ -1,8 +1,8 @@
-use parallax_storage::model::ErrorEventRow;
 use parallax_proto::collector_logs::ExportLogsServiceRequest;
 use parallax_proto::collector_metrics::ExportMetricsServiceRequest;
 use parallax_proto::collector_trace::ExportTraceServiceRequest;
 use parallax_spool::Signal;
+use parallax_storage::model::ErrorEventRow;
 use tokio::sync::mpsc;
 
 use crate::ingest_health::QueuedItem;

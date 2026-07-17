@@ -241,7 +241,10 @@ impl GreptimeStore {
         if families.is_empty() {
             return Ok(Vec::new());
         }
-        let step_secs = (step_nanos / 1_000_000_000).max(1);
+        // Greptime INTERVAL seconds is not unbounded; clamp multi-day/open-ended
+        // discovery steps so date_bin never receives multi-epoch second counts.
+        const MAX_STEP_SECS: u128 = 86_400;
+        let step_secs = (step_nanos / 1_000_000_000).max(1).min(MAX_STEP_SECS);
         let service_clause = service
             .map(|svc| format!(r#" AND "service_name" = '{}'"#, escape(svc)))
             .unwrap_or_default();

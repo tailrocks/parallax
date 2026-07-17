@@ -40,6 +40,8 @@ pub(crate) enum Command {
     BrowserFoundationServe,
     /// Serve fixture-backed product contracts (plan 144) via injected test adapter.
     BrowserContractsServe,
+    /// Serve/attach managed GreptimeDB + Turso full-stack browser lane (plan 145).
+    BrowserFullStackServe,
     /// Run the distinct Rust doctest integration partition.
     Integration,
     /// Validate repository documentation.

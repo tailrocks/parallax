@@ -11,7 +11,11 @@ impl crate::adapter::ServiceAnalyticsStore for GreptimeStore {
             .collect();
         // Metric-only services (metric-summary contract): a service that
         // emitted only metrics still enters bounded service discovery.
-        let window_step = range.end().saturating_sub(*range.start()).max(1);
+        // Never use the full open-ended window width as date_bin step —
+        // retained_recent_range ends at u128::MAX and would emit multi-epoch
+        // INTERVAL strings Greptime rejects.
+        const ONE_HOUR_NANOS: u128 = 3_600 * 1_000_000_000;
+        let window_step = ONE_HOUR_NANOS;
         for (_, svc, _) in self.metric_point_buckets(&range, None, window_step).await? {
             if !svc.is_empty() {
                 names.insert(svc);
@@ -83,8 +87,10 @@ impl crate::adapter::ServiceAnalyticsStore for GreptimeStore {
             }
         }
         // Windowed finite metric samples (+ one per histogram export) and
-        // metric-only services (metric-summary contract).
-        let window_step = range.end().saturating_sub(*range.start()).max(1);
+        // metric-only services (metric-summary contract). Cap date_bin step —
+        // open-ended ranges (to = u128::MAX) must not become multi-epoch intervals.
+        const ONE_HOUR_NANOS: u128 = 3_600 * 1_000_000_000;
+        let window_step = ONE_HOUR_NANOS;
         let metric_buckets = self.metric_point_buckets(&range, None, window_step).await?;
         let metric_point_count = metric_buckets.iter().map(|(_, _, n)| n).sum();
         for (_, svc, _) in &metric_buckets {

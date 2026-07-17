@@ -509,7 +509,7 @@ async fn test_reporting_schema_has_reference_and_mutable_state_tables() {
     }
 }
 
-async fn seed_test_reporting(store: &MetadataStore) {
+async fn seed_test_reporting(store: &dyn parallax_storage::metadata::MetadataStore) {
     use parallax_model::{
         FlakyEvidence, FlakyState, TestAttempt, TestCaseIdentitySource, TestCaseKey,
         TestCaseRecord, TestConfiguration, TestFlakyStateRecord, TestResultKey, TestResultRecord,
@@ -583,11 +583,11 @@ async fn test_reporting_upserts_are_idempotent_and_reference_native_spans() {
 
     let (_directory, path) = temp_db();
     let store = MetadataStore::open(&path).await.expect("open");
-    seed_test_reporting(&store).await;
+    let port: &dyn parallax_storage::metadata::MetadataStore = &store;
+    seed_test_reporting(port).await;
 
     assert_eq!(
-        store
-            .test_case(&format!("tc1:{}", "a".repeat(64)))
+        port.test_case(&format!("tc1:{}", "a".repeat(64)))
             .await
             .expect("read case")
             .expect("case")
@@ -595,13 +595,12 @@ async fn test_reporting_upserts_are_idempotent_and_reference_native_spans() {
         "test"
     );
     assert!(
-        store
-            .test_variant(&format!("tv1:{}", "b".repeat(64)))
+        port.test_variant(&format!("tv1:{}", "b".repeat(64)))
             .await
             .expect("read variant")
             .is_some()
     );
-    let results = store
+    let results = port
         .test_results_for_invocation("inv-test", 10)
         .await
         .expect("read results");
@@ -609,8 +608,7 @@ async fn test_reporting_upserts_are_idempotent_and_reference_native_spans() {
     assert_eq!(results[0].status, TestStatus::Failed);
     assert_eq!(results[0].key.attempt.get(), 1);
     assert_eq!(
-        store
-            .test_flaky_state(&format!("tv1:{}", "b".repeat(64)))
+        port.test_flaky_state(&format!("tv1:{}", "b".repeat(64)))
             .await
             .expect("read flaky")
             .expect("flaky")

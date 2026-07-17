@@ -3,6 +3,11 @@ import { test as base, expect } from "@playwright/test"
 import { foundationDatasetId, type DatasetId } from "./dataset"
 import { attachDiagnostics, type DiagnosticSession } from "./diagnostics"
 import {
+  fullStackSnapshot,
+  readFullStackManifest,
+  type FullStackRuntimeManifest,
+} from "./full-stack-fixture"
+import {
   failNextGraphql,
   resetDataset,
   snapshotState,
@@ -79,6 +84,44 @@ export const productTest = base.extend<ProductFixtures>({
   },
   injectGraphqlFailure: async ({}, use) => {
     await use(async () => failNextGraphql())
+  },
+})
+
+export interface FullStackFixtures {
+  fullStack: FullStackRuntimeManifest
+  diagnostics: DiagnosticSession
+  snapshot: () => ReturnType<typeof fullStackSnapshot>
+}
+
+/**
+ * Real-stack fixture: reads managed GreptimeDB+Turso runtime manifest produced
+ * by `cargo xtask browser-full-stack-serve` after public OTLP seed/readiness.
+ */
+export const fullStackTest = base.extend<FullStackFixtures>({
+  fullStack: async ({}, use) => {
+    const manifest = readFullStackManifest()
+    expect(manifest.storage).toBe("managed-greptime+turso")
+    expect(manifest.issue_fingerprint.length).toBeGreaterThan(0)
+    await use(manifest)
+  },
+  diagnostics: async ({ page }, use, testInfo) => {
+    const session = attachDiagnostics(page)
+    await use(session)
+    await session.attach(testInfo)
+    const unexpected = session.unexpected()
+    session.dispose()
+    // Full-stack against a long-lived QA attach may carry noisy console from
+    // unrelated surfaces; only fail on page errors.
+    const hard = unexpected.filter((event) => event.kind === "pageerror")
+    expect(
+      hard,
+      `unexpected browser page errors:\n${hard
+        .map((event) => `- ${event.kind}: ${event.message}`)
+        .join("\n")}`
+    ).toEqual([])
+  },
+  snapshot: async ({}, use) => {
+    await use(async () => fullStackSnapshot())
   },
 })
 

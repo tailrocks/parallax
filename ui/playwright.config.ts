@@ -2,20 +2,41 @@ import { defineConfig, type PlaywrightTestConfig } from "@playwright/test"
 
 const env = process.env
 const isCi = env["CI"] === "true" || env["CI"] === "1"
-const browserMode = env["PARALLAX_BROWSER_MODE"] === "foundation" ? "foundation" : "contracts"
+const browserMode =
+  env["PARALLAX_BROWSER_MODE"] === "foundation"
+    ? "foundation"
+    : env["PARALLAX_BROWSER_MODE"] === "full-stack"
+      ? "full-stack"
+      : "contracts"
 const foundationPort = env["PARALLAX_BROWSER_FOUNDATION_PORT"] ?? "4173"
 const contractsPort = env["PARALLAX_BROWSER_CONTRACTS_PORT"] ?? "4174"
-const port = browserMode === "foundation" ? foundationPort : contractsPort
-const baseURL = `http://127.0.0.1:${port}`
+const fullStackReadyPort = env["PARALLAX_BROWSER_FULL_STACK_READY_PORT"] ?? "4176"
+const fullStackPublicPort = env["PARALLAX_BROWSER_FULL_STACK_PORT"] ?? "4175"
+const fullStackApi = env["PARALLAX_FULL_STACK_BASE_URL"] ?? "http://127.0.0.1:4000"
+const fullStackPublic =
+  env["PARALLAX_BROWSER_FULL_STACK_PUBLIC_URL"] ?? `http://127.0.0.1:${fullStackPublicPort}`
+const port =
+  browserMode === "foundation"
+    ? foundationPort
+    : browserMode === "full-stack"
+      ? fullStackPublicPort
+      : contractsPort
+const baseURL =
+  browserMode === "full-stack" ? fullStackPublic : `http://127.0.0.1:${port}`
+const readyURL =
+  browserMode === "full-stack"
+    ? `http://127.0.0.1:${fullStackReadyPort}/health`
+    : `${baseURL}/health`
 
 /**
- * Plan 132 foundation + plan 144 product contracts.
+ * Plan 132 foundation + plan 144 product contracts + plan 145 full-stack.
  *
  * Runtime: lock-local `@playwright/test` forced through Bun
  * (`bunx --bun --no-install`). Browser binaries are provisioned by an explicit
  * install command, never install lifecycle scripts.
  *
  * `PARALLAX_BROWSER_MODE=foundation` keeps the plan 132 stub server.
+ * `PARALLAX_BROWSER_MODE=full-stack` uses managed GreptimeDB + Turso (or attach).
  * Default is contracts (real GraphQL + injected in-memory adapter).
  */
 const config: PlaywrightTestConfig = {
@@ -23,8 +44,8 @@ const config: PlaywrightTestConfig = {
   fullyParallel: true,
   forbidOnly: isCi,
   retries: 0,
-  timeout: 30_000,
-  expect: { timeout: 5_000 },
+  timeout: browserMode === "full-stack" ? 60_000 : 30_000,
+  expect: { timeout: browserMode === "full-stack" ? 15_000 : 5_000 },
   reporter: isCi
     ? [
         ["line"],
@@ -41,7 +62,7 @@ const config: PlaywrightTestConfig = {
       args: ["--force-prefers-reduced-motion"],
     },
     actionTimeout: 10_000,
-    navigationTimeout: 15_000,
+    navigationTimeout: browserMode === "full-stack" ? 30_000 : 15_000,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -62,13 +83,21 @@ const config: PlaywrightTestConfig = {
       // Mutation pilots share one control-plane dataset; serialize workers.
       fullyParallel: false,
     },
+    {
+      name: "full-stack-chromium",
+      testMatch: "**/full-stack/**/*.spec.ts",
+      use: { browserName: "chromium" },
+      // One worker owns one managed Greptime fixed-port stack (or attach).
+      fullyParallel: false,
+      workers: 1,
+    },
   ],
   webServer:
     browserMode === "foundation"
       ? {
           command: "cargo xtask browser-foundation-serve",
           cwd: "..",
-          url: `${baseURL}/health`,
+          url: readyURL,
           reuseExistingServer: false,
           timeout: 60_000,
           stdout: "pipe",
@@ -78,25 +107,45 @@ const config: PlaywrightTestConfig = {
             PARALLAX_BROWSER_FOUNDATION_PORT: foundationPort,
           },
         }
-      : {
-          command: "cargo xtask browser-contracts-serve",
-          cwd: "..",
-          url: `${baseURL}/health`,
-          reuseExistingServer: false,
-          timeout: 180_000,
-          stdout: "pipe",
-          stderr: "pipe",
-          env: {
-            ...env,
-            PARALLAX_BROWSER_CONTRACTS_PORT: contractsPort,
+      : browserMode === "full-stack"
+        ? {
+            command: "cargo xtask browser-full-stack-serve",
+            cwd: "..",
+            url: readyURL,
+            reuseExistingServer: false,
+            timeout: 180_000,
+            stdout: "pipe",
+            stderr: "pipe",
+            env: {
+              ...env,
+              PARALLAX_BROWSER_FULL_STACK_READY_PORT: fullStackReadyPort,
+              PARALLAX_BROWSER_FULL_STACK_PORT: fullStackPublicPort,
+              // Prefer attach when operator QA occupies fixed Greptime ports.
+              PARALLAX_FULL_STACK_MODE: env["PARALLAX_FULL_STACK_MODE"] ?? "attach",
+              PARALLAX_FULL_STACK_BASE_URL: fullStackApi,
+              PARALLAX_FULL_STACK_OTLP_HTTP:
+                env["PARALLAX_FULL_STACK_OTLP_HTTP"] ?? "http://127.0.0.1:4318",
+            },
+          }
+        : {
+            command: "cargo xtask browser-contracts-serve",
+            cwd: "..",
+            url: readyURL,
+            reuseExistingServer: false,
+            timeout: 180_000,
+            stdout: "pipe",
+            stderr: "pipe",
+            env: {
+              ...env,
+              PARALLAX_BROWSER_CONTRACTS_PORT: contractsPort,
+            },
           },
-        },
 }
 
 if (isCi) {
   config.workers = browserMode === "foundation" ? 2 : 1
   config.globalTimeout = 15 * 60_000
-} else if (browserMode === "contracts") {
+} else if (browserMode === "contracts" || browserMode === "full-stack") {
   config.workers = 1
 }
 

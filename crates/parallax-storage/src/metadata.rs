@@ -3,7 +3,7 @@
 use async_trait::async_trait;
 use parallax_model::{
     Dashboard, Investigation, InvocationRecord, Issue, IssueQuery, IssueSortKey, SavedView,
-    TrendPoint,
+    TestCaseRecord, TestFlakyStateRecord, TestResultRecord, TestVariantRecord, TrendPoint,
 };
 use thiserror::Error;
 
@@ -127,6 +127,21 @@ pub trait MetadataStore: Send + Sync {
         invocation_id: &str,
         first_seen_nanos: u128,
     ) -> MetadataResult<()>;
+    async fn upsert_test_case(&self, record: &TestCaseRecord) -> MetadataResult<()>;
+    async fn upsert_test_variant(&self, record: &TestVariantRecord) -> MetadataResult<()>;
+    async fn upsert_test_result(&self, record: &TestResultRecord) -> MetadataResult<()>;
+    async fn upsert_test_flaky_state(&self, record: &TestFlakyStateRecord) -> MetadataResult<()>;
+    async fn test_case(&self, key: &str) -> MetadataResult<Option<TestCaseRecord>>;
+    async fn test_variant(&self, key: &str) -> MetadataResult<Option<TestVariantRecord>>;
+    async fn test_results_for_invocation(
+        &self,
+        invocation_id: &str,
+        limit: usize,
+    ) -> MetadataResult<Vec<TestResultRecord>>;
+    async fn test_flaky_state(
+        &self,
+        variant_key: &str,
+    ) -> MetadataResult<Option<TestFlakyStateRecord>>;
     async fn dashboard_save(
         &self,
         id: &str,

@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 503,
-    "test_files": 104
+    "test_cases": 506,
+    "test_files": 107
   },
   "private_route_imports": [],
   "entries": [
@@ -2159,6 +2159,244 @@
       "test_ids": [
         "exposes public search and loaders for thin route wiring"
       ]
+    },
+    {
+      "id": "pw-full-stack-reserved-investigations",
+      "surface": "features/investigations",
+      "risk": "Reserved full-stack scenario for investigations after foundation project is green",
+      "scenario_owner": "features/investigations",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/investigations.spec.ts",
+      "test_ids": [
+        "reserved @investigations full-stack scenario"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "reserved",
+      "dataset_id": "investigations-full-stack",
+      "state_class": "inventory",
+      "delivery_plan": 134
+    },
+    {
+      "id": "pw-full-stack-reserved-sql",
+      "surface": "features/sql",
+      "risk": "Reserved full-stack scenario for sql after foundation project is green",
+      "scenario_owner": "features/sql",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/sql.spec.ts",
+      "test_ids": [
+        "reserved @sql full-stack scenario"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "reserved",
+      "dataset_id": "sql-full-stack",
+      "state_class": "inventory",
+      "delivery_plan": 135
+    },
+    {
+      "id": "pw-full-stack-reserved-ecosystem",
+      "surface": "features/ecosystem",
+      "risk": "Reserved full-stack scenario for ecosystem after foundation project is green",
+      "scenario_owner": "features/ecosystem",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/ecosystem.spec.ts",
+      "test_ids": [
+        "reserved @ecosystem full-stack scenario"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "reserved",
+      "dataset_id": "ecosystem-full-stack",
+      "state_class": "inventory",
+      "delivery_plan": 136
+    },
+    {
+      "id": "pw-full-stack-reserved-dashboards",
+      "surface": "features/dashboards",
+      "risk": "Reserved full-stack scenario for dashboards after foundation project is green",
+      "scenario_owner": "features/dashboards",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/dashboards.spec.ts",
+      "test_ids": [
+        "reserved @dashboards full-stack scenario"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "reserved",
+      "dataset_id": "dashboards-full-stack",
+      "state_class": "inventory",
+      "delivery_plan": 137
+    },
+    {
+      "id": "pw-full-stack-reserved-services",
+      "surface": "features/services",
+      "risk": "Reserved full-stack scenario for services after foundation project is green",
+      "scenario_owner": "features/services",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/services.spec.ts",
+      "test_ids": [
+        "reserved @services full-stack scenario"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "reserved",
+      "dataset_id": "services-full-stack",
+      "state_class": "inventory",
+      "delivery_plan": 138
+    },
+    {
+      "id": "pw-full-stack-reserved-issues",
+      "surface": "features/issues",
+      "risk": "Reserved full-stack scenario for issues after foundation project is green",
+      "scenario_owner": "features/issues",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/issues.spec.ts",
+      "test_ids": [
+        "reserved @issues full-stack scenario"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "reserved",
+      "dataset_id": "issues-full-stack",
+      "state_class": "inventory",
+      "delivery_plan": 139
+    },
+    {
+      "id": "pw-full-stack-reserved-runs",
+      "surface": "features/runs",
+      "risk": "Reserved full-stack scenario for runs after foundation project is green",
+      "scenario_owner": "features/runs",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/runs.spec.ts",
+      "test_ids": [
+        "reserved @runs full-stack scenario"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "reserved",
+      "dataset_id": "runs-full-stack",
+      "state_class": "inventory",
+      "delivery_plan": 140
+    },
+    {
+      "id": "pw-full-stack-reserved-logs",
+      "surface": "features/logs",
+      "risk": "Reserved full-stack scenario for logs after foundation project is green",
+      "scenario_owner": "features/logs",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/logs.spec.ts",
+      "test_ids": [
+        "reserved @logs full-stack scenario"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "reserved",
+      "dataset_id": "logs-full-stack",
+      "state_class": "inventory",
+      "delivery_plan": 141
+    },
+    {
+      "id": "pw-full-stack-reserved-traces",
+      "surface": "features/traces",
+      "risk": "Reserved full-stack scenario for traces after foundation project is green",
+      "scenario_owner": "features/traces",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/traces.spec.ts",
+      "test_ids": [
+        "reserved @traces full-stack scenario"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "reserved",
+      "dataset_id": "traces-full-stack",
+      "state_class": "inventory",
+      "delivery_plan": 142
+    },
+    {
+      "id": "pw-full-stack-reserved-shell",
+      "surface": "layout/shell",
+      "risk": "Reserved full-stack scenario for shell after foundation project is green",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/shell.spec.ts",
+      "test_ids": [
+        "reserved @shell full-stack scenario"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "reserved",
+      "dataset_id": "shell-full-stack",
+      "state_class": "inventory",
+      "delivery_plan": 143
+    },
+    {
+      "id": "pw-full-stack-reserved-overview",
+      "surface": "features/overview",
+      "risk": "Reserved full-stack scenario for overview after foundation project is green",
+      "scenario_owner": "features/overview",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/overview.spec.ts",
+      "test_ids": [
+        "reserved @overview full-stack scenario"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "reserved",
+      "dataset_id": "overview-full-stack",
+      "state_class": "inventory",
+      "delivery_plan": 150
+    },
+    {
+      "id": "pw-storage-telemetry-discovery",
+      "surface": "platform/storage",
+      "risk": "Public OTLP seed may not become visible across overview/service/issue/trace routes on managed GreptimeDB + Turso",
+      "scenario_owner": "platform/storage",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/telemetry-discovery.spec.ts",
+      "test_ids": [
+        "seeded service trace issue appear across routes @pw-storage-telemetry-discovery"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "implemented",
+      "dataset_id": "pw-storage",
+      "state_class": "seeded-discovery",
+      "delivery_plan": 145
+    },
+    {
+      "id": "pw-storage-composition",
+      "surface": "platform/storage",
+      "risk": "Issue status mutations may not persist in Turso across a fresh BrowserContext",
+      "scenario_owner": "platform/storage",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/storage-composition.spec.ts",
+      "test_ids": [
+        "issue status mutation persists in Turso across contexts @pw-storage-composition"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "implemented",
+      "dataset_id": "pw-storage",
+      "state_class": "turso-mutation",
+      "delivery_plan": 145
+    },
+    {
+      "id": "pw-storage-live-transport",
+      "surface": "platform/storage",
+      "risk": "One post-open live log may not appear exactly once through the product live path",
+      "scenario_owner": "platform/storage",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/live-transport.spec.ts",
+      "test_ids": [
+        "one post-open log appears once through live path @pw-storage-live-transport"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "implemented",
+      "dataset_id": "pw-storage",
+      "state_class": "live-one-event",
+      "delivery_plan": 145
     }
   ],
   "browser_contract_paths": [

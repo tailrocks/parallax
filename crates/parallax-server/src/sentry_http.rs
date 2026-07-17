@@ -113,7 +113,12 @@ async fn envelope(
                         .into_response();
                 }
             };
-            if let Err(e) = state.ingest.spool.append_raw(Signal::Sentry, &durable).await {
+            if let Err(e) = state
+                .ingest
+                .spool
+                .append_raw(Signal::Sentry, &durable)
+                .await
+            {
                 tracing::warn!(error = %e, "sentry spool write failed");
                 return (
                     StatusCode::SERVICE_UNAVAILABLE,

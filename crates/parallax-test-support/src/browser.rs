@@ -5,11 +5,15 @@
 //! in-memory adapter at composition and drives reset through this module.
 
 mod datasets;
+mod real_stack;
 mod seed;
 
 pub use datasets::{
     ANCHOR_TS_NANOS, DatasetId, INVESTIGATION_PILOT_ID, INVESTIGATION_PILOT_NAME, ScenarioManifest,
     catalog, dataset_ids, manifest_for, pilot_investigation_state_json,
+};
+pub use real_stack::{
+    RealStackIds, live_followup_log, logs_request, metrics_request, traces_request,
 };
 pub use seed::{
     InvestigationSnapshot, clear_metadata, investigation_snapshot, postconditions_hold,
