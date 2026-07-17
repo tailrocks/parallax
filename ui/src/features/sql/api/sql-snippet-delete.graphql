@@ -1,0 +1,3 @@
+mutation SqlSnippetDelete($id: String!) {
+  savedViewDelete(id: $id)
+}

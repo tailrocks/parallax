@@ -1817,10 +1817,6 @@ metric = "typescript.assertions"
 scope = "ui/src/routes/__tests__/-services.test.tsx"
 ceiling = 44
 
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-sql.test.tsx"
-ceiling = 16
 
 [[limits]]
 metric = "typescript.assertions"
@@ -1978,10 +1974,6 @@ metric = "typescript.file-lines"
 scope = "ui/src/routes/services.tsx"
 ceiling = 492
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/sql.tsx"
-ceiling = 669
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -2209,15 +2201,7 @@ metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/routes/services.tsx:260"
 ceiling = 29
 
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/sql.tsx:166"
-ceiling = 17
 
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/sql.tsx:382"
-ceiling = 16
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -2759,10 +2743,6 @@ metric = "typescript.function-lines"
 scope = "ui/src/routes/__tests__/-services.test.tsx:194"
 ceiling = 125
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/__tests__/-sql.test.tsx:37"
-ceiling = 70
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2952,20 +2932,8 @@ metric = "typescript.function-lines"
 scope = "ui/src/routes/services.tsx:413"
 ceiling = 98
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/sql.tsx:197"
-ceiling = 65
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/sql.tsx:276"
-ceiling = 62
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/sql.tsx:344"
-ceiling = 357
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -4977,12 +4945,6 @@ target_owner = "features/services"
 migration_plan = "138"
 kind = "handwritten"
 
-[[ui.ownership]]
-path = "ui/src/routes/__tests__/-sql.test.tsx"
-current_owner = "routes-tests"
-target_owner = "features/sql"
-migration_plan = "135"
-kind = "handwritten"
 
 [[ui.ownership]]
 path = "ui/src/routes/__tests__/-trace-graphql.test.tsx"
@@ -5142,7 +5104,7 @@ kind = "handwritten"
 path = "ui/src/routes/sql.tsx"
 current_owner = "routes"
 target_owner = "features/sql"
-migration_plan = "135"
+migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -5302,3 +5264,320 @@ metric = "typescript.suppressions"
 scope = "ui/src/features/investigations/api/investigations-list.generated.ts"
 ceiling = 1
 
+
+
+[[ui.ownership]]
+path = "ui/src/features/sql/api/sql-api.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/api/sql-execute.generated.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/api/sql-history-repository.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/api/sql-schema.generated.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/api/sql-snippet-delete.generated.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/api/sql-snippet-save.generated.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/api/sql-snippets-list.generated.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/components/save-snippet-dialog.tsx"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/components/snippets-menu.tsx"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/components/sql-editor.tsx"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/components/sql-page.tsx"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/components/sql-result-body.tsx"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/components/sql-results-table.tsx"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/components/sql-schema-browser.tsx"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/hooks/use-sql-workspace.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/index.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+facade = true
+
+[[ui.ownership]]
+path = "ui/src/features/sql/model/sql-cell-target.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/model/sql-error.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/model/sql-examples.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/model/sql-history.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/model/sql-result.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/model/sql-row.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/model/sql-snippet.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/tests/api/sql-history-repository.test.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/tests/components/snippets-menu.test.tsx"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/tests/components/sql-results-table.test.tsx"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/tests/model/sql-cell-target.test.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/tests/model/sql-history.test.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/sql/tests/model/sql-result.test.ts"
+current_owner = "features/sql"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/browser/monotonic-now.ts"
+current_owner = "platform/browser"
+target_owner = "platform/browser"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/tests/-sql-route.test.tsx"
+current_owner = "routes-tests"
+target_owner = "features/sql"
+migration_plan = "none"
+kind = "handwritten"
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/sql/api/sql-execute.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/sql/api/sql-schema.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/sql/api/sql-snippet-delete.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/sql/api/sql-snippet-save.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/sql/api/sql-snippets-list.generated.ts"
+ceiling = 1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/sql/tests/api/sql-history-repository.test.ts"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/sql/tests/components/snippets-menu.test.tsx"
+ceiling = 3
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/sql/tests/components/sql-results-table.test.tsx"
+ceiling = 3
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/sql/tests/model/sql-cell-target.test.ts"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/sql/tests/model/sql-history.test.ts"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/sql/tests/model/sql-result.test.ts"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/tests/-sql-route.test.tsx"
+ceiling = 3
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/sql/model/sql-cell-target.ts:21"
+ceiling = 17
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/sql/components/snippets-menu.tsx:15"
+ceiling = 62
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/sql/components/sql-editor.tsx:18"
+ceiling = 83
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/sql/components/sql-page.tsx:13"
+ceiling = 69
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/sql/hooks/use-sql-workspace.ts:47"
+ceiling = 133

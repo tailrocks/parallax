@@ -1,0 +1,9 @@
+query SqlSnippetsList($page: String) {
+  savedViews(page: $page) {
+    id
+    name
+    page
+    state
+    updatedAtNanos
+  }
+}

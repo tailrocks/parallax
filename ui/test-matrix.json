@@ -2,10 +2,10 @@
   "schema_version": 1,
   "ratchets": {
     "fire_event_calls": 28,
-    "legacy_handoffs": 60,
+    "legacy_handoffs": 59,
     "raw_router_builders": 1,
-    "test_cases": 490,
-    "test_files": 92
+    "test_cases": 497,
+    "test_files": 98
   },
   "private_route_imports": [
     {
@@ -96,18 +96,6 @@
         "ServiceDetailData"
       ],
       "removal_plan": 138
-    },
-    {
-      "test_file": "ui/src/routes/__tests__/-sql.test.tsx",
-      "module": "@/routes/sql",
-      "symbols": [
-        "EXAMPLES",
-        "Route as SqlRoute",
-        "SnippetsMenu",
-        "SqlResultBody",
-        "targetForCell"
-      ],
-      "removal_plan": 135
     },
     {
       "test_file": "ui/src/routes/__tests__/-trace-graphql.test.tsx",
@@ -1004,33 +992,6 @@
         "removal_plan": 138,
         "created": "2026-07-15",
         "expires": "plan-138-completion"
-      }
-    },
-    {
-      "id": "vitest-036",
-      "surface": "features/sql",
-      "risk": "SQL safety examples, result links, snippets, and actions can target wrong data",
-      "scenario_owner": "features/sql",
-      "lane_owner": "vitest/route",
-      "delivery_plan": 135,
-      "layer": "route-contract",
-      "test_file": "ui/src/routes/__tests__/-sql.test.tsx",
-      "test_ids": [
-        "keeps SQL examples on real table names",
-        "maps supported id columns to route targets",
-        "renders truncation notice and linkified cells",
-        "renders SQL keyboard hint and examples menu",
-        "dispatches select, save, and delete actions"
-      ],
-      "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "raw_router_reason": "Attaches the generated SQL route component and loader contract to its real parent route",
-      "legacy_handoff": {
-        "current_path": "ui/src/routes/__tests__/-sql.test.tsx",
-        "destination_owner": "features/sql",
-        "removal_plan": 135,
-        "created": "2026-07-15",
-        "expires": "plan-135-completion"
       }
     },
     {
@@ -2608,6 +2569,110 @@
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
+    },
+    {
+      "id": "vitest-036",
+      "surface": "features/sql",
+      "risk": "SQL safety examples and result links can target wrong data",
+      "scenario_owner": "features/sql",
+      "lane_owner": "vitest/unit",
+      "layer": "model",
+      "test_file": "ui/src/features/sql/tests/model/sql-cell-target.test.ts",
+      "test_ids": [
+        "keeps SQL examples on real table names",
+        "maps supported id columns to route targets"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-sql-history",
+      "surface": "features/sql",
+      "risk": "SQL history parse/dedupe/cap can drift from baseline wire contract",
+      "scenario_owner": "features/sql",
+      "lane_owner": "vitest/unit",
+      "layer": "model",
+      "test_file": "ui/src/features/sql/tests/model/sql-history.test.ts",
+      "test_ids": [
+        "returns empty for absent, malformed, and non-array wire",
+        "preserves mixed-array members without filtering",
+        "dedupes, orders most-recent-first, and caps at 20"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-sql-result",
+      "surface": "features/sql",
+      "risk": "SQL row and schema parse can accept malformed payloads",
+      "scenario_owner": "features/sql",
+      "lane_owner": "vitest/unit",
+      "layer": "model",
+      "test_file": "ui/src/features/sql/tests/model/sql-result.test.ts",
+      "test_ids": [
+        "maps malformed and non-array rows to empty cells",
+        "skips falsey schema cells and groups valid rows"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-sql-history-repo",
+      "surface": "features/sql",
+      "risk": "SQL history repository can bypass platform storage boundary",
+      "scenario_owner": "features/sql",
+      "lane_owner": "vitest/unit",
+      "layer": "platform-contract",
+      "test_file": "ui/src/features/sql/tests/api/sql-history-repository.test.ts",
+      "test_ids": [
+        "loads and records history through platform storage",
+        "returns empty on unavailable storage and flags write failure"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-sql-results-table",
+      "surface": "features/sql",
+      "risk": "SQL result table can drop truncation notice or fail to linkify cells",
+      "scenario_owner": "features/sql",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/features/sql/tests/components/sql-results-table.test.tsx",
+      "test_ids": [
+        "renders truncation notice and linkified cells"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-sql-snippets-menu",
+      "surface": "features/sql",
+      "risk": "SQL snippets menu can fail to dispatch select/save/delete",
+      "scenario_owner": "features/sql",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/features/sql/tests/components/snippets-menu.test.tsx",
+      "test_ids": [
+        "dispatches select, save, and delete actions"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-sql-route",
+      "surface": "features/sql",
+      "risk": "SQL route composition can lose editor chrome or examples menu",
+      "scenario_owner": "features/sql",
+      "lane_owner": "vitest/route",
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/tests/-sql-route.test.tsx",
+      "test_ids": [
+        "renders SQL keyboard hint and examples menu"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "raw_router_reason": "Composes the public SqlPage behind a private memory router for route chrome assertions without importing Route.options.component"
     }
   ],
   "browser_contract_paths": [

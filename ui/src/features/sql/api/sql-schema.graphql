@@ -1,0 +1,8 @@
+query SqlSchema($query: String!) {
+  sql(query: $query) {
+    columns
+    rows
+    rowCount
+    truncated
+  }
+}

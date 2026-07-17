@@ -1,0 +1,9 @@
+mutation SqlSnippetSave($name: String!, $page: String!, $state: String!) {
+  savedViewSave(name: $name, page: $page, state: $state) {
+    id
+    name
+    page
+    state
+    updatedAtNanos
+  }
+}

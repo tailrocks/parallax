@@ -1,0 +1,8 @@
+query SqlExecute($query: String!) {
+  sql(query: $query) {
+    columns
+    rows
+    rowCount
+    truncated
+  }
+}
