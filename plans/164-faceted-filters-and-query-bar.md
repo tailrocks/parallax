@@ -19,6 +19,37 @@
 - **Category**: direction / UI + API / filtering
 - **Planned at**: `2288011`, 2026-07-17
 
+## Preliminary work landed (helper agent, 2026-07-17)
+
+Committed to `main` for the primary executor to verify, deepen, and extend —
+statuses intentionally untouched:
+
+- `ui/src/lib/where-clause.ts` + `ui/src/lib/__tests__/where-clause.test.ts`
+  (`d0e1005`): AND-only grammar parser (`ident op literal (AND …)*`, ops
+  `= != > < >= <= CONTAINS NOT CONTAINS`), quoted strings with escapes and
+  unicode, `WhereParseError` start/end offsets for editor squiggles,
+  serialize/parse round-trip, `whereClauseFromSearch` URL codec. 26 tests.
+- `ui/src/components/console/facet-sidebar.tsx`: controlled `FacetSidebar`/
+  `FacetSection` (collapsible, count-annotated `tabular-nums`, inline search,
+  `maxVisible` + "Show N more", ServiceDot swatches) plus pure helpers
+  `facetSelectionsToParam`/`FromParam`/`toggleFacetValue` (`dim:value` CSV
+  URL codec). No tests yet — peer should add codec + component tests.
+- `ui/src/components/console/duration-filter.tsx`: preset chips
+  (`> p50`/`> p95` from injected `DurationStats`, `> 1s`), debounced (400ms)
+  min/max ms inputs, collapsed summary chip with inline clear.
+- `ui/src/components/console/where-clause-editor.tsx`: monospace input, live
+  parse + inline error with position, slot-aware autocomplete
+  (keys/ops/values/AND; Ctrl+Space open, Tab/Enter accept, ⌘Enter apply),
+  `WhereClauseChips` removable chip row.
+
+Still open (full plan scope): Step 1 backend entirely (facet queries,
+`attributeFilters` compilation + parameterization proof, `durationStats`);
+route wiring + URL schemas (Step 3); `F` keyboard shortcut; syntax-highlight
+overlay (editor currently plain input); `f-attrs` playground scenario;
+browser evidence. Preliminary components are controlled/presentational —
+verify their contracts against the GraphQL shapes you build and refactor
+freely; they carry no route or fetch coupling.
+
 ## Why this matters
 
 Parallax filters today are dropdowns plus a free-text box — no visibility

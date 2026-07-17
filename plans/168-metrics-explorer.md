@@ -25,6 +25,19 @@
 - **Category**: direction / product / metrics
 - **Planned at**: `2288011`, 2026-07-17
 
+## Preliminary work landed (helper agent, 2026-07-17)
+
+`ui/src/lib/metric-aggregation.ts` is on `main` (typecheck fixed at
+`90527b4`): typed aggregation legality per metric kind (contract decision 2 —
+illegal combos unrepresentable), `coerceAggregation`, `inferMetricKind`,
+`MetricQuerySpec` encode/decode URL codec (`q/type/agg/where/groupBy/step`),
+`encodeGraduationParams` (dashboard/alert handoff incl. `signal_type=metric`),
+and `clampCounterDelta` for reset clamping. Pure module, no tests yet — the
+primary executor should add tests, verify the codec against the real route
+schemas, and build everything else (Step 0 decision record, backend catalog/
+query, `/metrics` routes, graduation wiring, `m-labels` scenario, browser
+evidence). Statuses intentionally untouched.
+
 ## Why this matters
 
 Metrics are Parallax's weakest signal today: they surface only inside
