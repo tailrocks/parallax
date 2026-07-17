@@ -147,6 +147,7 @@ managed quotes remain):
 | still not done | **465** | top 5 open |
 | append DELETE + health | **466** | Code 1004; 2h healthy |
 | still not done | **467** | top 5 open |
+| last_value @2h uptime | **468** | GT 10–12ms / CH 4–5ms |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |

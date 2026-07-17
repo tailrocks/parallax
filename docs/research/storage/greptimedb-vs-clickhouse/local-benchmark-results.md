@@ -8505,3 +8505,14 @@ Capability parity for evidence-bundle window ranking (Run 156). CH ~4× at this 
 Both interactive. CH multi-percentile single-pass ~4× faster here (matches Run 135
 shape: GT per-percentile vs CH shared sketch). Blueprint: Flow-sketch for multi-p on GT.
 
+### Run 468 — 2026-07-18 — four-way last_value after ~2h uptime
+
+| Build | Times (3) |
+| --- | --- |
+| GT stable | 45 / **12** / **10** ms |
+| GT nightly | 171 cold / **16** / **10** ms |
+| CH 26.6 | 6 / **4** / **4** ms |
+| CH head | 10 / **5** / **5** ms |
+
+Warm shape holds vs Run 425. Cold first-hit on nightly again.
+
