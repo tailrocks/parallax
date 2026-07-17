@@ -8062,3 +8062,8 @@ schemas that use LowCardinality (Run 208).
 
 Highest remaining still: (1) mix shares (2) server 1M/5M (3) vendor quotes
 (4) GB cold S3 (5) RPO D2/D3. Will not self-complete.
+
+### Run 303 — 2026-07-17 — issue-list GROUP BY fingerprint
+
+`GROUP BY fingerprint ORDER BY count DESC LIMIT 20` on errs:
+GT warm **~7 ms**; CH **~2–5 ms**. Interactive both (issue-list shape).
