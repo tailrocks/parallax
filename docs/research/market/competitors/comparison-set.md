@@ -30,7 +30,7 @@ Legend for the **State** column:
 | **Splunk Observability Cloud** | Observability on top of Splunk (post-Cisco); OTel-native metrics/traces + logs. | Closed SaaS. | Logs + metrics + traces. | [deep-dive](parallax-vs-splunk.md) |
 | **Elastic Observability** | ES/Kibana stack (search + observability + security); ES|QL. | Elastic License v2 (source-available). | Logs + metrics + traces + security. | [deep-dive](parallax-vs-elastic.md) |
 | **Sumo Logic** | Cloud log/SIEM/observability SaaS. | Closed SaaS. | Logs + metrics + security. | stub |
-| **Chronosphere** | Scale metrics platform on M3/Cube; controlled-cost metrics. | Closed SaaS. | Metrics (high scale). | stub |
+| **Chronosphere** | Scale metrics platform on M3/Cube; controlled-cost metrics + Telemetry Pipeline. | Closed SaaS. | Metrics (high scale). | [deep-dive](parallax-vs-chronosphere.md) |
 | **Observe** | Data-/SQL-centric observability on Snowflake; relationship graph. | Closed SaaS. | All signals (relational). | stub |
 | **Axiom** | Serverless log/event analytics; cheap ingest. | Closed SaaS (OSS SDKs). | Logs + events. | stub |
 | **Mezmo** | Log/data pipeline + telemetry routing. | Closed SaaS (ex-LogDNA). | Logs + pipelines. | watch |
