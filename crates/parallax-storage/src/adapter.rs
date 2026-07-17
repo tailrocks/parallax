@@ -418,6 +418,11 @@ pub const TRACE_FACET_DIMENSIONS: &[&str] =
 /// Values shown per facet dimension before the sidebar's "Show N more".
 pub const FACET_VALUES_CAP: usize = 24;
 
+/// Bounded log facet dimensions (plan 164). Counts are log-row counts;
+/// dimension names double as where-clause keys.
+pub const LOG_FACET_DIMENSIONS: &[&str] =
+    &["service", "severity", "http.request.method", "error.type"];
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct FieldStats {
     pub key: String,

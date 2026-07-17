@@ -190,6 +190,11 @@ pub(super) fn span_attribute_filters_sql(filters: &[AttributeFilter]) -> Option<
     )
 }
 
+/// Log-table string expression for a facet dimension / where-clause key.
+pub(super) fn log_string_expr(key: &str) -> Option<String> {
+    log_filter_exprs(key).string
+}
+
 /// All filters ANDed against the same log row, or None when empty.
 pub(super) fn log_attribute_filters_sql(filters: &[AttributeFilter]) -> Option<String> {
     if filters.is_empty() {

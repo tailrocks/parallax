@@ -253,3 +253,47 @@ fn log_filter_value(log: &model::LogRow, key: &str) -> Option<String> {
         },
     }
 }
+
+/// Bounded log facet dimensions with per-value counts under the same
+/// filters as `logs` (plan 164 facet sidebar).
+#[expect(clippy::too_many_arguments, reason = "public GraphQL filter contract")]
+pub(crate) async fn log_facets(
+    context: &ApiContext,
+    from_nanos: Option<String>,
+    to_nanos: Option<String>,
+    service: Option<String>,
+    severity_min: Option<i32>,
+    severity_max: Option<i32>,
+    query: Option<String>,
+    attribute_filters: Option<Vec<AttributeFilterInput>>,
+) -> FieldResult<Vec<crate::resolvers::traces::Facet>> {
+    let from: u128 = match from_nanos {
+        Some(s) => s.parse().map_err(|_| field_err("invalid fromNanos"))?,
+        None => 0,
+    };
+    let to: u128 = match to_nanos {
+        Some(s) => s.parse().map_err(|_| field_err("invalid toNanos"))?,
+        None => u128::MAX,
+    };
+    let attribute_filters = attribute_filters
+        .unwrap_or_default()
+        .into_iter()
+        .map(|filter| filter.into_adapter().map_err(field_err))
+        .collect::<FieldResult<Vec<_>>>()?;
+    let facets = context
+        .store
+        .log_facets(
+            service.as_deref(),
+            from..=to,
+            severity_min,
+            severity_max,
+            query.as_deref(),
+            &attribute_filters,
+        )
+        .await
+        .map_err(crate::internal_field_err)?;
+    Ok(facets
+        .into_iter()
+        .map(crate::resolvers::traces::Facet)
+        .collect())
+}

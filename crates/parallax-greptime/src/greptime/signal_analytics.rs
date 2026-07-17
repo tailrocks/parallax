@@ -30,6 +30,58 @@ impl crate::adapter::LogAnalyticsStore for GreptimeStore {
         .await
         .map_err(Into::into)
     }
+
+    async fn log_facets(
+        &self,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        severity_min: Option<i32>,
+        severity_max: Option<i32>,
+        body_contains: Option<&str>,
+        attribute_filters: &[crate::adapter::AttributeFilter],
+    ) -> StorageResult<Vec<crate::adapter::Facet>> {
+        let clauses = log_filter_clauses(
+            service,
+            &range,
+            severity_min,
+            severity_max,
+            body_contains,
+            attribute_filters,
+        );
+        let base = clauses.join(" AND ");
+        let mut facets = Vec::new();
+        for dimension in crate::adapter::LOG_FACET_DIMENSIONS {
+            let Some(expr) = log_string_expr(dimension) else {
+                continue;
+            };
+            let sql = format!(
+                r#"SELECT {expr} AS "value", COUNT(*) AS "n"
+                   FROM opentelemetry_logs
+                   WHERE {base} AND {expr} IS NOT NULL AND {expr} != ''
+                   GROUP BY "value"
+                   ORDER BY "n" DESC, "value" ASC
+                   LIMIT {}"#,
+                crate::adapter::FACET_VALUES_CAP
+            );
+            let rows = self.sql_lenient(&sql).await?;
+            let values = rows
+                .iter()
+                .filter_map(|row| {
+                    let value = row.first()?.as_str()?.to_string();
+                    let count = row.get(1).and_then(|n| {
+                        n.as_u64()
+                            .or_else(|| n.as_str().and_then(|s| s.parse().ok()))
+                    })?;
+                    Some(FieldValueCount { value, count })
+                })
+                .collect();
+            facets.push(crate::adapter::Facet {
+                dimension: (*dimension).to_string(),
+                values,
+            });
+        }
+        Ok(facets)
+    }
 }
 
 #[async_trait::async_trait]

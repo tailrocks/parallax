@@ -340,6 +340,18 @@ pub trait LogAnalyticsStore: Send + Sync {
         attribute_filters: &[AttributeFilter],
         limit: usize,
     ) -> StorageResult<Vec<LogRow>>;
+    /// Bounded facet dimensions (`LOG_FACET_DIMENSIONS`) with per-value log
+    /// counts under the same filters as `logs_search` (plan 164 sidebar).
+    #[expect(clippy::too_many_arguments, reason = "mirrors logs_search filters")]
+    async fn log_facets(
+        &self,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        severity_min: Option<i32>,
+        severity_max: Option<i32>,
+        body_contains: Option<&str>,
+        attribute_filters: &[AttributeFilter],
+    ) -> StorageResult<Vec<Facet>>;
 }
 
 #[async_trait::async_trait]
