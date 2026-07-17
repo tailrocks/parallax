@@ -7054,3 +7054,9 @@ Note: `promql-and-metrics-query.md`.
 Selective full-text ~tie (5 vs 2–3 ms); broad CH ~1.5× (8 vs 5); JSON2 ~5 vs jsonb ~45 vs CH 4.
 No mechanism drift. Full matrix in scratch `run184-four-way-matrix.txt`. Notes:
 `indexing-internals.md`, `four-way-version-comparison.md`.
+
+### Run 185 — 2026-07-17 — CH projection granule prune (26.6.1.1193)
+
+`EXPLAIN indexes=1`: projection `p_svc` → Granules **2/12**; no projection → **12/12**.
+Mechanism no drift. GT inverted vs unindexed ~tie at 100k absolute ms. Note:
+`projections-and-access-paths.md`.

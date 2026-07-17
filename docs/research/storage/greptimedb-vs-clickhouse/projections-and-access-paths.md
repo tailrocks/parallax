@@ -133,3 +133,20 @@ feel different when you need a second access path.
   `indexing-internals.md` (GT inverted index vs CH sort-key/projection),
   `rollup-and-continuous-aggregation.md` (aggregate projections vs MV),
   `compression-and-cost.md` (the storage cost of a second copy).
+
+## Run 185 (2026-07-17) — projection prune live on CH 26.6.1.1193
+
+N=100k, `ORDER BY ts` base + `PROJECTION p_svc (SELECT * ORDER BY service, ts)`, materialized.
+
+| Table | Query | EXPLAIN | Granules |
+| --- | --- | --- | --- |
+| `proj_demo` + `p_svc` | `WHERE service='s3'` | **`ReadFromMergeTree (p_svc)`** | **2/12** (PK service binary search) |
+| `no_proj` same ORDER BY ts | `WHERE service='s3'` | `ReadFromMergeTree (no_proj)` | **12/12** (PK condition true) |
+
+Timing at 100k is noise (both ~3–4 ms wall). **Mechanism holds:** projection supplies an
+alternate sort so non-primary filters prune granules; without it, full part scan.
+
+**GT counterpart (same session):** inverted `trace_id` vs unindexed `span_id` on `spans1m`
+both ~5 ms median at 100k — absolute gap needs larger N (Run 158/184); plan text shows
+`MergeScan` remote path. Projections remain a CH-only alternate-ordering primitive
+(parity roadmap #5 still Tier A Flow-copy / Tier B mito2 alternate SST).
