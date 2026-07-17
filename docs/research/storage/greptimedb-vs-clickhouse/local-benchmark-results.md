@@ -7843,3 +7843,8 @@ Server 5M still decides if gap widens.
 On `26.7.1.1097`: MATERIALIZE `p_svc` → EXPLAIN shows `ReadFromMergeTree (p_svc)`
 with **Prewhere filter** on `service='s0'`, Granules **1/6**. Projection path
 works on head; EXPLAIN format differs from 26.6 but mechanism same.
+
+### Run 259 — 2026-07-17 — interleaved insert+select visibility
+
+Immediate SELECT after INSERT finds the row on both GT and CH (no flush wait).
+Re-confirms visible-on-write / freshness tie (Runs 166/191/229).
