@@ -364,7 +364,7 @@ OTLP-ingested telemetry only.
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | [154](154-playground-capability-and-test-observability.md) | Live multi-backend fan-out acceptance residual | P1 | S | Playground acceptance + disposition | IN PROGRESS — five-backend plumbing green 2026-07-17 (OO/Maple/SigNoz/Sentry+Parallax); acceptance/disposition residual |
-| [155](155-test-reporting-surface.md) | Test reporting surface residual | P1 | XL | 149, 152, 153, 140 DONE; soft 121 open; 124 DONE | IN PROGRESS — flaky scan job loop landed; residual UI/mute/JUnit adapters/e2e |
+| [155](155-test-reporting-surface.md) | Test reporting surface residual | P1 | XL | 149, 152, 153, 140 DONE; 121/124 DONE | IN PROGRESS — flaky scan job loop landed; residual UI/mute/JUnit adapters/e2e |
 
 ### Triggered Or Residual Work
 
