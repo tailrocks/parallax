@@ -182,7 +182,6 @@ Plan 129 DONE (2026-07-17): macOS forced-Bun Vitest dual-run + matrix ownership
 |------|-------|----------|--------|------------|--------|
 | [152](152-graphql-contract-foundation.md) | Establish the generated GraphQL contract foundation | P1 | L | 095, 100, 101, 128, 129, 130 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 | [153](153-runtime-boundary-foundation.md) | Establish non-GraphQL runtime boundary foundations | P1 | L | 095, 100, 101, 128, 129, 130 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
-| [144](144-playwright-product-contracts-and-ci.md) | Make fixture-backed Playwright product contracts a required CI gate | P1 | L | 094, 101, 128, 129, 132 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 | [145](145-playwright-real-stack-integration.md) | Prove critical UI flows against managed GreptimeDB and isolated Turso | P1 | L | 093, 101, 132, 144 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 | [146](146-playwright-cross-browser-accessibility-visual.md) | Establish cross-browser, mobile, accessibility, and visual Playwright gates | P1 | L | 101, 132, 144, 145 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 
