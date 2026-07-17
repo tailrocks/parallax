@@ -64,7 +64,7 @@ export function buildIncidentTimeline(
     kind: "triggered",
     atNanos: incident.firstTriggeredAtNanos,
     label: "Incident opened",
-    value: incident.lastValue ?? undefined,
+    ...(incident.lastValue != null ? { value: incident.lastValue } : {}),
   })
 
   if (
@@ -76,7 +76,7 @@ export function buildIncidentTimeline(
       kind: "renotify",
       atNanos: incident.lastTriggeredAtNanos,
       label: "Last re-triggered",
-      value: incident.lastValue ?? undefined,
+      ...(incident.lastValue != null ? { value: incident.lastValue } : {}),
     })
   }
 
@@ -99,7 +99,7 @@ export function buildIncidentTimeline(
       label: fail
         ? `Delivery failed (${et}, attempt ${d.attemptCount})`
         : `Delivered (${et})`,
-      detail: d.error ?? undefined,
+      ...(d.error ? { detail: d.error } : {}),
     })
   }
 
@@ -109,15 +109,15 @@ export function buildIncidentTimeline(
         kind: "check_breach",
         atNanos: c.atNanos,
         label: "Evaluation: breach",
-        value: c.value ?? undefined,
-        detail: c.error ?? undefined,
+        ...(c.value != null ? { value: c.value } : {}),
+        ...(c.error ? { detail: c.error } : {}),
       })
     } else if (c.status === "healthy") {
       events.push({
         kind: "check_healthy",
         atNanos: c.atNanos,
         label: "Evaluation: healthy",
-        value: c.value ?? undefined,
+        ...(c.value != null ? { value: c.value } : {}),
       })
     }
   }
