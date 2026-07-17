@@ -7109,3 +7109,8 @@ GT join 10 ms vs plain 5 ms; CH join 3 ms with Granules 1/12. Direction holds; a
 
 Previously broken (Run 165 on v1.0.2); **JOIN form** now returns correct 4-row depth tree (~12 ms).
 Comma self-join form still `project index out of bounds`. CH works. `trace-span-tree.md`.
+
+### Run 196 — 2026-07-17 — CH TimeSeries SELECT still NOT_IMPLEMENTED (26.6)
+
+`CREATE TABLE … ENGINE=TimeSeries` works under experimental flag; `SELECT` → Code 48.
+GT PromQL ergonomics edge holds. `promql-and-metrics-query.md`.

@@ -245,3 +245,16 @@ docker exec parallax-bench-greptimedb-1 curl -s 'http://localhost:4000/v1/sql?db
 docker exec parallax-bench-greptimedb-1 curl -s 'http://localhost:4000/v1/sql?db=public' \
   --data-urlencode "sql=TQL EVAL (1716000000, 1716060000, '60s') avg by (service) (prom_hc)"
 ```
+
+## Run 196 (2026-07-17) — ClickHouse TimeSeries still experimental / incomplete (26.6)
+
+With `allow_experimental_time_series_table=1`:
+
+| Step | Result |
+| --- | --- |
+| `CREATE TABLE prometheus ENGINE=TimeSeries` | **OK** — expands to SAMPLES/TAGS/METRICS inner engines |
+| `SELECT … FROM prometheus` | **Code 48 NOT_IMPLEMENTED** — “SELECT is not supported by storage TimeSeries yet” |
+| Column-list DDL (`id, timestamp, value`) | Rejected — must use engine-native form / INNER COLUMNS |
+
+**No drift from Run 24/164:** CH PromQL remains experimental and setup-heavy; table create works
+but ordinary SQL SELECT is still unimplemented. GT PromQL stays the GA-native path.
