@@ -7853,3 +7853,9 @@ Re-confirms visible-on-write / freshness tie (Runs 166/191/229).
 
 GT `1.2.0` nightly: PromQL **200**, Jaeger **200**, greptime_identity POST **200**
 (affectedrows=1). Adopt-native surfaces match stable. No drift.
+
+### Run 262 — 2026-07-17 — CH CREATE QUOTA vs GT unsupported
+
+CH `CREATE QUOTA … MAX queries` → listed in `SHOW QUOTAS`; dropped cleanly.
+GT `CREATE QUOTA` → **Code 1001 SQL statement is not supported**. Multi-tenant
+SQL quotas remain CH OSS edge / GT proxy-owned (Run 179/172).
