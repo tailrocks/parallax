@@ -5,12 +5,14 @@ use parallax_model::{
     TestFlakyStateRecord, TestResultRecord, TestVariantRecord, TrendPoint,
 };
 use parallax_storage::metadata::{
-    MetadataError, MetadataResult, TEST_EXPLORER_MAX_LIMIT, TEST_EXPLORER_MAX_OFFSET,
+    MetadataError, MetadataResult, TEST_CASE_VARIANTS_MAX_LIMIT, TEST_EXPLORER_MAX_LIMIT,
+    TEST_EXPLORER_MAX_OFFSET, TEST_VARIANT_RESULTS_MAX_LIMIT,
 };
 use parallax_storage::{
     MetadataPruneJournalStore, MetadataPruneStore, PruneItem, PruneJournal, PrunePlan,
     PrunePlanLimits, PruneStepStart,
 };
+use std::str::FromStr;
 
 #[async_trait::async_trait]
 impl MetadataPruneJournalStore for TursoMetadataStore {
@@ -241,6 +243,28 @@ impl parallax_storage::metadata::MetadataStore for TursoMetadataStore {
     }
     async fn test_variant(&self, key: &str) -> MetadataResult<Option<TestVariantRecord>> {
         Self::test_variant(self, key)
+            .await
+            .map_err(MetadataError::internal)
+    }
+    async fn test_variants_for_case(
+        &self,
+        case_key: &str,
+        limit: usize,
+    ) -> MetadataResult<Vec<TestVariantRecord>> {
+        parallax_model::TestCaseKey::from_str(case_key)
+            .map_err(|_| MetadataError::InvalidInput("invalid test case key".into()))?;
+        Self::test_variants_for_case(self, case_key, limit.min(TEST_CASE_VARIANTS_MAX_LIMIT))
+            .await
+            .map_err(MetadataError::internal)
+    }
+    async fn test_results_for_variant(
+        &self,
+        variant_key: &str,
+        limit: usize,
+    ) -> MetadataResult<Vec<TestResultRecord>> {
+        parallax_model::TestVariantKey::from_str(variant_key)
+            .map_err(|_| MetadataError::InvalidInput("invalid test variant key".into()))?;
+        Self::test_results_for_variant(self, variant_key, limit.min(TEST_VARIANT_RESULTS_MAX_LIMIT))
             .await
             .map_err(MetadataError::internal)
     }

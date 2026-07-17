@@ -158,6 +158,52 @@ impl TursoMetadataStore {
             .transpose()
     }
 
+    pub async fn test_variants_for_case(
+        &self,
+        case_key: &str,
+        limit: usize,
+    ) -> anyhow::Result<Vec<TestVariantRecord>> {
+        let conn = self.conn.lock().await;
+        let mut rows = conn
+            .query(
+                "SELECT variant_key, case_key, parameters, first_seen, last_seen
+                 FROM test_variants WHERE case_key = ?1
+                 ORDER BY last_seen DESC, variant_key
+                 LIMIT ?2",
+                (case_key, i64::try_from(limit).unwrap_or(i64::MAX)),
+            )
+            .await?;
+        let mut variants = Vec::new();
+        while let Some(row) = rows.next().await? {
+            variants.push(decode_test_variant(&row)?);
+        }
+        Ok(variants)
+    }
+
+    pub async fn test_results_for_variant(
+        &self,
+        variant_key: &str,
+        limit: usize,
+    ) -> anyhow::Result<Vec<TestResultRecord>> {
+        let conn = self.conn.lock().await;
+        let mut rows = conn
+            .query(
+                "SELECT variant_key, invocation_id, attempt, status, trace_id, span_id,
+                        started_at, ended_at, service, service_version, vcs_head_revision,
+                        configuration, failure_fingerprint
+                 FROM test_results WHERE variant_key = ?1
+                 ORDER BY started_at DESC, invocation_id, attempt DESC
+                 LIMIT ?2",
+                (variant_key, i64::try_from(limit).unwrap_or(i64::MAX)),
+            )
+            .await?;
+        let mut results = Vec::new();
+        while let Some(row) = rows.next().await? {
+            results.push(decode_test_result(&row)?);
+        }
+        Ok(results)
+    }
+
     pub async fn test_results_for_invocation(
         &self,
         invocation_id: &str,

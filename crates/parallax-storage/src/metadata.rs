@@ -79,6 +79,8 @@ pub type MetadataResult<T> = Result<T, MetadataError>;
 
 pub const TEST_EXPLORER_MAX_LIMIT: usize = 200;
 pub const TEST_EXPLORER_MAX_OFFSET: usize = 10_000;
+pub const TEST_CASE_VARIANTS_MAX_LIMIT: usize = 100;
+pub const TEST_VARIANT_RESULTS_MAX_LIMIT: usize = 500;
 
 #[async_trait]
 pub trait MetadataStore: Send + Sync {
@@ -137,6 +139,16 @@ pub trait MetadataStore: Send + Sync {
     async fn upsert_test_flaky_state(&self, record: &TestFlakyStateRecord) -> MetadataResult<()>;
     async fn test_case(&self, key: &str) -> MetadataResult<Option<TestCaseRecord>>;
     async fn test_variant(&self, key: &str) -> MetadataResult<Option<TestVariantRecord>>;
+    async fn test_variants_for_case(
+        &self,
+        case_key: &str,
+        limit: usize,
+    ) -> MetadataResult<Vec<TestVariantRecord>>;
+    async fn test_results_for_variant(
+        &self,
+        variant_key: &str,
+        limit: usize,
+    ) -> MetadataResult<Vec<TestResultRecord>>;
     async fn test_results_for_invocation(
         &self,
         invocation_id: &str,
