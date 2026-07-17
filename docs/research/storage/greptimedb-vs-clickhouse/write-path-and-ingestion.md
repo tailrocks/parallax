@@ -374,6 +374,19 @@ Pins: GT `v1.1.3` + nightly `1.2.0` (`v1.2.0-nightly-20260713`); CH `26.6.1.1193
 
 **Adopt-native decision unchanged:** product writes GT native OTLP tables + identity pipeline; never invent raw custom OTEL tables on GT. CH stays comparator (collector + custom schema).
 
+## Run 407 (2026-07-18) — catalog inventory (auto-create-on-ingest)
+
+Live `SHOW TABLES` on four-way standalone **does not** list `opentelemetry_logs` /
+`opentelemetry_traces` / metric-engine physical tables until OTLP or Prom remote-write
+lands. Public schema holds bench fixtures (`logs1m`, `spans1m`, `m2m`, identity
+smoke tables). `information_schema` has no pre-baked OTEL raw-signal tables.
+
+**Implication (no drift vs Run 126/150/152):** adopt-native is **ingestion-path
+provisioned**, not DDL-first. Parallax proxy must hit native OTLP/Prom endpoints
+to materialize Greptime native tables; hand-rolled CREATE for raw signals remains
+forbidden. CH four-way still shows only hand `otel_logs` MergeTree + experimental
+`TimeSeries` — no in-engine OTLP auto-schema.
+
 ## Run 286 — OTLP endpoint presence
 
 `POST /v1/otlp/v1/logs` returns HTTP 400 on empty JSON (endpoint live; protobuf body required for success per Run 181).

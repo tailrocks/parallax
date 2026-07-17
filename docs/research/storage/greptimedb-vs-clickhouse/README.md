@@ -86,6 +86,7 @@ managed quotes remain):
 | CH PromQL rate/sum OK; increase missing | **404** | matches GT on rate; Code 48 increase |
 | Managed $ list hold + D2 CLI limit | **405** | rates no drift; standalone meta snap fail |
 | adopt-native OTEL re-verify | **406** | protobuf OTLP; identity OK; no drift |
+| native tables on-ingest only | **407** | no pre-DDL opentelemetry_* |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
