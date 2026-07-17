@@ -303,3 +303,16 @@ Laptop engine smoke + instrument + packets **exhausted** for this machine.
 | RPO D2/D3 drills | `product-rpo-runbook.md` |
 
 **Not done** until operator stops the loop or these execute.
+
+## Run 427 (2026-07-18) — pins hold; still not done
+
+Hub re-check: GT latest stable still **v1.1.3** (2026-07-17); latest nightly still
+**v1.2.0-nightly-20260713**; CH feature stable still **26.6.1.1193**; head reports
+**26.7.1.1097**. **No pin bump.**
+
+Cycle 423–426 advanced: PromQL partial surface map, join prune re-verify, warm
+last_value four-way, JSON type honesty (no SQL `JSONB`). **No stack direction flip.**
+
+Highest remaining unchanged: (1) workload mix shares (2) server 1M/5M (3) trial quotes
+(4) GB cold S3 (5) cluster D2 + product D3.
+
