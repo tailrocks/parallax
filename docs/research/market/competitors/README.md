@@ -141,6 +141,25 @@ Cost/performance cells are **⚪ benchmark-dependent** — not filled until meas
 3. **No product — open or closed — ships all of:** OTLP-native + (future) Sentry-envelope ingest + a portable, versioned, redacted evidence bundle + a read-only safe agent projection + a fix-outcome loop, from a telemetry store. That combination is Parallax's thesis, but "no one ships it" is not evidence it is valuable — that is exactly the A1 gate.
 4. **The cells most likely to be wrong are the Parallax column (self-assessed, bias-prone) and the AI-native column (fast-moving).** Both are flagged for re-verification first on every pass.
 
+## Full deep-dive roster (30 products + layers)
+
+The wide matrix above is a readable 10-column slice; the authoritative roster
+lives in [`comparison-set.md`](comparison-set.md). Every product with a
+`parallax-vs-<product>.md` deep-dive:
+
+- **Closed incumbents** — [Datadog](parallax-vs-datadog.md), [Sentry](parallax-vs-sentry.md), [Grafana Cloud](parallax-vs-grafana.md), [Honeycomb](parallax-vs-honeycomb.md), [New Relic](parallax-vs-new-relic.md), [Dynatrace](parallax-vs-dynatrace.md), [Splunk Obs](parallax-vs-splunk.md), [Elastic](parallax-vs-elastic.md), [Sumo Logic](parallax-vs-sumo.md), [Chronosphere](parallax-vs-chronosphere.md), [Observe](parallax-vs-observe.md), [Axiom](parallax-vs-axiom.md).
+- **OSS / self-host platforms** — [SigNoz](parallax-vs-signoz.md), [OpenObserve](parallax-vs-openobserve.md), [Coroot](parallax-vs-coroot.md), [Highlight.io](parallax-vs-highlight.md), [Uptrace](parallax-vs-uptrace.md), [HyperDX](parallax-vs-hyperdx.md) *(ClickHouse Inc.'s ClickStack)*, [Odigos](parallax-vs-odigos.md), [Maple](parallax-vs-maple.md), **[TMA1](parallax-vs-tma1.md)** *(nearest architectural mirror)*.
+- **AI / LLM-agent observability** — [Langfuse](parallax-vs-langfuse.md), [LangSmith](parallax-vs-langsmith.md), [Arize Phoenix](parallax-vs-arize-phoenix.md), [PostHog](parallax-vs-posthog.md), [Helicone](parallax-vs-helicone.md), [Braintrust](parallax-vs-braintrust.md).
+- **Different-layer (causal / investigation / pipeline)** — **[Causely](parallax-vs-causely.md)** *(clearest shipped "agent-context layer" — BYO-telemetry causal MCP)*, [HolmesGPT](parallax-vs-holmesgpt.md) *(CNCF AI SRE)*, [Mezmo](parallax-vs-mezmo.md) *(pipeline)*.
+
+> **Strategically central — read first:** [Causely](parallax-vs-causely.md) and
+> [TMA1](parallax-vs-tma1.md) are the two clearest "context-layer-for-production-
+> agents" bets alongside Parallax, from *opposite* layers (reasoning-layer-BYO-
+> telemetry vs telemetry-native-store); [HyperDX](parallax-vs-hyperdx.md) is the
+> ClickHouse Inc. "just use ClickHouse" counter to Parallax's GreptimeDB bet;
+> [Sentry](parallax-vs-sentry.md) is the interop target. Watch status, open gaps,
+> and the bias audit per product live in [`PROGRESS.md`](PROGRESS.md).
+
 ## Sources
 
 Every deep-dive carries its own dated source list. The matrix above inherits from the legacy market notes (dated 2026-05/06) and the verified Datadog deep-dive (2026-07-17). Re-verify before trusting any 🟡 cell; see [`PROGRESS.md`](PROGRESS.md) for the per-cell queue.
