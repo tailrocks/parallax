@@ -2,6 +2,7 @@ schema_version = 1
 
 [roots]
 "lib.rs" = [
+    "mod browser",
     "mod builders",
     "mod conformance",
 ]

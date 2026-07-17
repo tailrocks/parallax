@@ -1,4 +1,4 @@
-use super::MemoryStore;
+use super::{Inner, MemoryStore};
 use parallax_model::{ErrorEventRow, HistogramRow, MetricExemplarRow, MetricPointRow};
 
 impl MemoryStore {
@@ -10,6 +10,15 @@ impl MemoryStore {
             inner.metric_points.len() + inner.histograms.len(),
             inner.error_events.len(),
         )
+    }
+
+    /// Drop every in-memory telemetry row. Browser-contract reset uses this
+    /// between datasets; product composition never reaches it.
+    pub fn clear(&self) {
+        let mut inner = self.lock();
+        *inner = Inner::default();
+        self.error_event_read_calls
+            .store(0, std::sync::atomic::Ordering::Relaxed);
     }
 
     pub fn push_metrics(

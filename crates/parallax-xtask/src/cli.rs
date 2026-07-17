@@ -38,6 +38,8 @@ pub(crate) enum Command {
     },
     /// Serve the built UI for Playwright foundation smoke (plan 132).
     BrowserFoundationServe,
+    /// Serve fixture-backed product contracts (plan 144) via injected test adapter.
+    BrowserContractsServe,
     /// Run the distinct Rust doctest integration partition.
     Integration,
     /// Validate repository documentation.

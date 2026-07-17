@@ -2,6 +2,7 @@ use std::{path::Path, process::Command as Process};
 
 use anyhow::{Context, Result, bail};
 
+use crate::browser_contracts;
 use crate::browser_foundation;
 use crate::cli::{
     Cli, Command, DocsAction, FacadeAction, Output, SemconvAction, UiAction, UiGraphqlAction,
@@ -24,6 +25,7 @@ pub(crate) fn execute(cli: Cli) -> Result<()> {
         Command::Test => test(&root),
         Command::Ui { action } => execute_ui(&root, action),
         Command::BrowserFoundationServe => browser_foundation::run(&root),
+        Command::BrowserContractsServe => browser_contracts::run(&root),
         Command::Integration => integration(&root),
         Command::Docs { action } => execute_docs(&root, action, cli.output),
         Command::Policy { only } => policy::run(&root, only.as_deref(), cli.output),

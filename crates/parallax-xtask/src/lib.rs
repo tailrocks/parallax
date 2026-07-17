@@ -1,3 +1,4 @@
+mod browser_contracts;
 mod browser_foundation;
 mod cli;
 mod closure_final;
