@@ -47,6 +47,12 @@ lint/format at commit time):**
   per the grammar (marquee/click threshold, shift/middle pan against the
   pointer-down-captured viewport, ctrl-wheel anchored zoom, shift/
   horizontal wheel pan, `passive:false`, `+`/`-`/`0` keys). 6 jsdom tests.
+- `ui/src/components/console/trace-flamegraph.tsx` (`30f53ae`) and route
+  wiring (`1c648f6`): accessible icicle rendering over `packFlameLanes`,
+  click-to-select, Shift-click subtree focus, label gating, empty state,
+  URL-valid `view=flame`, and a Flame mode beside tree/errors/lanes. The
+  focused component/route/pure suite passed 17 tests plus targeted lint and
+  format immediately before the concurrent peer commit captured the wiring.
 
 **Peer owns (verify/deepen):**
 - [ ] Review the reducer/gesture semantics against the plan grammar; the
@@ -54,7 +60,7 @@ lint/format at commit time):**
   marquee overlay rendering, minimap controller are NOT started).
 - [ ] Steps 3-5: waterfall rework onto the viewport, minimap controller,
   color-by picker UI + search-param schema, self-time in tooltip/inspector,
-  flamegraph tab (component started by peer, consuming `packFlameLanes`),
+  flamegraph behavior review/deepening (component + route wiring now landed),
   full gates, browser evidence.
 
 ## Why this matters
