@@ -6799,3 +6799,13 @@ reason = "private alert resolver composition maps to typed field errors centrall
 path = "crates/parallax-server/src/alerting/delivery_worker.rs"
 ceiling = 3
 reason = "private delivery loop composition reports through the typed outcome path"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-server/src/alerting/evaluator.rs"
+ceiling = 7
+reason = "private evaluation tick composition reports through the typed outcome path"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-server/src/alerting/measurement_source.rs"
+ceiling = 15
+reason = "private measurement adapter composition is converted at the typed source trait"
