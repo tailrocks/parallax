@@ -128,6 +128,19 @@ auto-merge commodity.
 
 **UNFIRED:** Seer self-host GA; Grafana offline/BYO-LLM Assistant; Bits auto-merge; Sentry OTLP metrics GA.
 
+### Pass 309 (2026-07-18) — Seer + Assistant + Bits + Sentry OTLP re-fetch
+
+| Source | Finding |
+| --- | --- |
+| develop.sentry.dev/self-hosted | still **"Seer and other AI & ML features, as these are currently closed source."** |
+| getsentry/self-hosted Latest | still **`26.7.0`** (2026-07-16) |
+| Bits Code docs | still **"Bits Code never auto-merges PRs or MRs."** |
+| Sentry OTLP docs | still **"Sentry does not support OTLP metrics at this time."** |
+| Grafana Assistant self-managed | still hybrid: backend/usage/billing stay in **Grafana Cloud stack** |
+
+**UNFIRED:** Seer self-host GA; Grafana offline/BYO-LLM Assistant; Bits auto-merge; Sentry OTLP metrics GA.
+
+
 **Precise claim after this pass:**
 
 > No major incumbent ships **fully offline, open (or self-hostable without
