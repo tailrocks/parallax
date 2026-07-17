@@ -7099,3 +7099,8 @@ Immediate select after insert always sees the row (GT+CH). Batch 1k visible with
 
 GT append INSERT 12-series 49 ms vs 100k-series 45 ms (~flat). CH wall ~flat too at 100k.
 `metric-cardinality.md`.
+
+### Run 193 — 2026-07-17 — join pushdown (N=100k)
+
+GT join 10 ms vs plain 5 ms; CH join 3 ms with Granules 1/12. Direction holds; all interactive.
+`read-path-indexing-and-execution.md`.

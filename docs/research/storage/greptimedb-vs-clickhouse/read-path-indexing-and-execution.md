@@ -152,3 +152,16 @@ planner output on Q4 confirmed the algorithms *and corrected the framing*:
 - GreptimeDB query/joins: `src/query/src/datafusion.rs:640,959,1056`; `src/query/src/optimizer/`; `src/query/src/dist_plan` (`MergeScanExec`)
 - GreptimeDB PromQL: `src/promql/src/{extension_plan,range_array}.rs`, `src/query/src/range_select.rs`
 - GreptimeDB region scan: `src/query/src/region_query.rs`
+
+## Run 193 (2026-07-17) — anchored join pushdown on v1.1.3 / 26.6 (N=100k)
+
+| Query | GT ms | CH ms | CH EXPLAIN |
+| --- | ---: | ---: | --- |
+| plain `WHERE trace_id` | 5 | 2 | — |
+| `JOIN` + `WHERE s.trace_id` | **10** | **3** | `ReadFromMergeTree` PrimaryKey `trace_id`, **Granules 1/12** + runtime filter |
+| subquery-prefilter both sides then JOIN | 10 | 3 | same order |
+
+Warm median of 8. **Direction holds:** CH prunes through join; GT join path is ~2–3× plain
+filter at 100k (all ≪300 ms). Subquery prefilter does not buy more at this scale (fixed overhead).
+Parallax app-side correlation still preferred for multi-signal bundles (Run 154/158). Gap widens
+at multi-M (historical).
