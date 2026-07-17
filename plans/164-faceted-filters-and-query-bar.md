@@ -131,7 +131,14 @@ whether OR-within-dimension needs a backend argument.
   worktree at `5fc4730`. Peer: verify live counts against `j-parallel`
   (mode/command/outcome), decide whether invocation facets need
   `attributeFilters`-style base-filter arguments (invocation list filtering
-  is currently client-side), and wire the invocations route sidebar.
+  is currently client-side).
+
+- Invocations route sidebar wired (`0366e02`): loader fetches
+  `invocationFacets` for the resolved range; clicks map app.mode/outcome to
+  the existing selects and service/cli.command.name to the text query.
+  Peer reconciles this with the client-side `invocation-facets.ts` counts
+  (`42473b6`) — pick one source of truth — and browser-verifies against
+  `j-parallel`.
 
 Still open (full plan scope): live facet verification against `f-attrs`
 (70/20/10) + the facet-window cap decision; live-engine narrowing
