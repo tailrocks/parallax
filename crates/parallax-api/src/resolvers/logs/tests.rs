@@ -174,3 +174,77 @@ async fn logs_around_clamps_window_and_limit() {
             .all(|row| row["body"] != "beyond-clamped-window")
     );
 }
+
+#[tokio::test]
+async fn logs_attribute_filters_narrow_rows_series_and_facets() {
+    let store = Arc::new(MemoryStore::new());
+    let mut checkout = log_row(
+        "api",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        1_000,
+        "checkout ok",
+    );
+    checkout.attributes = serde_json::json!({ "http.request.method": "POST" });
+    let mut health = log_row(
+        "api",
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        2_000,
+        "health ok",
+    );
+    health.attributes = serde_json::json!({ "http.request.method": "GET" });
+    store.push_logs(vec![checkout, health]);
+
+    let schema = build_schema();
+    let context = context_with_memory(store).await;
+    let request = juniper::http::GraphQLRequest::new(
+        r#"
+        {
+          logs(fromNanos: "0", toNanos: "10000", attributeFilters: [{key: "http.request.method", op: "=", value: "POST"}], limit: 10) {
+            body
+          }
+          logCountSeries(fromNanos: "0", toNanos: "10000", attributeFilters: [{key: "http.request.method", op: "=", value: "POST"}], stepSeconds: 1) {
+            value
+          }
+          logFacets(fromNanos: "0", toNanos: "10000") {
+            dimension
+            values { value count }
+          }
+        }
+        "#
+        .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, request).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert_eq!(
+        json.pointer("/data/logs"),
+        Some(&serde_json::json!([{ "body": "checkout ok" }])),
+        "narrowed: {json}"
+    );
+    let series_total: f64 = json
+        .pointer("/data/logCountSeries")
+        .and_then(|points| points.as_array())
+        .into_iter()
+        .flatten()
+        .filter_map(|point| point.pointer("/value").and_then(|v| v.as_f64()))
+        .sum();
+    assert_eq!(series_total, 1.0, "series reflects the filter: {json}");
+    let method_facet = json
+        .pointer("/data/logFacets")
+        .and_then(|facets| facets.as_array())
+        .into_iter()
+        .flatten()
+        .find(|facet| {
+            facet.pointer("/dimension").and_then(|d| d.as_str()) == Some("http.request.method")
+        })
+        .cloned()
+        .unwrap_or_else(|| panic!("missing method facet: {json}"));
+    assert_eq!(
+        method_facet.pointer("/values"),
+        Some(&serde_json::json!([
+            {"value": "GET", "count": "1"},
+            {"value": "POST", "count": "1"}
+        ]))
+    );
+}
