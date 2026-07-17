@@ -104,6 +104,18 @@ gravity.
 3. `corpus_empty_public` — no public outcome corpus at thresholds.
 4. A3 moat = **unproven**.
 
+### Pass 307 (2026-07-18) — adoption + schema liveness re-probe
+
+| Probe | Result |
+| --- | --- |
+| Declared `$id` HTTP GET (`github.com/tailrocks/parallax/schema/...`) | Still **404** |
+| `raw.githubusercontent.com/.../main/schema/evidence-bundle.v1.schema.json` | Still **200** |
+| In-repo paths containing `$id` host string | **6** files (schema v1/v2, a3 notes, MCP tests, poc v0) — **no** external consumer tree |
+| Public adoption ledger files | Still **absent** |
+| Claim stack | still `schema_artifacts_shipped` + `schema_adoption_none` + `corpus_empty_public` |
+
+**A3 moat still unproven.** Kill "external schema adoption closes moat" still **unfired** (open ≠ failed; adoption is zero, not "failed moat measurement").
+
 ## Artifact inventory (repo paths)
 
 | Artifact | Path |

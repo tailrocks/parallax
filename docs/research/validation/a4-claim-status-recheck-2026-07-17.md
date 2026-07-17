@@ -129,6 +129,16 @@ Upgrade path in §Falsification unchanged. GraphQL existence ≠ A4 gate.
 | `correlation-reliability-runs/` | **Still absent** |
 | Claim level | still **`not_measured`** |
 
+## Pass 307 addendum (2026-07-18)
+
+| Check | Result |
+| --- | --- |
+| `docs/research/correlation-reliability-runs/` | **Still absent** (no run_id ledger) |
+| Claim level | still **`not_measured`** for real_pilot product reliability |
+| Product surfaces | still shipped (code); **not** re-measured rates this pass |
+
+**Not A4 pass:** GraphQL/assembly code ≠ published reliability ledger on messy telemetry.
+
 ## Uncertainty
 
 - Did not re-query live GraphQL schema introspection this pass; surface list taken from research implementation banner + **static code references** (pass 161/194).
