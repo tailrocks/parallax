@@ -8149,3 +8149,8 @@ Inserted 20 rows without flush; `count(*)=20`. Freshness 20/20 style gate holds
 
 ### Run 322 — 2026-07-17 — not done
 
+
+### Run 323 — 2026-07-17 — session state still live
+
+GT public tables **28**; CH active parts **49**. Stack still researchable.
+Not done.
