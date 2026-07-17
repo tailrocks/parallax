@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 174 (Maple still **v0.0.12 / 1,532★**;
-Tinybird-decoupling watch **UNFIRED**; embedded CH local + Turso metadata). Pass
-173 = GlitchTip. A1/A2/A4 open; A6 open at mixed gate only.
+Last updated 2026-07-18 after pass 175 (Odigos still **v1.31.2 / 3,668★**;
+own-store watch **UNFIRED** — instrumentation export layer, not evidence engine).
+Pass 174 = Maple. A1/A2/A4 open; A6 open at mixed gate only.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
