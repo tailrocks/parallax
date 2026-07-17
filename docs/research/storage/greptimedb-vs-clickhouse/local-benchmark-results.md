@@ -8130,3 +8130,8 @@ Still open.
 
 ### Run 317 — 2026-07-17 — head still 26.7.1.1097; not done
 
+
+### Run 318 — 2026-07-17 — append_mode DELETE still Code 1004
+
+`DELETE FROM spans1m WHERE span_id=…` → **Code 1004** not allowed under append
+mode. Empty-match DELETE returned affectedrows=0 without error (no-op). No drift.
