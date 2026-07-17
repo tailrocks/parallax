@@ -9,8 +9,14 @@ fn masks_uuid_ip_email_hex_and_numbers() {
         !masked.contains("550e8400"),
         "uuid must not survive: {masked}"
     );
-    assert!(!masked.contains("10.0.0.7"), "ipv4 must not survive: {masked}");
-    assert!(!masked.contains("a@b.co"), "email must not survive: {masked}");
+    assert!(
+        !masked.contains("10.0.0.7"),
+        "ipv4 must not survive: {masked}"
+    );
+    assert!(
+        !masked.contains("a@b.co"),
+        "email must not survive: {masked}"
+    );
     assert!(
         !masked.contains("deadbeefcafebabe"),
         "hex≥8 must not survive: {masked}"
@@ -46,7 +52,11 @@ fn template_stable_across_parameter_churn() {
         },
     ];
     let clusters = cluster_logs(&lines, DrainConfig::default());
-    assert_eq!(clusters.len(), 1, "parameter churn must one template: {clusters:?}");
+    assert_eq!(
+        clusters.len(),
+        1,
+        "parameter churn must one template: {clusters:?}"
+    );
     assert_eq!(clusters[0].count, 3);
     assert!(
         clusters[0].template.contains(WILDCARD),
@@ -54,8 +64,7 @@ fn template_stable_across_parameter_churn() {
         clusters[0].template
     );
     assert!(
-        clusters[0].template.contains("checkout")
-            && clusters[0].template.contains("authorize"),
+        clusters[0].template.contains("checkout") && clusters[0].template.contains("authorize"),
         "stable tokens remain: {}",
         clusters[0].template
     );
@@ -182,8 +191,8 @@ fn lru_cap_bounds_cluster_count() {
 fn ten_thousand_lines_complete_quickly() {
     // Distinct *stable* template tokens (not numeric — numbers get masked).
     const NAMES: [&str; 12] = [
-        "alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel",
-        "india", "juliet", "kilo", "lima",
+        "alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india",
+        "juliet", "kilo", "lima",
     ];
     let mut bodies = Vec::with_capacity(10_000);
     for i in 0..10_000 {

@@ -81,9 +81,7 @@ fn maskers() -> &'static Maskers {
     static CELL: OnceLock<Maskers> = OnceLock::new();
     CELL.get_or_init(|| Maskers {
         // Standard UUID form.
-        uuid: static_regex(
-            r"(?i)\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b",
-        ),
+        uuid: static_regex(r"(?i)\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b"),
         ipv4: static_regex(
             r"\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b",
         ),

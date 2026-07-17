@@ -63,10 +63,7 @@ pub fn unique_delivery_key(
     destination_id: &str,
     event_type: DeliveryEventType,
 ) -> String {
-    format!(
-        "{incident_id}|{destination_id}|{}",
-        event_type.as_str()
-    )
+    format!("{incident_id}|{destination_id}|{}", event_type.as_str())
 }
 
 /// Generic webhook JSON body (documented plan-167 API shape).
@@ -132,10 +129,7 @@ pub fn slack_webhook_payload_json(ctx: &NotificationContext<'_>) -> String {
         thr = ctx.threshold,
         url = ctx.incident_url,
     );
-    format!(
-        "{{\"text\":\"{}\"}}",
-        escape_json(&text)
-    )
+    format!("{{\"text\":\"{}\"}}", escape_json(&text))
 }
 
 fn escape_json(s: &str) -> String {
