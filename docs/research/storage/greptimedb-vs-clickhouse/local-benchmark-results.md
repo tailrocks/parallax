@@ -8230,3 +8230,6 @@ GT warm **~7–10 ms**; CH **~3–4 ms**. Interactive both (trace-explorer shape
 
 GT warm **~9–10 ms**; CH **~5–6 ms**. Interactive; CH slight lead on broad term
 (scan-bound shape).
+
+### Run 344 — 2026-07-17 — not done
+
