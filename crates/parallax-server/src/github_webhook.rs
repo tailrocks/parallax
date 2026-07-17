@@ -377,6 +377,7 @@ mod tests {
             deploy_config: GithubDeployConfig {
                 enabled: true,
                 webhook_secret: "secret".into(),
+            ..GithubDeployConfig::default()
             },
             deploy_secret: Some("secret".into()),
             actions_config: empty_actions(),
@@ -423,6 +424,7 @@ mod tests {
             deploy_config: GithubDeployConfig {
                 enabled: true,
                 webhook_secret: secret.into(),
+            ..GithubDeployConfig::default()
             },
             deploy_secret: Some(secret.into()),
             actions_config: empty_actions(),

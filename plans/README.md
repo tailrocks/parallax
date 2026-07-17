@@ -380,9 +380,9 @@ external facts still BLOCKED where noted. Plan 102 and plan 109 retired
 | [115](115-v2-server-profile.md) | Auth contract + release pipeline (102/109 DONE) | Rehearsals + load packet (ADR + example config landed) | IN PROGRESS — example-config.toml validates |
 | [118](118-sentry-envelope-migration-adapter.md) | 093, 099, 104, 111, 116 | Live Greptime+Turso, retention/doctor/API gates | IN PROGRESS — parser + HTTP + ledger + SDK fixture + cross-source identity + canonical redaction landed |
 | [120](120-agent-session-capture-adapters.md) | 099, 104, 111, 119 | Storage/API/UI, consent CLI, durable IDs/correlation, loss ledger | IN PROGRESS — normalizer + success fixture + restart/redelivery dedup landed |
-| [121](121-deploy-and-change-context-collectors.md) | 099, 104, 111, 116 | Backfill, claim ledger (HTTP + doctor inventory landed) | IN PROGRESS — webhook + Turso + doctor deploy-context |
+| 121 | GitHub deploy/change context | webhook + REST backfill + claim rows + linkage bundle | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-121-deploy-context/README.md) |
 | 122 | 105, 151 | Disposition table + retained scenarios | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-122-playground-disposition/README.md) |
-| [123](123-fixer-outcome-loop.md) | 120, 121 residual | Offline outcome harness; fixer separate from core | BLOCKED on 120/121 storage/projection residuals |
+| [123](123-fixer-outcome-loop.md) | 120 residual; 121 DONE | Offline outcome harness; fixer separate from core | BLOCKED on 120 storage/projection residual |
 | 124 | CI/flaky evidence adapter | webhook + REST backfill + claim rows + linkage-only bundle | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-124-ci-evidence/README.md) |
 
 ## Dependency Order

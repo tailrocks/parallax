@@ -185,6 +185,31 @@ impl TursoMetadataStore {
         }
         Ok(out)
     }
+
+    /// Newest-first deploy inventory across repos (bounded linkage only).
+    pub async fn list_recent_deploy_deliveries(
+        &self,
+        limit: usize,
+    ) -> anyhow::Result<Vec<DeployDeliveryRecord>> {
+        let limit = i64::try_from(limit.clamp(1, 100)).unwrap_or(100);
+        let conn = self.conn.lock().await;
+        let mut rows = conn
+            .query(
+                "SELECT delivery_id, provider, event_name, deployment_id, repo_full_name,
+                        ref_name, commit_sha, environment, state, task, actor_login,
+                        edge_strength, lossiness, payload_hash, received_at
+                 FROM deploy_deliveries
+                 ORDER BY received_at DESC, delivery_id DESC
+                 LIMIT ?1",
+                (limit,),
+            )
+            .await?;
+        let mut out = Vec::new();
+        while let Some(row) = rows.next().await? {
+            out.push(decode_deploy_delivery(&row)?);
+        }
+        Ok(out)
+    }
 }
 
 fn decode_deploy_delivery(row: &turso::Row) -> anyhow::Result<DeployDeliveryRecord> {

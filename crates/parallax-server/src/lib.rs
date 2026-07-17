@@ -27,6 +27,7 @@
 mod alerting;
 mod ci_backfill;
 mod config;
+mod deploy_backfill;
 mod engine_io;
 mod errors;
 mod github_webhook;

@@ -48,6 +48,45 @@ pub fn deploy_adjacency_statement(deploy: &NormalizedDeploy) -> String {
     )
 }
 
+/// Cap deployments accepted from a single REST page (rate/output budget).
+pub const REST_DEPLOYMENTS_PAGE_CAP: usize = 100;
+
+/// One REST page of deployments (plan 121 backfill).
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct RestDeploymentsPage {
+    pub deployments: Vec<NormalizedDeploy>,
+    pub truncated: bool,
+}
+
+/// Parse a GitHub list-deployments JSON body (`[{...}]` array).
+#[must_use]
+pub fn parse_rest_deployments_page(repo_full_name: &str, body: &Value) -> RestDeploymentsPage {
+    let items = body
+        .as_array()
+        .cloned()
+        .or_else(|| {
+            body.get("deployments")
+                .and_then(Value::as_array)
+                .cloned()
+        })
+        .unwrap_or_default();
+    let truncated = items.len() > REST_DEPLOYMENTS_PAGE_CAP;
+    let mut page = RestDeploymentsPage {
+        truncated,
+        ..RestDeploymentsPage::default()
+    };
+    for item in items.into_iter().take(REST_DEPLOYMENTS_PAGE_CAP) {
+        let wrapped = serde_json::json!({
+            "deployment": item,
+            "repository": { "full_name": repo_full_name },
+        });
+        if let Some(row) = normalize_deploy_webhook("deployment", &wrapped) {
+            page.deployments.push(row);
+        }
+    }
+    page
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SignatureError {
     MissingHeader,
@@ -410,5 +449,22 @@ mod tests {
     #[test]
     fn rejects_unknown_event_name() {
         assert!(normalize_deploy_webhook("push", &json!({})).is_none());
+    }
+
+    #[test]
+    fn parses_rest_deployments_page() {
+        let body = json!([{
+            "id": 9,
+            "ref": "main",
+            "sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "environment": "production",
+            "task": "deploy",
+            "created_at": "2026-07-17T00:00:00Z"
+        }]);
+        let page = parse_rest_deployments_page("tailrocks/parallax", &body);
+        assert_eq!(page.deployments.len(), 1);
+        assert_eq!(page.deployments[0].deployment_id, 9);
+        assert!(deploy_adjacency_statement(&page.deployments[0]).contains("adjacent"));
+        assert!(DEPLOY_CLAIM_KEYS.contains(&"no_causal_wording_from_adjacency"));
     }
 }

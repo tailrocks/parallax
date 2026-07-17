@@ -49,7 +49,7 @@ impl Default for SentryConfig {
 }
 
 /// GitHub webhook receiver for `deployment` / `deployment_status` (plan 121).
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct GithubDeployConfig {
     /// When false, the webhook route returns 404.
@@ -57,6 +57,27 @@ pub struct GithubDeployConfig {
     /// HMAC secret for `X-Hub-Signature-256`. Prefer env
     /// `PARALLAX_GITHUB_WEBHOOK_SECRET`. Empty = fail closed when enabled.
     pub webhook_secret: String,
+    /// When true (and repos are set), run the bounded Deployments REST backfill.
+    pub backfill_enabled: bool,
+    /// Repos in `owner/name` form for REST backfill (read-only Deployments API).
+    pub backfill_repos: Vec<String>,
+    /// Seconds between REST backfill ticks (floor 30).
+    pub backfill_interval_secs: u64,
+    /// Deployments page size (1–100).
+    pub backfill_page_size: u32,
+}
+
+impl Default for GithubDeployConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            webhook_secret: String::new(),
+            backfill_enabled: false,
+            backfill_repos: Vec::new(),
+            backfill_interval_secs: 300,
+            backfill_page_size: 30,
+        }
+    }
 }
 
 /// GitHub Actions `workflow_job` webhook + optional REST backfill (plan 124).

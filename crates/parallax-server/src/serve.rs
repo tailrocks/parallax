@@ -413,6 +413,7 @@ async fn start_assembled(
         spawn_alerting_loops(config, &mut tasks, store.clone(), alerts.clone(), api_addr);
     spawn_test_flakiness_loop(&mut tasks, metadata.clone());
     spawn_ci_backfill_loop(config, &mut tasks, alerts.clone());
+    spawn_deploy_backfill_loop(config, &mut tasks, alerts.clone());
 
     tracing::info!(%api_addr, %otlp_grpc_addr, %otlp_http_addr, "parallax listening");
     Ok(ServerHandle {
@@ -501,6 +502,35 @@ fn spawn_ci_backfill_loop(
         },
         config.resolved_github_token(),
         config.github_actions.backfill_interval_secs,
+    );
+}
+
+fn spawn_deploy_backfill_loop(
+    config: &Config,
+    tasks: &mut Vec<JoinHandle<()>>,
+    alerts: Option<Arc<TursoMetadataStore>>,
+) {
+    if !config.github_deploy.backfill_enabled {
+        return;
+    }
+    let Some(metadata) = alerts else {
+        tracing::warn!("deploy evidence REST backfill enabled but Turso metadata unavailable");
+        return;
+    };
+    let repos = config.github_deploy.backfill_repos.clone();
+    if repos.is_empty() {
+        tracing::warn!("deploy evidence REST backfill enabled but backfill_repos is empty");
+        return;
+    }
+    crate::deploy_backfill::spawn_loop(
+        tasks,
+        metadata,
+        crate::deploy_backfill::DeployBackfillConfig {
+            repos,
+            page_size: config.github_deploy.backfill_page_size,
+        },
+        config.resolved_github_token(),
+        config.github_deploy.backfill_interval_secs,
     );
 }
 

@@ -25,6 +25,52 @@ fn unique_fingerprints(events: &[model::ErrorEventRow]) -> Vec<String> {
         .collect()
 }
 
+/// Linkage-only deploy/CI adjacency for bundles (plans 121/124). Never root-cause.
+async fn load_evidence_adjacency(
+    context: &ApiContext,
+    inputs: &mut parallax_evidence::bundle::BundleInputs,
+) {
+    let Some(store) = context.alerts.as_ref() else {
+        return;
+    };
+    if let Ok(deploys) = store.list_recent_deploy_deliveries(3).await {
+        inputs.deploy_adjacency = deploys
+            .into_iter()
+            .map(|row| {
+                let sha = row
+                    .commit_sha
+                    .as_deref()
+                    .map(|value| &value[..value.len().min(12)])
+                    .unwrap_or("no-sha");
+                let env = row.environment.as_deref().unwrap_or("unknown-env");
+                let repo = row.repo_full_name.as_deref().unwrap_or("unknown/unknown");
+                format!(
+                    "Deploy {} on {repo} ({env}, sha={sha}, strength={}) is adjacent timing evidence only — {}",
+                    row.deployment_id,
+                    row.edge_strength,
+                    parallax_evidence::github_deploy::DEPLOY_ADJACENCY_CLAIM_WORDING
+                )
+            })
+            .collect();
+    }
+    if let Ok(attempts) = store.list_recent_ci_attempts(3).await {
+        inputs.ci_adjacency = attempts
+            .into_iter()
+            .map(|row| {
+                let name = row.name.as_deref().unwrap_or("job");
+                let conclusion = row.conclusion.as_deref().unwrap_or("unknown");
+                format!(
+                    "CI attempt `{name}` on {} (run {}, attempt {}, conclusion={conclusion}) is adjacent timing evidence only — {}",
+                    row.repo_full_name,
+                    row.workflow_run_id,
+                    row.attempt,
+                    parallax_evidence::github_actions::CI_ADJACENCY_CLAIM_WORDING
+                )
+            })
+            .collect();
+    }
+}
+
 pub(crate) struct BundleOut {
     json: String,
     markdown: String,
@@ -396,6 +442,7 @@ pub(crate) async fn bundle(
     };
 
     inputs.metric_windows = bundle_metric_windows(context, &inputs).await?;
+    load_evidence_adjacency(context, &mut inputs).await;
     let bundle = parallax_evidence::bundle::assemble(inputs, max_tokens);
     let markdown = parallax_evidence::bundle::to_markdown(&bundle);
     // Option C (plan 104): prefer a bundle-v2 envelope around the immutable

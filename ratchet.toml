@@ -637,7 +637,7 @@ ceiling = 25
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-api/src/resolvers/issues.rs::bundle"
-ceiling = 169
+ceiling = 170
 
 [[limits]]
 metric = "rust.function-lines"
@@ -4272,7 +4272,7 @@ ceiling = 444
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-api/src/resolvers/issues.rs"
-ceiling = 457
+ceiling = 502
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4352,7 +4352,7 @@ ceiling = 635
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/src/serve.rs"
-ceiling = 597
+ceiling = 626
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4478,7 +4478,7 @@ ceiling = 105
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-server/src/serve.rs::start_assembled"
-ceiling = 108
+ceiling = 109
 
 [[limits]]
 metric = "rust.function-lines"
@@ -4747,7 +4747,7 @@ ceiling = 1
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-evidence/src/github_deploy.rs"
-ceiling = 19
+ceiling = 23
 
 [[limits]]
 metric = "rust.function-lines"
@@ -7284,7 +7284,7 @@ reason = "private CI-evidence persistence composition is converted at the typed 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/src/github_webhook.rs"
-ceiling = 508
+ceiling = 510
 
 
 [[limits]]
@@ -7357,7 +7357,7 @@ ceiling = 9
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-metadata/src/turso/ci.rs"
-ceiling = 440
+ceiling = 465
 
 [[limits]]
 metric = "typescript.assertions"
@@ -7420,3 +7420,18 @@ ceiling = 1
 metric = "agent-doc-bytes"
 scope = "bench/otlp-fanout/vendor/signoz/frontend/AGENTS.md"
 ceiling = 4495
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/src/deploy_backfill.rs"
+ceiling = 4
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-evidence/src/github_deploy.rs"
+ceiling = 416
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-server/src/deploy_backfill.rs"
+ceiling = 1
