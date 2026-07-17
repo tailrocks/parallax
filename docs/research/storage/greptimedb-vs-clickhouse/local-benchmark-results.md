@@ -7670,3 +7670,21 @@ UNCOMPRESSED CACHE`.
 
 **Reproduce.** `bench/s3/run-s3-stack.sh up` → load → wipe GT cache → restart →
 delta `/metrics` GetObject counts vs CH `system.events`.
+
+### Run 236 — 2026-07-17 — CH head TimeSeries SELECT still NOT_IMPLEMENTED
+
+**Pass target.** Check if CH `head` (`26.7.1.1097`) implemented TimeSeries SELECT
+(was Code 48 on 26.6, Run 196).
+
+**Live:**
+
+```sql
+SET allow_experimental_time_series_table=1;
+CREATE TABLE ts_r236 ENGINE=TimeSeries;  -- OK; expands to SAMPLES/TAGS/METRICS INNER
+SELECT * FROM ts_r236 LIMIT 1;
+-- Code 48: SELECT is not supported by storage TimeSeries yet. (NOT_IMPLEMENTED)
+```
+
+**Verdict.** **No drift** — TimeSeries remains experimental **write-side / protocol
+surface** without SQL SELECT on head. GT PromQL remains the durable metrics-query
+edge for Parallax. Do not plan product queries on CH TimeSeries until SELECT ships.
