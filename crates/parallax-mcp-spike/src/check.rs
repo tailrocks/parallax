@@ -28,7 +28,7 @@ pub(crate) async fn run(args: CheckArgs) -> anyhow::Result<()> {
     }
     if let Some(rid) = &args.invocation_id {
         cases.push(Case {
-            label: format!("run bundle invocation_id={rid}"),
+            label: format!("invocation bundle invocation_id={rid}"),
             kind: CaseKind::RunBundle {
                 invocation_id: rid.clone(),
             },
@@ -36,7 +36,7 @@ pub(crate) async fn run(args: CheckArgs) -> anyhow::Result<()> {
     }
 
     if cases.is_empty() {
-        anyhow::bail!("check requires --fingerprint and/or --run-id");
+        anyhow::bail!("check requires --fingerprint and/or --invocation-id");
     }
 
     let mut failed = 0usize;
@@ -92,7 +92,7 @@ async fn check_one(client: &GraphqlClient, args: &CheckArgs, case: &Case) -> any
         }
     };
 
-    // 3) CLI: `parallax issue context` / `parallax run bundle` --format json
+    // 3) CLI: `parallax issue context` / `parallax invocation bundle` --format json
     let cli_json = match &case.kind {
         CaseKind::IssueBundle { fingerprint } => run_cli_json(
             &args.parallax_bin,
@@ -100,7 +100,7 @@ async fn check_one(client: &GraphqlClient, args: &CheckArgs, case: &Case) -> any
         )?,
         CaseKind::RunBundle { invocation_id } => run_cli_json(
             &args.parallax_bin,
-            &["run", "bundle", invocation_id, "--format", "json"],
+            &["invocation", "bundle", invocation_id, "--format", "json"],
         )?,
     };
 

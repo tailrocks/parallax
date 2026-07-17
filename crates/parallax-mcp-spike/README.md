@@ -25,7 +25,7 @@ equivalence). See:
 | Tool | Args | Source |
 | --- | --- | --- |
 | `parallax_issue_context` | `fingerprint: string` | GraphQL `bundle(fingerprint:)` |
-| `parallax_agent_session_show` | `run_id: string` | GraphQL `agentSession(runId:)` |
+| `parallax_agent_session_show` | `invocation_id: string` | GraphQL `agentSession(invocationId:)` |
 
 No shell, SQL, deploy, rollback, or management tools exist in this binary.
 
@@ -37,10 +37,10 @@ Requires a live `parallax serve` (default `http://127.0.0.1:4000`).
 # stdio MCP server (default)
 cargo run -p parallax-mcp-spike
 
-# projection-equivalence proof (issue + optional run anchor)
+# projection-equivalence proof (issue + optional invocation anchor)
 cargo run -p parallax-mcp-spike -- check \
   --fingerprint <fp> \
-  --run-id <run_id>   # optional second anchor
+  --invocation-id <invocation_id>   # optional second anchor
 ```
 
 No CI wiring: needs a live server and seeded telemetry. Manual only.

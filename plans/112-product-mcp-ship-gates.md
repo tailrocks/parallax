@@ -22,7 +22,25 @@
 The spike proves byte-equivalent bounded bundle projection for two read-only
 tools. It does not prove client registration/discovery, resources, scopes,
 remote auth, audit, output limits, protocol drift, capability denial, or client
-retention. Its comparison-only `_meta` raw JSON must not become product output.
+retention. Its former comparison-only `_meta` raw JSON has been removed and
+must not return in product output.
+
+### Preliminary implementation available on `main` (Codex, 2026-07-17)
+
+- `rmcp` 2.2.0 was rechecked as the latest stable crate. The spike remains
+  local stdio-only with no SDK HTTP/TLS features; its dependency graph contains
+  no `rustls` package.
+- Comparison-only raw canonical JSON was removed from MCP `_meta` while the
+  canonical object remains in `structuredContent`.
+- Tests assert tools are advertised while roots, sampling, elicitation,
+  prompts, resources, tasks, and other unapproved capabilities remain absent.
+- GraphQL anchors use variables rather than copied partial string escaping,
+  removing the control-character/injection class at this adapter boundary.
+
+This is preliminary hardening, not completion. The next executor must still
+define scopes/install trust, graduate or remove the spike, implement bounded
+resources and audit/OTel evidence, and run both claimed-client fixtures plus
+the full negative matrices below.
 
 ## Scope
 

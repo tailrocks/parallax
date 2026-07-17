@@ -33,7 +33,7 @@ enum Command {
         /// Issue fingerprint for `parallax issue context` / `parallax_issue_context`.
         #[arg(long)]
         fingerprint: Option<String>,
-        /// Run id for `parallax run bundle` (second anchor when available).
+        /// Invocation id for `parallax invocation bundle` (second anchor when available).
         #[arg(long)]
         invocation_id: Option<String>,
         /// Path to the `parallax` CLI binary.
