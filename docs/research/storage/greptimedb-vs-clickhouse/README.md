@@ -377,6 +377,9 @@ managed quotes remain):
 | still not done | **695** | top 5 product/server |
 | join PREWHERE FT | **696** | granules hold |
 | still not done | **697** | top 5 product/server |
+| last_value rate health | **698** | holds |
+| still not done | **699** | top 5 product/server |
+| milestone 700 | **700** | pins/healthy; NOT DONE |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
