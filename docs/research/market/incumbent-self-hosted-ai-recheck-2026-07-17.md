@@ -107,6 +107,15 @@ auto-merge commodity.
 | Bits Code docs | still **"never auto-merges PRs or MRs"** |
 | Sentry OTLP docs | still **"does not support OTLP metrics at this time"** |
 
+### Pass 299 (2026-07-18) — Seer + Bits + Sentry OTLP re-fetch
+
+| Source | Finding |
+| --- | --- |
+| develop.sentry.dev/self-hosted | still Seer **closed source** exclusion |
+| getsentry/self-hosted Latest | still **`26.7.0`** |
+| Bits Code docs | still **"never auto-merges PRs or MRs"** |
+| Sentry OTLP docs | still **"does not support OTLP metrics at this time"** |
+
 **UNFIRED:** Seer self-host GA; Grafana offline/BYO-LLM Assistant; Bits auto-merge; Sentry OTLP metrics GA.
 
 **Precise claim after this pass:**
