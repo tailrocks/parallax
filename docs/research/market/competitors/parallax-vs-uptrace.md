@@ -1,8 +1,9 @@
 # Parallax vs Uptrace
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 116**
-> pin: **v2.1.0-beta.7** still latest GitHub release 2026-06-05; **4,242★**;
-> last push 2026-06-14 — quieter cadence than fast-movers). Sources:
+> + **pass 149** pin: still **v2.1.0-beta.7** latest release 2026-06-05;
+> **4,242★**; last push **2026-06-14** — quiet vs fast-movers). ClickHouse
+> OTLP APM family; **not** portable redacted evidence-bundle product. Sources:
 > [uptrace.dev](https://uptrace.dev/) + [editions](https://uptrace.dev/editions)
 > + [pricing-update April 2026](https://uptrace.dev/blog/pricing-update-april-2026),
 > [github.com/uptrace/uptrace](https://github.com/uptrace/uptrace),
