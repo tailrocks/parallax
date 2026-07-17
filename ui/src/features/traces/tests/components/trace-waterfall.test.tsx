@@ -7,8 +7,8 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   TraceWaterfall,
   WHOLE_TRACE_ID,
-} from "@/components/console/trace-waterfall"
-import type { WaterfallSpan } from "@/components/console/trace-waterfall"
+} from "@/features/traces/components/trace-waterfall"
+import type { WaterfallSpan } from "@/features/traces/components/trace-waterfall"
 
 const spans: WaterfallSpan[] = [
   {

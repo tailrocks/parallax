@@ -4,7 +4,7 @@ import {
   computeSelfTimes,
   packFlameLanes,
   type TraceTreeSpan,
-} from "@/lib/trace-tree"
+} from "@/features/traces/model/trace-tree"
 
 function span(
   spanId: string,

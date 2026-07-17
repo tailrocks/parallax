@@ -4,8 +4,8 @@ import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { GraphqlOperationCard } from "@/components/console/graphql-operation"
-import type { GraphqlOperation } from "@/lib/graphql-trace"
+import { GraphqlOperationCard } from "@/features/traces/components/trace-graphql-operations"
+import type { GraphqlOperation } from "@/features/traces/model/graphql-operations"
 
 afterEach(cleanup)
 

@@ -158,7 +158,7 @@ Plan 116 DONE (2026-07-17): retention contract + deterministic prune CLI
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | P2 | M | upstream `greptimedb-ingester` native-TLS/plaintext feature fix | TODO — rescoped (unblock directive 2026-07-17): contribute the native-TLS/plaintext feature upstream to `greptimedb-ingester` (fix-forward policy); HTTP row path stays until the upstream release lands |
+| [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | P2 | M | upstream `greptimedb-ingester` native-TLS/plaintext feature fix | BLOCKED — crates.io still 0.18.0; upstream PR #58 OPEN not merged (recheck 2026-07-17); HTTP SQL path remains |
 
 ### Foundation And Delivery
 
@@ -190,6 +190,7 @@ Plan 129 DONE (2026-07-17): macOS forced-Bun Vitest dual-run + matrix ownership
 Plans 152 and 153 establish GraphQL and non-GraphQL runtime boundaries after the
 layer graph. Plan 149 DONE (2026-07-17): route-less capability facades
 Plan 134 DONE (2026-07-17): investigations feature facade
+Plan 142 DONE (2026-07-17): traces feature facade
 
 (runtime-metrics, story, time-range, page-header). Plans 134-142 and 150 are split by product owner for parallel work.
 Plans 139, 140, and 142 wait for plan 134's public pin facade; plan 140 also
@@ -205,7 +206,7 @@ work.
 | 139 | Move issues and stacktrace ownership into one feature | P1 | L | 100, 129, 132, 134, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-139-issues/README.md) |
 | 141 | Move logs and the reusable log table into one feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-141-logs/README.md) |
 | 140 | Move runs/invocations, sessions, and live observation into one feature | P1 | L | 100, 129, 132, 134, 141, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-140-invocations/README.md) |
-| [142](142-traces-feature-migration.md) | Move trace search, analysis, and inspection into one feature | P1 | XL | 100, 129, 132, 134, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| 142 | Move trace search, analysis, and inspection into one feature | P1 | XL | 100, 129, 132, 134, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-142-traces/README.md) |
 | 150 | Move overview into one bounded feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-150-overview/README.md) |
 | [143](143-app-layout-shell-migration.md) | Move app, layout, and shell behind explicit boundaries | P1 | XL | 134, 135, 136, 137, 138, 139, 140, 141, 142, 145, 146, 149, 150, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 | [151](151-ui-architecture-final-closure.md) | Verify and close the final UI architecture | P1 | L | 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 149, 150, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
@@ -222,7 +223,7 @@ work.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [103](103-property-fuzz-and-performance.md) | Add focused Rust/UI property/fuzz corpora and measured performance/allocation gates | P2 | L | 097, 099, 101, 104, 133, 147, 148 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [103](103-property-fuzz-and-performance.md) | Add focused Rust/UI property/fuzz corpora and measured performance/allocation gates | P2 | L | 097, 099, 101, 104, 133, 147, 148 | IN PROGRESS — Rust properties (math/semconv/SQL/redaction/canonical-JSON/fingerprint) + six fuzz targets + first benches; residual OTLP-normalize/trace-tree/retry properties, CI fuzz lane, UI properties (133/147/148), ratchets |
 
 ### Evidence Contracts And Closure
 
@@ -365,10 +366,10 @@ invent the missing product or operator decision.
 |------|------------|---------|--------|
 | [109](109-v2-auth-and-context-management.md) | Operator opens V2 scope | Operator opens V2 authentication and remote-context scope | IN PROGRESS (2026-07-17): minimal local-first bearer + context CLI shipped ([evidence](../docs/research/validation/2026-07-plan-109-v2-auth/README.md)); residual keyring/OTLP-token/RBAC |
 | [110](110-server-profile-ingest-concurrency.md) | 099, 113, 115; measured saturation | Plan 115 ships a supported profile and measurements prove single-worker saturation | OPENED (unblock directive 2026-07-17): producing the saturation measurements is now in scope; execute after 115 |
-| [112](112-product-mcp-ship-gates.md) | 099, 104, 111; 109 before any remote transport | Operator opens the product MCP ship/no-ship decision after evidence-safety prerequisites | IN PROGRESS (2026-07-17): local-stdio GO; spike green (30 tests); 109 bearer landed for future remote; residual client fixtures/resources/audit/graduation |
+| [112](112-product-mcp-ship-gates.md) | 099, 104, 111; 109 before any remote transport | Operator opens the product MCP ship/no-ship decision after evidence-safety prerequisites | IN PROGRESS (2026-07-17): local-stdio GO; spike green (33 tests); secret-free per-call audit rows landed; residual live client fixtures/resources/OTel span/graduation |
 | [114](114-retire-legacy-spool-reader.md) | A qualifying release cycle and expired legacy segments | A raw-frame release completes one compatibility cycle and all supported legacy segments expire | TIME-TRIGGERED (recheck 2026-07-17): only `preview` tag exists; compatibility cycle not complete — keep legacy NDJSON reader |
 | [115](115-v2-server-profile.md) | 102, 109; operator opens V2 server scope | Operator opens V2 server scope and approves a supported profile contract | OPENED (unblock directive 2026-07-17): adopt the plan's recommended profile; execute after 102 and 109 |
-| [118](118-sentry-envelope-migration-adapter.md) | 093, 099, 104, 111, 116 | Operator opens Sentry-compatible ingest after evidence makes it the next adoption constraint | OPENED (unblock directive 2026-07-17): Sentry-compatible ingest scope open; execute after its listed dependencies |
+| [118](118-sentry-envelope-migration-adapter.md) | 093, 099, 104, 111, 116 | Operator opens Sentry-compatible ingest after evidence makes it the next adoption constraint | IN PROGRESS (2026-07-17): pure envelope framing parser + unit fixtures landed (`parallax-ingest::sentry_envelope`); residual real SDK fixtures, HTTP, DSN map, spool ack, normalize |
 | [120](120-agent-session-capture-adapters.md) | 099, 104, 111, 119 | Operator selects and opens one coding-agent session capture adapter | OPENED (unblock directive 2026-07-17): first adapter = Claude Code session capture; execute after its listed dependencies |
 | [121](121-deploy-and-change-context-collectors.md) | 099, 104, 109, 111, 116 | Operator selects and opens one deploy/change provider integration | OPENED (unblock directive 2026-07-17): provider = GitHub (deployments/changes); execute after its listed dependencies |
 | [122](122-playground-residual-program.md) | 105, 111, 119, 151 | Plans 105, 111, and 151 complete their product contracts | TODO — ready when 105, 111, and 151 complete (unblock directive 2026-07-17) |

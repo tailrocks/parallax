@@ -4,7 +4,7 @@ import { screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { FieldExplorer } from "@/components/console/field-explorer"
+import { FieldExplorer } from "@/features/traces/components/trace-field-explorer"
 import { graphql } from "@/lib/api"
 import type { ResolvedRange } from "@/lib/range"
 import { renderTestRouter } from "@/test/router"

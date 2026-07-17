@@ -3,7 +3,10 @@ import { IconAlertTriangle, IconCode, IconGitBranch } from "@tabler/icons-react"
 import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
 import { Badge } from "@/components/ui/badge"
 import { formatDurationNs } from "@/lib/format"
-import type { GraphqlFieldNode, GraphqlOperation } from "@/lib/graphql-trace"
+import type {
+  GraphqlFieldNode,
+  GraphqlOperation,
+} from "@/features/traces/model/graphql-operations"
 import { cn } from "@/lib/utils"
 
 function bigintToNumber(value: bigint): number {

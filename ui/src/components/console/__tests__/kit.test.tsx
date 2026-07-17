@@ -9,7 +9,7 @@ import {
   sortRows,
 } from "@/components/console/data-table"
 import { RelativeTime } from "@/components/console/relative-time"
-import { SpanKindChip, spanKindMeta } from "@/components/console/span-kind"
+import { SpanKindChip, spanKindMeta } from "@/features/traces"
 import { StatCard } from "@/components/console/stat-card"
 import { resolveRangeSearch } from "@/lib/range"
 

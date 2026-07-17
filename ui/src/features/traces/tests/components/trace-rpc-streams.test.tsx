@@ -3,8 +3,8 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
-import { RpcStreamCard } from "@/components/console/rpc-stream"
-import type { RpcStreamInfo } from "@/lib/rpc-trace"
+import { RpcStreamCard } from "@/features/traces/components/trace-rpc-streams"
+import type { RpcStreamInfo } from "@/features/traces/model/rpc-streams"
 
 afterEach(cleanup)
 

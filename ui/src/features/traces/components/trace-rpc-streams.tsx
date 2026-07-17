@@ -7,7 +7,10 @@ import {
 
 import { Badge } from "@/components/ui/badge"
 import { formatDateTime, formatDurationNs } from "@/lib/format"
-import type { RpcMessage, RpcStreamInfo } from "@/lib/rpc-trace"
+import type {
+  RpcMessage,
+  RpcStreamInfo,
+} from "@/features/traces/model/rpc-streams"
 import { cn } from "@/lib/utils"
 
 function outcomeBadge(outcome: RpcStreamInfo["outcome"]) {

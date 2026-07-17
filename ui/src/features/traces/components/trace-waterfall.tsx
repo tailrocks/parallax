@@ -10,7 +10,7 @@ import {
 import { IconAffiliate } from "@tabler/icons-react"
 import { useVirtualizer } from "@tanstack/react-virtual"
 
-import { SpanKindChip } from "@/components/console/span-kind"
+import { SpanKindChip } from "@/features/traces/components/trace-span-kind"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import {
@@ -19,7 +19,7 @@ import {
   computeWindow,
   errorPathSpanIds,
   groupByService,
-} from "@/lib/trace-tree"
+} from "@/features/traces/model/trace-tree"
 import { colorForSpan } from "@/lib/color-by"
 import type { ColorByStrategy } from "@/lib/color-by"
 import {
@@ -30,7 +30,10 @@ import {
 } from "@/lib/timeline-viewport"
 import type { TimelineViewport } from "@/lib/timeline-viewport"
 import { useTimelineInteractions } from "@/hooks/use-timeline-interactions"
-import type { OrderedTraceSpan, TraceTreeSpan } from "@/lib/trace-tree"
+import type {
+  OrderedTraceSpan,
+  TraceTreeSpan,
+} from "@/features/traces/model/trace-tree"
 import { formatDurationNs } from "@/lib/format"
 
 export const WHOLE_TRACE_ID = "__whole_trace__"

@@ -8,7 +8,7 @@ import {
   ClockSkewBanner,
   TraceViewModeToggle,
   validateTraceDetailSearch,
-} from "@/routes/traces.$traceId"
+} from "@/features/traces"
 
 afterEach(cleanup)
 

@@ -4,8 +4,11 @@ import {
   buildRpcStreams,
   grpcStatusLabel,
   messagingSummary,
-} from "@/lib/rpc-trace"
-import type { RpcTraceEvent, RpcTraceSpan } from "@/lib/rpc-trace"
+} from "@/features/traces/model/rpc-streams"
+import type {
+  RpcTraceEvent,
+  RpcTraceSpan,
+} from "@/features/traces/model/rpc-streams"
 
 function span(
   spanId: string,

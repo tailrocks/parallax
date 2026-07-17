@@ -3,7 +3,7 @@
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
-import { LinkedTraceEdges, TraceCompareResult } from "@/routes/traces.$traceId"
+import { LinkedTraceEdges, TraceCompareResult } from "@/features/traces"
 import type { SpanLink, TraceDiff, TraceSummary } from "@/lib/api"
 import { renderTestRouter } from "@/test/router"
 

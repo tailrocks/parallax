@@ -2,65 +2,12 @@
   "schema_version": 1,
   "ratchets": {
     "fire_event_calls": 28,
-    "legacy_handoffs": 45,
+    "legacy_handoffs": 29,
     "raw_router_builders": 1,
-    "test_cases": 502,
-    "test_files": 103
+    "test_cases": 503,
+    "test_files": 104
   },
-  "private_route_imports": [
-    {
-      "test_file": "ui/src/routes/__tests__/-trace-graphql.test.tsx",
-      "module": "@/routes/traces.$traceId",
-      "symbols": [
-        "TraceGraphqlSection"
-      ],
-      "removal_plan": 142
-    },
-    {
-      "test_file": "ui/src/routes/__tests__/-trace-links.test.tsx",
-      "module": "@/routes/traces.$traceId",
-      "symbols": [
-        "LinkedTraceEdges",
-        "TraceCompareResult"
-      ],
-      "removal_plan": 142
-    },
-    {
-      "test_file": "ui/src/routes/__tests__/-trace-rpc.test.tsx",
-      "module": "@/routes/traces.$traceId",
-      "symbols": [
-        "InspectorEventList",
-        "InspectorLinksList",
-        "SpanEvent",
-        "TraceErrorCallout",
-        "TraceRpcSection"
-      ],
-      "removal_plan": 142
-    },
-    {
-      "test_file": "ui/src/routes/__tests__/-trace-view-modes.test.tsx",
-      "module": "@/routes/traces.$traceId",
-      "symbols": [
-        "ClockSkewBanner",
-        "TraceViewModeToggle",
-        "validateTraceDetailSearch"
-      ],
-      "removal_plan": 142
-    },
-    {
-      "test_file": "ui/src/routes/__tests__/-traces-search.test.tsx",
-      "module": "@/routes/traces.index",
-      "symbols": [
-        "TraceTable",
-        "paramToTraceSort",
-        "patchTracesSearch",
-        "traceDetailSearch",
-        "traceSortToParam",
-        "validateTracesSearch"
-      ],
-      "removal_plan": 142
-    }
-  ],
+  "private_route_imports": [],
   "entries": [
     {
       "id": "vitest-001",
@@ -126,26 +73,18 @@
     },
     {
       "id": "vitest-004",
-      "surface": "features/investigations",
+      "surface": "features/traces",
       "risk": "Investigation attribute comparison can hide divergent evidence or misorder values",
-      "scenario_owner": "features/investigations",
+      "scenario_owner": "features/traces",
       "lane_owner": "vitest/component",
-      "delivery_plan": 134,
       "layer": "component",
-      "test_file": "ui/src/components/console/__tests__/attribute-compare.test.tsx",
+      "test_file": "ui/src/features/traces/tests/components/trace-attribute-compare.test.tsx",
       "test_ids": [
         "renders ranked BubbleUp rows with paired percentages",
         "renders an empty state"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/__tests__/attribute-compare.test.tsx",
-        "destination_owner": "features/investigations",
-        "removal_plan": 134,
-        "created": "2026-07-15",
-        "expires": "plan-134-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-005",
@@ -191,48 +130,32 @@
     },
     {
       "id": "vitest-007",
-      "surface": "features/investigations",
+      "surface": "features/traces",
       "risk": "Investigation evidence gaps can be ranked or linked incorrectly",
-      "scenario_owner": "features/investigations",
+      "scenario_owner": "features/traces",
       "lane_owner": "vitest/component",
-      "delivery_plan": 134,
       "layer": "component",
-      "test_file": "ui/src/components/console/__tests__/evidence-gaps.test.tsx",
+      "test_file": "ui/src/features/traces/tests/components/trace-evidence-gaps.test.tsx",
       "test_ids": [
         "renders gaps when present",
         "renders nothing for clean evidence"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/__tests__/evidence-gaps.test.tsx",
-        "destination_owner": "features/investigations",
-        "removal_plan": 134,
-        "created": "2026-07-15",
-        "expires": "plan-134-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-008",
-      "surface": "features/sql",
+      "surface": "features/traces",
       "risk": "Field exploration can apply the wrong service filter or SQL pivot",
-      "scenario_owner": "features/sql",
+      "scenario_owner": "features/traces",
       "lane_owner": "vitest/component",
-      "delivery_plan": 135,
       "layer": "component",
-      "test_file": "ui/src/components/console/__tests__/field-explorer.test.tsx",
+      "test_file": "ui/src/features/traces/tests/components/trace-field-explorer.test.tsx",
       "test_ids": [
         "loads field keys, stats, service filters, and SQL pivots"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/__tests__/field-explorer.test.tsx",
-        "destination_owner": "features/sql",
-        "removal_plan": 135,
-        "created": "2026-07-15",
-        "expires": "plan-135-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-009",
@@ -240,22 +163,14 @@
       "risk": "GraphQL trace operations can render incorrect field timing and error evidence",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/component",
-      "delivery_plan": 142,
       "layer": "component",
-      "test_file": "ui/src/components/console/__tests__/graphql-operation.test.tsx",
+      "test_file": "ui/src/features/traces/tests/components/trace-graphql-operations.test.tsx",
       "test_ids": [
         "renders operation badges and selects the backing span",
         "renders nothing for non-graphql traces"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/__tests__/graphql-operation.test.tsx",
-        "destination_owner": "features/traces",
-        "removal_plan": 142,
-        "created": "2026-07-15",
-        "expires": "plan-142-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-010",
@@ -330,22 +245,14 @@
       "risk": "RPC stream evidence can mislabel direction, deadlines, or message ordering",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/component",
-      "delivery_plan": 142,
       "layer": "component",
-      "test_file": "ui/src/components/console/__tests__/rpc-stream.test.tsx",
+      "test_file": "ui/src/features/traces/tests/components/trace-rpc-streams.test.tsx",
       "test_ids": [
         "renders message dots outcome badge and truncated line",
         "renders nothing for empty streams"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/__tests__/rpc-stream.test.tsx",
-        "destination_owner": "features/traces",
-        "removal_plan": 142,
-        "created": "2026-07-15",
-        "expires": "plan-142-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-014",
@@ -418,9 +325,8 @@
       "risk": "Trace waterfall selection, modes, lanes, and minimap navigation can diverge",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/component",
-      "delivery_plan": 142,
       "layer": "component",
-      "test_file": "ui/src/components/console/__tests__/waterfall.test.tsx",
+      "test_file": "ui/src/features/traces/tests/components/trace-waterfall.test.tsx",
       "test_ids": [
         "D-002 t-deep: span names render on one truncating line, never char-wrapped",
         "falls back to the full tree when errors mode has no errors",
@@ -434,14 +340,7 @@
         "true children are not flagged detached"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/__tests__/waterfall.test.tsx",
-        "destination_owner": "features/traces",
-        "removal_plan": 142,
-        "created": "2026-07-15",
-        "expires": "plan-142-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-018",
@@ -546,9 +445,8 @@
       "risk": "GraphQL span trees can miscompute nesting, self time, N+1 groups, or partial errors",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/unit",
-      "delivery_plan": 142,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/graphql-trace.test.ts",
+      "test_file": "ui/src/features/traces/tests/model/graphql-operations.test.ts",
       "test_ids": [
         "builds a nested field tree with self durations",
         "counts partial field errors under a successful operation",
@@ -558,14 +456,7 @@
         "sorts roots by start time then path"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/graphql-trace.test.ts",
-        "destination_owner": "features/traces",
-        "removal_plan": 142,
-        "created": "2026-07-15",
-        "expires": "plan-142-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-023",
@@ -631,9 +522,8 @@
       "risk": "RPC trace analysis can include unary spans or misclassify outcomes and messaging",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/unit",
-      "delivery_plan": 142,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/rpc-trace.test.ts",
+      "test_file": "ui/src/features/traces/tests/model/rpc-streams.test.ts",
       "test_ids": [
         "builds ordered message timelines for multi-message RPC spans",
         "maps deadline outcomes and labels",
@@ -641,14 +531,7 @@
         "summarizes messaging producers consumers and max batch size"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/rpc-trace.test.ts",
-        "destination_owner": "features/traces",
-        "removal_plan": 142,
-        "created": "2026-07-15",
-        "expires": "plan-142-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-027",
@@ -676,9 +559,8 @@
       "risk": "Trace trees can loop, orphan spans, misorder lanes, or miss clock skew",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/unit",
-      "delivery_plan": 142,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/trace-tree.test.ts",
+      "test_file": "ui/src/features/traces/tests/model/trace-tree.test.ts",
       "test_ids": [
         "clamps positions inside the remaining track",
         "detects a backdated rootless span in the same trace",
@@ -700,14 +582,7 @@
         "treats missing parents as orphan roots"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/trace-tree.test.ts",
-        "destination_owner": "features/traces",
-        "removal_plan": 142,
-        "created": "2026-07-15",
-        "expires": "plan-142-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-029",
@@ -847,21 +722,13 @@
       "risk": "Trace detail can omit GraphQL operation evidence",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/route",
-      "delivery_plan": 142,
       "layer": "route-contract",
-      "test_file": "ui/src/routes/__tests__/-trace-graphql.test.tsx",
+      "test_file": "ui/src/features/traces/tests/components/trace-graphql-section.test.tsx",
       "test_ids": [
         "renders the GraphQL card only when operations exist"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/routes/__tests__/-trace-graphql.test.tsx",
-        "destination_owner": "features/traces",
-        "removal_plan": 142,
-        "created": "2026-07-15",
-        "expires": "plan-142-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-038",
@@ -869,22 +736,14 @@
       "risk": "Trace compare and linked-edge navigation can lose current window state",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/route",
-      "delivery_plan": 142,
       "layer": "route-contract",
-      "test_file": "ui/src/routes/__tests__/-trace-links.test.tsx",
+      "test_file": "ui/src/features/traces/tests/components/trace-links.test.tsx",
       "test_ids": [
         "renders resolved link targets as causal edge cards",
         "renders added removed and changed sections"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/routes/__tests__/-trace-links.test.tsx",
-        "destination_owner": "features/traces",
-        "removal_plan": 142,
-        "created": "2026-07-15",
-        "expires": "plan-142-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-039",
@@ -892,9 +751,8 @@
       "risk": "Trace RPC inspectors can misrender errors, events, links, or stream evidence",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/route",
-      "delivery_plan": 142,
       "layer": "route-contract",
-      "test_file": "ui/src/routes/__tests__/-trace-rpc.test.tsx",
+      "test_file": "ui/src/features/traces/tests/components/trace-rpc-section.test.tsx",
       "test_ids": [
         "caps inspector events and expands on demand",
         "caps inspector links and expands on demand",
@@ -902,14 +760,7 @@
         "renders the RPC card only for stream data"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/routes/__tests__/-trace-rpc.test.tsx",
-        "destination_owner": "features/traces",
-        "removal_plan": 142,
-        "created": "2026-07-15",
-        "expires": "plan-142-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-040",
@@ -917,23 +768,15 @@
       "risk": "Trace view modes and clock-skew search state can round-trip incorrectly",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/route",
-      "delivery_plan": 142,
       "layer": "route-contract",
-      "test_file": "ui/src/routes/__tests__/-trace-view-modes.test.tsx",
+      "test_file": "ui/src/features/traces/tests/components/trace-view-modes.test.tsx",
       "test_ids": [
         "validates the trace view search param",
         "dispatches view changes from the mode toggle",
         "renders skew warnings only for suspect pairs"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/routes/__tests__/-trace-view-modes.test.tsx",
-        "destination_owner": "features/traces",
-        "removal_plan": 142,
-        "created": "2026-07-15",
-        "expires": "plan-142-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-041",
@@ -941,9 +784,8 @@
       "risk": "Trace search, sorting, links, and URL state can round-trip incorrectly",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/route",
-      "delivery_plan": 142,
       "layer": "route-contract",
-      "test_file": "ui/src/routes/__tests__/-traces-search.test.tsx",
+      "test_file": "ui/src/features/traces/tests/model/traces-search.test.tsx",
       "test_ids": [
         "tolerates garbage and keeps valid params",
         "resets page when filters change",
@@ -953,14 +795,7 @@
         "renders a compact trace table from a mocked payload"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/routes/__tests__/-traces-search.test.tsx",
-        "destination_owner": "features/traces",
-        "removal_plan": 142,
-        "created": "2026-07-15",
-        "expires": "plan-142-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-042",
@@ -1149,9 +984,8 @@
       "risk": "wave-2 trace flamegraph regression",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/component",
-      "delivery_plan": 163,
       "layer": "component",
-      "test_file": "ui/src/components/console/__tests__/trace-flamegraph.test.tsx",
+      "test_file": "ui/src/features/traces/tests/components/trace-flamegraph.test.tsx",
       "test_ids": [
         "explains an empty trace",
         "focuses a subtree on shift-click and can restore the whole trace",
@@ -1159,13 +993,6 @@
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/__tests__/trace-flamegraph.test.tsx",
-        "destination_owner": "features/traces",
-        "removal_plan": 163,
-        "created": "2026-07-15",
-        "expires": "plan-163-completion"
-      },
       "fire_event_reason": "PointerEvent shift-click focus is not expressible through userEvent's pointer API in jsdom"
     },
     {
@@ -1536,9 +1363,8 @@
       "risk": "wave-2 trace tree flame regression",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/model",
-      "delivery_plan": 163,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/trace-tree-flame.test.ts",
+      "test_file": "ui/src/features/traces/tests/model/trace-tree-flame.test.ts",
       "test_ids": [
         "clips children that spill past the parent window",
         "equals the full duration for leaf spans",
@@ -1553,14 +1379,7 @@
         "subtracts sequential children"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/trace-tree-flame.test.ts",
-        "destination_owner": "features/traces",
-        "removal_plan": 163,
-        "created": "2026-07-15",
-        "expires": "plan-163-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-w2-3877",
@@ -2542,6 +2361,20 @@
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
+    },
+    {
+      "lane_owner": "vitest/route",
+      "layer": "route-contract",
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "id": "vitest-traces-routes",
+      "surface": "features/traces",
+      "risk": "Traces route wiring can lose public search/loader facade contracts",
+      "scenario_owner": "features/traces",
+      "test_file": "ui/src/routes/tests/-traces-routes.test.tsx",
+      "test_ids": [
+        "exposes public search and loaders for thin route wiring"
+      ]
     }
   ],
   "browser_contract_paths": [

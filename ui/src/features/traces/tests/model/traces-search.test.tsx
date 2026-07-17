@@ -12,7 +12,7 @@ import {
   patchTracesSearch,
   traceSortToParam,
   validateTracesSearch,
-} from "@/routes/traces.index"
+} from "@/features/traces"
 
 const range = {
   key: "1h",

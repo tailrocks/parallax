@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
-import { buildGraphqlOperations } from "@/lib/graphql-trace"
-import type { GraphqlTraceSpan } from "@/lib/graphql-trace"
+import { buildGraphqlOperations } from "@/features/traces/model/graphql-operations"
+import type { GraphqlTraceSpan } from "@/features/traces/model/graphql-operations"
 
 function span(
   spanId: string,

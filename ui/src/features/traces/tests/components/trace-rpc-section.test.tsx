@@ -5,14 +5,14 @@ import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it } from "vitest"
 
 import type { SpanLink } from "@/lib/api"
-import type { RpcStreamInfo } from "@/lib/rpc-trace"
+import type { RpcStreamInfo } from "@/features/traces/model/rpc-streams"
 import {
   InspectorEventList,
   InspectorLinksList,
   TraceErrorCallout,
   TraceRpcSection,
-} from "@/routes/traces.$traceId"
-import type { SpanEvent } from "@/routes/traces.$traceId"
+} from "@/features/traces"
+import type { SpanEvent } from "@/features/traces"
 import { renderTestRouter } from "@/test/router"
 
 afterEach(cleanup)

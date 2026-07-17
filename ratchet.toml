@@ -501,57 +501,10 @@ class = "aux"
 name = "parallax-test-support"
 class = "test-support"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-evidence/tests/plan_093_baseline.rs"
 ceiling = 3
-
-
-
-
-
 
 [[limits]]
 metric = "rust.assertions"
@@ -618,12 +571,6 @@ metric = "rust.assertions"
 scope = "crates/parallax-server/tests/m7_metric_exemplar_migration_greptime.rs"
 ceiling = 10
 
-
-
-
-
-
-
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-xtask/src/command.rs"
@@ -633,63 +580,6 @@ ceiling = 1
 metric = "rust.assertions"
 scope = "crates/parallax-xtask/src/semconv/tests.rs"
 ceiling = 7
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 [[limits]]
 metric = "agent-doc-bytes"
@@ -746,7 +636,6 @@ metric = "rust.function-cognitive-complexity"
 scope = "crates/parallax-xtask/src/policy/typescript/workspace.rs::health"
 ceiling = 25
 
-
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-api/src/resolvers/issues.rs::bundle"
@@ -756,10 +645,6 @@ ceiling = 142
 metric = "rust.function-lines"
 scope = "crates/parallax-api/src/resolvers/issues.rs::bundle_metric_windows"
 ceiling = 111
-
-
-
-
 
 [[limits]]
 metric = "rust.function-lines"
@@ -851,18 +736,15 @@ metric = "rust.function-lines"
 scope = "crates/parallax-server/tests/m5_gates.rs::measure_m5_gates"
 ceiling = 241
 
-
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-greptime/src/greptime/trace_analytics.rs::attribute_compare"
 ceiling = 102
 
-
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-test-support/src/memory/trace_analytics.rs::attribute_compare"
 ceiling = 101
-
 
 [[limits]]
 metric = "rust.function-lines"
@@ -878,9 +760,6 @@ ceiling = 133
 metric = "rust.function-lines"
 scope = "crates/parallax-xtask/src/policy/typescript.rs::analyze"
 ceiling = 161
-
-
-
 
 [[limits]]
 metric = "rust.public-root-items"
@@ -976,7 +855,6 @@ ceiling = 9
 metric = "rust.assertions"
 scope = "crates/parallax-api/src/resolvers/metrics/tests.rs"
 ceiling = 16
-
 
 [[limits]]
 metric = "rust.assertions"
@@ -1348,15 +1226,10 @@ metric = "rust.file-lines"
 scope = "crates/parallax-greptime/src/greptime/invocation_store.rs"
 ceiling = 445
 
-
-
-
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-greptime/src/greptime/trace_store.rs::spans_by_invocations"
 ceiling = 102
-
-
 
 [[limits]]
 metric = "rust.function-lines"
@@ -1383,16 +1256,6 @@ metric = "rust.test-wall-clocks"
 scope = "crates/parallax-server/tests/m8_invocation_contract_greptime.rs"
 ceiling = 1
 
-
-
-
-
-
-
-
-
-
-
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-api/src/resolvers/invocations.rs"
@@ -1403,12 +1266,10 @@ metric = "rust.test-wall-clocks"
 scope = "crates/parallax-api/src/resolvers/invocations/tests.rs"
 ceiling = 2
 
-
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-metadata/src/turso.rs::upsert_issue_occurrences"
 ceiling = 103
-
 
 [[limits]]
 metric = "rust.assertions"
@@ -1465,14 +1326,12 @@ metric = "rust.test-wall-clocks"
 scope = "crates/parallax-analysis/src/log_patterns/tests.rs"
 ceiling = 1
 
-
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-test-support/src/memory/trace_analytics.rs"
 ceiling = 418
 
 # ---------------------------------------------------------------------------
-
 
 # ---------------------------------------------------------------------------
 
@@ -1484,7 +1343,6 @@ ceiling = 418
 metric = "typescript.assertions"
 scope = "ui/src/components/__tests__/shell.test.tsx"
 ceiling = 13
-
 
 [[limits]]
 metric = "typescript.assertions"
@@ -1531,16 +1389,10 @@ metric = "typescript.assertions"
 scope = "ui/src/shared/tests/components/page-header.test.tsx"
 ceiling = 5
 
-
 [[limits]]
 metric = "typescript.assertions"
 scope = "ui/src/components/console/__tests__/agent-session.test.tsx"
 ceiling = 10
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/attribute-compare.test.tsx"
-ceiling = 7
 
 [[limits]]
 metric = "typescript.assertions"
@@ -1559,23 +1411,8 @@ ceiling = 9
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/evidence-gaps.test.tsx"
-ceiling = 5
-
-[[limits]]
-metric = "typescript.assertions"
 scope = "ui/src/components/console/__tests__/facet-sidebar.test.tsx"
 ceiling = 14
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/field-explorer.test.tsx"
-ceiling = 8
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/graphql-operation.test.tsx"
-ceiling = 8
 
 [[limits]]
 metric = "typescript.assertions"
@@ -1589,18 +1426,8 @@ ceiling = 19
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/rpc-stream.test.tsx"
-ceiling = 6
-
-[[limits]]
-metric = "typescript.assertions"
 scope = "ui/src/components/console/__tests__/top-movers.test.tsx"
 ceiling = 8
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/trace-flamegraph.test.tsx"
-ceiling = 5
 
 [[limits]]
 metric = "typescript.assertions"
@@ -1609,7 +1436,7 @@ ceiling = 4
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/waterfall.test.tsx"
+scope = "ui/src/features/traces/tests/components/trace-waterfall.test.tsx"
 ceiling = 25
 
 [[limits]]
@@ -1679,7 +1506,7 @@ ceiling = 22
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/graphql-trace.test.ts"
+scope = "ui/src/features/traces/tests/model/graphql-operations.test.ts"
 ceiling = 15
 
 [[limits]]
@@ -1719,7 +1546,7 @@ ceiling = 6
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/rpc-trace.test.ts"
+scope = "ui/src/features/traces/tests/model/rpc-streams.test.ts"
 ceiling = 10
 
 [[limits]]
@@ -1734,12 +1561,12 @@ ceiling = 47
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/trace-tree-flame.test.ts"
+scope = "ui/src/features/traces/tests/model/trace-tree-flame.test.ts"
 ceiling = 23
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/trace-tree.test.ts"
+scope = "ui/src/features/traces/tests/model/trace-tree.test.ts"
 ceiling = 33
 
 [[limits]]
@@ -1767,7 +1594,6 @@ metric = "typescript.assertions"
 scope = "ui/src/routes/__tests__/-alerts.test.tsx"
 ceiling = 35
 
-
 [[limits]]
 metric = "typescript.assertions"
 scope = "ui/src/features/ecosystem/tests/model/ecosystem-search.test.ts"
@@ -1775,27 +1601,7 @@ ceiling = 2
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-trace-graphql.test.tsx"
-ceiling = 3
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-trace-links.test.tsx"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-trace-rpc.test.tsx"
-ceiling = 9
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-trace-view-modes.test.tsx"
-ceiling = 9
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-traces-search.test.tsx"
+scope = "ui/src/features/traces/tests/model/traces-search.test.tsx"
 ceiling = 11
 
 [[limits]]
@@ -1805,13 +1611,8 @@ ceiling = 370
 
 [[limits]]
 metric = "typescript.file-lines"
-scope = "ui/src/components/console/field-explorer.tsx"
-ceiling = 397
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/components/console/trace-waterfall.tsx"
-ceiling = 672
+scope = "ui/src/features/traces/components/trace-waterfall.tsx"
+ceiling = 675
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -1825,33 +1626,28 @@ ceiling = 676
 
 [[limits]]
 metric = "typescript.file-lines"
-scope = "ui/src/lib/trace-tree.ts"
+scope = "ui/src/features/traces/model/trace-tree.ts"
 ceiling = 351
-
 
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/routes/alerts.index.tsx"
 ceiling = 642
 
-
-
-
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/routes/metrics.$metricName.tsx"
 ceiling = 419
 
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx"
+ceiling = 1598
 
 [[limits]]
 metric = "typescript.file-lines"
-scope = "ui/src/routes/traces.$traceId.tsx"
-ceiling = 1585
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/traces.index.tsx"
-ceiling = 871
+scope = "ui/src/features/traces/components/traces-page.tsx"
+ceiling = 876
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -1860,18 +1656,8 @@ ceiling = 16
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/console/field-explorer.tsx:166"
-ceiling = 18
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/components/console/top-movers.tsx:85"
 ceiling = 30
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/console/trace-waterfall.tsx:331"
-ceiling = 24
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -1918,18 +1704,6 @@ metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/lib/colors.ts:103"
 ceiling = 19
 
-
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/graphql-trace.ts:146"
-ceiling = 19
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/graphql-trace.ts:226"
-ceiling = 28
-
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/lib/invocation.ts:36"
@@ -1952,21 +1726,6 @@ ceiling = 37
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/trace-tree.ts:222"
-ceiling = 49
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/trace-tree.ts:289"
-ceiling = 16
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/trace-tree.ts:335"
-ceiling = 24
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/lib/where-clause.ts:153"
 ceiling = 18
 
@@ -1979,33 +1738,6 @@ ceiling = 47
 metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/lib/where-clause.ts:77"
 ceiling = 42
-
-
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/traces.$traceId.tsx:1401"
-ceiling = 16
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/traces.$traceId.tsx:154"
-ceiling = 17
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/traces.$traceId.tsx:294"
-ceiling = 33
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/traces.index.tsx:369"
-ceiling = 69
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/components/console/trace-waterfall.tsx:331"
-ceiling = 18
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
@@ -2032,12 +1764,6 @@ metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/lib/colors.ts:103"
 ceiling = 15
 
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/lib/graphql-trace.ts:226"
-ceiling = 13
-
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/lib/metric-aggregation.ts:142"
@@ -2050,16 +1776,6 @@ ceiling = 16
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/lib/trace-tree.ts:222"
-ceiling = 20
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/lib/trace-tree.ts:335"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/lib/where-clause.ts:181"
 ceiling = 21
 
@@ -2067,22 +1783,6 @@ ceiling = 21
 metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/lib/where-clause.ts:77"
 ceiling = 15
-
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/traces.$traceId.tsx:1401"
-ceiling = 16
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/traces.$traceId.tsx:294"
-ceiling = 30
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/traces.index.tsx:369"
-ceiling = 34
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2096,11 +1796,6 @@ ceiling = 62
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/components/console/__tests__/waterfall.test.tsx:107"
-ceiling = 82
-
-[[limits]]
-metric = "typescript.function-lines"
 scope = "ui/src/components/console/__tests__/where-clause-editor.test.tsx:18"
 ceiling = 92
 
@@ -2108,11 +1803,6 @@ ceiling = 92
 metric = "typescript.function-lines"
 scope = "ui/src/components/console/agent-session.tsx:76"
 ceiling = 78
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/attribute-compare.tsx:50"
-ceiling = 61
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2124,7 +1814,6 @@ metric = "typescript.function-lines"
 scope = "ui/src/components/console/duration-filter.tsx:45"
 ceiling = 126
 
-
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/components/console/facet-sidebar.tsx:29"
@@ -2132,43 +1821,8 @@ ceiling = 108
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/components/console/field-explorer.tsx:166"
-ceiling = 248
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/field-explorer.tsx:91"
-ceiling = 74
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/rpc-stream.tsx:104"
-ceiling = 62
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/rpc-stream.tsx:99"
-ceiling = 70
-
-[[limits]]
-metric = "typescript.function-lines"
 scope = "ui/src/components/console/top-movers.tsx:85"
 ceiling = 77
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/trace-flamegraph.tsx:31"
-ceiling = 89
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/trace-waterfall.tsx:331"
-ceiling = 106
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/trace-waterfall.tsx:96"
-ceiling = 600
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2237,26 +1891,6 @@ ceiling = 67
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/lib/__tests__/graphql-trace.test.ts:24"
-ceiling = 150
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/__tests__/rpc-trace.test.ts:45"
-ceiling = 108
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/__tests__/trace-tree.test.ts:170"
-ceiling = 86
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/__tests__/trace-tree.test.ts:34"
-ceiling = 235
-
-[[limits]]
-metric = "typescript.function-lines"
 scope = "ui/src/lib/__tests__/where-clause.test.ts:11"
 ceiling = 126
 
@@ -2265,26 +1899,10 @@ metric = "typescript.function-lines"
 scope = "ui/src/lib/alert-incident-timeline.ts:56"
 ceiling = 76
 
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/graphql-trace.ts:146"
-ceiling = 152
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/graphql-trace.ts:226"
-ceiling = 61
-
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/lib/timeline-viewport.ts:107"
 ceiling = 64
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/trace-tree.ts:335"
-ceiling = 61
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2301,22 +1919,6 @@ metric = "typescript.function-lines"
 scope = "ui/src/platform/sse/tests/use-live-stream.test.tsx:77"
 ceiling = 146
 
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/__tests__/-trace-links.test.tsx:48"
-ceiling = 68
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/__tests__/-trace-links.test.tsx:49"
-ceiling = 66
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/__tests__/-trace-view-modes.test.tsx:15"
-ceiling = 61
-
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/routes/alerts.index.tsx:115"
@@ -2332,17 +1934,6 @@ metric = "typescript.function-lines"
 scope = "ui/src/routes/alerts.index.tsx:580"
 ceiling = 88
 
-
-
-
-
-
-
-
-
-
-
-
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/routes/metrics.$metricName.tsx:113"
@@ -2352,37 +1943,6 @@ ceiling = 74
 metric = "typescript.function-lines"
 scope = "ui/src/routes/metrics.$metricName.tsx:202"
 ceiling = 238
-
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/traces.$traceId.tsx:1142"
-ceiling = 90
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/traces.$traceId.tsx:1233"
-ceiling = 68
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/traces.$traceId.tsx:1401"
-ceiling = 212
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/traces.$traceId.tsx:294"
-ceiling = 497
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/traces.index.tsx:369"
-ceiling = 447
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/traces.index.tsx:817"
-ceiling = 89
 
 [[limits]]
 metric = "typescript.suppressions"
@@ -2399,12 +1959,10 @@ ceiling = 1
 # migration_plan = plan that moves or hardens the file; kind classifies origin.
 # ---------------------------------------------------------------------------
 
-
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/platform/sse/live-stream-controller.ts:37"
 ceiling = 112
-
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2415,8 +1973,6 @@ ceiling = 62
 metric = "typescript.function-lines"
 scope = "ui/src/platform/sse/use-live-stream.ts:39"
 ceiling = 69
-
-
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2442,7 +1998,6 @@ ceiling = 1
 metric = "typescript.suppressions"
 scope = "ui/src/platform/graphql/tests/fixtures/static-probe.generated.ts"
 ceiling = 1
-
 
 [[limits]]
 metric = "typescript.assertions"
@@ -2529,7 +2084,6 @@ metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/platform/graphql/variables.ts:17"
 ceiling = 21
 
-
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/features/dashboards/api/widget-series-api.ts:83"
@@ -2564,7 +2118,6 @@ ceiling = 63
 metric = "typescript.function-lines"
 scope = "ui/src/features/time-range/components/range-picker.tsx:19"
 ceiling = 80
-
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -3133,14 +2686,12 @@ target_owner = "features/investigations"
 migration_plan = "none"
 kind = "handwritten"
 
-
 [[ui.ownership]]
 path = "ui/src/features/investigations/api/investigation-delete.generated.ts"
 current_owner = "features/investigations"
 target_owner = "features/investigations"
 migration_plan = "none"
 kind = "generated"
-
 
 [[ui.ownership]]
 path = "ui/src/features/investigations/api/investigation-detail.generated.ts"
@@ -3149,14 +2700,12 @@ target_owner = "features/investigations"
 migration_plan = "none"
 kind = "generated"
 
-
 [[ui.ownership]]
 path = "ui/src/features/investigations/api/investigation-pin-options.generated.ts"
 current_owner = "features/investigations"
 target_owner = "features/investigations"
 migration_plan = "none"
 kind = "generated"
-
 
 [[ui.ownership]]
 path = "ui/src/features/investigations/api/investigation-save.generated.ts"
@@ -3165,14 +2714,12 @@ target_owner = "features/investigations"
 migration_plan = "none"
 kind = "generated"
 
-
 [[ui.ownership]]
 path = "ui/src/features/investigations/api/investigations-list.generated.ts"
 current_owner = "features/investigations"
 target_owner = "features/investigations"
 migration_plan = "none"
 kind = "generated"
-
 
 [[ui.ownership]]
 path = "ui/src/features/investigations/components/investigation-detail-page.tsx"
@@ -3181,7 +2728,6 @@ target_owner = "features/investigations"
 migration_plan = "none"
 kind = "handwritten"
 
-
 [[ui.ownership]]
 path = "ui/src/features/investigations/components/investigations-page.tsx"
 current_owner = "features/investigations"
@@ -3189,14 +2735,12 @@ target_owner = "features/investigations"
 migration_plan = "none"
 kind = "handwritten"
 
-
 [[ui.ownership]]
 path = "ui/src/features/investigations/components/pin-button.tsx"
 current_owner = "features/investigations"
 target_owner = "features/investigations"
 migration_plan = "none"
 kind = "handwritten"
-
 
 [[ui.ownership]]
 path = "ui/src/features/investigations/index.ts"
@@ -3213,14 +2757,12 @@ target_owner = "features/investigations"
 migration_plan = "none"
 kind = "handwritten"
 
-
 [[ui.ownership]]
 path = "ui/src/features/investigations/model/investigation-state.ts"
 current_owner = "features/investigations"
 target_owner = "features/investigations"
 migration_plan = "none"
 kind = "handwritten"
-
 
 [[ui.ownership]]
 path = "ui/src/features/investigations/model/investigation.ts"
@@ -3229,14 +2771,12 @@ target_owner = "features/investigations"
 migration_plan = "none"
 kind = "handwritten"
 
-
 [[ui.ownership]]
 path = "ui/src/features/investigations/tests/model/investigation-state.test.ts"
 current_owner = "features/investigations"
 target_owner = "features/investigations"
 migration_plan = "none"
 kind = "handwritten"
-
 
 [[ui.ownership]]
 path = "ui/scripts/runtime-probe.ts"
@@ -3260,13 +2800,6 @@ migration_plan = "140"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/__tests__/attribute-compare.test.tsx"
-current_owner = "legacy-console-tests"
-target_owner = "features/traces"
-migration_plan = "142"
-kind = "handwritten"
-
-[[ui.ownership]]
 path = "ui/src/components/console/__tests__/command-palette.test.tsx"
 current_owner = "legacy-console-tests"
 target_owner = "features/quick-navigation"
@@ -3280,30 +2813,8 @@ target_owner = "features/traces"
 migration_plan = "142"
 kind = "handwritten"
 
-
-[[ui.ownership]]
-path = "ui/src/components/console/__tests__/evidence-gaps.test.tsx"
-current_owner = "legacy-console-tests"
-target_owner = "features/investigations"
-migration_plan = "134"
-kind = "handwritten"
-
 [[ui.ownership]]
 path = "ui/src/components/console/__tests__/facet-sidebar.test.tsx"
-current_owner = "legacy-console-tests"
-target_owner = "features/traces"
-migration_plan = "142"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/__tests__/field-explorer.test.tsx"
-current_owner = "legacy-console-tests"
-target_owner = "features/traces"
-migration_plan = "142"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/__tests__/graphql-operation.test.tsx"
 current_owner = "legacy-console-tests"
 target_owner = "features/traces"
 migration_plan = "142"
@@ -3324,24 +2835,10 @@ migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/__tests__/rpc-stream.test.tsx"
-current_owner = "legacy-console-tests"
-target_owner = "features/traces"
-migration_plan = "142"
-kind = "handwritten"
-
-[[ui.ownership]]
 path = "ui/src/components/console/__tests__/top-movers.test.tsx"
 current_owner = "legacy-console-tests"
 target_owner = "features/overview"
 migration_plan = "150"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/__tests__/trace-flamegraph.test.tsx"
-current_owner = "legacy-console-tests"
-target_owner = "features/traces"
-migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -3352,7 +2849,7 @@ migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/__tests__/waterfall.test.tsx"
+path = "ui/src/features/traces/tests/components/trace-waterfall.test.tsx"
 current_owner = "legacy-console-tests"
 target_owner = "features/traces"
 migration_plan = "142"
@@ -3370,13 +2867,6 @@ path = "ui/src/components/console/agent-session.tsx"
 current_owner = "legacy-console"
 target_owner = "features/runs"
 migration_plan = "140"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/attribute-compare.tsx"
-current_owner = "legacy-console"
-target_owner = "features/traces"
-migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -3414,7 +2904,6 @@ target_owner = "features/traces"
 migration_plan = "142"
 kind = "handwritten"
 
-
 [[ui.ownership]]
 path = "ui/src/components/console/empty-state.tsx"
 current_owner = "legacy-console"
@@ -3423,28 +2912,7 @@ migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/evidence-gaps.tsx"
-current_owner = "legacy-console"
-target_owner = "features/investigations"
-migration_plan = "134"
-kind = "handwritten"
-
-[[ui.ownership]]
 path = "ui/src/components/console/facet-sidebar.tsx"
-current_owner = "legacy-console"
-target_owner = "features/traces"
-migration_plan = "142"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/field-explorer.tsx"
-current_owner = "legacy-console"
-target_owner = "features/traces"
-migration_plan = "142"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/graphql-operation.tsx"
 current_owner = "legacy-console"
 target_owner = "features/traces"
 migration_plan = "142"
@@ -3472,13 +2940,6 @@ migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/rpc-stream.tsx"
-current_owner = "legacy-console"
-target_owner = "features/traces"
-migration_plan = "142"
-kind = "handwritten"
-
-[[ui.ownership]]
 path = "ui/src/components/console/scroll-fade.tsx"
 current_owner = "legacy-console"
 target_owner = "shared/components/scroll-fade"
@@ -3500,13 +2961,6 @@ migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/span-kind.tsx"
-current_owner = "legacy-console"
-target_owner = "shared/components/span-kind"
-migration_plan = "100"
-kind = "handwritten"
-
-[[ui.ownership]]
 path = "ui/src/components/console/stat-card.tsx"
 current_owner = "legacy-console"
 target_owner = "shared/components/stat-card"
@@ -3521,14 +2975,7 @@ migration_plan = "150"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/trace-flamegraph.tsx"
-current_owner = "legacy-console"
-target_owner = "features/traces"
-migration_plan = "142"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/trace-waterfall.tsx"
+path = "ui/src/features/traces/components/trace-waterfall.tsx"
 current_owner = "legacy-console"
 target_owner = "features/traces"
 migration_plan = "142"
@@ -3884,7 +3331,6 @@ target_owner = "shadcn"
 migration_plan = "none"
 kind = "shadcn"
 
-
 [[ui.ownership]]
 path = "ui/src/domain/runtime-metrics/runtime-metric.ts"
 current_owner = "domain/runtime-metrics"
@@ -4056,7 +3502,6 @@ target_owner = "shared/tests"
 migration_plan = "none"
 kind = "handwritten"
 
-
 [[ui.ownership]]
 path = "ui/src/domain/time-range/range.ts"
 current_owner = "domain/time-range"
@@ -4134,9 +3579,6 @@ target_owner = "shared/lib/colors"
 migration_plan = "100"
 kind = "handwritten"
 
-
-
-
 [[ui.ownership]]
 path = "ui/src/lib/__tests__/format.test.ts"
 current_owner = "legacy-lib-tests"
@@ -4145,7 +3587,7 @@ migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/graphql-trace.test.ts"
+path = "ui/src/features/traces/tests/model/graphql-operations.test.ts"
 current_owner = "legacy-lib-tests"
 target_owner = "features/traces"
 migration_plan = "142"
@@ -4201,7 +3643,7 @@ migration_plan = "143"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/rpc-trace.test.ts"
+path = "ui/src/features/traces/tests/model/rpc-streams.test.ts"
 current_owner = "legacy-lib-tests"
 target_owner = "features/traces"
 migration_plan = "142"
@@ -4222,14 +3664,14 @@ migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/trace-tree-flame.test.ts"
+path = "ui/src/features/traces/tests/model/trace-tree-flame.test.ts"
 current_owner = "legacy-lib-tests"
 target_owner = "features/traces"
 migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/trace-tree.test.ts"
+path = "ui/src/features/traces/tests/model/trace-tree.test.ts"
 current_owner = "legacy-lib-tests"
 target_owner = "features/traces"
 migration_plan = "142"
@@ -4284,9 +3726,6 @@ target_owner = "shared/lib/colors"
 migration_plan = "100"
 kind = "handwritten"
 
-
-
-
 [[ui.ownership]]
 path = "ui/src/lib/format.ts"
 current_owner = "legacy-lib"
@@ -4295,7 +3734,7 @@ migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/graphql-trace.ts"
+path = "ui/src/features/traces/model/graphql-operations.ts"
 current_owner = "legacy-lib"
 target_owner = "features/traces"
 migration_plan = "142"
@@ -4365,7 +3804,7 @@ migration_plan = "149"
 kind = "compatibility-reexport"
 
 [[ui.ownership]]
-path = "ui/src/lib/rpc-trace.ts"
+path = "ui/src/features/traces/model/rpc-streams.ts"
 current_owner = "legacy-lib"
 target_owner = "features/traces"
 migration_plan = "142"
@@ -4386,7 +3825,7 @@ migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/trace-tree.ts"
+path = "ui/src/features/traces/model/trace-tree.ts"
 current_owner = "legacy-lib"
 target_owner = "features/traces"
 migration_plan = "142"
@@ -4461,7 +3900,6 @@ current_owner = "platform/sse"
 target_owner = "platform/sse"
 migration_plan = "153"
 kind = "handwritten"
-
 
 [[ui.ownership]]
 path = "ui/src/features/dashboards/api/widget-series-api.ts"
@@ -4589,7 +4027,6 @@ target_owner = "platform/graphql"
 migration_plan = "152"
 kind = "handwritten"
 
-
 [[ui.ownership]]
 path = "ui/src/platform/graphql/typed-document.ts"
 current_owner = "platform/graphql"
@@ -4660,7 +4097,6 @@ target_owner = "platform/url"
 migration_plan = "153"
 kind = "handwritten"
 
-
 [[ui.ownership]]
 path = "ui/src/platform/visibility/tests/use-page-visible.test.tsx"
 current_owner = "platform/visibility"
@@ -4702,37 +4138,8 @@ target_owner = "features/alerts"
 migration_plan = "alerts"
 kind = "handwritten"
 
-
 [[ui.ownership]]
-path = "ui/src/routes/__tests__/-trace-graphql.test.tsx"
-current_owner = "routes-tests"
-target_owner = "features/traces"
-migration_plan = "142"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/routes/__tests__/-trace-links.test.tsx"
-current_owner = "routes-tests"
-target_owner = "features/traces"
-migration_plan = "142"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/routes/__tests__/-trace-rpc.test.tsx"
-current_owner = "routes-tests"
-target_owner = "features/traces"
-migration_plan = "142"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/routes/__tests__/-trace-view-modes.test.tsx"
-current_owner = "routes-tests"
-target_owner = "features/traces"
-migration_plan = "142"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/routes/__tests__/-traces-search.test.tsx"
+path = "ui/src/features/traces/tests/model/traces-search.test.tsx"
 current_owner = "routes-tests"
 target_owner = "features/traces"
 migration_plan = "142"
@@ -5148,7 +4555,6 @@ target_owner = "features/runtime-metrics"
 migration_plan = "149"
 kind = "handwritten"
 
-
 [[ui.ownership]]
 path = "ui/src/routes/-metrics-table.tsx"
 current_owner = "routes/metrics"
@@ -5314,14 +4720,14 @@ kind = "handwritten"
 path = "ui/src/routes/traces.$traceId.tsx"
 current_owner = "routes"
 target_owner = "features/traces"
-migration_plan = "142"
+migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
 path = "ui/src/routes/traces.index.tsx"
 current_owner = "routes"
 target_owner = "features/traces"
-migration_plan = "142"
+migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -5466,8 +4872,6 @@ ceiling = 1
 metric = "typescript.suppressions"
 scope = "ui/src/features/investigations/api/investigations-list.generated.ts"
 ceiling = 1
-
-
 
 [[ui.ownership]]
 path = "ui/src/features/sql/api/sql-api.ts"
@@ -5712,19 +5116,6 @@ metric = "typescript.suppressions"
 scope = "ui/src/features/sql/api/sql-snippets-list.generated.ts"
 ceiling = 1
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 [[limits]]
 metric = "typescript.assertions"
 scope = "ui/src/features/sql/tests/api/sql-history-repository.test.ts"
@@ -5917,18 +5308,10 @@ metric = "typescript.suppressions"
 scope = "ui/src/features/ecosystem/api/service-map.generated.ts"
 ceiling = 1
 
-
-
-
-
-
-
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/features/ecosystem/model/ecosystem-topology.ts:78"
 ceiling = 17
-
-
 
 [[ui.ownership]]
 path = "ui/src/lib/overview-chart-helpers.ts"
@@ -5951,9 +5334,6 @@ ceiling = 120
 metric = "typescript.function-lines"
 scope = "ui/src/features/ecosystem/components/ecosystem-page.tsx:17"
 ceiling = 73
-
-
-
 
 [[ui.ownership]]
 path = "ui/src/features/dashboards/api/dashboard-api.ts"
@@ -6095,23 +5475,15 @@ target_owner = "platform/visibility"
 migration_plan = "none"
 kind = "handwritten"
 
-
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/features/dashboards/components/dashboards-page.tsx:63"
 ceiling = 182
 
-
-
-
-
-
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/features/dashboards/model/widget-data.ts:45"
 ceiling = 22
-
-
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -6179,3 +5551,427 @@ ceiling = 19
 metric = "typescript.function-lines"
 scope = "ui/src/features/ecosystem/model/service-map-layout-engine.ts:99"
 ceiling = 65
+
+[[ui.ownership]]
+path = "ui/src/features/traces/index.ts"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+facade = true
+
+[[ui.ownership]]
+path = "ui/src/features/traces/components/traces-page.tsx"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/components/trace-detail-page.tsx"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/components/trace-flamegraph.tsx"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/components/trace-field-explorer.tsx"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/components/trace-attribute-compare.tsx"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/components/trace-evidence-gaps.tsx"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/components/trace-graphql-operations.tsx"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/components/trace-rpc-streams.tsx"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/components/trace-span-kind.tsx"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/tests/components/trace-flamegraph.test.tsx"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/tests/components/trace-field-explorer.test.tsx"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/tests/components/trace-attribute-compare.test.tsx"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/tests/components/trace-evidence-gaps.test.tsx"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/tests/components/trace-graphql-operations.test.tsx"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/tests/components/trace-rpc-streams.test.tsx"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/tests/components/trace-view-modes.test.tsx"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/tests/components/trace-graphql-section.test.tsx"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/tests/components/trace-links.test.tsx"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/tests/components/trace-rpc-section.test.tsx"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/tests/-traces-routes.test.tsx"
+current_owner = "routes-tests"
+target_owner = "routes-tests"
+migration_plan = "none"
+kind = "handwritten"
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-attribute-compare.test.tsx"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-evidence-gaps.test.tsx"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-field-explorer.test.tsx"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-flamegraph.test.tsx"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-graphql-operations.test.tsx"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-graphql-section.test.tsx"
+ceiling = 3
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-links.test.tsx"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-rpc-section.test.tsx"
+ceiling = 9
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-rpc-streams.test.tsx"
+ceiling = 6
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-view-modes.test.tsx"
+ceiling = 9
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/tests/-traces-routes.test.tsx"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/traces/components/trace-field-explorer.tsx"
+ceiling = 397
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx:1416"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx:163"
+ceiling = 17
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx:303"
+ceiling = 33
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/components/trace-field-explorer.tsx:166"
+ceiling = 18
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/components/trace-waterfall.tsx:334"
+ceiling = 24
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/components/traces-page.tsx:371"
+ceiling = 69
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/model/graphql-operations.ts:146"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/model/graphql-operations.ts:226"
+ceiling = 28
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/model/trace-tree.ts:222"
+ceiling = 49
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/model/trace-tree.ts:289"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/model/trace-tree.ts:335"
+ceiling = 24
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx:1416"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx:303"
+ceiling = 30
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/traces/components/trace-waterfall.tsx:334"
+ceiling = 18
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/traces/components/traces-page.tsx:371"
+ceiling = 34
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/traces/model/graphql-operations.ts:226"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/traces/model/trace-tree.ts:222"
+ceiling = 20
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/traces/model/trace-tree.ts:335"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-attribute-compare.tsx:50"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx:1157"
+ceiling = 90
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx:1248"
+ceiling = 68
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx:1416"
+ceiling = 212
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx:303"
+ceiling = 503
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-field-explorer.tsx:166"
+ceiling = 248
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-field-explorer.tsx:91"
+ceiling = 74
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-flamegraph.tsx:31"
+ceiling = 89
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-rpc-streams.tsx:102"
+ceiling = 70
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-rpc-streams.tsx:107"
+ceiling = 62
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-waterfall.tsx:334"
+ceiling = 106
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-waterfall.tsx:99"
+ceiling = 600
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/traces-page.tsx:371"
+ceiling = 452
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/traces-page.tsx:824"
+ceiling = 89
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/model/graphql-operations.ts:146"
+ceiling = 152
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/model/graphql-operations.ts:226"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/model/trace-tree.ts:335"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/tests/components/trace-links.test.tsx:48"
+ceiling = 68
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/tests/components/trace-links.test.tsx:49"
+ceiling = 66
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/tests/components/trace-view-modes.test.tsx:15"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/tests/components/trace-waterfall.test.tsx:107"
+ceiling = 82
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/tests/model/graphql-operations.test.ts:24"
+ceiling = 150
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/tests/model/rpc-streams.test.ts:48"
+ceiling = 108
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/tests/model/trace-tree.test.ts:170"
+ceiling = 86
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/tests/model/trace-tree.test.ts:34"
+ceiling = 235
+

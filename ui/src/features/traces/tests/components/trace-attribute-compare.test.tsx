@@ -3,7 +3,7 @@
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
-import { AttributeComparePanel } from "@/components/console/attribute-compare"
+import { AttributeComparePanel } from "@/features/traces/components/trace-attribute-compare"
 import type { AttributeCompareRow } from "@/lib/api"
 
 const rows: AttributeCompareRow[] = [

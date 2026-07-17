@@ -3,8 +3,8 @@
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 
-import { TraceGraphqlSection } from "@/routes/traces.$traceId"
-import type { GraphqlOperation } from "@/lib/graphql-trace"
+import { TraceGraphqlSection } from "@/features/traces"
+import type { GraphqlOperation } from "@/features/traces/model/graphql-operations"
 
 const operation: GraphqlOperation = {
   operationSpanId: "op",

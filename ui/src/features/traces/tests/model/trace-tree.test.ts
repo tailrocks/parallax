@@ -8,8 +8,8 @@ import {
   groupByService,
   orderSpans,
   positionPct,
-} from "@/lib/trace-tree"
-import type { TraceTreeSpan } from "@/lib/trace-tree"
+} from "@/features/traces/model/trace-tree"
+import type { TraceTreeSpan } from "@/features/traces/model/trace-tree"
 
 function span(
   spanId: string,

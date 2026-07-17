@@ -3,8 +3,8 @@
 import { fireEvent, render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 
-import { TraceFlamegraph } from "@/components/console/trace-flamegraph"
-import type { WaterfallSpan } from "@/components/console/trace-waterfall"
+import { TraceFlamegraph } from "@/features/traces/components/trace-flamegraph"
+import type { WaterfallSpan } from "@/features/traces/components/trace-waterfall"
 
 const spans: WaterfallSpan[] = [
   {

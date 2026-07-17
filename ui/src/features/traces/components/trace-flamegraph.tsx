@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react"
 
-import type { WaterfallSpan } from "@/components/console/trace-waterfall"
+import type { WaterfallSpan } from "@/features/traces/components/trace-waterfall"
 import { serviceColor } from "@/lib/colors"
 import { formatDurationNs } from "@/lib/format"
-import { packFlameLanes } from "@/lib/trace-tree"
+import { packFlameLanes } from "@/features/traces/model/trace-tree"
 import { cn } from "@/lib/utils"
 
 const LANE_HEIGHT_PX = 30
