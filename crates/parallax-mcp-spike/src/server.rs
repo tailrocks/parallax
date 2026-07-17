@@ -62,6 +62,13 @@ impl SpikeServer {
     #[tool(
         name = "parallax_issue_context",
         description = "Canonical evidence bundle for an issue fingerprint. Returns bounded Markdown in text content and the parsed canonical JSON in structuredContent (already redacted by the Parallax API).",
+        annotations(
+            title = "Read Parallax issue context",
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        ),
         output_schema = evidence_bundle_output_schema()
     )]
     async fn parallax_issue_context(
@@ -76,7 +83,14 @@ impl SpikeServer {
 
     #[tool(
         name = "parallax_agent_session_show",
-        description = "Sanitized agent-session timeline for an invocation id (tool steps, token totals). Null/error when no agent spans were detected."
+        description = "Sanitized agent-session timeline for an invocation id (tool steps, token totals). Null/error when no agent spans were detected.",
+        annotations(
+            title = "Read Parallax agent session",
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
     )]
     async fn parallax_agent_session_show(
         &self,
@@ -213,6 +227,11 @@ mod tests {
                 "{} input must require its anchor",
                 tool.name
             );
+            let annotations = tool.annotations.as_ref().expect("tool annotations");
+            assert_eq!(annotations.read_only_hint, Some(true));
+            assert_eq!(annotations.destructive_hint, Some(false));
+            assert_eq!(annotations.idempotent_hint, Some(true));
+            assert_eq!(annotations.open_world_hint, Some(false));
         }
     }
 

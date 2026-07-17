@@ -67,6 +67,8 @@ must not return in product output.
   missing/null/non-string contract fields instead of substituting empty text.
 - Loopback-origin enforcement now lives inside the GraphQL client constructor,
   preventing future internal callers from bypassing the CLI-level validation.
+- Both preliminary tools advertise and test exact MCP annotations: read-only,
+  non-destructive, idempotent, and closed-world.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded

@@ -28,6 +28,8 @@ equivalence). See:
 | `parallax_agent_session_show` | `invocation_id: string` | GraphQL `agentSession(invocationId:)` |
 
 No shell, SQL, deploy, rollback, or management tools exist in this binary.
+Both tools advertise MCP annotations as read-only, non-destructive, idempotent,
+and closed-world.
 
 ## Usage
 
