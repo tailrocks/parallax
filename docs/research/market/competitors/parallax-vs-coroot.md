@@ -1,6 +1,6 @@
 # Parallax vs Coroot
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 46: eBPF→app-errors watch **UNFIRED** — recent = profiles/Windows/CI; `fix panic` is internal merge panic, not product app-error events).
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 59: eBPF→app-errors watch **UNFIRED** — recent = profiles/Windows/CI/SAML/OneLogin; `fix panic` is internal merge panic, not product app-error events; **v1.23.3 / 7,837★**).
 > Sources: [coroot.com](https://coroot.com/) + [pricing](https://coroot.com/pricing) + [enterprise](https://coroot.com/enterprise) + [AI](https://docs.coroot.com/ai/) + [MCP](https://docs.coroot.com/mcp/overview/), [github.com/coroot/coroot](https://github.com/coroot/coroot), and the legacy [coroot-deep-research.md](../coroot-deep-research.md) (2026-06-22) as a lead.
 >
 > **Bottom line up front:** Coroot is the **nearest eBPF/RCA open-source competitor**

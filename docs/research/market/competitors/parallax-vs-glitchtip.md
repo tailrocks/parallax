@@ -1,13 +1,15 @@
 # Parallax vs GlitchTip
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 53**
-> first deep-dive). Sources: [glitchtip.com](https://glitchtip.com),
+> first deep-dive; **pass 59** GitLab star pin). Sources: [glitchtip.com](https://glitchtip.com),
 > [glitchtip.com/pricing](https://glitchtip.com/pricing) (FAQ + plan structure;
 > Angular SPA hard to scrape — tier dollars cross-checked against 2026 secondary
 > summaries and marked where primary HTML did not yield numbers),
 > [documentation/install](https://glitchtip.com/documentation/install),
+> [GitLab primary](https://gitlab.com/glitchtip/glitchtip) (**161★**, last_activity
+> 2026-07-06, forks 14 — GitLab API 2026-07-17),
 > [GitHub mirror](https://github.com/burke-software/GlitchTip) (MIT, 159★, last
-> push 2026-02-10 — **stale mirror**; primary development is on **GitLab**),
+> push 2026-02-10 — **stale mirror**; do not use mirror stars as activity),
 > [MCP docs](https://glitchtip.com/documentation/mcp/), Bugsink/Rustrak peers.
 >
 > **Bottom line up front:** GlitchTip is a **mature, MIT, Sentry-API-compatible
@@ -28,9 +30,10 @@
   enterprise support **$15/user/mo** per blog 2026-03). Hosted Free **1,000
   events/mo**; paid tiers reported as **~$15 / 100k**, **~$50 / 500k**, **~$250 /
   3M** events/mo (2026 secondary re-statements of pricing page — re-confirm live
-  SPA if quoting contracts). Primary code on **GitLab** (`glitchtip/*`); GitHub
-  mirror **159★**, last push **2026-02-10** (do not treat mirror stars as
-  activity). Docs include **MCP**. Stack: Django + Postgres-class self-host.
+  SPA if quoting contracts). Primary code on **GitLab** (`glitchtip/glitchtip`
+  **161★**, last_activity **2026-07-06**); GitHub mirror **159★**, last push
+  **2026-02-10** (do not treat mirror stars as activity). Docs include **MCP**.
+  Stack: Django + Postgres-class self-host.
 - **Parallax** — Apache-2.0 Rust **execution-context engine**: OTLP + Sentry
   envelope ingest, multi-signal correlation, bounded redacted bundles
   (code-shipped; A1 unproven), local-stdio MCP. GreptimeDB + Turso. **Pre-release.**
@@ -95,15 +98,17 @@ shipped** — not read-only. Parallax’s bundle claim is different and unproven
 
 ## Watch
 
-- GitHub mirror **still stale** (last push **2026-02-10**); product site/docs active 2026-07. GitLab primary org `glitchtip/*` — public API star/activity pins flaky this pass; re-check when GH mirror moves or GitLab API free.
+- ~~GitLab API star pin~~ → **RESOLVED pass 59:** [gitlab.com/glitchtip/glitchtip](https://gitlab.com/glitchtip/glitchtip) **161★**, last_activity **2026-07-06**, forks **14** (GitLab REST API).
+- GitHub mirror **still stale** (last push **2026-02-10**, 159★); product site/docs active 2026-07. Prefer GitLab stars for primary-project health.
 - ~~MCP tool mutability~~ → **RESOLVED pass 54: `update_issue` mutates** (resolve/unresolve/ignore).
-- OTLP expansion (unlikely; would change layer).
+- OTLP expansion (unlikely; would change layer) — **UNFIRED pass 59**.
 
-## Sources (2026-07-17; pass 54)
+## Sources (2026-07-17; pass 59)
 
 - [glitchtip.com/pricing](https://glitchtip.com/pricing) FAQ (1k free events; event definition; Medium/Large support tiers).
 - [glitchtip.com/documentation/mcp](https://glitchtip.com/documentation/mcp/) (**17 tools**, OAuth/token, mutating update_issue).
 - [glitchtip.com/documentation/install](https://glitchtip.com/documentation/install) (donation $5/user).
 - Blog 2026-03 support $15/user; 2026 secondary re-statements of $15/$50/$250 tiers.
-- GitHub mirror `burke-software/GlitchTip` (MIT, 159★).
+- [GitLab primary](https://gitlab.com/glitchtip/glitchtip) **161★** (API 2026-07-17).
+- GitHub mirror `burke-software/GlitchTip` (MIT, 159★, push 2026-02-10).
 - Peers: [parallax-vs-bugsink.md](parallax-vs-bugsink.md), [parallax-vs-rustrak.md](parallax-vs-rustrak.md), [parallax-vs-sentry.md](parallax-vs-sentry.md).
