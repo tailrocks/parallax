@@ -46,7 +46,7 @@ Legend for the **State** column:
 | **Highlight.io** | Session replay + error tracking + logs + traces; OTLP-native; Apache-2.0 OSS self-host. | Apache-2.0 (self-host) + Cloud. | Errors + RUM + logs. | [deep-dive](parallax-vs-highlight.md) |
 | **Uptrace** | OTLP on ClickHouse/Postgres; tracing-first. | Open core (BSL-adjacent). | Traces + metrics. | watch |
 | **HyperDX** | OTLP + multi-protocol on **ClickHouse**; full-stack incl. **session replay**; = ClickHouse Inc.'s **ClickStack**. | **MIT** + Cloud. | All signals + RUM/replay. | [deep-dive](parallax-vs-hyperdx.md) |
-| **Odigos** | eBPF auto-instrumentation to OTLP (collector, not a backend). | Apache-2.0. | Auto-instrumentation. | watch |
+| **Odigos** | eBPF auto-instrumentation to OTLP (collector/instrumentation layer, not a backend). | Apache-2.0. | Auto-instrumentation. | [deep-dive](parallax-vs-odigos.md) |
 | **Maple** | OTLP single-binary best local UX; Turso metadata sibling choice. | FSL-1.1 (TS/Bun). | All signals. | [deep-dive](parallax-vs-maple.md) |
 | **TMA1** | Nearest architectural mirror: Go single binary + embedded GreptimeDB + read-only MCP context-bundle for coding agents. | Apache-2.0. | AI-agent cost/sessions/traces. | [deep-dive](parallax-vs-tma1.md) |
 
