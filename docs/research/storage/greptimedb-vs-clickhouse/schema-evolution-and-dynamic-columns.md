@@ -189,3 +189,22 @@ Live against `greptime/greptimedb:v1.1.3` + CH `26.6.1.1193` (no drift from Run 
 **Adopt-native-logs:** still prefer GT pipeline for drifting log attributes; promote hot
 keys / use JSON2 for true bag-of-attrs analytics (Run 173). CH needs proxy-managed ALTER
 or a JSON column.
+
+## Run 426 (2026-07-18) — JSON type surface re-pin
+
+Pins: GT `v1.1.3` + nightly `1.2.0`; CH `26.6.1.1193`.
+
+| Surface | Live result |
+| --- | --- |
+| `CREATE … attrs JSON` / `Json` | **OK** |
+| `CREATE … attrs JSONB` / `Jsonb` | **Code 2000** `SQL data type not supported yet: JSONB` on **both** stable and nightly |
+| Default JSON query | `json_get_string(attrs, 'region') = 'r1'` → 40/200 rows, warm **~4–5 ms** |
+| `attrs->>'region'` | **not implemented** |
+| `CREATE … attrs JSON2` | **OK** |
+| `INSERT` string literal into `JSON2` | **type mismatch** Utf8 vs Struct (Run 173 ingest caveat holds) |
+| CH `attrs JSON` + `attrs.region::String` | 40/200 rows, warm **~2–3 ms** |
+
+**Note:** prior notes saying "Jsonb column type" mean the **default JSON storage format**
+(`JsonFormat::Jsonb`), not a separate SQL type name. Prefer language: default `JSON`
+(Jsonb-backed) vs opt-in `JSON2` (structured). Blueprint unchanged: hot attrs → typed
+columns; undeclared analytics → JSON2 when bulk-loaded correctly, else `json_get_*`.

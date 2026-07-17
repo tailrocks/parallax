@@ -8425,3 +8425,13 @@ First nightly hit was **cold-cache**, not a v1.2 regression. Matches Run 177 sca
 caution. CH disk sample (dirty fixtures): logs1m 52k → 1.15 MiB; spans1m 50k → 497 KiB;
 m2m 50k → 219 KiB.
 
+
+### Run 426 — 2026-07-18 — JSON path micro N=200
+
+| Path | Filter warm | Group warm |
+| --- | --- | --- |
+| GT `JSON` + `json_get_string(attrs,'region')` | 5 / 4 / 4 ms (40 rows) | 17 / 5 / 6 ms (5 groups) |
+| CH `JSON` + `attrs.region::String` | 3 / 2 / 3 ms | 4 / 3 / 4 ms |
+| GT SQL type `JSONB` | **unsupported** on v1.1.3 and nightly 1.2.0 | — |
+| GT `JSON2` string INSERT | type mismatch Utf8→Struct (empty table) | — |
+
