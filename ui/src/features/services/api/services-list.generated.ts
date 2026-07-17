@@ -6,14 +6,18 @@ type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] }
 /** Internal type. DO NOT USE DIRECTLY. */
 export type Incremental<T> =
   | T
-  | {
-      [P in keyof T]?: P extends " $fragmentName" | "__typename" ? T[P] : never
-    }
+  | { [P in keyof T]?: P extends " $fragmentName" | "__typename" ? T[P] : never }
 import type * as Types from "../../../platform/graphql/generated/schema-types.generated"
 
 import * as z from "zod"
 import type {
   TraceSort,
+  TestResultStatus,
+  TestFlakyState,
+  TestExplorerSort,
+  TestRollup,
+  TestConfigurationFilterInput,
+  TestIdentitySource,
   SignalKind,
   IssueSort,
   AttributeFilterInput,
@@ -57,30 +61,18 @@ export const ServicesListDocument = {
       variableDefinitions: [
         {
           kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "fromNanos" },
-          },
+          variable: { kind: "Variable", name: { kind: "Name", value: "fromNanos" } },
           type: {
             kind: "NonNullType",
-            type: {
-              kind: "NamedType",
-              name: { kind: "Name", value: "String" },
-            },
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
           },
         },
         {
           kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "toNanos" },
-          },
+          variable: { kind: "Variable", name: { kind: "Name", value: "toNanos" } },
           type: {
             kind: "NonNullType",
-            type: {
-              kind: "NamedType",
-              name: { kind: "Name", value: "String" },
-            },
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
           },
         },
       ],
@@ -94,28 +86,19 @@ export const ServicesListDocument = {
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "fromNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "fromNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "fromNanos" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "toNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "toNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "toNanos" } },
               },
             ],
             selectionSet: {
               kind: "SelectionSet",
               selections: [
                 { kind: "Field", name: { kind: "Name", value: "name" } },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "lastSeenNanos" },
-                },
+                { kind: "Field", name: { kind: "Name", value: "lastSeenNanos" } },
                 { kind: "Field", name: { kind: "Name", value: "spanCount" } },
                 { kind: "Field", name: { kind: "Name", value: "errorCount" } },
                 { kind: "Field", name: { kind: "Name", value: "p95Ms" } },
@@ -129,56 +112,26 @@ export const ServicesListDocument = {
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "fromNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "fromNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "fromNanos" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "toNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "toNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "toNanos" } },
               },
             ],
             selectionSet: {
               kind: "SelectionSet",
               selections: [
                 { kind: "Field", name: { kind: "Name", value: "name" } },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "serviceVersion" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "serviceNamespace" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "deploymentEnvironment" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "telemetrySdkLanguage" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "telemetrySdkName" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "telemetrySdkVersion" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "lastSeenNanos" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "instanceCount" },
-                },
+                { kind: "Field", name: { kind: "Name", value: "serviceVersion" } },
+                { kind: "Field", name: { kind: "Name", value: "serviceNamespace" } },
+                { kind: "Field", name: { kind: "Name", value: "deploymentEnvironment" } },
+                { kind: "Field", name: { kind: "Name", value: "telemetrySdkLanguage" } },
+                { kind: "Field", name: { kind: "Name", value: "telemetrySdkName" } },
+                { kind: "Field", name: { kind: "Name", value: "telemetrySdkVersion" } },
+                { kind: "Field", name: { kind: "Name", value: "lastSeenNanos" } },
+                { kind: "Field", name: { kind: "Name", value: "instanceCount" } },
               ],
             },
           },
@@ -203,6 +156,30 @@ export const TraceSortSchema: z.ZodType<
   "DURATION_ASC" | "DURATION_DESC" | "SPAN_COUNT_DESC" | "START_DESC"
 > = z.enum(["DURATION_ASC", "DURATION_DESC", "SPAN_COUNT_DESC", "START_DESC"])
 
+export const TestResultStatusSchema: z.ZodType<
+  "BROKEN" | "FAILED" | "PASSED" | "SKIPPED" | "UNKNOWN",
+  "BROKEN" | "FAILED" | "PASSED" | "SKIPPED" | "UNKNOWN"
+> = z.enum(["BROKEN", "FAILED", "PASSED", "SKIPPED", "UNKNOWN"])
+
+export const TestFlakyStateSchema: z.ZodType<
+  "BROKEN" | "FIXED" | "FLAKY" | "HEALTHY",
+  "BROKEN" | "FIXED" | "FLAKY" | "HEALTHY"
+> = z.enum(["BROKEN", "FIXED", "FLAKY", "HEALTHY"])
+
+export const TestExplorerSortSchema: z.ZodType<"LAST_SEEN" | "NAME", "LAST_SEEN" | "NAME"> = z.enum(
+  ["LAST_SEEN", "NAME"]
+)
+
+export const TestRollupSchema: z.ZodType<
+  "BROKEN" | "FAILED" | "FLAKY_PASS" | "PASSED" | "SKIPPED" | "UNKNOWN",
+  "BROKEN" | "FAILED" | "FLAKY_PASS" | "PASSED" | "SKIPPED" | "UNKNOWN"
+> = z.enum(["BROKEN", "FAILED", "FLAKY_PASS", "PASSED", "SKIPPED", "UNKNOWN"])
+
+export const TestIdentitySourceSchema: z.ZodType<
+  "CODE_REFERENCE" | "EXPLICIT" | "NAME_PATH",
+  "CODE_REFERENCE" | "EXPLICIT" | "NAME_PATH"
+> = z.enum(["CODE_REFERENCE", "EXPLICIT", "NAME_PATH"])
+
 export const SignalKindSchema: z.ZodType<
   "ERRORS" | "LOGS" | "METRIC_POINTS" | "SPANS" | "TRACES",
   "ERRORS" | "LOGS" | "METRIC_POINTS" | "SPANS" | "TRACES"
@@ -212,6 +189,13 @@ export const IssueSortSchema: z.ZodType<
   "EVENTS" | "FIRST_SEEN" | "LAST_SEEN" | "TREND",
   "EVENTS" | "FIRST_SEEN" | "LAST_SEEN" | "TREND"
 > = z.enum(["EVENTS", "FIRST_SEEN", "LAST_SEEN", "TREND"])
+
+export const TestConfigurationFilterInputSchema: z.ZodObject<
+  Properties<TestConfigurationFilterInput>
+> = z.object({
+  key: z.string(),
+  value: z.string(),
+})
 
 export const AttributeFilterInputSchema: z.ZodObject<Properties<AttributeFilterInput>> = z.object({
   key: z.string(),

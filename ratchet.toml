@@ -754,7 +754,7 @@ ceiling = 161
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-analysis/facade.toml"
-ceiling = 7
+ceiling = 12
 
 [[limits]]
 metric = "rust.public-root-items"
@@ -769,7 +769,7 @@ ceiling = 1
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-evidence/facade.toml"
-ceiling = 9
+ceiling = 11
 
 [[limits]]
 metric = "rust.public-root-items"
@@ -5416,16 +5416,6 @@ ceiling = 338
 
 [[limits]]
 metric = "typescript.file-lines"
-scope = "ui/src/features/issues/api/issue-detail.generated.ts"
-ceiling = 336
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/issues/api/issues-list.generated.ts"
-ceiling = 334
-
-[[limits]]
-metric = "typescript.file-lines"
 scope = "ui/src/features/issues/components/issue-detail-page.tsx"
 ceiling = 543
 
@@ -5452,12 +5442,12 @@ ceiling = 838
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/features/runtime-metrics/api/runtime-metrics.generated.ts"
-ceiling = 423
+ceiling = 356
 
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/features/services/api/service-detail.generated.ts"
-ceiling = 1056
+ceiling = 833
 
 [[limits]]
 metric = "typescript.file-lines"

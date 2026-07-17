@@ -6,14 +6,18 @@ type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] }
 /** Internal type. DO NOT USE DIRECTLY. */
 export type Incremental<T> =
   | T
-  | {
-      [P in keyof T]?: P extends " $fragmentName" | "__typename" ? T[P] : never
-    }
+  | { [P in keyof T]?: P extends " $fragmentName" | "__typename" ? T[P] : never }
 import type * as Types from "../../../platform/graphql/generated/schema-types.generated"
 
 import * as z from "zod"
 import type {
   TraceSort,
+  TestResultStatus,
+  TestFlakyState,
+  TestExplorerSort,
+  TestRollup,
+  TestConfigurationFilterInput,
+  TestIdentitySource,
   SignalKind,
   IssueSort,
   AttributeFilterInput,
@@ -32,56 +36,20 @@ export type ServiceDetailQueryVariables = Exact<{
 
 export type ServiceDetailQuery = {
   readonly red: {
-    readonly rate: ReadonlyArray<{
-      readonly tsNanos: string
-      readonly value: number
-    }>
-    readonly errorRate: ReadonlyArray<{
-      readonly tsNanos: string
-      readonly value: number
-    }>
-    readonly p50: ReadonlyArray<{
-      readonly tsNanos: string
-      readonly value: number
-    }>
-    readonly p95: ReadonlyArray<{
-      readonly tsNanos: string
-      readonly value: number
-    }>
-    readonly p99: ReadonlyArray<{
-      readonly tsNanos: string
-      readonly value: number
-    }>
+    readonly rate: ReadonlyArray<{ readonly tsNanos: string; readonly value: number }>
+    readonly errorRate: ReadonlyArray<{ readonly tsNanos: string; readonly value: number }>
+    readonly p50: ReadonlyArray<{ readonly tsNanos: string; readonly value: number }>
+    readonly p95: ReadonlyArray<{ readonly tsNanos: string; readonly value: number }>
+    readonly p99: ReadonlyArray<{ readonly tsNanos: string; readonly value: number }>
   }
   readonly overview: {
-    readonly cpu: ReadonlyArray<{
-      readonly tsNanos: string
-      readonly value: number
-    }>
-    readonly memory: ReadonlyArray<{
-      readonly tsNanos: string
-      readonly value: number
-    }>
-    readonly requestRate: ReadonlyArray<{
-      readonly tsNanos: string
-      readonly value: number
-    }>
-    readonly errorRate: ReadonlyArray<{
-      readonly tsNanos: string
-      readonly value: number
-    }>
-    readonly latencyP50: ReadonlyArray<{
-      readonly tsNanos: string
-      readonly value: number
-    }>
-    readonly latencyP95: ReadonlyArray<{
-      readonly tsNanos: string
-      readonly value: number
-    }>
-    readonly latencyP99: ReadonlyArray<{
-      readonly tsNanos: string
-      readonly value: number
-    }>
+    readonly cpu: ReadonlyArray<{ readonly tsNanos: string; readonly value: number }>
+    readonly memory: ReadonlyArray<{ readonly tsNanos: string; readonly value: number }>
+    readonly requestRate: ReadonlyArray<{ readonly tsNanos: string; readonly value: number }>
+    readonly errorRate: ReadonlyArray<{ readonly tsNanos: string; readonly value: number }>
+    readonly latencyP50: ReadonlyArray<{ readonly tsNanos: string; readonly value: number }>
+    readonly latencyP95: ReadonlyArray<{ readonly tsNanos: string; readonly value: number }>
+    readonly latencyP99: ReadonlyArray<{ readonly tsNanos: string; readonly value: number }>
   }
   readonly releases: ReadonlyArray<{
     readonly version: string
@@ -124,10 +92,7 @@ export type ServiceDetailQuery = {
     readonly family: string
     readonly metric: string
     readonly unit: string | null
-    readonly points: ReadonlyArray<{
-      readonly tsNanos: string
-      readonly value: number
-    }>
+    readonly points: ReadonlyArray<{ readonly tsNanos: string; readonly value: number }>
   }>
   readonly tracesPage: {
     readonly items: ReadonlyArray<{
@@ -152,52 +117,31 @@ export const ServiceDetailDocument = {
       variableDefinitions: [
         {
           kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "service" },
-          },
+          variable: { kind: "Variable", name: { kind: "Name", value: "service" } },
           type: {
             kind: "NonNullType",
-            type: {
-              kind: "NamedType",
-              name: { kind: "Name", value: "String" },
-            },
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
           },
         },
         {
           kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "fromNanos" },
-          },
+          variable: { kind: "Variable", name: { kind: "Name", value: "fromNanos" } },
           type: {
             kind: "NonNullType",
-            type: {
-              kind: "NamedType",
-              name: { kind: "Name", value: "String" },
-            },
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
           },
         },
         {
           kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "toNanos" },
-          },
+          variable: { kind: "Variable", name: { kind: "Name", value: "toNanos" } },
           type: {
             kind: "NonNullType",
-            type: {
-              kind: "NamedType",
-              name: { kind: "Name", value: "String" },
-            },
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
           },
         },
         {
           kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "stepSeconds" },
-          },
+          variable: { kind: "Variable", name: { kind: "Name", value: "stepSeconds" } },
           type: {
             kind: "NonNullType",
             type: { kind: "NamedType", name: { kind: "Name", value: "Int" } },
@@ -205,30 +149,18 @@ export const ServiceDetailDocument = {
         },
         {
           kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "httpDurationMetric" },
-          },
+          variable: { kind: "Variable", name: { kind: "Name", value: "httpDurationMetric" } },
           type: {
             kind: "NonNullType",
-            type: {
-              kind: "NamedType",
-              name: { kind: "Name", value: "String" },
-            },
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
           },
         },
         {
           kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "rpcDurationMetric" },
-          },
+          variable: { kind: "Variable", name: { kind: "Name", value: "rpcDurationMetric" } },
           type: {
             kind: "NonNullType",
-            type: {
-              kind: "NamedType",
-              name: { kind: "Name", value: "String" },
-            },
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
           },
         },
       ],
@@ -243,34 +175,22 @@ export const ServiceDetailDocument = {
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "service" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "service" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "service" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "fromNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "fromNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "fromNanos" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "toNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "toNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "toNanos" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "stepSeconds" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "stepSeconds" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "stepSeconds" } },
               },
             ],
             selectionSet: {
@@ -282,10 +202,7 @@ export const ServiceDetailDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "tsNanos" },
-                      },
+                      { kind: "Field", name: { kind: "Name", value: "tsNanos" } },
                       { kind: "Field", name: { kind: "Name", value: "value" } },
                     ],
                   },
@@ -296,10 +213,7 @@ export const ServiceDetailDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "tsNanos" },
-                      },
+                      { kind: "Field", name: { kind: "Name", value: "tsNanos" } },
                       { kind: "Field", name: { kind: "Name", value: "value" } },
                     ],
                   },
@@ -310,10 +224,7 @@ export const ServiceDetailDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "tsNanos" },
-                      },
+                      { kind: "Field", name: { kind: "Name", value: "tsNanos" } },
                       { kind: "Field", name: { kind: "Name", value: "value" } },
                     ],
                   },
@@ -324,10 +235,7 @@ export const ServiceDetailDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "tsNanos" },
-                      },
+                      { kind: "Field", name: { kind: "Name", value: "tsNanos" } },
                       { kind: "Field", name: { kind: "Name", value: "value" } },
                     ],
                   },
@@ -338,10 +246,7 @@ export const ServiceDetailDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "tsNanos" },
-                      },
+                      { kind: "Field", name: { kind: "Name", value: "tsNanos" } },
                       { kind: "Field", name: { kind: "Name", value: "value" } },
                     ],
                   },
@@ -357,34 +262,22 @@ export const ServiceDetailDocument = {
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "service" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "service" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "service" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "fromNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "fromNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "fromNanos" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "toNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "toNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "toNanos" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "stepSeconds" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "stepSeconds" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "stepSeconds" } },
               },
             ],
             selectionSet: {
@@ -396,10 +289,7 @@ export const ServiceDetailDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "tsNanos" },
-                      },
+                      { kind: "Field", name: { kind: "Name", value: "tsNanos" } },
                       { kind: "Field", name: { kind: "Name", value: "value" } },
                     ],
                   },
@@ -410,10 +300,7 @@ export const ServiceDetailDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "tsNanos" },
-                      },
+                      { kind: "Field", name: { kind: "Name", value: "tsNanos" } },
                       { kind: "Field", name: { kind: "Name", value: "value" } },
                     ],
                   },
@@ -424,10 +311,7 @@ export const ServiceDetailDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "tsNanos" },
-                      },
+                      { kind: "Field", name: { kind: "Name", value: "tsNanos" } },
                       { kind: "Field", name: { kind: "Name", value: "value" } },
                     ],
                   },
@@ -438,10 +322,7 @@ export const ServiceDetailDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "tsNanos" },
-                      },
+                      { kind: "Field", name: { kind: "Name", value: "tsNanos" } },
                       { kind: "Field", name: { kind: "Name", value: "value" } },
                     ],
                   },
@@ -452,10 +333,7 @@ export const ServiceDetailDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "tsNanos" },
-                      },
+                      { kind: "Field", name: { kind: "Name", value: "tsNanos" } },
                       { kind: "Field", name: { kind: "Name", value: "value" } },
                     ],
                   },
@@ -466,10 +344,7 @@ export const ServiceDetailDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "tsNanos" },
-                      },
+                      { kind: "Field", name: { kind: "Name", value: "tsNanos" } },
                       { kind: "Field", name: { kind: "Name", value: "value" } },
                     ],
                   },
@@ -480,10 +355,7 @@ export const ServiceDetailDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "tsNanos" },
-                      },
+                      { kind: "Field", name: { kind: "Name", value: "tsNanos" } },
                       { kind: "Field", name: { kind: "Name", value: "value" } },
                     ],
                   },
@@ -498,40 +370,25 @@ export const ServiceDetailDocument = {
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "service" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "service" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "service" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "fromNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "fromNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "fromNanos" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "toNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "toNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "toNanos" } },
               },
             ],
             selectionSet: {
               kind: "SelectionSet",
               selections: [
                 { kind: "Field", name: { kind: "Name", value: "version" } },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "firstSeenNanos" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "lastSeenNanos" },
-                },
+                { kind: "Field", name: { kind: "Name", value: "firstSeenNanos" } },
+                { kind: "Field", name: { kind: "Name", value: "lastSeenNanos" } },
                 { kind: "Field", name: { kind: "Name", value: "spanCount" } },
               ],
             },
@@ -543,56 +400,26 @@ export const ServiceDetailDocument = {
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "fromNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "fromNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "fromNanos" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "toNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "toNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "toNanos" } },
               },
             ],
             selectionSet: {
               kind: "SelectionSet",
               selections: [
                 { kind: "Field", name: { kind: "Name", value: "name" } },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "serviceVersion" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "serviceNamespace" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "deploymentEnvironment" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "telemetrySdkLanguage" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "telemetrySdkName" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "telemetrySdkVersion" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "lastSeenNanos" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "instanceCount" },
-                },
+                { kind: "Field", name: { kind: "Name", value: "serviceVersion" } },
+                { kind: "Field", name: { kind: "Name", value: "serviceNamespace" } },
+                { kind: "Field", name: { kind: "Name", value: "deploymentEnvironment" } },
+                { kind: "Field", name: { kind: "Name", value: "telemetrySdkLanguage" } },
+                { kind: "Field", name: { kind: "Name", value: "telemetrySdkName" } },
+                { kind: "Field", name: { kind: "Name", value: "telemetrySdkVersion" } },
+                { kind: "Field", name: { kind: "Name", value: "lastSeenNanos" } },
+                { kind: "Field", name: { kind: "Name", value: "instanceCount" } },
               ],
             },
           },
@@ -604,34 +431,22 @@ export const ServiceDetailDocument = {
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "name" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "httpDurationMetric" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "httpDurationMetric" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "service" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "service" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "service" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "fromNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "fromNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "fromNanos" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "toNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "toNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "toNanos" } },
               },
               {
                 kind: "Argument",
@@ -648,10 +463,7 @@ export const ServiceDetailDocument = {
                 { kind: "Field", name: { kind: "Name", value: "value" } },
                 { kind: "Field", name: { kind: "Name", value: "traceId" } },
                 { kind: "Field", name: { kind: "Name", value: "spanId" } },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "invocationId" },
-                },
+                { kind: "Field", name: { kind: "Name", value: "invocationId" } },
                 { kind: "Field", name: { kind: "Name", value: "attributes" } },
               ],
             },
@@ -664,34 +476,22 @@ export const ServiceDetailDocument = {
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "name" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "rpcDurationMetric" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "rpcDurationMetric" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "service" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "service" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "service" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "fromNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "fromNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "fromNanos" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "toNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "toNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "toNanos" } },
               },
               {
                 kind: "Argument",
@@ -708,10 +508,7 @@ export const ServiceDetailDocument = {
                 { kind: "Field", name: { kind: "Name", value: "value" } },
                 { kind: "Field", name: { kind: "Name", value: "traceId" } },
                 { kind: "Field", name: { kind: "Name", value: "spanId" } },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "invocationId" },
-                },
+                { kind: "Field", name: { kind: "Name", value: "invocationId" } },
                 { kind: "Field", name: { kind: "Name", value: "attributes" } },
               ],
             },
@@ -723,34 +520,22 @@ export const ServiceDetailDocument = {
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "service" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "service" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "service" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "fromNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "fromNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "fromNanos" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "toNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "toNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "toNanos" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "stepSeconds" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "stepSeconds" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "stepSeconds" } },
               },
             ],
             selectionSet: {
@@ -765,10 +550,7 @@ export const ServiceDetailDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "tsNanos" },
-                      },
+                      { kind: "Field", name: { kind: "Name", value: "tsNanos" } },
                       { kind: "Field", name: { kind: "Name", value: "value" } },
                     ],
                   },
@@ -783,10 +565,7 @@ export const ServiceDetailDocument = {
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "service" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "service" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "service" } },
               },
               {
                 kind: "Argument",
@@ -801,18 +580,12 @@ export const ServiceDetailDocument = {
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "fromNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "fromNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "fromNanos" } },
               },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "toNanos" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "toNanos" },
-                },
+                value: { kind: "Variable", name: { kind: "Name", value: "toNanos" } },
               },
             ],
             selectionSet: {
@@ -824,34 +597,13 @@ export const ServiceDetailDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "traceId" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "rootName" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "service" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "startNanos" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "durationNs" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "spanCount" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "hasError" },
-                      },
+                      { kind: "Field", name: { kind: "Name", value: "traceId" } },
+                      { kind: "Field", name: { kind: "Name", value: "rootName" } },
+                      { kind: "Field", name: { kind: "Name", value: "service" } },
+                      { kind: "Field", name: { kind: "Name", value: "startNanos" } },
+                      { kind: "Field", name: { kind: "Name", value: "durationNs" } },
+                      { kind: "Field", name: { kind: "Name", value: "spanCount" } },
+                      { kind: "Field", name: { kind: "Name", value: "hasError" } },
                     ],
                   },
                 },
@@ -879,6 +631,30 @@ export const TraceSortSchema: z.ZodType<
   "DURATION_ASC" | "DURATION_DESC" | "SPAN_COUNT_DESC" | "START_DESC"
 > = z.enum(["DURATION_ASC", "DURATION_DESC", "SPAN_COUNT_DESC", "START_DESC"])
 
+export const TestResultStatusSchema: z.ZodType<
+  "BROKEN" | "FAILED" | "PASSED" | "SKIPPED" | "UNKNOWN",
+  "BROKEN" | "FAILED" | "PASSED" | "SKIPPED" | "UNKNOWN"
+> = z.enum(["BROKEN", "FAILED", "PASSED", "SKIPPED", "UNKNOWN"])
+
+export const TestFlakyStateSchema: z.ZodType<
+  "BROKEN" | "FIXED" | "FLAKY" | "HEALTHY",
+  "BROKEN" | "FIXED" | "FLAKY" | "HEALTHY"
+> = z.enum(["BROKEN", "FIXED", "FLAKY", "HEALTHY"])
+
+export const TestExplorerSortSchema: z.ZodType<"LAST_SEEN" | "NAME", "LAST_SEEN" | "NAME"> = z.enum(
+  ["LAST_SEEN", "NAME"]
+)
+
+export const TestRollupSchema: z.ZodType<
+  "BROKEN" | "FAILED" | "FLAKY_PASS" | "PASSED" | "SKIPPED" | "UNKNOWN",
+  "BROKEN" | "FAILED" | "FLAKY_PASS" | "PASSED" | "SKIPPED" | "UNKNOWN"
+> = z.enum(["BROKEN", "FAILED", "FLAKY_PASS", "PASSED", "SKIPPED", "UNKNOWN"])
+
+export const TestIdentitySourceSchema: z.ZodType<
+  "CODE_REFERENCE" | "EXPLICIT" | "NAME_PATH",
+  "CODE_REFERENCE" | "EXPLICIT" | "NAME_PATH"
+> = z.enum(["CODE_REFERENCE", "EXPLICIT", "NAME_PATH"])
+
 export const SignalKindSchema: z.ZodType<
   "ERRORS" | "LOGS" | "METRIC_POINTS" | "SPANS" | "TRACES",
   "ERRORS" | "LOGS" | "METRIC_POINTS" | "SPANS" | "TRACES"
@@ -888,6 +664,13 @@ export const IssueSortSchema: z.ZodType<
   "EVENTS" | "FIRST_SEEN" | "LAST_SEEN" | "TREND",
   "EVENTS" | "FIRST_SEEN" | "LAST_SEEN" | "TREND"
 > = z.enum(["EVENTS", "FIRST_SEEN", "LAST_SEEN", "TREND"])
+
+export const TestConfigurationFilterInputSchema: z.ZodObject<
+  Properties<TestConfigurationFilterInput>
+> = z.object({
+  key: z.string(),
+  value: z.string(),
+})
 
 export const AttributeFilterInputSchema: z.ZodObject<Properties<AttributeFilterInput>> = z.object({
   key: z.string(),
