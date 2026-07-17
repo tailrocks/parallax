@@ -20,6 +20,49 @@ fn issue_occurrence<'a>(
 }
 
 #[tokio::test]
+async fn alert_discovery_discloses_policy_retention_with_zero_eligibility() {
+    let directory = tempfile::tempdir().expect("temporary directory");
+    let store = TursoMetadataStore::open(directory.path().join("metadata.db"))
+        .await
+        .expect("open metadata");
+    let conn = store.conn.lock().await;
+    conn.execute(
+        "INSERT INTO alert_rule_states (rule_id, group_key) VALUES ('rule', 'group')",
+        (),
+    )
+    .await
+    .expect("seed rule state");
+    conn.execute(
+        "INSERT INTO alert_incidents
+         (id, rule_id, group_key, severity, first_triggered_at, last_triggered_at)
+         VALUES ('incident', 'rule', 'group', 'warning', 1, 1)",
+        (),
+    )
+    .await
+    .expect("seed incident");
+    drop(conn);
+
+    let items = store
+        .retained_alert_prune_items(101)
+        .await
+        .expect("discover protected alerts");
+
+    assert_eq!(items.len(), 6);
+    assert_eq!(items[1].class, PruneClass::AlertRuleStates);
+    assert_eq!(items[1].exclusions[0].count, 1);
+    assert_eq!(items[2].class, PruneClass::AlertIncidents);
+    assert_eq!(items[2].exclusions[0].count, 1);
+    for item in items {
+        assert_eq!(item.cutoff_nanos, 101);
+        assert_eq!(item.estimate.rows, Some(0));
+        assert!(
+            item.exclusions.is_empty()
+                || item.exclusions[0].kind == PruneExclusionKind::RetainedByPolicy
+        );
+    }
+}
+
+#[tokio::test]
 async fn saved_state_discovery_discloses_policy_retention_with_zero_eligibility() {
     let directory = tempfile::tempdir().expect("temporary directory");
     let store = TursoMetadataStore::open(directory.path().join("metadata.db"))

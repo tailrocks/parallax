@@ -6,6 +6,64 @@ use parallax_storage::{
 };
 
 impl TursoMetadataStore {
+    pub async fn retained_alert_prune_items(
+        &self,
+        cutoff_nanos: u128,
+    ) -> anyhow::Result<Vec<PruneItem>> {
+        let conn = self.conn.lock().await;
+        let mut rows = conn
+            .query(
+                "SELECT
+                   (SELECT COUNT(*) FROM alert_rules),
+                   (SELECT COUNT(*) FROM alert_rule_states),
+                   (SELECT COUNT(*) FROM alert_incidents),
+                   (SELECT COUNT(*) FROM alert_destinations),
+                   (SELECT COUNT(*) FROM alert_delivery_events),
+                   (SELECT COUNT(*) FROM alert_checks)",
+                (),
+            )
+            .await?;
+        let row = rows
+            .next()
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("alert prune aggregate returned no row"))?;
+        Ok([
+            (PruneClass::AlertRules, "alert_rules", integer(&row, 0)),
+            (
+                PruneClass::AlertRuleStates,
+                "alert_rule_states",
+                integer(&row, 1),
+            ),
+            (
+                PruneClass::AlertIncidents,
+                "alert_incidents",
+                integer(&row, 2),
+            ),
+            (
+                PruneClass::AlertDestinations,
+                "alert_destinations",
+                integer(&row, 3),
+            ),
+            (
+                PruneClass::AlertDeliveryEvents,
+                "alert_delivery_events",
+                integer(&row, 4),
+            ),
+            (PruneClass::AlertChecks, "alert_checks", integer(&row, 5)),
+        ]
+        .into_iter()
+        .map(|(class, target, count)| {
+            retained_by_policy_item(
+                class,
+                target,
+                cutoff_nanos,
+                count,
+                "normal prune never selects alert-owned state",
+            )
+        })
+        .collect())
+    }
+
     pub async fn retained_saved_state_prune_items(
         &self,
         cutoff_nanos: u128,
@@ -34,7 +92,15 @@ impl TursoMetadataStore {
             (PruneClass::SavedViews, "saved_views", integer(&row, 2)),
         ]
         .into_iter()
-        .map(|(class, target, count)| retained_by_policy_item(class, target, cutoff_nanos, count))
+        .map(|(class, target, count)| {
+            retained_by_policy_item(
+                class,
+                target,
+                cutoff_nanos,
+                count,
+                "normal prune never selects user-owned saved state",
+            )
+        })
         .collect())
     }
 
@@ -199,6 +265,7 @@ fn retained_by_policy_item(
     target: &str,
     cutoff_nanos: u128,
     count: i64,
+    warning: &str,
 ) -> PruneItem {
     let count = u64::try_from(count).unwrap_or(0);
     PruneItem {
@@ -218,7 +285,7 @@ fn retained_by_policy_item(
             })
             .into_iter()
             .collect(),
-        warnings: vec!["normal prune never selects user-owned saved state".to_string()],
+        warnings: vec![warning.to_string()],
     }
 }
 

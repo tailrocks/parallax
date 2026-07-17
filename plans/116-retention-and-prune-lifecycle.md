@@ -122,6 +122,10 @@ the helper objective; the peer executor owns the status transition.
   was temporarily obstructed by a peer's uncommitted metrics-explorer helper
   (`adapter_math::increase_from_buckets`); peer verification must rerun it once
   that concurrent slice is integrated.
+- Alert rules, rule states, incidents, destinations, delivery events, and
+  bounded checks now receive the same explicit zero-eligibility treatment via
+  one bounded aggregate. Their alert-owner/user-delete lifecycles remain
+  authoritative; normal prune gains no alert deletion capability.
 
 ## Historical Blocker Evidence (2026-07-14; superseded 2026-07-17)
 

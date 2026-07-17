@@ -8,6 +8,15 @@ use parallax_storage::{MetadataPruneStore, PruneItem};
 
 #[async_trait::async_trait]
 impl MetadataPruneStore for TursoMetadataStore {
+    async fn retained_alert_prune_items(
+        &self,
+        cutoff_nanos: u128,
+    ) -> MetadataResult<Vec<PruneItem>> {
+        Self::retained_alert_prune_items(self, cutoff_nanos)
+            .await
+            .map_err(MetadataError::internal)
+    }
+
     async fn retained_saved_state_prune_items(
         &self,
         cutoff_nanos: u128,

@@ -24,4 +24,11 @@ pub trait MetadataPruneStore: Send + Sync {
         &self,
         cutoff_nanos: u128,
     ) -> MetadataResult<Vec<PruneItem>>;
+
+    /// Bounded zero-eligibility items for alert-owned configuration and audit
+    /// state whose lifecycle is not normal prune.
+    async fn retained_alert_prune_items(
+        &self,
+        cutoff_nanos: u128,
+    ) -> MetadataResult<Vec<PruneItem>>;
 }
