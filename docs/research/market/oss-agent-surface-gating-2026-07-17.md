@@ -27,6 +27,12 @@ core or gate to cloud/EE (affects Parallax air-gap + A6 positioning).
   still lists **"Access to MCP Server and Noz"** under **$49/mo** Cloud
   ([signoz.io/pricing](https://signoz.io/pricing/)). Latest release **`v0.133.0`**
   (~30.3k★). Community self-host remains free software, not free Noz.
+- **Pass 262:** Noz docs still tagged **`SigNoz Cloud`** only (no Community
+  offline Noz path). [MCP Server docs](https://signoz.io/docs/ai/signoz-mcp-server/)
+  apply to **Cloud and Self-Host** (hosted MCP URL for Cloud; self-host install
+  path documented on same page). Noz vs MCP section still: Noz = in-UI Cloud
+  teammate; MCP = external coding agents over telemetry. Stars **~30,316**.
+  **No** portable redacted evidence-bundle export observed.
 - **Implication:** air-gap teams using SigNoz OSS get **MCP tools over raw
   telemetry**, not a free in-product Noz investigator. Aligns with Parallax's
   "context engine, not the fixer" + possible HolmesGPT/Traceway as fixers.

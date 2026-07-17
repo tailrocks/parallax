@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 261 (Datadog **BYOC Logs** = hybrid customer
-log store + **SaaS UI/AI** — not air-gap Bits; OPW still route-only). Pass 260 =
-Sentry 26.7.0. A1/A2/A3/A4 open; A6 mixed open.
+Last updated 2026-07-18 after pass 262 (SigNoz **Noz** still **Cloud-only**; MCP
+docs cover Cloud + self-host; ~30.3k★ / v0.133.0). Pass 261 = BYOC Logs. A1/A2/A3/A4
+open; A6 mixed open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
