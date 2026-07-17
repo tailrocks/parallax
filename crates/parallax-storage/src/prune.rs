@@ -8,7 +8,8 @@ mod metadata;
 pub use metadata::MetadataPruneStore;
 mod journal;
 pub use journal::{
-    MetadataPruneJournalStore, PruneJournal, PruneJournalStep, PruneJournalStepState,
+    MetadataPruneJournalStore, PRUNE_JOURNAL_ERROR_MAX_BYTES, PruneJournal, PruneJournalStep,
+    PruneJournalStepState, PruneStepStart,
 };
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]

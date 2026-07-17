@@ -6,7 +6,7 @@ use parallax_model::{
 use parallax_storage::metadata::{MetadataError, MetadataResult};
 use parallax_storage::{
     MetadataPruneJournalStore, MetadataPruneStore, PruneItem, PruneJournal, PrunePlan,
-    PrunePlanLimits,
+    PrunePlanLimits, PruneStepStart,
 };
 
 #[async_trait::async_trait]
@@ -28,6 +28,40 @@ impl MetadataPruneJournalStore for TursoMetadataStore {
         limits: PrunePlanLimits,
     ) -> MetadataResult<Option<PruneJournal>> {
         Self::prune_journal(self, plan_id, limits)
+            .await
+            .map_err(MetadataError::internal)
+    }
+
+    async fn begin_prune_step(
+        &self,
+        plan_id: &str,
+        step_index: u32,
+        now_nanos: u128,
+    ) -> MetadataResult<PruneStepStart> {
+        Self::begin_prune_step(self, plan_id, step_index, now_nanos)
+            .await
+            .map_err(MetadataError::internal)
+    }
+
+    async fn record_prune_step_failure(
+        &self,
+        plan_id: &str,
+        step_index: u32,
+        error: &str,
+        now_nanos: u128,
+    ) -> MetadataResult<()> {
+        Self::record_prune_step_failure(self, plan_id, step_index, error, now_nanos)
+            .await
+            .map_err(MetadataError::internal)
+    }
+
+    async fn complete_prune_step(
+        &self,
+        plan_id: &str,
+        step_index: u32,
+        now_nanos: u128,
+    ) -> MetadataResult<()> {
+        Self::complete_prune_step(self, plan_id, step_index, now_nanos)
             .await
             .map_err(MetadataError::internal)
     }

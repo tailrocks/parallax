@@ -1,9 +1,142 @@
 use super::super::*;
 use parallax_storage::{
-    PruneJournal, PruneJournalStep, PruneJournalStepState, PrunePlan, PrunePlanLimits,
+    PRUNE_JOURNAL_ERROR_MAX_BYTES, PruneJournal, PruneJournalStep, PruneJournalStepState,
+    PrunePlan, PrunePlanLimits, PruneStepStart,
 };
 
 impl TursoMetadataStore {
+    pub async fn begin_prune_step(
+        &self,
+        plan_id: &str,
+        step_index: u32,
+        now_nanos: u128,
+    ) -> anyhow::Result<PruneStepStart> {
+        let now = nanos_to_millis(now_nanos);
+        let mut conn = self.conn.lock().await;
+        let transaction = conn.transaction().await?;
+        let affected = transaction
+            .execute(
+                "UPDATE prune_journal_steps
+                 SET state = 'executing', last_error = NULL
+                 WHERE plan_id = ?1 AND step_index = ?2
+                   AND state IN ('planned', 'executing')",
+                (plan_id, i64::from(step_index)),
+            )
+            .await?;
+        if affected == 1 {
+            require_journal_touch(&transaction, plan_id, now).await?;
+            transaction.commit().await?;
+            return Ok(PruneStepStart::Execute);
+        }
+        let mut rows = transaction
+            .query(
+                "SELECT state FROM prune_journal_steps
+                 WHERE plan_id = ?1 AND step_index = ?2",
+                (plan_id, i64::from(step_index)),
+            )
+            .await?;
+        let state = rows.next().await?.map(|row| text(&row, 0));
+        drop(rows);
+        match state.as_deref() {
+            Some("complete") => {
+                transaction.commit().await?;
+                Ok(PruneStepStart::AlreadyComplete)
+            }
+            Some(_) => anyhow::bail!("prune step cannot enter executing state"),
+            None => anyhow::bail!("prune step does not exist"),
+        }
+    }
+
+    pub async fn record_prune_step_failure(
+        &self,
+        plan_id: &str,
+        step_index: u32,
+        error: &str,
+        now_nanos: u128,
+    ) -> anyhow::Result<()> {
+        if error.len() > PRUNE_JOURNAL_ERROR_MAX_BYTES {
+            anyhow::bail!("prune step error exceeds journal bound");
+        }
+        let now = nanos_to_millis(now_nanos);
+        let mut conn = self.conn.lock().await;
+        let transaction = conn.transaction().await?;
+        let affected = transaction
+            .execute(
+                "UPDATE prune_journal_steps SET last_error = ?3
+                 WHERE plan_id = ?1 AND step_index = ?2 AND state = 'executing'",
+                (plan_id, i64::from(step_index), error),
+            )
+            .await?;
+        if affected != 1 {
+            anyhow::bail!("only an executing prune step can record failure");
+        }
+        require_journal_touch(&transaction, plan_id, now).await?;
+        transaction.commit().await?;
+        Ok(())
+    }
+
+    pub async fn complete_prune_step(
+        &self,
+        plan_id: &str,
+        step_index: u32,
+        now_nanos: u128,
+    ) -> anyhow::Result<()> {
+        let now = nanos_to_millis(now_nanos);
+        let mut conn = self.conn.lock().await;
+        let transaction = conn.transaction().await?;
+        let affected = transaction
+            .execute(
+                "UPDATE prune_journal_steps
+                 SET state = 'complete', last_error = NULL, completed_at = ?3
+                 WHERE plan_id = ?1 AND step_index = ?2 AND state = 'executing'",
+                (plan_id, i64::from(step_index), now),
+            )
+            .await?;
+        if affected == 0 {
+            let mut rows = transaction
+                .query(
+                    "SELECT state FROM prune_journal_steps
+                     WHERE plan_id = ?1 AND step_index = ?2",
+                    (plan_id, i64::from(step_index)),
+                )
+                .await?;
+            let state = rows.next().await?.map(|row| text(&row, 0));
+            drop(rows);
+            match state.as_deref() {
+                Some("complete") => {}
+                Some(_) => anyhow::bail!("only an executing prune step can complete"),
+                None => anyhow::bail!("prune step does not exist"),
+            }
+        }
+        let mut rows = transaction
+            .query(
+                "SELECT COUNT(*) FROM prune_journal_steps
+                 WHERE plan_id = ?1 AND state != 'complete'",
+                (plan_id,),
+            )
+            .await?;
+        let remaining = rows
+            .next()
+            .await?
+            .map(|row| integer(&row, 0))
+            .ok_or_else(|| anyhow::anyhow!("prune journal remaining count is missing"))?;
+        drop(rows);
+        let journal_affected = transaction
+            .execute(
+                "UPDATE prune_journals
+                 SET updated_at = ?2,
+                     completed_at = CASE WHEN ?3 = 0 THEN COALESCE(completed_at, ?2) ELSE NULL END
+                 WHERE plan_id = ?1",
+                (plan_id, now, remaining),
+            )
+            .await?;
+        if journal_affected != 1 {
+            anyhow::bail!("prune journal does not exist");
+        }
+        transaction.commit().await?;
+        Ok(())
+    }
+
     pub async fn create_prune_journal(
         &self,
         plan: &PrunePlan,
@@ -138,6 +271,23 @@ fn parse_step_state(value: &str) -> anyhow::Result<PruneJournalStepState> {
         "complete" => Ok(PruneJournalStepState::Complete),
         other => anyhow::bail!("unknown prune journal step state {other:?}"),
     }
+}
+
+async fn require_journal_touch(
+    connection: &turso::Connection,
+    plan_id: &str,
+    now_millis: i64,
+) -> anyhow::Result<()> {
+    let affected = connection
+        .execute(
+            "UPDATE prune_journals SET updated_at = ?2 WHERE plan_id = ?1",
+            (plan_id, now_millis),
+        )
+        .await?;
+    if affected != 1 {
+        anyhow::bail!("prune journal does not exist");
+    }
+    Ok(())
 }
 
 #[cfg(test)]

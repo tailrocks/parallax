@@ -11,6 +11,14 @@ pub enum PruneJournalStepState {
     Complete,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PruneStepStart {
+    Execute,
+    AlreadyComplete,
+}
+
+pub const PRUNE_JOURNAL_ERROR_MAX_BYTES: usize = 1_024;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PruneJournalStep {
     pub step_index: u32,
@@ -47,4 +55,31 @@ pub trait MetadataPruneJournalStore: Send + Sync {
         plan_id: &str,
         limits: PrunePlanLimits,
     ) -> MetadataResult<Option<PruneJournal>>;
+
+    /// Start or retry a step. Completed steps return `AlreadyComplete` and
+    /// must never execute again.
+    async fn begin_prune_step(
+        &self,
+        plan_id: &str,
+        step_index: u32,
+        now_nanos: u128,
+    ) -> MetadataResult<PruneStepStart>;
+
+    /// Keep a failed step resumable in `executing` state with bounded evidence.
+    async fn record_prune_step_failure(
+        &self,
+        plan_id: &str,
+        step_index: u32,
+        error: &str,
+        now_nanos: u128,
+    ) -> MetadataResult<()>;
+
+    /// Complete an executing step idempotently. The journal completes only
+    /// after no planned/executing steps remain.
+    async fn complete_prune_step(
+        &self,
+        plan_id: &str,
+        step_index: u32,
+        now_nanos: u128,
+    ) -> MetadataResult<()>;
 }
