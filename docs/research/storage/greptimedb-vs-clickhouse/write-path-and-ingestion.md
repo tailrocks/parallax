@@ -316,3 +316,17 @@ visibility is still write-path immediate, not a flush barrier).
 
 No drift from Run 112 direction; production continuous-ingest-while-querying remains safe
 on both for the anchored hot path.
+
+## Run 181 (2026-07-17) — native OTLP protocol trio re-verify on v1.1.3
+
+| Endpoint | Result |
+| --- | --- |
+| `GET /health` | **200** |
+| `GET /v1/prometheus/api/v1/query?query=up` | **200** (PromQL GA) |
+| `GET /v1/jaeger/api/services` | **200** (Jaeger query API present) |
+| `POST /v1/otlp/v1/traces` `Content-Type: application/json` | **400** — body: OTLP endpoint **only supports `application/x-protobuf`** (source: `servers/src/error.rs` fixed message) |
+| `POST /v1/otlp/v1/traces` empty protobuf | **400** (route exists; bad/empty payload) |
+
+**Adopt-native:** no drift vs Runs 120/152. Parallax proxy must forward **OTLP protobuf**
+(not JSON) to GreptimeDB. Jaeger read path remains zero-glue for traces UI. Metrics physical
+table auto-create still observed earlier this session (`greptime_physical_table` ENGINE=metric).

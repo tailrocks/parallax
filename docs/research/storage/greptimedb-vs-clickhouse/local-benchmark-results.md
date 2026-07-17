@@ -7015,3 +7015,8 @@ proxy owns tenant fair-share + OTLP QPS either way. Note: `multi-tenancy-and-iso
 default 86.9 vs fsync 92.2 ms (noise-floor; Run 75 architecture still stands). (2) Leftover Run-179
 quota produced live **Code 201 QUOTA_EXCEEDED** — quota enforcement confirmed. Notes:
 `wal-and-durability.md`, `multi-tenancy-and-isolation.md`.
+
+### Run 181 — 2026-07-17 — native OTLP/PromQL/Jaeger re-verify (v1.1.3)
+
+Protocol smoke: health/PromQL/Jaeger **200**; OTLP traces **protobuf-only** (JSON → 400 with
+explicit error). Adopt-native trio holds. `write-path-and-ingestion.md`.
