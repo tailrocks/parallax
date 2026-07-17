@@ -43,6 +43,10 @@
   separates assertion failures from harness breakage, and copies only the
   matching normalized production error fingerprint. Worker persistence and
   explorer queries remain.
+- The trace ingest worker now normalizes each batch once, projects valid test
+  results, and idempotently persists case/variant/result records after native
+  trace and issue recording. A worker integration fixture proves a parented
+  failed test references the same stored production issue fingerprint.
 
 Design decisions D1–D9 (identity, native tables, status taxonomy, attempt
 chains, shared fingerprints, flaky SM, `/tests` surface, session semantics,

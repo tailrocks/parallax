@@ -120,7 +120,23 @@ fn trace_request_with_run_and_error() -> ExportTraceServiceRequest {
     }
 }
 
-async fn characterize_failure_after(stage: FailureStage) -> (usize, usize, u64, usize, usize) {
+fn trace_request_with_test_result() -> ExportTraceServiceRequest {
+    let mut request = trace_request_with_run_and_error();
+    let span = &mut request.resource_spans[0].scope_spans[0].spans[0];
+    span.attributes = vec![
+        string_kv("test.case.id", "checkout-authorize"),
+        string_kv("test.case.name", "authorizes card"),
+        string_kv("test.suite.name", "checkout"),
+        string_kv("test.case.result.status", "fail"),
+        string_kv("test.case.failure.kind", "assertion_failure"),
+    ];
+    span.parent_span_id = vec![9; 8];
+    request
+}
+
+async fn characterize_failure_after(
+    stage: FailureStage,
+) -> (usize, usize, u64, usize, usize, usize) {
     let tmp = tempfile::tempdir().expect("tempdir");
     let store = Arc::new(MemoryStore::new().with_normalizers(
         Arc::new(normalize::normalize_traces),
@@ -135,7 +151,7 @@ async fn characterize_failure_after(stage: FailureStage) -> (usize, usize, u64, 
     let mut live_spans = live.spans.subscribe();
     let worker = Worker::new(store.clone(), metadata.clone(), live);
     worker.inject_failure_once_after(stage).await;
-    let item = IngestItem::Traces(trace_request_with_run_and_error(), bytes::Bytes::new());
+    let item = IngestItem::Traces(trace_request_with_test_result(), bytes::Bytes::new());
     let mut progress = EffectProgress::default();
     worker
         .process_with_progress(&item, &mut progress)
@@ -167,7 +183,12 @@ async fn characterize_failure_after(stage: FailureStage) -> (usize, usize, u64, 
         0
     };
     let runs = metadata.invocations(10).await.expect("invocations").len();
-    (broadcasts, spans, issue_count, errors, runs)
+    let tests = metadata
+        .test_results_for_invocation("run-failure-oracle", 10)
+        .await
+        .expect("test results")
+        .len();
+    (broadcasts, spans, issue_count, errors, runs, tests)
 }
 
 #[test]
@@ -269,26 +290,31 @@ fn ingest_retry_constants_are_bounded() {
 #[tokio::test]
 async fn failure_stage_replay_behavior_is_characterized() {
     // Tuple: live broadcasts, stored spans, issue occurrences,
-    // stored error rows, registered runs.
+    // stored error rows, registered runs, stored test results.
     assert_eq!(
         characterize_failure_after(FailureStage::Registration).await,
-        (1, 1, 1, 1, 1),
+        (1, 1, 1, 1, 1, 1),
         "registration succeeds before failure; its seen-run cache prevents a duplicate"
     );
     assert_eq!(
         characterize_failure_after(FailureStage::Broadcast).await,
-        (1, 1, 1, 1, 1),
+        (1, 1, 1, 1, 1, 1),
         "completed broadcast is checkpointed before retry"
     );
     assert_eq!(
         characterize_failure_after(FailureStage::TelemetryStorage).await,
-        (1, 1, 1, 1, 1),
+        (1, 1, 1, 1, 1, 1),
         "completed telemetry and earlier effects are checkpointed before retry"
     );
     assert_eq!(
         characterize_failure_after(FailureStage::IssueRecording).await,
-        (1, 1, 1, 1, 1),
-        "a final-stage failure does not replay any completed effect"
+        (1, 1, 1, 1, 1, 1),
+        "issue recording is checkpointed before test persistence"
+    );
+    assert_eq!(
+        characterize_failure_after(FailureStage::TestRecording).await,
+        (1, 1, 1, 1, 1, 1),
+        "the final test stage is checkpointed before retry"
     );
 }
 
@@ -367,6 +393,96 @@ async fn metric_exemplar_round_trips_through_worker_and_store() {
     assert_eq!(rows[0].span_id, "cdcdcdcdcdcdcdcd");
     assert_eq!(rows[0].invocation_id.as_deref(), Some("run-a"));
     assert_eq!(rows[0].attributes["route"], "/checkout");
+}
+
+#[tokio::test]
+async fn trace_worker_persists_test_result_with_shared_issue_fingerprint() {
+    use parallax_storage::metadata::MetadataStore as MetadataStorePort;
+    use parallax_storage::model::TestStatus;
+
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let store = Arc::new(MemoryStore::new());
+    let metadata = Arc::new(
+        MetadataStore::open(tmp.path().join("meta.db"))
+            .await
+            .expect("metadata"),
+    );
+    let worker = Worker::new(store, metadata.clone(), crate::live::channels());
+    worker
+        .process(&IngestItem::Traces(
+            trace_request_with_test_result(),
+            bytes::Bytes::new(),
+        ))
+        .await
+        .expect("process test trace");
+
+    let port: &dyn MetadataStorePort = metadata.as_ref();
+    let results = port
+        .test_results_for_invocation("run-failure-oracle", 10)
+        .await
+        .expect("test results");
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].status, TestStatus::Failed);
+    let fingerprint = results[0]
+        .failure_fingerprint
+        .as_deref()
+        .expect("shared fingerprint");
+    assert!(metadata.issue(fingerprint).await.expect("issue").is_some());
+    let variant = port
+        .test_variant(results[0].key.variant_key.as_str())
+        .await
+        .expect("variant")
+        .expect("variant exists");
+    assert!(
+        port.test_case(variant.case_key.as_str())
+            .await
+            .expect("case")
+            .is_some()
+    );
+    assert_eq!(
+        results[0].trace_id.as_str(),
+        "01010101010101010101010101010101"
+    );
+    assert_eq!(results[0].span_id, "0202020202020202");
+}
+
+#[tokio::test]
+async fn malformed_test_projection_does_not_drop_native_trace() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let store = Arc::new(MemoryStore::new().with_normalizers(
+        Arc::new(normalize::normalize_traces),
+        Arc::new(normalize::normalize_logs),
+    ));
+    let metadata = Arc::new(
+        MetadataStore::open(tmp.path().join("meta.db"))
+            .await
+            .expect("metadata"),
+    );
+    let worker = Worker::new(store.clone(), metadata.clone(), crate::live::channels());
+    let mut request = trace_request_with_test_result();
+    request.resource_spans[0].scope_spans[0].spans[0]
+        .attributes
+        .push(string_kv("test.attempt.ordinal", "zero"));
+    worker
+        .process(&IngestItem::Traces(request, bytes::Bytes::new()))
+        .await
+        .expect("raw trace remains ingestible");
+
+    assert_eq!(
+        store
+            .spans_by_trace("01010101010101010101010101010101")
+            .await
+            .expect("native spans")
+            .len(),
+        1
+    );
+    assert!(
+        metadata
+            .test_results_for_invocation("run-failure-oracle", 10)
+            .await
+            .expect("test results")
+            .is_empty()
+    );
 }
 
 #[tokio::test]

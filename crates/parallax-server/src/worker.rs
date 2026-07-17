@@ -11,7 +11,7 @@
 //! does not stall logs/metrics acks (ordering across signals was never
 //! guaranteed).
 
-use parallax_analysis::derive;
+use parallax_analysis::{derive, test_reporting};
 use parallax_ingest as normalize;
 use parallax_proto::collector_logs::ExportLogsServiceRequest;
 use parallax_proto::collector_metrics::ExportMetricsServiceRequest;
@@ -59,6 +59,7 @@ enum FailureStage {
     Broadcast,
     TelemetryStorage,
     IssueRecording,
+    TestRecording,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -67,6 +68,7 @@ enum EffectStage {
     Broadcast,
     TelemetryStorage,
     IssueRecording,
+    TestRecording,
 }
 
 #[derive(Debug, Default)]
@@ -232,6 +234,8 @@ impl Worker {
         progress: &mut EffectProgress,
     ) -> WorkerResult<()> {
         let errors = derive::derive_from_traces(request);
+        let spans = normalize::normalize_traces(request);
+        let tests = derive_test_records(&spans, &errors);
         if !progress.completed(EffectStage::Registration) {
             self.register_invocations(normalize::resource_invocation_ids(request))
                 .await?;
@@ -241,13 +245,7 @@ impl Worker {
         self.maybe_fail_after(FailureStage::Registration).await?;
         if !progress.completed(EffectStage::Broadcast) {
             if self.live.spans.receiver_count() > 0 {
-                drop(
-                    self.live
-                        .spans
-                        .send(crate::live::span_batch(normalize::normalize_traces(
-                            request,
-                        ))),
-                );
+                drop(self.live.spans.send(crate::live::span_batch(spans)));
             }
             progress.mark_completed(EffectStage::Broadcast);
         }
@@ -266,6 +264,12 @@ impl Worker {
         }
         #[cfg(test)]
         self.maybe_fail_after(FailureStage::IssueRecording).await?;
+        if !progress.completed(EffectStage::TestRecording) {
+            self.record_tests(&tests).await?;
+            progress.mark_completed(EffectStage::TestRecording);
+        }
+        #[cfg(test)]
+        self.maybe_fail_after(FailureStage::TestRecording).await?;
         Ok(())
     }
 
@@ -400,6 +404,37 @@ impl Worker {
         self.store.write_error_events(errors).await?;
         Ok(())
     }
+
+    async fn record_tests(&self, tests: &[test_reporting::DerivedTestSpan]) -> WorkerResult<()> {
+        for test in tests {
+            self.metadata.upsert_test_case(&test.case).await?;
+            self.metadata.upsert_test_variant(&test.variant).await?;
+            self.metadata.upsert_test_result(&test.result).await?;
+        }
+        Ok(())
+    }
+}
+
+fn derive_test_records(
+    spans: &[parallax_storage::model::SpanRow],
+    errors: &[ErrorEventRow],
+) -> Vec<test_reporting::DerivedTestSpan> {
+    spans
+        .iter()
+        .filter_map(|span| {
+            let failure = errors
+                .iter()
+                .filter(|error| error.trace_id == span.trace_id && error.span_id == span.span_id)
+                .min_by_key(|error| source_precedence(error.source));
+            match test_reporting::derive_test_span(span, failure) {
+                Ok(test) => test,
+                Err(error) => {
+                    tracing::warn!(error = %error, "skipping malformed test-result projection");
+                    None
+                }
+            }
+        })
+        .collect()
 }
 
 fn source_precedence(source: ErrorSource) -> u8 {
