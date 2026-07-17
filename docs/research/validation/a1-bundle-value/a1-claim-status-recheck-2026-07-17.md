@@ -86,9 +86,17 @@ Upgrade path in §Falsification unchanged: freeze → overlays → arms → publ
 | SWE-bench_Lite | HTTP **200** |
 | Claim level | still **`not_measured`** |
 
+## Pass 214 addendum (2026-07-18)
+
+| Check | Result |
+| --- | --- |
+| Result-ledger instance | Still **absent** |
+| Golden fixture test | **ok** |
+| Claim level | still **`not_measured`** |
+
 ## Uncertainty
 
-- Pass 118 did **not** execute agent runs (token cost + harness ownership sit outside pure desk research; agenda still marks comparative runs owed). Pass 159/192 re-ran **only** the golden unit test, not arms.
+- Pass 118 did **not** execute agent runs (token cost + harness ownership sit outside pure desk research; agenda still marks comparative runs owed). Pass 159/192/214 re-ran **only** the golden unit test, not arms.
 - HF row counts / revision SHAs for Lite were not re-hashed this pass; source liveness only. Pinning remains in the freeze-check notes when Phase 0 starts.
 
 ## Parallax goal fit

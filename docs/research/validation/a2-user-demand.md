@@ -39,6 +39,9 @@
 > - SO **2025** still **200**; **2026** results still **404**.
 > - Desk rechecks through pass **192** **cannot** close A2.
 > - **Operator interview runbook still owed.**
+>
+> **Pass 214 recheck (2026-07-18):** gate **still OPEN / zero rows**; SO **2026**
+> results still **404**; operator interviews still owed.
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
