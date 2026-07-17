@@ -74,6 +74,31 @@ and the production build. Vite emitted the real ELK worker chunk
 (`ecosystem-layout.worker-*.js`, 1.43 MB), closing the worker-bundling check.
 Peer still owns live corpus/browser proof and may deepen the control layout.
 
+**Step 1 (backend derivation) landed preliminarily at `2dea2d2`** (helper
+agent, 2026-07-17): `external_dependency_edges` on the trace-analytics trait;
+GreptimeDB SQL anti-join (CLIENT/PRODUCER spans with no same-trace
+SERVER/CONSUMER child in another instrumented service) built only from
+`span_attributes.*` columns that exist per `information_schema` (returns
+empty when no trigger column); identity ladder mirrors
+`ecosystem-topology.ts` `resolveExternalNode` (db.system.name/db.system →
+database with db.namespace→db.name→server.address→system name fallback;
+messaging.system → queue named by messaging.destination.name; else
+server.address → external); new `db.*` semconv constants (owner parallax);
+in-memory parity impl; `serviceMap` now emits `nodes[].kind`
+`database|queue|external`, `nodes[].system`, and edges to external nodes —
+an instrumented service with the same node name keeps the node slot (edge
+still targets that name; peer may namespace external node ids if collisions
+matter). Tests: SQL-builder unit tests (ladder, partial schemas,
+trigger-required) and a GraphQL e2e including the instrumented-pair
+negative; `cargo nextest -p parallax-storage -p parallax-greptime -p
+parallax-test-support -p parallax-api` green at commit time. Peer owns:
+live-engine corpus test (Postgres fan-in, redpanda, `eco-external`,
+checkout→pricing negative), threshold/naming semantics review, UI wiring,
+browser evidence. NOTE (operator, 2026-07-17): the new graph-rendering rule
+in `AGENTS.md`/`ui/AGENTS.md` rule 24 mandates React Flow (`@xyflow/react`)
+for graph visualizations — reconcile this plan's earlier "hand-rolled SVG
+stays" wording with that rule before the UI steps.
+
 External-scenario prerequisite landed in both repositories: `a36b774` adds
 `server.address` to the canonical semconv contract and regenerates Parallax;
 playground `e665914` regenerates its Rust/Java/TypeScript/wire artifacts. The
