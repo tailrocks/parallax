@@ -8188,3 +8188,8 @@ Not done.
 
 ### Run 332 — 2026-07-17 — not done
 
+
+### Run 333 — 2026-07-17 — unindexed span_id lookup
+
+`WHERE span_id=…` (not keyed): GT warm **~6–7 ms**; CH **~3 ms**. Still
+interactive at 50k; would grow with scale.
