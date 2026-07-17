@@ -30,3 +30,6 @@ tracing = { workspace = true }
 
 [features]
 cross-release-vendored = ["reqwest/native-tls-vendored"]
+
+[dev-dependencies]
+proptest = { workspace = true }

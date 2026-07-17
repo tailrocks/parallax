@@ -406,3 +406,52 @@ mod tests {
         assert!(log_attribute_filters_sql(&[]).is_none());
     }
 }
+
+#[cfg(test)]
+mod property_tests {
+    //! Plan-103 bounded property suites: SQL injection/escaping oracles for
+    //! the single where-clause compiler (invariants doc:
+    //! docs/research/testing/property-invariants.md).
+    use super::*;
+    use proptest::prelude::*;
+
+    proptest! {
+        /// Every compiled condition keeps string literals balanced: an
+        /// arbitrary hostile value can never terminate a literal early
+        /// (single-quote count stays even across span/log/metric arms).
+        #[test]
+        fn compiled_filters_keep_literals_balanced(
+            key in "[A-Za-z][A-Za-z0-9._]{0,24}",
+            value in ".{0,48}",
+            op_index in 0usize..8,
+        ) {
+            let ops = [
+                AttributeFilterOp::Eq,
+                AttributeFilterOp::Ne,
+                AttributeFilterOp::Gt,
+                AttributeFilterOp::Lt,
+                AttributeFilterOp::Gte,
+                AttributeFilterOp::Lte,
+                AttributeFilterOp::Contains,
+                AttributeFilterOp::NotContains,
+            ];
+            let filter = AttributeFilter {
+                key,
+                op: ops[op_index],
+                value,
+            };
+            for sql in [
+                span_attribute_filter_sql(&filter),
+                log_attribute_filter_sql(&filter),
+                metric_attribute_filter_sql(&filter),
+            ] {
+                prop_assert_eq!(
+                    sql.matches('\'').count() % 2,
+                    0,
+                    "balanced literals: {}",
+                    sql
+                );
+            }
+        }
+    }
+}

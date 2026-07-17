@@ -1,5 +1,6 @@
 use super::*;
 use crate::adapter::AttributeFilter;
+use parallax_storage::model::InvocationMetricSummary;
 
 #[async_trait::async_trait]
 impl MetricAnalyticsStore for GreptimeStore {
@@ -211,7 +212,7 @@ impl MetricAnalyticsStore for GreptimeStore {
         invocation_id: &str,
         range: RangeInclusive<u128>,
         limit: usize,
-    ) -> StorageResult<Vec<parallax_storage::model::InvocationMetricSummary>> {
+    ) -> StorageResult<Vec<InvocationMetricSummary>> {
         // One bounded extension-table read: no native catalog discovery.
         // Legacy rows predate the persisted canonical identity; their name
         // normalizes client-side with the same deterministic function
@@ -235,8 +236,7 @@ impl MetricAnalyticsStore for GreptimeStore {
                 sql_ts(*range.end()),
             ))
             .await?;
-        let mut by_name: BTreeMap<String, parallax_storage::model::InvocationMetricSummary> =
-            BTreeMap::new();
+        let mut by_name: BTreeMap<String, InvocationMetricSummary> = BTreeMap::new();
         for row in &rows {
             let stored = str_at(row, 0);
             let raw_name = str_at(row, 1);
@@ -248,14 +248,15 @@ impl MetricAnalyticsStore for GreptimeStore {
             let count = u128_at(row, 2) as u64;
             let last_ts = u128_at(row, 3);
             let last_value = row.get(4).and_then(|v| v.as_f64()).unwrap_or(0.0);
-            let entry = by_name.entry(canonical.clone()).or_insert_with(|| {
-                parallax_storage::model::InvocationMetricSummary {
-                    name: canonical,
-                    point_count: 0,
-                    last_value,
-                    last_ts_nanos: last_ts,
-                }
-            });
+            let entry =
+                by_name
+                    .entry(canonical.clone())
+                    .or_insert_with(|| InvocationMetricSummary {
+                        name: canonical,
+                        point_count: 0,
+                        last_value,
+                        last_ts_nanos: last_ts,
+                    });
             entry.point_count += count;
             if last_ts >= entry.last_ts_nanos {
                 entry.last_ts_nanos = last_ts;

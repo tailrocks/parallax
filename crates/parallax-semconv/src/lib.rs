@@ -226,3 +226,30 @@ pub fn span_column(attr: &str) -> String {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod property_tests {
+    //! Plan-103 bounded property suites (invariants doc:
+    //! docs/research/testing/property-invariants.md).
+    use proptest::prelude::*;
+
+    proptest! {
+        /// The canonical native table base is idempotent and stays inside
+        /// the engine's identifier charset for arbitrary metric names.
+        #[test]
+        fn native_metric_table_base_idempotent(name in ".{0,64}") {
+            let once = super::native_metric_table_base(&name);
+            prop_assert!(once.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'));
+            prop_assert_eq!(super::native_metric_table_base(&once), once);
+        }
+
+        /// JSON attribute paths always address one plainly quoted member —
+        /// the exact shape GreptimeDB's json_get_string accepts.
+        #[test]
+        fn resource_json_path_is_quoted_member(attr in "[^\"]{0,48}") {
+            let path = super::resource_json_path(&attr);
+            prop_assert!(path.starts_with("$.\""));
+            prop_assert!(path.ends_with('"'));
+        }
+    }
+}
