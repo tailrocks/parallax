@@ -8000,3 +8000,8 @@ standalone process.
 
 After Runs 220–288 the engine-smoke + small MinIO + harness fix work is deep.
 **Do not stop.** Highest remaining value is off-laptop / product-input.
+
+### Run 290 — 2026-07-17 — TimeSeries SELECT still Code 48 on head
+
+Re-check after uptime: `SELECT * FROM ts_r236` still **NOT_IMPLEMENTED** on
+26.7.1.1097. No interim progress on SQL read path.
