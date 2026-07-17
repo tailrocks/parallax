@@ -88,6 +88,7 @@ managed quotes remain):
 | Server-tier runbook (1M/5M/GB) | 240 | `server-tier-runbook.md` |
 | PromQL vs SQL tax small | 241 | ~1.5×; path OK |
 | JSON2 vs Jsonb @50k | 243 | 3 vs 18 vs CH 2 ms |
+| re-pin still current | 244 | no bump |
 
 ## Method
 

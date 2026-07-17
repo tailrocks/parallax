@@ -7732,3 +7732,14 @@ results. Not a fixed 5.6× tax.
 **JSON2 closes ~6× of the Jsonb gap** → near-tie with CH at 50k. **No drift**
 from Runs 173/176. Product: prefer JSON2 for dynamic attrs; default Jsonb is
 the slow path.
+
+### Run 244 — 2026-07-17 — re-pin still current (Docker Hub)
+
+| Slot | Pinned | Hub latest check |
+| --- | --- | --- |
+| GT stable | v1.1.3 | still latest GA tag family |
+| GT nightly | v1.2.0-nightly-20260713 | **still newest** dated nightly on Hub |
+| CH stable feature | 26.6.1.1193 | still current 26.6.1.x |
+| CH head | 26.7.1.1097 | rolls |
+
+**No bump this pass.** Continue re-check each pass.
