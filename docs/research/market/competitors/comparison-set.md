@@ -27,7 +27,7 @@ Legend for the **State** column:
 | **Honeycomb** | High-cardinality event-pipeline observability; exploratory query; Query Assistant/Canvas AI + MCP. | Closed SaaS (Refinery OSS). | Events / traces (high cardinality). | [deep-dive](parallax-vs-honeycomb.md) |
 | **New Relic** | Full-platform SaaS; entity-centric; AI (NRAI + **AI Coding Obs** for Claude Code/Cursor/Copilot/Windsurf/Q); OTLP-native. | Closed SaaS (no self-host). | All signals. | [deep-dive](parallax-vs-new-relic.md) |
 | **Dynatrace** | AI-driven (Davis) full-stack; deep auto-instrumentation via OneAgent. | Closed SaaS. | All signals + topology. | [deep-dive](parallax-vs-dynatrace.md) |
-| **Splunk Observability Cloud** | Observability on top of Splunk (post-Cisco); OTel-native metrics/traces + logs. | Closed SaaS. | Logs + metrics + traces. | stub |
+| **Splunk Observability Cloud** | Observability on top of Splunk (post-Cisco); OTel-native metrics/traces + logs. | Closed SaaS. | Logs + metrics + traces. | [deep-dive](parallax-vs-splunk.md) |
 | **Elastic Observability** | ES/Kibana stack (search + observability + security); ES|QL. | Elastic License v2 (source-available). | Logs + metrics + traces + security. | [deep-dive](parallax-vs-elastic.md) |
 | **Sumo Logic** | Cloud log/SIEM/observability SaaS. | Closed SaaS. | Logs + metrics + security. | stub |
 | **Chronosphere** | Scale metrics platform on M3/Cube; controlled-cost metrics. | Closed SaaS. | Metrics (high scale). | stub |
