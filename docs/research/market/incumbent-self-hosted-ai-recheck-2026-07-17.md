@@ -58,7 +58,16 @@ claim retained).
 | develop.sentry.dev/self-hosted | Still Seer **closed source** |
 | Grafana Assistant self-managed docs | Still hybrid **Cloud backend/billing** |
 
-**UNFIRED:** Seer self-host GA; Grafana offline/BYO-LLM Assistant.
+### Pass 245 (2026-07-18) — Seer + Assistant + Bits Code triple re-fetch
+
+| Source | Finding |
+| --- | --- |
+| [develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/) | Differences list still: **"Seer and other AI & ML features, as these are currently closed source."** — **UNFIRED** for self-host Seer GA |
+| [Grafana Assistant self-managed setup](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/get-started/self-managed/) | Still **hybrid**: "The Assistant UI runs in your self-managed Grafana deployment. **The backend, usage limits, and billing stay in the Grafana Cloud stack** you connect during setup." Prompts + query context **sent to Grafana Cloud**. Requires Grafana **13.0.0+** + Cloud stack admin. Self-managed **does not** include Investigations / investigation memory. **No offline / BYO-LLM product path.** Pricing same as Cloud Assistant (seat/token meters — pass 242). |
+| [Bits Code docs](https://docs.datadoghq.com/bits_ai/bits_ai_dev_agent/) | Explicit: **"Bits Code never auto-merges PRs or MRs."** Creates/iterates PRs; human merge remains. Self-hosted SCM (GHES, GitLab Self-Managed) **not supported**. |
+
+**UNFIRED:** Seer self-host GA; Grafana offline/BYO-LLM Assistant; Bits app-code
+auto-merge commodity.
 
 **Precise claim after this pass:**
 
@@ -67,7 +76,8 @@ claim retained).
 > *did* ship Assistant into self-managed *UIs*, but the **LLM backend remains
 > Grafana Cloud**. Sentry Seer remains cloud/closed. True air-gap AI still
 > routes to BYO-LLM layers (e.g. HolmesGPT + Ollama) or pure context engines
-> (Parallax thesis).
+> (Parallax thesis). App-code auto-merge still **not** commodity (Bits never
+> auto-merges).
 
 ---
 

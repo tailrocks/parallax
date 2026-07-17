@@ -67,6 +67,11 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > still open/idle; OCSF GA still 1.8.0. Kill "OTel commoditizes evidence-bundle
 > schema" still **unfired**. **Still GO (narrow product).**
 >
+> **Pass 245 (2026-07-18) — GO reaffirm (incumbent AI + Bits).** Seer still
+> closed on self-host; Grafana Assistant still hybrid Cloud backend; Bits Code
+> still **never auto-merges**. Related kills **unfired**. **Still GO (narrow
+> product).**
+>
 > **Narrow product identity holds.** Research program continues.
 
 ## Verdict
