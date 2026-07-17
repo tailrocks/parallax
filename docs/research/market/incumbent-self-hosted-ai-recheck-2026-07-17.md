@@ -1,4 +1,4 @@
-# Incumbent self-hosted AI recheck (2026-07-17, pass 77 + pass 126)
+# Incumbent self-hosted AI recheck (2026-07-17, pass 77 + pass 126 + pass 158)
 
 <!-- markdownlint-disable MD013 -->
 
@@ -6,13 +6,14 @@
 (Sentry Seer self-host intent; Grafana local-inference / BYO-LLM). Either would
 erode Parallax's air-gap / no-cloud-AI differentiator.
 
-**Evidence class:** primary vendor docs (fetched 2026-07-17). Desk only.
+**Evidence class:** primary vendor docs (fetched 2026-07-17; pass **158** re-fetch
+2026-07-18). Desk only.
 
 ---
 
 ## Verdict
 
-| Watch item | Status 2026-07-17 | Erodes air-gap wedge? |
+| Watch item | Status 2026-07-18 (pass 158) | Erodes air-gap wedge? |
 | --- | --- | --- |
 | Sentry Seer on self-hosted | **Still unavailable** — closed-source AI/ML excluded from self-hosted | **No** (wedge holds) |
 | Grafana local-inference / fully offline Assistant | **Not found** as a shipping product | **No** for pure offline |
@@ -28,6 +29,13 @@ Live [develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/)
 **No change** vs pass 77. Air-gap / self-host Seer wedge **still holds**.
 Grafana offline BYO-LLM path **not re-probed** this pass (prior partial-pressure
 claim retained).
+
+### Pass 158 (2026-07-18) — Seer + Grafana Assistant dual re-fetch
+
+| Source | Finding |
+| --- | --- |
+| [develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/) | HTML still contains exact list item: **"Seer and other AI & ML features, as these are currently closed source."** — **UNFIRED** for self-host Seer GA |
+| [Grafana Assistant self-managed setup](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/get-started/self-managed/) (markdown-capable docs) | Still **hybrid**: "The Assistant UI runs in your self-managed Grafana deployment. **The backend, usage limits, and billing stay in the Grafana Cloud stack** you connect during setup." Prompts + query context **sent to Grafana Cloud**. Requires Grafana **13.0.0+** + Cloud stack admin. **No offline / BYO-LLM product path** documented. |
 
 **Precise claim after this pass:**
 

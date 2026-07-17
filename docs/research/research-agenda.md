@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 157 (OTel schema commoditization: #1185
-still open/idle **2025-10-24**; no incident/investigation model dirs; OCSF
-still **1.8.0** — **not commoditized**). Pass 156 = Traceway wedge. A1/A2/A4
+Last updated 2026-07-18 after pass 158 (incumbent self-hosted AI: Seer still
+**closed source** on self-host; Grafana Assistant still **Cloud LLM backend**
+only — air-gap wedge **holds**). Pass 157 = OTel commoditization. A1/A2/A4
 open; A6 open at mixed gate only.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
@@ -58,12 +58,13 @@ producer rather than treat its construction as future work. Autonomous fixing re
   still **experimental** on docs v1.1
   ([Traces overview](https://docs.greptime.com/user-guide/traces/overview/)
   warning: "experimental stage and may be adjusted"; **pass 83 + pass 130**).
-- **Incumbent self-hosted AI** — **Rechecked 2026-07-17 pass 77 + pass 126:**
+- **Incumbent self-hosted AI** — **Rechecked 2026-07-18 pass 158** (prior 77/126):
   Seer still **closed / unavailable** on self-hosted
   ([develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/)
   still lists "Seer and other AI & ML features… closed source"). Grafana
-  Assistant **UI** on self-managed still requires **Cloud LLM backend** (pass
-  77). Full note:
+  Assistant **UI** on self-managed still requires **Cloud LLM backend**
+  (hybrid docs: backend/billing/usage on Grafana Cloud stack; prompts leave
+  self-managed). Full note:
   [market/incumbent-self-hosted-ai-recheck-2026-07-17.md](market/incumbent-self-hosted-ai-recheck-2026-07-17.md).
   **UNFIRED:** Seer self-host GA; Grafana offline/BYO-LLM Assistant.
 - **OTel** — any move from per-signal semantics toward incident/investigation/RCA **artifacts**. Last deep recheck: **2026-07-18 pass 157** ([commoditization note](architecture/evidence-bundle-schema-commoditization-2026-07-17.md)): #1185 attribute issue still open/idle (`updated_at` 2025-10-24); no bundle schema; OCSF still 1.8.0.
