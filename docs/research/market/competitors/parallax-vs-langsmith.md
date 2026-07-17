@@ -7,11 +7,12 @@
 > observability + eval platform** — the native tool for the LangChain/LangGraph
 > ecosystem (the most-deployed agent framework). On **agent tracing (LangGraph),
 > evals, prompt hub, datasets/experiments, and ecosystem lock-in as a strength,
-> LangSmith is far ahead of pre-release Parallax.** It is **closed SaaS** (no real
-> self-host), per-seat + per-trace pricing. Parallax's honest edges are
-> **open-source/self-host** (LangSmith is closed), **Apache-2.0 vs proprietary**,
-> production-telemetry breadth, production-error + outcome loop, and the *unproven*
-> bounded agent bundle (A1 gate).
+> LangSmith is far ahead of pre-release Parallax.** It is **closed and commercial** —
+> SaaS by default; self-host/hybrid exist only on the Enterprise contract (a heavy
+> K8s stack, not an OSS path), per-seat + usage-metered pricing. Parallax's honest
+> edges are **open-source/self-host** (LangSmith is closed), **Apache-2.0 vs
+> proprietary**, production-telemetry breadth, production-error + outcome loop, and
+> the *unproven* bounded agent bundle (A1 gate).
 
 ## What each product is
 
@@ -27,7 +28,7 @@ Both touch agent/LLM tracing, but LangSmith is a closed LLMOps platform tied to 
 | LLM / model spans | ✅ core | ✅ (🏗) |
 | Agent spans (LangGraph nodes) | ✅ core (native LangGraph) | ✅ (🏗) |
 | Non-LLM / tool / retrieval spans | ✅ | ✅ (🏗) |
-| Production app traces (OTLP) | 🟡 (LangSmith can ingest OTLP for LLM traces; not a general backend) | ✅ OTLP-native (🏗) |
+| Production app traces (OTLP) | ✅ traces-only — dedicated OTLP endpoint (`/otel/v1/traces`, HTTP proto/JSON); **no OTLP metrics or logs** | ✅ OTLP-native (🏗) |
 | Logs / Metrics | ❌ (not a log/metrics platform) | ✅ OTLP logs/metrics (🏗) |
 | Errors / exceptions (production) | 🟡 (LLM-eval failures; not prod error events) | ✅ derived `error_event` (🏗) |
 | Eval scores / annotations | ✅ core (automated + human) | ✅ planned (A1) |
@@ -37,15 +38,15 @@ Both touch agent/LLM tracing, but LangSmith is a closed LLMOps platform tied to 
 
 ## Ingestion & transport
 
-- **Tracing:** LangSmith captures via LangChain/LangGraph SDKs (native), OpenTelemetry (LangSmith accepts OTLP for LLM traces), and its own SDK. Strongest where you're already on LangChain/LangGraph.
-- **LangGraph agent tracing:** native — per-node execution tracing ($0.001/node).
+- **Tracing:** LangSmith captures via LangChain/LangGraph SDKs (native), **OpenTelemetry end-to-end** ([docs](https://docs.langchain.com/langsmith/trace-with-opentelemetry), [announcement](https://www.langchain.com/blog/end-to-end-opentelemetry-langsmith)) — a dedicated OTLP endpoint (`https://api.smith.langchain.com/otel/v1/traces`, HTTP proto/JSON, `x-api-key` auth; regional endpoints for EU/APAC/AWS-US), plus `LANGSMITH_OTEL_ENABLED=true` in its SDKs and an official [`langsmith-collector-proxy`](https://github.com/langchain-ai/langsmith-collector-proxy) for fan-out. **Traces only — no OTLP metrics or logs**; token/latency arrive as span attributes (OpenLLMetry conventions). Strongest where you're already on LangChain/LangGraph.
+- **LangGraph agent tracing:** native — per-node execution tracing (third-party-cited at $0.001/node, unconfirmed on the live pricing page).
 - **Parallax:** OTel SDKs + CLI/agent tracing, OTLP-native storage.
 
 **Verdict:** on **LangChain/LangGraph-native tracing, LangSmith wins** (it's the native platform). On general OTLP-native telemetry storage, Parallax's design is broader. The **ecosystem lock-in cuts both ways**: LangSmith is strongest inside LangChain; teams not on LangChain get less native value.
 
 ## Storage architecture
 
-- **LangSmith:** proprietary closed backend (SaaS); internals not public. Retention tiers (14-day base, 400-day extended). Self-host Enterprise-limited.
+- **LangSmith:** proprietary closed backend; internals not public. Retention tiers per live pricing page (2026-07-17): **14-day base, 180-day extended** (extra fee to upgrade a trace). Self-host/hybrid exist on Enterprise only — see *Architecture & deployment*.
 - **Parallax:** GreptimeDB (native OTLP tables) + Turso, self-host single-binary.
 
 **Verdict:** on **self-host + open storage, Parallax wins by design** (LangSmith is closed SaaS). On proven-at-scale, LangSmith (LangChain's commercial arm, large customer base) is mature; Parallax unproven.
@@ -73,10 +74,10 @@ Both touch agent/LLM tracing, but LangSmith is a closed LLMOps platform tied to 
 
 ## Architecture & deployment
 
-- **LangSmith:** **closed SaaS** (LangChain Cloud). Enterprise self-host exists but is limited/commercial — not a real OSS self-host path.
+- **LangSmith:** **closed, commercial, SaaS-default.** Self-host and hybrid **do exist** ([docs](https://docs.langchain.com/langsmith/architectural-overview), cloud guides for [AWS](https://docs.langchain.com/langsmith/aws-self-hosted)/[GCP](https://docs.langchain.com/langsmith/gcp-self-hosted)/[Azure](https://docs.langchain.com/langsmith/azure-self-hosted)) — but **only on the Enterprise contract** (custom pricing, annual invoice, license beacon to `beacon.langchain.com` unless air-gapped), and the production path is **Kubernetes + Helm** with **PostgreSQL 14+** (metadata), **Redis 5+/Valkey 8** (queues), **ClickHouse** (trace analytics; LangChain recommends externally-managed ClickHouse Cloud or a LangSmith-managed option), and **blob storage (S3/GCS/Azure Blob) required in production**, baseline **16 vCPU / 64 GB RAM**. Docker Compose is dev/test-only. This is a real but heavy, paid-gated self-host path — not an OSS self-host option like Parallax/Langfuse/OpenObserve.
 - **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0.
 
-**Verdict:** on **self-host / data sovereignty, Parallax wins by design** (LangSmith is closed SaaS). On managed SaaS scale/maturity, LangSmith wins.
+**Verdict:** on **self-host accessibility / data sovereignty, Parallax wins by design** (free Apache single-binary vs a paid-Enterprise-gated, multi-component K8s stack). Note honestly: "LangSmith has no self-host" is **false** — it has a real one, just commercial and operationally heavy. On managed SaaS scale/maturity, LangSmith wins.
 
 ## Operational footprint
 
@@ -115,15 +116,17 @@ Both touch agent/LLM tracing, but LangSmith is a closed LLMOps platform tied to 
 
 ## Pricing & economics — real numbers
 
-LangSmith pricing is **public** ([langchain.com/pricing](https://www.langchain.com/pricing), accessed 2026-07-17):
+LangSmith pricing is **public** ([langchain.com/pricing](https://www.langchain.com/pricing), re-fetched 2026-07-17, pass 14):
 
 | Plan | Price | Traces | Notes |
 | --- | --- | --- | --- |
-| **Developer** | **Free** | 5K base traces/mo | 1 seat, 14-day retention |
-| **Plus** | **$39 / seat / month** | 10K base traces included | +**$0.50 / 1K base traces** overage (14-day) |
-| **Enterprise** | custom | custom | **400-day extended retention** ($2.50/1K extended traces), SSO, support |
+| **Developer** | **Free** | 5K base traces/mo, then pay-as-you-go | max 1 seat, 14-day retention |
+| **Plus** | **$39 / seat / month** | 10K base traces/mo included, then pay-as-you-go | unlimited seats |
+| **Enterprise** | custom (annual invoice) | custom | self-hosted + hybrid options, custom SSO/RBAC, SLA |
 
-**LangGraph agent tracing:** **$0.001 / node execution** (first 100K free). Sources: [pecollective](https://pecollective.com/blog/langsmith-pricing/), [checkthat.ai](https://checkthat.ai/brands/langsmith/pricing), [laminar.sh](https://laminar.sh/blog/2026-01-29-laminar-vs-langfuse-vs-langsmith-llm-observability-compared). Per-seat + per-trace + per-node compounds at scale (a documented TCO concern).
+**Metering units (live page, 2026-07-17):** usage beyond the included traces is metered in **LCU ($1.50 / LCU)** and **LSU ($1.00 / LSU)** — the page does **not** publish a per-1K-trace overage price. Retention: **base traces 14 days; extended traces 180 days** (upgrading a trace to extended costs an additional fee). ⚠️ **Correction vs pass 13:** the earlier figures ($0.50/1K base, $2.50/1K extended, 400-day extended retention) came from secondary 2026 analyses and do **not** match the live pricing page today — either LangSmith changed its metering (per-1K → LCU/LSU, 400d → 180d) or the secondary sources were stale/wrong. The live page is authoritative; per-1K figures are retained here only as historical context.
+
+**LangGraph agent tracing:** third-party sources cite **$0.001 / node execution** (first 100K free) — **not confirmed on the live pricing page** (LCU/LSU abstractions may have replaced it); treat as unproven. Sources: [pecollective](https://pecollective.com/blog/langsmith-pricing/), [checkthat.ai](https://checkthat.ai/brands/langsmith/pricing), [laminar.sh](https://laminar.sh/blog/2026-01-29-laminar-vs-langfuse-vs-langsmith-llm-observability-compared). Per-seat + usage metering compounds at scale (a documented TCO concern).
 
 **Parallax pricing:** none public yet (pre-release).
 
@@ -139,7 +142,7 @@ LangSmith pricing is **public** ([langchain.com/pricing](https://www.langchain.c
 ## Where Parallax honestly edges LangSmith
 
 - **Openness / lock-in** — Apache-2.0 OTLP-native self-host vs closed SaaS + LangChain ecosystem lock-in. *(Real, decisive.)*
-- **Self-host / data sovereignty** — Parallax designed for it; LangSmith is SaaS-only. *(Real.)*
+- **Self-host accessibility / data sovereignty** — Parallax: free Apache single-binary. LangSmith: self-host/hybrid exist but are Enterprise-contract-gated and operationally heavy (K8s+Helm, Postgres+Redis+ClickHouse+blob storage, 16 vCPU/64 GB baseline). *(Real edge on accessibility, not on existence — LangSmith self-host is real, just paid and heavy.)*
 - **Production telemetry breadth** — OTLP-native logs/metrics/errors; LangSmith is LLM-only. *(Real design difference.)*
 - **Production error events + fix-outcome loop** — LangSmith has neither. *(Thesis, unproven, A1.)*
 - **Bounded, redacted, agent-safe evidence bundle** — LangSmith is an LLMOps eval tool, not an incident-context engine. *(Thesis, unproven, A1.)*
@@ -147,12 +150,14 @@ LangSmith pricing is **public** ([langchain.com/pricing](https://www.langchain.c
 ## Open questions / what measurement would settle
 
 - **A1 gate vs LangSmith:** if a team is on LangChain/LangGraph + LangSmith, does a Parallax bounded bundle measurably improve coding-agent fix outcomes for *production incidents*? Unproven — and LangSmith's LangGraph tracing already covers much agent-context ground.
-- **LangSmith self-host reality (2026)** — confirm whether Enterprise self-host is a viable production path or still SaaS-default.
-- **LangSmith exact current trace/node pricing** — confirm $0.50/1K base, $2.50/1K extended, $0.001/node on the live pricing page.
+- ~~**LangSmith self-host reality (2026)**~~ — **answered (pass 14):** real but Enterprise-only; K8s+Helm production path with Postgres 14+/Redis/ClickHouse/blob storage, 16 vCPU/64 GB baseline, license beacon unless air-gapped ([architectural overview](https://docs.langchain.com/langsmith/architectural-overview)).
+- **LangSmith metering drift** — live page (pass 14) shows LCU/LSU units + 180-day extended retention, contradicting the per-1K/400-day figures in secondary analyses. Open: what exactly an LCU/LSU maps to (trace? span? byte?) — pin from LangSmith docs next pass.
 
 ## Sources (accessed 2026-07-17)
 
-- [LangChain pricing](https://www.langchain.com/pricing); [LangSmith docs](https://docs.smith.langchain.com/).
+- [LangChain pricing](https://www.langchain.com/pricing) (re-fetched 2026-07-17, pass 14 — LCU/LSU metering, 180-day extended retention); [LangSmith docs](https://docs.smith.langchain.com/).
+- [Trace with OpenTelemetry — LangChain docs](https://docs.langchain.com/langsmith/trace-with-opentelemetry); [End-to-end OpenTelemetry in LangSmith — LangChain blog](https://www.langchain.com/blog/end-to-end-opentelemetry-langsmith); [langsmith-collector-proxy](https://github.com/langchain-ai/langsmith-collector-proxy).
+- Self-host: [architectural overview](https://docs.langchain.com/langsmith/architectural-overview), [AWS](https://docs.langchain.com/langsmith/aws-self-hosted)/[GCP](https://docs.langchain.com/langsmith/gcp-self-hosted)/[Azure](https://docs.langchain.com/langsmith/azure-self-hosted) guides.
 - 2026 pricing analyses: [pecollective](https://pecollective.com/blog/langsmith-pricing/), [checkthat.ai](https://checkthat.ai/brands/langsmith/pricing), [laminar.sh](https://laminar.sh/blog/2026-01-29-laminar-vs-langfuse-vs-langsmith-llm-observability-compared), [inference.net](https://inference.net/content/langsmith-pricing/).
 - Parallax side: [00-vision/ai-native-observability.md](../../00-vision/ai-native-observability.md), [reference/agent-observability-review.md](../../reference/agent-observability-review.md), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).
 - Sibling deep-dives: [parallax-vs-langfuse.md](parallax-vs-langfuse.md), [parallax-vs-arize-phoenix.md](parallax-vs-arize-phoenix.md).
