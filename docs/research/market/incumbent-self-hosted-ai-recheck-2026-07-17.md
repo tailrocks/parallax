@@ -239,6 +239,16 @@ docs and release notes.
 
 1. **FIRED (partial):** self-managed Assistant UI via Cloud backend (2026-04+).
 2. **UNFIRED:** Assistant (or equivalent) with **fully offline / BYO-LLM**
+
+### Pass 332 (2026-07-18) — Seer + Bits
+
+| Source | Finding |
+| --- | --- |
+| develop.sentry.dev/self-hosted | still Seer **closed source** |
+| Bits Code docs | still **never auto-merges** |
+
+**UNFIRED:** Seer self-host GA; Bits auto-merge.
+
    backend and no Grafana Cloud stack.
 3. **UNFIRED:** portable versioned redacted investigation artifact.
 

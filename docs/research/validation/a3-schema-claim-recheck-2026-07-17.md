@@ -126,6 +126,15 @@ gravity.
 | Adoption ledger | Still **absent** |
 | Claim stack | still `schema_artifacts_shipped` + `schema_adoption_none` |
 
+### Pass 332 (2026-07-18) — adoption + liveness
+
+| Probe | Result |
+| --- | --- |
+| `$id` HTTP | **404** |
+| raw v1 schema | **200** |
+| In-repo `$id` host hits | still **6** (operator tree) |
+| Adoption ledger | **absent** |
+
 ## Artifact inventory (repo paths)
 
 | Artifact | Path |
