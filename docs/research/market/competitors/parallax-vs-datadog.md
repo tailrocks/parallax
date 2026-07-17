@@ -140,7 +140,7 @@ A real Datadog weakness here, written plainly: its AI is a **human dashboard plu
 ## Openness, licensing & vendor lock-in
 
 - **Datadog:** closed-source proprietary SaaS (Agent is OSS). High vendor lock-in: proprietary data format, proprietary query surface, proprietary dashboards, no portable export of the correlated store. **Migration out of Datadog is a well-documented, expensive undertaking.** This is a real, structural Datadog weakness.
-- **Parallax:** Apache-2.0, fully open, self-hostable, OTLP-native (standard format in and out), evidence bundle designed as a *portable* artifact. Low lock-in by construction.
+- **Parallax:** Apache-2.0, fully open, self-hostable, OTLP-native (standard format in and out), evidence bundle **code-shipped** as a *portable* artifact (A1 value unproven). Low lock-in by construction.
 
 **Verdict:** on **openness and lock-in cost, Parallax wins decisively; Datadog's closed proprietary model is a genuine liability for buyers who value portability and data ownership.** This is Parallax's strongest *real* (non-thesis) edge and should not be understated.
 

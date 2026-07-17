@@ -174,9 +174,9 @@ architecturally, early in productization.
 | Skills marketplace | ✅ `agent-skills` repo — 12 skills, incl. read-only `signoz-investigating-alerts` RCA skill **with eval cases** | ❌ |
 | AI root-cause | ✅ MCP RCA skill (3-tier, mandated cite-every-claim) | 🟡 planned |
 | Coding-agent clients | ✅ Claude Code, Cursor, VS Code/Copilot, Codex, Gemini | ✅ (intended) |
-| **Portable, versioned evidence-bundle schema** | ❌ — "Postmortem Evidence Pack" = **ad-hoc LLM-generated markdown per investigation; no JSON schema, no version/provenance/redaction/query-manifest/outcome fields** | ✅ designed (unproven value — A1 gate) |
-| **Fix-outcome loop** | ❌ — investigations end at ranked causes | ✅ designed (unproven) |
-| Redaction / PII before agent access | ❌ not surfaced | ✅ designed (A6 gate) |
+| **Portable, versioned evidence-bundle schema** | ❌ — "Postmortem Evidence Pack" = **ad-hoc LLM-generated markdown per investigation; no JSON schema, no version/provenance/redaction/query-manifest/outcome fields** | ✅🧪 **code-shipped** (value **unproven A1**) |
+| **Fix-outcome loop** | ❌ — investigations end at ranked causes | 🟡🧪 **partial**: offline residual plan **123 DONE**; draft-PR deferred; live value **unproven** |
+| Redaction / PII before agent access | ❌ not surfaced | 🟡🧪 **code-shipped** bundle-path (`REDACTION_POLICY_V1`); A6 residual (not full ingest scrub) |
 
 > **SigNoz is the strongest OSS competitor on agent/MCP maturity — by a wide
 > margin.** Real hosted+self-hosted MCP, a skills marketplace, evals, and active
@@ -217,7 +217,7 @@ is unmeasured.
 |---|---|---|
 | SSO/SAML | 🟡 Teams >$999 add-on / Enterprise | 🏗 planned |
 | RBAC + audit logs | 🟡 **Enterprise, "coming soon", pre-1.0** | 🏗 planned |
-| PII scrub / redaction | ❌ not surfaced | ✅ designed (A6 gate) |
+| PII scrub / redaction | ❌ not surfaced | 🟡🧪 **code-shipped** bundle-path (`REDACTION_POLICY_V1`); A6 residual (not full ingest scrub) |
 | Transport security | standard | standard |
 | Compliance (SOC2/etc.) | ❌ self-attest only | ❌ not yet |
 
@@ -269,8 +269,8 @@ self-hosted Parallax could undercut but that is unmeasured.
 
 1. **Single-binary local-first** — the one *real today* architectural edge (GreptimeDB+Turso, no ~5-container stack).
 2. **Sentry-compatible ingest lane** — shipped; plan 118 DONE; multi-SDK compatibility ledger unproven.
-3. **Portable versioned redacted evidence bundle** — designed; **value unproven (A1 gate)**.
-4. **Fix-outcome loop** — designed; **unproven**.
+3. **Portable versioned redacted evidence bundle** — **code-shipped**; value **unproven (A1 gate)**.
+4. **Fix-outcome loop** — **partial**: offline residual plan **123 DONE**; draft-PR deferred; live product value **unproven**.
 5. **Rust-first runtime-error capture** — real bet, early.
 6. **Fully Apache-2.0** — no proprietary `ee/` split (minor vs MIT core).
 

@@ -76,7 +76,7 @@ Both touch agent/LLM tracing, but LangSmith is a closed LLMOps platform tied to 
   - **Sandboxes** — ephemeral isolated compute for agent-generated code.
   - Expose agent as **MCP server**.
 - Still **not** a bounded/redacted/portable *production-incident* evidence bundle for general backend systems (no OTLP full-stack, no Sentry envelope, no prod error_event derivation outside the LLM-agent app surface).
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for production incidents (planned, A1 gate).
+- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for production incidents (**code-shipped**; value **unproven A1**).
 
 **Honest verdict (no-bias, pass 43):** LangSmith is **far more mature** on agent traces + evals **and now ships an autonomous Engine that diagnoses and proposes fixes** — a direct competitor surface for the “agent fix loop,” not just LLMOps analytics. On shipped agent-app investigation, **LangSmith leads** pre-release Parallax. Parallax’s residual claim is **production-backend** (non-LangChain) incident context + portable redacted bundle + Sentry/OTLP breadth — all **A1-unproven**. Do not claim “LangSmith is only a human dashboard.”
 

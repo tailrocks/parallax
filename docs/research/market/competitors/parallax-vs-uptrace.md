@@ -90,19 +90,20 @@ Both OSS, OTLP-native, ClickHouse-adjacent, self-hostable. Uptrace is a tracing-
 
 ## Pricing & economics — real numbers
 
-| Edition | Price | Capacity |
+| Edition | Price | Capacity / notes |
 | --- | --- | --- |
-| **Community (AGPL self-host)** | **$0** | unlimited |
-| **Starter (self-host/on-prem)** | **$39/mo** | ≤50 GB/day |
-| **Team** | **$199/mo** | ≤200 GB/day |
-| **Business** | **$499/mo** | higher |
-| **Cloud** | ~**$0.05–0.10/GB** ingested | + per-timeseries metrics |
+| **Community (AGPL self-host)** | **$0 unlimited** | free forever (FAQ) |
+| **Cloud free** | **$0** | **50 GB**/mo + free timeseries allowance (hero/FAQ) |
+| **Cloud PAYG** | **from ~$0.075–0.10/GB** → **as low as ~$0.016/GB** at volume | no seats/hosts; month-end or $400 threshold |
+| **Metrics** | **from $0.025 / 1M datapoints** | volume-tiered; interval-dependent |
+| **Cold retention / drop** | cold store fees; **$0.01/GB** dropped samples | FAQ |
+| **On-prem license** | free eval + paid (contact) | compliance path |
 
-**⚠️ April 10 2026: prices rose up to 15% (Hetzner infra costs); metrics shifted to per-timeseries.** Sources: [pricing-update April 2026](https://uptrace.dev/blog/pricing-update-april-2026), [editions](https://uptrace.dev/editions). **60–90%-cheaper-than-legacy claim.** No per-host/per-seat (APM included in ingest).
+Live [uptrace.dev/pricing](https://uptrace.dev/pricing) (2026-07-17). April 2026 +15% blog is historical; **50 GB free tier** is the material Cloud clarification vs pass-27.
 
-**Parallax pricing:** none public yet (pre-release); self-host = no per-event tax by design.
+**Parallax pricing:** **no public number** (pre-release).
 
-**Honest cost read:** Uptrace is genuinely cheap (AGPL free unlimited self-host + $0.05–0.10/GB cloud + 60–90%-cheaper claim). Whether Parallax self-host is cheaper is benchmark-dependent/unmeasured — Uptrace is a strong cost-positioned OSS APM.
+**Honest cost read:** Uptrace remains one of the **cheapest public Cloud APMs**. Strong vs SigNoz/OpenObserve Cloud on sticker. Parallax self-host TCO **unmeasured**.
 
 ## Where Uptrace plainly wins
 

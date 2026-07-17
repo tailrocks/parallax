@@ -1,6 +1,6 @@
 # Parallax vs OpenObserve
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17**.
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 48 Cloud pricing unit rates).
 > Sources: [openobserve.ai](https://openobserve.ai/) + [pricing](https://openobserve.ai/pricing/) + [AI SRE](https://openobserve.ai/ai-sre/) + [MCP server](https://openobserve.ai/mcp-server/), [github.com/openobserve/openobserve](https://github.com/openobserve/openobserve), and the legacy [openobserve-deep-research.md](../openobserve-deep-research.md) (2026-06-22) as a lead.
 >
 > **Bottom line up front:** OpenObserve is the **nearest open-source competitor
@@ -82,7 +82,7 @@ These overlap maximally on architecture — both Rust, single-binary, self-host,
 - **OpenObserve:** **single Rust binary** (SQLite + local/object store) or horizontally-scaled stateless services (Postgres + object store + NATS). Self-host OSS (AGPL, free, no caps) or OpenObserve Cloud (SaaS, usage-based). Multi-region Super Cluster = Enterprise.
 - **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0. GreptimeDB + Turso.
 
-**Verdict:** on the single-binary-Rust-self-host bet, **these are the same design — and OpenObserve has shipped it**, while Parallax is pre-release. **OpenObserve is ahead on Parallax's own architectural claim.** Parallax's real differentiators here are **Apache-2.0 vs AGPL-3.0** (a license-permissiveness edge) and the **GreptimeDB-native** storage choice (unproven advantage). Honestly: the "Rust single-binary self-host OTLP-native" wedge is **no longer unique to Parallax** — OpenObvalidate owns it, shipped.
+**Verdict:** on the single-binary-Rust-self-host bet, **these are the same design — and OpenObserve has shipped it**, while Parallax is pre-release. **OpenObserve is ahead on Parallax's own architectural claim.** Parallax's real differentiators here are **Apache-2.0 vs AGPL-3.0** (a license-permissiveness edge) and the **GreptimeDB-native** storage choice (unproven advantage). Honestly: the "Rust single-binary self-host OTLP-native" wedge is **no longer unique to Parallax** — OpenObserve owns it, shipped.
 
 ## Operational footprint
 
@@ -128,19 +128,20 @@ These overlap maximally on architecture — both Rust, single-binary, self-host,
 
 ## Pricing & economics — real numbers
 
-OpenObserve pricing is **public** ([openobserve.ai/pricing](https://openobserve.ai/pricing/), accessed 2026-07-17):
+OpenObserve pricing is **public** ([openobserve.ai/pricing](https://openobserve.ai/pricing/), **pass 48 live 2026-07-17**):
 
 | Plan | Price | Notes |
 | --- | --- | --- |
-| **OSS / Community (AGPL)** | **$0, no caps** | self-host, all core features (logs/metrics/traces/RUM/pipelines/dashboards/alerts) |
-| **Self-Hosted Enterprise** | **free up to 50 GB/day** (~1.5 TB/mo); paid beyond | adds SSO/RBAC/audit/AI/MCP/Sensitive Data Redaction |
-| **OpenObserve Cloud** | fully **usage-based** (no free tier since 2025-06-02; minimums removed) | SaaS |
+| **OSS / Community (AGPL)** | **$0, no caps** | self-host core features |
+| **Self-Hosted Enterprise** | **free ≤50 GB/day**; paid/contact beyond | SSO/RBAC/audit/redaction/QoS (FAQ) |
+| **Cloud Professional (PAYG)** | **$0.50 / GB ingest** (+ annual ~30% discount claim) + **$0.01 / GB query** | metrics ret. **15 mo**; non-metrics **30 days** (+$0.02/GB per extra 30d); unlimited users; 14-day free trial |
+| **Cloud Enterprise** | custom | AI SRE / Incident Mgmt / AI Assistant, pipelines, redaction, BYOC, SLAs |
 
-**Self-host OSS is free, unlimited, AGPL** — and the self-host *Enterprise* tier free-up-to-50GB/day-with-SSO/RBAC/audit is a notably strong offer.
+**AI (FAQ):** AI SRE Agent + AI Assistant **free during preview** (20 credits). ⚠️ pass-9 “Cloud fully usage-based with no rates” was underspecified — **ingest/query unit prices are public**.
 
-**Parallax pricing:** none public yet (pre-release). Stated shape: Apache-2.0 open core + gated enterprise-ops + managed cloud + outcome-priced fixer.
+**Parallax pricing:** **no public number** (pre-release).
 
-**Honest cost read:** OpenObserve's self-host economics are very strong (free, unlimited, 140×-storage-cost claim). Whether Parallax self-host is cheaper at a workload is **benchmark-dependent and unmeasured.** On cost-transparency-for-self-host, OpenObvalidate is a tough benchmark — Parallax cannot assume a cost edge here without measurement.
+**Honest cost read:** OpenObserve's self-host economics are very strong (free, unlimited, 140×-storage-cost claim). Whether Parallax self-host is cheaper at a workload is **benchmark-dependent and unmeasured.** On cost-transparency-for-self-host, OpenObserve is a tough benchmark — Parallax cannot assume a cost edge here without measurement.
 
 ## Where OpenObserve plainly wins
 

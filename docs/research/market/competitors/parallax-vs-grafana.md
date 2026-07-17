@@ -87,10 +87,10 @@ Latest stable tags via the [github.com/grafana](https://github.com/grafana) rele
 
 ## AI-native / agent-context story
 
-- **Grafana's AI:** app-observability insights, anomaly detection/forecasting, Sift (root-cause exploration), Grafana LLM features (query/natural-language), and emerging LLM/agent tooling. A human-dashboard + assistive AI; **not a bounded, read-only, agent-context projection.**
+- **Grafana's AI (pass 48):** app-observability insights, anomaly/forecasting, Sift, NL query, plus **Grafana Assistant** (copilot priced at **$20/active AI user** + token overage on Cloud Pro — live pricing page). Human-dashboard + assistive AI; **not** a portable redacted coding-agent evidence bundle.
 - **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven gate).
 
-**Verdict:** Grafana ships more AI today (insights, forecasting, NL query). Parallax's differentiated agent-context claim is **unproven (A1).** Neither serves the exact "safe bounded context for autonomous coding agents" cell — Parallax's thesis.
+**Verdict:** Grafana ships more AI today (Assistant + insights/forecasting/NL). Parallax's differentiated agent-context claim is **unproven (A1).** Neither serves the exact "safe bounded context for autonomous coding agents" cell — Parallax's thesis.
 
 ## Architecture & deployment model
 
@@ -141,23 +141,34 @@ Latest stable tags via the [github.com/grafana](https://github.com/grafana) rele
 
 **Verdict:** on **ecosystem breadth, Grafana wins decisively.**
 
-## Pricing & economics — real numbers
+## Pricing & economics — RESOLVED pass 48
 
-Grafana Cloud pricing is **public** ([grafana.com/pricing](https://grafana.com/pricing/), accessed 2026-07-17):
+Grafana Cloud pricing is **public** ([grafana.com/pricing](https://grafana.com/pricing/), **live 2026-07-17**):
 
 | Plan | Price | Notes |
 | --- | --- | --- |
-| **Free** | $0 | generous free tiers (metrics/logs/traces/profiles/users) |
-| **Pro** | **$195/mo** base (self-serve) | included usage + usage-based overage |
-| **Advanced / Cloud Enterprise** | custom | scale, security, support |
+| **Free** | **$0 always** | limited usage; 14-day retention; community support |
+| **Pro** | **from $19 / mo + usage** | ⚠️ pass-5 **$195/mo Pro base is STALE/WRONG** |
+| **Enterprise** | **starts $25,000 / year** spend commit | premium support, custom retention, Public/Federal/BYOC |
 
-Billable units (Pro overage, per 2026 sources): **metrics ~$6.50 / 1,000 active series** (10k free); **logs/traces/profiles ~$0.45–0.50 / GB**; **active visualization users ~$8 each**. **Application Observability** host-hour model (~**$0.04 / host-hour** for pre-2026-02-13 customers, with included series/trace credits). Sources disagree slightly on exact GB/series rates ([cloudzero](https://cloudzero.com/blog/grafana-cloud-pricing/), [monitoringcost](https://monitoringcost.com/grafana-cloud-pricing), [cubeapm](https://cubeapm.com/blog/grafana-cloud-pricing-and-review/)) — list-vs-contract; **confirm exact current rate on grafana.com before quoting as precise.**
+| Signal / product | Pro starts-at (live) | Included w/ $19 platform then PAYG |
+| --- | --- | --- |
+| **Metrics** | **$6.50 / 1k active series** | 10k series; 13-mo retention |
+| **Logs / Traces / Profiles** | **$0.05 Process + $0.40 Write + $0.10 Retain per GB** | 50 GB/mo; 30-day retention |
+| **App Observability** | **$0.025 / host-hour** (~$18/host) | 2,232 host-hours |
+| **K8s Monitoring** | **$0.01 / host-hour** + **$0.0007 / container-hour** | host+container hours included |
+| **Grafana visualization** | **$8 / active user** | 3 users |
+| **+ Enterprise plugins** | **$55 / active user** | 3 users |
+| **Grafana Assistant (AI)** | **$20 / AI user** (40M tokens) + **$2 / 1M tokens** | 3 AI users |
+| **IRM** | **$20 / IRM user** | 3 users |
+| **Frontend Obs** | **$0.75 / 1k sessions** | 50k sessions |
+| **k6** | **$0.15 / VU-hour** | 500 VU-hours |
 
-**Self-host OSS:** **free (AGPLv3)** — unlimited, you operate the stack.
+**Self-host OSS:** **free (AGPLv3)** — you operate the stack.
 
-**Parallax pricing:** none public yet (pre-release). Stated shape: Apache-2.0 open core + gated enterprise-ops + managed cloud + outcome-priced fixer.
+**Parallax pricing:** **no public number** (pre-release).
 
-**Honest cost read:** Grafana Cloud's free tier + cheap-ish usage pricing is competitive, and self-host OSS is free. Whether Parallax self-host is cheaper at a given workload is **benchmark-dependent and unmeasured.** Grafana's cost reputation is generally better than Datadog's, so Parallax's cost edge is weaker vs Grafana than vs Datadog.
+**Honest cost read:** Live Pro base is **much cheaper than our pass-5 $195 figure** — favors Grafana transparency. Process+Write+Retain can sum **above** old ~$0.50/GB flat proxies. Parallax cost edge vs Grafana is **weaker** than vs Datadog and **unmeasured**.
 
 ## Where Grafana plainly wins
 
@@ -180,11 +191,13 @@ Billable units (Pro overage, per 2026 sources): **metrics ~$6.50 / 1,000 active 
 
 - **A1 gate vs Grafana:** for a team on Grafana Cloud + Sentry, does a Parallax bundle measurably improve coding-agent fix outcomes for incidents? Unproven.
 - **Self-host cost/ops parity:** measured single-binary Parallax vs self-hosted Mimir+Loki+Tempo+Pyroscope (deploy complexity, RAM, ops). Benchmark-dependent, unmeasured.
-- ~~Grafana latest versions~~ → **pinned 2026-07-17 pass 5b**: Grafana v13.1.0, Mimir mimir-3.1.3, Loki v3.7.3, Tempo v2.10.7, Pyroscope v2.1.1 (see the "Current GA versions" table). **Tempo v3 is reviewed/in-development, not a GA tag** — corrected two prior claims ("Grafana 12.x"→13.1.0; "Tempo v3.x shipped"→GA is 2.10.7).
+- ~~Grafana latest versions~~ → Grafana **v13.1.0** re-confirmed pass 48 (GitHub); component tags rate-limited this pass — table retained. Tempo v3 not GA.
+- ~~Grafana Cloud Pro $195~~ → **RESOLVED pass 48: from $19/mo + usage** on live page.
 
-## Sources (accessed 2026-07-17)
+## Sources (accessed 2026-07-17; pass 48)
 
-- [Grafana pricing](https://grafana.com/pricing/); [Grafana Cloud docs](https://grafana.com/docs/grafana-cloud/); [app-observability pricing](https://grafana.com/docs/grafana-cloud/monitor-applications/application-observability/pricing/).
-- In-repo: [grafana-tempo-v3-architecture-review.md](../../reference/grafana-tempo-v3-architecture-review.md) (Tempo 3.0 cut, 2026-05-29).
-- 2026 pricing analyses: [cloudzero](https://cloudzero.com/blog/grafana-cloud-pricing/), [monitoringcost](https://monitoringcost.com/grafana-cloud-pricing), [cubeapm](https://cubeapm.com/blog/grafana-cloud-pricing-and-review/).
+- Live [grafana.com/pricing](https://grafana.com/pricing/).
+- [Grafana Cloud docs](https://grafana.com/docs/grafana-cloud/).
+- In-repo: [grafana-tempo-v3-architecture-review.md](../../reference/grafana-tempo-v3-architecture-review.md).
+- Secondary pricing blogs demoted where they conflict with live $19 Pro base.
 - Parallax side: [decisions/storage-engine.md](../../decisions/storage-engine.md), [storage/greptimedb-vs-clickhouse/](../../storage/greptimedb-vs-clickhouse/), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).
