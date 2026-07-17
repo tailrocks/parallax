@@ -29,7 +29,9 @@ Decision date baseline: 2026-05-29; **superseded 2026-06-12 by operator decision
 Never say only "Turso." Each claim must name which of these is under test:
 
 - **libSQL** — documented production-ready (the ORM/production fallback packages).
-- **Turso Database** — the newer Rust rewrite, still **beta** (latest checked `v0.6.1`, 2026-05-22; release notes still heavy on MVCC correctness fixes).
+- **Turso Database** — the newer Rust rewrite; latest checked **`v0.7.0`**
+  (2026-07-13, pass 68). Upstream README now states production readiness (FAQ);
+  Parallax still requires Tier A workload gates before *our* production claim.
 - **Local file vs Turso Cloud** — Cloud has separate durability/PITR guarantees; the self-hosted tiny tier must rely only on local/embedded persistence.
 
 ## Gates — now a hardening checklist on Turso itself

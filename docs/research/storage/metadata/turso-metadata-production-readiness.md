@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-05-25
+Research date: 2026-05-25 · **Version/status recheck 2026-07-17 (pass 68)**
 
 > **Current authority (operator, 2026-06-12): Turso is mandatory metadata
 > storage in every product profile.** A failed gate means fix forward in
@@ -13,6 +13,19 @@ Research date: 2026-05-25
 > and supported server operations are owned by
 > [`plans/115-v2-server-profile.md`](../../../../plans/115-v2-server-profile.md).
 > This file is a research and validation protocol, not an implementation queue.
+>
+> **Pass 68 primary recheck (GitHub + README):**
+> - Latest stable Turso Database: **`v0.7.0`** (2026-07-13, non-prerelease) —
+>   **supersedes May pin `v0.6.1`**.
+> - README FAQ **"Is Turso Database ready for production use?" → Yes** (cites
+>   Turso Cloud, Kin, Spice.ai; DST + Antithesis testing). May note's "still
+>   beta / not ready for production" **is stale**.
+> - libSQL remains the longer-battle-tested lineage; Turso Database is the
+>   active rewrite direction (both production-used per README).
+> - **Parallax gate still not auto-passed:** vendor "runs in production" ≠
+>   Parallax metadata workload crash/MVCC/backup/migration ledger green.
+>   Withhold *Parallax* production-readiness claim until Tier A gates on
+>   *our* workload pass.
 
 ## Purpose
 
@@ -34,7 +47,7 @@ path, and backup/restore path are proven on Parallax metadata workloads.
 
 | Source | What matters for Parallax |
 | --- | --- |
-| [Turso Database GitHub repository](https://github.com/tursodatabase/turso), [v0.6.1 release](https://github.com/tursodatabase/turso/releases/tag/v0.6.1), and [v0.7.0-pre.3 release](https://github.com/tursodatabase/turso/releases/tag/v0.7.0-pre.3) | Latest non-prerelease checked by GitHub API is `v0.6.1` published 2026-05-22; newest checked pre-release is `v0.7.0-pre.3`, also published 2026-05-22. Same-day API checks found `main` pushed again on 2026-05-25 after those releases, with current HEAD `6b60915d...` touching MVCC internals. The README still marks Turso Database beta, says mission-critical applications should use caution and independent backups, and says Turso Database is not ready for production use while libSQL is production ready. | Production-readiness claims must pin stable, pre-release, and moving-`main` tracks separately. A pre-release or `main` commit can be used for investigation, but it cannot satisfy the default metadata-store gate unless the same result is rerun on a stable release or explicitly accepted as a prototype-only risk. |
+| [Turso Database GitHub](https://github.com/tursodatabase/turso), [v0.7.0](https://github.com/tursodatabase/turso/releases/tag/v0.7.0) | **Pass 68 (2026-07-17):** latest non-prerelease **`v0.7.0`** (2026-07-13). README production FAQ = **Yes**. Historical May pin was `v0.6.1` + beta language — **stale**. | Pin stable vs pre vs `main` separately. Vendor production claim does not replace Parallax Tier A workload gates. |
 | [Turso Rust SDK reference](https://docs.turso.tech/sdk/rust/reference) | New Rust projects should use the `turso` crate for local/embedded database and sync. The newer engine supports MVCC concurrent writes and push/pull sync; `libsql` remains the remote/existing-codebase option. |
 | [Turso concurrent writes](https://docs.turso.tech/tursodb/concurrent-writes) | Default configuration allows one writer. MVCC requires `PRAGMA journal_mode = 'mvcc'` and `BEGIN CONCURRENT`; conflicting same-row transactions must roll back and retry. Parallax must own retry policy and hot-row contention tests. |
 | [Turso CDC](https://docs.turso.tech/tursodb/cdc) | CDC records data changes, but it cannot be used together with MVCC on the same connection. Parallax cannot rely on CDC as the primary audit trail if it also depends on MVCC concurrent writes. |
