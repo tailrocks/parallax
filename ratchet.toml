@@ -4376,7 +4376,7 @@ ceiling = 565
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/src/worker.rs"
-ceiling = 435
+ceiling = 431
 
 [[limits]]
 metric = "rust.file-lines"
@@ -7281,3 +7281,10 @@ ceiling = 105
 metric = "rust.inline-test-modules"
 scope = "crates/parallax-analysis/src/junit_reconcile.rs"
 ceiling = 1
+
+[[ui.ownership]]
+path = "ui/src/router-context.ts"
+current_owner = "shared"
+target_owner = "shared"
+migration_plan = "none"
+kind = "handwritten"
