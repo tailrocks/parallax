@@ -8050,3 +8050,10 @@ GT health endpoint live after long session. Comparison still open.
 
 Research loop reached Run **300** markers in this cycle. Product/server-gated
 gaps remain. Operator must stop or replace the goal explicitly.
+
+### Run 301 — 2026-07-17 — four-way CH types omit LowCardinality
+
+Live `system.columns`: spans1m/logs1m `service` is plain **String**, not
+`LowCardinality(String)`. Harness prioritizes fairness over CH-optimal codecs.
+CH density/scan numbers are therefore slightly conservative vs production CH
+schemas that use LowCardinality (Run 208).
