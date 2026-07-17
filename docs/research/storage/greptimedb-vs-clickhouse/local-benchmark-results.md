@@ -8449,3 +8449,14 @@ m2m 50k → 219 KiB.
 returns 7223 in ~9–93 ms (fixture-dirty counts ≠ CH). **No drift** vs selective-tie /
 broad-scan thesis (Run 157/184).
 
+### Run 429 — 2026-07-18 — four-way `avg(val) GROUP BY service` on m2m
+
+| Build | Warm (3) | Notes |
+| --- | --- | --- |
+| GT stable | 30 / **9** / **7** ms | 40 service groups (dirty fixture) |
+| GT nightly | **254** cold / 8 / 8 ms | cold first-hit again |
+| CH 26.6 | 7 / 2 / 3 ms | |
+| CH head | 10 / 3 / 2 ms | |
+
+Warm: interactive; CH ~2–3× at this N. Cold nightly first query not a regression.
+
