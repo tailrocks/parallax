@@ -12,9 +12,10 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 224 (loop: Detect ledger **absent**,
-`fixer_outcome` **3/3**; engine **v1.1.3**; OTel #1185 idle; Sentry OTLP metrics
-still absent). Pass 223 = wedge cohort. A1/A2/A4 open; A6 open at mixed gate only.
+Last updated 2026-07-18 after pass 225 (Phoenix **10,600★/v18.1.0**; Coroot
+**7,837★**; Langfuse **31,341★/v3.221.1**; HyperDX **9,680★**; Traceway
+**1,024★/v1.9.1**; O2 **20,197★** — pins stable; none close full wedge). Pass
+224 = loop/engine. A1/A2/A4 open; A6 open at mixed gate only.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
