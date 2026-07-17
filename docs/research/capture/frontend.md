@@ -27,6 +27,12 @@
 > OTLP+Sentry envelope ingest still exists; **browser matrix, CORS/CSP, source
 > maps, Replay, overhead** still **no dated run artifacts** → claim remains
 > **`not_measured`**.
+>
+> **Pass 136 (2026-07-17):** npm `latest` **still** Sentry **10.66.0**, OTel web
+> **2.9.0** / instrumentation+exporter **0.220.0**. OTel browser guide **still**
+> experimental/unspecified warning. UI/Playwright test harness
+> (`parallax-test-support` browser helpers) is **not** the frontend capture-safety
+> ledger — claim stays **`not_measured`**.
 
 > Parallax must capture from the browser (JS/TS), not only the backend, and join that frontend evidence to backend spans across the tier boundary, because most incidents are user-facing and the real cause usually crosses that boundary. The decided architecture is a dual-API browser source — Sentry browser envelopes for rich errors/breadcrumbs plus OpenTelemetry JS fetch/XHR spans for cross-tier trace continuity — exporting over a browser-specific HTTP-only ingest profile (`http/protobuf` preferred, HTTP/JSON optional; OTLP/gRPC is an expected-unsupported negative), with W3C `traceparent`/`tracestate`/`baggage` propagation guarded by backend CORS, an additive schema of frontend nodes and cross-tier edges, private Debug-ID-like source maps symbolicated server-side, and a default-deny privacy posture in which Replay and source maps are opt-in raw refs rather than agent-visible defaults. The frontend is a telemetry source only: the Parallax engine and infrastructure stay Rust-first and within the Rust/Go/Zig/C++/C filter, and nothing here adds a JS dependency to the Parallax core. As of the 2026-05-25 package snapshot the pins are `@sentry/browser`/`@sentry/react` `10.53.1` (internal `@sentry-internal/replay`/`@sentry-internal/replay-canvas` `10.53.1`, standalone `@sentry/replay` stale at `7.116.0`), `@opentelemetry/sdk-trace-web` `2.7.1`, and OTel fetch/XHR plus OTLP HTTP exporters `0.218.0`. The current capture-safety status is `not_measured`: the open gate is that no dated browser/build/route run artifacts yet exist, so frontend capture must be described as designed/planned, not proven, until the ledger proves the browser matrix, source-map identity and access controls, browser ingest posture, source-field policy, CORS/propagation and backend continuation, breadcrumbs, privacy canaries, export reliability, overhead, canonical hashes, and projection equivalence (including MCP `structuredContent`).
 
