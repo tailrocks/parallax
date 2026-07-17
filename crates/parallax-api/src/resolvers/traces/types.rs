@@ -348,6 +348,27 @@ impl TraceDiff {
     }
 }
 
+/// One structured where-clause filter (plan 164). `op` accepts the editor
+/// tokens: `=`, `!=`, `>`, `<`, `>=`, `<=`, `CONTAINS`, `NOT CONTAINS`.
+#[derive(juniper::GraphQLInputObject, Clone, Debug)]
+pub(crate) struct AttributeFilterInput {
+    pub(crate) key: String,
+    pub(crate) op: String,
+    pub(crate) value: String,
+}
+
+impl AttributeFilterInput {
+    pub(crate) fn into_adapter(self) -> Result<parallax_storage::adapter::AttributeFilter, String> {
+        let op = parallax_storage::adapter::AttributeFilterOp::parse(&self.op)
+            .ok_or_else(|| format!("invalid attribute filter operator: {:?}", self.op))?;
+        Ok(parallax_storage::adapter::AttributeFilter {
+            key: self.key,
+            op,
+            value: self.value,
+        })
+    }
+}
+
 #[derive(juniper::GraphQLEnum, Clone, Copy, Debug)]
 pub(crate) enum TraceSort {
     StartDesc,

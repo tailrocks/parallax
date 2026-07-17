@@ -29,12 +29,12 @@ use parallax_storage::{adapter::TelemetryStore, metadata::MetadataStore, model};
 use std::{collections::HashMap, sync::Arc};
 
 use resolvers::{
-    AgentSessionOut, AttributeCompareRow, BundleOut, CriticalPath, Dashboard, DurationStats,
-    EvidenceGap, FieldKey, FieldStats, Investigation, Invocation, Issue, IssueList, IssueSort,
-    LogRecord, MetricExemplar, ObservedInvocation, Overview, Point, ReleaseWindow, RuntimeMetric,
-    SavedView, Series, ServiceCatalogRow, ServiceMap, ServiceOverview, ServiceSummary, SignalKind,
-    SpanRed, SqlResultOut, StoryBeat, Trace, TraceDiff, TraceEventsOut, TraceList, TraceSort,
-    TraceSummary, TrendPoint,
+    AgentSessionOut, AttributeCompareRow, AttributeFilterInput, BundleOut, CriticalPath, Dashboard,
+    DurationStats, EvidenceGap, FieldKey, FieldStats, Investigation, Invocation, Issue, IssueList,
+    IssueSort, LogRecord, MetricExemplar, ObservedInvocation, Overview, Point, ReleaseWindow,
+    RuntimeMetric, SavedView, Series, ServiceCatalogRow, ServiceMap, ServiceOverview,
+    ServiceSummary, SignalKind, SpanRed, SqlResultOut, StoryBeat, Trace, TraceDiff, TraceEventsOut,
+    TraceList, TraceSort, TraceSummary, TrendPoint,
 };
 
 mod memo;
@@ -269,12 +269,13 @@ impl Query {
     /// Filtered, sorted, paged trace browse with total count for redesigned
     /// trace list clients.
     #[expect(clippy::too_many_arguments, reason = "GraphQL trace filters are the public query contract")]
-    async fn traces_page(context: &ApiContext, service: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, min_duration_ms: Option<f64>, max_duration_ms: Option<f64>, error_only: Option<bool>, query: Option<String>, limit: Option<i32>, offset: Option<i32>, sort: Option<TraceSort>,) -> FieldResult<TraceList> { resolvers::traces::traces_page(context, service, from_nanos, to_nanos, min_duration_ms, max_duration_ms, error_only, query, limit, offset, sort).await }
+    async fn traces_page(context: &ApiContext, service: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, min_duration_ms: Option<f64>, max_duration_ms: Option<f64>, error_only: Option<bool>, query: Option<String>, attribute_filters: Option<Vec<AttributeFilterInput>>, limit: Option<i32>, offset: Option<i32>, sort: Option<TraceSort>,) -> FieldResult<TraceList> { resolvers::traces::traces_page(context, service, from_nanos, to_nanos, min_duration_ms, max_duration_ms, error_only, query, attribute_filters, limit, offset, sort).await }
 
     /// Duration p50/p95 of the current trace filter set (plan 164 preset
     /// chips); duration bounds are not accepted so presets never feed back
     /// into themselves.
-    async fn trace_duration_stats(context: &ApiContext, service: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, error_only: Option<bool>, query: Option<String>,) -> FieldResult<DurationStats> { resolvers::traces::trace_duration_stats(context, service, from_nanos, to_nanos, error_only, query).await }
+    #[expect(clippy::too_many_arguments, reason = "GraphQL trace filters are the public query contract")]
+    async fn trace_duration_stats(context: &ApiContext, service: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, error_only: Option<bool>, query: Option<String>, attribute_filters: Option<Vec<AttributeFilterInput>>,) -> FieldResult<DurationStats> { resolvers::traces::trace_duration_stats(context, service, from_nanos, to_nanos, error_only, query, attribute_filters).await }
 
     /// The bounded, redacted, hypothesis-ranked evidence bundle — the agent
     /// handoff artifact assembling trace + logs + metric windows together.

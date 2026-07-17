@@ -202,6 +202,7 @@ pub(crate) async fn traces_page(
     max_duration_ms: Option<f64>,
     error_only: Option<bool>,
     query: Option<String>,
+    attribute_filters: Option<Vec<AttributeFilterInput>>,
     limit: Option<i32>,
     offset: Option<i32>,
     sort: Option<TraceSort>,
@@ -222,9 +223,11 @@ pub(crate) async fn traces_page(
         max_duration_ns: max_duration_ms.and_then(duration_ms_to_ns),
         error_only: error_only.unwrap_or(false),
         name_contains: query.filter(|q| !q.trim().is_empty()),
-        // Plan 164: GraphQL `attributeFilters` argument lands with the editor
-        // wiring; empty preserves list semantics until then.
-        attribute_filters: Vec::new(),
+        attribute_filters: attribute_filters
+            .unwrap_or_default()
+            .into_iter()
+            .map(|filter| filter.into_adapter().map_err(field_err))
+            .collect::<FieldResult<Vec<_>>>()?,
         limit: clamp_limit(limit, 50),
         offset: offset
             .map_or(0, |value| usize::try_from(value.max(0)).unwrap_or(0))
@@ -242,6 +245,7 @@ pub(crate) async fn traces_page(
 /// Duration p50/p95 of the current trace filter set (plan 164 preset
 /// chips). Duration bounds are deliberately not accepted: presets derive
 /// from the unbounded distribution of the filtered window.
+#[expect(clippy::too_many_arguments, reason = "public GraphQL filter contract")]
 pub(crate) async fn trace_duration_stats(
     context: &ApiContext,
     service: Option<String>,
@@ -249,6 +253,7 @@ pub(crate) async fn trace_duration_stats(
     to_nanos: Option<String>,
     error_only: Option<bool>,
     query: Option<String>,
+    attribute_filters: Option<Vec<AttributeFilterInput>>,
 ) -> FieldResult<DurationStats> {
     let parse = |bound: Option<String>, label: &str| -> FieldResult<Option<u128>> {
         bound
@@ -264,6 +269,11 @@ pub(crate) async fn trace_duration_stats(
         to_nanos: parse(to_nanos, "toNanos")?,
         error_only: error_only.unwrap_or(false),
         name_contains: query.filter(|q| !q.trim().is_empty()),
+        attribute_filters: attribute_filters
+            .unwrap_or_default()
+            .into_iter()
+            .map(|filter| filter.into_adapter().map_err(field_err))
+            .collect::<FieldResult<Vec<_>>>()?,
         ..parallax_storage::adapter::TraceQuery::default()
     };
     let stats = context

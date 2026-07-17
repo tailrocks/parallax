@@ -60,6 +60,7 @@ pub(crate) use services::SpanRed;
 pub(crate) use sql::SqlResultOut;
 pub(crate) use story::AgentSessionOut;
 pub(crate) use story::StoryBeat;
+pub(crate) use traces::AttributeFilterInput;
 pub(crate) use traces::CriticalPath;
 pub(crate) use traces::DurationStats;
 pub(crate) use traces::Trace;

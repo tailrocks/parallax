@@ -448,3 +448,74 @@ fn compare_two_500_span_traces_timing() {
     // than a laptop for pure CPU work; 50 ms failed at ~55 ms on GHA.
     assert!(elapsed.as_millis() < 200, "compare slow: {elapsed:?}");
 }
+
+#[tokio::test]
+async fn traces_page_attribute_filters_narrow_and_reject_bad_operator() {
+    let store = Arc::new(MemoryStore::new());
+    let mut post = span(
+        "api",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "a",
+        10,
+        10_000_000,
+    );
+    post.attributes = serde_json::json!({ "http.request.method": "POST" });
+    let mut get = span(
+        "api",
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "b",
+        20,
+        20_000_000,
+    );
+    get.attributes = serde_json::json!({ "http.request.method": "GET" });
+    store.push_spans(vec![post, get]);
+
+    let schema = build_schema();
+    let context = context_with_memory(store).await;
+    let request = juniper::http::GraphQLRequest::new(
+        r#"
+        {
+          tracesPage(attributeFilters: [{key: "http.request.method", op: "=", value: "POST"}]) {
+            total
+            items { traceId }
+          }
+          traceDurationStats(attributeFilters: [{key: "http.request.method", op: "=", value: "POST"}]) {
+            p50Ms
+          }
+        }
+        "#
+        .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, request).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert_eq!(
+        json.pointer("/data/tracesPage/total"),
+        Some(&serde_json::json!("1")),
+        "narrowed: {json}"
+    );
+    assert_eq!(
+        json.pointer("/data/tracesPage/items/0/traceId"),
+        Some(&serde_json::json!("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))
+    );
+    assert_eq!(
+        json.pointer("/data/traceDurationStats/p50Ms"),
+        Some(&serde_json::json!(10.0))
+    );
+
+    let bad = juniper::http::GraphQLRequest::new(
+        r#"{ tracesPage(attributeFilters: [{key: "k", op: "LIKE", value: "v"}]) { total } }"#
+            .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, bad).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(
+        json.pointer("/errors/0/message")
+            .and_then(|m| m.as_str())
+            .is_some_and(|m| m.contains("invalid attribute filter operator")),
+        "bad operator rejected: {json}"
+    );
+}
