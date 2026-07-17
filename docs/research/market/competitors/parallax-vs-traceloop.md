@@ -1,15 +1,15 @@
 # Parallax vs Traceloop (OpenLLMetry)
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 46: **v0.62.1 / 7,306★** stable; watch triggers still UNFIRED under ServiceNow) (pass 31;
-> drift-verified 2026-07-17).
-> Sources: [traceloop/openllmetry (GitHub)](https://github.com/traceloop/openllmetry)
-> (7,307★ / 1,020 forks, Apache-2.0, Python, last push 2026-07-13 — active),
-> [releases](https://github.com/traceloop/openllmetry/releases) (**v0.62.1**, published
-> 2026-06-28), [`traceloop-sdk` on PyPI](https://pypi.org/project/traceloop-sdk/)
-> (v0.62.1), [Traceloop blog](https://www.traceloop.com/blog/openllmetry),
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 46 +
+> **pass 114:** **v0.62.1 / 7,306★** still latest; last push 2026-07-13; ServiceNow
+> ownership / storage-expansion watch **UNFIRED**). Sources:
+> [traceloop/openllmetry (GitHub)](https://github.com/traceloop/openllmetry)
+> (Apache-2.0, Python), [releases](https://github.com/traceloop/openllmetry/releases)
+> (**v0.62.1**, 2026-06-28), [`traceloop-sdk` on PyPI](https://pypi.org/project/traceloop-sdk/),
+> [Traceloop blog](https://www.traceloop.com/blog/openllmetry),
 > [Traceloop joining ServiceNow](https://traceloop.com/blog/traceloop-is-joining-servicenow),
 > [cTech: $60–80M deal](https://www.calcalistech.com/ctechnews/article/sjghwiqf11e),
-> [ServiceNow AI Control Tower (Traceloop acquisition completed)](https://newsroom.servicenow.com).
+> [ServiceNow AI Control Tower](https://newsroom.servicenow.com).
 >
 > **⚠️ Name correction (this pass):** the legacy roster listed "**Tracelo**" as an
 > AI-agent-tracing competitor. **`tracelo.com` is a phone-geolocation service —

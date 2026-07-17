@@ -12,8 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 113 (Odigos still **v1.31.2** / 3,668★;
-instrumentation→any-backend; **own-store UNFIRED**). Pass 112 = Maple. A1/A2/A4/A6 open.
+Last updated 2026-07-17 after pass 114 (Traceloop/OpenLLMetry still **v0.62.1** /
+**7,306★**; ServiceNow own-store/agent-context expansion **UNFIRED**). Pass 113 =
+Odigos. A1/A2/A4/A6 open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
