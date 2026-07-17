@@ -1,9 +1,12 @@
 # Claude Code session capture adapter (plan 120)
 
-**Status:** preliminary approved shape; fixture proof required before product claim  
+**Status:** **shipped** — plan **120 DONE/deleted** (2026-07-17). Import CLI +
+Turso ledger + fixtures landed; evidence
+[validation/2026-07-plan-120-claude-code/README.md](../validation/2026-07-plan-120-claude-code/README.md).
+Broader multi-agent adapters remain design-only (no active residual owner).
 **Decision date:** 2026-07-17  
 **Approver:** operator unblock directive (plan 120 first adapter = Claude Code)  
-**Owner:** Plan 120
+**Owner:** closed — plan 120 DONE
 
 ## Decision
 

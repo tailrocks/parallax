@@ -69,7 +69,7 @@ not override code.
 | --- | --- | --- | --- |
 | Bounded evidence bundle assembly | **shipped** (code) / **unproven gate (A1)** | `crates/parallax-evidence/src/bundle/`; schemas `schema/evidence-bundle.v1.schema.json`, `v2` | Code + schema exist; **bundle-vs-raw agent fix quality unproven** |
 | Bundle-path redaction policy | **shipped** (code) / **A6 residual** | `crates/parallax-redaction/` (`REDACTION_POLICY_V1` = `redaction-lite-v3`); applied in evidence projection | Not full A6 canary program completion |
-| Story / gaps / agent session projections | **shipped** | `parallax-evidence` story/gaps/agent_session; GraphQL `story`, `evidenceGaps`, `agentSession` | Claude Code adapter modules; broader capture adapters in [plans/120-agent-session-capture-adapters.md](../../plans/120-agent-session-capture-adapters.md) |
+| Story / gaps / agent session projections | **shipped** | `parallax-evidence` story/gaps/agent_session; GraphQL `story`, `evidenceGaps`, `agentSession` | Claude Code adapter **shipped** (plan **120 DONE** — [evidence](validation/2026-07-plan-120-claude-code/README.md)). Broader multi-tool adapters are design-only (no active plan owner) |
 | Test reporting / flakiness analysis | **partial** | `parallax-analysis` test_*; GraphQL `testCases`/`testCase`; UI tests routes; [plans/154…](../../plans/154-playground-capability-and-test-observability.md), [155…](../../plans/155-test-reporting-surface.md) | Derivation + explorer exist; product surface still plan-owned |
 | Fixer / outcome loop | **planned** + **unproven** | [plans/123-fixer-outcome-loop.md](../../plans/123-fixer-outcome-loop.md); [decisions/fixer-boundary.md](decisions/fixer-boundary.md) | Context engine ≠ fixer; no measured outcome ledger |
 | Autonomous fix-loop kernels | **PoC-only** | `poc/evidence-loop/`; [architecture/poc-evidence-loop-coverage.md](architecture/poc-evidence-loop-coverage.md) | Executable kernels ≠ product gate pass |
@@ -82,7 +82,7 @@ not override code.
 | --- | --- | --- | --- |
 | Deploy/change context capture | **partial** | server `deploy_backfill`, `github_webhook`; evidence github_deploy modules; [decisions/github-deploy-change-adapter.md](decisions/github-deploy-change-adapter.md) | Adapters present; full product depth varies |
 | CI / GitHub Actions evidence | **partial** | evidence github_actions; analysis junit/nextest | Not a full CI product |
-| Coding-agent session capture | **partial** | evidence `claude_code`, `agent_session`; plan 120 | Local MCP consumes sessions when present |
+| Coding-agent session capture | **partial** (Claude Code **shipped**) | evidence `claude_code`, `agent_session`; CLI import; [plan 120 DONE](validation/2026-07-plan-120-claude-code/README.md) | Claude Code path closed plan 120; other agents design-only / new plan only; MCP consumes sessions when present |
 | SSO / multi-tenant RBAC | **planned** | V2 auth design / plan 109 family | Explicitly not V1 maturity |
 
 ---
