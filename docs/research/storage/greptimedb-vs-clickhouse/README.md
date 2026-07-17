@@ -330,6 +330,8 @@ managed quotes remain):
 | last_value + DELETE | **648** | warm; Code 1004 |
 | still not done | **649** | top 5 product/server |
 | milestone 650 | **650** | pins/healthy; NOT DONE |
+| identity + OTLP | **651** | schema-on-write; 400 |
+| still not done | **652** | top 5 product/server |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
