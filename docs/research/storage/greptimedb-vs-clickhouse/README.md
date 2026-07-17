@@ -300,6 +300,9 @@ managed quotes remain):
 | identity join OTLP | **618** | holds |
 | still not done | **619** | top 5 product/server |
 | milestone 620 | **620** | pins/healthy; NOT DONE |
+| still not done | **621** | top 5 product/server |
+| rate/increase | **622** | rate OK; increase 48 |
+| still not done | **623** | top 5 product/server |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
