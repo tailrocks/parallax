@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 268 (OTel #1185 still **open/idle** 2025-10-24;
-OCSF GA **1.8.0** + **1.9.0-dev** only; schema still **not commoditized**).
-Pass 267 = A4/A6. A1/A2/A3/A4 open; A6 mixed open.
+Last updated 2026-07-18 after pass 269 (Bits still **never auto-merges**; Sentry
+still **no OTLP metrics** — kills **UNFIRED**). Pass 268 = OTel/OCSF.
+A1/A2/A3/A4 open; A6 mixed open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in

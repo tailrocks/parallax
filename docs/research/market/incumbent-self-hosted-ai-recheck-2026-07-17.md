@@ -77,7 +77,14 @@ auto-merge commodity.
 | [develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/) | Still lists **"Seer and other AI & ML features, as these are currently closed source."** — **UNFIRED** |
 | SigNoz (adjacent pin) | **`v0.133.0`** still latest; **~30,316★** (small star drift vs pass 242 ~30,309) |
 
-**UNFIRED:** Seer self-host GA; Grafana offline/BYO-LLM Assistant; Bits auto-merge.
+### Pass 269 (2026-07-18) — Bits auto-merge + Sentry OTLP metrics kill watches
+
+| Source | Finding |
+| --- | --- |
+| [Bits Code docs](https://docs.datadoghq.com/bits_ai/bits_ai_dev_agent/) | Still explicit: **"Bits Code never auto-merges PRs or MRs."** — app-code auto-merge commodity **UNFIRED** |
+| [Sentry OTLP](https://docs.sentry.io/concepts/otlp/) | Still OTLP **traces and logs** (open beta). Explicit: **"Sentry does not support OTLP metrics at this time."** — OTLP metrics GA **UNFIRED** |
+
+**UNFIRED:** Seer self-host GA; Grafana offline/BYO-LLM Assistant; Bits auto-merge; Sentry OTLP metrics GA.
 
 **Precise claim after this pass:**
 
