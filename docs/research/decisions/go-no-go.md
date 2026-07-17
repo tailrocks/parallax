@@ -145,7 +145,7 @@ Sources:
 - [OpenTelemetry OTLP specification](https://opentelemetry.io/docs/specs/otlp/)
 - [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/)
 - [GreptimeDB docs](https://docs.greptime.com/)
-- [GreptimeDB v1.0.2 release](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.0.2)
+- [GreptimeDB v1.1.3 release](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.1.3) (historical cites may still list v1.0.2)
 - [GreptimeDB trace read/write docs](https://docs.greptime.com/user-guide/traces/read-write/)
 - [Apache Iggy docs](https://iggy.apache.org/docs/)
 - [Turso Database repository](https://github.com/tursodatabase/turso)
