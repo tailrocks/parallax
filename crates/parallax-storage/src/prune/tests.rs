@@ -157,8 +157,9 @@ fn execution_fails_closed_when_pin_protection_is_unavailable() {
             &PruneExecutionRequest::dry_run(plan.plan_id().to_string()),
             &unavailable
         )
-        .expect("dry run remains safe"),
-        PruneAuthorization::DryRun
+        .expect("dry run remains safe")
+        .mode(),
+        PruneExecutionMode::DryRun
     );
     let execute = PruneExecutionRequest::execute(plan.plan_id().to_string(), true)
         .expect("confirmed request");
@@ -388,8 +389,10 @@ fn execution_requires_exact_plan_identity_fresh_snapshot_and_confirmation() {
 
     let dry_run = PruneExecutionRequest::dry_run(plan.plan_id.clone());
     assert_eq!(
-        plan.authorize(&dry_run, &snapshot()).expect("dry run"),
-        PruneAuthorization::DryRun
+        plan.authorize(&dry_run, &snapshot())
+            .expect("dry run")
+            .mode(),
+        PruneExecutionMode::DryRun
     );
 
     assert!(matches!(
@@ -406,11 +409,15 @@ fn execution_requires_exact_plan_identity_fresh_snapshot_and_confirmation() {
 
     let confirmed =
         PruneExecutionRequest::execute(plan.plan_id.clone(), true).expect("explicit confirmation");
-    assert_eq!(
-        plan.authorize(&confirmed, &snapshot())
-            .expect("confirmed execution"),
-        PruneAuthorization::Execute
-    );
+    let authorization = plan
+        .authorize(&confirmed, &snapshot())
+        .expect("confirmed execution");
+    assert_eq!(authorization.mode(), PruneExecutionMode::Execute);
+    assert_eq!(authorization.plan_id(), plan.plan_id());
+    assert!(authorization.permits(&plan.items()[0]));
+    let mut foreign_item = plan.items()[0].clone();
+    foreign_item.target = "foreign-spool".into();
+    assert!(!authorization.permits(&foreign_item));
 
     let mut forged = plan.clone();
     forged.items[0].target = "different-target".into();

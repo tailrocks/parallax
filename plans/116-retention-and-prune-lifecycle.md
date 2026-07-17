@@ -155,6 +155,11 @@ the helper objective; the peer executor owns the status transition.
   currently bypasses `PrunePlan::authorize`, so peer verification must route
   every execution through it and must not enable issue/invocation deletion
   until Plan 106 supplies real reachability plus a stable protection generation.
+- `PruneAuthorization` is now a non-forgeable capability with a private mode;
+  raw issue/invocation delete helpers are crate-private, and the sole public
+  metadata item executor requires an execute capability. The concurrent CLI
+  therefore cannot compile its prior bypass and must authorize the exact plan
+  against a current non-placeholder protection snapshot before deletion.
 
 ## Historical Blocker Evidence (2026-07-14; superseded 2026-07-17)
 

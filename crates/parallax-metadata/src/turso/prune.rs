@@ -2,7 +2,8 @@
 
 use super::*;
 use parallax_storage::{
-    PruneClass, PruneEstimate, PruneExclusion, PruneExclusionKind, PruneItem, PruneStore,
+    PruneAuthorization, PruneClass, PruneEstimate, PruneExclusion, PruneExclusionKind,
+    PruneExecutionMode, PruneItem, PruneStore,
 };
 
 mod journal;
@@ -244,7 +245,7 @@ impl TursoMetadataStore {
     /// and occurrences. Unresolved and not-yet-expired issues are preserved.
     /// Returns rows deleted from `issues` only (dependents deleted by cascade
     /// or explicit cleanup are not double-counted).
-    pub async fn execute_issue_prune(&self, cutoff_nanos: u128) -> anyhow::Result<u64> {
+    pub(crate) async fn execute_issue_prune(&self, cutoff_nanos: u128) -> anyhow::Result<u64> {
         let cutoff_millis = nanos_to_millis(cutoff_nanos);
         let mut conn = self.conn.lock().await;
         let tx = conn.transaction().await?;
@@ -279,7 +280,7 @@ impl TursoMetadataStore {
 
     /// Delete finished invocations at/under the cutoff. Active/unfinished rows
     /// are preserved.
-    pub async fn execute_invocation_prune(&self, cutoff_nanos: u128) -> anyhow::Result<u64> {
+    pub(crate) async fn execute_invocation_prune(&self, cutoff_nanos: u128) -> anyhow::Result<u64> {
         let cutoff_millis = nanos_to_millis(cutoff_nanos);
         let deleted = self
             .conn
@@ -296,7 +297,14 @@ impl TursoMetadataStore {
 
     /// Execute one planned metadata class. Classes retained by policy delete
     /// zero rows and succeed (plan disclosed them with zero eligibility).
-    pub async fn execute_prune_item(&self, item: &PruneItem) -> anyhow::Result<u64> {
+    pub async fn execute_prune_item(
+        &self,
+        item: &PruneItem,
+        authorization: &PruneAuthorization,
+    ) -> anyhow::Result<u64> {
+        if authorization.mode() != PruneExecutionMode::Execute || !authorization.permits(item) {
+            anyhow::bail!("metadata prune item is not in the authorized destructive plan");
+        }
         if item.store != PruneStore::Turso {
             anyhow::bail!("metadata store cannot execute non-Turso prune item");
         }

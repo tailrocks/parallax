@@ -159,10 +159,28 @@ impl PruneExecutionRequest {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum PruneAuthorization {
-    DryRun,
-    Execute,
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PruneAuthorization {
+    mode: PruneExecutionMode,
+    plan_id: String,
+    items: Vec<PruneItem>,
+}
+
+impl PruneAuthorization {
+    #[must_use]
+    pub const fn mode(&self) -> PruneExecutionMode {
+        self.mode
+    }
+
+    #[must_use]
+    pub fn permits(&self, item: &PruneItem) -> bool {
+        self.mode == PruneExecutionMode::Execute && self.items.contains(item)
+    }
+
+    #[must_use]
+    pub fn plan_id(&self) -> &str {
+        &self.plan_id
+    }
 }
 
 #[derive(Debug, Error)]
@@ -349,12 +367,20 @@ impl PrunePlan {
         }
         self.validate_snapshot(current)?;
         match request.mode {
-            PruneExecutionMode::DryRun => Ok(PruneAuthorization::DryRun),
+            PruneExecutionMode::DryRun => Ok(PruneAuthorization {
+                mode: PruneExecutionMode::DryRun,
+                plan_id: self.plan_id.clone(),
+                items: self.items.clone(),
+            }),
             PruneExecutionMode::Execute => {
                 if self.snapshot.protection_generation == "pins:none" {
                     return Err(PrunePlanError::ProtectionUnavailable);
                 }
-                Ok(PruneAuthorization::Execute)
+                Ok(PruneAuthorization {
+                    mode: PruneExecutionMode::Execute,
+                    plan_id: self.plan_id.clone(),
+                    items: self.items.clone(),
+                })
             }
         }
     }
