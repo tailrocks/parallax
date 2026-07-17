@@ -77,6 +77,7 @@ impl GraphqlClient {
                 )
             })?
             .error_for_status()?;
+        ensure_declared_response_budget(response.content_length())?;
         let mut body = Vec::with_capacity(
             response
                 .content_length()
@@ -95,6 +96,13 @@ impl GraphqlClient {
         }
         Ok(response)
     }
+}
+
+fn ensure_declared_response_budget(content_length: Option<u64>) -> anyhow::Result<()> {
+    if content_length.is_some_and(|length| length > MCP_GRAPHQL_MAX_BYTES as u64) {
+        anyhow::bail!("GraphQL response exceeds MCP byte budget");
+    }
+    Ok(())
 }
 
 pub(crate) fn normalize_local_base_url(raw: &str) -> anyhow::Result<String> {
@@ -245,6 +253,14 @@ mod tests {
 
         assert!(append_bounded(&mut body, &[2]).is_err());
         assert_eq!(body.len(), before, "overflow must not partially append");
+    }
+
+    #[test]
+    fn declared_response_budget_rejects_oversize_before_streaming() {
+        ensure_declared_response_budget(None).expect("chunked response");
+        ensure_declared_response_budget(Some(MCP_GRAPHQL_MAX_BYTES as u64))
+            .expect("exact boundary");
+        assert!(ensure_declared_response_budget(Some((MCP_GRAPHQL_MAX_BYTES as u64) + 1)).is_err());
     }
 
     #[test]

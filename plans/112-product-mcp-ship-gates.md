@@ -68,6 +68,8 @@ must not return in product output.
   hash exactly matches the hash embedded in the bundle-v2 object.
 - All GraphQL responses stream through a hard 1 MiB ceiling before JSON parse;
   chunked responses cannot bypass the bound or partially append overflow bytes.
+- Oversized declared `Content-Length` is rejected before body streaming, while
+  the streaming ceiling still covers chunked or decoded responses.
 - Server discovery explicitly pins stable MCP `2025-11-25` rather than the
   SDK's moving `LATEST` constant; client skew fixtures remain unfinished.
 - The GraphQL client denies redirects (preventing loopback-to-remote escape)
