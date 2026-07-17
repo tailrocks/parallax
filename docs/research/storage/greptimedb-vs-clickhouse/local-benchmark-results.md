@@ -7905,3 +7905,12 @@ BLOOM` both accepted. SHOW CREATE shows both on `trace_id`. Filter
 `WHERE trace_id='t0'` **~4–7 ms**. Product path: can add indexes post-create
 without rebuild DDL. Harness should eventually key/index `trace_id` on logs
 tables for join prune fairness.
+
+### Run 271 — 2026-07-17 — harness: key/index logs1m.trace_id
+
+Updated `bench/four-way/gen.sh`:
+
+- GT: `\"trace_id\" STRING INVERTED INDEX` on `logs1m`
+- CH: `INDEX idx_trace trace_id TYPE bloom_filter`
+
+Fixes Run 269 harness gap so future four-way joins can prune logs by `trace_id`.

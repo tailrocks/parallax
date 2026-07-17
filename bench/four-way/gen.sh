@@ -31,9 +31,10 @@ gen_gt(){ local c=$1; echo "  [GT] $c ..."
   gt "$c" "DROP TABLE IF EXISTS m2m"
   gt "$c" "CREATE TABLE m2m (\"ts\" TIMESTAMP(3) TIME INDEX,\"service\" STRING,\"instance\" STRING,\"val\" DOUBLE,\"counter\" BIGINT,PRIMARY KEY(\"service\",\"instance\")) ENGINE=mito"
   gt "$c" "INSERT INTO m2m (\"ts\",\"service\",\"instance\",\"val\",\"counter\") SELECT (1716000000000+\"value\")::timestamp_ms, concat('s',cast(\"value\"%40 as string)), concat('i',cast(\"value\"%1000 as string)), (\"value\"%100)::double, \"value\" FROM range(0,$N)"
-  # logs1m — log signal: PK(service) + message FULLTEXT(bloom) + append
+  # logs1m — log signal: PK(service) + message FULLTEXT(bloom) + trace_id INVERTED
+  # (Run 269/270: unkeyed trace_id made cross-tier joins full-scan; product keys anchors)
   gt "$c" "DROP TABLE IF EXISTS logs1m"
-  gt "$c" "CREATE TABLE logs1m (\"ts\" TIMESTAMP(3) TIME INDEX,\"service\" STRING,\"level\" STRING,\"message\" STRING FULLTEXT INDEX WITH(backend='bloom',analyzer='English',case_sensitive='false',false_positive_rate='0.01'),\"trace_id\" STRING,PRIMARY KEY(\"service\")) ENGINE=mito WITH (append_mode='true')"
+  gt "$c" "CREATE TABLE logs1m (\"ts\" TIMESTAMP(3) TIME INDEX,\"service\" STRING,\"level\" STRING,\"message\" STRING FULLTEXT INDEX WITH(backend='bloom',analyzer='English',case_sensitive='false',false_positive_rate='0.01'),\"trace_id\" STRING INVERTED INDEX,PRIMARY KEY(\"service\")) ENGINE=mito WITH (append_mode='true')"
   gt "$c" "INSERT INTO logs1m (\"ts\",\"service\",\"level\",\"message\",\"trace_id\") SELECT (1716000000000+\"value\")::timestamp_ms, concat('s',cast(\"value\"%12 as string)), CASE WHEN \"value\"%7=0 THEN 'ERROR' ELSE 'INFO' END, concat('request id=',cast(\"value\" as string),' path=/api/r',cast(\"value\"%50 as string),CASE WHEN \"value\"%7=0 THEN ' timeout error' ELSE ' ok' END), concat('t',cast(\"value\"%70000 as string)) FROM range(0,$N)"
   # sj — default JSON (Jsonb) + parse_json bulk path (legacy / baseline for Run 173 gap)
   gt "$c" "DROP TABLE IF EXISTS sj"
@@ -85,7 +86,7 @@ gen_ch(){ local c=$1; echo "  [CH] $c ..."
   ch "$c" "CREATE TABLE m2m (ts DateTime64(3),service String,instance String,val Float64,counter Int64) ENGINE=MergeTree ORDER BY (service,instance)"
   ch "$c" "INSERT INTO m2m SELECT now(),concat('s',toString(number%40)),concat('i',toString(number%1000)),(number%100)::Float64,number FROM numbers($N)"
   ch "$c" "DROP TABLE IF EXISTS logs1m"
-  ch "$c" "CREATE TABLE logs1m (ts DateTime64(3),service String,level String,message String,trace_id String, INDEX idx_msg message TYPE tokenbf_v1(32768,3,0) GRANULARITY 1) ENGINE=MergeTree ORDER BY (service,ts)"
+  ch "$c" "CREATE TABLE logs1m (ts DateTime64(3),service String,level String,message String,trace_id String, INDEX idx_msg message TYPE tokenbf_v1(32768,3,0) GRANULARITY 1, INDEX idx_trace trace_id TYPE bloom_filter GRANULARITY 1) ENGINE=MergeTree ORDER BY (service,ts)"
   ch "$c" "INSERT INTO logs1m SELECT now(),concat('s',toString(number%12)),if(number%7=0,'ERROR','INFO'),concat('request id=',toString(number),' path=/api/r',toString(number%50),if(number%7=0,' timeout error',' ok')),concat('t',toString(number%70000)) FROM numbers($N)"
   ch "$c" "DROP TABLE IF EXISTS sj"
   ch "$c" "SET allow_experimental_json_type=1; CREATE TABLE sj (ts DateTime64(3),svc String,attributes JSON) ENGINE=MergeTree ORDER BY ts"
