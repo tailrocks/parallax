@@ -31,6 +31,13 @@
 Index status stays TODO.
 
 **Already landed:**
+- `docs/research/decisions/metric-summary-contract.md`: the operator-authorized
+  Plan-105/168 Step-0 contract now records exact window/count semantics,
+  non-finite and histogram treatment, trend bucket cap, fail-closed native-name
+  collision behavior, metric-only service discovery, GraphQL compatibility,
+  and the retained `parallax metrics --invocation` promise. Plan 105 links the
+  record. Peer must add the decision-policy fixture and prove adapter/API/CLI
+  conformance before treating Step 0 as closed.
 - `ui/src/lib/metric-aggregation.ts` (typecheck fixed at `90527b4`): typed
   aggregation legality per metric kind (contract decision 2 — illegal combos
   unrepresentable), `coerceAggregation`, `inferMetricKind`, `MetricQuerySpec`

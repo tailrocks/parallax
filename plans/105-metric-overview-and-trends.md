@@ -23,6 +23,15 @@ Author the still-undecided CLI metric contract as `parallax metrics
 invocation-scoped. See plans/156-unified-cli-observability-contract.md and
 the Unified CLI Observability note in plans/README.md.
 
+The operator-authorized Step-1 decision is now durable in
+[`metric-summary-contract.md`](../docs/research/decisions/metric-summary-contract.md):
+explicit inclusive windows, finite gauge/sum and one-row-per-explicit-
+histogram-export counting, ≤120 aligned trend buckets, fail-closed native-name
+collisions, bounded metric-only service discovery, and retained
+`parallax metrics --invocation`. This helper slice does not satisfy the
+required decision-policy fixture or compatibility/conformance evidence; the
+primary executor must verify/deepen the record before beginning backend work.
+
 ## Why
 
 `metric_point_count` is a documented zero stub and metric trend data is empty,
