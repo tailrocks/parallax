@@ -74,6 +74,9 @@ must not return in product output.
 - Agent-session output now strictly decodes into a closed typed projection and
   advertises its generated MCP `outputSchema`; arbitrary GraphQL fields cannot
   pass through to clients.
+- An in-memory stdio-equivalent wire fixture now proves MCP initialization,
+  stable protocol negotiation, and the exact `tools/list` catalog. Codex and
+  Claude registration/discovery fixtures remain unfinished.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded

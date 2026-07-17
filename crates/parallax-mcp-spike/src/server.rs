@@ -373,4 +373,37 @@ mod tests {
         assert_eq!(schema.get("additionalProperties"), Some(&json!(false)));
         assert!(schema.get("required").and_then(Value::as_array).is_some());
     }
+
+    #[tokio::test]
+    async fn wire_initialization_and_tools_list_match_the_locked_catalog() {
+        let (server_transport, client_transport) = tokio::io::duplex(64 * 1024);
+        let server = SpikeServer::new("http://127.0.0.1:4000".to_string()).expect("server");
+        let server_task = tokio::spawn(async move {
+            server.serve(server_transport).await?.waiting().await?;
+            anyhow::Ok(())
+        });
+        let client = ().serve(client_transport).await.expect("initialize client");
+        let peer = client.peer_info().expect("server initialization info");
+        let listed = client
+            .peer()
+            .list_tools(None)
+            .await
+            .expect("tools/list response");
+
+        assert_eq!(peer.protocol_version, ProtocolVersion::V_2025_11_25);
+        assert_eq!(
+            listed
+                .tools
+                .iter()
+                .map(|tool| tool.name.as_ref())
+                .collect::<Vec<_>>(),
+            ["parallax_agent_session_show", "parallax_issue_context"]
+        );
+
+        client.cancel().await.expect("cancel client");
+        server_task
+            .await
+            .expect("join server")
+            .expect("stop server");
+    }
 }

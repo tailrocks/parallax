@@ -51,6 +51,9 @@ No CI wiring: needs a live server and seeded telemetry. Manual only.
 The stdio server fails closed unless `--allow-local-stdio` appears on the
 process command line; no environment variable or repository file can provide
 that trust decision.
+Unit coverage includes wire-level MCP initialization and `tools/list` over an
+in-memory stdio-equivalent duplex transport. Live Codex/Claude fixtures remain
+manual and unfinished.
 The API origin is restricted to credential-free plaintext loopback HTTP.
 Authenticated remote transport remains deferred to Plan 109.
 HTTP redirects are disabled so loopback cannot bounce a request to a remote
