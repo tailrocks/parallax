@@ -266,6 +266,17 @@ Full combination **still not closed**.
 
 Full combination **still not closed**.
 
+**Pass 308 recheck (2026-07-18):** **Traceway + TMA1 + Bugsink** —
+
+| Product | Pin | Combo |
+| --- | --- | --- |
+| **Traceway** | still **1,024★** / **`backend/v1.9.1` + `cli/v1.9.1`** (2026-07-15); `pushed_at` **2026-07-17**; MIT; README probe: **OTLP/OpenTelemetry** present; **0** sentry/envelope/evidence-bundle/redact/outcome | combo **not closed** |
+| **TMA1** | still **109★** / **`v0.2.0-alpha12`** (2026-07-17); last 20 commits = GreptimeDB **v1.1.3** min + install probe + session UI perf — **0** collision keywords (sentry/envelope/redact/outcome/evidence/fingerprint/pii/bundle) | **29th UNFIRED** prod-incident collision |
+| **Bugsink** | still **1,940★** / **v2.4.0** (2026-07-10); push 2026-07-17 | error-only peer **not closed** |
+
+Full combination **still not closed**.
+
+
 **Pass 258 recheck (2026-07-18):** **Maple + Uptrace** —
 
 | Product | Pin | Watch |
