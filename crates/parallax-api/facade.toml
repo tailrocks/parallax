@@ -7,5 +7,5 @@ schema_version = 1
     "struct Query",
     "use memo::RequestMemo",
     "use query_limits::check_query_limits",
-    "use schema::{Schema, build_schema, execute}",
+    "use schema::{Schema, build_schema, execute, export_schema_sdl, normalize_schema_sdl}",
 ]

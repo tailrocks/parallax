@@ -10,6 +10,7 @@ mod nextest_evidence;
 mod policy;
 mod release;
 mod semconv;
+mod ui_graphql;
 
 use anyhow::Result;
 use clap::Parser;

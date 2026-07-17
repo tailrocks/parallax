@@ -3,7 +3,9 @@ use std::{path::Path, process::Command as Process};
 use anyhow::{Context, Result, bail};
 
 use crate::browser_foundation;
-use crate::cli::{Cli, Command, DocsAction, FacadeAction, Output, SemconvAction};
+use crate::cli::{
+    Cli, Command, DocsAction, FacadeAction, Output, SemconvAction, UiAction, UiGraphqlAction,
+};
 use crate::closure_final;
 use crate::dependencies::{self, Selection};
 use crate::docs_links;
@@ -12,6 +14,7 @@ use crate::nextest_evidence;
 use crate::policy;
 use crate::release;
 use crate::semconv;
+use crate::ui_graphql;
 
 pub(crate) fn execute(cli: Cli) -> Result<()> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
@@ -19,7 +22,7 @@ pub(crate) fn execute(cli: Cli) -> Result<()> {
         Command::Ci { fast, full } => execute_ci(&root, fast, full, cli.output),
         Command::Lint => lint(&root),
         Command::Test => test(&root),
-        Command::Ui => ui(&root),
+        Command::Ui { action } => execute_ui(&root, action),
         Command::BrowserFoundationServe => browser_foundation::run(&root),
         Command::Integration => integration(&root),
         Command::Docs { action } => execute_docs(&root, action, cli.output),
@@ -97,7 +100,7 @@ fn execute_ci(root: &Path, fast: bool, full: bool, output: Output) -> Result<()>
             "policy" => policy::run(root, None, output)?,
             "facade" => facade::check(root)?,
             "docs-links" => docs_links::run(root, output)?,
-            "ui" => ui(root)?,
+            "ui" => ui_gates(root)?,
             "test" => test(root)?,
             "integration" => integration(root)?,
             "dependencies" => dependencies::run(root, Selection::All, output)?,
@@ -229,12 +232,24 @@ fn integration(root: &Path) -> Result<()> {
     run(root, "cargo", &["test", "--workspace", "--doc", "--locked"])
 }
 
-fn ui(root: &Path) -> Result<()> {
+fn execute_ui(root: &Path, action: Option<UiAction>) -> Result<()> {
+    match action {
+        None => ui_gates(root),
+        Some(UiAction::Graphql { action }) => match action {
+            UiGraphqlAction::Export => ui_graphql::export(root),
+            UiGraphqlAction::Check => ui_graphql::check(root),
+        },
+    }
+}
+
+fn ui_gates(root: &Path) -> Result<()> {
     let directory = root.join("ui");
     run(&directory, "bun", &["ci"])?;
     for script in ["check", "typecheck", "lint", "test:ci", "build"] {
         run(&directory, "bun", &["run", script])?;
     }
+    // GraphQL schema drift is required once the export surface exists.
+    ui_graphql::check(root)?;
     Ok(())
 }
 

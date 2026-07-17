@@ -31,8 +31,11 @@ pub(crate) enum Command {
     Lint,
     /// Run non-doctest Rust tests through nextest.
     Test,
-    /// Install and run every required Bun UI gate.
-    Ui,
+    /// Install and run every required Bun UI gate, or GraphQL schema tools.
+    Ui {
+        #[command(subcommand)]
+        action: Option<UiAction>,
+    },
     /// Serve the built UI for Playwright foundation smoke (plan 132).
     BrowserFoundationServe,
     /// Run the distinct Rust doctest integration partition.
@@ -149,6 +152,23 @@ pub(crate) enum Command {
 pub(crate) enum DocsAction {
     /// Validate every tracked internal Markdown link and fragment.
     Links,
+}
+
+#[derive(Debug, Subcommand)]
+pub(crate) enum UiAction {
+    /// GraphQL schema export / drift / contract gates (Plan 152).
+    Graphql {
+        #[command(subcommand)]
+        action: UiGraphqlAction,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub(crate) enum UiGraphqlAction {
+    /// Write deterministic `ui/graphql/schema.graphql` from parallax-api.
+    Export,
+    /// Fail when the checked-in schema (and codegen artifacts) drift.
+    Check,
 }
 
 #[derive(Debug, Subcommand)]

@@ -1,3 +1,3 @@
 fn main() {
-    println!("{}", parallax_api::build_schema().as_sdl());
+    print!("{}", parallax_api::export_schema_sdl());
 }

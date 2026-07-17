@@ -10,6 +10,8 @@ fn parses_every_initial_command() {
         vec!["xtask", "lint"],
         vec!["xtask", "test"],
         vec!["xtask", "ui"],
+        vec!["xtask", "ui", "graphql", "export"],
+        vec!["xtask", "ui", "graphql", "check"],
         vec!["xtask", "integration"],
         vec!["xtask", "docs", "links"],
         vec!["xtask", "policy"],

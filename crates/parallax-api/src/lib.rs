@@ -442,7 +442,7 @@ impl Mutation {
 
 pub use query_limits::check_query_limits;
 pub(crate) use query_limits::clamp_limit;
-pub use schema::{Schema, build_schema, execute};
+pub use schema::{Schema, build_schema, execute, export_schema_sdl, normalize_schema_sdl};
 
 #[cfg(test)]
 mod tests;
