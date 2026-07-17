@@ -2,7 +2,7 @@
   "schema_version": 1,
   "ratchets": {
     "fire_event_calls": 28,
-    "legacy_handoffs": 61,
+    "legacy_handoffs": 60,
     "raw_router_builders": 1,
     "test_cases": 490,
     "test_files": 92
@@ -682,23 +682,15 @@
       "risk": "Investigation pins can lose route windows or exceed persisted state bounds",
       "scenario_owner": "features/investigations",
       "lane_owner": "vitest/unit",
-      "delivery_plan": 134,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/investigations.test.ts",
+      "test_file": "ui/src/features/investigations/tests/model/investigation-state.test.ts",
       "test_ids": [
         "serializes the current route as a restorable pin",
         "captures window params from hrefs",
         "parses and caps investigation state"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/investigations.test.ts",
-        "destination_owner": "features/investigations",
-        "removal_plan": 134,
-        "created": "2026-07-15",
-        "expires": "plan-134-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-024",

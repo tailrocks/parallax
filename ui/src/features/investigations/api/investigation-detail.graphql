@@ -1,0 +1,3 @@
+query InvestigationDetail($id: String!) {
+  investigation(id: $id) { id name state createdAtNanos updatedAtNanos }
+}

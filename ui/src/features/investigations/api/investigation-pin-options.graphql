@@ -1,0 +1,3 @@
+query InvestigationPinOptions {
+  investigations { id name state updatedAtNanos }
+}

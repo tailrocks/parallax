@@ -1,0 +1,3 @@
+query InvestigationsList {
+  investigations { id name state updatedAtNanos createdAtNanos }
+}

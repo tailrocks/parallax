@@ -1,0 +1,5 @@
+mutation InvestigationSave($name: String!, $state: String!, $id: String) {
+  investigationSave(name: $name, state: $state, id: $id) {
+    id name state createdAtNanos updatedAtNanos
+  }
+}

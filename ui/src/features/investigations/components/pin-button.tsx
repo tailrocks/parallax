@@ -14,8 +14,6 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { gqlString, graphql } from "@/lib/api"
-import type { Investigation } from "@/lib/api"
 import {
   appendInvestigationPin,
   buildInvestigationPin,
@@ -23,8 +21,14 @@ import {
   parseInvestigationState,
   serializeInvestigationState,
   windowFromHref,
-} from "@/lib/investigations"
-import type { InvestigationPinKind } from "@/lib/investigations"
+} from "@/features/investigations/model/investigation-state"
+import type { InvestigationPinKind } from "@/features/investigations/model/investigation-state"
+import type { Investigation } from "@/features/investigations/model/investigation"
+import {
+  loadInvestigationPinOptions,
+  saveInvestigation,
+} from "@/features/investigations/api/investigation-api"
+import { investigationErrorMessage } from "@/features/investigations/model/investigation-error"
 
 export function PinButton({
   kind,
@@ -54,21 +58,12 @@ export function PinButton({
     let ignore = false
     setLoading(true)
     setError(null)
-    void graphql<{ investigations: Investigation[] }>(`
-      {
-        investigations {
-          id
-          name
-          state
-          updatedAtNanos
-        }
-      }
-    `)
-      .then((data) => {
-        if (!ignore) setInvestigations(data.investigations)
+    void loadInvestigationPinOptions()
+      .then((rows) => {
+        if (!ignore) setInvestigations(rows)
       })
       .catch((err: unknown) => {
-        if (!ignore) setError(err instanceof Error ? err.message : String(err))
+        if (!ignore) setError(investigationErrorMessage(err))
       })
       .finally(() => {
         if (!ignore) setLoading(false)
@@ -87,11 +82,15 @@ export function PinButton({
         parseInvestigationState(investigation.state),
         pin
       )
-      await graphql(`mutation { investigationSave(id: "${gqlString(investigation.id)}", name: "${gqlString(investigation.name)}", state: "${gqlString(serializeInvestigationState(state))}") { id } }`)
+      await saveInvestigation({
+        id: investigation.id,
+        name: investigation.name,
+        state: serializeInvestigationState(state),
+      })
       setMessage(`Pinned to ${investigation.name}`)
       await router.invalidate()
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(investigationErrorMessage(err))
     } finally {
       setSavingId(null)
     }
@@ -111,15 +110,16 @@ export function PinButton({
         },
         pin
       )
-      const { investigationSave } = await graphql<{
-        investigationSave: Investigation
-      }>(`mutation { investigationSave(name: "${gqlString(name)}", state: "${gqlString(serializeInvestigationState(state))}") { id name state updatedAtNanos createdAtNanos } }`)
-      setInvestigations((current) => [investigationSave, ...current])
+      const created = await saveInvestigation({
+        name,
+        state: serializeInvestigationState(state),
+      })
+      setInvestigations((current) => [created, ...current])
       setNewName("")
-      setMessage(`Pinned to ${investigationSave.name}`)
+      setMessage(`Pinned to ${created.name}`)
       await router.invalidate()
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(investigationErrorMessage(err))
     } finally {
       setSavingId(null)
     }

@@ -189,6 +189,8 @@ Plan 129 DONE (2026-07-17): macOS forced-Bun Vitest dual-run + matrix ownership
 
 Plans 152 and 153 establish GraphQL and non-GraphQL runtime boundaries after the
 layer graph. Plan 149 DONE (2026-07-17): route-less capability facades
+Plan 134 DONE (2026-07-17): investigations feature facade
+
 (runtime-metrics, story, time-range, page-header). Plans 134-142 and 150 are split by product owner for parallel work.
 Plans 139, 140, and 142 wait for plan 134's public pin facade; plan 140 also
 waits for plan 141's public logs facade. Plan 143 moves app/layout/shell only,
@@ -198,7 +200,7 @@ work.
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | 149 | Establish route-less UI capabilities before feature moves | P1 | L | 100, 129, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-149-route-less-capabilities/README.md) |
-| [134](134-investigations-feature-migration.md) | Migrate investigations behind a strict feature facade | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| 134 | Migrate investigations behind a strict feature facade | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-134-investigations/README.md) |
 | [135](135-sql-feature-migration.md) | Migrate the SQL workspace behind decoded feature boundaries | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 | [136](136-ecosystem-feature-migration.md) | Migrate ecosystem topology into a bounded feature | P1 | M | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 | [137](137-dashboards-feature-migration.md) | Migrate dashboards into decoded model and API boundaries | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |

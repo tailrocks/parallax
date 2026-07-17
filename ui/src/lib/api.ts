@@ -275,13 +275,7 @@ export interface Conversation {
   outputTokens: number | null
 }
 
-export interface Investigation {
-  id: string
-  name: string
-  state: string
-  createdAtNanos: string
-  updatedAtNanos: string
-}
+export type { Investigation } from "@/features/investigations/model/investigation"
 
 export interface TraceSummary {
   traceId: string

@@ -23,7 +23,7 @@ import { InvocationTracesTab } from "@/components/console/invocations/invocation
 import { JobsCyclesTab } from "@/components/console/invocations/jobs-cycles-tab"
 import { SessionsTab } from "@/components/console/invocations/sessions-tab"
 import type { JourneyError } from "@/components/console/invocations/session-journey"
-import { PinButton } from "@/components/console/pin-button"
+import { PinButton } from "@/features/investigations"
 import { StatCard } from "@/components/console/stat-card"
 import { StoryTimeline } from "@/features/story"
 import { useLiveStream } from "@/hooks/use-live-stream"

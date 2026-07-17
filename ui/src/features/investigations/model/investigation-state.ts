@@ -1,4 +1,4 @@
-import { DEFAULT_RANGE_KEY } from "@/lib/range"
+import { DEFAULT_RANGE_KEY } from "@/domain/time-range/range"
 
 export type InvestigationPinKind = "trace" | "issue" | "run" | "log" | "view"
 

@@ -1694,11 +1694,6 @@ ceiling = 15
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/investigations.test.ts"
-ceiling = 8
-
-[[limits]]
-metric = "typescript.assertions"
 scope = "ui/src/lib/__tests__/invocation-facets.test.ts"
 ceiling = 5
 
@@ -1941,16 +1936,6 @@ ceiling = 278
 metric = "typescript.file-lines"
 scope = "ui/src/routes/index.tsx"
 ceiling = 955
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/investigations.$investigationId.tsx"
-ceiling = 269
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/investigations.index.tsx"
-ceiling = 195
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -2556,11 +2541,6 @@ ceiling = 126
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/components/console/pin-button.tsx:29"
-ceiling = 173
-
-[[limits]]
-metric = "typescript.function-lines"
 scope = "ui/src/components/console/rpc-stream.tsx:104"
 ceiling = 62
 
@@ -2860,16 +2840,6 @@ ceiling = 142
 metric = "typescript.function-lines"
 scope = "ui/src/routes/index.tsx:597"
 ceiling = 169
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/investigations.$investigationId.tsx:80"
-ceiling = 204
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/investigations.index.tsx:57"
-ceiling = 147
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -3232,6 +3202,118 @@ scope = "ui/src/features/runtime-metrics/api/runtime-metrics.generated.ts"
 ceiling = 1
 
 [[ui.ownership]]
+path = "ui/src/features/investigations/api/investigation-api.ts"
+current_owner = "features/investigations"
+target_owner = "features/investigations"
+migration_plan = "none"
+kind = "handwritten"
+
+
+[[ui.ownership]]
+path = "ui/src/features/investigations/api/investigation-delete.generated.ts"
+current_owner = "features/investigations"
+target_owner = "features/investigations"
+migration_plan = "none"
+kind = "generated"
+
+
+[[ui.ownership]]
+path = "ui/src/features/investigations/api/investigation-detail.generated.ts"
+current_owner = "features/investigations"
+target_owner = "features/investigations"
+migration_plan = "none"
+kind = "generated"
+
+
+[[ui.ownership]]
+path = "ui/src/features/investigations/api/investigation-pin-options.generated.ts"
+current_owner = "features/investigations"
+target_owner = "features/investigations"
+migration_plan = "none"
+kind = "generated"
+
+
+[[ui.ownership]]
+path = "ui/src/features/investigations/api/investigation-save.generated.ts"
+current_owner = "features/investigations"
+target_owner = "features/investigations"
+migration_plan = "none"
+kind = "generated"
+
+
+[[ui.ownership]]
+path = "ui/src/features/investigations/api/investigations-list.generated.ts"
+current_owner = "features/investigations"
+target_owner = "features/investigations"
+migration_plan = "none"
+kind = "generated"
+
+
+[[ui.ownership]]
+path = "ui/src/features/investigations/components/investigation-detail-page.tsx"
+current_owner = "features/investigations"
+target_owner = "features/investigations"
+migration_plan = "none"
+kind = "handwritten"
+
+
+[[ui.ownership]]
+path = "ui/src/features/investigations/components/investigations-page.tsx"
+current_owner = "features/investigations"
+target_owner = "features/investigations"
+migration_plan = "none"
+kind = "handwritten"
+
+
+[[ui.ownership]]
+path = "ui/src/features/investigations/components/pin-button.tsx"
+current_owner = "features/investigations"
+target_owner = "features/investigations"
+migration_plan = "none"
+kind = "handwritten"
+
+
+[[ui.ownership]]
+path = "ui/src/features/investigations/index.ts"
+current_owner = "features/investigations"
+target_owner = "features/investigations"
+migration_plan = "none"
+kind = "handwritten"
+facade = true
+
+[[ui.ownership]]
+path = "ui/src/features/investigations/model/investigation-error.ts"
+current_owner = "features/investigations"
+target_owner = "features/investigations"
+migration_plan = "none"
+kind = "handwritten"
+
+
+[[ui.ownership]]
+path = "ui/src/features/investigations/model/investigation-state.ts"
+current_owner = "features/investigations"
+target_owner = "features/investigations"
+migration_plan = "none"
+kind = "handwritten"
+
+
+[[ui.ownership]]
+path = "ui/src/features/investigations/model/investigation.ts"
+current_owner = "features/investigations"
+target_owner = "features/investigations"
+migration_plan = "none"
+kind = "handwritten"
+
+
+[[ui.ownership]]
+path = "ui/src/features/investigations/tests/model/investigation-state.test.ts"
+current_owner = "features/investigations"
+target_owner = "features/investigations"
+migration_plan = "none"
+kind = "handwritten"
+
+
+[[ui.ownership]]
 path = "ui/scripts/runtime-probe.ts"
 current_owner = "tooling"
 target_owner = "tooling"
@@ -3537,13 +3619,6 @@ path = "ui/src/components/console/invocations/sessions-tab.tsx"
 current_owner = "legacy-console"
 target_owner = "features/runs"
 migration_plan = "140"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/pin-button.tsx"
-current_owner = "legacy-console"
-target_owner = "features/investigations"
-migration_plan = "134"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -4259,13 +4334,6 @@ migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/investigations.test.ts"
-current_owner = "legacy-lib-tests"
-target_owner = "features/investigations"
-migration_plan = "134"
-kind = "handwritten"
-
-[[ui.ownership]]
 path = "ui/src/lib/__tests__/invocation-facets.test.ts"
 current_owner = "legacy-lib-tests"
 target_owner = "features/runs"
@@ -4438,13 +4506,6 @@ path = "ui/src/lib/graphql-trace.ts"
 current_owner = "legacy-lib"
 target_owner = "features/traces"
 migration_plan = "142"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/lib/investigations.ts"
-current_owner = "legacy-lib"
-target_owner = "features/investigations"
-migration_plan = "134"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -5195,3 +5256,49 @@ current_owner = "test-support"
 target_owner = "test-support"
 migration_plan = "129"
 kind = "test-support"
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/investigations/tests/model/investigation-state.test.ts"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/investigations/components/investigation-detail-page.tsx:62"
+ceiling = 209
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/investigations/components/investigations-page.tsx:45"
+ceiling = 151
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/investigations/components/pin-button.tsx:33"
+ceiling = 169
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/investigations/api/investigation-delete.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/investigations/api/investigation-detail.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/investigations/api/investigation-pin-options.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/investigations/api/investigation-save.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/investigations/api/investigations-list.generated.ts"
+ceiling = 1
+

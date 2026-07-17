@@ -23,7 +23,7 @@ import type {
   WaterfallSpan,
 } from "@/components/console/trace-waterfall"
 import { GraphqlOperationCard } from "@/components/console/graphql-operation"
-import { PinButton } from "@/components/console/pin-button"
+import { PinButton } from "@/features/investigations"
 import { RpcStreamCard } from "@/components/console/rpc-stream"
 import { EvidenceGapsCard } from "@/components/console/evidence-gaps"
 import { StoryTimeline } from "@/features/story"

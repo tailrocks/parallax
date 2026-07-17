@@ -8,7 +8,7 @@ import {
   parseInvestigationState,
   serializeInvestigationState,
   windowFromHref,
-} from "@/lib/investigations"
+} from "@/features/investigations/model/investigation-state"
 
 describe("investigation state helpers", () => {
   it("serializes the current route as a restorable pin", () => {

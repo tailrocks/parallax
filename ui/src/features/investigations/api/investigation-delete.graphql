@@ -1,0 +1,3 @@
+mutation InvestigationDelete($id: String!) {
+  investigationDelete(id: $id)
+}
