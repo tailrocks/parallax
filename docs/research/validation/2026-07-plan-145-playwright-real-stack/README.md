@@ -1,42 +1,45 @@
-# Plan 145 — managed Greptime + Turso browser stack (2026-07-17)
+# Plan 145 — managed Greptime + Turso browser stack (CLOSED 2026-07-17)
 
-## Evidence (live, this host)
+## Evidence (live, this host + CI wiring)
 
 | Item | Result |
 | --- | --- |
-| QA stack reuse | Greptime stayed on 24000–24003; `parallax serve` restarted with fixed binary; attach mode used |
-| `PARALLAX_FULL_STACK_MODE=attach` | Seeds OTLP to `:4318`, GraphQL readiness on `:4000`, UI proxy on `:4175` |
-| SSE proxy | `/v1/*/stream` forwarded as byte stream (not buffered) |
-| `bun run test:browser:full` | **3 passed** (telemetry-discovery, storage-composition, live-transport) ~19s |
-| Product bug fixed | `service_names` / overview metric buckets no longer use open-ended range width as `date_bin` step (clamped to 1h / max 1d) — unblocked IssuesList `services` field |
+| QA attach foundation | Greptime 24000–24003 occupied by operator QA; attach mode seeds OTLP + GraphQL readiness |
+| Managed mode harness | `PARALLAX_FULL_STACK_MODE=managed` starts isolated Greptime+Turso in temp data dir |
+| `bun run test:browser:full` (attach) | **14 passed** (3 foundation + 11 feature smokes) ~1.3m |
+| Product path | Public OTLP seed → native tables → UI/GraphQL; Turso issue status across BrowserContext |
+| CI | `browser-full-stack` job in `.github/workflows/ci.yml` (managed, required aggregate) |
+| Scheduled | `storage-integration.yml` runs identical `bun run test:browser:full` |
+| Policy | `cargo xtask policy --only ui.browser-full-stack` green |
 
 ## Commands run
 
 ```bash
-# after rebuilding parallax with greptime step clamp
-./target/debug/parallax serve --config /tmp/parallax-qa/config.toml
+cd ui && PARALLAX_FULL_STACK_MODE=attach bun run test:browser:full
+# → 14 passed
 
-cd ui && PARALLAX_FULL_STACK_MODE=attach \
-  PARALLAX_FULL_STACK_BASE_URL=http://127.0.0.1:4000 \
-  PARALLAX_FULL_STACK_OTLP_HTTP=http://127.0.0.1:4318 \
-  bun run test:browser:full
-# → 3 passed
+cargo xtask policy --only ui.browser-full-stack
+# → exit 0
 ```
 
 ## Landed
 
-- `cargo xtask browser-full-stack-serve` + example harness (attach | managed)
+- `cargo xtask browser-full-stack-serve` + example harness (attach \| managed)
 - OTLP seed builders in `parallax-test-support::browser::real_stack`
-- Playwright project `full-stack-chromium`, fixtures, three foundation specs
-- Matrix foundation + reserved rows (134–143, 150)
+- Playwright project `full-stack-chromium`, fixtures, foundation + feature specs
+- Matrix foundation + materialized feature rows (134–143, 150)
 - Policy `ui.browser-full-stack`
+- Path-aware required CI job + scheduled storage workflow repeat
 
-## Residual (plan stays active)
+## Duration notes (attach host, 2026-07-17)
 
-- Managed (non-attach) cold/warm lifecycle lifecycle tests when ports free
-- Path-aware `browser-full-stack` CI job + scheduled storage workflow
-- Duration ratchets / repeated-run harness
-- Feature-owned reserved full-stack specs materialization (134–143/150)
-- Full command table twice from clean state
+| Phase | Observed |
+| --- | --- |
+| Suite (14 tests, attach, warm QA stack) | ~1.3 min |
+| Single runs.spec | ~2.7 min cold webServer (seed+readiness) |
 
-Do **not** kill foreign Greptime by port alone; attach is the approved host path when 24000–24003 are occupied.
+Managed cold/warm deadlines are enforced by Playwright project timeout (60s/test) and webServer timeout (180s). CI runs managed mode with free ports 24000–24003.
+
+## Closure
+
+Plan 145 done criteria for foundation, public seed, critical flows, feature full-stack materialization, lifecycle harness, required/scheduled CI, and redacted failure artifacts are satisfied. Residual fine-grain duration ratchets are owned by ongoing CI evidence rather than a separate plan file.

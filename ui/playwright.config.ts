@@ -134,6 +134,10 @@ const config: PlaywrightTestConfig = {
     {
       name: "visual-chromium-linux",
       testMatch: "**/visual/**/*.spec.ts",
+      // Platform-neutral snapshot names so host-authored goldens can be
+      // revalidated on digest-pinned Linux CI (plan 146). Font AA may still
+      // differ; thresholds live in the visual specs/manifest.
+      snapshotPathTemplate: "{testDir}/{testFilePath}-snapshots/{arg}{ext}",
       use: {
         browserName: "chromium",
         viewport: { width: 1440, height: 900 },
