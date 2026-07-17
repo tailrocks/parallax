@@ -6965,3 +6965,24 @@ N=100000 bench/four-way/gen.sh
 ```
 
 **Note updated:** `query-execution-engine.md` (Run 177 section).
+
+### Run 178 — 2026-07-17 — concurrent ingest+query re-verify (v1.1.3 / 26.6)
+
+**Pass target.** Re-verify production-realism gate: anchored query under concurrent insert
+stays ≤2× idle (Runs 13/112).
+
+**Pins.** GT `v1.1.3`, CH `26.6.1.1193` (stables). Seed N=100k `cq_spans` (GT inverted
+`trace_id` + append; CH `ORDER BY (trace_id,ts)`). Concurrent: background INSERT 2k-row
+batches; measure `WHERE trace_id='t12345'` median of 8 warm.
+
+| | Idle | Busy | Penalty | Gate ≤2× |
+| --- | ---: | ---: | ---: | --- |
+| GT | 5 ms | 7 ms | **1.4×** | pass |
+| CH | 2 ms | 3 ms | **1.5×** | pass |
+
+Counts grew (GT 140k, CH 134k). Freshness 10/10 insert→SELECT visible both sides.
+
+**Verdict.** No drift; continuous ingest does not block anchored reads on current pins.
+Evidence: scratch `run178-concurrent-ingest-query.txt`. Updated `write-path-and-ingestion.md`.
+
+**Reproduce.** Create `cq_spans` as above; time idle query; start insert loop; retime; stop.

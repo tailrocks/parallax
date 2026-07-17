@@ -299,3 +299,20 @@ metrics — and it is axis #1.
 - GreptimeDB write path: `src/mito2/src/{worker.rs,region_write_ctx.rs,flush.rs}`, WAL `src/log-store/src/lib.rs`; visibility via `committed_sequence` (`src/mito2/src/lib.rs`).
 - ClickHouse write path: part creation in `src/Storages/MergeTree/`; async insert `src/Interpreters/AsynchronousInsertQueue.cpp`; `parts_to_throw_insert` in `MergeTreeSettings`.
 - Empirical: `local-benchmark-results.md` Run 5 (freshness/bulk), Run 53 (concurrent ingest+query latency penalty).
+
+## Run 178 (2026-07-17) — concurrent ingest+query on v1.1.3 / 26.6.1.1193
+
+Re-verify of Run 112/13 gate (anchored read must stay ≤2× idle under concurrent insert).
+
+| | Idle anchored ms | Busy (under INSERT) | Penalty | Rows during test |
+| --- | ---: | ---: | ---: | --- |
+| GreptimeDB `v1.1.3` | 5 | 7 | **1.4×** | 100k → 140k |
+| ClickHouse `26.6.1.1193` | 2 | 3 | **1.5×** | 100k → 134k (3 active parts) |
+
+**Pass:** both engines keep anchored `trace_id` lookup interactive and under the ≤2× penalty
+gate while ingest runs. Freshness: every insert immediately visible on subsequent SELECT
+(10/10 trials each; wall-clock p50 includes `docker exec` overhead ~130–220 ms — engine
+visibility is still write-path immediate, not a flush barrier).
+
+No drift from Run 112 direction; production continuous-ingest-while-querying remains safe
+on both for the anchored hot path.
