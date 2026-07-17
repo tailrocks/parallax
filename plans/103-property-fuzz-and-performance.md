@@ -11,13 +11,14 @@
 - **Depends on**: ≥3 independent `scheduled-measurement.yml` jobs (ratchets)
 - **Category**: testing / fuzzing / performance
 - **Status**: BLOCKED — fail-closed performance ratchets need multi-run variance
-- **Blocker**: Only **one** durable scheduled sample is committed
-  ([run 29582532812](https://github.com/tailrocks/parallax/actions/runs/29582532812),
-  packet
-  [`docs/research/testing/measurement/2026-07-17-run-29582532812/`](../docs/research/testing/measurement/2026-07-17-run-29582532812/README.md)).
-  Within-job criterion span is <5%; inventing relative ceilings from n=1 is
-  still forbidden. Second dispatch `29589577179` started 2026-07-17 — adopt
-  thresholds only after ≥3 independent ubuntu jobs.
+- **Blocker**: Only **two** durable scheduled samples are committed
+  ([29582532812](https://github.com/tailrocks/parallax/actions/runs/29582532812),
+  [29589577179](https://github.com/tailrocks/parallax/actions/runs/29589577179)).
+  Allocation count is identical (7011/call) across both; timing still unstable
+  for at least `spool_line_count` (~40% within-job swing on the second run).
+  Inventing relative timing ceilings from n=2 is still forbidden. Adopt
+  thresholds only after ≥3 independent ubuntu jobs + explicit no-auto-refresh
+  CI gate.
 - **Evidence**:
   [`docs/research/testing/property-invariants.md`](../docs/research/testing/property-invariants.md)
 

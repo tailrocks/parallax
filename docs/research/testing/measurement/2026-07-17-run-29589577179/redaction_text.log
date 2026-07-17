@@ -1,0 +1,20 @@
+
+Failing input:
+
+	fuzz/artifacts/redaction_text/crash-506014dc3f468145b1a3b896d478e84884a3a0fc
+
+Output of `std::fmt::Debug`:
+
+	"@pa@i-.\u{8}ayi"
+
+Reproduce with:
+
+	cargo fuzz run redaction_text fuzz/artifacts/redaction_text/crash-506014dc3f468145b1a3b896d478e84884a3a0fc
+
+Minimize test case with:
+
+	cargo fuzz tmin redaction_text fuzz/artifacts/redaction_text/crash-506014dc3f468145b1a3b896d478e84884a3a0fc
+
+────────────────────────────────────────────────────────────────────────────────
+
+Error: Fuzz target exited with exit status: 77

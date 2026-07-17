@@ -1,0 +1,20 @@
+[1m[92m     Running[0m `fuzz/target/x86_64-unknown-linux-gnu/release/spool_framing -artifact_prefix=/home/runner/work/parallax/parallax/fuzz/artifacts/spool_framing/ -max_total_time=300 /home/runner/work/parallax/parallax/fuzz/corpus/spool_framing`
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 2841519226
+INFO: Loaded 1 modules   (1902 inline 8-bit counters): 1902 [0x5607124f7830, 0x5607124f7f9e), 
+INFO: Loaded 1 PC tables (1902 PCs): 1902 [0x5607124f7fa0,0x5607124ff680), 
+INFO:        0 files found in /home/runner/work/parallax/parallax/fuzz/corpus/spool_framing
+INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes
+INFO: A corpus is not provided, starting from an empty corpus
+#2	INITED cov: 81 ft: 82 corp: 1/1b exec/s: 0 rss: 68Mb
+#207	NEW    cov: 82 ft: 83 corp: 2/6b lim: 6 exec/s: 0 rss: 68Mb L: 5/5 MS: 5 InsertByte-EraseBytes-CrossOver-CopyPart-CopyPart-
+#16384	pulse  cov: 82 ft: 83 corp: 2/6b lim: 163 exec/s: 8192 rss: 75Mb
+#32768	pulse  cov: 82 ft: 83 corp: 2/6b lim: 325 exec/s: 6553 rss: 101Mb
+#65536	pulse  cov: 82 ft: 83 corp: 2/6b lim: 652 exec/s: 6553 rss: 154Mb
+#131072	pulse  cov: 82 ft: 83 corp: 2/6b lim: 1300 exec/s: 5957 rss: 259Mb
+#262144	pulse  cov: 82 ft: 83 corp: 2/6b lim: 2611 exec/s: 6553 rss: 469Mb
+#524288	pulse  cov: 82 ft: 83 corp: 2/6b lim: 4096 exec/s: 6990 rss: 519Mb
+#1048576	pulse  cov: 82 ft: 83 corp: 2/6b lim: 4096 exec/s: 7436 rss: 519Mb
+#2097152	pulse  cov: 82 ft: 83 corp: 2/6b lim: 4096 exec/s: 7543 rss: 520Mb
+#2276142	DONE   cov: 82 ft: 83 corp: 2/6b lim: 4096 exec/s: 7561 rss: 520Mb
+Done 2276142 runs in 301 second(s)
