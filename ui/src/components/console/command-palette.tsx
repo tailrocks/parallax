@@ -1,4 +1,5 @@
 import { useNavigate } from "@tanstack/react-router"
+import { ServiceDot } from "@/components/console/service-dot"
 import {
   IconAffiliate,
   IconBug,
@@ -320,7 +321,7 @@ export function CommandPalette({
                 })
               }}
             >
-              <IconServer />
+              <ServiceDot name={service} />
               <span className="min-w-0 truncate">{service}</span>
             </CommandItem>
           ))}

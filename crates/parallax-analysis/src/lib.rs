@@ -1,7 +1,8 @@
-//! Pure error, fingerprint, span-event, and trace analysis.
+//! Pure error, fingerprint, span-event, log-pattern, and trace analysis.
 
 pub mod derive;
 pub mod fingerprint;
+pub mod log_patterns;
 pub mod semconv;
 pub mod span_events;
 pub mod trace_analysis;

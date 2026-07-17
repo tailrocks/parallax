@@ -61,15 +61,22 @@ export interface ServiceColor {
   background: string
 }
 
-/** Deterministic service identity color: hue from a hash of the NAME.
- * Same service = same color, everywhere. Lightness/chroma are fixed tiers
- * chosen to read on both themes. */
+/** Deterministic service identity color: the name hashes onto one of 48
+ * slots — 24 hues spaced 15° apart × 2 lightness tiers — so near-hash
+ * neighbors stay visually distinguishable (raw hash-mod-360 produced
+ * checkout=121° vs pricing=117°, unreadably close). Same service = same
+ * color, everywhere. */
 export function serviceColor(name: string): ServiceColor {
-  const hue = fnv1a(name.trim().toLowerCase()) % 360
+  // 120 slots: 24 hues spaced 15° × 5 lightness/chroma tiers.
+  const slot = fnv1a(name.trim().toLowerCase()) % 120
+  const hue = (slot % 24) * 15
+  const tier = Math.floor(slot / 24)
+  const lightness = [0.65, 0.55, 0.72, 0.48, 0.6][tier] ?? 0.65
+  const chroma = [0.14, 0.14, 0.12, 0.13, 0.17][tier] ?? 0.14
   return {
     hue,
-    color: `oklch(0.65 0.14 ${hue})`,
-    background: `oklch(0.65 0.14 ${hue} / 12%)`,
+    color: `oklch(${lightness} ${chroma} ${hue})`,
+    background: `oklch(${lightness} ${chroma} ${hue} / 12%)`,
   }
 }
 

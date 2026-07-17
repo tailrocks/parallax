@@ -27,16 +27,15 @@ describe("service identity color (plan 162)", () => {
       "web",
       "playground-cli",
     ]
-    const hues = names.map((name) => serviceColor(name).hue)
-    for (let a = 0; a < hues.length; a += 1) {
-      for (let b = a + 1; b < hues.length; b += 1) {
-        const distance = Math.min(
-          Math.abs(hues[a]! - hues[b]!),
-          360 - Math.abs(hues[a]! - hues[b]!)
-        )
-        expect(distance).toBeGreaterThanOrEqual(2)
-      }
-    }
+    const colors = names.map((name) => serviceColor(name).color)
+    // Slots are 15° apart (or a different lightness tier): distinct color
+    // strings guarantee a readable difference.
+    expect(new Set(colors).size).toBe(names.length)
+  })
+
+  it("snaps hues to 15-degree slots so neighbors stay readable", () => {
+    expect(serviceColor("checkout").hue % 15).toBe(0)
+    expect(serviceColor("pricing").hue % 15).toBe(0)
   })
 })
 

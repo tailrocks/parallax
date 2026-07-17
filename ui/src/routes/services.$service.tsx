@@ -616,9 +616,9 @@ function RequestsChart({ red }: { red: SpanRed }) {
             {
               key: "requests",
               label: "Requests",
-              color: "var(--chart-1)",
+              color: "var(--chart-throughput)",
             },
-            { key: "errors", label: "Errors", color: "var(--chart-5)" },
+            { key: "errors", label: "Errors", color: "var(--chart-error)" },
           ]}
         />
       </CardHeader>

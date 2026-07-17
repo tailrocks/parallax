@@ -294,8 +294,12 @@ inference (Maple's Hyperdrive/PlanetScale logic is explicitly not copied).
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [162](162-observability-design-language.md) | Three-axis semantic color system + density/motion/empty-state craft rules | P1 | M | Wave 1 merged | TODO |
-| [163](163-trace-timeline-interactions.md) | Trace timeline viewport reducer: drag-zoom/pan, color-by, self-time, flamegraph | P1 | XL | 160, 162 | TODO |
+Plan 162 is DONE (2026-07-17): tokens, colors lib, ServiceDot, severity
+ramp, percentile chart tokens, numerals, motion, and the codified rules +
+checklist live in `ui/AGENTS.md`; evidence in
+[docs/research/validation/2026-07-wave2/162/](../docs/research/validation/2026-07-wave2/162/README.md).
+
+| [163](163-trace-timeline-interactions.md) | Trace timeline viewport reducer: drag-zoom/pan, color-by, self-time, flamegraph | P1 | XL | 160, 162 (DONE) | TODO — next |
 | [164](164-faceted-filters-and-query-bar.md) | Faceted filters with counts, p50/p95 duration presets, where-clause editor | P1 | L | 156, 162 | TODO |
 | [165](165-logs-power-features.md) | Logs: brush-zoom histogram, pinned attribute columns, Drain pattern grouping | P2 | L | 162, 164 | TODO |
 | [166](166-service-map-v2.md) | Service map v2: ELK layout, focus/declutter, external db/queue/http nodes | P1 | L | 156, 157, 162 | TODO |

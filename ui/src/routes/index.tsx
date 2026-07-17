@@ -504,7 +504,11 @@ function SignalTrendCard({
                 )
               }
               items={[
-                { key: "spans", label: "Spans", color: "var(--chart-throughput)" },
+                {
+                  key: "spans",
+                  label: "Spans",
+                  color: "var(--chart-throughput)",
+                },
                 {
                   key: "errors",
                   label: "Errors",

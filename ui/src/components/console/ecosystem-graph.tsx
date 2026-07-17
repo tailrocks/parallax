@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router"
 import { IconTerminal2, IconWorld } from "@tabler/icons-react"
 
+import { ServiceDot } from "@/components/console/service-dot"
 import { Badge } from "@/components/ui/badge"
 import type { ServiceMapEdge, ServiceMapNode } from "@/lib/api"
 import { formatCount, formatDurationNs, formatPercent } from "@/lib/format"
@@ -220,6 +221,7 @@ export function EcosystemGraph({
                 ) : node.kind === "browser" ? (
                   <IconWorld className="size-3.5 shrink-0 text-sky-500" />
                 ) : null}
+                <ServiceDot name={node.name} />
                 <span className="truncate">{node.name}</span>
               </span>
               <span className="text-xs text-muted-foreground tabular-nums">

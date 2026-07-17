@@ -15,7 +15,7 @@
 - **Priority**: P1
 - **Effort**: L
 - **Risk**: MED (touches the three main list surfaces + adds GraphQL fields)
-- **Depends on**: plan 162 (ServiceDot/tokens); plan 156 (invocation fields)
+- **Depends on**: plan 162 (DONE 2026-07-17 — ServiceDot/tokens in ui/AGENTS.md rules 19-23); plan 156 (invocation fields)
 - **Category**: direction / UI + API / filtering
 - **Planned at**: `2288011`, 2026-07-17
 

@@ -17,6 +17,7 @@ import {
   TraceWaterfall,
   WHOLE_TRACE_ID,
 } from "@/components/console/trace-waterfall"
+import { TraceFlamegraph } from "@/components/console/trace-flamegraph"
 import type {
   TraceViewMode,
   WaterfallSpan,
@@ -110,10 +111,11 @@ interface TraceLog {
 }
 
 type TraceDetailTab = "waterfall" | "story"
+type TraceDisplayMode = TraceViewMode | "flame"
 
 interface TraceDetailSearch {
   tab?: TraceDetailTab | undefined
-  view?: TraceViewMode | undefined
+  view?: TraceDisplayMode | undefined
   range?: string | undefined
   from?: string | undefined
   to?: string | undefined
@@ -129,12 +131,12 @@ const TRACE_DIFF_SPAN_FIELDS =
   "spanId service name kind statusCode durationNs depth matchKey"
 const EMPTY_TRACE_SPANS: TraceSpan[] = []
 const INSPECTOR_LIST_CAP = 25
-const TRACE_VIEW_MODES = ["tree", "errors", "lanes"] as const
+const TRACE_VIEW_MODES = ["tree", "errors", "lanes", "flame"] as const
 
-function isTraceViewMode(value: unknown): value is TraceViewMode {
+function isTraceViewMode(value: unknown): value is TraceDisplayMode {
   return (
     typeof value === "string" &&
-    TRACE_VIEW_MODES.includes(value as TraceViewMode)
+    TRACE_VIEW_MODES.includes(value as TraceDisplayMode)
   )
 }
 
@@ -265,7 +267,7 @@ function TracePage() {
   const navigate = useNavigate({ from: Route.fullPath })
   const activeTab: TraceDetailTab =
     search.tab === "story" ? "story" : "waterfall"
-  const waterfallView: TraceViewMode = search.view ?? "tree"
+  const waterfallView: TraceDisplayMode = search.view ?? "tree"
   const detailRangeSearch = rangeLinkSearch(resolveRangeSearch(search))
   const [selectedId, setSelectedId] = useState<string | null>(WHOLE_TRACE_ID)
   const [criticalEnabled, setCriticalEnabled] = useState(false)
@@ -406,7 +408,7 @@ function TracePage() {
     })
   }
 
-  const setWaterfallView = (value: TraceViewMode) => {
+  const setWaterfallView = (value: TraceDisplayMode) => {
     void navigate({
       search: (current) => ({
         ...current,
@@ -535,13 +537,21 @@ function TracePage() {
                       totalNs={window.durationNs.toString()}
                     />
                   ) : null}
-                  <TraceWaterfall
-                    spans={spans}
-                    selectedId={selectedId}
-                    onSelect={setSelectedId}
-                    highlightIds={criticalIds}
-                    mode={waterfallView}
-                  />
+                  {waterfallView === "flame" ? (
+                    <TraceFlamegraph
+                      spans={spans}
+                      selectedId={selectedId}
+                      onSelect={setSelectedId}
+                    />
+                  ) : (
+                    <TraceWaterfall
+                      spans={spans}
+                      selectedId={selectedId}
+                      onSelect={setSelectedId}
+                      highlightIds={criticalIds}
+                      mode={waterfallView}
+                    />
+                  )}
                 </CardContent>
               </Card>
 
@@ -707,13 +717,14 @@ export function TraceViewModeToggle({
   value,
   onChange,
 }: {
-  value: TraceViewMode
-  onChange: (value: TraceViewMode) => void
+  value: TraceDisplayMode
+  onChange: (value: TraceDisplayMode) => void
 }) {
-  const options: Array<{ value: TraceViewMode; label: string }> = [
+  const options: Array<{ value: TraceDisplayMode; label: string }> = [
     { value: "tree", label: "Tree" },
     { value: "errors", label: "Errors" },
     { value: "lanes", label: "Lanes" },
+    { value: "flame", label: "Flame" },
   ]
 
   return (

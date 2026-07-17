@@ -24,6 +24,7 @@
 //! use parallax_server::self_telemetry::Installed;
 //! ```
 
+mod alerting;
 mod config;
 mod engine_io;
 mod errors;

@@ -28,6 +28,7 @@ describe("trace detail view modes", () => {
       from: undefined,
       to: undefined,
     })
+    expect(validateTraceDetailSearch({ view: "flame" }).view).toBe("flame")
     expect(
       validateTraceDetailSearch({ range: "custom", from: 1, to: "2" })
     ).toEqual({
@@ -47,6 +48,9 @@ describe("trace detail view modes", () => {
     await user.click(screen.getByRole("button", { name: /lanes view/i }))
 
     expect(onChange).toHaveBeenCalledWith("lanes")
+
+    await user.click(screen.getByRole("button", { name: /flame view/i }))
+    expect(onChange).toHaveBeenCalledWith("flame")
   })
 
   it("renders skew warnings only for suspect pairs", () => {

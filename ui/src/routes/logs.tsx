@@ -590,13 +590,13 @@ function LogsPage() {
           description={
             search.q || search.service || search.sev
               ? "Clear filters or widen the time range."
-              : "Send OTLP logs to http://127.0.0.1:4317 or run through parallax run."
+              : "No log records in this window — send OTLP logs to 127.0.0.1:4317/4318 or wrap a command with parallax invocation start."
           }
           icon={IconArticleFilled}
           className="rounded-xl border border-dashed"
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border/70">
+        <div className="content-enter overflow-hidden rounded-xl border border-border/70">
           {live ? (
             <div className="flex items-center gap-2 border-b border-border/70 px-3 py-2 text-xs">
               {streamStatus === "open" ? (

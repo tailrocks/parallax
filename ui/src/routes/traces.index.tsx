@@ -737,7 +737,7 @@ export function TraceTable({
             <TableCell className="text-right tabular-nums">
               {trace.spanCount}
             </TableCell>
-            <TableCell className="text-right">
+            <TableCell className="text-right tabular-nums">
               <HeatCell value={Number(trace.durationNs)} scale={durationScale}>
                 {formatDurationNs(trace.durationNs)}
               </HeatCell>
