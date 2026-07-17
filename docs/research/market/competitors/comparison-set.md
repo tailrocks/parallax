@@ -34,7 +34,7 @@ Legend for the **State** column:
 | **Observe** | Data-/SQL-centric observability on Snowflake (acquired ~$1B Jan 2026); O11y Knowledge Graph + AI SRE/o11y.ai agents. | Closed SaaS (Snowflake). | All signals (relational). | [deep-dive](parallax-vs-observe.md) |
 | **Axiom** | Serverless log/event analytics; 3-part usage pricing (ingest+query+storage); OTel-native. | Closed SaaS (OSS SDKs). | Logs + events. | [deep-dive](parallax-vs-axiom.md) |
 | **Mezmo** | Telemetry data pipeline + log analysis (ex-LogDNA); Mezmo Flow; route/optimize/govern in flight. | Closed SaaS. | Logs + pipelines (cost-governance layer). | [deep-dive](parallax-vs-mezmo.md) |
-| **Tracelo** | AI-agent tracing / debugging. | Closed. | Agent/LLM traces. | watch |
+| **Traceloop** (OpenLLMetry) | OSS Apache-2.0 OTel LLM-instrumentation SDK (auto-instrument providers/frameworks/vector-DBs → OTLP GenAI spans to any backend). *(Roster correction: "Tracelo" was a mistaken identity — tracelo.com is phone geo; real tool is Traceloop.)* | Apache-2.0 + Cloud. | LLM instrumentation layer (complementary). | [deep-dive](parallax-vs-traceloop.md) |
 
 ## C. Open-source / self-hosted observability platforms
 
