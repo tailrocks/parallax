@@ -1,5 +1,9 @@
 # Plan 123 — Fixer offline outcome residual (closed 2026-07-17)
 
+> **Pass 154:** offline unit tests re-ran green (`fixer_outcome` ×3). This does
+> **not** close research-agenda #6 live replay / Detect trigger ledger — see
+> [loop-stage-claim-status-recheck-2026-07-17.md](../loop-stage-claim-status-recheck-2026-07-17.md).
+
 ## Scope closed (offline only)
 
 | Residual | Landed surface |
