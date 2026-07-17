@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { WhereClauseEditor } from "@/components/console/where-clause-editor"
 import { gqlString, graphqlCached } from "@/lib/api"
 import {
   coerceAggregation,
@@ -36,6 +37,11 @@ import {
   resolveRangeSearch,
   type ResolvedRange,
 } from "@/lib/range"
+import {
+  serializeWhereClause,
+  whereClauseFromSearch,
+  type WhereFilter,
+} from "@/lib/where-clause"
 
 // Plan 168 metric detail view (preliminary). Runs on the existing GraphQL
 // primitives (metricSeries / histogramQuantile / metricLabels); the
@@ -48,6 +54,7 @@ interface MetricDetailSearch {
   from?: string | undefined
   to?: string | undefined
   agg?: string | undefined
+  where?: string | undefined
   groupBy?: string | undefined
   step?: string | undefined
   kind?: string | undefined
@@ -112,6 +119,16 @@ async function loadDetail(
   const groupBy = search.groupBy
     ? `, groupBy: "${gqlString(search.groupBy)}"`
     : ""
+  const whereFilters = whereClauseFromSearch(search.where)
+  const where =
+    whereFilters.length > 0
+      ? `, attributeFilters: [${whereFilters
+          .map(
+            (filter) =>
+              `{key: "${gqlString(filter.key)}", op: "${gqlString(filter.op)}", value: "${gqlString(filter.value)}"}`
+          )
+          .join(", ")}]`
+      : ""
   try {
     const data = await graphqlCached<{
       metricLabels: string[]
@@ -122,7 +139,7 @@ async function loadDetail(
       }
     }>(`{
       metricLabels(name: ${name})
-      metricQuery(name: ${name}, kind: "${gqlString(backendKind(kind))}", agg: "${gqlString(agg)}", ${window}, stepSeconds: ${stepSeconds}${groupBy}) {
+      metricQuery(name: ${name}, kind: "${gqlString(backendKind(kind))}", agg: "${gqlString(agg)}", ${window}, stepSeconds: ${stepSeconds}${groupBy}${where}) {
         kind
         effectiveStepSeconds
         series { groupValue points { tsNanos value } }
@@ -168,6 +185,7 @@ export const Route = createFileRoute("/metrics/$metricName")({
   validateSearch: (search: Record<string, unknown>): MetricDetailSearch => ({
     ...rangeSearchSchema.parse(search),
     agg: searchString(search["agg"]),
+    where: searchString(search["where"]),
     groupBy: searchString(search["groupBy"]),
     step: searchString(search["step"]),
     kind: searchString(search["kind"]),
@@ -227,6 +245,18 @@ function MetricDetailPage() {
 
   const setSearch = (patch: Partial<MetricDetailSearch>) =>
     void navigate({ search: (prev) => ({ ...prev, ...patch }) })
+
+  const whereFilters = whereClauseFromSearch(search.where)
+  const applyWhere = (filters: WhereFilter[]) =>
+    setSearch({ where: serializeWhereClause(filters) || undefined })
+  // Breakdown click-to-filter: pin one group value as a where filter.
+  const filterToGroup = (value: string) => {
+    if (!search.groupBy || value.startsWith("series-")) return
+    applyWhere([
+      ...whereFilters.filter((filter) => filter.key !== search.groupBy),
+      { key: search.groupBy, op: "=", value },
+    ])
+  }
 
   return (
     <div className="space-y-4 p-4">
@@ -303,6 +333,12 @@ function MetricDetailPage() {
             ))}
           </SelectContent>
         </Select>
+        <WhereClauseEditor
+          filters={whereFilters}
+          onApply={applyWhere}
+          keySuggestions={labels}
+          className="min-w-64 flex-1"
+        />
         <Button
           size="sm"
           variant="outline"
@@ -326,6 +362,20 @@ function MetricDetailPage() {
           <CardTitle className="text-sm">
             {agg} · {groups.length} series
           </CardTitle>
+          {search.groupBy ? (
+            <div className="flex flex-wrap gap-1 pt-1">
+              {groups.map((group) => (
+                <Badge
+                  key={group}
+                  variant="outline"
+                  className="cursor-pointer"
+                  onClick={() => filterToGroup(group)}
+                >
+                  {group}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
         </CardHeader>
         <CardContent>
           <ChartContainer config={config} className="h-[280px] w-full">
