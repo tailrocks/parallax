@@ -66,6 +66,9 @@ must not return in product output.
   contain seeded or upstream-reflected evidence.
 - Bundle output fails closed unless the separately projected GraphQL canonical
   hash exactly matches the hash embedded in the bundle-v2 object.
+- The standalone equivalence checker now recomputes bundle-v2's actual
+  `sha256-jcs:` scope, including the nested `data` exclusions; fixtures prove
+  excluded build/budget changes are stable while evidence changes are not.
 - All GraphQL responses stream through a hard 1 MiB ceiling before JSON parse;
   chunked responses cannot bypass the bound or partially append overflow bytes.
 - Oversized declared `Content-Length` is rejected before body streaming, while
