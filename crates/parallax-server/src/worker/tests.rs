@@ -136,6 +136,7 @@ fn trace_request_with_test_result() -> ExportTraceServiceRequest {
 
 async fn characterize_failure_after(
     stage: FailureStage,
+    failures: usize,
 ) -> (usize, usize, u64, usize, usize, usize) {
     let tmp = tempfile::tempdir().expect("tempdir");
     let store = Arc::new(MemoryStore::new().with_normalizers(
@@ -150,13 +151,15 @@ async fn characterize_failure_after(
     let live = crate::live::channels();
     let mut live_spans = live.spans.subscribe();
     let worker = Worker::new(store.clone(), metadata.clone(), live);
-    worker.inject_failure_once_after(stage).await;
+    worker.inject_failures_after(stage, failures).await;
     let item = IngestItem::Traces(trace_request_with_test_result(), bytes::Bytes::new());
     let mut progress = EffectProgress::default();
-    worker
-        .process_with_progress(&item, &mut progress)
-        .await
-        .expect_err("first attempt fails");
+    for _ in 0..failures {
+        worker
+            .process_with_progress(&item, &mut progress)
+            .await
+            .expect_err("injected attempt fails");
+    }
     worker
         .process_with_progress(&item, &mut progress)
         .await
@@ -292,30 +295,65 @@ async fn failure_stage_replay_behavior_is_characterized() {
     // Tuple: live broadcasts, stored spans, issue occurrences,
     // stored error rows, registered runs, stored test results.
     assert_eq!(
-        characterize_failure_after(FailureStage::Registration).await,
+        characterize_failure_after(FailureStage::Registration, 1).await,
         (1, 1, 1, 1, 1, 1),
         "registration succeeds before failure; its seen-run cache prevents a duplicate"
     );
     assert_eq!(
-        characterize_failure_after(FailureStage::Broadcast).await,
+        characterize_failure_after(FailureStage::Broadcast, 1).await,
         (1, 1, 1, 1, 1, 1),
         "completed broadcast is checkpointed before retry"
     );
     assert_eq!(
-        characterize_failure_after(FailureStage::TelemetryStorage).await,
+        characterize_failure_after(FailureStage::TelemetryStorage, 1).await,
         (1, 1, 1, 1, 1, 1),
         "completed telemetry and earlier effects are checkpointed before retry"
     );
     assert_eq!(
-        characterize_failure_after(FailureStage::IssueRecording).await,
+        characterize_failure_after(FailureStage::IssueRecording, 1).await,
         (1, 1, 1, 1, 1, 1),
         "issue recording is checkpointed before test persistence"
     );
     assert_eq!(
-        characterize_failure_after(FailureStage::TestRecording).await,
+        characterize_failure_after(FailureStage::TestRecording, 1).await,
         (1, 1, 1, 1, 1, 1),
         "the final test stage is checkpointed before retry"
     );
+}
+
+proptest::proptest! {
+    #![proptest_config(proptest::test_runner::Config {
+        cases: 32,
+        failure_persistence: None,
+        ..proptest::test_runner::Config::default()
+    })]
+
+    #[test]
+    fn completed_effects_are_not_replayed_after_late_retries(
+        stage_index in 0_usize..5,
+        failures in 1_usize..=INGEST_RETRIES,
+    ) {
+        let stage = [
+            FailureStage::Registration,
+            FailureStage::Broadcast,
+            FailureStage::TelemetryStorage,
+            FailureStage::IssueRecording,
+            FailureStage::TestRecording,
+        ][stage_index];
+        let actual = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("test runtime")
+            .block_on(characterize_failure_after(stage, failures));
+
+        proptest::prop_assert_eq!(
+            actual,
+            (1, 1, 1, 1, 1, 1),
+            "stage={:?}, failures={}",
+            stage,
+            failures,
+        );
+    }
 }
 
 #[tokio::test]

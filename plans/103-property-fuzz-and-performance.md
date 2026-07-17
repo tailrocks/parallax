@@ -21,15 +21,17 @@
   fixpoints, OTLP normalize determinism proptest.
 - Trace parent-graph traversal is cycle-safe and permutation-stable under a
   bounded seeded proptest; unattached identifiers are canonicalized.
+- Worker late-retry no-replay is covered across every effect checkpoint and
+  generated retry depths by the real live/storage/metadata effect oracle.
 - Six `fuzz/` boundaries + PR `fuzz-bench` lane + nightly
   `scheduled-measurement.yml`; drift gate in `parallax-xtask`.
 - Criterion benches + `bench-alloc/`; Step-6 advanced tools rejected for now.
 
 ## Residual only
 
-1. ~~**Rust serialization fixpoint**~~: flaky-state record JSON fixpoint proptest
-   landed (`parallax-model` serde_contract). Still open: plan-099 late-retry
-   no-replay properties.
+1. ~~**Rust properties**~~: flaky-state record JSON fixpoint
+   (`parallax-model` serde_contract) and plan-099 late-retry no-replay
+   properties landed.
 2. **UI properties** (partial 147 owners): live merge/identity/decoder tests
    landed with 147; still open: route-search round trips; Query-key identity;
    feature state machines (waits remaining 147/148).
@@ -39,7 +41,7 @@
 
 ## Done Criteria
 
-- [ ] Residual Rust properties (trace trees, serialization, retry no-replay)
+- [x] Residual Rust properties (trace trees, serialization, retry no-replay)
       have seeded coverage with oracles.
 - [ ] UI search/decoder/Query/live/state properties have bounded Bun coverage
       once 133/147/148 establish owners.

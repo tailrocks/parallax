@@ -1,14 +1,12 @@
 import { createRouter as createTanStackRouter } from "@tanstack/react-router"
-import type { QueryClient } from "@tanstack/react-query"
 
 import { RouteErrorPanel, RouteNotFoundPanel, RoutePendingPanel } from "@/layout/route-boundaries"
 import { createAppQueryClient } from "@/platform/query/client"
 import { installBrowserQueryClient } from "@/platform/query/graphql-query"
 import { routeTree } from "./routeTree.gen"
+import type { AppRouterContext } from "@/router-context"
 
-export interface AppRouterContext {
-  queryClient: QueryClient
-}
+export type { AppRouterContext } from "@/router-context"
 
 export function getRouter() {
   const queryClient = createAppQueryClient()

@@ -127,11 +127,6 @@ impl Worker {
     }
 
     #[cfg(test)]
-    async fn inject_failure_once_after(&self, stage: FailureStage) {
-        self.inject_failures_after(stage, 1).await;
-    }
-
-    #[cfg(test)]
     async fn inject_failures_after(&self, stage: FailureStage, attempts: usize) {
         *self.fail_after.lock().await = Some((stage, attempts));
     }

@@ -4,7 +4,7 @@ import { ThemeProvider } from "next-themes"
 import appCss from "../styles.css?url"
 import { ParallaxShell, RouteErrorPanel, RouteNotFoundPanel, RoutePendingPanel } from "@/layout"
 import { AppQueryProvider } from "@/platform/query/provider"
-import type { AppRouterContext } from "@/router"
+import type { AppRouterContext } from "@/router-context"
 
 export const Route = createRootRouteWithContext<AppRouterContext>()({
   head: () => ({

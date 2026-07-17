@@ -4371,7 +4371,7 @@ ceiling = 635
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/src/serve.rs"
-ceiling = 521
+ceiling = 565
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4406,7 +4406,7 @@ ceiling = 405
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-xtask/src/policy/ui_tests.rs"
-ceiling = 456
+ceiling = 459
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4497,7 +4497,7 @@ ceiling = 105
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-server/src/serve.rs::start_assembled"
-ceiling = 106
+ceiling = 107
 
 [[limits]]
 metric = "rust.function-lines"
@@ -6672,7 +6672,7 @@ ceiling = 1135
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/examples/browser_full_stack_serve.rs"
-ceiling = 586
+ceiling = 659
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
@@ -6817,7 +6817,7 @@ ceiling = 8
 [[limits]]
 metric = "typescript.assertions"
 scope = "ui/src/features/traces/tests/model/merge-live-spans.test.ts"
-ceiling = 7
+ceiling = 10
 
 [[limits]]
 metric = "typescript.assertions"
@@ -6917,7 +6917,7 @@ ceiling = 121
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/platform/sse/tests/use-live-stream.test.tsx:84"
-ceiling = 158
+ceiling = 152
 
 [[limits]]
 metric = "rust.assertions"
@@ -7007,7 +7007,7 @@ ceiling = 8
 [[limits]]
 metric = "typescript.assertions"
 scope = "ui/src/features/traces/tests/model/merge-live-spans.test.ts"
-ceiling = 7
+ceiling = 10
 
 [[limits]]
 metric = "typescript.assertions"
@@ -7107,7 +7107,7 @@ ceiling = 121
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/platform/sse/tests/use-live-stream.test.tsx:84"
-ceiling = 158
+ceiling = 152
 
 [[rust_suppressions]]
 crate_name = "parallax-metadata"
@@ -7260,9 +7260,24 @@ reason = "private sentry-ack persistence composition is converted at the typed m
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-server/src/test_flakiness.rs"
-ceiling = 10
+ceiling = 14
 
 [[limits]]
 metric = "rust.inline-test-modules"
 scope = "crates/parallax-server/src/test_flakiness.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-analysis/src/junit_reconcile.rs"
+ceiling = 12
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/examples/browser_full_stack_serve.rs::handle_control"
+ceiling = 105
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-analysis/src/junit_reconcile.rs"
 ceiling = 1

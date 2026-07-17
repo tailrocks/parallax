@@ -66,6 +66,7 @@ cross-release-vendored = [
 [dev-dependencies]
 flate2 = "1"
 hmac = "0.12"
+proptest = { workspace = true }
 reqwest = { workspace = true }
 tempfile = "3"
 tower = { version = "0.5", features = ["util"] }

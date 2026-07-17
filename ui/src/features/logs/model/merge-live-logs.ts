@@ -16,7 +16,20 @@ export interface MergeLiveLogsResult<T extends LiveLogIdentity> {
 
 function logIdentityKey(row: LiveLogIdentity): string {
   // Collision-resistant domain key: timestamp + body + service + severity.
-  return `${row.tsNanos}\0${row.body}\0${row.service ?? ""}\0${row.severity ?? ""}`
+  // Concat without template intermediates for the hot path.
+  return row.tsNanos + "\0" + row.body + "\0" + (row.service ?? "") + "\0" + (row.severity ?? "")
+}
+
+function compareNanosNewestFirst(a: string, b: string): number {
+  if (a.length === b.length) {
+    if (a === b) return 0
+    return a < b ? 1 : -1
+  }
+  // Rare unequal digit length — numeric compare.
+  const av = BigInt(a)
+  const bv = BigInt(b)
+  if (av === bv) return 0
+  return av < bv ? 1 : -1
 }
 
 /**
@@ -34,20 +47,18 @@ export function mergeLiveLogs<T extends LiveLogIdentity>(
   }
 
   const seen = new Set<string>()
-  for (const row of current) {
-    seen.add(logIdentityKey(row))
+  for (let i = 0; i < current.length; i += 1) {
+    seen.add(logIdentityKey(current[i]!))
   }
 
-  const orderedIncoming = [...incoming].sort((a, b) => {
-    const av = BigInt(a.tsNanos)
-    const bv = BigInt(b.tsNanos)
-    if (av === bv) return 0
-    return av < bv ? 1 : -1
-  })
+  // Sort a shallow copy only; never mutate caller's incoming.
+  const orderedIncoming = incoming.slice()
+  orderedIncoming.sort((a, b) => compareNanosNewestFirst(a.tsNanos, b.tsNanos))
 
   let duplicates = 0
   const fresh: T[] = []
-  for (const row of orderedIncoming) {
+  for (let i = 0; i < orderedIncoming.length; i += 1) {
+    const row = orderedIncoming[i]!
     const key = logIdentityKey(row)
     if (seen.has(key)) {
       duplicates += 1
@@ -61,10 +72,20 @@ export function mergeLiveLogs<T extends LiveLogIdentity>(
     return { items: current, duplicates, dropped: 0 }
   }
 
-  const merged = [...fresh, ...current]
-  if (merged.length <= maxVisible) {
-    return { items: merged, duplicates, dropped: 0 }
+  const total = fresh.length + current.length
+  if (total <= maxVisible) {
+    return { items: fresh.concat(current as T[]), duplicates, dropped: 0 }
   }
-  const dropped = merged.length - maxVisible
-  return { items: merged.slice(0, maxVisible), duplicates, dropped }
+
+  const dropped = total - maxVisible
+  // Prefer fresh (newest) then fill remaining capacity from current head.
+  if (fresh.length >= maxVisible) {
+    return { items: fresh.slice(0, maxVisible), duplicates, dropped }
+  }
+  const keepFromCurrent = maxVisible - fresh.length
+  return {
+    items: fresh.concat((current as T[]).slice(0, keepFromCurrent)),
+    duplicates,
+    dropped,
+  }
 }
