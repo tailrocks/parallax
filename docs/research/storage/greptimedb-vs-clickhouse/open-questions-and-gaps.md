@@ -341,3 +341,15 @@ Highest remaining unchanged: (1) workload mix shares (2) server 1M/5M (3) trial 
 Laptop engine smoke remains **saturated** for direction; keep pin-watch +
 comparator completeness only unless pin bumps.
 
+## Run 440 (2026-07-18) — still not done after 423–439
+
+**Not done.** Highest remaining unchanged (product / server):
+
+1. Workload mix A1–A7 filled shares
+2. Server 1M/5M four-way
+3. Vendor trial quotes
+4. GB–TB cold S3
+5. Cluster D2 + product D3
+
+Laptop cycle closed PromQL partial surface (423/439) and re-verified load-bearing
+holds (join, TTL, FT, projection, adopt-native, append DELETE). **No pin bump.**
