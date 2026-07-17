@@ -2,17 +2,12 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: open research packet · Created 2026-06-18 · Consultation protocol updated 2026-07-09 · **Several items empirically confirmed by the 2026-06-18 spike on
+Status: open research packet · Created 2026-06-18 · Consultation protocol updated 2026-07-09 ·
+**Pass 69 (2026-07-17):** docs still mark Traces experimental on **v1.1** line; engine pin
+**v1.1.3**. **Several items empirically confirmed by the 2026-06-18 spike on
 GreptimeDB v1.1.0** (see [native-otel-migration-plan.md](native-otel-migration-plan.md) → "Spike
-results"). Confirmed-by-spike: **#1, #3, #4, #5** (auto-widen-safe custom columns/indexes, indexing
-native logs post-create, adding columns to native traces, log attribute promotion). Still genuinely
-for the team: **#2** (traces GA *commitment/policy* — it works on v1.1.0), **#6** (blessing on the
-high-card pattern — it works), **#7** (forward perf), **#8** (exp-histogram timeline). Detailed
-questions to review with the GreptimeDB team on the next sync. They back the native-OTLP adoption decisions in
-[native-otel-migration-plan.md](native-otel-migration-plan.md) and
-[../decisions/native-otel-tables.md](../decisions/native-otel-tables.md). Each item states our
-context, our current assumption, the exact question, why it matters to Parallax, and our fallback if
-the answer is "no". Ranked load-bearing first.
+results"). Confirmed-by-spike: **#1, #3, #4, #5**. Still for the team: **#2** (traces GA
+*commitment/policy* — works on v1.1.x, docs still experimental), **#6**, **#7**, **#8**.
 
 Implementation has moved beyond the original future-tense framing:
 `parallax-greptime` ships native OTLP/HTTP forwarding, SQL/Arrow HTTP reads,
@@ -74,6 +69,12 @@ table, a GreptimeDB pull request, or a major deviation from native OTLP tables:
   us, or a clear migration/versioning contract if it does.
 - **Fallback if no.** Pin a GreptimeDB version, gate upgrades behind our own validation, and isolate
   trace reads behind our adapter so a model change is a localized fix.
+- **Pass 69 recheck (2026-07-17):** GreptimeDB docs **v1.1** Traces overview still banners
+  **"This section currently in the experimental stage and may be adjusted in future versions"**
+  ([docs.greptime.com traces overview](https://docs.greptime.com/user-guide/traces/overview/),
+  fetched live). Engine pin is **v1.1.3** (works for Parallax adapter) but **docs GA commitment
+  still not published**. Question **#2 remains open** for the team — do not treat "it works on
+  v1.1.x" as vendor GA. Fallback (pin version + adapter isolation) still correct.
 
 ## 3. Indexing the native logs table after creation (load-bearing)
 
