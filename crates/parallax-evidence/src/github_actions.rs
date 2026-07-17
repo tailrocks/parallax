@@ -3,6 +3,8 @@
 //! Read-only product evidence adapter. Provider text is untrusted. Flaky labels
 //! require multi-attempt evidence — a single retry is never enough.
 
+use std::collections::BTreeMap;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -27,7 +29,7 @@ pub struct NormalizedCiAttempt {
     pub lossiness: Vec<String>,
 }
 
-/// Flaky claim requires ≥2 distinct failed attempts for the same test identity.
+/// Flaky claim requires mixed outcomes across distinct attempts for one test.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct FlakyClaimEvidence {
     pub test_name: String,
@@ -40,6 +42,8 @@ pub struct FlakyClaimEvidence {
 pub enum FlakyClaimError {
     InsufficientAttempts,
     SingleAttemptOnly,
+    ConflictingAttempt,
+    TooManyAttempts,
 }
 
 impl FlakyClaimError {
@@ -48,6 +52,8 @@ impl FlakyClaimError {
         match self {
             Self::InsufficientAttempts => "flaky claim requires multi-attempt evidence",
             Self::SingleAttemptOnly => "a single retry is not flaky evidence",
+            Self::ConflictingAttempt => "one attempt identity has conflicting outcomes",
+            Self::TooManyAttempts => "attempt evidence exceeds the supported count",
         }
     }
 }
@@ -69,11 +75,13 @@ pub fn normalize_workflow_job(event_name: &str, body: &Value) -> Option<Normaliz
         .or_else(|| body.pointer("/workflow_run/id"))
         .and_then(Value::as_i64)?;
     let job_id = job.get("id").and_then(Value::as_i64)?;
-    let attempt = job
-        .get("run_attempt")
-        .and_then(Value::as_u64)
-        .unwrap_or(1)
-        .clamp(1, u64::from(u32::MAX)) as u32;
+    let attempt = u32::try_from(
+        job.get("run_attempt")
+            .and_then(Value::as_u64)
+            .unwrap_or(1)
+            .clamp(1, u64::from(u32::MAX)),
+    )
+    .unwrap_or(u32::MAX);
 
     let mut lossiness = Vec::new();
     let repo_full_name = body
@@ -157,20 +165,31 @@ fn encode_hex(bytes: &[u8]) -> String {
     out
 }
 
-/// Build a flaky claim only when there are ≥2 failed attempts (not any retry).
+/// Build a flaky claim only from mixed outcomes across distinct attempt IDs.
 pub fn flaky_claim_from_attempts(
     test_name: &str,
     attempts: &[(String, bool)],
 ) -> Result<FlakyClaimEvidence, FlakyClaimError> {
-    if attempts.len() < 2 {
+    let mut canonical = BTreeMap::new();
+    for (attempt_id, passed) in attempts {
+        if canonical
+            .insert(attempt_id.as_str(), *passed)
+            .is_some_and(|previous| previous != *passed)
+        {
+            return Err(FlakyClaimError::ConflictingAttempt);
+        }
+    }
+    if canonical.len() < 2 {
         return Err(FlakyClaimError::InsufficientAttempts);
     }
-    let fail_count = attempts.iter().filter(|(_, passed)| !*passed).count() as u32;
-    let pass_count = attempts.iter().filter(|(_, passed)| *passed).count() as u32;
+    let fail_count = u32::try_from(canonical.values().filter(|passed| !**passed).count())
+        .map_err(|_| FlakyClaimError::TooManyAttempts)?;
+    let pass_count = u32::try_from(canonical.values().filter(|passed| **passed).count())
+        .map_err(|_| FlakyClaimError::TooManyAttempts)?;
     if fail_count < 1 || pass_count < 1 {
         // Fail-only multi-attempt is broken, not flaky; pass-only is healthy.
         // Still require both sides for the flaky claim path.
-        if attempts.len() == 2
+        if canonical.len() == 2
             && fail_count + pass_count == 2
             && (fail_count == 0 || pass_count == 0)
         {
@@ -182,7 +201,7 @@ pub fn flaky_claim_from_attempts(
     }
     // Explicit: a lone fail→retry-pass pair with only one fail is flaky only if
     // we observed ≥1 fail and ≥1 pass across ≥2 attempts.
-    let attempt_ids = attempts.iter().map(|(id, _)| id.clone()).collect();
+    let attempt_ids = canonical.keys().map(|id| (*id).to_owned()).collect();
     Ok(FlakyClaimEvidence {
         test_name: test_name.to_owned(),
         attempt_ids,
@@ -242,6 +261,30 @@ mod tests {
         assert_eq!(claim.fail_count, 1);
         assert_eq!(claim.pass_count, 1);
         assert_eq!(claim.attempt_ids.len(), 2);
+    }
+
+    #[test]
+    fn flaky_attempt_identity_is_redelivery_safe_and_canonical() {
+        assert_eq!(
+            flaky_claim_from_attempts("t", &[("a1".into(), false), ("a1".into(), false)]),
+            Err(FlakyClaimError::InsufficientAttempts)
+        );
+        assert_eq!(
+            flaky_claim_from_attempts("t", &[("a1".into(), false), ("a1".into(), true)]),
+            Err(FlakyClaimError::ConflictingAttempt)
+        );
+
+        let claim = flaky_claim_from_attempts(
+            "t",
+            &[
+                ("a2".into(), true),
+                ("a1".into(), false),
+                ("a2".into(), true),
+            ],
+        )
+        .expect("distinct fail then pass is flaky");
+        assert_eq!(claim.attempt_ids, ["a1", "a2"]);
+        assert_eq!((claim.fail_count, claim.pass_count), (1, 1));
     }
 
     #[test]

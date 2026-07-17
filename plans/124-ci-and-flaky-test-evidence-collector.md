@@ -20,7 +20,8 @@
 1. Record exact APIs/events/report formats, repos, permissions, retention,
    output budgets, claim wording.
 2. ~~Normalized job/attempt IDs + flaky multi-attempt gate~~ landed
-   (`parallax-evidence::github_actions`).
+   (`parallax-evidence::github_actions`), including idempotent redelivery,
+   canonical ordering, and fail-closed conflicting outcomes per attempt ID.
 3. Signature-verified webhook + idempotent backfill; Turso state; doctor CLI.
 4. Bundle correlation without root-cause overclaim; dated coverage rows.
 
