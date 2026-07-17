@@ -1,27 +1,30 @@
 # Parallax vs OpenObserve
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 48
-> Cloud pricing unit rates; **pass 94** EE free ≤50 GB/day + AI/SDR gates;
-> **pass 102** pin recheck; **pass 119** pricing primary re-fetch — still
-> **$0.50/GB** ingest + **$0.01/GB** query; Self-Hosted EE free ≤**50 GB/day**).
-> Sources: [openobserve.ai](https://openobserve.ai/) + [pricing](https://openobserve.ai/pricing/) + [AI SRE](https://openobserve.ai/ai-sre/) + [MCP server](https://openobserve.ai/mcp-server/), [github.com/openobserve/openobserve](https://github.com/openobserve/openobserve), and the legacy [openobserve-deep-research.md](../openobserve-deep-research.md) (2026-06-22) as a lead.
+> Cloud pricing; **pass 94** EE gates; **pass 102** pin; **pass 119** pricing;
+> **pass 155** pin + MCP primary docs). Still **v0.91.2** latest stable
+> (2026-07-17); **20,196★**; AGPL-3.0; **v0.92.0-rc2** exists as prerelease only.
+> Sources: [pricing](https://openobserve.ai/pricing/), [MCP marketing](https://openobserve.ai/mcp-server/),
+> **[MCP docs](https://openobserve.ai/docs/integration/ai/mcp/)**, GitHub.
+>
+> **Pass 155 MCP nuance (primary docs, not marketing):** MCP is **Enterprise
+> only**. Tool list includes many **mutating/destructive** tools (⚠️ legend:
+> `DeleteAlert`, `DeleteDashboard`, `StreamDelete`, `CreateAlert`, user/org
+> admin tools, etc.). Marketing page FAQ claim of “read-only tool execution /
+> destructive actions not exposed” is **contradicted** by the docs tool table —
+> treat marketing as **stale/overclaim** vs docs. Parallax’s free **read-only**
+> stdio MCP remains a distinct posture (value unproven A1).
 >
 > **Bottom line up front:** OpenObserve is the **nearest open-source competitor
 > on Parallax's own architectural axes** — Rust engine, single binary, self-host,
-> OTLP-native, object-storage-Parquet, even the same DataFusion query layer
-> Parallax considered. **On every one of those shared axes, OpenObserve is shipping
-> and mature at scale today; Parallax is pre-release.** This is the hardest no-bias
-> test in the set, so it must be written plainly: on Rust + single-binary +
-> self-host + OTLP + Parquet, **OpenObserve is ahead of Parallax.** Parallax's
-> remaining wedge narrows to: Sentry-envelope compatibility, derived production
-> error events + fix-outcome loop, a **read-only** safe agent projection
-> (OpenObserve's MCP is Enterprise-gated + write-capable), **Apache-2.0 vs
-> AGPL-3.0**, and the *unproven* bounded redacted agent bundle thesis (A1 gate).
+> OTLP-native, object-storage-Parquet. **On those shared axes, OpenObserve is
+> shipping and mature; Parallax is pre-release.** Parallax edges: Sentry-envelope,
+> derived errors + outcome loop, **Apache-2.0 vs AGPL**, free read-only MCP vs
+> **EE mutating MCP**, unproven bounded redacted bundle (A1).
 
 ## What each product is
 
-- **OpenObserve** ("O2") — open-source (**AGPL-3.0** core, relicensed from Apache-2.0 in Nov 2023), cloud-native observability platform unifying logs, metrics, traces, frontend/RUM (+ session replay), data pipelines, and LLM observability in a **single Rust binary**. Positioned as a Datadog/Splunk/Elasticsearch alternative; headline "140× lower storage cost" from Parquet-on-object-storage. Ships an **AI SRE** + **140+-tool MCP server** (Enterprise-gated, write/destructive by default). OpenObserve Inc.; Series A **$10M** (~2026-04-29, Nexus + Dell Technologies Capital). **Latest: v0.91.2** (GitHub, 2026-07-17 — **pass 102:** still latest tag);
-**20,196★** (GitHub API, 2026-07-17). Rust engine (~26% by line; TS/Vue is the UI).
+- **OpenObserve** ("O2") — open-source (**AGPL-3.0** core, relicensed from Apache-2.0 in Nov 2023), cloud-native observability platform unifying logs, metrics, traces, frontend/RUM (+ session replay), data pipelines, and LLM observability in a **single Rust binary**. Positioned as a Datadog/Splunk/Elasticsearch alternative; headline "140× lower storage cost" from Parquet-on-object-storage. Ships an **AI SRE** + **broad MCP server** (**Enterprise-only** per docs; **mutating** tools including delete/create alerts, streams, dashboards, users — pass **155**). OpenObserve Inc.; Series A **$10M** (~2026-04-29). **Latest stable: v0.91.2** (2026-07-17); **20,196★**; **v0.92.0-rc2** prerelease only.
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable **execution-context engine**: OTLP-native ingest of traces/logs/metrics + CLI/agent traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, serves bounded/redacted evidence bundles to humans and coding agents. GreptimeDB + Turso. **Pre-release.**
 
 These overlap maximally on architecture — both Rust, single-binary, self-host, OTLP-native, object-storage-columnar. OpenObserve is the closest competitor on Parallax's own bet. The honest differentiator is product *intent*: OpenObserve is a general full-platform Datadog-alternative; Parallax is a narrow agent-context engine for production incidents.
