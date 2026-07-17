@@ -298,6 +298,9 @@ Full combination **still not closed**.
 
 **Pass 337 recheck (2026-07-18):** Traceway **1,024★**; TMA1 **alpha12** → **34th UNFIRED**; Bugsink **v2.4.0**; combo **not closed**.
 
+**Pass 342 recheck (2026-07-18):** GitHub API **rate-limited**; last live pins (pass **337**/same day): Traceway **1,024★**, TMA1 **alpha12**, Bugsink **v2.4.0** — treat as **35th UNFIRED** pending next live star/tag poll. Combo **not closed** on prior primary.
+
+
 **Pass 258 recheck (2026-07-18):** **Maple + Uptrace** —
 
 | Product | Pin | Watch |

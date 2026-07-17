@@ -120,6 +120,9 @@ OCSF GA still **`1.8.0`**; `/1.9.0/` still **404**. **Still not commoditized.**
 
 **Pass 334 primary re-fetch (2026-07-18):** #1185 still **open/idle** (2025-10-24). **Still not commoditized.**
 
+**Pass 342 primary re-fetch (2026-07-18):** GitHub API **rate-limited** this pass; last live pin (pass **334**/same day): #1185 **open/idle** (`updated_at` **2025-10-24**). OCSF last live pin **1.8.0**. **Still not commoditized** (no contrary primary). Next pass re-poll when API quota recovers.
+
+
 
 
 
