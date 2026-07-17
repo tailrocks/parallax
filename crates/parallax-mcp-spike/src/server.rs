@@ -268,7 +268,7 @@ mod tests {
     use super::*;
     use rmcp::{
         ClientHandler,
-        model::{CallToolRequestParams, ReadResourceRequestParams},
+        model::{CallToolRequestParams, GetPromptRequestParams, ReadResourceRequestParams},
     };
 
     struct VersionedClient(ProtocolVersion);
@@ -649,33 +649,34 @@ mod tests {
                 .collect::<Vec<_>>(),
             ["parallax_agent_session_show", "parallax_issue_context"]
         );
-        assert!(
-            client
-                .peer()
-                .list_prompts(None)
-                .await
-                .expect("prompts/list response")
-                .prompts
-                .is_empty()
-        );
-        assert!(
-            client
-                .peer()
-                .list_resources(None)
-                .await
-                .expect("resources/list response")
-                .resources
-                .is_empty()
-        );
-        assert!(
-            client
-                .peer()
-                .list_resource_templates(None)
-                .await
-                .expect("resources/templates/list response")
-                .resource_templates
-                .is_empty()
-        );
+        let prompts = client
+            .peer()
+            .list_prompts(None)
+            .await
+            .expect("prompts/list response");
+        assert!(prompts.prompts.is_empty());
+        assert_eq!(prompts.next_cursor, None);
+        let prompt_error = client
+            .peer()
+            .get_prompt(GetPromptRequestParams::new("forbidden"))
+            .await
+            .expect_err("prompt reads must remain unavailable");
+        assert!(prompt_error.to_string().contains("method not found"));
+
+        let resources = client
+            .peer()
+            .list_resources(None)
+            .await
+            .expect("resources/list response");
+        assert!(resources.resources.is_empty());
+        assert_eq!(resources.next_cursor, None);
+        let resource_templates = client
+            .peer()
+            .list_resource_templates(None)
+            .await
+            .expect("resources/templates/list response");
+        assert!(resource_templates.resource_templates.is_empty());
+        assert_eq!(resource_templates.next_cursor, None);
         let resource_error = client
             .peer()
             .read_resource(ReadResourceRequestParams::new("parallax://forbidden"))

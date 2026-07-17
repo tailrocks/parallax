@@ -115,9 +115,9 @@ must not return in product output.
   Claude registration/discovery fixtures remain unfinished.
 - The wire fixture also invokes representative forbidden shell and management
   names and requires protocol-level `tool not found` failures.
-- Wire-level prompt/resource/template catalogs must remain empty, and direct
-  resource reads must fail method-not-found while those capabilities are
-  unapproved.
+- Wire-level prompt/resource/template catalogs must remain empty with no next
+  cursor, and direct prompt/resource reads must fail method-not-found while
+  those capabilities are unapproved.
 - Missing bundles/sessions now map to stable MCP resource-not-found codes,
   distinct from secret-free internal transport/parse failures.
 - Initialization overrides the SDK's echo-any-known-version behavior: only the
