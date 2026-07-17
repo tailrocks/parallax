@@ -40,7 +40,9 @@ Originated in notebook-based prompt experimentation + LLM-as-judge evals.
 
 | | Phoenix | Source |
 |---|---|---|
-| **Latest release** | **arize-phoenix-v18.1.0** (2026-07-17) | [github.com/Arize-ai/phoenix/releases](https://github.com/Arize-ai/phoenix/releases) |
+| **Latest release** | **arize-phoenix-v18.1.0** (2026-07-17; still latest pass **168**) | [github.com/Arize-ai/phoenix/releases](https://github.com/Arize-ai/phoenix/releases) |
+| **Stars** | **10,600** (pass **168**) | GitHub API |
+| **MCP package** | **@arizeai/phoenix-mcp@4.2.0** — prompts include **write** tools (`upsert-prompt`, tags); projects list/get | npm registry + package README |
 | **Cadence** | Very high version number, fast-moving (v18 line) | releases |
 | **Language** | **Python** (core); TypeScript UI | GitHub |
 | **License** | **Elastic License 2.0 (ELv2)** — *not* Apache/OSI-open. Free to use + self-host; restricts offering it as a **managed service**. Self-host is 100% free, **no feature gates, no usage limits**. | [arize.com/docs/phoenix/self-hosting/license](https://arize.com/docs/phoenix/self-hosting/license), [GitHub](https://github.com/arize-ai/phoenix) |
