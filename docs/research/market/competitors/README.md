@@ -51,7 +51,7 @@ Prefer hard, current, sourced numbers: pricing tiers, ingest throughput, query l
 | **Telemetry store** | GreptimeDB | Proprietary closed | ClickHouse+Kafka | Mimir/Loki/Tempo/Py | proprietary | proprietary | ClickHouse | Parquet/DataFusion | ClickHouse+Prom | Postgres/sel. |
 | **Self-hostable?** | ✅ (target) | ❌ SaaS only | ✅ heavy (~40 ctnr) | ✅ (OSS bits) | 🟡 limited | ❌ | ✅ (~5 ctnr) | ✅ (1 binary) | ✅ (~5 ctnr) | ✅ |
 | **Maturity** | 🏗 pre-release | ✅ incumbent | ✅ incumbent | ✅ incumbent | ✅ mature | ✅ incumbent | ✅ mature | ✅ mature | ✅ mature | ✅ mature |
-| Deep-dive | — | [✅](parallax-vs-datadog.md) | [✅](parallax-vs-sentry.md) | [✅](parallax-vs-grafana.md) | [✅](parallax-vs-honeycomb.md) | 🔴 missing | [✅](parallax-vs-signoz.md) | 🟡 legacy | 🟡 legacy | [✅](parallax-vs-langfuse.md) |
+| Deep-dive | — | [✅](parallax-vs-datadog.md) | [✅](parallax-vs-sentry.md) | [✅](parallax-vs-grafana.md) | [✅](parallax-vs-honeycomb.md) | [✅](parallax-vs-new-relic.md) | [✅](parallax-vs-signoz.md) | [✅](parallax-vs-openobserve.md) | 🟡 legacy | [✅](parallax-vs-langfuse.md) |
 
 All identity cells except Datadog are **🟡 inherited** from legacy market notes (2026-05/06) — verify on each product's deep-dive pass.
 

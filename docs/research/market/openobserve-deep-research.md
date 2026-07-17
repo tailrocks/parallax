@@ -1,5 +1,12 @@
 # OpenObserve Deep Research
 
+> **Superseded as the canonical comparison** by
+> [`competitors/parallax-vs-openobserve.md`](competitors/parallax-vs-openobserve.md)
+> (no-bias deep-dive, verified 2026-07-17: v0.91.1, ~20k★, AGPL-3.0; OSS free
+> unlimited + self-host Enterprise free ≤50GB/day; AI SRE/MCP Enterprise-gated).
+> This legacy note (2026-06-22) is a **source** — architecture, Series A, tantivy
+> correction still useful; re-verify specifics in the canonical deep-dive.
+
 Research date: 2026-06-22
 
 This note gives OpenObserve ("O2") a Maple-style standalone deep-dive, consolidating

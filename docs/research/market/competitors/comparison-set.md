@@ -41,7 +41,7 @@ Legend for the **State** column:
 | Product | What it is | License / model | Primary signal focus | State |
 | --- | --- | --- | --- | --- |
 | **SigNoz** | OTLP-native full obs on ClickHouse; most mature MCP. | MIT-Expat core + proprietary `ee/`. | All signals. | [deep-dive](parallax-vs-signoz.md) |
-| **OpenObserve** | Rust single-binary, object-storage-native (Parquet/DataFusion); AI SRE + 140+ MCP. | AGPL-3.0 + commercial EE. | All signals. | stub (legacy [openobserve-deep-research.md](../openobserve-deep-research.md)) |
+| **OpenObserve** | Rust single-binary, object-storage-native (Parquet/DataFusion); AI SRE + 140+ MCP. | AGPL-3.0 + commercial EE. | All signals. | [deep-dive](parallax-vs-openobserve.md) |
 | **Coroot** | eBPF zero-instrumentation obs + 2-stage AI RCA; safest MCP (OAuth+RBAC). | Apache-2.0 + commercial EE. | Traces/logs/profiles (eBPF). | stub (legacy [coroot-deep-research.md](../coroot-deep-research.md)) |
 | **Highlight.io** | Session replay + error tracking + logs + traces; OSS SaaS. | Apache-2.0 (self-host) + Cloud. | Errors + RUM + logs. | stub |
 | **Uptrace** | OTLP on ClickHouse/Postgres; tracing-first. | Open core (BSL-adjacent). | Traces + metrics. | watch |
