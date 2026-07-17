@@ -34,7 +34,11 @@ Legend for the **State** column:
 | **Observe** | Data-/SQL-centric observability on Snowflake (acquired ~$1B Jan 2026); O11y Knowledge Graph + AI SRE/o11y.ai agents. | Closed SaaS (Snowflake). | All signals (relational). | [deep-dive](parallax-vs-observe.md) |
 | **Axiom** | Serverless log/event analytics; 3-part usage pricing (ingest+query+storage); OTel-native. | Closed SaaS (OSS SDKs). | Logs + events. | [deep-dive](parallax-vs-axiom.md) |
 | **Mezmo** | Telemetry data pipeline + log analysis (ex-LogDNA); Mezmo Flow; route/optimize/govern in flight. | Closed SaaS. | Logs + pipelines (cost-governance layer). | [deep-dive](parallax-vs-mezmo.md) |
-| **Traceloop** (OpenLLMetry) | OSS Apache-2.0 OTel LLM-instrumentation SDK (auto-instrument providers/frameworks/vector-DBs → OTLP GenAI spans to any backend). *(Roster correction: "Tracelo" was a mistaken identity — tracelo.com is phone geo; real tool is Traceloop.)* | Apache-2.0 + Cloud. | LLM instrumentation layer (complementary). | [deep-dive](parallax-vs-traceloop.md) |
+
+> **Roster correction (pass 31):** the legacy "**Tracelo**" row was removed —
+> `tracelo.com` is a phone-geolocation service, not an observability product. The
+> intended LLM-instrumentation tool is **Traceloop / OpenLLMetry**, deep-dived in
+> [section C](parallax-vs-traceloop.md) as the LLM-instrumentation sibling of Odigos.
 
 ## C. Open-source / self-hosted observability platforms
 
@@ -47,6 +51,7 @@ Legend for the **State** column:
 | **Uptrace** | OTLP tracing-first APM on ClickHouse+Postgres; Bun-author lineage. | **AGPL** (Community free) + paid editions + Cloud. | Traces + metrics + logs. | [deep-dive](parallax-vs-uptrace.md) |
 | **HyperDX** | OTLP + multi-protocol on **ClickHouse**; full-stack incl. **session replay**; = ClickHouse Inc.'s **ClickStack**. | **MIT** + Cloud. | All signals + RUM/replay. | [deep-dive](parallax-vs-hyperdx.md) |
 | **Odigos** | eBPF auto-instrumentation to OTLP (collector/instrumentation layer, not a backend). | Apache-2.0. | Auto-instrumentation. | [deep-dive](parallax-vs-odigos.md) |
+| **Traceloop** (OpenLLMetry) | OSS Apache-2.0 OTel **LLM-instrumentation SDK** (auto-instrument providers/frameworks/vector-DBs/MCP → OTLP GenAI spans to any backend); drove GenAI semantic conventions into upstream OTel; **ServiceNow-acquired (~$60–80M) → AI Control Tower** (OSS project stays Apache-2.0, active v0.62.1). The LLM-instrumentation sibling of Odigos. | Apache-2.0 + Cloud (now ServiceNow). | LLM instrumentation layer (complementary). | [deep-dive](parallax-vs-traceloop.md) |
 | **Maple** | OTLP single-binary best local UX; Turso metadata sibling choice. | FSL-1.1 (TS/Bun). | All signals. | [deep-dive](parallax-vs-maple.md) |
 | **TMA1** | Nearest architectural mirror: Go single binary + embedded GreptimeDB + read-only MCP context-bundle for coding agents. | Apache-2.0. | AI-agent cost/sessions/traces. | [deep-dive](parallax-vs-tma1.md) |
 

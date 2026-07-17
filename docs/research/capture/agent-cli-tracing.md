@@ -180,7 +180,7 @@ looking for agent observability:
 | Braintrust | Captures LLM calls, tool calls, nested application logic, token usage, errors, scores, human feedback, and eval datasets. | Outcome/evaluation loop is already seen as core, not optional. |
 | Datadog LLM Observability | Traces prompts, model responses, retrieval steps, and tool calls, and correlates AI behavior with backend services and infra. | Incumbents are joining agent traces to app/infra telemetry. |
 | Helicone Sessions | Groups related LLM calls, vector DB queries, and tool calls to trace an entire agent flow. | Session-level grouping is table stakes for multi-call agents. |
-| OpenLLMetry / Traceloop | Open-source LLM observability built on OpenTelemetry, exportable to existing observability stacks. | OTEL-native agent telemetry is becoming the interoperability path. |
+| OpenLLMetry / Traceloop | Open-source LLM observability built on OpenTelemetry, exportable to existing observability stacks. **→ deep-dive: [competitors/parallax-vs-traceloop.md](../market/competitors/parallax-vs-traceloop.md)** (Apache-2.0 OTel LLM-instrumentation SDK; v0.62.1, 7,307★; ServiceNow-acquired → AI Control Tower; complementary layer, not a backend). | OTEL-native agent telemetry is becoming the interoperability path. |
 | AgentTrace / AgentSight research | Recent papers explicitly frame agent observability as needed for reliable deployment, risk analysis, and bridging high-level intent with low-level actions. | Research community also sees a semantic gap in agent observability. |
 
 Sources:
@@ -192,6 +192,7 @@ Sources:
 - [Datadog LLM Observability](https://www.datadoghq.com/product/ai/llm-observability/)
 - [Helicone sessions docs](https://docs.helicone.ai/features/sessions)
 - [OpenLLMetry GitHub repository](https://github.com/traceloop/openllmetry)
+- _Canonical comparison: [../market/competitors/parallax-vs-traceloop.md](../market/competitors/parallax-vs-traceloop.md) (pass 32, 2026-07-17 — pinned v0.62.1 + ServiceNow acquisition)._ This note is a **lead**; the competitors/ deep-dive is the living record.
 - [AgentTrace paper](https://arxiv.org/abs/2602.10133)
 - [AgentSight paper](https://arxiv.org/abs/2508.02736)
 

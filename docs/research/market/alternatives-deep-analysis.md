@@ -208,6 +208,10 @@ space that Parallax wants to own.
 
 - **What**: Unified MCP server for querying OTel traces across multiple backends
   (Jaeger, Tempo, Traceloop). Enables AI agents to analyze distributed traces.
+  *(Note: "Traceloop" here = the OpenLLMetry LLM-instrumentation SDK, deep-dived at
+  [competitors/parallax-vs-traceloop.md](competitors/parallax-vs-traceloop.md) — Apache-2.0,
+  v0.62.1/7,307★, ServiceNow-acquired → AI Control Tower. Do not confuse with the
+  retired roster typo "Tracelo" (tracelo.com = phone geo).)*
 - **Stars**: 189 (active)
 - **Gap vs Parallax**: Not a store — a query layer. No Sentry. No bundles.
   No outcomes.
