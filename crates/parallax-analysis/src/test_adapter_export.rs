@@ -68,8 +68,7 @@ pub fn nextest_export_session_from_env<F>(lookup: F) -> Result<NextestExportSess
 where
     F: FnMut(&str) -> Option<String>,
 {
-    let context =
-        NextestAttemptContext::from_lookup(lookup).map_err(ExportError::Nextest)?;
+    let context = NextestAttemptContext::from_lookup(lookup).map_err(ExportError::Nextest)?;
     Ok(NextestExportSession { context })
 }
 
