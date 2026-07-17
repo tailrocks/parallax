@@ -1,13 +1,13 @@
 # Parallax vs Odigos
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 46
-> pricing + marketing; **pass 113** pin recheck**). Sources: live
-> [odigos.io/pricing](https://odigos.io/pricing) + [odigos.io](https://odigos.io/)
-> (site tagline **“Ask Production Anything”** / AI SRE / root-cause),
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 46**
+> pricing + marketing; **pass 113** pin recheck; **pass 139** re-pin). Sources:
+> [odigos.io/pricing](https://odigos.io/pricing) + [odigos.io](https://odigos.io/),
 > [docs](https://docs.odigos.io/), GitHub `odigos-io/odigos` (**v1.31.2** still
-> latest 2026-07-09, **3,668★**, Apache-2.0, push 2026-07-17), OBI / eBPF blogs.
-> **Own-store / long-term telemetry DB watch still UNFIRED** — still export-to-any-
-> backend control plane, not Greptime/ClickHouse product store.
+> latest 2026-07-09, **3,668★**, Apache-2.0, push 2026-07-17). **Own-store watch
+> still UNFIRED** — still vendor-agnostic **export to destinations**
+> ([backends overview](https://docs.odigos.io/backends-overview)); not a
+> Greptime/ClickHouse product store or evidence-bundle engine.
 >
 > **Bottom line up front:** Odigos remains an **Apache-2.0 eBPF + OTel auto-instrumentation
 > control plane** (no-code → OTel to *any* backend) — **still a different stack layer**

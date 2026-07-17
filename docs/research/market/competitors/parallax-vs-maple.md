@@ -1,12 +1,13 @@
 # Parallax vs Maple
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 59 +
-> **pass 112:** Tinybird-decoupling watch **still UNFIRED** — still **v0.0.12**
-> (2026-06-18 latest tag) / **1,532★**; last push 2026-07-17; code search still
-> hits Tinybird bench/PR-branch scripts). Sources: [maple.dev](https://maple.dev/)
-> + [pricing](https://maple.dev/pricing/) + [docs](https://maple.dev/docs),
-> [github.com/MapleTechLabs/maple](https://github.com/MapleTechLabs/maple), and the
-> legacy [maple-deep-research.md](../maple-deep-research.md) (2026-05-31) as a lead.
+> pass 112; **pass 139** re-pin). Tinybird-decoupling watch **still UNFIRED** —
+> latest tag still **v0.0.12** (2026-06-18) / **1,532★**; push **2026-07-17**
+> (UI/traces perf commits only). README still documents **Tinybird** cloud path
+> (`TINYBIRD_*` env) + **embedded ClickHouse** local — not a GreptimeDB/self-owned
+> store decoupling. Sources: [maple.dev](https://maple.dev/),
+> [github.com/MapleTechLabs/maple](https://github.com/MapleTechLabs/maple), legacy
+> [maple-deep-research.md](../maple-deep-research.md).
 >
 > **Bottom line up front:** Maple is the **local-experience benchmark** Parallax
 > wants to match — a single Bun binary with embedded chDB (ClickHouse) local mode,
