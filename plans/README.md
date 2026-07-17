@@ -227,12 +227,13 @@ work.
 
 Plan 104 DONE (2026-07-17): Option C bundle-v2 envelope
 ([evidence](../docs/research/validation/2026-07-plan-104-bundle-v2/README.md)).
+Plan 106 DONE (2026-07-17): evidence pins (sanitized bundle-v2 in Turso)
+([evidence](../docs/research/validation/2026-07-plan-106-evidence-pinning/README.md)).
 
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | [111](111-redaction-pipeline-and-a6-gate.md) | Build the source-aware fail-closed runtime redactor and prove the A6 gate | P1 | L | 099, 101, 104 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
-| [106](106-evidence-pinning-ttl-spike.md) | Design and live-test evidence pinning beyond telemetry TTL | P2 | M | 092, 104, 116 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 | [107](107-program-closure-audits.md) | Run independent source audits and verify the mechanical closure commit | P1 | M | Every other actionable indexed plan; all blockers freshly rechecked | TODO — runs last, after every other actionable plan (unblock directive 2026-07-17) |
 
 ### Unified CLI Observability (operator, 2026-07-17)

@@ -23,6 +23,7 @@ pub use alerts::{
     ALERT_CHECKS_KEEP_PER_RULE, AlertCheckRecord, AlertDeliveryEventRecord, AlertDestinationRecord,
     AlertIncidentRecord, AlertRuleRecord, AlertRuleStateRecord,
 };
+pub(crate) mod pins;
 use row::*;
 use values::*;
 
@@ -195,6 +196,23 @@ CREATE TABLE IF NOT EXISTS prune_journal_steps (
 );
 CREATE INDEX IF NOT EXISTS prune_journal_steps_state
   ON prune_journal_steps(plan_id, state, step_index);
+CREATE TABLE IF NOT EXISTS evidence_pins (
+  pin_id            TEXT PRIMARY KEY,
+  anchor_kind       TEXT NOT NULL,
+  anchor_id         TEXT NOT NULL,
+  schema_version    TEXT NOT NULL,
+  canonical_hash    TEXT NOT NULL,
+  bundle_json       TEXT NOT NULL,
+  byte_len          INTEGER NOT NULL,
+  pinned_at         INTEGER NOT NULL,
+  expires_at        INTEGER,
+  pinned_by         TEXT NOT NULL DEFAULT 'local-operator',
+  source_state      TEXT NOT NULL DEFAULT 'present'
+);
+CREATE INDEX IF NOT EXISTS evidence_pins_anchor
+  ON evidence_pins(anchor_kind, anchor_id);
+CREATE INDEX IF NOT EXISTS evidence_pins_expires
+  ON evidence_pins(expires_at);
 ";
 
 #[cfg(test)]
