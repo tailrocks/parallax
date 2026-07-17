@@ -232,6 +232,20 @@ desk work (pass 242 ledger still zero rows — see [a2-user-demand.md](a2-user-d
 
 **Falsify pass-242 holds:** (a) OpenObserve moves AI SRE + SDR into free unlimited OSS core *and* ships portable redacted evidence bundles + outcome records; (b) SigNoz ships offline free Noz in Community; (c) Grafana puts Assistant fully offline free on self-managed OSS without Cloud LLM; (d) public Cloud usage rates collapse so managed cloud is no longer a peer revenue motion. **Does not falsify:** more SaaS FedRAMP/IL5 or star growth.
 
+### Pass 263 (2026-07-18) — OpenObserve primary re-scrape only
+
+Live [openobserve.ai/pricing](https://openobserve.ai/pricing/) still:
+
+| Signal | Status |
+| --- | --- |
+| Cloud ingest / query | **$0.50/GB** / **$0.01/GB** |
+| Self-Hosted Enterprise free allowance | **≤ 50 GB/day** (FAQ twice; **no** 200 GB) |
+| EE feature list | **SDR + AI-Powered Observability + AI SRE Agent + AI Assistant** still listed |
+| AI preview meter | still **20 credits** / free during preview wording |
+| Release / stars | **`v0.91.2`** (2026-07-17); **~20,198★** |
+
+**Holds** pass 242 O2 row. Desk playbook unchanged. A2 interviews still open.
+
 ### Pass 131 (2026-07-17) — Datadog Bits / AI Credits pricing (fixer reference)
 
 Live primary: [datadoghq.com/pricing/?product=ai-credits](https://www.datadoghq.com/pricing/?product=ai-credits#products)
