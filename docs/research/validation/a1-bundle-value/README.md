@@ -6,6 +6,10 @@
 > ledgers below are all in service of one dated, reproducible number — which is currently
 > **`not_measured`**. No "bundles beat raw context" claim is allowed until the Phase-0 eval runs
 > and publishes per-arm results through the ledger.
+>
+> **Pass 118 (2026-07-17):** design + shipped `parallax-evidence` producer + golden fixture +
+> `poc/evidence-loop` exist; **no** `result-ledger.md` / run JSONL. Code readiness ≠ A1 pass.
+> Status note: [a1-claim-status-recheck-2026-07-17.md](a1-claim-status-recheck-2026-07-17.md).
 
 This directory groups the A1 bundle-value evidence (assumption A1 in the A1–A7 set). Files are
 kept separate because each is an executable contract on its own.
@@ -25,4 +29,5 @@ kept separate because each is an executable contract on its own.
 
 ## Result ledger and external reference
 - [a1-eval-result-ledger-and-model-refresh.md](a1-eval-result-ledger-and-model-refresh.md) — result-ledger and refresh policy: public run manifests, model snapshots, contamination tiers, per-arm result rows, claim levels, and expiry/rerun triggers.
+- [a1-claim-status-recheck-2026-07-17.md](a1-claim-status-recheck-2026-07-17.md) — **pass 118:** separates design/code readiness from empirical claim; claim level remains **`not_measured`**.
 - [datadog-bits-ai-eval-loop.md](datadog-bits-ai-eval-loop.md) — Datadog Bits AI SRE / Dev Agent eval-platform lessons (world snapshots, noise manifests, segmentation, score history, model-refresh) — validates methodology, not Parallax bundle value.
