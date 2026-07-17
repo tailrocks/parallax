@@ -59,6 +59,16 @@ configuration evidence lives in
 
 > **Update 2026-07-17 later**: Mach-O embed structural fix landed (see remaining work item 2). Protections remain OK; external four-target preview is now the residual blocker.
 
+External run `29571836457` at `46e1d815` reached the release matrix but failed
+before packaging: TanStack Start rejected the isomorphic SSE hook's static
+import of `event-source.client.ts`. Commit `c0801d00` removes the false
+client-only module boundary while preserving lazy browser-global access; its
+two focused suites pass (10 tests) and TypeScript is green. A replacement
+four-target run remains required. At that commit the shared-tree production
+build proceeds past SSE import protection and stops on the concurrently moving
+ecosystem worker path, so do not dispatch the replacement until that independent
+move leaves `bun run build` green.
+
 ## Fresh Blocker Evidence (2026-07-17) — pre-fix snapshot
 
 Protections (read-back OK):
