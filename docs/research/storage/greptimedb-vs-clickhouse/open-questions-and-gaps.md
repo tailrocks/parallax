@@ -194,3 +194,18 @@ Harness improved (logs.trace_id indexed, Runs 271–273). **Still not done:**
 5. RPO D2/D3
 
 Loop continues.
+
+## Run 284 (2026-07-17) — after harness logs.trace_id
+
+Mechanism/laptop smoke through **Run 283** including harness fix (271–273).
+**Still open for real progress:**
+
+| Gap | Needs |
+| --- | --- |
+| Workload mix shares | Operator/product fill of A1–A7 |
+| Server 1M/5M | Server hardware + `server-tier-runbook.md` |
+| Vendor quotes | Sales/trial invoices |
+| GB cold S3 | Large MinIO load |
+| RPO D2/D3 | Cluster meta + Turso fixture |
+
+**Comparison not done.**
