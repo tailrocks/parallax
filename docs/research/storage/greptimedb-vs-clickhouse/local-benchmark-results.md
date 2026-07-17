@@ -7696,3 +7696,13 @@ Second POST with `trace_id` + `latency_ms` → columns **auto-added** (`DESCRIBE
 `latency_ms Int64`, `trace_id String`). **No drift** vs Run 182/151. Adopt-native
 logs + identity pipeline still correct.
 
+
+### Run 239 — 2026-07-17 — last_value vs argMax re-verify (N=50k m2m)
+
+| Engine | Query | Median ms (5 reps) |
+| --- | --- | ---: |
+| GT 1.1.3 | `last_value(val ORDER BY ts) GROUP BY service` | **~4–5** |
+| CH 26.6 | `argMax(val, ts) GROUP BY service` | **~3** |
+
+**~1.5× CH**, both interactive. **No drift** vs Run 177 “tie at 100k” reading
+(scale still small). Gap expected to widen at 5M (server-tier owed).
