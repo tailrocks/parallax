@@ -142,8 +142,9 @@ Highest-value *remaining* items (not “done”):
    schema + Turso CLI still owed.
 6. ~~GT OpenDAL/S3 request metrics~~ — **closed Runs 234–235** (`opendal_http_*GetObject`).
 7. ~~CH TimeSeries "broken"~~ — **Run 403** query path real; **Run 404** `rate`/`sum`/
-   `avg by` match GT, **`increase` still NOT_IMPLEMENTED** on 26.6+26.7. Remaining watch:
-   leave experimental / Cloud support / more PromQL fns + volume — not "unusable."
+   `avg by` match GT, **`increase` still NOT_IMPLEMENTED** on 26.6+26.7. **Run 560:**
+   matrix holds; **range-vector `offset` is Code 43 type bug** (selector-level offset
+   OK). Remaining watch: experimental / Cloud support / completeness at volume.
 
 Do **not** burn passes re-confirming interactive 50k–100k ties, small-N object counts,
 or plan-shape re-verifies of PREWHERE/projection/TWCS/PARTITION unless a **pin bumps**.

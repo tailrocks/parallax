@@ -285,6 +285,41 @@ that uses `increase`, `avg_over_time`, or `resets` **cannot** drop onto CH TimeS
 today without rewrite; GT can. Still **not** a stack flip (product = GT); comparator
 watch for when CH fills `*_over_time` + `increase`.
 
+### Run 560 (2026-07-18) — matrix re-smoke + offset nuance
+
+**Setup:** SQL INSERT into existing `ts_r423` (26.6.1) + fresh `ts_r560h` (head 26.7.1);
+counter `r560_counter` with jobs j0/j1; table-function form
+`SELECT * FROM prometheusQuery(ts, promql, now())` (scalar form is UNKNOWN_FUNCTION).
+
+| Class | Expression | CH 26.6.1 | CH head 26.7.1 |
+| --- | --- | --- | --- |
+| Rate | `sum(rate(r560_counter[2m]))` | **OK** `0.5` | **OK** `~0.167` (single series) |
+| Increase | `sum(increase(…[2m]))` | **Code 48** | **Code 48** |
+| Ranking | `topk(1, sum by (job) (rate(…)))` | **OK** (job=j1) | — |
+| Last | `last_over_time(…[2m])` | **OK** | — |
+| Range rollups | `avg/max/min/sum/count_over_time` | **all Code 48** | — |
+| Instant delta | `delta`, `idelta`, `irate` | **OK** | — |
+| Compare | `sum(rate(…)) > bool 0` | **OK** `1` | — |
+| Extrapolation / resets / absent / clamp | `deriv`, `predict_linear`, `resets`, `changes`, `absent`, `clamp_min` | **Code 48** | — |
+| **Simple offset** | `r560_counter offset 1m` | **OK** (j0=20, j1=110) | — |
+| **Simple offset + sum** | `sum(r560_counter offset 1m)` | **OK** `130` | — |
+| **Range offset** | `rate(…[2m] offset 1m)`, `last_over_time(…[2m] offset 1m)` | **Code 43** `ILLEGAL_TYPE_OF_ARGUMENT` (`toIntervalNanosecond` / Decimal) | — |
+| Outer offset parse | `sum(rate(…[2m])) offset 1m` | **Code 756** `CANNOT_PARSE_PROMQL_QUERY` | — |
+| Range query | `prometheusQueryRange` rate 5m/1m | **OK** (2 points) | — |
+
+**Mechanism reading (new):**
+
+1. **No drift** on the Run 423 gap surface: still partial PromQL; `increase` + most
+   `*_over_time` + deriv/resets/absent/clamp missing on **both** feature line and head.
+2. **Offset is not fully OK.** Run 423’s “offset OK” holds only for **selector-level**
+   `metric offset 1m`. **Range-vector offsets** (`rate(x[w] offset …)`) hit a
+   **type bug** (Decimal vs interval), not “not implemented” — different failure mode.
+3. Call-site footgun: use **table function** `FROM prometheusQuery(...)`, not bare
+   scalar `SELECT prometheusQuery(...)` (Code 46).
+
+**Verdict impact:** comparator watch only; GT remains the product metrics/Prom path.
+No pin bump. **Not done.**
+
 ## Run 403 mechanism takeaway (why Code 48 is not a death sentence)
 
 `TimeSeries` is closer to a **materialized-view-style multi-target router** than a

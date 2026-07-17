@@ -274,6 +274,16 @@ docs and release notes.
    backend and no Grafana Cloud stack.
 3. **UNFIRED:** portable versioned redacted investigation artifact.
 
+### Pass 349 (2026-07-18) — Assistant + Sentry OTLP
+
+| Source | Finding |
+| --- | --- |
+| Grafana Assistant self-managed | still hybrid **Grafana Cloud stack** backend |
+| Sentry OTLP | still **does not support OTLP metrics** |
+
+**UNFIRED:** offline Assistant; Sentry OTLP metrics GA.
+
+
 ### Pass 348 (2026-07-18) — Bits
 
 Bits Code docs still: **"never auto-merges PRs or MRs."** **UNFIRED.**
