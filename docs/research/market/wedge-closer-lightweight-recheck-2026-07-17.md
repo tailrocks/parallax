@@ -201,6 +201,13 @@ Full combination **still not closed**.
 
 Full combination **still not closed**.
 
+**Pass 258 recheck (2026-07-18):** **Maple + Uptrace** —
+
+| Product | Pin | Watch |
+| --- | --- | --- |
+| **Maple** | [MapleTechLabs/maple](https://github.com/MapleTechLabs/maple) **1,532★**; latest release still **`v0.0.12`** (2026-06-18); push 2026-07-17 | Recent work = UI/trace perf, alerts v2, service-map — **not** Sentry envelope / portable redacted evidence / outcome. Code search **tinybird** still **total_count 304** → Tinybird-decoupling **UNFIRED**. Combo **not closed**. |
+| **Uptrace** | [uptrace/uptrace](https://github.com/uptrace/uptrace) **4,242★**; latest **`v2.1.0-beta.7`** (2026-06-05); push 2026-06-14 | OTLP APM platform peer; **no** evidence that it ships Parallax full combo (Sentry envelope + portable redacted bundle + outcome). Combo **not closed**. |
+
 **Pass 249 recheck (2026-07-18):** **Traceway** + Sentry OTLP metrics kill —
 
 | Field | Value |
