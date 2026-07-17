@@ -61,6 +61,14 @@ redacted evidence bundle **and** outcome loop — **not observed**.
 **Evidence class:** primary GitHub API + README/release tags (2026-07-17). Not
 a live deploy test of each product.
 
+**Pass 173 recheck (2026-07-18):** **GlitchTip** version pin moved —
+
+| Product | Pin | Combo |
+| --- | --- | --- |
+| **GlitchTip** | monorepo **161★** (act 2026-07-06); backend **354★** (act 2026-07-17); **backend tag `v6.2.1`** (2026-07-15) — was v6.1.8 | Still **Sentry-API error product** (README); MCP docs page live; **no** OTLP multi-signal / portable redacted bundle / outcome in primary probe. Combo **not closed**. |
+
+Stars unchanged; **real release-line move** on backend only.
+
 **Pass 156 recheck (2026-07-18):** **Traceway-focused** wedge re-poll + Bugsink/Rustrak
 star-pin hygiene — combination **still not closed**.
 
