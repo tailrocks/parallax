@@ -402,6 +402,9 @@ managed quotes remain):
 | milestone 720 | **720** | NOT DONE |
 | FT PREWHERE Flow | **721** | 0/7; 2/7; r228 |
 | still not done | **722** | top 5 product/server |
+| still not done | **723** | top 5 product/server |
+| last_value export Jaeger | **724** | holds |
+| still not done | **725** | top 5 product/server |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
