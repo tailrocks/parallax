@@ -8255,3 +8255,6 @@ CH `quantile(0.99)`: **34 ms**. Both complete; CH ~3× faster on this shape at 5
 
 ### Run 351 — 2026-07-17 — not done
 
+
+### Run 352 — 2026-07-17 — four-way healthy 52m; not done
+
