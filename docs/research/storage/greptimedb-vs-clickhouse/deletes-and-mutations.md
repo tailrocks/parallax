@@ -153,3 +153,14 @@ adopt-append blueprint.
 
 Physical purge still deferred to compaction/merge on both engines after logical delete
 (Run 167 nuance holds for the dedup/CH paths that accept DELETE).
+
+## Run 566 (2026-07-18) — append DELETE ban + freshness + CH lw DELETE
+
+| Check | Result |
+| --- | --- |
+| GT `append_mode=true` `DELETE` | **Code 1004** `DELETE is not allowed under append mode` |
+| GT visible-on-write | insert → count **1** → insert → count **2** (no flush) |
+| CH lightweight `DELETE` | 2 rows → delete id=1 → remaining **`(2,'b')` only** |
+
+No drift. **Not done.**
+
