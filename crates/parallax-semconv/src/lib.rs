@@ -153,7 +153,7 @@ pub const TEST_SUITE_NAME: &str = "test.suite.name";
 pub const TEST_SUITE_RUN_STATUS: &str = "test.suite.run.status";
 pub const CICD_PIPELINE_RUN_ID: &str = "cicd.pipeline.run.id";
 pub const CICD_PIPELINE_TASK_TYPE: &str = "cicd.pipeline.task.type";
-pub const PARALLAX_TEST_ID: &str = "parallax.test.id";
+pub const TEST_CASE_ID: &str = "test.case.id";
 pub const CANARY_EMAIL: &str = "canary.email";
 pub const CANARY_TOKEN: &str = "canary.token";
 pub const CANARY_CARD: &str = "canary.card";
@@ -188,30 +188,7 @@ pub const TOKIO_RUNTIME_METRIC_NAMES: &[&str] = &[
 
 #[must_use]
 pub fn resource_json_path(attr: &str) -> String {
-    // GreptimeDB's json_get_string wants a plainly quoted member —
-    // `$."a.b"` — NOT backslash-escaped quotes (`$.\"a.b\"` matches
-    // nothing on the live engine). Embedded quotes stay escaped per the
-    // JSON-path grammar.
-    format!(r#"$."{}""#, attr.replace('"', "\\\""))
-}
-
-/// Prometheus-style native metric table base name: every non
-/// `[A-Za-z0-9_]` byte becomes `_` — the same normalization GreptimeDB's
-/// OTLP ingest applies when it creates per-metric tables. This is the
-/// canonical machine identity for a metric family (metric-summary
-/// contract); ingest persists it so invocation-scoped reads never repair
-/// names with a catalog scan.
-#[must_use]
-pub fn native_metric_table_base(name: &str) -> String {
-    name.chars()
-        .map(|ch| {
-            if ch.is_ascii_alphanumeric() || ch == '_' {
-                ch
-            } else {
-                '_'
-            }
-        })
-        .collect()
+    format!(r#"$.\"{}\""#, attr.replace('"', "\\\""))
 }
 
 #[must_use]
@@ -226,30 +203,3 @@ pub fn span_column(attr: &str) -> String {
 
 #[cfg(test)]
 mod tests;
-
-#[cfg(test)]
-mod property_tests {
-    //! Plan-103 bounded property suites (invariants doc:
-    //! docs/research/testing/property-invariants.md).
-    use proptest::prelude::*;
-
-    proptest! {
-        /// The canonical native table base is idempotent and stays inside
-        /// the engine's identifier charset for arbitrary metric names.
-        #[test]
-        fn native_metric_table_base_idempotent(name in ".{0,64}") {
-            let once = super::native_metric_table_base(&name);
-            prop_assert!(once.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'));
-            prop_assert_eq!(super::native_metric_table_base(&once), once);
-        }
-
-        /// JSON attribute paths always address one plainly quoted member —
-        /// the exact shape GreptimeDB's json_get_string accepts.
-        #[test]
-        fn resource_json_path_is_quoted_member(attr in "[^\"]{0,48}") {
-            let path = super::resource_json_path(&attr);
-            prop_assert!(path.starts_with("$.\""));
-            prop_assert!(path.ends_with('"'));
-        }
-    }
-}

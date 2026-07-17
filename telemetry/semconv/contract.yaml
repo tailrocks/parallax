@@ -138,7 +138,7 @@ constants:
   - { id: test.suite.run.status, rust: TEST_SUITE_RUN_STATUS, typescript: TEST_SUITE_RUN_STATUS, java: TEST_SUITE_RUN_STATUS, value: test.suite.run.status, owner: playground }
   - { id: cicd.pipeline.run.id, rust: CICD_PIPELINE_RUN_ID, typescript: CICD_PIPELINE_RUN_ID, java: CICD_PIPELINE_RUN_ID, value: cicd.pipeline.run.id, owner: playground }
   - { id: cicd.pipeline.task.type, rust: CICD_PIPELINE_TASK_TYPE, typescript: CICD_PIPELINE_TASK_TYPE, java: CICD_PIPELINE_TASK_TYPE, value: cicd.pipeline.task.type, owner: playground }
-  - { id: parallax.test.id, rust: PARALLAX_TEST_ID, typescript: PARALLAX_TEST_ID, java: PARALLAX_TEST_ID, value: parallax.test.id, owner: playground }
+  - { id: test.case.id, rust: TEST_CASE_ID, typescript: TEST_CASE_ID, java: TEST_CASE_ID, value: test.case.id, owner: playground }
   - { id: canary.email, rust: CANARY_EMAIL, typescript: CANARY_EMAIL, java: CANARY_EMAIL, value: canary.email, owner: playground }
   - { id: canary.token, rust: CANARY_TOKEN, typescript: CANARY_TOKEN, java: CANARY_TOKEN, value: canary.token, owner: playground }
   - { id: canary.card, rust: CANARY_CARD, typescript: CANARY_CARD, java: CANARY_CARD, value: canary.card, owner: playground }

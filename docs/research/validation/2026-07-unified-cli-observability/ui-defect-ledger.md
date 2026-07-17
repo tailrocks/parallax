@@ -116,7 +116,7 @@ fingerprints — all against the live server.
 `grep -rn "parallax\.\|jackin" ui/src crates/parallax-api/src`, classified:
 
 - `ui/src/shared/semconv.ts` `PARALLAX_LAB`/`PARALLAX_SOURCE`/
-  `PARALLAX_TEST_ID`: generated exports from the contract; unused by any UI
+  `TEST_CASE_ID`: generated generic export from the contract; unused by any UI
   component (no branching), kept as generated surface.
 - `crates/parallax-*`: `parallax.lab` (comparison label stamped by
   Parallax's own forwarding CLI) and `parallax.source` (Parallax-stamped
