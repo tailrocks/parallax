@@ -51,6 +51,13 @@ Pins match the cohort table rows (no material version/star move since table writ
 Falsification for this pass: either ships OTLP full-signal **and** portable
 redacted evidence bundle **and** outcome loop — **not observed**.
 
+**Pass 134 recheck (2026-07-17):** **TMA1** + **GlitchTip** —
+
+| Product | Pin | Watch |
+| --- | --- | --- |
+| **TMA1** | **109★**, **`v0.2.0-alpha12`** (2026-07-17); push 2026-07-17 | **18th UNFIRED** — recent commits = GreptimeDB **v1.1.3** min + session UI perf only. Still local-only agent loop; no Sentry envelope / portable redacted evidence bundle / fix-outcome collision |
+| **GlitchTip** | GitLab `glitchtip` **161★** (last_activity 2026-07-06); backend **354★** / **v6.1.8** (2026-06-05) | Still Sentry-API error product; combo **not closed** |
+
 **Evidence class:** primary GitHub API + README/release tags (2026-07-17). Not
 a live deploy test of each product.
 
