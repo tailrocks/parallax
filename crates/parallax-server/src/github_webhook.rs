@@ -126,7 +126,7 @@ async fn accept_deploy(
     body: &[u8],
     body_json: &serde_json::Value,
 ) -> Response {
-    let Some(normalized) = normalize_deploy_webhook(event_name, &body_json) else {
+    let Some(normalized) = normalize_deploy_webhook(event_name, body_json) else {
         return (StatusCode::BAD_REQUEST, "unsupported deploy payload").into_response();
     };
 
@@ -144,7 +144,7 @@ async fn accept_deploy(
         actor_login: normalized.actor_login,
         edge_strength: edge_label(normalized.edge_strength).to_string(),
         lossiness: normalized.lossiness,
-        payload_hash: payload_sha256_hex(&body),
+        payload_hash: payload_sha256_hex(body),
         received_at_nanos: now_nanos(),
     };
 
