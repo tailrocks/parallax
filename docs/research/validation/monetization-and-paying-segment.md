@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-05-29 · **Desk recheck 2026-07-17 (pass 54)**
+Research date: 2026-05-29 · **Desk recheck 2026-07-17 (pass 54 + pass 94)**
 
 ## Purpose
 
@@ -81,13 +81,24 @@ commodity end.
 | Datadog FedRAMP High squeezes mid-tier "regulated" | **Holds** | Pass 42 competitor note: FedRAMP High on US1-FED (2026-05-06) | prior primary; not re-fetched this pass |
 | Paying segment exists but niche | **Unchanged theory** | No new primary isolation of air-gap ACV this pass; **A2 interviews still open** | desk only |
 
-**Falsify pass-54 holds:** Sentry ships self-hosted Seer/open AI stack; or Grafana/SigNoz/OpenObserve
-ship **open portable redacted evidence bundles + outcome records** free in core (would also fire
-agenda #3/#4). **Does not falsify:** more SaaS FedRAMP/IL5 — already priced into the squeeze.
+### Pass 94 desk recheck (2026-07-17) — survivor cloud/EE gates (primary re-fetch)
 
-**Implication:** monetization shape (Apache core + EE ops + managed cloud + outcome-priced fixer)
-**still the least-bad desk design**. Empirical A2 (20 interviews) remains the only way to size the
-hard-boundary buyer; desk rechecks cannot close A2.
+| Survivor pattern | Live primary (2026-07-17) | Holds? |
+| --- | --- | --- |
+| **OpenObserve** gates AI + SDR to Enterprise; free EE allowance | [openobserve.ai/pricing](https://openobserve.ai/pricing/): Cloud Professional **$0.50/GB ingest**, **$0.01/GB query**; Enterprise lists **Sensitive Data Redaction**, **AI-Powered Observability**, **Incident Management & AI SRE Agent**, **AI Assistant**, SSO/RBAC/audit. FAQ **twice**: Self-Hosted Enterprise free forever **≤ 50 GB/day** (above → sales). | **Holds.** Prior business-model note of **50 vs 200 GB FAQ conflict** appears **resolved toward 50 GB** on this page (both FAQ answers say 50). Treat **50 GB/day** as current primary; mark any residual 200 GB cite **stale**. |
+| **SigNoz Noz** cloud-gated AI teammate | [signoz.io/docs/ai/noz](https://signoz.io/docs/ai/noz/): page tagged **`SigNoz Cloud`**; last updated **2026-06-29**; distinguishes **Noz** (in-UI) vs **MCP Server** (external agents). No self-host Noz install path on this doc. Aligns pass 59/77 "Noz = Cloud". | **Holds** (Cloud product surface; MCP remains the OSS/self-host agent path). |
+| **Sentry Seer** not on self-host | develop.sentry.dev/self-hosted still excludes Seer (pass 77/87 reconfirm). | **Holds** |
+| **Traceway** MIT full-box + cheap managed cloud | Pass 84: public Free→Enterprise cloud tiers; self-host free. | **Holds** — cloud is convenience revenue, not open-core agent gate. |
+| Hard-boundary ACV size | Still **not** isolated by a primary source this pass. | **A2 interviews still open** |
+
+**Nuance (not a falsification):** OpenObserve lists AI features as **"free during preview"** with **20 credits** on Cloud — that is a **preview meter**, not "AI forever free in OSS core." Self-host Enterprise still packages AI SRE + Assistant with the EE gate above free GB.
+
+**Falsify pass-54/94 holds:** Sentry ships self-hosted Seer/open AI stack; SigNoz ships **offline Noz** free in Community; OpenObserve moves **AI SRE + SDR** fully into free OSS core *and* ships portable redacted evidence bundles + outcome records; or a peer ships that combination free. **Does not falsify:** more SaaS FedRAMP/IL5 — already priced into the squeeze.
+
+**Implication:** monetization shape (Apache core + EE ops + managed cloud + outcome-priced fixer;
+**do not** gate the evidence-bundle differentiator the way OpenObserve gates AI SRE) **still the
+least-bad desk design**. Empirical A2 (interviews) remains the only way to size the hard-boundary
+buyer; desk rechecks cannot close A2.
 
 ## 2. Monetization shape (the survivors' playbook, applied)
 

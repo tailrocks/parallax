@@ -6,7 +6,8 @@
 is table stakes — check whether **AI investigation / redaction** stay free in
 core or gate to cloud/EE (affects Parallax air-gap + A6 positioning).
 
-**Evidence class:** primary GitHub READMEs (2026-07-17), not live deploys.
+**Evidence class:** primary GitHub READMEs + vendor pricing/docs (2026-07-17).
+**Pass 94** re-fetched OpenObserve pricing FAQ + SigNoz Noz docs.
 
 ## Findings
 
@@ -17,6 +18,9 @@ core or gate to cloud/EE (affects Parallax air-gap + A6 positioning).
 - Explicit: **[Noz](https://signoz.io/docs/ai/noz/) is available only on SigNoz
   Cloud** (in-product AI investigator). Self-host gets MCP path to agents;
   **cloud-gated AI product (Noz)**.
+- **Pass 94:** Noz docs still tagged **`SigNoz Cloud`** (updated 2026-06-29);
+  page contrasts Noz (UI) vs **MCP Server** (IDE/agents) — does not document a
+  Community/self-host Noz path.
 - **Implication:** air-gap teams using SigNoz OSS get **MCP tools over raw
   telemetry**, not a free in-product Noz investigator. Aligns with Parallax's
   "context engine, not the fixer" + possible HolmesGPT/Traceway as fixers.
@@ -26,6 +30,11 @@ core or gate to cloud/EE (affects Parallax air-gap + A6 positioning).
 - README markets ingest-time enrich/**redact**/reduce and
   **Sensitive Data Redaction (SDR)** listed as **Enterprise feature** (PII
   redaction during ingest/query).
+- **Pass 94** ([openobserve.ai/pricing](https://openobserve.ai/pricing/)): Enterprise
+  still lists **SDR + AI SRE Agent + AI Assistant + AI-Powered Observability**.
+  Self-Hosted Enterprise free **≤ 50 GB/day** (FAQ, two answers — prior 200 GB
+  conflict treated **resolved to 50**). Cloud AI "free during preview" with
+  **20 credits** is **not** OSS-core AI.
 - **Implication:** Parallax's **bundle-path redaction (open core)** vs
   Enterprise-gated SDR is a real openness difference *if* A6 proves trustworthy.
   Do not claim unique "redaction exists" — claim **open-core agent-facing
