@@ -262,3 +262,16 @@ authority.
   [Sentry self-hosted data flow](https://develop.sentry.dev/self-hosted/data-flow/);
   [OpenObserve](https://github.com/openobserve/openobserve) (Rust unified platform);
   GreptimeDB pitch (treat as vendor) — [GreptimeDB as a ClickHouse alternative](https://greptime.com/tech-content/2026-04-17-clickhouse-alternative-greptimedb).
+
+## Run 212 (2026-07-17) — alternatives scan still holds (post re-pin)
+
+No third system re-entered the backend shortlist after the v1.1.3 / 26.6 re-pin
+cycle (Runs 173–211). Still true:
+
+- **OpenObserve** — competitor *platform*, not embeddable DB backend.
+- **Quickwit** — logs/traces search only.
+- **InfluxDB 3 / VictoriaMetrics** — split products / different product surface.
+- **StarRocks/Doris** — JVM-FE filter risk for this repo.
+
+**Backend shortlist remains GT (product) vs CH (comparator).** Managed-cloud
+framework (Run 175) and engine re-verifies do not reopen the field.

@@ -7182,3 +7182,7 @@ Still GT v1.1.3 / CH 26.6.1.1193 latest stables. No pin bump.
 
 All four builds healthy after re-pin. Directions hold; JSON2 ~4–5 ms vs jsonb ~30 ms vs CH ~4 ms.
 Scratch `run211-four-way.txt`.
+
+### Run 212 — 2026-07-17 — alternatives shortlist reaffirm
+
+No third backend enters after re-pin cycle. GT product / CH comparator. `platform-fit-and-alternatives.md`.
