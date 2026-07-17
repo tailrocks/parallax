@@ -17,6 +17,13 @@ Status: created 2026-05-25 (Run 131); **re-pinned Run 173 (2026-07-17)**. The op
 **Do not pin bare `v1.1.0`:** GitHub marks it prerelease; it carries a critical JSON upgrade bug.
 Use ≥`v1.1.1` (current stable = `v1.1.3`).
 
+
+## Run 255 — N=50k metric-agg resample (2026-07-17)
+
+| Query | GT 1.1.3 | GT 1.2-n | CH 26.6 | CH head | Faster |
+| --- | ---: | ---: | ---: | ---: | --- |
+| metric-agg avg by service | ~8–10 | ~7–8 | ~2–3 | ~3 | CH ~3–4× |
+
 ## Run 224 — N=50,000 re-pin smoke (2026-07-17, REPS=6)
 
 Pins **unchanged** (GT `v1.1.3` still latest stable on GH 2026-07-17; CH feature line
