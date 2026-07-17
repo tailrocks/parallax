@@ -56,6 +56,8 @@ Authenticated remote transport remains deferred to Plan 109.
 `default-features = false` and only `server`, `transport-io`,
 `macros`. No `reqwest`/`rustls` feature of the SDK is enabled. HTTP to GraphQL
 uses the workspace `reqwest` with `native-tls-vendored`.
+The server explicitly advertises stable MCP `2025-11-25`; it does not inherit
+an SDK `LATEST` value that could silently opt into a newer protocol revision.
 
 ## Owned concerns
 

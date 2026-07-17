@@ -4,7 +4,9 @@ use crate::gql::{self, GraphqlClient};
 use rmcp::{
     ErrorData as McpError, ServerHandler, ServiceExt,
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
-    model::{CallToolResult, ContentBlock, JsonObject, ServerCapabilities, ServerInfo},
+    model::{
+        CallToolResult, ContentBlock, JsonObject, ProtocolVersion, ServerCapabilities, ServerInfo,
+    },
     schemars, tool, tool_handler, tool_router,
     transport::stdio,
 };
@@ -118,11 +120,13 @@ fn bundle_tool_result(bundle: gql::BundleProjection) -> Result<CallToolResult, M
 #[tool_handler]
 impl ServerHandler for SpikeServer {
     fn get_info(&self) -> ServerInfo {
-        ServerInfo::new(ServerCapabilities::builder().enable_tools().build()).with_instructions(
-            "Parallax MCP SPIKE — read-only context adapter. \
+        ServerInfo::new(ServerCapabilities::builder().enable_tools().build())
+            .with_protocol_version(ProtocolVersion::V_2025_11_25)
+            .with_instructions(
+                "Parallax MCP SPIKE — read-only context adapter. \
                  Two tools only. Not a product surface. \
                  Calls http://127.0.0.1:4000/graphql (or PARALLAX_URL).",
-        )
+            )
     }
 }
 
@@ -141,6 +145,7 @@ mod tests {
     #[test]
     fn advertises_tools_without_unapproved_capabilities() {
         let info = SpikeServer::new("http://127.0.0.1:4000".to_string()).get_info();
+        assert_eq!(info.protocol_version, ProtocolVersion::V_2025_11_25);
         let capabilities = serde_json::to_value(info.capabilities).expect("serialize capabilities");
 
         assert!(capabilities.get("tools").is_some());

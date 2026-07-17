@@ -55,6 +55,8 @@ must not return in product output.
   hash exactly matches the hash embedded in the bundle-v2 object.
 - All GraphQL responses stream through a hard 1 MiB ceiling before JSON parse;
   chunked responses cannot bypass the bound or partially append overflow bytes.
+- Server discovery explicitly pins stable MCP `2025-11-25` rather than the
+  SDK's moving `LATEST` constant; client skew fixtures remain unfinished.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded
