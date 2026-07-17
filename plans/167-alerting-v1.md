@@ -37,6 +37,11 @@ stays TODO.
   Unit tests embedded in the module (breach open, healthy resolve, flap,
   min samples, no_data, between, renotify). Wired as private `mod alerting`
   in `parallax-server` (not yet public API surface).
+- `ui/src/lib/alert-rule-form.ts` — draft validation (comparator/threshold_upper
+  pairing, metricName for metric signal, error_rate fraction range) + five
+  plan templates (high-error-rate / slow-p95 / slow-p99 / throughput-drop /
+  log-error-burst) via `draftFromTemplate`. Vitest in
+  `__tests__/alert-rule-form.test.ts`.
 
 **Peer owns (verify/deepen/complete):**
 - [ ] Re-verify state machine vs plan exhaustiveness; expand tests if gaps.

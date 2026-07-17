@@ -36,6 +36,9 @@ closure commit — treat as preliminary handoff):**
 - `ui/src/lib/log-histogram-brush.ts` — pure brush helpers: snap to bucket
   edges, px↔time scale, uniform bucket builder (`DEFAULT_HISTOGRAM_BUCKETS=
   150`). Vitest coverage in `__tests__/log-histogram-brush.test.ts`.
+- `ui/src/lib/log-table-prefs.ts` — `?columns=` pin encode/decode + pin/unpin
+  toggle; density compact/comfortable parse + CSS class; wrap encode/parse
+  (+ storage key constants). Vitest in `__tests__/log-table-prefs.test.ts`.
 
 **Peer owns (verify/deepen/complete):**
 - [ ] Clippy/format polish on Drain if needed; deepen masking if PII edge
