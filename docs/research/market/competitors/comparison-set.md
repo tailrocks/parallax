@@ -63,7 +63,7 @@ Component-level (the "stack it yourself" pieces, referenced not deep-dived):
 | **Arize Phoenix** | OSS LLM/agent tracing + evals (drives **OpenInference**); OTLP-native. | **ELv2** (self-host free + unlimited, but not OSI-open; managed-service restriction). | LLM/agent traces + evals. | [deep-dive](parallax-vs-arize-phoenix.md) |
 | **PostHog** | OSS product analytics + session replay + feature flags/experiments + (now) LLM/agent tracing. | OSS (own license) + Cloud. | Product analytics + LLM. | [deep-dive](parallax-vs-posthog.md) |
 | **Helicone** | LLM gateway/proxy + observability; caching + cost analytics; zero LLM-cost markup. | MIT + Cloud. | LLM proxies + traces. | [deep-dive](parallax-vs-helicone.md) |
-| **Braintrust** | Eval/experiment platform (LLM). | Open core + Cloud. | LLM evals + experiments. | watch |
+| **Braintrust** | Eval-first LLM eval/experiment platform (datasets/scorers/playground); OSS SDK + closed core. | OSS SDK + SaaS. | LLM evals + experiments. | [deep-dive](parallax-vs-braintrust.md) |
 
 ## Maintenance notes
 
