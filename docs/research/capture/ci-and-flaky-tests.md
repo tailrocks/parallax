@@ -16,6 +16,26 @@
 > integration plus GitHub Actions webhook/backfill (plan 124). Historical
 > build-first language below is rationale; cross-language and real-run validation
 > questions remain open.
+>
+> **Pass 78 recheck (2026-07-17):**
+>
+> 1. **Product residual:** active plan **155** (test reporting surface) is IN
+>    PROGRESS — GraphQL + `/tests` UI landed; adapters/e2e residual. Research
+>    sequence (CI bundle → history → flaky classifier → agent PR) still maps
+>    to product reality; flaky-platform competition claim still holds.
+> 2. **Interchange formats:** JUnit XML remains the correct *first* import.
+>    **CTRF** (Common Test Report Format, [ctrf.io](https://ctrf.io/) — open
+>    JSON schema across languages) is a **growing second interchange** with
+>    plugins (pytest, Playwright, Jenkins, …). Watch for plan 155 adapter
+>    priority after JUnit + `go test -json` / nextest — **not** a reason to
+>    drop JUnit.
+> 3. **Incumbent pressure:** Datadog still owns SaaS flaky management
+>    ([Flaky Tests Management](https://docs.datadoghq.com/tests/flaky_management/)
+>    live 2026-07) + Bits Code autofix for tests — reinforces "don't build a
+>    closed flaky SaaS clone"; open local evidence + fused SUT telemetry remains
+>    the Parallax cell (see [test-reporting-ecosystem.md](../market/test-reporting-ecosystem.md)).
+> 4. **Validation gate:** still open — no public ledger proving "API-only CI
+>    bundle makes debugging easier" across languages.
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
