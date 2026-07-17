@@ -137,3 +137,10 @@ shipped* feature — it **defuses** the agg-gap as a blocker rather than differe
 **No drift** from Run 149/160: both engines can maintain continuous rollups. GT Flow is
 async/streaming (short lag); CH insert-triggered MV is immediate on same session. Prefer
 Flow/MV for recurring panels; ad-hoc aggs still pay the scan/agg engine gap.
+
+## Run 570 (2026-07-18) — Flow catalog still live
+
+`SHOW FLOWS` → **`r228_flow`**, **`r228_flow2`** still present after multi-hour
+bench uptime. Pins `v1.1.3`. Continuous-agg capability surface no drift.
+**Not done.**
+
