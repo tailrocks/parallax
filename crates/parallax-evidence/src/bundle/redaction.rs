@@ -93,7 +93,9 @@ pub(super) fn redaction_rules() -> &'static [(&'static str, Regex, &'static str)
             ),
             (
                 "basic_auth",
-                static_regex(r"(?i)\bBasic\s+[A-Za-z0-9+/=]{16,}\b"),
+                // Padding ends in a non-word character, so a trailing word
+                // boundary would miss ordinary Base64 credentials.
+                static_regex(r"(?i)\bBasic\s+[A-Za-z0-9+/]{8,}={0,2}"),
                 "[REDACTED:basic_auth]",
             ),
             (
@@ -134,4 +136,20 @@ pub(super) fn redact(text: &str, report: &mut RedactionReport) -> String {
 
 pub(super) fn estimate_tokens(text: &str) -> usize {
     text.chars().count().div_ceil(4)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn basic_authorization_with_base64_padding_is_redacted() {
+        let mut report = RedactionReport {
+            policy: "test",
+            ..Default::default()
+        };
+        let output = redact("Authorization: Basic dXNlcjpwYXNzd29yZHh4eHg=", &mut report);
+        assert_eq!(output, "Authorization: [REDACTED:basic_auth]");
+        assert_eq!(report.redacted_counts.get("basic_auth"), Some(&1));
+    }
 }
