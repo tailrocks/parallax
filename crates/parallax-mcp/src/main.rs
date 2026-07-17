@@ -1,7 +1,7 @@
-//! SPIKE binary: stdio MCP read-only context adapter + projection-equivalence check.
+//! Product local-stdio MCP: read-only context adapter + projection-equivalence check.
 //!
-//! Not a product surface. See crate README and
-//! `docs/research/validation/2026-07-11-mcp-spike-projection-equivalence.md`.
+//! Local-stdio GO only (plan 112). Remote transport remains out of scope.
+//! See `docs/research/validation/2026-07-plan-112-product-mcp/README.md`.
 
 mod audit;
 mod check;
@@ -12,8 +12,8 @@ use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "parallax-mcp-spike",
-    about = "SPIKE: read-only stdio MCP adapter over Parallax GraphQL (not product)"
+    name = "parallax-mcp",
+    about = "Read-only local-stdio MCP adapter over Parallax GraphQL"
 )]
 struct Cli {
     /// Base URL of the Parallax API (default local serve).

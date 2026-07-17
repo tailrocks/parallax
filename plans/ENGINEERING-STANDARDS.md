@@ -64,7 +64,7 @@ T5  parallax-cli         command parsing, API client, output, embedded serve edg
 
 Aux parallax-test-support  builders, fakes, conformance, controlled seeding
 Aux parallax-xtask         repository policy and developer orchestration
-Aux parallax-mcp-spike     isolated proof; never a product dependency
+Aux parallax-mcp          local-stdio MCP product surface (no product deps on it)
 ```
 
 `parallax-core` is a migration shell only. Its responsibilities move to

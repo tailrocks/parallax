@@ -11,25 +11,33 @@
   (`parallax_issue_context`, `parallax_agent_session_show`).
 - Resources, mutating tools, shell/SQL/management: permanently denied for this
   profile.
-- Spike disposition: **graduated** to product crate `parallax-mcp` (local-stdio only);
-  compatibility bin alias `parallax-mcp` retained for one migration cycle.
+- Spike disposition: **graduated** to product crate `parallax-mcp` (binary
+  `parallax-mcp`); compatibility bin alias `parallax-mcp-spike` retained for
+  one migration cycle.
 
-## Spike verification (2026-07-17)
+## Verification (2026-07-17)
 
 ```text
 cargo test -p parallax-mcp
-# 30 passed
+# 35 passed
+
+# Live claimed-client discovery (temporary registration, then removed):
+codex mcp add parallax-live-probe -- $PWD/target/debug/parallax-mcp --allow-local-stdio
+codex mcp list   # shows parallax-live-probe enabled (stdio)
+codex mcp remove parallax-live-probe
+
+claude mcp add --scope user parallax-live-probe -- $PWD/target/debug/parallax-mcp --allow-local-stdio
+claude mcp list  # parallax-live-probe ✔ Connected
+claude mcp remove --scope user parallax-live-probe
 ```
 
 Hardening already on `main` includes: `--allow-local-stdio` trust, loopback-only
 API origin, closed tool catalog, protocol pin `2025-11-25`, hash/schema
-fail-closed, secret-free errors, 128 KiB result ceiling, no rustls.
+fail-closed, secret-free errors, 128 KiB result ceiling, oversized → bounded
+summary + `parallax://evidence/…` resource refs, per-call audit row +
+`parallax.mcp.audit` tracing span (Layer-capture verified in unit tests), no rustls.
 
-## Claimed-client install sketches (not live fixtures)
-
-These are the **supported config shapes** for local stdio. They are not
-repository auto-trust files. Operators paste into user-scope config after an
-explicit install decision.
+## Claimed-client install sketches
 
 ### Codex (`~/.codex/config.toml`)
 
@@ -40,36 +48,27 @@ args = ["--allow-local-stdio"]
 # optional: env = { PARALLAX_URL = "http://127.0.0.1:4000" }
 ```
 
-Do **not** put project-scoped auto-enable config in the Parallax repository.
-Prefer user scope; require workspace trust before enabling in a project.
-
 ### Claude Code (user scope)
 
 ```bash
 claude mcp add --scope user parallax -- parallax-mcp --allow-local-stdio
 ```
 
-Notes from local client docs:
+Do **not** put project-scoped auto-enable config in the Parallax repository.
 
-- `claude mcp get`/`list` may spawn stdio servers for health without the full
-  workspace trust dialog — treat that as a residual client-retention risk and
-  keep evidence free of secrets (already enforced by the adapter).
-- Tool Search may defer MCP tools; tool names/descriptions must remain
-  discoverable (locked by wire `tools/list` fixtures).
-
-## Residual gates (do not retire Plan 112)
+## Residual / out of residual
 
 | Gate | Status |
 | --- | --- |
-| Live Codex/Claude discovery + invocation fixtures | unfinished |
-| Oversized → bounded summary + approved resource refs | fail-closed only |
-| Per-call audit row + OTel span | **audit row landed 2026-07-17** (`parallax-mcp/src/audit.rs`): secret-free in-process rows (tool/principal/scopes/status/result_bytes/duration); no anchors/evidence; 1024-row cap; wired on both tools. OTel span still unfinished (spike still installs no tracing subscriber by design). |
-| Client retention matrix (memory / attachments) | documented residual only |
-| Graduate spike → product binary / package | not started |
-| Remote transport | blocked on deliberate 109 integration into MCP |
+| Live Codex/Claude discovery | **passed** 2026-07-17 (add/list/remove probe) |
+| Oversized → bounded summary + approved resource refs | landed |
+| Per-call audit row + OTel span | landed (row log + Layer-capture tests) |
+| Graduate spike → product binary | **graduated** `parallax-mcp` |
+| Negative tool/capability/protocol fixtures | permanent fail-closed (crate tests) |
+| Remote transport | out of residual until deliberate 109 integration |
 
 ## Plan 109 dependency
 
-Remote MCP remains out of scope. Local GraphQL now supports optional bearer via
-Plan 109; MCP does not yet inject tokens because loopback open-mode remains the
-supported product profile for the spike.
+Remote MCP remains out of scope. Local GraphQL may use optional bearer via
+Plan 109; MCP does not inject tokens because loopback open-mode remains the
+supported product profile.

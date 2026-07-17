@@ -16,7 +16,7 @@ members = [
     "crates/parallax-spool",
     "crates/parallax-storage",
     "crates/parallax-test-support",
-    "crates/parallax-mcp-spike",
+    "crates/parallax-mcp",
     "crates/parallax-xtask",
 ]
 exclude = ["poc/evidence-loop", "poc/read-transport-bench", "fuzz", "bench-alloc"]

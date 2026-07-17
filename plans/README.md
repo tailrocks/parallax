@@ -374,7 +374,7 @@ external facts still BLOCKED where noted. Plan 102 and plan 109 retired
 | Plan | Depends on | Trigger / residual | Status |
 |------|------------|--------------------|--------|
 | [110](110-server-profile-ingest-concurrency.md) | 115 + saturation packet | Measured single-worker bottleneck on supported profile | BLOCKED on 115 profile + measurements |
-| [112](112-product-mcp-ship-gates.md) | 099, 104, 111 | Live client discovery/retention + spike graduation (registration fixtures + OTel span verify landed) | IN PROGRESS — local-stdio GO; residual graduation |
+| 112 | 099, 104, 111 | Local-stdio product MCP ship gates | DONE (2026-07-17) — graduated `parallax-mcp`; live Codex/Claude discovery; [evidence](../docs/research/validation/2026-07-plan-112-product-mcp/README.md) |
 | [114](114-retire-legacy-spool-reader.md) | Stable raw-frame release cycle + expired legacy segments | Remove NDJSON reader after cycle | BLOCKED — only rolling `preview` tag (recheck 2026-07-17T14:40Z) |
 | [115](115-v2-server-profile.md) | Auth contract + release pipeline (102/109 DONE) | Rehearsals + load packet (ADR + example config landed) | IN PROGRESS — example-config.toml validates |
 | [118](118-sentry-envelope-migration-adapter.md) | 093, 099, 104, 111, 116 | Cross-source identity, bundle/redaction, live gates (SDK fixture landed) | IN PROGRESS — parser + HTTP + ledger + Python SDK fixture |

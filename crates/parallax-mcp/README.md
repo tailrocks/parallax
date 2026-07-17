@@ -1,12 +1,12 @@
 +++
 schema_version = 1
-package = "parallax-mcp-spike"
+package = "parallax-mcp"
 class = "proof"
 dependencies = ["parallax-evidence"]
 facade_roots = ["main.rs"]
 +++
 
-# parallax-mcp-spike
+# parallax-mcp
 
 **SPIKE only — not a product surface.** May be deleted after the MCP ship/no-ship
 decision. Do not package, do not enable by default, do not document in the user
@@ -42,10 +42,10 @@ Requires a live `parallax serve` (default `http://127.0.0.1:4000`).
 
 ```bash
 # stdio MCP server (explicit local trust required)
-cargo run -p parallax-mcp-spike -- --allow-local-stdio
+cargo run -p parallax-mcp -- --allow-local-stdio
 
 # projection-equivalence proof (issue + optional invocation anchor)
-cargo run -p parallax-mcp-spike -- check \
+cargo run -p parallax-mcp -- check \
   --fingerprint <fp> \
   --invocation-id <invocation_id>   # optional second anchor
 ```
@@ -119,5 +119,5 @@ compatibility surface.
 
 ## Verification
 
-Run `cargo check -p parallax-mcp-spike` for the narrow crate gate and `cargo xtask facade check` for
+Run `cargo check -p parallax-mcp` for the narrow crate gate and `cargo xtask facade check` for
 root-surface drift.

@@ -1,6 +1,6 @@
 [package]
-name = "parallax-mcp-spike"
-description = "SPIKE: read-only stdio MCP adapter over GraphQL (not a product surface)"
+name = "parallax-mcp"
+description = "Read-only local-stdio MCP adapter over GraphQL (product surface, plan 112)"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -10,7 +10,7 @@ repository.workspace = true
 publish = false
 
 [[bin]]
-name = "parallax-mcp-spike"
+name = "parallax-mcp"
 path = "src/main.rs"
 
 [dependencies]
