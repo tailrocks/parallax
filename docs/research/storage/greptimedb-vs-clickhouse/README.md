@@ -39,6 +39,33 @@ A benchmark number the internals cannot explain is a flag that one of them is wr
 
 *Prior pins preserved in run history:* GT `v1.0.2` / CH `v26.5.1.882` through Run 172.
 
+## Recent loop status (Runs 173–193, 2026-07-17)
+
+Re-pinned to **v1.1.3 / 26.6** and re-verified live (not “done” — server-tier + workload mix +
+managed quotes remain):
+
+| Theme | Run | Status |
+| --- | --- | --- |
+| JSON2 closes most dynamic-attr gap | 173/176 | harness + note |
+| Backup/DR | 174 | new note |
+| Managed-cloud framework | 175 | new note; $ quotes owed |
+| Last-value ~tie at 100k | 177 | scale-shaped GT win |
+| Concurrent ingest ≤1.5× | 178 | gate pass |
+| Quotas / fsync settings | 179–180 | CH Code 201 live |
+| Native OTLP/PromQL/Jaeger | 181 | protobuf-only OTLP |
+| Schema-on-write identity | 182 | no drift |
+| PromQL tax ~1.5–2× @100k | 183 | not fixed 5.6× |
+| Full-text / matrix refresh | 184 | selective ~tie |
+| CH projections | 185 | 2/12 granules |
+| append_mode forbids DELETE | 186 | blueprint |
+| TTL expire | 187 | no drift |
+| Flow + CH MV | 188 | capability parity |
+| Storage density | 189 | shape-dependent |
+| Verdict pin refresh | 190 | one-pager |
+| Freshness 20/20 | 191 | tie |
+| Cardinality-insensitive ingest | 192 | flat |
+| Join pushdown | 193 | CH prunes; both interactive |
+
 ## Method
 
 - Compare the latest stable release of each system; record exact versions and the source commit SHA in every note.
