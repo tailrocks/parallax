@@ -7083,3 +7083,9 @@ immediate. Continuous-agg capability parity holds on current pins.
 GT denser on logs (~0.4× CH) and metrics (~0.92×); CH denser on spans (~1.7×) and indexed
 errs (~2.6× GT). Shape-dependent; no blanket winner. `compression-and-cost.md`.
 Evidence: scratch `run189-storage-sizes.txt`.
+
+### Run 190 — 2026-07-17 — verdict document pin refresh (synthesis)
+
+No new containers. Updated `verdict-which-to-choose.md` to pins GT `v1.1.3` / CH `26.6.1.1193`
+and folded Runs 173–189 corrections (JSON2, append DELETE, managed-cloud framework, closed
+v1.1-GA wait with 5M dedup residual).

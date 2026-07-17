@@ -2,14 +2,14 @@
 
 <!-- markdownlint-disable MD013 -->
 
-One-page current verdict. The full reasoning, ~170 benchmark runs, per-pass history, and the
+One-page current verdict. The full reasoning, 180+ benchmark runs, per-pass history, and the
 detailed DQ tables with run citations are in [`run-log.md`](run-log.md). The product-level
 decision and the "what must close to finalize" list are in
 [`../../decisions/storage-engine.md`](../../decisions/storage-engine.md).
 
-Pins (re-verify each pass): GreptimeDB `v1.0.2` (GA 2026-05-14, `0ef5451`); ClickHouse
-`v26.5.1.882-stable` (`5b96a8d8`). v1.1.0 is nightly-only; 26.5.x is the latest stable *feature* line.
-**Re-verified 2026-05-29 (GitHub releases): no drift — GreptimeDB v1.1 still nightly-only (no GA), ClickHouse 26.5 still the highest stable feature line.**
+Pins (re-verify each pass): GreptimeDB **`v1.1.3`** (GA 2026-07-17, `63ef18a7…`); ClickHouse
+**`v26.6.1.1193-stable`** (`840482cd…`). Nightly: GT `v1.2.0-nightly-…`, CH `:head` (~26.7.x).
+Do **not** pin bare `v1.1.0` (JSON upgrade bug). **Re-pinned Run 173; re-verified through Run 189.**
 
 ## Headline
 
@@ -41,8 +41,8 @@ ClickHouse implementation.
 
 | # | Question | Answer |
 | --- | --- | --- |
-| DQ1 | Where is **GreptimeDB** genuinely better? | Metrics/PromQL-native (GA + default-on); small-write/upsert ingest ergonomics (LSM, no part-explosion); horizontal scale-out by design (region auto-rebalance, no bulk-copy migration); read-time dedup → correct latest-state on a plain query; OTLP schema-drift auto-adds typed columns; retention = whole-SST drop; object-storage-native (fewer objects → wins cold full scans); replayable WAL; cardinality-insensitive metric *ingest*. |
-| DQ2 | Where is **ClickHouse** genuinely better? | Selective log/trace scan + full-text; time-DESC log-tail locality; generic wide-scan/aggregate throughput (~2–3× warm metric-agg); per-column codecs; dynamic-attribute JSON path queries (~8× with the required `.:Type` cast); projections (a 2nd physical order); in-DB anchored cross-tier joins; cold *selective* object-store reads; schema-mistake tolerance. Gap **widens with scale** (5M+). |
+| DQ1 | Where is **GreptimeDB** genuinely better? | Metrics/PromQL-native (GA + default-on); small-write/upsert ingest ergonomics (LSM, no part-explosion); horizontal scale-out by design (region auto-rebalance, no bulk-copy migration); read-time dedup → correct latest-state on a plain query; OTLP schema-drift auto-adds typed columns (`greptime_identity`); retention = whole-SST drop; object-storage-native (fewer objects → wins cold full scans); replayable WAL; cardinality-insensitive metric *ingest*; denser **logs** storage (Run 189); **JSON2** structured attrs when declared (Run 173). **Caveat (Run 186):** `append_mode` tables **cannot SQL DELETE** — GDPR needs a non-append path. |
+| DQ2 | Where is **ClickHouse** genuinely better? | Selective log/trace scan + full-text; time-DESC log-tail locality; generic wide-scan/aggregate throughput (~2–3× warm metric-agg); per-column codecs; **default** dynamic-attribute JSON path queries (~8–12× with the required `.:Type` cast — **opt-in GT `JSON2` closes most of this**, Run 173/176); projections (a 2nd physical order); in-DB anchored cross-tier joins; cold *selective* object-store reads; schema-mistake tolerance; first-class `BACKUP`/`CREATE QUOTA`. Gap **widens with scale** (5M+). |
 | DQ3 | Can ClickHouse replace GreptimeDB? | **Yes, technically** — at the cost of a PromQL+OTLP compatibility layer (experimental/collector-only on CH), manual sharding (OSS `SharedMergeTree` is Cloud-only), and an ingest-batching layer. |
 | DQ4 | Can GreptimeDB replace ClickHouse? | **Yes** — ran Q1–Q6 with identical results; accept slower heavy ad-hoc log/trace scans. The anchored hot path is **not latency-bound** (Q6 composite ≪300 ms on both). |
 | DQ5 | Which to choose for Parallax today? | **GreptimeDB** on workload fit + the Rust tiebreak; ClickHouse's wins are real but less central to anchored retrieval. |
@@ -64,9 +64,11 @@ ClickHouse implementation.
    **multi-replica object-storage cost** (GreptimeDB 1× shared S3 vs OSS ClickHouse N× replicas).
    The operator's #1 priority; see [`../size-and-object-cost.md`](../size-and-object-cost.md).
 2. **Cold-read latency at GB–TB from object storage** — see [`../freshness-and-latency.md`](../freshness-and-latency.md).
-3. **Self-hosted vs managed-cloud** — ClickHouse Cloud (`SharedMergeTree`) would erase GreptimeDB's cost edge.
-4. **Re-test on GreptimeDB v1.1 GA** (Q2 2026 — JSON Type v2 narrows the dynamic-attr gap; the v1.1
-   nightly is uneven and even regresses 5M dedup-aggregation). Re-pin and re-run the load-bearing benchmarks.
+3. **Self-hosted vs managed-cloud** — framework in `managed-cloud-vs-self-host.md` (Run 175); **live $
+   quotes still owed**. ClickHouse Cloud (`SharedMergeTree`) would erase much of GreptimeDB's OSS cost edge.
+4. **~~Re-test on GreptimeDB v1.1 GA~~ (done Run 173+)** — now on **`v1.1.3`**. JSON2 is opt-in and
+   closes most of the dynamic-attr gap when used. **Still owed:** server-tier **5M dedup-agg** retest
+   on v1.1.3 (pre-GA nightly regressed; not re-run at 5M on laptop).
 
 The complete open-question ledger (#0–#8, with mechanism status) and the per-pass run history are in
 [`run-log.md`](run-log.md) and [`open-questions-and-gaps.md`](open-questions-and-gaps.md); the
