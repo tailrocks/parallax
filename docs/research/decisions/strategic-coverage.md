@@ -24,6 +24,22 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > open proof gates are enumerated in "What Is Still Unproven" below. See
 > [go-no-go.md](go-no-go.md) for the verdict, [risks-and-bear-case.md](risks-and-bear-case.md)
 > for the bear case, and [storage-engine.md](storage-engine.md) for the engine decision.
+>
+> **Competitive pressure recheck (2026-07-17, passes 48–57):** GO (narrow) **survives**, but the
+> wedge is **narrower than May/June prose**. Field facts that must not be papered over:
+>
+> 1. **Agent access is table stakes** — Traceway ships local+remote MCP over OTLP multi-signal
+>    ([parallax-vs-traceway.md](../market/competitors/parallax-vs-traceway.md)); Rustrak/GlitchTip/
+>    Bugsink cover Sentry-compat + MCP variants; HolmesGPT is the open fixer agent.
+> 2. **OTel did not commoditize the evidence *bundle*** — #1185 attributes only, idle
+>    ([commoditization note](../architecture/evidence-bundle-schema-commoditization-2026-07-17.md)).
+> 3. **Closed-loop app auto-merge still unclaimed** — Bits/Seer stop at human merge.
+> 4. **GreptimeDB is on v1.1.3** — old `v1.0.2` pins are dead; cost/cold-read still unmeasured.
+> 5. **A1/A2 still unproven** — desk rechecks do not close them; Traceway MCP is a steelman B′ baseline.
+>
+> Surviving differentiation (if A1 holds): **portable redacted versioned prod-incident evidence +
+> outcome/recurrence substrate**, open, self-hostable, air-gap capable. Without A1, this is an
+> elegant engine with unproven agent-fix lift.
 
 ## Purpose
 
