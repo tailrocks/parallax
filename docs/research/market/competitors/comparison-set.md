@@ -65,7 +65,7 @@ Component-level (the "stack it yourself" pieces, referenced not deep-dived):
 | Product | What it is | License / model | Primary signal focus | State |
 | --- | --- | --- | --- | --- |
 | **Langfuse** | OSS LLM/agent tracing + evals + prompt mgmt (self-host or cloud). | MIT (self-host) + Cloud. | LLM/agent traces + evals. | [deep-dive](parallax-vs-langfuse.md) |
-| **LangSmith** | LangChain's closed tracing/eval/prompt platform. | Closed SaaS. | LLM/agent traces + evals. | [deep-dive](parallax-vs-langsmith.md) |
+| **LangSmith** | LangChain closed tracing/eval/prompt platform + **Engine** (autonomous agent failure diagnosis/fix recs, LCU-metered) + Fleet/Sandboxes. LCU $1.50 / LSU $1.00. | Closed SaaS (+ Enterprise self-host). | LLM/agent traces + evals + agent Engine. | [deep-dive](parallax-vs-langsmith.md) |
 | **Arize Phoenix** | OSS LLM/agent tracing + evals (drives **OpenInference**); OTLP-native. | **ELv2** (self-host free + unlimited, but not OSI-open; managed-service restriction). | LLM/agent traces + evals. | [deep-dive](parallax-vs-arize-phoenix.md) |
 | **PostHog** | OSS product analytics + session replay + feature flags/experiments + LLM/agent tracing. **MIT Expat core + proprietary `ee/`** (~36k★). | MIT core + EE proprietary + Cloud. | Product analytics + LLM. | [deep-dive](parallax-vs-posthog.md) |
 | **Helicone** | LLM gateway/proxy + observability; caching + zero LLM-markup. **🛑 Acquired by Mintlify 2026-03-03 → Cloud maintenance mode**; OSS Apache-2.0 (~6k★). | Apache-2.0 + Cloud (Mintlify). | LLM proxies + traces (maintenance). | [deep-dive](parallax-vs-helicone.md) |

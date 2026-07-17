@@ -1,7 +1,10 @@
 # Parallax vs LangSmith
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17**.
-> Sources: [LangChain pricing](https://www.langchain.com/pricing), [LangSmith docs](https://docs.smith.langchain.com/), and 2026 third-party pricing analyses. Completes the AI-observability trio alongside [Langfuse](parallax-vs-langfuse.md) and [Arize Phoenix](parallax-vs-arize-phoenix.md).
+> Sources: live [LangChain pricing](https://www.langchain.com/pricing) (**pass 43
+> LCU/LSU FAQ + Engine surface**), [LangSmith docs](https://docs.smith.langchain.com/),
+> 2026 third-party analyses. Completes the AI-observability trio alongside
+> [Langfuse](parallax-vs-langfuse.md) and [Arize Phoenix](parallax-vs-arize-phoenix.md).
 >
 > **Bottom line up front:** LangSmith is LangChain's **closed, commercial LLM/agent
 > observability + eval platform** — the native tool for the LangChain/LangGraph
@@ -67,10 +70,15 @@ Both touch agent/LLM tracing, but LangSmith is a closed LLMOps platform tied to 
 
 ## AI-native / agent-context story
 
-- **LangSmith's position:** an **LLMOps + eval platform for developers building LLM apps on LangChain/LangGraph** — trace, evaluate, manage prompts, experiment. A human dev loop + analytics; **not a bounded, read-only, redacted agent-context projection for production-incident resolution.** No production-error derivation, no fix-outcome loop.
+- **LangSmith's position:** an **LLMOps + eval platform** for LangChain/LangGraph builders — trace, evaluate, manage prompts, experiment. Plus (pass 43, live pricing page):
+  - **LangSmith Engine** — “Find agent failures, diagnose root causes, and generate fixes with eval coverage automatically”; monitors traces autonomously, clusters issues, diagnoses code failures, recommends prompt/code fixes, creates datasets/evals. Metered in LCUs (~5–30 LCU/run est.; runs every 6 hours). **This is a shipped autonomous investigator/fixer for agent applications** — same family of pressure on “context-engine-not-the-fixer” as HolmesGPT/Honeycomb/Splunk, but scoped to LangSmith-traced agents.
+  - **Fleet** — natural-language agent builder (MCP tools, LCU-metered).
+  - **Sandboxes** — ephemeral isolated compute for agent-generated code.
+  - Expose agent as **MCP server**.
+- Still **not** a bounded/redacted/portable *production-incident* evidence bundle for general backend systems (no OTLP full-stack, no Sentry envelope, no prod error_event derivation outside the LLM-agent app surface).
 - **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for production incidents (planned, A1 gate).
 
-**Honest verdict:** LangSmith is **far more mature** on capturing/structuring agent traces (esp. LangGraph) and evals. On shipped capability, **LangSmith leads.** Parallax's differentiation is entirely in cells LangSmith doesn't occupy: production-error derivation, fix-outcome loop, bounded/redacted agent-context artifact — all **unproven (A1 gate).** Fair read: a team on LangChain/LangGraph gets far more from LangSmith today than from pre-release Parallax.
+**Honest verdict (no-bias, pass 43):** LangSmith is **far more mature** on agent traces + evals **and now ships an autonomous Engine that diagnoses and proposes fixes** — a direct competitor surface for the “agent fix loop,” not just LLMOps analytics. On shipped agent-app investigation, **LangSmith leads** pre-release Parallax. Parallax’s residual claim is **production-backend** (non-LangChain) incident context + portable redacted bundle + Sentry/OTLP breadth — all **A1-unproven**. Do not claim “LangSmith is only a human dashboard.”
 
 ## Architecture & deployment
 
@@ -124,11 +132,22 @@ LangSmith pricing is **public** ([langchain.com/pricing](https://www.langchain.c
 | **Plus** | **$39 / seat / month** | 10K base traces/mo included, then pay-as-you-go | unlimited seats |
 | **Enterprise** | custom (annual invoice) | custom | self-hosted + hybrid options, custom SSO/RBAC, SLA |
 
-**Metering units (live page, 2026-07-17):** usage beyond the included traces is metered in **LCU ($1.50 / LCU)** and **LSU ($1.00 / LSU)** — the page does **not** publish a per-1K-trace overage price. Retention: **base traces 14 days; extended traces 180 days** (upgrading a trace to extended costs an additional fee). ⚠️ **Correction vs pass 13:** the earlier figures ($0.50/1K base, $2.50/1K extended, 400-day extended retention) came from secondary 2026 analyses and do **not** match the live pricing page today — either LangSmith changed its metering (per-1K → LCU/LSU, 400d → 180d) or the secondary sources were stale/wrong. The live page is authoritative; per-1K figures are retained here only as historical context.
+**Metering units — RESOLVED pass 43** (live [langchain.com/pricing](https://www.langchain.com/pricing) FAQ, 2026-07-17):
 
-**LangGraph agent tracing:** third-party sources cite **$0.001 / node execution** (first 100K free) — **not confirmed on the live pricing page** (LCU/LSU abstractions may have replaced it); treat as unproven. Sources: [pecollective](https://pecollective.com/blog/langsmith-pricing/), [checkthat.ai](https://checkthat.ai/brands/langsmith/pricing), [laminar.sh](https://laminar.sh/blog/2026-01-29-laminar-vs-langfuse-vs-langsmith-llm-observability-compared). Per-seat + usage metering compounds at scale (a documented TCO concern).
+| Unit | Definition (vendor FAQ) | List price |
+| --- | --- | --- |
+| **LCU** — LangChain Compute Unit | Normalized unit of **work/compute** on the LangSmith platform (Engine, Fleet, deployments, sandboxes meter at product-specific rates into LCUs) | **$1.50 / LCU** |
+| **LSU** — LangChain Storage Unit | Normalized unit of **data stored/managed** (traces, deployment DB, sandbox storage meter into LSUs) | **$1.00 / LSU** |
 
-**Parallax pricing:** none public yet (pre-release).
+**Seat + base traces (live page):** Developer **$0/seat**, 5k base traces/mo; Plus **$39/seat**, 10k base traces/mo; Enterprise custom. **Base traces = 14-day retention; extended = 180 days** (upgrade fee). No published per-1K overage — LCU/LSU replace that model.
+
+**Example resource rates (Plus Deployment, live page):** Runtime compute **0.045 LCU / vCPU-hr**; runtime memory **0.006 LCU / GiB-hr**; DB compute **0.177 LSU / vCPU-hr**; DB memory **0.025 LSU / GiB-hr**. Sandbox: compute **0.0384 LCU / vCPU-hr**, memory **0.0123 LCU / GiB-hr**, storage **0.000123 LSU / GiB-hr**. Fleet: Developer **5 LCU/mo** free org allowance; Plus **25 LCU/mo**. Engine runs consume **~5–30 LCU** per run (estimate; scheduled every 6 hours).
+
+⚠️ **Pass-13 per-1K / 400-day figures remain demoted** (secondary, not live).
+
+**LangGraph $0.001/node:** still **not on live page** — unproven secondary.
+
+**Parallax pricing:** **no public number** (pre-release).
 
 **Honest cost read:** LangSmith's per-seat + per-trace + per-node model compounds for high-volume agent workloads (third-party TCO guides flag this). Whether Parallax self-host is cheaper is benchmark-dependent/unmeasured. Langfuse (MIT, free self-host) is the cheaper OSS alternative in the same category.
 
@@ -151,7 +170,8 @@ LangSmith pricing is **public** ([langchain.com/pricing](https://www.langchain.c
 
 - **A1 gate vs LangSmith:** if a team is on LangChain/LangGraph + LangSmith, does a Parallax bounded bundle measurably improve coding-agent fix outcomes for *production incidents*? Unproven — and LangSmith's LangGraph tracing already covers much agent-context ground.
 - ~~**LangSmith self-host reality (2026)**~~ — **answered (pass 14):** real but Enterprise-only; K8s+Helm production path with Postgres 14+/Redis/ClickHouse/blob storage, 16 vCPU/64 GB baseline, license beacon unless air-gapped ([architectural overview](https://docs.langchain.com/langsmith/architectural-overview)).
-- **LangSmith metering drift** — live page (pass 14) shows LCU/LSU units + 180-day extended retention, contradicting the per-1K/400-day figures in secondary analyses. Open: what exactly an LCU/LSU maps to (trace? span? byte?) — pin from LangSmith docs next pass.
+- **LangSmith LCU/LSU unit definition** — **RESOLVED pass 43** (live pricing FAQ): LCU = compute/work unit @ $1.50; LSU = storage/managed-data unit @ $1.00; product-specific conversion rates published for deployments/sandboxes; Engine ~5–30 LCU/run estimate.
+- **A1 vs LangSmith Engine** — does a Parallax prod-incident bundle beat Engine’s autonomous agent-app fix loop for coding-agent outcomes? Different scopes (prod-backend vs LangSmith-traced agents); still unproven.
 
 ## Sources (accessed 2026-07-17)
 
