@@ -51,7 +51,18 @@ pressure, idle incident-attribute track).
 
 **Pass 211 primary re-fetch (2026-07-18):** #1185 still **open/idle** (2025-10-24); OCSF still **1.8.0**.
 
-**Still not commoditized.**
+**Pass 243 primary re-fetch (2026-07-18):**
+
+| Source | Finding |
+| --- | --- |
+| [semconv #1185](https://github.com/open-telemetry/semantic-conventions/issues/1185) | Still **open**; labels still `cicd:phase-2`, `triage:accepted:ready-with-sig`; `updated_at` still **2025-10-24T14:40:05Z** (**~9 months** idle). Scope still **attributes** (`outage.incident`), not a portable evidence bundle. |
+| [semconv #1081 alerts](https://github.com/open-telemetry/semantic-conventions/issues/1081) | Still **open**; `updated_at` still **2025-11-09**; experts-needed — alert **events**, not investigation packs |
+| `model/` dirs (contents API) | **No** `incident` / `investigation` / `rca` / `evidence` / `bundle` / `postmortem` / `forensic` / `alert` dirs. Present: `cicd`, `cli`, `mcp`, `artifact` (SLSA), `gen-ai`, `session`, … |
+| Code search `incident` yaml under `model/` | **total_count 0** |
+| [genai#51 session.id](https://github.com/open-telemetry/semantic-conventions-genai/issues/51) | Still **open**; `updated_at` still **2026-05-05** (session id pressure ≠ investigation artifact) |
+| [OCSF releases](https://github.com/ocsf/ocsf-schema/releases) | Latest GA tag still **`1.8.0`** (published **2026-03-18**). [schema.ocsf.io](https://schema.ocsf.io/) default selected **v1.8.0**; **`v1.9.0-dev`** appears in version picker only — **`/1.9.0/` → 404**. Dev draft ≠ GA commoditization. |
+
+**Still not commoditized.** No material movement vs pass 211/237.
 
 **Evidence class:** primary GitHub issue/tree + first-party release pages +
 vendor product docs (desk recheck). Not a measurement of A1 value.

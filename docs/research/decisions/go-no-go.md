@@ -63,6 +63,10 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > usage-Cloud + EE/AI gates. Full kill table not re-walked this pass (wedge =
 > pass 241; Seer = pass 238). **Still GO (narrow product).**
 >
+> **Pass 243 (2026-07-18) — GO reaffirm (schema commoditization).** OTel #1185
+> still open/idle; OCSF GA still 1.8.0. Kill "OTel commoditizes evidence-bundle
+> schema" still **unfired**. **Still GO (narrow product).**
+>
 > **Narrow product identity holds.** Research program continues.
 
 ## Verdict

@@ -104,6 +104,7 @@ managed quotes remain):
 | bloom trace_id 2/7 | **422** | idx_trace prunes; data dirty |
 | PromQL fn matrix expand | **423** | CH partial; *_over_time mostly missing |
 | join prune N=2k fresh | **424** | CH both sides; GT PK ok |
+| four-way last_value warm | **425** | GT 10–16ms / CH 4–11ms |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |

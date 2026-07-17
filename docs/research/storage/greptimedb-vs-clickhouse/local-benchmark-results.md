@@ -8406,3 +8406,22 @@ gaps remain. Operator must stop or replace goal explicitly. **Not done.**
 
 ### Run 402 — 2026-07-17 — health OK; not done
 
+
+### Run 425 — 2026-07-18 — four-way warm last_value / argMax @ ~50k
+
+**Pins:** GT `v1.1.3` / nightly `1.2.0` (`v1.2.0-nightly-20260713`); CH `26.6.1.1193` /
+head `26.7.1.1097`. Table `m2m` (~50k rows; GT stable has +20 concurrent dirt → 1020
+groups vs 1000 on other builds).
+
+| Build | Query | Warm times (3 passes) | Groups |
+| --- | --- | --- | --- |
+| GT stable | `last_value(val) GROUP BY service, instance` | 13 / 10 / 16 ms | 1020 |
+| GT nightly | same | **278 ms cold**, then 17 / 12 / 10 ms | 1000 |
+| CH 26.6 | `argMax(val, ts) GROUP BY …` | 11 / 5 / 5 ms | 1000 |
+| CH head | same | 5 / 6 / 4 ms | 1000 |
+
+**Reading:** warm interactive on all four; CH ~1.5–3× faster at this N (noise-bound).
+First nightly hit was **cold-cache**, not a v1.2 regression. Matches Run 177 scale-shape
+caution. CH disk sample (dirty fixtures): logs1m 52k → 1.15 MiB; spans1m 50k → 497 KiB;
+m2m 50k → 219 KiB.
+
