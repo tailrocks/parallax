@@ -270,7 +270,7 @@ pub(crate) async fn prune(execute: bool, yes: bool, json: bool) -> anyhow::Resul
     let mut items: Vec<PruneItem> = Vec::new();
     if meta_path.exists() {
         let store = TursoMetadataStore::open(&meta_path).await?;
-        items.extend(store.metadata_prune_items(cutoff_nanos).await?);
+        items.extend(store.metadata_prune_items(cutoff_nanos, now_nanos).await?);
     } else {
         eprintln!(
             "warning: no Turso metadata at {} — planning spool only",
@@ -298,9 +298,7 @@ pub(crate) async fn prune(execute: bool, yes: bool, json: bool) -> anyhow::Resul
     let snapshot = PruneSnapshot {
         config_generation: format!(
             "retention:{}:{}:{}",
-            config.retention.traces_ttl,
-            config.retention.logs_ttl,
-            config.retention.metrics_ttl
+            config.retention.traces_ttl, config.retention.logs_ttl, config.retention.metrics_ttl
         ),
         // Plan 106 pin store not yet product-wired; empty generation means
         // no pin exclusions are claimed.
@@ -323,7 +321,9 @@ pub(crate) async fn prune(execute: bool, yes: bool, json: bool) -> anyhow::Resul
     if !execute {
         if !json {
             println!();
-            println!("dry-run only — re-run with --execute (and --yes for non-interactive) to apply");
+            println!(
+                "dry-run only — re-run with --execute (and --yes for non-interactive) to apply"
+            );
             println!("raw telemetry remains engine-TTL managed (see config [retention])");
         }
         return Ok(());
@@ -331,9 +331,7 @@ pub(crate) async fn prune(execute: bool, yes: bool, json: bool) -> anyhow::Resul
 
     if !yes {
         println!();
-        println!(
-            "This permanently deletes eligible Turso lifecycle rows and truncates the spool."
-        );
+        println!("This permanently deletes eligible Turso lifecycle rows and truncates the spool.");
         println!("Re-run with --execute --yes to confirm.");
         return Ok(());
     }
@@ -366,10 +364,7 @@ pub(crate) async fn prune(execute: bool, yes: bool, json: bool) -> anyhow::Resul
             }
             match store.execute_prune_item(&step.item, &authorization).await {
                 Ok(rows) => {
-                    deleted.insert(
-                        step.item.target.clone(),
-                        serde_json::Value::from(rows),
-                    );
+                    deleted.insert(step.item.target.clone(), serde_json::Value::from(rows));
                     store
                         .complete_prune_step(plan.plan_id(), step.step_index, now_nanos)
                         .await?;
@@ -461,20 +456,13 @@ fn print_plan_human(plan: &PrunePlan) {
             .rows
             .map(|n| n.to_string())
             .unwrap_or_else(|| "-".into());
-        let bytes = item
-            .estimate
-            .bytes
-            .map(human)
-            .unwrap_or_else(|| "-".into());
+        let bytes = item.estimate.bytes.map(human).unwrap_or_else(|| "-".into());
         println!(
             "  - {:?} / {}  rows≈{rows}  bytes≈{bytes}",
             item.store, item.target
         );
         for exclusion in &item.exclusions {
-            println!(
-                "      exclude {:?}: {}",
-                exclusion.kind, exclusion.count
-            );
+            println!("      exclude {:?}: {}", exclusion.kind, exclusion.count);
         }
         for warning in &item.warnings {
             println!("      warn: {warning}");

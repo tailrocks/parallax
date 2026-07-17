@@ -1,4 +1,5 @@
 use super::super::*;
+use crate::EvidencePinRecord;
 use parallax_model::IssueOccurrence;
 use parallax_storage::MetadataPruneStore;
 use parallax_storage::{PruneClass, PruneExclusionKind, PruneStore};
@@ -20,6 +21,22 @@ fn issue_occurrence<'a>(
     }
 }
 
+fn evidence_pin(kind: &str, anchor_id: &str, expires_at_nanos: Option<u128>) -> EvidencePinRecord {
+    EvidencePinRecord {
+        pin_id: format!("{kind}:{anchor_id}"),
+        anchor_kind: kind.to_string(),
+        anchor_id: anchor_id.to_string(),
+        schema_version: "bundle-v2".to_string(),
+        canonical_hash: format!("sha256-jcs:{kind}:{anchor_id}"),
+        bundle_json: r#"{"schema_version":"bundle-v2","data":{}}"#.to_string(),
+        byte_len: 40,
+        pinned_at_nanos: 1_000_000,
+        expires_at_nanos,
+        pinned_by: "test".to_string(),
+        source_state: "present".to_string(),
+    }
+}
+
 #[tokio::test]
 async fn metadata_discovery_assembles_every_current_turso_class_deterministically() {
     let directory = tempfile::tempdir().expect("temporary directory");
@@ -27,7 +44,7 @@ async fn metadata_discovery_assembles_every_current_turso_class_deterministicall
         .await
         .expect("open metadata");
 
-    let items = MetadataPruneStore::metadata_prune_items(&store, 77)
+    let items = MetadataPruneStore::metadata_prune_items(&store, 77, 77)
         .await
         .expect("assemble metadata candidates");
 
@@ -162,7 +179,7 @@ async fn issue_discovery_uses_persisted_resolution_time_and_preserves_open_issue
         .expect("resolve recent");
 
     let item = store
-        .issue_prune_item(20_000_000)
+        .issue_prune_item(20_000_000, 20_000_000)
         .await
         .expect("discover issue candidates");
 
@@ -175,7 +192,7 @@ async fn issue_discovery_uses_persisted_resolution_time_and_preserves_open_issue
     assert_eq!(item.exclusions[1].count, 1);
 
     let dependents = store
-        .issue_dependent_prune_items(20_000_000)
+        .issue_dependent_prune_items(20_000_000, 20_000_000)
         .await
         .expect("discover issue-owned candidates");
     assert_eq!(dependents.len(), 2);
@@ -194,7 +211,7 @@ async fn issue_discovery_uses_persisted_resolution_time_and_preserves_open_issue
         .await
         .expect("reopen eligible");
     let reopened = store
-        .issue_prune_item(40_000_000)
+        .issue_prune_item(40_000_000, 40_000_000)
         .await
         .expect("rediscover issue candidates");
     assert_eq!(reopened.estimate.rows, Some(1));
@@ -230,7 +247,7 @@ async fn invocation_discovery_counts_eligible_active_and_not_expired_rows() {
         .expect("start active");
 
     let item = store
-        .invocation_prune_item(20_000_000)
+        .invocation_prune_item(20_000_000, 20_000_000)
         .await
         .expect("discover invocation candidates");
 
@@ -247,6 +264,71 @@ async fn invocation_discovery_counts_eligible_active_and_not_expired_rows() {
     assert_eq!(item.exclusions[1].kind, PruneExclusionKind::NotExpired);
     assert_eq!(item.exclusions[1].count, 1);
     assert!(item.warnings.is_empty());
+}
+
+#[tokio::test]
+async fn discovery_excludes_live_pins_from_owners_and_issue_dependents() {
+    let directory = tempfile::tempdir().expect("temporary directory");
+    let store = TursoMetadataStore::open(directory.path().join("metadata.db"))
+        .await
+        .expect("open metadata");
+    let attributes = serde_json::json!({});
+    store
+        .upsert_issue_occurrence(&issue_occurrence("pinned-issue", &attributes))
+        .await
+        .expect("seed issue");
+    store
+        .set_issue_status("pinned-issue", "resolved", 10_000_000)
+        .await
+        .expect("resolve issue");
+    store
+        .start_invocation("pinned-invocation", None, None, 1_000_000)
+        .await
+        .expect("start invocation");
+    store
+        .finish_invocation("pinned-invocation", 10_000_000, 0, Some("success"))
+        .await
+        .expect("finish invocation");
+    store
+        .evidence_pin_upsert(&evidence_pin("issue", "pinned-issue", None))
+        .await
+        .expect("pin issue");
+    store
+        .evidence_pin_upsert(&evidence_pin(
+            "invocation",
+            "pinned-invocation",
+            Some(30_000_000),
+        ))
+        .await
+        .expect("pin invocation");
+
+    let issue = store
+        .issue_prune_item(20_000_000, 20_000_000)
+        .await
+        .expect("discover issues");
+    let invocation = store
+        .invocation_prune_item(20_000_000, 20_000_000)
+        .await
+        .expect("discover invocations");
+    let dependents = store
+        .issue_dependent_prune_items(20_000_000, 20_000_000)
+        .await
+        .expect("discover dependents");
+
+    assert_eq!(issue.estimate.rows, Some(0));
+    assert_eq!(issue.exclusions[0].kind, PruneExclusionKind::Pinned);
+    assert_eq!(issue.exclusions[0].count, 1);
+    assert_eq!(invocation.estimate.rows, Some(0));
+    assert_eq!(invocation.exclusions[0].kind, PruneExclusionKind::Pinned);
+    assert_eq!(invocation.exclusions[0].count, 1);
+    assert!(dependents.iter().all(|item| item.estimate.rows == Some(0)));
+
+    let expired = store
+        .invocation_prune_item(20_000_000, 30_000_000)
+        .await
+        .expect("discover at expiry boundary");
+    assert_eq!(expired.estimate.rows, Some(1));
+    assert!(expired.exclusions.is_empty());
 }
 
 #[tokio::test]
@@ -278,7 +360,7 @@ async fn execute_invocation_prune_deletes_only_eligible_terminal_rows() {
         .expect("finish recent");
 
     let before = store
-        .invocation_prune_item(20_000_000)
+        .invocation_prune_item(20_000_000, 20_000_000)
         .await
         .expect("discover");
     assert_eq!(before.estimate.rows, Some(1));
@@ -290,7 +372,7 @@ async fn execute_invocation_prune_deletes_only_eligible_terminal_rows() {
     assert_eq!(deleted, 1);
 
     let after = store
-        .invocation_prune_item(20_000_000)
+        .invocation_prune_item(20_000_000, 20_000_000)
         .await
         .expect("rediscover");
     assert_eq!(after.estimate.rows, Some(0));
@@ -326,7 +408,10 @@ async fn execute_issue_prune_cascades_and_preserves_unresolved() {
         .await
         .expect("resolve eligible");
 
-    let before = store.issue_prune_item(20_000_000).await.expect("discover");
+    let before = store
+        .issue_prune_item(20_000_000, 20_000_000)
+        .await
+        .expect("discover");
     assert_eq!(before.estimate.rows, Some(1));
 
     let deleted = store
@@ -336,7 +421,7 @@ async fn execute_issue_prune_cascades_and_preserves_unresolved() {
     assert_eq!(deleted, 1);
 
     let after = store
-        .issue_prune_item(20_000_000)
+        .issue_prune_item(20_000_000, 20_000_000)
         .await
         .expect("rediscover");
     assert_eq!(after.estimate.rows, Some(0));
