@@ -32,7 +32,7 @@ Legend for the **State** column:
 | **Sumo Logic** | Cloud log/SIEM/observability SaaS; Flex scan-pricing; Francisco Partners-owned. | Closed SaaS. | Logs + metrics + security. | [deep-dive](parallax-vs-sumo.md) |
 | **Chronosphere** | Scale metrics platform on M3/Cube; controlled-cost metrics + Telemetry Pipeline. | Closed SaaS. | Metrics (high scale). | [deep-dive](parallax-vs-chronosphere.md) |
 | **Observe** | Data-/SQL-centric observability on Snowflake (acquired ~$1B Jan 2026); O11y Knowledge Graph + AI SRE/o11y.ai agents. | Closed SaaS (Snowflake). | All signals (relational). | [deep-dive](parallax-vs-observe.md) |
-| **Axiom** | Serverless log/event analytics; cheap ingest. | Closed SaaS (OSS SDKs). | Logs + events. | stub |
+| **Axiom** | Serverless log/event analytics; 3-part usage pricing (ingest+query+storage); OTel-native. | Closed SaaS (OSS SDKs). | Logs + events. | [deep-dive](parallax-vs-axiom.md) |
 | **Mezmo** | Log/data pipeline + telemetry routing. | Closed SaaS (ex-LogDNA). | Logs + pipelines. | watch |
 | **Tracelo** | AI-agent tracing / debugging. | Closed. | Agent/LLM traces. | watch |
 
