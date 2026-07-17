@@ -35,10 +35,36 @@ gen_gt(){ local c=$1; echo "  [GT] $c ..."
   gt "$c" "DROP TABLE IF EXISTS logs1m"
   gt "$c" "CREATE TABLE logs1m (\"ts\" TIMESTAMP(3) TIME INDEX,\"service\" STRING,\"level\" STRING,\"message\" STRING FULLTEXT INDEX WITH(backend='bloom',analyzer='English',case_sensitive='false',false_positive_rate='0.01'),\"trace_id\" STRING,PRIMARY KEY(\"service\")) ENGINE=mito WITH (append_mode='true')"
   gt "$c" "INSERT INTO logs1m (\"ts\",\"service\",\"level\",\"message\",\"trace_id\") SELECT (1716000000000+\"value\")::timestamp_ms, concat('s',cast(\"value\"%12 as string)), CASE WHEN \"value\"%7=0 THEN 'ERROR' ELSE 'INFO' END, concat('request id=',cast(\"value\" as string),' path=/api/r',cast(\"value\"%50 as string),CASE WHEN \"value\"%7=0 THEN ' timeout error' ELSE ' ok' END), concat('t',cast(\"value\"%70000 as string)) FROM range(0,$N)"
-  # sj — dynamic-attribute JSON
+  # sj — default JSON (Jsonb) + parse_json bulk path (legacy / baseline for Run 173 gap)
   gt "$c" "DROP TABLE IF EXISTS sj"
   gt "$c" "CREATE TABLE sj (\"ts\" TIMESTAMP(3) TIME INDEX,\"svc\" STRING,\"attributes\" JSON,PRIMARY KEY(\"svc\")) ENGINE=mito WITH (append_mode='true')"
   gt "$c" "INSERT INTO sj (\"ts\",\"svc\",\"attributes\") SELECT (1716000000000+\"value\")::timestamp_ms, concat('s',cast(\"value\"%12 as string)), parse_json(concat('{\"http\":{\"status_code\":',cast(200+(\"value\"%5)*100 as string),'}}')) FROM range(0,$N)"
+  # sj2 — JSON2 structured (fair dynamic-attr vs CH). parse_json cannot target JSON2;
+  # load via batched INSERT VALUES string literals (Run 173/176). Cap at 200k so gen
+  # stays laptop-safe (~30s/100k); larger N skips load (bench reports empty/ERR).
+  gt "$c" "DROP TABLE IF EXISTS sj2"
+  gt "$c" "CREATE TABLE sj2 (\"ts\" TIMESTAMP(3) TIME INDEX,\"svc\" STRING,\"attributes\" JSON2,PRIMARY KEY(\"svc\")) ENGINE=mito WITH (append_mode='true')"
+  if (( N <= 200000 )); then
+    python3 - "$c" "$N" <<'PY'
+import json, subprocess, sys
+c, n = sys.argv[1], int(sys.argv[2])
+batch = 500
+def run(sql: str) -> None:
+    subprocess.check_call(
+        ["docker", "exec", c, "curl", "-s", "http://localhost:4000/v1/sql?db=public",
+         "--data-urlencode", f"sql={sql}"],
+        stdout=subprocess.DEVNULL,
+    )
+for start in range(0, n, batch):
+    vals = []
+    for i in range(start, min(start + batch, n)):
+        sc = 200 + (i % 5) * 100
+        vals.append(f"({1716000000000 + i}, 's{i % 12}', '{{\"http\":{{\"status_code\":{sc}}}}}')")
+    run("INSERT INTO sj2 (ts,svc,attributes) VALUES " + ",".join(vals))
+PY
+  else
+    echo "  [GT] skip sj2 bulk load for N=$N (>200k); use server helper or lower N" >&2
+  fi
   # errs — for cross-tier join (trace_id-keyed)
   gt "$c" "DROP TABLE IF EXISTS errs"
   gt "$c" "CREATE TABLE errs (\"ts\" TIMESTAMP(3) TIME INDEX,\"trace_id\" STRING INVERTED INDEX,\"fingerprint\" STRING,\"service\" STRING,PRIMARY KEY(\"service\")) ENGINE=mito WITH (append_mode='true')"
@@ -48,7 +74,7 @@ gen_gt(){ local c=$1; echo "  [GT] $c ..."
   gt "$c" "CREATE TABLE tsr (\"ts\" TIMESTAMP(3) TIME INDEX,\"svc\" STRING,\"v\" DOUBLE,PRIMARY KEY(\"svc\")) ENGINE=mito WITH (append_mode='true')"
   gt "$c" "INSERT INTO tsr (\"ts\",\"svc\",\"v\") SELECT (1716000000000+\"value\")::timestamp_ms, concat('s',cast(\"value\"%12 as string)), (\"value\"%100)::double FROM range(0,$N)"
   # flush so reads come from SST (settled state), not the memtable
-  for t in spans1m m2m logs1m sj errs tsr; do gt "$c" "ADMIN flush_table('$t')"; done
+  for t in spans1m m2m logs1m sj sj2 errs tsr; do gt "$c" "ADMIN flush_table('$t')"; done
 }
 
 gen_ch(){ local c=$1; echo "  [CH] $c ..."

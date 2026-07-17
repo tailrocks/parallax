@@ -47,7 +47,9 @@ row "fulltext-broad(~14%)"               "SELECT count(*) FROM logs1m WHERE matc
 row "log-tail(service,ts DESC)"          "SELECT ts,level,message FROM logs1m WHERE service='s3' ORDER BY ts DESC LIMIT 100"                     "SELECT ts,level,message FROM logs1m WHERE service='s3' ORDER BY ts DESC LIMIT 100"
 # --- errors / json / join / time-range ---
 row "issue-list(GROUP BY fingerprint)"   "SELECT fingerprint,count(*) c,max(ts) FROM errs GROUP BY fingerprint ORDER BY c DESC LIMIT 50"        "SELECT fingerprint,count() c,max(ts) FROM errs GROUP BY fingerprint ORDER BY c DESC LIMIT 50"
-row "dynamic-attr-json(cast)"            "SELECT json_get_int(\"attributes\",'http.status_code') sc,count(*) FROM sj GROUP BY sc"                "SELECT attributes.http.status_code.:Int64 sc,count() FROM sj GROUP BY sc"
+row "dynamic-attr-jsonb(json_get)"       "SELECT json_get_int(\"attributes\",'http.status_code') sc,count(*) FROM sj GROUP BY sc"                "SELECT attributes.http.status_code.:Int64 sc,count() FROM sj GROUP BY sc"
+# JSON2 structured path on GT (sj2) vs CH typed subcolumn on sj — fair dynamic-attr pair (Run 173/176)
+row "dynamic-attr-json2(path)"           "SELECT attributes.http.status_code sc,count(*) FROM sj2 GROUP BY sc"                                   "SELECT attributes.http.status_code.:Int64 sc,count() FROM sj GROUP BY sc"
 row "cross-tier-join(anchored)"          "SELECT count(*) FROM spans1m s JOIN errs e ON s.trace_id=e.trace_id WHERE s.trace_id='t12345'"        "SELECT count() FROM spans1m s JOIN errs e ON s.trace_id=e.trace_id WHERE s.trace_id='t12345'"
 row "time-range-scan(100k window)"       "SELECT count(*) FROM tsr WHERE ts BETWEEN 1716000900000::timestamp_ms AND 1716001000000::timestamp_ms" "SELECT count() FROM tsr WHERE ts BETWEEN fromUnixTimestamp64Milli(1716000900000) AND fromUnixTimestamp64Milli(1716001000000)"
 echo "-------------------------------------------------------------------------------------------------"

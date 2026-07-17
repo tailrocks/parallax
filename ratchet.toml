@@ -5492,7 +5492,7 @@ ceiling = 362
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/platform/graphql/generated/schema-types.generated.ts"
-ceiling = 1414
+ceiling = 1545
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -7596,22 +7596,204 @@ target_owner = "features/tests"
 migration_plan = "none"
 kind = "handwritten"
 
+
+
+
+
+[[ui.ownership]]
+path = "ui/src/features/tests/api/test-case-detail.generated.ts"
+current_owner = "features/tests"
+target_owner = "features/tests"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/tests/api/tests-api.ts"
+current_owner = "features/tests"
+target_owner = "features/tests"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/tests/api/tests-list.generated.ts"
+current_owner = "features/tests"
+target_owner = "features/tests"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/tests/api/tests-mapper.ts"
+current_owner = "features/tests"
+target_owner = "features/tests"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/tests/components/test-case-detail-page.tsx"
+current_owner = "features/tests"
+target_owner = "features/tests"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/tests/components/tests-page.tsx"
+current_owner = "features/tests"
+target_owner = "features/tests"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/tests/index.ts"
+current_owner = "features/tests"
+target_owner = "features/tests"
+migration_plan = "none"
+kind = "handwritten"
+facade = true
+
+[[ui.ownership]]
+path = "ui/src/features/tests/tests/components/tests-contracts.test.tsx"
+current_owner = "features/tests"
+target_owner = "features/tests"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/tests.$caseKey.tsx"
+current_owner = "routes"
+target_owner = "routes"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/tests.index.tsx"
+current_owner = "routes"
+target_owner = "routes"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/tests/-tests-routes.test.tsx"
+current_owner = "routes-tests"
+target_owner = "routes-tests"
+migration_plan = "none"
+kind = "handwritten"
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/tests/tests/components/tests-contracts.test.tsx"
+ceiling = 9
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/tests/-tests-routes.test.tsx"
+ceiling = 4
+
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/tests/model/tests-search.ts:46"
+scope = "ui/src/features/tests/components/tests-page.tsx:109"
+ceiling = 26
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/tests/model/tests-search.ts:40"
 ceiling = 18
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/tests/model/tests-search.ts:46"
+scope = "ui/src/features/tests/components/tests-page.tsx:109"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/tests/model/tests-search.ts:40"
 ceiling = 15
 
 [[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/tests/components/test-case-detail-page.tsx:165"
+ceiling = 118
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/tests/components/test-case-detail-page.tsx:210"
+ceiling = 66
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/tests/components/test-case-detail-page.tsx:81"
+ceiling = 206
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/tests/components/tests-page.tsx:109"
+ceiling = 174
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/tests/api/test-case-detail.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/tests/api/tests-list.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/tests/tests/components/tests-contracts.test.tsx"
+ceiling = 9
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/tests/-tests-routes.test.tsx"
+ceiling = 4
+
+[[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/tests/model/tests-search.ts:46"
+scope = "ui/src/features/tests/components/tests-page.tsx:109"
+ceiling = 26
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/tests/model/tests-search.ts:40"
 ceiling = 18
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/tests/model/tests-search.ts:46"
+scope = "ui/src/features/tests/components/tests-page.tsx:109"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/tests/model/tests-search.ts:40"
 ceiling = 15
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/tests/components/test-case-detail-page.tsx:165"
+ceiling = 118
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/tests/components/test-case-detail-page.tsx:210"
+ceiling = 66
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/tests/components/test-case-detail-page.tsx:81"
+ceiling = 206
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/tests/components/tests-page.tsx:109"
+ceiling = 174
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/tests/api/test-case-detail.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/tests/api/tests-list.generated.ts"
+ceiling = 1

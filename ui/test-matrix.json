@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 568,
-    "test_files": 142
+    "test_cases": 571,
+    "test_files": 144
   },
   "private_route_imports": [],
   "entries": [
@@ -2771,6 +2771,35 @@
       "test_ids": [
         "is deterministic and prefix-hierarchical for arbitrary ids",
         "distinct ids never collide"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-155-tests-contracts",
+      "surface": "features/tests",
+      "risk": "Test explorer list/detail can lose filters, rollups, or flaky states",
+      "scenario_owner": "features/tests",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/features/tests/tests/components/tests-contracts.test.tsx",
+      "test_ids": [
+        "renders explorer rows with rollup and flaky evidence",
+        "renders detail attempt chain with cross-links"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-155-tests-route",
+      "surface": "features/tests",
+      "risk": "Tests routes stop being thin Route-only modules",
+      "scenario_owner": "features/tests",
+      "lane_owner": "vitest/route",
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/tests/-tests-routes.test.tsx",
+      "test_ids": [
+        "exposes public search and loaders for thin route wiring"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
