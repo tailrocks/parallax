@@ -320,6 +320,11 @@ docs and release notes.
 
 **UNFIRED:** offline Assistant; Sentry OTLP metrics.
 
+### Pass 370 (2026-07-18) — Seer + Bits
+
+Seer still **closed source**; Bits still **never auto-merges**. **UNFIRED.**
+
+
 ### Pass 368 (2026-07-18) — Assistant
 
 Grafana Assistant still hybrid **Cloud stack** backend. Offline/BYO-LLM **UNFIRED.**
