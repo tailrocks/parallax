@@ -39,7 +39,7 @@ A benchmark number the internals cannot explain is a flag that one of them is wr
 
 *Prior pins preserved in run history:* GT `v1.0.2` / CH `v26.5.1.882` through Run 172.
 
-## Recent loop status (Runs 173–193, 2026-07-17)
+## Recent loop status (Runs 173–200, 2026-07-17)
 
 Re-pinned to **v1.1.3 / 26.6** and re-verified live (not “done” — server-tier + workload mix +
 managed quotes remain):

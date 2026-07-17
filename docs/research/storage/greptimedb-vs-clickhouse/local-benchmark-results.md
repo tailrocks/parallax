@@ -7129,3 +7129,8 @@ CH 20 inserts → 5 parts → OPTIMIZE FINAL → 1. GT 5 same-window flushes →
 
 GT WalOptions RaftEngine|Kafka|Noop in source; `sync_write` WITH key not recognized on v1.1.3.
 CH fsync_after_insert default 0. `wal-and-durability.md`.
+
+### Run 201 — 2026-07-17 — prefilter.rs still in v1.1.3
+
+Source-confirmed PREWHERE-style parquet prefilter + result cache remain in mito2.
+`query-execution-engine.md`.

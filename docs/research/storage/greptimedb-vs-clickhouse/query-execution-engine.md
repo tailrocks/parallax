@@ -253,3 +253,18 @@ is anchored, not scan-bound.
   retired Run 31's 95 ms artifact)**.
 - Cross-refs: `read-path-indexing-and-execution.md` (planning/PREWHERE/skip/joins),
   `per-signal-verdict.md`, `greptimedb-internals.md` (DataFusion/PromQL).
+
+## Run 201 (2026-07-17) — prefilter framework still present on v1.1.3
+
+Source (`mito2/src/sst/parquet/prefilter.rs`):
+
+> Prefilter optimization reduces I/O by reading only a subset of columns first
+> (the prefilter phase), applying filters to compute a refined row selection,
+> then reading the remaining columns with the refined selection.
+
+Also: dedicated **prefilter result cache** in `mito2/src/cache.rs` (`PrefilterKey`,
+`put_prefilter_result` / `get_prefilter_result`).
+
+**Status:** parity-roadmap PREWHERE item remains **partially shipped** (Run 121/122 era),
+still present and wired in v1.1.3 — not a missing subsystem. Residual scan gap vs CH is
+still vectorized execution maturity (batch/JIT/SIMD), not total absence of late materialization.
