@@ -123,6 +123,11 @@ Air-gap combination claim **holds**. OPW ≠ Bits store; Assistant ≠ offline B
 
 Air-gap combination claim **holds**.
 
+### Pass 324 (2026-07-18) — OPW + Assistant + Seer
+
+OPW still **route-to-destinations**; Assistant still **Grafana Cloud stack** backend; Seer still closed. Air-gap combination claim **holds**.
+
+
 
 Air-gap combination claim (open core + portable redacted evidence + no closed
 cloud AI) **still holds** as a *combination* (A1 still unproven).

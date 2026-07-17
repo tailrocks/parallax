@@ -151,6 +151,16 @@ auto-merge commodity.
 
 **UNFIRED:** Seer self-host GA; Bits auto-merge; Sentry OTLP metrics GA.
 
+### Pass 324 (2026-07-18) — Seer + Bits re-fetch
+
+| Source | Finding |
+| --- | --- |
+| develop.sentry.dev/self-hosted | still Seer **closed source** |
+| Bits Code docs | still **never auto-merges** PRs/MRs |
+
+**UNFIRED:** Seer self-host GA; Bits auto-merge.
+
+
 
 
 **Precise claim after this pass:**
