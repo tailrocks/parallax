@@ -83,6 +83,9 @@ must not return in product output.
   names and requires protocol-level `tool not found` failures.
 - Missing bundles/sessions now map to stable MCP resource-not-found codes,
   distinct from secret-free internal transport/parse failures.
+- Initialization overrides the SDK's echo-any-known-version behavior: only the
+  reviewed `2024-11-05` through `2025-11-25` revisions are accepted; future
+  `2026-07-28` and unknown versions fail closed on the wire.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded

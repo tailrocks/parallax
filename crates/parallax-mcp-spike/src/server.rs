@@ -16,6 +16,12 @@ use std::sync::Arc;
 
 const MCP_RESULT_MAX_BYTES: usize = 128 * 1024;
 const MCP_ANCHOR_MAX_BYTES: usize = 256;
+const SUPPORTED_PROTOCOL_VERSIONS: &[ProtocolVersion] = &[
+    ProtocolVersion::V_2024_11_05,
+    ProtocolVersion::V_2025_03_26,
+    ProtocolVersion::V_2025_06_18,
+    ProtocolVersion::V_2025_11_25,
+];
 
 fn evidence_bundle_output_schema() -> Arc<JsonObject> {
     let schema = serde_json::from_str(include_str!(
@@ -184,6 +190,23 @@ impl ServerHandler for SpikeServer {
                  Calls http://127.0.0.1:4000/graphql (or PARALLAX_URL).",
             )
     }
+
+    async fn initialize(
+        &self,
+        request: rmcp::model::InitializeRequestParams,
+        context: rmcp::service::RequestContext<rmcp::RoleServer>,
+    ) -> Result<rmcp::model::InitializeResult, McpError> {
+        if !SUPPORTED_PROTOCOL_VERSIONS.contains(&request.protocol_version) {
+            return Err(McpError::invalid_request(
+                "unsupported MCP protocol version",
+                Some(json!({ "code": "unsupported_protocol_version" })),
+            ));
+        }
+        context.peer.set_peer_info(request.clone());
+        Ok(self
+            .get_info()
+            .with_protocol_version(request.protocol_version))
+    }
 }
 
 /// Run the stdio MCP server until the client disconnects.
@@ -197,7 +220,17 @@ pub(crate) async fn run_stdio(base_url: String) -> anyhow::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rmcp::model::CallToolRequestParams;
+    use rmcp::{ClientHandler, model::CallToolRequestParams};
+
+    struct VersionedClient(ProtocolVersion);
+
+    impl ClientHandler for VersionedClient {
+        fn get_info(&self) -> rmcp::model::ClientInfo {
+            let mut info = rmcp::model::ClientInfo::default();
+            info.protocol_version = self.0.clone();
+            info
+        }
+    }
 
     #[test]
     fn advertises_tools_without_unapproved_capabilities() {
@@ -433,5 +466,24 @@ mod tests {
             .await
             .expect("join server")
             .expect("stop server");
+    }
+
+    #[tokio::test]
+    async fn wire_initialization_rejects_unreviewed_future_protocol() {
+        let (server_transport, client_transport) = tokio::io::duplex(4096);
+        let server = SpikeServer::new("http://127.0.0.1:4000".to_string()).expect("server");
+        let server_task = tokio::spawn(async move { server.serve(server_transport).await });
+        let error = VersionedClient(ProtocolVersion::V_2026_07_28)
+            .serve(client_transport)
+            .await
+            .err()
+            .expect("future protocol must fail");
+
+        assert!(
+            error
+                .to_string()
+                .contains("unsupported MCP protocol version")
+        );
+        let _server_result = server_task.await.expect("join server");
     }
 }

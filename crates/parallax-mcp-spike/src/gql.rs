@@ -229,7 +229,7 @@ pub(crate) async fn fetch_agent_session(
     else {
         return Err(FetchError::NotFound("agent_session"));
     };
-    Ok(serde_json::from_value(session.clone())?)
+    Ok(serde_json::from_value(session.clone()).map_err(anyhow::Error::from)?)
 }
 
 #[cfg(test)]

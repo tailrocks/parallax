@@ -71,6 +71,8 @@ origin; connects time out after 5 seconds and calls after 30 seconds.
 uses the workspace `reqwest` with `native-tls-vendored`.
 The server explicitly advertises stable MCP `2025-11-25`; it does not inherit
 an SDK `LATEST` value that could silently opt into a newer protocol revision.
+Initialization accepts only reviewed revisions from `2024-11-05` through
+`2025-11-25`; SDK-known future and unknown revisions fail closed.
 
 ## Owned concerns
 
