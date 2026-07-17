@@ -13,7 +13,9 @@ publish = false
 workspace = true
 
 [dependencies]
+anyhow = { workspace = true }
 parallax-analysis = { workspace = true }
+parallax-metadata = { workspace = true }
 tokio = { workspace = true }
 juniper = { workspace = true, features = ["schema-language"] }
 parallax-evidence = { workspace = true }
@@ -22,6 +24,4 @@ serde_json = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
-anyhow = { workspace = true }
-parallax-metadata = { workspace = true }
 parallax-test-support = { workspace = true }

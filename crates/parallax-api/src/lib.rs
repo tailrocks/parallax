@@ -29,7 +29,8 @@ use parallax_storage::{adapter::TelemetryStore, metadata::MetadataStore, model};
 use std::{collections::HashMap, sync::Arc};
 
 use resolvers::{
-    AgentSessionOut, AttributeCompareRow, AttributeFilterInput, BundleOut, CriticalPath, Dashboard,
+    AgentSessionOut, AlertCheck, AlertDestination, AlertIncident, AlertRule, AlertRuleInput,
+    AlertRuleState, AttributeCompareRow, AttributeFilterInput, BundleOut, CriticalPath, Dashboard,
     DurationStats, EvidenceGap, Facet, FieldKey, FieldStats, Investigation, Invocation, Issue,
     IssueList, IssueSort, LogRecord, MetricExemplar, ObservedInvocation, Overview, Point,
     ReleaseWindow, RuntimeMetric, SavedView, Series, ServiceCatalogRow, ServiceMap,
@@ -47,6 +48,11 @@ pub use memo::RequestMemo;
 pub struct ApiContext {
     pub store: Arc<dyn TelemetryStore>,
     pub metadata: Arc<dyn MetadataStore>,
+    /// Alerting storage (plan 167). Alert tables are Turso-only — the
+    /// evaluator/delivery worker also bind to the concrete store — so this is
+    /// a concrete handle, `None` in pure in-memory harnesses (alert resolvers
+    /// then report alerting unavailable).
+    pub alerts: Option<Arc<parallax_metadata::TursoMetadataStore>>,
     pub otlp_grpc_port: u16,
     pub otlp_http_port: u16,
     pub memo: RequestMemo,
@@ -305,13 +311,6 @@ impl Query {
     /// case-insensitive substring filter; `kind` filters one metric kind.
     async fn metric_catalog(context: &ApiContext, from_nanos: String, to_nanos: String, q: Option<String>, kind: Option<String>, limit: Option<i32>,) -> FieldResult<Vec<resolvers::MetricCatalogRow>> { resolvers::metrics::metric_catalog(context, from_nanos, to_nanos, q, kind, limit).await }
 
-    /// The single shared metric read path (plan 168): typed kind + aggregation
-    /// legality (gauge→avg|min|max, sum→sum|rate, histogram→p50|p95|p99),
-    /// optional service filter and group-by, contract step rounding (≤120
-    /// buckets, minimum 1s). Explorer, dashboards, and alerts all consume this.
-    #[expect(clippy::too_many_arguments, reason = "GraphQL metric query spec is the public contract")]
-    async fn metric_query(context: &ApiContext, name: String, kind: String, agg: String, from_nanos: String, to_nanos: String, service: Option<String>, group_by: Option<String>, step_seconds: Option<i32>,) -> FieldResult<resolvers::MetricQueryOut> { resolvers::metrics::metric_query(context, name, kind, agg, from_nanos, to_nanos, service, group_by, step_seconds).await }
-
     /// Distinct metric names seen by the store (drives the dashboard
     /// builder), optionally prefix-filtered.
     async fn metric_names(context: &ApiContext, prefix: Option<String>,) -> FieldResult<Vec<String>> { resolvers::metrics::metric_names(context, prefix).await }
@@ -354,6 +353,26 @@ impl Query {
 
     async fn invocations(context: &ApiContext, limit: Option<i32>) -> FieldResult<Vec<Invocation>> { resolvers::invocations::invocations(context, limit).await }
 
+    /// Alert rules, most recently updated first (plan 167).
+    async fn alert_rules(context: &ApiContext) -> FieldResult<Vec<AlertRule>> { resolvers::alerts::alert_rules(context).await }
+
+    async fn alert_rule(context: &ApiContext, id: String) -> FieldResult<Option<AlertRule>> { resolvers::alerts::alert_rule(context, id).await }
+
+    /// Per-group rolling evaluation state for one rule.
+    async fn alert_rule_states(context: &ApiContext, rule_id: String) -> FieldResult<Vec<AlertRuleState>> { resolvers::alerts::alert_rule_states(context, rule_id).await }
+
+    /// Incidents newest-first; `status` filters open|resolved.
+    async fn alert_incidents(context: &ApiContext, status: Option<String>, rule_id: Option<String>, limit: Option<i32>,) -> FieldResult<Vec<AlertIncident>> { resolvers::alerts::alert_incidents(context, status, rule_id, limit).await }
+
+    async fn alert_incident(context: &ApiContext, id: String) -> FieldResult<Option<AlertIncident>> { resolvers::alerts::alert_incident(context, id).await }
+
+    /// Notification destinations, most recently updated first.
+    async fn alert_destinations(context: &ApiContext) -> FieldResult<Vec<AlertDestination>> { resolvers::alerts::alert_destinations(context).await }
+
+    /// Recent evaluation audit rows for one rule, newest first (bounded
+    /// retention: last 500 per rule).
+    async fn alert_checks(context: &ApiContext, rule_id: String, limit: Option<i32>,) -> FieldResult<Vec<AlertCheck>> { resolvers::alerts::alert_checks(context, rule_id, limit).await }
+
 }
 
 #[derive(Debug)]
@@ -390,6 +409,23 @@ impl Mutation {
 
     /// Close an invocation with the wrapped command's exit code and outcome.
     async fn invocation_finish(context: &ApiContext, invocation_id: String, ended_at_nanos: String, exit_code: i32, outcome: Option<String>,) -> FieldResult<bool> { resolvers::invocations::invocation_finish(context, invocation_id, ended_at_nanos, exit_code, outcome).await }
+
+    /// Create or update an alert rule (plan 167); optional knobs default per
+    /// the plan contract.
+    async fn alert_rule_save(context: &ApiContext, input: AlertRuleInput) -> FieldResult<AlertRule> { resolvers::alerts::alert_rule_save(context, input).await }
+
+    /// Delete an alert rule.
+    async fn alert_rule_delete(context: &ApiContext, id: String) -> FieldResult<bool> { resolvers::alerts::alert_rule_delete(context, id).await }
+
+    /// Enable/disable an alert rule without touching its definition.
+    async fn alert_rule_set_enabled(context: &ApiContext, id: String, enabled: bool,) -> FieldResult<AlertRule> { resolvers::alerts::alert_rule_set_enabled(context, id, enabled).await }
+
+    /// Create or update a notification destination (webhook | slack_webhook;
+    /// email is deferred in V1). Config is JSON with an http(s) `url`.
+    async fn alert_destination_save(context: &ApiContext, name: String, kind: String, config: String, id: Option<String>,) -> FieldResult<AlertDestination> { resolvers::alerts::alert_destination_save(context, name, kind, config, id).await }
+
+    /// Delete a notification destination.
+    async fn alert_destination_delete(context: &ApiContext, id: String) -> FieldResult<bool> { resolvers::alerts::alert_destination_delete(context, id).await }
 
 }
 

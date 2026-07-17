@@ -1,5 +1,6 @@
 //! Domain-split GraphQL resolvers and wrapper types.
 
+pub(crate) mod alerts;
 pub(crate) mod common;
 pub(crate) mod dashboards;
 pub(crate) mod fields;
@@ -24,6 +25,12 @@ pub(crate) mod traces;
 #[cfg(test)]
 pub(crate) mod test_support;
 
+pub(crate) use alerts::AlertCheck;
+pub(crate) use alerts::AlertDestination;
+pub(crate) use alerts::AlertIncident;
+pub(crate) use alerts::AlertRule;
+pub(crate) use alerts::AlertRuleInput;
+pub(crate) use alerts::AlertRuleState;
 pub(crate) use common::Point;
 pub(crate) use dashboards::Dashboard;
 pub(crate) use fields::AttributeCompareRow;
@@ -48,7 +55,6 @@ pub(crate) use journeys::UiActionOut;
 pub(crate) use logs::LogRecord;
 pub(crate) use metrics::MetricCatalogRow;
 pub(crate) use metrics::MetricExemplar;
-pub(crate) use metrics::MetricQueryOut;
 pub(crate) use metrics::RuntimeMetric;
 pub(crate) use metrics::Series;
 pub(crate) use services::Overview;

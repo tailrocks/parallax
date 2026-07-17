@@ -174,7 +174,10 @@ pub async fn start(config: &Config) -> ServerResult<ServerHandle> {
             .await
             .map_err(|source| ServerError::Metadata { source })?,
     );
-    start_assembled(config, store, metadata, supervisor).await
+    // Alerting (plan 167) binds to the concrete Turso store, so keep a
+    // typed handle alongside the query-neutral trait object.
+    let alerts = Some(metadata.clone());
+    start_assembled(config, store, metadata, alerts, supervisor).await
 }
 
 /// Internal composition seam for integration tests. Product entry points use
@@ -185,12 +188,13 @@ pub async fn start_with_capabilities(
     store: Arc<dyn TelemetryStore>,
     metadata: Arc<dyn MetadataStore>,
 ) -> ServerResult<ServerHandle> {
-    start_assembled(config, store, metadata, None).await
+    start_assembled(config, store, metadata, None, None).await
 }
 
 struct RouterState {
     store: Arc<dyn TelemetryStore>,
     metadata: Arc<dyn MetadataStore>,
+    alerts: Option<Arc<TursoMetadataStore>>,
     grpc_port: u16,
     http_port: u16,
     api_addr: SocketAddr,
@@ -221,6 +225,7 @@ fn build_api_router(
         schema: Arc::new(parallax_api::build_schema()),
         store: state.store,
         metadata: state.metadata,
+        alerts: state.alerts,
         otlp_grpc_port: state.grpc_port,
         otlp_http_port: state.http_port,
         limits: config.limits.clone(),
@@ -286,6 +291,7 @@ async fn start_assembled(
     config: &Config,
     store: Arc<dyn TelemetryStore>,
     metadata: Arc<dyn MetadataStore>,
+    alerts: Option<Arc<TursoMetadataStore>>,
     supervisor: Option<crate::greptime_supervisor::GreptimeSupervisor>,
 ) -> ServerResult<ServerHandle> {
     let data_dir = config.data_dir();
@@ -332,6 +338,7 @@ async fn start_assembled(
         RouterState {
             store: store.clone(),
             metadata: metadata.clone(),
+            alerts,
             grpc_port: otlp_grpc_addr.port(),
             http_port: otlp_http_addr.port(),
             api_addr,
