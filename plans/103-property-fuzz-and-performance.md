@@ -137,8 +137,13 @@ spike produces useful stable signal.
   spool IO, and Arrow decode with first observations recorded in
   docs/research/testing/property-invariants.md; allocation instrumentation
   and stable-runner variance modeling still open.
-- [ ] PR checks compile/smoke; scheduled runners perform stable measurement.
-- [ ] Ratchets use measured variance and fail without auto-refreshing baselines.
+- [x] (2026-07-17) PR lane `fuzz-bench` builds every fuzz target, smokes each
+  boundary, and compiles the benches (required via ci-required); nightly
+  `scheduled-measurement.yml` runs five-minute campaigns per boundary and
+  three criterion repeats, uploading artifacts for variance modeling.
+- [ ] Ratchets use measured variance and fail without auto-refreshing
+  baselines. (Waits on accumulated scheduled-measurement samples — per this
+  plan, thresholds must not be chosen before variance is modeled.)
 - [ ] Deferred hot-path candidates are optimized only when evidence warrants it.
 - [ ] Every adopted advanced tool has an owner, threshold, cost, and removal rule.
 
