@@ -226,7 +226,7 @@ work.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [103](103-property-fuzz-and-performance.md) | Residual Rust/UI property, fuzz, and performance gates | P2 | M | 133, 147, 148 (UI); scheduled samples (ratchets) | IN PROGRESS — serialization fixpoint proptest landed; residual retry no-replay, UI properties, variance ratchets |
+| [103](103-property-fuzz-and-performance.md) | Residual Rust/UI property, fuzz, and performance gates | P2 | M | 133, 147, 148 (UI); scheduled samples (ratchets) | IN PROGRESS — Rust properties landed; residual UI properties and variance ratchets |
 
 ### Evidence Contracts And Closure
 
@@ -378,7 +378,7 @@ external facts still BLOCKED where noted. Plan 102 and plan 109 retired
 | [121](121-deploy-and-change-context-collectors.md) | 099, 104, 111, 116 | Backfill, claim ledger (HTTP + doctor inventory landed) | IN PROGRESS — webhook + Turso + doctor deploy-context |
 | 122 | 105, 151 | Disposition table + retained scenarios | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-122-playground-disposition/README.md) |
 | [123](123-fixer-outcome-loop.md) | 120, 121 residual | Offline outcome harness; fixer separate from core | BLOCKED on 120/121 storage/projection residuals |
-| [124](124-ci-and-flaky-test-evidence-collector.md) | 121 durable path (landed) | GHA webhook/Turso (pure normalizer + multi-attempt gate landed) | IN PROGRESS |
+| [124](124-ci-and-flaky-test-evidence-collector.md) | 121 durable path (landed) | GHA webhook/backfill wiring (normalizer + stable Turso attempt/delivery ledgers landed) | IN PROGRESS |
 
 ## Dependency Order
 
