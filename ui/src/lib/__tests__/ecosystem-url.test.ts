@@ -13,7 +13,9 @@ import { TRAFFIC_PRESETS } from "@/lib/ecosystem-topology"
 
 describe("ecosystem URL codec", () => {
   it("defaults when empty", () => {
-    expect(decodeEcosystemUrl(new URLSearchParams())).toEqual(DEFAULT_ECOSYSTEM_URL)
+    expect(decodeEcosystemUrl(new URLSearchParams())).toEqual(
+      DEFAULT_ECOSYSTEM_URL
+    )
   })
 
   it("round-trips focus, hops, mode, traffic preset", () => {

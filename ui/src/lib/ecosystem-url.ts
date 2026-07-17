@@ -96,15 +96,15 @@ export function decodeEcosystemUrl(
   const hopsRaw = get("hops")
   return {
     focus: focusRaw ? focusRaw : null,
-    hops: clampHops(hopsRaw != null ? Number(hopsRaw) : DEFAULT_ECOSYSTEM_URL.hops),
+    hops: clampHops(
+      hopsRaw != null ? Number(hopsRaw) : DEFAULT_ECOSYSTEM_URL.hops
+    ),
     focusMode: parseFocusMode(get("focusMode")),
     minTraffic: parseMinTraffic(get("minTraffic")),
   }
 }
 
-export function encodeEcosystemUrl(
-  state: EcosystemUrlState
-): URLSearchParams {
+export function encodeEcosystemUrl(state: EcosystemUrlState): URLSearchParams {
   const params = new URLSearchParams()
   if (state.focus) params.set("focus", state.focus)
   if (state.hops !== DEFAULT_ECOSYSTEM_URL.hops) {

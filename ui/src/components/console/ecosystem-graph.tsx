@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useState } from "react"
-import { Link } from "@tanstack/react-router"
+import { Link, useNavigate } from "@tanstack/react-router"
 import { IconTerminal2, IconWorld } from "@tabler/icons-react"
+import {
+  Background,
+  Handle,
+  MarkerType,
+  Position,
+  ReactFlow,
+} from "@xyflow/react"
+import type { Edge, Node, NodeProps } from "@xyflow/react"
+import "@xyflow/react/dist/style.css"
 
 import { ServiceDot } from "@/components/console/service-dot"
 import { Badge } from "@/components/ui/badge"
@@ -18,15 +27,9 @@ import type { ResolvedRange } from "@/lib/range"
 import { rangeLinkSearch } from "@/lib/range"
 import { cn } from "@/lib/utils"
 
-const MIN_WIDTH = 960
 const MIN_HEIGHT = 420
 const NODE_WIDTH = ECOSYSTEM_NODE_WIDTH
 const NODE_HEIGHT = ECOSYSTEM_NODE_HEIGHT
-
-interface PositionedNode extends ServiceMapNode {
-  x: number
-  y: number
-}
 
 function count(value: string): number {
   const parsed = Number(value)
@@ -38,26 +41,8 @@ function edgeRate(edge: ServiceMapEdge): number {
   return calls > 0 ? count(edge.errorCount) / calls : 0
 }
 
-function positionedNodes(
-  nodes: ServiceMapNode[],
-  layout: EcosystemLayout
-): PositionedNode[] {
-  const byName = new Map(nodes.map((node) => [node.name, node]))
-  return layout.positions
-    .map(({ id, x, y }) => ({
-      name: id,
-      kind: "service" as const,
-      lastSeenNanos: "0",
-      spanCount: "0",
-      errorCount: "0",
-      p95Ms: null,
-      ...byName.get(id),
-      x: x + NODE_WIDTH / 2,
-      y: y + NODE_HEIGHT / 2,
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name))
-}
-
+/** Async ELK layout with the deterministic fallback rendered immediately;
+ * stale worker results never overwrite a newer topology. */
 function useEcosystemLayout(
   nodes: ServiceMapNode[],
   edges: ServiceMapEdge[]
@@ -74,7 +59,6 @@ function useEcosystemLayout(
         : fallbackEcosystemLayout({ nodes, edges }),
     [edges, key, nodes, resolved]
   )
-
   useEffect(() => {
     let current = true
     void layoutEcosystem({ nodes, edges }).then((next) => {
@@ -87,38 +71,65 @@ function useEcosystemLayout(
   return layout
 }
 
-function EdgePath({
-  edge,
-  source,
-  target,
-  dimmed,
-}: {
-  edge: ServiceMapEdge
-  source: PositionedNode
-  target: PositionedNode
+interface ServiceNodeData extends Record<string, unknown> {
+  node: ServiceMapNode
   dimmed: boolean
-}) {
-  const startX = source.x + NODE_WIDTH / 2
-  const endX = target.x - NODE_WIDTH / 2
-  const midX = (startX + endX) / 2
-  const path = `M ${startX} ${source.y} C ${midX} ${source.y}, ${midX} ${target.y}, ${endX} ${target.y}`
-  const hasError = count(edge.errorCount) > 0
+  range: ResolvedRange
+}
+
+/** React Flow custom node (operator rule, 2026-07-17: service graphs render
+ * with React Flow). Keeps the plan-162 language: ServiceDot identity + kind
+ * glyph + stats. */
+function ServiceGraphNode({ data }: NodeProps<Node<ServiceNodeData>>) {
+  const { node, dimmed, range } = data
+  const errors = count(node.errorCount)
+  const className = cn(
+    "flex h-full w-full flex-col justify-center gap-1 rounded-lg border bg-card px-3 py-2 text-sm shadow-sm hover:bg-muted/50",
+    errors > 0 && "border-rose-500/50",
+    dimmed && "opacity-30"
+  )
+  const body = (
+    <>
+      <span className="inline-flex min-w-0 items-center gap-1.5 font-medium">
+        {node.kind === "cli" ? (
+          <IconTerminal2 className="size-3.5 shrink-0 text-violet-500" />
+        ) : node.kind === "browser" ? (
+          <IconWorld className="size-3.5 shrink-0 text-sky-500" />
+        ) : null}
+        <ServiceDot name={node.name} />
+        <span className="truncate">{node.name}</span>
+      </span>
+      <span className="text-xs text-muted-foreground tabular-nums">
+        {formatCount(count(node.spanCount))} spans
+        {node.p95Ms != null
+          ? ` · p95 ${formatDurationNs(node.p95Ms * 1_000_000)}`
+          : ""}
+      </span>
+    </>
+  )
   return (
-    <path
-      d={path}
-      className={cn(
-        "fill-none stroke-muted-foreground/50",
-        hasError && "stroke-rose-500/80",
-        dimmed && "opacity-20"
+    <div style={{ width: NODE_WIDTH, height: NODE_HEIGHT }}>
+      <Handle type="target" position={Position.Left} className="!opacity-0" />
+      {node.kind === "cli" ? (
+        <Link to="/invocations" search={{ q: node.name }} className={className}>
+          {body}
+        </Link>
+      ) : (
+        <Link
+          to="/services/$service"
+          params={{ service: node.name }}
+          search={rangeLinkSearch(range)}
+          className={className}
+        >
+          {body}
+        </Link>
       )}
-      strokeWidth={Math.max(
-        1.5,
-        Math.min(6, Math.log2(count(edge.callCount) + 1))
-      )}
-      markerEnd="url(#ecosystem-arrow)"
-    />
+      <Handle type="source" position={Position.Right} className="!opacity-0" />
+    </div>
   )
 }
+
+const nodeTypes = { service: ServiceGraphNode }
 
 export function EcosystemGraph({
   nodes,
@@ -135,28 +146,52 @@ export function EcosystemGraph({
   hiddenNodeCount?: number
   hiddenEdgeCount?: number
 }) {
+  const navigate = useNavigate()
   const layout = useEcosystemLayout(nodes, edges)
-  const positioned = positionedNodes(nodes, layout)
-  const width = Math.max(MIN_WIDTH, layout.width)
   const height = Math.max(MIN_HEIGHT, layout.height)
-  const byName = new Map(positioned.map((node) => [node.name, node]))
-  const renderedEdges = edges
-    .map((edge) => ({
-      edge,
-      source: byName.get(edge.source),
-      target: byName.get(edge.target),
-    }))
-    .filter(
-      (
-        item
-      ): item is {
-        edge: ServiceMapEdge
-        source: PositionedNode
-        target: PositionedNode
-      } => Boolean(item.source && item.target)
-    )
+  const positionByName = new Map(
+    layout.positions.map((position) => [position.id, position] as const)
+  )
 
-  if (positioned.length === 0) {
+  const flowNodes: Array<Node<ServiceNodeData>> = nodes.map((node) => {
+    const position = positionByName.get(node.name)
+    return {
+      id: node.name,
+      type: "service",
+      position: {
+        x: (position?.x ?? 0) - NODE_WIDTH / 2,
+        y: (position?.y ?? 0) - NODE_HEIGHT / 2,
+      },
+      width: NODE_WIDTH,
+      height: NODE_HEIGHT,
+      data: { node, dimmed: dimmedNodeIds.has(node.name), range },
+    }
+  })
+
+  const flowEdges: Edge[] = edges.map((edge) => {
+    const dimmed =
+      dimmedNodeIds.has(edge.source) || dimmedNodeIds.has(edge.target)
+    const hasError = count(edge.errorCount) > 0
+    return {
+      id: `${edge.source}->${edge.target}`,
+      source: edge.source,
+      target: edge.target,
+      label: `${formatCount(count(edge.callCount))} calls · ${formatPercent(edgeRate(edge))} errors · p95 ${formatDurationNs(edge.p95Ms * 1_000_000)}`,
+      labelStyle: { fill: "var(--muted-foreground)", fontSize: 10 },
+      labelBgStyle: { fill: "var(--background)", fillOpacity: 0.9 },
+      style: {
+        stroke: hasError ? "var(--chart-error)" : "var(--border)",
+        strokeWidth: 1.5,
+        opacity: dimmed ? 0.25 : 1,
+      },
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        color: hasError ? "var(--chart-error)" : "var(--muted-foreground)",
+      },
+    }
+  })
+
+  if (nodes.length === 0) {
     return (
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">No service edges.</p>
@@ -169,8 +204,8 @@ export function EcosystemGraph({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm text-muted-foreground">
-          {formatCount(positioned.length)} services ·{" "}
-          {formatCount(edges.length)} edges
+          {formatCount(nodes.length)} services · {formatCount(edges.length)}{" "}
+          edges
           {hiddenNodeCount + hiddenEdgeCount > 0 ? (
             <Badge variant="secondary" className="ml-2">
               {formatCount(hiddenNodeCount + hiddenEdgeCount)} hidden
@@ -188,126 +223,30 @@ export function EcosystemGraph({
         </span>
       </div>
       <div
-        className="relative overflow-hidden rounded-lg border bg-background"
-        style={{ minHeight: height }}
+        className="overflow-hidden rounded-lg border bg-background"
+        style={{ height }}
+        aria-label="service dependency graph"
+        role="img"
       >
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          className="absolute inset-0 size-full text-muted-foreground"
-          role="img"
-          aria-label="service dependency graph"
+        <ReactFlow
+          nodes={flowNodes}
+          edges={flowEdges}
+          nodeTypes={nodeTypes}
+          fitView
+          minZoom={0.2}
+          maxZoom={2}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          edgesFocusable
+          onEdgeClick={(_, edge) => {
+            void navigate({
+              to: "/traces",
+              search: { ...rangeLinkSearch(range), service: edge.source },
+            })
+          }}
         >
-          <defs>
-            <marker
-              id="ecosystem-arrow"
-              viewBox="0 0 10 10"
-              refX="9"
-              refY="5"
-              markerWidth="6"
-              markerHeight="6"
-              orient="auto-start-reverse"
-            >
-              <path d="M 0 0 L 10 5 L 0 10 z" className="fill-current" />
-            </marker>
-          </defs>
-          {renderedEdges.map(({ edge, source, target }) => (
-            <EdgePath
-              key={`${edge.source}-${edge.target}`}
-              edge={edge}
-              source={source}
-              target={target}
-              dimmed={
-                dimmedNodeIds.has(edge.source) || dimmedNodeIds.has(edge.target)
-              }
-            />
-          ))}
-        </svg>
-
-        {positioned.map((node) => {
-          const errors = count(node.errorCount)
-          const className = cn(
-            "absolute flex flex-col gap-1 rounded-lg border bg-card px-3 py-2 text-sm shadow-sm hover:bg-muted/50",
-            errors > 0 && "border-rose-500/50",
-            dimmedNodeIds.has(node.name) && "opacity-30"
-          )
-          const style = {
-            left: `${((node.x - NODE_WIDTH / 2) / width) * 100}%`,
-            top: `${((node.y - NODE_HEIGHT / 2) / height) * 100}%`,
-            width: NODE_WIDTH,
-            minHeight: NODE_HEIGHT,
-          }
-          const body = (
-            <>
-              <span className="inline-flex min-w-0 items-center gap-1.5 font-medium">
-                {node.kind === "cli" ? (
-                  <IconTerminal2 className="size-3.5 shrink-0 text-violet-500" />
-                ) : node.kind === "browser" ? (
-                  <IconWorld className="size-3.5 shrink-0 text-sky-500" />
-                ) : null}
-                <ServiceDot name={node.name} />
-                <span className="truncate">{node.name}</span>
-              </span>
-              <span className="text-xs text-muted-foreground tabular-nums">
-                {formatCount(count(node.spanCount))} spans
-                {node.p95Ms != null
-                  ? ` · p95 ${formatDurationNs(node.p95Ms * 1_000_000)}`
-                  : ""}
-              </span>
-            </>
-          )
-          if (node.kind === "cli") {
-            return (
-              <Link
-                key={node.name}
-                to="/invocations"
-                search={{ q: node.name }}
-                className={className}
-                style={style}
-              >
-                {body}
-              </Link>
-            )
-          }
-          return (
-            <Link
-              key={node.name}
-              to="/services/$service"
-              params={{ service: node.name }}
-              search={rangeLinkSearch(range)}
-              className={className}
-              style={style}
-            >
-              {body}
-            </Link>
-          )
-        })}
-
-        {renderedEdges.map(({ edge, source, target }) => {
-          const x = ((source.x + target.x) / 2 / width) * 100
-          const y = ((source.y + target.y) / 2 / height) * 100
-          return (
-            <Link
-              key={`${edge.source}-${edge.target}-label`}
-              to="/traces"
-              search={{ ...rangeLinkSearch(range), service: edge.source }}
-              className="absolute rounded-md border bg-background/95 px-2 py-1 text-xs shadow-sm hover:bg-muted/80"
-              style={{
-                left: `${x}%`,
-                top: `${y}%`,
-                transform: "translate(-50%, -50%)",
-              }}
-            >
-              <span className="font-mono">
-                {edge.source} -&gt; {edge.target}
-              </span>
-              <span className="ml-2 text-muted-foreground">
-                {formatCount(count(edge.callCount))} calls ·{" "}
-                {formatPercent(edgeRate(edge))} errors · p95{" "}
-                {formatDurationNs(edge.p95Ms * 1_000_000)}
-              </span>
-            </Link>
-          )
-        })}
+          <Background gap={24} className="!bg-background" />
+        </ReactFlow>
       </div>
     </div>
   )

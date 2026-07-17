@@ -98,3 +98,14 @@ major upgrades. The root [`AGENTS.md`](../AGENTS.md) and the
     5. **Theme** — light and dark both readable (severity words + contrast).
     6. **Motion** — no layout shift on refresh; reduced-motion does not
        break usability.
+
+24. **Every graph visualization renders with React Flow** (operator,
+    2026-07-17): wherever the UI draws a graph schema or displays anything
+    as a node/edge graph — the ecosystem service map, dependency diagrams,
+    topology views, any future graph surface — use `@xyflow/react`
+    (React Flow). Never hand-roll an SVG/canvas graph renderer. Layout
+    stays ours (ELK worker + deterministic fallback); React Flow consumes
+    the computed coordinates. Node/edge visuals keep the plan-162 language
+    (ServiceDot identity, kind glyphs, severity-worded error chips).
+    Timeline/chart surfaces (waterfall, flamegraph, Recharts) are not
+    graphs in this sense and keep their dedicated renderers.
