@@ -72,6 +72,11 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > still **never auto-merges**. Related kills **unfired**. **Still GO (narrow
 > product).**
 >
+> **Pass 246 (2026-07-18) — GO reaffirm (A1 hygiene).** A1 still
+> **`not_measured`** (open, not failed): golden ok; no comparative result
+> ledger. Kill "bundles do not beat raw" **unfired** until measured. **Still
+> GO (narrow product).**
+>
 > **Narrow product identity holds.** Research program continues.
 
 ## Verdict
