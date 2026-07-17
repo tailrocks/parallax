@@ -599,3 +599,12 @@ Highest remaining: (1) mix shares (2) server 1M/5M (3) trial quotes (4) GB cold 
 ## Run 549 (2026-07-18) — still not done
 
 **Not done.** Highest remaining: mix, server 1M/5M, quotes, GB cold, cluster RPO.
+
+## Run 550 (2026-07-18) — milestone; still not done
+
+**Not done.** Pins: GT **v1.1.3** / nightly **1.2.0** / CH **26.6.1.1193** / head **26.7.1.1097**.
+Four-way healthy. sum(rate)=1.5. last_value ~9ms. Jaeger/Prom 200.
+
+Highest remaining: mix, server 1M/5M, quotes, GB cold, cluster RPO.
+
+Runs 423–550: PromQL partial surface + load-bearing re-verifies. No direction flip.

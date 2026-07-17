@@ -229,6 +229,7 @@ managed quotes remain):
 | still not done | **547** | top 5 open |
 | rate increase append | **548** | rate OK; increase/DELETE no |
 | still not done | **549** | top 5 open |
+| milestone 550 | **550** | healthy; not done |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
