@@ -505,3 +505,7 @@ Runs 423–500 closed PromQL partial surface mapping and many load-bearing re-ve
 ## Run 505 (2026-07-18) — still not done
 
 **Not done.** Highest remaining: mix, server 1M/5M, quotes, GB cold, cluster RPO.
+
+## Run 507 (2026-07-18) — still not done
+
+**Not done.** Highest remaining: mix, server 1M/5M, quotes, GB cold, cluster RPO.
