@@ -19,6 +19,35 @@ enum SignalKind {
   METRIC_POINTS
 }
 
+enum TestExplorerSort {
+  LAST_SEEN
+  NAME
+}
+
+enum TestFlakyState {
+  HEALTHY
+  FLAKY
+  FIXED
+  BROKEN
+}
+
+enum TestResultStatus {
+  PASSED
+  FAILED
+  BROKEN
+  SKIPPED
+  UNKNOWN
+}
+
+enum TestRollup {
+  PASSED
+  FLAKY_PASS
+  FAILED
+  BROKEN
+  SKIPPED
+  UNKNOWN
+}
+
 enum TraceSort {
   START_DESC
   DURATION_DESC
@@ -62,6 +91,11 @@ input AlertRuleInput {
 input AttributeFilterInput {
   key: String!
   op: String!
+  value: String!
+}
+
+input TestConfigurationFilterInput {
+  key: String!
   value: String!
 }
 
@@ -383,6 +417,14 @@ type InvocationErrorEvent {
   traceId: String
 }
 
+type InvocationMetricRow {
+  "Canonical native-family identity persisted at ingest."
+  name: String!
+  pointCount: String!
+  lastValue: Float!
+  lastTsNanos: String!
+}
+
 type Issue {
   fingerprint: String!
   title: String!
@@ -588,6 +630,11 @@ type Query {
   issues(service: String, status: String, query: String, fromNanos: String, toNanos: String, tagKey: String, tagValue: String, sort: IssueSort, limit: Int, offset: Int): IssueList!
   issue(fingerprint: String!): Issue
   """
+    Variant-scoped test explorer. Attempt rollups preserve fail-then-pass as
+    flaky-pass; every row references its latest native test span.
+  """
+  testCases(query: String, suite: String, service: String, serviceVersion: String, status: TestRollup, flakyState: TestFlakyState, configuration: TestConfigurationFilterInput, fromNanos: String, toNanos: String, sort: TestExplorerSort, limit: Int, offset: Int): TestExplorerPage!
+  """
     Occurrence counts per bucket for one issue's sparkline, oldest
     first. Defaults: the last 24 hours in one-hour buckets.
   """
@@ -727,8 +774,12 @@ type Query {
     Window-scoped metric explorer catalog (plan 168): canonical names with
     kind (gauge|sum|histogram), unit, emitting services, last datapoint,
     and finite-sample counts per the metric-summary contract. `q` is a
-    case-insensitive substring filter; `kind` filters one metric kind.
+    Bounded invocation-scoped metric family summaries (plan 105): typed
+    projection over invocation_metric_points, canonical names, finite
+    samples only.
   """
+  invocationMetrics(invocationId: String!, fromNanos: String, toNanos: String, limit: Int): [InvocationMetricRow!]!
+  "case-insensitive substring filter; `kind` filters one metric kind."
   metricCatalog(fromNanos: String!, toNanos: String!, q: String, kind: String, limit: Int): [MetricCatalogRow!]!
   """
     The single shared metric read path (plan 168): typed kind + aggregation
@@ -950,6 +1001,63 @@ type StoryBeat {
   spanId: String
   severity: String
   durationNs: String
+}
+
+type TestDimension {
+  key: String!
+  value: String!
+}
+
+type TestExplorerPage {
+  items: [TestExplorerRow!]!
+  hasMore: Boolean!
+}
+
+type TestExplorerRow {
+  caseKey: String!
+  variantKey: String!
+  name: String!
+  suitePath: [String!]!
+  codeReference: String
+  explicitId: String
+  firstSeenNanos: String!
+  lastSeenNanos: String!
+  parameters: [TestParameter!]!
+  invocationId: String!
+  rollup: TestRollup!
+  attemptCount: Int!
+  lastResult: TestResult!
+  flaky: TestFlaky
+}
+
+type TestFlaky {
+  state: TestFlakyState!
+  sameCommitDivergence: Boolean!
+  intraInvocationMix: Boolean!
+  transitionCount: Int!
+  consecutivePasses: Int!
+  updatedAtNanos: String!
+}
+
+type TestParameter {
+  name: String!
+  value: String!
+  excluded: Boolean!
+}
+
+type TestResult {
+  invocationId: String!
+  attempt: Int!
+  status: TestResultStatus!
+  traceId: String!
+  spanId: String!
+  startedAtNanos: String!
+  endedAtNanos: String!
+  service: String!
+  serviceVersion: String
+  vcsHeadRevision: String
+  failureFingerprint: String
+  configuration: [TestDimension!]!
 }
 
 type Trace {

@@ -53,6 +53,11 @@
   with hard page/offset clamps through the query-neutral port. Owner,
   mute/known, resolution, and session-lifecycle filters remain unavailable
   until their schema-owning residuals land.
+- The generated GraphQL contract now exposes typed `testCases` explorer
+  filters, rollups, parameters, configuration dimensions, flaky evidence, and
+  native trace/span/fingerprint/invocation references with resolver and port
+  clamps. Honest `testCase` detail/history still requires the bounded
+  case-detail metadata read; no explorer-substring substitute was used.
 
 Design decisions D1–D9 (identity, native tables, status taxonomy, attempt
 chains, shared fingerprints, flaky SM, `/tests` surface, session semantics,
@@ -61,12 +66,11 @@ if needed; do not reopen.
 
 ## Residual only
 
-1. Add explorer/filter queries and independently review the landed Turso
-   schema/upsert/read module for `test_cases` / `test_variants` /
-   `test_results` / `test_flaky_states`.
-2. Ingest derivation: test root-span recognition, registry upsert, failed vs
-   broken, fingerprint linkage (`parallax-analysis`).
-3. GraphQL `tests` namespace + clamped queries.
+1. ~~Explorer/filter + Turso schema~~ — landed (metadata explorer + fixtures).
+2. ~~Ingest derivation~~ — landed (`parallax-analysis` + worker persist).
+3. ~~GraphQL explorer~~ — `testCases` + SDL export landed; residual:
+   bounded `testCase` detail/history read (not explorer-substring),
+   attempt-chain history, mute/known/owner fields when schema exists.
 4. UI `features/tests`: list + detail + live session tree (after architecture
    owners; React Flow not required here).
 5. Flaky job over ingested results; mute/known flags (no runner quarantine
