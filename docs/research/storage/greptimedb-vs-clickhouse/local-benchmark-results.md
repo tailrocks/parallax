@@ -8071,3 +8071,8 @@ GT warm **~7 ms**; CH **~2–5 ms**. Interactive both (issue-list shape).
 ### Run 304 — 2026-07-17 — not done
 
 Still researching. Open: mix, server, quotes, GB cold, RPO D2/D3.
+
+### Run 305 — 2026-07-17 — counter range by service
+
+`max(counter)-min(counter) GROUP BY service` on m2m: GT **20 ms**; CH **19 ms**.
+Near-tie on this small shape.
