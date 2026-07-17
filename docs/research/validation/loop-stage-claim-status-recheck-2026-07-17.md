@@ -1,9 +1,9 @@
-# Loop-stage claim status recheck (agenda #6, pass 154 + pass 186)
+# Loop-stage claim status recheck (agenda #6, pass 154 + pass 186 + pass 215)
 
 <!-- markdownlint-disable MD013 -->
 
-**Research date:** 2026-07-17 (pass 154); **pass 186 recheck 2026-07-18**  
-**Pass:** 154 + **186**  
+**Research date:** 2026-07-17 (pass 154); **pass 186 + pass 215 recheck 2026-07-18**  
+**Pass:** 154 + **186** + **215**  
 **Claim under test:** Detect/Dispatch/Validate/Learn stage designs hold under
 replayed telemetry (research-agenda item **#6**).  
 **Verdict:** **Split** — offline kernels + plan 123 offline residual **exist**;
@@ -35,6 +35,14 @@ Detect precision/recall or dispatch idempotency on real telemetry.
 | --- | --- |
 | Detect trigger ledger files | **Still absent** |
 | `fixer_outcome` unit tests | **3/3 pass** |
+| Live replay / stage product claims | Still **`not_measured`** |
+
+### Pass 215 addendum (2026-07-18)
+
+| Check | Result |
+| --- | --- |
+| Detect trigger ledger files | **Still absent** (no `*detect*ledger*` / `*trigger*ledger*` under `docs/research/`) |
+| `fixer_outcome` unit tests | **3/3 pass** (re-ran) |
 | Live replay / stage product claims | Still **`not_measured`** |
 
 ## Allowed vs forbidden wording
