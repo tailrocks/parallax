@@ -87,7 +87,8 @@ These sit *on top of* your telemetry (metrics/logs/traces/K8s) as reasoning/grou
 
 | Product | Note | State |
 | --- | --- | --- |
-| **GoSnag / Urgentry** | Tiny Sentry-compat self-hosts; low stars / quiet cadence. | watch (low priority) |
+| **GoSnag** | MIT Sentry-compat self-host (`darkspock/gosnag`); **9★**; last push **2026-04-17** (quiet); no release tags. Error-only. | watch (low) |
+| **Urgentry** | Sentry-compat self-host (`urgentry/urgentry`); **63★**; last push **2026-07-01**; license NOASSERTION; no public releases API. Error-only. | watch (low) |
 
 ## Maintenance notes
 

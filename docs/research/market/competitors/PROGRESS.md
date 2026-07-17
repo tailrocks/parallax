@@ -76,6 +76,7 @@
 | 51 | 2026-07-17 | **Rustrak deep-dive** ([parallax-vs-rustrak.md](parallax-vs-rustrak.md)): Rust Sentry-compat + **GPL-3.0** + mutating MCP (18 tools); error-only; no OTLP/bundle/outcome. | `d0b72292` |
 | 53 | 2026-07-17 | **GlitchTip deep-dive** ([parallax-vs-glitchtip.md](parallax-vs-glitchtip.md)): MIT Sentry-API error tracker; Hosted Free **1k events/mo**; paid tiers ~$15/$50/$250 (secondary); self-host free + donation/support; **MCP docs**; GH mirror stale. Completes small Sentry-alt deep-dives (Bugsink/Rustrak/GlitchTip). | `67a356da` |
 | 54 | 2026-07-17 | **Desk-pending multi-resolve:** (1) **Traceway Cloud pricing RESOLVED** live tracewayapp.com/cloud — Free / **$12.99** / **$24.99** / **$499.99** + $0.25–$0.20/GB overage (was “no public $/unit”). (2) **Rustrak MCP inventory CORRECTED** source-count **56 tools** (not 18) with many mutating issue/team/storage/token ops. (3) **GlitchTip MCP RESOLVED** — **17 tools** incl. mutating `update_issue`; OAuth/token HTTP MCP. (4) **TMA1 watch 8th UNFIRED** (alpha12/109★). Fast-movers stable (SigNoz v0.133.0, Langfuse v3.221.0, O2 v0.91.2, Coroot v1.23.3, Odigos v1.31.2, Sentry self-host 26.7.0). Sentry OTLP still open-beta traces+logs only (no metrics nav). | `6623e4c8` |
+| 55 | 2026-07-17 | **GoSnag + Urgentry residual watch pin:** GoSnag **9★** MIT last push 2026-04-17 (quiet); Urgentry **63★** last push 2026-07-01; both Sentry-compat error-only; no OTLP/bundle/outcome; no full deep-dive (low value after Bugsink/Rustrak/GlitchTip). | _pending_ |
 
 ## Deep-dive status (per product)
 
@@ -144,7 +145,7 @@
 5. ~~Traceway Cloud $/unit~~ → **DONE pass 54**.
 6. ~~Rustrak MCP inventory~~ → **DONE pass 54 (56 tools)**.
 7. ~~GlitchTip MCP mutability~~ → **DONE pass 54 (mutating update_issue)**.
-8. **GoSnag / Urgentry** — lowest priority residual Sentry-alts.
+8. ~~**GoSnag / Urgentry**~~ → **pinned pass 55 as watch-only** (no deep-dive; quiet/tiny).
 9. **A1 eval program** — blocking gate for all “bundle beats X” claims.
 
 ## Bias audit (this pass)
