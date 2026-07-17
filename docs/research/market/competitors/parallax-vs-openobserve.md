@@ -2,19 +2,15 @@
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 48
 > Cloud pricing; **pass 94** EE gates; **pass 102** pin; **pass 119** pricing;
-> **pass 155** + **pass 182** pin + MCP primary docs). Still **v0.91.2** latest
-> stable (2026-07-17); **20,196★**; AGPL-3.0; **v0.92.0-rc2** still RC (not
-> stable pin). Sources: [pricing](https://openobserve.ai/pricing/),
+> **pass 155** + **pass 182** + **pass 206** pin + MCP primary docs). Still
+> **v0.91.2** latest stable; **20,197★** (pass **206**; was 20,196); AGPL-3.0;
+> **v0.92.0-rc2** still RC. Sources: [pricing](https://openobserve.ai/pricing/),
 > [MCP marketing](https://openobserve.ai/mcp-server/),
 > **[MCP docs](https://openobserve.ai/docs/integration/ai/mcp/)**, GitHub.
 >
-> **Pass 155/182 MCP nuance (primary docs, not marketing):** MCP requires
-> **`O2_AI_ENABLED=true`**. Tool list includes many **mutating/destructive**
-> tools (`CreateAlert`, `DeleteAlert`, `CreateDashboard`, `DeleteDashboard`,
-> `DeleteUser`, …). Marketing still claims **“read-only tool execution”** —
-> **contradicted** by docs tool table (reconfirmed pass **182**). Pricing still
-> Self-Host EE free ≤**50 GB**/day class. Parallax free **read-only** stdio MCP
-> remains a distinct posture (A1 value unproven).
+> **Pass 206 MCP re-fetch:** still **`O2_AI_ENABLED`** + **`CreateAlert` /
+> `DeleteAlert`** (and peer mutators). Marketing “read-only tool execution”
+> still **contradicted** by docs. Parallax free RO stdio MCP distinct (A1 unproven).
 >
 > **Bottom line up front:** OpenObserve is the **nearest open-source competitor
 > on Parallax's own architectural axes** — Rust engine, single binary, self-host,
