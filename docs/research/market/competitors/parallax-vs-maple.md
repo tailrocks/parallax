@@ -1,11 +1,11 @@
 # Parallax vs Maple
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 59 +
-> pass 112; **pass 139** + **pass 174** re-pin). Tinybird-decoupling watch
-> **still UNFIRED** — latest tag still **v0.0.12** (2026-06-18) / **1,532★**;
-> push **2026-07-17**. README still documents **Tinybird** cloud path
-> (`TINYBIRD_HOST` / `TINYBIRD_TOKEN`) + **embedded ClickHouse** local — not a
-> GreptimeDB/self-owned store decoupling. Sources: [maple.dev](https://maple.dev/),
+> pass 112; **pass 139** + **pass 174** + **pass 201** re-pin). Tinybird-decoupling
+> watch **still UNFIRED** — latest tag still **v0.0.12** (2026-06-18) / **1,532★**;
+> push **2026-07-17**. README still **Tinybird** cloud (`TINYBIRD_*`) + **embedded
+> ClickHouse** local — not GreptimeDB/self-owned store decoupling. Sources:
+> [maple.dev](https://maple.dev/),
 > [github.com/MapleTechLabs/maple](https://github.com/MapleTechLabs/maple), legacy
 > [maple-deep-research.md](../maple-deep-research.md).
 >
