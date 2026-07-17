@@ -1,5 +1,13 @@
 # Maple Deep Research
 
+> **Superseded as the canonical comparison** by
+> [`competitors/parallax-vs-maple.md`](competitors/parallax-vs-maple.md)
+> (no-bias deep-dive, verified 2026-07-17: local-experience benchmark, same Turso
+> metadata, FSL-1.1, Tinybird-vendor-coupled ClickHouse; Parallax edges =
+> Apache/self-host-GreptimeDB/bundle thesis). This legacy note (2026-05-31) is a
+> **source** — data-flow, tech choices, feature inventory remain useful; re-verify
+> version + pricing in the canonical deep-dive.
+
 Research date: 2026-05-31
 
 ## Sources

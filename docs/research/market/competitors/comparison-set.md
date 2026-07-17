@@ -47,7 +47,7 @@ Legend for the **State** column:
 | **Uptrace** | OTLP on ClickHouse/Postgres; tracing-first. | Open core (BSL-adjacent). | Traces + metrics. | watch |
 | **HyperDX** | OTLP on ClickHouse; single-pane logs/metrics/traces. | Apache-2.0 + Cloud. | All signals. | watch |
 | **Odigos** | eBPF auto-instrumentation to OTLP (collector, not a backend). | Apache-2.0. | Auto-instrumentation. | watch |
-| **Maple** | OTLP single-binary best local UX; Turso metadata sibling choice. | FSL-1.1 (TS/Bun). | All signals. | stub (legacy [maple-deep-research.md](../maple-deep-research.md)) |
+| **Maple** | OTLP single-binary best local UX; Turso metadata sibling choice. | FSL-1.1 (TS/Bun). | All signals. | [deep-dive](parallax-vs-maple.md) |
 | **TMA1** | Nearest architectural mirror: Go single binary + embedded GreptimeDB + read-only MCP context-bundle for coding agents. | Apache-2.0. | AI-agent cost/sessions/traces. | [deep-dive](parallax-vs-tma1.md) |
 
 Component-level (the "stack it yourself" pieces, referenced not deep-dived):
