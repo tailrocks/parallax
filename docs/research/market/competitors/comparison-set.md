@@ -29,7 +29,7 @@ Legend for the **State** column:
 | **Dynatrace** | AI-driven (Davis) full-stack; deep auto-instrumentation via OneAgent. | Closed SaaS. | All signals + topology. | [deep-dive](parallax-vs-dynatrace.md) |
 | **Splunk Observability Cloud** | Observability on top of Splunk (post-Cisco); OTel-native metrics/traces + logs. | Closed SaaS. | Logs + metrics + traces. | [deep-dive](parallax-vs-splunk.md) |
 | **Elastic Observability** | ES/Kibana stack (search + observability + security); ES|QL. | Elastic License v2 (source-available). | Logs + metrics + traces + security. | [deep-dive](parallax-vs-elastic.md) |
-| **Sumo Logic** | Cloud log/SIEM/observability SaaS. | Closed SaaS. | Logs + metrics + security. | stub |
+| **Sumo Logic** | Cloud log/SIEM/observability SaaS; Flex scan-pricing; Francisco Partners-owned. | Closed SaaS. | Logs + metrics + security. | [deep-dive](parallax-vs-sumo.md) |
 | **Chronosphere** | Scale metrics platform on M3/Cube; controlled-cost metrics + Telemetry Pipeline. | Closed SaaS. | Metrics (high scale). | [deep-dive](parallax-vs-chronosphere.md) |
 | **Observe** | Data-/SQL-centric observability on Snowflake; relationship graph. | Closed SaaS. | All signals (relational). | stub |
 | **Axiom** | Serverless log/event analytics; cheap ingest. | Closed SaaS (OSS SDKs). | Logs + events. | stub |
