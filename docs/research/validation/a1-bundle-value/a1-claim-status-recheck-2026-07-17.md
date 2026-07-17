@@ -1,9 +1,9 @@
-# A1 claim status recheck — design/code vs empirical (pass 118)
+# A1 claim status recheck — design/code vs empirical (pass 118 + pass 159)
 
 <!-- markdownlint-disable MD013 -->
 
-**Research date:** 2026-07-17  
-**Pass:** 118 (deep-research-parallax indefinite program)  
+**Research date:** 2026-07-17 (pass 118); **pass 159 recheck 2026-07-18**  
+**Pass:** 118 + **159** (deep-research-parallax indefinite program)  
 **Claim under test:** "A bounded Parallax evidence bundle makes a coding agent's diagnosis and fix materially better than raw context" (kill criterion 3 / assumption A1).  
 **Verdict this pass:** **`not_measured`** — unchanged. Product and eval *machinery* exist; **no published comparative agent run** exists in this repository.
 
@@ -21,11 +21,11 @@ raw context on fix quality." This pass separates those layers with live repo + p
 | Experiment design | **Present** | [bundle-value-evaluation.md](bundle-value-evaluation.md), [runtime-dependence-and-raw-baseline.md](runtime-dependence-and-raw-baseline.md), [bundle-value-phase0-runbook.md](bundle-value-phase0-runbook.md) |
 | Overlay / no-cheat contract | **Present** | [phase0-telemetry-overlay-contract.md](phase0-telemetry-overlay-contract.md) |
 | Result-ledger *policy* | **Present** | [a1-eval-result-ledger-and-model-refresh.md](a1-eval-result-ledger-and-model-refresh.md) defines claim levels and artifact shape |
-| Result-ledger *instance* | **Absent** | No `result-ledger.md`, no `result-ledger.jsonl`, no dated run_id under this directory (repo search 2026-07-17) |
-| Bundle producer (product) | **Present** | `crates/parallax-evidence` — golden stability test `bundle_v1_golden_fixture_is_stable` loads `fixtures/bundle-v1-golden.json` |
+| Result-ledger *instance* | **Absent** | No `result-ledger.md`, no `result-ledger.jsonl`, no dated run_id under this directory (repo search 2026-07-17; **pass 159 reconfirm**: only policy file `a1-eval-result-ledger-and-model-refresh.md` matches `*ledger*` / `*result*`) |
+| Bundle producer (product) | **Present** | `crates/parallax-evidence` — golden stability test `bundle_v1_golden_fixture_is_stable` loads `fixtures/bundle-v1-golden.json` (**pass 159:** `cargo test -p parallax-evidence bundle_v1_golden` → **ok**) |
 | Loop PoC fixtures | **Present** | `poc/evidence-loop/` with `fixtures/` (agent-sessions, OTLP, outcome-rows, etc.) — mechanism proof, not A1 arms |
 | Comparative agent arms A/B/B′/C/D | **Not run** | No per-arm resolved-rate rows, no model snapshot, no C-vs-B delta |
-| Public SWE-style task sources | **Still available** | [SWE-bench/SWE-bench_Lite](https://huggingface.co/datasets/SWE-bench/SWE-bench_Lite) still published (HF; ~300 Lite tasks; collection updated through 2025–2026). Does **not** include production telemetry — still issue+repo only |
+| Public SWE-style task sources | **Still available** | [SWE-bench/SWE-bench_Lite](https://huggingface.co/datasets/SWE-bench/SWE-bench_Lite) still published (HF HTTP 200; API `lastModified` **2025-04-29**, ~25.6k downloads — pass 159). Does **not** include production telemetry — still issue+repo only |
 
 ## What is *not* A1 pass
 
@@ -64,10 +64,22 @@ Forbidden wording:
 
 **What would falsify the product bet (not this recheck):** C ≤ B (or ≤ B′) on R1–R3 after a clean Phase-0 gate — kill criterion 3.
 
+## Pass 159 addendum (2026-07-18)
+
+Desk + code recheck only — **still `not_measured`.**
+
+| Check | Result |
+| --- | --- |
+| Result-ledger instance files | **None** (policy markdown only) |
+| Golden fixture test | **Pass** (`bundle_v1_golden_fixture_is_stable`) |
+| SWE-bench_Lite source liveness | **Live** (HF 200 + API) |
+| Comparative arms | **Still not run** |
+
+Upgrade path in §Falsification unchanged: freeze → overlays → arms → publish ledger. Golden ok ≠ A1 gate.
+
 ## Uncertainty
 
-- This pass did **not** execute agent runs (token cost + harness ownership sit outside pure desk research; agenda still marks comparative runs owed).
-- Bundle producer surface was verified by fixture/test path presence, not by re-running the full crate test suite in this pass.
+- Pass 118 did **not** execute agent runs (token cost + harness ownership sit outside pure desk research; agenda still marks comparative runs owed). Pass 159 re-ran **only** the golden unit test, not arms.
 - HF row counts / revision SHAs for Lite were not re-hashed this pass; source liveness only. Pinning remains in the freeze-check notes when Phase 0 starts.
 
 ## Parallax goal fit
