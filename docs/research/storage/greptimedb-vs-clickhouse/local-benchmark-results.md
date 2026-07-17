@@ -7796,3 +7796,14 @@ complete. Highlights:
 
 **Still open (do not stop):** filled mix shares, server 1M/5M, GB cold S3,
 vendor trial quotes, RPO D2/D3.
+
+### Run 251 — 2026-07-17 — GT BLOOM SKIPPING INDEX via ALTER
+
+`CREATE INDEX … USING INVERTED` → **SQL keyword not supported**.
+`ALTER TABLE spans1m MODIFY COLUMN service SET SKIPPING INDEX WITH(type='bloom',…)`
+→ **OK**; SHOW CREATE shows `SKIPPING INDEX … type = 'BLOOM'` on `service`.
+
+`WHERE service='s0'` after flush/compact: **~3–5 ms** interactive. Note harness
+`spans1m` already has `PRIMARY KEY(service)` so this is bloom-on-PK column (still
+valid for skipping-index syntax live-check). Product secondary-filter columns
+use same ALTER form when not in PK.
