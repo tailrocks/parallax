@@ -171,3 +171,39 @@ describe("graphql trace builder", () => {
     ])
   })
 })
+
+describe("D-006 single-span operations (plan 160, corpus p-graphql-err)", () => {
+  it("renders an operation whose only field is the operation span itself", () => {
+    const operations = buildGraphqlOperations([
+      {
+        spanId: "op",
+        parentSpanId: "http",
+        tsNanos: "1000",
+        durationNs: "500",
+        name: "graphql.resolver",
+        statusCode: "STATUS_CODE_ERROR",
+        attributes: JSON.stringify({
+          "graphql.operation.type": "query",
+          "graphql.operation.name": "Storefront",
+          "graphql.field.name": "Query.catalogProducts",
+          "graphql.field.path": "Query.catalogProducts",
+        }),
+      },
+      {
+        spanId: "http",
+        parentSpanId: null,
+        tsNanos: "900",
+        durationNs: "700",
+        name: "http.server.request",
+        statusCode: "STATUS_CODE_UNSET",
+        attributes: "{}",
+      },
+    ])
+    expect(operations).toHaveLength(1)
+    expect(operations[0]!.operationName).toBe("Storefront")
+    expect(operations[0]!.fieldErrors).toBe(1)
+    expect(operations[0]!.roots.map((root) => root.fieldName)).toEqual([
+      "Query.catalogProducts",
+    ])
+  })
+})

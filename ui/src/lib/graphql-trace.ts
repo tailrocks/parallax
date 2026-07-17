@@ -171,7 +171,11 @@ export function buildGraphqlOperations(
     const attributes = attrBySpanId.get(span.spanId) ?? {}
     const fieldName = stringAttr(attributes, GRAPHQL_FIELD_NAME)
     if (!fieldName) continue
-    const operationSpanId = nearestOperationSpanId(span, byId, operationIds)
+    // A span can be both the operation and its only resolved field (a
+    // gateway resolver emitting one span): it is its own operation.
+    const operationSpanId = operationIds.has(span.spanId)
+      ? span.spanId
+      : nearestOperationSpanId(span, byId, operationIds)
     if (!operationSpanId) continue
     const entry: FieldEntry = {
       span,
