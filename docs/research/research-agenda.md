@@ -12,10 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 151 (air-gap combination **still unique**:
-Seer self-host still closed-source excluded; no peer portable redacted
-prod-incident bundle+outcome under air-gap). Pass 150 = A7. A1/A2/A4 open; A6
-open at mixed gate only.
+Last updated 2026-07-17 after pass 152 (**GO reaffirm**: kill triggers unfired —
+A1 not_measured not fail; wedge/schema/Seer/auto-merge still open). Pass 151 =
+air-gap. A1/A2/A4 open; A6 open at mixed gate only.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in

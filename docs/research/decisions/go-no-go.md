@@ -29,6 +29,23 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > GO survives but narrower — the technical wedge is still unoccupied, but "Sentry migration" and
 > "simpler than Sentry" are no longer differentiators, **A1 (bundle beats raw context) is now the #1
 > existential gate**, and open self-hosted is structurally non-paying (plan a managed/enterprise tier).
+>
+> **Pass 152 (2026-07-17) — GO reaffirm against indefinite-research evidence.**
+> Status remains **GO (narrow product)**. Kill criteria that would reverse GO
+> were re-checked in recent passes; **none fired**:
+>
+> | Kill / reverse trigger | Latest recheck | Fired? |
+> | --- | --- | --- |
+> | A1: bundles do not beat raw context | Pass **118** — still **`not_measured`** (no result ledger) | **No** (unproven ≠ failed) |
+> | A2: no paying segment | Pass **128** — interviews **0 rows**; desk monetization holds | **No** (open) |
+> | Full wedge closed by peer | Passes **122–125, 134** — Traceway/Bugsink/Rustrak/TMA1/GlitchTip **not** full combo | **No** |
+> | OTel commoditizes evidence-bundle schema | Pass **123** — #1185 idle; no incident model dir | **No** |
+> | Incumbent self-host Seer-class AI | Pass **126, 151** — Seer still closed-source excluded | **No** |
+> | App-code auto-merge + open outcome becomes commodity | Pass **138, 142** — Bits never auto-merges; Seer max PR draft; Holmes no store/outcome corpus | **No** |
+>
+> **Narrow product identity holds:** evidence/context engine, not generic dashboard
+> suite or autonomous SRE (A7 process residual pass **150**). Implementation shipped
+> does **not** close A1–A6 empirical gates — research program continues.
 
 ## Verdict
 
