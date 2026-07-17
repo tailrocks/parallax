@@ -121,6 +121,18 @@ whether OR-within-dimension needs a backend argument.
   wires into `invocations.index.tsx` and decides whether a backend
   `invocationFacets` is needed beyond the loaded page.
 
+- Backend `invocationFacets` (`8376d33`): `INVOCATION_FACET_DIMENSIONS`
+  (service, app.mode, cli.command.name, outcome), per-value
+  DISTINCT-invocation counts from spans carrying `cli.invocation.id`
+  (COALESCE root-span/resource id expression, missing-column lenient),
+  GreptimeDB + memory impls, GraphQL `invocationFacets(fromNanos,toNanos)`
+  defaulting to the retained recent window. E2e distinct-count test; the
+  four crates' lanes, strict clippy, and fmt verified green in an isolated
+  worktree at `5fc4730`. Peer: verify live counts against `j-parallel`
+  (mode/command/outcome), decide whether invocation facets need
+  `attributeFilters`-style base-filter arguments (invocation list filtering
+  is currently client-side), and wire the invocations route sidebar.
+
 Still open (full plan scope): live facet verification against `f-attrs`
 (70/20/10) + the facet-window cap decision; live-engine narrowing
 + injection assertions; logs route wiring (in the primary executor's
