@@ -219,3 +219,7 @@ To force true-cold on GreptimeDB(S3): delete `/greptimedb_data/cache/*` then res
 | CH | `system.events` → `S3GetObject`, `ReadBufferFromS3Bytes` |
 
 Small-N live (20k, Run 235): GT **+5** GetObject / ~1.48 MiB vs CH **+3** GetObject. Object *inventory* still favors GT (fewer objects); per-query GET can favor CH. Scale to GB for egress-dollar magnitude.
+
+## Mito cache metrics (Run 291)
+
+`greptime_mito_cache_hit` / `greptime_mito_cache_miss` labeled by `type` (`page`, `sst_meta`, `prefilter_result`, index types). Pair with OpenDAL S3 GetObject deltas for cold vs warm attribution.

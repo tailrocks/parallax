@@ -8005,3 +8005,9 @@ After Runs 220–288 the engine-smoke + small MinIO + harness fix work is deep.
 
 Re-check after uptime: `SELECT * FROM ts_r236` still **NOT_IMPLEMENTED** on
 26.7.1.1097. No interim progress on SQL read path.
+
+### Run 291 — 2026-07-17 — mito cache hit/miss series live
+
+`/metrics` exposes `greptime_mito_cache_hit|miss{type=page|sst_meta|prefilter_result|…}`.
+After session load, page hits **271** / miss **49**; sst_meta hit **687**. Useful
+for warm-path diagnosis alongside OpenDAL cold counters (Run 234–235).
