@@ -8101,3 +8101,7 @@ Comparison not declared done.
 ### Run 312 — 2026-07-17 — not done
 
 Still researching.
+
+### Run 313 — 2026-07-17 — logs1m indexes persist after re-gen
+
+SHOW CREATE still has FULLTEXT + INVERTED on trace_id after gen.sh fix (271).
