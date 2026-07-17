@@ -115,6 +115,9 @@ Fixed decisions (approver: the operator, alexey@chainargos.com, 2026-07-17):
   fills `approved_by`/`approval_date` accordingly.
 - **Plan 108**: no destructive history rewrite, ever; scan history, rotate
   any found credential, record evidence.
+  **Plan 108 CLOSED (2026-07-17):** scan evidence in
+  `docs/research/security/credential-history-scan-2026-07-17.md` — no real
+  exposure; no rewrite; optional lab DSN regen only if compose revived.
 - **Plan 116**: adopt the plan's own proposed lifecycle contract verbatim as
   the approved contract; executor writes the decision record.
 - **Plans 109/115**: V2 auth + server scope opened, minimal recommended
@@ -351,7 +354,6 @@ invent the missing product or operator decision.
 | Plan | Depends on | Trigger | Status |
 |------|------------|---------|--------|
 | [104](104-evidence-bundle-contract-reconciliation.md) | 093, 099 | Operator approves Option A, B, C, or a replacement canonical evidence-bundle contract with approver/date | DECIDED (unblock directive 2026-07-17): Option C — versioned envelope around the V1 dossier; approver alexey@chainargos.com; executor fills the decision record and proceeds |
-| [108](108-rotel-credential-history-decision.md) | Operator decision | Operator confirms whether non-default lab credentials ever entered Git history and authorizes any rewrite | DECIDED (unblock directive 2026-07-17): NO history rewrite; executor performs the credential-history scan, rotates anything found, records evidence |
 | [109](109-v2-auth-and-context-management.md) | Operator opens V2 scope | Operator opens V2 authentication and remote-context scope | OPENED (unblock directive 2026-07-17): minimal local-first token auth per the plan's recommended shape; execute after Wave 2 and the core chain |
 | [110](110-server-profile-ingest-concurrency.md) | 099, 113, 115; measured saturation | Plan 115 ships a supported profile and measurements prove single-worker saturation | OPENED (unblock directive 2026-07-17): producing the saturation measurements is now in scope; execute after 115 |
 | [112](112-product-mcp-ship-gates.md) | 099, 104, 111; 109 before any remote transport | Operator opens the product MCP ship/no-ship decision after evidence-safety prerequisites | OPENED (unblock directive 2026-07-17): proceed toward ship once 099/104/111 gates pass; local transport only until 109 lands |
