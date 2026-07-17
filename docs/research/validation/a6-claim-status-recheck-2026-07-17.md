@@ -52,6 +52,15 @@ Still **offline validators only** — never runtime deps on the tiny tier.
 | `agent_visible_mixed_pass` | **Still open** |
 | Claim split | **Unchanged** — synthetic partial ≠ mixed agent-visible gate |
 
+### Pass 195 addendum (2026-07-18)
+
+| Check | Result |
+| --- | --- |
+| Public-safe canary unit test | **ok** (re-ran) |
+| Gitleaks / TruffleHog pins | Still **v8.30.1** / **v3.95.9** |
+| Multi-surface red-team ledger | **Still absent** |
+| `agent_visible_mixed_pass` | **Still open** |
+
 ## Claim levels applied
 
 From [redaction.md claim table](../capture/redaction.md):
