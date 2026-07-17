@@ -2,9 +2,17 @@
 //! so agent-facing evidence survives native telemetry TTL.
 
 use super::*;
+use sha2::{Digest, Sha256};
 
 /// Soft max for one pin payload (512 KiB). Larger bundles are refused.
 pub const EVIDENCE_PIN_MAX_BYTES: usize = 512 * 1024;
+pub const EVIDENCE_PIN_PROTECTION_CAP: usize = 4_096;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EvidencePinProtection {
+    pub generation: String,
+    pub active_count: usize,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EvidencePinRecord {
@@ -22,6 +30,50 @@ pub struct EvidencePinRecord {
 }
 
 impl TursoMetadataStore {
+    /// Deterministic generation of every live pin at `now_nanos`. The extra
+    /// row detects cap overflow; incomplete protection snapshots fail closed.
+    pub async fn evidence_pin_protection(
+        &self,
+        now_nanos: u128,
+    ) -> anyhow::Result<EvidencePinProtection> {
+        let now = nanos_to_millis(now_nanos);
+        let limit = i64::try_from(EVIDENCE_PIN_PROTECTION_CAP + 1)
+            .map_err(|_| anyhow::anyhow!("pin protection cap is not representable"))?;
+        let conn = self.conn.lock().await;
+        let mut rows = conn
+            .query(
+                "SELECT pin_id, anchor_kind, anchor_id, canonical_hash, expires_at
+                 FROM evidence_pins
+                 WHERE expires_at IS NULL OR expires_at > ?1
+                 ORDER BY pin_id, anchor_kind, anchor_id, canonical_hash
+                 LIMIT ?2",
+                (now, limit),
+            )
+            .await?;
+        let mut identities = Vec::new();
+        while let Some(row) = rows.next().await? {
+            identities.push((
+                text(&row, 0),
+                text(&row, 1),
+                text(&row, 2),
+                text(&row, 3),
+                opt_integer(&row, 4),
+            ));
+        }
+        if identities.len() > EVIDENCE_PIN_PROTECTION_CAP {
+            anyhow::bail!(
+                "active evidence pins exceed protection cap {}",
+                EVIDENCE_PIN_PROTECTION_CAP
+            );
+        }
+        let active_count = identities.len();
+        let encoded = serde_json::to_vec(&identities)?;
+        Ok(EvidencePinProtection {
+            generation: format!("pins:sha256:{:x}", Sha256::digest(encoded)),
+            active_count,
+        })
+    }
+
     /// Idempotent pin by `(anchor_kind, anchor_id, canonical_hash)`.
     pub async fn evidence_pin_upsert(
         &self,
@@ -170,13 +222,7 @@ mod tests {
             .expect("list");
         assert_eq!(listed.len(), 1);
         assert!(store.evidence_pin_delete("pin-1").await.expect("delete"));
-        assert!(
-            store
-                .evidence_pin("pin-1")
-                .await
-                .expect("get")
-                .is_none()
-        );
+        assert!(store.evidence_pin("pin-1").await.expect("get").is_none());
 
         let mut huge = pin.clone();
         huge.pin_id = "pin-huge".into();
@@ -186,5 +232,55 @@ mod tests {
             .evidence_pin_upsert(&huge)
             .await
             .expect_err("must refuse oversize");
+    }
+
+    #[tokio::test]
+    async fn protection_generation_is_deterministic_and_excludes_expired_boundary() {
+        let directory = tempfile::tempdir().expect("tempdir");
+        let store = TursoMetadataStore::open(directory.path().join("meta.db"))
+            .await
+            .expect("open");
+        let pin = |id: &str, expires_at_nanos| EvidencePinRecord {
+            pin_id: id.into(),
+            anchor_kind: "issue".into(),
+            anchor_id: format!("fp-{id}"),
+            schema_version: "bundle-v2".into(),
+            canonical_hash: format!("sha256-jcs:{id}"),
+            bundle_json: r#"{"schema_version":"bundle-v2","data":{}}"#.into(),
+            byte_len: 40,
+            pinned_at_nanos: 1_000_000,
+            expires_at_nanos,
+            pinned_by: "local-operator".into(),
+            source_state: "present".into(),
+        };
+        store
+            .evidence_pin_upsert(&pin("active", None))
+            .await
+            .expect("active pin");
+        store
+            .evidence_pin_upsert(&pin("boundary", Some(20_000_000)))
+            .await
+            .expect("boundary pin");
+        let before = store
+            .evidence_pin_protection(19_000_000)
+            .await
+            .expect("before expiry");
+        let at_boundary = store
+            .evidence_pin_protection(20_000_000)
+            .await
+            .expect("at expiry");
+
+        assert_eq!(before.active_count, 2);
+        assert_eq!(at_boundary.active_count, 1);
+        assert_ne!(before.generation, at_boundary.generation);
+        assert_eq!(
+            at_boundary,
+            store
+                .evidence_pin_protection(20_000_000)
+                .await
+                .expect("repeat generation")
+        );
+        assert!(at_boundary.generation.starts_with("pins:sha256:"));
+        assert_ne!(at_boundary.generation, "pins:none");
     }
 }

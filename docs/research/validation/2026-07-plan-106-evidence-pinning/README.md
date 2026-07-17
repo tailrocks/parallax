@@ -13,6 +13,10 @@ See [evidence-pinning.md](../../decisions/evidence-pinning.md).
 - `evidence_pin_upsert` / `evidence_pin` / `evidence_pins_for_anchor` / `evidence_pin_delete`
 - Soft max 512 KiB; oversize refused
 - Unit test: round-trip, idempotent upsert, delete, bound
+- `evidence_pin_protection(now)` produces a bounded deterministic generation of
+  live pins; pins expiring exactly at `now` are excluded. Prune discovery and
+  execution still must consume this generation before metadata deletion is
+  considered integrated.
 
 ## Verify
 

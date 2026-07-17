@@ -3253,6 +3253,7 @@ dependencies = [
  "parallax-semconv",
  "parallax-storage",
  "serde_json",
+ "sha2",
  "tempfile",
  "tokio",
  "turso",
