@@ -21,8 +21,11 @@
 - `parallax-model` test reporting domain: versioned `TestCaseKey` /
   `TestVariantKey`, result identity, attempt chains, rollups (`FlakyPass`),
   flaky state machine boundary, identity fallback
-  (explicit → code reference → name path).
-- Suites in `crates/parallax-model/src/test_reporting/`.
+  (explicit → code reference → name path), and typed case/variant/flaky
+  persistence records without raw telemetry payloads.
+- Eight tests across the suites in
+  `crates/parallax-model/src/test_reporting/`; strict crate Clippy passes.
+  Persistence adapter/migration behavior still requires independent review.
 
 Design decisions D1–D9 (identity, native tables, status taxonomy, attempt
 chains, shared fingerprints, flaky SM, `/tests` surface, session semantics,
