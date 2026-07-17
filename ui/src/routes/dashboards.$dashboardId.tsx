@@ -174,10 +174,43 @@ function toWidgetData(
       byTime.set(point.tsNanos, row)
     }
   })
-  const rows = [...byTime.entries()]
-    .sort(([a], [b]) => (BigInt(a) < BigInt(b) ? -1 : 1))
-    .map(([, row]) => row)
+  const entries = [...byTime.entries()].sort(([a], [b]) =>
+    BigInt(a) < BigInt(b) ? -1 : 1
+  )
+  const rows = fillBucketGaps(entries, range)
   return { widget, groups, rows }
+}
+
+/** Insert empty rows for skipped buckets so a gauge that stopped reporting
+ * renders a line BREAK instead of silently bridging the gap (corpus id
+ * m-shapes). Bucket step = the smallest observed inter-point delta. */
+const MAX_FILLED_ROWS = 2_000
+
+function fillBucketGaps(
+  entries: Array<[string, Record<string, number | string>]>,
+  range: ResolvedRange
+): Array<Record<string, number | string>> {
+  if (entries.length < 2) return entries.map(([, row]) => row)
+  let step = 0n
+  for (let i = 1; i < entries.length; i += 1) {
+    const delta = BigInt(entries[i]![0]) - BigInt(entries[i - 1]![0])
+    if (delta > 0n && (step === 0n || delta < step)) step = delta
+  }
+  if (step === 0n) return entries.map(([, row]) => row)
+  const rows: Array<Record<string, number | string>> = []
+  for (let i = 0; i < entries.length; i += 1) {
+    const [ts, row] = entries[i]!
+    if (i > 0) {
+      let cursor = BigInt(entries[i - 1]![0]) + step
+      const end = BigInt(ts)
+      while (cursor < end && rows.length < MAX_FILLED_ROWS) {
+        rows.push({ time: formatTimeInRange(cursor.toString(), range) })
+        cursor += step
+      }
+    }
+    rows.push(row)
+  }
+  return rows
 }
 
 function DashboardPage() {
@@ -466,7 +499,9 @@ function WidgetChart({
                   key={group}
                   dataKey={group}
                   stroke={`var(--color-${group})`}
-                  dot={false}
+                  // Small dots keep an isolated bucket visible when the gap
+                  // fill breaks the line on both sides of it.
+                  dot={{ r: 2, strokeWidth: 0, fill: `var(--color-${group})` }}
                 />
               ))}
             </LineChart>
