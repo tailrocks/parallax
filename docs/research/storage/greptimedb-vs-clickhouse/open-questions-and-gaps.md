@@ -64,15 +64,14 @@ sub-study's scope, but they are "not addressed"):
   match. Remaining: product runbook (Turso + Greptime meta + object store RPO/RTO), not engine choice.
 - **Rate-limiting / quotas / ingestion protection** — the proxy's protective layer.
 
-## 5. Managed-cloud vs self-host — changes the whole cost/ops calculus
+## 5. Managed-cloud vs self-host — framework answered (Run 175); live $ quotes still owed
 
-The cost + scaling analysis leaned **self-hosted** (1× vs N× S3, Keeper, manual resharding). But
-**ClickHouse Cloud** (`SharedMergeTree` + distributed cache — closes the S3-economics + cold-read gaps,
-Run 155/161) and **GreptimeCloud** change the math: they trade $ for ops and erase several of the
-self-host edges (e.g. ClickHouse Cloud neutralizes much of GreptimeDB's object-store-economics
-advantage). We have **not** modelled managed-vs-self-host — and given the operator's anti-operational-
-complexity goal (the anti-self-hosted-Sentry motivation), this may be the *most practically decisive*
-axis after workload mix.
+**Framework:** `managed-cloud-vs-self-host.md` (Run 175). ClickHouse Cloud
+(`SharedMergeTree` + local/distributed cache) collapses OSS CH’s N×/cold-S3 disadvantages for a
+premium; Greptime managed keeps S3-native economics with ops removed (public entry ~$290/mo class).
+**Product stack still GreptimeDB self-hostable.** Remaining: **current vendor quotes** for a fixed
+retained volume + evidence-bundle QPS (list prices go stale); optional free-tier smoke — not an
+engine-internals blocker.
 
 ## 6. Decided-but-not-designed
 

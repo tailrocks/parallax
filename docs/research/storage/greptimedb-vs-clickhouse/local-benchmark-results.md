@@ -6886,3 +6886,17 @@ logical export; CH leans SQL BACKUP of parts. Product still needs Turso+meta com
 **Note:** `backup-and-disaster-recovery.md` added; gap ledger updated.
 
 **Reproduce.** See that note's command block.
+
+### Run 175 — 2026-07-17 — managed-cloud vs self-host framework (gap #5)
+
+**Pass target.** Model how ClickHouse Cloud / Greptime managed change the cost+ops calculus vs the
+self-host-centric engine study.
+
+**Method.** First-party docs + prior Runs 155/161/174; incidental live re-verify on OSS pins only
+(anchored count returns; PromQL 200). No paid cloud endpoints exercised.
+
+**Finding.** Cloud CH SharedMergeTree + distributed cache **sells back** the OSS storage/cold edges
+GT held in self-host comparisons. Managed GT preserves object-store design with ops removed. Product
+remains self-hostable GreptimeDB; SaaS operator may choose managed later. **$ quote packet still owed.**
+
+**Deliverable.** `managed-cloud-vs-self-host.md`; gap ledger #5 updated.
