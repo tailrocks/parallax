@@ -91,6 +91,10 @@ upstream, so TWCS only ever sees flushed SSTs.
 - ClickHouse merge: `src/Storages/MergeTree/MergeSelector/SimpleMergeSelector*` (write-amplification doc + `base` knob), `MergeTreeDataMergerMutator`, `max_bytes_to_merge_at_max_space_in_pool=150 GB` (`MergeTreeSettings.cpp:465`).
 - Ties to `local-benchmark-results.md` Runs 7/9.
 
+## Run 230 (2026-07-17) — TWCS multi-window re-verify
+
+Same pins: 200+200 rows two calendar days, flush each, compact → full scan **files=2**; `WHERE ts < day1 noon` → **files=1**. DDL option: `'compaction.type'='twcs'` (not `compaction_twcs_time_window`).
+
 ## Run 197 (2026-07-17) — TWCS multi-window SSTs on v1.1.3
 
 Source: `mito2/src/compaction/twcs.rs` — `TwcsPicker` groups files by max-timestamp

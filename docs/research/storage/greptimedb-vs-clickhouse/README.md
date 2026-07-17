@@ -75,6 +75,7 @@ managed quotes remain):
 | PARTITION ON(trace_id) file_ranges | 227 | 1/2 regions; 1 vs 2 ranges |
 | Flow + CH MV continuous agg | 228 | parity; Flow async lag |
 | Freshness + append_mode DELETE | 229 | no drift |
+| TWCS multi-window SST prune | 230 | files 2→1 on time filter |
 
 ## Method
 

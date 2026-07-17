@@ -7541,3 +7541,24 @@ batch delay. Ad-hoc analytics gap (no Flow) unchanged.
 `DELETE is not allowed under append mode`. Non-append `del_t` DELETE →
 affectedrows=1, count=0. **No drift** vs Run 186 — GDPR path needs non-append
 or force-compact table design.
+
+### Run 230 — 2026-07-17 — TWCS multi-window SST prune re-verify
+
+**Pass target.** Re-verify TWCS keeps separate SSTs per time window and time
+predicates prune file ranges (Runs 197/144).
+
+**DDL.** Option keys: `'compaction.type'='twcs'` (+ auto `'compaction.override'='true'`
+in SHOW CREATE). Old name `compaction_twcs_time_window` → **unrecognized** on v1.1.3.
+
+**Load.** 200 rows @ `2026-01-01` flush; 200 rows @ `2026-01-02` flush; compact.
+
+| Query | `files` | `file_ranges` | `output_rows` |
+| --- | ---: | ---: | ---: |
+| Full `SELECT k,v` | **2** | **2** | 400 |
+| `WHERE ts < 2026-01-01 12:00` | **1** | **1** | 200 |
+
+**CH comparator.** `PARTITION BY toYYYYMMDD(ts)` + TTL → active parts listed by
+day partition (mechanism for whole-partition drop).
+
+**Verdict.** **No drift:** TWCS multi-window SSTs survive compact; time prune
+halves file_ranges. Whole-SST TTL drop story still rests on this layout.
