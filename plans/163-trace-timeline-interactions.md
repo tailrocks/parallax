@@ -21,6 +21,42 @@
 - **Category**: direction / UI / traces
 - **Planned at**: `2288011`, 2026-07-17
 
+### Landed (preliminary, helper agent) — peer verify/extend + browser evidence
+
+**Do not retire yet.** The pure layer landed for speed; the peer executor
+owns verification, wiring into `trace-waterfall.tsx`/`traces.$traceId.tsx`,
+the minimap controller, and all browser evidence under
+`docs/research/validation/2026-07-wave2/163/`.
+
+**Already landed (each slice green: focused tests + typecheck + targeted
+lint/format at commit time):**
+- `ui/src/lib/timeline-viewport.ts` (`de2eab7`): reducer (ZOOM anchor
+  invariance, PAN, ZOOM_TO_SPAN, ZOOM_TO_RANGE, ZOOM_TO_FIT, SET_SEARCH,
+  TOGGLE_COLLAPSE), constants (MIN_VISIBLE_MS=0.1, DRAG_THRESHOLD_PX=4,
+  DEFAULT_MAX_WINDOW_MS=10_000, ZOOM_FACTOR=1.15), clamping, px↔ms math,
+  `barRect` ([-50%,150%] clamp + outside skip), label gating (56/140px).
+  31 unit tests.
+- `ui/src/lib/trace-tree.ts` (`f42c175`): `computeSelfTimes` (children
+  clipped to parent, overlaps merged, floors at 0n) and `packFlameLanes`
+  (greedy per-depth lanes + laneCounts). Tests in
+  `__tests__/trace-tree-flame.test.ts`.
+- `ui/src/lib/color-by.ts` (`f4a177b`): strategy type, URL
+  encode/decode (`service|kind|status|attr:<key>`, fallback to service),
+  `colorForSpan`, `attributeKeysForColorBy`, capped legend helper. Tests.
+- `ui/src/hooks/use-timeline-interactions.ts` (`55e30b6`): gesture hook
+  per the grammar (marquee/click threshold, shift/middle pan against the
+  pointer-down-captured viewport, ctrl-wheel anchored zoom, shift/
+  horizontal wheel pan, `passive:false`, `+`/`-`/`0` keys). 6 jsdom tests.
+
+**Peer owns (verify/deepen):**
+- [ ] Review the reducer/gesture semantics against the plan grammar; the
+  helper's cut may be shallower than intended (e.g. double-click wiring,
+  marquee overlay rendering, minimap controller are NOT started).
+- [ ] Steps 3-5: waterfall rework onto the viewport, minimap controller,
+  color-by picker UI + search-param schema, self-time in tooltip/inspector,
+  flamegraph tab (component started by peer, consuming `packFlameLanes`),
+  full gates, browser evidence.
+
 ## Why this matters
 
 The trace view is where incidents get solved, and it is the area the
