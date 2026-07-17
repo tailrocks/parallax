@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import {
+  IconChartLine,
   IconActivity,
   IconAlertTriangleFilled,
   IconAffiliateFilled,
@@ -319,7 +320,7 @@ export function OverviewContent({
         actions={<RangePicker value={range} onChange={onRangeChange} />}
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <Link
           to="/traces"
           search={rangeLinkSearch(range)}
@@ -364,6 +365,22 @@ export function OverviewContent({
                 className="text-blue-500"
               />
             }
+          />
+        </Link>
+        <Link
+          to="/metrics"
+          className="block rounded-lg transition outline-none hover:-translate-y-0.5 focus-visible:ring-[1.5px] focus-visible:ring-ring/50"
+        >
+          <StatCard
+            label="Metric points"
+            value={formatCount(count(data.overview.metricPointCount))}
+            hint="finite samples in window"
+            delta={formatDelta(
+              count(data.overview.metricPointCount),
+              count(data.previousOverview.metricPointCount)
+            )}
+            icon={IconChartLine}
+            iconClassName="text-emerald-500"
           />
         </Link>
         <Link
