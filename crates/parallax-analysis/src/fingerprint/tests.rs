@@ -98,3 +98,20 @@ fn operation_partitions_same_error_message() {
     assert_eq!(a, b);
     assert_ne!(a, c);
 }
+
+#[test]
+fn ansi_colored_message_groups_and_reads_like_plain_text() {
+    // D-011 family (plan 160, corpus l-bodies/e-burst): colored CLI output
+    // must fingerprint identically to its plain form.
+    let plain = fingerprint("log_error", "error with ANSI escapes", None);
+    let colored = fingerprint(
+        "log_error",
+        "\u{1b}[31merror\u{1b}[0m with \u{1b}[1mANSI\u{1b}[0m escapes",
+        None,
+    );
+    assert_eq!(plain, colored);
+    assert_eq!(
+        strip_ansi("\u{1b}[31mred\u{1b}[0m text"),
+        "red text"
+    );
+}

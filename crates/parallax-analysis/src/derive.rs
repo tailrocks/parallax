@@ -232,9 +232,11 @@ pub fn derive_from_logs(rows: &[LogRow]) -> Vec<ErrorEventRow> {
 }
 
 /// Issue title: `error_type: first line of the normalized-ish message`.
+/// ANSI escapes are stripped — colored CLI output titles like its plain form.
 #[must_use]
 pub fn issue_title(error_type: &str, message: &str) -> String {
-    let head = message.lines().next().unwrap_or("").trim();
+    let clean = crate::fingerprint::strip_ansi(message);
+    let head = clean.lines().next().unwrap_or("").trim();
     if head.is_empty() {
         error_type.to_string()
     } else {

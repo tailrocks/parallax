@@ -20,6 +20,7 @@ struct Normalizers {
     whitespace: Regex,
     frame_suffix: Regex,
     absolute_path: Regex,
+    ansi: Regex,
 }
 
 #[expect(clippy::expect_used, reason = "static regex literal")]
@@ -43,15 +44,23 @@ fn normalizers() -> &'static Normalizers {
             whitespace: static_regex(r"\s+"),
             frame_suffix: static_regex(r":\d+(?::\d+)?$"),
             absolute_path: static_regex(r"/[^\s]+"),
+            ansi: static_regex(r"\x1b\[[0-9;]*[A-Za-z]"),
         }
     })
+}
+
+/// Strip terminal ANSI escape sequences (colored CLI output must group and
+/// title identically to its plain form).
+#[must_use]
+pub fn strip_ansi(message: &str) -> String {
+    normalizers().ansi.replace_all(message, "").into_owned()
 }
 
 /// Normalize volatile tokens out of an error message before grouping.
 #[must_use]
 pub fn normalize_message(message: &str) -> String {
     let normalizers = normalizers();
-    let mut out = message.to_string();
+    let mut out = strip_ansi(message);
     out = normalizers.uuid.replace_all(&out, "<uuid>").into_owned();
     out = normalizers.long_hex.replace_all(&out, "<hex>").into_owned();
     out = normalizers
