@@ -138,6 +138,37 @@ evidence. Index status stays TODO.
   this head reproduce identically without this slice (parallel-run
   timeouts in dashboards/sql/overview/range-picker lanes) and pass in
   isolation — peer's flaky-lane concern, not introduced here.
+- GraphQL alert surface (`4fe549b`, helper agent 2026-07-17) — Step 4
+  backend: `crates/parallax-api/src/resolvers/alerts.rs` queries
+  (`alertRules/alertRule/alertRuleStates/alertIncidents/alertIncident/
+  alertDestinations/alertChecks`) + mutations (`alertRuleSave` taking an
+  `AlertRuleInput` input object, `alertRuleDelete`, `alertRuleSetEnabled`,
+  `alertDestinationSave`, `alertDestinationDelete`). Validation mirrors
+  the plan contract (comparator/thresholdUpper pairing, error_rate
+  fraction, metric requires metricName, defaults 2/2/skip/30m,
+  minimumSampleCount floored at 1); `email` destinations refused (V1
+  deferral); destination config must be JSON with an http(s) `url`.
+  `ApiContext` gains `alerts: Option<Arc<TursoMetadataStore>>` (concrete —
+  alert tables are Turso-only, matching the evaluator); serve.rs threads
+  it via `RouterState`/`GraphQlState`, `None` in the
+  `start_with_capabilities` test seam. Five in-module test suites (53
+  crate tests green from a clean checkout). Caveat: `4fe549b` was staged
+  from a pre-`95c3b80` base and dropped `metricQuery`; restored at
+  `67e079b` — peer sanity-checks nothing else was clipped. Peer also
+  re-verifies list/JSON-string field encodings (services/attributeFilters/
+  destinationIds cross as JSON strings, plan-164 shape) and adds an
+  incident-resolve/timeline surface if the UI needs one.
+- `ui/src/lib/alerts-gql.ts` + `ui/src/routes/alerts.index.tsx` rewrite
+  (helper agent 2026-07-17) — Step 4 UI over the live surface: tabs for
+  rules (enable/disable switch, delete, template create dialog with
+  threshold override + destination checkboxes), incidents (severity/status
+  words per plan 162), destinations CRUD (webhook | slack_webhook).
+  Builders/tests in `alerts-gql.ts` (`alertRuleSaveMutation` input-object
+  shape, `alertRuleDetailQuery` ready for the detail page); vitest 6/6 in
+  `routes/__tests__/-alerts.test.tsx` (replaces the old `draftToArgs`
+  cases). Rule/incident rows deliberately render without detail links —
+  peer builds `/alerts/$ruleId` (+ incident detail, threshold chart) and
+  restores links, then browser-verifies per the ui/AGENTS.md checklist.
 
 **Peer owns (verify/deepen/complete):**
 - [ ] Re-verify state machine + delivery helpers vs plan exhaustiveness;
