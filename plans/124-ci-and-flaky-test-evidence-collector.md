@@ -22,7 +22,10 @@
 2. ~~Normalized job/attempt IDs + flaky multi-attempt gate~~ landed
    (`parallax-evidence::github_actions`), including idempotent redelivery,
    canonical ordering, and fail-closed conflicting outcomes per attempt ID.
-3. Signature-verified webhook + idempotent backfill; Turso state; doctor CLI.
+   Turso attempt-identity + delivery ledgers are landed as the shared durable
+   boundary for future webhook and REST backfill ingestion.
+3. Signature-verified workflow-job webhook + bounded REST backfill cursor;
+   wire the landed Turso ledgers; doctor CLI.
 4. Bundle correlation without root-cause overclaim; dated coverage rows.
 
 ## Done Criteria

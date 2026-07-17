@@ -11,6 +11,7 @@ use std::{collections::BTreeMap, path::Path};
 use turso::Value;
 
 mod alerts;
+mod ci;
 mod connection;
 mod deploy;
 mod invocations;
@@ -26,6 +27,7 @@ pub use alerts::{
     ALERT_CHECKS_KEEP_PER_RULE, AlertCheckRecord, AlertDeliveryEventRecord, AlertDestinationRecord,
     AlertIncidentRecord, AlertRuleRecord, AlertRuleStateRecord,
 };
+pub use ci::{CiAttemptAccept, CiAttemptDeliveryRecord, CiAttemptStoreError};
 pub use deploy::{DeployAccept, DeployDeliveryRecord, DeployStoreError, payload_sha256_hex};
 pub use sentry_ack::{SentryAck, SentryAckError};
 pub(crate) mod pins;
@@ -261,6 +263,29 @@ CREATE TABLE IF NOT EXISTS deploy_deliveries (
 );
 CREATE INDEX IF NOT EXISTS deploy_deliveries_repo_time
   ON deploy_deliveries(repo_full_name, received_at);
+CREATE TABLE IF NOT EXISTS ci_attempts (
+  attempt_id       TEXT PRIMARY KEY,
+  provider         TEXT NOT NULL,
+  repo_full_name   TEXT NOT NULL,
+  workflow_run_id  INTEGER NOT NULL,
+  job_id           INTEGER NOT NULL,
+  attempt          INTEGER NOT NULL,
+  conclusion       TEXT,
+  name             TEXT,
+  lossiness        TEXT NOT NULL,
+  first_seen_at    INTEGER NOT NULL,
+  updated_at       INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ci_attempts_repo_run
+  ON ci_attempts(repo_full_name, workflow_run_id, job_id, attempt);
+CREATE TABLE IF NOT EXISTS ci_attempt_deliveries (
+  delivery_id      TEXT PRIMARY KEY,
+  attempt_id       TEXT NOT NULL,
+  payload_hash     TEXT NOT NULL,
+  received_at      INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ci_attempt_deliveries_attempt
+  ON ci_attempt_deliveries(attempt_id, received_at);
 CREATE TABLE IF NOT EXISTS sentry_event_acks (
   project_id   TEXT NOT NULL,
   event_id     TEXT NOT NULL,
