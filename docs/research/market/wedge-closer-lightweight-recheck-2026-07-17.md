@@ -112,6 +112,12 @@ Stars unchanged; **real release-line move** on backend only.
 | **Bugsink** | **1,940★** / **v2.4.0** | Sentry-SDK error-only; combo **not closed** |
 | **Rustrak** | **64★** / server **0.9.2** + MCP **0.2.13** | Sentry+MCP error tracker; combo **not closed** |
 
+**Pass 218 recheck (2026-07-18):** **Traceway** escalator —
+
+| Product | Pin | Combo |
+| --- | --- | --- |
+| **Traceway** | **1,024★**; **`backend/v1.9.1` + `cli/v1.9.1`** still latest | OTLP multi-signal + agent path; **no** Sentry envelope / portable redacted bundle / outcome. Combo **not closed**. |
+
 **Pass 156 recheck (2026-07-18):** **Traceway-focused** wedge re-poll + Bugsink/Rustrak
 star-pin hygiene — combination **still not closed**.
 
