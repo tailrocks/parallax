@@ -104,6 +104,17 @@ OCSF GA still **`1.8.0`**; `/1.9.0/` still **404**. **Still not commoditized.**
 
 **Still not commoditized.** Kill unfired.
 
+**Pass 316 primary re-fetch (2026-07-18):**
+
+| Source | Finding |
+| --- | --- |
+| [semconv #1185](https://github.com/open-telemetry/semantic-conventions/issues/1185) | Still **open**; `updated_at` still **2025-10-24T14:40:05Z**; title "Add incident attributes" |
+| `model/` contents | name filter for incident/investigation/rca/evidence/bundle/postmortem/forensic/alert → **empty** |
+| OCSF Latest | still **`1.8.0`** (2026-03-18) |
+
+**Still not commoditized.** Kill unfired.
+
+
 **Evidence class:** primary GitHub issue/tree + first-party release pages +
 vendor product docs (desk recheck). Not a measurement of A1 value.
 
