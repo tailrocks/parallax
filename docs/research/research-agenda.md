@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 91 (consume Run 189 N=100k density: shape-
-dependent GT/CH ratios on `v1.1.3`/`26.6.1`; **not** sized-cost/A5 close). Pass 90
-= CH feature pin. A1/A2/A4/A6 open.
+Last updated 2026-07-17 after pass 92 (CLI invocation id still **no OTel standard**;
+genai#51 idle since 2026-05-05; `cli.invocation.id` still justified). Pass 91 =
+Run 189 consume. A1/A2/A4/A6 open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
@@ -63,7 +63,7 @@ producer rather than treat its construction as future work. Autonomous fixing re
   [market/incumbent-self-hosted-ai-recheck-2026-07-17.md](market/incumbent-self-hosted-ai-recheck-2026-07-17.md).
   **UNFIRED:** Seer self-host GA; Grafana offline/BYO-LLM Assistant.
 - **OTel** — any move from per-signal semantics toward incident/investigation/RCA **artifacts**. Last deep recheck: **2026-07-17** ([commoditization note](architecture/evidence-bundle-schema-commoditization-2026-07-17.md)): #1185 attribute issue still open/idle; no bundle schema.
-- **Run-id / invocation-id standardization (active participation, not just a watch)** — no OTel standard for a CLI invocation's cross-trace correlation id (rechecked **2026-07-17 pass 53**). Parallax ships **`cli.invocation.id`** (+ `session.id`). Historical tracker link `semantic-conventions#2883` is **dead**; GenAI session push is [semantic-conventions-genai#51](https://github.com/open-telemetry/semantic-conventions-genai/issues/51). Full table: [capture/run-id-standardization.md](capture/run-id-standardization.md).
+- **Run-id / invocation-id standardization (active participation, not just a watch)** — no OTel standard for a CLI invocation's cross-trace correlation id (rechecked **2026-07-17 pass 53 + pass 92**). Parallax ships **`cli.invocation.id`** (+ `session.id`). Historical tracker link `semantic-conventions#2883` is **dead**; GenAI session push [semantic-conventions-genai#51](https://github.com/open-telemetry/semantic-conventions-genai/issues/51) still **open/idle** (`updated_at` 2026-05-05). Full table: [capture/run-id-standardization.md](capture/run-id-standardization.md).
 - **Coding-agent capability** — as models improve, the "raw context is enough" threat (item 1) grows; A1 must re-run across model generations.
 
 ## How this maps to the kill criteria

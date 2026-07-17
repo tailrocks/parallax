@@ -3,7 +3,7 @@
 <!-- markdownlint-disable MD013 -->
 
 Research date: 2026-06-12; updated 2026-06-15; **re-verified 2026-07-17 against
-source**; **upstream tracker recheck pass 53 (2026-07-17)**. Owner question
+source**; **upstream tracker recheck pass 53 + pass 92 (2026-07-17)**. Owner question
 (operator): one CLI invocation ("a run") produces many traces, logs, and
 metrics; we correlate them under an invocation id. What is the standard, and
 how do we get to one?
@@ -102,20 +102,20 @@ run-anchored evidence bundles), plus jackin' as a second real CLI emitter.
 
 ## Tracking (update this table as threads move)
 
-| Thread | Why it matters | State (**2026-07-17 pass 53**) | Our move |
+| Thread | Why it matters | State (**2026-07-17 pass 53 + pass 92**) | Our move |
 | --- | --- | --- | --- |
 | ~~`open-telemetry/semantic-conventions#2883`~~ | Historical citation for "generalize session.id" | **Dead/wrong link** — `gh issue view 2883 -R open-telemetry/semantic-conventions` returns **not found** (2026-07-17). Do not cite as live. | Drop from engagement queue; use GenAI issue below |
-| [semantic-conventions-genai#51 — Add session.id to GenAI conventions](https://github.com/open-telemetry/semantic-conventions-genai/issues/51) | Live GenAI `session.id` reuse push (multi-step/multi-agent workflows) | **Open** as of 2026-05-05 last update; still GenAI-scoped, **not** CLI-invocation | Comment only if framing expands beyond GenAI; offer CLI invocation as *adjacent* use case carefully (different actor boundary) |
-| [CLI semconv](https://opentelemetry.io/docs/specs/semconv/cli/cli-spans/) (semconv **1.43.0** docs; [model/cli/spans.yaml](https://github.com/open-telemetry/semantic-conventions/tree/main/model/cli)) | Where a CLI invocation correlation id would land | Development; **still no** `cli.invocation.id` / `cli.run.id` / cross-trace correlation attribute (docs text search 2026-07-17: zero "invocation" hits) | **Primary move:** open a dedicated semconv issue — "CLI invocations need a cross-trace correlation id" — citing Parallax/`jackin` `cli.invocation.id` as a shipping reference |
+| [semantic-conventions-genai#51 — Add session.id to GenAI conventions](https://github.com/open-telemetry/semantic-conventions-genai/issues/51) | Live GenAI `session.id` reuse push (multi-step/multi-agent workflows) | **Still open** (pass 92: `updated_at` still **2026-05-05**; labels `enhancement`). GenAI-scoped, **not** CLI-invocation. | Comment only if framing expands beyond GenAI; offer CLI invocation as *adjacent* use case carefully (different actor boundary) |
+| [CLI semconv](https://opentelemetry.io/docs/specs/semconv/cli/cli-spans/) (semconv **1.43.0** docs; [model/cli/spans.yaml](https://github.com/open-telemetry/semantic-conventions/tree/main/model/cli)) | Where a CLI invocation correlation id would land | **Pass 92:** Development; **still** process attrs only (`process.executable.name`, `exit.code`, `pid`) — **no** `cli.invocation.id` / cross-trace correlation attribute | **Primary move:** open a dedicated semconv issue — "CLI invocations need a cross-trace correlation id" — citing Parallax/`jackin` `cli.invocation.id` as a shipping reference |
 | [CICD conventions](https://opentelemetry.io/docs/specs/semconv/resource/cicd/) | Owns `*.run.id` naming | `cicd.pipeline.run.id` still Development (not re-diffed this pass) | Watch; naming precedent only — do not alias pipeline run to CLI invocation |
-| [Session conventions / registry](https://opentelemetry.io/docs/specs/semconv/general/session/) | Scope of `session.id` | **Development**; definition still **client application + end user** period of activity (registry attributes page 2026-07-17) | Scope broadening = adopt-as-alias trigger; **not fired** |
+| [Session conventions / registry](https://opentelemetry.io/docs/specs/semconv/general/session/) | Scope of `session.id` | **Pass 92:** still **development**; registry still **client application + end user** wording | Scope broadening = adopt-as-alias trigger; **not fired**. Emit as interop bridge only |
 
-**Pass-53 verdict:** still **no OTel standard** for a CLI invocation correlation
-id. Parallax's `cli.invocation.id` remains a justified namespaced/generic-CLI
-choice, not a standard. Upstream engagement order (revised): (1) **dedicated CLI
-semconv issue** (not the dead #2883), (2) optional GenAI#51 comment only if it
-helps, (3) PR amending session/CLI docs if SIG interest appears. Every step gets
-a dated row appended here.
+**Pass-53 + pass-92 verdict:** still **no OTel standard** for a CLI invocation
+correlation id. GenAI#51 idle since 2026-05. Parallax's `cli.invocation.id`
+remains a justified generic-CLI choice, not a standard. Upstream engagement
+order: (1) **dedicated CLI semconv issue** (not the dead #2883), (2) optional
+GenAI#51 comment only if it helps, (3) PR amending session/CLI docs if SIG
+interest appears. Every step gets a dated row appended here.
 
 ### Pass log (upstream)
 
@@ -124,6 +124,7 @@ a dated row appended here.
 | 2026-06-12 | Initial tracker table | Cited #2883 as GenAI session push |
 | 2026-07-17 | Internal cutover to `cli.invocation.id` | Documented above |
 | 2026-07-17 pass 53 | Re-fetch #2883 + CLI docs + session registry | **#2883 link broken**; GenAI work lives at **genai#51**; CLI still lacks invocation id; session still client-scoped |
+| 2026-07-17 pass 92 | Re-fetch genai#51 + CLI spans + session registry | genai#51 **still open**, last activity **2026-05-05**; CLI/session **no drift** |
 
 ## Current implementation state (Parallax, 2026-07-17; re-verified in source)
 
