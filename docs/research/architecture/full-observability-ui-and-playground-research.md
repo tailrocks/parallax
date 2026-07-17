@@ -1420,7 +1420,7 @@ Historical inventory:
   `HeatCell`, `TrendChart`, `RangePicker`, data-table search/filter/sort/
   pagination, and stack-frame parsing with app-frame classification.
 
-Historical GraphQL snapshot (the generated schema now has **80** queries, **15**
+Historical GraphQL snapshot (the generated schema now has **76** queries, **14**
 mutations, and zero subscriptions — live count 2026-07-17; names below may lag):
 
 - Queries: `overview`, `serviceList`, `serviceRed`, `issues`, `issue`,

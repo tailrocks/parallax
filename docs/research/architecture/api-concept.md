@@ -5,8 +5,8 @@
 Decision date: 2026-06-03
 
 > **Status (2026-07-17): implemented and substantially broader than the original
-> sketch.** Parallax uses Juniper code-first GraphQL with **80** Query fields and
-> **15** Mutation fields (counted from `ui/graphql/schema.graphql`; see
+> sketch.** Parallax uses Juniper code-first GraphQL with **76** Query fields and
+> **14** Mutation fields (counted from `ui/graphql/schema.graphql`; see
 > [code-reality-ledger.md](../code-reality-ledger.md)), and no subscriptions.
 > OTLP traces/logs/metrics and Sentry envelopes are accepted now; GitHub webhooks
 > for `deployment`/`deployment_status`/`workflow_job` are implemented. Live
@@ -79,8 +79,8 @@ OTLP/gRPC and HTTP listen on the standard ports:
 
 ## GraphQL Query Shape
 
-The original schema sketch below is historical. Current truth: **80** query fields
-and **15** mutation fields span health/version; services, topology, RED analytics;
+The original schema sketch below is historical. Current truth: **76** query fields
+and **14** mutation fields span health/version; services, topology, RED analytics;
 issues and trends; tests and flakiness; traces, links, events, critical paths,
 and compare; logs, facets, and patterns; story/agent sessions and evidence gaps;
 fields and read-only SQL; journeys, sessions, jobs, and conversations;

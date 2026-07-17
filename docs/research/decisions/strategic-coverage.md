@@ -14,7 +14,7 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > **Implementation status (2026-07-17): local V1 and its broad product surface
 > are shipped.** This includes OTLP and Sentry ingest, GitHub webhooks
 > (`deployment`/`deployment_status`/`workflow_job` only), evidence bundles,
-> GraphQL (**80** queries / **15** mutations per `ui/graphql/schema.graphql` and
+> GraphQL (**76** queries / **14** mutations per `ui/graphql/schema.graphql` and
 > [code-reality-ledger.md](../code-reality-ledger.md)), CLI, alerting, dashboards,
 > investigations, SQL, and the TanStack UI. Local-stdio MCP (`parallax-mcp`,
 > aux) graduated plan 112 (DONE); remote MCP deferred to Plan 109.

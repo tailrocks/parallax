@@ -3,10 +3,11 @@
 Research date: 2026-06-23
 Status: **historical implementation snapshot and reusable validation protocol** — external repo:
 [tailrocks/parallax-telemetry-playground](https://github.com/tailrocks/parallax-telemetry-playground).
-This file is not an executable queue. Plan 122 in
-[`plans/`](../../../plans/) exclusively owns unfinished playground/fan-out work,
-live reruns, and any approved enrichment. The commands, scenario catalog, and
-coverage matrix below remain reproducible protocol evidence.
+This file is not an executable queue. **Plan 122 is DONE/deleted** (see
+`validation/2026-07-plan-122-playground-disposition/`). Residual playground /
+capability work is active plan **154**; test-reporting surface residual is plan
+**155**. The commands, scenario catalog, and coverage matrix below remain
+reproducible protocol evidence.
 All three language tiers validated to build (2026-06-23):
 - **Rust** — `playground-telemetry` (OTel + Sentry dual-pipeline), `proto`, and a
   verified multi-service distributed call: `/checkout` (axum) fans out to
@@ -651,7 +652,7 @@ parallax-telemetry-playground/
 The original protocol layered one cross-language trace before signal breadth,
 async/reverse/error paths, Parallax-specific run/deploy/redaction evidence, and a
 full flag/load/chaos fan-out. This ordering explains fixture dependencies but is
-not an execution sequence. Plan 122 owns any remaining scenario run and uses the
+not an execution sequence. Plan 122 is closed; any remaining scenario run uses the
 manual comparison contract in §12.
 
 ## 17. Sources

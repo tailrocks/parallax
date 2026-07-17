@@ -6,8 +6,9 @@ Topology: Parallax runs on the host (Homebrew); Rotel + competitor backends run
 in Docker Compose; Rotel fans out across the host↔container boundary.
 Deep review: 2026-06-22 (two passes) — every external claim verified against live
 sources and every Parallax-side claim checked against `crates/`; corrections
-folded in. Historical gaps do not create an implementation queue here: plan 122
-in [`plans/`](../../../plans/) exclusively owns unfinished lab work and reruns.
+folded in. Historical gaps do not create an implementation queue here.
+**Plan 122 is DONE/deleted**; multi-backend / playground residual is active plan
+**154** (or design-only).
 Updates 2026-06-23: added the compare-mode `parallax run start` DevEx design;
 **only Parallax runs on the host — Rotel, Maple, SigNoz, OpenObserve, Sentry all
 run in Docker Compose.** Maple runs fully local as a **chDB-binary container (not

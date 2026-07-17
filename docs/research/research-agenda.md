@@ -5,7 +5,7 @@
 Living backlog of research still needed to validate and extend the **shipped Parallax V1**, ranked
 cheapest-to-kill-first. This is no longer a pre-build gate or implementation backlog: V1 ships as a
 17-crate Rust workspace with CLI/server, OTLP and Sentry-envelope ingest (plan 118 DONE), GraphQL
-(**80** queries / **15** mutations), GreptimeDB + Turso, evidence/redaction/analysis, alerting and
+(**76** queries / **14** mutations), GreptimeDB + Turso, evidence/redaction/analysis, alerting and
 SSE, TanStack Start UI, and local-stdio MCP (plan 112 DONE). **Present-tense code claims** live in
 [code-reality-ledger.md](code-reality-ledger.md) — use that before asserting capability here or in
 market notes. Unfinished engineering is owned only by active numbered files in

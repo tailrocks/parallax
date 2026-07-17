@@ -12,7 +12,7 @@ compare on **practical fit for the vision**, not raw speed.
 > ClickHouse and Postgres are research comparators only. The default/fallback/flip
 > conclusions in this dated Run 153 analysis are superseded and retained solely
 > to explain how the benchmark was interpreted. Capability boundaries do not
-> promise engine substitution. Plan 093 owns contract cleanup and plan 115 owns
+> promise engine substitution. Plan 093 is closed; plan 115 owns
 > supported server work.
 
 This note reframes the whole comparison. It does not replace the mechanism notes; it changes the

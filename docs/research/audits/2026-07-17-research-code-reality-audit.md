@@ -64,7 +64,7 @@ test -f schema/evidence-bundle.v1.schema.json
 
 ## Follow-up (skeptic pass, same day)
 
-Present-tense **76/14 → 80/15** fixed on `api-concept`, `strategic-coverage`,
+Present-tense GraphQL counts fixed to **76/14** (schema SoT; 80/15 was wrong) on `api-concept`, `strategic-coverage`,
 `rust-workspace-map`, `v1-implementation-spec`, and the full-observability
 snapshot note. Thesis no longer says plan 118 “owns remaining migration.”
-Live assert: `ui/graphql/schema.graphql` = 80 Query / 15 Mutation.
+Live assert: `ui/graphql/schema.graphql` = 76 Query / 14 Mutation.

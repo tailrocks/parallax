@@ -9,7 +9,7 @@ that either need data we don't have, are deferred, or sit one layer above the en
 
 > **Current authority:** GreptimeDB + Turso are mandatory. ClickHouse and
 > Postgres are comparators only. This is a factual research-gap ledger, not a
-> product backlog or backend-selection mechanism. Plan 093 owns contract cleanup;
+> product backlog or backend-selection mechanism. Plan 093 is closed (contract cleanup historical);
 > plan 115 owns any supported server profile.
 
 ## 1. THE deciding input we don't have — Parallax's real workload mix

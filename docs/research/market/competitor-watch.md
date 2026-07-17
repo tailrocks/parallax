@@ -368,7 +368,7 @@ The watchlist produced this historical product recommendation:
 Dashboard breadth was deprioritized because OpenObserve, SigNoz, and Coroot
 already covered it well. Sentry-compatible migration, a versioned open evidence
 bundle, and measured outcome records were identified as the sharper gaps. Those
-recommendations now map exclusively to plans 118, 104, and 123 respectively;
+recommendations historically mapped to plans 118/104 (DONE) and active plan 123 respectively;
 they are not an executable list here. Ongoing watch refreshes may narrow claims
 or reopen a numbered plan, but cannot start implementation directly.
 

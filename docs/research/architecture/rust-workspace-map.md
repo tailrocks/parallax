@@ -43,7 +43,7 @@ leaves (no internal deps); `parallax-spool` sits conceptually at Tier 2
 | 2 | [parallax-greptime](../../../crates/parallax-greptime/README.md) | GreptimeDB native-table telemetry adapter (`GreptimeStore`): OTLP-forward write, SQL/arrow read, bootstrap/TTL reconcile | `lib.rs` |
 | 2 | [parallax-metadata](../../../crates/parallax-metadata/README.md) | Turso (`TursoMetadataStore`) mutable metadata + migrations: issues/invocations/dashboards/investigations/alerts/test reporting/evidence pins/deploys/sentry acks/prune journal | `lib.rs` |
 | 2 | [parallax-spool](../../../crates/parallax-spool/README.md) | Raw OTLP/Sentry-frame ingest durability — forensic trail (PSPL1 framing), rotation, retention, reclaim | `lib.rs` |
-| 3 | [parallax-api](../../../crates/parallax-api/README.md) | GraphQL surface (Juniper, code-first; **80** queries / **15** mutations / 0 subscriptions — live counts from `ui/graphql/schema.graphql`), resolvers, request memo/limits | `lib.rs` |
+| 3 | [parallax-api](../../../crates/parallax-api/README.md) | GraphQL surface (Juniper, code-first; **76** queries / **14** mutations / 0 subscriptions — live counts from `ui/graphql/schema.graphql`), resolvers, request memo/limits | `lib.rs` |
 | 4 | [parallax-server](../../../crates/parallax-server/README.md) | OTLP ingest (gRPC `:4317` / HTTP), GraphQL host, GreptimeDB supervision, staged workers, live SSE, alerting, self-telemetry, UI mount | `lib.rs` |
 | 5 | [parallax-cli](../../../crates/parallax-cli/README.md) | Installed `parallax` binary; embeds server (`serve`) + thin API client for all subcommands; `embed-ui`, `cross-release-vendored` features | `main.rs` |
 

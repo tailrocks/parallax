@@ -25,7 +25,7 @@ domain/port/adapter/composition layering. All workspace packages inherit Rust
 | T4 | `parallax-server` | analysis, API, Greptime, ingest, metadata, proto, spool, storage |
 | T5 | `parallax-cli` | server |
 
-`parallax-semconv` remains intentionally absent: Plan 119 owns its generated
+`parallax-semconv` now ships in-tree; historical note: Plan 119 once owned generated
 registry and Plan 126 explicitly excluded creating it. Temporary constants are
 kept with analysis/proto consumers without restoring an umbrella crate.
 

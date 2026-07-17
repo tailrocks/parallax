@@ -6,9 +6,11 @@ Status: **live run executed** — the whole stack was brought up on one machine
 Companion to [otlp-fanout-comparison-lab.md](otlp-fanout-comparison-lab.md)
 (plumbing) and [telemetry-playground-sample-project.md](telemetry-playground-sample-project.md)
 (payload). This note records what the live run proved, the bugs it surfaced, and
-candidate probes retained as validation design. It is not an executable backlog;
-plan 122 in [`plans/`](../../../plans/) exclusively owns unfinished lab work,
-reruns, and approved enrichment.
+candidate probes retained as validation design. It is not an executable backlog.
+**Plan 122 is DONE/deleted** (disposition evidence under
+`validation/2026-07-plan-122-playground-disposition/`). Residual playground /
+multi-backend work is active plan **154** only (or design-only if not in that
+scope).
 
 ## 1. What the live run proved (2026-06-23)
 
