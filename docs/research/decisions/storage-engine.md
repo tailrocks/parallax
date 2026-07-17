@@ -172,6 +172,10 @@ work in `plans/`.
   - Traces docs (docs.greptime.com **v1.1**): still **experimental** warning on
     [Traces overview](https://docs.greptime.com/user-guide/traces/overview/).
   - Size/cost/server-tier still **unproven**; no performance claims this pass.
+- **Version re-pin 2026-07-18 pass 266 (API only — no bench):** identical pins to pass 248 —
+  GreptimeDB **`v1.1.3`** / nightly **`v1.2.0-nightly-20260706`**; CH feature **`v26.6.1.1193-stable`**
+  (26.5.5.8 still maintenance). Traces overview still **"experimental stage"**. Size/cost still
+  **unproven**.
 - **Historical re-verify 2026-06-03 (official docs + GitHub releases — version pins superseded):**
   - GreptimeDB docs still describe a unified observability database for metrics, logs, and traces with
     SQL and PromQL support, OpenTelemetry ingestion paths for metrics/logs/traces, and a distributed
