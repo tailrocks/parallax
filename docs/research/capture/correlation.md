@@ -7,6 +7,22 @@
 > `attributeCompare`, `fieldKeys`, `fieldStats`, `story`, `evidenceGaps`, and
 > `bundle`. This does not close A4: the ledger measures reliability on real
 > telemetry, not resolver existence.
+>
+> **Pass 62 recheck (2026-07-17):** claim level remains **`not_measured`** for
+> A4 product reliability. Evidence:
+> - **No** `docs/research/correlation-reliability-runs/<run_id>/` tree (gate
+>   ledger artifacts absent).
+> - Bundle assembly does emit `missing_evidence` in code
+>   (`parallax-evidence`) — useful product behavior, **not** a scored
+>   `real_pilot` audit row set.
+> - Unified-CLI validation under
+>   `docs/research/validation/2026-07-unified-cli-observability/` proves
+>   end-to-end surfaces on a controlled stack; it is **not** an A4
+>   `real_pilot` multi-service messiness audit and must not be counted as A4
+>   pass.
+>
+> **Falsify `not_measured`:** land a dated `real_pilot` run with per-anchor
+> ledger + false-strong-edge sample + aggregate rates vs gate thresholds.
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
