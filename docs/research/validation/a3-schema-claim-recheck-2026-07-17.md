@@ -249,6 +249,13 @@ gravity.
 | raw v1 schema | **200** |
 | Adoption ledger | **absent** |
 
+### Pass 397 (2026-07-18) — schema liveness
+
+| Probe | Result |
+| --- | --- |
+| raw v1 schema | **200** |
+| Adoption ledger | **absent** |
+
 ## Artifact inventory (repo paths)
 
 | Artifact | Path |
