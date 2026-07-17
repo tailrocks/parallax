@@ -2,19 +2,20 @@
 
 > Parallax should start with a deterministic GitHub Actions failure-context compiler — given a failed workflow run, collect CI metadata, job logs, test reports, check annotations, artifacts, git context, and bounded raw evidence into a portable bundle that a human or coding agent can inspect — rather than a full flaky-test platform or production incident system. Flaky-test investigation is a validated but crowded space (Datadog, Trunk, BuildPulse, CloudBees, and CI-autofix startups already cover detection, history, quarantine, prioritization, ownership, and AI grouping), so Parallax wins only by being open-source, local-first, evidence-bundle-centric, agent-designed, and excellent for Rust and GitHub Actions. The decided sequence is: build the CI failure bundle MVP first, then add historical test memory (Turso for tiny mode), then deterministic same-commit and retry-based flaky classifiers, then reproducer hints (retry/stress/serial/seed/trace replay), and only then an agent PR workflow that proposes fixes for well-evidenced, reproducible failure classes. The open gate is validation: whether a bundle reconstructed from API access alone makes a failed run easier to debug, how often real projects upload machine-readable test reports, and whether bounded log excerpts and the normalized schema hold across Python, Java/JVM, Go, and JavaScript without becoming too generic. JUnit XML is the first interchange format with `go test -json` as a first-class non-JUnit path; OpenTelemetry CI/CD/VCS/test naming is a compatibility influence (development-stage), not a mandatory ingestion contract. Autonomous fixes are gated behind strong evidence, reproduction, and required local or CI validation.
 
-> **Implementation ownership (2026-07-12):** this file preserves CI/flaky-test
+> **Implementation ownership (2026-07-17):** this file preserves CI/flaky-test
 > research, candidate schemas, safety constraints, and validation questions. It
-> is not an executable MVP or product queue. Plan 124 in
-> [`plans/`](../../../plans/) exclusively owns unfinished CI failure-context and
-> flaky-test implementation. Historical sequence language below records design
-> rationale only.
+> is not an executable product queue. **Plan 124 is DONE/deleted** (2026-07-17) —
+> CI webhook + REST backfill + claim rows landed; evidence:
+> [validation/2026-07-plan-124-ci-evidence/README.md](../validation/2026-07-plan-124-ci-evidence/README.md).
+> Residual test-reporting UI/adapters live in active plan 155. Historical
+> sequence language below records design rationale only.
 
 > **Current implementation (2026-07-17):** `parallax-analysis` implements JUnit
 > XML reconciliation, nextest execution mapping, flaky-test evaluation/scanning,
-> and test-span derivation/reporting. `parallax-server/src/test_flakiness.rs`
-> provides server integration. Plan 124 remains active for unfinished evidence
-> collection/product closure. Historical build-first language below is rationale;
-> cross-language and real-run validation questions remain open.
+> and test-span derivation/reporting. `parallax-server` provides flakiness scan
+> integration plus GitHub Actions webhook/backfill (plan 124). Historical
+> build-first language below is rationale; cross-language and real-run validation
+> questions remain open.
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
@@ -288,7 +289,8 @@ The original narrow prototype excluded:
 - Long-term historical analytics.
 
 These exclusions document why the proposal stayed narrow. They are not a future
-queue; plan 124 is authoritative for any retained implementation scope.
+queue; plan 124 closed the CI evidence residual (evidence under
+`validation/2026-07-plan-124-ci-evidence/`).
 
 ### Research Questions
 
@@ -312,7 +314,7 @@ The research recommended validating a tiny schema-and-sample fixture from one
 public failed GitHub Actions run before a full collector: a hand-assembled
 `manifest.json`, `summary.md`, `test_cases.jsonl`, and bounded log excerpt would
 serve as the acceptance fixture. This recommendation is retained as rationale;
-plan 124 owns the executable steps and current acceptance evidence.
+plan 124 closed the executable CI evidence path (see validation evidence).
 
 ## Flaky Test Investigation and Replay
 _Provenance: merged verbatim from `flaky-test-investigation-and-replay.md` (2026-05-29 restructure)._
@@ -588,8 +590,8 @@ before the evidence layer is proven.
 The historical dependency rationale placed portable CI failure bundles before
 Turso-backed test history, deterministic flaky classification, reproducer hints,
 and any agent PR workflow. This preserves Parallax as a runtime/context engine
-for agents rather than a standalone CI analytics dashboard. Plan 124 owns the
-current executable decomposition.
+for agents rather than a standalone CI analytics dashboard. Plan 124 closed the
+CI evidence residual; plan 155 owns residual test-reporting surface work.
 
 ### Candidate Data Model
 

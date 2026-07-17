@@ -7,9 +7,9 @@
 > text may still name historical extension table `run_metric_points` — current
 > code uses `invocation_metric_points` and drops the legacy table at bootstrap.
 > Unfinished implementation lives only in active [`plans/`](../../../plans/)
-> files that still exist (e.g. 089, 103, 107, 110, 114, 115, 118, 120, 121, 123, 124, 154, 155). Plan 112 graduated local-stdio
-> MCP and is DONE/deleted. Closed plans (093, 104, 105, 106, 109, 111, 112, 116,
-> etc.) are not active queues.
+> files that still exist (e.g. 089, 103, 107, 110, 114, 115, 118, 120, 121, 123,
+> 154, 155). Plans 112 (MCP) and 124 (CI evidence) are DONE/deleted. Closed
+> plans (093, 104, 105, 106, 109, 111, 112, 116, 124, etc.) are not active queues.
 > Older Postgres/ClickHouse/fallback alternatives in this projection are
 > superseded by the mandatory GreptimeDB + Turso policy.
 

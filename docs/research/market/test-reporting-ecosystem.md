@@ -21,8 +21,8 @@ derived from this research lives in
 (product surface) and
 [`plans/154-playground-capability-and-test-observability.md`](../../../plans/154-playground-capability-and-test-observability.md)
 (playground payload). Capture mechanics and CI failure-bundle research remain
-in [`capture/ci-and-flaky-tests.md`](../capture/ci-and-flaky-tests.md) (owned
-by plan 124 for CI-provider collection).
+in [`capture/ci-and-flaky-tests.md`](../capture/ci-and-flaky-tests.md) (plan 124
+CI-provider collection DONE; residual surface work in plan 155).
 
 Two premise corrections found during research: **Codecov is no longer
 Sentry-owned** (Harness acquired it, announced 2026-06-02), and **Tracetest is
