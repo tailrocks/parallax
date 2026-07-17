@@ -70,6 +70,21 @@ lint/format at commit time):**
   flamegraph behavior review/deepening (component + route wiring now landed),
   full gates, browser evidence.
 
+### Fresh helper gate evidence (2026-07-17)
+
+At shared head after `e83a414`, full UI lint, type-aware lint, format check,
+typecheck, and production build pass (the build emits the ELK worker chunk).
+The full Vitest lane executes 66 files / 400 assertions successfully but is
+still **red** from one unhandled exception in
+`components/console/__tests__/waterfall.test.tsx` ("selects spans from the
+minimap"): `onMinimapPointerDown` calls
+`event.currentTarget.setPointerCapture(event.pointerId)` unconditionally at
+`trace-waterfall.tsx:182`, while jsdom does not implement that method. The
+existing gesture hook already uses the correct feature-detection pattern.
+Peer must guard pointer capture (and ideally release capture symmetrically),
+rerun the focused waterfall test, then rerun full Vitest; do not count the 400
+passing assertions as a green suite while the unhandled error remains.
+
 ## Why this matters
 
 The trace view is where incidents get solved, and it is the area the
