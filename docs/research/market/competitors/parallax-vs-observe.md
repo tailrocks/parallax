@@ -103,12 +103,12 @@ Observe pricing is **public** ([observeinc.com/pricing](https://www.observeinc.c
 
 | Data type | Price |
 | --- | --- |
-| **Logs** | **$0.49 / GiB** ingested *(pass 41 live re-verify — was wrongly listed as $0.59)* |
-| **Traces** | **$0.59 / GiB** ingested |
-| **Metrics** | **$0.008 / DPM** |
+| **Logs** | **$0.49 / GiB** ingested *(pass 41 + **pass 63** hero re-confirm)* |
+| **Traces** | **$0.59 / GiB** *(last explicit card pass 41; **pass 63 hero shows Logs + Metrics only** — traces rate not re-shown on hero; treat as last-verified pending re-card)* |
+| **Metrics** | **$0.008 / DPM** *(pass 63 hero re-confirm)* |
 | **Extended retention** | **$0.01 / GiB / month** |
 
-**Compute included** in the price; **unlimited users**; marketed **no overage bills** (pricing page meta). **13-month hot** O11y Data Lake retention (product copy). Marketed **"cut observability costs 60–70%."** **Live [observeinc.com/pricing](https://www.observeinc.com/pricing) 2026-07-17.**
+**Compute included**; **unlimited users**; marketed **no overage bills**. **Live [observeinc.com/pricing](https://www.observeinc.com/pricing) 2026-07-17 pass 63.**
 
 **Parallax pricing:** none public yet (pre-release); self-host = no per-ingest tax by design.
 

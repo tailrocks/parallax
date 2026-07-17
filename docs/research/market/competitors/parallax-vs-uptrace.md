@@ -99,7 +99,7 @@ Both OSS, OTLP-native, ClickHouse-adjacent, self-hostable. Uptrace is a tracing-
 | **Cold retention / drop** | cold store fees; **$0.01/GB** dropped samples | FAQ |
 | **On-prem license** | free eval + paid (contact) | compliance path |
 
-Live [uptrace.dev/pricing](https://uptrace.dev/pricing) (2026-07-17). April 2026 +15% blog is historical; **50 GB free tier** is the material Cloud clarification vs pass-27.
+Live [uptrace.dev/pricing](https://uptrace.dev/pricing) (**pass 63 re-confirm**): headline **50 GB free** then from **$0.075/GB**; FAQ: rates **$0.10→$0.016/GB** at volume; metrics from **$0.025/1M DP**; generous trial copy **1.2 TB spans/logs + 100k timeseries** (no card); dropped samples **$0.01/GB**. April 2026 +15% blog is historical.
 
 **Parallax pricing:** **no public number** (pre-release).
 

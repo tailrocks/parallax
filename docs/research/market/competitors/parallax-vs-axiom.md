@@ -73,10 +73,10 @@ Both OTLP/OTel-native. Axiom is a closed serverless log/event-analytics SaaS; Pa
 
 ## AI-native / agent-context story
 
-- **Axiom (pass-34 correction):** no longer just "analytics assistance." Axiom ships a dedicated **AI Engineering** product — **trace agent workflows**, **track cost/latency across providers**, **evaluate prompts**, and **evaluation & experimentation** — i.e., LLM/agent observability that directly overlaps [Langfuse](parallax-vs-langfuse.md)/[Phoenix](parallax-vs-arize-phoenix.md)/Parallax's AI-obs surface. It remains a **human analytics + dev-loop tool**, not a *bounded, read-only, redacted agent-context projection* for autonomous coding agents.
+- **Axiom (pass-34 + pass-63):** dedicated **AI Engineering** product — agent-workflow tracing, cost/latency, prompt evals/experiments — plus (pass **63** live pricing FAQ) **MCP server + SRE skill + Metrics skill included** on Personal and Cloud (**not** a separate add-on; agent queries count toward query-hour usage). Occupies LLM/agent-obs **and** a **free coding-agent MCP surface** on the free Personal tier. Still **not** a portable redacted versioned production-incident dossier.
 - **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven).
 
-**Honest verdict (no-bias):** Axiom **does now occupy the AI/agent-tracing + evals cell** — pass-34 evidence corrects the older "Axiom doesn't compete on AI" read. On **LLM/agent tracing + evals, Axiom ships; Parallax is 🟡🧪 in code.** Parallax's remaining differentiation on this axis is the **bounded/redacted production-incident bundle + outcome loop** (vs Axiom's dev-loop AI Engineering) — still **unproven (A1)**.
+**Honest verdict (no-bias):** Axiom ships AI Engineering **and free MCP/SRE agent skills** — stronger agent-access than pass-34 alone recorded. On **LLM/agent tracing + free MCP for agents, Axiom ships; Parallax is 🟡🧪 + A1 unproven.** Residual Parallax claim = **portable/redacted/versioned prod-incident bundle + outcome** — not "has MCP."
 
 ## Architecture & deployment
 
@@ -106,11 +106,13 @@ Both OTLP/OTel-native. Axiom is a closed serverless log/event-analytics SaaS; Pa
 
 **Verdict:** on **openness and lock-in cost, Parallax wins** (Apache OSS + OTLP-native + self-host vs closed SaaS).
 
-## Pricing & economics — the 4-part usage model (re-verified pass 34, live page)
+## Pricing & economics — the 4-part usage model (re-verified pass 34; **pass 63** live re-confirm)
 
 Axiom pricing is **public** ([axiom.co/pricing](https://axiom.co/pricing), accessed
-2026-07-17). It is **usage-based with 4 main components** (Axiom's own wording),
-**billed separately**, with **no egress fees and no per-seat user charges**:
+2026-07-17). **Pass 63:** $25 platform + Always-Free allowances + add-ons
+(SSO $100 / RBAC $50 / Audit $50 / DirSync $100) **hold**; **MCP/SRE/Metrics
+skills included (no separate AI add-on fee)**. Usage-based with 4 main components,
+**billed separately**, **no egress / no per-seat**:
 
 | Dimension | Axiom Cloud (paid) | Always-Free allowance |
 | --- | --- | --- |
@@ -185,9 +187,9 @@ different cost model entirely (own the hardware, not the scan).
 - **A1 gate:** does a Parallax bounded/redacted bundle add value beyond Axiom's full-stack + AI-Engineering analytics for coding-agent incident fixes? Unproven.
 - ~~Axiom exact pricing (2026)~~ — **resolved pass 34** (live page: 4-part model, rates above). Open: a live cost benchmark vs Parallax self-host (benchmark-dependent).
 
-## Sources (accessed 2026-07-17; pricing re-verified pass 34)
+## Sources (accessed 2026-07-17; pricing pass 34 + **pass 63** agent skills)
 
-- [axiom.co](https://axiom.co/); **[live pricing page](https://axiom.co/pricing)** (4-part model, $25 platform fee, data-loading 0.06–0.12 credits/GB, query 0.08–0.2 credits/GB-hr, storage $0.030/GB, Personal vs Cloud Always-Free tiers, add-on prices, volume + pre-purchase discounts, no egress/seat).
+- [axiom.co](https://axiom.co/); **[live pricing](https://axiom.co/pricing)** (4-part model; **MCP + SRE skill + Metrics skill included**; add-ons SSO/RBAC/Audit/DirSync).
 - [Correlations](https://axiom.co/blog) (logs↔traces↔metrics stitching); **AI Engineering** + **Metrics GA** (#LAUNCHED) on the platform/product pages.
 - [cubeapm Axiom pricing & review 2026](https://cubeapm.com/blog/axiom-pricing-review/); [Parseable vs Axiom](https://www.parseable.com/blog/axiom-vs-parseable); [SigNoz Axiom alternatives](https://signoz.io/comparisons/axiom-alternatives/); [Railway 2026 tools](https://blog.railway.com/p/best-cloud-observability-tools-2026).
 - Parallax side: [decisions/storage-engine.md](../../decisions/storage-engine.md), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).

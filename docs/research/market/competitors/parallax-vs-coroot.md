@@ -118,10 +118,11 @@ Both Apache-2.0 OSS, self-hostable, with an agent/MCP surface and AI RCA. The ov
 
 | Plan | Price | Notes |
 | --- | --- | --- |
-| **Community (self-host)** | **$0 / Apache-2.0** | full eBPF obs + AI RCA, self-host |
-| **Enterprise** | **$1 / CPU core / month** | SSO/RBAC/dedicated support, **no ingestion costs, no per-host fees, no cloud premiums** |
+| **Community (OSS GitHub)** | **$0 / Apache-2.0** | core features for learning/PoC (not full commercial SKU) |
+| **Standard** | **$1 / monitored CPU core / month** | **pass 63 live [coroot.com/pricing](https://coroot.com/pricing):** eBPF + SLO + AI RCA + **SSO/RBAC** + profiling + cost mon; volume discounts; 14-day trial; **no ingest fee** |
+| **Premium** | **custom (no public $)** | 24×7/phone, air-gap install support, training, capacity planning |
 
-Sources: [coroot.com/pricing](https://coroot.com/pricing), [coroot.com/enterprise](https://coroot.com/enterprise). The **$1/CPU-core with no ingest cost** model is notably clean vs Datadog/Sentry/New Relic event/GB metering.
+**Pass-11 naming fix:** commercial self-host at $1/core is **Standard**, not “Enterprise-only”; Premium is the sales-quoted tier. Example on page: 10 nodes × 4 vCPU = 40 cores = **$40/mo**.
 
 **Parallax pricing:** none public yet (pre-release).
 

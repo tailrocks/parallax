@@ -128,13 +128,13 @@ These overlap maximally on architecture — both Rust, single-binary, self-host,
 
 ## Pricing & economics — real numbers
 
-OpenObserve pricing is **public** ([openobserve.ai/pricing](https://openobserve.ai/pricing/), **pass 48 live 2026-07-17**):
+OpenObserve pricing is **public** ([openobserve.ai/pricing](https://openobserve.ai/pricing/), **pass 48 + pass 63 re-confirm**):
 
 | Plan | Price | Notes |
 | --- | --- | --- |
 | **OSS / Community (AGPL)** | **$0, no caps** | self-host core features |
 | **Self-Hosted Enterprise** | **free ≤50 GB/day**; paid/contact beyond | SSO/RBAC/audit/redaction/QoS (FAQ) |
-| **Cloud Professional (PAYG)** | **$0.50 / GB ingest** (+ annual ~30% discount claim) + **$0.01 / GB query** | metrics ret. **15 mo**; non-metrics **30 days** (+$0.02/GB per extra 30d); unlimited users; 14-day free trial |
+| **Cloud Professional (PAYG)** | **$0.50 / GB ingest** (+ annual ~30% discount claim) + **$0.01 / GB query** | metrics ret. **15 mo**; non-metrics **30 days** (+$0.02/GB per extra 30d); unlimited users; 14-day free trial; **AI preview free with 20 credits** (Incident/AI SRE/Assistant) per pricing FAQ |
 | **Cloud Enterprise** | custom | AI SRE / Incident Mgmt / AI Assistant, pipelines, redaction, BYOC, SLAs |
 
 **AI (FAQ):** AI SRE Agent + AI Assistant **free during preview** (20 credits). ⚠️ pass-9 “Cloud fully usage-based with no rates” was underspecified — **ingest/query unit prices are public**.
