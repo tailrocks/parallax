@@ -80,7 +80,7 @@ Run: `cargo bench -p <crate> --bench <name>`.
 independent scheduled jobs (`29582532812`, `29589577179`, `29592948190`),
 fail-closed ceilings live in
 [`bench-baselines.toml`](bench-baselines.toml) and are enforced by
-[`scripts/ci/check-bench-baselines.sh`](../../scripts/ci/check-bench-baselines.sh)
+[`scripts/ci/check-bench-baselines.sh`](../../../scripts/ci/check-bench-baselines.sh)
 on every scheduled bench job. The script never rewrites baselines; ceilings
 change only by commit. `spool_line_count` is excluded (cross-run unstable).
 Allocation absolute is 7011 / 1_022_357 bytes for

@@ -12,7 +12,7 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > substitution promises. Contract cleanup completed in
 > [Plan 093 validation](../validation/2026-07-12-plan-093-baseline/README.md),
 > and supported server-profile work belongs to
-> [`plans/115-v2-server-profile.md`](../../../plans/115-v2-server-profile.md).
+> [`docs/research/validation/2026-07-plan-115-v2-server-profile/`](../validation/2026-07-plan-115-v2-server-profile/).
 >
 > **A5 is now a stack-assurance roll-up.** Status: **open — no A5 pass yet.** A5
 > passes only when one run manifest proves the mandatory stack end to end with

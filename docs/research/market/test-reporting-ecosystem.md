@@ -17,9 +17,9 @@ the evidence base: a deep teardown of Allure, a survey of the wider
 test-reporting/test-observability ecosystem, the identity and flakiness models
 in production use, and the mapping onto Parallax. The executable work packet
 derived from this research lives in
-[`plans/155-test-reporting-surface.md`](../../../plans/155-test-reporting-surface.md)
+[plan 155 evidence](../validation/2026-07-plan-155-test-reporting/)
 (product surface) and
-[`plans/154-playground-capability-and-test-observability.md`](../../../plans/154-playground-capability-and-test-observability.md)
+[plan 154 evidence](../validation/2026-07-17-plan-154-multi-backend/)
 (playground payload). Capture mechanics and CI failure-bundle research remain
 in [`capture/ci-and-flaky-tests.md`](../capture/ci-and-flaky-tests.md) (plan 124
 CI-provider collection DONE; residual surface work in plan 155).

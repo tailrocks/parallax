@@ -14,7 +14,7 @@ Research date: 2026-05-25
 > Plan 093 contract cleanup is complete and retained as validation evidence at
 > [Plan 093 validation](../validation/2026-07-12-plan-093-baseline/README.md);
 > current server-profile work belongs to
-> [`plans/115-v2-server-profile.md`](../../../plans/115-v2-server-profile.md).
+> [`docs/research/validation/2026-07-plan-115-v2-server-profile/`](../validation/2026-07-plan-115-v2-server-profile/).
 
 GreptimeDB is a credible storage-layer candidate for Parallax, but the strongest
 technical argument is not that it is universally faster than every alternative.

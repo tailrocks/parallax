@@ -1,6 +1,6 @@
 # MCP spike — projection equivalence
 
-> **Status (2026-07-17): historical spike evidence.** Plan 112 graduated this work into product crate `parallax-mcp` (local-stdio only). Current status and install sketches: [2026-07-plan-112-product-mcp/README.md](../2026-07-plan-112-product-mcp/README.md). Body below preserves the original spike run record (crate path names may say `parallax-mcp-spike`).
+> **Status (2026-07-17): historical spike evidence.** Plan 112 graduated this work into product crate `parallax-mcp` (local-stdio only). Current status and install sketches: [2026-07-plan-112-product-mcp/README.md](2026-07-plan-112-product-mcp/README.md). Body below preserves the original spike run record (crate path names may say `parallax-mcp-spike`).
 
 
 Timestamp: 2026-07-11 (plan 083)

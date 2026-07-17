@@ -14,7 +14,7 @@ Decision date baseline: 2026-05-29. Operator confirmations followed on
 > support only. Contract cleanup is owned by
 > completed [Plan 093 validation](../validation/2026-07-12-plan-093-baseline/README.md),
 > and any supported server profile is owned by
-> [`plans/115-v2-server-profile.md`](../../../plans/115-v2-server-profile.md).
+> [`docs/research/validation/2026-07-plan-115-v2-server-profile/`](../validation/2026-07-plan-115-v2-server-profile/).
 >
 > **Implementation status (2026-07-17): shipped.** Product telemetry uses
 > GreptimeDB native OTLP tables and product metadata uses Turso. No product

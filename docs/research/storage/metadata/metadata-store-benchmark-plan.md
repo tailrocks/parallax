@@ -11,7 +11,7 @@ Research date: 2026-05-25
 > cleanup belongs to
 > [Plan 093 validation](../../validation/2026-07-12-plan-093-baseline/README.md),
 > and supported server operations belong to
-> [`plans/115-v2-server-profile.md`](../../../../plans/115-v2-server-profile.md).
+> [`docs/research/validation/2026-07-plan-115-v2-server-profile/`](../../validation/2026-07-plan-115-v2-server-profile/).
 
 ## Purpose
 

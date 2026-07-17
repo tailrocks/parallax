@@ -11,7 +11,7 @@ Research date: 2026-05-25 · **Version/status recheck 2026-07-17 (pass 68)**
 > Product contract cleanup is owned by
 > [Plan 093 validation](../../validation/2026-07-12-plan-093-baseline/README.md),
 > and supported server operations are owned by
-> [`plans/115-v2-server-profile.md`](../../../../plans/115-v2-server-profile.md).
+> [`docs/research/validation/2026-07-plan-115-v2-server-profile/`](../../validation/2026-07-plan-115-v2-server-profile/).
 > This file is a research and validation protocol, not an implementation queue.
 >
 > **Pass 68 primary recheck (GitHub + README):**

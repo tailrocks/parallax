@@ -28,7 +28,7 @@
 5. When a claim cannot be proven, mark it **unproven** and say what would prove it. Never present an unproven claim as settled.
 6. **Parallax product cells must match [code-reality-ledger.md](../../code-reality-ledger.md).** Shipped code is ✅🧪, not 🏗 planned. Unproven product value stays unproven even when code exists.
 7. **Corrections welcome.** If a cell is wrong, open a PR with a dated primary source (docs, pricing page, GitHub release, crate path) that falsifies it. Prefer transparency over brand protection.
-8. **Equal-skepticism grilling.** Apply the **same** hard questions to Parallax and every peer before a verdict (shipped vs claimed, evidence quality, failure modes, economics, openness, lock-in, falsifiers). Do not grill only one side. Method: [`prompts/objective-research-reality.md`](../../../prompts/objective-research-reality.md).
+8. **Equal-skepticism grilling.** Apply the **same** hard questions to Parallax and every peer before a verdict (shipped vs claimed, evidence quality, failure modes, economics, openness, lock-in, falsifiers). Do not grill only one side. Method: [`prompts/objective-research-reality.md`](../../../../prompts/objective-research-reality.md).
 
 ### Economics & cost axes (required on every deep-dive)
 

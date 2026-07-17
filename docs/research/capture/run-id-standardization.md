@@ -20,8 +20,8 @@ how do we get to one?
 > were renamed to `invocations`/`invocation` (`invocationStart`/`invocationFinish`).
 > Program: plans 156–161; decision:
 > [decisions/native-otel-tables.md](../decisions/native-otel-tables.md);
-> generated constants in [parallax-semconv](../../crates/parallax-semconv/) from
-> [`telemetry/semconv/contract.yaml`](../../telemetry/semconv/contract.yaml).
+> generated constants in [parallax-semconv](../../../crates/parallax-semconv/) from
+> [`telemetry/semconv/contract.yaml`](../../../telemetry/semconv/contract.yaml).
 
 ## Position (operator, 2026-07-17; re-verified in source)
 
