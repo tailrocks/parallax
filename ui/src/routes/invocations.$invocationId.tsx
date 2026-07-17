@@ -318,7 +318,7 @@ export function InvocationHubContent({
 }) {
   const search = { range: undefined, from: undefined, to: undefined }
   const range = resolveRangeSearch(search)
-  const back = navItem("/invocations")!
+  const back = navItem("/invocations")
   const empty =
     !record &&
     data.tracesByInvocation.length === 0 &&
@@ -365,7 +365,7 @@ export function InvocationHubContent({
   return (
     <div className="space-y-4">
       <PageHeader
-        back={back}
+        {...(back ? { back } : {})}
         title={invocationId}
         titleTrailing={<CopyButton value={invocationId} />}
         description={

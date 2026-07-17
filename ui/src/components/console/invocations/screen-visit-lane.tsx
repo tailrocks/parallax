@@ -5,8 +5,9 @@ import { cn } from "@/lib/utils"
 
 /** Gantt-style dwell lane: one row per screen visit, navigation order. */
 export function ScreenVisitLane({ visits }: { visits: ScreenVisit[] }) {
-  if (visits.length === 0) return null
-  const start = BigInt(visits[0]!.enteredNanos)
+  const firstVisit = visits[0]
+  if (!firstVisit) return null
+  const start = BigInt(firstVisit.enteredNanos)
   const end = visits.reduce((max, visit) => {
     const candidate = BigInt(visit.exitedNanos ?? visit.enteredNanos)
     return candidate > max ? candidate : max

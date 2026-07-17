@@ -83,7 +83,7 @@ export function InvestigationDetailContent({
   investigation: Investigation
 }) {
   const router = useRouter()
-  const investigationsBack = navItem("/investigations")!
+  const investigationsBack = navItem("/investigations")
   const [draft, setDraft] = useState<InvestigationState>(() =>
     parseInvestigationState(investigation.state)
   )
@@ -129,7 +129,7 @@ export function InvestigationDetailContent({
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        back={investigationsBack}
+        {...(investigationsBack ? { back: investigationsBack } : {})}
         title={investigation.name}
         description="Pinned telemetry pages and working notes."
         actions={

@@ -279,8 +279,8 @@ export function ServicesIndexContent({
       row.telemetrySdkLanguage,
       row.deploymentEnvironment,
     ]
-      .filter(Boolean)
-      .some((value) => value!.toLowerCase().includes(query))
+      .filter((value): value is string => Boolean(value))
+      .some((value) => value.toLowerCase().includes(query))
   )
   const rows = sortedServices(filtered, search.sort)
   const p95Values = rows

@@ -173,7 +173,9 @@ export function severityMixSegments(
   const byFrac = [...floors].sort((a, b) => b.frac - a.frac)
   let i = 0
   while (sum < 100 && byFrac.length > 0) {
-    byFrac[i % byFrac.length]!.pct += 1
+    const row = byFrac[i % byFrac.length]
+    if (!row) break
+    row.pct += 1
     sum += 1
     i += 1
   }

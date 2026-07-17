@@ -416,11 +416,21 @@ function TracePage() {
     )
   }
 
+  const sortedByStart = [...spans].sort((a, b) =>
+    BigInt(a.tsNanos) < BigInt(b.tsNanos) ? -1 : 1
+  )
+  const firstSorted = sortedByStart[0]
+  if (!firstSorted) {
+    return (
+      <EmptyState
+        title="Trace not found"
+        description={traceId}
+        icon={IconAffiliate}
+      />
+    )
+  }
   const rootSpan =
-    spans.find((span) => !span.parentSpanId) ??
-    [...spans].sort((a, b) =>
-      BigInt(a.tsNanos) < BigInt(b.tsNanos) ? -1 : 1
-    )[0]!
+    spans.find((span) => !span.parentSpanId) ?? firstSorted
   const tracesBack = navItem("/traces")
   const invocationId =
     spans.find((span) => span.invocationId)?.invocationId ?? null
@@ -428,6 +438,7 @@ function TracePage() {
   const failedSpans = spans.filter(
     (span) => span.statusCode === "STATUS_CODE_ERROR"
   )
+  const firstFailedSpan = failedSpans[0]
   const spanLinks = spans.flatMap((span) => span.typedLinks)
   const spanEvents = spans.flatMap((span) => parseEvents(span.events))
   const selectedSpan =
@@ -583,10 +594,10 @@ function TracePage() {
       />
       {messaging ? <MessagingSummaryLine summary={messaging} /> : null}
 
-      {failedSpans.length > 0 ? (
+      {firstFailedSpan ? (
         <button
           type="button"
-          onClick={() => setSelectedId(failedSpans[0]!.spanId)}
+          onClick={() => setSelectedId(firstFailedSpan.spanId)}
           className="flex w-full items-center justify-between gap-3 rounded-lg border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-left text-sm text-rose-700 dark:text-rose-300"
         >
           <span className="flex min-w-0 items-center gap-2">

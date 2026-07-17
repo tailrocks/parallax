@@ -121,11 +121,12 @@ export function computeWindow(
   spans: readonly TraceTreeSpan[],
   times = buildTimesMap(spans)
 ): TraceWindow {
-  if (spans.length === 0) return { startNs: 0n, durationNs: 1n }
-  let start = times.get(spans[0]!.spanId)?.start ?? 0n
-  let end = times.get(spans[0]!.spanId)?.end ?? 0n
-  for (let i = 1; i < spans.length; i += 1) {
-    const t = times.get(spans[i]!.spanId)
+  const first = spans[0]
+  if (!first) return { startNs: 0n, durationNs: 1n }
+  let start = times.get(first.spanId)?.start ?? 0n
+  let end = times.get(first.spanId)?.end ?? 0n
+  for (const span of spans.slice(1)) {
+    const t = times.get(span.spanId)
     if (!t) continue
     if (t.start < start) start = t.start
     if (t.end > end) end = t.end

@@ -221,7 +221,7 @@ function DashboardPage() {
   const [draft, setDraft] = useState<Widget[]>(widgets)
   const [addition, setAddition] = useState<Widget>(emptyWidget())
   const [error, setError] = useState<string | null>(null)
-  const dashboardsBack = navItem("/dashboards")!
+  const dashboardsBack = navItem("/dashboards")
 
   async function save(layout: Widget[]) {
     setError(null)
@@ -270,7 +270,7 @@ function DashboardPage() {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        back={dashboardsBack}
+        {...(dashboardsBack ? { back: dashboardsBack } : {})}
         title={name}
         actions={
           <>

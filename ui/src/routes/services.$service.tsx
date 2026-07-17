@@ -375,13 +375,13 @@ export function ServiceDetailContent({
   const noData =
     !hasRed && traces.length === 0 && data.runtimeSnapshot.length === 0
   const lastSeen = traces[0]?.startNanos
-  const servicesBack = navItem("/services")!
+  const servicesBack = navItem("/services")
 
   if (noData) {
     return (
       <div className="space-y-4">
         <PageHeader
-          back={servicesBack}
+          {...(servicesBack ? { back: servicesBack } : {})}
           title={service}
           actions={<RangePicker value={range} onChange={onRange} />}
         />
@@ -397,7 +397,7 @@ export function ServiceDetailContent({
   return (
     <div className="space-y-4">
       <PageHeader
-        back={servicesBack}
+        {...(servicesBack ? { back: servicesBack } : {})}
         title={service}
         actions={
           <>

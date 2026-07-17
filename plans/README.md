@@ -173,9 +173,11 @@ Plan 116 DONE (2026-07-17): retention contract + deterministic prune CLI
 
 ### TypeScript Toolchain, Architecture, Boundary, And Test Foundations
 
+Plan 128 DONE (2026-07-17): strictest-passing TS7 + shrink-only libcheck exceptions
+([evidence](../docs/research/validation/2026-07-plan-128-static-safety/README.md)).
+
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [128](128-typescript-static-and-runtime-safety.md) | Enforce strict TypeScript static safety | P1 | L | 095, 101, 131 (all retired) | TODO — rescoped (unblock directive 2026-07-17): re-validate on the current latest stable toolchain; if third-party declaration failures persist, adopt the strictest passing configuration with documented shrink-only per-package exceptions and record the evidence |
 | [129](129-frontend-test-architecture.md) | Validate the deterministic Vitest foundation cross-platform | P1 | S | 094, 101, 128; macOS evidence | TODO — after 128; macOS evidence is producible on the operator host (unblock directive 2026-07-17) |
 | [100](100-ui-feature-architecture.md) | Establish the TypeScript layer graph, ownership ledger, facades, and placement policy | P1 | L | 095, 101, 128, 129 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 | [152](152-graphql-contract-foundation.md) | Establish the generated GraphQL contract foundation | P1 | L | 095, 100, 101, 128, 129, 130 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |

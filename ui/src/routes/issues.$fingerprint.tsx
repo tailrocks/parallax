@@ -213,7 +213,7 @@ export function IssueDetailContent({
   const occurrencesRef = useRef<HTMLDivElement>(null)
   const bucketRequestRef = useRef<string | null>(null)
 
-  const issuesBack = navItem("/issues")!
+  const issuesBack = navItem("/issues")
 
   if (!issue) {
     return (
@@ -277,7 +277,7 @@ export function IssueDetailContent({
   return (
     <div className="space-y-4">
       <PageHeader
-        back={issuesBack}
+        {...(issuesBack ? { back: issuesBack } : {})}
         title={currentIssue.errorType || currentIssue.title}
         titleTrailing={<CopyButton value={currentIssue.fingerprint} />}
         description={currentIssue.title}
