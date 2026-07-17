@@ -31,6 +31,10 @@
   trace/span identifiers, never copied raw telemetry. Schema inventory and
   full four-record persistence fixtures pass; query/read APIs and independent
   migration review remain.
+- Typed reads now cover case/variant lookup, bounded invocation attempt lists,
+  and flaky state. Decode rejects malformed versioned keys, attempts, enums,
+  trace IDs, and JSON rather than manufacturing defaults. Explorer/filter
+  queries and independent migration review remain.
 
 Design decisions D1–D9 (identity, native tables, status taxonomy, attempt
 chains, shared fingerprints, flaky SM, `/tests` surface, session semantics,
@@ -39,9 +43,9 @@ if needed; do not reopen.
 
 ## Residual only
 
-1. Finish Turso query/read modules and migration review for `test_cases` /
-   `test_variants` / `test_results` / `test_flaky_states` (schema + typed
-   upserts landed preliminarily).
+1. Add explorer/filter queries and independently review the landed Turso
+   schema/upsert/read module for `test_cases` / `test_variants` /
+   `test_results` / `test_flaky_states`.
 2. Ingest derivation: test root-span recognition, registry upsert, failed vs
    broken, fingerprint linkage (`parallax-analysis`).
 3. GraphQL `tests` namespace + clamped queries.
