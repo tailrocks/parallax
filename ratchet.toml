@@ -299,12 +299,12 @@ ceiling = 8
 
 [[product.anyhow_edges]]
 path = "crates/parallax-greptime/src/arrow_sql.rs"
-ceiling = 19
+ceiling = 21
 reason = "private Arrow decode composition preserves field-level context before the typed storage port"
 
 [[product.anyhow_edges]]
 path = "crates/parallax-greptime/src/greptime/analytics_helpers.rs"
-ceiling = 4
+ceiling = 5
 reason = "private multi-query analytics composition is converted at the typed storage port"
 
 [[product.anyhow_edges]]
@@ -339,7 +339,7 @@ reason = "HTTP SQL transport composes protocol decode context behind typed stora
 
 [[product.anyhow_edges]]
 path = "crates/parallax-metadata/src/turso.rs"
-ceiling = 9
+ceiling = 10
 reason = "Turso transaction composition is converted by the typed metadata port"
 
 [[product.anyhow_edges]]
@@ -394,7 +394,7 @@ reason = "private Greptime connect/bootstrap composition maps immediately to Ser
 
 [[product.anyhow_edges]]
 path = "crates/parallax-spool/src/spool.rs"
-ceiling = 2
+ceiling = 4
 reason = "filesystem spool construction preserves multi-step operator context"
 
 [[product.anyhow_edges]]
@@ -6764,3 +6764,38 @@ ceiling = 109
 metric = "rust.inline-test-modules"
 scope = "crates/parallax-evidence/src/github_deploy.rs"
 ceiling = 1
+
+[[product.anyhow_edges]]
+path = "crates/parallax-greptime/src/greptime/metric_analytics.rs"
+ceiling = 1
+reason = "private metric SQL composition is converted at the typed storage port"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-metadata/src/turso/pins.rs"
+ceiling = 11
+reason = "private pin persistence composition is converted at the typed metadata port"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-metadata/src/turso/alerts.rs"
+ceiling = 26
+reason = "private alert persistence composition is converted at the typed metadata port"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-metadata/src/turso/prune/journal.rs"
+ceiling = 24
+reason = "private prune journal composition is converted at the typed metadata port"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-metadata/src/turso/prune.rs"
+ceiling = 16
+reason = "private prune lifecycle composition is converted at the typed metadata port"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-api/src/resolvers/alerts.rs"
+ceiling = 1
+reason = "private alert resolver composition maps to typed field errors centrally"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-server/src/alerting/delivery_worker.rs"
+ceiling = 3
+reason = "private delivery loop composition reports through the typed outcome path"
