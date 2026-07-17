@@ -80,6 +80,7 @@ pub(crate) struct ToolCallGuard {
     scopes: Vec<&'static str>,
     started: Instant,
     span: tracing::Span,
+    completed: bool,
 }
 
 impl ToolCallGuard {
@@ -101,18 +102,19 @@ impl ToolCallGuard {
                 result_bytes = tracing::field::Empty,
                 duration_ms = tracing::field::Empty,
             ),
+            completed: false,
         }
     }
 
-    pub(crate) fn finish_ok(self, result_bytes: usize) {
+    pub(crate) fn finish_ok(mut self, result_bytes: usize) {
         self.finish("ok", result_bytes);
     }
 
-    pub(crate) fn finish_err(self, code: &str) {
+    pub(crate) fn finish_err(mut self, code: &str) {
         self.finish(code, 0);
     }
 
-    fn finish(self, status: &str, result_bytes: usize) {
+    fn finish(&mut self, status: &str, result_bytes: usize) {
         let duration_ms = u64::try_from(self.started.elapsed().as_millis()).unwrap_or(u64::MAX);
         self.span.record("status", status);
         self.span.record("result_bytes", result_bytes);
@@ -120,11 +122,20 @@ impl ToolCallGuard {
         record(AuditRow {
             tool: self.tool.as_str(),
             principal: self.principal,
-            scopes: self.scopes,
+            scopes: std::mem::take(&mut self.scopes),
             status: status.to_string(),
             result_bytes,
             duration_ms,
         });
+        self.completed = true;
+    }
+}
+
+impl Drop for ToolCallGuard {
+    fn drop(&mut self) {
+        if !self.completed {
+            self.finish("cancelled", 0);
+        }
     }
 }
 
@@ -247,5 +258,23 @@ mod tests {
         assert_eq!(rows[0].tool, "parallax_agent_session_show");
         assert!(fields.contains("status=\"invalid_anchor\""));
         assert!(fields.contains("result_bytes=0"));
+    }
+
+    #[test]
+    fn dropped_guard_records_one_cancelled_call() {
+        let _lock = TEST_LOCK.lock().expect("audit test lock");
+        clear();
+        let fields = captured_span(|| {
+            let _guard = ToolCallGuard::start(
+                AuditTool::IssueContext,
+                "local-operator",
+                &["evidence:read"],
+            );
+        });
+        let rows = snapshot();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].status, "cancelled");
+        assert_eq!(rows[0].result_bytes, 0);
+        assert!(fields.contains("status=\"cancelled\""));
     }
 }

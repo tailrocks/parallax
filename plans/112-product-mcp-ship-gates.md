@@ -84,6 +84,10 @@ Evidence packet: [`docs/research/validation/2026-07-plan-112-product-mcp/README.
   subscriber or exporter and adds no TLS surface. Full crate tests (33) and
   spike-only strict Clippy pass; the next executor must independently verify
   exporter integration before treating the OTel gate as terminal.
+- The call guard is cancellation-safe: dropping an unfinished async call emits
+  exactly one bounded `cancelled` row/span, while explicit success/error
+  completion suppresses the fallback. This removes future early-return and
+  task-cancellation audit gaps; a focused fixture locks the one-row invariant.
 - Canonical evidence redaction now strips C0/C1 terminal controls (including
   ANSI ESC, NUL, and DEL) while preserving tab/newline/CR and records the
   removal count, preventing control injection across structured/text clients.
