@@ -2,7 +2,8 @@
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 48
 > Cloud pricing unit rates; **pass 94** EE free ≤50 GB/day + AI/SDR gates;
-> **pass 102** pin recheck).
+> **pass 102** pin recheck; **pass 119** pricing primary re-fetch — still
+> **$0.50/GB** ingest + **$0.01/GB** query; Self-Hosted EE free ≤**50 GB/day**).
 > Sources: [openobserve.ai](https://openobserve.ai/) + [pricing](https://openobserve.ai/pricing/) + [AI SRE](https://openobserve.ai/ai-sre/) + [MCP server](https://openobserve.ai/mcp-server/), [github.com/openobserve/openobserve](https://github.com/openobserve/openobserve), and the legacy [openobserve-deep-research.md](../openobserve-deep-research.md) (2026-06-22) as a lead.
 >
 > **Bottom line up front:** OpenObserve is the **nearest open-source competitor
@@ -131,16 +132,16 @@ These overlap maximally on architecture — both Rust, single-binary, self-host,
 
 ## Pricing & economics — real numbers
 
-OpenObserve pricing is **public** ([openobserve.ai/pricing](https://openobserve.ai/pricing/), **pass 48 + pass 63 re-confirm**):
+OpenObserve pricing is **public** ([openobserve.ai/pricing](https://openobserve.ai/pricing/), **pass 48 + pass 63 + pass 94 + pass 119 re-confirm**):
 
 | Plan | Price | Notes |
 | --- | --- | --- |
 | **OSS / Community (AGPL)** | **$0, no caps** | self-host core features |
-| **Self-Hosted Enterprise** | **free ≤50 GB/day**; paid/contact beyond | SSO/RBAC/audit/redaction/QoS (FAQ) |
+| **Self-Hosted Enterprise** | **free ≤50 GB/day**; paid/contact beyond | SSO/RBAC/audit/redaction/QoS (FAQ, twice on page) |
 | **Cloud Professional (PAYG)** | **$0.50 / GB ingest** (+ annual ~30% discount claim) + **$0.01 / GB query** | metrics ret. **15 mo**; non-metrics **30 days** (+$0.02/GB per extra 30d); unlimited users; 14-day free trial; **AI preview free with 20 credits** (Incident/AI SRE/Assistant) per pricing FAQ |
 | **Cloud Enterprise** | custom | AI SRE / Incident Mgmt / AI Assistant, pipelines, redaction, BYOC, SLAs |
 
-**AI (FAQ):** AI SRE Agent + AI Assistant **free during preview** (20 credits). ⚠️ pass-9 “Cloud fully usage-based with no rates” was underspecified — **ingest/query unit prices are public**.
+**AI (FAQ):** AI SRE Agent + AI Assistant **free during preview** (20 credits). ⚠️ pass-9 “Cloud fully usage-based with no rates” was underspecified — **ingest/query unit prices are public**. **Pass 119:** unit rates and 50 GB/day EE free allowance **unchanged** vs pass 94.
 
 **Parallax pricing:** **no public number** (pre-release).
 

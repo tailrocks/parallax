@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-05-29 · **Desk recheck 2026-07-17 (pass 54 + pass 94)**
+Research date: 2026-05-29 · **Desk recheck 2026-07-17 (pass 54 + 94 + 106 + 117 + 119)**
 
 ## Purpose
 
@@ -146,6 +146,45 @@ telemetry is the OSS peer pattern).
 **Falsify:** SigNoz moves Noz fully offline free in Community; or Teams Cloud
 drops below free-self-host economics so hard that OSS self-host dies (ops cost
 is separate).
+
+### Pass 119 (2026-07-17) — OpenObserve Cloud/EE pricing (comparison #2)
+
+Live primary re-fetch of [openobserve.ai/pricing](https://openobserve.ai/pricing/)
+(Cloud / Self Hosted tabs; extract is **order-of-magnitude**, not a quote). Completes
+the Grafana (pass 106) + SigNoz (pass 117) + OpenObserve triangle for survivor
+usage-cloud pricing.
+
+| Surface | Primary signal (2026-07-17) |
+| --- | --- |
+| **OSS Community (self-host)** | **$0**, no ingest caps on AGPL core (per FAQ + downloads framing) |
+| **Cloud Professional (PAYG)** | Ingest **$0.50/GB** (page notes \*includes **~30% annual commitment discount**); query **$0.01/GB**; metrics ret. **15 months**; non-metrics (logs/traces/etc.) **30 days**; extra non-metrics ret. **$0.02/GB per +30 days**; **unlimited users** / no seat or host meters; **14-day free trial** (no card) |
+| **Cloud Enterprise** | Custom; lists **Sensitive Data Redaction**, **AI-Powered Observability**, **Incident Management & AI SRE Agent**, **AI Assistant**, pipelines, audit, SSO/RBAC, BYOC, SLAs, volume discounts |
+| **Self-Hosted Enterprise** | FAQ (twice): **free ≤ 50 GB/day** ingestion; includes SSO, RBAC, federated search, query/workload QoS, audit trail, **sensitive data redaction**; **above 50 GB/day or paid support → sales** |
+| **AI meter (Cloud)** | FAQ: AI features **free during preview** with **20 credits** (AI SRE Agent + AI Assistant); not “AI forever free in OSS core” |
+
+**Holds vs pass 94:** unit rates, EE feature list, and **50 GB/day** free self-host
+Enterprise allowance are **unchanged**. No reappearance of the historical **200 GB**
+FAQ conflict on this page.
+
+**Parity vs peers (same day desk):**
+
+| Vendor | Cloud entry shape | AI / agent gate | Self-host EE gate |
+| --- | --- | --- | --- |
+| **OpenObserve** | **$0.50/GB** ingest + **$0.01/GB** query | EE list + Cloud **preview credits** | Free ≤**50 GB/day** then sales |
+| **SigNoz** (pass 117) | **$49/mo** + **~$0.30/GB** logs/traces | **Noz = Cloud**; MCP open | Community free; EE custom |
+| **Grafana Cloud** (pass 106) | **~$19/mo** + multi-signal usage | Assistant needs Cloud LLM backend | EE high-ACV / plugins |
+
+**Implication for Parallax monetization design:** OpenObserve is the **nearest
+architecture peer** *and* a clean **usage-Cloud + EE ops/AI gate** template.
+Parallax should still **not** gate the portable redacted evidence bundle the way
+O2 gates AI SRE / SDR — keep that differentiator open for adoption (A1 corpus
+precondition). Cloud usage + EE ops/compliance remains the least-bad desk shape.
+**A2 interviews still open** (no ACV isolation this pass).
+
+**Falsify:** OpenObserve moves AI SRE + SDR into free unlimited OSS core *and*
+ships portable redacted evidence bundles + outcome records; or public Cloud rates
+collapse so that managed cloud is no longer a viable peer revenue motion (unlikely
+from this re-fetch).
 
 ## 2. Monetization shape (the survivors' playbook, applied)
 
