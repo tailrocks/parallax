@@ -8540,3 +8540,8 @@ Thesis holds: selective full-text prunes; broad term does not. PREWHERE service 
 
 last_value/argMax on `m2m` warm: GT **8–9 ms** (first 20 ms), CH **~3 ms**. Jaeger/Prom **200**. **Not done.**
 
+## Run 584 (2026-07-18) — join prune + OTLP
+
+CH `r424_spans ⋈ r424_logs` on `trace_id=t0`: left PrimaryKey **1/1**, right
+bloom **1/1**. OTLP JSON still HTTP **400**. **Not done.**
+
