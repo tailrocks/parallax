@@ -320,6 +320,11 @@ docs and release notes.
 
 **UNFIRED:** offline Assistant; Sentry OTLP metrics.
 
+### Pass 365 (2026-07-18) — Seer
+
+Seer still **closed source**. **UNFIRED.**
+
+
 
 ### Pass 362 (2026-07-18) — Bits
 
