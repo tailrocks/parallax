@@ -150,6 +150,18 @@ Full wedge combination **still not closed**.
 
 Combo still **not closed** (no Sentry envelope + portable redacted bundle + outcome).
 
+**Pass 238 recheck (2026-07-18):** **Traceway** + engine/Seer watch batch —
+
+| Field | Value |
+| --- | --- |
+| Traceway | still **1,024★**; **`cli/v1.9.1` + `backend/v1.9.1`** latest; README probe **no** sentry/envelope/evidence-bundle/outcome hits |
+| GreptimeDB | stable **v1.1.3**; nightly release still **v1.2.0-nightly-20260706** |
+| ClickHouse feature | still **v26.6.1.1193-stable** |
+| Seer self-host | still **closed source** (develop.sentry.dev) |
+| Grafana Assistant | still **hybrid Cloud LLM backend** |
+
+Full wedge combination **still not closed**.
+
 **Pass 156 recheck (2026-07-18):** **Traceway-focused** wedge re-poll + Bugsink/Rustrak
 star-pin hygiene — combination **still not closed**.
 

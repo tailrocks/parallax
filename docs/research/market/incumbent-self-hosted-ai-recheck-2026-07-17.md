@@ -51,6 +51,13 @@ claim retained).
 | develop.sentry.dev/self-hosted | Still Seer **closed source** list item |
 | Grafana Assistant self-managed docs | Still hybrid **Cloud backend/billing** wording |
 
+### Pass 238 (2026-07-18) — dual re-fetch
+
+| Source | Finding |
+| --- | --- |
+| develop.sentry.dev/self-hosted | Still Seer **closed source** |
+| Grafana Assistant self-managed docs | Still hybrid **Cloud backend/billing** |
+
 **UNFIRED:** Seer self-host GA; Grafana offline/BYO-LLM Assistant.
 
 **Precise claim after this pass:**
