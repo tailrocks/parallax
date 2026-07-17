@@ -116,11 +116,12 @@ close the cost/cold-read finalizer gates below, and three reality checks bound t
    read replicas are Enterprise-only ([enterprise docs](https://docs.greptime.com/enterprise/overview/)).
    Parallax must own detection/dispatch in its own workers regardless of engine — which the
    adapter boundary already requires.
-3. **Release cadence wobble.** v1.1 GA has not shipped (stable remains v1.0.2, 2026-05-14); the
-   nightly line stalled at `v1.1.0-nightly-20260525` while the repo stays highly active — a
-   publishing gap, not a dev stall, but the v1.1-GA retest trigger has still not fired. Dynamic
-   JSON ("JSON2") is the headline in-flight v1.1 feature (merged PRs May–June 2026), which is the
-   exact gap behind ClickHouse's ~8× dynamic-attribute win.
+3. **Release cadence (historical June claim, superseded).** The 2026-06-11 note said v1.1 had not
+   GA'd and nightlies stalled at `v1.1.0-nightly-20260525`. **That pin is obsolete as of
+   2026-07-17 (pass 52 / pass 48 re-pin):** stable is **`v1.1.3`** (2026-07-17), with prior
+   `v1.1.0` / `v1.1.1` / `v1.1.2` on the same line; nightly is **`v1.2.0-nightly-20260706`**.
+   The **v1.1-GA retest trigger has fired for version currency**; **sized cost / cold-read /
+   Parallax-shaped benchmark re-runs on v1.1.3 remain unmeasured** (benchmark agent owns them).
 
 ## Historical finalizer questions
 
@@ -133,9 +134,9 @@ close the cost/cold-read finalizer gates below, and three reality checks bound t
 3. **Self-hosted vs managed cloud** — strictly self-hosted at scale favors GreptimeDB's 1× object copy
    + compute/storage separation; if ClickHouse Cloud (`SharedMergeTree`) is acceptable, that erases
    GreptimeDB's cost-economics edge.
-4. **Re-test on GreptimeDB v1.1 GA** (expected Q2 2026 — narrows the dynamic-JSON gap and may move the
-   metrics path; the v1.1 *nightly* is uneven, even regressing 5M dedup-aggregation). Re-pin and re-run
-   the load-bearing speed/cost benchmarks when it ships.
+4. **Re-test on GreptimeDB v1.1.x stable (now shipping)** — version pin is **`v1.1.3`** (2026-07-17).
+   Re-run load-bearing speed/cost benchmarks against this line (and current ClickHouse feature
+   stable); prior matrices pinned to `v1.0.2` / early nightlies are **not** current evidence.
 
 ## Historical flip analysis (superseded)
 
@@ -152,8 +153,15 @@ work in `plans/`.
   they do not imply a ClickHouse implementation.
 - Query mix is **resolved** (anchored-retrieval-dominant); the remaining finalizers are the sized cost
   numbers and the self-host-vs-managed-cloud call, not another query-shape model.
-- Re-pin versions and re-verify load-bearing claims on each new stable release (GreptimeDB v1.1 GA next).
-- **Re-verified 2026-06-03 (official docs + GitHub releases):**
+- Re-pin versions and re-verify load-bearing claims on each new stable release.
+- **Version re-pin 2026-07-17 (pass 52; GitHub releases API — no performance claims):**
+  - GreptimeDB latest stable: **[`v1.1.3`](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.1.3)**
+    (2026-07-17). Nightly: **`v1.2.0-nightly-20260706`**. Supersedes 2026-06-03/06-11 pins of
+    `v1.0.2` / `v1.1.0-nightly-20260525`.
+  - ClickHouse feature-line pin **not re-fetched this pass** — leave prior `v26.5.x` note as
+    **stale until next ClickHouse pass**; do not invent a number.
+  - Product stance unchanged: GreptimeDB + Turso mandatory; ClickHouse comparator only.
+- **Historical re-verify 2026-06-03 (official docs + GitHub releases — version pins superseded):**
   - GreptimeDB docs still describe a unified observability database for metrics, logs, and traces with
     SQL and PromQL support, OpenTelemetry ingestion paths for metrics/logs/traces, and a distributed
     architecture with region-based sharding and disaggregated compute/storage.
@@ -161,11 +169,7 @@ work in `plans/`.
     strong compression and fast query response, but also state that using it as observability storage
     requires a UI and collection framework; current OTLP usage flows through an OpenTelemetry Collector
     exporter into ClickHouse tables.
-  - GitHub releases still show GreptimeDB latest GA `v1.0.2` (2026-05-14) with `v1.1.0-nightly-20260525`
-    as a pre-release, so the v1.1-GA retest trigger has not fired.
-  - GitHub releases still show ClickHouse `v26.5.1.882-stable` (2026-05-21) as the latest stable feature
-    line visible on the releases page, while `v26.3.12.3-lts` is marked latest by GitHub release
-    metadata because it is the LTS line.
+  - ~~GitHub releases GA `v1.0.2`~~ → see 2026-07-17 pin above.
 
 ## Source anchors checked on 2026-06-03
 

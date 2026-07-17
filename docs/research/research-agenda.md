@@ -12,10 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 51 (Rustrak deep-dive). Pass 50 = Traceway MCP deep-dive; pass 49
-= lightweight wedge-closer; pass 48 = OTel schema commoditization + GreptimeDB pins. A1/A2 remain
-product/market validation risks. Autonomous-loop kernels remain PoCs; fixer offline residual plan
-**123 DONE** (live outcome measurement still open).
+Last updated 2026-07-17 after pass 52 (storage-engine + thesis GreptimeDB pin → **v1.1.3**; A1 steelman
+baselines cite Traceway/HolmesGPT). Pass 51 = Rustrak; pass 50 = Traceway; pass 49 = wedge-closer;
+pass 48 = OTel schema commoditization. A1/A2 remain product/market validation risks.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in

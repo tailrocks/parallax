@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-05-29
+Research date: 2026-05-29 · **Steelmans recheck 2026-07-17 (pass 52)**
 
 ## Purpose
 
@@ -55,7 +55,19 @@ own repos** — the fault catalog must enumerate R2/R3 fault types explicitly.
 
 The 2026 "raw context is enough" threat is specifically that an agent **agentically retrieves** from
 raw telemetry — it is not a static dump. So beating a static dump proves little. Add a baseline arm
-that mirrors the real incumbent pattern:
+that mirrors the real incumbent pattern.
+
+**2026-07-17 steelman refresh (desk, not a run):** concrete OSS/SaaS agents that already query
+telemetry without a Parallax bundle include at least:
+
+- **Traceway MCP/CLI** — local+remote MCP over OTLP multi-signal + exceptions
+  ([parallax-vs-traceway.md](../../market/competitors/parallax-vs-traceway.md));
+- **HolmesGPT** — CNCF AI SRE over BYO Prometheus/Loki/Tempo
+  ([parallax-vs-holmesgpt.md](../../market/competitors/parallax-vs-holmesgpt.md));
+- **SigNoz / Coroot MCP**, **Datadog Bits**, **Sentry Seer** — as already noted in market notes.
+
+Any Phase-0/1 A1 raw arm that is weaker than "coding agent + read tools over a live OTel store or
+HolmesGPT-class investigator" is a **strawman**. Prefer B′ baselines that match these surfaces.
 
 | Arm | Context | Isolates |
 | --- | --- | --- |

@@ -227,16 +227,16 @@ Greptime has also written about unified observability with native OpenTelemetry 
 
 Source: [Greptime — OpenTelemetry Traces Integration with GreptimeDB](https://greptime.com/tech-content/2025-07-17-opentelemetry-traces-integration-with-greptimedb)
 
-GreptimeDB reached `v1.0.2` as the latest stable release checked on
-2026-05-25. Its GA status reduces unreleased-database risk, but its trace
-read/write docs still mark trace support as experimental, and vendor-published
-benchmarks do not prove Parallax's evidence-bundle workload. The current
-product position is mandatory GreptimeDB + Turso. ClickHouse's faster analytics
-and broader build-on-top ecosystem remain comparison evidence; benchmark gates
-bound speed, cost, and operations claims and identify fix-forward work. Full
-reasoning: [storage engine decision](../decisions/storage-engine.md).
+GreptimeDB is on the **v1.1.x** stable line — latest pin **`v1.1.3`**
+(2026-07-17; supersedes historical 2026-05 `v1.0.2` checks). GA status long ago
+reduced unreleased-database risk; **version currency is not workload proof** —
+vendor-published benchmarks still do not prove Parallax's evidence-bundle
+workload, and sized cost/cold-read gates remain open. The current product
+position is mandatory GreptimeDB + Turso. ClickHouse remains comparison
+evidence only. Full reasoning: [storage engine decision](../decisions/storage-engine.md).
 
-Sources: [GreptimeDB v1.0.2 release](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.0.2),
+Sources: [GreptimeDB v1.1.3 release](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.1.3),
+[GreptimeDB releases](https://github.com/GreptimeTeam/greptimedb/releases),
 [GreptimeDB trace read/write docs](https://docs.greptime.com/user-guide/traces/read-write/),
 [Storage benchmark prototype](../storage/benchmark-plan.md),
 [Storage freshness and bundle latency gate](../storage/freshness-and-latency.md),
