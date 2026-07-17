@@ -7945,3 +7945,9 @@ Directions hold; join remains interactive all builds after harness fix.
 
 `PREWHERE trace_id='t0'` on logs1m: Skip `idx_trace` **Granules 1/6**. PREWHERE
 composes with secondary bloom (same as PK projections).
+
+### Run 277 — 2026-07-17 — recursive CTE smoke
+
+CH `WITH RECURSIVE` numbers series **works** (1,2,3).
+GT basic recursive UNION form fails planning/parser on this pin (various attempts).
+Span-tree still preferred **app-side** (proxy lens, Run 165/195). Not a product blocker.

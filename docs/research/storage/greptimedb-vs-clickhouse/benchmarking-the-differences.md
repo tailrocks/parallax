@@ -191,7 +191,7 @@ Legend: **Runnable now** = expressible in the current prototype/`bench/compose.y
 - **Pass/fail:** quantify the object-store cost + the cold-read request amplification
   per engine; is GreptimeDB's native path cheaper or just simpler?
 - **Prereq:** MinIO in compose; S3 config for both; request-counting instrumentation.
-- **Status:** **DONE (Runs 8–9).** Same MinIO, 1M spans: **GreptimeDB 4 objects /
+- **Status:** **DONE (Runs 8–9; re-verified 220/235 with `opendal_http_*GetObject` + CH `system.events`).** Same MinIO, 1M spans: **GreptimeDB 4 objects /
   37 MiB vs ClickHouse 74 objects / 63 MiB** (~18× more objects — Wide part =
   one S3 object per column + marks; confirmed the hypothesis). ClickHouse active
   logical 31.82 MiB is slightly smaller (codec edge) but raw S3 use is inflated by
