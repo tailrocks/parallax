@@ -63,7 +63,7 @@ export const Route = createFileRoute("/metrics/")({
       const data = await graphqlCached<{
         metricCatalog: CatalogRow[]
       }>(
-        `{ metricCatalog(fromNanos: "${from}", toNanos: "${now}", limit: 500) { name kind } }`
+        `{ metricCatalog(fromNanos: "${from}", toNanos: "${now}", limit: 500) { name kind unit services lastDatapointNanos pointCount } }`
       )
       if (data.metricCatalog.length > 0) return data.metricCatalog
     } catch {
@@ -138,6 +138,10 @@ function MetricsPage() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead className="w-32">Kind</TableHead>
+              <TableHead className="w-24">Unit</TableHead>
+              <TableHead>Services</TableHead>
+              <TableHead className="w-28 text-right">Datapoints</TableHead>
+              <TableHead className="w-36">Last seen</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
