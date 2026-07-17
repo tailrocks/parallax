@@ -7077,3 +7077,9 @@ No drift. `retention-and-ttl.md`.
 GT Flow (streaming + EVAL INTERVAL) populates sink tables; CH AggregatingMergeTree MV
 immediate. Continuous-agg capability parity holds on current pins.
 `rollup-and-continuous-aggregation.md`.
+
+### Run 189 — 2026-07-17 — four-way storage sizes N=100k
+
+GT denser on logs (~0.4× CH) and metrics (~0.92×); CH denser on spans (~1.7×) and indexed
+errs (~2.6× GT). Shape-dependent; no blanket winner. `compression-and-cost.md`.
+Evidence: scratch `run189-storage-sizes.txt`.

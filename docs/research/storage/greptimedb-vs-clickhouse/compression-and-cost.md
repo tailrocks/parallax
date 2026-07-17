@@ -233,3 +233,28 @@ decided less by "who compresses spans 1.3× better" and more by:
 - Measured sizes: `local-benchmark-results.md` Run 1/3/10 (column compression) + Runs 51–52 (full-text index cost: inverted + fair bloom-vs-bloom) via `system.parts`, `system.data_skipping_indices`, GreptimeDB `information_schema.region_statistics`.
 - GreptimeDB full-text backends (`bloom` vs `tantivy`): index built per SST in the `.puffin` sidecar; backend chosen in `FULLTEXT INDEX WITH(backend=…)` DDL (`indexing-internals.md`).
 - Retention $ + TTL expiry mechanism: `retention-and-ttl.md`.
+
+## Run 189 (2026-07-17) — N=100k four-way on-disk sizes (v1.1.3 / 26.6)
+
+**Method.** After `bench/four-way/gen.sh` + flush: GT
+`information_schema.region_statistics.disk_size`; CH `system.parts` `bytes_on_disk`
+(active). Nightly ≈ stable on both (CH identical bytes).
+
+| Table (100k rows) | GT disk_size | CH bytes_on_disk | GT/CH | Winner |
+| --- | ---: | ---: | ---: | --- |
+| `spans1m` (traces-like) | 1.85 MB | 1.09 MB | **1.69×** | **CH** |
+| `m2m` (metrics) | 407 KB | 443 KB | **0.92×** | **GT** slight |
+| `logs1m` (+FT index) | 596 KB | 1.49 MB | **0.40×** | **GT** denser |
+| `sj` (Jsonb attrs) | 8 KB | 147 KB | **0.06×** | **GT** (blob denser; CH typed subcols) |
+| `errs` | 1.58 MB | 611 KB | **2.58×** | **CH** (GT inverted on `trace_id` costs space) |
+
+**Shape-dependent cost (no blanket winner)** — matches Runs 100/159:
+- **Logs** density → GreptimeDB
+- **Spans/traces** → ClickHouse  
+- **Metrics** ~parity / slight GT
+- Indexes change the story: GT inverted on `errs`/`spans` inflates disk vs unindexed CH ORDER BY locality
+
+**JSON2 caveat:** freshly loaded `sj2` may still sit in memtable (`memtable_size` ≫ `sst_size`);
+compare only after flush settles. Nightly flushed `sj2` data_length ~6.7 KB class.
+
+At 100k absolute sizes are small; use **ratios** for cost thesis, server tier for $/GB.
