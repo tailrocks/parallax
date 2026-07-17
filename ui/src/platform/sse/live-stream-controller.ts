@@ -8,7 +8,7 @@ import {
   browserEventSourceFactory,
   type EventSourceFactory,
   type EventSourceLike,
-} from "@/platform/sse/event-source.client"
+} from "@/platform/sse/event-source"
 import { createBoundedFrameBuffer } from "@/platform/sse/bounded-frame-buffer"
 import {
   initialStreamStatus,
