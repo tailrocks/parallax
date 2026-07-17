@@ -244,6 +244,10 @@ Full combination **still not closed**.
 
 Combo **still not closed**.
 
+**Pass 289 recheck (2026-07-18):** Maple still **1,532★** / **v0.0.12**; tinybird
+search still **304** — Tinybird-decoupling **UNFIRED**. OpenObserve still
+**v0.91.2**. Combo **not closed**.
+
 **Pass 249 recheck (2026-07-18):** **Traceway** + Sentry OTLP metrics kill —
 
 | Field | Value |
