@@ -175,6 +175,22 @@ Full wedge combination **still not closed**.
 
 Full wedge combination **still not closed**.
 
+**Pass 244 recheck (2026-07-18):** **Bugsink + Rustrak + GlitchTip** primary
+version/README hygiene (error-tracker peer cluster) —
+
+| Product | Pin (API / GitLab) | README / primary probe | Combo |
+| --- | --- | --- | --- |
+| **Bugsink** | [bugsink/bugsink](https://github.com/bugsink/bugsink) **1,940★**; **`v2.4.0`** (2026-07-10); `pushed_at` **2026-07-17** | Self-hosted **Sentry-SDK error tracking**; **0** hits for OTLP / OpenTelemetry / evidence-bundle / outcome / redact / MCP | **not closed** |
+| **Rustrak** | [rustrak/rustrak](https://github.com/rustrak/rustrak) **64★**; **`@rustrak/server@0.9.2`** + **`@rustrak/mcp@0.2.13`** (2026-07-15 tags); push **2026-07-17** | Sentry SDK path + **MCP** package; architecture still Sentry→server→Postgres; **no** OTLP multi-signal / portable redacted bundle / fix-outcome | **not closed** |
+| **GlitchTip** | GitLab monorepo **161★** (last_activity **2026-07-06**); [glitchtip-backend](https://gitlab.com/glitchtip/glitchtip-backend) **354★** (act **2026-07-17**); backend tag still **`v6.2.1`** (2026-07-15) | Sentry-API compatible **error tracking** (Django/Postgres); privacy/self-host messaging; **no** OTLP multi-signal / portable redacted evidence bundle / outcome in primary README | **not closed** |
+
+**Verdict:** peer error-trackers remain **Sentry-compat (and Rustrak MCP)** —
+none ship OTLP multi-signal + portable redacted evidence bundle + outcome.
+Full combination **still not closed**. Version pins **unchanged** vs pass
+173/179/180/214 (stable).
+
+**Evidence class:** GitHub API + GitLab API + raw README probes (desk). Not A1.
+
 **Pass 156 recheck (2026-07-18):** **Traceway-focused** wedge re-poll + Bugsink/Rustrak
 star-pin hygiene — combination **still not closed**.
 
