@@ -4,7 +4,8 @@ Reproducible MinIO + GreptimeDB(S3) + ClickHouse(S3) stack for the object-storag
 path of the GreptimeDB-vs-ClickHouse comparison (cost axis: retained object bytes,
 object count, cold-read GET/PUT/LIST). Proven in
 `../../docs/research/storage/greptimedb-vs-clickhouse/local-benchmark-results.md` Runs 8–9
-(GreptimeDB 4 objects / 37 MiB vs ClickHouse 74 objects / 63 MiB for 1M spans).
+(and re-verified on current pins in Run 220). Historical 1M-span layout: GreptimeDB
+~3–4 objects / ~22–37 MiB vs ClickHouse ~74 objects / ~57–63 MiB.
 
 ```bash
 ./run-s3-stack.sh up      # MinIO + bucket + GreptimeDB(S3) + ClickHouse(S3)

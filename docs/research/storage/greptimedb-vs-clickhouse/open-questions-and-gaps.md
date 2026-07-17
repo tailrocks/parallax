@@ -122,7 +122,11 @@ Highest-value *remaining* items (not “done”):
 1. **Workload mix model** (product) — only input that re-weights DQ5 flip rule.
 2. **Server-tier 1M/5M four-way** on v1.1.3 + 26.6 — especially dedup-agg regression retest.
 3. **Managed $ quote packet** — GT managed vs CH Cloud for fixed volume/QPS.
-4. **Cold S3 selective egress** at GB scale (MinIO harness) — JSONBench cold counterpoint.
+4. **Cold S3 selective egress at GB scale** — Run 220 re-verified object layout at
+   N=100k on current pins (GT 3 vs CH 22 objects); **GB–TB selective cold + GET
+   parity for GT** still owed (server/MinIO large tier; `mc admin trace` broken on
+   current MinIO — use CH `system.events`, need GT OpenDAL counters).
 5. **Product RPO runbook** — Turso + GT meta snapshot + object store (ops, not engine choice).
 
-Do **not** burn passes re-confirming interactive 100k ties unless a pin bumps.
+Do **not** burn passes re-confirming interactive 100k ties or small-N S3 object
+counts unless a pin bumps.

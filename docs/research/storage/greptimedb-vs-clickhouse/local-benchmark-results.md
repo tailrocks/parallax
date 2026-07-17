@@ -7216,3 +7216,140 @@ GT/CH implementation notes annotated with current pins + JSON2/DELETE/OTLP cavea
 
 After re-pin cycle, prioritize workload mix / server tier / managed quotes over more 100k ties.
 `open-questions-and-gaps.md`.
+
+### Run 220 — 2026-07-17 — MinIO S3 stack re-verify on v1.1.3 / 26.6.1.1193 (N=100k)
+
+**Pass target.** Re-pin the **stale** `bench/s3` harness (still on GT `v1.0.2` / CH
+`26.5.1.882`) to current comparison pins, bring up MinIO + GT(S3) + CH(S3), and
+re-verify the load-bearing object-store economics claim (object count + bytes +
+cold anchored read) at laptop-safe **N=100,000**.
+
+**Environment.**
+
+| Piece | Version / config |
+| --- | --- |
+| GreptimeDB | **`v1.1.3`** (`[storage] type=S3` → MinIO path-style) |
+| ClickHouse | **`26.6.1.1193-stable`** (`storage_policy='s3only'`, DiskS3) |
+| MinIO | `minio/minio:latest` + `mc:latest`, net `pbench-s3` |
+| Harness | `bench/s3/run-s3-stack.sh` (**pin bump this run**) |
+| N | **100,000** spans (identical CSV into both) |
+
+**Dataset.** ClickHouse `INSERT … FROM numbers(100000)` with synthetic
+`trace_id`/`span_id` (sipHash hex), 20 services × 50 ops; dumped
+`CSVWithNames` → GreptimeDB `COPY … FORMAT CSV`. Both verified
+`count()=100000`. GT `PRIMARY KEY(trace_id)` + TIME INDEX `ts`; CH
+`ORDER BY (trace_id, ts)` + LowCardinality on service/name/status. CH
+`OPTIMIZE FINAL`; GT `ADMIN flush_table('spans')`.
+
+**Measured — object footprint (MinIO `mc ls --recursive` + `mc du`):**
+
+| Engine | Objects | Raw S3 bytes | Active logical |
+| --- | --- | --- | --- |
+| **GreptimeDB** | **3** | **4.1 MiB** | 1 Parquet SST + 2 manifest JSON |
+| **ClickHouse** | **22** | **11 MiB** | 1 active part ~5.8 MiB compressed (`bytes_on_disk`); +1 inactive merge leftover (~5.5 MiB) |
+
+**Measured — latency (anchored `WHERE trace_id=?`):**
+
+| State | CH client `--time` | GT `execution_time_ms` |
+| --- | --- | --- |
+| Warm | ~9–19 ms | ~33 ms |
+| Cold (CH drop caches / GT container restart) | ~11–15 ms | ~17–21 ms |
+| Cold filter `service='svc-1'` (5k rows) | ~17–20 ms | ~23 ms |
+
+Both interactive at 100k — **not** the GB-scale cold flip-trigger.
+
+**Measured — CH cold S3 request counters** (`system.events` deltas; `mc admin
+trace` produced **zero lines** on current MinIO/mc — instrumentation break vs
+Runs 14/55; use CH-native counters instead):
+
+| Query (cold) | `S3GetObject` Δ | `ReadBufferFromS3Bytes` Δ |
+| --- | --- | --- |
+| Anchored trace_id | **4** | ~1.7 MiB |
+| Filter scan service | **3** | ~10 MiB |
+| Warm re-read (no drop) | 3 (remote FS still touches) | ~1.7 MiB |
+
+GT has no comparable per-query S3 GET counter exposed in `/metrics` on this
+standalone image; object inventory still implies ≤3 GETs for a full SST miss
+(1 Parquet + manifests).
+
+**Comparison logic & verdict.**
+
+1. **Object-count pillar CONFIRMED on new pins.** GT **3** vs CH **22** at 100k
+   (~**7× fewer**). Same mechanism as Runs 8–9/54: CH Wide parts = **one S3
+   object per column file + marks/checksums per part**; GT = **one Parquet SST
+   + manifests**. At 1M (Run 54) CH was 74 including merge garbage; fully
+   GC'd steady-state still ~order-of-magnitude more objects than GT.
+2. **Raw S3 bytes: GT denser on this schema** (4.1 vs 11 MiB raw; active CH
+   compressed ~5.8 MiB). Aligns with Run 54 size-order nuance when sort key
+   clusters high-card hex IDs (`PRIMARY KEY`/`ORDER BY trace_id`).
+3. **Cold latency at 100k is a wash** (both ~10–25 ms). Does **not** re-open
+   the GB–TB selective-egress story (Runs 55/63/88 — CH granule locality wins
+   when SST is multi-GB and unpartitioned GT scatters). Laptop 100k cannot
+   substitute for that; only re-affirms interactive floor still holds on S3
+   path for small retained sets.
+4. **Harness fix:** `bench/s3` was silently on **v1.0.2 / 26.5.1.882** through
+   Run 219. Any future S3 pass must keep images in lockstep with
+   `bench/compose.yml` / comparison README pins.
+5. **Request-count tooling drift:** `mc admin trace` no longer yields events
+   against this MinIO build (empty JSONL, no stderr). Prefer
+   ClickHouse `system.events` (`S3GetObject`, `ReadBufferFromS3Bytes`) for CH;
+   GT still needs OpenDAL/MinIO audit or a future metrics series for apples-to-apples
+   GET counts.
+
+**Status vs B10/B12.** Object-layout re-verify on current pins = **done (small
+N)**. GB-scale cold selective egress + JSONBench-class cold still **owed**
+(server / large MinIO tier). Per-query GET parity for GT still instrument-gated.
+
+**Reproduce (copy-paste).**
+
+```bash
+# pins must match comparison README (v1.1.3 / 26.6.1.1193)
+bench/s3/run-s3-stack.sh up
+
+docker exec pbench-ch-s3 clickhouse-client -q "
+CREATE TABLE spans (
+  ts DateTime64(3) CODEC(DoubleDelta, ZSTD(1)),
+  trace_id String, span_id String, parent_span_id String,
+  service LowCardinality(String), name LowCardinality(String),
+  duration_ms Float64, status LowCardinality(String)
+) ENGINE=MergeTree ORDER BY (trace_id, ts)
+SETTINGS storage_policy='s3only'"
+
+docker exec pbench-ch-s3 clickhouse-client -q "
+INSERT INTO spans SELECT
+  now64(3) - number % 3600,
+  lower(hex(reinterpretAsUInt64(sipHash64(number)))),
+  lower(hex(reinterpretAsUInt64(sipHash64(number+1)))),
+  if(number % 5 = 0, '', lower(hex(reinterpretAsUInt64(sipHash64(number-1))))),
+  concat('svc-', toString(number % 20)),
+  concat('op-', toString(number % 50)),
+  (number % 500) + 0.5,
+  if(number % 100 = 0, 'ERROR', 'OK')
+FROM numbers(100000)"
+docker exec pbench-ch-s3 clickhouse-client -q "OPTIMIZE TABLE spans FINAL"
+
+docker exec pbench-ch-s3 clickhouse-client -q "SELECT * FROM spans FORMAT CSVWithNames" > /tmp/spans100k.csv
+docker cp /tmp/spans100k.csv pbench-gt-s3:/spans.csv
+docker exec pbench-gt-s3 curl -s "http://localhost:4000/v1/sql?db=public" --data-urlencode \
+  'sql=CREATE TABLE spans ("ts" TIMESTAMP(3) TIME INDEX,"trace_id" STRING,"span_id" STRING,"parent_span_id" STRING,"service" STRING,"name" STRING,"duration_ms" DOUBLE,"status" STRING, PRIMARY KEY("trace_id"))'
+docker exec pbench-gt-s3 curl -s "http://localhost:4000/v1/sql?db=public" --data-urlencode \
+  "sql=COPY spans FROM '/spans.csv' WITH (FORMAT='CSV')"
+docker exec pbench-gt-s3 curl -s "http://localhost:4000/v1/sql?db=public" --data-urlencode \
+  "sql=ADMIN flush_table('spans')"
+
+docker run --rm --network pbench-s3 --entrypoint sh minio/mc:latest -c \
+  'mc alias set m http://pbench-minio:9000 minioadmin minioadmin; \
+   echo GT; mc ls --recursive m/greptimedb/data/ | wc -l; mc du m/greptimedb/data/; \
+   echo CH; mc ls --recursive m/greptimedb/clickhouse/ | wc -l; mc du m/greptimedb/clickhouse/'
+
+# CH cold GET delta example
+docker exec pbench-ch-s3 clickhouse-client -q "SYSTEM DROP FILESYSTEM CACHE; SYSTEM DROP MARK CACHE; SYSTEM DROP UNCOMPRESSED CACHE"
+docker exec pbench-ch-s3 clickhouse-client -q "SELECT event, value FROM system.events WHERE event IN ('S3GetObject','ReadBufferFromS3Bytes') FORMAT TSV"
+# run query, then re-select and subtract
+
+bench/s3/run-s3-stack.sh down
+```
+
+**Caveat.** N=100k single-node laptop; synthetic 1-span-per-trace_id (sipHash
+unique). Object-count mechanism holds; cold multi-GB selective egress still
+server-tier.

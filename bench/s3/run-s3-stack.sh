@@ -12,8 +12,8 @@
 #         ./run-s3-stack.sh down    # tear everything down
 #
 # Pinned versions (keep in sync with bench README / version pins):
-GT_IMG="greptime/greptimedb:v1.0.2"
-CH_IMG="clickhouse/clickhouse-server:26.5.1.882"
+GT_IMG="greptime/greptimedb:v1.1.3"
+CH_IMG="clickhouse/clickhouse-server:26.6.1.1193"
 MINIO_IMG="minio/minio:latest"
 MC_IMG="minio/mc:latest"
 NET="pbench-s3"

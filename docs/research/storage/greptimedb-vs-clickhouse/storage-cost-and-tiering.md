@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass (Run 161) — answers the operator's framing: *is ClickHouse performance-first (server/
+Status: pass (Run 161; object layout re-verified Run 220 on v1.1.3/26.6) — answers the operator's framing: *is ClickHouse performance-first (server/
 local-disk) while GreptimeDB is S3/cost-first (store-everything-cheaply, read as fast as the
 architecture allows)? If so, compare on **cost** (not just speed): how much each costs to run, what
 infra each needs. And does a **hybrid** — ClickHouse for live data + GreptimeDB for historical — make
@@ -49,7 +49,7 @@ Performance is one axis; **cost to run** is the other the operator now wants. Fo
 | --- | --- | --- |
 | **Compute** (instances $/mo) | Performance-first → wants **CPU + fast local disk/NVMe** (or cache), sized for vectorized scan; the hot tier is **always-on**. More/bigger servers. | Near-stateless datanodes → **smaller, elastic** compute (scale down when idle); WAL/SSTs offloaded to Kafka/S3. **Fewer always-on servers.** |
 | **Storage** ($/GB-mo × copies × density) | Hot on **block storage** (EBS gp3 ~**$0.08/GB**) or local NVMe; cold on S3. OSS HA = **N× copies**. | **S3-native** (~**$0.023/GB**, ~3.5× cheaper than EBS) at **1× shared copy**; denser on metrics+logs (Run 159 ~1.5×). |
-| **Egress / requests** | S3 GET + egress on cold reads; more objects/parts (Run 9: ~74 vs 4 objects for 1M spans). | Object-count-efficient (4 objects/1M spans, Run 9); still pays egress on re-reads (Parallax re-reads history → R2 zero-egress is attractive, `retention-cost-model.md`). |
+| **Egress / requests** | S3 GET + egress on cold reads; more objects/parts (Run 9/54: ~74 vs 3–4 objects for 1M spans; **Run 220** on v1.1.3/26.6: **22 vs 3** at 100k). | Object-count-efficient (3–4 objects/flush SST + manifests; Run 220: **3 / 4.1 MiB** @100k); still pays egress on re-reads (Parallax re-reads history → R2 zero-egress is attractive, `retention-cost-model.md`). |
 | **Operational** | **Keeper** (Raft) for replication; **manual resharding**; or pay for ClickHouse Cloud. | **Metasrv** + optional **Kafka** (remote WAL); auto-rebalance; or GreptimeCloud. |
 
 **The headline cost number:** object storage is **~3.5× cheaper per GB than block storage** (S3
