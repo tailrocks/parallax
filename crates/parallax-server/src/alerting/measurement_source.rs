@@ -488,6 +488,7 @@ mod tests {
             _name: &str,
             service: Option<&str>,
             _invocation_id: Option<&str>,
+            _attribute_filters: &[parallax_storage::adapter::AttributeFilter],
             _range: RangeInclusive<u128>,
             _step_nanos: u128,
             _agg: MetricAgg,
@@ -512,9 +513,20 @@ mod tests {
             &self,
             _name: &str,
             _service: Option<&str>,
+            _attribute_filters: &[parallax_storage::adapter::AttributeFilter],
             _range: RangeInclusive<u128>,
             _step_nanos: u128,
             _q: f64,
+        ) -> StorageResult<Vec<SeriesPoint>> {
+            unimplemented!("not used by the measurement shim")
+        }
+        async fn histogram_avg(
+            &self,
+            _name: &str,
+            _service: Option<&str>,
+            _attribute_filters: &[parallax_storage::adapter::AttributeFilter],
+            _range: RangeInclusive<u128>,
+            _step_nanos: u128,
         ) -> StorageResult<Vec<SeriesPoint>> {
             unimplemented!("not used by the measurement shim")
         }
