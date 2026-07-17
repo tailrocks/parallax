@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 70 (self-host simplicity baselines: Sentry **26.7.0**/64 services,
-SigNoz v0.133.0, …; Parallax claim still **not_measured**). Pass 69 = traces experimental. A1/A2/A4/A6
-open.
+Last updated 2026-07-17 after pass 71 (OTel Collector/semconv re-pin: collector **v0.156.0**,
+semconv **v1.43.0**; OTLP conformance still **not_measured**). Pass 70 = simplicity baselines.
+A1/A2/A4/A6 open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in

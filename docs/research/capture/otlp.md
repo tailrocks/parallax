@@ -11,6 +11,18 @@
 > implementation is shipped. The conformance ledger remains `not_measured`:
 > direct-SDK/Collector/Contrib/Rotel equivalence and agent-ready projection
 > claims still require the documented runs.
+>
+> **Pass 71 ecosystem re-pin (2026-07-17, GitHub releases — no conformance run):**
+> | Component | May note | 2026-07-17 pin |
+> | --- | --- | --- |
+> | OTel Collector core | v0.153.0 | **v0.156.0** (2026-07-07) |
+> | Collector releases (otelcol) | v0.152.1 | **v0.156.0** (2026-07-07) |
+> | Collector Contrib | v0.152.0 | **v0.156.0** (2026-07-07) |
+> | Semantic Conventions | v1.41.0 | **v1.43.0** (2026-07-03) |
+> | opentelemetry-proto | — | **v1.10.0** (2026-03-09, still latest) |
+>
+> Conformance claim level **unchanged `not_measured`**. Re-run ledger against
+> these pins when measuring Collector equivalence.
 
 > **⚠ Update 2026-06-18 — storage landing decided.** Parallax remains the OTLP receiver, but for
 > storage it **forwards raw OTLP straight to GreptimeDB's native tables** (`opentelemetry_traces`/`opentelemetry_logs`/metric
