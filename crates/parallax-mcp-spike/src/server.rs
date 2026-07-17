@@ -66,8 +66,8 @@ impl SpikeServer {
     ) -> Result<CallToolResult, McpError> {
         let bundle = gql::fetch_bundle(&self.client, Some(&args.fingerprint), None)
             .await
-            .map_err(|e| McpError::internal_error(e.to_string(), None))?;
-        Ok(bundle_tool_result(bundle))
+            .map_err(|_| safe_internal_error("bundle_unavailable"))?;
+        bundle_tool_result(bundle)
     }
 
     #[tool(
@@ -80,24 +80,35 @@ impl SpikeServer {
     ) -> Result<CallToolResult, McpError> {
         let session = gql::fetch_agent_session(&self.client, &args.invocation_id)
             .await
-            .map_err(|e| McpError::internal_error(e.to_string(), None))?;
+            .map_err(|_| safe_internal_error("agent_session_unavailable"))?;
         // Mirror CLI JSON shape: compact re-serialize of the GraphQL object.
-        let body = serde_json::to_string(&session).unwrap_or_else(|_| "{}".into());
-        let parsed: Value = serde_json::from_str(&body).unwrap_or(json!({}));
-        let mut result = CallToolResult::structured(parsed);
+        let body = serde_json::to_string(&session)
+            .map_err(|_| safe_internal_error("agent_session_invalid"))?;
+        let mut result = CallToolResult::structured(session);
         result.content = vec![ContentBlock::text(body)];
         Ok(result)
     }
 }
 
-fn bundle_tool_result(bundle: gql::BundleProjection) -> CallToolResult {
+fn safe_internal_error(code: &'static str) -> McpError {
+    McpError::internal_error(
+        "Parallax could not produce a safe MCP result",
+        Some(json!({ "code": code })),
+    )
+}
+
+fn bundle_tool_result(bundle: gql::BundleProjection) -> Result<CallToolResult, McpError> {
     // Parse exactly once for structuredContent. Keep the raw string for
     // comparison outside this function (check subcommand); do not re-serialize
     // the parsed value when comparing hashes.
-    let parsed: Value = serde_json::from_str(&bundle.json).unwrap_or(json!({}));
+    let parsed: Value =
+        serde_json::from_str(&bundle.json).map_err(|_| safe_internal_error("bundle_invalid"))?;
+    if parsed.get("schema_version").and_then(Value::as_str) != Some("bundle-v2") {
+        return Err(safe_internal_error("bundle_contract_mismatch"));
+    }
     let mut result = CallToolResult::structured(parsed);
     result.content = vec![ContentBlock::text(bundle.markdown)];
-    result
+    Ok(result)
 }
 
 #[tool_handler]
@@ -186,7 +197,8 @@ mod tests {
             json: r#"{"schema_version":"bundle-v2"}"#.to_string(),
             markdown: "# Evidence".to_string(),
             canonical_hash: "sha256-jcs:test".to_string(),
-        });
+        })
+        .expect("valid bundle result");
         let encoded = serde_json::to_value(result).expect("serialize result");
 
         assert_eq!(encoded.get("_meta"), None);
@@ -194,6 +206,23 @@ mod tests {
             encoded.get("structuredContent"),
             Some(&json!({"schema_version": "bundle-v2"}))
         );
+    }
+
+    #[test]
+    fn malformed_bundles_and_upstream_failures_return_stable_secret_free_errors() {
+        let malformed = bundle_tool_result(gql::BundleProjection {
+            json: r#"{"schema_version":"bundle-v1","secret":"seeded-secret"}"#.to_string(),
+            markdown: "seeded-secret".to_string(),
+            canonical_hash: "seeded-secret".to_string(),
+        })
+        .expect_err("wrong contract must fail");
+        let upstream = safe_internal_error("bundle_unavailable");
+
+        for error in [malformed, upstream] {
+            let encoded = serde_json::to_string(&error).expect("serialize MCP error");
+            assert!(!encoded.contains("seeded-secret"));
+            assert!(encoded.contains("Parallax could not produce a safe MCP result"));
+        }
     }
 
     #[test]

@@ -48,6 +48,9 @@ must not return in product output.
 - API origins are restricted to credential-free plaintext loopback HTTP;
   arbitrary hosts, TLS, URL credentials, paths, queries, and fragments fail
   closed until Plan 109 supplies the remote transport contract.
+- Malformed bundle contracts and upstream failures return stable secret-free
+  MCP errors; the adapter no longer silently substitutes an empty object or
+  forwards raw upstream error strings.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded
