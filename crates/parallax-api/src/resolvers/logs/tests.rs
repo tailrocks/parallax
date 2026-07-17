@@ -229,7 +229,10 @@ async fn logs_attribute_filters_narrow_rows_series_and_facets() {
         .flatten()
         .filter_map(|point| point.pointer("/value").and_then(|v| v.as_f64()))
         .sum();
-    assert_eq!(series_total, 1.0, "series reflects the filter: {json}");
+    assert!(
+        (series_total - 1.0).abs() < f64::EPSILON,
+        "series reflects the filter: {json}"
+    );
     let method_facet = json
         .pointer("/data/logFacets")
         .and_then(|facets| facets.as_array())
