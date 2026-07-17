@@ -178,6 +178,33 @@ CREATE TABLE IF NOT EXISTS alert_checks (
 );
 CREATE INDEX IF NOT EXISTS alert_checks_rule_time
   ON alert_checks(rule_id, checked_at);
+CREATE TABLE IF NOT EXISTS test_cases (
+  case_key TEXT PRIMARY KEY, identity_source TEXT NOT NULL,
+  explicit_id TEXT, code_reference TEXT, suite_path TEXT NOT NULL,
+  name TEXT NOT NULL, first_seen INTEGER NOT NULL, last_seen INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS test_variants (
+  variant_key TEXT PRIMARY KEY, case_key TEXT NOT NULL, parameters TEXT NOT NULL,
+  first_seen INTEGER NOT NULL, last_seen INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS test_variants_case_key ON test_variants(case_key);
+CREATE TABLE IF NOT EXISTS test_results (
+  variant_key TEXT NOT NULL, invocation_id TEXT NOT NULL,
+  attempt INTEGER NOT NULL CHECK (attempt >= 1),
+  status TEXT NOT NULL CHECK (status IN ('passed', 'failed', 'broken', 'skipped', 'unknown')),
+  trace_id TEXT NOT NULL, span_id TEXT NOT NULL,
+  started_at INTEGER NOT NULL, ended_at INTEGER NOT NULL, service TEXT NOT NULL,
+  service_version TEXT, vcs_head_revision TEXT, configuration TEXT NOT NULL,
+  failure_fingerprint TEXT,
+  PRIMARY KEY (variant_key, invocation_id, attempt)
+);
+CREATE INDEX IF NOT EXISTS test_results_invocation ON test_results(invocation_id, started_at);
+CREATE INDEX IF NOT EXISTS test_results_fingerprint ON test_results(failure_fingerprint);
+CREATE TABLE IF NOT EXISTS test_flaky_states (
+  variant_key TEXT PRIMARY KEY,
+  state TEXT NOT NULL CHECK (state IN ('healthy', 'flaky', 'fixed', 'broken')),
+  evidence TEXT NOT NULL, updated_at INTEGER NOT NULL
+);
 CREATE TABLE IF NOT EXISTS prune_journals (
   plan_id       TEXT PRIMARY KEY,
   plan_json     TEXT NOT NULL,

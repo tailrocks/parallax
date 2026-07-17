@@ -487,6 +487,29 @@ async fn legacy_runs_table_is_dropped_forward_only() {
 }
 
 #[tokio::test]
+async fn test_reporting_schema_has_reference_and_mutable_state_tables() {
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(&path).await.expect("open");
+    let conn = store.conn.lock().await;
+    for table in [
+        "test_cases",
+        "test_variants",
+        "test_results",
+        "test_flaky_states",
+    ] {
+        let mut rows = conn
+            .query(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = ?1",
+                (table,),
+            )
+            .await
+            .expect("query schema");
+        let row = rows.next().await.expect("read count").expect("count row");
+        assert_eq!(integer(&row, 0), 1, "missing {table}");
+    }
+}
+
+#[tokio::test]
 async fn issue_title_and_culprit_are_sanitized_at_rest() {
     let (_directory, path) = temp_db();
     let store = MetadataStore::open(&path).await.expect("open");
