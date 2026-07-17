@@ -120,15 +120,20 @@ Both OTLP/OTel-native. Splunk Obs Cloud is a closed enterprise full-stack SaaS; 
 
 ## Pricing & economics — real numbers
 
-Splunk Observability Cloud pricing is **public** (per-host, via [cubeapm 2026](https://cubeapm.com/blog/splunk-observability-cloud-pricing-and-review/), [BITSIO 2026](https://www.bitsioinc.com/blog-post/splunk-observability-cloud-2026-guide)):
+Splunk Observability Cloud pricing is **public** ([splunk.com/products/pricing/observability](https://www.splunk.com/en_us/products/pricing/observability.html) + [FAQ](https://www.splunk.com/en_us/products/pricing/faqs/observability.html), **confirmed pass 40** — the pass-17 third-party $15/$60/$75 figures match the official page):
 
 | Component | Price | Notes |
 | --- | --- | --- |
-| Infrastructure Monitoring | **$15 / host / mo** | metrics |
-| Application & Infrastructure Monitoring | **$60 / host / mo** | + APM/traces |
-| Full Observability | **$75 / host / mo** | + logs/RUM/synthetics |
+| Infrastructure Monitoring | **$15 / host / mo** | billed annually; metrics |
+| Cloud App & Infra (IM + APM) | **$60 / host / mo** | + APM/traces |
+| End-to-End Observability Cloud Suite | **$75 / host / mo** | + Log Observer + RUM + synthetics |
+| **Free Edition** | **$0** | **15 hosts free forever**, all features |
 
-Cisco-era enterprise contracts skew expensive (Splunk's historical reputation). **Confirm current Cisco-era rates + log-overage on [splunk.com/pricing](https://www.splunk.com/en_us/products/pricing.html).**
+**Pricing models:** host-based (unique hosts, hourly-averaged) **or** usage-based (custom metrics/containers/serverless). APM counts unique APM hosts/min, averaged across the cycle.
+
+> **No public number (marked explicitly):** à-la-carte **credit rates** for individual Infrastructure/APM/Log-Observer/RUM components, standalone **Log Observer** pricing, and **log-overage rates** are **NOT published** on splunk.com — they require a sales quote. The published rates are the bundled host tiers ($15/$60/$75). Government (UK G-Cloud) lists the Suite at $95/host/mo (100-host min). Third-party full-stack-with-add-ons ranges cite $95–$200/host/mo.
+
+Cisco-era enterprise contracts skew expensive (Splunk's historical reputation); the base host tiers are the published floor.
 
 **Parallax pricing:** none public yet (pre-release).
 
@@ -155,7 +160,7 @@ Cisco-era enterprise contracts skew expensive (Splunk's historical reputation). 
 ## Open questions / what measurement would settle
 
 - **A1 gate vs Splunk AI:** does a Parallax bounded bundle beat Splunk-AI-assistant-as-context for coding-agent fix outcomes? Unproven.
-- **Cisco-era exact pricing + log overage** — confirm on splunk.com/pricing (post-acquisition rates may have shifted).
+- **Cisco-era exact pricing + log overage** — **RESOLVED pass 40** ([splunk.com](https://www.splunk.com/en_us/products/pricing/observability.html)): Infra $15 / IM+APM $60 / Suite $75 per host/mo + Free Edition 15 hosts; pass-17 third-party numbers **confirmed correct**. **No public number** (marked): à-la-carte credit rates, standalone Log Observer, log-overage — sales-quote only. Still-open (NOT desk-research): NoSample storage-cost vs sampled GreptimeDB (benchmark); A1-vs-Splunk-Agentic-Obs.
 - **NoSample cost** — 100% trace retention has a storage cost; how does it compare to Parallax's sampled GreptimeDB at parity? Benchmark-dependent.
 
 ## Sources (accessed 2026-07-17)
