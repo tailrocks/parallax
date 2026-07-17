@@ -199,3 +199,48 @@ See
 Apple package legs now embed `__DWARF` from dsymutil into the executable before
 `verify_object`. Residual plan-102 work is the external four-target preview
 proof only.
+
+## Current-implementation four-target preview proof (2026-07-17)
+
+Source identity:
+
+- Parallax source SHA: `e37a65d7239b207dc9b6ab6c5fdd55a3eef6fdbb`
+- Version: `0.1.0-preview.1295+e37a65d`
+- Preview workflow run: [29575421066](https://github.com/tailrocks/parallax/actions/runs/29575421066)
+
+All four matrix jobs completed successfully. Each passed the workflow's
+`Verify complete preview artifact set` step, which invokes
+`cargo xtask release-verify` with the exact version, target, source SHA,
+`refs/heads/main`, repository, workflow identity, and artifact/sidecar paths:
+
+| Target | Matrix result |
+| --- | --- |
+| `aarch64-apple-darwin` | success |
+| `x86_64-apple-darwin` | success |
+| `aarch64-unknown-linux-gnu` | success |
+| `x86_64-unknown-linux-gnu` | success |
+
+The first publish attempt correctly failed instead of producing a false green:
+the repository's default Actions token permission was `read`, so GitHub denied
+release mutation despite the job's requested `contents: write`. Repository
+Actions default workflow permission was corrected to `write` and verified by
+API read-back. A failed-job rerun retained the original run's token-permission
+snapshot and failed identically. The already-verified run artifacts were then
+downloaded and published with repository-admin authority: exactly 16 files
+(archive, checksum, Sigstore bundle, and CycloneDX SBOM for each target), with
+the rolling `preview` release targeting the exact SHA above.
+
+Independent tap acceptance:
+
+- Tap workflow run: [29576725410](https://github.com/tailrocks/homebrew-parallax/actions/runs/29576725410)
+- Result: success, including complete-set download, independent checksums,
+  CycloneDX metadata/digests, Cosign workflow identity, GitHub attestation
+  bound to the exact source SHA/ref, executable version, formula rewrite, and
+  formula commit.
+- Tap commit: `e31cb27ec8a2fafcffa6b0453a5ac98502ed6b51`
+- Formula source marker: `e37a65d7239b207dc9b6ab6c5fdd55a3eef6fdbb`
+- Formula version: `0.1.0-preview.1295+e37a65d`
+
+The tap formula changed only through its repository-local workflow. No tap
+credential or cross-repository write path was added to Parallax. Plan status
+and retirement are intentionally left to the independent verifier.

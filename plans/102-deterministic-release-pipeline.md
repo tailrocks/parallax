@@ -76,6 +76,17 @@ move leaves `bun run build` green.
 > `release-verify` until a full green `Publish Homebrew Preview` matrix for a
 > post-Mach-O SHA finishes and assets are downloaded and verified.
 
+> **Preliminary implementation evidence, 2026-07-17 later**: run
+> [`29575421066`](https://github.com/tailrocks/parallax/actions/runs/29575421066)
+> at `e37a65d7239b207dc9b6ab6c5fdd55a3eef6fdbb` passed all four target jobs,
+> including each target's exact-SHA/ref `release-verify`. The exact 16-file set
+> was published as `0.1.0-preview.1295+e37a65d`. Tap pull run
+> [`29576725410`](https://github.com/tailrocks/homebrew-parallax/actions/runs/29576725410)
+> independently accepted checksums, SBOMs, signatures, attestations, and the
+> executable version, then committed formula SHA/version/digests in tap commit
+> `e31cb27e`. Full sanitized evidence is in the validation record. Status and
+> lifecycle remain unchanged for the independent verifier to audit and retire.
+
 ## Fresh Blocker Evidence (2026-07-17) — pre-fix snapshot
 
 Protections (read-back OK):
