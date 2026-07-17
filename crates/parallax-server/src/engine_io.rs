@@ -8,14 +8,28 @@ pub(crate) async fn reap_stale_child(pid_path: &Path, port: u16) {
     else {
         return;
     };
-    let command = tokio::process::Command::new("ps")
-        .args(["-p", &pid.to_string(), "-o", "command="])
+    let probe = tokio::process::Command::new("ps")
+        .args(["-p", &pid.to_string(), "-o", "command=,ppid="])
         .output()
         .await
         .ok()
         .map(|output| String::from_utf8_lossy(&output.stdout).into_owned())
         .unwrap_or_default();
-    if command.contains("greptime") {
+    let is_greptime = probe.contains("greptime");
+    // Only reap a true orphan (its owning serve died, so init adopted it —
+    // ppid 1). A live parent means another serve actively supervises this
+    // engine: killing it would crash-loop that stack; leave the pidfile and
+    // let our own port preflight fail this start instead.
+    let orphaned = probe
+        .split_whitespace()
+        .next_back()
+        .and_then(|ppid| ppid.parse::<u32>().ok())
+        == Some(1);
+    if is_greptime && !orphaned {
+        tracing::warn!("greptime child (pid {pid}) is still owned by a live serve; not reaping");
+        return;
+    }
+    if is_greptime {
         tracing::warn!("reaping stale greptime child (pid {pid}) from a previous serve");
         let status = tokio::process::Command::new("kill")
             .args(["-TERM", &pid.to_string()])
