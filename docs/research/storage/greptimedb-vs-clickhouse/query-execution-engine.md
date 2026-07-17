@@ -268,3 +268,12 @@ Also: dedicated **prefilter result cache** in `mito2/src/cache.rs` (`PrefilterKe
 **Status:** parity-roadmap PREWHERE item remains **partially shipped** (Run 121/122 era),
 still present and wired in v1.1.3 — not a missing subsystem. Residual scan gap vs CH is
 still vectorized execution maturity (batch/JIT/SIMD), not total absence of late materialization.
+
+## Run 206 (2026-07-17) — CH PREWHERE still default-on (26.6.1.1193)
+
+`EXPLAIN actions=1` on `WHERE service=… AND payload LIKE …` shows **Prewhere info /
+Need filter: 1** with both predicates moved into prewhere. Settings:
+`optimize_move_to_prewhere=1`, `enable_multiple_prewhere_read_steps=1` (default).
+
+**No drift:** late materialization remains a CH native path. GT counterpart is the
+partial `prefilter.rs` framework (Run 201).

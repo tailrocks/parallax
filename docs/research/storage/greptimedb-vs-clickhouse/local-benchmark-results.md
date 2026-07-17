@@ -7154,3 +7154,8 @@ cluster view. `distributed-and-scaling.md`.
 
 Updated `per-signal-verdict.md` pins and folded Runs 173–204 corrections (JSON2, PromQL tax,
 recursive CTE, append DELETE, density). No new containers.
+
+### Run 206 — 2026-07-17 — CH PREWHERE still on
+
+EXPLAIN shows Prewhere info for dual-predicate filter. Default settings confirmed.
+`query-execution-engine.md`.
