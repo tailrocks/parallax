@@ -251,3 +251,53 @@ fn flaky_state_requires_evidence_and_recovers_at_policy_threshold() {
         FlakyState::Broken
     );
 }
+
+#[test]
+fn persistence_records_round_trip_without_raw_telemetry() {
+    let case_key = TestCaseKey::from_str(&key("tc1", '7')).expect("case");
+    let variant_key = TestVariantKey::from_str(&key("tv1", '8')).expect("variant");
+    let case = TestCaseRecord {
+        key: case_key.clone(),
+        identity_source: TestCaseIdentitySource::CodeReference,
+        explicit_id: None,
+        code_reference: Some("crate::suite::test".into()),
+        suite_path: vec!["suite".into()],
+        name: "test".into(),
+        first_seen_nanos: 1,
+        last_seen_nanos: 2,
+    };
+    let variant = TestVariantRecord {
+        key: variant_key.clone(),
+        case_key,
+        parameters: vec![TestParameter {
+            name: "browser".into(),
+            value: "chromium".into(),
+            excluded: false,
+        }],
+        first_seen_nanos: 1,
+        last_seen_nanos: 2,
+    };
+    let flaky = TestFlakyStateRecord {
+        variant_key,
+        state: FlakyState::Flaky,
+        evidence: FlakyEvidence {
+            intra_invocation_mix: true,
+            ..FlakyEvidence::default()
+        },
+        updated_at_nanos: 3,
+    };
+    for value in [
+        serde_json::to_value(&case).expect("case serialize"),
+        serde_json::to_value(&variant).expect("variant serialize"),
+        serde_json::to_value(&flaky).expect("flaky serialize"),
+    ] {
+        assert!(value.get("attributes").is_none());
+        assert!(value.get("resource").is_none());
+        assert!(value.get("events").is_none());
+    }
+    assert_eq!(
+        serde_json::from_value::<TestCaseRecord>(serde_json::to_value(&case).expect("serialize"))
+            .expect("deserialize"),
+        case
+    );
+}

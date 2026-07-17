@@ -32,6 +32,27 @@ pub struct TestConfiguration {
     pub dimensions: BTreeMap<String, String>,
 }
 
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub struct TestCaseRecord {
+    pub key: TestCaseKey,
+    pub identity_source: TestCaseIdentitySource,
+    pub explicit_id: Option<String>,
+    pub code_reference: Option<String>,
+    pub suite_path: Vec<String>,
+    pub name: String,
+    pub first_seen_nanos: u128,
+    pub last_seen_nanos: u128,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub struct TestVariantRecord {
+    pub key: TestVariantKey,
+    pub case_key: TestCaseKey,
+    pub parameters: Vec<TestParameter>,
+    pub first_seen_nanos: u128,
+    pub last_seen_nanos: u128,
+}
+
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(transparent)]
 pub struct TestAttempt(NonZeroU32);
@@ -191,13 +212,21 @@ pub enum FlakyState {
     Broken,
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct FlakyEvidence {
     pub same_commit_divergence: bool,
     pub intra_invocation_mix: bool,
     pub window_transition_count: u32,
     pub consecutive_passes: u32,
     pub consistently_failing: bool,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub struct TestFlakyStateRecord {
+    pub variant_key: TestVariantKey,
+    pub state: FlakyState,
+    pub evidence: FlakyEvidence,
+    pub updated_at_nanos: u128,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
