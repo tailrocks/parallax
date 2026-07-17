@@ -7168,3 +7168,8 @@ CH plain shows dups until FINAL (with merges stopped); GT last_value returns lat
 ### Run 208 — 2026-07-17 — CH LowCardinality mid-card density
 
 1k distinct / 100k rows: LC 24.8 KiB vs plain 26.1 KiB. Graceful. `metric-cardinality.md`.
+
+### Run 209 — 2026-07-17 — object-store config surface
+
+GT example.toml S3 storage; CH storage_configuration s3 disks. Live both local-only.
+`storage-cost-and-tiering.md`.

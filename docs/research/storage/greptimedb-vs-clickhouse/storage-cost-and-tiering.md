@@ -139,3 +139,14 @@ We have largely measured **speed**. To decide this, each storage benchmark must 
   Cloud-only), `compression-and-cost.md` (Run 159 per-signal density), `retention-cost-model.md` (S3/R2/
   B2 pricing, egress), `platform-fit-and-alternatives.md` (proxy lens; slower=engine, cheaper=storage-arch).
 - Pricing figures are 2026 list prices, order-of-magnitude; sized/tuned $ owed to the server tier.
+
+## Run 209 (2026-07-17) — object-store config surface (no live S3 this pass)
+
+| Engine | Config surface | Live Docker default |
+| --- | --- | --- |
+| GT | `[storage] type = "S3"` (and other OpenDAL backends) in `standalone.example.toml` | Local data dir `/greptimedb_data` (data/wal/metadata) |
+| CH | `<storage_configuration>` disks of type `s3` / policies / TTL MOVE | `system.disks`: **Local** `/var/lib/clickhouse/` only |
+
+**Architecture thesis unchanged:** GT is S3-native by config flip; CH OSS treats S3 as
+disk/policy tier. Full cold-S3 benchmark still server/MinIO harness (`bench/s3/`).
+`build_info` on live GT reports commit `63ef18a` / `1.1.3` (pin match).
