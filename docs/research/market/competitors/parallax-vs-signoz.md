@@ -4,11 +4,10 @@
 > is written. Where Parallax's edge is only *planned* or *unproven*, that is
 > stated, not hidden.
 >
-> Research date: **2026-07-17**. **Pass 101 + 117 + 153 + 164 + 191 + 213:** GitHub
-> still **v0.133.0** (2026-07-15), **30,304★** (pass **213**), push 2026-07-17.
-> **Noz** docs still **`SigNoz Cloud`** only (pass **213**). Distinguishes **Noz
-> (Cloud)** vs **MCP Server** (self-host path). Pricing class still **$49** start.
-> Legacy: [`../signoz-deep-research.md`](../signoz-deep-research.md).
+> Research date: **2026-07-17**. **Pass 101 + 117 + 153 + 164 + 191 + 213 + 221:**
+> GitHub still **v0.133.0** (2026-07-15), **30,307★** (pass **221**), push
+> 2026-07-17. **Noz** still Cloud-only. Pricing class still **$49** start. Legacy:
+> [`../signoz-deep-research.md`](../signoz-deep-research.md).
 
 ## TL;DR verdict (scoped per axis)
 
@@ -37,7 +36,7 @@ monitoring, LLM observability.
 |---|---|---|
 | **Latest version** | **v0.133.0** (2026-07-15); v0.131.0 (2026-07-01) bumped **ClickHouse → 25.12.5** to stay on a supported release | [github.com/SigNoz/signoz/releases](https://github.com/SigNoz/signoz/releases), [signoz.io/changelog](https://signoz.io/changelog/) |
 | **Cadence** | Very fast: ~4 minor releases in ~4 weeks (v0.130→v0.133 as of 2026-07-17); still **pre-1.0** | changelog |
-| **Stars** | **30,304** (GitHub API, 2026-07-18 pass **213**) | [github.com/SigNoz/signoz](https://github.com/SigNoz/signoz) |
+| **Stars** | **30,307** (GitHub API, 2026-07-18 pass **221**) | [github.com/SigNoz/signoz](https://github.com/SigNoz/signoz) |
 | **License** | Core platform **MIT-Expat**; `ee/` + `cmd/enterprise/` proprietary; **`signoz-mcp-server` Apache-2.0** (separate repo) | LICENSE, ee/LICENSE, maintainer [discussion #4231](https://github.com/SigNoz/signoz/discussions/4231) |
 | **Languages** | TypeScript ~53% (React UI), Go ~37% (backend), Python ~5% | GitHub |
 | **Telemetry store** | **ClickHouse** + ClickHouse Keeper (ZooKeeper still the shipped reality — Keeper *supported* but charts/compose not switched: issues signoz#7002, charts#610) | docs + issues |
