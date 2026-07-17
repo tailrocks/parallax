@@ -134,6 +134,7 @@ Historical architecture/capture notes keep evidence under dated or **historical*
   [prompts/parallax-vs-competitors.md](../../prompts/parallax-vs-competitors.md).
 - [landscape.md](market/landscape.md) — market research.
 - [competitor-watch.md](market/competitor-watch.md) — consolidated watch: OpenObserve, SigNoz, Coroot, Bugsink, Rustrak, Traceway, GoSnag, Urgentry, Sentry/Seer/MCP, the MCP-power boundary, and the drift ledger.
+- [wedge-closer-lightweight-recheck-2026-07-17.md](market/wedge-closer-lightweight-recheck-2026-07-17.md) — pass-49 pin of lightweight Sentry-compat + Traceway agent-first pressure; full combination still open.
 - [alternatives-deep-analysis.md](market/alternatives-deep-analysis.md) — balanced skeptical analysis: 60+ alternatives surveyed, arguments FOR and AGAINST Parallax, empirical gates, and kill criteria.
 - [competitive-comparison-matrix.md](market/competitive-comparison-matrix.md) — quick-reference matrix of all competitors against Parallax's 8 wedge dimensions.
 - [agent-debugging-competitor-drift-2026-06-02.md](market/agent-debugging-competitor-drift-2026-06-02.md) — focused recheck of Syncause, AgentRx, Notrix Trax, AgentReplay, and OpenTelemetry MCP/replay/crash semantic-convention drift.
