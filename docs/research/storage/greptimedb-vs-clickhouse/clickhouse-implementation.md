@@ -11,7 +11,8 @@ comparable. Builds on the seed DDL in `storage-benchmark-prototype.md` and the D
 (`local-benchmark-results.md`). **DDL executed on live ClickHouse `v26.5.1.882` (Run 46):
 all 7 tables + rollup MV build; one fix applied (`text` tokenizer `'default'`→`splitByNonAlpha`).**
 
-Pin: ClickHouse `v26.5.1.882-stable` (`5b96a8d8`). Confirmed against source:
+Pin (current loop): ClickHouse **`v26.6.1.1193`** (+ head `26.7.1.1097`; Run 173+).
+Historical schema-build evidence: `v26.5.1.882-stable` (`5b96a8d8`, Run 46). Confirmed against source:
 skip-index types `minmax/set/tokenbf_v1/ngrambf_v1/sparse_grams/bloom_filter/text/
 vector_similarity` (`src/Storages/MergeTree/MergeTreeIndices.cpp:172-195`),
 `async_insert` **default `true`** (`src/Core/Settings.cpp:6365`), `JSON` type now

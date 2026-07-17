@@ -19,7 +19,8 @@ attached via `SHOW CREATE TABLE`.** Two corrections vs the original syntax-only 
 caught and applied — see the note above the DDL (reserved-keyword quoting) and table 4 (no
 empty `PRIMARY KEY ()`).
 
-Pin: GreptimeDB `v1.0.2` (`0ef5451`). DDL features confirmed in
+Pin (current loop): GreptimeDB **`v1.1.3`** (Run 173+; 2026-07-18 re-pin hold).
+Historical schema-build evidence: GreptimeDB `v1.0.2` (`0ef5451`, Run 45). DDL features confirmed in
 `src/sql/src/parsers/create_parser.rs` (`INVERTED`/`FULLTEXT`/`SKIPPING INDEX`),
 `src/store-api/src/region_request.rs` (`append_mode`, `ttl`), and
 `src/store-api/src/metric_engine_consts.rs` (`physical_metric_table`,

@@ -98,6 +98,7 @@ managed quotes remain):
 | ranking 403–415 | **416** | not done; top 5 open |
 | TWCS + partition hold | **417** | twcs option + 2 files live |
 | CH impl PromQL stale fix | **418** | TimeSeries facade; no product path |
+| impl pin headers | **419** | v1.1.3 / 26.6 current |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
