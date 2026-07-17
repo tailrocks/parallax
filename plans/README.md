@@ -212,15 +212,15 @@ work.
 | 142 | Move trace search, analysis, and inspection into one feature | P1 | XL | 100, 129, 132, 134, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-142-traces/README.md) |
 | 150 | Move overview into one bounded feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-150-overview/README.md) |
 | 143 | Move app, layout, and shell behind explicit boundaries | P1 | XL | 134, 135, 136, 137, 138, 139, 140, 141, 142, 145, 146, 149, 150, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-143-app-layout-shell/README.md) |
-| [151](151-ui-architecture-final-closure.md) | Verify and close the final UI architecture | P1 | L | 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 149, 150, 152, 153 | IN PROGRESS — 145/146 retired; residual architecture verify ([evidence](../docs/research/validation/2026-07-plan-151-ui-architecture-closure/README.md)) |
+| 151 | Verify and close the final UI architecture | P1 | L | 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 149, 150, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-151-ui-architecture-closure/README.md) |
 
 ### UI State, Performance, And Product Gaps
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [133](133-ui-tanstack-query-cache.md) | Replace the UI TTL cache with feature-owned TanStack Query | P1 | L | 095, 101, 128, 129, 132, 144, 145, 151 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
-| [147](147-ui-live-data-performance.md) | Make live telemetry updates typed, bounded, and identity-stable | P1 | L | 095, 101, 129, 133, 140, 141, 142, 145, 151 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
-| [148](148-ui-bundle-performance.md) | Enforce route-owned production chunks and deterministic bundle budgets | P1 | L | 095, 100, 101, 105, 132, 133, 144, 146, 147, 151 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [133](133-ui-tanstack-query-cache.md) | Replace the UI TTL cache with feature-owned TanStack Query | P1 | L | 095, 101, 128, 129, 132, 144, 145, 151 | IN PROGRESS — 151 closed; sole Query cache migration |
+| [147](147-ui-live-data-performance.md) | Make live telemetry updates typed, bounded, and identity-stable | P1 | L | 095, 101, 129, 133, 140, 141, 142, 145, 151 | TODO — waits on 133 |
+| [148](148-ui-bundle-performance.md) | Enforce route-owned production chunks and deterministic bundle budgets | P1 | L | 095, 100, 101, 105, 132, 133, 144, 146, 147, 151 | TODO — waits on 133/147 |
 
 ### Dependencies, Tests, And Performance
 

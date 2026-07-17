@@ -97,13 +97,13 @@ const config: PlaywrightTestConfig = {
     // Plan 146 breadth — fixture-backed contracts server, selected pilots only.
     {
       name: "cross-firefox",
-      testMatch: ["**/contracts/shell.spec.ts", "**/contracts/investigations.spec.ts"],
+      testMatch: "**/cross/**/*.spec.ts",
       use: { browserName: "firefox" },
       fullyParallel: false,
     },
     {
       name: "cross-webkit",
-      testMatch: ["**/contracts/shell.spec.ts", "**/contracts/investigations.spec.ts"],
+      testMatch: "**/cross/**/*.spec.ts",
       use: { browserName: "webkit" },
       fullyParallel: false,
     },

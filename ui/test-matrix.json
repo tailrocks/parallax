@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 506,
-    "test_files": 107
+    "test_cases": 526,
+    "test_files": 126
   },
   "private_route_imports": [],
   "entries": [
@@ -2391,9 +2391,9 @@
       "scenario_owner": "layout/shell",
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
-      "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
+      "test_file": "ui/tests/e2e/cross/shell-cross.spec.ts",
       "test_ids": [
-        "root readiness and primary navigation @pw-shell-root-nav"
+        "root readiness on alternate engine @pw-shell-cross-root-nav"
       ],
       "required_environment": "cross-firefox-webkit",
       "status": "implemented",
@@ -2425,7 +2425,8 @@
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/accessibility/shell-accessibility.spec.ts",
       "test_ids": [
-        "root shell passes axe and keyboard focus @pw-shell-a11y"
+        "root shell passes axe and keyboard focus @pw-shell-a11y",
+        "investigations list keyboard and axe @pw-investigations-a11y"
       ],
       "required_environment": "accessibility-chromium",
       "status": "implemented",
@@ -2503,9 +2504,9 @@
       "scenario_owner": "features/investigations",
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
-      "test_file": "ui/tests/e2e/contracts/investigations.spec.ts",
+      "test_file": "ui/tests/e2e/cross/investigations-cross.spec.ts",
       "test_ids": [
-        "lists seeded investigation and opens detail @pw-investigations-list-detail"
+        "list and open detail on alternate engine @pw-investigations-cross-list-detail"
       ],
       "required_environment": "cross-firefox-webkit",
       "status": "implemented",
