@@ -26,6 +26,7 @@ use std::time::Duration;
 use tokio::sync::RwLock;
 
 mod analytics_helpers;
+mod attribute_filters;
 mod ingest;
 mod invocation_store;
 mod lifecycle;
@@ -40,6 +41,7 @@ mod trace_store;
 mod transport;
 
 use analytics_helpers::*;
+use attribute_filters::*;
 use query_sql::*;
 use row_decode::*;
 

@@ -251,9 +251,110 @@ pub struct TraceQuery {
     pub error_only: bool,
     /// Substring of the representative span name.
     pub name_contains: Option<String>,
+    /// Structured where-clause filters (plan 164): a trace matches when at
+    /// least one in-window span satisfies ALL filters. Parsed client-side
+    /// from the where-clause editor; raw strings never reach SQL.
+    pub attribute_filters: Vec<AttributeFilter>,
     pub limit: usize,
     pub offset: usize,
     pub sort: TraceSort,
+}
+
+/// Where-clause operator (plan 164). AND-only grammar in v1; the UI parser
+/// emits `[{key, op, value}]` and every adapter compiles or evaluates it —
+/// never a second grammar.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AttributeFilterOp {
+    Eq,
+    Ne,
+    Gt,
+    Lt,
+    Gte,
+    Lte,
+    Contains,
+    NotContains,
+}
+
+impl AttributeFilterOp {
+    /// Parse the editor's operator token (case-insensitive for the word ops).
+    #[must_use]
+    pub fn parse(token: &str) -> Option<Self> {
+        match token.trim().to_ascii_uppercase().as_str() {
+            "=" | "==" => Some(Self::Eq),
+            "!=" | "<>" => Some(Self::Ne),
+            ">" => Some(Self::Gt),
+            "<" => Some(Self::Lt),
+            ">=" => Some(Self::Gte),
+            "<=" => Some(Self::Lte),
+            "CONTAINS" => Some(Self::Contains),
+            "NOT CONTAINS" => Some(Self::NotContains),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub fn as_token(self) -> &'static str {
+        match self {
+            Self::Eq => "=",
+            Self::Ne => "!=",
+            Self::Gt => ">",
+            Self::Lt => "<",
+            Self::Gte => ">=",
+            Self::Lte => "<=",
+            Self::Contains => "CONTAINS",
+            Self::NotContains => "NOT CONTAINS",
+        }
+    }
+}
+
+/// One structured attribute filter from the where-clause editor (plan 164).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AttributeFilter {
+    /// Attribute key, or an intrinsic (`service.name`, `name`, `kind`,
+    /// `status`, `duration_ns`). Keys must pass `span_field_key_allowed`.
+    pub key: String,
+    pub op: AttributeFilterOp,
+    pub value: String,
+}
+
+impl AttributeFilter {
+    /// Evaluate against one observed value (None = attribute absent).
+    /// Ordering ops compare numerically when both sides parse as numbers,
+    /// else lexicographically — mirroring the SQL compilation.
+    #[must_use]
+    pub fn matches(&self, observed: Option<&str>) -> bool {
+        let Some(observed) = observed else {
+            // Absent values only satisfy negative operators.
+            return matches!(
+                self.op,
+                AttributeFilterOp::Ne | AttributeFilterOp::NotContains
+            );
+        };
+        let ordering = || match (observed.parse::<f64>(), self.value.parse::<f64>()) {
+            (Ok(a), Ok(b)) => a.partial_cmp(&b),
+            _ => Some(observed.cmp(self.value.as_str())),
+        };
+        match self.op {
+            AttributeFilterOp::Eq => observed == self.value,
+            AttributeFilterOp::Ne => observed != self.value,
+            AttributeFilterOp::Gt => ordering() == Some(std::cmp::Ordering::Greater),
+            AttributeFilterOp::Lt => ordering() == Some(std::cmp::Ordering::Less),
+            AttributeFilterOp::Gte => {
+                matches!(
+                    ordering(),
+                    Some(std::cmp::Ordering::Greater | std::cmp::Ordering::Equal)
+                )
+            }
+            AttributeFilterOp::Lte => {
+                matches!(
+                    ordering(),
+                    Some(std::cmp::Ordering::Less | std::cmp::Ordering::Equal)
+                )
+            }
+            AttributeFilterOp::Contains => observed.contains(self.value.as_str()),
+            AttributeFilterOp::NotContains => !observed.contains(self.value.as_str()),
+        }
+    }
 }
 
 /// One overrepresented span-attribute value in a selected window compared

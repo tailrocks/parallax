@@ -23,35 +23,28 @@ impl crate::adapter::TraceAnalyticsStore for GreptimeStore {
         } else {
             scan.join(" AND ")
         };
-        // `service` matches any in-window trace the service participates in.
-        // Materialized client-side: `"trace_id" IN (SELECT …)` semi-joins
+        // `service` matches any in-window trace the service participates in;
+        // structured where-clause filters (plan 164) match traces where at
+        // least one in-window span satisfies ALL filters. Both are
+        // materialized client-side: `"trace_id" IN (SELECT …)` semi-joins
         // return zero rows on the live engine (see invocation_trace_ids).
-        let participation = match &query.service {
-            Some(service) => {
-                let ids_sql = format!(
-                    r#"SELECT DISTINCT "trace_id" FROM opentelemetry_traces
-                       WHERE "service_name" = '{}' AND {scan_where}
-                       LIMIT {MAX_ROWS}"#,
-                    escape(service)
-                );
-                let ids: Vec<String> = self
-                    .sql_lenient(&ids_sql)
-                    .await?
-                    .iter()
-                    .filter_map(|row| row.first().and_then(|v| v.as_str()))
-                    .filter(|id| !id.is_empty())
-                    .map(|id| format!("'{}'", escape(id)))
-                    .collect();
-                if ids.is_empty() {
+        let service_condition = query
+            .service
+            .as_deref()
+            .map(|service| format!(r#""service_name" = '{}'"#, escape(service)));
+        let filter_condition = span_attribute_filters_sql(&query.attribute_filters);
+        let mut participation = String::new();
+        for condition in [service_condition, filter_condition].into_iter().flatten() {
+            match self.trace_participation(&condition, &scan_where).await? {
+                Some(clause) => participation.push_str(&clause),
+                None => {
                     return Ok(crate::adapter::TraceList {
                         items: Vec::new(),
                         total: 0,
                     });
                 }
-                format!(r#" AND "trace_id" IN ({})"#, ids.join(", "))
             }
-            None => String::new(),
-        };
+        }
         // Representative-span filters, applied after the per-trace pick.
         let mut rep = vec!["\"rn\" = 1".to_string()];
         if let Some(min) = query.min_duration_ns {
@@ -409,5 +402,34 @@ impl crate::adapter::TraceAnalyticsStore for GreptimeStore {
             ))
             .await?;
         Ok(rows.iter().map(|row| error_event_from_row(row)).collect())
+    }
+}
+
+impl GreptimeStore {
+    /// Materialize the in-window trace ids matching `condition` into an
+    /// ` AND "trace_id" IN (…)` participation clause; `None` = no trace
+    /// matches, so the whole search short-circuits to an empty page.
+    async fn trace_participation(
+        &self,
+        condition: &str,
+        scan_where: &str,
+    ) -> StorageResult<Option<String>> {
+        let ids_sql = format!(
+            r#"SELECT DISTINCT "trace_id" FROM opentelemetry_traces
+               WHERE {condition} AND {scan_where}
+               LIMIT {MAX_ROWS}"#
+        );
+        let ids: Vec<String> = self
+            .sql_lenient(&ids_sql)
+            .await?
+            .iter()
+            .filter_map(|row| row.first().and_then(|v| v.as_str()))
+            .filter(|id| !id.is_empty())
+            .map(|id| format!("'{}'", escape(id)))
+            .collect();
+        if ids.is_empty() {
+            return Ok(None);
+        }
+        Ok(Some(format!(r#" AND "trace_id" IN ({})"#, ids.join(", "))))
     }
 }

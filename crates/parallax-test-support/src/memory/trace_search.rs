@@ -21,6 +21,10 @@ pub(super) fn search(
             .map(|s| s.trace_id.as_str())
             .collect()
     });
+    // Structured where-clause filters (plan 164): a trace matches when at
+    // least one in-window span satisfies ALL filters — same semantics as the
+    // GreptimeDB adapter's client-side participation materialization.
+    let filter_matched = filter_matched_trace_ids(&inner.spans, query, &in_window);
     // Representative span per trace: the root (no parent), else — when no
     // root was stored — the earliest span, so all-INTERNAL traces still
     // list instead of vanishing.
@@ -62,6 +66,11 @@ pub(super) fn search(
                 .name_contains
                 .as_deref()
                 .is_none_or(|needle| s.name.contains(needle))
+        })
+        .filter(|s| {
+            filter_matched
+                .as_ref()
+                .is_none_or(|set| set.contains(s.trace_id.as_str()))
         })
         .collect();
     let mut traces: Vec<_> = roots
@@ -108,4 +117,50 @@ pub(super) fn search(
         .take(query.limit)
         .collect();
     Ok(adapter::TraceList { items, total })
+}
+
+/// Trace ids with at least one in-window span satisfying ALL structured
+/// filters (plan 164); `None` when no filters are set.
+fn filter_matched_trace_ids<'a>(
+    spans: &'a [SpanRow],
+    query: &adapter::TraceQuery,
+    in_window: &dyn Fn(u128) -> bool,
+) -> Option<HashSet<&'a str>> {
+    if query.attribute_filters.is_empty() {
+        return None;
+    }
+    Some(
+        spans
+            .iter()
+            .filter(|s| in_window(s.ts_nanos))
+            .filter(|s| {
+                query
+                    .attribute_filters
+                    .iter()
+                    .all(|f| f.matches(filter_observed_value(s, &f.key).as_deref()))
+            })
+            .map(|s| s.trace_id.as_str())
+            .collect(),
+    )
+}
+
+/// Observed value for a where-clause key on one span: intrinsics mirror the
+/// GreptimeDB compiler's column mapping; everything else reads the span
+/// attribute object.
+fn filter_observed_value(span: &SpanRow, key: &str) -> Option<String> {
+    match key.trim() {
+        "service.name" | "service" => Some(span.service.clone()),
+        "name" | "span.name" => Some(span.name.clone()),
+        "kind" | "span.kind" => Some(span.kind.clone()),
+        "status" | "span.status" => Some(span.status_code.clone()),
+        "duration_ns" | "duration" => Some(span.duration_ns.to_string()),
+        "trace_id" => Some(span.trace_id.clone()),
+        "span_id" => Some(span.span_id.clone()),
+        key => match span.attributes.get(key)? {
+            serde_json::Value::String(value) => Some(value.clone()),
+            serde_json::Value::Bool(value) => Some(value.to_string()),
+            serde_json::Value::Number(value) => Some(value.to_string()),
+            _ => None,
+        },
+    }
 }
