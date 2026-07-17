@@ -29,6 +29,12 @@ Structure:
 - `comparison-set.md` — the roster of products compared, each with a one-line
   definition (what it is, license model, primary signal focus), kept current as
   the market shifts. This is the authoritative list of what is in scope.
+- `PROGRESS.md` — the living checklist / status board. Tracks, per product and
+  per matrix cell: verification state (unverified / stale / verified), last
+  verified date, source links, open uncertainties, missing deep-dives, and the
+  next highest-value gap. This is what makes the program resumable and keeps
+  unfinished work, weak evidence, and future verification needs visible across
+  passes. Update it on every pass.
 
 Existing market notes — `competitive-comparison-matrix.md`,
 `observability-feature-matrix.md`, `closest-to-parallax-ranked.md`,
@@ -59,18 +65,37 @@ surface, at minimum:
 - **Query & correlation** — query language, cross-signal joins, trace-to-log,
   metric-to-trace, AI-agent run reconstruction (trace_id / run_id / invocation
   stitching), evidence pinning.
-- **Investigation & UX** — dashboards, alerting, service maps, profiling,
-  error grouping, replay, AI-assisted triage. Who does it better and why.
+- **Dashboards & visualization** — dashboard builder, panels/widgets, service
+  maps, graph rendering, custom vs templated.
+- **Alerting & on-call** — alert rules, anomaly detection, routing, noise
+  reduction, incident management.
+- **Profiling** — continuous profiling language coverage, flamegraphs,
+  allocation/lock profiling, overhead.
+- **Developer experience** — SDK ergonomics, docs quality, quickstart time,
+  local dev loop, error messages, first-value-to-insight time.
 - **AI-native / agent-context story** — is the product a context engine for
   autonomous agents, or a human dashboard? This is Parallax's wedge; assess
-  each competitor's real position, not their press releases.
-- **Openness & licensing** — open source vs SaaS-only, self-host viability,
-  lock-in, data ownership.
+  each competitor's real position, not their press releases. Include any
+  vendor AI-assisted triage, query, or root-cause features.
+- **Architecture & deployment model** — self-hosted vs SaaS vs hybrid,
+  single-binary vs distributed, agent/collector topology, multi-tenancy.
 - **Operational footprint** — deploy complexity, resource cost, operator
-  burden, scaling model.
+  burden, day-2 operations, upgrade model.
+- **Scalability & performance** — verified or cited throughput, ingestion
+  rate, query latency, cardinality ceiling, known limits at scale. Prefer
+  measured numbers; otherwise cite vendor-published limits with date.
+- **Security** — auth (SSO/SAML/OIDC), RBAC granularity, secret management,
+  audit logs, network/transport security, sandboxing.
+- **Privacy & compliance** — data residency, PII scrubbing, retention/PII
+  controls, GDPR/SOC2/HIPAA/ISO27001 posture where applicable, data ownership.
+- **Openness, licensing & vendor lock-in** — open source / source-available /
+  closed; license (Apache-2.0, ELv2, BSL, proprietary); self-host viability;
+  export/migration cost; proprietary query language or data format lock-in.
+- **Extensibility** — plugins, custom integrations, APIs, pipeline/processor
+  model, programmable alerts, webhooks, ecosystem of integrations.
 - **Pricing & economics** — real numbers where public (per-host, per-event,
-  per-GB, per-span, free tiers). If no public number exists, say so explicitly
-  and reference the closest proxy with its date.
+  per-GB, per-span, free tiers, committed-use discounts). If no public number
+  exists, say so explicitly and reference the closest proxy with its date.
 
 Every claim carries a source link and a research date. Re-verify on each pass.
 
@@ -94,7 +119,10 @@ query latency, retention defaults, cardinality limits, feature limits. When a
 number exists, cite the source and date. When no public number exists, write
 that explicitly, give the best-grounded proxy, and note why a direct number is
 unavailable. A referenced "we could not measure this because X" is acceptable;
-an invented or stale number is not.
+an invented or stale number is not. For every derived or estimated figure,
+state the method, the assumptions, the source limitations, and a confidence
+level (high / medium / low) so a reader can weigh it; never present an estimate
+as a measured fact.
 
 Where a comparison depends on storage/ingest/query performance and a real
 measurement is feasible, flag it as benchmark-dependent and mark it unproven
@@ -121,14 +149,21 @@ deep-dive. Scope is the whole market, not a fixed list.
 
 ## One pass
 
-Treat every existing finding (in `competitors/`, in the legacy market notes, and
-in the rest of `docs/research/`) as a hypothesis, not settled fact. Each pass:
+Before any change: **read the existing record first.** On the first pass read
+all of `docs/research/` (market, architecture, decisions, storage, security,
+00-vision, README) and all of `prompts/`; on later passes re-read the prompt,
+`competitors/`, and any source notes touched that pass. Treat every existing
+finding (in `competitors/`, in the legacy market notes, and in the rest of
+`docs/research/`) as a hypothesis, not settled fact — many files carry an old
+research date and the market has moved. Each pass:
 
-1. Re-read this prompt, `competitors/README.md`, and `comparison-set.md`.
+1. Re-read this prompt, `competitors/README.md`, `comparison-set.md`, and
+   `PROGRESS.md`.
 2. Pick the weakest, stalest, least-sourced, most strategically important, or
-   most suspicious comparison cell, product, or missing deep-dive. Prioritize:
-   missing deep-dives for products in the set, then unproven cells in the
-   overview matrix, then aging per-product claims.
+   most suspicious comparison cell, product, or missing deep-dive. Use
+   `PROGRESS.md` as the work queue. Prioritize: missing deep-dives for products
+   in the set, then unproven cells in the overview matrix, then aging
+   per-product claims, then inconsistent terminology across files.
 3. Re-research it from current primary sources — vendor docs, pricing pages,
   changelogs, GitHub repos/releases, the per-tool deep-dives in
   `docs/research/market/`, and current web sources.
@@ -136,10 +171,15 @@ in the rest of `docs/research/`) as a hypothesis, not settled fact. Each pass:
    rules enforced.
 5. Update or create the focused file (`README.md` matrix, a
    `parallax-vs-<product>.md`, or `comparison-set.md`); refresh the matching
-   legacy source note and leave a pointer into `competitors/`.
-6. Update `docs/research/README.md`, `PROJECT_STRUCTURE.md`, and this prompt
+   legacy source note(s) in `docs/research/market/` and leave a pointer into
+   `competitors/`. Correct outdated or unsupported claims wherever found, not
+   only in the file under focus.
+6. Update `PROGRESS.md`: flip the touched cell/product to verified with today's
+   date and source links, record any new uncertainty or open question, and
+   queue the next gap.
+7. Update `docs/research/README.md`, `PROJECT_STRUCTURE.md`, and this prompt
    when the folder shape or scope changes.
-7. Commit and push, then continue to the next highest-value gap.
+8. Commit and push, then continue to the next highest-value gap.
 
 Depth over speed. A single cell verified against three current primary sources,
 with bias actively checked, beats a full matrix of unverified inherited marks.
