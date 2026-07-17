@@ -1,4 +1,4 @@
-# A3 claim-level recheck (2026-07-17, pass 60 + pass 100 + pass 124)
+# A3 claim-level recheck (2026-07-17, pass 60 + pass 100 + pass 124 + pass 184)
 
 <!-- markdownlint-disable MD013 -->
 
@@ -7,11 +7,11 @@
 
 ## Verdict
 
-| Old claim (May body) | Reality 2026-07-17 | Decision |
+| Old claim (May body) | Reality 2026-07-18 (pass 184) | Decision |
 | --- | --- | --- |
 | No released JSON Schema | **Shipped** `schema/evidence-bundle.v1.schema.json` + `v2` | **Replace** |
 | No validator | **jsonschema** crate validates in `parallax-evidence` tests + plan_093 baseline | **Replace** |
-| No fixtures | `crates/parallax-evidence/fixtures/bundle-v1-golden.json` | **Replace** |
+| No fixtures | `crates/parallax-evidence/fixtures/bundle-v1-golden.json` (**pass 184:** golden test **ok**) | **Replace** |
 | No versioning policy | `schema/README.md` additive-only v1 policy | **Replace** |
 | MCP outputSchema fixture absent | MCP crate **loads** v1/v2 schema files (`parallax-mcp/src/server.rs`) | **Narrow** — not a full public MCP outputSchema marketplace entry, but in-tree |
 | A3 adoption / moat proven | **Still false** — zero external integration ledger rows | **Keep unproven** |
@@ -38,6 +38,20 @@
 | `gh search code` for `$id` host | Still **only** `tailrocks/parallax` (+ in-tree MCP test). **No** non-operator consumer. |
 | Foreign `evidence-bundle.v1.schema.json` names | Still **name collisions** with other `$id`s (RoutePilot, Mischief-Manager, Entroping, bil-actuarial, lupine, etc.) — **not** Parallax gravity |
 | Adoption ledger files | Still **absent** |
+
+### Pass 184 (2026-07-18) — adoption + schema liveness re-probe
+
+| Probe | Result |
+| --- | --- |
+| Declared `$id` HTTP GET | Still **404** |
+| `raw.githubusercontent.com/.../main/schema/evidence-bundle.v1.schema.json` | Still **200** |
+| Code search `$id` host `github.com/tailrocks/parallax/schema/evidence-bundle` | **total_count 6**, all **`tailrocks/parallax`** — **no** external consumer |
+| Filename `evidence-bundle.v1.schema.json` | **total_count 50** — still dominated by **name collisions** / in-tree; **not** Parallax gravity |
+| Adoption ledger files | Still **absent** |
+| Golden stability test | **`bundle_v1_golden_fixture_is_stable` ok** |
+| Industry “evidence/investigation schema” desk scan | GenAI/agent **trace** schemas and OTel GenAI semconv growing; **no** portable multi-signal redacted **investigation evidence-bundle** standard observed (aligns pass **157** OTel #1185 idle) |
+
+**A3 split holds:** schema **artifacts shipped**; **external adoption = zero** (moat unproven).
 
 **Implication:** `$id` is currently an **identifier**, not a **dereferenceable
 catalog URL**. That is compatible with self-contained offline validation, but

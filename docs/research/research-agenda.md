@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 183 (Sentry OTLP metrics still **unsupported**
-— docs still “does not support OTLP metrics at this time”; OTLP traces+logs beta).
-Pass 182 = OpenObserve. A1/A2/A4 open; A6 open at mixed gate only.
+Last updated 2026-07-18 after pass 184 (A3: schema artifacts **shipped**; external
+adoption still **zero** — `$id` search only `tailrocks/parallax`; golden **ok**).
+Pass 183 = Sentry OTLP metrics. A1/A2/A4 open; A6 open at mixed gate only.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
