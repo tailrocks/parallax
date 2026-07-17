@@ -38,26 +38,26 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 >
 > **Pass 197 (2026-07-18) — GO reaffirm** after passes **171–196**. **Still GO.**
 >
-> **Pass 221 (2026-07-18) — GO reaffirm** after passes **197–220** (monetization
-> triangle, loop stages, Holmes/Traceway/Uptrace/Traceloop, A3/A4/A6, air-gap OPW,
-> cohort pins). **Still GO (narrow product).** Kill criteria **still unfired**:
+> **Pass 221 (2026-07-18) — GO reaffirm** after passes **197–220**. **Still GO.**
+>
+> **Pass 230 (2026-07-18) — GO reaffirm** after passes **221–229**. **Still GO
+> (narrow product).** Kill criteria **still unfired** (desk rechecks only;
+> empirical A1/A2/A4/A6 still open, not failed):
 >
 > | Kill / reverse trigger | Latest recheck | Fired? |
 > | --- | --- | --- |
-> | A1: bundles do not beat raw context | Pass **214** — still **`not_measured`** | **No** (unproven ≠ failed) |
-> | A2: no paying segment | Pass **214/216** — interviews **0 rows**; desk triangle holds | **No** (open) |
-> | Full wedge closed by peer | Pass **218–220** Traceway/TMA1/Maple + cohort — **not** full combo | **No** |
-> | OTel commoditizes evidence-bundle schema | Pass **211** — #1185 idle 2025-10-24; OCSF 1.8.0 | **No** |
-> | Incumbent self-host Seer-class AI | Pass **210/221** — Seer still closed-source excluded | **No** |
-> | App-code auto-merge + open outcome becomes commodity | Pass **212** — Bits never auto-merges; Seer max PR draft | **No** |
-> | A4 correlation reliable on real messy telemetry | Pass **219** — still **`not_measured`** | **No** (open) |
-> | A6 agent-visible redaction gate closed by peer or failed | Pass **219** — canary **ok**; mixed **open** | **No** |
-> | A3 schema moat proven by external adoption | Pass **219** — `$id` search total 6 in-tree only | **No** (unproven) |
-> | Sentry OTLP metrics closes OTLP multi-signal scarcity | Pass **221** — docs still **no OTLP metrics** | **No** |
+> | A1: bundles do not beat raw context | Pass **228** — golden ok; no result ledger | **No** |
+> | A2: no paying segment | Pass **222/228** — **0** interview rows; desk triangle holds (pass **216**) | **No** |
+> | Full wedge closed by peer | Pass **223–225** cohort pins — Traceway/TMA1/Bugsink/etc. **not** full combo | **No** |
+> | OTel commoditizes evidence-bundle schema | Pass **224** — #1185 idle; OCSF 1.8.0 | **No** |
+> | Incumbent self-host Seer-class AI | Pass **226/229** — Seer closed; Grafana Assistant hybrid Cloud | **No** |
+> | App-code auto-merge commodity | Pass **227** — Bits still never auto-merges | **No** |
+> | A4 real messy telemetry reliability | Pass **226** — no `correlation-reliability-runs/` | **No** |
+> | A6 agent-visible mixed redaction | Pass **226** — canary ok; mixed open | **No** |
+> | A3 external schema adoption | Pass **226** — `$id` search total 6 in-tree | **No** |
+> | Sentry OTLP metrics GA | Pass **224** — still unsupported | **No** |
 >
-> **Narrow product identity holds:** evidence/context engine, not generic dashboard
-> suite or autonomous SRE. Implementation shipped does **not** close A1–A6 empirical
-> gates — research program continues.
+> **Narrow product identity holds.** Research program continues.
 
 ## Verdict
 

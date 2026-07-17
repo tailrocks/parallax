@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 229 (GT nightly still **20260706**; CH
-**v26.6.1.1193**; Grafana Assistant **hybrid Cloud**; TMA1 **alpha12**; Bugsink
-**v2.4.0**). Pass 228 = A1/A2 tests. A1/A2/A4 open; A6 open at mixed gate only.
+Last updated 2026-07-18 after pass 230 (**GO reaffirm** — kill criteria still
+**unfired** after 221–229; A1/A2/A4 empirical still open). Pass 229 = engine/
+Grafana/TMA1. A1/A2/A4 open; A6 open at mixed gate only.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
