@@ -32,4 +32,9 @@ tracing = { workspace = true }
 cross-release-vendored = ["reqwest/native-tls-vendored"]
 
 [dev-dependencies]
+criterion = { workspace = true }
 proptest = { workspace = true }
+
+[[bench]]
+name = "arrow_decode"
+harness = false

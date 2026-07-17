@@ -35,3 +35,21 @@ scheduled CI lane are still open.
 Deferred (blocked on their owners): UI search round-trips, runtime decoder
 accept/reject domains, Query-key identity, SSE ordering (plans 133/147/148);
 fuzz targets and performance baselines follow as separate plan-103 steps.
+
+## Performance baselines (plan 103, Step 4 — first measurement)
+
+Criterion benches (measurement only; thresholds wait for variance modeling
+on a stable runner). First local run, 2026-07-17, Apple Silicon dev host,
+`--quick`:
+
+| Bench | Crate | First observation |
+|---|---|---|
+| `normalize_metrics_1k_points` | parallax-ingest | ~238 µs |
+| `spool_append_4k` | parallax-spool | ~23 µs |
+| `spool_line_count` | parallax-spool | ~330 µs (grows with segment size) |
+| `arrow_decode_10k_rows` | parallax-greptime | ~840 µs |
+| `arrow_decode_10k_rows_zstd` | parallax-greptime | ~980 µs |
+
+Run: `cargo bench -p <crate> --bench <name>`. Ratchets are NOT set — the
+plan forbids thresholds before variance is measured on a stable scheduled
+runner; these numbers are the reference points for that work.

@@ -53,6 +53,7 @@ parallax-test-support = { path = "crates/parallax-test-support" }
 anyhow = "1"
 addr2line = { version = "0.27.0", default-features = false, features = ["loader"] }
 proptest = "1"
+criterion = { version = "0.7", default-features = false }
 arrow = { version = "59", default-features = false, features = ["ipc"] }
 arrow-ipc = { version = "59", default-features = false, features = ["zstd"] }
 async-trait = "0.1"

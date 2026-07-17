@@ -18,4 +18,10 @@ bytes = { workspace = true }
 tokio = { workspace = true }
 
 [dev-dependencies]
+criterion = { workspace = true }
+tempfile = "3"
 tracing = { workspace = true }
+
+[[bench]]
+name = "spool_io"
+harness = false
