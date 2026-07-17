@@ -7926,3 +7926,17 @@ After Run 271 gen.sh + `N=50000` re-gen:
 
 GT logs CREATE shows `trace_id … INVERTED INDEX`. Product blueprint validated
 in harness.
+
+### Run 273 — 2026-07-17 — four-way after logs.trace_id index (N=50k, REPS=4)
+
+| Query | GT-s | GT-n | CH-s | CH-h |
+| --- | ---: | ---: | ---: | ---: |
+| anchored | 7 | 4 | 3 | 3 |
+| metric-agg | 11 | 9 | 4 | 3 |
+| fulltext-sel | 5 | 4 | 3 | 3 |
+| fulltext-broad | 10 | 8 | 5 | 6 |
+| jsonb | 30 | 32 | 4 | 4 |
+| json2 | 6 | 7 | 4 | 4 |
+| **cross-tier-join** | **20** | **15** | **8** | **4** |
+
+Directions hold; join remains interactive all builds after harness fix.

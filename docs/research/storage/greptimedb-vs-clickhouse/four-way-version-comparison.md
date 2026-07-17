@@ -18,6 +18,15 @@ Status: created 2026-05-25 (Run 131); **re-pinned Run 173 (2026-07-17)**. The op
 Use ≥`v1.1.1` (current stable = `v1.1.3`).
 
 
+
+## Run 273 — N=50k after logs.trace_id index (2026-07-17, REPS=4)
+
+| Query | GT 1.1.3 | GT 1.2-n | CH 26.6 | CH head |
+| --- | ---: | ---: | ---: | ---: |
+| cross-tier-join | 20 | 15 | 8 | 4 |
+| json2 | 6 | 7 | 4 | 4 |
+| jsonb | 30 | 32 | 4 | 4 |
+
 ## Run 255 — N=50k metric-agg resample (2026-07-17)
 
 | Query | GT 1.1.3 | GT 1.2-n | CH 26.6 | CH head | Faster |
