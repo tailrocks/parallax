@@ -295,6 +295,7 @@ export interface LogRecord {
 
 export interface Invocation {
   invocationId: string
+  registration: "cli" | "external"
   command: string | null
   appMode: string | null
   outcome: string | null

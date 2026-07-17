@@ -109,7 +109,9 @@ export function mergeInvocations(
     const seen = rows.get(row.invocationId)
     rows.set(row.invocationId, {
       invocationId: row.invocationId,
-      source: "cli",
+      // Auto-registered telemetry-only ids keep the external badge; only a
+      // wrapper-registered invocation is a first-party CLI row.
+      source: row.registration,
       command: row.command ?? seen?.command ?? null,
       appMode: row.appMode ?? seen?.appMode ?? null,
       outcome: row.outcome,

@@ -81,6 +81,7 @@ describe("mergeInvocations", () => {
       [
         {
           invocationId: "inv-1",
+          registration: "cli" as const,
           command: "jk attach",
           appMode: null,
           outcome: "success",

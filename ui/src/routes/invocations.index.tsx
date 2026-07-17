@@ -58,6 +58,7 @@ const INVOCATIONS_QUERY = `
   {
     invocations {
       invocationId
+      registration
       command
       appMode
       outcome

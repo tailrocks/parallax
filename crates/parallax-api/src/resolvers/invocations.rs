@@ -25,6 +25,14 @@ impl ObservedInvocation {
     fn service(&self) -> &str {
         &self.0.service
     }
+    /// Latest `cli.command.name` seen on this invocation's root spans.
+    fn last_command(&self) -> Option<&str> {
+        self.0.last_command.as_deref()
+    }
+    /// `app.mode` seen on this invocation's root spans.
+    fn app_mode(&self) -> Option<&str> {
+        self.0.app_mode.as_deref()
+    }
     fn first_nanos(&self) -> String {
         nanos_string(self.0.first_nanos)
     }
@@ -152,6 +160,14 @@ impl Invocation {
     }
     fn exit_code(&self) -> Option<i32> {
         self.record.exit_code
+    }
+    /// cli (wrapper-registered) | external (auto-registered from telemetry).
+    fn registration(&self) -> &str {
+        if self.record.status == "external" {
+            "external"
+        } else {
+            "cli"
+        }
     }
     /// one_shot | interactive | daemon | capsule, when registered.
     fn app_mode(&self) -> Option<&str> {

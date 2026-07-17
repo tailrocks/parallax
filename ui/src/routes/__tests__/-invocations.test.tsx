@@ -35,6 +35,7 @@ const rows = mergeInvocations(
   [
     {
       invocationId: "inv-cli",
+      registration: "cli" as const,
       command: "jk workspace sync",
       appMode: "interactive",
       outcome: "success",

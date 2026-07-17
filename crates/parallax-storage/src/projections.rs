@@ -174,7 +174,8 @@ fn percentile(sorted_ns: &[u128], q: f64) -> Option<f64> {
     if sorted_ns.is_empty() {
         return None;
     }
-    let rank = (q * (sorted_ns.len() - 1) as f64).round().max(0.0) as usize;
+    // Standard nearest-rank: ceil(q * N) - 1 (1-indexed rank to 0-index).
+    let rank = ((q * sorted_ns.len() as f64).ceil() as usize).max(1) - 1;
     sorted_ns
         .get(rank.min(sorted_ns.len() - 1))
         .map(|v| *v as f64)
