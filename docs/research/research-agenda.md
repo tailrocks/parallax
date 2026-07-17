@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 275 (GO composite reaffirm after **268–274**;
-all tracked kills **UNFIRED**; A1/A2/A3/A4 open; A6 mixed open). Pass 274 =
-Traceway/Assistant.
+Last updated 2026-07-18 after pass 276 (Maple **1,532★**/v0.0.12 Tinybird **304**;
+HyperDX **9,681★**; Langfuse **31,342★**/v3.221.1 — combo **not closed**). Pass 275
+= GO reaffirm. A1/A2/A3/A4 open; A6 mixed open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
