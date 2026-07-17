@@ -156,6 +156,20 @@ workload-mix packet, OpenDAL GetObject method, partition/TWCS/PREWHERE/projectio
 Flow/freshness/JSON2/PromQL/identity/TimeSeries/concurrent re-verifies. **No
 engine direction flip.**
 
+## Run 561 (2026-07-18) — still not done; pins + GT increase plan
+
+| Check | Result |
+| --- | --- |
+| Pins | GT `1.1.3` / nightly `1.2.0` / CH `26.6.1.1193` / head `26.7.1.1097` — **no bump** |
+| Four-way health | All HTTP **200** |
+| GT TQL `increase(m2m…[2m])` | Plans to **`prom_increase(...)`** (schema columns present; empty rows on this fixture OK) |
+| CH `increase` | Still Code 48 (Run 560) |
+| Ops gap #7 | Engine inventory **closed** Run 558; multi-node drills open |
+| D1 | Re-green Run 559 |
+| Top remaining | (1) mix A1–A7 (2) server 1M/5M (3) trial quotes (4) GB cold S3 (5) RPO D2 cluster + D3 Turso product |
+
+**Do not declare comparison done.**
+
 | # | Gap | Status |
 | --- | --- | --- |
 | 1 | Workload mix **filled shares** | packet exists (223); product fill owed |
