@@ -134,5 +134,6 @@ All required selections passed with locked dependencies and `-D warnings`:
 workspace formatting and strict Clippy, Bun lockfile install, formatting,
 typecheck, lint, 175 UI tests, client and SSR production builds, 231 nextest
 tests with 6 intentional real-engine skips, the compile-fail doctest, and the
-RustSec audit. Plan 096 is complete; remaining dependency orchestration belongs
-to Plan 101 and final artifact verification belongs to Plan 102.
+RustSec audit. Plan 096 is complete; remaining dependency orchestration was
+handed to Plan 101 and final artifact verification to Plan 102 (both later
+closed — historical handoff only, not present-tense ownership).
