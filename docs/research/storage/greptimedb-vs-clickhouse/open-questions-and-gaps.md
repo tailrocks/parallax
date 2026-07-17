@@ -139,3 +139,22 @@ Highest-value *remaining* items (not “done”):
 
 Do **not** burn passes re-confirming interactive 50k–100k ties, small-N object counts,
 or plan-shape re-verifies of PREWHERE/projection/TWCS/PARTITION unless a **pin bumps**.
+
+## Run 246 ranking (2026-07-17) — after passes 220–245
+
+Laptop + small MinIO work **advanced**: S3 pin fix, managed list rates, RPO D1,
+workload-mix packet, OpenDAL GetObject method, partition/TWCS/PREWHERE/projection/
+Flow/freshness/JSON2/PromQL/identity/TimeSeries/concurrent re-verifies. **No
+engine direction flip.**
+
+| # | Gap | Status |
+| --- | --- | --- |
+| 1 | Workload mix **filled shares** | packet exists (223); product fill owed |
+| 2 | Server 1M/5M four-way | runbook (240); hardware owed |
+| 3 | Vendor trial $ quotes | list rates (221); sales/trial owed |
+| 4 | Cold S3 **GB–TB** selective | method (235/238); large N owed |
+| 5 | RPO D2 meta + D3 Turso | D1 done (225); D2/D3 owed |
+| 6 | OpenDAL GET instrument | **closed** 234–235 |
+| 7 | CH TimeSeries SELECT | still Code 48 (236); watch head |
+
+Do not re-smoke interactive 50k ties without pin bump or new mechanism.
