@@ -8022,3 +8022,8 @@ cache metrics (Run 291) for warm-path comparison instrumentation.
 
 Selective term on logs1m: GT **~4–9 ms** warm; CH **~3 ms**. Near-tie
 interactive (Run 184/157).
+
+### Run 295 — 2026-07-17 — comparison not done (reaffirm)
+
+Engine loop still open per operator brief. Next high-value requires server or
+product input. Will keep re-pinning and re-verifying until stopped.
