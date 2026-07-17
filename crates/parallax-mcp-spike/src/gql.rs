@@ -1,17 +1,6 @@
 //! Thin GraphQL client against a running Parallax API.
 //!
-//! Escape semantics match `crates/parallax-cli/src/client.rs` `gql_str`
-//! (backslash + double-quote only).
-
 use serde_json::Value;
-
-/// Escape a string for inclusion inside a GraphQL double-quoted literal.
-///
-/// Copied from `parallax-cli` (`gql_str`) so MCP and CLI embed arguments the
-/// same way. The CLI only escapes `\` and `"` — not newline/tab.
-pub(crate) fn gql_str(s: &str) -> String {
-    s.replace('\\', "\\\\").replace('"', "\\\"")
-}
 
 #[derive(Clone)]
 pub(crate) struct GraphqlClient {
@@ -27,12 +16,12 @@ impl GraphqlClient {
         }
     }
 
-    pub(crate) async fn graphql(&self, query: &str) -> anyhow::Result<Value> {
+    pub(crate) async fn graphql(&self, query: &str, variables: Value) -> anyhow::Result<Value> {
         let response: Value = self
             .http
             .post(format!("{}/graphql", self.base_url))
             .header("Host", host_header_for(&self.base_url))
-            .json(&serde_json::json!({ "query": query }))
+            .json(&serde_json::json!({ "query": query, "variables": variables }))
             .send()
             .await
             .map_err(|e| {
@@ -76,18 +65,18 @@ pub(crate) async fn fetch_bundle(
     fingerprint: Option<&str>,
     invocation_id: Option<&str>,
 ) -> anyhow::Result<BundleProjection> {
-    let query = match (fingerprint, invocation_id) {
-        (Some(fp), None) => format!(
-            r#"{{ bundle(fingerprint: "{}") {{ json markdown canonicalHash }} }}"#,
-            gql_str(fp)
+    let (query, variables) = match (fingerprint, invocation_id) {
+        (Some(fingerprint), None) => (
+            "query Bundle($anchor: String!) { bundle(fingerprint: $anchor) { json markdown canonicalHash } }",
+            serde_json::json!({ "anchor": fingerprint }),
         ),
-        (None, Some(rid)) => format!(
-            r#"{{ bundle(invocationId: "{}") {{ json markdown canonicalHash }} }}"#,
-            gql_str(rid)
+        (None, Some(invocation_id)) => (
+            "query Bundle($anchor: String!) { bundle(invocationId: $anchor) { json markdown canonicalHash } }",
+            serde_json::json!({ "anchor": invocation_id }),
         ),
         _ => anyhow::bail!("fetch_bundle requires exactly one of fingerprint or invocation_id"),
     };
-    let response = client.graphql(&query).await?;
+    let response = client.graphql(query, variables).await?;
     let Some(bundle) = response.pointer("/data/bundle").filter(|v| !v.is_null()) else {
         anyhow::bail!("bundle not found for the given anchor");
     };
@@ -104,16 +93,18 @@ pub(crate) async fn fetch_agent_session(
     invocation_id: &str,
 ) -> anyhow::Result<Value> {
     let response = client
-        .graphql(&format!(
-            r#"{{ agentSession(invocationId: "{}") {{
+        .graphql(
+            r#"query AgentSession($invocationId: String!) {
+              agentSession(invocationId: $invocationId) {
                 rootSpanId totalInputTokens totalOutputTokens errorCount truncated
                 steps {{
                   spanId traceId kind name startNanos durationNs isError
                   genAiOperation inputTokens outputTokens
                 }}
-            }} }}"#,
-            gql_str(invocation_id)
-        ))
+              }
+            }"#,
+            serde_json::json!({ "invocationId": invocation_id }),
+        )
         .await?;
     let Some(session) = response
         .pointer("/data/agentSession")
