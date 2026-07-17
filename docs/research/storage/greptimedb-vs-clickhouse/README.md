@@ -144,6 +144,7 @@ managed quotes remain):
 | time-range aged data | **462** | 0 rows; ~3ms both |
 | still not done | **463** | top 5 open |
 | freshness 1→2 | **464** | both engines no drift |
+| still not done | **465** | top 5 open |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
