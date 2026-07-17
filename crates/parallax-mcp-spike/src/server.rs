@@ -27,7 +27,7 @@ fn evidence_bundle_output_schema() -> Arc<JsonObject> {
     let schema = serde_json::from_str(include_str!(
         "../../../schema/evidence-bundle.v2.schema.json"
     ))
-    .unwrap_or_default();
+    .expect("checked-in evidence bundle schema must be valid JSON Schema");
     Arc::new(schema)
 }
 
@@ -456,6 +456,11 @@ mod tests {
             Some("https://github.com/tailrocks/parallax/schema/evidence-bundle.v2.schema.json")
         );
         assert_eq!(schema.get("type").and_then(Value::as_str), Some("object"));
+        assert_eq!(
+            schema.get("additionalProperties"),
+            Some(&json!(false)),
+            "canonical output discovery must stay closed-schema"
+        );
     }
 
     #[test]

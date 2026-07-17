@@ -43,6 +43,9 @@ must not return in product output.
   resource-reference behavior remains unfinished.
 - Issue-context discovery advertises the checked-in bundle-v2 schema as the MCP
   `outputSchema`; client discovery/conformance evidence remains unfinished.
+- Invalid checked-in bundle schema content now fails server construction rather
+  than silently advertising an open empty schema; discovery locks its canonical
+  identifier and closed-object policy.
 - Stdio startup requires an explicit `--allow-local-stdio` command-line trust
   decision; environment and repository files cannot supply that opt-in.
 - API origins are restricted to credential-free plaintext loopback HTTP;
