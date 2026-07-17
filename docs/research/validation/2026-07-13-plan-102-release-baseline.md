@@ -103,3 +103,91 @@ by the current implementation from a green `main` push (CI on `main` was red
 at configuration time from in-flight Wave 2 alerting work, so the
 `workflow_run`-gated preview publish is pending a green head), then
 per-target `cargo xtask release-verify` plus tap pull-workflow acceptance.
+
+## External proof attempt (2026-07-17T08:30Z UTC) — BLOCKED
+
+Protections re-verified live:
+
+| Control | Evidence |
+| --- | --- |
+| `STABLE_RELEASE_ENABLED` | `true` (Actions variable) |
+| Environment | `stable-release` present |
+| Tag ruleset | `stable tag protection` active, `target=tag` |
+| Branch ruleset | `main protection` still active |
+
+Rolling preview still points at pre-verifier SHA
+`4e8edfa5f92cd8060dfdd46dccb82a0fa26613f8`
+(`0.1.0-preview.958+4e8edfa`). Last **successful** `Publish Homebrew Preview`
+run is still that SHA (run `29223792389`, 2026-07-13). Homebrew formula
+`# source-sha:` matches it.
+
+### Why a current-implementation preview cannot publish
+
+After the packaging/verifier unification landed, every post-fix preview that
+actually built failed at **Package** on Apple targets with:
+
+```text
+error: release binary is missing line tables
+```
+
+Reproduced on CI:
+
+| Run | Source SHA | Failure |
+| ---: | --- | --- |
+| `29548131177` | `ba85f86cc544134a0dd50be1702b855e4aef98bc` | `build-preview (aarch64-apple-darwin)` Package |
+| `29546944724` | `882dcb9cda114f60400bfe8617ec65c2de8a1c67` | same |
+| `29545963394` | `d8e7a192f6f9ea81dfec216bb4a8146a8ae0b3e4` | same |
+
+`release-package` calls `verify_object`, which requires a section named
+`.debug_line` / `.zdebug_line` / `__debug_line` / `__zdebug_line` inside the
+final linked binary. That check fails for Mach-O release artifacts produced
+by the current toolchain (`rustc 1.97` + `cargo zigbuild` / Apple `ld` and
+Zig's Mach-O linker).
+
+Local and Linux-container reproduction (minimal `debug = "line-tables-only"`,
+`strip = "none"`, `split-debuginfo = "off"` crate, target
+`aarch64-apple-darwin`):
+
+1. Object files **do** contain `__TEXT,__debug_line` and `__DWARF,*` before
+   link (confirmed with a fake linker that inspects `.rcgu.o` inputs).
+2. The **final linked executable has no `__DWARF` / `__debug_line` sections**
+   — Apple `ld` and Zig's Mach-O link path keep a debug map / dSYM path, not
+   embedded DWARF segments. Confirmed on host macOS and in
+   `rust:1.87-bookworm` + `cargo-zigbuild 0.21.8` + Zig 0.14 producing a
+   454 440-byte binary with `has __debug_line False`.
+3. `split-debuginfo = "packed"` yields a `.dSYM` companion whose DWARF
+   payload has `__DWARF,__debug_line`, but plan 102 forbids a symbol
+   companion; the shipped archive is the executable alone.
+4. The **old** published `parallax-aarch64-apple-darwin.tar.gz` from
+   `4e8edfa` also has no DWARF sections. Current
+   `cargo xtask release-package` rejects it with the same
+   `release binary is missing line tables` error — so the last green preview
+   cannot prove the current verifier.
+
+Linux ELF targets were cancelled on the failing runs after the Apple matrix
+leg failed; they are not independently proven green under the new package
+gate either for a complete four-target publish.
+
+### Path-filter / CI thrash (secondary)
+
+Many `Publish Homebrew Preview` runs on 2026-07-17 conclude `skipped` because
+the triggering CI run was `cancelled` or docs-only (job `if` requires
+`workflow_run.conclusion == 'success'`). That is expected gating, not the
+primary blocker: when preview **did** build after green CI, Package failed
+on macOS line tables as above.
+
+### Unblock required before retirement
+
+Do **not** retire plan 102 until:
+
+1. Mach-O release binaries retain embeddable line tables that
+   `verify_object` accepts (structural fix in the build/link/package path —
+   not a companion sidecar, not a verifier weaken-only patch without a real
+   symbolication surface), and
+2. One preview from that fixed implementation publishes all four targets, and
+3. Each target passes `cargo xtask release-verify` at the exact source SHA/ref,
+   and
+4. The tap pull workflow accepts the set (sanitized evidence only).
+
+No stable tag was cut. No tap write credential was restored. No older preview
+was treated as proof of the current byte-producing implementation.

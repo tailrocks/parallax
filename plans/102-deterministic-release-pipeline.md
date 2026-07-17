@@ -1,21 +1,23 @@
 # Plan 102: Prove the deterministic release pipeline externally
 
-> **Executor instructions**: The local implementation is complete. Do not
-> reopen archive, sidecar, identity, or workflow design. Retire this plan only
-> after the repository protections are opened and one preview produced by the
-> current implementation verifies end to end.
+> **Executor instructions**: The local packaging/verifier design is in place.
+> Do not reopen archive layout, sidecar set, identity, or workflow design.
+> Retire this plan only after protections stay open **and** one preview
+> produced by an implementation that satisfies `verify_object` on **all four**
+> targets verifies end to end.
 
 ## Status
 
 - **Priority**: P1
-- **Effort**: S remaining
+- **Effort**: S–M remaining (Mach-O line-table embed + one preview proof)
 - **Risk**: HIGH
-- **Depends on**: 094, 096, 101; external repository configuration and a
-  post-merge preview run
+- **Depends on**: 094, 096, 101; structural Mach-O line-table fix; post-merge
+  preview run
 - **Category**: release / packaging / provenance
-- **Planned at**: `a1d8bf82`, revised 2026-07-15
-- **Status**: BLOCKED — stable release authorization is not configured and no
-  preview from the completed implementation has been published
+- **Planned at**: `a1d8bf82`, revised 2026-07-15, blocked-update 2026-07-17
+- **Status**: BLOCKED — stable protections are configured, but the current
+  implementation cannot publish a four-target preview: Apple targets fail
+  Package with `release binary is missing line tables`
 
 ## Completed Contract
 
@@ -36,32 +38,48 @@ configuration evidence lives in
 
 ## Remaining Work
 
-1. The operator enables stable readiness by setting
-   `STABLE_RELEASE_ENABLED=true`, creating a reviewer-protected
-   `stable-release` environment, and activating a `refs/tags/v*` ruleset that
-   restricts creation, deletion, and non-fast-forward updates.
-2. After the completed implementation reaches `main`, allow the preview
-   workflow to publish one complete four-target asset set.
-3. Download that set and run `cargo xtask release-verify` with its exact source
+1. ~~Operator enables stable readiness~~ **DONE 2026-07-17**:
+   `STABLE_RELEASE_ENABLED=true`, reviewer-protected `stable-release`
+   environment, active `refs/tags/v*` ruleset (`stable tag protection`).
+2. **Fix Mach-O release binaries so `verify_object` accepts them** — final
+   linked `aarch64-apple-darwin` / `x86_64-apple-darwin` executables must
+   retain line-table sections (or an equivalent in-binary surface the
+   existing verifier already accepts). Object files already emit
+   `__debug_line`; the link step drops them. Do not satisfy this with a
+   forbidden symbol companion or by treating `4e8edfa` as proof.
+3. After that fix reaches `main` and CI is green, publish one complete
+   four-target preview asset set from the current implementation SHA.
+4. Download that set and run `cargo xtask release-verify` with its exact source
    SHA/ref for every target. Confirm the tap pull workflow accepts the same set
    and updates only the rolling preview formula.
-4. Preserve sanitized protection and preview-verification evidence, then delete
+5. Preserve sanitized protection and preview-verification evidence, then delete
    this plan and its index row.
 
-## Fresh Blocker Evidence
+## Fresh Blocker Evidence (2026-07-17)
 
-On 2026-07-15 at branch head `5be1190`:
+Protections (read-back OK):
 
-- `cargo test --locked -p parallax-xtask release` passed all 15 focused tests;
-  strict all-target/all-feature xtask clippy and Actionlint for both release
-  workflows passed.
-- GitHub returned `404` for the `stable-release` environment. The only active
-  ruleset is branch-targeted `main protection`; there is no tag ruleset.
-- The rolling `preview` release targets `4e8edfa5f92cd8060dfdd46dccb82a0fa26613f8`,
-  which predates this branch's finalized verifier and cannot prove it.
-- `tailrocks/homebrew-parallax/.github/workflows/update-preview.yml` is present
-  and uses the tap repository's own scoped `contents: write` authority after
-  independently checking the complete asset set.
+- `STABLE_RELEASE_ENABLED=true`
+- environment `stable-release` with required reviewer `donbeave`
+- ruleset `stable tag protection` on `refs/tags/v*`
+  (creation/update/deletion/non-fast-forward)
+
+Preview proof still missing:
+
+- Rolling `preview` release + formula still target
+  `4e8edfa5f92cd8060dfdd46dccb82a0fa26613f8` (pre-verifier).
+- Post-unification preview builds fail Package on Apple:
+  `error: release binary is missing line tables` (e.g. run `29548131177` on
+  `ba85f86`).
+- Local + Linux-container zigbuild of a minimal release binary for
+  `aarch64-apple-darwin` produces **no** `__debug_line` / `__DWARF` in the
+  final executable; `split-debuginfo=packed` only yields a `.dSYM` companion.
+- Current `release-package` also rejects the already-published
+  `4e8edfa` aarch64-apple archive for the same reason.
+
+Full write-up:
+[`docs/research/validation/2026-07-13-plan-102-release-baseline.md`](../docs/research/validation/2026-07-13-plan-102-release-baseline.md)
+section **External proof attempt (2026-07-17T08:30Z UTC) — BLOCKED**.
 
 ## STOP Conditions
 
@@ -70,9 +88,11 @@ On 2026-07-15 at branch head `5be1190`:
 - Do not publish a rehearsal or treat an older preview as proof of the current
   byte-producing implementation.
 - Do not restore a Parallax-owned tap credential or cross-repository write path.
+- Do not weaken `verify_object` to pass empty Mach-O DWARF without a real
+  in-binary line-table / symbolication surface.
 
 ## Remove When
 
-Delete this plan and index row after the protection trigger is configured and a
-preview from the current implementation passes atomic verification and the tap
-pull workflow.
+Delete this plan and index row after the protection trigger remains configured
+and a preview from an implementation that passes atomic verification on all
+four targets is accepted by the tap pull workflow.
