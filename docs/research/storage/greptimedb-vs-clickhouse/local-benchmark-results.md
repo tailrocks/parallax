@@ -7756,3 +7756,18 @@ typical. Aligns with Run 226/178 concurrent gate.
 `ReadFromMergeTree (p_svc)` Granules **1/7**. PREWHERE does not disable
 projection selection. GT full-region scan for non-PK `service` (expected without
 partition/index on service).
+
+### Run 248 — 2026-07-17 — per-signal storage density @ N=50k
+
+**Method.** CH `system.parts` active `bytes_on_disk`. GT
+`information_schema.ssts_storage` file sizes summed by region
+(`region_id >> 32` path prefix matches `region_peers`).
+
+| Table | Rows | GT bytes | CH bytes | Denser |
+| --- | ---: | ---: | ---: | --- |
+| spans1m | ~50k | **~1.13 MiB** (1156 KiB) | **1.32 MiB** | **GT** |
+| logs1m | 50k | **~0.36 MiB** (356 KiB incl. index) | **0.71 MiB** | **GT ~2×** |
+| m2m | 50k | **~0.18 MiB** | **0.21 MiB** | **GT slight** |
+
+**Verdict.** Shape matches Run 159/189 direction at small N: GT denser on
+logs+metrics; spans closer. Not a substitute for 5M density matrix.
