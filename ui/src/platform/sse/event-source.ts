@@ -1,4 +1,5 @@
-// Plan 153 — sole browser EventSource constructor owner.
+// Plan 153 — sole browser EventSource constructor owner. This module is safe
+// to import during SSR because the browser global is read only when invoked.
 
 export interface EventSourceLike {
   onopen: ((this: EventSourceLike, ev: Event) => unknown) | null
