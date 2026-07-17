@@ -122,3 +122,14 @@ GreptimeDB release wins," not "a GreptimeDB roadmap line item per gap." DQ6 upda
 list + closability), `public-performance-claims.md` (the broader public-claims triangulation),
 `promql-and-metrics-query.md` (Run 105), `metric-cardinality.md` (Runs 84/101), `local-benchmark-results.md`
 (Run 106). Vendor sources audited: the compare page + 15 blogs (2025-01 through 2026-05).
+
+## Run 216 (2026-07-17) — vendor-claims status after re-pin
+
+No new full website re-scrape this pass. Cross-check against Runs 173–215:
+
+- Compare-page posture (“fit not raw speed”) still matches our measurements.
+- JSON Type v2 shipped as opt-in **JSON2** (not automatic default JSON) — any marketing
+  implying automatic JSON analytics parity needs that qualifier.
+- OTel-Arrow still experimental per earlier audit; baseline OTLP protobuf remains the
+  adopted path (Run 181).
+- Cold JSONBench claim still **not independently re-run** (server/object-store owed).

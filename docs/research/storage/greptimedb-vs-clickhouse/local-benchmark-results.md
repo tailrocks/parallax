@@ -7198,3 +7198,8 @@ Source map only. GT object-store/OpenDAL; CH Disks/S3 policy. `storage-cost-and-
 ### Run 215 — 2026-07-17 — public claims re-rate under v1.1.3
 
 Updated claim table with scale/shape qualifiers from re-pin cycle. `public-performance-claims.md`.
+
+### Run 216 — 2026-07-17 — vendor claims audit cross-check
+
+No full re-scrape; qualifiers for JSON2 default and OTel-Arrow experimental still apply.
+`vendor-claims-audit.md`.
