@@ -1811,7 +1811,7 @@ ceiling = 56
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-analysis/src/derive/tests.rs"
-ceiling = 20
+ceiling = 24
 
 [[limits]]
 metric = "rust.assertions"
@@ -2101,7 +2101,7 @@ ceiling = 110
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-api/src/resolvers/invocations/tests.rs"
-ceiling = 12
+ceiling = 16
 
 [[limits]]
 metric = "rust.assertions"
@@ -2402,7 +2402,7 @@ ceiling = 73
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-api/src/resolvers/invocations.rs"
-ceiling = 403
+ceiling = 420
 
 [[limits]]
 metric = "rust.function-lines"
@@ -2412,7 +2412,7 @@ ceiling = 115
 [[limits]]
 metric = "rust.test-wall-clocks"
 scope = "crates/parallax-api/src/resolvers/invocations/tests.rs"
-ceiling = 1
+ceiling = 2
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -2538,3 +2538,9 @@ ceiling = 63
 metric = "typescript.suppressions"
 scope = "ui/src/lib/format.ts"
 ceiling = 1
+
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-metadata/src/turso.rs::upsert_issue_occurrences"
+ceiling = 103

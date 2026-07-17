@@ -8,7 +8,7 @@
 >
 > **Drift check (run first)**:
 > `git diff --stat <wave2-base>..HEAD -- ui/src/styles.css ui/src/components ui/src/lib`
-> where `<wave2-base>` is the `main` commit at which plan 159 recorded Wave
+> where `<wave2-base>` is the `main` commit at which plan 159 (DONE 2026-07-17, evidence commit `0e0e794`) recorded Wave
 > 1's completion evidence (plans 156-161; direct-to-main delivery). If
 > `/invocations` routes do not exist, STOP.
 

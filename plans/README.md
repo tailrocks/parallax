@@ -271,9 +271,10 @@ statements become `session.id`/`cli.invocation.id`; its result key becomes
 `parallax metrics --run` contract must be authored against `--invocation`.
 Plan 154's remaining sweep consumes the plan-158 emitter contract.
 
-| Plan | Title | Priority | Effort | Depends on | Status |
-|------|-------|----------|--------|------------|--------|
-| [159](159-unified-cli-observability-acceptance.md) | Live acceptance: coverage matrix, GraphQL assertions, journey + usability browser evidence | P1 | M | 156+157+158+160+161 (DONE) | TODO — next |
+Wave 1 (plans 156, 157, 158, 159, 160, 161) is COMPLETE (2026-07-17). The
+closing evidence — 27 green GraphQL assertions, the coverage matrix, and
+thirteen browser captures with a clean console — lives in
+[docs/research/validation/2026-07-unified-cli-observability/README.md](../docs/research/validation/2026-07-unified-cli-observability/README.md).
 
 ### Wave 2 — Maple-Informed UI Evolution (operator /improve directive, 2026-07-17)
 

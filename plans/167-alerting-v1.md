@@ -8,7 +8,7 @@
 >
 > **Drift check (run first)**:
 > `git diff --stat <wave2-base>..HEAD -- crates/parallax-metadata crates/parallax-api crates/parallax-server ui/src/components/nav.ts`
-> `<wave2-base>` = the `main` commit closing Wave 1 (plan 159's evidence commit).
+> `<wave2-base>` = the `main` commit closing Wave 1 (plan 159's evidence commit `0e0e794`).
 
 ## Status
 

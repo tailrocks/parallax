@@ -29,7 +29,7 @@ Parallax-backend arm of this plan's remaining sweep on the operator's Docker
 host; this plan keeps only the multi-backend (Maple/SigNoz/OpenObserve/
 Sentry) matrix. `parallax run start` wording below reads as the renamed
 invocation wrapper. See plans/158-playground-unified-cli-contract.md and
-plans/159-unified-cli-observability-acceptance.md.
+the plan-159 evidence bundle (docs/research/validation/2026-07-unified-cli-observability/README.md in the Parallax repo; plan 159 DONE 2026-07-17).
 
 ## Completed Contract
 
