@@ -7973,3 +7973,8 @@ re-verifies. **Open:** mix shares, server 1M/5M, vendor quotes, GB cold, RPO D2/
 `last_value(service ORDER BY ts) GROUP BY fingerprint` on errs (50k):
 GT warm **~7–10 ms**; CH `argMax` **~4 ms**. Both interactive for Sentry-style
 rollup shape (Run 156/160).
+
+### Run 283 — 2026-07-17 — errs.trace_id INVERTED lookup
+
+Harness `errs` already has `trace_id INVERTED INDEX`. Warm lookup **~7–8 ms**.
+Good model for keyed error events.
