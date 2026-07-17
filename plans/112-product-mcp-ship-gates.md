@@ -71,6 +71,9 @@ must not return in product output.
 - Before hash verification or output, the MCP tool validates the envelope
   against the checked-in Draft 2020-12 bundle-v2 schema with formats enabled;
   correctly hashed unknown fields and malformed contracts fail secret-free.
+- The nested immutable `data` dossier is separately validated against the
+  checked-in bundle-v1 schema, matching the v2 contract's explicit deep-shape
+  rule rather than accepting version-only payloads.
 - The standalone equivalence checker now recomputes bundle-v2's actual
   `sha256-jcs:` scope, including the nested `data` exclusions; fixtures prove
   excluded build/budget changes are stable while evidence changes are not.

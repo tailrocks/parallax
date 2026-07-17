@@ -49,6 +49,20 @@ fn validate_bundle_contract(bundle: &Value) -> Result<(), McpError> {
     if !validator.is_valid(bundle) {
         return Err(safe_internal_error("bundle_contract_mismatch"));
     }
+    let data = bundle
+        .get("data")
+        .ok_or_else(|| safe_internal_error("bundle_contract_mismatch"))?;
+    let data_schema = Value::Object(parse_output_schema(include_str!(
+        "../../../schema/evidence-bundle.v1.schema.json"
+    )));
+    let data_validator = jsonschema::draft202012::options()
+        .should_validate_formats(true)
+        .should_ignore_unknown_formats(false)
+        .build(&data_schema)
+        .map_err(|_| safe_internal_error("bundle_schema_invalid"))?;
+    if !data_validator.is_valid(data) {
+        return Err(safe_internal_error("bundle_contract_mismatch"));
+    }
     Ok(())
 }
 
@@ -268,7 +282,27 @@ mod tests {
                 "to": "2026-07-17T00:01:00Z"
             },
             "access": { "policy": "local-operator" },
-            "data": { "schema_version": "bundle-v1", "evidence": "bounded" },
+            "data": {
+                "schema_version": "bundle-v1",
+                "generator": "parallax/test",
+                "anchor": { "kind": "issue", "id": "fp-test" },
+                "issue": null,
+                "invocation": null,
+                "latest_event": null,
+                "trace": null,
+                "metric_windows": [],
+                "logs": [],
+                "hypotheses": [],
+                "missing_evidence": [],
+                "redaction": { "policy": "test", "redacted_counts": {} },
+                "bounded": {
+                    "max_tokens": 4000,
+                    "estimated_tokens": 0,
+                    "dropped_log_lines": 0,
+                    "truncated_stacktrace": false
+                },
+                "canonical_hash": null
+            },
             "canonical_hash": null
         });
         let hash = crate::check::recompute_canonical_hash(&value.to_string()).expect("hash");
@@ -401,29 +435,12 @@ mod tests {
     #[test]
     fn bundle_result_has_no_comparison_only_raw_metadata() {
         let projection = valid_bundle_projection();
-        let canonical_hash = projection.canonical_hash.clone();
+        let expected: Value = serde_json::from_str(&projection.json).expect("bundle JSON");
         let result = bundle_tool_result(projection).expect("valid bundle result");
         let encoded = serde_json::to_value(result).expect("serialize result");
 
         assert_eq!(encoded.get("_meta"), None);
-        assert_eq!(
-            encoded.get("structuredContent"),
-            Some(&json!({
-                "schema_version": "bundle-v2",
-                "bundle_id": "bundle-test",
-                "schema_ref": "parallax/evidence/bundle-v2",
-                "generated_at": "2026-07-17T00:00:00Z",
-                "generator": "parallax/test",
-                "project": "test",
-                "window": {
-                    "from": "2026-07-17T00:00:00Z",
-                    "to": "2026-07-17T00:01:00Z"
-                },
-                "access": { "policy": "local-operator" },
-                "data": { "schema_version": "bundle-v1", "evidence": "bounded" },
-                "canonical_hash": canonical_hash
-            }))
-        );
+        assert_eq!(encoded.get("structuredContent"), Some(&expected));
     }
 
     #[test]
@@ -494,6 +511,27 @@ mod tests {
         let encoded = serde_json::to_string(&error).expect("serialize MCP error");
         assert!(encoded.contains("bundle_contract_mismatch"));
         assert!(!encoded.contains("seeded-secret"));
+    }
+
+    #[test]
+    fn correctly_hashed_nonconforming_v1_data_fails_closed() {
+        let mut projection = valid_bundle_projection();
+        let mut value: Value = serde_json::from_str(&projection.json).expect("bundle JSON");
+        value["data"]
+            .as_object_mut()
+            .expect("data object")
+            .remove("logs");
+        let hash = crate::check::recompute_canonical_hash(&value.to_string()).expect("hash");
+        value["canonical_hash"] = json!(hash);
+        projection.json = value.to_string();
+        projection.canonical_hash = hash;
+
+        let error = bundle_tool_result(projection).expect_err("v1 schema violation must fail");
+        assert!(
+            serde_json::to_string(&error)
+                .expect("serialize MCP error")
+                .contains("bundle_contract_mismatch")
+        );
     }
 
     #[test]
