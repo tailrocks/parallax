@@ -2492,3 +2492,13 @@ ceiling = 63
 metric = "typescript.function-lines"
 scope = "ui/src/routes/invocations.index.tsx:196"
 ceiling = 125
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/console/invocations/__tests__/-tabs.test.tsx"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/invocations/__tests__/-tabs.test.tsx:75"
+ceiling = 72

@@ -2,10 +2,10 @@
   "schema_version": 1,
   "ratchets": {
     "fire_event_calls": 7,
-    "legacy_handoffs": 43,
+    "legacy_handoffs": 44,
     "raw_router_builders": 1,
-    "test_cases": 198,
-    "test_files": 47
+    "test_cases": 202,
+    "test_files": 48
   },
   "private_route_imports": [
     {
@@ -1303,6 +1303,31 @@
       "status": "implemented",
       "legacy_handoff": {
         "current_path": "ui/src/components/console/invocations/__tests__/-session-journey.test.tsx",
+        "destination_owner": "features/runs",
+        "removal_plan": 140,
+        "created": "2026-07-15",
+        "expires": "plan-140-completion"
+      }
+    },
+    {
+      "id": "vitest-072",
+      "surface": "features/runs",
+      "risk": "Hub tab empty states or populated tab tables can break silently",
+      "scenario_owner": "features/runs",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 140,
+      "layer": "component",
+      "test_file": "ui/src/components/console/invocations/__tests__/-tabs.test.tsx",
+      "test_ids": [
+        "renders the explicit empty state",
+        "renders cycle aggregates and job attempt chips with trace links",
+        "renders the explicit empty state for a one-shot invocation",
+        "renders sessions, visits, actions, and conversations"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/invocations/__tests__/-tabs.test.tsx",
         "destination_owner": "features/runs",
         "removal_plan": 140,
         "created": "2026-07-15",
