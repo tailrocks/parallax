@@ -145,6 +145,11 @@ the helper objective; the peer executor owns the status transition.
   retry begins, skip already-complete steps, and complete the parent journal
   only after every step completes. No store deletion is attached; peers must
   review crash windows around real external work and prove resume behavior.
+- `Spool::prune_estimate` adds bounded read-only local-disk discovery for
+  recognized active, legacy, and rotated spool files. Every directory entry
+  consumes the scan cap, unrelated files are never selected, and cap overflow
+  fails closed. Wiring this estimate into the unified plan and replacing the
+  unsynchronized legacy CLI truncation path remain peer work.
 
 ## Historical Blocker Evidence (2026-07-14; superseded 2026-07-17)
 

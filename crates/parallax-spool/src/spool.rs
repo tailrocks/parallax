@@ -98,6 +98,13 @@ pub struct SpoolHealth {
     pub oldest_age: Duration,
 }
 
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct SpoolPruneEstimate {
+    pub active_files: usize,
+    pub rotated_segments: usize,
+    pub bytes: u64,
+}
+
 #[derive(Debug, Clone)]
 struct RotatedSegment {
     path: PathBuf,
@@ -106,6 +113,37 @@ struct RotatedSegment {
 }
 
 impl Spool {
+    /// Bounded read-only discovery for manual prune planning. Every directory
+    /// entry consumes the cap, including unrelated files, so output cannot be
+    /// made incomplete by filling the spool directory.
+    pub fn prune_estimate(&self, max_entries: usize) -> anyhow::Result<SpoolPruneEstimate> {
+        let mut estimate = SpoolPruneEstimate::default();
+        for (index, entry) in std::fs::read_dir(&self.dir)?.enumerate() {
+            if index >= max_entries {
+                anyhow::bail!("spool prune scan exceeds {max_entries} entries");
+            }
+            let entry = entry?;
+            let path = entry.path();
+            if !path.is_file() {
+                continue;
+            }
+            let Some(name) = path.file_name().and_then(|name| name.to_str()) else {
+                continue;
+            };
+            let active = Signal::ALL
+                .iter()
+                .any(|signal| name == signal.file_name() || name == signal.legacy_file_name());
+            let rotated = rotated_timestamp(name).is_some();
+            if !active && !rotated {
+                continue;
+            }
+            estimate.bytes = estimate.bytes.saturating_add(entry.metadata()?.len());
+            estimate.active_files += usize::from(active);
+            estimate.rotated_segments += usize::from(rotated);
+        }
+        Ok(estimate)
+    }
+
     pub fn health(&self, signal: Signal, now: SystemTime) -> std::io::Result<SpoolHealth> {
         let mut health = SpoolHealth::default();
         for entry in std::fs::read_dir(&self.dir)? {

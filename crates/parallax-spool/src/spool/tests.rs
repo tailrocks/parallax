@@ -1,5 +1,27 @@
 use super::*;
 
+#[test]
+fn prune_estimate_is_bounded_and_counts_only_owned_files() {
+    let tmp = TempDir::new("prune-estimate");
+    std::fs::write(tmp.path().join("traces.pspl"), b"active").expect("write active");
+    std::fs::write(tmp.path().join("logs.ndjson"), b"legacy").expect("write legacy");
+    std::fs::write(tmp.path().join("metrics.123.pspl"), b"rotated").expect("write rotated");
+    std::fs::write(tmp.path().join("unrelated.txt"), b"ignored").expect("write unrelated");
+    let spool = Spool::open(tmp.path()).expect("open spool");
+
+    assert_eq!(
+        spool.prune_estimate(4).expect("estimate prune"),
+        SpoolPruneEstimate {
+            active_files: 2,
+            rotated_segments: 1,
+            bytes: 19,
+        }
+    );
+    spool
+        .prune_estimate(3)
+        .expect_err("entry cap must fail closed");
+}
+
 struct TempDir(PathBuf);
 
 impl TempDir {
