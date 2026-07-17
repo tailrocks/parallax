@@ -39,6 +39,10 @@ closure commit — treat as preliminary handoff):**
 - `ui/src/lib/log-table-prefs.ts` — `?columns=` pin encode/decode + pin/unpin
   toggle; density compact/comfortable parse + CSS class; wrap encode/parse
   (+ storage key constants). Vitest in `__tests__/log-table-prefs.test.ts`.
+- `ui/src/lib/log-pattern-match.ts` — template↔body match for Patterns
+  expand-to-samples: `templateToRegExp` (whole-token + embedded `<*>`),
+  `bodyMatchesTemplate`, `templateStableFragment` (CONTAINS prefilter),
+  `filterBodiesByTemplate`. Vitest in `__tests__/log-pattern-match.test.ts`.
 
 **Peer owns (verify/deepen/complete):**
 - [ ] Clippy/format polish on Drain if needed; deepen masking if PII edge

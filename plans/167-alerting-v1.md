@@ -24,9 +24,9 @@
 
 ### Landed by Grok (preliminary) — peer verify/extend + full stack
 
-**Do not retire yet.** Pure evaluation state machine only. No Turso schema,
-evaluator loop, delivery, GraphQL, UI, or playground scenarios. Index status
-stays TODO.
+**Do not retire yet.** Pure evaluation + delivery helpers only. No Turso
+schema/CRUD, evaluator I/O loop, GraphQL, full UI pages, or live evidence.
+Index status stays TODO.
 
 **Already landed:**
 - `crates/parallax-server/src/alerting/mod.rs` + `state_machine.rs` —
@@ -37,6 +37,11 @@ stays TODO.
   Unit tests embedded in the module (breach open, healthy resolve, flap,
   min samples, no_data, between, renotify). Wired as private `mod alerting`
   in `parallax-server` (not yet public API surface).
+- `crates/parallax-server/src/alerting/delivery.rs` — pure delivery surface:
+  `unique_delivery_key`, webhook JSON body (rule/incident/value/threshold/
+  window/links), Slack `{text}` payload, backoff 1m/5m/30m, max 5 attempts
+  dead-letter, claim lease (30s) availability. Unit tests in-module. **No
+  reqwest/I/O** — peer owns the worker.
 - `ui/src/lib/alert-rule-form.ts` — draft validation (comparator/threshold_upper
   pairing, metricName for metric signal, error_rate fraction range) + five
   plan templates (high-error-rate / slow-p95 / slow-p99 / throughput-drop /
@@ -44,13 +49,15 @@ stays TODO.
   `__tests__/alert-rule-form.test.ts`.
 
 **Peer owns (verify/deepen/complete):**
-- [ ] Re-verify state machine vs plan exhaustiveness; expand tests if gaps.
+- [ ] Re-verify state machine + delivery helpers vs plan exhaustiveness;
+  deepen payload schema docs if needed.
 - [ ] Step 1 remainder: Turso DDL + CRUD for rules/states/incidents/
-  destinations/delivery_events/alert_checks.
+  destinations/delivery_events/alert_checks (peer may already have WIP
+  `turso/alerts.rs` — finish that, do not clobber).
 - [ ] Steps 2–5: evaluator CAS loop, measurement queries, delivery worker
-  (native-tls reqwest), GraphQL + UI pages, playground breach scenarios,
-  ready-banner line, browser + webhook evidence under
-  `docs/research/validation/2026-07-wave2/167/`.
+  (native-tls reqwest calling these pure helpers), GraphQL + UI pages,
+  playground breach scenarios, ready-banner line, browser + webhook
+  evidence under `docs/research/validation/2026-07-wave2/167/`.
 - [ ] Full Done criteria; then retire.
 
 ## Why this matters

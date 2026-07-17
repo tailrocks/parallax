@@ -21,6 +21,12 @@
 
 ### Landed (preliminary, helper agents) — peer verify and wire
 
+**Additional Grok pure slice (URL codec):** `ui/src/lib/ecosystem-url.ts` —
+encode/decode `focus` / `hops` (0–3) / `focusMode` (dim|hide) / `minTraffic`
+(preset labels `all|0.1%|1%|5%` or fraction/percent). Vitest in
+`__tests__/ecosystem-url.test.ts`. Peer: wire if not already covered by
+route search schema; verify URL-reload evidence. **Do not retire.**
+
 **Do not retire yet.** `ui/src/lib/ecosystem-topology.ts` is the sole pure
 focus/declutter model: caller+callee hop neighborhoods, dim/hide projection,
 max-edge-relative traffic filtering with hidden counts, external dependency
