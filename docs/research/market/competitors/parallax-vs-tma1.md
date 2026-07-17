@@ -22,7 +22,9 @@
 > observability**; Parallax targets **production-incident evidence** plus the
 > unproven portable redacted-bundle thesis. Critical watch: **if TMA1 adds
 > production-error derivation, Sentry ingest, redaction, or an outcome loop, it is
-> a direct collision.** As of 2026-07-17, **that trigger has not fired.**
+> a direct collision.** As of 2026-07-17 **pass 98**, **that trigger has not fired**
+> (code search: `redactKey` = LLM API key UI masking only; `outcome` = request
+> metrics / OpenClaw attrs — **not** a fix-outcome ledger; no Sentry envelope).
 
 ## What each product is
 
