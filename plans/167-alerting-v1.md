@@ -243,7 +243,8 @@ complete and self-sufficient):
   exit, `?slow=` p95 breach, healthy-traffic recovery; `BREACH_SECONDS`/
   `RECOVER_SECONDS` knobs, default 200s). Catalog rows for `run.sh` sit in
   the playground working tree; peer verifies live against the evaluator and
-  adds any missing rows.*
+  adds any missing rows. Corner-case-matrix rows for the three scenarios
+  landed on the playground's main at `67be73a` (helper agent, 2026-07-17).*
 - Ready-banner line + config knobs (`[alerting] enabled`, intervals) in
   `parallax-server` config with sane defaults.
 
@@ -297,6 +298,34 @@ Tests with a local HTTP test server: success, 500-retry-backoff, lease
 takeover after expiry, no double-delivery (unique delivery key).
 
 **Verify**: server tests pass; no delivery without an incident transition.
+
+#### Webhook payload schema (as implemented in `alerting/delivery.rs`)
+
+Generic `webhook` destinations receive one JSON object per event
+(content-type `application/json`); keys are stable for external
+integrators. `slack_webhook` destinations instead receive Slack's
+`{"text": "[FIRING|RESOLVED|STILL FIRING] <rule> (<severity>) group=…
+value=… threshold=… — <incident url>"}` shape.
+
+```json
+{
+  "event": "triggered | resolved | renotify",
+  "rule": {
+    "id": "…", "name": "…",
+    "signal_type": "error_rate | p95_latency | p99_latency | throughput | log_count | metric",
+    "severity": "warning | critical"
+  },
+  "incident": { "id": "…", "group_key": "…" },
+  "value": 0.42,
+  "threshold": 0.2,
+  "threshold_upper": null,
+  "window_minutes": 5,
+  "links": { "incident": "<ui>/alerts/incidents/<id>", "investigate": "<ui>/traces?service=…" }
+}
+```
+
+`value`/`threshold_upper` are `null` when absent. Peer re-verifies this
+section against the final wired worker before retiring the plan.
 
 ### Step 4: GraphQL + UI
 
