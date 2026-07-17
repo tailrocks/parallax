@@ -219,6 +219,16 @@ Full combination **still not closed**.
 
 Full wedge combination **still not closed** (Traceway lacks Sentry envelope + portable redacted bundle + outcome; Sentry lacks OTLP metrics).
 
+**Pass 264 recheck (2026-07-18):** **Traceway** hygiene only —
+
+| Field | Value |
+| --- | --- |
+| Stars / push | still **1,024★**; `pushed_at` still **2026-07-17** |
+| Latest tags | still **`backend/v1.9.1` + `cli/v1.9.1`** (2026-07-15) |
+| README probe | still **0** hits for sentry / envelope / evidence-bundle / fix-outcome / redact |
+
+Combo **still not closed**.
+
 **Pass 244 recheck (2026-07-18):** **Bugsink + Rustrak + GlitchTip** primary
 version/README hygiene (error-tracker peer cluster) —
 
