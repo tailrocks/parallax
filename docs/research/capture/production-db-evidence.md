@@ -8,6 +8,23 @@
 > source policy, reports, and bundle/metadata projection sanitization. It is not
 > applied on the ingest hot path. This does not advance Tier 2: query-template,
 > privilege, RLS, audit, and prompt-injection fixtures remain unmeasured.
+>
+> **Pass 80 boundary recheck (2026-07-17):** operator front-door framing in
+> [problem-audience-product-shape.md](../00-vision/problem-audience-product-shape.md)
+> is explicit: **production database state is a developer↔agent side-channel;
+> Parallax never proxies raw database access.** That rule **outranks** any
+> product roadmap that would put free-form or even template SQL behind Parallax
+> APIs by default.
+>
+> | Tier | Pass-80 status |
+> | --- | --- |
+> | **0** (app telemetry: db spans, summaries, errors) | **In scope** — OTLP/Sentry path; keep improving capture/redaction |
+> | **1** (schema/metadata snapshots, no row values) | **Optional research**; no shipped product surface |
+> | **2** (read-only query templates via Parallax) | **Deferred / demoted** relative to operator boundary — if ever revisited, requires a new numbered plan + full Tier-2 ledger green; default remains **out of product** so agents get DB access only as developer-granted side-channel |
+>
+> Claim level for agent-visible DB query tools: still **`not_measured`** and
+> **not V1 product**. PostgreSQL/OWASP/MCP safety sources below remain valid
+> *if* Tier 2 is ever authorized — they do not authorize building it now.
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
