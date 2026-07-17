@@ -77,7 +77,7 @@ app-code auto-merge + open outcome/recurrence corpus.**
 
 | Source | Finding |
 | --- | --- |
-| [Bits Code docs](https://docs.datadoghq.com/bits_ai/bits_code/) | Explicit: **“Bits Code never auto-merges PRs or MRs.”** (pass **165** + **190** + **212** HTML reconfirm). Automations deliver PR/MR (optionally draft) or Slack — not merge. |
+| [Bits Code docs](https://docs.datadoghq.com/bits_ai/bits_code/) | Explicit: **“Bits Code never auto-merges PRs or MRs.”** (pass **165** + **190** + **212** + **222** HTML reconfirm). Automations deliver PR/MR (optionally draft) or Slack — not merge. |
 | [Bits Code product/blog](https://www.datadoghq.com/blog/bits-code/) | “The agent proposes pull requests, but **engineers decide what to merge**.” |
 | [Seer Autofix docs](https://docs.sentry.io/product/ai-in-sentry/seer/autofix/) | Automation caps: **Stop after Root Cause / Plan / PR Drafted**. Max automation = **open a PR**; human still merges. Handoff to Claude/Cursor/Copilot Cloud still PR/local checkout path. |
 | HolmesGPT (pass 95 + **142**) | Operator mode + optional GitHub MCP **open PR** (write optional); MCP toolset *can* include merge when write-enabled — **not** “never merges,” but also **not** a productized app-code auto-merge + open outcome corpus; **no own store** |

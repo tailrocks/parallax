@@ -42,6 +42,9 @@
 >
 > **Pass 214 recheck (2026-07-18):** gate **still OPEN / zero rows**; SO **2026**
 > results still **404**; operator interviews still owed.
+>
+> **Pass 222 recheck (2026-07-18):** gate **still OPEN / zero rows**; ledger
+> files still **absent**; operator interviews still owed.
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
