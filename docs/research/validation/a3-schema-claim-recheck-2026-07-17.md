@@ -1,4 +1,4 @@
-# A3 claim-level recheck (2026-07-17, pass 60)
+# A3 claim-level recheck (2026-07-17, pass 60 + pass 100)
 
 <!-- markdownlint-disable MD013 -->
 
@@ -16,6 +16,19 @@
 | MCP outputSchema fixture absent | MCP crate **loads** v1/v2 schema files (`parallax-mcp/src/server.rs`) | **Narrow** — not a full public MCP outputSchema marketplace entry, but in-tree |
 | A3 adoption / moat proven | **Still false** — zero external integration ledger rows | **Keep unproven** |
 | SigNoz open investigation format = schema | Still **product language**, not published portable schema (prior checks; no new schema found 2026-07-17) | **Keep** |
+
+### Pass 100 (2026-07-17) — external adoption probe
+
+| Probe | Result |
+| --- | --- |
+| GitHub code search for `$id` host `github.com/tailrocks/parallax/schema/evidence-bundle` | **Only** `tailrocks/parallax` hits (schema files + MCP tests). **No** non-operator consumer. |
+| Generic filename `evidence-bundle.v1.schema.json` | **Many unrelated projects** use that *name* (RoutePilot, Mischief-Manager, Entroping, actuarial SDKs, etc.) with **different `$id`s** — name collision only, **not** Parallax adoption. |
+| Phrase "PARALLAX evidence bundle" outside Tailrocks | Hits on `arjun7n9s/Parallax` (1★, unrelated Python “band” project — **homonym**, not schema import). |
+| Public adoption ledgers | Still **absent** (`schema-adoption-results.md` / `corpus-outcome-results.md` not present). |
+
+**Claim stack unchanged:** `schema_artifacts_shipped` + `schema_adoption_none` +
+`corpus_empty_public`. **Do not** count foreign `evidence-bundle.v1` files as A3
+gravity.
 
 **Correct claim stack:**
 

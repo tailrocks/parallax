@@ -13,6 +13,12 @@
 > `schema_release`-class *artifact* event — path is `schema/` not the historical
 > `schemas/…/v0.1.0/` table).
 >
+> **Pass 100 (2026-07-17):** GitHub code search for Tailrocks `$id`
+> (`github.com/tailrocks/parallax/schema/evidence-bundle…`) still **only** this
+> repo. Generic filename `evidence-bundle.v1.schema.json` appears in many
+> **unrelated** projects — **name collision, not adoption**. Homonym repo
+> `arjun7n9s/Parallax` is not a schema consumer.
+>
 > **What is still unproven (A3 proper):**
 > - **External adoption = 0** (no non-operator producer/consumer, workflow
 >   dependency, or compatibility decision logged).
