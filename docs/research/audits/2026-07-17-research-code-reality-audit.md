@@ -117,3 +117,10 @@ Fixed present-tense leftovers the first pass missed:
 - SigNoz/HolmesGPT MCP cells: local-stdio shipped (not 🏗 planned)
 
 Folder re-grep for product deep-dives: clean on planned/unshipped for those surfaces.
+
+## Structural phrase-lock pass (strategist, same day)
+
+Locked six ledger status phrases and applied a whole-folder mechanical pass on
+`competitors/parallax-vs-*.md` + `README.md`. Cleared residual freestyle
+`designed (unproven)` on SigNoz (bundle, fix-outcome, redaction) and false-positive
+same-line `bundle.*planned` hits. Strategist residual gate re-run: **EMPTY**.

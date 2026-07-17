@@ -152,7 +152,7 @@ Same shape (a typed object an agent reads); fundamentally different artifact. Do
 - **Turso metadata split** — production multi-entity state. *(Design choice; scale advantage unproven.)*
 - **Rust vs Go** — different substrate. *(Minor; both compile to single binaries.)*
 
-> **Honest summary:** TMA1 is the reference competitor and #1 watch target. It **validates** the embedded-GreptimeDB + OTLP + read-only-MCP pattern in a shipping alpha. Parallax **also ships** that pattern plus production-oriented pieces (error derivation, Sentry envelope, Turso, UI/CLI, redacting bundle assembler). The remaining honest gap is **not "architecture only planned"** — it is **maturity, local-agent depth, and A1 (does the portable redacted bundle beat raw/TMA1 live context for fix quality?)**. If TMA1 extends to production-errors/Sentry/redaction/outcome, the collision is direct.
+> **Honest summary:** TMA1 is the reference competitor and #1 watch target. It **validates** the embedded-GreptimeDB + OTLP + read-only-MCP pattern in a shipping alpha. Parallax **also ships** that pattern plus production-oriented pieces (error derivation, Sentry envelope, Turso, UI/CLI, redacting bundle assembler). The remaining honest gap is **not "architecture only on paper"** — it is **maturity, local-agent depth, and A1 (does the portable redacted bundle beat raw/TMA1 live context for fix quality?)**. If TMA1 extends to production-errors/Sentry/redaction/outcome, the collision is direct.
 
 ## Watch triggers (the point of tracking TMA1)
 

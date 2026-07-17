@@ -127,7 +127,8 @@ Cost/performance cells are **⚪ benchmark-dependent** — not filled until meas
 | AI pricing model | (self-hosted compute) | credit-metered ($500/500cr) | paid (Seer) | free (MCP) | Enterprise+BYO-key | Enterprise/Cloud | self-host or cloud |
 | LLM/agent trace evals + experiments | 🏗 planned | ✅ (Agent Observability) | ❌ | ❌ | 🟡 | ❌ | ✅ core |
 
-> **Honest read of this column:** on every *shipped* AI axis, Datadog, Sentry, SigNoz, Coroot, and Langfuse are ahead of pre-release Parallax. Parallax's only differentiated AI claim is the *bounded, redacted, agent-safe bundle* as a typed artifact — which is **unproven** (the A1 gate: does a bundle beat raw context for agent fix quality?). Do not read "✅🏗 planned" as parity with a shipped competitor feature.
+> **Honest read of this column:** on every *shipped* AI axis, Datadog, Sentry, SigNoz, Coroot, and Langfuse are ahead of pre-release Parallax. Parallax's only differentiated AI claim is the *bounded, redacted, agent-safe bundle* as a typed artifact — which is **code-shipped**, value **unproven (A1)** (does a bundle beat raw context for agent fix quality?).
+> Do not read a 🏗 cell or "✅🏗" legend mark as parity with a shipped competitor feature.
 
 ### Architecture & deployment
 
@@ -153,7 +154,11 @@ Cost/performance cells are **⚪ benchmark-dependent** — not filled until meas
 ## What the matrix shows (no-bias read)
 
 1. **On breadth, maturity, scale, enterprise readiness, and shipped AI features, the incumbents (Datadog especially) are far ahead of pre-release Parallax.** That is the plain reality; hiding it would defeat the purpose.
-2. **Parallax's shipped-in-code (pre-release) surface is real but unproven:** OTLP ingest of all three signals into GreptimeDB native tables, Sentry-envelope ingest, derived error events + fingerprints, span-derived test results, and a bounded redacted evidence bundle (A1-unvalidated). **Planned-only:** remote MCP, AI root-cause, evals, SSO/RBAC. **Partial:** fix-outcome offline residual (plan **123 DONE**; draft-PR deferred; live product value unproven). **Shipped agent surface:** local-stdio MCP. The defensible axes today are openness/self-hostability/cost transparency/data ownership; the bundle/outcome edge is gated behind A1.
+2. **Parallax's shipped-in-code (pre-release) surface is real but unproven at product value:** OTLP ingest of all three signals into GreptimeDB native tables, Sentry-envelope ingest (plan **118 DONE**), derived error events + fingerprints, span-derived test results, and a bounded redacted evidence bundle (**code-shipped**; A1 value unvalidated).
+   - **Partial:** fix-outcome offline residual (plan **123 DONE**; draft-PR deferred; live product value unproven).
+   - **Shipped agent surface:** local-stdio MCP (plan **112 DONE**).
+   - **Still planned:** remote MCP, AI root-cause, evals, SSO/RBAC.
+   The defensible axes today are openness/self-hostability/cost transparency/data ownership; the bundle/outcome *value* edge is gated behind A1.
 3. **Combination claim (honest):** Parallax **ships code** for OTLP-native + Sentry-envelope ingest + a portable/versioned/redacted evidence-bundle assembler + local-stdio read-only MCP. **Nobody (including Parallax) has proven** that the bundle improves agent fix quality (A1), and the **fix-outcome loop has offline residual shipped** (plan 123 DONE) with **live value unproven**. "Unique combination in code" ≠ "valuable product" — A1 remains the gate.
 4. **The cells most likely to be wrong are the Parallax column (self-assessed, bias-prone) and the AI-native column (fast-moving).** Both are flagged for re-verification first on every pass.
 5. **Parallax's agent-context thesis faces shipped pressure from *three layers* at once** — and must beat (or complement) all of them, not assume superiority:
