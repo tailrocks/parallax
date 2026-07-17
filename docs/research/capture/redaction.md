@@ -2,6 +2,14 @@
 
 > A6 (one of the A1–A7 assumptions — "redaction can be made trustworthy enough to expose evidence to agents and third-party models") is kept alive only with a default-deny pipeline: source-specific minimization, a source-field policy gate before scanner-based redaction, detector and output passes over the canonical bundle plus every projection, a machine-readable `redaction_report`, and a reproducible red-team gate before any bundle reaches an agent or third-party model. The detector/toolchain decision is settled: Parallax owns a small Rust, source-aware, default-deny runtime redaction engine that fails closed, and uses Gitleaks (`v8.30.1`), Betterleaks (`v1.3.1`), TruffleHog (`v3.95.3`), detect-secrets (`v1.5.0`), Presidio (`2.2.362`), and the GitHub secret-scanning pattern corpus as offline validators and red-team comparators, never as blocking tiny-tier runtime dependencies. The Betterleaks drift recheck moves it from "unvetted future candidate" to a tracked `experimental_active` offline comparator, with network/credential-verification/LLM validation disabled by default; Gitleaks is now feature-complete (security patches only) so it stays the stable comparator but not the current-provider-pattern source. The synthetic canary fixture corpus is specified: commit manifests, expected findings, redacted outputs, hashes, and generator recipes, but keep raw provider-shaped values private or generator-only to avoid hosted-secret-scanning noise. The open gate is execution: A6 is proven only by committed red-team run artifacts showing zero seeded-canary leaks across canonical JSON, MCP `structuredContent`, and every agent-visible projection, fail-closed detector behavior, raw-ref isolation, source-field isolation, and preserved debugging usefulness — no current run exists yet, so the claim level remains `not_measured` until the ledger is populated.
 
+> **Implementation status (2026-07-17):** `parallax-redaction` implements 20
+> secret detectors (`redaction-lite-v3`), default-deny source decisions,
+> `REDACTION_POLICY_V1`, `RedactionReport`, `redact`, `decide`, `project_text`,
+> and `sanitize_text`. It runs during metadata/bundle projection, deliberately
+> not on the zero-copy ingest hot path. A6 `not_measured` now means the broader
+> red-team/canary and cross-projection proof gate remains open, not that the
+> redaction engine is absent.
+
 This note consolidates the following previously-separate research files, each preserved in full below:
 
 - `redaction-pipeline-and-secret-safety.md`

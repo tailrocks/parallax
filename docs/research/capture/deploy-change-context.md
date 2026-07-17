@@ -1,6 +1,12 @@
 # Deploy, Change, and Issue Context
 
-> Deploy/change/issue context is first-class evidence for answering "what changed?" after a production error, but it is decided that it is never root-cause proof by itself. The contract is set: Parallax ingests exact release, deployment, commit, PR, CI/check, workflow-run/job, and work-item records from GitHub/Sentry/Linear/Jira (plus OTel CICD as adapter input), attaches them to telemetry by stable identifiers first, downgrades everything else to explicit medium/weak/inferred hypotheses, and loudly reports missing-evidence categories rather than guessing. Normalized nodes, edge-strength rules, privacy defaults (issue/deploy text and logs are untrusted, redacted/ref-only by default), and the proof-gate thresholds are defined. What remains an open gate is execution: the deploy/change result ledger is currently at claim level `not_measured` — there is a data model and edge rules but no real provider ingestion, backfill, redaction, or bundle-audit run yet, so release/deploy/code/work-item context must be described as planned evidence, not proven "what changed?" intelligence. Strong deploy/change edges prove linkage only; causality still requires runtime evidence (first-seen/spike timing, trace/log/metric support, touched code, recurrence after fix, or contradiction analysis). Claims advance through explicit claim levels with allowed wording, expire on provider/schema/policy/freshness changes, and fail closed per provider, surface, and edge.
+> **Implementation status (2026-07-17):** GitHub deployment ingest is shipped:
+> `parallax-server/src/github_webhook.rs` receives webhooks and
+> `parallax-evidence/src/github_deploy.rs` verifies deployment signatures and
+> normalizes deployment evidence. Plan 121 remains active for the wider
+> provider/product surface. The ledger remains `not_measured` for end-to-end
+> backfill, bundle audits, and causal claims; this no longer means no provider
+> ingestion exists.
 
 > **Implementation ownership (2026-07-12):** this file retains the provider,
 > edge-strength, privacy, claim-level, and measurement contracts. It is not an

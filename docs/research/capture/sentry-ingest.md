@@ -1,14 +1,16 @@
-# Future Sentry-Compatible Ingestion
+# Sentry-Compatible Ingestion
 
-> Sentry-compatible ingestion is future migration-adapter research, not V1 scope. V1 is
-> OTLP-first and derives Parallax `error_event` rows from OpenTelemetry exception span events,
-> span error status, and ERROR/FATAL logs. If Sentry compatibility becomes the next highest-value
-> adoption path, Parallax should accept Sentry envelopes for error events at
-> `POST /api/<project_id>/envelope/`, normalize the payload into the same Parallax-owned
-> `error_event` model, compute deterministic grouping/fingerprinting, normalize stacktraces
-> (Rust-first), and correlate events with OpenTelemetry traces/logs/metrics — without
+> **Implementation status (2026-07-17): Sentry ingest exists.**
+> `parallax-server/src/sentry_http.rs` implements HTTP ingest,
+> `parallax-ingest/src/sentry_envelope.rs` implements `parse_envelope` with
+> `EnvelopeOutcome`, `RejectReason`, and `UnsupportedItem`, and
+> `parallax-analysis/src/sentry.rs` projects accepted events. Plan 118 remains
+> active for migration-adapter completion, not creation of the core path.
+> Parallax remains OTLP-first and derives `error_event` rows from OpenTelemetry
+> exception span events, span error status, and ERROR/FATAL logs. The Sentry
+> path accepts envelopes and normalizes them into Parallax evidence without
 > reimplementing Relay, Kafka, Snuba, sessions, replay, profiling, or billing quotas. The
-> envelope-item policy remains useful future design: event-first with a tolerant parser in front of
+> envelope-item policy is implemented as event-first tolerant parsing in front of
 > a strict typed oracle, so a valid `event` item is never poisoned by unsupported side items, every
 > unsupported item (current and unknown-future) gets an explicit, retry-safe, non-agent-visible
 > outcome, and unsupported payloads never become agent-visible by default. Future public
@@ -17,7 +19,7 @@
 > canonical-bundle, projection-equivalence, MCP structured-output, and unsupported-item checks. The
 > compatibility ledger remains **not measured**.
 
-**Sources rechecked 2026-06-03:** Sentry envelopes remain the relevant protocol target for future
+**Historical sources rechecked 2026-06-03:** Sentry envelopes were the protocol target for current
 compatibility, Sentry event payloads still carry the exception/stacktrace fields Parallax would
 normalize, and Sentry grouping still prioritizes fingerprint/stacktrace/exception/message material.
 

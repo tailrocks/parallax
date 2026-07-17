@@ -11,6 +11,15 @@
 > implementation and real protocol runs. Historical build order below records
 > rationale only.
 
+> **Current implementation (2026-07-17):** `parallax-evidence` normalizes
+> Claude Code NDJSON/hooks and projects `AgentSession`/`AgentStep` evidence.
+> `parallax-semconv` ships generated Rust, TypeScript, and Java constants for
+> CLI invocation, app mode, session, UI navigation/action, background jobs, and
+> GenAI agent/conversation/token conventions. Generation uses
+> `cargo xtask semconv generate` from `telemetry/semconv/contract.yaml` against
+> OTel schema 1.40.0; Weaver is not used. Plan 120 owns remaining tool coverage
+> and measurement, so broad cross-tool claims remain `not_measured`.
+
 This note consolidates the following previously-separate research files, each preserved in full below:
 
 - `agent-and-cli-execution-tracing.md`

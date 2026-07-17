@@ -9,6 +9,12 @@ DataLoaders, **tokio-postgres** and the official **`clickhouse`** crate (operato
 not sqlx), Redis, RabbitMQ (lapin). This note answers "what can a Rust application actually send
 to Parallax, and how" — the full emission scope per layer, with gaps named.
 
+**Parallax receiver status (2026-07-17):** the receiver described here is
+shipped for traces, logs, and metrics on OTLP/gRPC `:4317` and OTLP/HTTP
+`:4318`. It accepts gzip, enforces `otlp_max_body_bytes`, validates OTLP IDs,
+and durably spools raw length-prefixed `.pspl` frames before queue
+acknowledgement. `parallax-ingest` performs zero-copy signal normalization.
+
 **Ecosystem state:** `opentelemetry-rust` 0.32 (2026-05) — **logs + metrics API/SDK stable;
 traces still beta; OTLP exporter RC**. One `tracing_subscriber::registry()` carries everything:
 spans via `tracing-opentelemetry`, logs via `opentelemetry-appender-tracing` (with automatic

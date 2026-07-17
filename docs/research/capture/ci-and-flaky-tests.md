@@ -9,6 +9,13 @@
 > flaky-test implementation. Historical sequence language below records design
 > rationale only.
 
+> **Current implementation (2026-07-17):** `parallax-analysis` implements JUnit
+> XML reconciliation, nextest execution mapping, flaky-test evaluation/scanning,
+> and test-span derivation/reporting. `parallax-server/src/test_flakiness.rs`
+> provides server integration. Plan 124 remains active for unfinished evidence
+> collection/product closure. Historical build-first language below is rationale;
+> cross-language and real-run validation questions remain open.
+
 This note consolidates the following previously-separate research files, each preserved in full below:
 
 - `ci-failure-context-mvp.md`

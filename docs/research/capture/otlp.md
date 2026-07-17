@@ -1,6 +1,16 @@
 # OpenTelemetry Protocol and Context Layer
 
-> OpenTelemetry should be Parallax's native telemetry protocol layer and context substrate, while the durable product value lives above OTEL: Sentry-style error grouping, stacktrace normalization, release regression analysis, an evidence graph, and schema-bound canonical context bundles for humans and coding agents across CLI, HTTP, and MCP projections. V1 should not claim a separate OpenTelemetry "error event" signal. It should receive OTLP traces, logs, and metrics, then derive Parallax `error_event` rows from span exception events, span status/`error.type`, and correlated ERROR/FATAL log records. The baseline transport claim is decided: Parallax must require `grpc` and `http/protobuf`, label `http/json` as explicitly optional (a JSON-only receiver is not enough for "OTLP-native" wording), test SDK endpoint URL construction, and back any "Collector-compatible" claim with a runnable Collector distribution fixture rather than a core/source release note. "OTLP-native" and "Collector-compatible" are conformance claims, not endpoint facts: they require direct-SDK, official Collector, Collector Contrib, and Rotel fixtures that produce equivalent normalized rows, canonical bundle and evidence-edge hashes, projection manifests, and MCP `structuredContent`/`outputSchema` validation. The current ledger status is **not measured** — no direct-SDK, Collector, Collector Contrib, or Rotel fixture results exist yet — so Parallax should describe OTLP support as a target or design direction, with the v0 gate being L1 + L2 + L3 (direct Rust SDK, signal semantics preserved, Collector equivalence) for a narrow signal subset. The open gates remain: running the dated fixture matrix to advance past `not_measured`, resolving the stable Collector distribution `v0.153.0` axis (core/source is `v0.153.0` while the runnable distribution `/releases/latest` still resolves to `v0.152.1`), and proving OTLP-derived evidence assembles into agent-ready bundles before any agent-facing claim.
+> **Implementation status (2026-07-17):** OpenTelemetry is Parallax's native
+> protocol layer. `parallax-server` receives traces, logs, and metrics over
+> OTLP/gRPC `:4317` and OTLP/HTTP `:4318`; supports gzip; enforces
+> `otlp_max_body_bytes`; rejects invalid IDs as HTTP 400 / gRPC
+> `INVALID_ARGUMENT`; and reports spool/queue failures as HTTP 500 / gRPC
+> `INTERNAL`. `parallax-spool` writes length-prefixed raw `.pspl` frames before
+> queue acknowledgement. `parallax-ingest` provides zero-copy
+> `normalize_traces`, `normalize_logs`, and `normalize_metrics`. Receiver
+> implementation is shipped. The conformance ledger remains `not_measured`:
+> direct-SDK/Collector/Contrib/Rotel equivalence and agent-ready projection
+> claims still require the documented runs.
 
 > **⚠ Update 2026-06-18 — storage landing decided.** Parallax remains the OTLP receiver, but for
 > storage it **forwards raw OTLP straight to GreptimeDB's native tables** (`opentelemetry_traces`/`opentelemetry_logs`/metric

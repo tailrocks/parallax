@@ -2,6 +2,13 @@
 
 > Parallax treats production databases as evidence sources, not agent control surfaces: direct database access is optional, read-only, template-driven, scoped, audited, redacted, and excluded from default bundles until a Tier 2 safety gate passes. Three tiers are decided — Tier 0 application telemetry (on by default), Tier 1 metadata/schema snapshots (optional), and Tier 2 read-only query templates (off until the gate passes) — with the first product claim limited to "Parallax can show database-related evidence," never "agents can query production." The companion ledger turns that gate into auditable claim levels (`not_measured` through `agent_visible_db_evidence`, plus `claim_expired`/`claim_failed`), defining run artifacts, row schemas, counting rules, refresh triggers, and allowed product wording. Generic SQL tools such as `run_sql` are rejected in the Parallax context server, and database evidence must never be exposed through MCP resources/resource templates — only schema-bound tool `structuredContent`. The open gates remain: until Tier 2 template fixtures prove least privilege, RLS/view scoping, read-only runtime, parser/allowlist, limits, redaction, source-field policy, projection raw-ref denial, audit, MCP resource denial, prompt-injection resistance, and failure wording, the current status is `not_measured` and direct database evidence stays marked as missing.
 
+> **Current shared safety implementation (2026-07-17):** the redaction
+> prerequisite is no longer hypothetical. `parallax-redaction` implements the
+> 20-detector `redaction-lite-v3` engine, `REDACTION_POLICY_V1`, default-deny
+> source policy, reports, and bundle/metadata projection sanitization. It is not
+> applied on the ingest hot path. This does not advance Tier 2: query-template,
+> privilege, RLS, audit, and prompt-injection fixtures remain unmeasured.
+
 This note consolidates the following previously-separate research files, each preserved in full below:
 
 - `production-database-evidence-access.md`

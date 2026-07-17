@@ -2,6 +2,12 @@
 
 > A4 is the bear-case assumption that deterministic cross-signal correlation is reliable in real, messy telemetry, and it remains an open validation gate: it can pass only through a row-level audit of real (`real_pilot`) telemetry, never on aggregate rates or generator-perfect data. The gate defines what to measure — strong-edge prevalence, trace/log/release/deploy coverage, trace-context validity and scope consistency, frontend-to-backend continuation, async links, baggage privacy, projection equivalence, a manual false-strong-edge audit, and complete missing-evidence reporting — with first-pass pass targets for the Rust backend/tiny-tier wedge (e.g. backend `trace_context_rate` >= 80%, `error_in_span_rate` >= 70%, `false_strong_edge_rate` <= 5%, `missing_evidence_report_rate` = 100%). The ledger defines the proof artifact required before any aggregate can count: a per-run manifest, per-anchor rows, manual audit rows, instrumentation repair rows, claim levels, and freshness/rerun rules. If strong edges are common and the same safe canonical bundle survives CLI/API/MCP projection, Parallax can claim evidence-backed reconstruction for the target wedge; if strong edges are rare or projections diverge, the product must become honest best-effort context plus tooling that helps users fix instrumentation and access-surface gaps. A failed A4 gate is itself useful — it tells Parallax where instrumentation, setup diagnostics, and honest product wording must change.
 
+> **Implementation status (2026-07-17):** GraphQL ships
+> `tracesByInvocation`, `logsByTrace`, `logsByInvocation`, `linkedTraces`,
+> `attributeCompare`, `fieldKeys`, `fieldStats`, `story`, `evidenceGaps`, and
+> `bundle`. This does not close A4: the ledger measures reliability on real
+> telemetry, not resolver existence.
+
 This note consolidates the following previously-separate research files, each preserved in full below:
 
 - `correlation-reliability-real-telemetry-gate.md`
