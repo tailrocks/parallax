@@ -1,12 +1,30 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router"
 import { useState } from "react"
-import { IconBell, IconPlus } from "@tabler/icons-react"
+import {
+  IconBell,
+  IconBellFilled,
+  IconPlus,
+  IconTrash,
+  IconWebhook,
+} from "@tabler/icons-react"
 
 import { EmptyState } from "@/components/console/empty-state"
+import { RelativeTime } from "@/components/console/relative-time"
 import { PageHeader } from "@/components/page-header"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -17,78 +35,365 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { gqlString, graphql } from "@/lib/api"
 import {
   ALERT_RULE_TEMPLATES,
   draftFromTemplate,
   validateAlertRuleDraft,
 } from "@/lib/alert-rule-form"
-import type { AlertRuleDraft } from "@/lib/alert-rule-form"
+import type {
+  AlertDestinationRow,
+  AlertIncidentRow,
+  AlertRuleRow,
+} from "@/lib/alerts-gql"
+import {
+  ALERTS_INDEX_QUERY,
+  alertDestinationSaveMutation,
+  alertRuleSaveMutation,
+  parseStringArray,
+  ruleConditionLabel,
+} from "@/lib/alerts-gql"
 
-/** Preliminary /alerts page (plan 167 step 4 skeleton).
- *
- * The GraphQL contract below (`alertRules` query, `alertRuleSave` mutation)
- * is the shape the backend resolvers are expected to expose over the landed
- * Turso CRUD; until they land the loader degrades to a "backend not wired"
- * empty state instead of crashing the route. Peer owns the full pages
- * (rule detail with threshold chart, incidents, destinations) and evidence.
+/** /alerts index (plan 167 step 4, preliminary): rules, incidents, and
+ * destinations over the alert GraphQL surface. Peer owns the rule-detail
+ * threshold chart, incident detail, and live breach evidence.
  */
 
-export interface AlertRuleRow {
-  id: string
-  name: string
-  enabled: boolean
-  signalType: string
-  comparator: string
-  threshold: number
-  severity: string
-  windowMinutes: number
-}
-
 interface LoaderData {
-  rules: AlertRuleRow[] | null
+  alertRules: AlertRuleRow[]
+  alertIncidents: AlertIncidentRow[]
+  alertDestinations: AlertDestinationRow[]
 }
 
 export const Route = createFileRoute("/alerts/")({
-  loader: async (): Promise<LoaderData> => {
-    try {
-      const { alertRules } = await graphql<{ alertRules: AlertRuleRow[] }>(`
-        {
-          alertRules {
-            id
-            name
-            enabled
-            signalType
-            comparator
-            threshold
-            severity
-            windowMinutes
-          }
-        }
-      `)
-      return { rules: alertRules }
-    } catch {
-      // Backend field not wired yet (plan 167 step 4) — render the
-      // preliminary empty state rather than a route error.
-      return { rules: null }
-    }
-  },
+  loader: () => graphql<LoaderData>(ALERTS_INDEX_QUERY),
   component: AlertsPage,
 })
 
-function severityVariant(severity: string): "destructive" | "secondary" {
-  return severity === "critical" ? "destructive" : "secondary"
+function SeverityBadge({ severity }: { severity: string }) {
+  return (
+    <Badge variant={severity === "critical" ? "destructive" : "secondary"}>
+      {severity}
+    </Badge>
+  )
 }
 
 function AlertsPage() {
-  const { rules } = Route.useLoaderData()
+  const { alertRules, alertIncidents, alertDestinations } =
+    Route.useLoaderData()
   const router = useRouter()
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  async function mutate(mutation: string) {
+    setActionError(null)
+    try {
+      await graphql(mutation)
+      await router.invalidate()
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : String(err))
+    }
+  }
+
+  const openIncidents = alertIncidents.filter(
+    (incident) => incident.status === "open"
+  )
+
+  return (
+    <div className="flex flex-col gap-4">
+      <PageHeader
+        icon={IconBell}
+        iconClassName="text-amber-500"
+        title="Alerts"
+        description="Threshold rules over live signals; incidents notify webhook destinations."
+        actions={
+          <NewRuleDialog
+            destinations={alertDestinations}
+            onSaved={() => void router.invalidate()}
+          />
+        }
+      />
+
+      {actionError ? (
+        <p className="text-sm text-destructive">{actionError}</p>
+      ) : null}
+
+      <Tabs defaultValue="rules">
+        <TabsList>
+          <TabsTrigger value="rules">Rules ({alertRules.length})</TabsTrigger>
+          <TabsTrigger value="incidents">
+            Incidents ({openIncidents.length} open)
+          </TabsTrigger>
+          <TabsTrigger value="destinations">
+            Destinations ({alertDestinations.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="rules">
+          {alertRules.length === 0 ? (
+            <EmptyState
+              icon={IconBellFilled}
+              title="No alert rules"
+              description="Create a rule from a template — the evaluator checks it every minute once it is enabled."
+            />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Rule</TableHead>
+                  <TableHead>Condition</TableHead>
+                  <TableHead>Scope</TableHead>
+                  <TableHead>Severity</TableHead>
+                  <TableHead>Enabled</TableHead>
+                  <TableHead>Updated</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {alertRules.map((rule) => (
+                  <TableRow key={rule.id}>
+                    <TableCell>
+                      <span className="font-medium">{rule.name}</span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {ruleConditionLabel(rule)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {parseStringArray(rule.services).join(", ") ||
+                        "all services"}
+                    </TableCell>
+                    <TableCell>
+                      <SeverityBadge severity={rule.severity} />
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={rule.enabled}
+                        onCheckedChange={(checked) =>
+                          void mutate(
+                            `mutation { alertRuleSetEnabled(id: "${gqlString(rule.id)}", enabled: ${checked ? "true" : "false"}) { id enabled } }`
+                          )
+                        }
+                        aria-label={`Enable ${rule.name}`}
+                      />
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      <RelativeTime nanos={rule.updatedAtNanos} />
+                    </TableCell>
+                    <TableCell>
+                      <DeleteButton
+                        label={`Delete rule ${rule.name}?`}
+                        onDelete={() =>
+                          void mutate(
+                            `mutation { alertRuleDelete(id: "${gqlString(rule.id)}") }`
+                          )
+                        }
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </TabsContent>
+
+        <TabsContent value="incidents">
+          {alertIncidents.length === 0 ? (
+            <EmptyState
+              icon={IconBell}
+              title="No incidents"
+              description="Incidents appear when an enabled rule breaches for its required consecutive windows."
+            />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Rule</TableHead>
+                  <TableHead>Group</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Severity</TableHead>
+                  <TableHead className="text-right">Last value</TableHead>
+                  <TableHead>First triggered</TableHead>
+                  <TableHead>Last triggered</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {alertIncidents.map((incident) => (
+                  <TableRow key={incident.id}>
+                    <TableCell>
+                      <span className="font-medium">
+                        {incident.rule?.name ?? incident.ruleId}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {incident.groupKey || "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          incident.status === "open" ? "destructive" : "outline"
+                        }
+                      >
+                        {incident.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <SeverityBadge severity={incident.severity} />
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {incident.lastValue ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      <RelativeTime nanos={incident.firstTriggeredAtNanos} />
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      <RelativeTime nanos={incident.lastTriggeredAtNanos} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </TabsContent>
+
+        <TabsContent value="destinations">
+          <div className="flex flex-col gap-3">
+            <div>
+              <NewDestinationDialog onSaved={() => void router.invalidate()} />
+            </div>
+            {alertDestinations.length === 0 ? (
+              <EmptyState
+                icon={IconWebhook}
+                title="No destinations"
+                description="Add a webhook or Slack webhook URL — rules deliver incident notifications to it."
+              />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Kind</TableHead>
+                    <TableHead>URL</TableHead>
+                    <TableHead>Updated</TableHead>
+                    <TableHead />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {alertDestinations.map((destination) => (
+                    <TableRow key={destination.id}>
+                      <TableCell className="font-medium">
+                        {destination.name}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {destination.kind}
+                      </TableCell>
+                      <TableCell className="max-w-64 truncate text-muted-foreground">
+                        {destinationUrl(destination.config)}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        <RelativeTime nanos={destination.updatedAtNanos} />
+                      </TableCell>
+                      <TableCell>
+                        <DeleteButton
+                          label={`Delete destination ${destination.name}?`}
+                          onDelete={() =>
+                            void mutate(
+                              `mutation { alertDestinationDelete(id: "${gqlString(destination.id)}") }`
+                            )
+                          }
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
+
+function destinationUrl(config: string): string {
+  try {
+    const value: unknown = JSON.parse(config)
+    if (value && typeof value === "object" && "url" in value) {
+      const url = (value as { url?: unknown }).url
+      if (typeof url === "string") return url
+    }
+  } catch {
+    // opaque config — fall through to the raw string
+  }
+  return config
+}
+
+function DeleteButton({
+  label,
+  onDelete,
+}: {
+  label: string
+  onDelete: () => void
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger
+        render={<Button variant="ghost-destructive" size="icon-xs" />}
+      >
+        <IconTrash />
+        <span className="sr-only">Delete</span>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{label}</AlertDialogTitle>
+          <AlertDialogDescription>
+            This cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction variant="destructive" onClick={onDelete}>
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+
+function NewRuleDialog({
+  destinations,
+  onSaved,
+}: {
+  destinations: AlertDestinationRow[]
+  onSaved: () => void
+}) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [templateId, setTemplateId] = useState(
     ALERT_RULE_TEMPLATES[0]?.id ?? "high-error-rate"
   )
+  const [threshold, setThreshold] = useState("")
+  const [selectedDestinations, setSelectedDestinations] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
+
+  const template = ALERT_RULE_TEMPLATES.find((t) => t.id === templateId)
 
   async function create() {
     setError(null)
@@ -97,150 +402,222 @@ function AlertsPage() {
       setError("unknown template")
       return
     }
+    if (threshold.trim()) {
+      const parsed = Number(threshold)
+      if (!Number.isFinite(parsed)) {
+        setError("threshold must be a number")
+        return
+      }
+      draft.threshold = parsed
+    }
     const validation = validateAlertRuleDraft(draft)
     if (!validation.ok) {
       setError(validation.errors.join("; "))
       return
     }
     try {
-      await graphql<{
-        alertRuleSave: { id: string }
-      }>(`mutation { alertRuleSave(${draftToArgs(draft)}) { id } }`)
-      setName("")
+      await graphql(
+        alertRuleSaveMutation(draft, {
+          destinationIds: selectedDestinations,
+        })
+      )
       setOpen(false)
-      await router.invalidate()
+      setName("")
+      setThreshold("")
+      setSelectedDestinations([])
+      onSaved()
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     }
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <PageHeader
-        icon={IconBell}
-        iconClassName="text-amber-500"
-        title="Alerts"
-        description="Threshold rules over error rate, latency, throughput, logs, and metrics."
-        actions={
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger render={<Button />}>
-              <IconPlus data-icon="inline-start" />
-              New rule
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>New alert rule</DialogTitle>
-                <DialogDescription>
-                  Start from a template; thresholds and scope can be refined on
-                  the rule page.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex flex-col gap-2">
-                <Input
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  placeholder="Checkout error rate"
-                />
-                <div className="flex flex-wrap gap-2">
-                  {ALERT_RULE_TEMPLATES.map((template) => (
-                    <Button
-                      key={template.id}
-                      size="sm"
-                      variant={
-                        template.id === templateId ? "default" : "outline"
-                      }
-                      onClick={() => setTemplateId(template.id)}
-                    >
-                      {template.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-              {error ? (
-                <p className="text-sm text-destructive">{error}</p>
-              ) : null}
-              <DialogFooter>
-                <Button disabled={!name.trim()} onClick={() => void create()}>
-                  Create
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        }
-      />
-
-      {rules === null ? (
-        <EmptyState
-          icon={IconBell}
-          title="Alerting backend not wired yet"
-          description="The alert rule store and evaluator are in place; the GraphQL surface lands with plan 167 step 4."
-        />
-      ) : rules.length === 0 ? (
-        <EmptyState
-          icon={IconBell}
-          title="No alert rules"
-          description="Create a rule from a template to get notified about breaches."
-        />
-      ) : (
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {rules.map((rule) => (
-            <li key={rule.id}>
-              <Card>
-                <CardHeader className="flex-row items-center justify-between">
-                  <CardTitle className="truncate text-sm">
-                    {rule.name}
-                  </CardTitle>
-                  <Badge variant={severityVariant(rule.severity)}>
-                    {rule.severity}
-                  </Badge>
-                </CardHeader>
-                <CardContent className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                  <span>
-                    {rule.signalType} {rule.comparator} {rule.threshold} over{" "}
-                    {rule.windowMinutes}m
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger render={<Button />}>
+        <IconPlus data-icon="inline-start" />
+        New rule
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>New alert rule</DialogTitle>
+          <DialogDescription>
+            Start from a template; scope, thresholds, and hysteresis can be
+            refined on the rule page.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="alert-rule-name">Name</Label>
+            <Input
+              id="alert-rule-name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Checkout error rate"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>Template</Label>
+            <Select
+              value={templateId}
+              onValueChange={(value) => {
+                if (value) setTemplateId(value)
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ALERT_RULE_TEMPLATES.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="alert-rule-threshold">
+              Threshold{" "}
+              <span className="text-muted-foreground">
+                (default {template?.draft.threshold ?? "—"})
+              </span>
+            </Label>
+            <Input
+              id="alert-rule-threshold"
+              value={threshold}
+              onChange={(event) => setThreshold(event.target.value)}
+              placeholder={String(template?.draft.threshold ?? "")}
+              inputMode="decimal"
+            />
+          </div>
+          {destinations.length > 0 ? (
+            <div className="flex flex-col gap-1.5">
+              <Label>Destinations</Label>
+              {destinations.map((destination) => (
+                <label
+                  key={destination.id}
+                  className="flex items-center gap-2 text-sm"
+                >
+                  <Checkbox
+                    checked={selectedDestinations.includes(destination.id)}
+                    onCheckedChange={(checked) =>
+                      setSelectedDestinations((current) =>
+                        checked
+                          ? [...current, destination.id]
+                          : current.filter((id) => id !== destination.id)
+                      )
+                    }
+                  />
+                  {destination.name}
+                  <span className="text-muted-foreground">
+                    ({destination.kind})
                   </span>
-                  <Badge variant={rule.enabled ? "secondary" : "outline"}>
-                    {rule.enabled ? "enabled" : "disabled"}
-                  </Badge>
-                </CardContent>
-              </Card>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              No destinations yet — the rule will open incidents in the UI only
+              until a webhook destination is added.
+            </p>
+          )}
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        </div>
+        <DialogFooter>
+          <Button disabled={!name.trim()} onClick={() => void create()}>
+            Create rule
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
-/** Serialize a draft into GraphQL mutation arguments (string-typed API). */
-export function draftToArgs(draft: AlertRuleDraft): string {
-  const parts = [
-    `name: "${gqlString(draft.name)}"`,
-    `enabled: ${draft.enabled}`,
-    `signalType: "${gqlString(draft.signalType)}"`,
-    `comparator: "${gqlString(draft.comparator)}"`,
-    `threshold: ${draft.threshold}`,
-    `windowMinutes: ${draft.windowMinutes}`,
-    `minimumSampleCount: ${draft.minimumSampleCount}`,
-    `consecutiveBreachesRequired: ${draft.consecutiveBreachesRequired}`,
-    `consecutiveHealthyRequired: ${draft.consecutiveHealthyRequired}`,
-    `severity: "${gqlString(draft.severity)}"`,
-    `renotifyIntervalMinutes: ${draft.renotifyIntervalMinutes}`,
-  ]
-  if (draft.thresholdUpper != null) {
-    parts.push(`thresholdUpper: ${draft.thresholdUpper}`)
+function NewDestinationDialog({ onSaved }: { onSaved: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState("")
+  const [kind, setKind] = useState("webhook")
+  const [url, setUrl] = useState("")
+  const [error, setError] = useState<string | null>(null)
+
+  async function create() {
+    setError(null)
+    if (!/^https?:\/\//.test(url)) {
+      setError("URL must start with http:// or https://")
+      return
+    }
+    try {
+      await graphql(alertDestinationSaveMutation(name, kind, url))
+      setOpen(false)
+      setName("")
+      setUrl("")
+      onSaved()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    }
   }
-  if (draft.metricName) {
-    parts.push(`metricName: "${gqlString(draft.metricName)}"`)
-  }
-  if (draft.metricAggregation) {
-    parts.push(`metricAggregation: "${gqlString(draft.metricAggregation)}"`)
-  }
-  if (draft.services && draft.services.length > 0) {
-    const list = draft.services
-      .map((service) => `"${gqlString(service)}"`)
-      .join(", ")
-    parts.push(`services: [${list}]`)
-  }
-  return parts.join(", ")
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger render={<Button variant="outline" size="sm" />}>
+        <IconPlus data-icon="inline-start" />
+        Add destination
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>New destination</DialogTitle>
+          <DialogDescription>
+            Incident notifications POST to this URL. Email is not available in
+            V1.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="alert-destination-name">Name</Label>
+            <Input
+              id="alert-destination-name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Ops webhook"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>Kind</Label>
+            <Select
+              value={kind}
+              onValueChange={(value) => {
+                if (value) setKind(value)
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="webhook">Webhook (JSON)</SelectItem>
+                <SelectItem value="slack_webhook">Slack webhook</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="alert-destination-url">URL</Label>
+            <Input
+              id="alert-destination-url"
+              value={url}
+              onChange={(event) => setUrl(event.target.value)}
+              placeholder="https://hooks.example.com/parallax"
+            />
+          </div>
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        </div>
+        <DialogFooter>
+          <Button
+            disabled={!name.trim() || !url.trim()}
+            onClick={() => void create()}
+          >
+            Add destination
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
 }
