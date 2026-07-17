@@ -26,6 +26,31 @@ their original measurement pins unless a later Run re-verified.
 | Signal · query shape | Winner | Mechanism (the *because*) | Scenario qualifiers | Confidence |
 | --- | --- | --- | --- | --- |
 | **Metrics** · PromQL range/aggregation | **GreptimeDB** (maturity/ergonomics, no longer binary) | Native PromQL planner (custom DataFusion nodes) + Prom `query_range` API, **GA + default-on**. **Correction (pass 44):** ClickHouse 26.x **does** have PromQL (`prometheusQuery[Range]` over the experimental `TimeSeries` engine) — but **experimental, off by default, setup-heavy**. **Run 403:** outer `SELECT` still Code 48 (facade); **SQL INSERT + `prometheusQuery`/`prometheusQueryRange` return real series** on 26.6.1+26.7.1 — intended path is table-function-only, not broken. **Run 404:** `rate`/`sum`/`avg by` **numerically match** GT; **`increase` Code 48** on 26.6+26.7. **Run 423:** expanded matrix — CH also lacks most `*_over_time` (except `last`), `deriv`/`predict_linear`/`resets`/`changes`/`absent`/`clamp_*`; has `topk`/`bottomk`/`offset`/compare. **Run 183:** PromQL/TQL tax vs SQL is ~1.5–2× at N=100k (not a fixed ~5.6×). | Any; gap = maturity+**partial surface** | **plan+live** (Runs 3, 23, 183, 196, **403–404, 423**) |
+
+## Run 424 (2026-07-18) — join prune re-verify (N=2k fresh tables)
+
+**CH 26.6.1** (`r424_spans` ORDER BY `(trace_id, ts)`; `r424_logs` ORDER BY `(service, ts)` +
+`bloom_filter` on `trace_id`):
+
+| Query | Plan | Time |
+| --- | --- | --- |
+| `WHERE trace_id='t42'` on spans | PrimaryKey granules **1/1** | ~3 ms, 4 rows |
+| JOIN spans ⋉ logs `WHERE s.trace_id='t42'` | **Left** PK 1/1; **Right** bloom `idx_trace` 1/1 (predicate pushed) | ~4 ms, 16 rows |
+
+**GT v1.1.3** (`r424_spans` PK `trace_id`; 2000 rows; plain filter):
+
+| Query | Plan | Result |
+| --- | --- | --- |
+| `WHERE trace_id='t42'` | SeqScan `output_rows: 1`, mem-only range | **1** row, ~3 ms |
+| JOIN with `WHERE s.trace_id` | Left prunes; right is `HashJoin` + post-scan `FilterExec` on logs | Join returns 1 (logs empty in this fixture after insert-math fail) |
+
+**No drift vs Run 154/193 thesis:** CH propagates join filter into both MergeTree
+reads (PK + bloom). GT prunes keyed side; join still non-commutative fan-in at the
+frontend (app-side prefilter still the blueprint). At N=2k both interactive.
+
+**Harness note:** GT reserved keyword `service` must be quoted; same-ts insert into
+non-`append_mode` table collapses PK series (10 services → 10 rows). Use distinct
+timestamps + `append_mode` for log volume.
 | **Metrics** · SQL range-aggregation latency | **ClickHouse, ~2× warm** (was misread as ~10×) | **Corrected (Run 37):** warm steady-state at 40k series / 8M rows is **CH 50 ms vs GT 107 ms (~2×)** — vectorized C++ group-by is the throughput bar (pass 42), but the gap is ~2×, not 10×. Run 11's GT 638 ms (~10×) was a **cold/first-run** scan (cold caches right after ingest), not the warm gap. Run-3's near-tie (1.3×) was a 1,200-series tiny-scale artifact. Cold-regime gap is larger (`caching-and-cold-warm.md`). | 40k series; warm ~2×, cold larger | smoke→volume (Runs 11, 37) |
 | **Metrics** · high-cardinality series ingest | GreptimeDB (likely) | Metric engine maps many logical metrics onto a shared physical wide table → avoids per-series region/table explosion; ClickHouse needs careful `ORDER BY` + low-card keys. | High series cardinality | arch |
 | **Metrics** · float compression | ClickHouse (likely) | Gorilla/DoubleDelta/ALP/FPC/T64 codec breadth vs GreptimeDB Parquet defaults. **Untested** — Run 3 data was incompressible (random walk). | Flat gauges / counters | arch (inconclusive) |
