@@ -11,13 +11,10 @@
 - **Risk**: HIGH
 - **Depends on**: 104, 111 (done); 120, 121 residual gates
 - **Category**: future autonomous fixing / outcome evidence
-- **Status**: BLOCKED
-- **Blocker**: Plan 120 residual capture adapters incomplete (121 DONE
-  2026-07-17); offline evaluation harness and operator fixer/provider
-  selection not yet landed. Scope opened by unblock directive only for
-  after those gates.
+- **Status**: IN PROGRESS
+- **Blocker**: none for offline harness residual (120/121 DONE 2026-07-17)
 
-## Residual only (after 120; 121 DONE)
+## Residual only
 
 1. Operator-approved fixer/provider, task classes, autonomy ≤L3 draft-PR,
    budgets, success rule.

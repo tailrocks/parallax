@@ -3263,6 +3263,7 @@ dependencies = [
  "opentelemetry",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
+ "parallax-evidence",
  "parallax-metadata",
  "parallax-model",
  "parallax-semconv",

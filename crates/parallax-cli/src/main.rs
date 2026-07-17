@@ -138,6 +138,17 @@ pub(crate) enum Command {
         /// "SELECT * FROM `opentelemetry_logs` ORDER BY timestamp DESC LIMIT 10".
         query: String,
     },
+    /// Explicit consent-only Claude Code session import (plan 120).
+    ///
+    /// Never auto-enabled from a checkout. Pass a stream-json NDJSON path
+    /// produced by the operator (e.g. `claude -p --output-format stream-json`).
+    ImportClaude {
+        /// Path to a Claude Code stream-json NDJSON capture.
+        path: std::path::PathBuf,
+        /// Emit the normalized projection as JSON.
+        #[arg(long)]
+        json: bool,
+    },
     /// Diagnose the local install (server, engine, spool, sizes).
     Doctor,
     /// Plan and reclaim eligible lifecycle data (default: dry-run).

@@ -4091,7 +4091,7 @@ ceiling = 91
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-evidence/src/claude_code.rs"
-ceiling = 44
+ceiling = 55
 
 [[limits]]
 metric = "rust.assertions"
@@ -4297,12 +4297,12 @@ ceiling = 450
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-cli/src/doctor.rs"
-ceiling = 533
+ceiling = 541
 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-evidence/src/claude_code.rs"
-ceiling = 553
+ceiling = 595
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4317,7 +4317,7 @@ ceiling = 536
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-metadata/src/turso.rs"
-ceiling = 674
+ceiling = 692
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4687,7 +4687,7 @@ ceiling = 1
 [[rust_suppressions]]
 crate_name = "parallax-cli"
 lint = "clippy::too_many_lines"
-ceiling = 1
+ceiling = 2
 
 [[rust_suppressions]]
 crate_name = "parallax-evidence"
@@ -6939,7 +6939,7 @@ ceiling = 115
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-cli/src/doctor.rs::doctor"
-ceiling = 145
+ceiling = 153
 
 [[limits]]
 metric = "rust.function-lines"
@@ -7226,7 +7226,7 @@ kind = "handwritten"
 
 [[product.anyhow_edges]]
 path = "crates/parallax-metadata/src/turso/deploy.rs"
-ceiling = 9
+ceiling = 10
 reason = "private deploy-context persistence composition is converted at the typed metadata port"
 
 [[product.anyhow_edges]]
@@ -7278,7 +7278,7 @@ ceiling = 1
 
 [[product.anyhow_edges]]
 path = "crates/parallax-metadata/src/turso/ci.rs"
-ceiling = 13
+ceiling = 15
 reason = "private CI-evidence persistence composition is converted at the typed metadata port"
 
 [[limits]]
@@ -7445,3 +7445,106 @@ ceiling = 4
 metric = "rust.test-sleeps"
 scope = "crates/parallax-server/tests/m118_sentry_envelope.rs"
 ceiling = 1
+
+[[ui.ownership]]
+path = "ui/src/features/investigations/tests/queries/keys.property.test.ts"
+current_owner = "features/investigations"
+target_owner = "features/investigations"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/logs/tests/model/logs-search.property.test.ts"
+current_owner = "features/logs"
+target_owner = "features/logs"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/logs/tests/model/merge-live-logs.property.test.ts"
+current_owner = "features/logs"
+target_owner = "features/logs"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/shared/tests/where-clause.property.test.ts"
+current_owner = "shared"
+target_owner = "shared"
+migration_plan = "none"
+kind = "handwritten"
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/investigations/tests/queries/keys.property.test.ts"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/logs/tests/model/logs-search.property.test.ts"
+ceiling = 2
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/logs/tests/model/merge-live-logs.property.test.ts"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/shared/tests/where-clause.property.test.ts"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/tests/model/merge-live-logs.property.test.ts:30"
+ceiling = 78
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/tests/model/merge-live-logs.property.test.ts:31"
+ceiling = 64
+
+[[product.anyhow_edges]]
+path = "crates/parallax-metadata/src/turso/agent_sessions.rs"
+ceiling = 7
+reason = "private composition converted at the typed port boundary"
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-metadata/src/turso/agent_sessions.rs"
+ceiling = 4
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-metadata/src/turso/agent_sessions.rs"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/investigations/tests/queries/keys.property.test.ts"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/logs/tests/model/logs-search.property.test.ts"
+ceiling = 2
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/logs/tests/model/merge-live-logs.property.test.ts"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/shared/tests/where-clause.property.test.ts"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/tests/model/merge-live-logs.property.test.ts:30"
+ceiling = 78
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/tests/model/merge-live-logs.property.test.ts:31"
+ceiling = 64

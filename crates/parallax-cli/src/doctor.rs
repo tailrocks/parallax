@@ -163,6 +163,10 @@ async fn check_http(url: &str) -> Option<String> {
     response.status().is_success().then(|| "ok".to_string())
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "linear inventory walkthrough with narration"
+)]
 pub(crate) async fn doctor() -> anyhow::Result<()> {
     let config = load_config();
     let dir = config.data_dir();
@@ -297,6 +301,10 @@ pub(crate) async fn doctor() -> anyhow::Result<()> {
                 match store.count_evidence_claims(Some("deploy_context")).await {
                     Ok(count) => println!("  deploy-context claim rows: {count}"),
                     Err(err) => println!("  deploy-context claim rows: unavailable ({err})"),
+                }
+                match store.count_agent_session_imports().await {
+                    Ok(count) => println!("  agent-session imports: {count}"),
+                    Err(err) => println!("  agent-session imports: unavailable ({err})"),
                 }
             }
             Err(err) => println!("  deploy-context deliveries: open failed ({err})"),

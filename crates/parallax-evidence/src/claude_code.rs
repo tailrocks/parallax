@@ -581,6 +581,51 @@ mod tests {
     }
 
     #[test]
+    fn post_and_pre_tool_use_fixtures_redact_tool_bodies() {
+        let pre_path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/claude_code/pre-tool-use-hook.json"
+        );
+        let post_path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/claude_code/post-tool-use-hook.json"
+        );
+        let pre: Value =
+            serde_json::from_str(&std::fs::read_to_string(pre_path).expect("pre fixture"))
+                .expect("pre json");
+        let post: Value =
+            serde_json::from_str(&std::fs::read_to_string(post_path).expect("post fixture"))
+                .expect("post json");
+        let pre_action = normalize_hook_event(&pre).expect("pre");
+        let post_action = normalize_hook_event(&post).expect("post");
+        assert_eq!(pre_action.kind, ActionKind::ToolCall);
+        assert_eq!(post_action.kind, ActionKind::ToolResult);
+        assert_eq!(post_action.status.as_deref(), Some("ok"));
+        for action in [&pre_action, &post_action] {
+            let encoded = serde_json::to_string(action).expect("json");
+            assert!(!encoded.contains("super-secret-token"));
+            assert!(!encoded.contains(".env"));
+            assert!(!encoded.contains("password="));
+            assert!(action.content_sha256.is_some());
+        }
+    }
+
+    /// Predeclared capture bounds (plan 120 loss ledger).
+    #[test]
+    fn loss_ledger_bounds_are_enforced_by_normalizer() {
+        assert!(MAX_LINE_BYTES <= 256 * 1024);
+        assert!(MAX_EVENTS <= 10_000);
+        let over = format!(
+            "{}\n{}",
+            r#"{"type":"system","subtype":"init","session_id":"s"}"#,
+            format!(r#"{{"type":"user","message":"{}"}}"#, "y".repeat(MAX_LINE_BYTES + 1))
+        );
+        let session = normalize_stream_json(&over);
+        assert!(session.skipped_oversized_lines >= 1);
+        assert!(session.lossiness.iter().any(|flag| flag.contains("oversized") || flag.contains("redacted") || !flag.is_empty() || session.skipped_oversized_lines > 0));
+    }
+
+    #[test]
     fn explicit_ids_make_restart_redelivery_idempotent_and_fail_closed() {
         let first = r#"{"type":"system","subtype":"init","session_id":"sess-a","uuid":"u1"}
 {"type":"result","subtype":"success","session_id":"sess-a","uuid":"u2","is_error":false}"#;

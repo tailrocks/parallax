@@ -1,0 +1,10 @@
+{
+  "session_id": "sess-fixture-pre-tool",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Read",
+  "tool_input": {
+    "file_path": "/Users/example/proj/.env"
+  },
+  "cwd": "/Users/example/proj",
+  "claude_code_version": "2.1.212"
+}

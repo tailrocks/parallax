@@ -2,6 +2,7 @@
 
 mod filters;
 mod forwarding;
+mod import_claude;
 mod invocations;
 mod issues;
 mod live;
@@ -12,6 +13,7 @@ mod sql;
 mod traces;
 
 pub(crate) use filters::{LogsFilter, TracesFilter};
+pub(crate) use import_claude::import_claude;
 pub(crate) use invocations::*;
 pub(crate) use issues::*;
 pub(crate) use live::*;

@@ -1,0 +1,14 @@
+{
+  "session_id": "sess-fixture-post-tool",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "cargo test -p secret-crate -- --password=super-secret-token"
+  },
+  "tool_response": {
+    "stdout": "ok",
+    "exit_code": 0
+  },
+  "cwd": "/Users/example/proj",
+  "claude_code_version": "2.1.212"
+}

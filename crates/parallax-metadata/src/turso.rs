@@ -10,6 +10,7 @@ use parallax_semconv as semconv;
 use std::{collections::BTreeMap, path::Path};
 use turso::Value;
 
+mod agent_sessions;
 mod alerts;
 mod ci;
 mod claims;
@@ -24,6 +25,9 @@ mod sentry_ack;
 mod test_reporting;
 mod values;
 
+pub use agent_sessions::{
+    AgentSessionImportAccept, AgentSessionImportError, AgentSessionImportRecord,
+};
 pub use alerts::{
     ALERT_CHECKS_KEEP_PER_RULE, AlertCheckRecord, AlertDeliveryEventRecord, AlertDestinationRecord,
     AlertIncidentRecord, AlertRuleRecord, AlertRuleStateRecord,
@@ -309,6 +313,20 @@ CREATE TABLE IF NOT EXISTS evidence_claim_rows (
 );
 CREATE INDEX IF NOT EXISTS evidence_claim_rows_domain
   ON evidence_claim_rows(domain, measured_at);
+CREATE TABLE IF NOT EXISTS agent_session_imports (
+  import_id        TEXT PRIMARY KEY,
+  source_tool      TEXT NOT NULL,
+  source_version   TEXT,
+  capture_surface  TEXT NOT NULL,
+  session_id       TEXT,
+  payload_hash     TEXT NOT NULL,
+  action_count     INTEGER NOT NULL,
+  lossiness        TEXT NOT NULL,
+  canonical_json   TEXT NOT NULL,
+  imported_at      INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS agent_session_imports_session
+  ON agent_session_imports(session_id, imported_at);
 CREATE TABLE IF NOT EXISTS sentry_event_acks (
   project_id   TEXT NOT NULL,
   event_id     TEXT NOT NULL,

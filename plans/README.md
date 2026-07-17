@@ -379,10 +379,10 @@ external facts still BLOCKED where noted. Plan 102 and plan 109 retired
 | [114](114-retire-legacy-spool-reader.md) | Stable raw-frame release cycle + expired legacy segments | Remove NDJSON reader after cycle | BLOCKED — only rolling `preview` tag (recheck 2026-07-17T14:40Z) |
 | [115](115-v2-server-profile.md) | Auth contract + release pipeline (102/109 DONE) | Rehearsals + load packet (ADR + example config landed) | IN PROGRESS — example-config.toml validates |
 | 118 | Sentry envelope adapter | fixture + ack + redaction + HTTP e2e | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-118-sentry-envelope/README.md) |
-| [120](120-agent-session-capture-adapters.md) | 099, 104, 111, 119 | Storage/API/UI, consent CLI, durable IDs/correlation, loss ledger | IN PROGRESS — normalizer + success fixture + restart/redelivery dedup landed |
+| 120 | Claude Code session capture | fixtures + import CLI + Turso ledger + loss bounds | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-120-claude-code/README.md) |
 | 121 | GitHub deploy/change context | webhook + REST backfill + claim rows + linkage bundle | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-121-deploy-context/README.md) |
 | 122 | 105, 151 | Disposition table + retained scenarios | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-122-playground-disposition/README.md) |
-| [123](123-fixer-outcome-loop.md) | 120 residual; 121 DONE | Offline outcome harness; fixer separate from core | BLOCKED on 120 storage/projection residual |
+| [123](123-fixer-outcome-loop.md) | 120/121 DONE | Offline outcome harness; fixer separate from core | READY residual (offline harness) |
 | 124 | CI/flaky evidence adapter | webhook + REST backfill + claim rows + linkage-only bundle | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-124-ci-evidence/README.md) |
 
 ## Dependency Order

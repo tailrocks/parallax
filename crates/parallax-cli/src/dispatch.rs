@@ -90,6 +90,7 @@ pub(crate) async fn execute(cli: Cli, runtime: runtime::Runtime) -> anyhow::Resu
             }
         }
         Command::Sql { query } => commands::sql(&client()?, &query).await,
+        Command::ImportClaude { path, json } => commands::import_claude(&path, json).await,
         Command::Doctor => doctor::doctor().await,
         Command::Prune { execute, yes, json } => doctor::prune(execute, yes, json).await,
         Command::Uninstall { purge, yes } => doctor::uninstall(purge, yes),

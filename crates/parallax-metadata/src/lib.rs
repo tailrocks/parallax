@@ -8,7 +8,8 @@ pub use turso::pins::{
     EVIDENCE_PIN_MAX_BYTES, EVIDENCE_PIN_PROTECTION_CAP, EvidencePinProtection, EvidencePinRecord,
 };
 pub use turso::{
-    ALERT_CHECKS_KEEP_PER_RULE, AlertCheckRecord, AlertDeliveryEventRecord, AlertDestinationRecord,
+    ALERT_CHECKS_KEEP_PER_RULE, AgentSessionImportAccept, AgentSessionImportError,
+    AgentSessionImportRecord, AlertCheckRecord, AlertDeliveryEventRecord, AlertDestinationRecord,
     AlertIncidentRecord, AlertRuleRecord, AlertRuleStateRecord, CiAttemptAccept,
     CiAttemptDeliveryRecord, CiAttemptStoreError, CiBackfillState, DeployAccept,
     DeployDeliveryRecord, DeployStoreError, EvidenceClaimRow, SentryAck, SentryAckError,
