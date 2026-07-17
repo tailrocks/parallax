@@ -1,0 +1,6 @@
+# Example only — do not commit into project auto-trust paths.
+# Place under ~/.codex/config.toml after an explicit local install decision.
+
+[mcp_servers.parallax]
+command = "parallax-mcp-spike"
+args = ["--allow-local-stdio"]

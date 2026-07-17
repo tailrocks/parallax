@@ -27,6 +27,8 @@ must not return in product output.
 
 ### Preliminary implementation available on `main` (Codex, 2026-07-17)
 
+Evidence packet: [`docs/research/validation/2026-07-plan-112-product-mcp/README.md`](../docs/research/validation/2026-07-plan-112-product-mcp/README.md).
+
 - The opened product decision is now durable in
   `docs/research/decisions/agent-access-surface.md`: local stdio only, exact two
   tools, no resources/raw refs/remote transport, server-assigned
