@@ -1,8 +1,9 @@
 name: Scheduled Measurement
 
-# Plan 103 Step 5: stable scheduled runs gather fuzz campaigns and benchmark
-# samples so variance can be modeled before any ratchet is set. Artifacts
-# only — no thresholds, no baseline auto-refresh.
+# Plan 103: scheduled fuzz campaigns + benchmark samples. After n≥3
+# variance samples (2026-07-17), fail-closed ceilings live in
+# docs/research/testing/bench-baselines.toml and are checked by
+# scripts/ci/check-bench-baselines.sh — never auto-refreshed.
 
 on:
   schedule:
@@ -99,6 +100,12 @@ jobs:
       - name: Allocation profile (plan 103 zero-copy instrumentation)
         run: |
           (cd bench-alloc && cargo run --release) | tee measurement/bench/allocation-profile.txt
+      - name: Fail-closed bench ratchets (no auto-refresh)
+        run: |
+          cat measurement/bench/repeat-*.txt > measurement/bench/all-repeats.txt
+          scripts/ci/check-bench-baselines.sh \
+            measurement/bench/all-repeats.txt \
+            measurement/bench/allocation-profile.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:

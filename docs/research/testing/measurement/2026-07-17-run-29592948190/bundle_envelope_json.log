@@ -1,0 +1,20 @@
+
+Failing input:
+
+	fuzz/artifacts/bundle_envelope_json/crash-300218cfc034ee7b517df1ea4f5802fb0f234ec7
+
+Output of `std::fmt::Debug`:
+
+	[57, 57, 69, 57, 52]
+
+Reproduce with:
+
+	cargo fuzz run bundle_envelope_json fuzz/artifacts/bundle_envelope_json/crash-300218cfc034ee7b517df1ea4f5802fb0f234ec7
+
+Minimize test case with:
+
+	cargo fuzz tmin bundle_envelope_json fuzz/artifacts/bundle_envelope_json/crash-300218cfc034ee7b517df1ea4f5802fb0f234ec7
+
+────────────────────────────────────────────────────────────────────────────────
+
+Error: Fuzz target exited with exit status: 77

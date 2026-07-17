@@ -74,10 +74,17 @@ defects fixed same day (control-strip order; number fixpoint loop). Durable
 sample + within-run variance table:
 [`measurement/2026-07-17-run-29582532812/`](measurement/2026-07-17-run-29582532812/README.md).
 
-Run: `cargo bench -p <crate> --bench <name>`. Ratchets are NOT set — the
-plan forbids thresholds before **multi-run** variance is measured on a stable
-scheduled runner (n≥3 independent jobs); one-job within-run span is reference
-only.
+Run: `cargo bench -p <crate> --bench <name>`.
+
+**Ratchets adopted 2026-07-17 (plan 103 residual closed):** after three
+independent scheduled jobs (`29582532812`, `29589577179`, `29592948190`),
+fail-closed ceilings live in
+[`bench-baselines.toml`](bench-baselines.toml) and are enforced by
+[`scripts/ci/check-bench-baselines.sh`](../../scripts/ci/check-bench-baselines.sh)
+on every scheduled bench job. The script never rewrites baselines; ceilings
+change only by commit. `spool_line_count` is excluded (cross-run unstable).
+Allocation absolute is 7011 / 1_022_357 bytes for
+`normalize_metrics_1k_points`.
 
 ## Allocation instrumentation (plan 103, Step 4)
 

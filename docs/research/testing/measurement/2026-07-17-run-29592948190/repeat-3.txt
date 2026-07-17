@@ -1,0 +1,5 @@
+                        time:   [289.33 µs 289.60 µs 289.98 µs]
+spool_append_4k         time:   [39.959 µs 41.068 µs 42.095 µs]
+spool_line_count        time:   [21.734 ms 21.937 ms 22.139 ms]
+arrow_decode_10k_rows   time:   [1.8206 ms 1.8217 ms 1.8229 ms]
+                        time:   [2.0834 ms 2.0842 ms 2.0851 ms]

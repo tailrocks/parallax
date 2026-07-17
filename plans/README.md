@@ -169,6 +169,10 @@ passed exact-SHA `release-verify` + tap pull
 
 ### Quality Tooling And Rust
 
+Plan 103 DONE (2026-07-17): fail-closed bench/alloc ratchets from n=3 scheduled samples
+([bench-baselines.toml](../docs/research/testing/bench-baselines.toml) +
+[measurement/2026-07-17-run-29592948190](../docs/research/testing/measurement/2026-07-17-run-29592948190/README.md)).
+
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 
@@ -230,7 +234,6 @@ Plan 148 DONE (2026-07-17): production bundle budgets + two clean builds + `@bun
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [103](103-property-fuzz-and-performance.md) | Residual Rust/UI property, fuzz, and performance gates | P2 | S | ≥3 scheduled-measurement jobs (ratchets) | BLOCKED — fuzz defects fixed + 1 durable sample committed; fail-closed ratchets wait multi-run variance (no invent) |
 
 ### Evidence Contracts And Closure
 

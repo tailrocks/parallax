@@ -1,0 +1,20 @@
+
+Failing input:
+
+	fuzz/artifacts/redaction_text/crash-39e4f4f631024b0e6e9d5975e8df1e2fd3408b50
+
+Output of `std::fmt::Debug`:
+
+	"C@u\0pi⤪pwi://Y\0\u{1}i⤪pwi⤪C,`s\u{6}@s.as..sas@s@s.as..as;.yyyaay.cyca$?BAas..as;.yyyaay.cyca$?BA\0\0ſe"
+
+Reproduce with:
+
+	cargo fuzz run redaction_text fuzz/artifacts/redaction_text/crash-39e4f4f631024b0e6e9d5975e8df1e2fd3408b50
+
+Minimize test case with:
+
+	cargo fuzz tmin redaction_text fuzz/artifacts/redaction_text/crash-39e4f4f631024b0e6e9d5975e8df1e2fd3408b50
+
+────────────────────────────────────────────────────────────────────────────────
+
+Error: Fuzz target exited with exit status: 77

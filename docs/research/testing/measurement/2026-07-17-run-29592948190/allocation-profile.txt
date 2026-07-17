@@ -1,0 +1,1 @@
+normalize_metrics_1k_points allocation-profile: 7011 allocations/call, 1022357 bytes/call
