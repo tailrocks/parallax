@@ -8211,3 +8211,7 @@ GT warm **~5–13 ms**; CH **~2–6 ms**. Interactive both.
 
 ### Run 338 — 2026-07-17 — not done
 
+
+### Run 339 — 2026-07-17 — explorer ERROR + duration sort
+
+GT warm **~7–10 ms**; CH **~3–4 ms**. Interactive both (trace-explorer shape).
