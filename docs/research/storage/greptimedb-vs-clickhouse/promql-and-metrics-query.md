@@ -7,19 +7,25 @@ Status: pass 44 (capability/maturity) + pass 72 (PromQL **speed** characterizati
 PromQL ~675 ms vs GT SQL ~120 ms vs CH SQL ~55 ms on `avg by(service)` over a 60-min/60-s
 range — ~5.6× GT-SQL, ordering CH SQL > GT SQL > GT PromQL confirmed; sharper caveat: a WIDE
 PromQL range over 40k series is OVER the 300 ms gate, so drive hot panels with SQL/Flow, not
-wide PromQL)**. The PromQL planning path (a GreptimeDB
-system-lead) **and** a required re-verification of the verdict's load-bearing claim that
-"ClickHouse has no PromQL." Metrics/PromQL nativeness is the verdict's #1 GreptimeDB
-advantage, so a version-drift here is decision-critical. Source + live (Runs 23, 24, 44, 62).
+wide PromQL)**. **Run 403 (2026-07-18) — CH TimeSeries surface DRIFT CORRECTION** on pins
+`v1.1.3` / `26.6.1.1193` / head `26.7.1.1097`: outer `SELECT * FROM TimeSeries` is still
+Code 48, but that is **by design** (facade has no storage); **SQL `INSERT` into the outer
+table works**, splits into three MergeTree-family inners, and **`prometheusQuery` /
+`prometheusQueryRange` return real series** when called with the 3-arg form
+`(ts_table, promql, eval_time)`. Prior run-log lines that treated "Code 48 SELECT" as
+"PromQL path broken" are **wrong** — the intended query path is table-function-only and
+**works**. The GA-vs-experimental maturity gap still holds; capability is no longer vapor.
 
-**Re-verification (Run 62, v1.0.2 / 26.5.1.882 — pillar STABLE):** GreptimeDB PromQL
-still GA + zero-setup — `/v1/prometheus/api/v1/query?query=avg(metrics_hc)` returned a
-real vector (`50.77`) and `TQL EVAL` a real value (`49.98`) against a **plain `mito`
-table** (no metric-engine table needed). ClickHouse unchanged: `allow_experimental_time_series_table=0`
-(off by default); `prometheusQuery`/`prometheusQueryRange` exist; the `TimeSeries` engine
-is creatable with the flag but **`INSERT`/`SELECT` still "not supported by storage
-TimeSeries yet"** (NOT_IMPLEMENTED, reproduces Run 24) — ingest remote-write-only, query
-table-function-only. The "GA-ergonomic vs experimental-setup-gated" gap holds exactly.
+The PromQL planning path (a GreptimeDB system-lead) **and** a required re-verification of
+the verdict's load-bearing claim that "ClickHouse has no PromQL." Metrics/PromQL
+nativeness is the verdict's #1 GreptimeDB advantage, so a version-drift here is
+decision-critical. Source + live (Runs 23, 24, 44, 62, **403**).
+
+**Re-verification (Run 62, v1.0.2 / 26.5.1.882 — historical):** GreptimeDB PromQL
+still GA + zero-setup. ClickHouse: `allow_experimental_time_series_table=0` off by default;
+`TimeSeries` creatable with flag. **Superseded on INSERT:** Run 24 claimed INSERT
+NOT_IMPLEMENTED; **Run 403** on 26.6.1 + 26.7.1 shows SQL INSERT into the outer table
+**succeeds** (docs now document it). Outer SELECT remains NOT_IMPLEMENTED.
 
 **Headline correction:** the old "ClickHouse has **no** PromQL, needs an external
 PromQL→SQL layer" is **outdated as of ClickHouse 26.x**. ClickHouse now ships
@@ -55,18 +61,35 @@ PromQL is a first-class query path (`src/promql` crate):
 ClickHouse **has gained** PromQL, but it is experimental and off by default:
 
 - **`TimeSeries` table engine** (`allow_experimental_time_series_table`, default **0**)
-  — a Prometheus-shaped store (tags/metrics/data sub-tables), fed by the **Prometheus
-  remote-write** protocol.
-- **PromQL table functions** (live, Run 23): `prometheusQuery([db,] ts_table, promql
-  [, eval_time])` and `prometheusQueryRange(…)` — they **execute PromQL** against a
-  `TimeSeries` table. Plus `timeSeriesSelector/Metrics/Data/Tags`. Settings
-  `promql_database`/`promql_table`/`promql_evaluation_time` configure the target;
-  `allow_experimental_time_series_aggregate_functions` (default 0) gates the agg fns.
-- **Live (Run 23):** `CREATE TABLE … ENGINE=TimeSeries` succeeded (with the
-  experimental flag); `prometheusQuery('up')` exists with a real 3–4 arg signature
-  (errored only on arg count / empty table, not "unknown function"). So the capability
-  is present — but **requires** the experimental flag, a dedicated `TimeSeries` table,
-  and Prometheus remote-write ingest. **Not the default, not ergonomic, young.**
+  — a **facade** over three target tables (not a single MergeTree). Live `SHOW CREATE`
+  on 26.6.1 / 26.7.1 (Run 403) matches [upstream docs](https://clickhouse.com/docs/engines/table-engines/special/time_series):
+  - **SAMPLES** — `MergeTree ORDER BY (id, timestamp)` (`id UUID`, `timestamp`, `value`)
+  - **TAGS** — `AggregatingMergeTree PRIMARY KEY metric_name ORDER BY (metric_name, id)`
+    with `id DEFAULT reinterpretAsUUID(sipHash128(metric_name, all_tags))`, optional
+    `min_time`/`max_time` `SimpleAggregateFunction`, `allow_dimensions_outside_sorting_key=1`
+  - **METRICS** — `ReplacingMergeTree ORDER BY metric_family_name` (type/unit/help)
+  - **Outer columns** (no storage): `metric_name`, `tags Map`, `time_series Array(Tuple(ts,value))`,
+    `metric_family`, `type`, `unit`, `help` — interface for INSERT/SELECT; data lives only in targets.
+- **Ingest paths:** Prometheus **remote-write** (configured port) **and** SQL
+  `INSERT INTO ts_table (metric_name, tags, time_series[, metric_family, type, unit, help])`
+  (Run 403: 2 series / 3 samples landed; inners readable via
+  `` `.inner_id.samples.<uuid>` `` or `timeSeriesSamples(ts)`).
+- **Query paths (intended):** `prometheusQuery(ts_table, promql, eval_time)` and
+  `prometheusQueryRange(ts_table, promql, start, end, step)` plus
+  `timeSeriesSamples` / `timeSeriesTags` / `timeSeriesMetrics` / `timeSeriesData`.
+  **Not** ordinary `SELECT * FROM ts_table` (Code 48 by design).
+- **Live Run 403 (26.6.1.1193 + head 26.7.1.1097, identical behavior):**
+  - `CREATE` + flag → OK
+  - outer `SELECT *` → Code 48 `SELECT is not supported by storage TimeSeries yet`
+  - SQL `INSERT` → OK; samples=3, tags=2, metrics=1
+  - `prometheusQuery(ts, 'up', toDateTime64('2026-07-18 00:01:00',3))` →
+    `tags=[(__name__,up),(instance,h1),(job,node)], value=1`
+  - `prometheusQueryRange(ts, 'up', start, end, 60)` → 3-point series
+  - 2-arg `prometheusQuery(ts, 'up')` → Code 42 (needs eval_time) — easy footgun
+  - default `allow_experimental_time_series_table=0` still
+- **Not supported in ClickHouse Cloud** (docs as of 2026-07-17).
+- Settings: `promql_database` / `promql_table` / `promql_evaluation_time`;
+  `allow_experimental_time_series_aggregate_functions` (default 0).
 
 ## Side by side
 
@@ -139,41 +162,58 @@ difference.)
   becomes "ClickHouse's PromQL is experimental, so relying on it for a metrics product
   today is a maturity risk + setup cost," which is softer.
 
-## Maturity, measured end-to-end (pass 45, Run 24)
+## Maturity, measured end-to-end (pass 45, Run 24 — **partially superseded by Run 403**)
 
-Pass 44 established ClickHouse PromQL *exists*; this pass ran it to characterize *how
-usable* it is. Concrete findings on the `TimeSeries` engine + `prometheusQuery[Range]`:
+Pass 44 established ClickHouse PromQL *exists*; pass 45 characterized usability. **Run 403
+re-measures the same surface on 26.6.1 / 26.7.1:**
 
-- **No direct `INSERT`** — `INSERT INTO <ts_table>` → `"INSERT is not supported by
-  storage TimeSeries yet"` (NOT_IMPLEMENTED). Data can land **only via the Prometheus
-  remote-write protocol**.
-- **No direct `SELECT`** — `SELECT … FROM <ts_table>` → `"SELECT is not supported by
-  storage TimeSeries yet"`. The table is queryable **only** through the
-  `prometheusQuery`/`prometheusQueryRange`/`timeSeries*` functions.
-- **The PromQL functions do execute.** `prometheusQuery(<table>, '<promql>',
-  <eval_time>)` and `prometheusQueryRange(<table>, '<promql>', start, end, step)`
-  parsed and ran `rate(http_requests_total[2m])` and an instant selector with **no
-  error** (returned empty only because hand-loading the engine's inner `.data` table
-  without populating the id-coupled `.tags`/`.metrics` inner tables yields no
-  resolvable series — i.e. there is **no practical hand-load path**; you need a real
-  remote-write client).
-- **GreptimeDB, same workload, real result:** an InfluxDB-line write auto-created the
-  metric table, and `TQL EVAL (start,end,'30s') rate(http_requests_total[2m])`
-  returned **actual values** (`0.72`, `1.17` for `job=api`) via the native `prom_rate`
-  planner — zero ceremony, multi-protocol ingest, PromQL **and** SQL **and** TQL query.
+| Surface | Run 24 (historical) | Run 403 (26.6.1 + 26.7.1) |
+| --- | --- | --- |
+| Outer `INSERT` | claimed NOT_IMPLEMENTED | **works** — rows split to samples/tags/metrics |
+| Outer `SELECT *` | NOT_IMPLEMENTED | still NOT_IMPLEMENTED (facade) |
+| Hand-load via SQL INSERT | "no practical path" | **practical** — INSERT outer → inners populated |
+| `prometheusQuery(table, promql, eval_time)` | ran but empty (bad hand-load) | **returns real vector** (`up=1`) |
+| `prometheusQueryRange` | ran | **returns real range series** |
+| `timeSeriesSamples/Tags/Metrics` | listed | **return real rows** |
+| Experimental flag default | 0 | still **0** |
+| Works without dedicated `TimeSeries` table | no | still no |
+| ClickHouse Cloud | — | **not supported** (docs) |
 
-So the maturity gap is concrete: **ClickHouse PromQL = experimental, remote-write-only
-ingest, table-function-only query, no INSERT/SELECT** ("yet"); **GreptimeDB PromQL =
-GA, multi-protocol ingest, multi-surface query, works on any metric table.** The
-*capability* exists on both (pass 44); the *workflow maturity/ergonomics* gap is large
-and real (pass 45). This is the precise shape of the metrics-pillar advantage now.
+**Still true after Run 403:**
+
+- **No ordinary SQL SELECT** from the facade — table-function / PromQL only.
+- **Experimental + off-by-default** + dedicated engine required.
+- **GreptimeDB:** `/v1/prometheus/api/v1/query?query=up` still GA zero-setup
+  (`{"status":"success",…}` on stable+nightly, Run 403); works on **any** metric table
+  (mito or metric-engine), multi-protocol ingest, SQL + Prom HTTP + TQL.
+
+**Narrowed:** CH is no longer "INSERT broken / can't load data without remote-write client."
+SQL INSERT + `prometheusQuery` is a viable experimental lab path. Maturity gap is now
+**GA multi-surface any-table (GT)** vs **experimental facade + table-functions + dedicated
+engine, Cloud-unsupported (CH)** — not "query path vaporware."
+
+## Run 403 mechanism takeaway (why Code 48 is not a death sentence)
+
+`TimeSeries` is closer to a **materialized-view-style multi-target router** than a
+queryable storage engine:
+
+1. INSERT on the outer table → transform → write samples + tags + metrics parts.
+2. Read path is **not** MergeTree select-from-part on the facade; it is PromQL table
+   functions that join tags→id→samples (and optional min/max time filters).
+3. Therefore `SELECT * FROM ts` is unimplemented **while** the product query path
+   (`prometheusQuery*`) is the real one — measuring only Code 48 understates CH progress.
+
+For Parallax: still **do not** plan product metrics storage on CH TimeSeries (stack is
+GT). As a **comparator maturity watch**, CH PromQL is a real experimental engine with a
+working SQL INSERT lab path as of 26.6/26.7 — re-check when/if it leaves experimental
+or gains Cloud support.
 
 ## Honest caveats
 
 - ClickHouse PromQL is experimental — **feature completeness vs Prometheus is
-  unverified** (which PromQL functions/selectors work, edge cases). A fair "can it run
-  Parallax's actual PromQL set" test needs data loaded into a `TimeSeries` table — owed
-  to a follow-up (a strong `benchmarking-the-differences.md` case).
+  unverified** (which PromQL functions/selectors work, edge cases). Run 403 proved
+  instant `up` + range on 2 samples only; a fair "can it run Parallax's actual PromQL
+  set" test at volume is still owed (`benchmarking-the-differences.md` case).
 - GreptimeDB PromQL completeness vs upstream Prometheus is also not exhaustively
   tested here, but it is GA and the planner covers the core operators (above).
 - This pass corrected the *query* side; the **ingest** side ("ClickHouse needs a

@@ -81,7 +81,8 @@ managed quotes remain):
 | Gap ranking after 220–232 | 233 | server/quotes/mix still top |
 | GT OpenDAL /metrics for S3 reads | 234 | opendal_operation_bytes |
 | Live S3 cold GetObject deltas | 235 | GT +5 vs CH +3 @20k |
-| CH head TimeSeries SELECT | 236 | still Code 48 |
+| CH head TimeSeries SELECT | 236 | outer Code 48 (facade) |
+| CH TimeSeries INSERT+prometheusQuery real | **403** | drift: query path works 26.6+26.7 |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
@@ -92,15 +93,17 @@ managed quotes remain):
 | Gap ranking 220–245 | 246 | server/GB/mix/quotes top |
 | Session milestone 220–249 | 250 | not done; server/GB open |
 
-## Remaining execute work (Run 393+)
+## Remaining execute work (Run 403+)
 
-Laptop smoke is saturated. Highest remaining:
+Laptop smoke mostly saturated; **Run 403** closed a false "TimeSeries unusable" reading.
+Highest remaining:
 
 1. Workload mix A1–A7 fill (`workload-mix-decision-input.md`)
 2. Server 1M/5M (`server-tier-runbook.md`)
 3. Vendor trial quotes (`managed-cloud-vs-self-host.md`)
 4. GB cold S3 (`caching-and-cold-warm.md` recipe)
 5. RPO D2/D3 (`product-rpo-runbook.md`)
+6. Optional: CH TimeSeries PromQL **completeness at volume** (comparator watch only)
 
 ## Method
 
