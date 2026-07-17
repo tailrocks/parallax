@@ -188,7 +188,7 @@ Vendor markets **“80% cheaper at scale”** vs Sentry Hosted (claim, not indep
 
 ## Watch triggers — re-evaluate Bugsink if it:
 
-- Adds **OTLP ingest** (traces/logs/metrics) — would broaden from error-only toward full-stack (collision with Parallax's breadth edge).
+- Adds **OTLP ingest** (traces/logs/metrics) — would broaden from error-only toward full-stack (collision with Parallax's breadth edge). **Pass 58: UNFIRED** (recent commits: no otlp/otel hits).
 - Adds an **AI/agent-context** surface or **outcome tracking**.
 - **Hosted pricing or EE scope** shifts (e.g. free-self-host features move behind paywall).
 

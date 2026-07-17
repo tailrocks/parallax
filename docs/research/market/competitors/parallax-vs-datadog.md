@@ -93,7 +93,7 @@ This is where Parallax claims differentiation, so it must be examined most hones
   - **Bits Code** — AI-assisted code generation/review/debugging, opens PRs (~5 credits/fix).
   - **Bits Agent Builder** — custom AI agents for ops workflows (~3 credits/run).
   - **Bits Security Analyst** — autonomous Cloud SIEM triage.
-  - Priced as **AI Credits: $500 / 500 credits / mo** annual, or $1.30/credit on-demand. Per third-party analyses, ~20 investigations/mo at the entry bundle.
+  - Priced as **AI Credits** ([live pricing](https://www.datadoghq.com/pricing/) + [billing docs](https://docs.datadoghq.com/account_management/billing/ai_credits/), pass **58** re-confirm): **$500 / 500 credits / mo** annual commit; **$600 / 500 credits** monthly commit (list page); **$1.30/credit** on-demand. Entry annual bundle ≈ **~20 Investigations/mo** at ~6.5 cr/run (third-party + vendor credit table: Chat ~0.5–0.7, Investigation ~6.5, Code ~5, Agent Builder ~0.3/msg or ~3/run depending on unit). Credits reset monthly (no rollover).
   - **Datadog Agent Observability** — a dedicated **LLM/agent observability product**: end-to-end LLM tracing (prompts, tool calls, retrieval, decisions), offline/online evals, datasets, experiments, prompt tracking, playground, human annotation; Free 40K LLM spans/mo, Pro $160/mo annual for 100K LLM spans (+$3.5/10K); **Sensitive Data Scanner included**. This is a direct competitor to the LLM-observability wedge (Langfuse/Phoenix/LangSmith) and ships more agent-tracing surface than Parallax has today.
 
 - **Parallax's AI claim (code-shipped, A1 value unproven):** a **read-only, redacted, bounded evidence bundle** served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) — a *context engine for autonomous agents*, not a human chat dashboard. The thesis is that a bounded, validated, redacted dossier beats dumping raw telemetry into an agent.
@@ -174,7 +174,7 @@ Datadog pricing is **public** and itemized below (annual prices, [datadoghq.com/
 | Test Optimization | $20 / committer / mo | |
 | Code Coverage | $8 / committer / mo | |
 | Error Tracking | included w/ APM+RUM; standalone flat $25/mo ≤50k errors | |
-| **Bits AI Credits** | **$500 / 500 credits / mo** ($1.30/credit od) | Chat ~0.5cr; AgentBuilder ~3cr; Code ~5cr; Investigate ~6.5cr |
+| **Bits AI Credits** | **$500 / 500 cr/mo** annual; **$600/500** monthly; **$1.30/cr** on-demand | Chat ~0.5–0.7; Investigate ~6.5; Code ~5; Agent Builder ~0.3/msg |
 | Agent Observability (LLM) | Free 40K LLM spans; Pro $160/mo (100K) + $3.5/10K | bills LLM spans only |
 | Managed Platform OTLP | $0.50 / GB ingested spans | pure consumption, no allotments |
 | Sensitive Data Scanner | $0.03/GB detect (10%); $0.30/scanned GB obfuscate | |

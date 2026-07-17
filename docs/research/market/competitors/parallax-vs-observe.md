@@ -13,7 +13,7 @@
 
 ## What each product is
 
-- **Observe** ("Observe by Snowflake" post-acquisition) — a **data-/SQL-centric observability platform** built on a **streaming data lake** (open formats, 10× compression; O11y Data Lake, 13-month hot retention). Distinctive **O11y Knowledge Graph™ / Context Graph** — a real-time, relationship-aware model connecting applications/infrastructure/code/deploys/users (materialized views, token indexes) over columnar telemetry. **OpenTelemetry-native** (logs/metrics/traces). **AI SRE + o11y.ai Agents** (developer-productivity agents). **Snowflake acquired Observe (~$1B, announced Jan 2026)** — now integrated into Snowflake; "analyze 100% of telemetry at lower cost." Closed SaaS. Consumption-priced (ingest-based, compute included).
+- **Observe** ("Observe by Snowflake") — **data-/SQL-centric observability** on a streaming data lake (O11y Data Lake, long hot retention). **O11y Knowledge Graph™** + **OpenTelemetry-native** logs/metrics/traces + **AI SRE / o11y.ai** + **MCP for Cursor/Claude/Augment**. **Snowflake closed acquisition 2026-02-02** ([Snowflake blog](https://www.snowflake.com/en/blog/observe-acquisition-ai-powered-observability/); intent ~Jan 2026, ~$1B secondary). Built on Snowflake from day one — lock-in to AI Data Cloud **deepens under ownership**. Closed SaaS; consumption-priced (ingest + compute-included).
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable **execution-context engine**: OTLP-native ingest of traces/logs/metrics + CLI/agent traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, serves bounded/redacted evidence bundles to humans and coding agents. GreptimeDB + Turso. **Pre-release.**
 
 Both build a **relationship/evidence graph** over telemetry and pursue an **agent** surface — genuine conceptual overlap. Observe is a closed Snowflake-data-platform SaaS; Parallax is an open self-hosted GreptimeDB engine.
@@ -133,21 +133,21 @@ Observe pricing is **public** ([observeinc.com/pricing](https://www.observeinc.c
 
 ## Watch triggers (track each pass)
 
-1. **Coding-agent MCP / portable bundle** — **pass 47 PARTIAL FIRE:** MCP Server for Cursor/Claude/Augment is **shipped**. Still **not** a portable redacted versioned dossier; residual Parallax claim = portable/redacted/A1, not “agents can query us.”
+1. **Coding-agent MCP / portable bundle** — **pass 47 PARTIAL FIRE:** MCP for Cursor/Claude/Augment **shipped**. Still **not** a portable redacted versioned dossier.
 2. **Snowflake integration depth** — cost/scale lead vs lock-in.
 3. **Knowledge Graph → portable/exportable** — would further shrink Parallax residual.
 
-**As of 2026-07-17 pass 47:** coding-agent MCP **shipped**; portable redacted bundle watch **not fired**.
+**Pass 58 trajectory:** acquisition **closed 2026-02-02** ([Snowflake closes Observe acquisition](https://www.snowflake.com/en/blog/observe-acquisition-ai-powered-observability/)). Roadmap tied to Snowflake AI Data Cloud; non-Snowflake shops face **deeper platform coupling** (no-bias: strengthens Observe at Snowflake scale; weakens “vendor-neutral obs” story). Portable redacted-bundle watch **still not fired**. Pricing pass-41 units still the public rate card reference.
 
 ## Open questions / what measurement would settle
 
-- **A1 gate vs o11y.ai agents:** does a Parallax bounded bundle beat Observe-o11y.ai-agents-over-the-Knowledge-Graph for coding-agent fix outcomes? Unproven — and Observe's shipped graph+agents are a high bar.
-- **Observe exact current pricing (Snowflake-era)** — **RESOLVED pass 41:** live page = **Logs $0.49/GiB**, **Traces $0.59/GiB**, **Metrics $0.008/DPM**, extended retention **$0.01/GiB/mo**.
-- **Snowflake integration trajectory** — track whether acquisition accelerates or constrains Observe's product direction.
+- **A1 gate vs o11y.ai agents:** does a Parallax bounded bundle beat Observe-o11y.ai-agents-over-the-Knowledge-Graph for coding-agent fix outcomes? Unproven — high bar.
+- **Observe exact current pricing (Snowflake-era)** — **RESOLVED pass 41:** **Logs $0.49/GiB**, **Traces $0.59/GiB**, **Metrics $0.008/DPM**, retention **$0.01/GiB/mo**.
+- **Post-close product merge** — track Snowflake Marketplace / “Observe for Snowflake” packaging changes.
 
-## Sources (accessed 2026-07-17)
+## Sources (accessed 2026-07-17; pass 58)
 
-- [observeinc.com](https://www.observeinc.com/); [pricing](https://www.observeinc.com/pricing); [why-observe (Context Graph)](https://www.observeinc.com/why-observe).
-- [Snowflake acquisition press release](https://www.snowflake.com/en/news/press-releases/snowflake-announces-intent-to-acquire-observe-to-deliver-ai-powered-observability-at-enterprise-scale/).
-- [Observe AI SRE product (MCP for Cursor/Claude)](https://www.observeinc.com/product/ai-sre); [PR Newswire o11y.ai Agents](https://www.prnewswire.com/news-releases/observe-introduces-ai-sre-and-o11yai-agents-accelerating-developer-productivity-while-cutting-enterprise-observability-costs-302603717.html).
-- Parallax side: [decisions/storage-engine.md](../../decisions/storage-engine.md), [00-vision/ai-native-observability.md](../../00-vision/ai-native-observability.md), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).
+- [observeinc.com](https://www.observeinc.com/); [pricing](https://www.observeinc.com/pricing); [why-observe](https://www.observeinc.com/why-observe).
+- [Snowflake intent to acquire](https://www.snowflake.com/en/news/press-releases/snowflake-announces-intent-to-acquire-observe-to-deliver-ai-powered-observability-at-enterprise-scale/); [closes acquisition (2026-02-02)](https://www.snowflake.com/en/blog/observe-acquisition-ai-powered-observability/).
+- [Observe AI SRE / MCP](https://www.observeinc.com/product/ai-sre).
+- Parallax: [decisions/storage-engine.md](../../decisions/storage-engine.md), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).

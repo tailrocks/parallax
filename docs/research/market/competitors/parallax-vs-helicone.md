@@ -55,7 +55,7 @@
 ## Architecture & deployment / trajectory
 
 - **Helicone Cloud:** live under **Mintlify**, **maintenance mode** ([joining Mintlify](https://www.helicone.ai/blog/joining-mintlify)).
-- **Helicone OSS:** Apache-2.0 repo public; last release **2025-08-21**; last push **2026-07-05** (maintenance-level activity).
+- **Helicone OSS:** Apache-2.0 repo public; last release **2025-08-21** (`v2025.08.21-1`); last push **2026-07-05**; **5,957★** (pass 58). Still maintenance-level — **sunset / re-invest watches UNFIRED**.
 - **Parallax:** single-binary self-host target, Apache-2.0, pre-release.
 
 **No-bias trajectory note (same pattern as Highlight pass 33):** an acquisition + maintenance mode is **not** a Parallax product win. Helicone’s shipped gateway stack was strong; code remains forkable. Effect = **field thins** on active OSS LLM-gateway productization. Parallax still has **no** LLM gateway.

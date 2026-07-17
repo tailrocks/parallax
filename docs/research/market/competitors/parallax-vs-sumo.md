@@ -144,7 +144,7 @@ Primary: live [sumologic.com/pricing](https://www.sumologic.com/pricing) (access
 - **A1 gate:** does a Parallax bundle add value beyond Sumo's logs/SIEM + Dojo AI for coding-agent incident fixes? Unproven.
 - **Sumo list $/TB scanned** — **resolved as no static public number**; estimator/quote only. Capacity matrix + Flex model verified.
 - **Francisco Partners strategy** — track product direction/cadence under private ownership.
-- **Dojo AI → bounded agent artifact** — if Sumo ships a portable redacted coding-agent bundle, collision with Parallax wedge.
+- **Dojo AI → bounded agent artifact** — if Sumo ships a portable redacted coding-agent bundle, collision with Parallax wedge. **Pass 58: UNFIRED** (Dojo remains assistive multi-agent on Sumo SaaS, not a portable redacted dossier).
 
 ## Sources (accessed 2026-07-17; pass 41 re-verify)
 

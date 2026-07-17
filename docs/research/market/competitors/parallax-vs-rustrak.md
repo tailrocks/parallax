@@ -127,7 +127,7 @@ proprietary forks.
 
 | Trigger | Status 2026-07-17 |
 | --- | --- |
-| OTLP multi-signal ingest | **UNFIRED** |
+| OTLP multi-signal ingest | **UNFIRED pass 58** (recent commits: no otlp/otel hits; still Sentry-path error tracker) |
 | Portable redacted evidence bundle | **UNFIRED** |
 | Fix-outcome loop | **UNFIRED** |
 | License change (GPL → more permissive) | Watch |
