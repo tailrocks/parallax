@@ -246,3 +246,7 @@ logs.trace_id, dozens of live re-verifies, density/instrument notes.
 5. RPO D2 meta + D3 Turso
 
 Loop continues until operator stops.
+
+## Run 365
+
+Still not done. Top 5: mix, server, quotes, GB cold, RPO D2/D3.
