@@ -12,9 +12,8 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 256 (TMA1 **109★**/alpha12 — **23rd UNFIRED**
-prod collision; Odigos **3,668★**/v1.31.2 export-only). Pass 255 = Phoenix/Coroot/Holmes.
-A1/A2/A4 open; A6 mixed open.
+Last updated 2026-07-18 after pass 257 (GO composite reaffirm after **242–256**;
+all tracked kills **UNFIRED**; A1/A2/A4 open; A6 mixed open). Pass 256 = TMA1/Odigos.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in

@@ -95,6 +95,24 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > differentiator still holds (combination claim; A1 open). **Still GO (narrow
 > product).**
 >
+> **Pass 257 (2026-07-18) — GO composite reaffirm** after passes **242–256**.
+> **Still GO (narrow product).** Kill criteria **still unfired** (desk + unit
+> hygiene only; empirical A1/A2/A4/A6 mixed still **open**, not failed):
+>
+> | Kill / reverse trigger | Latest recheck | Fired? |
+> | --- | --- | --- |
+> | A1: bundles do not beat raw context | Pass **246** — golden ok; no result ledger | **No** (open) |
+> | A2: no paying segment | Pass **253** — **0** interview rows; desk triangle **242** holds | **No** (open) |
+> | Full wedge closed by peer | Pass **249/254–256** — Traceway/error peers/LLMOps/TMA1/Odigos **not** full combo | **No** |
+> | OTel commoditizes evidence-bundle schema | Pass **243** — #1185 idle; OCSF 1.8.0 | **No** |
+> | Incumbent self-host Seer-class AI | Pass **245** — Seer closed; Grafana Assistant hybrid Cloud | **No** |
+> | App-code auto-merge commodity | Pass **245** — Bits still never auto-merges | **No** |
+> | A4 real messy telemetry reliability | Pass **247** — no `correlation-reliability-runs/` | **No** (open) |
+> | A6 agent-visible mixed redaction | Pass **247** — canary ok; mixed open | **No** (open) |
+> | Sentry OTLP metrics GA | Pass **249** — still unsupported | **No** |
+> | Datadog OPW = self-host Bits store | Pass **251** — still route-only Worker | **No** |
+> | TMA1 prod-incident collision | Pass **256** — **23rd UNFIRED** | **No** |
+>
 > **Narrow product identity holds.** Research program continues.
 
 ## Verdict
