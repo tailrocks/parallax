@@ -76,6 +76,13 @@
 | Claim stack | Unchanged: **`schema_artifacts_shipped` + `schema_adoption_none` + `corpus_empty_public`** |
 | Seer self-host (adjacent kill) | develop.sentry.dev still **"Seer and other AI & ML features… closed source"** — **UNFIRED** |
 
+### Pass 284 (2026-07-18) — adoption re-probe
+
+| Probe | Result |
+| --- | --- |
+| In-repo `$id` host file hits | still **6** paths (schema + PoC + MCP test + research notes) — **no** external consumer |
+| Claim stack | still **`schema_artifacts_shipped` + `schema_adoption_none` + `corpus_empty_public`** |
+
 **A3 split holds:** schema **artifacts shipped**; **external adoption = zero** (moat unproven).
 
 **Implication:** `$id` is currently an **identifier**, not a **dereferenceable
