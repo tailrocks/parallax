@@ -13,10 +13,11 @@
 - **Depends on**: Auth contract (plan 109 retired minimal slice);
   release pipeline (plan 102 retired four-target proof)
 - **Category**: V2 / deployment / operability
-- **Status**: IN PROGRESS — ADR landed; config/rehearsal residual
+- **Status**: IN PROGRESS — live non-loopback lab rehearsal landed; TLS-edge /
+  upgrade / install / plan-110 isolation residual
 - **Decision**:
   [`docs/research/decisions/v2-server-profile.md`](../docs/research/decisions/v2-server-profile.md)
-- **Blocker**: none for validated config composition + rehearsals
+- **Blocker**: none for remaining hardening packets
 
 ## Residual only
 
@@ -24,14 +25,17 @@
 2. ~~Validated example config composition~~ landed
    (`docs/research/validation/2026-07-plan-115-v2-server-profile/example-config.toml`
    + `Config::load` unit gate).
-3. ~~Rehearsal checklist~~ landed
-   (`docs/research/validation/2026-07-plan-115-v2-server-profile/rehearsal-checklist.md`).
-   Still open: **live** non-loopback/TLS-edge run logs, measured backup/restore/
-   upgrade/rollback/disk-pressure packets.
-4. Package via verified release pipeline; remote CLI acceptance for
-   issue/bundle/trace.
+3. ~~Rehearsal checklist + live non-loopback packet~~ landed
+   ([`rehearsal-checklist.md`](../docs/research/validation/2026-07-plan-115-v2-server-profile/rehearsal-checklist.md),
+   [`live-rehearsal-2026-07-17.md`](../docs/research/validation/2026-07-plan-115-v2-server-profile/live-rehearsal-2026-07-17.md)):
+   bind `0.0.0.0` + bearer, GraphQL 401/200, remote CLI context, backup snapshot,
+   prune dry-run, GraphQL micro-RPS + invocation timings. Still open: operator
+   TLS edge, upgrade/rollback cutover log, disk-pressure reclaim, four-target
+   install dogfood.
+4. Package via verified release pipeline; broader remote CLI dogfood for
+   issue/bundle/trace against TLS-edge profile.
 5. Publish load packet that can unblock plan 110 only after measured worker
-   saturation.
+   saturation (current micro-packets **do not** open plan 110).
 6. OTLP ingest tokens (deferred from auth minimal slice) belong here if the
    profile exposes remote ingest.
 

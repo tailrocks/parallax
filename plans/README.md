@@ -364,7 +364,7 @@ OTLP-ingested telemetry only.
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | [154](154-playground-capability-and-test-observability.md) | Live multi-backend fan-out acceptance residual | P1 | S | Playground acceptance + disposition | IN PROGRESS — five-backend plumbing green 2026-07-17 (OO/Maple/SigNoz/Sentry+Parallax); acceptance/disposition residual |
-| [155](155-test-reporting-surface.md) | Test reporting surface residual | P1 | XL | 149, 152, 153, 140 DONE; 121/124 DONE | IN PROGRESS — flaky scan job loop landed; residual UI/mute/JUnit adapters/e2e |
+| [155](155-test-reporting-surface.md) | Test reporting surface residual | P1 | XL | 149, 152, 153, 140 DONE; 121/124 DONE | IN PROGRESS — `/tests` list+detail UI + GraphQL ops landed; residual adapters/e2e/live session |
 
 ### Triggered Or Residual Work
 
@@ -377,7 +377,7 @@ external facts still BLOCKED where noted. Plan 102 and plan 109 retired
 | [110](110-server-profile-ingest-concurrency.md) | 115 + saturation packet | Measured single-worker bottleneck on supported profile | BLOCKED on 115 profile + measurements |
 | 112 | 099, 104, 111 | Local-stdio product MCP ship gates | DONE (2026-07-17) — graduated `parallax-mcp`; live Codex/Claude discovery; [evidence](../docs/research/validation/2026-07-plan-112-product-mcp/README.md) |
 | [114](114-retire-legacy-spool-reader.md) | Stable raw-frame release cycle + expired legacy segments | Remove NDJSON reader after cycle | BLOCKED — only rolling `preview` tag (recheck 2026-07-17T15:55Z) |
-| [115](115-v2-server-profile.md) | Auth contract + release pipeline (102/109 DONE) | Rehearsals + load packet (ADR + example config landed) | IN PROGRESS — example-config.toml validates |
+| [115](115-v2-server-profile.md) | Auth contract + release pipeline (102/109 DONE) | Rehearsals + load packet (ADR + example config landed) | IN PROGRESS — live non-loopback lab packet 2026-07-17; plan 110 still closed |
 | 118 | Sentry envelope adapter | fixture + ack + redaction + HTTP e2e | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-118-sentry-envelope/README.md) |
 | 120 | Claude Code session capture | fixtures + import CLI + Turso ledger + loss bounds | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-120-claude-code/README.md) |
 | 121 | GitHub deploy/change context | webhook + REST backfill + claim rows + linkage bundle | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-121-deploy-context/README.md) |

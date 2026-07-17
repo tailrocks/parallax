@@ -35,8 +35,14 @@ proves the single worker is the bottleneck (not disk/network/Greptime).
 
 ## Residual for full plan 115 retirement
 
-- [ ] Live non-loopback rehearsal evidence packet (operator TLS edge)
-- [ ] Measured backup/restore + upgrade/rollback run log
-- [ ] Disk-pressure + retention prune rehearsal log
+- [x] Live non-loopback + bearer rehearsal (lab bind `0.0.0.0` + token) —
+      [`live-rehearsal-2026-07-17.md`](live-rehearsal-2026-07-17.md)
+- [x] Offline backup snapshot of config + managed data dir (restore procedure
+      documented; not cut over against live lab)
+- [x] Retention prune dry-run JSON (execute still gated by pin protection)
+- [ ] Operator TLS edge (reverse-proxy cert terminate) WAN dogfood
+- [ ] Measured upgrade/rollback binary swap log on same data dir
+- [ ] Disk-pressure injection + prune reclaim under free-space stress
 - [ ] Four-target release artifact install dogfood
-- [ ] Load packet for plan 110
+- [ ] Plan 110 load packet isolating single-worker stage costs (micro GraphQL +
+      invocation timings recorded; **not** a concurrency trigger)

@@ -1,0 +1,73 @@
+query TestsList(
+  $query: String
+  $suite: String
+  $service: String
+  $serviceVersion: String
+  $status: TestRollup
+  $flakyState: TestFlakyState
+  $fromNanos: String
+  $toNanos: String
+  $sort: TestExplorerSort
+  $limit: Int
+  $offset: Int
+) {
+  testCases(
+    query: $query
+    suite: $suite
+    service: $service
+    serviceVersion: $serviceVersion
+    status: $status
+    flakyState: $flakyState
+    fromNanos: $fromNanos
+    toNanos: $toNanos
+    sort: $sort
+    limit: $limit
+    offset: $offset
+  ) {
+    hasMore
+    items {
+      caseKey
+      variantKey
+      name
+      suitePath
+      codeReference
+      explicitId
+      firstSeenNanos
+      lastSeenNanos
+      parameters {
+        name
+        value
+        excluded
+      }
+      invocationId
+      rollup
+      attemptCount
+      lastResult {
+        invocationId
+        attempt
+        status
+        traceId
+        spanId
+        startedAtNanos
+        endedAtNanos
+        service
+        serviceVersion
+        vcsHeadRevision
+        failureFingerprint
+        configuration {
+          key
+          value
+        }
+      }
+      flaky {
+        state
+        sameCommitDivergence
+        intraInvocationMix
+        transitionCount
+        consecutivePasses
+        updatedAtNanos
+      }
+    }
+  }
+  services
+}

@@ -13,6 +13,8 @@ import {
   IconClipboardListFilled,
   IconDatabase,
   IconDatabaseFilled,
+  IconFlask,
+  IconFlask2Filled,
   IconHome,
   IconHomeFilled,
   IconLayoutDashboard,
@@ -47,6 +49,14 @@ export const primaryNav: NavItem[] = [
     activeIcon: IconBugFilled,
     iconClassName:
       "bg-rose-100 dark:bg-rose-950 rounded-xl p-0.5 corner-squircle text-rose-500 shadow-[inset_0_0_0_1px_rgba(244,63,94,0.14),0_2px_6px_-2px_rgba(244,63,94,0.25)] dark:shadow-(--custom-shadow)",
+  },
+  {
+    href: "/tests",
+    label: "Tests",
+    icon: IconFlask,
+    activeIcon: IconFlask2Filled,
+    iconClassName:
+      "bg-violet-100 dark:bg-violet-950 rounded-xl p-0.5 corner-squircle text-violet-500 shadow-[inset_0_0_0_1px_rgba(139,92,246,0.14),0_2px_6px_-2px_rgba(139,92,246,0.25)] dark:shadow-(--custom-shadow)",
   },
   {
     href: "/traces",

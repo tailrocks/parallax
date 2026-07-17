@@ -1,0 +1,47 @@
+query TestCaseDetail($caseKey: String!, $variantLimit: Int, $resultLimit: Int) {
+  testCase(caseKey: $caseKey, variantLimit: $variantLimit, resultLimit: $resultLimit) {
+    caseKey
+    name
+    identitySource
+    suitePath
+    codeReference
+    explicitId
+    firstSeenNanos
+    lastSeenNanos
+    variants {
+      variantKey
+      parameters {
+        name
+        value
+        excluded
+      }
+      firstSeenNanos
+      lastSeenNanos
+      history {
+        invocationId
+        attempt
+        status
+        traceId
+        spanId
+        startedAtNanos
+        endedAtNanos
+        service
+        serviceVersion
+        vcsHeadRevision
+        failureFingerprint
+        configuration {
+          key
+          value
+        }
+      }
+      flaky {
+        state
+        sameCommitDivergence
+        intraInvocationMix
+        transitionCount
+        consecutivePasses
+        updatedAtNanos
+      }
+    }
+  }
+}

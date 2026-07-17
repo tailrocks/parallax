@@ -396,6 +396,15 @@ export type InvocationErrorEvent = {
   readonly tsNanos: Scalars["String"]["output"]
 }
 
+export type InvocationMetricRow = {
+  readonly __typename?: "InvocationMetricRow"
+  readonly lastTsNanos: Scalars["String"]["output"]
+  readonly lastValue: Scalars["Float"]["output"]
+  /** Canonical native-family identity persisted at ingest. */
+  readonly name: Scalars["String"]["output"]
+  readonly pointCount: Scalars["String"]["output"]
+}
+
 export type Issue = {
   readonly __typename?: "Issue"
   readonly culprit: Maybe<Scalars["String"]["output"]>
@@ -724,6 +733,15 @@ export type Query = {
    * retained recent window.
    */
   readonly invocationFacets: ReadonlyArray<Facet>
+  /**
+   * Window-scoped metric explorer catalog (plan 168): canonical names with
+   * kind (gauge|sum|histogram), unit, emitting services, last datapoint,
+   * and finite-sample counts per the metric-summary contract. `q` is a
+   * Bounded invocation-scoped metric family summaries (plan 105): typed
+   * projection over invocation_metric_points, canonical names, finite
+   * samples only.
+   */
+  readonly invocationMetrics: ReadonlyArray<InvocationMetricRow>
   readonly invocations: ReadonlyArray<Invocation>
   readonly issue: Maybe<Issue>
   /**
@@ -766,12 +784,7 @@ export type Query = {
   readonly logsByInvocation: ReadonlyArray<LogRecord>
   /** Logs correlated to one trace, time ascending. */
   readonly logsByTrace: ReadonlyArray<LogRecord>
-  /**
-   * Window-scoped metric explorer catalog (plan 168): canonical names with
-   * kind (gauge|sum|histogram), unit, emitting services, last datapoint,
-   * and finite-sample counts per the metric-summary contract. `q` is a
-   * case-insensitive substring filter; `kind` filters one metric kind.
-   */
+  /** case-insensitive substring filter; `kind` filters one metric kind. */
   readonly metricCatalog: ReadonlyArray<MetricCatalogRow>
   /** Trace-linked exemplars for one metric, newest first. */
   readonly metricExemplars: ReadonlyArray<MetricExemplar>
@@ -853,6 +866,13 @@ export type Query = {
   readonly sql: SqlResultOut
   /** Deterministic story timeline for exactly one trace or run anchor. */
   readonly story: ReadonlyArray<StoryBeat>
+  /** One test case with bounded variants and newest-first attempt history. */
+  readonly testCase: Maybe<TestCaseDetail>
+  /**
+   * Variant-scoped test explorer. Attempt rollups preserve fail-then-pass as
+   * flaky-pass; every row references its latest native test span.
+   */
+  readonly testCases: TestExplorerPage
   /** Every span of one trace, start-time ascending (cross-service). */
   readonly trace: Maybe<Trace>
   /** Structural diff between two traces' span trees. */
@@ -991,6 +1011,13 @@ export type QueryInvocationArgs = {
 
 export type QueryInvocationFacetsArgs = {
   fromNanos: InputMaybe<Scalars["String"]["input"]>
+  toNanos: InputMaybe<Scalars["String"]["input"]>
+}
+
+export type QueryInvocationMetricsArgs = {
+  fromNanos: InputMaybe<Scalars["String"]["input"]>
+  invocationId: Scalars["String"]["input"]
+  limit: InputMaybe<Scalars["Int"]["input"]>
   toNanos: InputMaybe<Scalars["String"]["input"]>
 }
 
@@ -1232,6 +1259,27 @@ export type QuerySqlArgs = {
 export type QueryStoryArgs = {
   invocationId: InputMaybe<Scalars["String"]["input"]>
   traceId: InputMaybe<Scalars["String"]["input"]>
+}
+
+export type QueryTestCaseArgs = {
+  caseKey: Scalars["String"]["input"]
+  resultLimit: InputMaybe<Scalars["Int"]["input"]>
+  variantLimit: InputMaybe<Scalars["Int"]["input"]>
+}
+
+export type QueryTestCasesArgs = {
+  configuration: InputMaybe<TestConfigurationFilterInput>
+  flakyState: InputMaybe<TestFlakyState>
+  fromNanos: InputMaybe<Scalars["String"]["input"]>
+  limit: InputMaybe<Scalars["Int"]["input"]>
+  offset: InputMaybe<Scalars["Int"]["input"]>
+  query: InputMaybe<Scalars["String"]["input"]>
+  service: InputMaybe<Scalars["String"]["input"]>
+  serviceVersion: InputMaybe<Scalars["String"]["input"]>
+  sort: InputMaybe<TestExplorerSort>
+  status: InputMaybe<TestRollup>
+  suite: InputMaybe<Scalars["String"]["input"]>
+  toNanos: InputMaybe<Scalars["String"]["input"]>
 }
 
 export type QueryTraceArgs = {
@@ -1491,6 +1539,107 @@ export type StoryBeat = {
   readonly title: Scalars["String"]["output"]
   readonly traceId: Scalars["String"]["output"]
   readonly tsNanos: Scalars["String"]["output"]
+}
+
+export type TestCaseDetail = {
+  readonly __typename?: "TestCaseDetail"
+  readonly caseKey: Scalars["String"]["output"]
+  readonly codeReference: Maybe<Scalars["String"]["output"]>
+  readonly explicitId: Maybe<Scalars["String"]["output"]>
+  readonly firstSeenNanos: Scalars["String"]["output"]
+  readonly identitySource: TestIdentitySource
+  readonly lastSeenNanos: Scalars["String"]["output"]
+  readonly name: Scalars["String"]["output"]
+  readonly suitePath: ReadonlyArray<Scalars["String"]["output"]>
+  readonly variants: ReadonlyArray<TestVariantDetail>
+}
+
+export type TestConfigurationFilterInput = {
+  readonly key: Scalars["String"]["input"]
+  readonly value: Scalars["String"]["input"]
+}
+
+export type TestDimension = {
+  readonly __typename?: "TestDimension"
+  readonly key: Scalars["String"]["output"]
+  readonly value: Scalars["String"]["output"]
+}
+
+export type TestExplorerPage = {
+  readonly __typename?: "TestExplorerPage"
+  readonly hasMore: Scalars["Boolean"]["output"]
+  readonly items: ReadonlyArray<TestExplorerRow>
+}
+
+export type TestExplorerRow = {
+  readonly __typename?: "TestExplorerRow"
+  readonly attemptCount: Scalars["Int"]["output"]
+  readonly caseKey: Scalars["String"]["output"]
+  readonly codeReference: Maybe<Scalars["String"]["output"]>
+  readonly explicitId: Maybe<Scalars["String"]["output"]>
+  readonly firstSeenNanos: Scalars["String"]["output"]
+  readonly flaky: Maybe<TestFlaky>
+  readonly invocationId: Scalars["String"]["output"]
+  readonly lastResult: TestResult
+  readonly lastSeenNanos: Scalars["String"]["output"]
+  readonly name: Scalars["String"]["output"]
+  readonly parameters: ReadonlyArray<TestParameter>
+  readonly rollup: TestRollup
+  readonly suitePath: ReadonlyArray<Scalars["String"]["output"]>
+  readonly variantKey: Scalars["String"]["output"]
+}
+
+export type TestExplorerSort = "LAST_SEEN" | "NAME"
+
+export type TestFlaky = {
+  readonly __typename?: "TestFlaky"
+  readonly consecutivePasses: Scalars["Int"]["output"]
+  readonly intraInvocationMix: Scalars["Boolean"]["output"]
+  readonly sameCommitDivergence: Scalars["Boolean"]["output"]
+  readonly state: TestFlakyState
+  readonly transitionCount: Scalars["Int"]["output"]
+  readonly updatedAtNanos: Scalars["String"]["output"]
+}
+
+export type TestFlakyState = "BROKEN" | "FIXED" | "FLAKY" | "HEALTHY"
+
+export type TestIdentitySource = "CODE_REFERENCE" | "EXPLICIT" | "NAME_PATH"
+
+export type TestParameter = {
+  readonly __typename?: "TestParameter"
+  readonly excluded: Scalars["Boolean"]["output"]
+  readonly name: Scalars["String"]["output"]
+  readonly value: Scalars["String"]["output"]
+}
+
+export type TestResult = {
+  readonly __typename?: "TestResult"
+  readonly attempt: Scalars["Int"]["output"]
+  readonly configuration: ReadonlyArray<TestDimension>
+  readonly endedAtNanos: Scalars["String"]["output"]
+  readonly failureFingerprint: Maybe<Scalars["String"]["output"]>
+  readonly invocationId: Scalars["String"]["output"]
+  readonly service: Scalars["String"]["output"]
+  readonly serviceVersion: Maybe<Scalars["String"]["output"]>
+  readonly spanId: Scalars["String"]["output"]
+  readonly startedAtNanos: Scalars["String"]["output"]
+  readonly status: TestResultStatus
+  readonly traceId: Scalars["String"]["output"]
+  readonly vcsHeadRevision: Maybe<Scalars["String"]["output"]>
+}
+
+export type TestResultStatus = "BROKEN" | "FAILED" | "PASSED" | "SKIPPED" | "UNKNOWN"
+
+export type TestRollup = "BROKEN" | "FAILED" | "FLAKY_PASS" | "PASSED" | "SKIPPED" | "UNKNOWN"
+
+export type TestVariantDetail = {
+  readonly __typename?: "TestVariantDetail"
+  readonly firstSeenNanos: Scalars["String"]["output"]
+  readonly flaky: Maybe<TestFlaky>
+  readonly history: ReadonlyArray<TestResult>
+  readonly lastSeenNanos: Scalars["String"]["output"]
+  readonly parameters: ReadonlyArray<TestParameter>
+  readonly variantKey: Scalars["String"]["output"]
 }
 
 export type Trace = {

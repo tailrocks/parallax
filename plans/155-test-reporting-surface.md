@@ -12,7 +12,7 @@
 - **Risk**: MEDIUM
 - **Depends on**: 149, 152, 153, 140 (DONE hard deps); soft 121/124 open
 - **Category**: product capability / ingest derivation / UI surface
-- **Status**: IN PROGRESS — domain model + identity derivation landed
+- **Status**: IN PROGRESS — GraphQL + `/tests` list/detail UI landed; adapters/e2e residual
 - **Evidence base**:
   [`docs/research/market/test-reporting-ecosystem.md`](../docs/research/market/test-reporting-ecosystem.md)
 
@@ -110,19 +110,19 @@ if needed; do not reopen.
 
 1. ~~Explorer/filter + Turso schema~~ — landed (metadata explorer + fixtures).
 2. ~~Ingest derivation~~ — landed (`parallax-analysis` + worker persist).
-3. ~~GraphQL explorer~~ — `testCases` + SDL export landed; residual:
-   batch the preliminary `testCase` detail/history reads, regenerate UI
-   operations, attempt-chain history, mute/known/owner fields when schema exists.
-4. UI `features/tests`: list + detail + live session tree (after architecture
-   owners; React Flow not required here).
-5. ~~Flaky job over ingested results~~ — pure evaluator + Turso candidate scan
+3. ~~GraphQL explorer + UI ops~~ — `testCases`/`testCase` SDL, codegen operations,
+   and `/tests` list + case-detail pages landed under `ui/src/features/tests`
+   with nav, Vitest contracts, and strict typecheck. Residual: batch the
+   preliminary `testCase` detail/history metadata reads; mute/known/owner
+   fields when schema exists; live session tree / SSE headline.
+4. ~~Flaky job over ingested results~~ — pure evaluator + Turso candidate scan
    + result windows + `tick_once` server loop (60s) landed. Residual:
    mute/known flags (no runner quarantine enforcement in V1).
-6. Runner adapters: nextest attempt identity + bounded JUnit XML gap analysis
+5. Runner adapters: nextest attempt identity + bounded JUnit XML gap analysis
    landed; residual nextest support crate/export lifecycle, JUnit listener jar,
    and persistence writes for reconciled killed/missing attempts.
-7. Live e2e vs plan 154 W4 playground payload; validation evidence under
-   `docs/research/validation/`.
+6. Live e2e vs plan 154 W4 playground payload + Playwright gates; validation
+   evidence under `docs/research/validation/`.
 
 ## Done Criteria
 
