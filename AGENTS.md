@@ -72,6 +72,9 @@ structure quickly.
   and consult Ning / the GreptimeDB team with that packet. Only
   Parallax-derived extension tables are allowed, and they must be justified in
   [docs/research/decisions/native-otel-tables.md](docs/research/decisions/native-otel-tables.md).
+- Graph rendering (operator, 2026-07-17): every graph-schema/node-edge
+  visualization in the UI is built with React Flow (`@xyflow/react`) — see
+  `ui/AGENTS.md` rule 24. Never hand-roll a graph canvas.
 - Version policy (operator, 2026-06-12): always use the latest stable versions
   everywhere — crates, engines, UI dependencies, toolchains. Version tables in
   docs are known-compatible floors, not freezes; when implementing, resolve
