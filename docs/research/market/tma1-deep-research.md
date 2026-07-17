@@ -1,5 +1,12 @@
 # TMA1 Deep Research
 
+> **Superseded as the canonical comparison** by
+> [`competitors/parallax-vs-tma1.md`](competitors/parallax-vs-tma1.md)
+> (no-bias deep-dive, verified 2026-07-17: watch triggers checked, none fired).
+> This legacy teardown (2026-06-22, full source-code read) is a **source** — the
+> bundle/anomaly/MCP/derive/install source paths and the bundle-name-trap finding
+> remain useful; re-verify version + drift in the canonical deep-dive.
+
 Research date: 2026-06-22
 
 TMA1 (`github.com/tma1-ai/tma1`) is the **closest architectural cousin to Parallax** found in the
