@@ -109,3 +109,16 @@ Research **#1 (workload mix)** and **#5 (managed-vs-self-host)** first because
 they most affect risk and claims. **#2** remains a server-tier research run.
 Product work discovered by **#3/#4/#6** must be added to `plans/` before
 implementation; this ledger does not authorize it.
+
+## Next engine-loop targets (after Run 219, 2026-07-17)
+
+Engine-smoke re-verify cycle after v1.1.3 re-pin is **saturated** for laptop scale.
+Highest-value *remaining* items (not “done”):
+
+1. **Workload mix model** (product) — only input that re-weights DQ5 flip rule.
+2. **Server-tier 1M/5M four-way** on v1.1.3 + 26.6 — especially dedup-agg regression retest.
+3. **Managed $ quote packet** — GT managed vs CH Cloud for fixed volume/QPS.
+4. **Cold S3 selective egress** at GB scale (MinIO harness) — JSONBench cold counterpoint.
+5. **Product RPO runbook** — Turso + GT meta snapshot + object store (ops, not engine choice).
+
+Do **not** burn passes re-confirming interactive 100k ties unless a pin bumps.

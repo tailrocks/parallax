@@ -7211,3 +7211,8 @@ GT protocols 200; CH flags: experimental TimeSeries off, JSON on, PREWHERE on. N
 ### Run 218 — 2026-07-17 — implementation design pin annotations
 
 GT/CH implementation notes annotated with current pins + JSON2/DELETE/OTLP caveats.
+
+### Run 219 — 2026-07-17 — next engine-loop targets ranked
+
+After re-pin cycle, prioritize workload mix / server tier / managed quotes over more 100k ties.
+`open-questions-and-gaps.md`.
