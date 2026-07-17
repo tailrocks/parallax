@@ -190,3 +190,21 @@ hot-path differentiator. Does **not** move the verdict.
 - ClickHouse caches: `src/Core/ServerSettings.cpp:496-588,1574` (mark/uncompressed/index/query cache + prewarm); defaults `src/Core/Defines.h:85,88` (mark 5 GiB, uncompressed 0 MiB = off).
 - Ties to `local-benchmark-results.md` Runs 8–9/54 (object layout/count), **Run 55 (B10 cold-read request count + egress, measured)**, **Run 63 (`EXPLAIN ANALYZE` scatter-vs-cluster: anchored scan 39 ms scattered vs 14 ms trace_id-clustered → whole-SST cold read is scatter-driven, persists at scale)**, `public-performance-claims.md` (JSONBench cold-run), `benchmarking-the-differences.md` B1/B10/B12.
 - GreptimeDB persistent local read cache: `/greptimedb_data/cache` (write-through on flush; survived `docker restart`, cleared only by explicit `rm`) — `src/object-store/src/config.rs:318-340` (default on).
+
+## Run 203 (2026-07-17) — cache hierarchy re-map on v1.1.3 source + warm micro
+
+**GT `CacheManager` members (source `mito2/src/cache.rs`):** page_cache (`PageRangeCache`),
+write_cache, inverted_index_cache, bloom_filter_index_cache, vector_index_cache, prefilter
+result cache. Write cache can background-download for object-store mode.
+
+**CH:** uncompressed/mark/primary-index caches (classic MergeTree stack; settings default on).
+
+**Live N=100k local disk** (not object-store cold): filter agg first vs warm median-of-5 —
+
+| | First ms | Warm ms |
+| --- | ---: | ---: |
+| GT | 6 | 4 |
+| CH | 4 | 3 |
+
+Modest warm-up on local SSD; the large cold-S3 penalty story remains about **object-store path**
+(Runs 14/15/55), not this local smoke.
