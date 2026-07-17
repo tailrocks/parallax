@@ -214,6 +214,10 @@ Full combination **still not closed**.
 
 Combo **still not closed**.
 
+**Pass 279 recheck (2026-07-18):** **Odigos** — still **3,668★** / **`v1.31.2`**
+(2026-07-09). Export-only eBPF auto-instrumentation; own-store collision
+**UNFIRED**. Combo **not closed**.
+
 **Pass 258 recheck (2026-07-18):** **Maple + Uptrace** —
 
 | Product | Pin | Watch |

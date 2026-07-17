@@ -86,6 +86,13 @@ evidence + no mandatory vendor cloud AI). OPW route-only claim **unchanged**.
 **Continue watching** if Datadog ships offline Bits / multi-signal BYOC store
 without SaaS phone-home.
 
+### Pass 279 (2026-07-18) — OPW primary re-fetch
+
+[Observability Pipelines](https://docs.datadoghq.com/observability_pipelines/)
+still: collect/process then **route** to destinations; Worker **aggregate,
+process, and route**. Still **not** self-hosted Bits/APM store. BYOC Logs
+hybrid story (pass 261) unchanged. Air-gap combination claim **holds**.
+
 Air-gap combination claim (open core + portable redacted evidence + no closed
 cloud AI) **still holds** as a *combination* (A1 still unproven).
 
