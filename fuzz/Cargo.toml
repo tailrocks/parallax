@@ -22,11 +22,21 @@ path = "../crates/parallax-ingest"
 [dependencies.parallax-proto]
 path = "../crates/parallax-proto"
 
+[dependencies.parallax-greptime]
+path = "../crates/parallax-greptime"
+
 [dependencies.parallax-spool]
 path = "../crates/parallax-spool"
 
 [dependencies.parallax-semconv]
 path = "../crates/parallax-semconv"
+
+[[bin]]
+name = "arrow_decode"
+path = "fuzz_targets/arrow_decode.rs"
+test = false
+doc = false
+bench = false
 
 [[bin]]
 name = "spool_framing"

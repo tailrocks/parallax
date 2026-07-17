@@ -4,7 +4,7 @@
 mod adapter {
     pub(crate) use parallax_storage::adapter::*;
 }
-mod arrow_sql;
+pub mod arrow_sql;
 #[expect(
     clippy::cast_possible_truncation,
     clippy::cast_precision_loss,

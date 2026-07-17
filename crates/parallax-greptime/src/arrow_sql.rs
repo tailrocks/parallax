@@ -28,7 +28,9 @@ use std::io::Cursor;
 
 /// Decode an Arrow IPC stream (optionally zstd-compressed per-message) into
 /// column names + rows of JSON-compatible cells.
-pub(crate) fn decode_arrow_ipc(bytes: &[u8]) -> anyhow::Result<(Vec<String>, Vec<Vec<Value>>)> {
+/// Public for the plan-103 fuzz boundary (`fuzz/fuzz_targets/arrow_decode.rs`):
+/// arbitrary bytes must never panic or allocate unboundedly here.
+pub fn decode_arrow_ipc(bytes: &[u8]) -> anyhow::Result<(Vec<String>, Vec<Vec<Value>>)> {
     if bytes.is_empty() {
         return Ok((Vec::new(), Vec::new()));
     }
@@ -37,6 +39,11 @@ pub(crate) fn decode_arrow_ipc(bytes: &[u8]) -> anyhow::Result<(Vec<String>, Vec
         return Err(map_greptime_json_error(bytes));
     }
 
+    // The IPC stream's length prefixes drive buffer allocations inside the
+    // arrow reader; a corrupt/hostile prefix can demand gigabytes from a
+    // few bytes of input. Walk the message framing first and reject any
+    // declared length that exceeds the bytes we actually hold.
+    validate_ipc_frame_lengths(bytes)?;
     let reader = StreamReader::try_new(Cursor::new(bytes), None)
         .context("arrow-ipc StreamReader (format=arrow)")?;
     let mut columns: Vec<String> = Vec::new();
@@ -57,6 +64,40 @@ pub(crate) fn decode_arrow_ipc(bytes: &[u8]) -> anyhow::Result<(Vec<String>, Vec
         append_batch_rows(&batch, &mut rows)?;
     }
     Ok((columns, rows))
+}
+
+/// Reject a stream whose first message declares more metadata than the
+/// payload holds — the cheap hostile-prefix case where a few bytes demand
+/// gigabytes from the arrow reader. Deeper messages are framed by lengths
+/// inside verified flatbuffer metadata; walking them without full parsing
+/// is not possible here, so this guards the first-allocation class only.
+fn validate_ipc_frame_lengths(bytes: &[u8]) -> anyhow::Result<()> {
+    let mut offset = 0usize;
+    let mut word = |offset: &mut usize| -> Option<u32> {
+        let end = *offset + 4;
+        let value = bytes
+            .get(*offset..end)
+            .map(|b| u32::from_le_bytes(b.try_into().expect("4 bytes")));
+        *offset = end;
+        value
+    };
+    let Some(first) = word(&mut offset) else {
+        return Ok(());
+    };
+    let declared = if first == u32::MAX {
+        match word(&mut offset) {
+            Some(len) => len,
+            None => return Ok(()),
+        }
+    } else {
+        first
+    };
+    anyhow::ensure!(
+        (declared as usize) <= bytes.len().saturating_sub(offset),
+        "arrow-ipc stream declares {declared} metadata bytes but only {} remain",
+        bytes.len().saturating_sub(offset)
+    );
+    Ok(())
 }
 
 fn map_greptime_json_error(bytes: &[u8]) -> anyhow::Error {
