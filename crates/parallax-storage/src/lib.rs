@@ -12,5 +12,10 @@ mod adapter_math;
 mod adapter_rules;
 pub mod metadata;
 pub mod projections;
-pub mod prune;
+mod prune;
 pub use parallax_model as model;
+pub use prune::{
+    PruneAuthorization, PruneClass, PruneEstimate, PruneExclusion, PruneExclusionKind,
+    PruneExecutionMode, PruneExecutionRequest, PruneItem, PrunePlan, PrunePlanError,
+    PrunePlanLimits, PruneSnapshot, PruneStore,
+};

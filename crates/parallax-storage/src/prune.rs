@@ -96,14 +96,14 @@ impl Default for PrunePlanLimits {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct PrunePlan {
-    pub contract_version: u8,
-    pub plan_id: String,
+    contract_version: u8,
+    plan_id: String,
     #[serde(with = "u128_string")]
-    pub cutoff_nanos: u128,
-    pub snapshot: PruneSnapshot,
-    pub items: Vec<PruneItem>,
+    cutoff_nanos: u128,
+    snapshot: PruneSnapshot,
+    items: Vec<PruneItem>,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -113,11 +113,10 @@ pub enum PruneExecutionMode {
     Execute,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct PruneExecutionRequest {
-    pub plan_id: String,
-    pub mode: PruneExecutionMode,
-    pub confirmed: bool,
+    plan_id: String,
+    mode: PruneExecutionMode,
 }
 
 impl PruneExecutionRequest {
@@ -126,17 +125,17 @@ impl PruneExecutionRequest {
         Self {
             plan_id,
             mode: PruneExecutionMode::DryRun,
-            confirmed: false,
         }
     }
 
-    #[must_use]
-    pub fn execute(plan_id: String, confirmed: bool) -> Self {
-        Self {
+    pub fn execute(plan_id: String, confirmed: bool) -> Result<Self, PrunePlanError> {
+        if !confirmed {
+            return Err(PrunePlanError::ConfirmationRequired);
+        }
+        Ok(Self {
             plan_id,
             mode: PruneExecutionMode::Execute,
-            confirmed,
-        }
+        })
     }
 }
 
@@ -152,7 +151,7 @@ pub enum PrunePlanError {
     EmptySnapshotField(&'static str),
     #[error("prune item cutoff {item} differs from plan cutoff {plan}")]
     CutoffMismatch { item: u128, plan: u128 },
-    #[error("prune item {target:?} has no row, object, or byte estimate")]
+    #[error("prune item {target:?} has no row or object estimate")]
     MissingEstimate { target: String },
     #[error("prune plan contains {actual} items; limit is {limit}")]
     TooManyItems { actual: usize, limit: usize },
@@ -176,6 +175,8 @@ pub enum PrunePlanError {
     StaleSnapshot { field: &'static str },
     #[error("execution request does not name this prune plan")]
     PlanIdentityMismatch,
+    #[error("prune plan contents do not match its identity")]
+    PlanIntegrityMismatch,
     #[error("destructive prune execution requires explicit confirmation")]
     ConfirmationRequired,
     #[error("failed to encode prune plan identity: {0}")]
@@ -219,10 +220,7 @@ impl PrunePlan {
                     plan: cutoff_nanos,
                 });
             }
-            if item.estimate.rows.is_none()
-                && item.estimate.objects.is_none()
-                && item.estimate.bytes.is_none()
-            {
+            if item.estimate.rows.is_none() && item.estimate.objects.is_none() {
                 return Err(PrunePlanError::MissingEstimate {
                     target: item.target.clone(),
                 });
@@ -260,8 +258,7 @@ impl PrunePlan {
                 });
             }
         }
-        let identity = serde_json::to_vec(&(1_u8, cutoff_nanos.to_string(), &snapshot, &items))?;
-        let plan_id = format!("{:x}", Sha256::digest(identity));
+        let plan_id = compute_plan_id(1, cutoff_nanos, &snapshot, &items)?;
         Ok(Self {
             contract_version: 1,
             plan_id,
@@ -298,16 +295,60 @@ impl PrunePlan {
         request: &PruneExecutionRequest,
         current: &PruneSnapshot,
     ) -> Result<PruneAuthorization, PrunePlanError> {
+        if compute_plan_id(
+            self.contract_version,
+            self.cutoff_nanos,
+            &self.snapshot,
+            &self.items,
+        )? != self.plan_id
+        {
+            return Err(PrunePlanError::PlanIntegrityMismatch);
+        }
         if request.plan_id != self.plan_id {
             return Err(PrunePlanError::PlanIdentityMismatch);
         }
         self.validate_snapshot(current)?;
         match request.mode {
             PruneExecutionMode::DryRun => Ok(PruneAuthorization::DryRun),
-            PruneExecutionMode::Execute if request.confirmed => Ok(PruneAuthorization::Execute),
-            PruneExecutionMode::Execute => Err(PrunePlanError::ConfirmationRequired),
+            PruneExecutionMode::Execute => Ok(PruneAuthorization::Execute),
         }
     }
+
+    #[must_use]
+    pub fn plan_id(&self) -> &str {
+        &self.plan_id
+    }
+
+    #[must_use]
+    pub const fn contract_version(&self) -> u8 {
+        self.contract_version
+    }
+
+    #[must_use]
+    pub const fn cutoff_nanos(&self) -> u128 {
+        self.cutoff_nanos
+    }
+
+    #[must_use]
+    pub fn snapshot(&self) -> &PruneSnapshot {
+        &self.snapshot
+    }
+
+    #[must_use]
+    pub fn items(&self) -> &[PruneItem] {
+        &self.items
+    }
+}
+
+fn compute_plan_id(
+    contract_version: u8,
+    cutoff_nanos: u128,
+    snapshot: &PruneSnapshot,
+    items: &[PruneItem],
+) -> Result<String, PrunePlanError> {
+    let identity =
+        serde_json::to_vec(&(contract_version, cutoff_nanos.to_string(), snapshot, items))?;
+    Ok(format!("{:x}", Sha256::digest(identity)))
 }
 
 fn validate_text(field: &'static str, value: &str, limit: usize) -> Result<(), PrunePlanError> {

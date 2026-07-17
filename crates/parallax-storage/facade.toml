@@ -6,5 +6,6 @@ schema_version = 1
     "mod metadata",
     "mod prune",
     "mod projections",
+    "use prune::{PruneAuthorization, PruneClass, PruneEstimate, PruneExclusion, PruneExclusionKind, PruneExecutionMode, PruneExecutionRequest, PruneItem, PrunePlan, PrunePlanError, PrunePlanLimits, PruneSnapshot, PruneStore}",
     "use parallax_model as model",
 ]

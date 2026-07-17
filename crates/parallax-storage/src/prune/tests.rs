@@ -156,6 +156,17 @@ fn construction_rejects_stale_or_ambiguous_plan_inputs() {
         ),
         Err(PrunePlanError::MissingEstimate { .. })
     ));
+
+    let mut byte_only = item(PruneStore::LocalDisk, PruneClass::Spool, "spool");
+    byte_only.estimate = PruneEstimate {
+        rows: None,
+        objects: None,
+        bytes: Some(32),
+    };
+    assert!(matches!(
+        PrunePlan::build(100, snapshot(), vec![byte_only], PrunePlanLimits::default()),
+        Err(PrunePlanError::MissingEstimate { .. })
+    ));
 }
 
 #[test]
@@ -300,22 +311,30 @@ fn execution_requires_exact_plan_identity_fresh_snapshot_and_confirmation() {
         PruneAuthorization::DryRun
     );
 
-    let unconfirmed = PruneExecutionRequest::execute(plan.plan_id.clone(), false);
     assert!(matches!(
-        plan.authorize(&unconfirmed, &snapshot()),
+        PruneExecutionRequest::execute(plan.plan_id.clone(), false),
         Err(PrunePlanError::ConfirmationRequired)
     ));
 
-    let wrong_plan = PruneExecutionRequest::execute("different-plan".into(), true);
+    let wrong_plan = PruneExecutionRequest::execute("different-plan".into(), true)
+        .expect("explicit confirmation");
     assert!(matches!(
         plan.authorize(&wrong_plan, &snapshot()),
         Err(PrunePlanError::PlanIdentityMismatch)
     ));
 
-    let confirmed = PruneExecutionRequest::execute(plan.plan_id.clone(), true);
+    let confirmed =
+        PruneExecutionRequest::execute(plan.plan_id.clone(), true).expect("explicit confirmation");
     assert_eq!(
         plan.authorize(&confirmed, &snapshot())
             .expect("confirmed execution"),
         PruneAuthorization::Execute
     );
+
+    let mut forged = plan.clone();
+    forged.items[0].target = "different-target".into();
+    assert!(matches!(
+        forged.authorize(&confirmed, &snapshot()),
+        Err(PrunePlanError::PlanIntegrityMismatch)
+    ));
 }
