@@ -17,6 +17,7 @@ mod occurrences;
 mod prune;
 mod row;
 mod saved_state;
+mod test_reporting;
 mod values;
 
 pub use alerts::{

@@ -510,6 +510,99 @@ async fn test_reporting_schema_has_reference_and_mutable_state_tables() {
 }
 
 #[tokio::test]
+async fn test_reporting_upserts_are_idempotent_and_reference_native_spans() {
+    use parallax_model::{
+        FlakyEvidence, FlakyState, TestAttempt, TestCaseIdentitySource, TestCaseKey,
+        TestCaseRecord, TestConfiguration, TestFlakyStateRecord, TestResultKey, TestResultRecord,
+        TestStatus, TestVariantKey, TestVariantRecord, TraceId,
+    };
+    use std::str::FromStr;
+
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(&path).await.expect("open");
+    let case_key = TestCaseKey::from_str(&format!("tc1:{}", "a".repeat(64))).expect("case");
+    let variant_key =
+        TestVariantKey::from_str(&format!("tv1:{}", "b".repeat(64))).expect("variant");
+    store
+        .upsert_test_case(&TestCaseRecord {
+            key: case_key.clone(),
+            identity_source: TestCaseIdentitySource::CodeReference,
+            explicit_id: None,
+            code_reference: Some("crate::suite::test".into()),
+            suite_path: vec!["suite".into()],
+            name: "test".into(),
+            first_seen_nanos: 2_000_000,
+            last_seen_nanos: 3_000_000,
+        })
+        .await
+        .expect("case upsert");
+    store
+        .upsert_test_variant(&TestVariantRecord {
+            key: variant_key.clone(),
+            case_key,
+            parameters: Vec::new(),
+            first_seen_nanos: 2_000_000,
+            last_seen_nanos: 3_000_000,
+        })
+        .await
+        .expect("variant upsert");
+    store
+        .upsert_test_result(&TestResultRecord {
+            key: TestResultKey {
+                variant_key: variant_key.clone(),
+                invocation_id: "inv-test".into(),
+                attempt: TestAttempt::new(1).expect("attempt"),
+            },
+            status: TestStatus::Failed,
+            trace_id: TraceId::from_str("abababababababababababababababab").expect("trace"),
+            span_id: "cdcdcdcdcdcdcdcd".into(),
+            started_at_nanos: 2_000_000,
+            ended_at_nanos: 3_000_000,
+            service: "checkout".into(),
+            service_version: Some("1.2.3".into()),
+            vcs_head_revision: Some("deadbeef".into()),
+            configuration: TestConfiguration::default(),
+            failure_fingerprint: Some("fp-test".into()),
+        })
+        .await
+        .expect("result upsert");
+    store
+        .upsert_test_flaky_state(&TestFlakyStateRecord {
+            variant_key,
+            state: FlakyState::Flaky,
+            evidence: FlakyEvidence {
+                intra_invocation_mix: true,
+                ..FlakyEvidence::default()
+            },
+            updated_at_nanos: 3_000_000,
+        })
+        .await
+        .expect("flaky upsert");
+
+    let conn = store.conn.lock().await;
+    for table in [
+        "test_cases",
+        "test_variants",
+        "test_results",
+        "test_flaky_states",
+    ] {
+        let mut rows = conn
+            .query(&format!("SELECT COUNT(*) FROM {table}"), ())
+            .await
+            .expect("count query");
+        let row = rows.next().await.expect("read count").expect("count row");
+        assert_eq!(integer(&row, 0), 1, "unexpected {table} count");
+    }
+    let mut rows = conn
+        .query("SELECT trace_id, span_id FROM test_results", ())
+        .await
+        .expect("result refs");
+    let row = rows.next().await.expect("read refs").expect("refs row");
+    assert_eq!(text(&row, 0), "abababababababababababababababab");
+    assert_eq!(text(&row, 1), "cdcdcdcdcdcdcdcd");
+}
+
+#[tokio::test]
 async fn issue_title_and_culprit_are_sanitized_at_rest() {
     let (_directory, path) = temp_db();
     let store = MetadataStore::open(&path).await.expect("open");
