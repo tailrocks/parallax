@@ -76,6 +76,11 @@
 >   pass 281) **holds** survivors' playbook. Desk **cannot** substitute interviews.
 > - Ledger paths still **absent**.
 > - **Operator interview runbook still owed.**
+>
+> **Pass 286 recheck (2026-07-18):** gate **still OPEN / zero rows**.
+> - SO **2025** still **200**; **2026** results still **404**.
+> - Ledger paths still **absent**.
+> - **Operator interview runbook still owed.**
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
