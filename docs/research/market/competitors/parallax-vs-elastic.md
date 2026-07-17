@@ -117,7 +117,17 @@ Both OSS-origin, self-hostable, OTLP-native, with a columnar/search backend. The
 
 ## Pricing & economics — model + verify-flag
 
-Elastic Observability pricing is **public** ([elastic.co/pricing](https://www.elastic.co/pricing)), **usage-based** across **Hosted** and **Serverless** plans (per-GB-ingested + per-resource/user components; Serverless is consumption-metered). **Exact current per-GB/per-user rates not captured cleanly this pass — confirm on the live pricing page before quoting a number** ([cubeapm 2026 review](https://cubeapm.com/blog/elastic-observability-pricing-and-review/) covers tier structure). Self-host ELv2 = $0 software cost (you operate the cluster).
+Elastic Observability pricing is **public** ([elastic.co/pricing](https://www.elastic.co/pricing)), **usage-based** across **Hosted** and **Serverless** plans (resolved pass 36 against the live page + [cubeapm 2026](https://cubeapm.com/blog/elastic-observability-pricing-and-review/) + [Serverless billing-dimensions docs](https://www.elastic.co/docs/deploy-manage/cloud-organization/billing/elastic-observability-billing-dimensions)):
+
+| Component | Rate | Notes |
+| --- | --- | --- |
+| **Hosted Standard ingest** | **~$0.09 / GB** | e.g. 3,000 GB ≈ $270 |
+| **Hosted Standard retention** | **~$0.019 / GB** | e.g. 3,000 GB ≈ $57 |
+| **Serverless** | **GB-ingested + retention** (consumption-metered) | per official billing-dimensions docs |
+| **APM add-on** | **~$31 / host / mo** | (~$15/host/mo infra-only) |
+| **Small deployments** | **~$1,500–$8,000 / mo** | Standard/Gold; Platinum/Enterprise $10K+/mo |
+
+Self-host ELv2 = **$0 software cost** (you operate the cluster). Hosted Standard tier starts ~$99 + usage. **Confirm exact live rates on [elastic.co/pricing](https://www.elastic.co/pricing)** (Elastic uses a calculator; the above are the documented 2026 components).
 
 **Parallax pricing:** none public yet (pre-release).
 
@@ -146,7 +156,7 @@ Elastic Observability pricing is **public** ([elastic.co/pricing](https://www.el
 
 - **A1 gate vs Elastic AI Error Assistant:** does a Parallax bundle beat Elastic-AI-assistant-as-context for coding-agent fix outcomes? Unproven.
 - **GreptimeDB-vs-Elasticsearch telemetry cost/perf** — measured ingest/query/cost at a representative telemetry workload. Benchmark-dependent, unmeasured; a real opening given Elastic's search-engine overhead.
-- **Elastic exact latest version + pricing rates** — pin latest tag; confirm Hosted/Serverless per-GB + per-user rates on elastic.co/pricing.
+- **Elastic exact latest version + pricing rates** — **RESOLVED pass 36**: current major line = **Elasticsearch 9.x** (the v9 line; v8.x legacy); Hosted Standard ~$0.09/GB ingest + ~$0.019/GB retain; Serverless = GB + retention; APM ~$31/host. Still confirm exact live calculator rates for a specific workload.
 
 ## Sources (accessed 2026-07-17)
 
