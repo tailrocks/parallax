@@ -133,7 +133,10 @@ spike produces useful stable signal.
 - [x] (partial, 2026-07-17) Fuzz target/manifest drift gate in
   `parallax-xtask/tests/fuzz_target_drift.rs`; workflow-side drift check
   lands with the CI fuzz lane (Step 5, open).
-- [ ] Representative hot paths have reproducible time/allocation baselines.
+- [x] (first measurement, 2026-07-17) Criterion benches for normalization,
+  spool IO, and Arrow decode with first observations recorded in
+  docs/research/testing/property-invariants.md; allocation instrumentation
+  and stable-runner variance modeling still open.
 - [ ] PR checks compile/smoke; scheduled runners perform stable measurement.
 - [ ] Ratchets use measured variance and fail without auto-refreshing baselines.
 - [ ] Deferred hot-path candidates are optimized only when evidence warrants it.
