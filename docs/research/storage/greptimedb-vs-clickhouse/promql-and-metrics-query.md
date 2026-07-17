@@ -192,6 +192,39 @@ SQL INSERT + `prometheusQuery` is a viable experimental lab path. Maturity gap i
 **GA multi-surface any-table (GT)** vs **experimental facade + table-functions + dedicated
 engine, Cloud-unsupported (CH)** — not "query path vaporware."
 
+## Run 404 (2026-07-18) — PromQL function completeness smoke (tiny series)
+
+**Pins:** GT `v1.1.3`, CH `26.6.1.1193`, head `26.7.1.1097`. Same 5-point counter per
+instance (`i1`: 100→340, +60/min; `i2`: 50→170, +30/min), eval at `00:04:00`.
+
+| Expression | CH 26.6.1 | CH head 26.7.1 | GT TQL / Prom HTTP |
+| --- | --- | --- | --- |
+| `up` / raw selector | OK | OK | OK (any mito table) |
+| `{instance="i1"}` matcher | OK (340) | OK | OK |
+| `rate(…[2m])` | **1.0 / 0.5** | same | **1.0 / 0.5** (match) |
+| `sum(rate(…[2m]))` | **1.5** | same | **1.5** (match) |
+| `avg by (job) (rate(…))` | **0.75** | same | **0.75** (match) |
+| `irate(…[2m])` | 1.0 / 0.5 | same | (not retested) |
+| `delta(…[2m])` | 120 / 60 | same | — |
+| `increase(…[2m])` | **Code 48 NOT_IMPLEMENTED** | **same** | **120 / 60** (`prom_increase`) |
+| `prometheusQueryRange` `rate` | OK (with ≥2m lookback window) | same | Prom `query_range` OK |
+
+**Mechanism reading:**
+
+- Core **rate + aggregation + label matchers** on CH experimental PromQL are **real and
+  numerically aligned** with GreptimeDB on this toy counter (not empty shells).
+- **`increase()` is still missing** on both stable 26.6 and head 26.7 — hard Code 48.
+  Many dashboards use `increase` as the friendly form of `rate * interval`; CH forces
+  `rate` (or SQL). GT implements `prom_increase` on the GA path.
+- Head did **not** close the `increase` gap vs 26.6 in this cycle.
+- Range queries need enough lookback relative to the range vector window (empty result
+  with exit 0 is a footgun, not an error).
+
+**Verdict impact:** maturity/ergonomics edge for GT **sharpened on completeness**, not
+only on GA flag. Capability is no longer vapor for `rate`/`sum`/`avg by`, but a product
+that expects full Prometheus function coverage cannot treat CH TimeSeries as drop-in yet.
+Still comparator-only for Parallax stack policy.
+
 ## Run 403 mechanism takeaway (why Code 48 is not a death sentence)
 
 `TimeSeries` is closer to a **materialized-view-style multi-target router** than a
@@ -210,10 +243,9 @@ or gains Cloud support.
 
 ## Honest caveats
 
-- ClickHouse PromQL is experimental — **feature completeness vs Prometheus is
-  unverified** (which PromQL functions/selectors work, edge cases). Run 403 proved
-  instant `up` + range on 2 samples only; a fair "can it run Parallax's actual PromQL
-  set" test at volume is still owed (`benchmarking-the-differences.md` case).
+- ClickHouse PromQL is experimental — **feature completeness partially measured
+  (Run 404):** `rate`/`irate`/`delta`/`sum`/`avg by`/matchers work; **`increase` missing**
+  on 26.6+26.7. Volume/cardinality completeness still owed.
 - GreptimeDB PromQL completeness vs upstream Prometheus is also not exhaustively
   tested here, but it is GA and the planner covers the core operators (above).
 - This pass corrected the *query* side; the **ingest** side ("ClickHouse needs a

@@ -135,10 +135,9 @@ Highest-value *remaining* items (not “done”):
    **GB–TB** selective cold still owed.
 5. **RPO D2/D3 drills** — Run 225 D1 done; cluster meta snapshot + Turso dump still owed.
 6. ~~GT OpenDAL/S3 request metrics~~ — **closed Runs 234–235** (`opendal_http_*GetObject`).
-7. ~~CH TimeSeries "broken"~~ — **Run 403 drift correction:** outer SELECT still Code 48
-   (facade by design); **SQL INSERT + `prometheusQuery`/`prometheusQueryRange` work** on
-   26.6.1 + 26.7.1 with real series. Remaining watch: leave experimental / Cloud support /
-   PromQL completeness at volume — not "SELECT unimplemented = unusable."
+7. ~~CH TimeSeries "broken"~~ — **Run 403** query path real; **Run 404** `rate`/`sum`/
+   `avg by` match GT, **`increase` still NOT_IMPLEMENTED** on 26.6+26.7. Remaining watch:
+   leave experimental / Cloud support / more PromQL fns + volume — not "unusable."
 
 Do **not** burn passes re-confirming interactive 50k–100k ties, small-N object counts,
 or plan-shape re-verifies of PREWHERE/projection/TWCS/PARTITION unless a **pin bumps**.
