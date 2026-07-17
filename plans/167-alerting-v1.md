@@ -47,6 +47,12 @@ evidence. Index status stays TODO.
   plan templates (high-error-rate / slow-p95 / slow-p99 / throughput-drop /
   log-error-burst) via `draftFromTemplate`. Vitest in
   `__tests__/alert-rule-form.test.ts`.
+- `ui/src/lib/alert-incident-timeline.ts` — pure incident detail timeline:
+  `buildIncidentTimeline(incident, deliveries, checks)` sorted by time
+  (triggered / renotify while open / checks / deliveries / resolved);
+  failed delivery detection; `severityMixSegments` for mix bars. Vitest in
+  `__tests__/alert-incident-timeline.test.ts`. **Peer:** wire GraphQL rows
+  into this builder on incident detail; do not rewrite the pure sorter.
 - `crates/parallax-metadata/src/turso/alerts.rs` (`02d6dd2`, helper agent
   2026-07-17) — Step 1 remainder: DDL for the six tables (alert_rules,
   alert_rule_states, alert_incidents, alert_destinations,

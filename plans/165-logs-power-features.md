@@ -43,6 +43,12 @@ closure commit — treat as preliminary handoff):**
   expand-to-samples: `templateToRegExp` (whole-token + embedded `<*>`),
   `bodyMatchesTemplate`, `templateStableFragment` (CONTAINS prefilter),
   `filterBodiesByTemplate`. Vitest in `__tests__/log-pattern-match.test.ts`.
+- `ui/src/lib/log-patterns-url.ts` — Patterns-mode URL codec (`patterns=1`,
+  optional `pattern=<template>`); merge helper preserves unrelated search
+  keys. Vitest in `__tests__/log-patterns-url.test.ts`.
+- `severityMixSegments` in `ui/src/lib/alert-incident-timeline.ts` — largest-
+  remainder % bars for cluster severity mix (shared helper; plan-165 UI can
+  import it for pattern rows).
 
 **Peer owns (verify/deepen/complete):**
 - [ ] Clippy/format polish on Drain if needed; deepen masking if PII edge
