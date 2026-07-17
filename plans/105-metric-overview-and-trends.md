@@ -78,6 +78,26 @@ unavailable, rejects every proposal, or changes backend/API/UI scope, mark this
 plan `BLOCKED` with the exact open decision and stop instead of selecting product
 semantics during implementation.
 
+### Helper handoff: invocation projection seam (2026-07-17)
+
+A prototype bounded read over `invocation_metric_points` proved that the
+extension can avoid native-table discovery, but review rejected the prototype
+before commit. Returning its ingest-time OTLP `name` verbatim violates the
+approved canonical-name contract: machine output must use the native public
+table base name and fail closed on ambiguous resolution. Fix this structurally
+at ingest by persisting the canonical native-family identity in the extension
+through the same resolver used by metric queries; do not repair names with a
+catalog scan on every invocation read.
+
+The eventual adapter conformance fixture must use identical MemoryStore and
+live GreptimeDB seeds and prove inclusive endpoints, finite filtering, cap+1
+truncation, and total ordering at tied timestamp/service/name boundaries.
+Ordering needs stable value and canonical-attribute tie-breakers. It must also
+pin normalized-name parity and collision rejection. GraphQL should expose
+attributes through the repository's canonical JSON representation, not a
+second JSON-encoded string. No implementation or plan status changed in this
+handoff.
+
 ## Steps
 
 1. Specify whether `metric_point_count` is windowed, which samples count, how
