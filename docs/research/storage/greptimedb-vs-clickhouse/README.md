@@ -238,6 +238,7 @@ managed quotes remain):
 | health+pins+adopt | **556** | all healthy |
 | still not done | **557** | top 5 open |
 | ops burden note + raft D2 re-fail | **558** | gap #7 engine layer; list rates hold |
+| D1 BACKUP/export re-smoke m2m | **559** | CH 50k match; GT schema+parquet |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |

@@ -212,3 +212,17 @@ exported `greptime_private` + `public` DDL; snapshot id
 `2110c353-9ca0-446d-bb01-4352d90ff454`; `public.sql` **508 lines** (grew with bench
 tables). Complements D1 portability (Run 405).
 
+#### Run 559 (2026-07-18) — D1 re-smoke on m2m (50k) + export-v2 schema
+
+Reproducibility log: `/tmp/run559_dr/` (host scratch). Pins unchanged.
+
+| Step | Result |
+| --- | --- |
+| CH `BACKUP TABLE m2m TO File('backups/run559_m2m')` | **BACKUP_CREATED**; `system.backup_log` total_size **11,510,221** |
+| CH `RESTORE … AS m2m_r559` | **RESTORED**; counts **50,000 = 50,000** (`ROW_MATCH`) |
+| GT `export-v2 create --schema-only --to file:///tmp/run559_export --schemas public --force` | Snapshot `2951d446-…`; `schema/ddl/public.sql` **10,905 B** + `manifest.json` |
+| GT `COPY m2m TO '/tmp/run559_m2m.parquet'` | **50,020** affected rows (fixture grew), **182,746 B** parquet, **32 ms** |
+| Jaeger health | HTTP **200** |
+
+**Status:** D1 paths still green on `v1.1.3` / `26.6.1.1193`. D2/D3 still open
+(standalone raft-engine snapshot fail re-confirmed Run 558).

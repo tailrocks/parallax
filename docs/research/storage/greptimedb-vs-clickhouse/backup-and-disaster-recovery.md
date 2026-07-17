@@ -130,3 +130,23 @@ No stack flip. Closes the engine-layer **backup/DR** gap in the ledger: both sys
 have **working** backup/restore paths on current pins; shapes differ (export+meta+S3
 vs BACKUP SQL+parts). Product still owes a combined Greptime+Turso runbook and a
 managed-cloud vs self-host cost model (gap #5).
+
+### Run 559 (2026-07-18) — re-smoke m2m D1
+
+| Op | Result |
+| --- | --- |
+| CH BACKUP/RESTORE `m2m` | **50,000 = 50,000**; backup ~**11.0 MiB** (`system.backup_log`) |
+| GT export-v2 `--schema-only` `public` | `public.sql` **10,905 B** + manifest (snapshot id `2951d446-…`) |
+| GT `COPY m2m` parquet | **~178 KiB**, **32 ms**, ~50k rows |
+
+Reproduce (same containers as ops note Run 558):
+
+```bash
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q \
+  "BACKUP TABLE m2m TO File('backups/run559_m2m')"
+docker exec parallax-bench-clickhouse-1 clickhouse-client -q \
+  "RESTORE TABLE m2m AS m2m_r559 FROM File('backups/run559_m2m')"
+docker exec parallax-bench-greptimedb-1 greptime cli data export-v2 create \
+  --addr 127.0.0.1:4000 --to file:///tmp/run559_export \
+  --schemas public --schema-only --force
+```

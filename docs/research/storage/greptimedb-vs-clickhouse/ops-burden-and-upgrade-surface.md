@@ -120,6 +120,13 @@ server-tier drills).
 **Do not declare comparison done.** Engine ops inventory is now documented;
 production drills remain owed.
 
+### Run 559 follow-on — D1 still green (not a stack flip)
+
+Same session, immediately after this note: CH `BACKUP`/`RESTORE` of `m2m`
+**50k ROW_MATCH**; GT `export-v2 --schema-only` + `COPY` parquet OK. Details in
+[`product-rpo-runbook.md`](product-rpo-runbook.md) / [`backup-and-disaster-recovery.md`](backup-and-disaster-recovery.md).
+D2/D3 still open.
+
 ## Sources (primary / live)
 
 - Live Docker: `parallax-bench-{greptimedb,greptimedb-nightly,clickhouse,clickhouse-head}-1` (Run 558).
