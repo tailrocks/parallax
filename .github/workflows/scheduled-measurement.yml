@@ -88,14 +88,21 @@ jobs:
           install_args: "rust"
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - name: Run criterion benches (three repeats for variance)
+        # Explicit bash gives pipefail so a cargo bench failure fails the step
+        # even through tee (plan 107 audit B-2).
+        shell: bash
         run: |
           mkdir -p measurement/bench
           for repeat in 1 2 3; do
+            # A bench-run failure must fail this step directly, not surface
+            # later as a MISSING baseline (plan 107 audit B-2).
             {
               cargo bench --locked -p parallax-ingest --bench normalize
               cargo bench --locked -p parallax-spool --bench spool_io
               cargo bench --locked -p parallax-greptime --bench arrow_decode
-            } 2>&1 | grep -E "time:" | tee -a "measurement/bench/repeat-${repeat}.txt" || true
+            } 2>&1 | tee "measurement/bench/full-${repeat}.log"
+            grep -E "time:" "measurement/bench/full-${repeat}.log" \
+              >> "measurement/bench/repeat-${repeat}.txt"
           done
       - name: Allocation profile (plan 103 zero-copy instrumentation)
         run: |
