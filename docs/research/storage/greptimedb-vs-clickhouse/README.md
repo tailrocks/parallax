@@ -194,6 +194,7 @@ managed quotes remain):
 | Flow TTL increase | **512** | holds; increase no |
 | still not done | **513** | top 5 open |
 | health+pins+adopt | **514** | 2h+; Prom/Jaeger 200 |
+| still not done | **515** | top 5 open |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
