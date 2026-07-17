@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 87 (Sentry self-hosted still **`26.7.0`** /
-**64** Compose services; Seer still self-host-excluded; simplicity gate still
-`not_measured`). Pass 86 = Iggy. A1/A2/A4/A6 open.
+Last updated 2026-07-17 after pass 88 (Bugsink still **v2.4.0** / 1,940★;
+error-only Sentry-compat; no OTLP/portable-bundle/outcome — wedge open). Pass 87
+= Sentry 64 services. A1/A2/A4/A6 open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in

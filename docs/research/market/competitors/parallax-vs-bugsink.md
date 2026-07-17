@@ -1,7 +1,8 @@
 # Parallax vs Bugsink
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 40
-> deep-dive; **pass 41 pricing RESOLVED** against live [bugsink.com](https://www.bugsink.com/)).
+> deep-dive; **pass 41 pricing RESOLVED** against live [bugsink.com](https://www.bugsink.com/);
+> **pass 88 wedge pin** 2026-07-17).
 > Sources: [github.com/bugsink/bugsink](https://github.com/bugsink/bugsink) (1,940★,
 > open-core w/ `ee/`, Python/Django, last push 2026-07-17 — active; latest
 > **v2.4.0**, 2026-07-10), [bugsink.com](https://www.bugsink.com/) (pricing +
