@@ -31,11 +31,25 @@ vector_similarity` (`src/Storages/MergeTree/MergeTreeIndices.cpp:172-195`),
    real name** — valid in 26.5.1 are `splitByNonAlpha` (word search, used here),
    `splitByString`, `array`; `'default'`/`'standard'`/`'ngram'` are **rejected** (Run 46).
 4. **`JSON` type** (now stable) for dynamic OTLP attributes.
-5. **Metrics: `AggregatingMergeTree` + materialized view** for rollups — there is
-   **no PromQL**, so a PromQL→SQL translation layer is required in front (the cost).
+5. **Metrics: `AggregatingMergeTree` + materialized view** for rollups remains the
+   production-proven path. **PromQL is no longer absent** (Runs 44/403–404/411):
+   experimental `TimeSeries` engine + `prometheusQuery[Range]` can execute real
+   `rate`/`sum`/`avg by` (numeric match vs GT), but is **off by default**, Cloud-
+   unsupported, outer SELECT Code 48 (facade), and **`increase` still missing**
+   even with `allow_experimental_time_series_aggregate_functions=1`. Do **not**
+   plan product metrics on TimeSeries; keep AMT+MV + SQL. See
+   `promql-and-metrics-query.md`.
 6. **`async_insert` (default on in 26.x)** batches small writes server-side →
    avoids part-explosion; visibility delayed ~50–200 ms.
 7. **TTL move to an S3 disk** for hot-local/cold-object tiering.
+
+### Run 418 — TimeSeries storage model (comparator note)
+
+`ENGINE=TimeSeries` is a **three-target facade** (docs + live `SHOW CREATE` on
+26.6.1/26.7.1): **SAMPLES** MergeTree `(id, timestamp)`, **TAGS** AggregatingMergeTree
+`(metric_name, id)` with sipHash UUID, **METRICS** ReplacingMergeTree
+`metric_family_name`. SQL INSERT into the outer table works; query via table
+functions only. **Not** a product path for Parallax.
 
 ## Schema (real DDL)
 
