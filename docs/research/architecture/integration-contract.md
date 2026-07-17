@@ -7,7 +7,7 @@ Research date: 2026-06-11.
 > **Status (2026-07-17): core attachment contract implemented.** OTLP gRPC
 > (`:4317`) and HTTP (`:4318`) ingest traces, logs, and metrics with gzip, body
 > limits, and raw-frame spool-before-ack durability. Sentry envelope HTTP and
-> GitHub webhook ingest are implemented. The semconv source is
+> GitHub webhook ingest (`deployment`/`deployment_status`/`workflow_job` only) are implemented. The semconv source is
 > `telemetry/semconv/contract.yaml`, generated for Rust/TypeScript/Java by
 > `cargo xtask semconv generate`. Deploy payloads and autonomous-fixer surfaces
 > shown below remain conceptual where no current API contract exposes them.
@@ -120,10 +120,13 @@ POST /v1/deploys
 }
 ```
 
-1. **GitHub webhook ingest** (zero deploy-tool changes): Parallax subscribes to `deployment`,
-   `deployment_status`, `workflow_run`, `check_run`, `pull_request`, and `pull_request_review`
-   events — the same feed the Reconciler
-   ([autonomous-fix-loop.md](autonomous-fix-loop.md) §Stage 5) consumes for fix validation.
+1. **GitHub webhook ingest** (zero deploy-tool changes): **shipped handlers** accept only
+   `deployment`, `deployment_status`, and `workflow_job` on `POST /webhooks/github`
+   (`github_webhook.rs`, HMAC-verified). **Not shipped as handlers:** `workflow_run`,
+   `check_run`, `pull_request`, `pull_request_review` — those remain design targets for plan
+   121 residual / future collectors. The Reconciler
+   ([autonomous-fix-loop.md](autonomous-fix-loop.md) §Stage 5) still wants a broader feed for
+   fix validation; do not read the design list as the current accept set.
 
 The deploy event is what turns "errors after 10:03" into a `deploy_adjacent_regression` trigger
 with a strong edge — it is the single highest-leverage integration after OTLP itself.

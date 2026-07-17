@@ -3,7 +3,7 @@
 > **Status (2026-07-17): historical market reassessment.** Its competitive and
 > business warnings remain useful, but the implementation premise has advanced:
 > Parallax now ships Sentry envelope and OTLP ingest, evidence bundles,
-> GraphQL/CLI/UI, GitHub webhooks, and alerting. Local-stdio MCP graduated plan
+> GraphQL/CLI/UI, GitHub webhooks (`deployment`/`deployment_status`/`workflow_job`), and alerting. Local-stdio MCP graduated plan
 > 112 (DONE); remote MCP deferred to Plan 109. Fixer outcome proof remains
 > active plan 123.
 

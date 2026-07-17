@@ -2,7 +2,7 @@
 
 > **Status (2026-07-17): historical loop design, not a shipped autonomous
 > fixer.** Detection context is materially implemented: issues, evidence
-> bundles, investigations, GitHub webhook ingest, alert evaluation/delivery, and
+> bundles, investigations, GitHub webhook ingest (`deployment`/`deployment_status`/`workflow_job`), alert evaluation/delivery, and
 > incidents now exist. Dispatch budgets, an external fixer, reconciliation, and
 > learning/outcome policy remain conceptual unless owned by a current plan.
 

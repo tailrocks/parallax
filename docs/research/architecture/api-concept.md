@@ -7,7 +7,7 @@ Decision date: 2026-06-03
 > **Status (2026-07-17): implemented and substantially broader than the original
 > sketch.** Parallax uses Juniper code-first GraphQL with 76 queries, 14
 > mutations, and no subscriptions. OTLP traces/logs/metrics and Sentry envelopes
-> are accepted now; GitHub webhooks are also implemented. Live delivery uses
+> are accepted now; GitHub webhooks for `deployment`/`deployment_status`/`workflow_job` are implemented. Live delivery uses
 > SSE. Product clients use the Parallax API and never query GreptimeDB or Turso
 > directly. The schema generated at `ui/graphql/schema.graphql` is authoritative.
 
@@ -19,7 +19,7 @@ Parallax has three different API jobs:
 | --- | --- | --- |
 | Telemetry ingest | OTLP HTTP/gRPC | Standard path for traces, logs, and metrics; Parallax derives `error_event` rows from exception span events, span error status, and ERROR/FATAL logs. |
 | Error compatibility ingest | Sentry envelope HTTP endpoint | Shipped migration path for Sentry-style events. Raw frames are spooled before queue acknowledgement. |
-| Integration ingest | GitHub webhooks | Shipped deploy, workflow, check, pull-request, and review context. |
+| Integration ingest | GitHub webhooks | Shipped HMAC `POST /webhooks/github` for **`deployment`**, **`deployment_status`**, and **`workflow_job` only** (`github_webhook.rs`). PR/check_run/workflow_run/review events are not handlers yet (plan 121 residual / design). |
 | Query/exploration | GraphQL | The shipped code-first schema covers observability, evidence, product state, testing, and alerting. |
 
 Keep these separate. GraphQL should not ingest raw telemetry.
@@ -49,7 +49,9 @@ Only storage adapters talk directly to databases. This centralizes:
 
 ## Endpoints
 
-Implemented core transport surface:
+Implemented core transport surface (re-verified 2026-07-17 against
+`parallax-server` `serve.rs` / `otlp_http.rs` / `sentry_http.rs` /
+`github_webhook.rs`):
 
 ```text
 POST /graphql
@@ -58,9 +60,10 @@ POST /v1/logs          # OTLP HTTP
 POST /v1/metrics       # OTLP HTTP
 GET  /v1/logs/stream   # SSE
 GET  /v1/traces/stream # SSE
-GET  /healthz
-GET  /readyz
+GET  /health             # ingest degradation (not /healthz or /readyz)
 GET  /version
+POST /api/{project_id}/envelope[/]   # Sentry envelope
+POST /webhooks/github                # deployment | deployment_status | workflow_job
 ```
 
 OTLP/gRPC and HTTP listen on the standard ports:
@@ -68,6 +71,7 @@ OTLP/gRPC and HTTP listen on the standard ports:
 ```text
 4317  OTLP/gRPC
 4318  OTLP/HTTP
+4000  API (GraphQL + health + HTTP ingest merge)
 ```
 
 ## GraphQL Query Shape

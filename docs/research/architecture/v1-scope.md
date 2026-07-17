@@ -19,7 +19,7 @@ slice**; M3+ (server/cloud profiles) becomes the V2 line.
 > **Status (2026-07-17): V1 shipped and expanded.** Current commands use
 > `invocation` rather than the historical `run` noun and add metrics, traces,
 > logs, SQL, doctor, prune, uninstall, and context management. OTLP gRPC/HTTP,
-> Sentry envelope and GitHub webhook ingest, evidence bundle v1/envelope v2,
+> Sentry envelope and GitHub webhook ingest (`deployment`/`deployment_status`/`workflow_job`), evidence bundle v1/envelope v2,
 > dashboards, investigations, ecosystem, alerting, and SSE live tails are
 > implemented. Plans 093, 104, 109, 111, 116, 117, and 128 are closed and own no
 > residual work. Historical launch acceptance language below remains provenance.

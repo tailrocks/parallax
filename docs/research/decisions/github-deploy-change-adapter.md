@@ -13,8 +13,8 @@ Parallax's first deploy/change provider is **GitHub** (read-only).
 | --- | --- |
 | Provider | GitHub |
 | REST API version header | `2022-11-28` (fixtures also record `X-GitHub-Api-Version` when present) |
-| Webhooks (first slice) | `deployment`, `deployment_status` |
-| Later entities | `push`/`create` release markers, PR/file list, check runs, workflow runs (plan 124) |
+| Webhooks (shipped accept set) | `deployment`, `deployment_status` (deploy path); CI path also accepts `workflow_job` (plan 124 DONE) on the same `POST /webhooks/github` router |
+| Later entities | `push`/`create` release markers, PR/file list, `check_run`, `workflow_run`, PR reviews (not handlers today) |
 | Auth | Webhook HMAC `X-Hub-Signature-256` (`sha256=<hex>`); API backfill uses least-privilege token later |
 | Permissions (least) | Deployments: read; Contents: read (for SHA); Metadata: read |
 | Claim level | **not_measured** until coverage ledger rows land |
@@ -41,13 +41,9 @@ Parallax's first deploy/change provider is **GitHub** (read-only).
 - [GitHub webhooks](https://docs.github.com/en/webhooks/webhook-events-and-payloads)
 - [Validating webhook deliveries](https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries)
 
-## Open gates
+## Status
 
-The HTTP webhook endpoint and durable ingest path are implemented. Plan 124
-(CI evidence) closed 2026-07-17 with REST backfill + claim rows. Plan 121
-residual gates:
-
-1. Deploy API backfill/reconciliation under rate limits
-2. Broader deploy/change entity coverage beyond deployment webhooks
-3. Bundle projection for deploy adjacency (linkage helpers landed; API wiring residual)
-4. Measured claim-level rows (Turso `evidence_claim_rows` domain `deploy_context` seeded on webhook accept)
+Plan 121 closed 2026-07-17: webhook + REST Deployments backfill + claim rows +
+GraphQL linkage-only bundle adjacency. Broader entity coverage (push/release/
+PR file lists) is out of this plan's residual and may open a future plan if
+measured need appears.
