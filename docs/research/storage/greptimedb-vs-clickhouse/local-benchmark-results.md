@@ -7203,3 +7203,7 @@ Updated claim table with scale/shape qualifiers from re-pin cycle. `public-perfo
 
 No full re-scrape; qualifiers for JSON2 default and OTel-Arrow experimental still apply.
 `vendor-claims-audit.md`.
+
+### Run 217 — 2026-07-17 — compact native smoke
+
+GT protocols 200; CH flags: experimental TimeSeries off, JSON on, PREWHERE on. No drift.
