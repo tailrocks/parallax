@@ -149,6 +149,7 @@ managed quotes remain):
 | still not done | **467** | top 5 open |
 | last_value @2h uptime | **468** | GT 10–12ms / CH 4–5ms |
 | still not done | **469** | top 5 open |
+| adopt-native + pins | **470** | identity OK; pins hold |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
