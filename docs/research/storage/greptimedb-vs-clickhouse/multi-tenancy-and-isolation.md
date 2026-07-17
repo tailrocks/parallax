@@ -49,7 +49,7 @@ layer.” Engine capabilities (what Parallax can lean on vs must own):
 | --- | --- |
 | `SETTINGS max_execution_time=1` on `sleep(2)` | **`TIMEOUT_EXCEEDED` (Code 159)** after ~1 s |
 | `SETTINGS max_result_rows=5, result_overflow_mode='throw'` | **`TOO_MANY_ROWS_OR_BYTES` (Code 396)** |
-| `CREATE QUOTA … MAX queries = N TO user` | DDL accepted; stock image also has unlimited `default` quota entity (`system.quotas`). Enforcement is real in Access stack (`EnabledQuota` throws when max exceeded — Run 172 source). Per-second burst from multiquery/`docker exec` is a weak micro-test (connection/session accounting). |
+| `CREATE QUOTA … MAX queries = N TO user` | DDL accepted; stock image also has unlimited `default` quota entity (`system.quotas`). Enforcement is real in Access stack (`EnabledQuota` throws when max exceeded — Run 172 source). Per-second burst from multiquery/`docker exec` is a weak micro-test (connection/session accounting). **Run 180 live:** a residual quota `MAX queries=2` later threw **Code 201 `QUOTA_EXCEEDED`** (`queries = 3/2`) on INSERT — enforcement confirmed under load. |
 | Settings profiles / `max_concurrent_queries_for_user` | Present in `system.settings` (default 0 = unlimited) |
 
 **Implication:** ClickHouse can enforce **query-time and analyst-path** budgets in-engine.

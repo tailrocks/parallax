@@ -159,3 +159,30 @@ decoupling.
 - Cross-refs: `write-path-and-ingestion.md` (freshness, small-write absorption),
   `distributed-and-scaling.md` (region migration, compute/storage separation),
   `greptimedb-internals.md` (WAL in the write path).
+
+## Run 180 (2026-07-17) — durability knobs + quota live proof on v1.1.3 / 26.6
+
+**Pins.** GT `v1.1.3`, CH `26.6.1.1193`. Wall times include `docker exec` (directional only).
+
+### `fsync_after_insert` is a **MergeTree table setting**, not a query `SETTINGS` key
+
+- Query form `INSERT … SETTINGS fsync_after_insert=1` → **Code 115 UNKNOWN_SETTING**.
+- Table form `CREATE TABLE … ENGINE=MergeTree … SETTINGS fsync_after_insert=1` → works.
+- Micro (5× INSERT 10k rows, wall p50): default **86.9 ms** vs fsync table **92.2 ms** (~6% at this
+  noise floor). Does **not** overturn Run 75’s architectural claim (WAL append fsync ≪ whole-part
+  fsync at strict durability); laptop wall+small parts under-state the part-fsync tax.
+
+### Single-row insert wall (docker exec dominated)
+
+| Engine | p50 wall ms | p90 |
+| --- | ---: | ---: |
+| GT mito append single-row | ~57 | ~60 |
+| CH MergeTree single-row | ~138 | ~142 |
+
+Not a fair engine comparison (exec overhead); shows both accept writes promptly.
+
+### Bonus: `QUOTA_EXCEEDED` live (closes Run 179 enforcement doubt)
+
+A leftover `CREATE QUOTA … MAX queries = 2` from Run 179 caused CH inserts to fail with
+**Code 201 `QUOTA_EXCEEDED`**: `queries = 3/2` — first-class quota enforcement **confirmed live**
+on 26.6.1.1193 (not only Access source). Dropped before durability timing.

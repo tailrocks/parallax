@@ -7008,3 +7008,10 @@ Evidence: scratch `run178-concurrent-ingest-query.txt`. Updated `write-path-and-
 
 **Verdict.** CH wins engine-native query budgets; GT wins only coarse process limits. Parallax
 proxy owns tenant fair-share + OTLP QPS either way. Note: `multi-tenancy-and-isolation.md` Run 179.
+
+### Run 180 — 2026-07-17 — durability knobs + CH QUOTA_EXCEEDED live
+
+**Findings.** (1) CH `fsync_after_insert` is **table** SETTINGS only; 10k-row bulk wall p50
+default 86.9 vs fsync 92.2 ms (noise-floor; Run 75 architecture still stands). (2) Leftover Run-179
+quota produced live **Code 201 QUOTA_EXCEEDED** — quota enforcement confirmed. Notes:
+`wal-and-durability.md`, `multi-tenancy-and-isolation.md`.
