@@ -187,6 +187,15 @@ pub trait MetricAnalyticsStore: Send + Sync {
         }
         Ok(out)
     }
+    /// Histogram average per bucket (Δ`_sum`/Δ`_count` over cumulative
+    /// exports, reset-clamped; zero-growth buckets skipped).
+    async fn histogram_avg(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+    ) -> StorageResult<Vec<SeriesPoint>>;
     /// Trace-linked metric exemplars, time-bounded and newest first.
     async fn metric_exemplars(
         &self,

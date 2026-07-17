@@ -12,12 +12,6 @@ impl MetricAnalyticsStore for GreptimeStore {
         agg: MetricAgg,
     ) -> StorageResult<Vec<SeriesPoint>> {
         let step_secs = (step_nanos / 1_000_000_000).max(1);
-        let sql_agg = match agg {
-            MetricAgg::Avg => "avg",
-            MetricAgg::Min => "min",
-            MetricAgg::Max => "max",
-            MetricAgg::Sum | MetricAgg::Rate => "sum",
-        };
         // Run-scoped reads hit the `invocation_metric_points` extension table (ns time
         // index, `value` column); aggregate reads hit the per-metric native
         // table (ms `greptime_timestamp`, `greptime_value`, `service_name` tag).
@@ -26,9 +20,10 @@ impl MetricAnalyticsStore for GreptimeStore {
                 .map(|svc| format!(r#" AND "service" = '{}'"#, escape(svc)))
                 .unwrap_or_default();
             let name_filter = metric_name_sql_filter(r#""name""#, name);
+            let agg_expr = metric_agg_expr(agg, "value", "ts");
             self.sql_arrow_lenient(&format!(
                 r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "ts") AS BIGINT)
-                          AS "bucket_ns", {sql_agg}("value") AS "agg_value"
+                          AS "bucket_ns", {agg_expr} AS "agg_value"
                    FROM invocation_metric_points
                    WHERE {name_filter} AND "invocation_id" = '{}'{service_clause}
                      AND "ts" >= {} AND "ts" <= {}
@@ -45,9 +40,10 @@ impl MetricAnalyticsStore for GreptimeStore {
             let service_clause = service
                 .map(|svc| format!(r#" AND "service_name" = '{}'"#, escape(svc)))
                 .unwrap_or_default();
+            let agg_expr = metric_agg_expr(agg, "greptime_value", "greptime_timestamp");
             self.sql_arrow_lenient(&format!(
                 r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "greptime_timestamp") AS BIGINT)
-                          AS "bucket_ms", {sql_agg}("greptime_value") AS "agg_value"
+                          AS "bucket_ms", {agg_expr} AS "agg_value"
                    FROM "{}"
                    WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
                    GROUP BY "bucket_ms" ORDER BY "bucket_ms""#,
@@ -72,6 +68,8 @@ impl MetricAnalyticsStore for GreptimeStore {
             .collect();
         if agg == MetricAgg::Rate {
             series = crate::adapter::rate_from_buckets(&series, step_secs * 1_000_000_000);
+        } else if agg == MetricAgg::Increase {
+            series = crate::adapter::increase_from_buckets(&series);
         }
         Ok(series)
     }
@@ -141,6 +139,52 @@ impl MetricAnalyticsStore for GreptimeStore {
             );
         }
         Ok(out)
+    }
+
+    async fn histogram_avg(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+    ) -> StorageResult<Vec<SeriesPoint>> {
+        // Latest cumulative `_sum`/`_count` per bucket (MAX merge, plan 085
+        // shape), Δsum/Δcount computed client-side with reset clamping.
+        let step_secs = (step_nanos / 1_000_000_000).max(1);
+        let service_clause = service
+            .map(|svc| format!(r#" AND "service_name" = '{}'"#, escape(svc)))
+            .unwrap_or_default();
+        let mut stat_series: Vec<Vec<SeriesPoint>> = Vec::with_capacity(2);
+        for suffix in ["_sum", "_count"] {
+            let Some(table) = self.metric_table_for_name(name, Some(suffix)).await? else {
+                return Ok(Vec::new());
+            };
+            let rows = self
+                .sql_arrow_lenient(&format!(
+                    r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "greptime_timestamp") AS BIGINT)
+                              AS "bucket_ms", max("greptime_value") AS "cumulative"
+                       FROM "{}"
+                       WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
+                       GROUP BY "bucket_ms" ORDER BY "bucket_ms""#,
+                    escape_ident(&table),
+                    sql_ts(range.start() / 1_000_000),
+                    sql_ts(range.end() / 1_000_000),
+                ))
+                .await?;
+            stat_series.push(
+                rows.iter()
+                    .map(|row| SeriesPoint {
+                        ts_nanos: u128_at(row, 0) * 1_000_000,
+                        value: row.get(1).and_then(|v| v.as_f64()).unwrap_or(0.0),
+                    })
+                    .collect(),
+            );
+        }
+        let counts = stat_series.pop().unwrap_or_default();
+        let sums = stat_series.pop().unwrap_or_default();
+        Ok(crate::adapter::histogram_avg_from_cumulative(
+            &sums, &counts,
+        ))
     }
 
     async fn metric_exemplars(

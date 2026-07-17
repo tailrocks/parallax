@@ -119,9 +119,9 @@ impl MetricQueryOut {
 /// combinations are rejected with the legal set named).
 fn legal_aggregations(kind: model::MetricKind) -> &'static [&'static str] {
     match kind {
-        model::MetricKind::Gauge => &["avg", "min", "max"],
-        model::MetricKind::Sum => &["sum", "rate"],
-        model::MetricKind::Histogram => &["p50", "p95", "p99"],
+        model::MetricKind::Gauge => &["avg", "min", "max", "last"],
+        model::MetricKind::Sum => &["sum", "rate", "increase"],
+        model::MetricKind::Histogram => &["p50", "p95", "p99", "avg"],
     }
 }
 
@@ -157,16 +157,24 @@ pub(crate) async fn metric_query(
                     "groupBy is not supported for histogram quantiles yet",
                 ));
             }
-            let q = match agg.as_str() {
-                "p50" => 0.50,
-                "p95" => 0.95,
-                _ => 0.99,
+            let points = if agg == "avg" {
+                context
+                    .store
+                    .histogram_avg(&name, service.as_deref(), from..=to, step_ns)
+                    .await
+                    .map_err(crate::internal_field_err)?
+            } else {
+                let q = match agg.as_str() {
+                    "p50" => 0.50,
+                    "p95" => 0.95,
+                    _ => 0.99,
+                };
+                context
+                    .store
+                    .histogram_quantile(&name, service.as_deref(), from..=to, step_ns, q)
+                    .await
+                    .map_err(crate::internal_field_err)?
             };
-            let points = context
-                .store
-                .histogram_quantile(&name, service.as_deref(), from..=to, step_ns, q)
-                .await
-                .map_err(crate::internal_field_err)?;
             vec![Series {
                 group_value: None,
                 points,

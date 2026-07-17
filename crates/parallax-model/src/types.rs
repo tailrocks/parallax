@@ -226,6 +226,10 @@ pub enum MetricAgg {
     Max,
     Sum,
     Rate,
+    /// Latest sample in each bucket (gauges).
+    Last,
+    /// Reset-clamped counter delta per bucket (monotonic sums).
+    Increase,
 }
 
 impl MetricAgg {
@@ -237,6 +241,8 @@ impl MetricAgg {
             "max" => Self::Max,
             "sum" => Self::Sum,
             "rate" => Self::Rate,
+            "last" => Self::Last,
+            "increase" => Self::Increase,
             _ => return None,
         })
     }

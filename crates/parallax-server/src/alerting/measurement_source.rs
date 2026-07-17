@@ -100,7 +100,8 @@ fn combine(agg: MetricAgg, values: &[f64]) -> Option<f64> {
         reason = "value-list lengths fit well within f64 mantissa range"
     )]
     Some(match agg {
-        MetricAgg::Sum | MetricAgg::Rate => values.iter().sum(),
+        MetricAgg::Sum | MetricAgg::Rate | MetricAgg::Increase => values.iter().sum(),
+        MetricAgg::Last => *values.last().unwrap_or(&0.0),
         MetricAgg::Avg => values.iter().sum::<f64>() / values.len() as f64,
         MetricAgg::Min => values.iter().copied().fold(f64::INFINITY, f64::min),
         MetricAgg::Max => values.iter().copied().fold(f64::NEG_INFINITY, f64::max),

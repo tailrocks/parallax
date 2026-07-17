@@ -107,12 +107,7 @@ impl crate::adapter::RuntimeMetricStore for GreptimeStore {
             return Err(StorageError::query(anyhow::anyhow!("unknown metric label")));
         }
         let step_secs = (step_nanos / 1_000_000_000).max(1);
-        let sql_agg = match agg {
-            MetricAgg::Avg => "avg",
-            MetricAgg::Min => "min",
-            MetricAgg::Max => "max",
-            MetricAgg::Sum | MetricAgg::Rate => "sum",
-        };
+        let agg_expr = metric_agg_expr(agg, "greptime_value", "greptime_timestamp");
         let service_clause = service
             .map(|svc| format!(r#" AND "service_name" = '{}'"#, escape(svc)))
             .unwrap_or_default();
@@ -123,7 +118,7 @@ impl crate::adapter::RuntimeMetricStore for GreptimeStore {
             .sql_arrow_lenient(&format!(
                 r#"SELECT COALESCE(CAST({group_col} AS STRING), '(none)') AS "grp",
                           CAST(date_bin(INTERVAL '{step_secs} seconds', "greptime_timestamp") AS BIGINT)
-                          AS "bucket_ms", {sql_agg}("greptime_value") AS "agg_value"
+                          AS "bucket_ms", {agg_expr} AS "agg_value"
                    FROM "{}"
                    WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}{service_clause}
                    GROUP BY "grp", "bucket_ms" ORDER BY "grp", "bucket_ms""#,
@@ -142,10 +137,12 @@ impl crate::adapter::RuntimeMetricStore for GreptimeStore {
         Ok(groups
             .into_iter()
             .map(|(group, series)| {
-                let series = if agg == MetricAgg::Rate {
-                    crate::adapter::rate_from_buckets(&series, step_secs * 1_000_000_000)
-                } else {
-                    series
+                let series = match agg {
+                    MetricAgg::Rate => {
+                        crate::adapter::rate_from_buckets(&series, step_secs * 1_000_000_000)
+                    }
+                    MetricAgg::Increase => crate::adapter::increase_from_buckets(&series),
+                    _ => series,
                 };
                 (group, series)
             })

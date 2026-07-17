@@ -250,6 +250,19 @@ impl Ord for OrderedF64 {
     }
 }
 
+/// SQL aggregate expression for one metric bucket. `last` needs the time
+/// column to pick the latest sample; rate/increase aggregate the raw counter
+/// with `sum` and post-process the bucketed series client-side.
+pub(super) fn metric_agg_expr(agg: MetricAgg, value_col: &str, ts_col: &str) -> String {
+    match agg {
+        MetricAgg::Avg => format!(r#"avg("{value_col}")"#),
+        MetricAgg::Min => format!(r#"min("{value_col}")"#),
+        MetricAgg::Max => format!(r#"max("{value_col}")"#),
+        MetricAgg::Sum | MetricAgg::Rate | MetricAgg::Increase => format!(r#"sum("{value_col}")"#),
+        MetricAgg::Last => format!(r#"last_value("{value_col}" ORDER BY "{ts_col}")"#),
+    }
+}
+
 /// Linear-interpolated quantile from native cumulative `le`-bucket counts
 /// (`bound → cumulative count ≤ bound`, ascending). Mirrors the explicit-bucket
 /// math the in-memory store uses, adapted to native cumulative buckets.

@@ -25,7 +25,7 @@ impl adapter::RuntimeMetricStore for MemoryStore {
             )));
         }
         let step = step_nanos.max(1);
-        let mut buckets: BTreeMap<(String, u128), Vec<f64>> = Default::default();
+        let mut buckets: BTreeMap<(String, u128), Vec<(u128, f64)>> = Default::default();
         for point in self.lock().metric_points.iter().filter(|p| {
             p.name == name
                 && service.is_none_or(|svc| p.service == svc)
@@ -37,15 +37,21 @@ impl adapter::RuntimeMetricStore for MemoryStore {
                     (point.ts_nanos / step) * step,
                 ))
                 .or_default()
-                .push(point.value);
+                .push((point.ts_nanos, point.value));
         }
         let mut groups: BTreeMap<String, Vec<SeriesPoint>> = Default::default();
-        for ((group, ts_nanos), values) in buckets {
+        for ((group, ts_nanos), samples) in buckets {
+            let values = samples.iter().map(|(_, v)| *v);
             let value = match agg {
-                MetricAgg::Avg => values.iter().sum::<f64>() / values.len() as f64,
-                MetricAgg::Min => values.iter().copied().fold(f64::INFINITY, f64::min),
-                MetricAgg::Max => values.iter().copied().fold(f64::NEG_INFINITY, f64::max),
-                MetricAgg::Sum | MetricAgg::Rate => values.iter().sum::<f64>(),
+                MetricAgg::Avg => values.sum::<f64>() / samples.len() as f64,
+                MetricAgg::Min => values.fold(f64::INFINITY, f64::min),
+                MetricAgg::Max => values.fold(f64::NEG_INFINITY, f64::max),
+                MetricAgg::Last => samples
+                    .iter()
+                    .max_by_key(|(ts, _)| *ts)
+                    .map(|(_, v)| *v)
+                    .unwrap_or(0.0),
+                MetricAgg::Sum | MetricAgg::Rate | MetricAgg::Increase => values.sum::<f64>(),
             };
             groups
                 .entry(group)
@@ -55,10 +61,10 @@ impl adapter::RuntimeMetricStore for MemoryStore {
         Ok(groups
             .into_iter()
             .map(|(group, series)| {
-                let series = if agg == MetricAgg::Rate {
-                    adapter::rate_from_buckets(&series, step)
-                } else {
-                    series
+                let series = match agg {
+                    MetricAgg::Rate => adapter::rate_from_buckets(&series, step),
+                    MetricAgg::Increase => adapter::increase_from_buckets(&series),
+                    _ => series,
                 };
                 (group, series)
             })

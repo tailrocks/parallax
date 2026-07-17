@@ -9,7 +9,10 @@ use std::ops::RangeInclusive;
 mod error;
 pub use error::{StorageError, StorageErrorKind, StorageResult};
 
-pub use crate::adapter_math::{attribute_compare_score, rate_from_buckets};
+pub use crate::adapter_math::{
+    attribute_compare_score, histogram_avg_from_cumulative, increase_from_buckets,
+    rate_from_buckets,
+};
 pub use crate::adapter_rules::{
     field_key_identifier_like, field_key_namespace, metric_group_label_allowed,
     runtime_metric_family, runtime_metric_unit,

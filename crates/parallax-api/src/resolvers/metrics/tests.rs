@@ -495,3 +495,94 @@ async fn metric_query_enforces_typed_aggregation_legality() {
         "histogram groupBy rejected: {json}"
     );
 }
+
+#[tokio::test]
+async fn metric_query_supports_last_and_increase_aggregations() {
+    let store = Arc::new(MemoryStore::new());
+    store
+        .ingest_metrics(
+            vec![
+                MetricPointRow {
+                    ts_nanos: 1_000_000_000,
+                    service: "checkout".into(),
+                    name: "shapes.region.requests_total".into(),
+                    value: 10.0,
+                    is_monotonic: true,
+                    invocation_id: None,
+                    attributes: serde_json::json!({"region": "eu"}),
+                },
+                MetricPointRow {
+                    ts_nanos: 61_000_000_000,
+                    service: "checkout".into(),
+                    name: "shapes.region.requests_total".into(),
+                    value: 40.0,
+                    is_monotonic: true,
+                    invocation_id: None,
+                    attributes: serde_json::json!({"region": "eu"}),
+                },
+                MetricPointRow {
+                    ts_nanos: 2_000_000_000,
+                    service: "checkout".into(),
+                    name: "shapes.region.load".into(),
+                    value: 3.0,
+                    is_monotonic: false,
+                    invocation_id: None,
+                    attributes: serde_json::json!({"region": "eu"}),
+                },
+                MetricPointRow {
+                    ts_nanos: 30_000_000_000,
+                    service: "checkout".into(),
+                    name: "shapes.region.load".into(),
+                    value: 7.0,
+                    is_monotonic: false,
+                    invocation_id: None,
+                    attributes: serde_json::json!({"region": "eu"}),
+                },
+            ],
+            Vec::new(),
+            Vec::new(),
+            Default::default(),
+        )
+        .await
+        .unwrap();
+    let schema = build_schema();
+    let context = context_with_memory(store).await;
+
+    // increase: reset-clamped counter growth per bucket, not divided by step.
+    let increase = juniper::http::GraphQLRequest::new(
+        r#"{ metricQuery(name: "shapes.region.requests_total", kind: "sum", agg: "increase", fromNanos: "0", toNanos: "120000000000", stepSeconds: 60) {
+            series { points { tsNanos value } }
+        } }"#
+            .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, increase).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(error_messages(&json).is_empty(), "increase legal: {json}");
+    let points = json
+        .pointer("/data/metricQuery/series/0/points")
+        .and_then(|v| v.as_array())
+        .unwrap();
+    assert_eq!(points.len(), 1, "one delta bucket: {json}");
+    assert_eq!(points[0].get("value").unwrap().as_f64().unwrap(), 30.0);
+
+    // last: latest gauge sample inside the single bucket.
+    let last = juniper::http::GraphQLRequest::new(
+        r#"{ metricQuery(name: "shapes.region.load", kind: "gauge", agg: "last", fromNanos: "0", toNanos: "60000000000", stepSeconds: 60) {
+            series { points { tsNanos value } }
+        } }"#
+            .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, last).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(error_messages(&json).is_empty(), "last legal: {json}");
+    let points = json
+        .pointer("/data/metricQuery/series/0/points")
+        .and_then(|v| v.as_array())
+        .unwrap();
+    assert_eq!(points.len(), 1, "single bucket: {json}");
+    assert_eq!(points[0].get("value").unwrap().as_f64().unwrap(), 7.0);
+}
