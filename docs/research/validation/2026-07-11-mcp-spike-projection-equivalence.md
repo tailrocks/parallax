@@ -1,5 +1,8 @@
 # MCP spike — projection equivalence
 
+> **Status (2026-07-17): historical spike evidence.** Plan 112 graduated this work into product crate `parallax-mcp` (local-stdio only). Current status and install sketches: [2026-07-plan-112-product-mcp/README.md](../2026-07-plan-112-product-mcp/README.md). Body below preserves the original spike run record (crate path names may say `parallax-mcp-spike`).
+
+
 Timestamp: 2026-07-11 (plan 083)
 
 ## Sources
@@ -177,7 +180,7 @@ This packet proves projection equivalence only. It does not authorize or plan a
 product MCP surface. All unfinished client, resource, scope/auth, redaction,
 budget, audit, protocol/capability, retention, and spike-disposition work now
 lives exclusively in
-[`plans/112-product-mcp-ship-gates.md`](../../../plans/112-product-mcp-ship-gates.md),
+[`docs/research/validation/2026-07-plan-112-product-mcp/README.md`](2026-07-plan-112-product-mcp/README.md),
 which remains blocked on an explicit operator ship/no-ship decision. This
 validation file is durable evidence, not an active checklist.
 

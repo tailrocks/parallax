@@ -48,7 +48,7 @@ Prefer hard, current, sourced numbers: pricing tiers, ingest throughput, query l
 > in `serve.rs`), not planned; **error derivation + test-result derivation are
 > shipped** (`parallax-analysis::{derive,fingerprint,test_reporting}`); the
 > **bounded redacted bundle exists in code** (`parallax-evidence::bundle` +
-> `REDACTION_POLICY_V1`) but remains **A1-unproven**; **MCP is a spike crate
+> `REDACTION_POLICY_V1`) but remains **A1-unproven**; **local-stdio MCP graduated
 > only** (`parallax-mcp`, separate binary) — not a shipped product surface.
 
 ---
@@ -106,7 +106,7 @@ Cost/performance cells are **⚪ benchmark-dependent** — not filled until meas
 | Capability | Parallax | Datadog | Sentry | SigNoz | OpenObserve | Coroot | Langfuse |
 |---|---|---|---|---|---|---|---|
 | Context engine for autonomous agents (bounded, redacted bundle) | 🟡🧪 bundle+redaction in code (`parallax-evidence`), **A1-unproven** | ❌ (human dashboard + chat) | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Read-only / safe-by-default agent projection | 🏗 MCP spike only (`parallax-mcp`, not a product surface) | ❌ (write-capable management) | 🟡 | ❌ write/delete | ❌ write/delete default | 🟡 1 mutating tool | 🟡 |
+| Read-only / safe-by-default agent projection | ✅🧪 local-stdio MCP (`parallax-mcp`, plan 112 DONE; remote deferred) | ❌ (write-capable management) | 🟡 | ❌ write/delete | ❌ write/delete default | 🟡 1 mutating tool | 🟡 |
 | AI root-cause / investigation | 🏗 planned (no shipped AI RCA) | ✅ Bits AI (Investigation) | ✅ Seer autofix | ✅ MCP RCA skill | ✅ AI SRE | ✅ 2-stage ML+LLM | ❌ |
 | AI pricing model | (self-hosted compute) | credit-metered ($500/500cr) | paid (Seer) | free (MCP) | Enterprise+BYO-key | Enterprise/Cloud | self-host or cloud |
 | LLM/agent trace evals + experiments | 🏗 planned | ✅ (Agent Observability) | ❌ | ❌ | 🟡 | ❌ | ✅ core |
@@ -137,7 +137,7 @@ Cost/performance cells are **⚪ benchmark-dependent** — not filled until meas
 ## What the matrix shows (no-bias read)
 
 1. **On breadth, maturity, scale, enterprise readiness, and shipped AI features, the incumbents (Datadog especially) are far ahead of pre-release Parallax.** That is the plain reality; hiding it would defeat the purpose.
-2. **Parallax's shipped-in-code (pre-release) surface is real but unproven:** OTLP ingest of all three signals into GreptimeDB native tables, Sentry-envelope ingest, derived error events + fingerprints, span-derived test results, and a bounded redacted evidence bundle (A1-unvalidated). **Planned-only:** MCP agent surface (spike crate), AI root-cause, evals, SSO/RBAC, fix-outcome loop. The defensible axes today are openness/self-hostability/cost transparency/data ownership; the bundle/outcome edge is gated behind A1.
+2. **Parallax's shipped-in-code (pre-release) surface is real but unproven:** OTLP ingest of all three signals into GreptimeDB native tables, Sentry-envelope ingest, derived error events + fingerprints, span-derived test results, and a bounded redacted evidence bundle (A1-unvalidated). **Planned-only:** remote MCP, AI root-cause, evals, SSO/RBAC, fix-outcome loop. **Shipped agent surface:** local-stdio MCP. The defensible axes today are openness/self-hostability/cost transparency/data ownership; the bundle/outcome edge is gated behind A1.
 3. **No product — open or closed — ships all of:** OTLP-native + (future) Sentry-envelope ingest + a portable, versioned, redacted evidence bundle + a read-only safe agent projection + a fix-outcome loop, from a telemetry store. That combination is Parallax's thesis, but "no one ships it" is not evidence it is valuable — that is exactly the A1 gate.
 4. **The cells most likely to be wrong are the Parallax column (self-assessed, bias-prone) and the AI-native column (fast-moving).** Both are flagged for re-verification first on every pass.
 5. **Parallax's agent-context thesis faces shipped pressure from *three layers* at once** — and must beat (or complement) all of them, not assume superiority:

@@ -23,8 +23,8 @@ Tier 0    model, proto, semconv
 ```
 
 Dependencies point downward. `parallax-test-support` is dev-only,
-`parallax-xtask` is repository-only, and `parallax-mcp` is an isolated
-proof. `parallax-spool`, `parallax-redaction`, and `parallax-semconv` are true
+`parallax-xtask` is repository-only, and `parallax-mcp` is the aux local-stdio
+MCP product surface (no product crate depends on it). `parallax-spool`, `parallax-redaction`, and `parallax-semconv` are true
 leaves (no internal deps); `parallax-spool` sits conceptually at Tier 2
 (raw-frame durability) despite having no internal crate dependency today.
 
@@ -53,7 +53,7 @@ leaves (no internal deps); `parallax-spool` sits conceptually at Tier 2
 | --- | --- | --- |
 | Test support | [parallax-test-support](../../../crates/parallax-test-support/README.md) | Reusable fakes/builders/conformance; unreachable from release roots |
 | Auxiliary | [parallax-xtask](../../../crates/parallax-xtask/README.md) | Repository policy and CI control plane |
-| Proof | [parallax-mcp](../../../crates/parallax-mcp/README.md) | MCP projection experiment; not packaged |
+| Aux | [parallax-mcp](../../../crates/parallax-mcp/README.md) | Local-stdio read-only MCP product surface (graduated plan 112); remote deferred |
 
 ## Machine-owned contracts
 

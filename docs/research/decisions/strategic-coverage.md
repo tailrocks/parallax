@@ -148,7 +148,7 @@ GreptimeDB risks; they do not activate a fallback.
 | Processing | Rust workers, deterministic normalization/grouping/correlation before AI. |
 | Context model | Typed evidence graph in tables first. |
 | Execution surfaces | Services, CI runs, CLI apps, and coding agents. |
-| Agent surface | CLI/HTTP context are shipped; a read-only local-stdio MCP spike exists and remains non-product pending plan 112; no production mutation. |
+| Agent surface | CLI/HTTP context shipped; local-stdio read-only MCP graduated (`parallax-mcp`, plan 112 DONE); remote deferred; no production mutation tools. |
 | UI | TanStack Start + shadcn UI shipped with 16 feature modules and 19 product routes, including object-centric evidence, dashboards, investigations, alerts, logs, traces, metrics, and ecosystem graph views. |
 
 ## What Is Still Unproven

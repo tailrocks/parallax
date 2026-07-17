@@ -11,8 +11,8 @@ questions, this file is updated in the same change.
 **Implementation status, 2026-07-17:** V1 has shipped this shape: the Rust CLI/server, OTLP
 gRPC/HTTP ingest, GraphQL API, mandatory GreptimeDB + Turso storage, bounded redacted evidence,
 alerting/live streaming, and the full TanStack Start investigation UI are implemented. Sentry
-envelope HTTP ingest is implemented; its migration adapter remains plan 118. MCP remains a spike
-and plan 112 ship-gate project, not a product surface. Historical build-order statements below are
+envelope HTTP ingest is implemented; its migration adapter remains plan 118. Local-stdio MCP
+(`parallax-mcp`) graduated plan 112 (DONE); remote MCP deferred to Plan 109. Historical build-order statements below are
 preserved as the record that led to V1.
 
 > **One paragraph.** Parallax is for developers — human and AI — who can now build and ship
@@ -76,7 +76,7 @@ people the UI to see the same truth.
   matter where the server is deployed or which storage backend it runs.
 - **UI** is the human window over the same API — Sentry-style issues plus Grafana/Kibana-style
   cross-signal inspection. Humans need to know what is going on too; the UI is how.
-- **MCP** is a tested spike only. Plan 112 owns the safety and product ship gates for a future
+- **MCP** local-stdio product surface graduated (plan 112 DONE). Remote MCP remains a future
   read-only projection.
 
 One API + swappable `StorageAdapter` is what makes the scale ladder below a topology change
@@ -152,7 +152,7 @@ protocol enters only where OTLP genuinely cannot express something. The operator
 the right one: **breadcrumbs**. OpenTelemetry has no first-class breadcrumb signal — an
 interaction trail can be approximated with log records (and span events are deprecated toward
 log-based events), but Sentry's breadcrumb model (typed, categorized, auto-collected by SDKs) is
-richer today. That is exactly the gap-filler criterion that keeps the future Sentry adapter on
+richer today. That is exactly the gap-filler criterion that keeps the shipped Sentry envelope adapter on
 the roadmap ([capture/sentry-ingest.md](../capture/sentry-ingest.md)) without ever making it the
 primary path.
 

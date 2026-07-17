@@ -63,7 +63,7 @@ owners named above and the mandatory storage policy.
 | Metadata store | Turso Database in every product profile. | Users, projects, DSNs, issue status, policies, and audit records are relational product state, not telemetry. |
 | Processing | Rust workers, in-process for tiny mode and separate services for durable/scale-out mode. | Normalization, symbolication, grouping, correlation, and graph building need deterministic logic and strong testability. |
 | Causal layer | Typed evidence graph stored as tables first. | Materialize graph edges before adopting a graph database. Causality needs explicit evidence and confidence. |
-| Agent surface | CLI plus canonical HTTP context API first; read-only MCP adapter after the access-surface gate. | Agents need structured evidence, not dashboards. CLI/HTTP keeps the tiny tier testable; MCP becomes valuable once the bundle contract and safety model are stable. |
+| Agent surface | CLI + HTTP + graduated local-stdio MCP (`parallax-mcp`); remote deferred to Plan 109. | Agents need structured evidence, not dashboards. Local-stdio MCP is product; remote waits on protected transport. |
 | Execution surfaces | Treat services, CLI apps, CI runs, and coding agents as first-class trace sources. | Parallax should explain software execution and the agent work performed on that execution, not only long-running services. |
 | Human surface | Minimal Sentry-like issue UI later. | Humans need inspection and trust, but the differentiator is the context API. |
 
@@ -150,7 +150,7 @@ references in this section no longer own future server topology.
 | Metadata store | Turso Database for projects, policies, issue state, audit, agent sessions, CLI invocations, and outcomes. | Turso under the backup/restore and concurrency contract approved by plan 115. | Turso; fix forward or upstream rather than substitute engines. |
 | Raw evidence retention | Local disk raw refs with TTL. | S3-compatible object storage for raw envelopes, attachments, logs, and bundle manifests. | Tiered object storage with lifecycle policy and per-tenant retention. |
 | Processing | In-process Rust normalizer/grouping/evidence-graph worker. | Separate Rust worker services and consumer groups. | Worker pools by normalization, grouping, symbolication, graph, bundle indexing. |
-| Context surface | CLI + HTTP API in the same binary; optional read-only MCP adapter only after the access-surface gate. | Separate API and optional MCP service. | Horizontally scaled API/MCP tier with tenant isolation and audit indexing. |
+| Context surface | CLI + HTTP API in the same binary; local-stdio MCP aux binary (`parallax-mcp`). | Separate API and optional remote MCP service (deferred). | Horizontally scaled API/MCP tier with tenant isolation and audit indexing. |
 | Human UI | No dashboard suite; optional minimal issue/evidence view later. | Same UI over API. | Same UI over API; dashboards remain non-core. |
 
 The stack deliberately keeps Tier 1 small while preserving the seams needed for
@@ -321,10 +321,10 @@ Tiny single-node:
 ```text
 Rust app / service / CLI / coding agent
   -> OTLP HTTP/gRPC endpoint
-  -> future Sentry envelope event endpoint after V1
+  -> Sentry envelope event endpoint (shipped; plan 118 residual)
   -> agent/CLI execution trace endpoint
   -> parallax-server
-       - project-token auth / future DSN validation
+       - project-token auth / Sentry public-key validation
        - redaction and size limits
        - local WAL / outbox
        - normalizer
@@ -332,7 +332,7 @@ Rust app / service / CLI / coding agent
        - storage writer
        - evidence graph builder
        - CLI / HTTP context API
-       - optional MCP adapter after access-surface gate
+       - local-stdio MCP (parallax-mcp; remote deferred)
   -> GreptimeDB native observability tables
   -> Turso metadata
 ```
@@ -353,7 +353,7 @@ Rust app / service / CLI / coding agent
   -> columnar storage adapter + object storage profile
   -> Turso prototype metadata
   -> parallax-api
-  -> optional MCP adapter
+  -> local-stdio MCP (parallax-mcp)
 ```
 
 Scale-out:
@@ -369,16 +369,17 @@ apps / collectors / CI systems / coding agents
   -> GreptimeDB distributed placement
   -> Turso metadata
   -> object storage
-  -> context API / optional MCP adapter / UI
+  -> context API / local-stdio MCP / UI
 ```
 
 ## Data Flow From Event To Evidence Bundle
 
 1. **Accept event.**
    - V1 OTLP traces/logs/metrics arrive over HTTP/gRPC.
-   - Future Sentry envelopes may arrive at `POST /api/:project_id/envelope/`.
-   - Ingest validates project token, size, and content type; future Sentry
-     adapters add DSN validation.
+   - Sentry envelopes arrive at `POST /api/:project_id/envelope/` (shipped;
+     plan 118 residual migration hardening).
+   - Ingest validates project token, size, and content type; Sentry path adds
+     public-key / DSN-style validation.
 
 2. **Persist raw evidence.**
    - Tiny profile: append to local WAL/outbox.
@@ -388,7 +389,7 @@ apps / collectors / CI systems / coding agents
 3. **Normalize.**
    - Derive Parallax `error_event` rows from OTLP exception span events, spans
      with error status/`error.type`, and ERROR/FATAL log records.
-   - Later, convert Sentry events into the same Parallax error-event rows.
+   - Convert Sentry envelope events into the same Parallax error-event rows (shipped).
    - Convert CLI invocations and coding-agent sessions into execution traces.
    - Convert OTLP spans/logs/metrics into queryable records.
    - Extract release, environment, service, trace ID, span ID, runtime, SDK, and
@@ -614,7 +615,7 @@ GET /api/projects/:project/traces/:trace_id/context
 POST /api/projects/:project/hypotheses/check
 ```
 
-First MCP tools, after the access-surface gate:
+First MCP tools (local-stdio product catalog after plan 112 graduation):
 
 | Tool | Purpose |
 | --- | --- |
@@ -658,12 +659,12 @@ Target: personal projects, startups, and small teams.
 ```text
 parallax-server
   - OTLP HTTP/gRPC endpoint
-  - future Sentry envelope endpoint after V1
+  - Sentry envelope endpoint (shipped)
   - CLI/agent trace endpoint
   - local WAL/outbox
   - in-process normalizer/grouping/evidence graph
   - HTTP API
-  - optional read-only MCP adapter after the access-surface gate
+  - local-stdio read-only MCP (parallax-mcp; remote deferred)
 greptimedb standalone on local disk
 turso metadata
 local disk raw retention
@@ -676,9 +677,9 @@ Properties:
 - no broker;
 - no Kubernetes requirement;
 - bounded local raw WAL;
-- CLI and HTTP API available from the same process, with MCP optional after the
-  access-surface gate;
-- future migration path from self-hosted Sentry SDKs after OTLP-first V1 proves useful.
+- CLI and HTTP API available from the same process, plus local-stdio MCP
+  (`parallax-mcp`; remote deferred to Plan 109);
+- shipped Sentry envelope migration path (plan 118 residual hardening).
 
 This is the product that proves Parallax can be simpler than Sentry.
 That proof is measured by the
@@ -696,7 +697,7 @@ parallax-worker
 greptimedb standalone with object storage
 turso metadata
 optional Apache Iggy standalone
-parallax-api, plus optional MCP adapter after the access-surface gate
+parallax-api, plus local-stdio MCP (`parallax-mcp`; remote deferred)
 parallax CLI
 ```
 
@@ -708,7 +709,7 @@ Properties:
 - Turso for metadata and audit;
 - still small enough for one VM or a simple Compose deployment.
 
-The explicit seams are ingest, stream, workers, storage, API, and optional MCP. Moving
+The explicit seams are ingest, stream, workers, storage, API, and MCP. Moving
 from Tier 1 to Tier 2 should not change the event contract, the bundle schema,
 or the CLI/MCP tool semantics.
 
@@ -723,7 +724,7 @@ worker pools x N
 greptimedb distributed
 turso metadata
 object storage
-api nodes x N, plus optional mcp adapter nodes
+api nodes x N, plus mcp adapter nodes (local-stdio today; remote deferred)
 parallax CLI across CI/dev/agent environments
 ```
 

@@ -395,9 +395,10 @@ this implemented dialect is the contract.
 // `cargo xtask ui graphql check`). Treat that file as the source of truth; the
 // sketch here is historical and intentionally partial.
 //
-// Re-verified 2026-07-17 against `crates/parallax-api/src/lib.rs`: the live
-// schema is Juniper code-first with **67 Query fields, 14 Mutation fields, and
-// ZERO Subscription fields** (`RootNode<Query, Mutation, EmptySubscription>`).
+// Re-verified 2026-07-17 against `crates/parallax-api/src/lib.rs` and
+// `ui/graphql/schema.graphql`: the live schema is Juniper code-first with
+// **76 Query fields, 14 Mutation fields, and ZERO Subscription fields**
+// (`RootNode<Query, Mutation, EmptySubscription>`).
 // Beyond the V1 core below it has grown: `overview`, `serviceMap`/`serviceRed`/
 // `serviceCatalog`, `ecosystem` service topology, `invocations`/`invocation`/
 `invocationFacets`/`observedInvocations`, `sessions`/`agentSession`/`story`/

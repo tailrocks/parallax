@@ -8,8 +8,9 @@ This directory is the research record behind Parallax. It is organized so a read
 > Parallax-owned error events from exception spans and ERROR/FATAL logs, groups errors
 > deterministically, correlates signals into a typed evidence graph, and serves **bounded,
 > redacted, schema-valid evidence bundles** to humans and coding agents through the shipped CLI,
-> GraphQL API, and UI. A read-only MCP adapter remains a tested spike, not a product surface;
-> its ship gates are active in [plan 112](../../plans/112-product-mcp-ship-gates.md). Parallax is the **context engine, not the fixer**
+> GraphQL API, UI, and a **local-stdio read-only MCP** adapter (`parallax-mcp`, plan 112
+> graduated 2026-07-17 — see [validation evidence](validation/2026-07-plan-112-product-mcp/README.md)).
+> Remote MCP remains deferred until Plan 109 transport. Parallax is the **context engine, not the fixer**
 > — a separate coding agent consumes the bundle and proposes the fix.
 
 ## Current answers (the short version)
@@ -21,13 +22,13 @@ This directory is the research record behind Parallax. It is organized so a read
 | What is the V1 storage design? | **Native-first on GreptimeDB.** The proxy forwards raw OTLP straight to GreptimeDB's native tables and tees in-process to derive issues into documented extension tables (`error_events`, `invocation_metric_points`, `metric_exemplars`); Turso holds metadata. Legacy `run_metric_points` is dropped at bootstrap (forward-only). Greenfield, no migration. | [decisions/native-otel-tables.md](decisions/native-otel-tables.md), [storage/native-otel-migration-plan.md](storage/native-otel-migration-plan.md) |
 | Why GreptimeDB? | Anchored evidence-bundle retrieval is interactive on it (≪300 ms); the team optimizes around the native OTLP model and it's the Rust, self-hosted substrate Parallax can build on. | [decisions/storage-engine.md](decisions/storage-engine.md) |
 | What's still open on storage? | Vendor confirmations for the native-table customizations (custom columns/indexes vs schema auto-widening, traces OTLP GA, etc.). | [storage/greptimedb-team-questions.md](storage/greptimedb-team-questions.md) |
-| How is it built? | **Shipped V1:** 17 Rust crates; OTLP gRPC/HTTP and Sentry-envelope ingest; GreptimeDB + Turso; 76 GraphQL queries and 14 mutations; CLI (serve/invocation/issue/trace/metrics/logs/traces/sql/doctor/prune/uninstall/context); workers, alerting, SSE, redaction, analysis, durable spool, evidence bundles; and a 19-route TanStack Start UI (16 feature modules). MCP remains a spike. | [architecture/rust-workspace-map.md](architecture/rust-workspace-map.md), [architecture/v1-implementation-spec.md](architecture/v1-implementation-spec.md) |
+| How is it built? | **Shipped V1:** 17 Rust crates; OTLP gRPC/HTTP and Sentry-envelope ingest; GreptimeDB + Turso; 76 GraphQL queries and 14 mutations; CLI (serve/invocation/issue/trace/metrics/logs/traces/sql/doctor/prune/uninstall/context); workers, alerting, SSE, redaction, analysis, durable spool, evidence bundles; and a 19-route TanStack Start UI (16 feature modules); **local-stdio MCP** (`parallax-mcp`) graduated (plan 112 DONE). | [architecture/rust-workspace-map.md](architecture/rust-workspace-map.md), [architecture/v1-implementation-spec.md](architecture/v1-implementation-spec.md) |
 | What still needs research? | V1 engineering is no longer gated by research. Open validation remains bundle-vs-raw value (A1), user demand/monetization (A2), schema adoption, competitor/standards drift, and large-server storage measurements. Active implementation work is owned only by `plans/`. | [research-agenda.md](research-agenda.md) |
 
 ## Map
 
 ### `00-vision/` — why this product, in plain terms
-- [problem-audience-product-shape.md](00-vision/problem-audience-product-shape.md) — the front door and shipped-V1 status: what problem Parallax solves, who it is for, and the product shape; CLI + API + UI are live, while MCP remains gated.
+- [problem-audience-product-shape.md](00-vision/problem-audience-product-shape.md) — the front door and shipped-V1 status: what problem Parallax solves, who it is for, and the product shape; CLI + API + UI + local-stdio MCP are live (remote MCP deferred).
 - [north-star-autonomous-fix-loop.md](00-vision/north-star-autonomous-fix-loop.md) — the named moonshot, its executable PoC foundations, and the still-active product work needed for an outcome-fed autonomous loop.
 - [thesis.md](00-vision/thesis.md) — the original, now explicitly historical thesis plus current shipped status.
 - [world-before-parallax.md](00-vision/world-before-parallax.md) — the pre-Parallax stack (Sentry + traces/logs/metrics/UI), why it exists, and what Parallax tries to collapse.
@@ -46,7 +47,7 @@ This directory is the research record behind Parallax. It is organized so a read
 - [metadata-store.md](decisions/metadata-store.md) — relational metadata store: Turso is mandatory; historical Postgres fallback findings are superseded (evidence in [storage/metadata/](storage/metadata/)).
 - [metric-summary-contract.md](decisions/metric-summary-contract.md) — approved bounded metric point/trend semantics, native-name collision behavior, metric-only service discovery, and the `parallax metrics --invocation` promise shared by plans 105/168.
 - [retention-and-prune-contract.md](decisions/retention-and-prune-contract.md) — approved ownership, grace, pin protection, confirmation, recovery, and truthful logical/physical reclaim semantics for plan 116.
-- [agent-access-surface.md](decisions/agent-access-surface.md) — canonical HTTP API, day-one CLI, and the approved local-stdio read-only MCP ship contract plus remaining client/audit gates.
+- [agent-access-surface.md](decisions/agent-access-surface.md) — canonical HTTP API, day-one CLI, and graduated local-stdio read-only MCP product surface (plan 112 DONE); remote MCP waits on Plan 109.
 - [fixer-boundary.md](decisions/fixer-boundary.md) — the separate fixer component, outcome loop, and why PR creation is commodity while outcome feedback is the moat.
 
 ### `architecture/` — how the pieces fit
@@ -54,7 +55,7 @@ This directory is the research record behind Parallax. It is organized so a read
 - [implementation-concept.md](architecture/implementation-concept.md) — opinionated end-to-end blueprint with named component choices, deployment profiles, data flow, rejected alternatives.
 - [overview.md](architecture/overview.md) — the OpenTelemetry-native self-hosted architecture; Sentry envelope ingest is now shipped (historical "future adapter" framing is superseded).
 - [evidence-bundle-schema.md](architecture/evidence-bundle-schema.md) — the `v0` portable evidence-bundle and open schema (the named moat artifact).
-- [api-concept.md](architecture/api-concept.md) — GraphQL-first query/exploration API, OTLP-first ingest, future Sentry adapter, and strict API boundary.
+- [api-concept.md](architecture/api-concept.md) — GraphQL-first query/exploration API, OTLP-first ingest, shipped Sentry envelope adapter, and strict API boundary.
 - [causal-reconstruction.md](architecture/causal-reconstruction.md) — evidence-graph, causal reconstruction, and agent-safety analysis.
 - [agent-trust-boundary-and-prompt-injection.md](architecture/agent-trust-boundary-and-prompt-injection.md) — prompt injection via attacker-controlled telemetry (inject-*in*, vs A6 redaction's leak-*out*): the threat and the trust-boundary design constraints it forces.
 - [agent-context-integration.md](architecture/agent-context-integration.md) — how real coding agents ingest context (MCP structuredContent + token-budget caps → bounded bundle) and how to link to repo intent (reference, don't invent; the unsolved evidence→intent edge).

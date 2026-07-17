@@ -14,7 +14,7 @@
 maintained GO verdict has shipped: a 17-crate Rust workspace accepts OTLP traces/logs/metrics and
 Sentry envelopes, derives and analyzes issues, and serves bounded redacted evidence through its
 CLI, GraphQL API, and full 19-route UI. Alerting, SSE live streaming, spool durability, and the
-mandatory GreptimeDB + Turso adapters are implemented. MCP remains a spike, and autonomous
+mandatory GreptimeDB + Turso adapters are implemented. Local-stdio MCP graduated (plan 112 DONE); autonomous
 production mutation remains outside the product. Do not read the original proposal below as the
 current scope or inventory. The storage posture is also narrower than early drafts: GreptimeDB native
 tables are mandatory for telemetry and Turso is mandatory for metadata (see
@@ -715,7 +715,7 @@ parallax test explain com.company.CheckoutTest.shouldApplyDiscount
 Input:
 - OpenTelemetry traces/logs/metrics
 - derived Parallax error events from exception spans and ERROR/FATAL logs
-- future Sentry envelope error events after V1
+- Sentry envelope error events (shipped; plan 118 residual)
 - deploy metadata
 
 Output:

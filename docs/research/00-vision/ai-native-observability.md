@@ -7,7 +7,7 @@ Research date: 2026-05-25
 **Parallax status, 2026-07-17:** the narrow evidence engine recommended here is now shipped, not a
 proposal: OTLP and Sentry-envelope ingest, deterministic issue/trace/log analysis, bounded redacted
 bundles, GraphQL/CLI, alerting, SSE, and a 19-route cross-signal UI run on mandatory GreptimeDB +
-Turso. MCP remains a spike under plan 112. The market survey and prescriptive language below retain
+Turso. Local-stdio MCP (`parallax-mcp`) graduated plan 112 (2026-07-17); remote deferred. The market survey and prescriptive language below retain
 their research-date meaning.
 
 ## Purpose

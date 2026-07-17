@@ -26,7 +26,7 @@ Closeness is measured against Parallax's V1 product shape (per the vision/overvi
 4. **Derives its own `error_event`** from exception span-events, span error status, ERROR/FATAL logs —
    then **fingerprints**.
 5. **Portable, auditable, redacted, versioned evidence/context bundles** as the output artifact.
-6. **Read-only agent surface**: CLI + HTTP shipped; MCP remains `parallax-mcp` (plan 112 gates).
+6. **Read-only agent surface**: CLI + HTTP + local-stdio MCP shipped (`parallax-mcp`, plan 112 DONE); remote deferred.
 7. **Fix-outcome loop** (accepted/rejected/reverted/recurred) — the data moat (plan 123; unproven).
 8. Captures more than app telemetry: **deploys, CI runs, agent/CLI sessions, repo intent** → a bounded
    failure dossier a coding agent can safely act on (partially shipped; residual plans 120/121/124).

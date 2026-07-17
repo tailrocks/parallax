@@ -11,8 +11,8 @@ owned only by active numbered files in [`plans/`](../../plans/). The full per-as
 [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md); this
 file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed. Last
 updated 2026-07-17 after V1 shipment. A1 and A2 remain product/market validation risks, not blockers
-to code that already shipped. Autonomous-loop kernels remain PoCs; product MCP and fixer outcome
-work remain active in plans 112 and 123.
+to code that already shipped. Autonomous-loop kernels remain PoCs; local-stdio MCP graduated
+(plan 112 DONE); fixer outcome work remains active in plan 123.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in

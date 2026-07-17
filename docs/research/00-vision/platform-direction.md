@@ -6,9 +6,9 @@ Research date: 2026-05-25
 
 **Implementation status, 2026-07-17:** Stage 1's evidence-engine floor has shipped: OTLP and
 Sentry-envelope ingest, grouping/correlation and analysis, bounded redacted bundles, CLI, GraphQL,
-alerting/live streaming, mandatory GreptimeDB + Turso, and a full UI. Read-only MCP remains a spike
-under plan 112, not a shipped Stage 1 surface. Stage 2/3 adoption and outcome-loop gates remain
-future direction.
+alerting/live streaming, mandatory GreptimeDB + Turso, a full UI, and graduated local-stdio
+MCP (`parallax-mcp`, plan 112 DONE). Remote MCP remains deferred (Plan 109). Stage 2/3 adoption
+and outcome-loop gates remain future direction.
 
 ## Purpose
 
@@ -41,7 +41,7 @@ earned by winning the narrow wedge first.
 ### Stage 1 — Evidence engine (shipped V1)
 
 Sentry-envelope + OTLP ingest, deterministic grouping/correlation, bounded
-bundles, CLI + GraphQL + UI, and mandatory GreptimeDB + Turso. MCP remains gated. Value to one team,
+bundles, CLI + GraphQL + UI + local-stdio MCP, and mandatory GreptimeDB + Turso. Remote MCP remains deferred. Value to one team,
 no network effects required. **Validation still owed:** bundle-value (A1) proven and a
 real user base beyond the operator (A2). See
 [build roadmap](../architecture/build-roadmap.md).

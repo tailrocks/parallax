@@ -90,7 +90,7 @@ existing signals:
 2. spans with error status and `error.type`;
 3. OTLP log records with ERROR/FATAL severity, especially those carrying
    `exception.*`, `trace_id`, and `span_id`;
-4. later, future Sentry envelope events normalized into the same Parallax
+4. Sentry envelope events normalized into the same Parallax
    `error_event` model.
 
 **Consequence:** docs should avoid implying a fourth OTLP endpoint or signal for

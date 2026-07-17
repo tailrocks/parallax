@@ -13,7 +13,7 @@ verdict with the widest possible market lens.
 > the May 2026 concept, not current implementation status. Parallax now ships
 > Sentry envelope + OTLP ingest, deterministic issues, bundle-v1/envelope-v2,
 > GraphQL/CLI/UI, GitHub webhooks, dashboards, investigations, SQL, and alerting.
-> Outcome-loop proof and product MCP remain gated by active plans 123 and 112.
+> Outcome-loop proof remains gated by plan 123; local-stdio product MCP graduated (plan 112 DONE).
 
 > **Verdict: GO survives, narrower than ever, conditional on three gates.**
 > The technical wedge remains **unoccupied** — no single tool or combination of

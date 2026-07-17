@@ -166,8 +166,8 @@ Parallax solves these concrete jobs; outcome-corpus and product-MCP claims remai
 3. Join Sentry-style errors with OTLP traces, logs, metrics, releases, deploys,
    CI runs, CLI invocations, and agent sessions.
 4. Build an evidence graph with typed edge strengths, not a loose text blob.
-5. Serve bounded context bundles through CLI and HTTP; the MCP spike serves the
-   two approved read-only tools but is not a product surface until plan 112 passes.
+5. Serve bounded context bundles through CLI, HTTP, and graduated local-stdio MCP
+   (`parallax-mcp`: two read-only tools; plan 112 DONE; remote deferred).
 6. Record what an agent saw, queried, changed, tested, proposed, and shipped.
 7. Say "inconclusive" when evidence is missing instead of inventing certainty.
 

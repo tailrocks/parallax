@@ -1,22 +1,20 @@
 # Agent Access Surface — CLI, HTTP API, and MCP
 
-> **Status (2026-07-17): product MCP GO, local stdio profile only while ship
-> gates execute.** The operator unblock directive in
-> [`plans/README.md`](../../../plans/README.md) opened Plan 112 after Plans
-> 099/104/111. Remote MCP remains excluded until Plan 109's protected transport
-> is separately integrated and proven. No product-safety or supported-client
-> claim exists until Plan 112's client, audit, retention, and graduation gates
-> pass. Only [`plans/`](../../../plans/) authorizes implementation. The design
-> remains **CLI first, HTTP API underneath, read-only MCP over the same canonical
-> evidence**; no transport may bypass bundle bounds, redaction, authorization,
-> or audit.
+> **Status (2026-07-17): product MCP GO for local stdio — plan 112 DONE.**
+> Plan 112 graduated the spike crate to `parallax-mcp` (35 tests; live Codex/Claude
+> discovery verified). Evidence:
+> [validation/2026-07-plan-112-product-mcp/README.md](../validation/2026-07-plan-112-product-mcp/README.md).
+> Remote MCP remains excluded until Plan 109's protected transport is integrated.
+> The design remains **CLI first, HTTP API underneath, read-only local-stdio MCP
+> over the same canonical evidence**; no transport may bypass bundle bounds,
+> redaction, authorization, or audit.
 > The executable product-code boundary is specified in
 > [agent-trust-boundary-and-prompt-injection.md](agent-trust-boundary-and-prompt-injection.md).
 >
-> **Current implementation:** `parallax-mcp` uses `rmcp` and provides
-> `serve` (stdio, requiring `--allow-local-stdio`) and `check`. Its closed tool
-> catalog is `parallax_issue_context` and `parallax_agent_session_show`. This is
-> working spike evidence, not a shipped or supported product surface.
+> **Current implementation:** `parallax-mcp` (aux product surface) uses `rmcp`
+> and provides stdio serve (requiring `--allow-local-stdio`) and `check`. Closed
+> tool catalog: `parallax_issue_context`, `parallax_agent_session_show`. Loopback-only
+> GraphQL origin; no mutating tools; remote transport deferred.
 
 This decision record consolidates the following previously-separate research files, each preserved in full below:
 
@@ -454,7 +452,7 @@ levels. It consumes the design in
 and the normalization contract in
 [Agent and CLI OTel semantic-convention mapping](../capture/agent-cli-tracing.md).
 
-Current product claim status remains **not measured**. The MCP spike is evidence,
+Local-stdio MCP is graduated product surface (plan 112 DONE). Broader multi-client claim levels remain **not measured** where the safety ledger still says so. Historical spike text below is evidence,
 not a shipped product surface, and does not satisfy the full projection,
 client/auth, redaction, source-field, retention, or audit gates in plan 112.
 Until those pass, Parallax must not describe product MCP as proven safe.

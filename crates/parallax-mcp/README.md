@@ -1,26 +1,26 @@
 +++
 schema_version = 1
 package = "parallax-mcp"
-class = "proof"
+class = "aux"
 dependencies = ["parallax-evidence"]
 facade_roots = ["main.rs"]
 +++
 
 # parallax-mcp
 
-**SPIKE only — not a product surface.** May be deleted after the MCP ship/no-ship
-decision. Do not package, do not enable by default, do not document in the user
-guide.
+**Local-stdio product MCP surface** (plan 112 graduated 2026-07-17). Read-only
+adapter over GraphQL that reproduces the canonical evidence bundle
+byte-for-byte (CLI ↔ HTTP ↔ MCP projection equivalence). Remote MCP remains
+out of scope until Plan 109's protected transport is integrated.
 
-Proves that a thin stdio MCP server over the existing GraphQL API can reproduce
-the canonical evidence bundle byte-for-byte (CLI ↔ HTTP ↔ MCP projection
-equivalence). See:
+Evidence and decision:
 
-- Findings: [`docs/research/validation/2026-07-11-mcp-spike-projection-equivalence.md`](../../docs/research/validation/2026-07-11-mcp-spike-projection-equivalence.md)
+- Graduation evidence: [`docs/research/validation/2026-07-plan-112-product-mcp/README.md`](../../docs/research/validation/2026-07-plan-112-product-mcp/README.md)
+- Spike projection proof (historical): [`docs/research/validation/2026-07-11-mcp-spike-projection-equivalence.md`](../../docs/research/validation/2026-07-11-mcp-spike-projection-equivalence.md)
 - Design: [`docs/research/decisions/agent-access-surface.md`](../../docs/research/decisions/agent-access-surface.md)
-- Active ship/no-ship work: [`plans/112-product-mcp-ship-gates.md`](../../plans/112-product-mcp-ship-gates.md)
+- Workspace policy: `Aux parallax-mcp` in [`plans/ENGINEERING-STANDARDS.md`](../../plans/ENGINEERING-STANDARDS.md)
 
-## Tools (read-only catalog, spike subset)
+## Tools (read-only catalog)
 
 | Tool | Args | Source |
 | --- | --- | --- |
@@ -50,7 +50,6 @@ cargo run -p parallax-mcp -- check \
   --invocation-id <invocation_id>   # optional second anchor
 ```
 
-No CI wiring: needs a live server and seeded telemetry. Manual only.
 The stdio server fails closed unless `--allow-local-stdio` appears on the
 process command line; no environment variable or repository file can provide
 that trust decision.
@@ -59,8 +58,8 @@ authorization context with exactly `evidence:read`; both tools require it and
 clients cannot supply or elevate scopes.
 Unit coverage includes wire-level MCP initialization and `tools/list` over an
 in-memory stdio-equivalent duplex transport; the exact tool catalog is terminal
-with no pagination cursor. Live Codex/Claude fixtures remain manual and
-unfinished.
+with no pagination cursor. Live Codex/Claude discovery was verified on
+2026-07-17 (temporary registration then remove) — see plan 112 evidence.
 Wire fixtures require empty, terminal prompt/resource/template catalogs and
 method-level denial for prompt/resource reads; those capabilities remain
 disabled.
@@ -72,9 +71,9 @@ the local boundary.
 Authenticated remote transport remains deferred to Plan 109.
 HTTP redirects are disabled so loopback cannot bounce a request to a remote
 origin; connects time out after 5 seconds and calls after 30 seconds.
-The spike installs no tracing subscriber, so `RUST_LOG` cannot enable MCP
-protocol/result logging or persist anchors and evidence through dependency
-diagnostics.
+The process installs no tracing subscriber by default, so `RUST_LOG` cannot
+enable MCP protocol/result logging or persist anchors and evidence through
+dependency diagnostics.
 
 ## SDK / TLS
 
@@ -89,9 +88,8 @@ Initialization accepts only reviewed revisions from `2024-11-05` through
 
 ## Owned concerns
 
-Isolated proof of read-only MCP projection equivalence; never product packaging.
-Tool results expose bounded text plus `structuredContent`; comparison-only raw
-canonical JSON metadata was removed before product graduation.
+Local-stdio read-only MCP product surface; never remote packaging until Plan 109.
+Tool results expose bounded text plus `structuredContent`.
 Bundle assembly is explicitly capped at 4,000 tokens for MCP because each call
 returns both the canonical structured object and compatibility text.
 The adapter streams GraphQL responses through a hard 1 MiB pre-parse ceiling,
@@ -119,5 +117,5 @@ compatibility surface.
 
 ## Verification
 
-Run `cargo check -p parallax-mcp` for the narrow crate gate and `cargo xtask facade check` for
-root-surface drift.
+Run `cargo test -p parallax-mcp` (35 tests) for the crate gate and
+`cargo xtask facade check` for root-surface drift.
