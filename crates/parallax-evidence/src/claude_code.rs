@@ -8,6 +8,7 @@ use crate::redaction_policy::sanitize_text;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
+use std::collections::HashMap;
 
 /// Tool identity recorded on every normalized session.
 pub const SOURCE_TOOL: &str = "claude_code";
@@ -63,6 +64,9 @@ pub struct NormalizedSession {
     pub event_count: usize,
     pub skipped_oversized_lines: usize,
     pub skipped_malformed_lines: usize,
+    pub duplicate_event_count: usize,
+    pub conflicting_event_count: usize,
+    pub conflicting_session_event_count: usize,
 }
 
 /// Parse Claude Code print-mode stream-json NDJSON into one normalized session.
@@ -83,7 +87,11 @@ pub fn normalize_stream_json(ndjson: &str) -> NormalizedSession {
         event_count: 0,
         skipped_oversized_lines: 0,
         skipped_malformed_lines: 0,
+        duplicate_event_count: 0,
+        conflicting_event_count: 0,
+        conflicting_session_event_count: 0,
     };
+    let mut explicit_events = HashMap::new();
 
     for line in ndjson.lines() {
         let line = line.trim();
@@ -105,6 +113,14 @@ pub fn normalize_stream_json(ndjson: &str) -> NormalizedSession {
             continue;
         };
         session.event_count += 1;
+        if has_conflicting_session(&session, &value) {
+            session.conflicting_session_event_count += 1;
+            push_loss(&mut session.lossiness, "conflicting_session_event_skipped");
+            continue;
+        }
+        if skip_replayed_explicit_event(&mut session, &mut explicit_events, &value) {
+            continue;
+        }
         ingest_stream_object(&mut session, &value);
     }
 
@@ -121,6 +137,56 @@ pub fn normalize_stream_json(ndjson: &str) -> NormalizedSession {
     push_loss(&mut session.lossiness, "prompt_body_redacted");
     push_loss(&mut session.lossiness, "tool_input_redacted");
     session
+}
+
+fn skip_replayed_explicit_event(
+    session: &mut NormalizedSession,
+    explicit_events: &mut HashMap<String, String>,
+    value: &Value,
+) -> bool {
+    let Some(event_id) = explicit_event_identity(value) else {
+        return false;
+    };
+    let shape = value.as_object().map(structural_hash).unwrap_or_default();
+    let Some(previous) = explicit_events.get(&event_id) else {
+        explicit_events.insert(event_id, shape);
+        return false;
+    };
+    if previous == &shape {
+        session.duplicate_event_count += 1;
+        push_loss(&mut session.lossiness, "duplicate_event_skipped");
+    } else {
+        session.conflicting_event_count += 1;
+        push_loss(&mut session.lossiness, "conflicting_event_id_skipped");
+    }
+    true
+}
+
+fn has_conflicting_session(session: &NormalizedSession, value: &Value) -> bool {
+    let Some(expected) = session.session_id.as_deref() else {
+        return false;
+    };
+    value
+        .get("session_id")
+        .and_then(Value::as_str)
+        .is_some_and(|observed| observed != expected)
+}
+
+fn explicit_event_identity(value: &Value) -> Option<String> {
+    if let Some(uuid) = value.get("uuid").and_then(Value::as_str)
+        && !uuid.trim().is_empty()
+    {
+        return Some(format!("uuid:{uuid}"));
+    }
+    let tool_use_id = value.get("tool_use_id").and_then(Value::as_str)?;
+    if tool_use_id.trim().is_empty() {
+        return None;
+    }
+    let hook = value
+        .get("hook_event_name")
+        .and_then(Value::as_str)
+        .unwrap_or("unknown");
+    Some(format!("hook:{hook}:{tool_use_id}"))
 }
 
 /// Normalize one Claude Code hook stdin JSON object.
@@ -512,5 +578,33 @@ mod tests {
                 .any(|a| a.kind == ActionKind::SessionEnd)
         );
         assert_eq!(session.source_version.as_deref(), Some("2.1.150"));
+    }
+
+    #[test]
+    fn explicit_ids_make_restart_redelivery_idempotent_and_fail_closed() {
+        let first = r#"{"type":"system","subtype":"init","session_id":"sess-a","uuid":"u1"}
+{"type":"result","subtype":"success","session_id":"sess-a","uuid":"u2","is_error":false}"#;
+        let restarted = format!("{first}\n{first}");
+        let session = normalize_stream_json(&restarted);
+        assert_eq!(session.actions.len(), 2);
+        assert_eq!(session.duplicate_event_count, 2);
+        assert_eq!(session.conflicting_event_count, 0);
+        assert_eq!(session.success, Some(true));
+
+        let conflict = normalize_stream_json(
+            r#"{"type":"result","subtype":"success","session_id":"sess-a","uuid":"same","is_error":false}
+{"type":"result","subtype":"success","session_id":"sess-a","uuid":"same","is_error":true}
+{"type":"user","session_id":"sess-b","uuid":"other"}"#,
+        );
+        assert_eq!(conflict.actions.len(), 1);
+        assert_eq!(conflict.conflicting_event_count, 1);
+        assert_eq!(conflict.conflicting_session_event_count, 1);
+        assert_eq!(conflict.success, Some(true));
+        assert!(
+            conflict
+                .lossiness
+                .iter()
+                .any(|reason| reason == "conflicting_event_id_skipped")
+        );
     }
 }

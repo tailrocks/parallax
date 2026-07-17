@@ -20,6 +20,8 @@
 - Claude Code stream-json + hook normalizer (`parallax-evidence::claude_code`).
 - Auth-error live probe fixture; hand-crafted multi-event + PreToolUse fixtures;
   path leaf only; no checkout auto-enable.
+- Explicit Claude event IDs make restart/redelivery idempotent; conflicting
+  reuse and cross-session rows fail closed with bounded loss counters.
 
 ## Residual only
 
@@ -27,7 +29,8 @@
    (`tests/fixtures/claude_code/success-stream-json.ndjson`).
 2. Real Pre/PostToolUse hook payloads (sanitized) beyond unit PreToolUse.
 3. Storage/API/UI projection; consent CLI import command.
-4. Deterministic IDs/ordering/duplicates/restart/trace correlation.
+4. ~~Explicit-ID duplicate/restart handling~~ landed. Still open: durable
+   normalized IDs/order + trace correlation across storage/API projection.
 5. Overhead/loss ledger within predeclared bounds; conformance gate.
 
 ## Done Criteria
