@@ -268,8 +268,8 @@
         "policy": {
           "type": "string",
           "minLength": 1,
-          "description": "Redaction policy identifier. Canonical current value: evidence-source-v1 (plan 111). Typed as free string so policies can evolve without a schema bump.",
-          "examples": ["evidence-source-v1", "redaction-lite-v3"]
+          "description": "Redaction policy identifier. Known examples: redaction-lite-v2, redaction-lite-v3. Typed as free string so policies can evolve without a schema bump.",
+          "examples": ["redaction-lite-v2", "redaction-lite-v3"]
         },
         "redacted_counts": {
           "type": "object",

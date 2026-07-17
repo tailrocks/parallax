@@ -364,9 +364,7 @@ fn a6_json_and_markdown_projections_share_redacted_bundle() {
 
     let mut event = test_event();
     event.message = "Bearer ghp_0123456789ABCDEFGHIJKLMNOPQRST".into();
-    event.stacktrace = Some(
-        "-----BEGIN PRIVATE KEY-----\nMIIE\n-----END PRIVATE KEY-----".into(),
-    );
+    event.stacktrace = Some("-----BEGIN PRIVATE KEY-----\nMIIE\n-----END PRIVATE KEY-----".into());
 
     let mut span = test_span(0, true, 1_000_000);
     span.attributes = serde_json::json!({
@@ -401,10 +399,7 @@ fn a6_json_and_markdown_projections_share_redacted_bundle() {
         8_000,
     );
 
-    assert_eq!(
-        bundle.redaction.policy,
-        crate::redaction_policy::SOURCE_POLICY_VERSION
-    );
+    assert_eq!(bundle.redaction.policy, REDACTION_POLICY_V1);
     let json = serde_json::to_string(&bundle).expect("serialize");
     let md = to_markdown(&bundle);
     for surface in [&json, &md] {
@@ -452,7 +447,7 @@ fn minimal_all_none_bundle_conforms_to_bundle_v1_schema() {
         hypotheses: Vec::new(),
         missing_evidence: Vec::new(),
         redaction: RedactionReport {
-            policy: crate::redaction_policy::SOURCE_POLICY_VERSION,
+            policy: REDACTION_POLICY_V1,
             redacted_counts: BTreeMap::new(),
         },
         bounded: BoundReport {

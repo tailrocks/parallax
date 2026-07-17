@@ -30,6 +30,9 @@ pub use v2::{
 };
 
 pub const SCHEMA_VERSION: &str = "bundle-v1";
+/// Immutable serialized policy label shipped by bundle-v1. New source-policy
+/// machinery may strengthen behavior but cannot rewrite version-1 bytes.
+pub const REDACTION_POLICY_V1: &str = "redaction-lite-v3";
 
 #[derive(Debug, Serialize)]
 pub struct Bundle {
@@ -208,7 +211,7 @@ pub struct RedactionReport {
 impl Default for RedactionReport {
     fn default() -> Self {
         Self {
-            policy: crate::redaction_policy::SOURCE_POLICY_VERSION,
+            policy: REDACTION_POLICY_V1,
             redacted_counts: BTreeMap::new(),
         }
     }

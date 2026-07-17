@@ -43,12 +43,12 @@
     "no logs correlated to the trace — bridge the log appender through tracing-opentelemetry",
     "no process metrics in the anchor window — export process.cpu/process.memory gauges (invocation-tagged under the wrapper) for the cross-signal view"
   ],
-  "redaction": { "policy": "evidence-source-v1", "redacted_counts": {} },
+  "redaction": { "policy": "redaction-lite-v3", "redacted_counts": {} },
   "bounded": {
     "max_tokens": 8000,
     "estimated_tokens": 323,
     "dropped_log_lines": 0,
     "truncated_stacktrace": false
   },
-  "canonical_hash": "sha256:9572a9b65d080dc5d737daa87f90b94f6860c454526eefbeac3b135c9cf54e89"
+  "canonical_hash": "sha256:43930a25526503b409328b8883ab6f7db1ed0ff159a96f6ac3aeb4d71c43e978"
 }

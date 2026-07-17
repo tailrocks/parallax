@@ -53,7 +53,7 @@ fn issue_summary(issue: &Issue, report: &mut RedactionReport) -> IssueSummary {
 
 pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
     let mut redaction = RedactionReport {
-        policy: crate::redaction_policy::SOURCE_POLICY_VERSION,
+        policy: REDACTION_POLICY_V1,
         ..Default::default()
     };
     let mut missing = Vec::new();

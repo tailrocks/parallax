@@ -9,7 +9,7 @@
 | --- | --- |
 | Source-field policy | `evidence-source-v1` |
 | Detector set | `detectors-v1` (owned Rust regex engine in `bundle::redaction`) |
-| Bundle schema | `bundle-v1` / envelope `bundle-v2` (plan 104) |
+| Bundle schema | immutable `bundle-v1` (`redaction-lite-v3` serialized label) / envelope `bundle-v2` (plan 104) |
 
 Default-deny: unknown fields drop; hostile free-text fields run detectors;
 structural identifiers are validated (detectors still applied so secrets cannot
@@ -38,7 +38,9 @@ No live provider credentials and no customer data appear in fixtures or this led
 
 ## Projections checked
 
-All derived from the same assembled `Bundle` (policy `evidence-source-v1`):
+All derive from the same assembled `Bundle`. Runtime decisions use
+`evidence-source-v1`; the immutable bundle-v1 report retains its shipped
+`redaction-lite-v3` serialized label and canonical hash:
 
 1. Canonical JSON (`serde_json` of `Bundle`)
 2. Markdown (`bundle::to_markdown`)
