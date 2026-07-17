@@ -8080,3 +8080,7 @@ Near-tie on this small shape.
 ### Run 306 — 2026-07-17 — not done
 
 Comparison remains open.
+
+### Run 307 — 2026-07-17 — four-way healthy 37m
+
+All four containers still healthy after ~37 minutes continuous research load.
