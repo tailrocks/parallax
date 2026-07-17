@@ -70,10 +70,10 @@ Both build a **relationship/evidence graph** over telemetry and pursue an **agen
 
 ## AI-native / agent-context story — the direct overlap
 
-- **Observe's AI:** **AI SRE + o11y.ai Agents** — developer-productivity agents that investigate/act on the O11y Knowledge Graph; O11y AI. This is a **direct, shipped overlap with Parallax's "context engine for agents" thesis** — Observe serves agent access to a relationship-aware telemetry graph.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven gate).
+- **Observe's AI (pass 47 re-verify on [AI SRE product page](https://www.observeinc.com/product/ai-sre)):** **AI SRE** (chat RCA, recommended actions, monitors) + **MCP Server** — **troubleshoot from coding agents (Cursor, Claude, Augment)** via Observe MCP; custom agentic workflows; RBAC + SOC2/ISO/GDPR claims. Knowledge Graph grounds investigations. **Direct shipped overlap** with Parallax’s “context for coding agents” thesis — and **MCP-to-Cursor/Claude is a closer collision** than chat-only AI SRE.
+- **Parallax's claim:** bounded, redacted, agent-safe **portable** evidence bundle for coding agents (**code-shipped**, A1 value unproven).
 
-**Honest verdict:** Observe **ships more agent surface today** (AI SRE + o11y.ai agents over the Knowledge Graph) than Parallax. On shipped agent capability, **Observe leads.** Parallax's differentiation is the **bounded/redacted/versioned/portable** bundle + **read-only-safe** projection + **fix-outcome loop** — none of which Observe's o11y.ai agents emphasize (they're productivity agents, not a bounded-safety-gated context artifact). But all Parallax-side claims are **unproven (A1 gate).** The burden of proof that Parallax's bundle beats o11y.ai-agents-over-the-Knowledge-Graph is on Parallax.
+**Honest verdict (no-bias):** Observe **ships more agent surface today** (AI SRE + **MCP for coding agents** + Knowledge Graph) than pre-release Parallax. On shipped agent capability, **Observe leads.** Parallax residual = **portable/versioned/redacted bundle + offline fix-outcome residual** — Observe MCP is **live SaaS grounding**, not a portable redacted dossier. **A1 unproven** either way; burden on Parallax.
 
 ## Architecture & deployment
 
