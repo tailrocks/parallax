@@ -11,9 +11,9 @@ Research date: 2026-05-25
 > comparator only, never a fallback or product adapter target. Storage traits
 > express capabilities and test boundaries, not engine replaceability. Historical
 > candidate-selection language below is retained only to explain the benchmark.
-> Contract cleanup belongs to
+> Plan 093 contract cleanup is complete and retained as validation evidence at
 > [Plan 093 validation](../validation/2026-07-12-plan-093-baseline/README.md);
-> server-profile work belongs to
+> current server-profile work belongs to
 > [`plans/115-v2-server-profile.md`](../../../plans/115-v2-server-profile.md).
 
 GreptimeDB is a credible storage-layer candidate for Parallax, but the strongest
@@ -572,6 +572,13 @@ keep a substitute engine ready. The original research recommendation was to
 compare both engines before choosing. That comparison remains useful for
 performance, cost, and upstream prioritization, but it cannot select a fallback.
 
+This position is implemented: `parallax-greptime` owns native-table OTLP
+forwarding and SQL/Arrow reads plus telemetry analytics; `parallax-metadata`
+owns Turso migrations and mutable product metadata; `parallax-storage` is the
+capability/projection layer rather than a concrete database client. Durable raw
+OTLP frames are handled by `parallax-spool`, and the server supervises the local
+GreptimeDB binary rather than embedding GreptimeDB as a Rust crate.
+
 ## Benchmark We Should Run
 
 The public benchmarks do not answer the Parallax question directly. Parallax
@@ -630,5 +637,6 @@ GreptimeDB is the mandatory telemetry engine, paired with mandatory Turso
 metadata. A GreptimeDB release does not by itself close trace-maturity, cost,
 cold-read, or operational-complexity questions. Continue the four-build
 comparison to expose risk and guide fix-forward work, with ClickHouse as a
-comparator only. Any product contract corrections are executed through plan 093;
-any supported server profile is executed through plan 115.
+comparator only. Plan 093 is closed; active storage-related work is limited to
+plans 089 (extension-table gRPC writes), 110 (server-profile ingest
+concurrency), and 115 (V2 server profile).

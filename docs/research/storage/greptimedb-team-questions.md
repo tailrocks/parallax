@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: open · Created 2026-06-18 · Consultation protocol updated 2026-07-09 · **Several items empirically confirmed by the 2026-06-18 spike on
+Status: open research packet · Created 2026-06-18 · Consultation protocol updated 2026-07-09 · **Several items empirically confirmed by the 2026-06-18 spike on
 GreptimeDB v1.1.0** (see [native-otel-migration-plan.md](native-otel-migration-plan.md) → "Spike
 results"). Confirmed-by-spike: **#1, #3, #4, #5** (auto-widen-safe custom columns/indexes, indexing
 native logs post-create, adding columns to native traces, log attribute promotion). Still genuinely
@@ -13,6 +13,14 @@ questions to review with the GreptimeDB team on the next sync. They back the nat
 [../decisions/native-otel-tables.md](../decisions/native-otel-tables.md). Each item states our
 context, our current assumption, the exact question, why it matters to Parallax, and our fallback if
 the answer is "no". Ranked load-bearing first.
+
+Implementation has moved beyond the original future-tense framing:
+`parallax-greptime` ships native OTLP/HTTP forwarding, SQL/Arrow HTTP reads,
+Arrow IPC decoding, lifecycle/TTL reconciliation, and telemetry analytics. The
+derived extension tables are `error_events`, `run_metric_points`, and
+`metric_exemplars`; extension-table gRPC writes remain active plan 089. These
+questions now validate support policy, tuning, and future improvements rather
+than block the existing adapter.
 
 ## Context for the team (one paragraph)
 
@@ -42,7 +50,7 @@ table, a GreptimeDB pull request, or a major deviation from native OTLP tables:
 
 ## 1. Custom columns / indexes vs. schema auto-widening (load-bearing)
 
-- **Context.** Native OTLP tables auto-add a column when a new attribute key appears. We also plan to
+- **Context.** Native OTLP tables auto-add a column when a new attribute key appears. We also
   `ALTER` these tables to add our own things (an index, or a Parallax-specific column).
 - **Our assumption.** Manual `ALTER`-added columns and indexes persist and keep working as the schema
   auto-widens from new OTLP attributes.
@@ -112,8 +120,8 @@ table, a GreptimeDB pull request, or a major deviation from native OTLP tables:
 ## 6. High-cardinality metrics — confirm the recommended pattern
 
 - **Context.** We need "metrics for one CLI run" (`run_id` is high-cardinality — a new value per run).
-  We will **not** put `run_id` on the metric engine (it would create one series per run = cardinality
-  explosion). Instead we plan a separate **append/event table** with `run_id STRING SKIPPING INDEX`
+  We **do not** put `run_id` on the metric engine (it would create one series per run = cardinality
+  explosion). The shipped `run_metric_points` **append/event table** uses a high-cardinality run key
   (modeled on the `http_logs_v4` high-cardinality example), keeping the metric engine for low-card
   aggregates only.
 - **Our assumption.** This events-table-with-skipping-index pattern is the recommended GreptimeDB way
@@ -121,7 +129,7 @@ table, a GreptimeDB pull request, or a major deviation from native OTLP tables:
 - **Question.** Is this the pattern you'd recommend? Is there any native per-entity / high-cardinality
   metric mechanism we're missing (e.g. a way to scope metric-engine data by a high-card key without
   the series blow-up)?
-- **Why it matters.** Confirms our one custom metrics extension is the right shape before we build it.
+- **Why it matters.** Confirms the shipped custom metrics extension remains the recommended shape.
 - **Fallback if no.** Reconstruct run-scoped metrics purely from time windows (run start/end) and from
   span-derived aggregates over `opentelemetry_traces`.
 

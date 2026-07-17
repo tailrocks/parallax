@@ -11,6 +11,14 @@
 > stale-bundle rate, crash/restart loss, high-cardinality native metric pressure,
 > object-store economics, and end-to-end A5 integration are incomplete.
 
+> **Implementation status (2026-07-17):** benchmark gaps below remain evidence
+> gaps, not missing product adapters. The shipped path forwards OTLP into
+> GreptimeDB native tables, reads through SQL/Arrow HTTP with Arrow IPC decode,
+> stores mutable metadata in Turso, and durably spools raw PSPL1 frames.
+> `bench/` contains the required four-way generator/runner plus `bench/s3/` and
+> `bench/otlp-fanout/`; `poc/read-transport-bench/` separately measures JSON,
+> Arrow, Arrow+zstd, and MySQL-wire reads.
+
 This note consolidates the following previously-separate research files, each preserved in full below:
 
 - `observability-storage-benchmark-plan.md`

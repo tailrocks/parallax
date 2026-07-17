@@ -1,5 +1,13 @@
 # Storage Size and Object-Store Cost
 
+> **Current implementation status (2026-07-17):** GreptimeDB is the mandatory
+> telemetry engine and Turso the mandatory metadata engine; this comparison can
+> refine cost claims but cannot select ClickHouse as a fallback. The runnable
+> object-storage work now lives in `bench/s3/`. Raw OTLP spool segment size,
+> retention/reaping, health, and reclaim estimates are implemented separately in
+> `parallax-spool` and must be counted independently from GreptimeDB retained
+> bytes in future cost runs.
+
 > Object storage is available for both candidate engines (GreptimeDB and ClickHouse), but the storage-cost winner is still an open, workload-specific gate: it must be measured with identical generated data, fair schema tuning (no tuned ClickHouse codecs vs. unexamined GreptimeDB defaults), and provider-specific request/egress modeling across AWS S3, Cloudflare R2, and Backblaze B2. What is already decided is the economics: compressed object-storage retention is cheap — single-digit to low-hundreds of dollars per month from the tiny to large tier at 90-day retention, roughly 100x (two orders of magnitude) under ingest-priced SaaS such as Observe (~$0.49/GB) or SigNoz Cloud (~$0.30/GB). The non-obvious design finding, also decided, is that because Parallax re-reads history to build agent context, object-store egress pricing matters as much as storage pricing, so self-hosted deployments should default to a zero/low-egress store (R2 or B2) or co-locate compute rather than generic S3. Still open and gated by runnable benchmark measurement: per-signal compression ratios on real Parallax data, object counts, PUT/GET/LIST request costs, cold-read bytes, compaction amplification, local cache size, and the resulting provider cost projection — plus the cost-comparison pass target (GreptimeDB retained size + modeled object cost <= 1.2x ClickHouse on the small tier, or a clear speed/operability win) and the coupling rule that any size/cost winner failing the storage freshness and bundle-latency gate cannot become the default. Local smoke numbers (ClickHouse 28.9 MiB vs. GreptimeDB SST 38 MiB for 1M spans) are a warning, not a verdict, because that schema comparison was unfair. Provider list prices are current as of 2026-05-25 and are order-of-magnitude planning inputs, not quotes.
 
 This note consolidates the following previously-separate research files, each preserved in full below:

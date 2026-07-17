@@ -13,7 +13,9 @@
 
 **GO landed.** Heavy GreptimeDB typed reads now use HTTP
 `format=arrow&compression=zstd` via `GreptimeStore::sql_arrow` /
-`sql_with_schema_arrow` (decode in `crates/parallax-storage/src/arrow_sql.rs`).
+`sql_with_schema_arrow` (transport in
+`crates/parallax-greptime/src/greptime/transport.rs`, decode in
+`crates/parallax-greptime/src/arrow_sql.rs`).
 Domain callers still consume `Vec<Vec<serde_json::Value>>` / `SqlResult` — no
 GraphQL or UI contract change.
 
@@ -29,8 +31,9 @@ parallax-storage -i rustls` stays empty; `arrow-ipc` uses the `zstd` crate only.
 ## Purpose
 
 Historically all Parallax product reads went through GreptimeDB HTTP `/v1/sql`
-returning `greptimedb_v1` JSON (`crates/parallax-storage/src/greptime.rs`
-`sql()`). The 2026-07-10 audit verified that the engine also offers:
+returning `greptimedb_v1` JSON (then in
+`crates/parallax-storage/src/greptime.rs`; concrete GreptimeDB I/O now lives in
+`parallax-greptime`). The 2026-07-10 audit verified that the engine also offers:
 
 1. `format=arrow` (+ optional `compression=zstd|lz4`) on the same endpoint
 2. MySQL (:24002) / Postgres (:24003) wires with **session-cached prepared plans**
@@ -38,8 +41,9 @@ returning `greptimedb_v1` JSON (`crates/parallax-storage/src/greptime.rs`
 4. Auto-created `opentelemetry_traces` default **16 partitions by `trace_id`**
    (`trace_table_partitions` hint can shrink it)
 
-This spike measures those candidates on the real read mix and issues
-GO / NO-GO / REVISIT verdicts. **No product code changes.**
+This spike measured those candidates on the real read mix and issued
+GO / NO-GO / REVISIT verdicts. The spike itself made no product changes; its
+Arrow+zstd GO was subsequently implemented in `parallax-greptime`.
 
 ## Method
 
@@ -74,8 +78,9 @@ differs on auto-widened native columns).
 
 ## Step 1 — Frozen query inventory
 
-Extracted from live `crates/parallax-storage/src/greptime.rs` (post-084, with
-085 working-tree histogram rewrites present). Six heaviest shapes:
+Extracted from then-live `crates/parallax-storage/src/greptime.rs` (post-084,
+with 085 working-tree histogram rewrites present). Current query builders and
+analytics live in `parallax-greptime`. Six heaviest shapes:
 
 | id | Surface | Provenance | SQL shape (frozen in harness) |
 |----|---------|------------|-------------------------------|
@@ -185,7 +190,7 @@ partitions** via `trace_table_partitions`).
 
 | Candidate | Measured delta (this run) | Adoption cost | Verdict |
 |-----------|---------------------------|---------------|---------|
-| HTTP `format=arrow` (+ **zstd**) | Logs page ~20% faster wall; histogram decode 20×; zstd wire ~4–9× smaller on tall pages. Uncompressed Arrow can be **larger** than JSON. | **S** per endpoint (change `sql()` response path + `arrow-ipc` decode; keep JSON for tiny results) | **GO** → new plan **091** |
+| HTTP `format=arrow` (+ **zstd**) | Logs page ~20% faster wall; histogram decode 20×; zstd wire ~4–9× smaller on tall pages. Uncompressed Arrow can be **larger** than JSON. | **S** per endpoint (change `sql()` response path + `arrow-ipc` decode; keep JSON for tiny results) | **GO — implemented** (former plan 091) |
 | MySQL/PG prepared statements | 5/6 inventory SQLs **fail PREPARE** on MySQL wire; remaining path had empty/unreliable rows in harness | **L** (pool, dual transport, dialect rewrite, TLS policy) | **NO-GO** for product path today; re-open only if engine prepare dialect matches HTTP SQL or we rewrite queries |
 | `RANGE`/`ALIGN` vs `date_bin` | ~same wall at laptop N; different plan | Cosmetic / query-by-query | **NO-GO** (keep `date_bin`) |
 | `trace_table_partitions=1` (laptop) | Point lookup faster multi-region; search A/B confounded; proxy ≠ native 16 | **S** but fresh dirs only | **REVISIT-AT-SCALE** — do **not** change product default from this proxy; remeasure on native OTLP auto-create 1 vs 16 with ≥500k spans |

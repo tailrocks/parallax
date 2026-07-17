@@ -4,6 +4,14 @@
 
 Research date: 2026-05-25
 
+> **Current implementation status (2026-07-17):** this remains a performance
+> proof gate, not an implementation backlog. Parallax already forwards raw OTLP
+> to GreptimeDB native trace/log/per-metric tables, persists incoming frames in
+> the PSPL1 spool, and serves reads through SQL/Arrow HTTP. The local engine is
+> process-supervised on shifted ports 24000–24003. `bench/otlp-fanout/` and
+> `poc/read-transport-bench/` provide focused ingest/read measurements; they do
+> not replace the mixed-load gate specified here.
+
 ## Purpose
 
 This is the proof gate for the two remaining storage-speed claims that the local

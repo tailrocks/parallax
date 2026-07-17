@@ -9,7 +9,8 @@ The settled contract lives in
 [decisions/native-otel-tables.md](../decisions/native-otel-tables.md) and the
 [V1 implementation spec](../architecture/v1-implementation-spec.md). This file
 preserves spike evidence and design reasoning; it is not an active plan. Current
-contract correction is in plan 093, metric residuals are in plan 105, and vendor questions remain research in
+extension-table gRPC writes are tracked by plan 089; server-profile ingest
+concurrency and V2 deployment work are tracked by plans 110 and 115. Vendor questions remain research in
 [greptimedb-team-questions.md](greptimedb-team-questions.md).
 
 ## Adopted Direction (operator, 2026-06-18)
@@ -239,7 +240,16 @@ OTLP in → otlp_http/grpc (keep raw Bytes alongside decoded request) → spool 
 
 ### Historical change list by file
 
-| File | Current role | Required change |
+This table records the 2026-06-18 implementation proposal and its then-current
+paths. The shipped ownership is now split: `parallax-greptime` contains
+`GreptimeStore`, OTLP forwarding, SQL/Arrow HTTP transport, Arrow IPC decoding,
+lifecycle/TTL reconciliation, SQL builders, and signal/service/trace/metric
+analytics; `parallax-storage` contains capability contracts and projections
+only. `parallax-spool` owns durable PSPL1 raw-frame segments, rotation,
+retention/reaping, health, and reclaim estimates. The server's
+`greptime_supervisor.rs` manages the local binary and shifted ports 24000–24003.
+
+| Historical file | Role at proposal time | Required change at proposal time |
 | --- | --- | --- |
 | `parallax-storage/src/greptime.rs` | hand-rolled DDL + INSERT + custom-table SELECTs | **Largest change.** (1) `bootstrap`: drop the `otel_spans/otel_logs/otel_metrics_*` CREATE; keep CREATE for extension tables (`error_events`, `run_metric_points`, `metric_exemplars`). (2) Add `forward_traces/forward_logs/forward_metrics` → `POST {base_url}/v1/otlp/v1/…` with headers (`x-greptime-pipeline-name: greptime_trace_v1`, `x-greptime-log-table-name`, `x-greptime-log-extract-keys: parallax.run.id`, `x-greptime-hints: ttl=…,append_mode=true`). (3) Rewrite every read to native columns: traces `service_name`/`duration_nano`/`span_attributes.*`/`resource_attributes.*`; logs `body` + JSON attrs + extracted `parallax.run.id`; metrics → per-metric native tables (+ `information_schema.tables` for `metric_names`). (4) Add `run_metric_points` and `metric_exemplars` write + read. |
 | `parallax-storage/src/adapter.rs` | `TelemetryStore` trait | **Reshape the write side:** replace `write_spans/write_logs/write_metric_points/write_histograms` with `forward_traces/forward_logs/forward_metrics` (raw OTLP), add `write_run_metric_points` + a run-scoped metric read. **Read signatures stay** (API-stable). *(Sub-decision: how the in-memory test adapter satisfies a raw-OTLP write — see open impl questions.)* |
@@ -347,10 +357,11 @@ math all return correct results. Two behaviors the memory adapter hid surfaced a
   already surfaces these native names and reads address them as-is — consistent and **native-first
   correct**, but user-visible: the UI lists Prometheus-style names, not the raw OTLP instrument names.
   Attribute keys normalize the same way for tag columns (`payment.method` → `payment_method` in
-  `groupBy`). The remaining name-mapping/collision decision is owned only by active plan 105.
+  `groupBy`). This is shipped behavior; the former plan 105 is closed.
 - **`service_names` misses metric-only services** — it unions `opentelemetry_traces` / `opentelemetry_logs`
-  / `run_metric_points`, not the native per-metric tables, so a service that emits *only* metrics is not
-  listed. Active plan 105 owns bounded native-catalog discovery for this case.
+  / `run_metric_points`, not the native per-metric tables, so a service that emits *only* metrics was not
+  listed at the time of this historical validation. The former plan 105 is closed; current behavior
+  belongs to `parallax-greptime` service/metric analytics and must be judged from current tests/code.
 
 **Table inventory locked (added 2026-06-18).** A gated guard (`m1_table_inventory_greptime`) pushes all
 three signals to a real engine and `SHOW TABLES`, asserting the only Parallax-created tables are the
