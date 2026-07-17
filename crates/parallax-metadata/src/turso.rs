@@ -265,6 +265,13 @@ impl TursoMetadataStore {
             if !claim_occurrence(&tx, occurrence, millis).await? {
                 continue;
             }
+            // Plan 111: never persist raw title/culprit — sanitize at the write
+            // boundary so every caller (worker, tests, migrations) is covered.
+            let safe_title = parallax_evidence::sanitize_text(occurrence.title.as_str());
+            let safe_culprit = occurrence
+                .culprit
+                .as_deref()
+                .map(parallax_evidence::sanitize_text);
             tx.execute(
                 "INSERT INTO issues
                        (fingerprint, title, error_type, culprit, service,
@@ -280,9 +287,9 @@ impl TursoMetadataStore {
                        last_trace_id = COALESCE(excluded.last_trace_id, last_trace_id)",
                 (
                     occurrence.fingerprint,
-                    occurrence.title.as_str(),
+                    safe_title.as_str(),
                     occurrence.error_type,
-                    occurrence.culprit.clone(),
+                    safe_culprit,
                     occurrence.service,
                     millis,
                     occurrence.trace_id.map(str::to_string),
@@ -571,6 +578,39 @@ impl TursoMetadataStore {
             )
             .await?;
         Ok(())
+    }
+
+    /// Idempotent rewrite of legacy issue title/culprit rows through the plan
+    /// 111 sanitizer. Safe to re-run; already-clean placeholders are stable.
+    pub async fn sanitize_existing_issue_text(&self) -> anyhow::Result<u64> {
+        let conn = self.conn.lock().await;
+        let mut rows = conn
+            .query("SELECT fingerprint, title, culprit FROM issues", ())
+            .await?;
+        let mut rewritten = 0_u64;
+        let mut updates: Vec<(String, String, Option<String>)> = Vec::new();
+        while let Some(row) = rows.next().await? {
+            let fingerprint = text(&row, 0);
+            let title = text(&row, 1);
+            let culprit = opt_text(&row, 2);
+            let safe_title = parallax_evidence::sanitize_text(&title);
+            let safe_culprit = culprit
+                .as_deref()
+                .map(parallax_evidence::sanitize_text);
+            if safe_title != title || safe_culprit != culprit {
+                updates.push((fingerprint, safe_title, safe_culprit));
+            }
+        }
+        drop(rows);
+        for (fingerprint, title, culprit) in updates {
+            conn.execute(
+                "UPDATE issues SET title = ?2, culprit = ?3 WHERE fingerprint = ?1",
+                (fingerprint.as_str(), title.as_str(), culprit),
+            )
+            .await?;
+            rewritten += 1;
+        }
+        Ok(rewritten)
     }
 }
 

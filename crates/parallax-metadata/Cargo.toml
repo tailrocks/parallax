@@ -15,6 +15,7 @@ workspace = true
 [dependencies]
 anyhow = { workspace = true }
 async-trait = { workspace = true }
+parallax-evidence = { workspace = true }
 parallax-model = { workspace = true }
 parallax-semconv = { workspace = true }
 parallax-storage = { workspace = true }

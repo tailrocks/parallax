@@ -29,15 +29,21 @@ pub struct BundleInputs {
     pub metric_windows: Vec<MetricWindow>,
 }
 
+use crate::redaction_policy::{EvidenceField, project_text};
+
+fn project_required(field: EvidenceField, value: &str, report: &mut RedactionReport) -> String {
+    project_text(field, value, report).unwrap_or_else(|| "[REDACTED:stripped]".to_string())
+}
+
 fn issue_summary(issue: &Issue, report: &mut RedactionReport) -> IssueSummary {
     IssueSummary {
-        title: redact(&issue.title, report),
-        error_type: issue.error_type.clone(),
+        title: project_required(EvidenceField::IssueTitle, &issue.title, report),
+        error_type: project_required(EvidenceField::IssueErrorType, &issue.error_type, report),
         culprit: issue
             .culprit
             .as_deref()
-            .map(|culprit| redact(culprit, report)),
-        service: issue.service.clone(),
+            .and_then(|culprit| project_text(EvidenceField::IssueCulprit, culprit, report)),
+        service: project_required(EvidenceField::ServiceName, &issue.service, report),
         status: issue.status.clone(),
         event_count: issue.event_count,
         first_seen_nanos: issue.first_seen_nanos.to_string(),
@@ -47,7 +53,7 @@ fn issue_summary(issue: &Issue, report: &mut RedactionReport) -> IssueSummary {
 
 pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
     let mut redaction = RedactionReport {
-        policy: "redaction-lite-v3",
+        policy: crate::redaction_policy::SOURCE_POLICY_VERSION,
         ..Default::default()
     };
     let mut missing = Vec::new();
@@ -57,7 +63,7 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
         BundleAnchor::Issue(issue) => (
             Anchor {
                 kind: "issue",
-                id: issue.fingerprint.clone(),
+                id: project_required(EvidenceField::AnchorId, &issue.fingerprint, &mut redaction),
             },
             None,
             Some(issue.as_ref().clone()),
@@ -72,16 +78,27 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
             (
                 Anchor {
                     kind: "invocation",
-                    id: invocation.invocation_id.clone(),
+                    id: project_required(
+                        EvidenceField::AnchorId,
+                        &invocation.invocation_id,
+                        &mut redaction,
+                    ),
                 },
                 Some(InvocationSection {
-                    invocation_id: invocation.invocation_id.clone(),
-                    command: invocation
-                        .command
-                        .as_deref()
-                        .map(|command| redact(command, &mut redaction)),
-                    app_mode: invocation.app_mode.clone(),
-                    outcome: invocation.outcome.clone(),
+                    invocation_id: project_required(
+                        EvidenceField::AnchorId,
+                        &invocation.invocation_id,
+                        &mut redaction,
+                    ),
+                    command: invocation.command.as_deref().and_then(|command| {
+                        project_text(EvidenceField::InvocationCommand, command, &mut redaction)
+                    }),
+                    app_mode: invocation.app_mode.as_deref().map(|mode| {
+                        project_required(EvidenceField::InvocationMode, mode, &mut redaction)
+                    }),
+                    outcome: invocation.outcome.as_deref().map(|outcome| {
+                        project_required(EvidenceField::InvocationOutcome, outcome, &mut redaction)
+                    }),
                     status: invocation.status.clone(),
                     exit_code: invocation.exit_code,
                     started_at_nanos: invocation.started_at_nanos.to_string(),
@@ -104,7 +121,7 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
             (
                 Anchor {
                     kind: "trace",
-                    id: trace_id.clone(),
+                    id: project_required(EvidenceField::TraceId, trace_id, &mut redaction),
                 },
                 None,
                 primary,
@@ -114,16 +131,16 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
 
     let latest_event = inputs.events.first().map(|event| EventDetail {
         ts_nanos: event.ts_nanos.to_string(),
-        message: redact(&event.message, &mut redaction),
+        message: project_required(EvidenceField::EventMessage, &event.message, &mut redaction),
         stacktrace: event
             .stacktrace
             .as_deref()
-            .map(|s| redact(s, &mut redaction)),
+            .and_then(|s| project_text(EvidenceField::EventStacktrace, s, &mut redaction)),
         source: serde_json::to_string(&event.source)
             .unwrap_or_default()
             .trim_matches('"')
             .to_string(),
-        trace_id: event.trace_id.clone(),
+        trace_id: project_required(EvidenceField::TraceId, &event.trace_id, &mut redaction),
     });
     if inputs.events.is_empty() {
         missing.push(match anchor.kind {
@@ -140,21 +157,35 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
         None
     } else {
         Some(TraceSection {
-            trace_id: inputs.trace_spans[0].trace_id.clone(),
+            trace_id: project_required(
+                EvidenceField::TraceId,
+                &inputs.trace_spans[0].trace_id,
+                &mut redaction,
+            ),
             spans: inputs
                 .trace_spans
                 .iter()
                 .map(|span| SpanLine {
-                    service: span.service.clone(),
-                    name: redact(&span.name, &mut redaction),
-                    kind: span.kind.clone(),
-                    status_code: span.status_code.clone(),
+                    service: project_required(
+                        EvidenceField::ServiceName,
+                        &span.service,
+                        &mut redaction,
+                    ),
+                    name: project_required(EvidenceField::SpanName, &span.name, &mut redaction),
+                    kind: project_required(EvidenceField::SpanKind, &span.kind, &mut redaction),
+                    status_code: project_required(
+                        EvidenceField::SpanStatus,
+                        &span.status_code,
+                        &mut redaction,
+                    ),
                     duration_us: span.duration_ns / 1_000,
                     db_query: span
                         .attributes
                         .get("db.query.text")
                         .and_then(|v| v.as_str())
-                        .map(|q| redact(q, &mut redaction)),
+                        .and_then(|q| {
+                            project_text(EvidenceField::DatabaseQueryText, q, &mut redaction)
+                        }),
                 })
                 .collect(),
         })
@@ -164,12 +195,10 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
         .trace_logs
         .iter()
         .map(|log| {
-            redact(
-                &format!(
-                    "{} {} [{}] {}",
-                    log.ts_nanos, log.severity_text, log.service, log.body
-                ),
-                &mut redaction,
+            let body = project_required(EvidenceField::LogBody, &log.body, &mut redaction);
+            format!(
+                "{} {} [{}] {body}",
+                log.ts_nanos, log.severity_text, log.service
             )
         })
         .collect();

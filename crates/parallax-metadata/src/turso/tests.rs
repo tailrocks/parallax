@@ -487,6 +487,48 @@ async fn legacy_runs_table_is_dropped_forward_only() {
 }
 
 #[tokio::test]
+async fn issue_title_and_culprit_are_sanitized_at_rest() {
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(&path).await.expect("open");
+    let attrs = serde_json::json!({});
+    let mut occurrence = occurrence("fp-secret", "svc", 1_000_000_000, &attrs);
+    occurrence.title = "boom postgres://admin:s3cr3t@db/app".into();
+    occurrence.culprit = Some(concat!("token=ghp_", "0123456789ABCDEFGHIJKLMNOPQRST").into());
+    store
+        .upsert_issue_occurrence(&occurrence)
+        .await
+        .expect("upsert");
+
+    let issue = store
+        .issue("fp-secret")
+        .await
+        .expect("read")
+        .expect("present");
+    assert!(
+        !issue.title.contains("s3cr3t"),
+        "raw dsn secret must not persist: {}",
+        issue.title
+    );
+    assert!(
+        issue.title.contains("[REDACTED:dsn_userinfo]"),
+        "title should keep redaction marker: {}",
+        issue.title
+    );
+    let culprit = issue.culprit.expect("culprit");
+    assert!(
+        !culprit.contains("ghp_0123456789"),
+        "raw token must not persist: {culprit}"
+    );
+
+    // Migration is idempotent on already-sanitized rows.
+    let rewritten = store
+        .sanitize_existing_issue_text()
+        .await
+        .expect("sanitize pass");
+    assert_eq!(rewritten, 0, "already-clean rows must not thrash");
+}
+
+#[tokio::test]
 async fn legacy_issues_table_gains_nullable_resolution_time() {
     let (_directory, path) = temp_db();
     {

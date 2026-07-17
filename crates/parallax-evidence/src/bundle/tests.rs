@@ -356,6 +356,85 @@ fn assembled_bundle_conforms_to_bundle_v1_schema() {
 }
 
 #[test]
+fn a6_json_and_markdown_projections_share_redacted_bundle() {
+    // Public-safe canaries only.
+    let mut issue = test_issue();
+    issue.title = "timeout postgres://admin:s3cr3t@db/app".into();
+    issue.culprit = Some(concat!("token=ghp_", "0123456789ABCDEFGHIJKLMNOPQRST").into());
+
+    let mut event = test_event();
+    event.message = "Bearer ghp_0123456789ABCDEFGHIJKLMNOPQRST".into();
+    event.stacktrace = Some(
+        "-----BEGIN PRIVATE KEY-----\nMIIE\n-----END PRIVATE KEY-----".into(),
+    );
+
+    let mut span = test_span(0, true, 1_000_000);
+    span.attributes = serde_json::json!({
+        "db.query.text": "SELECT * FROM t WHERE password=hunter2"
+    });
+
+    let log = LogRow {
+        ts_nanos: 2,
+        event_name: String::new(),
+        observed_ts_nanos: 0,
+        service: "checkout".into(),
+        severity_num: 17,
+        severity_text: "ERROR".into(),
+        body: "api_key=supersecretvalue".into(),
+        trace_id: "trace".into(),
+        span_id: "span-0".into(),
+        invocation_id: None,
+        session_id: None,
+        scope_name: "test".into(),
+        attributes: serde_json::Value::Null,
+        resource: serde_json::Value::Null,
+    };
+
+    let bundle = assemble(
+        BundleInputs {
+            anchor: BundleAnchor::Issue(Box::new(issue)),
+            events: vec![event],
+            trace_spans: vec![span],
+            trace_logs: vec![log],
+            metric_windows: vec![],
+        },
+        8_000,
+    );
+
+    assert_eq!(
+        bundle.redaction.policy,
+        crate::redaction_policy::SOURCE_POLICY_VERSION
+    );
+    let json = serde_json::to_string(&bundle).expect("serialize");
+    let md = to_markdown(&bundle);
+    for surface in [&json, &md] {
+        assert!(!surface.contains("s3cr3t"), "leak in projection: {surface}");
+        assert!(
+            !surface.contains("ghp_0123456789"),
+            "leak in projection: {surface}"
+        );
+        assert!(
+            !surface.contains("BEGIN PRIVATE KEY"),
+            "leak in projection: {surface}"
+        );
+        assert!(
+            !surface.contains("hunter2"),
+            "leak in projection: {surface}"
+        );
+        assert!(
+            !surface.contains("supersecretvalue"),
+            "leak in projection: {surface}"
+        );
+    }
+    assert!(!bundle.redaction.redacted_counts.is_empty());
+    assert!(bundle.canonical_hash.is_some());
+    // Usefulness: structural issue identity and service remain.
+    let issue = bundle.issue.as_ref().expect("issue");
+    assert_eq!(issue.service, "checkout");
+    assert_eq!(issue.error_type, "test::Boom");
+}
+
+#[test]
 fn minimal_all_none_bundle_conforms_to_bundle_v1_schema() {
     let bundle = Bundle {
         schema_version: SCHEMA_VERSION,
@@ -373,7 +452,7 @@ fn minimal_all_none_bundle_conforms_to_bundle_v1_schema() {
         hypotheses: Vec::new(),
         missing_evidence: Vec::new(),
         redaction: RedactionReport {
-            policy: "redaction-lite-v3",
+            policy: crate::redaction_policy::SOURCE_POLICY_VERSION,
             redacted_counts: BTreeMap::new(),
         },
         bounded: BoundReport {

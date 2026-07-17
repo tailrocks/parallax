@@ -3248,6 +3248,7 @@ version = "0.1.0-dev"
 dependencies = [
  "anyhow",
  "async-trait",
+ "parallax-evidence",
  "parallax-model",
  "parallax-semconv",
  "parallax-storage",

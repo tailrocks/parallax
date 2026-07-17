@@ -22,7 +22,8 @@ use bounding::*;
 use hash::*;
 pub use markdown::to_markdown;
 use ranking::*;
-use redaction::*;
+use redaction::estimate_tokens;
+pub(crate) use redaction::redact;
 pub use v2::{
     ACCESS_POLICY_LOCAL, EnvelopeAccess, EnvelopeError, EnvelopeInputs, EnvelopeV2, EnvelopeWindow,
     SCHEMA_REF_V2, SCHEMA_VERSION_V2, document_version, envelope_v1,
@@ -198,10 +199,19 @@ pub struct Hypothesis {
     pub evidence: Vec<String>,
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct RedactionReport {
     pub policy: &'static str,
     pub redacted_counts: BTreeMap<&'static str, u64>,
+}
+
+impl Default for RedactionReport {
+    fn default() -> Self {
+        Self {
+            policy: crate::redaction_policy::SOURCE_POLICY_VERSION,
+            redacted_counts: BTreeMap::new(),
+        }
+    }
 }
 
 #[derive(Debug, Default, Serialize)]

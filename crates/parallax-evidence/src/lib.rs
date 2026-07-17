@@ -12,3 +12,8 @@ pub mod envelope;
 pub mod gaps;
 pub mod redaction_policy;
 pub mod story;
+
+pub use redaction_policy::{
+    DETECTOR_POLICY_VERSION, EvidenceField, SOURCE_POLICY_VERSION, SourceAction, SourceDecision,
+    decide, project_text, sanitize_text,
+};

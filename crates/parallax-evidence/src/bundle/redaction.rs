@@ -122,7 +122,7 @@ pub(super) fn redaction_rules() -> &'static [(&'static str, Regex, &'static str)
     })
 }
 
-pub(super) fn redact(text: &str, report: &mut RedactionReport) -> String {
+pub(crate) fn redact(text: &str, report: &mut RedactionReport) -> String {
     let mut out = text.to_string();
     for (name, rule, replacement) in redaction_rules() {
         let hits = rule.find_iter(&out).count() as u64;
