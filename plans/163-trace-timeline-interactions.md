@@ -53,11 +53,18 @@ lint/format at commit time):**
   URL-valid `view=flame`, and a Flame mode beside tree/errors/lanes. The
   focused component/route/pure suite passed 17 tests plus targeted lint and
   format immediately before the concurrent peer commit captured the wiring.
+- `ui/src/lib/timeline-minimap.ts` (`0a3da7d`): pure minimap edge/interior/
+  outside hit testing and reducer-action math for resize, pan, and recenter.
+  It uses the captured viewport and the same PAN/ZOOM_TO_RANGE actions as the
+  waterfall. The combined viewport/minimap suite passes 38 tests; full UI
+  typecheck and targeted lint pass. Peer still owns DOM pointer wiring and
+  browser behavior verification.
 
 **Peer owns (verify/deepen):**
 - [ ] Review the reducer/gesture semantics against the plan grammar; the
   helper's cut may be shallower than intended (e.g. double-click wiring,
-  marquee overlay rendering, minimap controller are NOT started).
+  marquee overlay rendering, minimap DOM controller are NOT started; pure
+  minimap action math is landed).
 - [ ] Steps 3-5: waterfall rework onto the viewport, minimap controller,
   color-by picker UI + search-param schema, self-time in tooltip/inspector,
   flamegraph behavior review/deepening (component + route wiring now landed),
