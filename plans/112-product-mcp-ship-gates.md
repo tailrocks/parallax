@@ -43,6 +43,8 @@ must not return in product output.
   resource-reference behavior remains unfinished.
 - Issue-context discovery advertises the checked-in bundle-v2 schema as the MCP
   `outputSchema`; client discovery/conformance evidence remains unfinished.
+- Stdio startup requires an explicit `--allow-local-stdio` command-line trust
+  decision; environment and repository files cannot supply that opt-in.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded

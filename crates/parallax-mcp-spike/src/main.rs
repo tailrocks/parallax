@@ -20,6 +20,10 @@ struct Cli {
     #[arg(long, default_value = "http://127.0.0.1:4000", global = true)]
     url: String,
 
+    /// Explicitly trust and start the local stdio MCP server.
+    #[arg(long, global = true)]
+    allow_local_stdio: bool,
+
     #[command(subcommand)]
     command: Option<Command>,
 }
@@ -61,7 +65,14 @@ async fn main() -> anyhow::Result<()> {
         cli.url = url;
     }
     match cli.command.unwrap_or(Command::Serve) {
-        Command::Serve => server::run_stdio(cli.url).await,
+        Command::Serve => {
+            if !cli.allow_local_stdio {
+                anyhow::bail!(
+                    "local stdio MCP is disabled; re-run with --allow-local-stdio after reviewing the command and configuration"
+                );
+            }
+            server::run_stdio(cli.url).await
+        }
         Command::Check {
             fingerprint,
             invocation_id,
@@ -75,5 +86,20 @@ async fn main() -> anyhow::Result<()> {
             })
             .await
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn local_stdio_requires_explicit_cli_opt_in() {
+        let default = Cli::try_parse_from(["parallax-mcp-spike"]).expect("parse default");
+        let trusted = Cli::try_parse_from(["parallax-mcp-spike", "--allow-local-stdio"])
+            .expect("parse opt-in");
+
+        assert!(!default.allow_local_stdio);
+        assert!(trusted.allow_local_stdio);
     }
 }

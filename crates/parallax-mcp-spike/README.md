@@ -34,8 +34,8 @@ No shell, SQL, deploy, rollback, or management tools exist in this binary.
 Requires a live `parallax serve` (default `http://127.0.0.1:4000`).
 
 ```bash
-# stdio MCP server (default)
-cargo run -p parallax-mcp-spike
+# stdio MCP server (explicit local trust required)
+cargo run -p parallax-mcp-spike -- --allow-local-stdio
 
 # projection-equivalence proof (issue + optional invocation anchor)
 cargo run -p parallax-mcp-spike -- check \
@@ -44,6 +44,9 @@ cargo run -p parallax-mcp-spike -- check \
 ```
 
 No CI wiring: needs a live server and seeded telemetry. Manual only.
+The stdio server fails closed unless `--allow-local-stdio` appears on the
+process command line; no environment variable or repository file can provide
+that trust decision.
 
 ## SDK / TLS
 
