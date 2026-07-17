@@ -1,3 +1,4 @@
+use super::v2::canonical_hash_v2;
 use super::*;
 
 fn test_issue() -> Issue {
@@ -385,4 +386,111 @@ fn minimal_all_none_bundle_conforms_to_bundle_v1_schema() {
     };
 
     assert_validates_bundle_v1(&bundle);
+}
+
+fn v2_inputs() -> EnvelopeInputs {
+    EnvelopeInputs {
+        bundle_id: "b-1".to_string(),
+        project: Some("parallax".to_string()),
+        window_nanos: Some((0, 2_000_000_000)),
+        generated_at_nanos: 1_752_800_000_000_000_000,
+    }
+}
+
+#[test]
+fn v2_envelope_is_deterministic_and_version_scoped() {
+    let left = envelope_v1(
+        assemble(test_inputs(vec![test_span(0, true, 10)]), 8_000),
+        v2_inputs(),
+    )
+    .expect("envelope");
+    let right = envelope_v1(
+        assemble(test_inputs(vec![test_span(0, true, 10)]), 8_000),
+        v2_inputs(),
+    )
+    .expect("envelope");
+    assert_eq!(left.canonical_hash, right.canonical_hash);
+    let v2_hash = left.canonical_hash.as_deref().expect("hash stamped");
+    assert!(
+        v2_hash.starts_with("sha256-jcs:"),
+        "version-scoped prefix: {v2_hash}"
+    );
+    let v1_hash = left
+        .data
+        .canonical_hash
+        .as_deref()
+        .expect("payload keeps v1 hash");
+    assert!(v1_hash.starts_with("sha256:") && !v1_hash.starts_with("sha256-jcs:"));
+    assert_eq!(left.schema_version, SCHEMA_VERSION_V2);
+    assert_eq!(left.data.schema_version, SCHEMA_VERSION);
+    assert!(left.generated_at.ends_with('Z') && left.generated_at.contains('T'));
+}
+
+#[test]
+fn v2_conversion_fails_closed_without_project_or_window() {
+    let missing_project = EnvelopeInputs {
+        project: None,
+        ..v2_inputs()
+    };
+    let error = envelope_v1(assemble(test_inputs(Vec::new()), 8_000), missing_project)
+        .expect_err("no project");
+    assert_eq!(error, EnvelopeError::MissingProject);
+    let missing_window = EnvelopeInputs {
+        window_nanos: None,
+        ..v2_inputs()
+    };
+    let error = envelope_v1(assemble(test_inputs(Vec::new()), 8_000), missing_window)
+        .expect_err("no window");
+    assert_eq!(error, EnvelopeError::MissingWindow);
+}
+
+#[test]
+fn document_version_rejects_unknown_and_malformed() {
+    let v1 = serde_json::to_value(assemble(test_inputs(Vec::new()), 8_000)).unwrap();
+    assert_eq!(document_version(&v1), Ok(SCHEMA_VERSION));
+    let v2 = serde_json::to_value(
+        envelope_v1(assemble(test_inputs(Vec::new()), 8_000), v2_inputs()).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(document_version(&v2), Ok(SCHEMA_VERSION_V2));
+    assert_eq!(
+        document_version(&serde_json::json!({"schema_version": "bundle-v3"})),
+        Err(EnvelopeError::UnknownVersion("bundle-v3".to_string()))
+    );
+    assert!(matches!(
+        document_version(&serde_json::json!({})),
+        Err(EnvelopeError::Malformed(_))
+    ));
+    assert!(matches!(
+        document_version(&serde_json::json!({"schema_version": 2})),
+        Err(EnvelopeError::Malformed(_))
+    ));
+}
+
+#[test]
+fn v2_hash_excludes_bounding_and_hash_fields_only() {
+    let base = envelope_v1(
+        assemble(test_inputs(vec![test_span(0, true, 10)]), 8_000),
+        v2_inputs(),
+    )
+    .expect("envelope");
+    let mut retitled = envelope_v1(
+        assemble(test_inputs(vec![test_span(0, true, 10)]), 8_000),
+        v2_inputs(),
+    )
+    .expect("envelope");
+    retitled.project = "other-project".to_string();
+    let retitled_hash = canonical_hash_v2(&retitled);
+    assert_ne!(base.canonical_hash.as_deref(), Some(retitled_hash.as_str()));
+    let mut rebounded = envelope_v1(
+        assemble(test_inputs(vec![test_span(0, true, 10)]), 8_000),
+        v2_inputs(),
+    )
+    .expect("envelope");
+    rebounded.data.bounded.max_tokens = 1;
+    assert_eq!(
+        base.canonical_hash.as_deref(),
+        Some(canonical_hash_v2(&rebounded).as_str()),
+        "per-request bounding report stays outside the hash"
+    );
 }

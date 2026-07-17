@@ -15,6 +15,7 @@ mod hash;
 mod markdown;
 mod ranking;
 mod redaction;
+mod v2;
 
 pub use assembly::{BundleAnchor, BundleInputs, assemble};
 use bounding::*;
@@ -22,6 +23,10 @@ use hash::*;
 pub use markdown::to_markdown;
 use ranking::*;
 use redaction::*;
+pub use v2::{
+    ACCESS_POLICY_LOCAL, EnvelopeAccess, EnvelopeError, EnvelopeInputs, EnvelopeV2, EnvelopeWindow,
+    SCHEMA_REF_V2, SCHEMA_VERSION_V2, document_version, envelope_v1,
+};
 
 pub const SCHEMA_VERSION: &str = "bundle-v1";
 

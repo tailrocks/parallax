@@ -52,6 +52,22 @@ green). Peer: verify the record against the directive, then execute Steps
 3-5 (versioned migration design, single source of truth, equivalence proofs)
 — none of that implementation exists yet.
 
+### Step-3 preliminary core also landed (same helper agent)
+
+`crates/parallax-evidence/src/bundle/v2.rs`: `EnvelopeV2` (CloudEvents-profile
+envelope; ISO-8601 UTC envelope times via `time`/Rfc3339; v1 dossier verbatim
+as `data`), fail-closed deterministic `envelope_v1` conversion
+(MissingProject/MissingWindow), `document_version` reader dispatch rejecting
+unknown/malformed versions, and the version-scoped `sha256-jcs:` hash over
+JCS-canonicalized content (v1 exclusion semantics mirrored: hash, generator,
+per-request `bounded`). Tests cover determinism, version scoping vs the v1
+`sha256:` hash, fail-closed conversion, unknown-version rejection, and
+bounding-exclusion. Caveat recorded in-code: JCS number serialization uses
+serde_json/ryu shortest round-trip — exact RFC 8785 ES6 exponent edge cases
+are Step-5 property-test work before v2 becomes default emit. Peer owns:
+JSON Schema for v2, GraphQL/CLI/MCP projection wiring, equivalence and
+property tests (Steps 4-5).
+
 ## Why
 
 The research model and shipped `bundle-v1` schema describe materially different
