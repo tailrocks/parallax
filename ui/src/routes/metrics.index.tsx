@@ -8,6 +8,7 @@ import {
   Toolbar,
 } from "@/components/console/data-table"
 import { EmptyState } from "@/components/console/empty-state"
+import { RelativeTime } from "@/components/console/relative-time"
 import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -27,6 +28,10 @@ import { inferMetricKind, type MetricKind } from "@/lib/metric-aggregation"
 interface CatalogRow {
   name: string
   kind: string
+  unit?: string | null
+  services?: string[]
+  lastDatapointNanos?: string
+  pointCount?: string
 }
 
 interface MetricsSearch {
@@ -51,7 +56,7 @@ export const Route = createFileRoute("/metrics/")({
     q: searchString(search["q"]),
     kind: searchString(search["kind"]),
   }),
-  loader: async () => {
+  loader: async (): Promise<CatalogRow[]> => {
     const now = Date.now() * 1_000_000
     const from = now - 7 * 24 * 60 * 60 * 1_000_000_000
     try {
@@ -67,7 +72,9 @@ export const Route = createFileRoute("/metrics/")({
     const names = await graphqlCached<{ metricNames: string[] }>(
       `{ metricNames }`
     ).then((d) => d.metricNames)
-    return names.map((name) => ({ name, kind: inferMetricKind(name) }))
+    return names.map(
+      (name): CatalogRow => ({ name, kind: inferMetricKind(name) })
+    )
   },
   component: MetricsPage,
 })
@@ -82,7 +89,7 @@ function MetricsPage() {
     const needle = text.toLowerCase()
     return catalog
       .map((row) => ({
-        name: row.name,
+        ...row,
         kind: (row.kind as MetricKind) || inferMetricKind(row.name),
       }))
       .filter((row) => !needle || row.name.toLowerCase().includes(needle))
@@ -148,6 +155,22 @@ function MetricsPage() {
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline">{row.kind}</Badge>
+                </TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  {row.unit ?? "—"}
+                </TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  {row.services?.join(", ") ?? "—"}
+                </TableCell>
+                <TableCell className="text-right text-xs tabular-nums">
+                  {row.pointCount ?? "—"}
+                </TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  {row.lastDatapointNanos ? (
+                    <RelativeTime nanos={row.lastDatapointNanos} />
+                  ) : (
+                    "—"
+                  )}
                 </TableCell>
               </TableRow>
             ))}
