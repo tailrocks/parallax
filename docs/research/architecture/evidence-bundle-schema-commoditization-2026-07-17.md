@@ -77,6 +77,10 @@ pressure, idle incident-attribute track).
 
 **Still not commoditized.** No material movement vs pass 243.
 
+**Pass 285 primary re-fetch (2026-07-18):** #1185 still **open/idle**
+(`updated_at` **2025-10-24**); model/ incident-family dirs still **empty**;
+OCSF GA still **`1.8.0`**; `/1.9.0/` still **404**. **Still not commoditized.**
+
 **Evidence class:** primary GitHub issue/tree + first-party release pages +
 vendor product docs (desk recheck). Not a measurement of A1 value.
 
