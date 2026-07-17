@@ -98,7 +98,7 @@ are 🟡 inherited** (sources dated 2026-05/06). Priority for re-verification:
 
 - **Datadog self-host posture**: marketing says SaaS-only; clarify whether any production self-host path beyond the Agent + Observability Pipelines Worker exists in 2026. Flagged in Datadog deep-dive.
 - **Datadog OTLP-in-Agent GA scope**: confirm which signals (logs/metrics/traces) the Agent OTLP receiver ingests natively vs routes through transform. Flagged.
-- **Parallax-column honesty**: several Parallax cells (fix-outcome loop, redacted bundle, MCP) are *planned*, not shipped. Keep the planned/shipped split explicit in every row — do not let "planned" read as "has it".
+- **Parallax-column honesty**: several Parallax cells (fix-outcome loop, redacted bundle, MCP) are *planned*, not shipped. Keep the planned/shipped split explicit in every row — do not let "planned" read as "has it". **[pass 32 code-audit, 2026-07-17]** the shipped `✅🧪` claims were verified against `crates/` + `v1-gates-report.md`: metrics OTLP ingest (`otlp_grpc.rs`/`otlp_http.rs` + greptime ingest), error grouping (gates: panic→issue **32 ms**, verified live), test-result derivation (`worker.rs` + `turso/test_reporting.rs`), native `opentelemetry_logs`/`opentelemetry_traces` tables, Sentry-envelope (`sentry_envelope.rs`). **No pro-Parallax overclaims found** — the column's `✅🧪` marks are code-backed, not just self-assessed. (Planned-only stay `🏗`: MCP spike crate, AI RCA, evals, SSO/RBAC, fix-outcome loop.)
 
 ## Next highest-value gaps (ranked)
 
