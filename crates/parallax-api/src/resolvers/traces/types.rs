@@ -235,6 +235,20 @@ impl TraceList {
     }
 }
 
+pub(crate) struct DurationStats(pub(crate) parallax_storage::adapter::DurationStats);
+
+#[graphql_object(context = ApiContext)]
+impl DurationStats {
+    /// Median representative-span duration, milliseconds.
+    fn p50_ms(&self) -> Option<f64> {
+        self.0.p50_ns.map(|ns| ns / 1_000_000.0)
+    }
+    /// 95th-percentile representative-span duration, milliseconds.
+    fn p95_ms(&self) -> Option<f64> {
+        self.0.p95_ns.map(|ns| ns / 1_000_000.0)
+    }
+}
+
 pub(crate) struct CriticalHop(pub(crate) trace_analysis::CriticalHop);
 
 #[graphql_object(context = ApiContext)]

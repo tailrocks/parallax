@@ -11,6 +11,37 @@ impl adapter::TraceAnalyticsStore for MemoryStore {
         trace_search::search(self, query).map_err(Into::into)
     }
 
+    async fn trace_duration_stats(
+        &self,
+        query: &adapter::TraceQuery,
+    ) -> StorageResult<adapter::DurationStats> {
+        // Same filtered representative set as search, duration bounds and
+        // paging removed (presets never feed back into themselves).
+        let unbounded = adapter::TraceQuery {
+            min_duration_ns: None,
+            max_duration_ns: None,
+            limit: usize::MAX,
+            offset: 0,
+            ..query.clone()
+        };
+        let list = trace_search::search(self, &unbounded)?;
+        let mut durations: Vec<u128> = list.items.iter().map(|t| t.duration_ns).collect();
+        durations.sort_unstable();
+        // Exact nearest-rank percentile (small in-memory sets).
+        let percentile = |p: f64| -> Option<f64> {
+            if durations.is_empty() {
+                return None;
+            }
+            let rank = (p * durations.len() as f64).ceil() as usize;
+            let index = rank.clamp(1, durations.len()) - 1;
+            Some(durations[index] as f64)
+        };
+        Ok(adapter::DurationStats {
+            p50_ns: percentile(0.50),
+            p95_ns: percentile(0.95),
+        })
+    }
+
     async fn attribute_compare(
         &self,
         selected: RangeInclusive<u128>,

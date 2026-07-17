@@ -294,6 +294,10 @@ pub trait TraceAnalyticsStore: Send + Sync {
         keys: &[String],
         top_n: usize,
     ) -> StorageResult<Vec<AttributeCompareRow>>;
+    /// Duration percentiles of the representative spans matching `query`
+    /// (plan 164 preset chips). The query's own duration bounds are ignored
+    /// so `> p50` / `> p95` presets never feed back into themselves.
+    async fn trace_duration_stats(&self, query: &TraceQuery) -> StorageResult<DurationStats>;
     /// Discover scalar span/resource attribute keys in a window. Resource
     /// attributes are exposed as `resource.<key>` so the API key is unambiguous.
     async fn span_field_keys(&self, range: RangeInclusive<u128>) -> StorageResult<Vec<FieldKey>>;

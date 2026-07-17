@@ -8,43 +8,12 @@ impl crate::adapter::TraceAnalyticsStore for GreptimeStore {
     ) -> StorageResult<crate::adapter::TraceList> {
         // One representative span per trace — its root (no parent), else the
         // earliest span when no root was stored (all-INTERNAL traces).
-        //
-        // Scan window — also bounds representative, participation, and
-        // in-window span_count/has_error (plan 075, aligned with memory).
-        let mut scan = Vec::new();
-        if let Some(from) = query.from_nanos {
-            scan.push(format!(r#""timestamp" >= {}"#, sql_ts(from)));
-        }
-        if let Some(to) = query.to_nanos {
-            scan.push(format!(r#""timestamp" <= {}"#, sql_ts(to)));
-        }
-        let scan_where = if scan.is_empty() {
-            "1 = 1".to_string()
-        } else {
-            scan.join(" AND ")
+        let Some((scan_where, participation)) = self.trace_scan_clauses(query).await? else {
+            return Ok(crate::adapter::TraceList {
+                items: Vec::new(),
+                total: 0,
+            });
         };
-        // `service` matches any in-window trace the service participates in;
-        // structured where-clause filters (plan 164) match traces where at
-        // least one in-window span satisfies ALL filters. Both are
-        // materialized client-side: `"trace_id" IN (SELECT …)` semi-joins
-        // return zero rows on the live engine (see invocation_trace_ids).
-        let service_condition = query
-            .service
-            .as_deref()
-            .map(|service| format!(r#""service_name" = '{}'"#, escape(service)));
-        let filter_condition = span_attribute_filters_sql(&query.attribute_filters);
-        let mut participation = String::new();
-        for condition in [service_condition, filter_condition].into_iter().flatten() {
-            match self.trace_participation(&condition, &scan_where).await? {
-                Some(clause) => participation.push_str(&clause),
-                None => {
-                    return Ok(crate::adapter::TraceList {
-                        items: Vec::new(),
-                        total: 0,
-                    });
-                }
-            }
-        }
         // Representative-span filters, applied after the per-trace pick.
         let mut rep = vec!["\"rn\" = 1".to_string()];
         if let Some(min) = query.min_duration_ns {
@@ -108,6 +77,48 @@ impl crate::adapter::TraceAnalyticsStore for GreptimeStore {
         Ok(crate::adapter::TraceList {
             items: traces,
             total,
+        })
+    }
+
+    async fn trace_duration_stats(
+        &self,
+        query: &crate::adapter::TraceQuery,
+    ) -> StorageResult<crate::adapter::DurationStats> {
+        // Duration bounds intentionally ignored: preset chips derive from
+        // the unbounded duration distribution of the current filter set.
+        let Some((scan_where, participation)) = self.trace_scan_clauses(query).await? else {
+            return Ok(crate::adapter::DurationStats::default());
+        };
+        let mut rep = vec!["\"rn\" = 1".to_string()];
+        if let Some(needle) = &query.name_contains {
+            let escaped = escape(needle).replace('%', r"\%").replace('_', r"\_");
+            rep.push(format!(r#""span_name" LIKE '%{escaped}%' ESCAPE '\'"#));
+        }
+        if query.error_only {
+            rep.push(r#""has_error" > 0"#.to_string());
+        }
+        let (listed, _) = Self::traces_search_sql(
+            &scan_where,
+            &participation,
+            &rep.join(" AND "),
+            r#""ts_nanos" DESC"#,
+            MAX_ROWS,
+            0,
+        );
+        let sql = format!(
+            r#"SELECT approx_percentile_cont("dur", 0.50) AS "p50",
+                      approx_percentile_cont("dur", 0.95) AS "p95"
+               FROM ({listed})"#
+        );
+        let rows = self.sql_lenient(&sql).await?;
+        let stat = |index: usize| {
+            rows.first()
+                .and_then(|row| row.get(index))
+                .and_then(serde_json::Value::as_f64)
+        };
+        Ok(crate::adapter::DurationStats {
+            p50_ns: stat(0),
+            p95_ns: stat(1),
         })
     }
 
@@ -406,6 +417,48 @@ impl crate::adapter::TraceAnalyticsStore for GreptimeStore {
 }
 
 impl GreptimeStore {
+    /// Shared scan window + participation assembly for `traces_search` and
+    /// `trace_duration_stats`.
+    ///
+    /// Scan window bounds representative, participation, and in-window
+    /// span_count/has_error (plan 075, aligned with memory). `service`
+    /// matches any in-window trace the service participates in; structured
+    /// where-clause filters (plan 164) match traces where at least one
+    /// in-window span satisfies ALL filters. Both are materialized
+    /// client-side: `"trace_id" IN (SELECT …)` semi-joins return zero rows
+    /// on the live engine (see invocation_trace_ids). `None` = a
+    /// participation condition matched no traces (short-circuit empty).
+    async fn trace_scan_clauses(
+        &self,
+        query: &crate::adapter::TraceQuery,
+    ) -> StorageResult<Option<(String, String)>> {
+        let mut scan = Vec::new();
+        if let Some(from) = query.from_nanos {
+            scan.push(format!(r#""timestamp" >= {}"#, sql_ts(from)));
+        }
+        if let Some(to) = query.to_nanos {
+            scan.push(format!(r#""timestamp" <= {}"#, sql_ts(to)));
+        }
+        let scan_where = if scan.is_empty() {
+            "1 = 1".to_string()
+        } else {
+            scan.join(" AND ")
+        };
+        let service_condition = query
+            .service
+            .as_deref()
+            .map(|service| format!(r#""service_name" = '{}'"#, escape(service)));
+        let filter_condition = span_attribute_filters_sql(&query.attribute_filters);
+        let mut participation = String::new();
+        for condition in [service_condition, filter_condition].into_iter().flatten() {
+            match self.trace_participation(&condition, &scan_where).await? {
+                Some(clause) => participation.push_str(&clause),
+                None => return Ok(None),
+            }
+        }
+        Ok(Some((scan_where, participation)))
+    }
+
     /// Materialize the in-window trace ids matching `condition` into an
     /// ` AND "trace_id" IN (…)` participation clause; `None` = no trace
     /// matches, so the whole search short-circuits to an empty page.

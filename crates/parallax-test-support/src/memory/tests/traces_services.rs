@@ -364,3 +364,38 @@ async fn conformance_scenarios_pass_on_memory() {
         .await
         .expect("service_map");
 }
+
+#[tokio::test]
+async fn trace_duration_stats_ignores_duration_bounds_and_paging() {
+    let store = MemoryStore::new();
+    store.push_spans(vec![
+        span_with_duration("t0", "a", None, "checkout", 1_000, 10),
+        span_with_duration("t1", "b", None, "checkout", 1_001, 20),
+        span_with_duration("t2", "c", None, "checkout", 1_002, 30),
+        span_with_duration("t3", "d", None, "checkout", 1_003, 40),
+        span_with_duration("t4", "e", None, "checkout", 1_004, 100),
+    ]);
+
+    let stats = store
+        .trace_duration_stats(&TraceQuery {
+            // Duration bounds and paging must not shape the distribution.
+            min_duration_ns: Some(35),
+            limit: 1,
+            ..TraceQuery::default()
+        })
+        .await
+        .unwrap();
+    // Nearest-rank over [10,20,30,40,100]: p50 = 30, p95 = 100.
+    assert_eq!(stats.p50_ns, Some(30.0));
+    assert_eq!(stats.p95_ns, Some(100.0));
+
+    let empty = store
+        .trace_duration_stats(&TraceQuery {
+            service: Some("missing".into()),
+            ..TraceQuery::default()
+        })
+        .await
+        .unwrap();
+    assert_eq!(empty.p50_ns, None);
+    assert_eq!(empty.p95_ns, None);
+}

@@ -260,6 +260,14 @@ pub struct TraceQuery {
     pub sort: TraceSort,
 }
 
+/// p50/p95 of representative-span durations for the current trace filter
+/// window (plan 164 duration preset chips). Nanoseconds; None = no traces.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub struct DurationStats {
+    pub p50_ns: Option<f64>,
+    pub p95_ns: Option<f64>,
+}
+
 /// Where-clause operator (plan 164). AND-only grammar in v1; the UI parser
 /// emits `[{key, op, value}]` and every adapter compiles or evaluates it —
 /// never a second grammar.
