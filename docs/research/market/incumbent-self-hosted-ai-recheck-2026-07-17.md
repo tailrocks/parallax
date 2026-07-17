@@ -283,6 +283,16 @@ docs and release notes.
 
 **UNFIRED:** offline Assistant; Sentry OTLP metrics GA.
 
+### Pass 353 (2026-07-18) — Seer + Bits
+
+| Source | Finding |
+| --- | --- |
+| develop.sentry.dev/self-hosted | still Seer **closed source** |
+| Bits Code docs | still **never auto-merges** |
+
+**UNFIRED:** Seer self-host GA; Bits auto-merge.
+
+
 ### Pass 351 (2026-07-18) — Seer
 
 Seer still **closed source** on self-hosted. **UNFIRED.**
