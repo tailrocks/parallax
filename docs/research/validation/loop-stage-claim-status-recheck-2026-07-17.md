@@ -61,6 +61,17 @@ Detect precision/recall or dispatch idempotency on real telemetry.
 | `fixer_outcome` unit tests | **3/3 pass** |
 | Live replay | Still **open** / **`not_measured`** |
 
+### Pass 250 addendum (2026-07-18)
+
+| Check | Result |
+| --- | --- |
+| Detect trigger ledger | **Still absent** (`find docs/research -iname '*detect*ledger*' / '*trigger*ledger*'` → **0**) |
+| `fixer_outcome` unit tests | **3/3 pass** — re-ran `cargo test -p parallax-evidence fixer_outcome` (`pr_open_is_never_success`, `success_requires_review_and_no_recurrence`, `offline_multi_arm_preserves_failures`) |
+| Live replay / Detect precision-recall | Still **open** / product stage claims **`not_measured`** |
+| Plan 123 offline residual | Still **DONE offline only** (PoC ≠ gate) |
+
+**Not a Detect gate pass:** offline outcome SM unit tests ≠ precision/recall on replayed telemetry.
+
 ## Allowed vs forbidden wording
 
 **Allowed:**

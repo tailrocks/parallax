@@ -86,6 +86,10 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > lacks full combo; Sentry still no OTLP metrics. Wedge-close and Sentry OTLP
 > metrics kills **unfired**. **Still GO (narrow product).**
 >
+> **Pass 250 (2026-07-18) — GO reaffirm (loop hygiene).** Detect trigger ledger
+> still absent; `fixer_outcome` unit **3/3** ok; live replay open. Loop-stage
+> product claims still open (not failed). **Still GO (narrow product).**
+>
 > **Narrow product identity holds.** Research program continues.
 
 ## Verdict
