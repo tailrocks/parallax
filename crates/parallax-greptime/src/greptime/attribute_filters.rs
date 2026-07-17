@@ -387,7 +387,7 @@ mod tests {
     fn log_attribute_keys_read_the_json_column_escaped() {
         assert_eq!(
             log_attribute_filter_sql(&filter("http.route", AttributeFilterOp::Eq, "x' OR 1=1--")),
-            r#"json_get_string("log_attributes", '$.\"http.route\"') = 'x'' OR 1=1--'"#
+            r#"json_get_string("log_attributes", '$."http.route"') = 'x'' OR 1=1--'"#
         );
         assert_eq!(
             log_attribute_filter_sql(&filter("api_token", AttributeFilterOp::Eq, "v")),

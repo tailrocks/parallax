@@ -188,7 +188,11 @@ pub const TOKIO_RUNTIME_METRIC_NAMES: &[&str] = &[
 
 #[must_use]
 pub fn resource_json_path(attr: &str) -> String {
-    format!(r#"$.\"{}\""#, attr.replace('"', "\\\""))
+    // GreptimeDB's json_get_string wants a plainly quoted member —
+    // `$."a.b"` — NOT backslash-escaped quotes (`$.\"a.b\"` matches
+    // nothing on the live engine). Embedded quotes stay escaped per the
+    // JSON-path grammar.
+    format!(r#"$."{}""#, attr.replace('"', "\\\""))
 }
 
 #[must_use]

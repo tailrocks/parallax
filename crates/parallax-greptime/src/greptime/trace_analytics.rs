@@ -150,7 +150,14 @@ impl crate::adapter::TraceAnalyticsStore for GreptimeStore {
                    LIMIT {}"#,
                 crate::adapter::FACET_VALUES_CAP
             );
-            let rows = self.sql_lenient(&sql).await?;
+            // Auto-widened span-attribute columns exist only after a span
+            // carried the attribute; a facet dimension the corpus never
+            // emitted must degrade to an empty facet, not fail the resolver.
+            let rows = match self.sql_lenient(&sql).await {
+                Ok(rows) => rows,
+                Err(error) if error.to_string().contains("No field named") => Vec::new(),
+                Err(error) => return Err(error.into()),
+            };
             let values = rows
                 .iter()
                 .filter_map(|row| {
