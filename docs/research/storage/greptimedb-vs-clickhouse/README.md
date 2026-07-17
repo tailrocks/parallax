@@ -111,6 +111,7 @@ managed quotes remain):
 | metric-agg four-way warm | **429** | GT 7–9ms / CH 2–7ms |
 | TTL expire re-verify | **430** | GT 0 after compact; CH 2→1 |
 | SQL agg tax spot | **431** | GT 8–11ms / CH 3–8ms warm |
+| CH projection p_svc both | **432** | 26.6+head ReadFromMergeTree(p_svc) |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |

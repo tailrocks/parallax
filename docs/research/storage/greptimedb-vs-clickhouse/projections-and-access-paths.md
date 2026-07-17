@@ -150,3 +150,16 @@ alternate sort so non-primary filters prune granules; without it, full part scan
 both ~5 ms median at 100k — absolute gap needs larger N (Run 158/184); plan text shows
 `MergeScan` remote path. Projections remain a CH-only alternate-ordering primitive
 (parity roadmap #5 still Tier A Flow-copy / Tier B mito2 alternate SST).
+
+## Run 432 (2026-07-18) — projection on stable + head
+
+`r432_proj` N=10k, `ORDER BY (ts)`, projection `p_svc (SELECT service, count() GROUP BY service)`.
+
+| Build | `EXPLAIN` for `GROUP BY service` | Notes |
+| --- | --- | --- |
+| CH 26.6.1.1193 | `ReadFromMergeTree (p_svc)` Granules **1/1** | serves agg without full fact scan |
+| CH head 26.7.1.1097 | same | no regression |
+
+At N=10k wall times ~2–3 ms with or without `optimize_use_projections` (overhead-dominated).
+**No drift** vs Run 185/232 projection mechanism.
+
