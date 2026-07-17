@@ -20,6 +20,7 @@ pub(crate) mod metrics;
 pub(crate) mod services;
 pub(crate) mod sql;
 pub(crate) mod story;
+pub(crate) mod tests;
 pub(crate) mod traces;
 
 #[cfg(test)]
@@ -69,6 +70,9 @@ pub(crate) use services::SpanRed;
 pub(crate) use sql::SqlResultOut;
 pub(crate) use story::AgentSessionOut;
 pub(crate) use story::StoryBeat;
+pub(crate) use tests::{
+    TestConfigurationFilterInput, TestExplorerPage, TestExplorerSort, TestFlakyState, TestRollup,
+};
 pub(crate) use traces::AttributeFilterInput;
 pub(crate) use traces::CriticalPath;
 pub(crate) use traces::DurationStats;

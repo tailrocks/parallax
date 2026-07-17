@@ -716,6 +716,192 @@ jobs:
         if: always() && steps.sccache.outcome == 'success'
         run: sccache --show-stats
 
+  browser-full-stack:
+    needs: changes
+    if: needs.changes.outputs.ui == 'true' || needs.changes.outputs.rust == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CARGO_INCREMENTAL: "0"
+      CARGO_TERM_COLOR: always
+      CI: "true"
+      # CI owns an isolated managed Greptime + Turso stack (fixed ports free).
+      PARALLAX_FULL_STACK_MODE: managed
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Cache Rust toolchain
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.rustup/toolchains
+            ~/.rustup/update-hashes
+          key: rustup-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml') }}
+          restore-keys: |
+            rustup-${{ runner.os }}-${{ runner.arch }}-
+      - name: Cache Cargo registry
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.cargo/registry/cache
+            ~/.cargo/registry/index
+            ~/.cargo/registry/src
+            ~/.cargo/git/db
+          key: cargo-registry-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-registry-${{ runner.os }}-${{ runner.arch }}-
+      - id: sccache
+        uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
+        continue-on-error: true
+        env:
+          SCCACHE_GHA_ENABLED: "true"
+      - name: Enable sccache
+        if: steps.sccache.outcome == 'success'
+        run: |
+          echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
+          echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
+        with:
+          install_args: "rust bun"
+          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+      - name: Cache Bun modules
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('ui/bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - name: Cache Cargo build artifacts
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: target
+          key: cargo-target-${{ runner.os }}-${{ runner.arch }}-${{ github.head_ref || github.ref_name }}-browser-full-stack-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: |
+            cargo-target-${{ runner.os }}-${{ runner.arch }}-${{ github.head_ref || github.ref_name }}-browser-full-stack-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}-
+            cargo-target-${{ runner.os }}-${{ runner.arch }}-${{ github.head_ref || github.ref_name }}-browser-full-stack-
+            cargo-target-${{ runner.os }}-${{ runner.arch }}-${{ github.base_ref || 'main' }}-browser-full-stack-
+            cargo-target-${{ runner.os }}-${{ runner.arch }}-browser-full-stack-
+      - run: bun ci
+        working-directory: ui
+      - name: Install locked Chromium with system deps
+        run: bunx --bun --no-install playwright install --with-deps chromium
+        working-directory: ui
+      - name: Build UI once
+        run: bun run build
+        working-directory: ui
+      - name: Build browser full-stack harness
+        run: cargo build --locked -p parallax-server --example browser_full_stack_serve
+      - name: Run managed GreptimeDB + Turso full-stack lane
+        run: bun run test:browser:full
+        working-directory: ui
+      - name: Upload browser full-stack failure artifacts
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: browser-full-stack-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ui/blob-report
+            ui/test-results
+            ui/playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Show sccache stats
+        if: always() && steps.sccache.outcome == 'success'
+        run: sccache --show-stats
+
+  browser-breadth:
+    needs: changes
+    if: needs.changes.outputs.ui == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CARGO_INCREMENTAL: "0"
+      CARGO_TERM_COLOR: always
+      CI: "true"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Cache Rust toolchain
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.rustup/toolchains
+            ~/.rustup/update-hashes
+          key: rustup-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml') }}
+          restore-keys: |
+            rustup-${{ runner.os }}-${{ runner.arch }}-
+      - name: Cache Cargo registry
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.cargo/registry/cache
+            ~/.cargo/registry/index
+            ~/.cargo/registry/src
+            ~/.cargo/git/db
+          key: cargo-registry-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-registry-${{ runner.os }}-${{ runner.arch }}-
+      - id: sccache
+        uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
+        continue-on-error: true
+        env:
+          SCCACHE_GHA_ENABLED: "true"
+      - name: Enable sccache
+        if: steps.sccache.outcome == 'success'
+        run: |
+          echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
+          echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
+        with:
+          install_args: "rust bun"
+          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+      - name: Cache Bun modules
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('ui/bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - name: Cache Cargo build artifacts
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: target
+          key: cargo-target-${{ runner.os }}-${{ runner.arch }}-${{ github.head_ref || github.ref_name }}-browser-breadth-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: |
+            cargo-target-${{ runner.os }}-${{ runner.arch }}-${{ github.head_ref || github.ref_name }}-browser-breadth-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}-
+            cargo-target-${{ runner.os }}-${{ runner.arch }}-${{ github.head_ref || github.ref_name }}-browser-breadth-
+            cargo-target-${{ runner.os }}-${{ runner.arch }}-${{ github.base_ref || 'main' }}-browser-breadth-
+            cargo-target-${{ runner.os }}-${{ runner.arch }}-browser-breadth-
+      - run: bun ci
+        working-directory: ui
+      - name: Install locked Chromium Firefox WebKit with system deps
+        run: bunx --bun --no-install playwright install --with-deps chromium firefox webkit
+        working-directory: ui
+      - name: Build UI once
+        run: bun run build
+        working-directory: ui
+      - name: Build browser contracts harness
+        run: cargo build --locked -p parallax-server --example browser_contracts_serve
+      - name: Cross-browser and mobile lanes
+        run: bun run test:browser:cross
+        working-directory: ui
+      - name: Accessibility and keyboard lane
+        run: bun run test:browser:a11y
+        working-directory: ui
+      - name: Canonical visual lane
+        run: bun run test:browser:visual
+        working-directory: ui
+      - name: Upload browser breadth failure artifacts
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: browser-breadth-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ui/blob-report
+            ui/test-results
+            ui/playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Show sccache stats
+        if: always() && steps.sccache.outcome == 'success'
+        run: sccache --show-stats
+
   closure-final:
     needs: changes
     if: always()
@@ -785,7 +971,7 @@ jobs:
       - run: cargo check --locked --benches -p parallax-ingest -p parallax-spool -p parallax-greptime
 
   ci-required:
-    needs: [changes, actionlint, source-hygiene, security-hygiene, policy, fmt, docs-links, audit, check, clippy, test, ui, ui-formatter-platform, embed, native-macos, browser-contracts, closure-final, fuzz-bench]
+    needs: [changes, actionlint, source-hygiene, security-hygiene, policy, fmt, docs-links, audit, check, clippy, test, ui, ui-formatter-platform, embed, native-macos, browser-contracts, browser-full-stack, browser-breadth, closure-final, fuzz-bench]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 10

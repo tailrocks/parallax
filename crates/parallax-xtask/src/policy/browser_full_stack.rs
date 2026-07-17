@@ -96,7 +96,8 @@ fn check_matrix(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
     let mut has_discovery = false;
     let mut has_storage = false;
     let mut has_live = false;
-    let mut reserved_features = 0u32;
+    // Feature owners 134-143 + 150: reserved until materialization, then implemented.
+    let mut feature_rows = 0u32;
     for entry in &matrix.entries {
         if entry.lane_owner != "playwright/full-stack" {
             continue;
@@ -141,8 +142,24 @@ fn check_matrix(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
         if entry.id.contains("live-transport") && entry.status == "implemented" {
             has_live = true;
         }
-        if entry.status == "reserved" {
-            reserved_features += 1;
+        // Count durable feature full-stack rows (investigations…overview).
+        if (entry.status == "reserved" || entry.status == "implemented")
+            && (entry.id.contains("investigations")
+                || entry.id.contains("sql")
+                || entry.id.contains("ecosystem")
+                || entry.id.contains("dashboards")
+                || entry.id.contains("services")
+                || entry.id.contains("issues")
+                || entry.id.contains("runs")
+                || entry.id.contains("logs")
+                || entry.id.contains("traces")
+                || entry.id.contains("shell")
+                || entry.id.contains("overview"))
+            && !entry.id.contains("telemetry")
+            && !entry.id.contains("live-transport")
+            && !entry.id.contains("storage-composition")
+        {
+            feature_rows += 1;
         }
     }
     if !has_discovery || !has_storage || !has_live {
@@ -152,11 +169,11 @@ fn check_matrix(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
             "foundation rows telemetry-discovery, storage-composition, live-transport must be implemented",
         ));
     }
-    if reserved_features < 11 {
+    if feature_rows < 11 {
         findings.push(error(
             "ui.browser-full-stack.matrix",
             MATRIX,
-            "expected reserved full-stack rows for plans 134-143 and 150 (11 total)",
+            "expected 11 feature full-stack rows (plans 134-143 and 150) reserved or implemented",
         ));
     }
     Ok(())

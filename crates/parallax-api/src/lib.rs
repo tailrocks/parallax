@@ -34,8 +34,9 @@ use resolvers::{
     DurationStats, EvidenceGap, Facet, FieldKey, FieldStats, Investigation, Invocation, Issue,
     IssueList, IssueSort, LogRecord, MetricExemplar, ObservedInvocation, Overview, Point,
     ReleaseWindow, RuntimeMetric, SavedView, Series, ServiceCatalogRow, ServiceMap,
-    ServiceOverview, ServiceSummary, SignalKind, SpanRed, SqlResultOut, StoryBeat, Trace,
-    TraceDiff, TraceEventsOut, TraceList, TraceSort, TraceSummary, TrendPoint,
+    ServiceOverview, ServiceSummary, SignalKind, SpanRed, SqlResultOut, StoryBeat,
+    TestConfigurationFilterInput, TestExplorerPage, TestExplorerSort, TestFlakyState, TestRollup,
+    Trace, TraceDiff, TraceEventsOut, TraceList, TraceSort, TraceSummary, TrendPoint,
 };
 
 mod memo;
@@ -156,6 +157,11 @@ impl Query {
     async fn issues(context: &ApiContext, service: Option<String>, status: Option<String>, query: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, tag_key: Option<String>, tag_value: Option<String>, sort: Option<IssueSort>, limit: Option<i32>, offset: Option<i32>,) -> FieldResult<IssueList> { resolvers::issues::issues(context, service, status, query, from_nanos, to_nanos, tag_key, tag_value, sort, limit, offset).await }
 
     async fn issue(context: &ApiContext, fingerprint: String) -> FieldResult<Option<Issue>> { resolvers::issues::issue(context, fingerprint).await }
+
+    /// Variant-scoped test explorer. Attempt rollups preserve fail-then-pass as
+    /// flaky-pass; every row references its latest native test span.
+    #[expect(clippy::too_many_arguments, reason = "GraphQL test explorer filters are the public query contract")]
+    async fn test_cases(context: &ApiContext, query: Option<String>, suite: Option<String>, service: Option<String>, service_version: Option<String>, status: Option<TestRollup>, flaky_state: Option<TestFlakyState>, configuration: Option<TestConfigurationFilterInput>, from_nanos: Option<String>, to_nanos: Option<String>, sort: Option<TestExplorerSort>, limit: Option<i32>, offset: Option<i32>,) -> FieldResult<TestExplorerPage> { resolvers::tests::test_cases(context, query, suite, service, service_version, status, flaky_state, configuration, from_nanos, to_nanos, sort, limit, offset).await }
 
     /// Occurrence counts per bucket for one issue's sparkline, oldest
     /// first. Defaults: the last 24 hours in one-hour buckets.

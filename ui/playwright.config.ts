@@ -1,4 +1,4 @@
-import { defineConfig, type PlaywrightTestConfig } from "@playwright/test"
+import { defineConfig, devices, type PlaywrightTestConfig } from "@playwright/test"
 
 const env = process.env
 const isCi = env["CI"] === "true" || env["CI"] === "1"
@@ -7,7 +7,9 @@ const browserMode =
     ? "foundation"
     : env["PARALLAX_BROWSER_MODE"] === "full-stack"
       ? "full-stack"
-      : "contracts"
+      : env["PARALLAX_BROWSER_MODE"] === "breadth"
+        ? "breadth"
+        : "contracts"
 const foundationPort = env["PARALLAX_BROWSER_FOUNDATION_PORT"] ?? "4173"
 const contractsPort = env["PARALLAX_BROWSER_CONTRACTS_PORT"] ?? "4174"
 const fullStackReadyPort = env["PARALLAX_BROWSER_FULL_STACK_READY_PORT"] ?? "4176"
@@ -21,15 +23,15 @@ const port =
     : browserMode === "full-stack"
       ? fullStackPublicPort
       : contractsPort
-const baseURL =
-  browserMode === "full-stack" ? fullStackPublic : `http://127.0.0.1:${port}`
+const baseURL = browserMode === "full-stack" ? fullStackPublic : `http://127.0.0.1:${port}`
 const readyURL =
   browserMode === "full-stack"
     ? `http://127.0.0.1:${fullStackReadyPort}/health`
     : `${baseURL}/health`
 
 /**
- * Plan 132 foundation + plan 144 product contracts + plan 145 full-stack.
+ * Plan 132 foundation + plan 144 product contracts + plan 145 full-stack +
+ * plan 146 cross/mobile/a11y/visual breadth.
  *
  * Runtime: lock-local `@playwright/test` forced through Bun
  * (`bunx --bun --no-install`). Browser binaries are provisioned by an explicit
@@ -37,6 +39,7 @@ const readyURL =
  *
  * `PARALLAX_BROWSER_MODE=foundation` keeps the plan 132 stub server.
  * `PARALLAX_BROWSER_MODE=full-stack` uses managed GreptimeDB + Turso (or attach).
+ * `PARALLAX_BROWSER_MODE=breadth` reuses the fixture-backed contracts server.
  * Default is contracts (real GraphQL + injected in-memory adapter).
  */
 const config: PlaywrightTestConfig = {
@@ -91,6 +94,53 @@ const config: PlaywrightTestConfig = {
       fullyParallel: false,
       workers: 1,
     },
+    // Plan 146 breadth — fixture-backed contracts server, selected pilots only.
+    {
+      name: "cross-firefox",
+      testMatch: ["**/contracts/shell.spec.ts", "**/contracts/investigations.spec.ts"],
+      use: { browserName: "firefox" },
+      fullyParallel: false,
+    },
+    {
+      name: "cross-webkit",
+      testMatch: ["**/contracts/shell.spec.ts", "**/contracts/investigations.spec.ts"],
+      use: { browserName: "webkit" },
+      fullyParallel: false,
+    },
+    {
+      name: "mobile-chromium",
+      testMatch: "**/mobile/**/*.spec.ts",
+      use: {
+        browserName: "chromium",
+        ...devices["Pixel 7"],
+      },
+      fullyParallel: false,
+    },
+    {
+      name: "mobile-webkit",
+      testMatch: "**/mobile/**/*.spec.ts",
+      use: {
+        browserName: "webkit",
+        ...devices["iPhone 14"],
+      },
+      fullyParallel: false,
+    },
+    {
+      name: "accessibility-chromium",
+      testMatch: "**/accessibility/**/*.spec.ts",
+      use: { browserName: "chromium" },
+      fullyParallel: false,
+    },
+    {
+      name: "visual-chromium-linux",
+      testMatch: "**/visual/**/*.spec.ts",
+      use: {
+        browserName: "chromium",
+        viewport: { width: 1440, height: 900 },
+        deviceScaleFactor: 1,
+      },
+      fullyParallel: false,
+    },
   ],
   webServer:
     browserMode === "foundation"
@@ -120,14 +170,16 @@ const config: PlaywrightTestConfig = {
               ...env,
               PARALLAX_BROWSER_FULL_STACK_READY_PORT: fullStackReadyPort,
               PARALLAX_BROWSER_FULL_STACK_PORT: fullStackPublicPort,
-              // Prefer attach when operator QA occupies fixed Greptime ports.
-              PARALLAX_FULL_STACK_MODE: env["PARALLAX_FULL_STACK_MODE"] ?? "attach",
+              // Host QA: attach. CI: set PARALLAX_FULL_STACK_MODE=managed.
+              PARALLAX_FULL_STACK_MODE:
+                env["PARALLAX_FULL_STACK_MODE"] ?? (isCi ? "managed" : "attach"),
               PARALLAX_FULL_STACK_BASE_URL: fullStackApi,
               PARALLAX_FULL_STACK_OTLP_HTTP:
                 env["PARALLAX_FULL_STACK_OTLP_HTTP"] ?? "http://127.0.0.1:4318",
             },
           }
         : {
+            // contracts + breadth share the fixture-backed contracts server.
             command: "cargo xtask browser-contracts-serve",
             cwd: "..",
             url: readyURL,
@@ -145,7 +197,11 @@ const config: PlaywrightTestConfig = {
 if (isCi) {
   config.workers = browserMode === "foundation" ? 2 : 1
   config.globalTimeout = 15 * 60_000
-} else if (browserMode === "contracts" || browserMode === "full-stack") {
+} else if (
+  browserMode === "contracts" ||
+  browserMode === "full-stack" ||
+  browserMode === "breadth"
+) {
   config.workers = 1
 }
 

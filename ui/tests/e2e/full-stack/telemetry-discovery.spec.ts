@@ -33,8 +33,7 @@ test.describe("full-stack telemetry discovery @storage", () => {
     }>(`{ issues(limit: 100) { items { fingerprint service errorType } } }`)
     expect(
       issues.issues.items.some(
-        (row) =>
-          row.fingerprint === manifest.issue_fingerprint && row.service === manifest.service
+        (row) => row.fingerprint === manifest.issue_fingerprint && row.service === manifest.service
       )
     ).toBe(true)
 

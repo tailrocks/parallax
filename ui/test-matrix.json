@@ -2161,191 +2161,180 @@
       ]
     },
     {
-      "id": "pw-full-stack-reserved-investigations",
+      "id": "pw-full-stack-investigations",
       "surface": "features/investigations",
-      "risk": "Reserved full-stack scenario for investigations after foundation project is green",
+      "risk": "Full-stack smoke for investigations after foundation project is green",
       "scenario_owner": "features/investigations",
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/investigations.spec.ts",
       "test_ids": [
-        "reserved @investigations full-stack scenario"
+        "investigations surface mounts on managed stack @pw-full-stack-investigations"
       ],
       "required_environment": "chromium-full-stack",
-      "status": "reserved",
+      "status": "implemented",
       "dataset_id": "investigations-full-stack",
-      "state_class": "inventory",
-      "delivery_plan": 134
+      "state_class": "inventory"
     },
     {
-      "id": "pw-full-stack-reserved-sql",
+      "id": "pw-full-stack-sql",
       "surface": "features/sql",
-      "risk": "Reserved full-stack scenario for sql after foundation project is green",
+      "risk": "Full-stack smoke for sql after foundation project is green",
       "scenario_owner": "features/sql",
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/sql.spec.ts",
       "test_ids": [
-        "reserved @sql full-stack scenario"
+        "sql surface mounts on managed stack @pw-full-stack-sql"
       ],
       "required_environment": "chromium-full-stack",
-      "status": "reserved",
+      "status": "implemented",
       "dataset_id": "sql-full-stack",
-      "state_class": "inventory",
-      "delivery_plan": 135
+      "state_class": "inventory"
     },
     {
-      "id": "pw-full-stack-reserved-ecosystem",
+      "id": "pw-full-stack-ecosystem",
       "surface": "features/ecosystem",
-      "risk": "Reserved full-stack scenario for ecosystem after foundation project is green",
+      "risk": "Full-stack smoke for ecosystem after foundation project is green",
       "scenario_owner": "features/ecosystem",
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/ecosystem.spec.ts",
       "test_ids": [
-        "reserved @ecosystem full-stack scenario"
+        "ecosystem surface mounts on managed stack @pw-full-stack-ecosystem"
       ],
       "required_environment": "chromium-full-stack",
-      "status": "reserved",
+      "status": "implemented",
       "dataset_id": "ecosystem-full-stack",
-      "state_class": "inventory",
-      "delivery_plan": 136
+      "state_class": "inventory"
     },
     {
-      "id": "pw-full-stack-reserved-dashboards",
+      "id": "pw-full-stack-dashboards",
       "surface": "features/dashboards",
-      "risk": "Reserved full-stack scenario for dashboards after foundation project is green",
+      "risk": "Full-stack smoke for dashboards after foundation project is green",
       "scenario_owner": "features/dashboards",
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/dashboards.spec.ts",
       "test_ids": [
-        "reserved @dashboards full-stack scenario"
+        "dashboards surface mounts on managed stack @pw-full-stack-dashboards"
       ],
       "required_environment": "chromium-full-stack",
-      "status": "reserved",
+      "status": "implemented",
       "dataset_id": "dashboards-full-stack",
-      "state_class": "inventory",
-      "delivery_plan": 137
+      "state_class": "inventory"
     },
     {
-      "id": "pw-full-stack-reserved-services",
+      "id": "pw-full-stack-services",
       "surface": "features/services",
-      "risk": "Reserved full-stack scenario for services after foundation project is green",
+      "risk": "Full-stack smoke for services after foundation project is green",
       "scenario_owner": "features/services",
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/services.spec.ts",
       "test_ids": [
-        "reserved @services full-stack scenario"
+        "seeded service visible on services list @pw-full-stack-services"
       ],
       "required_environment": "chromium-full-stack",
-      "status": "reserved",
+      "status": "implemented",
       "dataset_id": "services-full-stack",
-      "state_class": "inventory",
-      "delivery_plan": 138
+      "state_class": "inventory"
     },
     {
-      "id": "pw-full-stack-reserved-issues",
+      "id": "pw-full-stack-issues",
       "surface": "features/issues",
-      "risk": "Reserved full-stack scenario for issues after foundation project is green",
+      "risk": "Full-stack smoke for issues after foundation project is green",
       "scenario_owner": "features/issues",
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/issues.spec.ts",
       "test_ids": [
-        "reserved @issues full-stack scenario"
+        "seeded issue open on issues list and detail @pw-full-stack-issues"
       ],
       "required_environment": "chromium-full-stack",
-      "status": "reserved",
+      "status": "implemented",
       "dataset_id": "issues-full-stack",
-      "state_class": "inventory",
-      "delivery_plan": 139
+      "state_class": "inventory"
     },
     {
-      "id": "pw-full-stack-reserved-runs",
+      "id": "pw-full-stack-runs",
       "surface": "features/runs",
-      "risk": "Reserved full-stack scenario for runs after foundation project is green",
+      "risk": "Full-stack smoke for runs after foundation project is green",
       "scenario_owner": "features/runs",
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/runs.spec.ts",
       "test_ids": [
-        "reserved @runs full-stack scenario"
+        "invocations list loads seeded invocation @pw-full-stack-runs"
       ],
       "required_environment": "chromium-full-stack",
-      "status": "reserved",
+      "status": "implemented",
       "dataset_id": "runs-full-stack",
-      "state_class": "inventory",
-      "delivery_plan": 140
+      "state_class": "inventory"
     },
     {
-      "id": "pw-full-stack-reserved-logs",
+      "id": "pw-full-stack-logs",
       "surface": "features/logs",
-      "risk": "Reserved full-stack scenario for logs after foundation project is green",
+      "risk": "Full-stack smoke for logs after foundation project is green",
       "scenario_owner": "features/logs",
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/logs.spec.ts",
       "test_ids": [
-        "reserved @logs full-stack scenario"
+        "logs surface loads for seeded service @pw-full-stack-logs"
       ],
       "required_environment": "chromium-full-stack",
-      "status": "reserved",
+      "status": "implemented",
       "dataset_id": "logs-full-stack",
-      "state_class": "inventory",
-      "delivery_plan": 141
+      "state_class": "inventory"
     },
     {
-      "id": "pw-full-stack-reserved-traces",
+      "id": "pw-full-stack-traces",
       "surface": "features/traces",
-      "risk": "Reserved full-stack scenario for traces after foundation project is green",
+      "risk": "Full-stack smoke for traces after foundation project is green",
       "scenario_owner": "features/traces",
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/traces.spec.ts",
       "test_ids": [
-        "reserved @traces full-stack scenario"
+        "traces surface loads for seeded stack @pw-full-stack-traces"
       ],
       "required_environment": "chromium-full-stack",
-      "status": "reserved",
+      "status": "implemented",
       "dataset_id": "traces-full-stack",
-      "state_class": "inventory",
-      "delivery_plan": 142
+      "state_class": "inventory"
     },
     {
-      "id": "pw-full-stack-reserved-shell",
+      "id": "pw-full-stack-shell",
       "surface": "layout/shell",
-      "risk": "Reserved full-stack scenario for shell after foundation project is green",
+      "risk": "Full-stack smoke for shell after foundation project is green",
       "scenario_owner": "layout/shell",
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/shell.spec.ts",
       "test_ids": [
-        "reserved @shell full-stack scenario"
+        "shell nav and brand against managed stack @pw-full-stack-shell"
       ],
       "required_environment": "chromium-full-stack",
-      "status": "reserved",
+      "status": "implemented",
       "dataset_id": "shell-full-stack",
-      "state_class": "inventory",
-      "delivery_plan": 143
+      "state_class": "inventory"
     },
     {
-      "id": "pw-full-stack-reserved-overview",
+      "id": "pw-full-stack-overview",
       "surface": "features/overview",
-      "risk": "Reserved full-stack scenario for overview after foundation project is green",
+      "risk": "Full-stack smoke for overview after foundation project is green",
       "scenario_owner": "features/overview",
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/overview.spec.ts",
       "test_ids": [
-        "reserved @overview full-stack scenario"
+        "overview renders for seeded stack @pw-full-stack-overview"
       ],
       "required_environment": "chromium-full-stack",
-      "status": "reserved",
+      "status": "implemented",
       "dataset_id": "overview-full-stack",
-      "state_class": "inventory",
-      "delivery_plan": 150
+      "state_class": "inventory"
     },
     {
       "id": "pw-storage-telemetry-discovery",
@@ -2361,8 +2350,7 @@
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "pw-storage",
-      "state_class": "seeded-discovery",
-      "delivery_plan": 145
+      "state_class": "seeded-discovery"
     },
     {
       "id": "pw-storage-composition",
@@ -2378,8 +2366,7 @@
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "pw-storage",
-      "state_class": "turso-mutation",
-      "delivery_plan": 145
+      "state_class": "turso-mutation"
     },
     {
       "id": "pw-storage-live-transport",
@@ -2395,8 +2382,135 @@
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "pw-storage",
-      "state_class": "live-one-event",
-      "delivery_plan": 145
+      "state_class": "live-one-event"
+    },
+    {
+      "id": "pw-breadth-cross-shell",
+      "surface": "layout/shell",
+      "risk": "Shell contracts may diverge on Firefox/WebKit",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "playwright/breadth",
+      "layer": "browser-breadth",
+      "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
+      "test_ids": [
+        "root readiness and primary navigation @pw-shell-root-nav"
+      ],
+      "required_environment": "cross-firefox-webkit",
+      "status": "implemented",
+      "dataset_id": "shell-empty",
+      "state_class": "cross-engine"
+    },
+    {
+      "id": "pw-breadth-mobile-shell",
+      "surface": "layout/shell",
+      "risk": "Shell may overflow or miss touch targets on mobile device descriptors",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "playwright/breadth",
+      "layer": "browser-breadth",
+      "test_file": "ui/tests/e2e/mobile/shell-mobile.spec.ts",
+      "test_ids": [
+        "device settings active and nav without horizontal overflow @pw-shell-mobile"
+      ],
+      "required_environment": "mobile-chromium-webkit",
+      "status": "implemented",
+      "dataset_id": "shell-empty",
+      "state_class": "mobile-touch"
+    },
+    {
+      "id": "pw-breadth-a11y-shell",
+      "surface": "layout/shell",
+      "risk": "Shell may fail axe serious/critical or keyboard reachability",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "playwright/breadth",
+      "layer": "browser-breadth",
+      "test_file": "ui/tests/e2e/accessibility/shell-accessibility.spec.ts",
+      "test_ids": [
+        "root shell passes axe and keyboard focus @pw-shell-a11y"
+      ],
+      "required_environment": "accessibility-chromium",
+      "status": "implemented",
+      "dataset_id": "shell-empty",
+      "state_class": "accessibility"
+    },
+    {
+      "id": "pw-breadth-a11y-investigations",
+      "surface": "features/investigations",
+      "risk": "Investigations list/detail/dialog may fail axe or focus restore",
+      "scenario_owner": "features/investigations",
+      "lane_owner": "playwright/breadth",
+      "layer": "browser-breadth",
+      "test_file": "ui/tests/e2e/accessibility/investigations-accessibility.spec.ts",
+      "test_ids": [
+        "list detail and dialog axe keyboard focus @pw-investigations-a11y-detail"
+      ],
+      "required_environment": "accessibility-chromium",
+      "status": "implemented",
+      "dataset_id": "investigations-pilot",
+      "state_class": "accessibility"
+    },
+    {
+      "id": "pw-breadth-mobile-investigations",
+      "surface": "features/investigations",
+      "risk": "Investigations dialogs may break on mobile touch contexts",
+      "scenario_owner": "features/investigations",
+      "lane_owner": "playwright/breadth",
+      "layer": "browser-breadth",
+      "test_file": "ui/tests/e2e/mobile/investigations-mobile.spec.ts",
+      "test_ids": [
+        "list open detail and dialog on mobile @pw-investigations-mobile"
+      ],
+      "required_environment": "mobile-chromium-webkit",
+      "status": "implemented",
+      "dataset_id": "investigations-pilot",
+      "state_class": "mobile-touch"
+    },
+    {
+      "id": "pw-breadth-visual-shell",
+      "surface": "layout/shell",
+      "risk": "Shell layout pixels may regress without canonical visual gate",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "playwright/breadth",
+      "layer": "browser-breadth",
+      "test_file": "ui/tests/e2e/visual/shell.visual.spec.ts",
+      "test_ids": [
+        "root shell dark reduced-motion snapshot @pw-shell-visual"
+      ],
+      "required_environment": "visual-chromium-linux",
+      "status": "implemented",
+      "dataset_id": "shell-empty",
+      "state_class": "visual"
+    },
+    {
+      "id": "pw-breadth-visual-investigations",
+      "surface": "features/investigations",
+      "risk": "Investigations list layout may regress without visual golden",
+      "scenario_owner": "features/investigations",
+      "lane_owner": "playwright/breadth",
+      "layer": "browser-breadth",
+      "test_file": "ui/tests/e2e/visual/investigations.visual.spec.ts",
+      "test_ids": [
+        "investigations list snapshot @pw-investigations-visual"
+      ],
+      "required_environment": "visual-chromium-linux",
+      "status": "implemented",
+      "dataset_id": "investigations-pilot",
+      "state_class": "visual"
+    },
+    {
+      "id": "pw-breadth-cross-investigations",
+      "surface": "features/investigations",
+      "risk": "Investigations contracts may diverge on Firefox/WebKit",
+      "scenario_owner": "features/investigations",
+      "lane_owner": "playwright/breadth",
+      "layer": "browser-breadth",
+      "test_file": "ui/tests/e2e/contracts/investigations.spec.ts",
+      "test_ids": [
+        "lists seeded investigation and opens detail @pw-investigations-list-detail"
+      ],
+      "required_environment": "cross-firefox-webkit",
+      "status": "implemented",
+      "dataset_id": "investigations-pilot",
+      "state_class": "cross-engine"
     }
   ],
   "browser_contract_paths": [

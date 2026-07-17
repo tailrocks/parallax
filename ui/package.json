@@ -18,6 +18,10 @@
     "test:browser:foundation": "PARALLAX_BROWSER_MODE=foundation bunx --bun --no-install playwright test --project=foundation-chromium",
     "test:browser": "bunx --bun --no-install playwright test --project=contracts-chromium",
     "test:browser:full": "PARALLAX_BROWSER_MODE=full-stack bunx --bun --no-install playwright test --project=full-stack-chromium",
+    "test:browser:cross": "PARALLAX_BROWSER_MODE=breadth bunx --bun --no-install playwright test --project=cross-firefox --project=cross-webkit --project=mobile-chromium --project=mobile-webkit",
+    "test:browser:a11y": "PARALLAX_BROWSER_MODE=breadth bunx --bun --no-install playwright test --project=accessibility-chromium",
+    "test:browser:visual": "PARALLAX_BROWSER_MODE=breadth bunx --bun --no-install playwright test --project=visual-chromium-linux",
+    "test:browser:visual:update": "PARALLAX_BROWSER_MODE=breadth PARALLAX_VISUAL_UPDATE=1 bunx --bun --no-install playwright test --project=visual-chromium-linux --update-snapshots",
     "lint": "bun run lint:native && bun run lint:type-aware",
     "lint:native": "bun ./node_modules/oxlint/bin/oxlint --deny-warnings --report-unused-disable-directives .",
     "lint:type-aware": "bun ./node_modules/oxlint/bin/oxlint --type-aware --deny-warnings --report-unused-disable-directives .",
@@ -58,6 +62,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.12.1",
     "@graphql-codegen/add": "6.0.0",
     "@graphql-codegen/cli": "7.2.0",
     "@graphql-codegen/near-operation-file-preset": "5.2.1",
