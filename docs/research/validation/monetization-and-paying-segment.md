@@ -325,6 +325,10 @@ SigNoz Teams **$49** class and OpenObserve self-host EE free ≤**50 GB/day** st
 
 Grafana Pro **$19** / Enterprise **$25,000** class; SigNoz Teams **$49**; OpenObserve **$0.50/GB** + ≤**50 GB/day** free self-host EE still present. Desk playbook **holds**. A2 still **0** interview rows.
 
+### Pass 355 (2026-07-18) — Grafana $19 pin
+
+Grafana Cloud Pro **$19** class still present.
+
 ### Pass 131 (2026-07-17) — Datadog Bits / AI Credits pricing (fixer reference)
 
 Live primary: [datadoghq.com/pricing/?product=ai-credits](https://www.datadoghq.com/pricing/?product=ai-credits#products)

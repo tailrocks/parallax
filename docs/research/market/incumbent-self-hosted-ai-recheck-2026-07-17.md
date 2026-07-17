@@ -292,6 +292,16 @@ docs and release notes.
 
 **UNFIRED:** Seer self-host GA; Bits auto-merge.
 
+### Pass 355 (2026-07-18) — Assistant + Sentry OTLP
+
+| Source | Finding |
+| --- | --- |
+| Grafana Assistant self-managed | still hybrid **Cloud stack** backend |
+| Sentry OTLP | still **no OTLP metrics** |
+
+**UNFIRED:** offline Assistant; Sentry OTLP metrics.
+
+
 
 ### Pass 351 (2026-07-18) — Seer
 
