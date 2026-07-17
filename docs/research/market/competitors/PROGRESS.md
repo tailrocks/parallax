@@ -28,7 +28,7 @@
 | --- | --- | --- | --- | --- |
 | Datadog | [parallax-vs-datadog.md](parallax-vs-datadog.md) | ✅ pass 1 | 2026-07-17 | self-host/agentless reality; gov/FedRAMP posture; exact 2026 OTLP-in-Agent GA scope |
 | Sentry | [parallax-vs-sentry.md](parallax-vs-sentry.md) | ✅ pass 3 | 2026-07-17 | track OTLP-metrics GA; A1-vs-Seer measurement; self-host cost/ops benchmark |
-| Grafana Cloud/LGTM | [parallax-vs-grafana.md](parallax-vs-grafana.md) | ✅ pass 5 | 2026-07-17 | pin exact latest Grafana/Mimir/Loki/Tempo/Pyroscope tags; A1-vs-Grafana measurement; self-host cost/ops benchmark |
+| Grafana Cloud/LGTM | [parallax-vs-grafana.md](parallax-vs-grafana.md) | ✅ pass 5 | 2026-07-17 | **versions pinned pass 5b**: Grafana v13.1.0 / Mimir mimir-3.1.3 / Loki v3.7.3 / Tempo v2.10.7 / Pyroscope v2.1.1; corrected "Grafana 12.x"→13.1.0 + "Tempo v3 GA"→v3-not-yet-GA; open: A1-vs-Grafana measurement; self-host cost/ops benchmark |
 | Honeycomb | — | 🔴 missing | n/a | write deep-dive; high-cardinality model + pricing |
 | New Relic | — | 🔴 missing | n/a | write deep-dive; entity model + NRAI + pricing |
 | SigNoz | [parallax-vs-signoz.md](parallax-vs-signoz.md) | ✅ pass 2 | 2026-07-17 | outstanding: exact current star count + MCP server version (v0.5.1 last confirmed 2026-06-17); current trace/metric throughput (no public number) |

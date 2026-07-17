@@ -20,11 +20,25 @@
 
 These overlap on **full-stack OTLP telemetry + self-host OSS**. Grafana is the broad platform; Parallax is a narrow context engine. Compare axis-by-axis.
 
+## Current GA versions (pinned 2026-07-17)
+
+Latest stable tags via the [github.com/grafana](https://github.com/grafana) releases API:
+
+| Component | Latest GA tag | Released | Note |
+| --- | --- | --- | --- |
+| Grafana | **v13.1.0** | 2026-07-01 | the **v13** line (not 12.x) |
+| Mimir | **mimir-3.1.3** | 2026-07-16 | metrics, Prometheus-compatible |
+| Loki | **v3.7.3** | 2026-06-24 | logs |
+| Tempo | **v2.10.7** | 2026-06-12 | traces — **v3 (Kafka-log/vParquet5) is reviewed in-repo but NOT yet a GA tag** |
+| Pyroscope | **v2.1.1** | 2026-07-10 | continuous profiling |
+
+> ⚠️ The signal/storage sections below reference **Tempo v3** features from the in-repo [architecture review](../../reference/grafana-tempo-v3-architecture-review.md) (2026-05-29). v3 is the **reviewed/next line, not the current GA release** (2.10.7 is). Do not read "Tempo v3" as the shipped product — it is forward-looking architecture.
+
 ## Signal coverage — Grafana is the full OSS stack
 
 | Signal | Grafana Cloud (shipped) | Parallax (planned) |
 | --- | --- | --- |
-| Traces / distributed tracing | ✅ Tempo (v3.x; Kafka-log write path, vParquet5, TraceQL Metrics GA) | ✅ OTLP traces (🏗) |
+| Traces / distributed tracing | ✅ Tempo (**GA v2.10.7**; v3 Kafka/vParquet5 path reviewed in-repo, not yet a GA tag) | ✅ OTLP traces (🏗) |
 | Logs | ✅ Loki | ✅ OTLP logs (🏗) |
 | Metrics | ✅ Mimir (Prometheus-compatible) | ✅ OTLP metrics (🏗) |
 | Continuous profiling | ✅ Pyroscope | ❌ |
@@ -59,7 +73,7 @@ These overlap on **full-stack OTLP telemetry + self-host OSS**. Grafana is the b
 
 ## Dashboards & visualization — Grafana's moat
 
-- **Grafana:** the namesake — the most widely adopted visualization/dashboard layer in observability. Templated dashboards, alert panels, Canvas, Geomap, and an enormous library of community dashboards. Grafana 12.x (latest line; **pin exact latest from [grafana.com](https://grafana.com/oss/grafana/) next**).
+- **Grafana:** the namesake — the most widely adopted visualization/dashboard layer in observability. Templated dashboards, alert panels, Canvas, Geomap, and an enormous library of community dashboards. **Grafana v13.1.0** (2026-07-01) — the v13 line.
 - **Parallax:** V1 UI = Sentry-grade issues + predefined/user dashboards (TanStack/shadcn, React Flow for graph viz). Intentionally minimal.
 
 **Verdict:** **Grafana wins decisively.** This is Grafana's defining strength; Parallax does not compete on visualization breadth.
@@ -166,7 +180,7 @@ Billable units (Pro overage, per 2026 sources): **metrics ~$6.50 / 1,000 active 
 
 - **A1 gate vs Grafana:** for a team on Grafana Cloud + Sentry, does a Parallax bundle measurably improve coding-agent fix outcomes for incidents? Unproven.
 - **Self-host cost/ops parity:** measured single-binary Parallax vs self-hosted Mimir+Loki+Tempo+Pyroscope (deploy complexity, RAM, ops). Benchmark-dependent, unmeasured.
-- **Grafana latest versions** — pin exact latest stable for Grafana/Mimir/Loki/Tempo/Pyroscope from grafana.com (Tempo v3.0.0 major cut confirmed in-repo; newer minors likely).
+- ~~Grafana latest versions~~ → **pinned 2026-07-17 pass 5b**: Grafana v13.1.0, Mimir mimir-3.1.3, Loki v3.7.3, Tempo v2.10.7, Pyroscope v2.1.1 (see the "Current GA versions" table). **Tempo v3 is reviewed/in-development, not a GA tag** — corrected two prior claims ("Grafana 12.x"→13.1.0; "Tempo v3.x shipped"→GA is 2.10.7).
 
 ## Sources (accessed 2026-07-17)
 
