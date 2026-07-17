@@ -1,0 +1,2 @@
+    alerting   on (eval 5s / deliver 2s)
+

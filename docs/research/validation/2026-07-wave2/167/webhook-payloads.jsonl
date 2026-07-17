@@ -1,0 +1,2 @@
+{"ping":1}
+{"event":"triggered","rule":{"id":"alr_18c303607f1b0f80","name":"plan-167 high error rate","signal_type":"error_rate","severity":"critical"},"incident":{"id":"inc-alr_18c303607f1b0f80--1784273619","group_key":""},"value":0.10284303866898253,"threshold":0,"threshold_upper":null,"window_minutes":10080,"links":{"incident":"http://127.0.0.1:4000/alerts/incidents/inc-alr_18c303607f1b0f80--1784273619","investigate":"http://127.0.0.1:4000/traces"}}
