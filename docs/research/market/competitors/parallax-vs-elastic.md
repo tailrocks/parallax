@@ -62,14 +62,14 @@ Both OSS-origin, self-hostable, OTLP-native, with a columnar/search backend. The
 ## Error tracking & workflow
 
 - **Elastic:** errors are queryable logs/span-events; **no native Sentry-grade issue lifecycle.**
-- **Parallax:** derived `error_event` + fingerprint + (planned) fix-outcome loop.
+- **Parallax:** derived `error_event` + fingerprint (**shipped**) + fix-outcome offline residual (**plan 123 DONE**; live value **unproven**).
 
-**Verdict:** on **error-issue workflow, Parallax targets a real Elastic gap** — but planned/unproven.
+**Verdict:** on **error-issue workflow, Parallax ships error derivation + fingerprint** (pre-release) where Elastic is weaker; fix-outcome offline residual plan 123 DONE; live value **unproven.**
 
 ## AI-native / agent-context story
 
 - **Elastic's AI:** Elastic AI Assistant (observability + security), ES|QL-from-natural-language, anomaly detection, the **Elastic AI Error Assistant**. A human-assistive AI across obs+sec; not a bounded agent-context projection.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (planned, A1).
+- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven).
 
 **Honest verdict:** Elastic ships more AI today (assistant, NL→ES|QL, anomaly, error assistant, plus the LLM-obs features) than Parallax. On shipped AI, **Elastic leads.** Parallax's bounded-agent-context claim is **unproven (A1).**
 

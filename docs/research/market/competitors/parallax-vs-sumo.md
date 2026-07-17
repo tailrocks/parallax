@@ -61,14 +61,14 @@ Both OTLP/OTel-capable. Sumo is a closed logs-first + SIEM SaaS; Parallax is an 
 ## Error tracking & workflow
 
 - **Sumo Logic:** errors are queryable log/metric signals; **no native Sentry-grade error-issue lifecycle.**
-- **Parallax:** derived `error_event` + fingerprint + (planned) fix-outcome loop.
+- **Parallax:** derived `error_event` + fingerprint (**shipped**) + fix-outcome offline residual (**plan 123 DONE**; live value **unproven**).
 
-**Verdict:** on **error-issue workflow, Parallax targets a gap** — but planned/unproven.
+**Verdict:** on **error-issue workflow, Parallax ships error derivation + fingerprint** (pre-release); fix-outcome offline residual plan 123 DONE, live value **unproven**.
 
 ## AI-native / agent-context story
 
 - **Sumo Logic (pass 41 re-verify on live pricing page):** **Dojo AI** ships a multi-agent surface — **Mobot** conversational UI + **Query Agent** (NL→query) + **Knowledge Agent** (platform how-to) + **Summary Agent** (Insight signal condensation; SIEM) + **SOC Analyst Agent (preview)** (alert triage; SIEM). Plus AI-driven alerting / ML RCA / anomaly. This is a **shipped multi-agent assistive/investigation surface** — human+security-ops oriented, **not** a bounded/redacted/portable coding-agent evidence bundle.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (planned, A1).
+- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven).
 
 **Honest verdict (no-bias):** Sumo now ships **agent-flavored investigation tools** (Dojo AI), so “Sumo has only classic ML anomaly” is **stale**. On shipped AI investigation, **Sumo leads** pre-release Parallax. Parallax’s residual claim is still the **bounded/redacted/portable prod-incident bundle + outcome loop** (A1 unproven) — not “AI exists.”
 

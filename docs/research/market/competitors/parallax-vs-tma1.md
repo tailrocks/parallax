@@ -76,7 +76,7 @@ Same shape (a typed object an agent reads); fundamentally different artifact. Do
 ## Error tracking & workflow
 
 - **TMA1:** **no production error-event derivation, no fingerprinting, no issue lifecycle, no fix-outcome loop.** Anomaly resolution is the closest (anomaly → resolved).
-- **Parallax:** derived `error_event` + fingerprint + (planned) fix-outcome loop.
+- **Parallax:** derived `error_event` + fingerprint (**shipped**) + fix-outcome offline residual (**plan 123 DONE**; live value **unproven**).
 
 **Verdict:** on **production error workflow + outcome loop, Parallax targets cells TMA1 does not occupy** — but Parallax's are **planned/unproven.** This is a real Parallax-favorable axis (gated).
 

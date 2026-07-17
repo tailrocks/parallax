@@ -64,14 +64,14 @@ Both touch a **cost** story, but Chronosphere is a closed metrics-scale/cost-con
 ## Error tracking & workflow
 
 - **Chronosphere:** alerting-centric (metric thresholds, anomaly); **no native Sentry-grade error-issue lifecycle.**
-- **Parallax:** derived `error_event` + fingerprint + (planned) fix-outcome loop.
+- **Parallax:** derived `error_event` + fingerprint (**shipped**) + fix-outcome offline residual (**plan 123 DONE**; live value **unproven**).
 
-**Verdict:** on **error-issue workflow, Parallax targets a gap** — but planned/unproven.
+**Verdict:** on **error-issue workflow, Parallax ships error derivation + fingerprint** (pre-release); fix-outcome offline residual plan 123 DONE, live value **unproven**.
 
 ## AI-native / agent-context story
 
 - **Chronosphere's AI:** AI-assisted query/detection emerging; the **Control Plane** is the distinctive "intelligent" layer (cost/data-volume governance), not an agent-context projection. A human-platform + cost-governance tool.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (planned, A1).
+- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven).
 
 **Honest verdict:** Chronosphere's distinctiveness is **cost/data-volume control**, not agent-context. Parallax's bounded-agent-bundle claim is **unproven (A1)** — and Chronosphere doesn't occupy that cell. Different axes.
 

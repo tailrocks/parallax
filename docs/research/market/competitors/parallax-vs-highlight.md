@@ -218,7 +218,7 @@ an actively-maintained Highlight fork.
    dashboard, not an agent-context projection. *(Thesis, **unproven** — A1 gate.)*
 4. **Single-binary local-first** — Highlight self-host is a multi-service stack.
    *(Design edge.)*
-5. **LLM/agent-span ingestion** — Highlight has none; Parallax plans it. *(Planned.)*
+5. **LLM/agent-span ingestion** — Highlight has none; Parallax has 🟡🧪 agent-session modules (partial, not full LLM-obs platform).
 
 ## Watch triggers — re-evaluate Highlight if it:
 

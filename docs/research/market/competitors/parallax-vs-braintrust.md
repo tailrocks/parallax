@@ -60,14 +60,14 @@ Both touch "evaluation" of AI behavior, but **Braintrust = LLM-app eval/experime
 ## Error tracking & workflow
 
 - **Braintrust:** eval-failure detection (not production-backend error events); **no production error-issue lifecycle.**
-- **Parallax:** derived `error_event` + fingerprint + (planned) fix-outcome loop.
+- **Parallax:** derived `error_event` + fingerprint (**shipped**) + fix-outcome offline residual (**plan 123 DONE**; live value **unproven**).
 
 **Verdict:** **different domains.** Parallax targets production-backend errors Braintrust doesn't cover.
 
 ## AI-native / agent-context story
 
 - **Braintrust's position:** an **LLM-app eval/experiment tool** (improve your LLM app via evals/experiments) + **Loop** (AI). A human dev-eval tool; **not a bounded, read-only, redacted agent-context projection for production incidents.**
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (planned, A1 gate).
+- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven gate).
 
 **Honest verdict:** Braintrust and Parallax serve different jobs even at the "AI evaluation" overlap — Braintrust = LLM-app eval/experimentation; Parallax = production-incident agent context. Parallax's differentiated bundle is **unproven (A1)**. Note: Parallax's **A1 gate (does a bundle beat raw context for agent fix outcomes?) is itself an eval question — Braintrust's eval tooling is exactly the kind of harness that could measure it.** (Useful cross-reference, not a competitive overlap.)
 
@@ -115,7 +115,7 @@ Source: live [braintrust.dev/pricing](https://www.braintrust.dev/pricing) (2026-
 ## Where Parallax honestly edges Braintrust
 
 - **Production-backend telemetry breadth** — OTLP-native logs/metrics/traces; Braintrust is LLM-eval/trace-centric. *(Real domain difference.)*
-- **Production error events + fix-outcome loop** — Braintrust has neither. *(Real: error events shipped; fix-outcome planned/unproven, A1.)*
+- **Production error events + fix-outcome loop** — Braintrust has neither. *(Real: error events **shipped**; fix-outcome offline residual plan 123 DONE; live value **unproven**.)*
 - **Openness** — Apache-2.0 OSS core vs Braintrust's closed core (OSS SDK only). *(Real.)*
 - **Sentry-envelope compatibility** — Braintrust has none; Parallax ships it. *(Real.)*
 - **Bounded, redacted, agent-safe evidence bundle** — Braintrust has none. *(Thesis, unproven, A1 — and Braintrust's eval tooling could help *measure* the A1 gate.)*

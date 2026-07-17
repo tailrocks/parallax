@@ -81,14 +81,14 @@ Latest stable tags via the [github.com/grafana](https://github.com/grafana) rele
 ## Error tracking & workflow — a Grafana gap
 
 - **Grafana:** errors are queryable span-events/logs — **no native issue lifecycle** (no resolve/regress/ignore/assign, no ownership rules, no suspect-commits). Grafana pairs with Sentry or relies on the user.
-- **Parallax:** derives `error_event` + deterministic fingerprint + (planned) fix-outcome loop.
+- **Parallax:** derives `error_event` + deterministic fingerprint (**shipped**) + fix-outcome offline residual (**plan 123 DONE**; live value **unproven**).
 
-**Verdict:** on **error-issue workflow, Parallax's design targets a real Grafana gap** (Grafana has none; Sentry owns this; Parallax plans it). But Parallax's workflow is **planned/unproven.** An honest Parallax-favorable axis, scoped + gated.
+**Verdict:** on **error-issue workflow, Parallax's design targets a real Grafana gap** (Grafana has none; Sentry owns this). Parallax **ships** error derivation + fingerprint; fix-outcome offline residual plan 123 DONE; live value **unproven.** An honest Parallax-favorable axis, scoped + gated.
 
 ## AI-native / agent-context story
 
 - **Grafana's AI:** app-observability insights, anomaly detection/forecasting, Sift (root-cause exploration), Grafana LLM features (query/natural-language), and emerging LLM/agent tooling. A human-dashboard + assistive AI; **not a bounded, read-only, agent-context projection.**
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (planned, A1 gate).
+- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven gate).
 
 **Verdict:** Grafana ships more AI today (insights, forecasting, NL query). Parallax's differentiated agent-context claim is **unproven (A1).** Neither serves the exact "safe bounded context for autonomous coding agents" cell — Parallax's thesis.
 
@@ -172,7 +172,7 @@ Billable units (Pro overage, per 2026 sources): **metrics ~$6.50 / 1,000 active 
 ## Where Parallax honestly edges Grafana
 
 - **Self-host simplicity** — single-binary vs Grafana's distributed Mimir+Loki+Tempo+Pyroscope+Grafana stack. *(Real operational wedge; Parallax pre-release.)*
-- **Native error-issue workflow** — Grafana has none; Parallax plans derived errors + fingerprint + outcome loop. *(Real Grafana gap; Parallax planned/unproven.)*
+- **Native error-issue workflow** — Grafana has none; Parallax plans derived errors + fingerprint + outcome loop. *(Real Grafana gap; Parallax error derivation **shipped**; fix-outcome offline residual plan 123 DONE; live value unproven.)*
 - **License permissiveness** — Apache-2.0 vs AGPLv3 (network-use copyleft). *(Narrow but real.)*
 - **Bounded, redacted, agent-safe evidence bundle + fix-outcome loop** — unoccupied cells. *(Thesis, **unproven** — A1 gate.)*
 

@@ -56,14 +56,14 @@ Both OSS, OTLP-native, ClickHouse-adjacent, self-hostable. Uptrace is a tracing-
 ## Error tracking & workflow
 
 - **Uptrace:** errors are queryable; **no native Sentry-grade error-issue lifecycle.**
-- **Parallax:** derived `error_event` + fingerprint + (planned) fix-outcome loop.
+- **Parallax:** derived `error_event` + fingerprint (**shipped**) + fix-outcome offline residual (**plan 123 DONE**; live value **unproven**).
 
-**Verdict:** on **error-issue workflow, Parallax targets a gap** — but planned/unproven.
+**Verdict:** on **error-issue workflow, Parallax ships error derivation + fingerprint** (pre-release); fix-outcome offline residual plan 123 DONE, live value **unproven**.
 
 ## AI-native / agent-context story
 
 - **Uptrace:** no significant AI/agent surface (traditional APM). Not an agent-context engine.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (planned, A1 gate).
+- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven gate).
 
 **Honest verdict:** Uptrace has no AI/agent story. Parallax's differentiated agent-context claim is **unproven (A1)** — Uptrace doesn't occupy that cell.
 
@@ -116,7 +116,7 @@ Both OSS, OTLP-native, ClickHouse-adjacent, self-hostable. Uptrace is a tracing-
 - **License permissiveness** — Apache-2.0 vs AGPL (network-use copyleft). *(Real, narrow.)*
 - **Engine choice (GreptimeDB-native telemetry)** — vs ClickHouse (unproven advantage).
 - **Sentry-envelope compatibility** — Uptrace has none; Parallax ships it. *(Real.)*
-- **Production error events + fix-outcome loop** — Uptrace has neither. *(Real: error events shipped; fix-outcome planned/unproven, A1.)*
+- **Production error events + fix-outcome loop** — Uptrace has neither. *(Real: error events **shipped**; fix-outcome offline residual plan 123 DONE; live value **unproven**.)*
 - **Bounded, redacted, agent-safe evidence bundle** — Uptrace has none. *(Thesis, unproven, A1.)*
 
 > **Honest summary:** Uptrace is a solid **OSS tracing-first APM** (AGPL, ClickHouse+Postgres, OTLP-native, cheap, Bun-author lineage) — same family as SigNoz/OpenObserve/HyperDX but tracing-centric. Ahead of pre-release Parallax on tracing-APM maturity, ClickHouse+Postgres, AGPL-self-host-free, cost. Parallax's defensible delta is **Apache-vs-AGPL**, **GreptimeDB-native** (vs ClickHouse, unproven), **Sentry-envelope**, **prod-error + outcome loop**, and the **bounded+outcome bundle** (A1 unproven). Lower strategic priority than SigNoz/OpenObserve (more niche), but completes the OSS-ClickHouse-OTLP-platform coverage.

@@ -64,14 +64,14 @@ Both build a **relationship/evidence graph** over telemetry and pursue an **agen
 ## Error tracking & workflow
 
 - **Observe:** errors are queryable telemetry; **no native Sentry-grade error-issue lifecycle.**
-- **Parallax:** derived `error_event` + fingerprint + (planned) fix-outcome loop.
+- **Parallax:** derived `error_event` + fingerprint (**shipped**) + fix-outcome offline residual (**plan 123 DONE**; live value **unproven**).
 
-**Verdict:** on **error-issue workflow, Parallax targets a gap** — but planned/unproven.
+**Verdict:** on **error-issue workflow, Parallax ships error derivation + fingerprint** (pre-release); fix-outcome offline residual plan 123 DONE, live value **unproven**.
 
 ## AI-native / agent-context story — the direct overlap
 
 - **Observe's AI:** **AI SRE + o11y.ai Agents** — developer-productivity agents that investigate/act on the O11y Knowledge Graph; O11y AI. This is a **direct, shipped overlap with Parallax's "context engine for agents" thesis** — Observe serves agent access to a relationship-aware telemetry graph.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (planned, A1 gate).
+- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven gate).
 
 **Honest verdict:** Observe **ships more agent surface today** (AI SRE + o11y.ai agents over the Knowledge Graph) than Parallax. On shipped agent capability, **Observe leads.** Parallax's differentiation is the **bounded/redacted/versioned/portable** bundle + **read-only-safe** projection + **fix-outcome loop** — none of which Observe's o11y.ai agents emphasize (they're productivity agents, not a bounded-safety-gated context artifact). But all Parallax-side claims are **unproven (A1 gate).** The burden of proof that Parallax's bundle beats o11y.ai-agents-over-the-Knowledge-Graph is on Parallax.
 

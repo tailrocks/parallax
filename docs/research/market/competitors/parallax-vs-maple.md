@@ -38,7 +38,7 @@ Both single-binary-local-first, OTLP-native, Turso-metadata. The closest pair on
 ## Ingestion & transport
 
 - **OTLP:** Maple is genuinely **OTLP-native** — standard OTel SDKs emit OTLP traces/logs/metrics to `apps/ingest` → OTel Collector. Local mode: OTLP/HTTP on `:4318`. Same native stance as Parallax.
-- **Sentry envelope:** Maple has **none**. Parallax plans compatibility.
+- **Sentry envelope:** Maple has **none**. Parallax **ships** bounded envelope ingest (plan 118 DONE; multi-SDK ledger unproven).
 - **Local mode capture:** single Bun binary + libchdb; standard OTel SDKs target `localhost:4318`.
 
 **Verdict:** on OTLP-native ingest, **tied in design; Maple ships it.** On Sentry-envelope, **Parallax ships bounded envelope ingest** (plan 118 DONE).
@@ -60,14 +60,14 @@ Both single-binary-local-first, OTLP-native, Turso-metadata. The closest pair on
 ## Error tracking & workflow
 
 - **Maple:** **smart grouping by type/message**, trend detection, trace linking, spam/env filtering — a real error-tracking surface (more than Grafana/Honeycomb/Coroot offer natively), though not Sentry-grade lifecycle.
-- **Parallax:** derived `error_event` + deterministic fingerprint + (planned) fix-outcome loop.
+- **Parallax:** derived `error_event` + deterministic fingerprint (**shipped**) + fix-outcome offline residual (**plan 123 DONE**; live value **unproven**).
 
 **Verdict:** on **shipped error grouping, Maple is ahead of pre-release Parallax.** On the **fix-outcome loop**, Parallax targets an unoccupied cell (planned/unproven, A1). Scoped.
 
 ## AI-native / agent-context story
 
 - **Maple's AI/MCP:** MCP server in `apps/api`, **10+ read-oriented tools**; explore-level AI. A read-leaning agent surface, but not a bounded/redacted/versioned bundle.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (planned, A1).
+- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven).
 
 **Verdict:** Maple ships more agent surface today (10+ MCP tools) than Parallax. On **read-oriented** MCP, Maple is closer to Parallax's safety intent than SigNoz/OpenObserve (which are write-capable) — but Maple's is not bounded/redacted/versioned. Parallax's differentiated bundle is **unproven (A1).**
 

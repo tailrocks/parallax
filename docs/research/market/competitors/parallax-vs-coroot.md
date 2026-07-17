@@ -34,13 +34,13 @@ Both Apache-2.0 OSS, self-hostable, with an agent/MCP surface and AI RCA. The ov
 | SLO-based alerting | ✅ | 🟡 (🏗) |
 | Sentry envelope / DSN | ❌ | ✅ shipped |
 
-**Verdict:** Coroot's coverage is broad and all shipped, BUT its defining limitation — **eBPF spans are protocol-level, no app-level errors/panics/stacks** (Coroot's own docs say so) — is **exactly Parallax's whole point.** Parallax derives production error events from real services; Coroot deliberately does not. On coverage breadth, **Coroot wins;** on **app-level error semantics, Parallax targets a real Coroot gap** (planned/unproven).
+**Verdict:** Coroot's coverage is broad and all shipped, BUT its defining limitation — **eBPF spans are protocol-level, no app-level errors/panics/stacks** (Coroot's own docs say so) — is **exactly Parallax's whole point.** Parallax derives production error events from real services; Coroot deliberately does not. On coverage breadth, **Coroot wins;** on **app-level error semantics, Parallax **ships** error derivation (**shipped**, pre-release) where Coroot has none; fix-outcome offline residual plan 123 DONE; live value **unproven**).
 
 ## Ingestion & transport
 
 - **OTLP:** Coroot ingests OTLP/HTTP traces + logs; metrics via Prometheus Remote Write; eBPF auto-instrumentation generates traces. OTLP/gRPC not clearly confirmed (HTTP emphasized). Both eBPF-auto AND OTLP — flexible.
 - **eBPF zero-instrumentation:** Coroot's signature — deploy the node-agent DaemonSet, get a service map with no app changes. Parallax has **no eBPF story** (relies on OTel SDKs).
-- **Sentry envelope:** Coroot has **none**. Parallax plans compatibility.
+- **Sentry envelope:** Coroot has **none**. Parallax **ships** bounded envelope ingest (plan 118 DONE; multi-SDK ledger unproven).
 
 **Verdict:** on **eBPF zero-instrumentation adoption friction, Coroot wins decisively** (Parallax has none). On OTLP-native + Sentry-envelope, **Parallax ships both** (plan 118 DONE).
 
@@ -61,14 +61,14 @@ Both Apache-2.0 OSS, self-hostable, with an agent/MCP surface and AI RCA. The ov
 ## Error tracking & workflow — Parallax's sharpest edge here
 
 - **Coroot:** **no app-level error tracking, no fingerprinting, no issue lifecycle, no Sentry path.** eBPF spans are partial by design. Incidents exist (RCA on alert), not managed error issues.
-- **Parallax:** derived `error_event` + deterministic fingerprint + (planned) fix-outcome loop.
+- **Parallax:** derived `error_event` + deterministic fingerprint (**shipped**) + fix-outcome offline residual (**plan 123 DONE**; live value **unproven**).
 
-**Verdict:** on **production app-error semantics + workflow, Parallax targets the single biggest Coroot gap** — Coroot does not capture app errors/panics/stacks at all. This is the most Parallax-favorable axis in the comparison, but Parallax's error pipeline is **planned/unproven.**
+**Verdict:** on **production app-error semantics + workflow, Parallax targets the single biggest Coroot gap** — Coroot does not capture app errors/panics/stacks at all. This is the most Parallax-favorable axis in the comparison, but error derivation is **shipped** (pre-release); fix-outcome offline residual plan 123 DONE; product maturity and live value **unproven.**
 
 ## AI-native / agent-context story — the safe-agent crux
 
 - **Coroot's AI (shipped, Enterprise/Cloud-gated):** 2-stage RCA (deterministic-ML-then-LLM), OpenAI-compatible/BYO key, "what broke, why, how to fix." **And the key one: the best MCP safety model in the field** — per-user **OAuth + RBAC projection**, ~18 tools, **only `resolve_alerts` mutates.** This is the closest shipped thing to Parallax's "read-only safe agent projection" thesis.
-- **Parallax's claim (planned):** bounded, redacted, agent-safe evidence bundle served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) — **read-only by design**, redaction as a first-class gate.
+- **Parallax's claim (code-shipped, A1 value unproven):** bounded, redacted, agent-safe evidence bundle served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) — **read-only by design**, redaction as a first-class gate.
 
 **Honest verdict:** On shipped AI (2-stage RCA) **Coroot leads.** On **safe-agent-projection — a recurring Parallax claim — Coroot already ships the best RBAC-scoped MCP in the market.** This is a direct, uncomfortable test of Parallax's wedge: the "safe agent surface" is NOT unoccupied; Coroot owns the best version of it. Parallax's narrowing differentiators: (a) **strictly read-only** (Coroot has one mutating tool), (b) **redaction-before-access as a gate** (Coroot's MCP doesn't redact), (c) **bounded/versioned bundle** (Coroot serves queries, not a bounded artifact), (d) **production-incident evidence** scope. Most planned/unproven (A1). Write it plainly: Parallax cannot claim "safe agent projection" as unique — Coroot ships the best one today.
 

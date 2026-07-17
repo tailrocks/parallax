@@ -13,7 +13,7 @@
 > compliance, Sentry is far ahead of pre-release Parallax.** Parallax's honest
 > edges are OTLP-native ingest (Sentry is not), a single-binary self-host that is
 > genuinely simpler than Sentry's ~20–40-container stack, Apache-2.0 vs
-> source-available FSL, and the *unproven* evidence-bundle + fix-outcome thesis.
+> source-available FSL, and the *code-shipped, A1-unproven* evidence-bundle + *offline residual* fix-outcome thesis.
 
 ## What each product is
 
@@ -65,9 +65,9 @@ These overlap most directly on **error tracking + tracing**. Sentry is a broad p
 ## Error tracking & workflow — Sentry's moat
 
 - **Sentry:** deterministic grouping/fingerprinting, full issue lifecycle (resolve/regress/ignore/assign), ownership rules + code owners, suspect commits, integrations (Slack/GitHub/Jira), alerting + anomaly detection. This is the category Sentry created and still leads.
-- **Parallax:** derives `error_event` + deterministic fingerprint + a *fix-outcome loop* (accepted/rejected/reverted/recurred) — the latter is the genuinely unoccupied cell, but **planned/unproven.**
+- **Parallax:** derives `error_event` + deterministic fingerprint (**shipped**) + fix-outcome offline residual (**plan 123 DONE**: SM + Turso append-only outcomes; draft-PR deferred; live product value **unproven**).
 
-**Verdict:** on error-workflow maturity, **Sentry wins decisively.** Parallax's only differentiated workflow claim is the fix-outcome loop, which is unshipped and unproven (A1).
+**Verdict:** on error-workflow maturity, **Sentry wins decisively.** Parallax's differentiated workflow claim is the fix-outcome loop: offline residual **shipped** (plan 123 DONE); live measured value **unproven**.
 
 ## Dashboards & visualization
 
@@ -93,7 +93,7 @@ These overlap most directly on **error tracking + tracing**. Sentry is a broad p
 ## AI-native / agent-context story
 
 - **Sentry's AI (Seer, shipped, additional cost):** Root Cause Analysis, **Fix Generation (Autofix → creates a branch + opens a PR with the fix)**, Error Prediction, AI Code Review, and a **Seer Agent** (Jan 2026: expanded into local-development + code-review debugging). Pricing confirmed: **$40 / active contributor / month, unlimited usage**, add-on for any paid plan (Team/Business/Enterprise) — [BusinessWire announcement](https://www.businesswire.com/news/home/20260127739891/en/Sentry-Adds-Local-Development-and-Code-Review-Debugging-to-Seer) (2026-01) + [sentry.io/product/seer](https://sentry.io/product/seer/). This is shipped, production AI debugging — directly overlapping Parallax's "context → fix" thesis.
-- **Parallax's AI claim (planned/unproven):** a bounded, redacted, agent-safe evidence bundle served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) — a *context engine*, not a chat/autofix tool.
+- **Parallax's AI claim (code-shipped, A1 value unproven):** a bounded, redacted, agent-safe evidence bundle served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) — a *context engine*, not a chat/autofix tool.
 
 **Honest verdict:** Seer already does much of "context → root cause → proposed fix → PR" today, from SaaS, at scale. On every *shipped* AI axis, **Sentry is ahead.** Parallax's differentiated claim is the bounded/redacted/agent-safe bundle — unoccupied but **unproven** (A1 gate). The burden of proof that a Parallax bundle beats Seer-as-context for agent fix quality is on Parallax and unmet. Sentry's Seer is a real competitive pressure on the A1 thesis, written plainly.
 

@@ -60,9 +60,9 @@ Both OTLP/OTel-native. Splunk Obs Cloud is a closed enterprise full-stack SaaS; 
 ## Error tracking & workflow
 
 - **Splunk Obs Cloud:** errors are queryable signals; **no native Sentry-grade issue lifecycle** (Splunk's issue workflow is log/SIEM-centric, not error-tracking-centric).
-- **Parallax:** derived `error_event` + fingerprint + (planned) fix-outcome loop.
+- **Parallax:** derived `error_event` + fingerprint (**shipped**) + fix-outcome offline residual (**plan 123 DONE**; live value **unproven**).
 
-**Verdict:** on **error-issue workflow, Parallax targets a gap** — but planned/unproven.
+**Verdict:** on **error-issue workflow, Parallax ships error derivation + fingerprint** (pre-release); fix-outcome offline residual plan 123 DONE, live value **unproven**.
 
 ## AI-native / agent-context story
 
@@ -72,7 +72,7 @@ Both OTLP/OTel-native. Splunk Obs Cloud is a closed enterprise full-stack SaaS; 
   - **Cisco AI Defense integration** — compliance with AI standards + threat detection for AI apps.
   - **AI Agent Governance + Federated Analytics** — managing autonomous agent behavior at scale.
   - Still **not** a bounded, read-only, redacted, *portable* agent-context projection.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (planned, A1).
+- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven).
 
 **Honest verdict (pass-36, no-bias):** Splunk now **ships agent-obs (AI Agent Monitoring) AND autonomous investigation (Agentic Observability)** — two cells Parallax aspired to are occupied by Splunk. This is the **4th shipped autonomous investigator** in the set (after HolmesGPT, Causely, Honeycomb Auto-investigations) — Parallax's "context-engine, *not* the fixer" thesis now faces four shipped "fixers." Parallax's remaining wedge narrows to the bounded/redacted/portable production-incident bundle + outcome loop (A1 unproven).
 

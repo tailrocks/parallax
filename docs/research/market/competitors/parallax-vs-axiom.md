@@ -67,14 +67,14 @@ Both OTLP/OTel-native. Axiom is a closed serverless log/event-analytics SaaS; Pa
 ## Error tracking & workflow
 
 - **Axiom:** errors are queryable events; **no native Sentry-grade error-issue lifecycle.**
-- **Parallax:** derived `error_event` + fingerprint + (planned) fix-outcome loop.
+- **Parallax:** derived `error_event` + fingerprint (**shipped**) + fix-outcome offline residual (**plan 123 DONE**; live value **unproven**).
 
-**Verdict:** on **error-issue workflow, Parallax targets a gap** — but planned/unproven.
+**Verdict:** on **error-issue workflow, Parallax ships error derivation + fingerprint** (pre-release); fix-outcome offline residual plan 123 DONE, live value **unproven**.
 
 ## AI-native / agent-context story
 
 - **Axiom (pass-34 correction):** no longer just "analytics assistance." Axiom ships a dedicated **AI Engineering** product — **trace agent workflows**, **track cost/latency across providers**, **evaluate prompts**, and **evaluation & experimentation** — i.e., LLM/agent observability that directly overlaps [Langfuse](parallax-vs-langfuse.md)/[Phoenix](parallax-vs-arize-phoenix.md)/Parallax's AI-obs surface. It remains a **human analytics + dev-loop tool**, not a *bounded, read-only, redacted agent-context projection* for autonomous coding agents.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (planned, A1).
+- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven).
 
 **Honest verdict (no-bias):** Axiom **does now occupy the AI/agent-tracing + evals cell** — pass-34 evidence corrects the older "Axiom doesn't compete on AI" read. On **LLM/agent tracing + evals, Axiom ships; Parallax is 🟡🧪 in code.** Parallax's remaining differentiation on this axis is the **bounded/redacted production-incident bundle + outcome loop** (vs Axiom's dev-loop AI Engineering) — still **unproven (A1)**.
 
@@ -164,7 +164,7 @@ different cost model entirely (own the hardware, not the scan).
 
 - **Openness / lock-in** — Apache-2.0 OTLP-native self-host vs closed SaaS. *(Real.)*
 - **Self-host / data sovereignty** — Parallax designed for it; Axiom is serverless SaaS-only. *(Real.)*
-- **Production error events + fix-outcome loop** — Axiom is log/event-analytics-centric, no error-issue lifecycle. *(Real gap in Axiom; Parallax planned.)*
+- **Production error events + fix-outcome loop** — Axiom is log/event-analytics-centric, no error-issue lifecycle. *(Real gap in Axiom; Parallax error derivation **shipped**, fix-outcome offline residual plan 123 DONE, live value unproven.)*
 - **Sentry-envelope compatibility** — Axiom has none; Parallax ships it. *(Real.)*
 - **Bounded, redacted, agent-safe evidence bundle** — Axiom has none. *(Thesis, unproven, A1.)*
 

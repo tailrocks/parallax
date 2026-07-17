@@ -92,3 +92,15 @@ Full plan verification re-run against live `main`:
 - Competitor OTLP/`error_event` 🏗 greps: clean.
 - Canonical competitors multi-angle (SigNoz OSS, Sentry closed SaaS, TMA1 peer, Datadog SaaS): price/TCO/contribute/lock-in + A1 unproven retained.
 - **Gap closed:** dead `plans/123-fixer-outcome-loop.md` ownership on ledger, agenda, fixer-boundary, problem-audience — plan **123 DONE** offline residual; point at validation evidence.
+
+## Competitor prose pass (skeptic, same day)
+
+Emoji cells were already ✅🧪; body prose still said “plans compatibility / planned/unproven”
+for shipped error derivation, Sentry envelope, bundle assembler, and treated fix-outcome as
+fully unshipped. Bulk-fixed `parallax-vs-*.md` + `competitors/README.md`:
+
+- Sentry envelope → **ships** (plan 118 DONE; multi-SDK unproven)
+- error derivation → **shipped** (pre-release)
+- evidence bundle → **code-shipped**, A1 **value** unproven
+- fix-outcome → offline residual **plan 123 DONE**; live value unproven (not “unshipped”)
+- README Planned-only list no longer includes fix-outcome as fully planned

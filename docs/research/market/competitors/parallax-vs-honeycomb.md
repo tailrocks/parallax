@@ -78,9 +78,9 @@ Both ingest events/traces and value rich context, but Honeycomb is a human-explo
 ## Error tracking & workflow
 
 - **Honeycomb:** errors are queryable events/attributes — **no native issue lifecycle** (no resolve/regress/assign/ownership). Pairs with external tools or Sentry.
-- **Parallax:** derived `error_event` + fingerprint + (planned) fix-outcome loop.
+- **Parallax:** derived `error_event` + fingerprint (**shipped**) + fix-outcome offline residual (**plan 123 DONE**; live value **unproven**).
 
-**Verdict:** on **error-issue workflow, Parallax targets a real Honeycomb gap** (like Grafana, Honeycomb has none) — but Parallax's is **planned/unproven.** Scoped.
+**Verdict:** on **error-issue workflow, Parallax targets a real Honeycomb gap** (Honeycomb has none): error derivation **shipped** (pre-release); fix-outcome offline residual plan 123 DONE; live value **unproven.** Scoped.
 
 ## Dashboards & visualization
 
@@ -97,7 +97,7 @@ Both ingest events/traces and value rich context, but Honeycomb is a human-explo
   - **Canvas** rebuilt = collaborative workspace + chat + **autonomous agent** (NLQ, parallel hypotheses, sharable snapshots); **Canvas Skills** encode debugging playbooks (e.g. Kafka) that run autonomously.
   - First-class **OTel GenAI semantic conventions (v1.40.0)** — `gen_ai.*` attributes for model evals, tool executions, MCP calls, LLMs, agents; no proprietary SDK / framework lock-in.
   - It is still **not** a bounded, read-only, redacted, *portable* agent-context projection.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (planned, A1 gate).
+- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven gate).
 
 **Verdict (pass-35, no-bias):** Honeycomb now **ships more AI than Parallax on every axis Parallax aspired to** — LLM/agent tracing (Agent Timeline + GenAI semconv) **and** autonomous AI investigation (Auto-investigations). Two cells Parallax could previously point to ("agent-obs" and "AI RCA") are now **occupied by Honeycomb**. Parallax's remaining differentiation narrows to the **bounded/redacted/portable production-incident bundle + fix-outcome loop** (A1-unproven) — *not* agent-obs or AI-RCA broadly. Honeycomb's Auto-investigations is also a **second shipped "autonomous investigator"** (after HolmesGPT/Causely) pressuring Parallax's "context-engine-not-the-fixer" thesis.
 
@@ -180,7 +180,7 @@ Honeycomb pricing is **public** ([honeycomb.io/pricing](https://www.honeycomb.io
 
 - **Self-host / data sovereignty** — Parallax designed for it; Honeycomb's store is SaaS-only. *(Real.)*
 - **Openness / lock-in** — Apache-2.0 OTLP-native vs closed SaaS-only store. *(Real, decisive.)*
-- **Production error-issue workflow** — Honeycomb has none; Parallax plans it. *(Real gap; Parallax planned/unproven.)*
+- **Production error-issue workflow** — Honeycomb has none; Parallax **ships** error derivation (pre-release). *(Real gap; fix-outcome offline residual plan 123 DONE; live value unproven.)*
 - **Bounded, redacted, agent-safe bundle + fix-outcome loop** — still unoccupied as a *portable, redacted, production-incident artifact*. *(Thesis, **unproven** — A1 gate. Note: Honeycomb's Auto-investigations now occupies the adjacent "autonomous investigation" cell, so this edge is narrower than it looked in pass 6.)*
 - **Full OTLP signal breadth** — logs/metrics native; Honeycomb is events-first. *(Design difference.)*
 

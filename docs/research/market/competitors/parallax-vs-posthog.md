@@ -60,14 +60,14 @@ Both OSS, self-hostable, with an LLM/agent-obs surface. But the **core domains d
 ## Error tracking & workflow
 
 - **PostHog:** frontend/replay errors; **no production-backend error-issue lifecycle** (not its domain).
-- **Parallax:** derived `error_event` + fingerprint + (planned) fix-outcome loop.
+- **Parallax:** derived `error_event` + fingerprint (**shipped**) + fix-outcome offline residual (**plan 123 DONE**; live value **unproven**).
 
 **Verdict:** **different domains.** Parallax targets production-backend errors PostHog doesn't cover.
 
 ## AI-native / agent-context story — the real overlap
 
 - **PostHog's LLM observability:** a newer feature — tracing/evals for LLM apps, overlapping the Langfuse/Phoenix territory. Part of PostHog's product-analytics platform (correlate LLM app behavior with product metrics). **Not a bounded, read-only, redacted agent-context projection for production incidents.**
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (planned, A1 gate).
+- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven gate).
 
 **Honest verdict:** PostHog's LLM-obs is a **product-analytics extension** (correlate LLM-app traces with user behavior), not an incident-context engine. Parallax's differentiated bounded-agent-bundle is **unproven (A1)** — and the two serve different primary jobs even at the LLM-obs overlap. On shipped LLM-obs maturity, PostHog (alongside Langfuse/Phoenix) leads pre-release Parallax.
 
@@ -126,7 +126,7 @@ Sources: [schematic](https://schematichq.com/blog/posthog-pricing), [checkthat.a
 ## Where Parallax honestly edges PostHog
 
 - **Domain fit** — Parallax is production-incident evidence; PostHog is product/user analytics. *(Different jobs; Parallax where PostHog doesn't play.)*
-- **Production error events + fix-outcome loop** — PostHog has neither (not its domain). *(Real: error events shipped; fix-outcome planned/unproven, A1.)*
+- **Production error events + fix-outcome loop** — PostHog has neither (not its domain). *(Real: error events **shipped**; fix-outcome offline residual plan 123 DONE; live value **unproven**.)*
 - **Uniform OSI openness** — Apache-2.0 with no proprietary `ee/` vs PostHog MIT core + proprietary `ee/`. *(Narrow; not “competitive-use.”)*
 - **Sentry-envelope compatibility** — PostHog has none; Parallax ships it. *(Real.)*
 - **Bounded, redacted, agent-safe evidence bundle** — PostHog has none. *(Thesis, unproven, A1.)*
