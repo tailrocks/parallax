@@ -107,6 +107,19 @@ evidence. Index status stays TODO.
   / log_count_series / metric_series) plus the live-engine tick test, and
   re-verifies the ungrouped worst-service percentile policy against the
   plan's ROOT-span RED convention decision.
+- `crates/parallax-server/src/alerting/measurement_source.rs` (helper agent
+  2026-07-17) — adapter-backed `MeasurementSource` (`AdapterMeasurementSource`,
+  generic over `ServiceAnalyticsStore + LogCountStore + MetricAnalyticsStore`;
+  wire with the concrete store `Arc` before `dyn` erasure): span signals from
+  one `service_summaries` scan (p99 via per-scoped-service single-bucket
+  `span_red_series` fan-out — peer may collapse to one SQL), `log_count` via
+  `log_count_series` with severity floor ERROR(17) (rule record has no log
+  severity field — peer re-verifies that floor) + plan-164 `{key,op,value}`
+  attribute-filter parsing (invalid = config error), `metric` via
+  `metric_series` single window bucket with include/exclude fan-out and
+  per-agg combine. Eight in-module stub tests. Peer re-verifies: severity
+  floor policy, metric sample-count semantics (currently bucket count, weak),
+  p99 fan-out cost, and wires it in serve.rs (serve.rs was under peer edit).
 - `ui/src/routes/alerts.index.tsx` + nav entry (`1e4be3f`, helper agent
   2026-07-17) — Step 4 skeleton: rules list cards, create dialog with the
   five template presets + `validateAlertRuleDraft`, `draftToArgs`

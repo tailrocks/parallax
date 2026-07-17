@@ -8,6 +8,9 @@ mod delivery;
 mod delivery_worker;
 mod evaluator;
 mod measurement;
+mod measurement_source;
+
+pub use measurement_source::{AdapterMeasurementSource, LOG_COUNT_SEVERITY_FLOOR};
 
 pub use measurement::{
     ServiceWindowStats, SignalType, groups_by_service, scalar_measurement, service_in_scope,
