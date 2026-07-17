@@ -118,6 +118,7 @@ managed quotes remain):
 | Flow still async lag | **436** | r228 flows; sink 3 vs src 4 |
 | still not done | **437** | top 5 open |
 | TWCS + PREWHERE hold | **438** | twcs option; PREWHERE 2/7 |
+| PromQL gaps still open | **439** | increase/min_over_time Code 48 |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
