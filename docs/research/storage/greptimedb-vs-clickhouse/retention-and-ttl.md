@@ -252,3 +252,15 @@ directional only.
 **No drift:** both expire data; GT TTL purge is **compaction-triggered** (background/eventual until
 compact), CH boundary/part drop on OPTIMIZE/merge. Cheap retention still favors time-ordered
 ingestion + whole-file/part drop (TWCS on GT).
+
+## Run 430 (2026-07-18) — TTL expire live re-verify
+
+| Engine | Setup | Result |
+| --- | --- | --- |
+| GT v1.1.3 | `ttl='1s'`, insert aged+fresh, `ADMIN FLUSH_TABLE` + `COMPACT_TABLE` | Eventually **0** rows (expired); memtable may briefly hold until compact |
+| CH 26.6 | `TTL ts + INTERVAL 1 SECOND`, insert aged+fresh, `MATERIALIZE TTL` + `OPTIMIZE FINAL` | **2 → 1** (fresh kept) |
+
+**No drift** vs Run 187/253: both engines expire; GT needs flush/compact for SST drop;
+CH needs MATERIALIZE/OPTIMIZE for immediate physical drop. Query may still see
+logical rows until maintenance.
+

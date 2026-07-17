@@ -109,6 +109,7 @@ managed quotes remain):
 | re-pin still current | **427** | not done; top 5 open |
 | FT selective vs broad | **428** | CH tokenbf 0/7 rare; 7/7 broad |
 | metric-agg four-way warm | **429** | GT 7–9ms / CH 2–7ms |
+| TTL expire re-verify | **430** | GT 0 after compact; CH 2→1 |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
