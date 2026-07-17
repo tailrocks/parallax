@@ -156,6 +156,47 @@ fn attempt_chain_preserves_attempts_and_never_masks_flaky_pass() {
         result(&variant, "inv-2", 2, TestStatus::Passed),
     ])
     .expect_err("mixed invocation");
+    AttemptChain::new(vec![
+        result(&variant, "inv-1", 1, TestStatus::Passed),
+        result(&key("tv1", 'd'), "inv-1", 2, TestStatus::Passed),
+    ])
+    .expect_err("mixed variant");
+}
+
+#[test]
+fn attempt_rollup_matrix_is_explicit_and_not_latest_wins() {
+    let variant = key("tv1", 'e');
+    let rollup = |statuses: &[TestStatus]| {
+        AttemptChain::new(
+            statuses
+                .iter()
+                .enumerate()
+                .map(|(index, status)| {
+                    result(
+                        &variant,
+                        "inv-rollup",
+                        u32::try_from(index + 1).expect("bounded fixture"),
+                        *status,
+                    )
+                })
+                .collect(),
+        )
+        .expect("chain")
+        .rollup()
+    };
+    assert_eq!(rollup(&[TestStatus::Passed]), AttemptRollup::Passed);
+    assert_eq!(rollup(&[TestStatus::Failed]), AttemptRollup::Failed);
+    assert_eq!(rollup(&[TestStatus::Broken]), AttemptRollup::Broken);
+    assert_eq!(rollup(&[TestStatus::Skipped]), AttemptRollup::Skipped);
+    assert_eq!(rollup(&[TestStatus::Unknown]), AttemptRollup::Unknown);
+    assert_eq!(
+        rollup(&[TestStatus::Passed, TestStatus::Failed]),
+        AttemptRollup::Failed
+    );
+    assert_eq!(
+        rollup(&[TestStatus::Broken, TestStatus::Passed]),
+        AttemptRollup::FlakyPass
+    );
 }
 
 #[test]
