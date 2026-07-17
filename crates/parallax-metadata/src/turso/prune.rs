@@ -5,6 +5,8 @@ use parallax_storage::{
     PruneClass, PruneEstimate, PruneExclusion, PruneExclusionKind, PruneItem, PruneStore,
 };
 
+mod journal;
+
 impl TursoMetadataStore {
     pub async fn retained_alert_prune_items(
         &self,

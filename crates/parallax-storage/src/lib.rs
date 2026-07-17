@@ -15,7 +15,8 @@ pub mod projections;
 mod prune;
 pub use parallax_model as model;
 pub use prune::{
-    MetadataPruneStore, PruneAuthorization, PruneClass, PruneEstimate, PruneExclusion,
-    PruneExclusionKind, PruneExecutionMode, PruneExecutionRequest, PruneItem, PrunePlan,
-    PrunePlanError, PrunePlanLimits, PruneSnapshot, PruneStore,
+    MetadataPruneJournalStore, MetadataPruneStore, PruneAuthorization, PruneClass, PruneEstimate,
+    PruneExclusion, PruneExclusionKind, PruneExecutionMode, PruneExecutionRequest, PruneItem,
+    PruneJournal, PruneJournalStep, PruneJournalStepState, PrunePlan, PrunePlanError,
+    PrunePlanLimits, PruneSnapshot, PruneStore,
 };

@@ -4,7 +4,34 @@ use parallax_model::{
     SavedView, TrendPoint,
 };
 use parallax_storage::metadata::{MetadataError, MetadataResult};
-use parallax_storage::{MetadataPruneStore, PruneItem};
+use parallax_storage::{
+    MetadataPruneJournalStore, MetadataPruneStore, PruneItem, PruneJournal, PrunePlan,
+    PrunePlanLimits,
+};
+
+#[async_trait::async_trait]
+impl MetadataPruneJournalStore for TursoMetadataStore {
+    async fn create_prune_journal(
+        &self,
+        plan: &PrunePlan,
+        now_nanos: u128,
+        limits: PrunePlanLimits,
+    ) -> MetadataResult<PruneJournal> {
+        Self::create_prune_journal(self, plan, now_nanos, limits)
+            .await
+            .map_err(MetadataError::internal)
+    }
+
+    async fn prune_journal(
+        &self,
+        plan_id: &str,
+        limits: PrunePlanLimits,
+    ) -> MetadataResult<Option<PruneJournal>> {
+        Self::prune_journal(self, plan_id, limits)
+            .await
+            .map_err(MetadataError::internal)
+    }
+}
 
 #[async_trait::async_trait]
 impl MetadataPruneStore for TursoMetadataStore {

@@ -177,6 +177,24 @@ CREATE TABLE IF NOT EXISTS alert_checks (
 );
 CREATE INDEX IF NOT EXISTS alert_checks_rule_time
   ON alert_checks(rule_id, checked_at);
+CREATE TABLE IF NOT EXISTS prune_journals (
+  plan_id       TEXT PRIMARY KEY,
+  plan_json     TEXT NOT NULL,
+  created_at    INTEGER NOT NULL,
+  updated_at    INTEGER NOT NULL,
+  completed_at  INTEGER
+);
+CREATE TABLE IF NOT EXISTS prune_journal_steps (
+  plan_id       TEXT NOT NULL,
+  step_index    INTEGER NOT NULL,
+  item_json     TEXT NOT NULL,
+  state         TEXT NOT NULL CHECK (state IN ('planned', 'executing', 'complete')),
+  last_error    TEXT,
+  completed_at  INTEGER,
+  PRIMARY KEY (plan_id, step_index)
+);
+CREATE INDEX IF NOT EXISTS prune_journal_steps_state
+  ON prune_journal_steps(plan_id, state, step_index);
 ";
 
 #[cfg(test)]

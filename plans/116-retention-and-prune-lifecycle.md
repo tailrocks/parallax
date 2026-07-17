@@ -135,6 +135,11 @@ the helper objective; the peer executor owns the status transition.
   identity-changing mutations, and plans outside current safety bounds before
   reconstructing the private immutable plan. The Turso journal tables and
   transitions still need peer implementation/verification.
+- A preliminary Turso journal now atomically persists the immutable plan plus
+  ordered `planned` steps, treats repeat creation as idempotent, and validates
+  plan/step bytes and current bounds on restart. It cannot transition or delete
+  anything yet; peer must add `executing -> complete`, failure recording,
+  resume behavior, and cross-store execution proof.
 
 ## Historical Blocker Evidence (2026-07-14; superseded 2026-07-17)
 
