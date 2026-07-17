@@ -206,7 +206,7 @@ work.
 | 141 | Move logs and the reusable log table into one feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-141-logs/README.md) |
 | 140 | Move runs/invocations, sessions, and live observation into one feature | P1 | L | 100, 129, 132, 134, 141, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-140-invocations/README.md) |
 | [142](142-traces-feature-migration.md) | Move trace search, analysis, and inspection into one feature | P1 | XL | 100, 129, 132, 134, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
-| [150](150-overview-feature-migration.md) | Move overview into one bounded feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| 150 | Move overview into one bounded feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-150-overview/README.md) |
 | [143](143-app-layout-shell-migration.md) | Move app, layout, and shell behind explicit boundaries | P1 | XL | 134, 135, 136, 137, 138, 139, 140, 141, 142, 145, 146, 149, 150, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 | [151](151-ui-architecture-final-closure.md) | Verify and close the final UI architecture | P1 | L | 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 149, 150, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 

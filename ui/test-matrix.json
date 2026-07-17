@@ -2,23 +2,12 @@
   "schema_version": 1,
   "ratchets": {
     "fire_event_calls": 28,
-    "legacy_handoffs": 46,
+    "legacy_handoffs": 45,
     "raw_router_builders": 1,
-    "test_cases": 501,
-    "test_files": 102
+    "test_cases": 502,
+    "test_files": 103
   },
   "private_route_imports": [
-    {
-      "test_file": "ui/src/routes/__tests__/-overview.test.tsx",
-      "module": "@/routes/index",
-      "symbols": [
-        "OverviewContent",
-        "OverviewData",
-        "latencyBands",
-        "loadOverview"
-      ],
-      "removal_plan": 150
-    },
     {
       "test_file": "ui/src/routes/__tests__/-trace-graphql.test.tsx",
       "module": "@/routes/traces.$traceId",
@@ -802,10 +791,9 @@
       "surface": "features/overview",
       "risk": "Overview loading, KPI bands, recent evidence, and drilldowns can diverge",
       "scenario_owner": "features/overview",
-      "lane_owner": "vitest/route",
-      "delivery_plan": 150,
-      "layer": "route-contract",
-      "test_file": "ui/src/routes/__tests__/-overview.test.tsx",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/features/overview/tests/components/overview-contracts.test.tsx",
       "test_ids": [
         "loads the one-document overview query",
         "renders KPIs and linked recent lists",
@@ -813,14 +801,7 @@
         "guards negative stacked latency bands"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/routes/__tests__/-overview.test.tsx",
-        "destination_owner": "features/overview",
-        "removal_plan": 150,
-        "created": "2026-07-15",
-        "expires": "plan-150-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-034",
@@ -2098,7 +2079,6 @@
       "risk": "Overview range, trends, movers, onboarding and recent-entity links",
       "scenario_owner": "features/overview",
       "lane_owner": "playwright/contracts",
-      "delivery_plan": 150,
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/overview.spec.ts",
       "test_ids": [
@@ -2107,7 +2087,8 @@
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "overview-default",
-      "state_class": "inventory"
+      "state_class": "inventory",
+      "delivery_plan": 150
     },
     {
       "id": "vitest-149-rm-domain",
@@ -2544,6 +2525,20 @@
       "test_file": "ui/src/routes/tests/-invocations-routes.test.tsx",
       "test_ids": [
         "exposes public search and loaders for thin route wiring"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-overview-route",
+      "surface": "features/overview",
+      "risk": "Overview route wiring can lose public loader facade contracts",
+      "scenario_owner": "features/overview",
+      "lane_owner": "vitest/route",
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/tests/-overview-routes.test.tsx",
+      "test_ids": [
+        "exposes public loader helpers for thin route wiring"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"

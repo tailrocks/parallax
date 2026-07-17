@@ -1775,11 +1775,6 @@ ceiling = 2
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-overview.test.tsx"
-ceiling = 23
-
-[[limits]]
-metric = "typescript.assertions"
 scope = "ui/src/routes/__tests__/-trace-graphql.test.tsx"
 ceiling = 3
 
@@ -1836,21 +1831,11 @@ ceiling = 351
 
 [[limits]]
 metric = "typescript.file-lines"
-scope = "ui/src/routes/__tests__/-overview.test.tsx"
-ceiling = 191
-
-[[limits]]
-metric = "typescript.file-lines"
 scope = "ui/src/routes/alerts.index.tsx"
 ceiling = 642
 
 
 
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/index.tsx"
-ceiling = 914
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -2316,11 +2301,6 @@ metric = "typescript.function-lines"
 scope = "ui/src/platform/sse/tests/use-live-stream.test.tsx:77"
 ceiling = 146
 
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/__tests__/-overview.test.tsx:131"
-ceiling = 78
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -3100,6 +3080,51 @@ ceiling = 126
 metric = "typescript.function-lines"
 scope = "ui/src/features/invocations/tests/components/tabs.test.tsx:75"
 ceiling = 73
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/overview/tests/components/overview-contracts.test.tsx"
+ceiling = 23
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/tests/-overview-routes.test.tsx"
+ceiling = 2
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/overview/components/overview-page.tsx"
+ceiling = 915
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/overview/components/overview-page.tsx:619"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/overview/components/overview-page.tsx:619"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/overview/components/overview-page.tsx:278"
+ceiling = 186
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/overview/components/overview-page.tsx:470"
+ceiling = 142
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/overview/components/overview-page.tsx:619"
+ceiling = 169
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/overview/tests/components/overview-contracts.test.tsx:135"
+ceiling = 78
 
 [[ui.ownership]]
 path = "ui/src/features/investigations/api/investigation-api.ts"
@@ -4679,15 +4704,6 @@ kind = "handwritten"
 
 
 [[ui.ownership]]
-path = "ui/src/routes/__tests__/-overview.test.tsx"
-current_owner = "routes-tests"
-target_owner = "features/overview"
-migration_plan = "150"
-kind = "handwritten"
-
-
-
-[[ui.ownership]]
 path = "ui/src/routes/__tests__/-trace-graphql.test.tsx"
 current_owner = "routes-tests"
 target_owner = "features/traces"
@@ -4751,10 +4767,39 @@ migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
+path = "ui/src/features/overview/components/overview-page.tsx"
+current_owner = "features/overview"
+target_owner = "features/overview"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/overview/index.ts"
+current_owner = "features/overview"
+target_owner = "features/overview"
+migration_plan = "none"
+kind = "handwritten"
+facade = true
+
+[[ui.ownership]]
+path = "ui/src/features/overview/tests/components/overview-contracts.test.tsx"
+current_owner = "features/overview"
+target_owner = "features/overview"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/tests/-overview-routes.test.tsx"
+current_owner = "routes-tests"
+target_owner = "routes-tests"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
 path = "ui/src/routes/index.tsx"
 current_owner = "routes"
 target_owner = "features/overview"
-migration_plan = "150"
+migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -5891,31 +5936,6 @@ current_owner = "legacy-lib"
 target_owner = "features/overview"
 migration_plan = "150"
 kind = "handwritten"
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/index.tsx:619"
-ceiling = 16
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/index.tsx:619"
-ceiling = 14
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/index.tsx:278"
-ceiling = 186
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/index.tsx:470"
-ceiling = 142
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/index.tsx:619"
-ceiling = 169
 
 [[limits]]
 metric = "typescript.function-lines"

@@ -5,8 +5,12 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { graphqlCached } from "@/lib/api"
 import type { ResolvedRange } from "@/lib/range"
-import { OverviewContent, latencyBands, loadOverview } from "@/routes/index"
-import type { OverviewData } from "@/routes/index"
+import {
+  OverviewContent,
+  latencyBands,
+  loadOverview,
+} from "@/features/overview"
+import type { OverviewData } from "@/features/overview"
 import { renderTestRouter } from "@/test/router"
 
 vi.mock("@/lib/api", () => {
