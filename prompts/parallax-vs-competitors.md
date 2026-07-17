@@ -124,6 +124,30 @@ state the method, the assumptions, the source limitations, and a confidence
 level (high / medium / low) so a reader can weigh it; never present an estimate
 as a measured fact.
 
+## Always compare to the latest version
+
+Every comparison is against each product's **latest stable/current version** as
+of the pass date — never an LTS or backport line, never a version cached in a
+legacy note. The root `AGENTS.md` version policy ("always use the latest stable
+versions everywhere") applies in full here. Concretely, on every pass:
+
+- Re-pull each touched product's **latest release tag and changelog** (GitHub
+  releases / vendor changelog) and version-pin it with the pass date. If a
+  competitor shipped a new minor since the last pass, that drift is the
+  comparison — update the version cell and re-check whether any watch trigger
+  fired in that release.
+- A version number carried from a legacy 2026-05/06 note is **stale by default**;
+  re-verify it before trusting it, and mark the cell verified-with-date only
+  after confirming against the live source.
+- Where a product has separate versioned components (e.g. SigNoz platform vs
+  `signoz-mcp-server`, or a bundled engine like ClickHouse), pin each relevant
+  component's latest version, not just the platform's.
+- Benchmark-dependent performance figures must be measured on the latest
+  stable (and latest nightly where the benchmark program mandates four builds);
+  a number measured on an older version is not the result.
+
+
+
 Where a comparison depends on storage/ingest/query performance and a real
 measurement is feasible, flag it as benchmark-dependent and mark it unproven
 until measured by the benchmark program — do not fabricate a figure to fill the

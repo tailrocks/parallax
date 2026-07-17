@@ -28,7 +28,7 @@
 | Grafana Cloud/LGTM | — | 🔴 missing | n/a | write deep-dive; Tempo v3 + Pyroscope + Mimir cost model |
 | Honeycomb | — | 🔴 missing | n/a | write deep-dive; high-cardinality model + pricing |
 | New Relic | — | 🔴 missing | n/a | write deep-dive; entity model + NRAI + pricing |
-| SigNoz | [parallax-vs-signoz.md](parallax-vs-signoz.md) | 🟡 exists — written by a concurrent pass 2026-07-17; **not yet re-verified by this pass.** Re-read and verify next. | 2026-07-17 (peer) | re-verify MCP "open investigation format" status; confirm ClickHouse/pricing |
+| SigNoz | [parallax-vs-signoz.md](parallax-vs-signoz.md) | ✅ pass 2 | 2026-07-17 | outstanding: exact current star count + MCP server version (v0.5.1 last confirmed 2026-06-17); current trace/metric throughput (no public number) |
 | OpenObserve | — | 🟡 inherited | 2026-06 (legacy) | write `parallax-vs-openobserve.md`; AI/MCP gating + free-tier |
 | Coroot | — | 🟡 inherited | 2026-06 (legacy) | write `parallax-vs-coroot.md`; eBPF partial-span limit + MCP RBAC |
 | Maple | — | 🟡 inherited | 2026-06 (legacy) | write `parallax-vs-maple.md`; Tinybird coupling + local UX |

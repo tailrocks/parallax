@@ -1,5 +1,12 @@
 # SigNoz Deep Research
 
+> **Canonical comparison now lives in
+> [competitors/parallax-vs-signoz.md](competitors/parallax-vs-signoz.md)**
+> (re-verified 2026-07-17 against current sources: SigNoz v0.132.2, ClickHouse
+> 25.12.5, "open investigation format" still no published schema). This legacy
+> note is kept as a sourced lead; where it disagrees with the canonical
+> deep-dive, the canonical file wins.
+
 Research date: 2026-06-22
 
 This note gives SigNoz a Maple-style standalone deep-dive, consolidating what was
