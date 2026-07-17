@@ -267,6 +267,7 @@ managed quotes remain):
 | still not done | **585** | top 5 product/server |
 | append DELETE + health | **586** | Code 1004; all 200 |
 | still not done | **587** | top 5 product/server |
+| PREWHERE + FT | **588** | 2/7; msg0 0/7; error 7/7 |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
