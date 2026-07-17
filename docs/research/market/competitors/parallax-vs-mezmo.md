@@ -1,7 +1,7 @@
 # Parallax vs Mezmo
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17**.
-> Sources: [mezmo.com](https://www.mezmo.com/) + [Telemetry Pipeline](https://www.mezmo.com/learn/a-guide-to-opentelemetry-architecture-logs-and-implementation-best-practices) + [Mezmo Flow released](https://www.mezmo.com/newsroom/mezmo-flow-released), third-party pricing.
+> Sources: [mezmo.com](https://www.mezmo.com/) + [Telemetry Pipeline](https://www.mezmo.com/learn/a-guide-to-opentelemetry-architecture-logs-and-implementation-best-practices) + [Mezmo Flow released](https://www.mezmo.com/newsroom/mezmo-flow-released), **[Mezmo pricing announcement (2025-05-14)](https://www.mezmo.com/newsroom/mezmo-disrupts-market-by-reducing-observability-cost-structure-by-90)** (pass 42 re-confirm: **$0.20/GB ingest + $0.20/GB retain/mo** for contract customers).
 >
 > **Bottom line up front:** Mezmo (formerly **LogDNA**) is a **telemetry data pipeline
 > + log analysis platform** — it profiles, transforms, routes, and governs telemetry
@@ -59,8 +59,8 @@ Mezmo retains **LogDNA's log-management store** (so it *is* a log backend too), 
 
 | Component | Price |
 | --- | --- |
-| **Ingestion** (processing/analyzing) | **$0.20 / GB ingested** |
-| **Retention** (storage) | **$0.20 / GB retained** |
+| **Ingestion** (processing/analyzing) | **$0.20 / GB ingested** (contract; [newsroom 2025-05-14](https://www.mezmo.com/newsroom/mezmo-disrupts-market-by-reducing-observability-cost-structure-by-90); re-confirmed pass 42 via G2/cubeapm 2026) |
+| **Retention** (storage) | **$0.20 / GB retained / mo** (optional; was $1.80/GB — vendor ~90% cut claim) |
 
 **Volume-based, not per-host/user/vCPU** — transparent, separates processing from retention. **Up-to-70%-observability-spend-savings** claim (pipeline reduces what reaches paid backends). **Confirm current rates on [mezmo.com](https://www.mezmo.com/).**
 

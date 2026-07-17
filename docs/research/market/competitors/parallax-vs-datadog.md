@@ -104,7 +104,7 @@ A real Datadog weakness here, written plainly: its AI is a **human dashboard plu
 
 ## Architecture & deployment model
 
-- **Datadog:** SaaS-first, multi-region (US/EU/APAC), multi-tenant, with GovCloud (US1-FED) for a limited product subset. **No production self-host path** beyond the OSS Agent and the Observability Pipelines Worker (which runs in your env but ships to Datadog). This is a structural fact: if your constraint is "data never leaves our network," Datadog largely cannot satisfy it.
+- **Datadog:** SaaS-first, multi-region (US/EU/APAC), multi-tenant. **Gov:** **Datadog for Government (US1-FED) achieved FedRAMP® High** (announced **2026-05-06**; FedRAMP Marketplace FR2023864279A, Class D High as of 2026-05-05) — elevates beyond older “Moderate subset” framing. **No production self-host of the observability *backend***: only the OSS Agent + **Observability Pipelines Worker** (runs in your env to aggregate/process/route; still a path into Datadog SaaS, not a self-hosted Datadog store). If the constraint is "data never leaves our network / air-gap," Datadog still largely cannot satisfy it.
 - **Parallax:** self-hosted, single-binary target, local-first, air-gapped-capable, three deployment tiers. Designed for the team that cannot or will not use a closed SaaS.
 
 **Verdict:** on **self-host / air-gap / data-sovereignty, Parallax wins (by design); Datadog cannot play here.** On **managed-SaaS scale/multi-region/multi-tenancy, Datadog wins; Parallax has none of that operational machinery.** Again, different axes.
@@ -132,7 +132,7 @@ A real Datadog weakness here, written plainly: its AI is a **human dashboard plu
 
 ## Privacy & compliance
 
-- **Datadog:** SOC 2, HIPAA, PCI (Log Management explicitly supports PCI + HIPAA); data residency US/EU/APAC; FedRAMP via GovCloud for a limited subset; **Sensitive Data Scanner** (detection $0.03/GB @ 10% sampling, or $0.30/scanned GB full obfuscation) for PII scrubbing across logs/APM/RUM/S3.
+- **Datadog:** SOC 2, HIPAA, PCI; data residency US/EU/APAC; **FedRAMP High** on **Datadog for Government (US1-FED)** (2026-05; not “Moderate-only”); **Sensitive Data Scanner** (detection $0.03/GB @ 10% sampling, or $0.30/scanned GB full obfuscation) for PII scrubbing across logs/APM/RUM/S3.
 - **Parallax:** no compliance certifications (not yet — pre-release, Apache-2.0). Redaction is a designed pipeline (A6) but unattested. Data ownership is total (self-host).
 
 **Verdict:** on **compliance certifications and attested PII tooling, Datadog wins decisively.** On **data ownership/sovereignty (self-host, air-gap), Parallax wins by design.**
@@ -208,12 +208,13 @@ Datadog pricing is **public** and itemized below (annual prices, [datadoghq.com/
 
 - **A1 gate:** does a Parallax evidence bundle beat raw-context (or beat Bits-Investigation-as-context) for agent fix quality, measurably? Unproven. Until shown, Parallax's headline differentiation is a hypothesis.
 - **Cost at workload:** a measured Parallax-vs-Datadog TCO at a representative ingestion/cardinality workload. Benchmark-dependent, unmeasured.
-- **Datadog self-host reality (2026):** confirm there is still no production self-host path beyond Agent + OP Worker; verify whether any FedRAMP/sovereign-cloud gap has closed.
+- **Datadog self-host reality (2026)** — **RESOLVED pass 42:** still **no self-hosted Datadog backend**. Self-managed pieces = Agent + Observability Pipelines Worker only ([docs](https://docs.datadoghq.com/observability_pipelines/)); OPW processes/routes in-customer infra then to Datadog. **FedRAMP High** on US1-FED **resolved upward** (2026-05-06 blog + FedRAMP Marketplace High).
 - ~~Datadog OTLP-in-Agent GA scope~~ → **resolved 2026-07-17 (pass 19): the Agent's OTLP receiver is GA — traces + metrics by default, logs with manual enable** ([docs](https://docs.datadoghq.com/opentelemetry/setup/otlp_ingest_in_the_agent/)). It still transforms OTLP into Datadog's proprietary backend (not OTLP-native storage).
 
 ## Sources (accessed 2026-07-17)
 
 - [Datadog Pricing](https://www.datadoghq.com/pricing/) — authoritative live price page (all numbers above).
+- [Datadog for Government achieves FedRAMP High (2026-05-06)](https://www.datadoghq.com/blog/datadog-achieves-fedramp-high-certification/); [FedRAMP Marketplace FR2023864279A](https://www.fedramp.gov/marketplace/products/FR2023864279A/); [Observability Pipelines Worker](https://docs.datadoghq.com/observability_pipelines/).
 - [Bits Investigation blog](https://www.datadoghq.com/blog/bits-ai-sre/); [Bits Agent Builder](https://www.datadoghq.com/blog/bits-agent-builder/).
 - [Datadog Agent Observability](https://www.datadoghq.com/products/ai/agent-observability/); [LLM prompt tracking](https://www.datadoghq.com/blog/llm-prompt-tracking/).
 - Third-party pricing analyses (2026): [Opslyft](https://www.opslyft.com/blog/datadog-pricing), [Last9](https://last9.io/blog/datadog-pricing-all-your-questions-answered/), [OneUptime](https://oneuptime.com/blog/post/2026-03-13-how-datadog-pricing-actually-works/view).

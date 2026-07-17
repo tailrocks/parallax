@@ -68,7 +68,7 @@ Component-level (the "stack it yourself" pieces, referenced not deep-dived):
 | **LangSmith** | LangChain's closed tracing/eval/prompt platform. | Closed SaaS. | LLM/agent traces + evals. | [deep-dive](parallax-vs-langsmith.md) |
 | **Arize Phoenix** | OSS LLM/agent tracing + evals (drives **OpenInference**); OTLP-native. | **ELv2** (self-host free + unlimited, but not OSI-open; managed-service restriction). | LLM/agent traces + evals. | [deep-dive](parallax-vs-arize-phoenix.md) |
 | **PostHog** | OSS product analytics + session replay + feature flags/experiments + LLM/agent tracing. **MIT Expat core + proprietary `ee/`** (~36k★). | MIT core + EE proprietary + Cloud. | Product analytics + LLM. | [deep-dive](parallax-vs-posthog.md) |
-| **Helicone** | LLM gateway/proxy + observability; caching + cost analytics; zero LLM-cost markup. | MIT + Cloud. | LLM proxies + traces. | [deep-dive](parallax-vs-helicone.md) |
+| **Helicone** | LLM gateway/proxy + observability; caching + zero LLM-markup. **🛑 Acquired by Mintlify 2026-03-03 → Cloud maintenance mode**; OSS Apache-2.0 (~6k★). | Apache-2.0 + Cloud (Mintlify). | LLM proxies + traces (maintenance). | [deep-dive](parallax-vs-helicone.md) |
 | **Braintrust** | Eval-first LLM eval/experiment platform (datasets/scorers/playground); OSS SDK + closed core. | OSS SDK + SaaS. | LLM evals + experiments. | [deep-dive](parallax-vs-braintrust.md) |
 
 ## E. AI investigation / causal-context layers (different layer — consume telemetry, not stores)
