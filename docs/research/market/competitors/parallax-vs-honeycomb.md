@@ -136,10 +136,10 @@ Honeycomb pricing is **public** ([honeycomb.io/pricing](https://www.honeycomb.io
 | Tier | Price | Volume |
 | --- | --- | --- |
 | **Free** | $0 | up to **20M events/mo** + 100M time-series data points |
-| **Pro** | **from $150/mo** (per 50M events; sources also cite ~$130/100M up to 1.5B — **confirm exact current unit on honeycomb.io**) | up to 750M–1.5B events/mo |
+| **Pro** | **from $150/mo / 50M events** (~$3/M events, 60-day retention + distributed tracing; **official honeycomb.io/pricing, 2026-07-17**) | scalable to 750M–1.5B events/mo |
 | **Enterprise** | custom (volume discounts) | avg ~$293K/yr per [Spendhound](https://www.spendhound.com/marketplace/honeycomb-pricing) (third-party, indicative) |
 
-Sources disagree on the exact Pro unit ($150/50M vs $130/100M) — list-vs-tier drift; **confirm on the live pricing page before quoting precisely.** Key point: **cardinality is free** — you pay per event, not per series/dimension, which is Honeycomb's economic pitch against metric-based tools.
+**Pro unit resolved (official honeycomb.io/pricing, 2026-07-17): $150 / 50M events** (~$3/M, 60-day retention, distributed tracing included). The earlier "$130/100M" figure was a third-party conflation, not on the live page. Key point: **cardinality is free** — you pay per event, not per series/dimension, which is Honeycomb's economic pitch against metric-based tools.
 
 **Parallax pricing:** none public yet (pre-release).
 
@@ -166,7 +166,7 @@ Sources disagree on the exact Pro unit ($150/50M vs $130/100M) — list-vs-tier 
 
 - **A1 gate vs Honeycomb:** for a team on Honeycomb (high-cardinality exploration + MCP), does a Parallax bounded bundle measurably improve coding-agent fix outcomes? Unproven.
 - **High-cardinality query parity:** measured GreptimeDB (Parallax) vs Honeycomb on a high-cardinality interactive-query workload. Benchmark-dependent, unmeasured — and high-cardinality is the *exact* regime where Parallax's engine bet is riskiest.
-- **Honeycomb Pro exact pricing unit** — confirm $150/50M vs $130/100M on the live page.
+- ~~Honeycomb Pro exact pricing unit~~ → **resolved 2026-07-17: $150/50M events** (~$3/M, official honeycomb.io/pricing); the "$130/100M" figure was a third-party conflation.
 
 ## Sources (accessed 2026-07-17)
 

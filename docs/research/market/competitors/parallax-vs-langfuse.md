@@ -47,7 +47,7 @@ These overlap on **agent/LLM tracing and "context for agents,"** but were built 
 
 ## Storage architecture
 
-- **Langfuse:** self-hosted via Docker (MIT); backing store per its deployment (Langfuse v3 moved to a containerized stack — **confirm current backing store: historically Postgres + ClickHouse for scale; pin from deploy guide next**). Cloud = managed.
+- **Langfuse:** self-hosted via Docker (MIT); **v3 backing store pinned: PostgreSQL (state) + ClickHouse (traces/observations/scores) + Redis + S3**, plus an async worker container ([infra-evolution blog](https://langfuse.com/blog/2024-12-langfuse-v3-infrastructure-evolution), v3 stable 2024-12-09). Cloud = managed.
 - **Parallax:** GreptimeDB (telemetry native OTLP tables) + Turso (metadata), single-binary self-host target.
 
 **Verdict:** both self-hostable; Langfuse's is more mature/shipped. Parallax's GreptimeDB-native design is benchmark-dependent and **unproven** vs Langfuse's shipped stack.
@@ -91,7 +91,7 @@ This is the axis that matters most for Parallax's thesis, so be most honest.
 
 ## Operational footprint
 
-- **Langfuse self-host:** Docker stack (Langfuse + backing store); moderate ops. Cloud = zero backend ops.
+- **Langfuse self-host:** Docker stack (Langfuse web + worker + Postgres + ClickHouse + Redis + S3); moderate ops. Cloud = zero backend ops.
 - **Parallax:** self-hosted GreptimeDB + Turso + engine; single-binary target lowers burden but production operation is real work.
 
 **Verdict:** **Langfuse wins on operational maturity** (shipped + Cloud zero-ops option). Scoped.
@@ -163,7 +163,7 @@ A "unit" ≈ a traced event/observation. **Self-host OSS is free with no limits*
 
 - **A1 gate vs Langfuse:** if a team already has Langfuse for agent traces + evals, does adding a Parallax bounded bundle measurably improve coding-agent fix outcomes for *production incidents*? Unproven — and this is the existential question for Parallax's wedge against the AI-observability category Langfuse leads.
 - **Langfuse extension risk:** Langfuse could add production-error derivation / a bounded export. If it does, Parallax's AI-wedge differentiation collapses. Track Langfuse changelog.
-- **Langfuse exact version + backing store** — pin latest release tag + current self-host backing store (Postgres/ClickHouse) from the deploy guide.
+- ~~Langfuse exact version + backing store~~ → **pinned v3.219.0 + v3 stack (Postgres + ClickHouse + Redis + S3 + async worker)**, 2026-07-17.
 
 ## Sources (accessed 2026-07-17)
 

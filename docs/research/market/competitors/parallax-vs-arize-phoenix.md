@@ -44,7 +44,7 @@ Originated in notebook-based prompt experimentation + LLM-as-judge evals.
 | **Tracing standard** | **OpenTelemetry (OTLP) + OpenInference** semantic conventions for AI/LLM spans — Arize drives OpenInference | [arize.com/docs/ax/concepts/otel-openinference/overview](https://arize.com/docs/ax/concepts/otel-openinference/overview) |
 | **OTLP ingest** | ✅ **accepts traces over OTLP natively** (Phoenix-aware OTel defaults) | [arize.com/docs/phoenix](https://arize.com/docs/phoenix) |
 | **Self-host** | ✅ Docker / containers / Railway; free, unlimited | [self-host docs](https://arize.com/docs/phoenix/self-hosting) |
-| **Backing store** | **not pinned this pass** — historically local SQLite/Parquet; ClickHouse for scale via OTel collector backend. Verify from deploy guide before quoting. | to verify |
+| **Backing store** | **file-based SQLite (default)**, configurable via DB URL ([self-hosting/configuration](https://arize.com/docs/phoenix/self-hosting/configuration), 2026-07-17); **no native ClickHouse** (only in third-party Docker Compose guides). | pinned |
 | **Company** | Arize AI (commercial); Phoenix OSS + Phoenix Cloud + Arize AX (enterprise platform) | [arize.com/phoenix](https://arize.com/phoenix/) |
 
 ### Pricing (re-cited 2026-07-17; verify live page)
@@ -94,8 +94,7 @@ Sources: [arize.com/phoenix](https://arize.com/phoenix/), [Cekura pricing analys
 
 ### Storage architecture
 
-Phoenix: **backing store not pinned this pass** (historically local SQLite/
-Parquet; ClickHouse for scale). Parallax: GreptimeDB native OTLP tables + Turso.
+Phoenix: **default file-based SQLite** (configurable via DB URL; no native ClickHouse). Parallax: GreptimeDB native OTLP tables + Turso.
 Both self-hostable; Phoenix's is shipped/mature, Parallax's is newer and
 **benchmark-dependent, unproven**.
 
