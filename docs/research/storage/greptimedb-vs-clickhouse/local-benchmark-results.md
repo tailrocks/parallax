@@ -7706,3 +7706,17 @@ logs + identity pipeline still correct.
 
 **~1.5× CH**, both interactive. **No drift** vs Run 177 “tie at 100k” reading
 (scale still small). Gap expected to widen at 5M (server-tier owed).
+
+### Run 241 — 2026-07-17 — PromQL vs SQL tax re-verify (small)
+
+**Table.** `prom_r241` 5k rows, 20 hosts; SQL `avg(val) GROUP BY host` vs
+PromQL `avg by (host) (prom_r241)`.
+
+| Path | Timing | Median |
+| --- | --- | ---: |
+| SQL | `execution_time_ms` | **~7–8 ms** |
+| PromQL | curl wall (`time_total`) | **~11 ms** |
+
+**Ratio ~1.4–1.5×** PromQL over SQL (mixed metrics — wall vs engine ms). Direction
+matches Run 183 (~1.5–2× at 100k). PromQL path still **HTTP 200 success** with
+results. Not a fixed 5.6× tax.
