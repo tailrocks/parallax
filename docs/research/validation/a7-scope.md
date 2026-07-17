@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-05-25 · **Recheck 2026-07-17 (pass 67)**
+Research date: 2026-05-25 · **Recheck 2026-07-17 (pass 67 + pass 150)**
 
 > **Pass 67:** historical A7 "tiny tier first" discipline was a *pre-ship*
 > control. **V1 has since shipped** with a broad surface (OTLP+Sentry, GraphQL,
@@ -21,6 +21,20 @@ Research date: 2026-05-25 · **Recheck 2026-07-17 (pass 67)**
 > A7 claim level: **process discipline ongoing** (plans index), not a numeric
 > "scope budget green" ledger for the whole product — update this note when a
 > phase-budget ledger is re-introduced for post-V1 work.
+>
+> **Pass 150 (2026-07-17) — residual re-audit:**
+>
+> | Residual | Status this pass |
+> | --- | --- |
+> | `plans/` is sole active implementation home | **Holds** — few numbered plans remain active (plus `GOAL.md` / standards); no parallel implementation-plan directory found |
+> | Full L4/L5 auto-merge fixer in core product | **Not claimed as shipped** — north-star still design pressure; pass 138 auto-merge unclaimed industry-wide |
+> | Storage multi-engine product modes | **Still forbidden** by operator stack decision (GreptimeDB + Turso mandatory) |
+> | UI dashboards vs "not a dashboard product" | **Tension managed** — GO text allows dashboards as *surface* while product identity remains **evidence/context engine** ([go-no-go.md](../decisions/go-no-go.md)); dashboards alone ≠ kill criterion |
+>
+> **Falsify A7 process residual:** new durable implementation backlogs outside
+> `plans/`; or product claims shift primary identity to generic dashboard suite
+> without evidence-bundle/agent context; or L5 auto-merge ships without A1/A2
+> gates.
 
 ## Purpose
 
