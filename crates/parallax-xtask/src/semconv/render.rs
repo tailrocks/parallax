@@ -28,13 +28,18 @@ pub(super) fn render_rust(constants: &[Constant], include_freeze_test: bool) -> 
 }
 
 fn render_rust_values(identifier: &str, values: &[String]) -> String {
-    if values.len() <= 2 {
-        let values = values
-            .iter()
-            .map(|value| rust(value))
-            .collect::<Vec<_>>()
-            .join(", ");
-        return format!("pub const {identifier}: &[&str] =\n    &[{values}];\n");
+    let joined = values
+        .iter()
+        .map(|value| rust(value))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let compact = format!("pub const {identifier}: &[&str] = &[{joined}];");
+    if compact.len() <= 100 {
+        return compact + "\n";
+    }
+    let wrapped = format!("pub const {identifier}: &[&str] =\n    &[{joined}];");
+    if values.len() <= 2 && joined.len() + 8 <= 100 {
+        return wrapped + "\n";
     }
     let values = values
         .iter()

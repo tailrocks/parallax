@@ -1,6 +1,6 @@
 use super::{
     Constant, check_generated_artifacts, check_playground_test_consumer_ownership,
-    check_rust_ownership, generate_at, render_typescript, validate,
+    check_rust_ownership, generate_at, render_rust, render_typescript, validate,
 };
 use std::fs;
 use tempfile::TempDir;
@@ -155,4 +155,19 @@ fn typescript_renderer_emits_formatter_compatible_declarations() {
         "] as const\n",
     );
     assert_eq!(actual, expected);
+}
+
+#[test]
+fn rust_renderer_keeps_short_lists_rustfmt_clean() {
+    let mut list = constant();
+    list.value = None;
+    list.values = Some(vec![
+        "claude".to_owned(),
+        "codex".to_owned(),
+        "amp".to_owned(),
+    ]);
+    let actual = render_rust(&[list], false);
+    assert!(
+        actual.contains("pub const SERVICE_NAME: &[&str] = &[\"claude\", \"codex\", \"amp\"];")
+    );
 }
