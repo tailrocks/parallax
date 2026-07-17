@@ -197,7 +197,7 @@ work.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [149](149-route-less-capability-foundation.md) | Establish route-less UI capabilities before feature moves | P1 | L | 100, 129, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [149](149-route-less-capability-foundation.md) | Establish route-less UI capabilities before feature moves | P1 | L | 100, 129, 152, 153 | BLOCKED — 100+129 done; remaining deps 152+153 (dep note 2026-07-17) |
 | [134](134-investigations-feature-migration.md) | Migrate investigations behind a strict feature facade | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 | [135](135-sql-feature-migration.md) | Migrate the SQL workspace behind decoded feature boundaries | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 | [136](136-ecosystem-feature-migration.md) | Migrate ecosystem topology into a bounded feature | P1 | M | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |

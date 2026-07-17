@@ -24,7 +24,49 @@
 - **Depends on**: 100, 129, 152, 153
 - **Category**: TypeScript / route-less capabilities / architecture foundation
 - **Planned at**: `e3e7997`, 2026-07-12
-- **Status**: BLOCKED — Plans 100, 129, 152, and 153 are not complete
+- **Status**: BLOCKED — remaining deps Plan 152 + Plan 153 (checked 2026-07-17)
+
+### Dependency resolution (2026-07-17)
+
+| Dep | State | Evidence |
+|---|---|---|
+| 100 | **DONE** (retired) | Plan file gone; `090ea92b` architecture control plane; domain/time-range + ownership ledger live |
+| 129 | **DONE** (retired) | Plan file gone; README “Plan 129 DONE (2026-07-17)”; `34174e31` Vitest foundation |
+| 152 | **OPEN** | `plans/152-graphql-contract-foundation.md` present; README TODO; uncommitted WIP under `ui/codegen.ts`, `ui/src/platform/graphql/**`, `ui/src/features/dashboards/**` |
+| 153 | **OPEN** | `plans/153-runtime-boundary-foundation.md` present; README TODO; uncommitted WIP under `ui/src/platform/{external-values,visibility,url,storage,sse}/**` |
+
+### Full-scope blockers
+
+Full Plan 149 cannot land until **both 152 and 153 are retired on `main`**:
+
+1. **Plan 152** must supply the generator/transport and runtime-metric handoff so
+   `features/runtime-metrics/api/runtime-metrics.graphql` + generated sibling can
+   be created without a parallel decoder or raw `graphql()` string path.
+2. **Plan 153** must supply final visibility/cancellation and non-GraphQL URL
+   owners so `use-runtime-metrics` and any range/search edges consume permanent
+   platform facades (not provisional `@/lib/use-visible` / ad-hoc URL decode).
+
+### Independent work (not landed this pass)
+
+These steps do **not** require 152/153 product APIs and can proceed once the
+working tree is clean of concurrent 152/153 WIP (ownership ledger scans all
+live `ui/src` files; untracked platform files fail `ui.architecture` and
+serialize with `ratchet.toml`):
+
+- Step 1 domain: `domain/story/story-beat.ts`, `domain/runtime-metrics/runtime-metric.ts`
+  (`domain/time-range` already final from Plan 100)
+- Step 3 presentation: `features/story`, `features/time-range`, `shared/components/page-header`
+- Step 4 import-only consumers for story / time-range / page-header
+- Step 5 tests/matrix/ratchet for those owners only
+
+**Not independent:** Step 2 runtime-metrics GraphQL + hook + MetricStrip/
+RuntimeSnapshotCard orchestration (needs 152 transport + 153 visibility).
+
+### Re-entry
+
+When 152 + 153 are retired on `main` (plan files deleted, README rows gone,
+platform owners committed): re-run Step 0 drift check + prerequisite gates, then
+execute Steps 1–6 in full, evidence twice green, retire this plan + README row.
 
 ## Why This Matters
 
