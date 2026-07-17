@@ -565,3 +565,10 @@ Runs 423–500 closed PromQL partial surface mapping and many load-bearing re-ve
 ## Run 535 (2026-07-18) — still not done
 
 **Not done.** Highest remaining: mix, server 1M/5M, quotes, GB cold, cluster RPO.
+
+## Run 537 (2026-07-18) — still not done
+
+**Not done.** Highest remaining: mix, server 1M/5M, quotes, GB cold, cluster RPO.
+
+Laptop 423–536: PromQL partial surface, join/TTL/FT/projection/windows, adopt-native.
+No pin bump. No direction flip.
