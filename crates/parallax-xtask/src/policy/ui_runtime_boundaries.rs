@@ -20,7 +20,7 @@ const REQUIRED: &[(&str, &str)] = &[
         "BoundaryError",
     ),
     (
-        "ui/src/platform/sse/event-source.client.ts",
+        "ui/src/platform/sse/event-source.ts",
         "browserEventSourceFactory",
     ),
     (
