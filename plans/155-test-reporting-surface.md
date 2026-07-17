@@ -38,6 +38,11 @@
 - The query-neutral `MetadataStore` port now exposes all four test-reporting
   upserts and reads. Dynamic-dispatch fixtures prove server/API composition can
   persist and query the Turso registry without concrete-store downcasts.
+- Pure `parallax-analysis` derivation now recognizes parented test spans by
+  `test.case.name`, derives strict ordered identities/attempts/configuration,
+  separates assertion failures from harness breakage, and copies only the
+  matching normalized production error fingerprint. Worker persistence and
+  explorer queries remain.
 
 Design decisions D1–D9 (identity, native tables, status taxonomy, attempt
 chains, shared fingerprints, flaky SM, `/tests` surface, session semantics,
