@@ -140,6 +140,11 @@ the helper objective; the peer executor owns the status transition.
   plan/step bytes and current bounds on restart. It cannot transition or delete
   anything yet; peer must add `executing -> complete`, failure recording,
   resume behavior, and cross-store execution proof.
+- Journal steps now enforce atomic `planned -> executing -> complete`
+  transitions, preserve bounded failure evidence for retry, clear it when a
+  retry begins, skip already-complete steps, and complete the parent journal
+  only after every step completes. No store deletion is attached; peers must
+  review crash windows around real external work and prove resume behavior.
 
 ## Historical Blocker Evidence (2026-07-14; superseded 2026-07-17)
 

@@ -303,10 +303,15 @@ mod tests {
                 protection_generation: "pins".into(),
                 catalog_fingerprint: "catalog".into(),
             },
-            vec![PruneItem {
+            [
+                (PruneClass::Issues, "issues"),
+                (PruneClass::Invocations, "invocations"),
+            ]
+            .into_iter()
+            .map(|(class, target)| PruneItem {
                 store: PruneStore::Turso,
-                class: PruneClass::Issues,
-                target: "issues".into(),
+                class,
+                target: target.into(),
                 cutoff_nanos: 100,
                 estimate: PruneEstimate {
                     rows: Some(2),
@@ -315,7 +320,8 @@ mod tests {
                 },
                 exclusions: Vec::new(),
                 warnings: Vec::new(),
-            }],
+            })
+            .collect(),
             PrunePlanLimits::default(),
         )
         .expect("build plan")
@@ -340,7 +346,7 @@ mod tests {
             .expect("repeat journal");
         assert_eq!(first, repeated);
         assert_eq!(first.created_at_nanos, 12_000_000);
-        assert_eq!(first.steps.len(), 1);
+        assert_eq!(first.steps.len(), 2);
         assert_eq!(first.steps[0].state, PruneJournalStepState::Planned);
         drop(store);
 
@@ -384,5 +390,123 @@ mod tests {
             .prune_journal(plan.plan_id(), PrunePlanLimits::default())
             .await
             .expect_err("tampered step must fail recovery");
+    }
+
+    #[tokio::test]
+    async fn transitions_preserve_retry_evidence_and_complete_only_after_all_steps() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let store = TursoMetadataStore::open(directory.path().join("metadata.db"))
+            .await
+            .expect("open metadata");
+        let plan = plan();
+        store
+            .create_prune_journal(&plan, 1_000_000, PrunePlanLimits::default())
+            .await
+            .expect("create journal");
+
+        assert_eq!(
+            store
+                .begin_prune_step(plan.plan_id(), 0, 2_000_000)
+                .await
+                .expect("start first step"),
+            PruneStepStart::Execute
+        );
+        store
+            .record_prune_step_failure(plan.plan_id(), 0, "engine unavailable", 3_000_000)
+            .await
+            .expect("record failure");
+        let failed = store
+            .prune_journal(plan.plan_id(), PrunePlanLimits::default())
+            .await
+            .expect("load failed journal")
+            .expect("journal exists");
+        assert_eq!(failed.steps[0].state, PruneJournalStepState::Executing);
+        assert_eq!(
+            failed.steps[0].last_error.as_deref(),
+            Some("engine unavailable")
+        );
+        assert_eq!(failed.completed_at_nanos, None);
+
+        assert_eq!(
+            store
+                .begin_prune_step(plan.plan_id(), 0, 4_000_000)
+                .await
+                .expect("retry first step"),
+            PruneStepStart::Execute
+        );
+        store
+            .complete_prune_step(plan.plan_id(), 0, 5_000_000)
+            .await
+            .expect("complete first step");
+        assert_eq!(
+            store
+                .begin_prune_step(plan.plan_id(), 0, 6_000_000)
+                .await
+                .expect("revisit completed step"),
+            PruneStepStart::AlreadyComplete
+        );
+        let partial = store
+            .prune_journal(plan.plan_id(), PrunePlanLimits::default())
+            .await
+            .expect("load partial journal")
+            .expect("journal exists");
+        assert_eq!(partial.steps[0].last_error, None);
+        assert_eq!(partial.completed_at_nanos, None);
+
+        store
+            .begin_prune_step(plan.plan_id(), 1, 7_000_000)
+            .await
+            .expect("start second step");
+        store
+            .complete_prune_step(plan.plan_id(), 1, 8_000_000)
+            .await
+            .expect("complete second step");
+        let complete = store
+            .prune_journal(plan.plan_id(), PrunePlanLimits::default())
+            .await
+            .expect("load complete journal")
+            .expect("journal exists");
+        assert_eq!(complete.completed_at_nanos, Some(8_000_000));
+        assert!(
+            complete
+                .steps
+                .iter()
+                .all(|step| step.state == PruneJournalStepState::Complete)
+        );
+    }
+
+    #[tokio::test]
+    async fn transitions_reject_skips_missing_steps_and_unbounded_errors() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let store = TursoMetadataStore::open(directory.path().join("metadata.db"))
+            .await
+            .expect("open metadata");
+        let plan = plan();
+        store
+            .create_prune_journal(&plan, 1, PrunePlanLimits::default())
+            .await
+            .expect("create journal");
+
+        store
+            .complete_prune_step(plan.plan_id(), 0, 2)
+            .await
+            .expect_err("planned step cannot skip executing");
+        store
+            .begin_prune_step(plan.plan_id(), 99, 2)
+            .await
+            .expect_err("missing step cannot start");
+        store
+            .begin_prune_step(plan.plan_id(), 0, 2)
+            .await
+            .expect("start step");
+        store
+            .record_prune_step_failure(
+                plan.plan_id(),
+                0,
+                &"x".repeat(PRUNE_JOURNAL_ERROR_MAX_BYTES + 1),
+                3,
+            )
+            .await
+            .expect_err("unbounded error must fail");
     }
 }
