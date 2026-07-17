@@ -36,7 +36,7 @@ monitoring, LLM observability.
 |---|---|---|
 | **Latest version** | **v0.133.0** (2026-07-15); v0.131.0 (2026-07-01) bumped **ClickHouse → 25.12.5** to stay on a supported release | [github.com/SigNoz/signoz/releases](https://github.com/SigNoz/signoz/releases), [signoz.io/changelog](https://signoz.io/changelog/) |
 | **Cadence** | Very fast: ~4 minor releases in ~4 weeks (v0.130→v0.133 as of 2026-07-17); still **pre-1.0** | changelog |
-| **Stars** | **30,144** (GitHub API, 2026-07-17 — up from ~27.4k in June 2026) | [github.com/SigNoz/signoz](https://github.com/SigNoz/signoz) |
+| **Stars** | **30,251** (GitHub API, 2026-07-17 pass 59/60 — up from ~27.4k in June 2026) | [github.com/SigNoz/signoz](https://github.com/SigNoz/signoz) |
 | **License** | Core platform **MIT-Expat**; `ee/` + `cmd/enterprise/` proprietary; **`signoz-mcp-server` Apache-2.0** (separate repo) | LICENSE, ee/LICENSE, maintainer [discussion #4231](https://github.com/SigNoz/signoz/discussions/4231) |
 | **Languages** | TypeScript ~53% (React UI), Go ~37% (backend), Python ~5% | GitHub |
 | **Telemetry store** | **ClickHouse** + ClickHouse Keeper (ZooKeeper still the shipped reality — Keeper *supported* but charts/compose not switched: issues signoz#7002, charts#610) | docs + issues |
@@ -65,11 +65,14 @@ single-process local mode exists.**
 
 Feature gating: SSO/SAML add-on (Teams >$999/mo) or Enterprise; **RBAC + audit
 logs = Enterprise ("coming soon")**. MCP server itself is Apache-2.0, free,
-self-hostable against any instance; in-product "Noz" AI + hosted MCP are
-Teams-Cloud features (whether self-host Community gets Noz is **not stated** —
-uncertain). **No per-seat fees.** Verify pricing against live
-[signoz.io/pricing](https://signoz.io/pricing/) before quoting — vendor pages
-change.
+self-hostable against any instance. **In-product AI "Noz" = SigNoz Cloud only**
+(pass 60: [docs.signoz.io/docs/ai/noz](https://signoz.io/docs/ai/noz/) tagged
+**SigNoz Cloud**; README Agent-Native section + concurrent market note
+[oss-agent-surface-gating-2026-07-17.md](../oss-agent-surface-gating-2026-07-17.md)).
+Self-host keeps free MCP path to external agents; **does not get free Noz**.
+Hosted MCP / other Teams-Cloud AI surfaces remain cloud-tiered. **No per-seat
+fees.** Verify pricing against live [signoz.io/pricing](https://signoz.io/pricing/)
+before quoting — vendor pages change.
 
 > **Economics (multi-angle):** SigNoz Community is **$0 software** with **non-zero
 > ops cost** (ClickHouse + collector + Postgres/SQLite; ~5-container local).
@@ -172,7 +175,7 @@ architecturally, early in productization.
 | Official MCP server | ✅ **Apache-2.0, both hosted + self-hosted**, **v0.8.0** (2026-07-15), stdio + HTTP(OAuth) | ✅🧪 local-stdio read-only shipped (plan 112 DONE; remote deferred) |
 | MCP tool surface | **41 tools** (pass 41 recount of [signoz-mcp-server README](https://github.com/SigNoz/signoz-mcp-server) table) — includes write/destructive tools (create/update/delete alerts, dashboards, views, notification channels) | read-only bounded projection (local-stdio MCP shipped; remote 🏗) |
 | Skills marketplace | ✅ `agent-skills` repo — 12 skills, incl. read-only `signoz-investigating-alerts` RCA skill **with eval cases** | ❌ |
-| AI root-cause | ✅ MCP RCA skill (3-tier, mandated cite-every-claim) | 🟡 planned |
+| AI root-cause | ✅ MCP RCA skill (3-tier, cite-every-claim); **Noz in-product AI = Cloud only** (pass 60) | 🟡 planned |
 | Coding-agent clients | ✅ Claude Code, Cursor, VS Code/Copilot, Codex, Gemini | ✅ (intended) |
 | **Portable, versioned evidence-bundle schema** | ❌ — "Postmortem Evidence Pack" = **ad-hoc LLM-generated markdown per investigation; no JSON schema, no version/provenance/redaction/query-manifest/outcome fields** | ✅🧪 **code-shipped** (value **unproven A1**) |
 | **Fix-outcome loop** | ❌ — investigations end at ranked causes | 🟡🧪 **partial**: offline residual plan **123 DONE**; draft-PR deferred; live value **unproven** |
@@ -290,7 +293,9 @@ self-hosted Parallax could undercut but that is unmeasured.
 
 - [github.com/SigNoz/signoz](https://github.com/SigNoz/signoz) — README, LICENSE, releases, architecture
 - [github.com/SigNoz/signoz LICENSE](https://github.com/SigNoz/signoz/blob/main/LICENSE), [ee/LICENSE](https://github.com/SigNoz/signoz/blob/develop/ee/LICENSE), [discussion #4231](https://github.com/SigNoz/signoz/discussions/4231) (license split)
-- [github.com/SigNoz/signoz/releases](https://github.com/SigNoz/signoz/releases) — latest **v0.133.0** (2026-07-15); **30,235 stars** (GitHub API, 2026-07-17 pass 41)
+- [github.com/SigNoz/signoz/releases](https://github.com/SigNoz/signoz/releases) — latest **v0.133.0** (2026-07-15); **30,251 stars** (GitHub API, 2026-07-17 pass 59/60)
+- [Noz docs](https://signoz.io/docs/ai/noz/) — **SigNoz Cloud only** (pass 60)
+- [OSS agent surface gating note](../oss-agent-surface-gating-2026-07-17.md)
 - [github.com/SigNoz/signoz-mcp-server/releases](https://github.com/SigNoz/signoz-mcp-server/releases) — MCP server latest **v0.8.0** (2026-07-15); **41 tools** counted from README tool table (pass 41; was ~38)
 - [github.com/SigNoz/signoz/releases](https://github.com/SigNoz/signoz/releases)
 - [signoz.io/docs/architecture](https://signoz.io/docs/architecture/), [install/self-host](https://signoz.io/docs/install/self-host/)
