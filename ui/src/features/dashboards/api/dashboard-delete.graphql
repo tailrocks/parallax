@@ -1,0 +1,3 @@
+mutation DashboardDelete($id: String!) {
+  dashboardDelete(id: $id)
+}

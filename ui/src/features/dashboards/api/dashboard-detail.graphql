@@ -1,0 +1,4 @@
+query DashboardDetail($id: String!) {
+  dashboard(id: $id) { id name layout }
+  metricNames
+}

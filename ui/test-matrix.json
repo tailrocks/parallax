@@ -2,24 +2,12 @@
   "schema_version": 1,
   "ratchets": {
     "fire_event_calls": 28,
-    "legacy_handoffs": 54,
+    "legacy_handoffs": 53,
     "raw_router_builders": 1,
     "test_cases": 497,
     "test_files": 98
   },
   "private_route_imports": [
-    {
-      "test_file": "ui/src/routes/__tests__/-dashboards.test.tsx",
-      "module": "@/routes/dashboards.index",
-      "symbols": [
-        "DashboardCards",
-        "DashboardCreateDialog",
-        "dashboardRangeSearch",
-        "parseLayout",
-        "serializeWidgets"
-      ],
-      "removal_plan": 137
-    },
     {
       "test_file": "ui/src/routes/__tests__/-invocations.test.tsx",
       "module": "@/routes/invocations.index",
@@ -818,9 +806,8 @@
       "risk": "Dashboard CRUD, layout serialization, range links, and widget queries can diverge",
       "scenario_owner": "features/dashboards",
       "lane_owner": "vitest/route",
-      "delivery_plan": 137,
       "layer": "route-contract",
-      "test_file": "ui/src/routes/__tests__/-dashboards.test.tsx",
+      "test_file": "ui/src/features/dashboards/tests/components/dashboard-contracts.test.tsx",
       "test_ids": [
         "preserves dashboard widget unknown fields",
         "round-trips dashboard label choices without breaking old layouts",
@@ -830,14 +817,7 @@
         "passes custom ranges through dashboard create navigation"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/routes/__tests__/-dashboards.test.tsx",
-        "destination_owner": "features/dashboards",
-        "removal_plan": 137,
-        "created": "2026-07-15",
-        "expires": "plan-137-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-031",

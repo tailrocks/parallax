@@ -1782,10 +1782,6 @@ metric = "typescript.assertions"
 scope = "ui/src/routes/__tests__/-alerts.test.tsx"
 ceiling = 35
 
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-dashboards.test.tsx"
-ceiling = 14
 
 [[limits]]
 metric = "typescript.assertions"
@@ -1878,10 +1874,6 @@ metric = "typescript.file-lines"
 scope = "ui/src/lib/trace-tree.ts"
 ceiling = 351
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/__tests__/-dashboards.test.tsx"
-ceiling = 176
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -1913,15 +1905,7 @@ metric = "typescript.file-lines"
 scope = "ui/src/routes/alerts.index.tsx"
 ceiling = 642
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/dashboards.$dashboardId.tsx"
-ceiling = 466
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/dashboards.index.tsx"
-ceiling = 520
 
 
 [[limits]]
@@ -2681,10 +2665,6 @@ metric = "typescript.function-lines"
 scope = "ui/src/platform/sse/tests/use-live-stream.test.tsx:77"
 ceiling = 146
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/__tests__/-dashboards.test.tsx:54"
-ceiling = 142
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2744,25 +2724,9 @@ ceiling = 88
 
 
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/dashboards.index.tsx:134"
-ceiling = 182
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/dashboards.index.tsx:317"
-ceiling = 71
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/dashboards.index.tsx:389"
-ceiling = 91
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/dashboards.index.tsx:481"
-ceiling = 65
 
 
 
@@ -2945,15 +2909,7 @@ metric = "typescript.function-lines"
 scope = "ui/src/platform/sse/use-live-stream.ts:39"
 ceiling = 69
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/dashboards.$dashboardId.tsx:188"
-ceiling = 180
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/dashboards.$dashboardId.tsx:369"
-ceiling = 117
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -3066,10 +3022,6 @@ metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/platform/graphql/variables.ts:17"
 ceiling = 21
 
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/dashboards.$dashboardId.tsx:161"
-ceiling = 22
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
@@ -4678,12 +4630,6 @@ current_owner = "platform/graphql"
 target_owner = "platform/graphql"
 migration_plan = "152"
 kind = "handwritten"
-[[ui.ownership]]
-path = "ui/src/platform/sse/event-source.client.ts"
-current_owner = "platform/sse"
-target_owner = "platform/sse"
-migration_plan = "153"
-kind = "handwritten"
 
 [[ui.ownership]]
 path = "ui/src/platform/sse/live-stream-controller.ts"
@@ -4748,12 +4694,6 @@ target_owner = "platform/url"
 migration_plan = "153"
 kind = "handwritten"
 
-[[ui.ownership]]
-path = "ui/src/platform/visibility/page-visibility.client.ts"
-current_owner = "platform/visibility"
-target_owner = "platform/visibility"
-migration_plan = "153"
-kind = "handwritten"
 
 [[ui.ownership]]
 path = "ui/src/platform/visibility/tests/use-page-visible.test.tsx"
@@ -4794,13 +4734,6 @@ path = "ui/src/routes/__tests__/-alerts.test.tsx"
 current_owner = "routes-tests"
 target_owner = "features/alerts"
 migration_plan = "alerts"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/routes/__tests__/-dashboards.test.tsx"
-current_owner = "routes-tests"
-target_owner = "features/dashboards"
-migration_plan = "137"
 kind = "handwritten"
 
 
@@ -4886,14 +4819,14 @@ kind = "handwritten"
 path = "ui/src/routes/dashboards.$dashboardId.tsx"
 current_owner = "routes"
 target_owner = "features/dashboards"
-migration_plan = "137"
+migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
 path = "ui/src/routes/dashboards.index.tsx"
 current_owner = "routes"
 target_owner = "features/dashboards"
-migration_plan = "137"
+migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -5668,17 +5601,230 @@ metric = "typescript.function-lines"
 scope = "ui/src/features/ecosystem/components/ecosystem-page.tsx:17"
 ceiling = 73
 
+
+
+
+[[ui.ownership]]
+path = "ui/src/features/dashboards/api/dashboard-api.ts"
+current_owner = "features/dashboards"
+target_owner = "features/dashboards"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/dashboards/api/dashboard-delete.generated.ts"
+current_owner = "features/dashboards"
+target_owner = "features/dashboards"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/dashboards/api/dashboard-detail.generated.ts"
+current_owner = "features/dashboards"
+target_owner = "features/dashboards"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/dashboards/api/dashboard-save.generated.ts"
+current_owner = "features/dashboards"
+target_owner = "features/dashboards"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/dashboards/api/dashboards-list.generated.ts"
+current_owner = "features/dashboards"
+target_owner = "features/dashboards"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/dashboards/components/dashboard-detail-page.tsx"
+current_owner = "features/dashboards"
+target_owner = "features/dashboards"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/dashboards/components/dashboards-page.tsx"
+current_owner = "features/dashboards"
+target_owner = "features/dashboards"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/dashboards/index.ts"
+current_owner = "features/dashboards"
+target_owner = "features/dashboards"
+migration_plan = "none"
+kind = "handwritten"
+facade = true
+
+[[ui.ownership]]
+path = "ui/src/features/dashboards/model/dashboard-error.ts"
+current_owner = "features/dashboards"
+target_owner = "features/dashboards"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/dashboards/model/dashboard-search.ts"
+current_owner = "features/dashboards"
+target_owner = "features/dashboards"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/dashboards/model/dashboard.ts"
+current_owner = "features/dashboards"
+target_owner = "features/dashboards"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/dashboards/model/widget-data.ts"
+current_owner = "features/dashboards"
+target_owner = "features/dashboards"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/dashboards/model/widget.ts"
+current_owner = "features/dashboards"
+target_owner = "features/dashboards"
+migration_plan = "none"
+kind = "handwritten"
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/dashboards/api/dashboard-delete.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/dashboards/api/dashboard-detail.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/dashboards/api/dashboard-save.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/dashboards/api/dashboards-list.generated.ts"
+ceiling = 1
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/model/service-map-layout-engine.ts"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/workers/ecosystem-layout.worker.ts"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/sse/event-source.ts"
+current_owner = "platform/sse"
+target_owner = "platform/sse"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/visibility/page-visibility.ts"
+current_owner = "platform/visibility"
+target_owner = "platform/visibility"
+migration_plan = "none"
+kind = "handwritten"
+
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/dashboards/components/dashboards-page.tsx:63"
+ceiling = 182
+
+
+
+
+
+
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/ecosystem/model/service-map-layout.ts:102"
+scope = "ui/src/features/dashboards/model/widget-data.ts:45"
+ceiling = 22
+
+
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/dashboards/components/dashboard-detail-page.tsx:64"
+ceiling = 191
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/dashboards/components/dashboard-detail-page.tsx:256"
+ceiling = 117
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/dashboards/components/dashboards-page.tsx:246"
+ceiling = 77
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/dashboards/components/dashboards-page.tsx:324"
+ceiling = 91
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/dashboards/components/dashboards-page.tsx:416"
+ceiling = 65
+
+[[ui.ownership]]
+path = "ui/src/features/dashboards/tests/components/dashboard-contracts.test.tsx"
+current_owner = "features/dashboards"
+target_owner = "features/dashboards"
+migration_plan = "none"
+kind = "handwritten"
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/dashboards/components/dashboard-detail-page.tsx"
+ceiling = 361
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/dashboards/components/dashboards-page.tsx"
+ceiling = 464
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/dashboards/tests/components/dashboard-contracts.test.tsx:67"
+ceiling = 135
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/dashboards/tests/components/dashboard-contracts.test.tsx"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/ecosystem/model/service-map-layout-engine.ts:99"
 ceiling = 36
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/ecosystem/model/service-map-layout.ts:102"
+scope = "ui/src/features/ecosystem/model/service-map-layout-engine.ts:99"
 ceiling = 19
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/features/ecosystem/model/service-map-layout.ts:102"
+scope = "ui/src/features/ecosystem/model/service-map-layout-engine.ts:99"
 ceiling = 65

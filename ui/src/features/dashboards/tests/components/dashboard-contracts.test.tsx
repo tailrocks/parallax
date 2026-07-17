@@ -10,9 +10,10 @@ import {
   DashboardCards,
   DashboardCreateDialog,
   dashboardRangeSearch,
+  loadWidgetSeries,
   parseLayout,
   serializeWidgets,
-} from "@/routes/dashboards.index"
+} from "@/features/dashboards"
 import { renderTestRouter } from "@/test/router"
 
 const apiMock = vi.hoisted(() => ({
@@ -36,6 +37,18 @@ vi.mock("@/lib/api", () => ({
     value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n"),
   graphql: apiMock.graphql,
   graphqlCached: apiMock.graphql,
+}))
+
+vi.mock("@/features/dashboards/api/dashboard-api", () => ({
+  loadDashboardsList: vi.fn(),
+  loadDashboardDetail: vi.fn(),
+  saveDashboard: vi.fn(async () => ({
+    id: "dash-new",
+    name: "checkout ops",
+    layout: "[]",
+    updatedAtNanos: "1",
+  })),
+  deleteDashboard: vi.fn(async () => undefined),
 }))
 
 afterEach(() => {
@@ -126,8 +139,6 @@ describe("dashboard contracts", () => {
   })
 
   it("loads N widget series with one aliased GraphQL document", async () => {
-    const { loadWidgetSeries } =
-      await import("@/routes/dashboards.$dashboardId")
     const fetch = vi.fn(async (_query: string) => ({
       series_0: [{ groupValue: null, points: [{ tsNanos: "1", value: 1 }] }],
       series_1: [{ groupValue: null, points: [{ tsNanos: "1", value: 2 }] }],
@@ -140,7 +151,7 @@ describe("dashboard contracts", () => {
     ]
     const series = await loadWidgetSeries(
       widgets,
-      { key: "1h", fromNanos: "10", toNanos: "20" },
+      { fromNanos: "10", toNanos: "20" },
       fetch as never
     )
     expect(fetch).toHaveBeenCalledTimes(1)
@@ -161,27 +172,22 @@ describe("dashboard contracts", () => {
       to: custom.toNanos,
     })
     const onCreated = vi.fn()
-    apiMock.graphql.mockImplementation((query: string) => {
-      if (query.includes("dashboardSave")) {
-        return Promise.resolve({ dashboardSave: { id: "dash-new" } })
-      }
-      return apiMock.defaultGraphql(query)
-    })
 
     render(
       <DashboardCreateDialog
         metricNames={["process.cpu.utilization"]}
         detailSearch={detailSearch}
+        initialWidget={{
+          metric: "process.cpu.utilization",
+          agg: "avg",
+          chart: "line",
+          title: "cpu",
+        }}
         onCreated={onCreated}
       />
     )
 
-    await user.click(screen.getByRole("button", { name: /new dashboard/i }))
     await user.type(screen.getByPlaceholderText("checkout ops"), "checkout ops")
-    await user.type(
-      screen.getByPlaceholderText("Search metrics"),
-      "process.cpu.utilization"
-    )
     await user.click(screen.getByRole("button", { name: "Create" }))
 
     await waitFor(() =>

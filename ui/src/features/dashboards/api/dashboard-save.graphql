@@ -1,0 +1,5 @@
+mutation DashboardSave($name: String!, $layout: String!, $id: String) {
+  dashboardSave(name: $name, layout: $layout, id: $id) {
+    id name layout updatedAtNanos
+  }
+}

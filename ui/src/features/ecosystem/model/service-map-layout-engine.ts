@@ -29,7 +29,6 @@ export type EcosystemLayoutResponse =
   | { ok: true; layout: EcosystemLayout }
   | { ok: false; error: string }
 
-
 function sortedRequest(
   request: EcosystemLayoutRequest
 ): EcosystemLayoutRequest {

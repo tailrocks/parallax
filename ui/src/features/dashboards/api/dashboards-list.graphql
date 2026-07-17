@@ -1,0 +1,4 @@
+query DashboardsList {
+  dashboards { id name layout updatedAtNanos }
+  metricNames
+}
