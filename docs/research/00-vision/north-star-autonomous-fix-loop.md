@@ -77,15 +77,15 @@ app-code auto-merge + open outcome/recurrence corpus.**
 
 | Source | Finding |
 | --- | --- |
-| [Bits Code docs](https://docs.datadoghq.com/bits_ai/bits_code/) | Explicit: **“Bits Code never auto-merges PRs or MRs.”** (pass **165** + **190** HTML reconfirm). Automations deliver PR/MR (optionally draft) or Slack — not merge. |
+| [Bits Code docs](https://docs.datadoghq.com/bits_ai/bits_code/) | Explicit: **“Bits Code never auto-merges PRs or MRs.”** (pass **165** + **190** + **212** HTML reconfirm). Automations deliver PR/MR (optionally draft) or Slack — not merge. |
 | [Bits Code product/blog](https://www.datadoghq.com/blog/bits-code/) | “The agent proposes pull requests, but **engineers decide what to merge**.” |
 | [Seer Autofix docs](https://docs.sentry.io/product/ai-in-sentry/seer/autofix/) | Automation caps: **Stop after Root Cause / Plan / PR Drafted**. Max automation = **open a PR**; human still merges. Handoff to Claude/Cursor/Copilot Cloud still PR/local checkout path. |
 | HolmesGPT (pass 95 + **142**) | Operator mode + optional GitHub MCP **open PR** (write optional); MCP toolset *can* include merge when write-enabled — **not** “never merges,” but also **not** a productized app-code auto-merge + open outcome corpus; **no own store** |
 
 | Player | How far they go | The stated stopping point |
 | --- | --- | --- |
-| Sentry Seer | Root cause → solution → code changes → **opens PR** (cap: **Stop after PR Drafted**); external coding-agent handoff | **No app-code auto-merge** — max auto is PR draft/create ([Autofix docs](https://docs.sentry.io/product/ai-in-sentry/seer/autofix/) pass **165/190** stopping-points reconfirm) |
-| Datadog Bits AI | Bits Code: fix gen + CI iterate + open PR/MR; automations optional | **Never auto-merges** ([Bits Code docs](https://docs.datadoghq.com/bits_ai/bits_code/) pass **165/190**); humans decide merge |
+| Sentry Seer | Root cause → solution → code changes → **opens PR** (cap: **Stop after PR Drafted**); external coding-agent handoff | **No app-code auto-merge** — max auto is PR draft/create ([Autofix docs](https://docs.sentry.io/product/ai-in-sentry/seer/autofix/) pass **165/190/212**) |
+| Datadog Bits AI | Bits Code: fix gen + CI iterate + open PR/MR; automations optional | **Never auto-merges** ([Bits Code docs](https://docs.datadoghq.com/bits_ai/bits_code/) pass **165/190/212**); humans decide merge |
 | HolmesGPT (CNCF) | Investigation agent over your stack; **Operator mode** background health + Slack fix messaging; GitHub toolset can **open PRs** | No own store/outcome ledger; PR open ≠ auto-merge; SRE/infra automation path ([README](https://github.com/HolmesGPT/holmesgpt) pass **95/99**) |
 | GitLab Duo | "Ready-to-merge" AI fix MRs | Humans decide the merge ([GitLab blog](https://about.gitlab.com/blog/automate-remediation-with-ready-to-merge-ai-code-fixes/)) |
 | GitHub Copilot coding agent | Issue → draft PR via Agent Tasks | Normal review required; Actions gated ([docs](https://docs.github.com/en/copilot/concepts/about-copilot-coding-agent)) |
