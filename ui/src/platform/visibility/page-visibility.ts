@@ -1,4 +1,5 @@
-// Plan 153 — browser document visibility source.
+// Plan 153 — browser document visibility source. SSR-safe: no document
+// global is touched until methods run.
 
 export interface PageVisibilitySource {
   readonly isVisible: () => boolean
