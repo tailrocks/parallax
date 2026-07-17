@@ -47,13 +47,16 @@ No CI wiring: needs a live server and seeded telemetry. Manual only.
 
 ## SDK / TLS
 
-`rmcp` 2.2.0 with `default-features = false` and only `server`, `transport-io`,
+`rmcp` 2.2.0 (latest stable rechecked 2026-07-17) with
+`default-features = false` and only `server`, `transport-io`,
 `macros`. No `reqwest`/`rustls` feature of the SDK is enabled. HTTP to GraphQL
 uses the workspace `reqwest` with `native-tls-vendored`.
 
 ## Owned concerns
 
 Isolated proof of read-only MCP projection equivalence; never product packaging.
+Tool results expose bounded text plus `structuredContent`; comparison-only raw
+canonical JSON metadata was removed before product graduation.
 
 ## Source map
 

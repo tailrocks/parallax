@@ -4,7 +4,7 @@ use crate::gql::{self, GraphqlClient};
 use rmcp::{
     ErrorData as McpError, ServerHandler, ServiceExt,
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
-    model::{CallToolResult, ContentBlock, Meta, ServerCapabilities, ServerInfo},
+    model::{CallToolResult, ContentBlock, ServerCapabilities, ServerInfo},
     schemars, tool, tool_handler, tool_router,
     transport::stdio,
 };
@@ -83,18 +83,9 @@ fn bundle_tool_result(bundle: gql::BundleProjection) -> CallToolResult {
     // comparison outside this function (check subcommand); do not re-serialize
     // the parsed value when comparing hashes.
     let parsed: Value = serde_json::from_str(&bundle.json).unwrap_or(json!({}));
-    let mut meta = Meta::new();
-    meta.0.insert(
-        "canonicalHash".to_string(),
-        Value::String(bundle.canonical_hash.clone()),
-    );
-    // Spike-only: expose the raw canonical JSON string so a client/check can
-    // compare byte-identity without relying on structuredContent re-serialization.
-    meta.0
-        .insert("rawJson".to_string(), Value::String(bundle.json));
     let mut result = CallToolResult::structured(parsed);
     result.content = vec![ContentBlock::text(bundle.markdown)];
-    result.with_meta(Some(meta))
+    result
 }
 
 #[tool_handler]
@@ -114,4 +105,50 @@ pub(crate) async fn run_stdio(base_url: String) -> anyhow::Result<()> {
     let service = server.serve(stdio()).await?;
     service.waiting().await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn advertises_tools_without_unapproved_capabilities() {
+        let info = SpikeServer::new("http://127.0.0.1:4000".to_string()).get_info();
+        let capabilities = serde_json::to_value(info.capabilities).expect("serialize capabilities");
+
+        assert!(capabilities.get("tools").is_some());
+        for denied in [
+            "completions",
+            "elicitation",
+            "experimental",
+            "logging",
+            "prompts",
+            "resources",
+            "roots",
+            "sampling",
+            "tasks",
+        ] {
+            assert_eq!(
+                capabilities.get(denied),
+                None,
+                "{denied} must stay disabled"
+            );
+        }
+    }
+
+    #[test]
+    fn bundle_result_has_no_comparison_only_raw_metadata() {
+        let result = bundle_tool_result(gql::BundleProjection {
+            json: r#"{"schema_version":"bundle-v2"}"#.to_string(),
+            markdown: "# Evidence".to_string(),
+            canonical_hash: "sha256-jcs:test".to_string(),
+        });
+        let encoded = serde_json::to_value(result).expect("serialize result");
+
+        assert_eq!(encoded.get("_meta"), None);
+        assert_eq!(
+            encoded.get("structuredContent"),
+            Some(&json!({"schema_version": "bundle-v2"}))
+        );
+    }
 }
