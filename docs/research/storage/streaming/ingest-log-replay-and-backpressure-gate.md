@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-05-25
+Research date: 2026-05-25 · **Iggy pin recheck 2026-07-17 (pass 74)**
 
 > **Dormant experiment protocol, not an implementation plan (reconciled
 > 2026-07-12).** The shipped bounded local spool remains the only product ingest
@@ -13,6 +13,13 @@ Research date: 2026-05-25
 > Run or revise this protocol only after the measured broker trigger in
 > [`plans/README.md`](../../../../plans/README.md) fires and the operator opens a
 > new numbered plan.
+>
+> **Pass 74 primary recheck:** Apache Iggy latest server release still
+> **`server-0.8.0`** (2026-04-22); repo active (pushed 2026-07-17, ~4.4k★).
+> Clustering status issue [#2562](https://github.com/apache/iggy/issues/2562)
+> **closed 2026-05-25 for inactivity**, not because multi-node HA was proven —
+> do **not** treat clustering as documented-ready. Product decision (local
+> spool only) **unchanged**.
 
 ## Purpose
 
