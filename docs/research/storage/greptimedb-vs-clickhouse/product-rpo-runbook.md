@@ -144,14 +144,29 @@ or Greptime meta. Do not invent a CH-shaped runbook for the mandatory stack.
 - [ ] Secrets restore path documented (not only “ask Alice”)
 - [ ] JSON2 / experimental tables not blocking `COPY DATABASE` (Run 174 caveat)
 
-## Still open after Run 222
+## Live D1 drill (Run 225 — 2026-07-17)
+
+On four-way pins, N=50k `spans1m` (product path, not CH product):
+
+| Step | Result |
+| --- | --- |
+| GT `COPY spans1m TO '/tmp/…/spans.parquet'` | **50,000** rows, **~280 KiB** parquet, 74 ms |
+| GT `CREATE TABLE spans1m_r225 LIKE spans1m` + `COPY FROM` parquet | **count=50,000**; JOIN on `span_id` **50,000** match |
+| CH comparator `BACKUP`/`RESTORE AS spans1m_r225` | **BACKUP_CREATED** → **RESTORED**, count **50,000** |
+
+**Status:** D1 logical export/import **works end-to-end** on current pins.
+D2 meta snapshot still cluster-path (standalone has no separate metasrv backend
+to snapshot in this compose). D3 Turso dump not exercised here (no product
+Turso fixture in `bench/`).
+
+## Still open after Run 222 / 225
 
 - Concrete **customer-tier SLOs** (numbers above are defaults).
 - Automated job manifests (systemd/k8s CronJob YAML) in product repo when ops
   surfaces exist.
 - Multi-region active-passive design (out of tiny-tier scope).
-- Live restore drill on a throwaway compose stack (engineering time; engine
-  primitives already smoked in Run 174).
+- D2 meta snapshot drill on a **cluster** compose; D3 Turso dump/restore with
+  product schema checksums (`turso-metadata-production-readiness.md` A3).
 
 ## Research date
 

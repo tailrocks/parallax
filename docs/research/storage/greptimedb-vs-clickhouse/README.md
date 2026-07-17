@@ -70,6 +70,7 @@ managed quotes remain):
 | Product RPO/RTO runbook (D1–D3) | 222 | `product-rpo-runbook.md` |
 | Workload-mix decision input (DQ5) | 223 | `workload-mix-decision-input.md` |
 | Four-way N=50k + native OTEL; pins hold | 224 | no direction drift |
+| Live D1 COPY/BACKUP restore drill | 225 | 50k full match both engines |
 
 ## Method
 

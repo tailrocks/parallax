@@ -7401,3 +7401,46 @@ docker exec parallax-bench-greptimedb-1 curl -s -X POST \
 ```
 
 Caveat: N=50k laptop; server 1M/5M still owed.
+
+### Run 225 — 2026-07-17 — live product D1 restore drill (GT COPY + CH BACKUP)
+
+**Pass target.** Practice the product RPO D1 path from `product-rpo-runbook.md`
+on live pins (not only document it).
+
+**Environment.** Four-way compose, N=50k `spans1m` already loaded (Run 224 gen).
+GT `1.1.3`, CH `26.6.1.1193`.
+
+**GT (product path):**
+
+1. `COPY spans1m TO '/tmp/r225/spans.parquet' WITH (FORMAT='parquet')` →
+   **affectedrows=50000**, file **279,874 bytes**, 74 ms.
+2. `CREATE TABLE spans1m_r225 LIKE spans1m`.
+3. `COPY spans1m_r225 FROM '…/spans.parquet' WITH (FORMAT='parquet')` →
+   **50000** rows.
+4. `SELECT count(*) FROM spans1m s JOIN spans1m_r225 r ON s.span_id = r.span_id`
+   → **50000** (full key match).
+
+**CH (comparator):**
+
+1. `BACKUP TABLE spans1m TO File('backups/r225_spans1m')` → `BACKUP_CREATED`.
+2. `RESTORE TABLE spans1m AS spans1m_r225 FROM File(…)` → `RESTORED`.
+3. `count()` → **50000**.
+
+**Verdict.** Product D1 logical restore is **real and fast** at 50k. Mechanism
+unchanged from Run 174; this pass is the **measured practice** the runbook
+checklist required. D2/D3 still open (cluster meta + Turso fixture).
+
+**Reproduce.**
+
+```bash
+# assumes gen.sh already loaded spans1m
+docker exec parallax-bench-greptimedb-1 sh -c 'mkdir -p /tmp/r225'
+docker exec parallax-bench-greptimedb-1 curl -s 'http://localhost:4000/v1/sql?db=public' \
+  --data-urlencode "sql=COPY spans1m TO '/tmp/r225/spans.parquet' WITH (FORMAT='parquet')"
+docker exec parallax-bench-greptimedb-1 curl -s 'http://localhost:4000/v1/sql?db=public' \
+  --data-urlencode 'sql=CREATE TABLE spans1m_r225 LIKE spans1m'
+docker exec parallax-bench-greptimedb-1 curl -s 'http://localhost:4000/v1/sql?db=public' \
+  --data-urlencode "sql=COPY spans1m_r225 FROM '/tmp/r225/spans.parquet' WITH (FORMAT='parquet')"
+docker exec parallax-bench-greptimedb-1 curl -s 'http://localhost:4000/v1/sql?db=public' \
+  --data-urlencode 'sql=SELECT count(*) FROM spans1m_r225'
+```
