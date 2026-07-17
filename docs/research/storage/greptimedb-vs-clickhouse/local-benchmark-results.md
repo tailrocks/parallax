@@ -8141,3 +8141,8 @@ mode. Empty-match DELETE returned affectedrows=0 without error (no-op). No drift
 
 ### Run 320 — 2026-07-17 — still healthy; not done
 
+
+### Run 321 — 2026-07-17 — 20 rapid inserts visible (20/20)
+
+Inserted 20 rows without flush; `count(*)=20`. Freshness 20/20 style gate holds
+(Run 191).
