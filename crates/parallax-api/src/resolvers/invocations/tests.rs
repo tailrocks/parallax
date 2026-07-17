@@ -11,7 +11,9 @@ use std::sync::Arc;
 async fn memo_helper_truncates_and_reuses_spans_for_same_trace() {
     let store = Arc::new(MemoryStore::new());
     let mut spans = Vec::new();
-    for i in 0..(MAX_ROWS + 25) {
+    // Whole-trace reads cap at TRACE_SPANS_MAX (memory guard), NOT list-page
+    // MAX_ROWS: a 521-span trace must arrive complete (corpus id t-wide).
+    for i in 0..(crate::TRACE_SPANS_MAX + 25) {
         spans.push(span(
             "api",
             "big-trace",
@@ -24,7 +26,8 @@ async fn memo_helper_truncates_and_reuses_spans_for_same_trace() {
     let context = context_with_memory(store).await;
     let first = context.spans_for("big-trace").await.unwrap();
     let second = context.spans_for("big-trace").await.unwrap();
-    assert_eq!(first.len(), MAX_ROWS);
+    assert_eq!(first.len(), crate::TRACE_SPANS_MAX);
+    assert!(first.len() > MAX_ROWS, "trace reads outgrow list pagination");
     assert!(Arc::ptr_eq(&first, &second));
 }
 

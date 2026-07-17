@@ -87,6 +87,11 @@ pub(crate) const MAX_ROWS: usize = 500;
 /// Raw SQL is the power surface, so it gets a larger cap than typed resolvers
 /// while still bounding GraphQL response size.
 pub(crate) const SQL_MAX_ROWS: usize = 2_000;
+/// Whole-trace reads are bounded by the trace itself and feed a virtualized
+/// waterfall, so they get a memory-guard cap far above list pagination —
+/// truncating a trace at list size (500) silently corrupted wide traces'
+/// span tree and span count (corpus id t-wide, 521 spans).
+pub(crate) const TRACE_SPANS_MAX: usize = 10_000;
 pub(crate) const SAVED_VIEW_NAME_MAX: usize = 120;
 pub(crate) const SAVED_VIEWS_PER_PAGE: usize = 100;
 pub(crate) const INVESTIGATION_NAME_MAX: usize = 120;

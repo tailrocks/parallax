@@ -18,6 +18,9 @@ import { formatDurationNs } from "@/lib/format"
 export const WHOLE_TRACE_ID = "__whole_trace__"
 export type TraceViewMode = "tree" | "errors" | "lanes"
 const MINIMAP_MAX_BARS = 2_000
+/** Deepest visually indented level; deeper rows stop indenting so the fixed
+ * name column keeps room for the span name (corpus id t-deep). */
+const INDENT_DEPTH_CAP = 10
 
 export interface WaterfallSpan extends TraceTreeSpan {
   service: string
@@ -179,7 +182,7 @@ export function TraceWaterfall({
         type="button"
         onClick={() => onSelect(active ? null : span.spanId)}
         className={cn(
-          "grid w-full cursor-pointer grid-cols-[11rem_minmax(0,1fr)_6.5rem] items-center rounded-md border-l-2 border-transparent py-1.5 text-left text-sm hover:bg-accent/50",
+          "grid w-full cursor-pointer grid-cols-[16rem_minmax(0,1fr)_6.5rem] items-center rounded-md border-l-2 border-transparent py-1.5 text-left text-sm hover:bg-accent/50",
           active && "bg-accent/70",
           highlighted && "border-primary bg-primary/5",
           style && "absolute top-0 left-0"
@@ -189,11 +192,15 @@ export function TraceWaterfall({
       >
         <div
           className="flex min-w-0 items-start gap-2 pr-3"
-          style={{ paddingLeft: (depth + 1) * 14 + 4 }}
+          // Indentation caps so very deep chains keep a readable name column;
+          // depth beyond the cap reads from the row order, as in any tree UI.
+          style={{ paddingLeft: Math.min(depth, INDENT_DEPTH_CAP) * 14 + 8 }}
         >
-          <SpanKindChip kind={span.kind} statusCode={span.statusCode} />
+          <SpanKindChip compact kind={span.kind} statusCode={span.statusCode} />
           <div className="min-w-0">
-            <span className="block break-words">{span.name}</span>
+            <span className="block truncate" title={span.name}>
+              {span.name}
+            </span>
             <div className="mt-1 flex flex-wrap items-center gap-1">
               <Badge variant="outline">{span.service}</Badge>
               {failed ? <Badge variant="rose">error</Badge> : null}
@@ -224,7 +231,7 @@ export function TraceWaterfall({
     <div
       key={item.key}
       className={cn(
-        "sticky top-0 z-20 grid w-full grid-cols-[11rem_minmax(0,1fr)_6.5rem] items-center rounded-md border border-border/70 bg-background/95 px-2 py-1 text-xs text-muted-foreground backdrop-blur",
+        "sticky top-0 z-20 grid w-full grid-cols-[16rem_minmax(0,1fr)_6.5rem] items-center rounded-md border border-border/70 bg-background/95 px-2 py-1 text-xs text-muted-foreground backdrop-blur",
         style && "absolute top-0 left-0"
       )}
       data-testid="trace-lane-header"
@@ -260,7 +267,7 @@ export function TraceWaterfall({
       }}
       className="outline-none"
     >
-      <div className="grid grid-cols-[11rem_minmax(0,1fr)_6.5rem] items-center pb-1 text-[11px] text-muted-foreground">
+      <div className="grid grid-cols-[16rem_minmax(0,1fr)_6.5rem] items-center pb-1 text-[11px] text-muted-foreground">
         <div />
         <div className="grid grid-cols-4">
           {[0, 25, 50, 75].map((pct) => (
@@ -278,7 +285,7 @@ export function TraceWaterfall({
       </div>
 
       <div
-        className="relative mb-2 ml-[11rem] h-6 rounded-md border border-border/70 bg-muted/30"
+        className="relative mb-2 ml-[16rem] h-6 rounded-md border border-border/70 bg-muted/30"
         aria-label="Trace minimap"
       >
         {minimapRows.map((row) => {
@@ -308,7 +315,7 @@ export function TraceWaterfall({
       </div>
 
       <div className="relative">
-        <div className="pointer-events-none absolute inset-y-0 right-[6.5rem] left-[11rem] z-0 grid grid-cols-4">
+        <div className="pointer-events-none absolute inset-y-0 right-[6.5rem] left-[16rem] z-0 grid grid-cols-4">
           {[0, 1, 2, 3].map((line) => (
             <span key={line} className="border-l border-border/50" />
           ))}
@@ -321,7 +328,7 @@ export function TraceWaterfall({
               onSelect(selectedId === WHOLE_TRACE_ID ? null : WHOLE_TRACE_ID)
             }
             className={cn(
-              "grid w-full cursor-pointer grid-cols-[11rem_minmax(0,1fr)_6.5rem] items-center rounded-md py-1.5 text-left text-sm hover:bg-accent/50",
+              "grid w-full cursor-pointer grid-cols-[16rem_minmax(0,1fr)_6.5rem] items-center rounded-md py-1.5 text-left text-sm hover:bg-accent/50",
               selectedId === WHOLE_TRACE_ID && "bg-accent/70"
             )}
           >

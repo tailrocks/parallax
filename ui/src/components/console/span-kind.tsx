@@ -51,6 +51,12 @@ const kindMap: Record<string, SpanKindMeta> = {
   },
 }
 
+/// The wire encodes span kind as `SPAN_KIND_INTERNAL`; every display and
+/// color decision works on the bare kind name.
+export function spanKindLabel(kind: SpanKind): string {
+  return kind.replace(/^SPAN_KIND_/, "")
+}
+
 export function spanKindMeta(kind: SpanKind, statusCode?: string) {
   if (statusCode === "STATUS_CODE_ERROR") {
     return {
@@ -60,7 +66,7 @@ export function spanKindMeta(kind: SpanKind, statusCode?: string) {
     }
   }
   return (
-    kindMap[kind] ?? {
+    kindMap[spanKindLabel(kind)] ?? {
       variant: "secondary" as const,
       icon: IconCpu,
       bar: "bg-muted-foreground",
@@ -71,16 +77,20 @@ export function spanKindMeta(kind: SpanKind, statusCode?: string) {
 export function SpanKindChip({
   kind,
   statusCode,
+  compact = false,
 }: {
   kind: SpanKind
   statusCode?: string
+  /** Icon-only rendering for dense rows (full kind stays in the tooltip). */
+  compact?: boolean
 }) {
   const meta = spanKindMeta(kind, statusCode)
   const Icon = meta.icon
+  const label = spanKindLabel(kind)
   return (
-    <Badge variant={meta.variant}>
+    <Badge variant={meta.variant} title={label}>
       <Icon />
-      {kind}
+      {compact ? null : label}
     </Badge>
   )
 }

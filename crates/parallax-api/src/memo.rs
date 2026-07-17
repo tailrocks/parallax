@@ -63,14 +63,14 @@ impl ApiContext {
             .spans_by_trace(trace_id)
             .await
             .map_err(internal_field_err)?;
-        if rows.len() > MAX_ROWS {
+        if rows.len() > TRACE_SPANS_MAX {
             tracing::warn!(
                 trace_id,
                 fetched = rows.len(),
-                cap = MAX_ROWS,
-                "anchored spans truncated to MAX_ROWS"
+                cap = TRACE_SPANS_MAX,
+                "anchored spans truncated to TRACE_SPANS_MAX"
             );
-            rows.truncate(MAX_ROWS);
+            rows.truncate(TRACE_SPANS_MAX);
         }
         let rows = Arc::new(rows);
         let mut cache = self.memo.spans.lock().await;
@@ -93,14 +93,14 @@ impl ApiContext {
             .logs_by_trace(trace_id)
             .await
             .map_err(internal_field_err)?;
-        if rows.len() > MAX_ROWS {
+        if rows.len() > TRACE_SPANS_MAX {
             tracing::warn!(
                 trace_id,
                 fetched = rows.len(),
-                cap = MAX_ROWS,
-                "anchored logs truncated to MAX_ROWS"
+                cap = TRACE_SPANS_MAX,
+                "anchored logs truncated to TRACE_SPANS_MAX"
             );
-            rows.truncate(MAX_ROWS);
+            rows.truncate(TRACE_SPANS_MAX);
         }
         let rows = Arc::new(rows);
         let mut cache = self.memo.logs.lock().await;
