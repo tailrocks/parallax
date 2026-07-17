@@ -4142,7 +4142,7 @@ ceiling = 74
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-metadata/src/turso/tests.rs"
-ceiling = 103
+ceiling = 109
 
 [[limits]]
 metric = "rust.assertions"
@@ -6644,7 +6644,7 @@ ceiling = 1
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-metadata/src/turso/tests.rs"
-ceiling = 1135
+ceiling = 1207
 
 [[limits]]
 metric = "rust.file-lines"
@@ -6764,7 +6764,7 @@ reason = "private test-report persistence composition is converted at the typed 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-metadata/src/turso/test_reporting.rs"
-ceiling = 629
+ceiling = 705
 
 [[limits]]
 metric = "rust.function-lines"
@@ -6929,7 +6929,7 @@ ceiling = 416
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-metadata/src/port.rs"
-ceiling = 465
+ceiling = 482
 
 [[limits]]
 metric = "rust.function-lines"
@@ -6944,7 +6944,7 @@ ceiling = 153
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-metadata/src/turso/tests.rs::test_case_variants_and_variant_history_are_bounded_and_isolated"
-ceiling = 103
+ceiling = 104
 
 [[limits]]
 metric = "rust.inline-test-modules"
@@ -7797,3 +7797,14 @@ ceiling = 1
 metric = "typescript.suppressions"
 scope = "ui/src/features/tests/api/tests-list.generated.ts"
 ceiling = 1
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-analysis/src/test_adapter_export.rs"
+ceiling = 8
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-analysis/src/test_adapter_export.rs"
+ceiling = 1
+
