@@ -47,8 +47,11 @@ closure commit — treat as preliminary handoff):**
   live-engine cluster test (spiking template first).
 - [ ] Step 3: histogram brush overlay on logs route → URL range; pinned
   columns (`?columns=`); density/wrap + localStorage.
-- [ ] Step 4: Patterns toggle + expand-to-samples; playground `l-patterns`;
-  browser evidence → `docs/research/validation/2026-07-wave2/165/`.
+- [ ] Step 4: Patterns toggle + expand-to-samples; browser evidence →
+  `docs/research/validation/2026-07-wave2/165/`. The `l-patterns` playground
+  scenario is already on the playground's main (`4741e64`): 20k lines, 11
+  steady templates × 1,200 + spike × 6,800 in the last fifth of a 5-minute
+  window, unit-tested; run `scenarios/run.sh l-patterns`.
 - [ ] Full plan Done criteria; then retire file + index row.
 
 ## Why this matters
