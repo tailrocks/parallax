@@ -227,6 +227,17 @@ Combo **still not closed**.
 
 Full combination **still not closed**.
 
+**Pass 292 recheck (2026-07-18):** **Traceway + Phoenix cohort** —
+
+| Product | Pin | Note |
+| --- | --- | --- |
+| **Traceway** | still **1,024★** / **v1.9.1**; README **0** sentry/bundle/outcome | combo **not closed** |
+| **Phoenix** | **10,600★** / **v18.1.0** | LLMOps; not full combo |
+| **Coroot** | **7,837★** / **v1.23.3** | eBPF RCA; not full combo |
+| **HolmesGPT** | **2,875★** (+1) / **0.36.0** | no own store |
+
+Combo **still not closed**.
+
 **Pass 258 recheck (2026-07-18):** **Maple + Uptrace** —
 
 | Product | Pin | Watch |
