@@ -359,3 +359,7 @@ standalone SQL catalog (table-not-found); pipeline endpoint still works.
 | CH TimeSeries | CREATE OK; SELECT Code 48 on 26.7 head (Run 236) | **Do not** plan product SELECT on CH TimeSeries |
 
 Raw custom tables for OTLP signals remain forbidden without the native-table decision research packet.
+
+## Run 286 — OTLP endpoint presence
+
+`POST /v1/otlp/v1/logs` returns HTTP 400 on empty JSON (endpoint live; protobuf body required for success per Run 181).
