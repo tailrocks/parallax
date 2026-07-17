@@ -75,6 +75,12 @@ Stars unchanged; **real release-line move** on backend only.
 | --- | --- | --- |
 | **Bugsink** | **1,940★**; **v2.4.0** (2026-07-10); push 2026-07-17 | Still **Sentry-SDK error-only** (README); **no** OTLP multi-signal / portable redacted bundle / outcome. Combo **not closed**. |
 
+**Pass 180 recheck (2026-07-18):** **Rustrak** hygiene —
+
+| Product | Pin | Combo |
+| --- | --- | --- |
+| **Rustrak** | **64★**; **`@rustrak/server@0.9.2` + `@rustrak/mcp@0.2.13`** (2026-07-15); push 2026-07-17 | Still Sentry SDK + **MCP**; README **no** OTLP multi-signal / portable redacted bundle / outcome. Combo **not closed**. |
+
 **Pass 156 recheck (2026-07-18):** **Traceway-focused** wedge re-poll + Bugsink/Rustrak
 star-pin hygiene — combination **still not closed**.
 

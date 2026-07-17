@@ -1,10 +1,12 @@
 # Parallax vs Rustrak
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 51**
-> first canonical deep-dive; **pass 89 pin recheck**). Sources: primary
+> first canonical deep-dive; **pass 89** + **pass 125** + **pass 180** pin
+> recheck — still **64★**, **`@rustrak/server@0.9.2` + `@rustrak/mcp@0.2.13`**
+> 2026-07-15). Sources: primary
 > [github.com/rustrak/rustrak](https://github.com/rustrak/rustrak) (README,
 > LICENSE, releases, `packages/mcp`),
-> [rustrak.github.io/rustrak](https://rustrak.github.io/rustrak/), pass-49
+> [rustrak.github.io/rustrak](https://rustrak.github.io/rustrak/),
 > [wedge-closer recheck](../wedge-closer-lightweight-recheck-2026-07-17.md).
 >
 > **Bottom line up front:** Rustrak is a **Rust, Sentry-SDK-compatible,
