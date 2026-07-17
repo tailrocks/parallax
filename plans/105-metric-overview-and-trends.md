@@ -37,6 +37,13 @@ generic application metrics and violate bounded-query rules. The primary
 executor must first expose one bounded, typed API projection over all
 `invocation_metric_points`; then implement CLI snapshots through it.
 
+Plan-168 reconciliation (2026-07-17): `metricQuery` is now the single shared
+metric read path (typed kind/aggregation legality incl. gauge `last`, sum
+`increase`, histogram `avg`; attributeFilters where-clauses; contract step
+rounding; sum-bucket zero-fill). This plan's overview/trend work must consume
+`metricQuery` (or the same storage entry points) — never fork its own metric
+SQL — and the explorer already links graduation into dashboards and alerts.
+
 ## Why
 
 `metric_point_count` is a documented zero stub and metric trend data is empty,
