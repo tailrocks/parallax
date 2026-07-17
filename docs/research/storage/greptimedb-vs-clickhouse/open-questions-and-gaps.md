@@ -353,3 +353,14 @@ comparator completeness only unless pin bumps.
 
 Laptop cycle closed PromQL partial surface (423/439) and re-verified load-bearing
 holds (join, TTL, FT, projection, adopt-native, append DELETE). **No pin bump.**
+
+## Run 445 (2026-07-18) — affirm not done
+
+Comparison **not done**. Pins hold. Highest remaining still:
+
+1. Workload mix A1–A7 filled shares  
+2. Server 1M/5M four-way  
+3. Vendor trial quotes  
+4. GB–TB cold S3  
+5. Cluster D2 + product D3  
+
