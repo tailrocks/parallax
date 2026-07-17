@@ -68,6 +68,7 @@ managed quotes remain):
 | MinIO S3 object layout re-verify (pins bumped) | 220 | GT 3 / CH 22 objs @100k |
 | Managed cloud primary $ rates | 221 | CH transparent; GT $290 floor opaque |
 | Product RPO/RTO runbook (D1–D3) | 222 | `product-rpo-runbook.md` |
+| Workload-mix decision input (DQ5) | 223 | `workload-mix-decision-input.md` |
 
 ## Method
 
@@ -113,6 +114,7 @@ managed quotes remain):
 - [`multi-tenancy-and-isolation.md`](multi-tenancy-and-isolation.md) — tenant isolation, RBAC, row policies, quotas, and proxy-owned auth.
 - [`backup-and-disaster-recovery.md`](backup-and-disaster-recovery.md) — engine backup/export/restore surfaces (GT COPY+cli meta/data vs CH BACKUP/RESTORE).
 - [`product-rpo-runbook.md`](product-rpo-runbook.md) — product RPO/RTO: D1 telemetry / D2 meta / D3 Turso, cadence, restore order (Run 222).
+- [`workload-mix-decision-input.md`](workload-mix-decision-input.md) — DQ5 flip-rule mix model: A1–A7 classes, rubric, how to measure (Run 223).
 - [`managed-cloud-vs-self-host.md`](managed-cloud-vs-self-host.md) — managed Cloud vs self-host cost/ops calculus (SharedMergeTree + GT managed).
 
 **Per-signal, benchmarks, and public claims**

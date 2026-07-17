@@ -26,6 +26,11 @@ missing input — the operator (product intent) or a projected-usage model resol
 benchmark.** The missing input limits performance claims; it cannot change the
 mandatory GreptimeDB product engine.
 
+**Run 223:** measurement + scoring packet drafted —
+[`workload-mix-decision-input.md`](workload-mix-decision-input.md) (A1–A7 shares, rubric,
+flip thresholds, how to gather). **Still empty:** filled product hypothesis row and live
+proxy counters.
+
 ## 2. Server-tier benchmarks (deferred + agent-network-blocked)
 
 Known, owed, operator-deferred ("the proper test on the server, not now"):
@@ -119,7 +124,8 @@ smoke as if it closed agenda item 5. Server-tier + workload-mix remain **unprove
 Engine-smoke re-verify cycle after v1.1.3 re-pin is **saturated** for laptop scale.
 Highest-value *remaining* items (not “done”):
 
-1. **Workload mix model** (product) — only input that re-weights DQ5 flip rule.
+1. **Workload mix model** (product) — Run 223 packet exists; **fill shares + counters**
+   still owed (only input that re-weights DQ5 flip rule).
 2. **Server-tier 1M/5M four-way** on v1.1.3 + 26.6 — especially dedup-agg regression retest.
 3. **Managed $ quotes** — Run 221 locked **primary list rates** (CH Cloud
    calculator-transparent; GT from $290 opaque above floor). Still need

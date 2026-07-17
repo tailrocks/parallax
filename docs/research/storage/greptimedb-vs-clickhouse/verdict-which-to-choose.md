@@ -56,7 +56,8 @@ ClickHouse implementation.
 - **Secondary (workload):** if Parallax's real query mix turns out **analytics-/ad-hoc-scan-
   dominated** (not anchored bundle assembly) *and* GreptimeDB's cold-scan latency at GB–TB is
   materially worse, ClickHouse's read-path advantage becomes central and the choice flips —
-  accepting the PromQL/OTLP layer as the cost of doing business.
+  accepting the PromQL/OTLP layer as the cost of doing business. Measurement packet:
+  [`workload-mix-decision-input.md`](workload-mix-decision-input.md) (Run 223).
 
 ## What must still close (handed to the benchmark, which holds veto)
 
