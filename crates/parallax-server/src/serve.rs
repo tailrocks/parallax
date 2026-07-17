@@ -409,6 +409,7 @@ async fn start_assembled(
 
     let alerting_status =
         spawn_alerting_loops(config, &mut tasks, store.clone(), alerts.clone(), api_addr);
+    spawn_test_flakiness_loop(&mut tasks, metadata.clone());
 
     tracing::info!(%api_addr, %otlp_grpc_addr, %otlp_http_addr, "parallax listening");
     Ok(ServerHandle {
@@ -424,6 +425,50 @@ async fn start_assembled(
         worker_tasks,
         ingest_health: health,
     })
+}
+
+fn spawn_test_flakiness_loop(tasks: &mut Vec<JoinHandle<()>>, metadata: Arc<dyn MetadataStore>) {
+    tasks.push(tokio::spawn(async move {
+        let policy = crate::test_flakiness::preliminary_job_policy();
+        let mut interval = tokio::time::interval(Duration::from_secs(60));
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+        let mut cursor = None;
+        let mut sweep_now_nanos = None;
+        loop {
+            interval.tick().await;
+            let now_nanos = *sweep_now_nanos.get_or_insert_with(|| {
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|duration| duration.as_nanos())
+                    .unwrap_or(0)
+            });
+            match crate::test_flakiness::tick_once(
+                metadata.as_ref(),
+                now_nanos,
+                policy,
+                cursor.as_ref(),
+            )
+            .await
+            {
+                Ok(report) => {
+                    tracing::debug!(
+                        candidates = report.candidates_seen,
+                        upserted = report.states_upserted,
+                        truncated = report.truncated_histories,
+                        invalid = report.evaluation_errors,
+                        has_more = report.next_cursor.is_some(),
+                        "test flakiness scan tick"
+                    );
+                    cursor = report.next_cursor;
+                    sweep_now_nanos = cursor.as_ref().map(|_| now_nanos);
+                }
+                Err(error) => {
+                    tracing::warn!(%error, "test flakiness scan tick failed; retaining cursor");
+                }
+            }
+        }
+    }));
+    tracing::info!(interval_secs = 60, "test flakiness scanner ready");
 }
 
 /// Spawn evaluator + delivery interval loops when alerting is enabled and a
