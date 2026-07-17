@@ -6,7 +6,7 @@
 > (2026-06-22) is a **source** (Parallax-closeness framing); re-verify per-product
 > facts in the matching `competitors/parallax-vs-<product>.md` deep-dive.
 
-Research date: 2026-06-22
+Research date: 2026-06-22 · **Closeness recheck 2026-07-17 (pass 57)**
 
 This note ranks every tool surfaced in the comparison set and discovery sweep by **how close it is
 to what Parallax is actually building**, and for each says **what they implement, how, and which
@@ -14,6 +14,23 @@ features they provide**. It synthesizes the per-tool deep-dives, the
 [feature matrix](observability-feature-matrix.md), the
 [backend/data-flow note](backend-and-data-flow.md), and the
 [discovery sweep](missed-similar-tools-2026-06.md).
+
+### Pass 57 ranking delta (read this before the June body)
+
+Canonical truth for versions/pricing lives in [`competitors/`](competitors/). **Material 2026-07
+moves that change closeness order of magnitude:**
+
+| Rank shift | Tool | Why |
+| --- | --- | --- |
+| **New T1 peer (agent access)** | **Traceway** | MIT OTel full-stack + agent CLI/skills + **local+remote MCP** (mostly read-only). Closer than Maple/SigNoz on *agent investigation product*; farther than TMA1 on GreptimeDB mirror. Deep-dive: [competitors/parallax-vs-traceway.md](competitors/parallax-vs-traceway.md). |
+| **T1 architecture still TMA1** | TMA1 | Still nearest GreptimeDB+MCP shape; watch triggers still unfired (pass 44+). Pin ~alpha12 / GreptimeDB floor v1.1.3. |
+| **Sentry-alt ladder filled** | Bugsink, GlitchTip, Rustrak | Full issue products / Rust GPL MCP — **not** multi-signal evidence engines. Deep-dives: bugsink, [glitchtip](competitors/parallax-vs-glitchtip.md), [rustrak](competitors/parallax-vs-rustrak.md). |
+| **Unchanged moat cells** | (none ship both) | Portable redacted versioned bundle + fix-outcome loop still empty in cohort. |
+
+**Revised mental model:** T1 is no longer "TMA1 alone + platforms." Split T1 into
+**(A) architecture mirror** = TMA1, **(B) agent-access multi-signal OSS** = Traceway (+ SigNoz MCP
+maturity), **(C) local OTLP polish** = Maple. Parallax wedge vs all three remains bundle+outcome
+(A1 unproven).
 
 ## The yardstick — what Parallax actually is
 
