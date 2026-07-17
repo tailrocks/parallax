@@ -640,6 +640,275 @@ async fn test_reporting_upserts_are_idempotent_and_reference_native_spans() {
 }
 
 #[tokio::test]
+async fn test_explorer_rolls_up_attempts_and_filters_through_port() {
+    use parallax_model::{
+        AttemptRollup, TestAttempt, TestConfiguration, TestConfigurationFilter, TestExplorerQuery,
+        TestExplorerSort, TestResultKey, TestResultRecord, TestStatus, TestVariantKey, TraceId,
+    };
+    use parallax_storage::metadata::{MetadataErrorKind, MetadataStore as MetadataStorePort};
+    use std::collections::BTreeMap;
+    use std::str::FromStr;
+
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(&path).await.expect("open");
+    seed_test_reporting(&store).await;
+    let variant_key =
+        TestVariantKey::from_str(&format!("tv1:{}", "b".repeat(64))).expect("variant");
+    store
+        .upsert_test_result(&TestResultRecord {
+            key: TestResultKey {
+                variant_key,
+                invocation_id: "inv-test".into(),
+                attempt: TestAttempt::new(2).expect("attempt"),
+            },
+            status: TestStatus::Passed,
+            trace_id: TraceId::from_str("efefefefefefefefefefefefefefefef").expect("trace"),
+            span_id: "abababababababab".into(),
+            started_at_nanos: 4_000_000,
+            ended_at_nanos: 5_000_000,
+            service: "checkout".into(),
+            service_version: Some("1.2.3".into()),
+            vcs_head_revision: Some("deadbeef".into()),
+            configuration: TestConfiguration {
+                dimensions: BTreeMap::from([("test.configuration.os".into(), "linux".into())]),
+            },
+            failure_fingerprint: None,
+        })
+        .await
+        .expect("second attempt");
+
+    let port: &dyn MetadataStorePort = &store;
+    let page = port
+        .test_explorer(
+            &TestExplorerQuery {
+                service: Some("checkout".into()),
+                service_version: Some("1.2.3".into()),
+                status: Some(AttemptRollup::FlakyPass),
+                suite: Some("suite".into()),
+                configuration: Some(TestConfigurationFilter {
+                    key: "test.configuration.os".into(),
+                    value: "linux".into(),
+                }),
+                ..Default::default()
+            },
+            TestExplorerSort::LastSeen,
+            10,
+            0,
+        )
+        .await
+        .expect("explorer");
+    assert_eq!(page.items.len(), 1);
+    assert!(!page.has_more);
+    assert_eq!(page.items[0].rollup, AttemptRollup::FlakyPass);
+    assert_eq!(page.items[0].attempt_count, 2);
+    assert_eq!(page.items[0].last_result.key.attempt.get(), 2);
+
+    let invalid = port
+        .test_explorer(
+            &TestExplorerQuery {
+                configuration: Some(TestConfigurationFilter {
+                    key: "x') OR 1=1 --".into(),
+                    value: "linux".into(),
+                }),
+                ..Default::default()
+            },
+            TestExplorerSort::Name,
+            10,
+            0,
+        )
+        .await
+        .expect_err("invalid config key");
+    assert_eq!(invalid.kind(), MetadataErrorKind::InvalidInput);
+}
+
+#[tokio::test]
+async fn test_explorer_filters_latest_variant_invocation_and_rollups() {
+    use parallax_model::{
+        AttemptRollup, FlakyState, TestAttempt, TestCaseIdentitySource, TestCaseKey,
+        TestCaseRecord, TestConfiguration, TestExplorerQuery, TestExplorerSort, TestResultKey,
+        TestResultRecord, TestStatus, TestVariantKey, TestVariantRecord, TraceId,
+    };
+    use std::str::FromStr;
+
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(&path).await.expect("open");
+    let port: &dyn parallax_storage::metadata::MetadataStore = &store;
+
+    let case_a = TestCaseKey::from_str(&format!("tc1:{}", "a".repeat(64))).expect("case a");
+    let case_b = TestCaseKey::from_str(&format!("tc1:{}", "c".repeat(64))).expect("case b");
+    let variant_a =
+        TestVariantKey::from_str(&format!("tv1:{}", "b".repeat(64))).expect("variant a");
+    let variant_b =
+        TestVariantKey::from_str(&format!("tv1:{}", "d".repeat(64))).expect("variant b");
+
+    port.upsert_test_case(&TestCaseRecord {
+        key: case_a.clone(),
+        identity_source: TestCaseIdentitySource::CodeReference,
+        explicit_id: None,
+        code_reference: Some("crate::suite::alpha".into()),
+        suite_path: vec!["suite".into(), "alpha".into()],
+        name: "alpha_test".into(),
+        first_seen_nanos: 1_000_000,
+        last_seen_nanos: 5_000_000,
+    })
+    .await
+    .expect("case a");
+    port.upsert_test_case(&TestCaseRecord {
+        key: case_b.clone(),
+        identity_source: TestCaseIdentitySource::NamePath,
+        explicit_id: None,
+        code_reference: None,
+        suite_path: vec!["suite".into(), "beta".into()],
+        name: "beta_test".into(),
+        first_seen_nanos: 1_000_000,
+        last_seen_nanos: 4_000_000,
+    })
+    .await
+    .expect("case b");
+    port.upsert_test_variant(&TestVariantRecord {
+        key: variant_a.clone(),
+        case_key: case_a,
+        parameters: Vec::new(),
+        first_seen_nanos: 1_000_000,
+        last_seen_nanos: 5_000_000,
+    })
+    .await
+    .expect("variant a");
+    port.upsert_test_variant(&TestVariantRecord {
+        key: variant_b.clone(),
+        case_key: case_b,
+        parameters: Vec::new(),
+        first_seen_nanos: 1_000_000,
+        last_seen_nanos: 4_000_000,
+    })
+    .await
+    .expect("variant b");
+
+    // Older invocation for alpha fails; newer flaky_pass (fail then pass).
+    for (invocation, attempt, status, start, end) in [
+        ("inv-old", 1, TestStatus::Failed, 1_000_000, 2_000_000),
+        ("inv-new", 1, TestStatus::Failed, 3_000_000, 4_000_000),
+        ("inv-new", 2, TestStatus::Passed, 4_000_000, 5_000_000),
+        ("inv-beta", 1, TestStatus::Broken, 2_500_000, 3_500_000),
+    ] {
+        let variant = if invocation == "inv-beta" {
+            variant_b.clone()
+        } else {
+            variant_a.clone()
+        };
+        let service = if invocation == "inv-beta" {
+            "billing"
+        } else {
+            "checkout"
+        };
+        port.upsert_test_result(&TestResultRecord {
+            key: TestResultKey {
+                variant_key: variant,
+                invocation_id: invocation.into(),
+                attempt: TestAttempt::new(attempt).expect("attempt"),
+            },
+            status,
+            trace_id: TraceId::from_str("abababababababababababababababab").expect("trace"),
+            span_id: "cdcdcdcdcdcdcdcd".into(),
+            started_at_nanos: start,
+            ended_at_nanos: end,
+            service: service.into(),
+            service_version: Some("1.0.0".into()),
+            vcs_head_revision: Some("deadbeef".into()),
+            configuration: TestConfiguration::default(),
+            failure_fingerprint: None,
+        })
+        .await
+        .expect("result");
+    }
+
+    let page = port
+        .test_explorer(
+            &TestExplorerQuery::default(),
+            TestExplorerSort::LastSeen,
+            10,
+            0,
+        )
+        .await
+        .expect("explorer");
+    assert_eq!(page.items.len(), 2);
+    assert!(!page.has_more);
+    assert_eq!(page.items[0].case.name, "alpha_test");
+    assert_eq!(page.items[0].invocation_id, "inv-new");
+    assert_eq!(page.items[0].rollup, AttemptRollup::FlakyPass);
+    assert_eq!(page.items[0].attempt_count, 2);
+    assert_eq!(page.items[1].case.name, "beta_test");
+    assert_eq!(page.items[1].rollup, AttemptRollup::Broken);
+
+    let filtered = port
+        .test_explorer(
+            &TestExplorerQuery {
+                service: Some("checkout".into()),
+                status: Some(AttemptRollup::FlakyPass),
+                query: Some("alpha".into()),
+                suite: Some("suite".into()),
+                ..TestExplorerQuery::default()
+            },
+            TestExplorerSort::Name,
+            10,
+            0,
+        )
+        .await
+        .expect("filtered");
+    assert_eq!(filtered.items.len(), 1);
+    assert_eq!(filtered.items[0].case.name, "alpha_test");
+    assert_eq!(filtered.items[0].flaky.as_ref().map(|row| row.state), None);
+
+    let empty = port
+        .test_explorer(
+            &TestExplorerQuery {
+                service: Some("missing".into()),
+                ..TestExplorerQuery::default()
+            },
+            TestExplorerSort::LastSeen,
+            10,
+            0,
+        )
+        .await
+        .expect("empty");
+    assert!(empty.items.is_empty());
+
+    let bad_range = port
+        .test_explorer(
+            &TestExplorerQuery {
+                from_nanos: Some(10),
+                to_nanos: Some(1),
+                ..TestExplorerQuery::default()
+            },
+            TestExplorerSort::LastSeen,
+            10,
+            0,
+        )
+        .await;
+    assert!(bad_range.is_err());
+
+    // Seed flaky state and filter on it.
+    seed_test_reporting(port).await;
+    let flaky = port
+        .test_explorer(
+            &TestExplorerQuery {
+                flaky_state: Some(FlakyState::Flaky),
+                ..TestExplorerQuery::default()
+            },
+            TestExplorerSort::LastSeen,
+            10,
+            0,
+        )
+        .await
+        .expect("flaky filter");
+    assert!(flaky.items.iter().any(|row| {
+        row.flaky
+            .as_ref()
+            .is_some_and(|f| f.state == FlakyState::Flaky)
+    }));
+}
+
+#[tokio::test]
 async fn issue_title_and_culprit_are_sanitized_at_rest() {
     let (_directory, path) = temp_db();
     let store = MetadataStore::open(&path).await.expect("open");

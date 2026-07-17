@@ -229,6 +229,49 @@ pub struct TestFlakyStateRecord {
     pub updated_at_nanos: u128,
 }
 
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct TestExplorerQuery {
+    pub query: Option<String>,
+    pub suite: Option<String>,
+    pub service: Option<String>,
+    pub service_version: Option<String>,
+    pub status: Option<AttemptRollup>,
+    pub flaky_state: Option<FlakyState>,
+    pub configuration: Option<TestConfigurationFilter>,
+    pub from_nanos: Option<u128>,
+    pub to_nanos: Option<u128>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TestConfigurationFilter {
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum TestExplorerSort {
+    #[default]
+    LastSeen,
+    Name,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TestExplorerRow {
+    pub case: TestCaseRecord,
+    pub variant: TestVariantRecord,
+    pub invocation_id: String,
+    pub rollup: AttemptRollup,
+    pub attempt_count: u32,
+    pub last_result: TestResultRecord,
+    pub flaky: Option<TestFlakyStateRecord>,
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct TestExplorerPage {
+    pub items: Vec<TestExplorerRow>,
+    pub has_more: bool,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct FlakyPolicy {
     pub transition_threshold: NonZeroU32,

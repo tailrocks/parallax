@@ -1,10 +1,12 @@
 use crate::TursoMetadataStore;
 use parallax_model::{
     Dashboard, Investigation, InvocationRecord, Issue, IssueOccurrence, IssueQuery, IssueSortKey,
-    SavedView, TestCaseRecord, TestFlakyStateRecord, TestResultRecord, TestVariantRecord,
-    TrendPoint,
+    SavedView, TestCaseRecord, TestExplorerPage, TestExplorerQuery, TestExplorerSort,
+    TestFlakyStateRecord, TestResultRecord, TestVariantRecord, TrendPoint,
 };
-use parallax_storage::metadata::{MetadataError, MetadataResult};
+use parallax_storage::metadata::{
+    MetadataError, MetadataResult, TEST_EXPLORER_MAX_LIMIT, TEST_EXPLORER_MAX_OFFSET,
+};
 use parallax_storage::{
     MetadataPruneJournalStore, MetadataPruneStore, PruneItem, PruneJournal, PrunePlan,
     PrunePlanLimits, PruneStepStart,
@@ -259,6 +261,24 @@ impl parallax_storage::metadata::MetadataStore for TursoMetadataStore {
             .await
             .map_err(MetadataError::internal)
     }
+    async fn test_explorer(
+        &self,
+        query: &TestExplorerQuery,
+        sort: TestExplorerSort,
+        limit: usize,
+        offset: usize,
+    ) -> MetadataResult<TestExplorerPage> {
+        validate_test_explorer_query(query)?;
+        Self::test_explorer(
+            self,
+            query,
+            sort,
+            limit.min(TEST_EXPLORER_MAX_LIMIT),
+            offset.min(TEST_EXPLORER_MAX_OFFSET),
+        )
+        .await
+        .map_err(MetadataError::internal)
+    }
     async fn dashboard_save(
         &self,
         id: &str,
@@ -338,4 +358,41 @@ impl parallax_storage::metadata::MetadataStore for TursoMetadataStore {
             .await
             .map_err(MetadataError::internal)
     }
+}
+
+fn validate_test_explorer_query(query: &TestExplorerQuery) -> MetadataResult<()> {
+    if query
+        .from_nanos
+        .zip(query.to_nanos)
+        .is_some_and(|(from, to)| from > to)
+    {
+        return Err(MetadataError::InvalidInput(
+            "test explorer time range is reversed".into(),
+        ));
+    }
+    for value in [
+        query.query.as_deref(),
+        query.suite.as_deref(),
+        query.service.as_deref(),
+        query.service_version.as_deref(),
+    ]
+    .into_iter()
+    .flatten()
+    {
+        if value.trim().is_empty() || value.len() > 256 {
+            return Err(MetadataError::InvalidInput(
+                "test explorer filter must be nonblank and at most 256 bytes".into(),
+            ));
+        }
+    }
+    if let Some(configuration) = &query.configuration
+        && (!configuration.key.starts_with("test.configuration.")
+            || configuration.key.len() > 256
+            || configuration.value.len() > 256)
+    {
+        return Err(MetadataError::InvalidInput(
+            "test configuration filter is invalid".into(),
+        ));
+    }
+    Ok(())
 }

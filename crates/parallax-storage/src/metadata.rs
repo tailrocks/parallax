@@ -3,7 +3,8 @@
 use async_trait::async_trait;
 use parallax_model::{
     Dashboard, Investigation, InvocationRecord, Issue, IssueQuery, IssueSortKey, SavedView,
-    TestCaseRecord, TestFlakyStateRecord, TestResultRecord, TestVariantRecord, TrendPoint,
+    TestCaseRecord, TestExplorerPage, TestExplorerQuery, TestExplorerSort, TestFlakyStateRecord,
+    TestResultRecord, TestVariantRecord, TrendPoint,
 };
 use thiserror::Error;
 
@@ -76,6 +77,9 @@ impl MetadataError {
 
 pub type MetadataResult<T> = Result<T, MetadataError>;
 
+pub const TEST_EXPLORER_MAX_LIMIT: usize = 200;
+pub const TEST_EXPLORER_MAX_OFFSET: usize = 10_000;
+
 #[async_trait]
 pub trait MetadataStore: Send + Sync {
     async fn upsert_issue_occurrence(&self, occurrence: &IssueOccurrence<'_>)
@@ -142,6 +146,13 @@ pub trait MetadataStore: Send + Sync {
         &self,
         variant_key: &str,
     ) -> MetadataResult<Option<TestFlakyStateRecord>>;
+    async fn test_explorer(
+        &self,
+        query: &TestExplorerQuery,
+        sort: TestExplorerSort,
+        limit: usize,
+        offset: usize,
+    ) -> MetadataResult<TestExplorerPage>;
     async fn dashboard_save(
         &self,
         id: &str,

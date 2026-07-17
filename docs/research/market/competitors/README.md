@@ -38,7 +38,18 @@ Prefer hard, current, sourced numbers: pricing tiers, ingest throughput, query l
 - **❌ No** — absent.
 - **—** — not applicable.
 - **🏗 planned** — Parallax-specific: designed but not yet shipped (do not read as "has it").
+- **✅🧪 shipped (pre-release)** — Parallax-specific: landed in code on `main` (verified against `crates/`), but the product is pre-release; "shipped" ≠ proven at scale.
 - **🟡 inherited** — carried from legacy 2026-05/06 market notes, not yet re-verified against current sources. Treat as a hypothesis; see [`PROGRESS.md`](PROGRESS.md).
+
+> **Parallax column verified (pass 15, 2026-07-17):** every Parallax cell below
+> re-checked against shipped code (`crates/parallax-server`, `parallax-analysis`,
+> `parallax-evidence`, `parallax-redaction`, `parallax-mcp-spike`). Corrections
+> this pass: **Sentry envelope ingest is shipped** (`sentry_http.rs` router wired
+> in `serve.rs`), not planned; **error derivation + test-result derivation are
+> shipped** (`parallax-analysis::{derive,fingerprint,test_reporting}`); the
+> **bounded redacted bundle exists in code** (`parallax-evidence::bundle` +
+> `REDACTION_POLICY_V1`) but remains **A1-unproven**; **MCP is a spike crate
+> only** (`parallax-mcp-spike`, separate binary) — not a shipped product surface.
 
 ---
 
@@ -49,7 +60,7 @@ Prefer hard, current, sourced numbers: pricing tiers, ingest throughput, query l
 | **Category** | Execution-context engine | Full-stack SaaS obs+sec | Error-tracking + APM | Managed OSS stack | High-card events obs | Full-stack SaaS | OSS full obs | OSS Rust full obs | OSS eBPF obs+RCA | OSS LLM/agent obs |
 | **License** | Apache-2.0 | Closed SaaS (OSS agent) | FSL (→Apache/MIT) | Mixed OSS + Cloud | Closed SaaS | Closed SaaS | MIT-Expat + `ee/` | AGPL-3.0 + EE | Apache-2.0 + EE | MIT + Cloud |
 | **Telemetry store** | GreptimeDB | Proprietary closed | ClickHouse+Kafka | Mimir/Loki/Tempo/Py | proprietary | proprietary | ClickHouse | Parquet/DataFusion | ClickHouse+Prom | Postgres/sel. |
-| **Self-hostable?** | ✅ (target) | ❌ SaaS only | ✅ heavy (~40 ctnr) | ✅ (OSS bits) | 🟡 limited | ❌ | ✅ (~5 ctnr) | ✅ (1 binary) | ✅ (~5 ctnr) | ✅ |
+| **Self-hostable?** | ✅🧪 runs today (pre-release) | ❌ SaaS only | ✅ heavy (~40 ctnr) | ✅ (OSS bits) | 🟡 limited | ❌ | ✅ (~5 ctnr) | ✅ (1 binary) | ✅ (~5 ctnr) | ✅ |
 | **Maturity** | 🏗 pre-release | ✅ incumbent | ✅ incumbent | ✅ incumbent | ✅ mature | ✅ incumbent | ✅ mature | ✅ mature | ✅ mature | ✅ mature |
 | Deep-dive | — | [✅](parallax-vs-datadog.md) | [✅](parallax-vs-sentry.md) | [✅](parallax-vs-grafana.md) | [✅](parallax-vs-honeycomb.md) | [✅](parallax-vs-new-relic.md) | [✅](parallax-vs-signoz.md) | [✅](parallax-vs-openobserve.md) | [✅](parallax-vs-coroot.md) | [✅](parallax-vs-langfuse.md) |
 
@@ -61,32 +72,32 @@ All identity cells except Datadog are **🟡 inherited** from legacy market note
 
 | Signal | Parallax | Datadog | Sentry | Grafana Cl. | Honeycomb | New Relic | SigNoz | OpenObserve | Coroot | Langfuse |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Traces | ✅🏗 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🟡 eBPF partial | ✅ |
-| Logs | ✅🏗 | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | ✅ | 🟡 |
-| Metrics | ✅🏗 | ✅ | 🟡 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| Errors/exceptions | ✅🏗 | ✅ best-in-class issue workflow | ✅ best-in-class | ✅ | ✅ | ✅ | 🟡 span-events | 🟡 | 🟡 protocol | 🟡 |
+| Traces | ✅🧪 OTLP gRPC+HTTP | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🟡 eBPF partial | ✅ |
+| Logs | ✅🧪 OTLP gRPC+HTTP | ✅ | ✅ | ✅ | 🟡 | ✅ | ✅ | ✅ | ✅ | 🟡 |
+| Metrics | ✅🧪 OTLP gRPC+HTTP | ✅ | 🟡 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Errors/exceptions | ✅🧪 derived `error_event` + fingerprint (spans+Sentry envelopes) | ✅ best-in-class issue workflow | ✅ best-in-class | ✅ | ✅ | ✅ | 🟡 span-events | 🟡 | 🟡 protocol | 🟡 |
 | Continuous profiling | ❌ | ✅ | ✅ Vroom | ✅ Pyroscope | ❌ | ✅ | 🟡 | ❌ | ✅ eBPF | ❌ |
 | RUM / session replay | ❌ | ✅ | ✅ | ❌ (3rd-party) | ❌ | ✅ | ❌ | ✅ | ❌ | ❌ |
-| LLM / agent spans | ✅🏗 | ✅ (Agent Obs) | 🟡 | ❌ | 🟡 | 🟡 | ✅ | 🟡 | ❌ | ✅ core |
-| CI / test results | ✅🏗 | ✅ (CI/Test Optimization) | 🟡 | ❌ | ❌ | 🟡 | ❌ | ❌ | ❌ | ❌ |
+| LLM / agent spans | 🟡🧪 agent-session + Claude Code modules; CLI-invocation program in flight | ✅ (Agent Obs) | 🟡 | ❌ | 🟡 | 🟡 | ✅ | 🟡 | ❌ | ✅ core |
+| CI / test results | ✅🧪 test results derived from spans | ✅ (CI/Test Optimization) | 🟡 | ❌ | ❌ | 🟡 | ❌ | ❌ | ❌ | ❌ |
 
 ### Ingestion & transport
 
 | Capability | Parallax | Datadog | Sentry | Grafana Cl. | Honeycomb | New Relic | SigNoz | OpenObserve | Coroot | Langfuse |
 |---|---|---|---|---|---|---|---|---|---|---|
-| OTLP ingest (any form) | ✅🏗 | ✅ (Agent + Managed OTLP) | 🟡 beta HTTP-only | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🟡 |
-| OTLP-native storage | ✅🏗 (GreptimeDB native tables) | ❌ transforms to proprietary | ❌ | ✅ (own stores) | ❌ | ❌ | ❌ transforms to ClickHouse | 🟡 Parquet | ❌ ClickHouse | ❌ |
-| Sentry envelope / DSN | ✅🏗 planned | ❌ | ✅ native | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| OTLP ingest (any form) | ✅🧪 gRPC+HTTP, all 3 signals | ✅ (Agent + Managed OTLP) | 🟡 beta HTTP-only | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🟡 |
+| OTLP-native storage | ✅🧪 GreptimeDB native tables | ❌ transforms to proprietary | ❌ | ✅ (own stores) | ❌ | ❌ | ❌ transforms to ClickHouse | 🟡 Parquet | ❌ ClickHouse | ❌ |
+| Sentry envelope / DSN | ✅🧪 `sentry_http.rs` wired | ❌ | ✅ native | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | eBPF zero-instrumentation | ❌ | ✅ (USM/CNM) | ❌ | ❌ | ❌ | 🟡 | ❌ | ❌ | ✅ | ❌ |
 
 ### Storage & cost behavior at scale
 
 | Capability | Parallax | Datadog | Grafana Cl. | SigNoz | OpenObserve | Coroot |
 |---|---|---|---|---|---|---|
-| Columnar backend | ✅🏗 GreptimeDB | proprietary | ✅ | ✅ ClickHouse | ✅ Parquet | ✅ ClickHouse |
-| Object-storage cold tier | 🟡🏗 | ✅ Flex/Archive | ✅ | ❌ | ✅ native | ❌ |
+| Columnar backend | ✅🧪 GreptimeDB | proprietary | ✅ | ✅ ClickHouse | ✅ Parquet | ✅ ClickHouse |
+| Object-storage cold tier | 🟡🏗 (GreptimeDB supports object stores; Parallax deployment unproven) | ✅ Flex/Archive | ✅ | ❌ | ✅ native | ❌ |
 | Cost model | open/self-host (no per-event tax) | per-host+per-metric+per-GB+per-span (complex) | per-series/GB | self-host or per-GB cloud | self-host or GB-day | self-host or per-node |
-| Cost transparency | ✅🏗 (self-hosted compute) | ⚪ benchmark-dependent; widely cited as expensive & unpredictable | ⚪ benchmark-dependent | ⚪ bdd | ⚪ bdd | ⚪ bdd |
+| Cost transparency | ✅🧪 (self-hosted compute) | ⚪ benchmark-dependent; widely cited as expensive & unpredictable | ⚪ benchmark-dependent | ⚪ bdd | ⚪ bdd | ⚪ bdd |
 
 Cost/performance cells are **⚪ benchmark-dependent** — not filled until measured. Datadog's "expensive/unpredictable" reputation is widely documented by third parties (see Datadog deep-dive) but a specific Parallax-vs-Datadog number is unmeasured.
 
@@ -94,11 +105,11 @@ Cost/performance cells are **⚪ benchmark-dependent** — not filled until meas
 
 | Capability | Parallax | Datadog | Sentry | SigNoz | OpenObserve | Coroot | Langfuse |
 |---|---|---|---|---|---|---|---|
-| Context engine for autonomous agents (bounded, redacted bundle) | ✅🏗 | ❌ (human dashboard + chat) | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Read-only / safe-by-default agent projection | ✅🏗 | ❌ (write-capable management) | 🟡 | ❌ write/delete | ❌ write/delete default | 🟡 1 mutating tool | 🟡 |
-| AI root-cause / investigation | ✅🏗 | ✅ Bits AI (Investigation) | ✅ Seer autofix | ✅ MCP RCA skill | ✅ AI SRE | ✅ 2-stage ML+LLM | ❌ |
+| Context engine for autonomous agents (bounded, redacted bundle) | 🟡🧪 bundle+redaction in code (`parallax-evidence`), **A1-unproven** | ❌ (human dashboard + chat) | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Read-only / safe-by-default agent projection | 🏗 MCP spike only (`parallax-mcp-spike`, not a product surface) | ❌ (write-capable management) | 🟡 | ❌ write/delete | ❌ write/delete default | 🟡 1 mutating tool | 🟡 |
+| AI root-cause / investigation | 🏗 planned (no shipped AI RCA) | ✅ Bits AI (Investigation) | ✅ Seer autofix | ✅ MCP RCA skill | ✅ AI SRE | ✅ 2-stage ML+LLM | ❌ |
 | AI pricing model | (self-hosted compute) | credit-metered ($500/500cr) | paid (Seer) | free (MCP) | Enterprise+BYO-key | Enterprise/Cloud | self-host or cloud |
-| LLM/agent trace evals + experiments | ✅🏗 planned | ✅ (Agent Observability) | ❌ | ❌ | 🟡 | ❌ | ✅ core |
+| LLM/agent trace evals + experiments | 🏗 planned | ✅ (Agent Observability) | ❌ | ❌ | 🟡 | ❌ | ✅ core |
 
 > **Honest read of this column:** on every *shipped* AI axis, Datadog, Sentry, SigNoz, Coroot, and Langfuse are ahead of pre-release Parallax. Parallax's only differentiated AI claim is the *bounded, redacted, agent-safe bundle* as a typed artifact — which is **unproven** (the A1 gate: does a bundle beat raw context for agent fix quality?). Do not read "✅🏗 planned" as parity with a shipped competitor feature.
 
@@ -106,9 +117,9 @@ Cost/performance cells are **⚪ benchmark-dependent** — not filled until meas
 
 | Capability | Parallax | Datadog | Sentry | SigNoz | OpenObserve | Coroot |
 |---|---|---|---|---|---|---|
-| Single binary, no Docker | ✅🏗 | ❌ | ❌ | ❌ | ✅ | ❌ |
-| Self-host free tier | ✅🏗 | ❌ (SaaS only) | ✅ heavy | ✅ | 🟡 10/50 GB-day EE | ✅ (AI gated) |
-| Air-gapped / offline | ✅🏗 | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Single binary, no Docker | 🟡🧪 `parallax-server` binary supervises GreptimeDB + embeds Turso | ❌ | ❌ | ❌ | ✅ | ❌ |
+| Self-host free tier | ✅🧪 Apache-2.0, pre-release | ❌ (SaaS only) | ✅ heavy | ✅ | 🟡 10/50 GB-day EE | ✅ (AI gated) |
+| Air-gapped / offline | ✅🧪 self-host, no phone-home | ❌ | ✅ | ✅ | ✅ | ✅ |
 | Multi-tenancy / SSO-RBAC | 🏗 planned | ✅ best-in-class | ✅ | 🟡 | 🟡 | 🟡 |
 
 ### Security & compliance
@@ -117,8 +128,8 @@ Cost/performance cells are **⚪ benchmark-dependent** — not filled until meas
 |---|---|---|---|---|---|
 | SSO/SAML/OIDC | 🏗 planned | ✅ (Enterprise) | ✅ | 🟡 | 🟡 |
 | Fine-grained RBAC | 🏗 planned | ✅ | ✅ | 🟡 | 🟡 |
-| PII scrub / redaction | ✅🏗 (A6 gate) | ✅ Sensitive Data Scanner | 🟡 server scrub | ❌ | 🟡 VRL (EE) |
-| Compliance (SOC2/HIPAA/PCI) | ❌🏗 not yet | ✅ SOC2/HIPAA/PCI | ✅ | ❌ self-attest | ❌ |
+| PII scrub / redaction | 🟡🧪 bundle-path redaction shipped (`REDACTION_POLICY_V1`); ingest-time scrub = A6 gate | ✅ Sensitive Data Scanner | 🟡 server scrub | ❌ | 🟡 VRL (EE) |
+| Compliance (SOC2/HIPAA/PCI) | ❌ not yet | ✅ SOC2/HIPAA/PCI | ✅ | ❌ self-attest | ❌ |
 | Data ownership / lock-in cost | ✅ low (OSS self-host) | ❌ high (proprietary, SaaS) | 🟡 medium | ✅ low | ✅ low |
 
 > Datadog's compliance posture is genuinely best-in-class here; Parallax has none of it yet. This is an axis where the incumbent plainly wins.
@@ -126,7 +137,7 @@ Cost/performance cells are **⚪ benchmark-dependent** — not filled until meas
 ## What the matrix shows (no-bias read)
 
 1. **On breadth, maturity, scale, enterprise readiness, and shipped AI features, the incumbents (Datadog especially) are far ahead of pre-release Parallax.** That is the plain reality; hiding it would defeat the purpose.
-2. **Parallax's real, defensible axes — all still partly *planned*, not shipped — are:** open-source/self-hostability, single-binary local-first simplicity, cost transparency and data ownership (no proprietary lock-in), and the *unproven* bounded-redacted-bundle + fix-outcome thesis. Only the openness/cost/ownership axes are real today; the bundle/outcome edge is gated behind A1.
+2. **Parallax's shipped-in-code (pre-release) surface is real but unproven:** OTLP ingest of all three signals into GreptimeDB native tables, Sentry-envelope ingest, derived error events + fingerprints, span-derived test results, and a bounded redacted evidence bundle (A1-unvalidated). **Planned-only:** MCP agent surface (spike crate), AI root-cause, evals, SSO/RBAC, fix-outcome loop. The defensible axes today are openness/self-hostability/cost transparency/data ownership; the bundle/outcome edge is gated behind A1.
 3. **No product — open or closed — ships all of:** OTLP-native + (future) Sentry-envelope ingest + a portable, versioned, redacted evidence bundle + a read-only safe agent projection + a fix-outcome loop, from a telemetry store. That combination is Parallax's thesis, but "no one ships it" is not evidence it is valuable — that is exactly the A1 gate.
 4. **The cells most likely to be wrong are the Parallax column (self-assessed, bias-prone) and the AI-native column (fast-moving).** Both are flagged for re-verification first on every pass.
 
