@@ -1,9 +1,9 @@
-# A6 claim status recheck — synthetic canaries vs agent-visible gate (pass 120)
+# A6 claim status recheck — synthetic canaries vs agent-visible gate (pass 120 + pass 166)
 
 <!-- markdownlint-disable MD013 -->
 
-**Research date:** 2026-07-17  
-**Pass:** 120 (deep-research-parallax indefinite program)  
+**Research date:** 2026-07-17 (pass 120); **pass 166 recheck 2026-07-18**  
+**Pass:** 120 + **166** (deep-research-parallax indefinite program)  
 **Claim under test:** "Redaction can be made trustworthy enough to expose evidence to agents and third-party models" (assumption A6).  
 **Verdict this pass:** **Split claim** — engine + public-safe unit canaries support partial **`synthetic_canary_pass`**; full **`agent_visible_mixed_pass`** / third-party-model safety wording remains **open**. Do not collapse to a single `not_measured` *or* a single "A6 closed."
 
@@ -29,19 +29,28 @@ note's own claim-level table honestly.
 | Offline multi-scanner matrix (Gitleaks/Betterleaks/TruffleHog/…) | **Optional / not run this pass** | Comparators re-pinned only |
 | Retroactive purge (Tempo-style) | **Out of scope** | Explicit residual in plan 111 + redaction.md |
 
-## Offline comparator re-pin (2026-07-17)
+## Offline comparator re-pin (2026-07-17; **pass 166** reconfirm)
 
-GitHub releases API + PyPI (same day as pass):
+GitHub releases API (pass 166):
 
-| Tool | Latest pin | vs pass 105 |
+| Tool | Latest pin | vs pass 105/120 |
 | --- | --- | --- |
 | Gitleaks | **v8.30.1** (2026-03-21) | unchanged |
 | Betterleaks | **v1.6.1** (2026-06-30) | unchanged |
 | TruffleHog | **v3.95.9** (2026-07-09) | unchanged |
 | detect-secrets | **v1.5.0** (2024-05-06) | unchanged |
-| Presidio | **2.2.363** (2026-06-28) | unchanged |
+| Presidio | **2.2.363** (2026-06-28) | not re-polled pass 166 |
 
 Still **offline validators only** — never runtime deps on the tiny tier.
+
+### Pass 166 addendum
+
+| Check | Result |
+| --- | --- |
+| Public-safe canary unit test | **`a6_public_safe_canaries_are_not_projected_raw_by_detectors` → ok** |
+| Formal multi-surface red-team ledger | **Still absent** |
+| `agent_visible_mixed_pass` | **Still open** |
+| Claim split | **Unchanged** — synthetic partial ≠ mixed agent-visible gate |
 
 ## Claim levels applied
 
