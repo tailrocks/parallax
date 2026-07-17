@@ -100,6 +100,27 @@ commodity end.
 least-bad desk design**. Empirical A2 (interviews) remains the only way to size the hard-boundary
 buyer; desk rechecks cannot close A2.
 
+### Pass 106 (2026-07-17) — Grafana Cloud pricing shape (comparison #2)
+
+Live [grafana.com/pricing](https://grafana.com/pricing/) (usage-based, multi-signal
+meters; extract is **order-of-magnitude**, not a quote):
+
+| Surface | Primary signal (2026-07-17) |
+| --- | --- |
+| **Cloud Free** | Limited free tier (e.g. metrics/logs allowances cited on page — free + community support) |
+| **Cloud Pro (self-serve)** | **From ~$19/mo platform fee + usage** (examples on page: e.g. **10k active series** then PAYG; **50 GB** log ingest included then PAYG at ~**$0.05/GB** class; host hours ~**$0.07/host-hour** class; users ~**$8/active user** class). Volume discounts on series/GB/users. |
+| **Enterprise plugins** | Paid add-on on Cloud Pro PAYG (page cites ~**$55/active user/mo** class with volume tiers) |
+| **Enterprise (full service)** | **Starts at ~$25,000/year** spend commit (matches self-managed EE floor order-of-magnitude used elsewhere in this note) |
+
+**Parity with Parallax monetization design:** Grafana sells **usage Cloud** +
+**ops/EE add-ons** + high-ACV Enterprise — **not** the open dashboard engine as
+the paid product. Reinforces survivors' playbook (pass 54/94). **A2 still open**
+for whether hard-boundary buyers pay *Parallax* at EE/cloud prices.
+
+**Falsify:** Grafana puts core observability (or AI assistant offline) only behind
+a seat tax that makes free OSS self-host non-viable for all but hobby — already
+partially true for Cloud, not for OSS Grafana CE.
+
 ## 2. Monetization shape (the survivors' playbook, applied)
 
 1. **License: Apache-2.0 for the core, kept consistent — RESOLVED (operator, 2026-05-29).** The
