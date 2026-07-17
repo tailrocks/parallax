@@ -74,6 +74,26 @@ Index status stays TODO.
   `corner-cases.sh`, `run.sh`, and `docs/corner-case-matrix.md`. Run
   `scenarios/run.sh m-labels`; peer supplies live evidence.
 
+- `metricCatalog` backend slice (helper, 2026-07-17): `MetricKind` +
+  `MetricCatalogEntry` in `parallax-model`, `MetricStore::metric_catalog`
+  (window-scoped, bounded/batched, `q` substring + kind filter + limit),
+  MemoryStore impl (finite-only counts, one count per histogram export,
+  kind from OTLP monotonicity), GreptimeStore impl
+  (`discover_metric_families` in `analytics_helpers.rs`: complete
+  `_bucket`/`_count`/`_sum` triple → histogram with `_count` as stats table,
+  `_total` suffix → sum, else gauge; one schema scan + one UNION ALL stats
+  query — no per-metric fan-out), GraphQL `metricCatalog(fromNanos, toNanos,
+  q, kind, limit)` returning `MetricCatalogRow`, plus resolver tests
+  (kind classification, NaN/window exclusion, service dedup, kind/q filters,
+  unknown-kind and reversed-range rejection). **Peer must verify/extend:**
+  scalar sum-vs-gauge inference from native tables is the `_total` heuristic
+  only (native tables do not persist monotonicity — decide whether the
+  invocation extension or ingest-time bookkeeping should back it), non-finite
+  filtering is not yet pushed into the Greptime SQL arm, unit inference only
+  covers runtime families (`runtime_metric_unit`), catalog excludes
+  invocation-extension-only names, and live-engine `m-labels`/`m-shapes`
+  coverage is unrun. `metricQuery(spec)` remains unimplemented.
+
 **Peer owns:** verify codec against real route schemas; Step 0 plan-105
 decision record; backend catalog/query; `/metrics` routes; graduation wiring;
 `m-labels` / `m-shapes` scenario evidence; browser pack under

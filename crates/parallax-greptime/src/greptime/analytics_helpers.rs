@@ -147,6 +147,88 @@ impl GreptimeStore {
         }
         Ok(names)
     }
+
+    /// Classify native metric tables into catalog families (plan 168): an
+    /// explicit-histogram family collapses only when the complete
+    /// `_bucket`/`_count`/`_sum` triple exists (metric-summary contract);
+    /// remaining scalar tables classify Sum on the Prometheus `_total`
+    /// convention, else Gauge. `stats_table` is the physical table window
+    /// stats read from (`_count` sibling for histograms so one export counts
+    /// once).
+    pub(super) async fn discover_metric_families(
+        &self,
+    ) -> anyhow::Result<Vec<MetricFamily>> {
+        const RESERVED: &[&str] = &[
+            "opentelemetry_traces",
+            "opentelemetry_traces_services",
+            "opentelemetry_traces_operations",
+            "opentelemetry_logs",
+            "error_events",
+            "invocation_metric_points",
+            METRIC_EXEMPLARS_TABLE,
+            "greptime_physical_table",
+        ];
+        let rows = self
+            .sql(
+                r#"SELECT "table_name" FROM information_schema.tables
+                   WHERE "table_schema" = 'public'"#,
+            )
+            .await?;
+        let tables: BTreeSet<String> = rows
+            .iter()
+            .map(|row| str_at(row, 0))
+            .filter(|table| {
+                !table.is_empty()
+                    && !RESERVED.contains(&table.as_str())
+                    && !table.starts_with("opentelemetry_")
+            })
+            .collect();
+        let mut families = Vec::new();
+        let mut consumed: BTreeSet<String> = BTreeSet::new();
+        for table in &tables {
+            let Some(base) = table.strip_suffix("_bucket") else {
+                continue;
+            };
+            let count_table = format!("{base}_count");
+            let sum_table = format!("{base}_sum");
+            if tables.contains(&count_table) && tables.contains(&sum_table) {
+                consumed.insert(table.clone());
+                consumed.insert(count_table.clone());
+                consumed.insert(sum_table);
+                let display = runtime_display_name(base).unwrap_or_else(|| base.to_string());
+                families.push(MetricFamily {
+                    display: canonical_metric_display_name(&display),
+                    stats_table: count_table,
+                    kind: MetricKind::Histogram,
+                });
+            }
+        }
+        for table in &tables {
+            if consumed.contains(table) {
+                continue;
+            }
+            let kind = if table.ends_with("_total") {
+                MetricKind::Sum
+            } else {
+                MetricKind::Gauge
+            };
+            let display = runtime_display_name(table).unwrap_or_else(|| table.to_string());
+            families.push(MetricFamily {
+                display: canonical_metric_display_name(&display),
+                stats_table: table.clone(),
+                kind,
+            });
+        }
+        families.sort_by(|a, b| a.display.cmp(&b.display));
+        Ok(families)
+    }
+}
+
+/// One classified native metric family for the explorer catalog.
+pub(super) struct MetricFamily {
+    pub(super) display: String,
+    pub(super) stats_table: String,
+    pub(super) kind: MetricKind,
 }
 
 /// A total-ordering wrapper for histogram bucket bounds (`le`), so they can key

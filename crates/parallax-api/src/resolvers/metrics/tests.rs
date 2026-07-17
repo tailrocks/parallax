@@ -232,3 +232,162 @@ async fn metric_exemplars_resolver_returns_trace_links() {
         Some(&serde_json::json!(120.0))
     );
 }
+
+#[tokio::test]
+async fn metric_catalog_classifies_kinds_and_counts_finite_window_samples() {
+    use parallax_storage::model::HistogramRow;
+    let store = Arc::new(MemoryStore::new());
+    store
+        .ingest_metrics(
+            vec![
+                MetricPointRow {
+                    ts_nanos: 1_000_000_000,
+                    service: "checkout".into(),
+                    name: "shapes.region.load".into(),
+                    value: 6.0,
+                    is_monotonic: false,
+                    invocation_id: None,
+                    attributes: serde_json::json!({"region": "eu"}),
+                },
+                MetricPointRow {
+                    ts_nanos: 2_000_000_000,
+                    service: "billing".into(),
+                    name: "shapes.region.load".into(),
+                    value: 3.0,
+                    is_monotonic: false,
+                    invocation_id: None,
+                    attributes: serde_json::json!({"region": "us"}),
+                },
+                // NaN sample must not count (metric-summary contract).
+                MetricPointRow {
+                    ts_nanos: 2_500_000_000,
+                    service: "checkout".into(),
+                    name: "shapes.region.load".into(),
+                    value: f64::NAN,
+                    is_monotonic: false,
+                    invocation_id: None,
+                    attributes: serde_json::json!({}),
+                },
+                MetricPointRow {
+                    ts_nanos: 3_000_000_000,
+                    service: "checkout".into(),
+                    name: "shapes.region.requests_total".into(),
+                    value: 42.0,
+                    is_monotonic: true,
+                    invocation_id: None,
+                    attributes: serde_json::json!({"region": "eu"}),
+                },
+                // Outside the queried window: must be absent from counts.
+                MetricPointRow {
+                    ts_nanos: 9_000_000_000,
+                    service: "checkout".into(),
+                    name: "shapes.region.load".into(),
+                    value: 1.0,
+                    is_monotonic: false,
+                    invocation_id: None,
+                    attributes: serde_json::json!({}),
+                },
+            ],
+            vec![HistogramRow {
+                ts_nanos: 1_500_000_000,
+                service: "checkout".into(),
+                name: "http.server.request.duration".into(),
+                count: 7,
+                sum: 3.5,
+                bucket_counts: vec![3, 3, 1],
+                bounds: vec![0.1, 1.0],
+                attributes: serde_json::json!({}),
+            }],
+            Vec::new(),
+            Default::default(),
+        )
+        .await
+        .unwrap();
+    let schema = build_schema();
+    let context = context_with_memory(store).await;
+    let request = juniper::http::GraphQLRequest::new(
+        r#"
+        {
+          metricCatalog(fromNanos: "0", toNanos: "4000000000") {
+            name kind unit services lastDatapointNanos pointCount
+          }
+          gauges: metricCatalog(fromNanos: "0", toNanos: "4000000000", kind: "gauge") { name }
+          searched: metricCatalog(fromNanos: "0", toNanos: "4000000000", q: "REQUESTS") { name kind }
+        }
+        "#
+        .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, request).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(error_messages(&json).is_empty(), "metricCatalog: {json}");
+
+    let rows = json
+        .pointer("/data/metricCatalog")
+        .and_then(|v| v.as_array())
+        .unwrap();
+    assert_eq!(rows.len(), 3, "three catalog families: {json}");
+    let by_name = |name: &str| {
+        rows.iter()
+            .find(|row| row["name"] == name)
+            .unwrap_or_else(|| panic!("{name} in catalog: {json}"))
+    };
+    let gauge = by_name("shapes.region.load");
+    assert_eq!(gauge["kind"], "gauge");
+    assert_eq!(gauge["pointCount"], "2", "NaN and out-of-window excluded");
+    assert_eq!(gauge["lastDatapointNanos"], "2000000000");
+    assert_eq!(
+        gauge["services"],
+        serde_json::json!(["billing", "checkout"])
+    );
+    let sum = by_name("shapes.region.requests_total");
+    assert_eq!(sum["kind"], "sum");
+    assert_eq!(sum["pointCount"], "1");
+    let histogram = by_name("http.server.request.duration");
+    assert_eq!(histogram["kind"], "histogram");
+    assert_eq!(histogram["pointCount"], "1", "one count per export");
+
+    let gauges = json
+        .pointer("/data/gauges")
+        .and_then(|v| v.as_array())
+        .unwrap();
+    assert_eq!(gauges.len(), 1, "kind filter: {json}");
+    let searched = json
+        .pointer("/data/searched")
+        .and_then(|v| v.as_array())
+        .unwrap();
+    assert_eq!(searched.len(), 1, "case-insensitive q filter: {json}");
+    assert_eq!(searched[0]["name"], "shapes.region.requests_total");
+}
+
+#[tokio::test]
+async fn metric_catalog_rejects_unknown_kind_and_reversed_range() {
+    let schema = build_schema();
+    let context = context_with_memory(Arc::new(MemoryStore::new())).await;
+    let bad_kind = juniper::http::GraphQLRequest::new(
+        r#"{ metricCatalog(fromNanos: "0", toNanos: "1", kind: "counter") { name } }"#.into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, bad_kind).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(
+        error_messages(&json)
+            .iter()
+            .any(|message| message.contains("gauge|sum|histogram")),
+        "unknown kind rejected: {json}"
+    );
+
+    let reversed = juniper::http::GraphQLRequest::new(
+        r#"{ metricCatalog(fromNanos: "5", toNanos: "1") { name } }"#.into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, reversed).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(
+        !error_messages(&json).is_empty(),
+        "reversed range rejected: {json}"
+    );
+}

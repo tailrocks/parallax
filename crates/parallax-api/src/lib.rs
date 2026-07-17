@@ -299,6 +299,12 @@ impl Query {
     /// (spec §8). Null when the anchor does not exist.
     async fn bundle(context: &ApiContext, fingerprint: Option<String>, invocation_id: Option<String>, trace_id: Option<String>, max_tokens: Option<i32>,) -> FieldResult<Option<BundleOut>> { resolvers::issues::bundle(context, fingerprint, invocation_id, trace_id, max_tokens).await }
 
+    /// Window-scoped metric explorer catalog (plan 168): canonical names with
+    /// kind (gauge|sum|histogram), unit, emitting services, last datapoint,
+    /// and finite-sample counts per the metric-summary contract. `q` is a
+    /// case-insensitive substring filter; `kind` filters one metric kind.
+    async fn metric_catalog(context: &ApiContext, from_nanos: String, to_nanos: String, q: Option<String>, kind: Option<String>, limit: Option<i32>,) -> FieldResult<Vec<resolvers::MetricCatalogRow>> { resolvers::metrics::metric_catalog(context, from_nanos, to_nanos, q, kind, limit).await }
+
     /// Distinct metric names seen by the store (drives the dashboard
     /// builder), optionally prefix-filtered.
     async fn metric_names(context: &ApiContext, prefix: Option<String>,) -> FieldResult<Vec<String>> { resolvers::metrics::metric_names(context, prefix).await }

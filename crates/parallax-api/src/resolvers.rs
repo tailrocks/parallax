@@ -46,6 +46,7 @@ pub(crate) use journeys::ScreenVisitOut;
 pub(crate) use journeys::SessionOut;
 pub(crate) use journeys::UiActionOut;
 pub(crate) use logs::LogRecord;
+pub(crate) use metrics::MetricCatalogRow;
 pub(crate) use metrics::MetricExemplar;
 pub(crate) use metrics::RuntimeMetric;
 pub(crate) use metrics::Series;

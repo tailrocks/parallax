@@ -92,6 +92,17 @@ pub trait MetricStore: Send + Sync {
         label: &str,
         range: RangeInclusive<u128>,
     ) -> StorageResult<Vec<String>>;
+    /// Window-scoped explorer catalog (plan 168): canonical names with kind,
+    /// unit, emitting services, last datapoint, and finite-sample counts.
+    /// Bounded and batched — one logical scan, never per-metric fan-out.
+    /// `q` is a case-insensitive substring filter on the canonical name.
+    async fn metric_catalog(
+        &self,
+        range: RangeInclusive<u128>,
+        q: Option<&str>,
+        kind: Option<MetricKind>,
+        limit: usize,
+    ) -> StorageResult<Vec<MetricCatalogEntry>>;
 }
 
 #[async_trait::async_trait]

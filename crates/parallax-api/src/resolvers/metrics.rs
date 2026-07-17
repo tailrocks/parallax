@@ -80,6 +80,58 @@ impl MetricExemplar {
     }
 }
 
+pub(crate) struct MetricCatalogRow(pub(crate) model::MetricCatalogEntry);
+
+#[graphql_object(context = ApiContext)]
+impl MetricCatalogRow {
+    /// Canonical native-table display name (metric-summary contract).
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+    /// gauge | sum | histogram — bounds legal aggregations client-side.
+    fn kind(&self) -> &str {
+        self.0.kind.as_str()
+    }
+    fn unit(&self) -> Option<&str> {
+        self.0.unit.as_deref()
+    }
+    /// Emitting services inside the window, deduplicated and sorted.
+    fn services(&self) -> &[String] {
+        &self.0.services
+    }
+    fn last_datapoint_nanos(&self) -> String {
+        nanos_string(self.0.last_datapoint_nanos)
+    }
+    /// Finite exported samples in the window; one count per histogram export.
+    fn point_count(&self) -> String {
+        self.0.point_count.to_string()
+    }
+}
+
+pub(crate) async fn metric_catalog(
+    context: &ApiContext,
+    from_nanos: String,
+    to_nanos: String,
+    q: Option<String>,
+    kind: Option<String>,
+    limit: Option<i32>,
+) -> FieldResult<Vec<MetricCatalogRow>> {
+    let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+    let kind = match kind.as_deref() {
+        None => None,
+        Some(raw) => Some(
+            model::MetricKind::parse(raw)
+                .ok_or_else(|| field_err("kind must be gauge|sum|histogram"))?,
+        ),
+    };
+    let rows = context
+        .store
+        .metric_catalog(from..=to, q.as_deref(), kind, clamp_limit(limit, 100))
+        .await
+        .map_err(crate::internal_field_err)?;
+    Ok(rows.into_iter().map(MetricCatalogRow).collect())
+}
+
 pub(crate) async fn metric_names(
     context: &ApiContext,
     prefix: Option<String>,

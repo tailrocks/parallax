@@ -171,6 +171,52 @@ pub struct SeriesPoint {
     pub value: f64,
 }
 
+/// Metric kind classification for the explorer catalog (plan 168). Kinds
+/// bound aggregation legality: sum→rate/sum, gauge→avg/min/max,
+/// histogram→quantiles.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MetricKind {
+    Gauge,
+    Sum,
+    Histogram,
+}
+
+impl MetricKind {
+    #[must_use]
+    pub fn parse(s: &str) -> Option<Self> {
+        Some(match s.to_ascii_lowercase().as_str() {
+            "gauge" => Self::Gauge,
+            "sum" => Self::Sum,
+            "histogram" => Self::Histogram,
+            _ => return None,
+        })
+    }
+
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Gauge => "gauge",
+            Self::Sum => "sum",
+            Self::Histogram => "histogram",
+        }
+    }
+}
+
+/// One metric catalog row (plan 168 explorer browse): canonical name, kind,
+/// unit when known, emitting services, and window-scoped datapoint facts per
+/// the metric-summary contract (finite samples only; one count per histogram
+/// export).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MetricCatalogEntry {
+    pub name: String,
+    pub kind: MetricKind,
+    pub unit: Option<String>,
+    pub services: Vec<String>,
+    pub last_datapoint_nanos: u128,
+    pub point_count: u64,
+}
+
 /// Aggregations for metric series (RATE applies to monotonic sums: per-second
 /// delta of the bucketed sum).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
