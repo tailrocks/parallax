@@ -7978,3 +7978,8 @@ rollup shape (Run 156/160).
 
 Harness `errs` already has `trace_id INVERTED INDEX`. Warm lookup **~7–8 ms**.
 Good model for keyed error events.
+
+### Run 285 — 2026-07-17 — CH head logs bloom prune
+
+`26.7.1.1097` logs1m `idx_trace` bloom: **Granules 1/6** for `trace_id='t0'`.
+Matches stable after harness fix.
