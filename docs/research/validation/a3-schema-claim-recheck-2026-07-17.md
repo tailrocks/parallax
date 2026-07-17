@@ -1,4 +1,4 @@
-# A3 claim-level recheck (2026-07-17, pass 60 + pass 100)
+# A3 claim-level recheck (2026-07-17, pass 60 + pass 100 + pass 124)
 
 <!-- markdownlint-disable MD013 -->
 
@@ -25,6 +25,27 @@
 | Generic filename `evidence-bundle.v1.schema.json` | **Many unrelated projects** use that *name* (RoutePilot, Mischief-Manager, Entroping, actuarial SDKs, etc.) with **different `$id`s** — name collision only, **not** Parallax adoption. |
 | Phrase "PARALLAX evidence bundle" outside Tailrocks | Hits on `arjun7n9s/Parallax` (1★, unrelated Python “band” project — **homonym**, not schema import). |
 | Public adoption ledgers | Still **absent** (`schema-adoption-results.md` / `corpus-outcome-results.md` not present). |
+
+### Pass 124 (2026-07-17) — `$id` resolve + adoption re-probe
+
+| Probe | Result |
+| --- | --- |
+| Declared `$id` (v1) | `https://github.com/tailrocks/parallax/schema/evidence-bundle.v1.schema.json` |
+| HTTP GET that `$id` URL | **404** — not a live schema document URL (GitHub does not serve files at that path) |
+| `raw.githubusercontent.com/.../main/schema/evidence-bundle.v1.schema.json` | **200** JSON — actual fetchable bytes |
+| `blob/main/...` HTML | **200** HTML — not machine schema |
+| `schema/README.md` policy | Schemas are **self-contained** (no remote `$ref`); offline validation does not require `$id` fetch |
+| `gh search code` for `$id` host | Still **only** `tailrocks/parallax` (+ in-tree MCP test). **No** non-operator consumer. |
+| Foreign `evidence-bundle.v1.schema.json` names | Still **name collisions** with other `$id`s (RoutePilot, Mischief-Manager, Entroping, bil-actuarial, lupine, etc.) — **not** Parallax gravity |
+| Adoption ledger files | Still **absent** |
+
+**Implication:** `$id` is currently an **identifier**, not a **dereferenceable
+catalog URL**. That is compatible with self-contained offline validation, but
+weakens any claim that third parties can `$ref` the published `$id` without
+using raw.githubusercontent (or a future stable docs host). **Does not change**
+claim stack: artifacts shipped, adoption none. Optional follow-up (product, not
+this research pass): publish a stable raw or docs URL and align `$id`, or
+document `$id` as non-resolving URI.
 
 **Claim stack unchanged:** `schema_artifacts_shipped` + `schema_adoption_none` +
 `corpus_empty_public`. **Do not** count foreign `evidence-bundle.v1` files as A3
