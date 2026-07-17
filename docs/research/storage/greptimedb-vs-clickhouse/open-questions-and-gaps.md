@@ -144,7 +144,7 @@ Highest-value *remaining* items (not “done”):
 7. ~~CH TimeSeries "broken"~~ — **Run 403** query path real; **Run 404** `rate`/`sum`/
    `avg by` match GT, **`increase` still NOT_IMPLEMENTED** on 26.6+26.7. **Run 560:**
    matrix holds; **range-vector `offset` is Code 43 type bug** (selector-level offset
-   OK). Remaining watch: experimental / Cloud support / completeness at volume.
+   OK). Remaining watch: experimental / completeness at volume. **Run 572:** docs say **Not supported in ClickHouse Cloud** — Cloud does not close PromQL via TimeSeries.
 
 Do **not** burn passes re-confirming interactive 50k–100k ties, small-N object counts,
 or plan-shape re-verifies of PREWHERE/projection/TWCS/PARTITION unless a **pin bumps**.

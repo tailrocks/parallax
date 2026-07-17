@@ -320,6 +320,26 @@ counter `r560_counter` with jobs j0/j1; table-function form
 **Verdict impact:** comparator watch only; GT remains the product metrics/Prom path.
 No pin bump. **Not done.**
 
+### Run 572 (2026-07-18) — TimeSeries **not in ClickHouse Cloud**
+
+Primary docs (fetched 2026-07-18):
+[TimeSeries table engine](https://clickhouse.com/docs/engines/table-engines/special/time_series):
+
+- Marked **Experimental feature** (may change in backwards-incompatible ways).
+- Explicit line: **“Not supported in ClickHouse Cloud.”**
+- Enablement still gated (`allow_experimental_time_series_table`).
+
+**Implication for the managed comparison (Run 221/558 list rates):** even if
+CH Cloud closes OSS N×/cold-S3 economics via SharedMergeTree, **native PromQL
+via TimeSeries is not a Cloud product path today**. ClickStack/blog notes continue
+to describe experimental PromQL growth on the engine, but Cloud customers do not
+get this facade. Greptime managed + GA PromQL/OTLP/Jaeger remains the only
+**managed** path in this study with first-class Prom/OTEL without a parallel
+collector stack.
+
+**No stack flip** (product already self-host GT). Comparator honesty: CH
+experimental PromQL is **OSS-lab only** for now. **Not done.**
+
 ## Run 403 mechanism takeaway (why Code 48 is not a death sentence)
 
 `TimeSeries` is closer to a **materialized-view-style multi-target router** than a

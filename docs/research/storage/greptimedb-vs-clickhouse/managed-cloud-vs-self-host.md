@@ -163,6 +163,11 @@ managed CH quote exceeds self-host GT TCO, (c) native PromQL/OTLP/Jaeger without
 collector glue remains valuable. Cloud CH wins if: team will not run DBs and the
 query mix is analytics-heavy.
 
+**Run 572:** ClickHouse docs state **TimeSeries engine is not supported in
+ClickHouse Cloud** (experimental, OSS-only for now). So Cloud CH does **not**
+inherit the experimental PromQL lab path from Runs 403–560 — observability on
+Cloud remains collector/schema/ClickStack-shaped, not `prometheusQuery` facade.
+
 ### Managed GT vs ClickHouse Cloud
 
 Closest “fair managed” fight. Both sell object-store + elastic compute. Score on
