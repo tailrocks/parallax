@@ -7046,3 +7046,11 @@ Do **not** compare Prometheus HTTP wall (docker+curl ~65 ms) to engine SQL ms.
 Ordering CH SQL > GT SQL > GT PromQL holds. Instant PromQL needs `time=` in data window.
 CH TimeSeries still experimental/default-off. Evidence: scratch `run183-promql-vs-sql.txt`.
 Note: `promql-and-metrics-query.md`.
+
+### Run 184 — 2026-07-17 — four-way full-text + matrix refresh (N=100k, REPS=8)
+
+**Pins.** GT v1.1.3 / v1.2-nightly; CH 26.6.1.1193 / 26.7-head. Data from `bench/four-way/gen.sh`.
+
+Selective full-text ~tie (5 vs 2–3 ms); broad CH ~1.5× (8 vs 5); JSON2 ~5 vs jsonb ~45 vs CH 4.
+No mechanism drift. Full matrix in scratch `run184-four-way-matrix.txt`. Notes:
+`indexing-internals.md`, `four-way-version-comparison.md`.

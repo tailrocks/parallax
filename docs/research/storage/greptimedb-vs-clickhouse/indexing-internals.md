@@ -175,3 +175,18 @@ materialized rather than counted.
 - Cross-refs: `read-path-indexing-and-execution.md` (what each skips),
   `query-execution-engine.md` (why integration beats index richness),
   `clickhouse-internals.md` / `greptimedb-internals.md`.
+
+## Run 184 (2026-07-17) — full-text selective vs broad on v1.1.3 four-way
+
+N=100k `logs1m` (GT FULLTEXT bloom + `matches_term`; CH `tokenbf_v1` + `hasToken`), warm median of 8.
+
+| Query | GT v1.1.3 | GT v1.2-nightly | CH 26.6 | CH 26.7-head | Direction |
+| --- | ---: | ---: | ---: | ---: | --- |
+| selective (`matches_term`/`hasToken` rare id) | 5 | 5 | 3 | 2 | ~tie / CH slight |
+| broad (`timeout` ~14% of rows) | 8 | 7 | 5 | 5 | CH ~1.5–1.6× |
+| log-tail service+ts DESC | 5 | 5 | 3 | 2 | CH ~2× (sort-key locality) |
+
+**No drift** from Runs 98/133/157 mechanism story: selective full-text is interactive on both
+(pruning works); broad terms are scan-bound and favour CH’s vectorized scan. At 100k the ~12×
+canonical broad gap (5M logs_b1) is compressed — magnitude is scale-shaped; direction holds.
+Also re-confirmed JSON2 path ~5–6 ms vs jsonb ~44–45 ms vs CH ~4 ms (Run 173/176).

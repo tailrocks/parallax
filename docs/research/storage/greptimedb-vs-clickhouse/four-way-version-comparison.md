@@ -17,6 +17,22 @@ Status: created 2026-05-25 (Run 131); **re-pinned Run 173 (2026-07-17)**. The op
 **Do not pin bare `v1.1.0`:** GitHub marks it prerelease; it carries a critical JSON upgrade bug.
 Use ≥`v1.1.1` (current stable = `v1.1.3`).
 
+## Run 184 — N=100,000 matrix refresh (2026-07-17, REPS=8)
+
+Same pins as Run 173. Full harness medians (selected load-bearing rows):
+
+| Query | GT 1.1.3 | GT 1.2-n | CH 26.6 | CH head | Faster |
+| --- | ---: | ---: | ---: | ---: | --- |
+| anchored-lookup | 5 | 5 | 3 | 2 | CH ~2× |
+| fulltext-selective | 5 | 5 | 3 | 2 | ~tie |
+| fulltext-broad | 8 | 7 | 5 | 5 | CH ~1.5× |
+| log-tail | 5 | 5 | 3 | 2 | CH ~2× |
+| dynamic-attr-jsonb | 45 | 44 | 4 | 4 | CH ~11× |
+| dynamic-attr-json2 | 5 | 6 | 4 | 4 | ~tie / CH slight |
+| cross-tier-join | 10 | 11 | 3 | 3 | CH ~3× |
+
+Full raw matrix: plan scratch `run184-four-way-matrix.txt`. Directions stable vs Run 173.
+
 ## Run 173 — N=100,000 re-verify on new pins (laptop preliminary)
 
 **Method.** `docker compose -f bench/compose.yml up -d` (images above) →
