@@ -169,7 +169,7 @@ architecturally, early in productization.
 
 | Capability | SigNoz | Parallax |
 |---|---|---|
-| Official MCP server | ✅ **Apache-2.0, both hosted + self-hosted**, **v0.8.0** (2026-07-15), stdio + HTTP(OAuth) | 🟡 planned, read-only after safety gates |
+| Official MCP server | ✅ **Apache-2.0, both hosted + self-hosted**, **v0.8.0** (2026-07-15), stdio + HTTP(OAuth) | ✅🧪 local-stdio read-only shipped (plan 112 DONE; remote deferred) |
 | MCP tool surface | **41 tools** (pass 41 recount of [signoz-mcp-server README](https://github.com/SigNoz/signoz-mcp-server) table) — includes write/destructive tools (create/update/delete alerts, dashboards, views, notification channels) | read-only bounded projection (local-stdio MCP shipped; remote 🏗) |
 | Skills marketplace | ✅ `agent-skills` repo — 12 skills, incl. read-only `signoz-investigating-alerts` RCA skill **with eval cases** | ❌ |
 | AI root-cause | ✅ MCP RCA skill (3-tier, mandated cite-every-claim) | 🟡 planned |

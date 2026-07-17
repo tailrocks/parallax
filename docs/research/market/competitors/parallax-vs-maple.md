@@ -10,7 +10,7 @@
 > error/session-replay coverage, Maple is ahead of pre-release Parallax.** Parallax's
 > honest edges are Rust vs TS/Bun, **self-hosted GreptimeDB vs Maple's Tinybird-
 > vendor-coupled ClickHouse** (Maple's hosted fast-path depends on a vendor),
-> **Apache-2.0 vs FSL-1.1**, and the *unproven* bundle + fix-outcome thesis.
+> **Apache-2.0 vs FSL-1.1**, and the *code-shipped bundle (A1 value unproven)* + *offline fix-outcome residual (plan 123 DONE)* thesis.
 
 ## What each product is
 
@@ -33,7 +33,7 @@ Both single-binary-local-first, OTLP-native, Turso-metadata. The closest pair on
 | LLM / agent spans | 🟡 (explore) | ✅ (🏗) |
 | Sentry envelope / DSN | ❌ | ✅ shipped |
 
-**Verdict:** Maple's coverage is broader and all shipped — it is a full platform. Parallax is narrower (evidence engine). On coverage, **Maple wins decisively.** Same gap as the other platforms: **no Sentry-envelope path, no fix-outcome loop.**
+**Verdict:** Maple's coverage is broader and all shipped — it is a full platform. Parallax is narrower (evidence engine). On coverage, **Maple wins decisively.** Maple gap vs Parallax thesis: **no Sentry-envelope path, no fix-outcome loop** (Parallax ships envelope + offline outcome residual plan 123 DONE).
 
 ## Ingestion & transport
 

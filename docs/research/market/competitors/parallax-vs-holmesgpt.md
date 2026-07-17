@@ -31,7 +31,7 @@ Both Apache-2.0, agent-facing, in the "AI investigation" space. **HolmesGPT is t
 | --- | --- | --- |
 | AI alert investigation (alert→RCA) | ✅ **(the core — <30s RCA)** | 🟡 (🏗) |
 | Runbook execution | ✅ | ❌ |
-| MCP toolset (extensible data sources) | ✅ | ✅ planned (🏗) |
+| MCP toolset (extensible data sources) | ✅ | ✅🧪 local-stdio MCP shipped (2 tools; remote deferred) |
 | Incident grouping (Robusta) | ✅ | ❌ |
 | **Own telemetry store** | ❌ (queries yours) | ✅🧪 GreptimeDB (shipped, pre-release) |
 | Error derivation / fingerprinting | ❌ (reads your signals) | ✅ derived `error_event` (🧪 shipped) |

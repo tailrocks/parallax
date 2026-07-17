@@ -95,7 +95,7 @@ Both touch "AI-driven investigation" and (now) "agent" framing, but Dynatrace is
     autonomous agents the observability truth they need to reason accurately,
     take decisive actions, and operate safely." **= shipped MCP for agent context.**
   - Plus pre-existing **Davis AI causal RCA** + **AI Observability** (LLM/agent via OTLP).
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle served to coding agents (planned, A1 gate).
+- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle served to coding agents (**code-shipped**, A1 value unproven).
 
 **Honest verdict (pass-38, no-bias — the strongest incumbent collision yet):**
 Dynatrace now **ships a production-grade "context/grounding layer for agents" at

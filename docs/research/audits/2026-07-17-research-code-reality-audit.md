@@ -104,3 +104,16 @@ fully unshipped. Bulk-fixed `parallax-vs-*.md` + `competitors/README.md`:
 - evidence bundle → **code-shipped**, A1 **value** unproven
 - fix-outcome → offline residual **plan 123 DONE**; live value unproven (not “unshipped”)
 - README Planned-only list no longer includes fix-outcome as fully planned
+
+### Second skeptic pass — residual verdict/edge lists
+
+Fixed present-tense leftovers the first pass missed:
+
+- `parallax-vs-tma1.md` verdict + honest-read residual
+- `parallax-vs-coroot.md` “Where Parallax edges” list (error planned → shipped; bundle planned → code-shipped)
+- `parallax-vs-highlight.md` “backend telemetry unshipped” → OTLP shipped
+- `parallax-vs-sumo.md` production error-workflow planned → shipped
+- fix-outcome “planned/unproven” on maple/dynatrace/holmesgpt/signoz → plan 123 DONE offline residual
+- SigNoz/HolmesGPT MCP cells: local-stdio shipped (not 🏗 planned)
+
+Folder re-grep for product deep-dives: clean on planned/unshipped for those surfaces.
