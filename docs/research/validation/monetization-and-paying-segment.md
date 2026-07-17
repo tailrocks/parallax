@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-05-29 · **Desk recheck 2026-07-17 (pass 54 + 94 + 106 + 117 + 119)**
+Research date: 2026-05-29 · **Desk recheck 2026-07-17 (pass 54 + 94 + 106 + 117 + 119 + 131 + 132)**
 
 ## Purpose
 
@@ -223,6 +223,47 @@ billing docs.
 **Falsify:** Datadog publishes a different exclusive per-investigation SKU that
 replaces AI Credits for Bits Investigation only.
 
+### Pass 132 (2026-07-17) — Sentry Seer seat pricing (fixer reference)
+
+Live primaries: [sentry.io/pricing](https://sentry.io/pricing/) (marketing) +
+[docs.sentry.io/pricing/#seer-pricing](https://docs.sentry.io/pricing/#seer-pricing)
+(billing detail). Completes the **Seer seat** vs **Bits credits** (pass 131)
+fixer-model pair.
+
+| Surface | Primary signal (2026-07-17) |
+| --- | --- |
+| **Marketing page** | Seer listed as add-on: **$40/active contributor/month** (Team / Business / Enterprise); “subscription required” on Team feature list |
+| **Current Seer SKU** | **$40 / active contributor / month** on Team **and** Business (same rate) |
+| **Active contributor definition** | User who makes **≥2 PRs** to a **Seer-Enabled** repository (repo connected + ≥1 Seer feature enabled). Counts **reset monthly** |
+| **GitHub counting** | Repo members counted except GitHub bots marked `[bot]` |
+| **GitLab counting** | All group members counted (even with Autofix/bots) |
+| **vs PAYG** | Seer is a **separate monthly charge**; **does not** consume the shared PAYG budget |
+| **Legacy Seer** (pre-Jan 2026 only) | **$20/mo** per Sentry subscription + **$25** Seer event credits; overage via PAYG. Issue Scan ~**$0.003**/run tiered; Issue Fix **$1.00**/run. **No longer offered** as new add-on after Jan 2026 |
+| **Self-host** | Seer still **unavailable** (pass 126 / develop.sentry.dev) |
+
+**Holds:** desk claim “Seer ≈ $40/active-contributor” is **still current primary**
+for new customers. Legacy per-event / $1 fix-run path is **legacy-only**.
+
+**Fixer-model comparison (same day desk):**
+
+| Vendor | Meter | Unit economics (order-of-magnitude) | Self-host AI |
+| --- | --- | --- | --- |
+| **Sentry Seer** | Seat (active contributor) | **$40/contributor/mo** unlimited usage within SKU | **No** |
+| **Datadog Bits** (pass 131) | AI Credits | **~$6.50–$8.45**/Investigate avg (credit math) | **No** (SaaS) |
+
+**Implication for Parallax fixer design:** two live incumbent patterns —
+
+1. **Seat / contributor** (Seer) — simple ACV math once adoption is broad; expensive for large PR teams; no self-host.
+2. **Work-unit / credit** (Bits AI Credits) — variable cost with usage spikes; still SaaS-only.
+
+Parallax desk design (outcome-priced fixer + open evidence core + optional EE/cloud)
+still sits in the **work-unit / outcome** family early, with optional graduate to
+contributor seats once accuracy is trusted — **unchanged**. Self-host Seer absence
+still supports hard-boundary air-gap narrative (pass 126).
+
+**Falsify:** Seer drops to free on Team; or ships self-hosted open AI; or
+primary rate leaves $40/contributor for a pure per-fix PAYG only.
+
 ## 2. Monetization shape (the survivors' playbook, applied)
 
 1. **License: Apache-2.0 for the core, kept consistent — RESOLVED (operator, 2026-05-29).** The
@@ -290,7 +331,7 @@ replaces AI Credits for Bits Investigation only.
 - Market sizing: observability split (Mordor): <https://www.mordorintelligence.com/industry-reports/observability-market> · sovereign-cloud IaaS $80B (Gartner): <https://www.gartner.com/en/newsroom/press-releases/2026-02-09-gartner-says-worldwide-sovereign-cloud-iaas-spending-will-total-us-dollars-80-billion-in-2026> · open-source preference (Grafana survey): <https://grafana.com/press/2026/03/18/grafana-labs-4th-annual-observability-survey-reveals-a-field-at-a-crossroads-ai-economics-complexity-and-the-enduring-power-of-open-source/>
 - The squeeze: Datadog FedRAMP High (2026-05-27): <https://www.globenewswire.com/news-release/2026/05/27/3302010/0/en/datadog-and-carahsoft-announce-datadog-s-achievement-of-fedramp-high-certification-for-its-observability-and-security-platform.html> · Grafana Federal Cloud (FedRAMP High/IL5 SaaS): <https://grafana.com/products/fedramp-federal-cloud/> · AWS European Sovereign Cloud GA: <https://www.datadoghq.com/about/latest-news/press-releases/eu-region-germany/>
 - Monetization playbook: Grafana AGPLv3 (no fork): <https://grafana.com/blog/grafana-loki-tempo-relicensing-to-agplv3/> · Elastic Cloud ~49% (Q2 FY26): <https://www.businesswire.com/news/home/20251119331264/en/Elastic-Reports-Second-Quarter-Fiscal-2026-Financial-Results> · SigNoz `ee/` gating + cloud pivot: <https://signoz.io/pricing/> · OpenObserve enterprise set + 50 GB/day free: <https://openobserve.ai/pricing/> · SSO tax: <https://sso.tax/> · relicensing forks (OpenTofu/Valkey/OpenSearch): <https://opentofu.org/blog/opentofu-announces-fork-of-terraform/> · <https://www.infoq.com/news/2025/05/redis-agpl-license/>
-- Fixer pricing: Sentry Seer ($40/active-contributor): <https://sentry.io/product/seer/> · Datadog **AI Credits** (pass 131 primary): <https://www.datadoghq.com/pricing/?product=ai-credits#products> · Bits product: <https://www.datadoghq.com/product/ai/bits-ai-sre/>
+- Fixer pricing: Sentry Seer **$40/active contributor** (pass 132 primary docs): <https://docs.sentry.io/pricing/#seer-pricing> · marketing: <https://sentry.io/pricing/> · Datadog **AI Credits** (pass 131): <https://www.datadoghq.com/pricing/?product=ai-credits#products>
 
 > Unconfirmed / flagged: the compliance-only segment $ size is estimated, not isolated by any source;
 > Grafana's cloud-vs-self-managed split and OSS→paid conversion rates are not published; several

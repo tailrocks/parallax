@@ -12,11 +12,10 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 131 (Datadog **AI Credits** primary:
-**$500/500 credits/mo** annual or **$1.30/credit** on-demand; Bits Investigate
-~**6.5 credits** → ~**$6.50–$8.45**/investigation avg — **stale ~$25–30** claim
-corrected). Pass 130 = traces experimental. A1/A2/A4 open; A6 open at mixed
-gate only.
+Last updated 2026-07-17 after pass 132 (Sentry Seer still **$40/active
+contributor/mo**; ≥2 PRs/Seer-enabled repo; separate from PAYG; legacy
+$20+$25 credits closed for new. Fixer seat vs Bits credits pair complete).
+Pass 131 = Datadog AI Credits. A1/A2/A4 open; A6 open at mixed gate only.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
