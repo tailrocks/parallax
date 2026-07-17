@@ -16,7 +16,7 @@ dependency.** Narrower claims need care:
 | Claim | Status 2026-07-17 | Evidence |
 | --- | --- | --- |
 | Sentry Seer available self-hosted | **False — still excluded** | [develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/): "Seer and other AI & ML features… currently closed source" (pass 54 fetch) |
-| Datadog Bits available as self-hosted backend | **False** | Pass 42: Agent + OPW only; no self-hosted Datadog backend |
+| Datadog Bits available as self-hosted backend | **False** | Pass 42 + **pass 111:** only OSS Agent + Observability Pipelines Worker (routes into SaaS); **no self-hosted Datadog store/UI**. Secondary market sources still “SaaS-only” (2026); primary product remains cloud backend. |
 | OSS Grafana / LGTM can run offline | **True for OSS core** | Self-host OSS is real; **Enterprise plugins/license keys** and Cloud AI features are separate — do **not** claim "all Grafana phones home" without a dated primary for a specific binary feature |
 | Grafana Assistant on self-managed | **UI yes / AI backend Cloud** | **Pass 77:** plugin + connect to Grafana Cloud stack required; not offline BYO-LLM — [incumbent-self-hosted-ai-recheck-2026-07-17.md](incumbent-self-hosted-ai-recheck-2026-07-17.md) |
 | OSS SigNoz / OpenObserve / Traceway / Rustrak / GlitchTip / Bugsink can air-gap | **True (product can)** | Self-host OSS peers; **none** ship Parallax-style portable redacted evidence bundle + outcome loop (passes 49–53) |

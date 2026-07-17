@@ -1,7 +1,12 @@
 # Parallax vs Datadog
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17**.
-> Sources: live [Datadog pricing page](https://www.datadoghq.com/pricing/) (accessed 2026-07-17), [Datadog product/docs](https://www.datadoghq.com/), [Bits AI](https://www.datadoghq.com/blog/bits-ai-sre/) / [Bits Agent Builder](https://www.datadoghq.com/blog/bits-agent-builder/), [Agent Observability](https://www.datadoghq.com/products/ai/agent-observability/), plus third-party pricing analyses dated 2026.
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 111**
+> self-host backend recheck: still **SaaS-only product**). Sources: live
+> [Datadog pricing page](https://www.datadoghq.com/pricing/) (accessed 2026-07-17),
+> [Datadog product/docs](https://www.datadoghq.com/), [Bits AI](https://www.datadoghq.com/blog/bits-ai-sre/)
+> / [Bits Agent Builder](https://www.datadoghq.com/blog/bits-agent-builder/),
+> [Agent Observability](https://www.datadoghq.com/products/ai/agent-observability/),
+> plus third-party pricing analyses dated 2026.
 >
 > **Bottom line up front:** on breadth, maturity, scale, enterprise readiness, and shipped AI features, **Datadog is far ahead of pre-release Parallax.** Parallax's only honest edges are openness/self-hostability, cost transparency and data ownership, and an *unproven* evidence-bundle + fix-outcome thesis. A comparison that concluded otherwise would be dishonest.
 
