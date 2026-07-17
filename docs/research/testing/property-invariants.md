@@ -55,6 +55,11 @@ on a stable runner). First local run, 2026-07-17, Apple Silicon dev host,
 | `arrow_decode_10k_rows` | parallax-greptime | ~840 µs |
 | `arrow_decode_10k_rows_zstd` | parallax-greptime | ~980 µs |
 
+First CI validation (2026-07-17): manual dispatch run 29582532812 completed
+green on ubuntu, uploading `fuzz-campaign-*` (five-minute campaign per
+boundary, no crashes) and `bench-samples-*` (three criterion repeats)
+artifacts.
+
 Run: `cargo bench -p <crate> --bench <name>`. Ratchets are NOT set — the
 plan forbids thresholds before variance is measured on a stable scheduled
 runner; these numbers are the reference points for that work.
