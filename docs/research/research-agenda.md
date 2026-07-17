@@ -12,9 +12,11 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 128 (A2 interview gate still **OPEN / zero
-rows**; SO 2025=200 / 2026=404; desk monetization ≠ demand). Pass 127 = run-id
-OTel gap. A1/A2/A4 open; A6 open at mixed-agent gate only.
+Last updated 2026-07-17 after pass 129 (engine pins: GreptimeDB stable still
+**`v1.1.3`** (Latest, published 2026-07-17); named nightly still
+**`v1.2.0-nightly-20260706`**; ClickHouse feature line still
+**`v26.6.1.1193-stable`** — **no bench this pass**). Pass 128 = A2 zero
+interviews. A1/A2/A4 open; A6 open at mixed-agent gate only.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
@@ -53,7 +55,7 @@ producer rather than treat its construction as future work. Autonomous fixing re
 
 ## Standing watches (cheap, recurring)
 
-- **Engine releases** — re-pin + re-verify load-bearing claims on each new stable (GreptimeDB; ClickHouse feature line). Last: **2026-07-17 pass 60 + pass 90 + pass 97** — GreptimeDB stable **`v1.1.3`** (still GitHub **Latest**); latest *named* nightly release tag still **`v1.2.0-nightly-20260706`** (no `nightly-2026071x` GitHub tag; some bench notes citing `20260713` are **container/local pins**, not a newer GitHub release). ClickHouse **feature** line still **`v26.6.1.1193-stable`** (2026-06-25). Newer **`v26.5.5.8-stable`** / LTS **`v25.8.28.1-lts`** are **not** the feature-line pin. Measurement still owed. **Traces docs GA (team Q#2):** still **experimental** (**pass 83**).
+- **Engine releases** — re-pin + re-verify load-bearing claims on each new stable (GreptimeDB; ClickHouse feature line). Last: **2026-07-17 pass 60/90/97 + pass 129 (API only, no bench)** — GreptimeDB stable **`v1.1.3`** (GitHub **Latest**; release date 2026-07-17); latest *named* nightly tag still **`v1.2.0-nightly-20260706`** (no newer `nightly-2026071x` GitHub release tag). ClickHouse **feature** line still **`v26.6.1.1193-stable`** (2026-06-25). Newer **`v26.5.5.8-stable`** (2026-07-01) is a **26.5** patch, **not** the feature-line pin. Server-tier size/cost measurement still owed (agenda #5). **Traces docs GA:** still **experimental** (**pass 83**).
 - **Incumbent self-hosted AI** — **Rechecked 2026-07-17 pass 77 + pass 126:**
   Seer still **closed / unavailable** on self-hosted
   ([develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/)
