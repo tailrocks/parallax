@@ -1,7 +1,7 @@
 # Parallax vs Rustrak
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 51**
-> first canonical deep-dive). Sources: primary
+> first canonical deep-dive; **pass 89 pin recheck**). Sources: primary
 > [github.com/rustrak/rustrak](https://github.com/rustrak/rustrak) (README,
 > LICENSE, releases, `packages/mcp`),
 > [rustrak.github.io/rustrak](https://rustrak.github.io/rustrak/), pass-49
@@ -23,9 +23,12 @@
   self-hosted error tracking compatible with Sentry SDKs**. Point existing Sentry
   SDKs at Rustrak via DSN. **Rust + Actix-web** server, **PostgreSQL** store,
   web UI (`webview-ui`). Packages: `@rustrak/server` **v0.9.2**, `@rustrak/mcp`
-  **v0.2.13**, `@rustrak/client`, docs (2026-07-15 releases). **GPL-3.0**
-  (LICENSE + badge). **64★, 9 forks, created 2026-01-22, last push 2026-07-17.**
-  Homepage docs at `rustrak.github.io/rustrak`.
+  **v0.2.13**, `@rustrak/client`, docs (2026-07-15 releases — **pass 89:** still
+  latest tags; npm lists client/mcp; server image `rustrak/rustrak-server`).
+  **GPL-3.0** (LICENSE + badge). **64★, last push 2026-07-17.** README default
+  deploy is **SQLite** (optional PostgreSQL). Homepage docs at
+  `rustrak.github.io/rustrak`. **Pass 89:** still **no OTLP / portable bundle /
+  outcome loop** in README; MCP remains the differentiator vs pure Sentry-compat.
 - **Parallax** — Apache-2.0, Rust-first **execution-context engine**: OTLP +
   Sentry envelope, multi-signal correlation, bounded redacted evidence bundles,
   CLI/GraphQL/UI, local-stdio read-only MCP. GreptimeDB + Turso. **Pre-release.**
