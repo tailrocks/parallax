@@ -8032,3 +8032,7 @@ product input. Will keep re-pinning and re-verifying until stopped.
 
 `WHERE service ORDER BY ts DESC LIMIT 50`: GT **~6–10 ms**; CH **~3–7 ms**.
 Both interactive; CH slight lead (ORDER BY locality). No drift.
+
+### Run 297 — 2026-07-17 — pins + containers still healthy
+
+Four-way still healthy; GT 1.1.3 / CH 26.6. Loop continues without declaring done.
