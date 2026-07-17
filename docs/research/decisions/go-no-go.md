@@ -14,8 +14,8 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > shipped.** Parallax now has native-table OTLP gRPC/HTTP ingest, Sentry envelope
 > ingest, GitHub webhooks, deterministic issues, bundle-v1/envelope-v2 evidence,
 > the code-first GraphQL API, CLI, alerting, dashboards, investigations, SQL,
-> and the TanStack UI. MCP remains a quarantined `parallax-mcp`; active
-> plan 112 owns product ship gates.
+> and the TanStack UI. Local-stdio MCP (`parallax-mcp`) graduated plan 112
+> (DONE); remote MCP remains deferred to Plan 109.
 
 > **Decision record — Status: GO (narrow product).** Build the open-source, Rust-first,
 > self-hosted execution-context engine; do **not** build the generic AI-RCA chatbot,

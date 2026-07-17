@@ -7,7 +7,8 @@ Research date: 2026-06-11. Operator vision statement recorded 2026-06-11.
 **Implementation status, 2026-07-17:** the evidence substrate this moonshot requires has shipped:
 ingest, deterministic analysis, bounded/redacted v1/v2 bundles, alerting, live delivery, and durable
 storage are product code. `poc/evidence-loop` provides executable concept kernels, but no autonomous
-fixer product surface has shipped. Plan 123 owns the active fixer outcome loop; plan 112 owns MCP.
+fixer product surface has shipped. Plan 123 owns the active fixer outcome loop;
+local-stdio MCP graduated plan 112 (DONE); remote MCP deferred to Plan 109.
 
 > **North star.** Parallax exists so that, eventually, most production bugs are fixed by AI without
 > a human gathering context — and in routine cases without a human being asked at all. A failure is

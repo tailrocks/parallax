@@ -14,8 +14,8 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > **Implementation status (2026-07-17): local V1 and its broad product surface
 > are shipped.** This includes OTLP and Sentry ingest, GitHub webhooks, evidence
 > bundles, 76 GraphQL queries/14 mutations, CLI, alerting, dashboards,
-> investigations, SQL, and the TanStack UI. `parallax-mcp` is proof code,
-> not product MCP; active plan 112 remains authoritative for graduation.
+> investigations, SQL, and the TanStack UI. Local-stdio MCP (`parallax-mcp`,
+> aux) graduated plan 112 (DONE); remote MCP deferred to Plan 109.
 
 > **Decision record — strategic synthesis and coverage map.** Status: GO (narrow), tying the
 > research notes into one verdict and mapping every prompt area to its evidence. The current
@@ -82,9 +82,10 @@ Rust service / CLI / coding agent
 
 This is not executable work. Local V1 subsequently shipped. Plan 093 closed;
 plan 115 owns remaining server-profile work. Sentry envelope ingest shipped;
-product MCP remains blocked in active plan 112. Any external stream remains research until
-the operator authorizes a numbered plan. ClickHouse benchmark deltas expose
-GreptimeDB risks; they do not activate a fallback.
+local-stdio product MCP graduated plan 112 (DONE); remote MCP waits on Plan 109.
+Any external stream remains research until the operator authorizes a numbered
+plan. ClickHouse benchmark deltas expose GreptimeDB risks; they do not activate
+a fallback.
 
 ## Direct Answers To Strategic Questions
 

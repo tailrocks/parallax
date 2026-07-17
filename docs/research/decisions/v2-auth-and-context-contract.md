@@ -9,7 +9,7 @@
   for the first shippable auth surface.
 - **Plan owner:** plan 109 (retired 2026-07-17; minimal slice shipped —
   [evidence](../validation/2026-07-plan-109-v2-auth/README.md)). Later auth
-  expansions stay on this ADR / plan 115 / plan 112 as noted below.
+  expansions stay on this ADR / plan 115; local-stdio MCP graduated plan 112 (DONE).
 
 ## Decision
 
@@ -31,14 +31,14 @@ once at the HTTP boundary**, with default-deny when the token is configured.
 | Local process on same host | Accidental use of a non-loopback bind without a token |
 | Network peer on a shared LAN | Unauthenticated GraphQL/SSE when an API token is set |
 | Log aggregator / crash dump / shell history | Token plaintext in argv, URL, ready banner, errors, telemetry |
-| Malicious MCP/client | Not covered here for remote MCP; plan 112 stays local-stdio until this contract is used for remote |
+| Malicious MCP/client | Not covered here for remote MCP; local-stdio MCP graduated; remote waits on Plan 109 + this contract |
 
 Out of scope for contract v1:
 
 - Multi-user RBAC, project-scoped capabilities, billing roles.
 - Browser cookie/session persistence designs.
 - OTLP ingest tokens (`x-parallax-project-token`) — plan 115.
-- Remote MCP OAuth/PKCE/resource-indicators — plan 112 after this lands.
+- Remote MCP OAuth/PKCE/resource-indicators — Plan 109 + this contract after local-stdio graduation.
 - rustls, custom root bundles, or plaintext remote credential transport over the public Internet without an operator-controlled TLS terminator.
 
 ## Credential format and lifecycle
@@ -110,7 +110,7 @@ Rules:
 | --- | --- |
 | Existing local installs | Unchanged: no token, loopback, open GraphQL/SSE. |
 | CI non-interactive | Set `PARALLAX_API_TOKEN` on server and clients, or context `token_env`. |
-| MCP local stdio (plan 112) | Continues credential-free loopback until a product MCP remote path is authorized; then it consumes this bearer contract. |
+| MCP local stdio (plan 112 DONE) | Credential-free loopback product surface; remote path consumes this bearer contract when authorized. |
 
 ## Acceptance matrix (machine-checkable intent)
 

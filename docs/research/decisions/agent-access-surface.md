@@ -170,10 +170,10 @@ changes it:
 | Protocol | Advertise stable `2025-11-25`; accept only the reviewed `2024-11-05`, `2025-03-26`, `2025-06-18`, and `2025-11-25` revisions. No protocol session identity, roots, sampling, elicitation, logging, tasks, prompts, or resources. |
 | Audit | Every eventual supported invocation must durably record one metadata row and one OTel span with event id, time, caller/client identity, transport, protocol revision, tool, server-assigned scopes, bundle id/hash when available, status, duration, serialized output bytes, and policy/schema versions. Never record arguments, anchor values, evidence, Markdown, raw errors, credentials, environment, or client-retained artifacts. |
 | Retention | Codex fixtures must prove external-context memory exclusion; Claude Code fixtures must record output persistence and confirm no resource attachment path exists. Seeded secrets must remain absent from client history/artifacts used by the fixture. |
-| Graduation | Keep the proof crate quarantined and unshipped until both client fixtures and durable audit/OTel gates pass. Then move proven code into a deliberately named product crate/binary and delete the spike identity in one reviewed slice. |
+| Graduation | **DONE (2026-07-17):** spike identity retired; product crate/binary is `parallax-mcp` (local-stdio only). Remote transport remains unauthorized until Plan 109. |
 
-This GO does not authorize remote transport or weaken any unfinished gate. It
-removes the former decision blocker and gives those gates one exact target.
+This GO authorized local-stdio only. It does not authorize remote transport.
+Live Codex/Claude discovery and 35 crate tests closed plan 112.
 
 ### Why CLI-Only Is Not Enough
 
@@ -371,9 +371,11 @@ not satisfy the Parallax schema/adoption or source-field policy gates.
 
 The former phase ordering is retired. Closed plans 104 and 111 delivered the
 canonical bundle/projection and redaction/source-field safety boundaries;
-active plan 112 owns the product MCP decision, client fixtures, auth/scope,
-resources, capabilities, output budgets, auditing, and spike graduation or
-removal. This document supplies requirements and claim levels only.
+plan 112 graduated local-stdio product MCP (`parallax-mcp`) and is DONE —
+evidence in
+[validation/2026-07-plan-112-product-mcp/README.md](../validation/2026-07-plan-112-product-mcp/README.md).
+Remote MCP remains deferred to Plan 109. This document supplies requirements
+and claim levels only.
 
 ### Gate For Shipping MCP
 
@@ -452,10 +454,10 @@ levels. It consumes the design in
 and the normalization contract in
 [Agent and CLI OTel semantic-convention mapping](../capture/agent-cli-tracing.md).
 
-Local-stdio MCP is graduated product surface (plan 112 DONE). Broader multi-client claim levels remain **not measured** where the safety ledger still says so. Historical spike text below is evidence,
-not a shipped product surface, and does not satisfy the full projection,
-client/auth, redaction, source-field, retention, or audit gates in plan 112.
-Until those pass, Parallax must not describe product MCP as proven safe.
+Local-stdio MCP is graduated product surface (plan 112 DONE). Broader multi-client
+and remote claim levels remain **not measured** where the safety ledger still
+says so. Historical spike/ledger prose below is provenance only — it must not
+be read as re-opening plan 112 or demoting `parallax-mcp` back to a spike.
 
 The central rule:
 

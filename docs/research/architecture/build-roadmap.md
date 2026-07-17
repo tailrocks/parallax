@@ -146,10 +146,11 @@ or any other product fallback.
 
 This phase originally grouped UI, server topology, MCP, CLI/agent tracing, and
 frontend collection. It is not a backlog. The UI and several capture surfaces
-subsequently shipped; current UI restructuring is plan 100, server/auth work is
-blocked in plans 109/110/115, and product MCP is blocked in plan 112. Capture
-ledgers continue to constrain product claims. Any future unlisted implementation
-must first receive a numbered plan in `plans/`.
+subsequently shipped; current UI restructuring ownership is historical plan 100
+(closed or superseded by later UI plans), server/auth residual is plans
+109/110/115, and local-stdio product MCP graduated plan 112 (DONE; remote → 109).
+Capture ledgers continue to constrain product claims. Any future unlisted
+implementation must first receive a numbered plan in `plans/`.
 
 ### Phase 4 — Historical fixer projection
 

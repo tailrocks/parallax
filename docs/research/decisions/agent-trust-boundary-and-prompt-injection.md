@@ -19,8 +19,10 @@ or persistence capabilities through the workspace graph.
 
 The name-based classification check is fail-closed for future product packages
 whose names contain `agent` or `mcp`: they cannot enter the graph without the
-marker. The current `parallax-mcp` remains class `proof`, is not packaged,
-and cannot establish a product safety claim.
+marker. The current `parallax-mcp` is class `aux` (local-stdio product surface,
+plan 112 DONE) and depends only on `parallax-evidence`; remote MCP still needs
+Plan 109 protected transport before it may claim a broader product safety
+posture.
 
 ## Prompt-injection model
 
@@ -32,9 +34,9 @@ Raw GraphQL (`/graphql`), trace/log SSE, SQL, raw storage traits, and source
 envelopes are therefore outside the agent context domain even on localhost.
 
 This is a containment boundary, not a claim that redaction alone detects every
-prompt injection. Product MCP remains blocked on its separate ship gates for
-schema validation, redaction fixtures, audit, authorization, cross-client
-behavior, and adversarial evaluation.
+prompt injection. Local-stdio MCP graduated plan 112 with closed tools, loopback
+origin, and redaction/hash fail-closed paths; broader multi-client, remote, and
+adversarial evaluation claims remain ledger-gated (not a re-open of plan 112).
 
 ## Enforcement evidence
 
