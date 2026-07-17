@@ -263,30 +263,46 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
         markdown.contains("## Hypotheses"),
         "hypotheses section present"
     );
-    assert!(hash.starts_with("sha256:"));
+    assert!(
+        hash.starts_with("sha256-jcs:"),
+        "v2 canonical hash prefix: {hash}"
+    );
 
-    let mut budget_hashes = Vec::new();
+    // Identity vs integrity (envelope v2): `bundle_id` is the budget-invariant
+    // bundle identity; `canonical_hash` covers the exact served content, so a
+    // different token budget legitimately produces a different content hash.
+    let mut budget_ids = Vec::new();
     for max_tokens in [2_000, 8_000] {
         let response: serde_json::Value = client
             .post(format!("http://{}/graphql", handle.api_addr))
             .json(&serde_json::json!({"query": format!(
-                r#"{{ bundle(fingerprint: "{fingerprint}", maxTokens: {max_tokens}) {{ canonicalHash }} }}"#
+                r#"{{ bundle(fingerprint: "{fingerprint}", maxTokens: {max_tokens}) {{ json }} }}"#
             )}))
             .send()
             .await
-            .expect("budget hash request")
+            .expect("budget bundle request")
             .json()
             .await
-            .expect("budget hash json");
-        budget_hashes.push(
+            .expect("budget bundle json");
+        let envelope: serde_json::Value = serde_json::from_str(
             response
-                .pointer("/data/bundle/canonicalHash")
+                .pointer("/data/bundle/json")
                 .and_then(|v| v.as_str())
-                .expect("budget hash")
+                .expect("budget bundle payload"),
+        )
+        .expect("budget envelope parses");
+        budget_ids.push(
+            envelope
+                .pointer("/bundle_id")
+                .and_then(|v| v.as_str())
+                .expect("bundle id")
                 .to_string(),
         );
     }
-    assert_eq!(budget_hashes[0], budget_hashes[1]);
+    assert_eq!(
+        budget_ids[0], budget_ids[1],
+        "bundle identity is budget-invariant"
+    );
 
     // Correlation: the same-window process gauge appears as a metric window
     // (poll — the metric batch may land just after the issue).
@@ -315,7 +331,7 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
                 .to_string();
             let parsed: serde_json::Value = serde_json::from_str(json).expect("bundle json parses");
             let window = parsed
-                .pointer("/metric_windows/0")
+                .pointer("/data/metric_windows/0")
                 .expect("metric window present");
             assert_eq!(window["metric"], "process.cpu.utilization");
             assert_eq!(window["scope"], "service");
@@ -350,7 +366,7 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
         .expect("bounded bundle");
     let parsed: serde_json::Value = serde_json::from_str(bounded_json).expect("valid json");
     let estimated = parsed
-        .pointer("/bounded/estimated_tokens")
+        .pointer("/data/bounded/estimated_tokens")
         .and_then(serde_json::Value::as_u64)
         .expect("estimate present");
     assert!(
@@ -422,12 +438,12 @@ async fn bundle_redacts_issue_title_culprit_and_run_command() {
     assert!(!json.contains("hunter2"), "password leaked in json");
     assert!(!markdown.contains("hunter2"), "password leaked in markdown");
     assert_eq!(
-        parsed.pointer("/issue/title").and_then(|v| v.as_str()),
-        Some("login failed [REDACTED:password_assignment]")
+        parsed.pointer("/data/issue/title").and_then(|v| v.as_str()),
+        Some("login failed [REDACTED:password_assignment]"),
     );
     assert_eq!(
         parsed
-            .pointer("/latest_event/message")
+            .pointer("/data/latest_event/message")
             .and_then(|v| v.as_str()),
         Some("login failed [REDACTED:password_assignment]")
     );
