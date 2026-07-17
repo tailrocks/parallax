@@ -17,7 +17,7 @@ Tier 3  parallax-api
         /          \
 Tier 2  evidence   concrete adapters (GreptimeDB, Turso, spool)
         \          /
-Tier 1  analysis, ingest, storage capability ports
+Tier 1  analysis, ingest, redaction, storage capability ports
           \       /
 Tier 0    model, proto
 ```
@@ -34,6 +34,7 @@ proof.
 | 0 | [parallax-proto](../../../crates/parallax-proto/README.md) | OTLP wire/service aliases and semantic conventions | `lib.rs` |
 | 1 | [parallax-analysis](../../../crates/parallax-analysis/README.md) | Fingerprints, error derivation, span events, trace comparison/path analysis | `lib.rs` |
 | 1 | [parallax-ingest](../../../crates/parallax-ingest/README.md) | Signal-specific zero-copy normalization | `lib.rs` |
+| 1 | [parallax-redaction](../../../crates/parallax-redaction/README.md) | Secret-detector engine and default-deny source policy | `lib.rs` |
 | 1 | [parallax-storage](../../../crates/parallax-storage/README.md) | Telemetry and metadata capability contracts | `lib.rs` |
 | 2 | [parallax-evidence](../../../crates/parallax-evidence/README.md) | Bounded/redacted/ranked evidence and agent projections | `lib.rs` |
 | 2 | [parallax-greptime](../../../crates/parallax-greptime/README.md) | GreptimeDB native-table telemetry adapter | `lib.rs` |
