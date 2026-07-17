@@ -225,6 +225,10 @@ work.
 
 ### Evidence Contracts And Closure
 
+Plan 104 DONE (2026-07-17): Option C bundle-v2 envelope
+([evidence](../docs/research/validation/2026-07-plan-104-bundle-v2/README.md)).
+
+
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | [111](111-redaction-pipeline-and-a6-gate.md) | Build the source-aware fail-closed runtime redactor and prove the A6 gate | P1 | L | 099, 101, 104 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
@@ -356,7 +360,6 @@ invent the missing product or operator decision.
 
 | Plan | Depends on | Trigger | Status |
 |------|------------|---------|--------|
-| [104](104-evidence-bundle-contract-reconciliation.md) | 093, 099 | Operator approves Option A, B, C, or a replacement canonical evidence-bundle contract with approver/date | DECIDED (unblock directive 2026-07-17): Option C — versioned envelope around the V1 dossier; approver alexey@chainargos.com; executor fills the decision record and proceeds |
 | [109](109-v2-auth-and-context-management.md) | Operator opens V2 scope | Operator opens V2 authentication and remote-context scope | OPENED (unblock directive 2026-07-17): minimal local-first token auth per the plan's recommended shape; execute after Wave 2 and the core chain |
 | [110](110-server-profile-ingest-concurrency.md) | 099, 113, 115; measured saturation | Plan 115 ships a supported profile and measurements prove single-worker saturation | OPENED (unblock directive 2026-07-17): producing the saturation measurements is now in scope; execute after 115 |
 | [112](112-product-mcp-ship-gates.md) | 099, 104, 111; 109 before any remote transport | Operator opens the product MCP ship/no-ship decision after evidence-safety prerequisites | OPENED (unblock directive 2026-07-17): proceed toward ship once 099/104/111 gates pass; local transport only until 109 lands |

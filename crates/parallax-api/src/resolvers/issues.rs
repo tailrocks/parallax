@@ -389,13 +389,60 @@ pub(crate) async fn bundle(
     inputs.metric_windows = bundle_metric_windows(context, &inputs).await?;
     let bundle = parallax_evidence::bundle::assemble(inputs, max_tokens);
     let markdown = parallax_evidence::bundle::to_markdown(&bundle);
-    let canonical_hash = bundle.canonical_hash.clone().unwrap_or_default();
-    let json = serde_json::to_string_pretty(&bundle).map_err(internal_field_err)?;
+    // Option C (plan 104): prefer a bundle-v2 envelope around the immutable
+    // v1 dossier. Project defaults to local-operator; window is derived from
+    // issue/invocation timestamps when present.
+    let generated_at_nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(internal_field_err)?
+        .as_nanos();
+    let window_nanos =
+        bundle_window_nanos(&bundle).unwrap_or((generated_at_nanos, generated_at_nanos));
+    let envelope_inputs = parallax_evidence::bundle::EnvelopeInputs {
+        bundle_id: bundle
+            .canonical_hash
+            .clone()
+            .unwrap_or_else(|| format!("bundle-{generated_at_nanos}")),
+        project: Some("local".to_string()),
+        window_nanos: Some(window_nanos),
+        generated_at_nanos,
+    };
+    let v1_hash = bundle.canonical_hash.clone().unwrap_or_default();
+    let envelope = parallax_evidence::bundle::envelope_v1(bundle, envelope_inputs)
+        .map_err(internal_field_err)?;
+    let canonical_hash = envelope.canonical_hash.clone().unwrap_or(v1_hash);
+    let json = serde_json::to_string_pretty(&envelope).map_err(internal_field_err)?;
     Ok(Some(BundleOut {
         json,
         markdown,
         canonical_hash,
     }))
+}
+
+/// Best-effort evidence window for v2 envelope conversion.
+fn bundle_window_nanos(bundle: &parallax_evidence::bundle::Bundle) -> Option<(u128, u128)> {
+    let mut times = Vec::new();
+    if let Some(issue) = &bundle.issue {
+        if let Ok(v) = issue.first_seen_nanos.parse::<u128>() {
+            times.push(v);
+        }
+        if let Ok(v) = issue.last_seen_nanos.parse::<u128>() {
+            times.push(v);
+        }
+    }
+    if let Some(invocation) = &bundle.invocation {
+        if let Ok(v) = invocation.started_at_nanos.parse::<u128>() {
+            times.push(v);
+        }
+        if let Some(ended) = &invocation.ended_at_nanos {
+            if let Ok(v) = ended.parse::<u128>() {
+                times.push(v);
+            }
+        }
+    }
+    let from = *times.iter().min()?;
+    let to = *times.iter().max()?;
+    Some((from, to))
 }
 
 pub(crate) async fn issue_set_status(
