@@ -11,7 +11,7 @@
 - **Risk**: HIGH
 - **Depends on**: 093, 099, 104, 111, 116 (done)
 - **Category**: future compatibility / ingest / security
-- **Status**: IN PROGRESS — ingest-path slice landed; residual below
+- **Status**: IN PROGRESS — ingest + event-id ledger landed; residual below
 - **Decision**:
   [`docs/research/decisions/sentry-envelope-adapter.md`](../docs/research/decisions/sentry-envelope-adapter.md)
 
@@ -22,11 +22,13 @@
   spool of **normalized** accept record.
 - `POST /api/<project_id>/envelope[/]` with public-key map, gzip, typed
   outcomes; disabled by default; worker writes issues + `error_events` only.
+- Turso `sentry_event_acks` ledger: exact duplicate `(project, event_id,
+  payload_hash)` returns `200` without re-spool; collision → `409`.
 
 ## Residual only
 
 1. Real sanitized `sentry` 0.48.x SDK envelope fixtures (compatibility claim).
-2. Idempotent event-id collision handling (`409` / exact-duplicate ledger).
+2. ~~Idempotent event-id collision handling~~ landed.
 3. Cross-source OTLP+Sentry stable issue/occurrence identity.
 4. Full fail-closed redaction + canonical bundle projection for Sentry path.
 5. Real Greptime+Turso, retention/doctor, API gates end-to-end for Sentry.

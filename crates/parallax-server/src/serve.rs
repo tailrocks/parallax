@@ -225,11 +225,12 @@ fn build_api_router(
     ingest: IngestState,
 ) -> Router {
     let ingest_health = ingest.health.clone();
+    let alerts = state.alerts.clone();
     let graphql_state = GraphQlState {
         schema: Arc::new(parallax_api::build_schema()),
         store: state.store,
         metadata: state.metadata,
-        alerts: state.alerts,
+        alerts: alerts.clone(),
         otlp_grpc_port: state.grpc_port,
         otlp_http_port: state.http_port,
         limits: config.limits.clone(),
@@ -279,6 +280,14 @@ fn build_api_router(
                 ingest,
                 config: config.sentry.clone(),
                 public_key: config.resolved_sentry_public_key(),
+                metadata: alerts.clone(),
+            },
+        ))
+        .merge(crate::github_webhook::router(
+            crate::github_webhook::GithubWebhookState {
+                config: config.github_deploy.clone(),
+                secret: config.resolved_github_webhook_secret(),
+                metadata: alerts,
             },
         ));
     let ui_dist = if config.server.ui_dist.is_empty() {

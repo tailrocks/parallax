@@ -28,6 +28,7 @@ mod alerting;
 mod config;
 mod engine_io;
 mod errors;
+mod github_webhook;
 #[expect(
     clippy::cast_possible_truncation,
     clippy::cast_precision_loss,
@@ -52,8 +53,8 @@ mod serve;
 mod worker;
 
 pub use config::{
-    AlertingConfig, Config, LimitsConfig, RetentionConfig, SentryConfig, ServerConfig,
-    StorageConfig, TelemetryConfig,
+    AlertingConfig, Config, GithubDeployConfig, LimitsConfig, RetentionConfig, SentryConfig,
+    ServerConfig, StorageConfig, TelemetryConfig,
 };
 pub use errors::{
     ConfigError, ConfigErrorKind, ConfigResult, ServerError, ServerErrorKind, ServerResult,

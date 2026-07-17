@@ -20,6 +20,7 @@ axum = { workspace = true }
 async-trait = { workspace = true }
 bytes = { workspace = true }
 parallax-api = { workspace = true }
+parallax-evidence = { workspace = true }
 parallax-greptime = { workspace = true }
 parallax-ingest = { workspace = true }
 parallax-metadata = { workspace = true }
@@ -64,6 +65,8 @@ cross-release-vendored = [
 
 [dev-dependencies]
 flate2 = "1"
+hmac = "0.12"
 reqwest = { workspace = true }
 tempfile = "3"
+tower = { version = "0.5", features = ["util"] }
 parallax-test-support = { workspace = true }

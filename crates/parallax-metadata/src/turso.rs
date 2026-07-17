@@ -12,11 +12,13 @@ use turso::Value;
 
 mod alerts;
 mod connection;
+mod deploy;
 mod invocations;
 mod occurrences;
 mod prune;
 mod row;
 mod saved_state;
+mod sentry_ack;
 mod test_reporting;
 mod values;
 
@@ -24,6 +26,8 @@ pub use alerts::{
     ALERT_CHECKS_KEEP_PER_RULE, AlertCheckRecord, AlertDeliveryEventRecord, AlertDestinationRecord,
     AlertIncidentRecord, AlertRuleRecord, AlertRuleStateRecord,
 };
+pub use deploy::{DeployAccept, DeployDeliveryRecord, DeployStoreError, payload_sha256_hex};
+pub use sentry_ack::{SentryAck, SentryAckError};
 pub(crate) mod pins;
 use row::*;
 use values::*;
@@ -236,6 +240,32 @@ CREATE TABLE IF NOT EXISTS evidence_pins (
   expires_at        INTEGER,
   pinned_by         TEXT NOT NULL DEFAULT 'local-operator',
   source_state      TEXT NOT NULL DEFAULT 'present'
+);
+CREATE TABLE IF NOT EXISTS deploy_deliveries (
+  delivery_id     TEXT PRIMARY KEY,
+  provider        TEXT NOT NULL,
+  event_name      TEXT NOT NULL,
+  deployment_id   INTEGER NOT NULL,
+  repo_full_name  TEXT,
+  ref_name        TEXT,
+  commit_sha      TEXT,
+  environment     TEXT,
+  state           TEXT NOT NULL,
+  task            TEXT,
+  actor_login     TEXT,
+  edge_strength   TEXT NOT NULL,
+  lossiness       TEXT NOT NULL,
+  payload_hash    TEXT NOT NULL,
+  received_at     INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS deploy_deliveries_repo_time
+  ON deploy_deliveries(repo_full_name, received_at);
+CREATE TABLE IF NOT EXISTS sentry_event_acks (
+  project_id   TEXT NOT NULL,
+  event_id     TEXT NOT NULL,
+  payload_hash TEXT NOT NULL,
+  received_at  INTEGER NOT NULL,
+  PRIMARY KEY (project_id, event_id)
 );
 CREATE INDEX IF NOT EXISTS evidence_pins_anchor
   ON evidence_pins(anchor_kind, anchor_id);

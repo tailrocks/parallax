@@ -16,6 +16,8 @@ pub struct Config {
     pub alerting: AlertingConfig,
     /// Sentry envelope migration adapter (plan 118). Disabled by default.
     pub sentry: SentryConfig,
+    /// GitHub deploy/change webhook adapter (plan 121). Disabled by default.
+    pub github_deploy: GithubDeployConfig,
 }
 
 /// Local project/public-key mapping for `POST /api/<project_id>/envelope/`.
@@ -42,6 +44,17 @@ impl Default for SentryConfig {
             public_key: String::new(),
         }
     }
+}
+
+/// GitHub webhook receiver for `deployment` / `deployment_status` (plan 121).
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct GithubDeployConfig {
+    /// When false, the webhook route returns 404.
+    pub enabled: bool,
+    /// HMAC secret for `X-Hub-Signature-256`. Prefer env
+    /// `PARALLAX_GITHUB_WEBHOOK_SECRET`. Empty = fail closed when enabled.
+    pub webhook_secret: String,
 }
 
 /// Alert evaluator + delivery worker (plan 167). Defaults keep alerting on
@@ -252,6 +265,21 @@ impl Config {
             .map(str::to_string)
             .or_else(|| {
                 let trimmed = self.sentry.public_key.trim();
+                (!trimmed.is_empty()).then(|| trimmed.to_string())
+            })
+    }
+
+    /// Resolve the GitHub webhook secret: env `PARALLAX_GITHUB_WEBHOOK_SECRET`
+    /// wins over config.
+    #[must_use]
+    pub fn resolved_github_webhook_secret(&self) -> Option<String> {
+        let env = std::env::var("PARALLAX_GITHUB_WEBHOOK_SECRET").ok();
+        env.as_deref()
+            .map(str::trim)
+            .filter(|v| !v.is_empty())
+            .map(str::to_string)
+            .or_else(|| {
+                let trimmed = self.github_deploy.webhook_secret.trim();
                 (!trimmed.is_empty()).then(|| trimmed.to_string())
             })
     }

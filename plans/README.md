@@ -183,8 +183,8 @@ Plan 129 DONE (2026-07-17): macOS forced-Bun Vitest dual-run + matrix ownership
 |------|-------|----------|--------|------------|--------|
 | 152 | Establish the generated GraphQL contract foundation | P1 | L | 095, 100, 101, 128, 129, 130 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-152-graphql-contract/README.md) |
 | 153 | Establish non-GraphQL runtime boundary foundations | P1 | L | 095, 100, 101, 128, 129, 130 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-153-runtime-boundaries/README.md) |
-| [145](145-playwright-real-stack-integration.md) | Prove critical UI flows against managed GreptimeDB and isolated Turso | P1 | L | 093, 101, 132, 144 | IN PROGRESS — attach foundation 3/3 green; residual CI/managed ([evidence](../docs/research/validation/2026-07-plan-145-playwright-real-stack/README.md)) |
-| [146](146-playwright-cross-browser-accessibility-visual.md) | Establish cross-browser, mobile, accessibility, and visual Playwright gates | P1 | L | 101, 132, 144, 145 | IN PROGRESS — 145 config unblocked; Chromium ready ([evidence](../docs/research/validation/2026-07-plan-146-playwright-breadth/README.md)) |
+| 145 | Prove critical UI flows against managed GreptimeDB and isolated Turso | P1 | L | 093, 101, 132, 144 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-145-playwright-real-stack/README.md) |
+| 146 | Establish cross-browser, mobile, accessibility, and visual Playwright gates | P1 | L | 101, 132, 144, 145 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-146-playwright-breadth/README.md) |
 
 ### TypeScript Capability And Feature Migrations
 
@@ -212,7 +212,7 @@ work.
 | 142 | Move trace search, analysis, and inspection into one feature | P1 | XL | 100, 129, 132, 134, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-142-traces/README.md) |
 | 150 | Move overview into one bounded feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-150-overview/README.md) |
 | 143 | Move app, layout, and shell behind explicit boundaries | P1 | XL | 134, 135, 136, 137, 138, 139, 140, 141, 142, 145, 146, 149, 150, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-143-app-layout-shell/README.md) |
-| [151](151-ui-architecture-final-closure.md) | Verify and close the final UI architecture | P1 | L | 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 149, 150, 152, 153 | IN PROGRESS — lib/* residual claimed; 145/146 remain ([evidence](../docs/research/validation/2026-07-plan-151-ui-architecture-closure/README.md)) |
+| [151](151-ui-architecture-final-closure.md) | Verify and close the final UI architecture | P1 | L | 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 149, 150, 152, 153 | IN PROGRESS — 145/146 retired; residual architecture verify ([evidence](../docs/research/validation/2026-07-plan-151-ui-architecture-closure/README.md)) |
 
 ### UI State, Performance, And Product Gaps
 
@@ -373,9 +373,9 @@ external facts still BLOCKED where noted. Plan 102 and plan 109 retired
 | [112](112-product-mcp-ship-gates.md) | 099, 104, 111 | Claimed-client fixtures, oversized summary+resource, OTel export verify, spike graduation | IN PROGRESS — local-stdio GO; residual ship gates |
 | [114](114-retire-legacy-spool-reader.md) | Stable raw-frame release cycle + expired legacy segments | Remove NDJSON reader after cycle | BLOCKED — only rolling `preview` tag (recheck 2026-07-17) |
 | [115](115-v2-server-profile.md) | Auth contract + release pipeline (102/109 DONE) | ADR + one supported server profile | TODO — scope open; contract not written |
-| [118](118-sentry-envelope-migration-adapter.md) | 093, 099, 104, 111, 116 | Real SDK fixtures, event-id idempotency, bundle/redaction, live gates | IN PROGRESS — parser + HTTP + normalize landed |
+| [118](118-sentry-envelope-migration-adapter.md) | 093, 099, 104, 111, 116 | Real SDK fixtures, cross-source identity, bundle/redaction, live gates | IN PROGRESS — parser + HTTP + event-id ledger landed |
 | [120](120-agent-session-capture-adapters.md) | 099, 104, 111, 119 | Success-path fixtures, storage/API/UI, consent CLI, loss ledger | IN PROGRESS — Claude Code pure normalizer landed |
-| [121](121-deploy-and-change-context-collectors.md) | 099, 104, 111, 116 | Webhook route, durable idempotency, backfill, doctor, claim ledger | IN PROGRESS — HMAC + deploy normalize landed |
+| [121](121-deploy-and-change-context-collectors.md) | 099, 104, 111, 116 | Backfill, doctor, claim ledger (HTTP + delivery idempotency landed) | IN PROGRESS — webhook + Turso durable path landed |
 | [122](122-playground-residual-program.md) | 105, 151 (111/119 DONE) | Disposition table + retained scenarios only | BLOCKED on 105 + 151 |
 | [123](123-fixer-outcome-loop.md) | 120, 121 residual | Offline outcome harness; fixer separate from core | BLOCKED on 120/121 |
 | [124](124-ci-and-flaky-test-evidence-collector.md) | 121 residual | GHA read-only collect + flaky multi-attempt evidence | BLOCKED on 121 durable path |
