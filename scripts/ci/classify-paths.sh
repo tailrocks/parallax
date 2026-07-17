@@ -18,7 +18,7 @@ classify() {
       ;;
   esac
   case "$path" in
-    .cargo/*|Cargo.toml|Cargo.lock|rust-toolchain.toml|ratchet.toml|telemetry/semconv/*|crates/*|poc/*)
+    .cargo/*|Cargo.toml|Cargo.lock|rust-toolchain.toml|ratchet.toml|telemetry/semconv/*|crates/*|poc/*|fuzz/*)
       rust=true
       ;;
   esac
