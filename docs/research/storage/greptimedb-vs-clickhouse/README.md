@@ -114,6 +114,7 @@ managed quotes remain):
 | CH projection p_svc both | **432** | 26.6+head ReadFromMergeTree(p_svc) |
 | ranking after 423–432 | **433** | not done; top 5 open |
 | adopt-native smoke | **434** | Jaeger/identity/OTLP no drift |
+| append DELETE + fresh | **435** | Code 1004; CH 2→1; 1→2 |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
