@@ -430,6 +430,8 @@ managed quotes remain):
 | last_value Jaeger DELETE | **748** | holds |
 | still not done | **749** | top 5 product/server |
 | milestone 750 | **750** | NOT DONE |
+| p_svc rate export | **751** | holds |
+| still not done | **752** | top 5 product/server |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
