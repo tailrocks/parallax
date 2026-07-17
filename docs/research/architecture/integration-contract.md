@@ -123,8 +123,8 @@ POST /v1/deploys
 1. **GitHub webhook ingest** (zero deploy-tool changes): **shipped handlers** accept only
    `deployment`, `deployment_status`, and `workflow_job` on `POST /webhooks/github`
    (`github_webhook.rs`, HMAC-verified). **Not shipped as handlers:** `workflow_run`,
-   `check_run`, `pull_request`, `pull_request_review` — those remain design targets for plan
-   121 residual / future collectors. The Reconciler
+   `check_run`, `pull_request`, `pull_request_review` — design-only today (plan 121
+   closed; open a new numbered plan only if measured need appears). The Reconciler
    ([autonomous-fix-loop.md](autonomous-fix-loop.md) §Stage 5) still wants a broader feed for
    fix validation; do not read the design list as the current accept set.
 

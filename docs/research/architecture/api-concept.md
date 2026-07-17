@@ -19,7 +19,7 @@ Parallax has three different API jobs:
 | --- | --- | --- |
 | Telemetry ingest | OTLP HTTP/gRPC | Standard path for traces, logs, and metrics; Parallax derives `error_event` rows from exception span events, span error status, and ERROR/FATAL logs. |
 | Error compatibility ingest | Sentry envelope HTTP endpoint | Shipped migration path for Sentry-style events. Raw frames are spooled before queue acknowledgement. |
-| Integration ingest | GitHub webhooks | Shipped HMAC `POST /webhooks/github` for **`deployment`**, **`deployment_status`**, and **`workflow_job` only** (`github_webhook.rs`). PR/check_run/workflow_run/review events are not handlers yet (plan 121 residual / design). |
+| Integration ingest | GitHub webhooks | Shipped HMAC `POST /webhooks/github` for **`deployment`**, **`deployment_status`**, and **`workflow_job` only** (`github_webhook.rs`). PR/`check_run`/`workflow_run`/review events are **not handlers** today (design-only; plan 121 closed — no active residual owner). |
 | Query/exploration | GraphQL | The shipped code-first schema covers observability, evidence, product state, testing, and alerting. |
 
 Keep these separate. GraphQL should not ingest raw telemetry.

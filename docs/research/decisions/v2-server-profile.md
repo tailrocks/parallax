@@ -77,7 +77,7 @@ measured profile or shrink load.
 | Drain | Graceful shutdown aborts listeners then drains ingest workers |
 | Upgrade | Replace binary + config; engines upgrade via managed supervisor or operator external upgrade |
 | Rollback | Restore prior binary + data dirs from backup |
-| Doctor | `parallax doctor` reports storage/auth/spool; deploy-context coverage grows under plan 121 residual |
+| Doctor | `parallax doctor` reports storage/auth/spool; deploy-context inventory shipped with plan 121 (DONE) |
 
 ## Plan 110 gate
 

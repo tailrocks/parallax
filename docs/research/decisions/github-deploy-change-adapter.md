@@ -1,9 +1,12 @@
 # GitHub deploy/change context adapter (plan 121)
 
-**Status:** first GitHub webhook ingest slice implemented; broader coverage remains fixture-gated
+**Status:** Plan 121 DONE/closed (2026-07-17) — webhook + REST backfill + claim rows +
+GraphQL linkage-only adjacency shipped; see
+[validation/2026-07-plan-121-deploy-context/README.md](../validation/2026-07-plan-121-deploy-context/README.md).
+Broader entity coverage is design-only (no active plan owner).
 **Decision date:** 2026-07-17  
 **Approver:** operator unblock directive (plan 121 provider = GitHub)  
-**Owner:** Plan 121
+**Owner:** closed — plan 121 deleted; future expansion needs a new plan
 
 ## Decision
 

@@ -1,18 +1,18 @@
 # Deploy, Change, and Issue Context
 
-> **Implementation status (2026-07-17):** GitHub deployment ingest is shipped:
-> `parallax-server/src/github_webhook.rs` receives webhooks and
-> `parallax-evidence/src/github_deploy.rs` verifies deployment signatures and
-> normalizes deployment evidence. Plan 121 remains active for the wider
-> provider/product surface. The ledger remains `not_measured` for end-to-end
-> backfill, bundle audits, and causal claims; this no longer means no provider
-> ingestion exists.
+> **Implementation status (2026-07-17):** Plan **121 is DONE/deleted** (commit
+> b71db51f). Shipped: HMAC webhooks (`deployment`/`deployment_status` + CI
+> `workflow_job`), REST Deployments backfill (`deploy_backfill`), Turso claim
+> rows, GraphQL linkage-only `deploy_adjacency` / `ci_adjacency`. Evidence:
+> [validation/2026-07-plan-121-deploy-context/README.md](../validation/2026-07-plan-121-deploy-context/README.md).
+> Broader entity coverage (push/release/PR file lists, check_run, workflow_run)
+> has **no active plan owner**. Causal claim ledgers may remain `not_measured`
+> until measured rows land — that is measurement status, not missing ingest.
 
-> **Implementation ownership (2026-07-12):** this file retains the provider,
+> **Implementation ownership (2026-07-17):** this file retains the provider,
 > edge-strength, privacy, claim-level, and measurement contracts. It is not an
-> executable ingestion queue. [Plan 121](../../../plans/121-deploy-and-change-context-collectors.md) exclusively
-> owns unfinished deploy/change ingestion and product work. The historical order
-> below cannot authorize implementation independently of that plan.
+> executable ingestion queue and has no exclusive active plan owner after plan 121
+> closure. Historical order below is design rationale only.
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
@@ -249,9 +249,10 @@ The original design ordered exact GitHub/Sentry release and deployment markers
 before bundle edges, issue-tracker references, diagnostics, and any provider
 writeback. It also placed writeback after proof of the fixer outcome loop. That
 sequence explains the contract dependencies but is not an active version queue.
-Plan 121 owns the current executable slices and must preserve exact identifiers,
-missing-evidence reporting, redacted/ref-only provider text, and the writeback
-gate.
+Plan 121 closed the first GitHub deploy/CI webhook + backfill slices; any future
+provider expansion needs a new numbered plan. Contracts still require exact
+identifiers, missing-evidence reporting, redacted/ref-only provider text, and
+the writeback gate.
 
 ### Claim Acceptance Contract
 
@@ -391,7 +392,7 @@ Initial Parallax level: `not_measured`.
 ### Result Artifacts
 
 The retained result-packet schema makes real deploy/change runs durable and
-diffable. Plan 121 owns any future instantiation:
+diffable. Future measurement runs use this layout (no active plan owner):
 
 ```text
 docs/research/deploy-change-context-results.md
@@ -416,7 +417,7 @@ docs/research/deploy-change-context-runs/<run_id>/hashes.sha256
 ```
 
 Hypothetical data never receives a run directory; the protocol applies only to a
-real fixture or pilot run executed through plan 121.
+real fixture or pilot run against the shipped deploy/CI ingest surfaces.
 
 ### Run Manifest
 
