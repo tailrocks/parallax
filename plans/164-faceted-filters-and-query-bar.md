@@ -91,10 +91,18 @@ statuses intentionally untouched:
   in-memory parity, GraphQL `traceFacets` honoring the full filter set
   incl. `attributeFilters`. E2e distinct-count test. 106 tests green.
 
+Traces route wiring landed (`a2445af`, UI gates green): `?where=` URL param
+compiled to `attributeFilters`, facet sidebar toggling equality filters,
+where-clause editor with facet-driven autocomplete + chips, duration
+presets from `traceDurationStats` (replacing the bare min/max inputs).
+Facet multi-select currently means AND (backend semantics) — peer decides
+whether OR-within-dimension needs a backend argument.
+
 Still open (full plan scope): live facet verification against `f-attrs`
 (70/20/10) + the facet-window cap decision; logs/invocations facets +
 filter compilation (the compiler is span-table-only so far); live-engine narrowing
-+ injection assertions; route wiring + URL schemas (Step 3); `F` keyboard
++ injection assertions; logs/invocations route wiring (Step 3 remainder);
+`F` keyboard
 shortcut; syntax-highlight overlay (editor currently plain input);
 browser evidence. The `f-attrs` playground scenario landed on the
 playground's main at `2083a89` (100 spans + 100 logs,
