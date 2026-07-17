@@ -2,9 +2,9 @@
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 65:
 > 16th watch; **pass 98: 17th UNFIRED**; **pass 134: 18th UNFIRED**; **pass 181:
-> 19th UNFIRED** — still **v0.2.0-alpha12 / 109★**; latest commits still
-> GreptimeDB min **v1.1.3** probe/bump + session-detail perf only — no
-> Sentry/redaction/outcome/prod-error collision). Sources:
+> 19th UNFIRED**; **pass 202: 20th UNFIRED** — still **v0.2.0-alpha12 / 109★**;
+> latest commits still GreptimeDB min **v1.1.3** probe/bump + session UI only —
+> no Sentry/redaction/outcome/prod-error collision). Sources:
 > [github.com/tma1-ai/tma1](https://github.com/tma1-ai/tma1), [tma1.ai](https://tma1.ai/),
 > and the legacy [tma1-deep-research.md](../tma1-deep-research.md)
 > (2026-06-22, a full source-code teardown) as the lead.
@@ -24,9 +24,9 @@
 > observability**; Parallax targets **production-incident evidence** plus the
 > unproven portable redacted-bundle thesis. Critical watch: **if TMA1 adds
 > production-error derivation, Sentry ingest, redaction, or an outcome loop, it is
-> a direct collision.** As of 2026-07-18 **pass 181**, **that trigger has not fired**
-> (pass 98 code search still stands; pass 134/181 commit log re-scan: GreptimeDB
-> min **v1.1.3** install probe + session UI perf only).
+> a direct collision.** As of 2026-07-18 **pass 202**, **that trigger has not fired**
+> (pass 98 code search still stands; pass 134/181/202 commit log re-scan: GreptimeDB
+> min **v1.1.3** install probe + session UI only).
 
 ## What each product is
 

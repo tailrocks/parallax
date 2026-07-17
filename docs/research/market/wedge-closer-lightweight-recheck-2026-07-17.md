@@ -93,6 +93,12 @@ Stars unchanged; **real release-line move** on backend only.
 | --- | --- | --- |
 | **Traceway** | **1,024★**; **`backend/v1.9.1` + `cli/v1.9.1`** still latest (2026-07-15); `pushed_at` 2026-07-17 | Still **OTLP multi-signal + agent skills/CLI/MCP**. README probe: **no** Sentry envelope / portable redacted evidence bundle / fix-outcome. Combo **not closed**. |
 
+**Pass 202 recheck (2026-07-18):** **TMA1** —
+
+| Product | Pin | Combo |
+| --- | --- | --- |
+| **TMA1** | **109★**; **`v0.2.0-alpha12`** still latest; push 2026-07-17 | **20th UNFIRED** — commits still GreptimeDB **v1.1.3** min + session UI. No Sentry envelope / portable redacted prod evidence / fix-outcome collision. |
+
 **Pass 156 recheck (2026-07-18):** **Traceway-focused** wedge re-poll + Bugsink/Rustrak
 star-pin hygiene — combination **still not closed**.
 
