@@ -9,16 +9,25 @@ investigation/incident convention)?
 **Status of prior claim (theory under test):**
 [research-agenda.md](../research-agenda.md) / pass **48** (same day): still not
 commoditized. Pass **85** re-opens the theory after concurrent wedge/pricing
-work to catch any same-day OTel/OCSF movement.
+work to catch any same-day OTel/OCSF movement. **Pass 123** re-fetches primary
+API pins after A1–A6 / monetization / wedge passes.
 
-**Verdict (pass 48 + pass 85):** **Still not commoditized.** No OpenTelemetry
-semantic convention ships a portable, versioned, redacted, validator-backed
-investigation/evidence bundle comparable to Parallax's `bundle-v1` /
-`envelope-v2`. Adjacent standards remain **attribute fragments** (OTel) or
-**security-incident event shapes** (OCSF), not coding-agent fix-loop artifacts.
-Confidence: **high** for "no OTel investigation schema GA"; **medium** for
-"field will not ship one in 12 months" (active GenAI/CI/CD pressure, idle
-incident-attribute track).
+**Verdict (pass 48 + pass 85 + pass 123):** **Still not commoditized.** No
+OpenTelemetry semantic convention ships a portable, versioned, redacted,
+validator-backed investigation/evidence bundle comparable to Parallax's
+`bundle-v1` / `envelope-v2`. Adjacent standards remain **attribute fragments**
+(OTel) or **security-incident event shapes** (OCSF), not coding-agent fix-loop
+artifacts. Confidence: **high** for "no OTel investigation schema GA";
+**medium** for "field will not ship one in 12 months" (active GenAI/CI/CD
+pressure, idle incident-attribute track).
+
+**Pass 123 primary re-fetch (2026-07-17):**
+
+| Source | Finding |
+| --- | --- |
+| [semconv #1185](https://github.com/open-telemetry/semantic-conventions/issues/1185) | Still **open**; `updated_at` still **2025-10-24T14:40:05Z** (no 2026 activity) |
+| `model/` dirs (contents API) | Still **no** `incident` / `investigation` / `rca` / `postmortem`; `mcp` present (tool telemetry); `artifact` present (SLSA packages) |
+| OCSF releases | Latest still **`1.8.0`** (2026-03-18) |
 
 **Evidence class:** primary GitHub issue/tree + first-party release pages +
 vendor product docs (desk recheck). Not a measurement of A1 value.
