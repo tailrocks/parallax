@@ -1,7 +1,12 @@
 # Parallax vs Coroot
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 59: eBPF→app-errors watch **UNFIRED** — recent = profiles/Windows/CI/SAML/OneLogin; `fix panic` is internal merge panic, not product app-error events; **v1.23.3 / 7,837★**).
-> Sources: [coroot.com](https://coroot.com/) + [pricing](https://coroot.com/pricing) + [enterprise](https://coroot.com/enterprise) + [AI](https://docs.coroot.com/ai/) + [MCP](https://docs.coroot.com/mcp/overview/), [github.com/coroot/coroot](https://github.com/coroot/coroot), and the legacy [coroot-deep-research.md](../coroot-deep-research.md) (2026-06-22) as a lead.
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 59:
+> eBPF→app-errors **UNFIRED**; **pass 103** MCP/AI primary re-verify — still
+> **v1.23.3 / 7,837★**, last push 2026-07-02). Sources: [coroot.com](https://coroot.com/)
+> + [pricing](https://coroot.com/pricing) + [enterprise](https://coroot.com/enterprise)
+> + [AI](https://docs.coroot.com/ai/) + [MCP](https://docs.coroot.com/mcp/overview/),
+> [github.com/coroot/coroot](https://github.com/coroot/coroot), and the legacy
+> [coroot-deep-research.md](../coroot-deep-research.md) (2026-06-22) as a lead.
 >
 > **Bottom line up front:** Coroot is the **nearest eBPF/RCA open-source competitor**
 > and ships the **best MCP safety model in the field** (per-user OAuth + RBAC, one
@@ -16,7 +21,20 @@
 
 ## What each product is
 
-- **Coroot** — open-source (**Apache-2.0** core / Community; commercial **Enterprise** $1/CPU-core/mo) **eBPF-based observability + APM** with zero-instrumentation capture and AI Root Cause Analysis. Metrics/logs/traces/continuous-profiling/SLO alerting + predefined dashboards/inspections. Wedge = adoption friction: deploy the eBPF agent, a service map appears with no app code changes. Go ~61%. **7,837 stars, v1.23.3 (2026-07-02) — pinned 2026-07-17 (GitHub API); no release since (stable). MCP safety model — per-user OAuth 2.0 + RBAC (the agent runs under that user's permissions) — confirmed against official docs ([docs.coroot.com/mcp](https://docs.coroot.com/mcp/overview/), [RBAC](https://docs.coroot.com/configuration/rbac/)) 2026-07-17; tool count ~18 with 1 mutating (`resolve_alerts`), not exact-recounted this pass. eBPF→app-level-errors watch trigger unfired (Coroot remains protocol-level by design).** Coroot Inc. (Palo Alto; Peter Zaitsev co-founder).
+- **Coroot** — open-source (**Apache-2.0** core / Community; commercial **Enterprise**
+  **$1/CPU-core/mo**) **eBPF-based observability + APM** with zero-instrumentation
+  capture and AI Root Cause Analysis. Metrics/logs/traces/continuous-profiling/SLO
+  alerting + predefined dashboards/inspections. Wedge = adoption friction: deploy
+  the eBPF agent, a service map appears with no app code changes. Go ~61%.
+  **7,837★, v1.23.3 (2026-07-02) — pass 103: still latest GitHub release; no newer
+  tag.** **MCP** ([docs.coroot.com/mcp/overview](https://docs.coroot.com/mcp/overview/),
+  pass 103 live): HTTP streamable `/mcp` + **OAuth 2.0**; agent runs with the
+  user's **RBAC**. **Community tools** = topology/health/traces/logs/PromQL +
+  **one mutate** `resolve_alerts`; **EE tools** `list_anomalies` +
+  **`investigate_anomaly`** (deterministic graph RCA then LLM prose — **not** free
+  in CE). Tool table ≈ **17 CE + 2 EE**. **AI RCA** also: EE from $1/core/mo **or**
+  Coroot Cloud integration for CE (**10 free investigations/mo** per AI docs).
+  **eBPF→app-level-errors watch still UNFIRED** (pass 59/103). Coroot Inc.
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable **execution-context engine**: OTLP-native ingest of traces/logs/metrics + CLI/agent traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, serves bounded/redacted evidence bundles to humans and coding agents. GreptimeDB + Turso. **Pre-release.**
 
 Both Apache-2.0 OSS, self-hostable, with an agent/MCP surface and AI RCA. The overlap is real but the *signal source* differs fundamentally: Coroot = eBPF (protocol-level, no app code); Parallax = OTLP/Sentry (app-level, including errors).

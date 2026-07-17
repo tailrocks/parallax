@@ -40,10 +40,17 @@ core or gate to cloud/EE (affects Parallax air-gap + A6 positioning).
   Do not claim unique "redaction exists" — claim **open-core agent-facing
   redaction contract** when A6 holds.
 
-### Coroot / others
+### Coroot (**pass 103** primary re-fetch)
 
-- Coroot README fetch incomplete this pass; prior deep-dive still owns
-  OAuth+RBAC MCP (1 mutate). Re-fetch next pass if citing.
+- [MCP overview](https://docs.coroot.com/mcp/overview/): OAuth 2.0 + per-user
+  **RBAC**; CE tools include full triage surface + **`resolve_alerts`** (sole CE
+  mutate); EE adds `list_anomalies` + **`investigate_anomaly`**.
+- [AI docs](https://docs.coroot.com/ai/): AI-powered RCA **Enterprise ($1/CPU
+  core/mo)** or **Cloud integration** for CE (**10 free investigations/mo**).
+- Pin still **v1.23.3 / 7,837★** (2026-07-02). **No** portable redacted evidence
+  bundle; eBPF still not app-error/stack product.
+- **Implication:** best-in-class **MCP safety model** among peers; **AI RCA is
+  EE/Cloud-metered** (same survivor pattern as SigNoz Noz / O2 AI SRE).
 
 ### Traceway / Rustrak / GlitchTip / Bugsink
 
@@ -55,8 +62,8 @@ core or gate to cloud/EE (affects Parallax air-gap + A6 positioning).
 
 | Capability | Free OSS self-host (representative) | Gated |
 | --- | --- | --- |
-| MCP / agent query tools | SigNoz, Traceway, Coroot (prior), Rustrak, GlitchTip | — |
-| In-product AI investigator (Noz-class) | — | **SigNoz Noz = Cloud only** |
+| MCP / agent query tools | SigNoz, Traceway, Coroot CE, Rustrak, GlitchTip | — |
+| In-product AI investigator (Noz-class) | — | **SigNoz Noz = Cloud only**; **Coroot `investigate_anomaly` = EE** (or Cloud 10/mo for CE) |
 | Advanced PII SDR | partial | **OpenObserve Enterprise** |
 | Portable redacted versioned evidence bundle | **none found** | n/a |
 | Fix-outcome open records | **none found** | n/a |
