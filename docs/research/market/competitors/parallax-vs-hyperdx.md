@@ -4,12 +4,13 @@
 > is written. Where Parallax's edge is only *planned* or *unproven*, that is
 > stated, not hidden.
 >
-> Research date: **2026-07-17** (**pass 44 pricing; pass 64; pass 115; pass 147
-> pin:** `@hyperdx/app@2.30.1` still latest monorepo tag 2026-07-13; **9,680★**;
-> last push **2026-07-17**; MIT). ClickStack / ClickHouse-backed full-stack APM
-> still the framing — **not** portable redacted evidence-bundle + outcome product.
-> Pricing primary last deep-fetched pass 64 (Free 3GB / Starter **$20 + $0.40/GB**
-> + **$0.40/100 DPM** — not re-fetched this pin-only pass).
+> Research date: **2026-07-17** (**pass 44 pricing; pass 64; pass 115; pass 147;
+> pass 170 pin:** `@hyperdx/app@2.30.1` still latest monorepo tag 2026-07-13;
+> **9,680★**; last push **2026-07-17**; MIT). ClickStack / ClickHouse-backed
+> full-stack APM still the framing — **not** portable redacted evidence-bundle +
+> outcome product. **Pass 170** reconfirm pricing scrape Free / Starter **$20** +
+> **$0.40/GB** class numbers still on [hyperdx.io/pricing](https://www.hyperdx.io/pricing).
+> README still no MCP/agent-evidence product surface (ClickHouse search UI focus).
 
 ## TL;DR verdict (scoped per axis)
 
@@ -36,7 +37,7 @@ as "Datadog without the price tag." Now also distributed by ClickHouse Inc. as
 
 | | HyperDX | Source |
 |---|---|---|
-| **Repo** | `hyperdxio/hyperdx`, **9,680 stars** (GitHub API, 2026-07-17) | [github.com/hyperdxio/hyperdx](https://github.com/hyperdxio/hyperdx) |
+| **Repo** | `hyperdxio/hyperdx`, **9,680 stars** (GitHub API, pass **170**) | [github.com/hyperdxio/hyperdx](https://github.com/hyperdxio/hyperdx) |
 | **License** | **MIT** (repo LICENSE — the comparison-set's "Apache-2.0" was imprecise; the core is MIT, *more* permissive) | GitHub API |
 | **Signals** | session replay + logs + metrics + traces + errors (full-stack incl. RUM/replay) | repo + [hyperdx.io](https://www.hyperdx.io/) |
 | **Storage** | **ClickHouse** (Lucene-style log search); the HyperDX UI is also ClickHouse Inc.'s **ClickStack** | [clickhouse.com/clickstack](https://clickhouse.com/clickstack) |

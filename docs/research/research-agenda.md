@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 169 (Coroot still **v1.23.3 / 7,837★**; MCP
-still OAuth+RBAC + **`resolve_alerts`** mutate; EE RCA tools; eBPF→app-errors
-**UNFIRED**). Pass 168 = Phoenix. A1/A2/A4 open; A6 open at mixed gate only.
+Last updated 2026-07-18 after pass 170 (HyperDX still **@hyperdx/app@2.30.1 /
+9,680★ / MIT**; ClickStack framing; pricing **$20 + $0.40/GB**; **not**
+evidence-bundle wedge). Pass 169 = Coroot. A1/A2/A4 open; A6 open at mixed gate only.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
