@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 260 (Sentry self-host still **26.7.0**/64
-services; Seer still **closed**; SigNoz **v0.133.0**/~30.3k★). Pass 259 = A3.
-A1/A2/A3/A4 open; A6 mixed open.
+Last updated 2026-07-18 after pass 261 (Datadog **BYOC Logs** = hybrid customer
+log store + **SaaS UI/AI** — not air-gap Bits; OPW still route-only). Pass 260 =
+Sentry 26.7.0. A1/A2/A3/A4 open; A6 mixed open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
@@ -46,10 +46,10 @@ producer rather than treat its construction as future work. Autonomous fixing re
    GB–TB): characterize the mandatory engine and identify fix-forward work; this no longer reopens the
    committed GreptimeDB + Turso stack. → item 5. (Query mix already resolved: anchored.)
 5. **Air-gapped agent-evidence: Parallax vs incumbents** — confirm the differentiator stays unique.
-   **Rechecked 2026-07-18 pass 251** (prior 56/151/158/178/220): Seer self-host-excluded; Datadog OPW =
-   still **route-to-destinations** Worker (not Bits store); BYOC Logs further-reading = **watch**;
-   Grafana Assistant Cloud LLM (pass 245); OSS peers can air-gap but lack portable redacted
-   bundle+outcome. Note:
+   **Rechecked 2026-07-18 pass 261** (prior 56/151/158/178/220/251): Seer self-host-excluded; Datadog OPW =
+   still **route-to-destinations**; **BYOC Logs** = hybrid customer log store + **SaaS UI/Bits**
+   (not offline agent-evidence combination); Grafana Assistant Cloud LLM (pass 245/260);
+   OSS peers can air-gap but lack portable redacted bundle+outcome. Note:
    [market/air-gap-no-phone-home-recheck-2026-07-17.md](market/air-gap-no-phone-home-recheck-2026-07-17.md).
 
 ## Standing watches (cheap, recurring)

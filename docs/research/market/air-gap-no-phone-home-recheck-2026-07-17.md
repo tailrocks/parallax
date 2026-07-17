@@ -51,11 +51,40 @@ primary re-fetch (markdown/docs body):
 **Still route-only for OPW** — **not** a self-hosted Datadog APM/Bits/UI product
 store. **UNFIRED** as air-gap Seer/Bits replacement.
 
-**Watch (not a falsification of OPW claim):** further-reading links mention
-Datadog **BYOC Logs / CloudPrem** ("store and search logs… in your own
-infrastructure") — separate product narrative. Track if it becomes a
-self-hosted **agent evidence + Bits** store without phone-home AI; **do not**
-conflate with OPW Worker today.
+### Pass 261 (2026-07-18) — Datadog BYOC Logs (CloudPrem branding) deep pin
+
+Primary sources:
+
+| Source | Role |
+| --- | --- |
+| [docs.datadoghq.com/cloudprem/](https://docs.datadoghq.com/cloudprem/) | Docs hub → **BYOC Logs** product pages |
+| [docs.datadoghq.com/byoc_logs/](https://docs.datadoghq.com/byoc_logs/) (llms index) / byoc-logs intro | Self-hosted **log** ingest/index/search in customer cloud/K8s |
+| [Introducing BYOC Logs blog](https://www.datadoghq.com/blog/introducing-datadog-byoc-logs/) | Architecture + hybrid SaaS story |
+
+**What it is (primary language):**
+
+- Hybrid log management: compute/index nodes + **object storage in customer
+  environment** (on-prem or S3/GCS/Azure); search via Datadog **Log Explorer**.
+- Explicitly **fully integrated with the Datadog SaaS platform** — correlation
+  with SaaS metrics/traces, Bits AI SRE / NLQ, MCP-ready over BYOC log datasets,
+  governance (RBAC, audit, SDS) as on SaaS.
+- Built for residency/compliance/high-volume **logs**, not a claim of full
+  offline multi-signal agent evidence without Datadog control plane.
+
+**What it is not (honest bounds):**
+
+| Claim to avoid | Why |
+| --- | --- |
+| "Datadog now ships air-gap Seer/Bits offline" | AI assistance in blog is **Bits AI** over SaaS-correlated signals; BYOC keeps SaaS integration |
+| "Same as OPW" | OPW = **route** worker; BYOC Logs = **store/search logs** in customer infra + SaaS UI |
+| "Closes Parallax air-gap combination" | No portable redacted **investigation evidence bundle** + fix-outcome; still vendor SaaS for AI/UI; logs-first hybrid not open Apache context engine |
+
+**Verdict:** BYOC Logs is a **material residency/cost product** and a **partial
+pressure** on "keep logs in my cloud" buyers — **not** a falsification of the
+air-gap **combination** differentiator (open core + portable redacted agent
+evidence + no mandatory vendor cloud AI). OPW route-only claim **unchanged**.
+**Continue watching** if Datadog ships offline Bits / multi-signal BYOC store
+without SaaS phone-home.
 
 Air-gap combination claim (open core + portable redacted evidence + no closed
 cloud AI) **still holds** as a *combination* (A1 still unproven).

@@ -113,6 +113,11 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > | Datadog OPW = self-host Bits store | Pass **251** — still route-only Worker | **No** |
 > | TMA1 prod-incident collision | Pass **256** — **23rd UNFIRED** | **No** |
 >
+> **Pass 261 (2026-07-18) — GO reaffirm (BYOC Logs).** Datadog BYOC Logs is
+> hybrid customer log store + SaaS UI/AI — **not** offline Seer/Bits and **not**
+> OPW. Air-gap combination differentiator still holds. **Still GO (narrow
+> product).**
+>
 > **Narrow product identity holds.** Research program continues.
 
 ## Verdict
