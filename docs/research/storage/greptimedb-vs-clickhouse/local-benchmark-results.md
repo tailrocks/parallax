@@ -7951,3 +7951,8 @@ composes with secondary bloom (same as PK projections).
 CH `WITH RECURSIVE` numbers series **works** (1,2,3).
 GT basic recursive UNION form fails planning/parser on this pin (various attempts).
 Span-tree still preferred **app-side** (proxy lens, Run 165/195). Not a product blocker.
+
+### Run 278 — 2026-07-17 — re-pin still current (v1.1.3)
+
+Docker Hub still lists **v1.1.3** as latest v1.1.x stable family. Four-way
+containers healthy ~27 min uptime. No bump.
