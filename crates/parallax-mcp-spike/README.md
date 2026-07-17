@@ -30,6 +30,8 @@ equivalence). See:
 No shell, SQL, deploy, rollback, or management tools exist in this binary.
 Both tools advertise MCP annotations as read-only, non-destructive, idempotent,
 and closed-world.
+Anchor schemas and runtime validation require 1–256 UTF-8 bytes; invalid-input
+errors never echo the supplied anchor.
 
 ## Usage
 

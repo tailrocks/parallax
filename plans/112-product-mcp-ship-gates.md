@@ -69,6 +69,8 @@ must not return in product output.
   preventing future internal callers from bypassing the CLI-level validation.
 - Both preliminary tools advertise and test exact MCP annotations: read-only,
   non-destructive, idempotent, and closed-world.
+- Tool anchors are closed-schema and runtime bounded to 1–256 UTF-8 bytes;
+  stable invalid-parameter errors do not echo attacker-controlled values.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded

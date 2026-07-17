@@ -15,6 +15,7 @@ use serde_json::{Value, json};
 use std::sync::Arc;
 
 const MCP_RESULT_MAX_BYTES: usize = 128 * 1024;
+const MCP_ANCHOR_MAX_BYTES: usize = 256;
 
 fn evidence_bundle_output_schema() -> Arc<JsonObject> {
     let schema = serde_json::from_str(include_str!(
@@ -28,6 +29,7 @@ fn evidence_bundle_output_schema() -> Arc<JsonObject> {
 #[serde(deny_unknown_fields)]
 pub(crate) struct IssueContextArgs {
     /// Issue fingerprint (canonical issue anchor).
+    #[schemars(length(min = 1, max = 256))]
     pub fingerprint: String,
 }
 
@@ -35,6 +37,7 @@ pub(crate) struct IssueContextArgs {
 #[serde(deny_unknown_fields)]
 pub(crate) struct AgentSessionArgs {
     /// Invocation id whose agent-session projection to show.
+    #[schemars(length(min = 1, max = 256))]
     pub invocation_id: String,
 }
 
@@ -75,6 +78,7 @@ impl SpikeServer {
         &self,
         Parameters(args): Parameters<IssueContextArgs>,
     ) -> Result<CallToolResult, McpError> {
+        validate_anchor(&args.fingerprint)?;
         let bundle = gql::fetch_bundle(&self.client, Some(&args.fingerprint), None)
             .await
             .map_err(|_| safe_internal_error("bundle_unavailable"))?;
@@ -96,6 +100,7 @@ impl SpikeServer {
         &self,
         Parameters(args): Parameters<AgentSessionArgs>,
     ) -> Result<CallToolResult, McpError> {
+        validate_anchor(&args.invocation_id)?;
         let session = gql::fetch_agent_session(&self.client, &args.invocation_id)
             .await
             .map_err(|_| safe_internal_error("agent_session_unavailable"))?;
@@ -114,6 +119,16 @@ fn safe_internal_error(code: &'static str) -> McpError {
         "Parallax could not produce a safe MCP result",
         Some(json!({ "code": code })),
     )
+}
+
+fn validate_anchor(anchor: &str) -> Result<(), McpError> {
+    if anchor.is_empty() || anchor.len() > MCP_ANCHOR_MAX_BYTES {
+        return Err(McpError::invalid_params(
+            "anchor must contain 1 to 256 UTF-8 bytes",
+            Some(json!({ "code": "invalid_anchor" })),
+        ));
+    }
+    Ok(())
 }
 
 fn ensure_result_budget(part_lengths: &[usize]) -> Result<(), McpError> {
@@ -227,6 +242,14 @@ mod tests {
                 "{} input must require its anchor",
                 tool.name
             );
+            let properties = tool
+                .input_schema
+                .get("properties")
+                .and_then(Value::as_object)
+                .expect("input properties");
+            let anchor = properties.values().next().expect("anchor property");
+            assert_eq!(anchor.get("minLength"), Some(&json!(1)));
+            assert_eq!(anchor.get("maxLength"), Some(&json!(256)));
             let annotations = tool.annotations.as_ref().expect("tool annotations");
             assert_eq!(annotations.read_only_hint, Some(true));
             assert_eq!(annotations.destructive_hint, Some(false));
@@ -300,6 +323,20 @@ mod tests {
                 .contains("result_too_large")
         );
         assert!(ensure_result_budget(&[usize::MAX, usize::MAX]).is_err());
+    }
+
+    #[test]
+    fn anchor_validation_is_bounded_and_does_not_echo_input() {
+        validate_anchor("a").expect("one byte");
+        validate_anchor(&"a".repeat(MCP_ANCHOR_MAX_BYTES)).expect("exact boundary");
+        for denied in [String::new(), "seeded-secret".repeat(30)] {
+            let error = validate_anchor(&denied).expect_err("invalid anchor");
+            let encoded = serde_json::to_string(&error).expect("serialize error");
+            assert!(encoded.contains("invalid_anchor"));
+            if !denied.is_empty() {
+                assert!(!encoded.contains(&denied));
+            }
+        }
     }
 
     #[test]
