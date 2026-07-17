@@ -230,3 +230,19 @@ Not done.
 ## Run 349 — still not done (2026-07-17)
 
 Through 348. Execute: mix fill, server runbook, quotes, GB cold, RPO D2/D3.
+
+## Run 356 status (2026-07-17)
+
+**Done this long session (220+):** S3 pins+OpenDAL GET method, managed list
+rates, RPO D1+runbook, workload-mix packet, server-tier runbook, harness
+logs.trace_id, dozens of live re-verifies, density/instrument notes.
+
+**Still open (not done):**
+
+1. Workload mix A1–A7 filled by product
+2. Server 1M/5M four-way
+3. Vendor trial quotes
+4. GB cold S3 selective
+5. RPO D2 meta + D3 Turso
+
+Loop continues until operator stops.
