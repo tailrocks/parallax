@@ -208,6 +208,7 @@ managed quotes remain):
 | FT PREWHERE p_svc | **526** | all hold |
 | still not done | **527** | top 5 open |
 | re-pin + healthy | **528** | v1.1.3; 2h+ up |
+| still not done | **529** | top 5 open |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
