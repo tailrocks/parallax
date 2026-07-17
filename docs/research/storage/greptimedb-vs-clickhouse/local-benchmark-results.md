@@ -8208,3 +8208,6 @@ Interactive both.
 ### Run 337 — 2026-07-17 — status=ERROR filter
 
 GT warm **~5–13 ms**; CH **~2–6 ms**. Interactive both.
+
+### Run 338 — 2026-07-17 — not done
+
