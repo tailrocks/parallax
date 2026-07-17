@@ -385,6 +385,25 @@ fn result_budget_counts_json_escaping_on_the_wire() {
 }
 
 #[test]
+fn oversized_path_returns_bounded_summary_and_resource_ref() {
+    let summary = bounded_summary_result(
+        "evidence_bundle",
+        json!({
+            "canonical_hash": "a".repeat(64),
+            "omitted": ["markdown", "full_json"],
+        }),
+        &["parallax://evidence/bundle/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into()],
+    )
+    .expect("summary fits budget");
+    ensure_result_budget(&summary).expect("summary under budget");
+    let wire = serde_json::to_value(&summary).expect("wire");
+    let body = wire.to_string();
+    assert!(body.contains("truncated"));
+    assert!(body.contains("parallax://evidence/bundle/"));
+    assert!(!body.contains("ghp_"));
+}
+
+#[test]
 fn anchor_validation_is_bounded_and_does_not_echo_input() {
     validate_anchor("a").expect("one byte");
     validate_anchor(&"a".repeat(MCP_ANCHOR_MAX_BYTES)).expect("exact boundary");

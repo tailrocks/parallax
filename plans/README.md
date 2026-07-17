@@ -159,7 +159,7 @@ Plan 116 DONE (2026-07-17): retention contract + deterministic prune CLI
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | P2 | M | upstream `greptimedb-ingester` native-TLS/plaintext feature fix | BLOCKED — crates.io still 0.18.0; upstream PR #58 OPEN not merged (recheck 2026-07-17T11:50Z); HTTP SQL path remains |
+| [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | P2 | M | upstream `greptimedb-ingester` native-TLS/plaintext feature fix | BLOCKED — crates.io still 0.18.0; upstream PR #58 OPEN not merged (recheck 2026-07-17T13:06Z); HTTP SQL path remains |
 
 ### Foundation And Delivery
 
@@ -359,7 +359,7 @@ CI-provider API collection; 155 consumes OTLP-ingested telemetry only.
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | [154](154-playground-capability-and-test-observability.md) | Live multi-backend fan-out acceptance residual | P1 | M | Self-hosted Maple/SigNoz/OpenObserve/Sentry (Parallax arm → plan 159 DONE) | BLOCKED — multi-backend arm only; one self-hosted external at a time on 16 GB host |
-| [155](155-test-reporting-surface.md) | Test reporting surface residual | P1 | XL | 149, 152, 153, 140 DONE; soft 121/124 | IN PROGRESS — domain model + identity derivation landed; residual Turso/ingest/GraphQL/UI/adapters |
+| [155](155-test-reporting-surface.md) | Test reporting surface residual | P1 | XL | 149, 152, 153, 140 DONE; soft 121/124 | IN PROGRESS — explorer+testCases GraphQL landed; residual UI/flaky job/adapters/e2e |
 
 ### Triggered Or Residual Work
 
@@ -370,15 +370,15 @@ external facts still BLOCKED where noted. Plan 102 and plan 109 retired
 | Plan | Depends on | Trigger / residual | Status |
 |------|------------|--------------------|--------|
 | [110](110-server-profile-ingest-concurrency.md) | 115 + saturation packet | Measured single-worker bottleneck on supported profile | BLOCKED on 115 profile + measurements |
-| [112](112-product-mcp-ship-gates.md) | 099, 104, 111 | Claimed-client fixtures, oversized summary+resource, OTel export verify, spike graduation | IN PROGRESS — local-stdio GO; residual ship gates |
-| [114](114-retire-legacy-spool-reader.md) | Stable raw-frame release cycle + expired legacy segments | Remove NDJSON reader after cycle | BLOCKED — only rolling `preview` tag (recheck 2026-07-17) |
-| [115](115-v2-server-profile.md) | Auth contract + release pipeline (102/109 DONE) | ADR + one supported server profile | TODO — scope open; contract not written |
+| [112](112-product-mcp-ship-gates.md) | 099, 104, 111 | Claimed-client fixtures, OTel export verify, spike graduation (oversized summary landed) | IN PROGRESS — local-stdio GO; residual ship gates |
+| [114](114-retire-legacy-spool-reader.md) | Stable raw-frame release cycle + expired legacy segments | Remove NDJSON reader after cycle | BLOCKED — only rolling `preview` tag (recheck 2026-07-17T13:06Z) |
+| [115](115-v2-server-profile.md) | Auth contract + release pipeline (102/109 DONE) | Validated config + rehearsals + load packet (ADR landed) | IN PROGRESS — ADR in decisions/v2-server-profile.md |
 | [118](118-sentry-envelope-migration-adapter.md) | 093, 099, 104, 111, 116 | Real SDK fixtures, cross-source identity, bundle/redaction, live gates | IN PROGRESS — parser + HTTP + event-id ledger landed |
 | [120](120-agent-session-capture-adapters.md) | 099, 104, 111, 119 | Success-path fixtures, storage/API/UI, consent CLI, loss ledger | IN PROGRESS — Claude Code pure normalizer landed |
 | [121](121-deploy-and-change-context-collectors.md) | 099, 104, 111, 116 | Backfill, doctor, claim ledger (HTTP + delivery idempotency landed) | IN PROGRESS — webhook + Turso durable path landed |
 | [122](122-playground-residual-program.md) | 105, 151 (111/119 DONE) | Disposition table + retained scenarios only | BLOCKED on 105 + 151 |
 | [123](123-fixer-outcome-loop.md) | 120, 121 residual | Offline outcome harness; fixer separate from core | BLOCKED on 120/121 |
-| [124](124-ci-and-flaky-test-evidence-collector.md) | 121 residual | GHA read-only collect + flaky multi-attempt evidence | BLOCKED on 121 durable path |
+| [124](124-ci-and-flaky-test-evidence-collector.md) | 121 durable path (landed) | GHA read-only collect + flaky multi-attempt evidence | TODO — unblocked |
 
 ## Dependency Order
 

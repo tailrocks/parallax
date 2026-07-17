@@ -14,7 +14,7 @@
 - **Status**: BLOCKED
 - **Blocker**: Only published tag is rolling `preview`. No qualifying stable
   release cycle for raw-frame writer + full compatibility window (recheck
-  2026-07-17).
+  2026-07-17T13:06Z UTC).
 
 ## Residual only (after trigger)
 

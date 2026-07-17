@@ -30,8 +30,8 @@ at evidence time.
 
 1. **Claimed-client fixtures**: real Codex + Claude Code registration, trust,
    discovery, invocation, retention (not only in-process wire mock).
-2. **Oversized path**: bounded summary + approved resource reference (today
-   fails closed at 128 KiB only).
+2. ~~**Oversized path**~~: bounded summary + approved `parallax://evidence/…`
+   resource refs when wire JSON exceeds 128 KiB (landed).
 3. **Independent OTel verification**: exporter/subscriber integration of audit
    spans outside unit capture.
 4. **Spike disposition**: graduate deliberate product crate **or**
@@ -42,7 +42,7 @@ at evidence time.
 ## Done Criteria
 
 - [ ] Client fixtures pass for every claimed client.
-- [ ] Oversized output → bounded summary + approved resource refs.
+- [x] Oversized output → bounded summary + approved resource refs.
 - [ ] Every call produces safe audit + independently verified OTel evidence.
 - [ ] Spike graduated or deleted/quarantined deliberately.
 - [ ] Negative tool/capability/protocol fixtures remain permanently empty/fail-closed.

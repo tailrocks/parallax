@@ -13,15 +13,14 @@
 - **Depends on**: Auth contract (plan 109 retired minimal slice);
   release pipeline (plan 102 retired four-target proof)
 - **Category**: V2 / deployment / operability
-- **Status**: TODO — operator opened V2 server scope (unblock 2026-07-17);
-  recommended profile not yet specified/implemented
-- **Blocker**: none for starting the ADR + config composition; no hardware/
-  workload/availability contract written yet
+- **Status**: IN PROGRESS — ADR landed; config/rehearsal residual
+- **Decision**:
+  [`docs/research/decisions/v2-server-profile.md`](../docs/research/decisions/v2-server-profile.md)
+- **Blocker**: none for validated config composition + rehearsals
 
 ## Residual only
 
-1. ADR: topology, SLOs, hardware floor, workload envelope, ports, trust
-   boundary, retention, backup/restore, upgrade/rollback, unsupported configs.
+1. ~~ADR~~ landed (`docs/research/decisions/v2-server-profile.md`).
 2. Validated server config: native TLS, least privilege, external endpoints,
    progress, health/readiness, graceful drain; no in-memory product path.
 3. Live rehearsal: backup/restore, upgrade/rollback, disk pressure, retention.

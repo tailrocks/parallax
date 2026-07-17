@@ -244,12 +244,31 @@ impl SpikeServer {
             guard.finish_err(&crate::audit::error_code(&error));
             return Err(error);
         };
-        let mut result = CallToolResult::structured(structured);
+        let mut result = CallToolResult::structured(structured.clone());
         result.content = vec![ContentBlock::text(body)];
-        if let Err(error) = ensure_result_budget(&result) {
-            guard.finish_err(&crate::audit::error_code(&error));
-            return Err(error);
-        }
+        let result = if ensure_result_budget(&result).is_ok() {
+            result
+        } else {
+            let resource = format!(
+                "parallax://evidence/agent-session/{id}",
+                id = args.invocation_id
+            );
+            match bounded_summary_result(
+                "agent_session",
+                json!({
+                    "invocation_id": args.invocation_id,
+                    "truncated_fields": true,
+                    "omitted": ["full_timeline_body"],
+                }),
+                &[resource],
+            ) {
+                Ok(summary) => summary,
+                Err(error) => {
+                    guard.finish_err(&crate::audit::error_code(&error));
+                    return Err(error);
+                }
+            }
+        };
         let bytes = serde_json::to_vec(&result).map(|v| v.len()).unwrap_or(0);
         guard.finish_ok(bytes);
         Ok(result)
@@ -295,6 +314,33 @@ fn ensure_result_budget(result: &CallToolResult) -> Result<(), McpError> {
     Ok(())
 }
 
+/// When a full tool payload exceeds the wire budget, return a bounded summary
+/// plus approved resource references (plan 112 residual) instead of fail-closed
+/// empty output. Secrets stay out of text; only structural ids/hashes/refs.
+fn bounded_summary_result(
+    kind: &'static str,
+    summary: Value,
+    resource_uris: &[String],
+) -> Result<CallToolResult, McpError> {
+    let structured = json!({
+        "truncated": true,
+        "kind": kind,
+        "byte_budget": MCP_RESULT_MAX_BYTES,
+        "summary": summary,
+        "resources": resource_uris.iter().map(|uri| json!({
+            "uri": uri,
+            "mimeType": "application/json",
+        })).collect::<Vec<_>>(),
+    });
+    let text = serde_json::to_string(&structured)
+        .map_err(|_| safe_internal_error("summary_invalid"))?;
+    ensure_already_redacted(&[&text], "summary_redaction_mismatch")?;
+    let mut result = CallToolResult::structured(structured);
+    result.content = vec![ContentBlock::text(text)];
+    ensure_result_budget(&result)?;
+    Ok(result)
+}
+
 fn ensure_already_redacted(parts: &[&str], code: &'static str) -> Result<(), McpError> {
     if parts
         .iter()
@@ -325,10 +371,32 @@ fn bundle_tool_result(bundle: gql::BundleProjection) -> Result<CallToolResult, M
     {
         return Err(safe_internal_error("bundle_hash_mismatch"));
     }
+    let schema = parsed.get("schema").cloned().unwrap_or(Value::Null);
+    let contract_version = parsed
+        .get("contract_version")
+        .cloned()
+        .unwrap_or(Value::Null);
     let mut result = CallToolResult::structured(parsed);
     result.content = vec![ContentBlock::text(bundle.markdown)];
-    ensure_result_budget(&result)?;
-    Ok(result)
+    if ensure_result_budget(&result).is_ok() {
+        return Ok(result);
+    }
+    // Oversized path: keep only hash + approved resource refs, never the full
+    // markdown/JSON body (plan 112 residual ship gate).
+    let resource = format!(
+        "parallax://evidence/bundle/{hash}",
+        hash = bundle.canonical_hash
+    );
+    bounded_summary_result(
+        "evidence_bundle",
+        json!({
+            "canonical_hash": bundle.canonical_hash,
+            "schema": schema,
+            "contract_version": contract_version,
+            "omitted": ["markdown", "full_json"],
+        }),
+        &[resource],
+    )
 }
 
 #[tool_handler]

@@ -11,10 +11,9 @@
 - **Risk**: HIGH
 - **Depends on**: 099, 104, 111 (done); 121 residual
 - **Category**: future CI evidence / flaky tests
-- **Status**: BLOCKED
-- **Blocker**: Plan 121 residual (GitHub deploy/change durable path) incomplete.
-  Provider = GitHub Actions on tailrocks repos (unblock 2026-07-17) but
-  implementation must not invent permissions/retention before fixtures.
+- **Status**: TODO — unblocked after plan 121 Turso durable webhook path
+- **Blocker**: none for starting read-only GHA collect design + fixtures.
+  Provider = GitHub Actions on tailrocks repos (unblock 2026-07-17).
 
 ## Residual only (after 121 durable path patterns)
 
