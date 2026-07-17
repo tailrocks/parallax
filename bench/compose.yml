@@ -7,12 +7,15 @@
 # Bring up:   docker compose -f bench/compose.yml up -d
 # Tear down:  docker compose -f bench/compose.yml down -v
 # Re-pin nightlies: bump the *-nightly / :head tags below (they roll daily) and re-run gen.sh.
+#
+# Pins last bumped: Run 173 (2026-07-17) — GT v1.1.3 / v1.2.0-nightly-20260713;
+# CH 26.6.1.1193 / head (26.7.x).
 name: parallax-bench
 
 services:
-  # 1. GreptimeDB — latest STABLE (production-OK)
+  # 1. GreptimeDB — latest STABLE (production-OK). Do not pin bare v1.1.0 (JSON upgrade bug).
   greptimedb:
-    image: greptime/greptimedb:v1.0.2
+    image: greptime/greptimedb:v1.1.3
     command: >
       standalone start
       --http-addr 0.0.0.0:4000 --rpc-bind-addr 0.0.0.0:4001
@@ -24,9 +27,9 @@ services:
       timeout: 2s
       retries: 20
 
-  # 2. GreptimeDB — latest NIGHTLY (v1.1, unreleased). Bump the dated tag as it rolls.
+  # 2. GreptimeDB — latest NIGHTLY (v1.2 line). Bump the dated tag as it rolls.
   greptimedb-nightly:
-    image: greptime/greptimedb:v1.1.0-nightly-20260525
+    image: greptime/greptimedb:v1.2.0-nightly-20260713
     command: >
       standalone start
       --http-addr 0.0.0.0:4000 --rpc-bind-addr 0.0.0.0:4001
@@ -38,9 +41,9 @@ services:
       timeout: 2s
       retries: 20
 
-  # 3. ClickHouse — latest STABLE feature line (NOT LTS)
+  # 3. ClickHouse — latest STABLE feature line (NOT LTS). 26.6 > 26.5 patches.
   clickhouse:
-    image: clickhouse/clickhouse-server:26.5.1.882
+    image: clickhouse/clickhouse-server:26.6.1.1193
     ports: ["8123:8123", "9000:9000"]
     ulimits:
       nofile: { soft: 262144, hard: 262144 }
@@ -50,7 +53,7 @@ services:
       timeout: 2s
       retries: 20
 
-  # 4. ClickHouse — latest NIGHTLY (head, currently 26.6.x)
+  # 4. ClickHouse — latest NIGHTLY (head, currently 26.7.x)
   clickhouse-head:
     image: clickhouse/clickhouse-server:head
     ports: ["8124:8123", "9001:9000"]

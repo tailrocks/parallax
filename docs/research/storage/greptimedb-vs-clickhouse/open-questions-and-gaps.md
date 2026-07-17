@@ -4,8 +4,10 @@
 
 Status: created Run 171 — operator asked "what else have we missed?" This consolidates the scattered
 open questions + the dimensions the storage research has **not** covered, prioritized. The GreptimeDB-
-vs-ClickHouse *engine* comparison is exhaustive + re-verified (Runs 1–170); the gaps below are the parts
-that either need data we don't have, are deferred, or sit one layer above the engine.
+vs-ClickHouse *engine* comparison is exhaustive + re-verified (Runs 1–173; **Run 173 re-pinned** to
+GT `v1.1.3` / CH `26.6.1.1193` and confirmed JSON2 closes most of the default-JSON analytics gap);
+the gaps below are the parts that either need data we don't have, are deferred, or sit one layer
+above the engine.
 
 > **Current authority:** GreptimeDB + Turso are mandatory. ClickHouse and
 > Postgres are comparators only. This is a factual research-gap ledger, not a

@@ -24,7 +24,7 @@ row(){ # 1=name 2=GT_SQL 3=CH_SQL
 }
 
 echo "4-way benchmark matrix (median of $REPS warm reps, ms). All queries < 300ms gate = interactive."
-echo "GT=GreptimeDB v1.0.2/v1.1-nightly  CH=ClickHouse 26.5/26.6-head"
+echo "GT=GreptimeDB v1.1.3/v1.2-nightly  CH=ClickHouse 26.6/head (re-pin every pass)"
 echo "-------------------------------------------------------------------------------------------------"
 # --- spans (anchored, scan, topk, trace-explorer) ---
 row "anchored-lookup(trace_id)"          "SELECT count(*) FROM spans1m WHERE trace_id='t12345'"                                                  "SELECT count() FROM spans1m WHERE trace_id='t12345'"

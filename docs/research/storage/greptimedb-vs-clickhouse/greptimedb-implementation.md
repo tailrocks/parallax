@@ -71,7 +71,9 @@ Pin: GreptimeDB `v1.0.2` (`0ef5451`). DDL features confirmed in
 4. **`FULLTEXT INDEX`** on free-text (`message`) for log/error search.
 5. **Metrics via the metric engine** (logical→physical) + OTLP/Prom remote write →
    native PromQL (Run 3 capability win).
-6. **Dynamic OTLP attributes → `JSON` column**; promote a hot attribute to a tag or
+6. **Dynamic OTLP attributes → prefer `JSON2` / `JSON(format='structured')`** (Run 173:
+   ~7× faster path analytics than default Jsonb `JSON`+`json_get_*`; residual ~1.8× vs CH
+   at 100k). Use default `JSON` only when ingest path cannot land structured; promote a hot attribute to a tag or
    `SKIPPING INDEX` only when a query needs it (Q5).
 7. **`ttl` per table** + object storage for cheap re-readable retention.
 8. **`PARTITION ON COLUMNS (trace_id)`** on the anchored signals (spans/logs/error_events)
@@ -134,7 +136,7 @@ CREATE TABLE spans (
   "name"         STRING,
   duration_ms    DOUBLE,
   "status"       STRING,
-  attributes     JSON,                          -- dynamic OTLP span attrs
+  attributes     JSON2,                         -- structured dynamic attrs (Run 173; not default JSON/jsonb)
   PRIMARY KEY ("service", "name")                -- low-card series tags
 ) WITH (append_mode = 'true', ttl = '30d');
 
@@ -146,7 +148,7 @@ CREATE TABLE logs (
   "message" STRING FULLTEXT INDEX WITH (analyzer = 'English', case_sensitive = 'false'),
   trace_id  STRING INVERTED INDEX,
   span_id   STRING,
-  attributes JSON,
+  attributes JSON2,
   PRIMARY KEY ("service", "level")
 ) WITH (append_mode = 'true', ttl = '30d');
 
@@ -163,7 +165,7 @@ CREATE TABLE error_events (
   span_id       STRING,
   panic_location STRING,
   handled       BOOLEAN,
-  attributes    JSON,
+  attributes    JSON2,
   PRIMARY KEY (project, fingerprint)             -- Q2/Q3 by (project,fingerprint)
 ) WITH (append_mode = 'true', ttl = '90d');
 
@@ -191,7 +193,7 @@ CREATE TABLE deploy_markers (
   environment STRING,
   "release"   STRING,
   commit_sha  STRING,
-  attributes  JSON,
+  attributes  JSON2,
   PRIMARY KEY (project, environment)
 ) WITH (append_mode = 'true', ttl = '365d');
 
@@ -204,7 +206,7 @@ CREATE TABLE cli_invocations (
   exit_code  INT,
   duration_ms DOUBLE,
   trace_id   STRING INVERTED INDEX,
-  attributes JSON,
+  attributes JSON2,
   PRIMARY KEY (command)
 ) WITH (append_mode = 'true', ttl = '90d');
 
@@ -215,7 +217,7 @@ CREATE TABLE agent_actions (
   action_type STRING,
   trace_id    STRING INVERTED INDEX,
   tool        STRING,
-  attributes  JSON,
+  attributes  JSON2,
   PRIMARY KEY (action_type)
 ) WITH (append_mode = 'true', ttl = '90d');
 
@@ -228,7 +230,7 @@ CREATE TABLE frontend_events (
   trace_id    STRING INVERTED INDEX,            -- Q4 cross-tier join key
   "url"       STRING,
   user_id     STRING SKIPPING INDEX,
-  attributes  JSON,
+  attributes  JSON2,
   PRIMARY KEY (app, event_type)
 ) WITH (append_mode = 'true', ttl = '30d');
 ```
@@ -289,7 +291,7 @@ SELECT s.service, s.name, s.duration_ms, e.error_type, e.message
 
 -- Q5 high_cardinality: filter by user over window (SKIPPING INDEX / JSON attr)
 SELECT count(*) FROM spans
- WHERE ts >= ? AND ts < ? AND json_get_string(attributes, 'user') = ?;
+ WHERE ts >= ? AND ts < ? AND attributes.user = ?;
 
 -- Q6 bundle = Q1 + Q2 + Q3 for the anchor, assembled client-side.
 

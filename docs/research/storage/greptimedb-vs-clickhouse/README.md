@@ -32,8 +32,12 @@ A benchmark number the internals cannot explain is a flag that one of them is wr
 
 | System | Pinned version | Source commit | Notes |
 | --- | --- | --- | --- |
-| GreptimeDB | `v1.0.2` (GA 2026-05-14) | `0ef54511f710f0ef2c05941c8c600bb4c1fd46c8` | Latest GA; `v1.1.0-nightly` exists but is not stable. |
-| ClickHouse | `v26.5.1.882-stable` | commit `5b96a8d8a5e2f4800b43a780911a39dc5a666e1c` | Latest stable feature line; LTS line is `v26.3.12.3-lts`. |
+| GreptimeDB stable | **`v1.1.3`** (GA 2026-07-17) | `63ef18a74a640135b983db6332226f90f9ae2b24` | **Run 173 bump** from `v1.0.2`. Do **not** pin `v1.1.0` alone — critical JSON upgrade bug; use ≥`v1.1.1`. |
+| GreptimeDB nightly | **`v1.2.0-nightly-20260713`** | `c12f40cec232dda23429a0995d70bb4a230a562c` (reports `1.2.0`) | Rolls; re-bump dated tag each pass. |
+| ClickHouse stable | **`v26.6.1.1193-stable`** | `840482cdca4e574927c1853900043b81d0687d00` | **Run 173 bump** from `v26.5.1.882`. Latest **feature** line (not LTS). `v26.5.5.8-stable` is a newer *patch* of the older 26.5 line. |
+| ClickHouse nightly | **`clickhouse/clickhouse-server:head`** | reports **`26.7.1.1097`** | Rolls daily. |
+
+*Prior pins preserved in run history:* GT `v1.0.2` / CH `v26.5.1.882` through Run 172.
 
 ## Method
 

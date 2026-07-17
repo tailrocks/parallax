@@ -205,14 +205,17 @@ mechanism analysis, per the repo research conventions.
    At the start of every pass, check for a newer stable release of each system and
    bump to it before comparing; if one side has shipped a new version, upgrade the
    comparison rather than reusing an old number. Record the exact version and the
-   source commit SHA you read in every note. Current pins (re-verified 2026-05-25,
-   still latest — re-check and bump at run time): GreptimeDB `v1.0.2` (GA 2026-05-14;
-   `v1.1.0` is nightly-only, not GA), ClickHouse `v26.5.1.882-stable` (the newest stable
-   *feature* line — pin the exact patch; note newer-dated `26.x-lts`/`26.2/26.3` tags are
-   backport/LTS patches of older lines, not higher than 26.5). *(Brief was authored at
-   ClickHouse `25.x`; bumped through the loop to 26.5.)* Never analyze an old major
-   against a current one unless the point is explicitly historical, and never carry
-   forward a stale benchmark or claim as current — re-verify it against the latest version.
+   source commit SHA you read in every note. Current pins (**re-pinned Run 173,
+   2026-07-17** — re-check and bump at run time): GreptimeDB **`v1.1.3`** (GA
+   2026-07-17; source `63ef18a74a640135b983db6332226f90f9ae2b24`; do **not** pin bare
+   `v1.1.0` — critical JSON upgrade bug fixed in ≥`v1.1.1`), nightly
+   `v1.2.0-nightly-…`; ClickHouse **`v26.6.1.1193-stable`** (newest stable *feature*
+   line; `v26.5.5.8-stable` is a later *patch of the older 26.5 line*, not higher
+   than 26.6) + `:head` nightly (currently 26.7.x). *(Brief was authored at ClickHouse
+   `25.x` / GT `v1.0.2`; bumped through the loop to CH 26.6 / GT 1.1.3.)* Never analyze
+   an old major against a current one unless the point is explicitly historical, and
+   never carry forward a stale benchmark or claim as current — re-verify it against
+   the latest version.
 
 2. **Clone the source and read it.** The repos are open:
    - GreptimeDB (Rust): <https://github.com/GreptimeTeam/greptimedb>
@@ -603,10 +606,10 @@ performance claims for each system. Capture every run in
 Operator directive (durable): **every performance benchmark must be measured on all four builds**,
 never stable-only, never a 2-way:
 
-1. **GreptimeDB — latest stable** (currently `v1.0.2`, production-OK).
-2. **GreptimeDB — latest nightly** (currently `v1.1.0-nightly-…`, everything not-yet-released).
-3. **ClickHouse — latest stable feature line, NOT LTS** (currently `v26.5.1.882-stable`).
-4. **ClickHouse — latest nightly** (`clickhouse/clickhouse-server:head`, currently `v26.6.x`).
+1. **GreptimeDB — latest stable** (currently `v1.1.3`, production-OK; ≥`v1.1.1` if on the 1.1 line).
+2. **GreptimeDB — latest nightly** (currently `v1.2.0-nightly-…`, everything not-yet-released).
+3. **ClickHouse — latest stable feature line, NOT LTS** (currently `v26.6.1.1193-stable`).
+4. **ClickHouse — latest nightly** (`clickhouse/clickhouse-server:head`, currently `v26.7.x`).
 
 **Two tiers — local SMALL (preliminary), server LARGE (detailed, on request only).** On the laptop,
 run a **small but meaningful** tier — default `N=100,000` (min 50,000). **Do NOT run millions-scale

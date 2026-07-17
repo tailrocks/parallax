@@ -2,28 +2,86 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: created 2026-05-25 (Run 131). The operator asked for **one clear comparison**: how fast is
-each load-bearing query on **all four builds** —
-- **GT-stable** = GreptimeDB **v1.0.2** (latest stable, production-OK)
-- **GT-nightly** = GreptimeDB **v1.1.0-nightly-20260525** (latest nightly, unreleased)
-- **CH-stable** = ClickHouse **v26.5.1.882** (latest stable feature line, non-LTS)
-- **CH-head** = ClickHouse **v26.6.1.127** (`clickhouse:head`, the unreleased nightly)
+Status: created 2026-05-25 (Run 131); **re-pinned Run 173 (2026-07-17)**. The operator asked for
+**one clear comparison**: how fast is each load-bearing query on **all four builds**.
 
-**Method (no-tricks, reproducible).** Two fresh standalone containers (GT-nightly :4100, CH-head
-:8124) ran alongside the v1.0.2 / 26.5 bench. **Identical data on all four**, generated natively via
-`range()` (GT) / `numbers()` (CH): `spans1m` (1M; trace_id 70k-card, INVERTED on GT / `ORDER BY
-(trace_id,ts)` on CH), `m2m` (2M / 40k series), `logs1m` (1M + fulltext bloom/tokenbf index on
-`message`), `errs` (1M, trace_id-keyed), `sj` (200k JSON). GT tables flushed (settled-state reads).
-Warm, **median of 5 reps**. GT = `execution_time_ms`; CH = `clickhouse-client --time`.
+## Current pins (Run 173)
 
-## The matrix (median ms; lower = faster)
+| Slot | Image / tag | Reported version | Source commit |
+| --- | --- | --- | --- |
+| **GT-stable** | `greptime/greptimedb:v1.1.3` | `1.1.3` | `63ef18a74a640135b983db6332226f90f9ae2b24` |
+| **GT-nightly** | `greptime/greptimedb:v1.2.0-nightly-20260713` | `1.2.0` | `c12f40cec232dda23429a0995d70bb4a230a562c` |
+| **CH-stable** | `clickhouse/clickhouse-server:26.6.1.1193` | `26.6.1.1193` | `840482cdca4e574927c1853900043b81d0687d00` (`v26.6.1.1193-stable`) |
+| **CH-head** | `clickhouse/clickhouse-server:head` | `26.7.1.1097` | rolls |
 
-Median ms, lower = faster. **Faster** = which engine wins this query (both interactive — every cell
-≪ 300 ms). **Details** links the curated mechanism note + the reproducible run(s) in the run log.
-**Numbers below are produced by the reproducible harness [`bench/four-way/`](../../../../bench/four-way/) at
-`N = 1,000,000` rows per table (uniform; `gen.sh` enforces a 50,000 minimum), median of 8 warm reps,
-Run 140.** Re-run with `docker compose -f bench/compose.yml up -d && bench/four-way/gen.sh &&
-bench/four-way/bench.sh`.
+**Do not pin bare `v1.1.0`:** GitHub marks it prerelease; it carries a critical JSON upgrade bug.
+Use ≥`v1.1.1` (current stable = `v1.1.3`).
+
+## Run 173 — N=100,000 re-verify on new pins (laptop preliminary)
+
+**Method.** `docker compose -f bench/compose.yml up -d` (images above) →
+`N=100000 bench/four-way/gen.sh` → `REPS=6 bench/four-way/bench.sh`. Host: macOS arm64,
+Docker 29.4.0. Warm median of 6. GT = `execution_time_ms`; CH = `clickhouse-client --time` (×1000).
+**Fixed-overhead-dominated** — directions matter; absolute ratios compress vs 1M/5M. Canonical
+magnitude still = 1M matrix (historical pins) until a server-tier re-run on the new pins.
+
+| Query | GT v1.1.3 | GT v1.2-nightly | CH 26.6.1 | CH 26.7-head | Faster (dir.) |
+| --- | ---: | ---: | ---: | ---: | --- |
+| anchored-lookup | 5 | 5 | 2 | 2 | CH ~2.5× |
+| unindexed-scan | 3 | 4 | 2 | 2 | CH ~1.5× |
+| topk | 5 | 5 | 3 | 3 | CH ~1.7× |
+| trace-explorer | 5 | 5 | 5 | 5 | ~tie |
+| high-group-agg | 12 | 12 | 11 | 9 | CH ~1.2× |
+| count-distinct | 11 | 11 | 10 | 9 | ~tie |
+| count-distinct-highcard | 11 | 13 | 9 | 9 | CH ~1.2× |
+| latency-histogram | 5 | 5 | 3 | 3 | CH ~1.7× |
+| metric-agg-flat | 8 | 8 | 3 | 3 | CH ~2.7× |
+| metric-bucketed-line | 11 | 10 | 4 | 5 | CH ~2.5× |
+| counter-rate-panel | 12 | 11 | 6 | 6 | CH ~2× |
+| last-value | 6 | 6 | 3 | 3 | CH ~2× *at 100k only* (Run 109 GT wins at 1M/5M — fixed-overhead flip) |
+| latency-p99 | 6 | 7 | 4 | 4 | CH ~1.5× |
+| fulltext-selective | 5 | 5 | 3 | 2 | ~tie/CH |
+| fulltext-broad | 7 | 8 | 5 | 5 | CH ~1.4× |
+| log-tail | 6 | 5 | 3 | 3 | CH ~2× |
+| issue-list | 6 | 6 | 4 | 4 | CH ~1.5× |
+| dynamic-attr-json (default `JSON`/jsonb + `json_get_int`) | 45 | 45 | 4 | 4 | CH ~11× |
+| cross-tier-join | 10 | 11 | 4 | 3 | CH ~3× |
+| time-range-scan | 3 | 3 | 3 | 2 | ~tie |
+
+**Run 173 directions (no-tricks):** nightlies ≈ stables; CH still leads analytical/scan shapes;
+all cells ≪ 300 ms; **default JSON path gap still ~11×** on the harness `sj` table (Jsonb +
+`json_get_int`). **JSON2 closes most of that on GT alone** (see below) — not yet folded into the
+harness row (still measures default `JSON`).
+
+### Run 173 add-on — `JSON2` / structured JSON closes most of the dynamic-attr gap
+
+Same host, GT `v1.1.3`, N=100k, warm median of 6, identical status_code distribution (5 buckets × 20k):
+
+| Path | Median ms | Notes |
+| --- | ---: | --- |
+| GT default `JSON` (Jsonb) + `json_get_int(…,'http.status_code') GROUP BY` | **63** | harness `sj` path |
+| GT **`JSON2`** / `JSON(format='structured')` + `attributes.http.status_code GROUP BY` | **9** | ~7× faster than Jsonb on GT |
+| CH `JSON` + `attributes.http.status_code.:Int64 GROUP BY` | **5** | production-ready JSON type (since 25.3) |
+
+Counts match (20k per status). **Gap vs CH: ~12× (Jsonb) → ~1.8× (JSON2)** at this scale.
+Mechanism: default SQL `JSON` still maps to `JsonFormat::Jsonb` (`src/sql/src/statements.rs`);
+`JSON2` maps to `JsonFormat::Json2` structured native type with path projection. Ingest caveat:
+HTTP `INSERT … VALUES (…, '{"k":1}')` works; `parse_json` / `INSERT SELECT` string concat do **not**
+auto-convert to `JSON2` (`Cannot convert Utf8/BinaryView to Struct()`). Blueprint: prefer
+`JSON2` for undeclared-attribute analytics; keep promoting hot paths to typed columns.
+
+Reproduce JSON2 micro: create `JSON2` column → batch `INSERT VALUES` string literals →
+`ADMIN flush_table` → path `GROUP BY`. Full four-way: `docker compose -f bench/compose.yml up -d &&
+N=100000 bench/four-way/gen.sh && REPS=6 bench/four-way/bench.sh`.
+
+---
+
+## Historical matrix — N=1,000,000 on prior pins (Run 140; still the scale-shaped reference)
+
+Pins at measurement: GT **v1.0.2** / GT **v1.1.0-nightly-20260525** / CH **26.5.1.882** / CH **26.6-head**.
+**Method (no-tricks, reproducible).** Identical data on all four via `range()` (GT) / `numbers()` (CH);
+GT flushed; warm **median of 8**. Re-run shape on *current* pins with `N=1000000` on a server when
+magnitude re-verification is needed (laptop freezes at multi-M × 4 containers).
 
 | Query (Parallax view) | GT v1.0.2 | GT v1.1-nightly | CH 26.5 | CH 26.6-head | Faster | Details |
 | --- | ---: | ---: | ---: | ---: | --- | --- |
@@ -151,16 +209,18 @@ cast in JSON GROUP BY (`Code 44` without it) where 26.5 allowed a lax no-cast ~1
 
 ## Bottom line for the operator
 
-- **Nightlies don't change the 1M decision, but the 5M caveat is real.** GT v1.1 gives a modest broad
-  1M speedup (aggs ~25%, join ~1.8×), but Run 141/142 found a dedup-aggregation regression at 5M; CH
-  26.6 is perf-flat + stricter. The GreptimeDB-vs-ClickHouse gaps — and the fit-vs-speed verdict —
-  are the same only when that scale caveat is carried forward.
-- **The only build worth waiting for is GT v1.1 GA** (when JSON Type v2 may land properly and could
-  cut the ~10× dynamic-attr gap and may fix the 5M dedup-agg regression — neither is proven by the
-  20260525 nightly).
-- **Where ClickHouse genuinely leads** (re-confirmed on the newest of both): in-DB cross-tier join,
-  dynamic-attr JSON, log-tail, raw anchored/scan latency — all of which Parallax either avoids
-  (app-side correlation, anchored fetch) or absorbs (all interactive).
+- **Run 173 re-pin:** GT **v1.1.3** + CH **26.6.1.1193** are current stables; nightlies on
+  **v1.2.0** / **26.7.x**. Directions on the N=100k harness **hold** (CH leads analytical/scan;
+  all interactive; nightlies ≈ stables).
+- **JSON Type v2 is real but opt-in as `JSON2`:** default `JSON` is still Jsonb + `json_get_int`
+  (gap ~11× at 100k). Declaring `JSON2` / `JSON(format='structured')` and path-querying cuts GT's
+  side ~7× and leaves ~1.8× vs CH at 100k — a **Tier-A schema** win, not an automatic upgrade.
+  Fold `JSON2` into the harness + re-measure at 1M when practical.
+- **5M dedup-agg regression** (Run 141/142 on pre-GA v1.1 nightly) is **not re-run here** (laptop
+  policy); re-test on server against v1.1.3 before trusting metric-engine dedup at multi-M.
+- **Where ClickHouse genuinely leads** (re-confirmed on newest pins): in-DB cross-tier join,
+  default-JSON dynamic-attr analytics, log-tail, raw anchored/scan latency — Parallax either avoids
+  (app-side correlation, anchored fetch, `JSON2`/typed columns) or absorbs (all interactive at 100k).
 
 ## Cross-refs
 

@@ -180,7 +180,7 @@ only if that fraction is high. Anything else is mechanism elegance without user 
 | 1 | **Log search gap mostly dissolved by Runs 48-49** | ClickHouse still has a fast integrated `text`/`hasToken` path, but the old ~18× GreptimeDB result was `matches()` on a bloom-backed index, which full-scanned. Correct selective pairings prune: `matches()` + tantivy returns ~6 ms warm and `matches_term()` + bloom returns ~8 ms warm. | **First fix usage/schema, then measure broad residuals.** Document Parallax log-search DDL/query rules: tantivy backend + `matches()` for query-syntax/phrase/relevance search; bloom backend + `matches_term()` for exact request-id/token grep. Add planner/UX guardrails so a bloom index is not queried through the non-pruning function. Broad-term scans still route to #2 scan-engine work. A dedicated `FulltextIndexCache` is not a current priority because Run 47 measured index apply at ~0.15 ms. | **A** (usage/schema guard) / **B** (broad scan) | usage / integration |
 | 2 | **Generic scan/aggregate throughput ~2–4×** | 65,409-row blocks (8× DataFusion's 8,192) + **LLVM-JIT** expressions/aggregation + bespoke SIMD kernels + specialized adaptive hash tables. | (a) **Raise the `RecordBatch` size** in `SessionConfig` — **source-confirmed (pass 77): `state.rs:126-128` sets only `with_target_partitions`, never `batch_size`, so DataFusion's 8,192 default holds** → raise toward 32–64k so vectors amortize overhead and feed SIMD; (b) **expression + aggregation codegen** — DataFusion's is young/narrow vs LLVM JIT; (c) **specialized SIMD aggregation** (two-level hash for high-card, fixed-width-key kernels). Mostly **upstream DataFusion** — GreptimeDB inherits as DF improves, or contributes. | **B** | integration (upstream DataFusion) |
 | 3 | **Late materialization (PREWHERE)** | Decodes cheap filter columns first → row mask → decodes wide columns only for surviving rows. | **Add column-staged late materialization to the mito2 reader.** Source-confirmed (pass 77): GreptimeDB already **prunes** row-groups/pages (`RowGroupSelection` from Puffin fulltext/inverted indexes + the Parquet **page index**, `reader.rs`) and then **post-decode**-filters rows (`PruneReader::precise_filter`, `read/prune.rs:119`) — so within a surviving row-group it decodes **all projected columns before dropping rows**. There is **no arrow `RowFilter`** in the reader (grep = 0) → no column-staging. Fix: wire the pushed-down predicate into arrow's **`RowFilter`** (`ParquetRecordBatchReaderBuilder::with_row_filter`, which arrow-rs already provides) so filter columns decode first, build a selection, and wide/`Json` columns materialize only for survivors. File: `src/mito2/src/sst/parquet/reader.rs`. **Arrow ships the primitive → integration, not a new algorithm.** | **B** | integration |
-| 4 | **Dynamic-attribute path queries (JSON)** | `JSON` type stores each path as a **typed columnar subcolumn** → `attributes.user` reads one subcolumn. GreptimeDB `Json` is a **binary blob** (jsonb) + `json_get_*` per-row parse (`schema-evolution-and-dynamic-columns.md`). | **Shred JSON paths into Parquet subcolumns.** Adopt the emerging Parquet **Variant/shredding** layout: at flush, write hot/declared attribute paths as their own typed Parquet columns; push `attributes.k` access down to a subcolumn scan instead of a per-row blob parse. Files: a shredded column type + mito2 SST writer + DataFusion pushdown. **Biggest storage-format change here** — borders on design, but Parquet's variant work makes it integration, not a rewrite. | **B** | integration / format |
+| 4 | **Dynamic-attribute path queries (JSON)** | `JSON` type stores each path as a **typed columnar subcolumn** → `attributes.user` reads one subcolumn. GreptimeDB **default** `JSON` is still **Jsonb** + `json_get_*` per-row parse. **Run 173:** opt-in **`JSON2` / `JSON(format='structured')`** already ships structured path projection (~7× faster than Jsonb at 100k; gap vs CH ~12×→~1.8×). Residual is default-on / OTLP auto-map + ingest ergonomics, not "no structured JSON". | **Tier A today:** declare `JSON2` (or promote hot attrs to typed columns) and path-query `col.a.b` — do **not** use default `JSON`+`json_get_*` for analytics. **Tier B residual:** make structured the default for OTLP attribute maps; auto-convert `parse_json`/INSERT SELECT into JSON2; optional further shredding into Parquet leaves. | **A** (schema) / **B** (default + ingest) | usage / integration |
 | 5 | **Projections / alternate physical `ORDER BY`** (decouple sort from PK/series identity) | A projection stores a 2nd sort order **inside each part**, optimizer-picked → fast scan on an alternate key (Run 28); CH `ORDER BY(trace_id,ts)` also clusters the high-card anchor at **zero cardinality cost**. GreptimeDB's **PK = sort = series identity**, so it can't cluster by `trace_id` without 71k-series blowup (Run 63), and indexes give *positions* not a 2nd order. **Now also the root of cold-read egress** (Run 55/63: scattered anchor → cold read pulls whole SST). | (a) **Tier A** — Flow re-sorted copy (`SINK TO …`, Run 43); a `trace_id`-sorted copy also fixes cold-read egress; (b) **Tier B** — mito2 alternate-sorted SST copy + planner auto-pick (`src/mito2` SST writer + region metadata + DataFusion rule). Full sort/identity decoupling = redesign; the copy sidesteps it. | **A** / **B** (copy) | integration (copy); design (full decouple) |
 | 7 | **Per-column codecs (`CODEC(Gorilla/DoubleDelta/T64)`)** | Hand-picked per-column codecs match each column's shape — `Gorilla` on float gauges (Run 4: 78×), `DoubleDelta` on monotonic counters (7.3×). | **Type-aware Parquet encodings + a column codec DDL option.** Source (pass 81): mito2's writer **already** sets per-column encodings for *internal* columns (`writer.rs:387-391`: `ts`/`seq` → `DELTA_BINARY_PACKED` ≈ DoubleDelta, `op_type` → UNCOMPRESSED) but **user data columns default to `Encoding::PLAIN` + table-wide ZSTD** (`writer.rs:433-434`) — so a `Float64` gauge gets **no Gorilla/float-split encoding**. Fix: in the writer's `customize_column_config` (`writer.rs:371`), pick **type-aware encodings** for user columns (floats → Parquet **`BYTE_STREAM_SPLIT`** ≈ Gorilla; monotonic ints → `DELTA_BINARY_PACKED`); optionally expose a per-column codec option in DDL. Parquet already ships these encodings → integration. | **B** | integration |
 | 6 | **Vertical single-node ceiling + analytical/merge maturity** | A decade of single-box scan tuning; battle-tested merges. | Inherited via #2 (engine) + time/battle-testing. Not a discrete feature. | **C** | maturity |
@@ -316,34 +316,28 @@ Parallax. Source read at GreptimeDB `v1.0.2` (`0ef5451`).
   **typed columnar subcolumn**, so `attributes.user` reads exactly one subcolumn with full
   codec/skip benefits. Portable idea: **shred** the dynamic document into columns instead
   of keeping one opaque blob.
-- **What:** store hot/declared attribute paths as their own Parquet columns and push path
-  access down to a subcolumn scan.
-- **Why:** GreptimeDB's `Json` is a **binary blob** (jsonb) read with `json_get_*`
-  **per-row parse** — every `attributes.k` filter parses the whole blob for every row, vs
-  ClickHouse reading one pre-split subcolumn. **Source-confirmed (pass 80, v1.0.2):** the
-  `Json` type is stored via `BinaryVectorBuilder` (`src/datatypes/src/types/json_type.rs`);
-  `json_get_*` is a DataFusion **scalar UDF** that calls `jsonb::get_by_path(...)` element-wise
-  over the binary column (`src/common/function/src/scalars/json/json_get.rs`); the
-  `JsonGetRewriter` (`json_get_rewriter.rs`) is only a **logical function-canonicalization**
-  (a DataFusion `FunctionRewrite`), **not** a subcolumn pushdown — there are no subcolumns to
-  push to. (v1.0.2 has a `JsonNativeType`→`Struct`/`List` typed *representation* for value
-  conversion, but storage stays binary jsonb.) Axis: cost + speed on dynamic-attribute
-  queries (Q5-shaped).
-- **How (code-oriented):** adopt the emerging **Parquet Variant/shredding** layout: at
-  flush in the mito2 SST writer (`src/mito2/src/sst/parquet/`), split declared/hot paths of
-  a `Json` column into typed Parquet leaf columns; in the read path, lower
-  `json_get_*(attributes,'k')` to a direct subcolumn projection so only that leaf decodes.
-  This is the **largest change** here — a storage-format addition — but Parquet's variant
-  work makes it an integration along an established spec, not a from-scratch type.
-- **Tier:** **B**. **Integration / format** (borders on design — flag if it grows).
-- **User story & clear-winner:** *a user groups errors by `http.status_code`, or filters by
-  an arbitrary, undeclared OTLP attribute (`attributes.http.route = '/checkout'`) across last
-  week.* Per-row jsonb parse hurts at volume. **Clear-winner only for unplanned
-  arbitrary-attribute analytics** — the Tier-A answer (promote hot attributes to real columns)
-  wins the planned/common case. Footnote unless attribute exploration is core to the product.
-- **Value here:** only matters if Parallax does heavy arbitrary-attribute filtering at
-  volume; for declared hot attributes, promoting them to real columns in the schema (Tier-A
-  today) captures most of the benefit without the format work.
+- **What (updated Run 173):** **prefer `JSON2` / `JSON(format='structured')` today** for
+  dynamic-attr analytics; residual engine work is default-on + ingest ergonomics (and optional
+  deeper Parquet shredding).
+- **Why:** Default SQL `JSON` is still **Jsonb** (`statements.rs`: `SqlDataType::JSON →
+  JsonFormat::Jsonb`) + per-row `json_get_*`. **But v1.1.3 ships `JSON2`** →
+  `JsonFormat::Json2` / `JsonNativeType` structured storage; path queries
+  (`attributes.http.status_code`) work. **Live (Run 173, N=100k):** Jsonb `json_get_int`
+  GROUP BY **~63 ms** vs JSON2 path GROUP BY **~9 ms** (~7×) vs CH **~5 ms** — gap
+  ~12×→~**1.8×**. So #4 is **mostly closed by schema choice**, not blocked on Tier-B
+  format work. Residual pain: OTLP/default `JSON` still lands Jsonb; `parse_json` /
+  `INSERT SELECT` strings do not auto-convert into `JSON2`.
+- **How (code-oriented):** (A) Parallax DDL: `JSON2` + path syntax; promote hot keys to
+  typed columns. (B) Upstream: map OTLP attribute maps to JSON2 by default; accept string
+  → JSON2 on INSERT SELECT; optionally continue Parquet Variant shredding for further
+  CH parity. Source still relevant for default Jsonb path: `json_type.rs`,
+  `common/function/.../json_get.rs`.
+- **Tier:** **A** (use JSON2 / typed columns) / **B** (default + ingest). **Usage first.**
+- **User story & clear-winner:** *group by undeclared `http.status_code`.* With JSON2,
+  GreptimeDB is **interactive and near-CH** at 100k; with default JSON it is not. **Clear
+  winner for Parallax only if the product does heavy unplanned attribute analytics** — else
+  promote columns. Do not invest in deeper shredding until JSON2 is the product default and
+  a 1M+ residual remains.
 
 ### Improvement 5 — Alternate physical ordering (projection-equivalent)
 
@@ -537,14 +531,12 @@ first which gaps Parallax's real query mix actually hits before investing in Tie
 GreptimeDB's RC2 **"100× TopK"** (dynamic filter pushdown into the Mito scan, built on **DataFusion
 runtime dynamic filters**) is present in our `v1.0.2` — `ORDER BY … LIMIT 10` on 1M = ~20 ms, not a
 full sort. **Flat SST** (v1.0 GA default) is a shipped high-cardinality scan-format redesign (write
-~4×, TSBS query latency up to ~10×). And **JSON Type v2** (field-level index / dynamic fields) is
-**roadmap-committed for v1.1 / Q2 2026** — directly narrowing #4 (the dynamic-attr gap, **~8–12× with
-the typed-subcolumn cast** — Runs 129/130; the ~57× at Run 104 was ClickHouse 26.5's lax no-cast path,
-removed in 26.6; GT v1.1-nightly shows no change yet, so JSON Type v2's win is still owed to v1.1 GA).
-**Honest caveat:** #2's JIT/SIMD, #3 PREWHERE, #5 projections, #8 join-pushdown
-are **not** explicit GreptimeDB-roadmap line items — they ride upstream DataFusion + opportunistic
-release wins (as TopK did). Engineering, not physics — but partly community-paced, not solely
-GreptimeDB-owned.
+~4×, TSBS query latency up to ~10×). **JSON Type v2 shipped as opt-in `JSON2` in the v1.1 line**
+(Run 173 on `v1.1.3`: ~7× faster path GROUP BY vs default Jsonb; residual gap vs CH ~1.8× at 100k).
+It is **not** the default `JSON` type — schema must opt in. **Honest caveat:** #2's JIT/SIMD,
+#3 PREWHERE, #5 projections, #8 join-pushdown are **not** explicit GreptimeDB-roadmap line items —
+they ride upstream DataFusion + opportunistic release wins (as TopK did). Engineering, not physics —
+but partly community-paced, not solely GreptimeDB-owned.
 
 ## Open questions handed to the benchmark
 

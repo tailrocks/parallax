@@ -6787,3 +6787,77 @@ docker compose -f bench/compose.yml up -d
 #   COPY spans FROM '/tmp/spans_h.csv' WITH (FORMAT='CSV')   # needs header row
 docker compose -f bench/compose.yml down -v   # cleanup (data dirs are gitignored)
 ```
+
+### Run 173 — 2026-07-17 — VERSION RE-PIN + 4-way N=100k + JSON2 mechanism (default JSON gap holds; JSON2 closes most of it)
+
+**Pass target.** Re-pin to latest stables after a long pin freeze (`v1.0.2` / `26.5.1.882`); re-verify
+load-bearing four-way directions; deepen the dynamic-attr JSON subsystem against v1.1.3 source; smoke
+native OTLP/PromQL/Jaeger + adopt-native logs path.
+
+**Pins (bumped)**
+
+| Slot | Tag | Reported | Source SHA |
+| --- | --- | --- | --- |
+| GT stable | `greptime/greptimedb:v1.1.3` | `1.1.3` | `63ef18a74a640135b983db6332226f90f9ae2b24` |
+| GT nightly | `greptime/greptimedb:v1.2.0-nightly-20260713` | `1.2.0` | `c12f40cec232dda23429a0995d70bb4a230a562c` |
+| CH stable | `clickhouse/clickhouse-server:26.6.1.1193` | `26.6.1.1193` | `840482cdca4e574927c1853900043b81d0687d00` |
+| CH head | `clickhouse/clickhouse-server:head` | `26.7.1.1097` | rolls |
+
+**Do not use bare `v1.1.0`:** critical JSON upgrade bug; fixed in ≥`v1.1.1`. Current GA = `v1.1.3`.
+
+**Environment**
+
+| Item | Value |
+| --- | --- |
+| Host | macOS 26.5.2 arm64; Docker 29.4.0 |
+| Compose | `bench/compose.yml` (updated images) |
+| Dataset | `N=100000` via `bench/four-way/gen.sh` (`range()` / `numbers()`, flushed GT) |
+| Measurement | `REPS=6 bench/four-way/bench.sh`; GT `execution_time_ms`; CH `--time`×1000; warm median |
+| Caveat | Laptop preliminary (fixed-overhead); 1M/5M magnitude still historical pins until server re-run |
+
+**Four-way matrix (median ms)** — full table in `four-way-version-comparison.md` (Run 173 section).
+Headline directions: CH leads analytical/scan (~1.5–3× compressed at 100k); nightlies ≈ stables; all
+≪ 300 ms; default dynamic-attr JSON still **GT 45 / CH 4 (~11×)** on harness `sj`.
+
+**JSON2 add-on (same N=100k, GT v1.1.3, warm median of 6)**
+
+| Path | Median ms | Correctness |
+| --- | ---: | --- |
+| default `JSON` + `json_get_int(…,'http.status_code') GROUP BY` | 63 | 20k×5 buckets |
+| `JSON2` + `attributes.http.status_code GROUP BY` | **9** (~7× vs Jsonb) | same 20k×5 |
+| CH `JSON` + `.:Int64` GROUP BY | **5** | same |
+
+Source: default SQL `JSON` → `JsonFormat::Jsonb` (`src/sql/src/statements.rs`); `JSON2` →
+`JsonFormat::Json2` structured. Ingest: VALUES string literals OK; `parse_json` / INSERT SELECT
+string concat fail into `JSON2`.
+
+**Native structure smoke (GT v1.1.3)** — no drift on adopt-native trio:
+
+| Probe | Result |
+| --- | --- |
+| `/health` | 200 |
+| PromQL `/v1/prometheus/api/v1/query?query=up` | 200 |
+| Jaeger `/v1/jaeger/api/services` | 200 |
+| OTLP metrics/logs POST (empty body) | 200 |
+| OTLP traces POST (empty body) | 400 (route exists; bad payload) |
+| `greptime_identity` pipeline auto-schema | 200; columns auto-created (`greptime_timestamp`, `latency_ms`, `level`, `msg`, `service`, `trace_id`) |
+| Freshness visible-on-write | GT count=1 post-insert; CH count=1 |
+| CH `enable_json_type` / `allow_experimental_json_type` | **1** (production-ready since 25.3; flags obsolete) |
+| CH `allow_experimental_time_series_table` | **0** (still gated) |
+
+**Verdict.** Re-pin is mandatory and landed. Load-bearing speed directions **reproduce** on new
+pins at N=100k. The old "wait for v1.1 GA JSON Type v2" trigger is **partially resolved**: JSON2
+exists and is fast, but **opt-in** (not default `JSON`). Update schema blueprint to prefer JSON2
+for dynamic-attr analytics. **Not done:** 1M/5M four-way on new pins (server); 5M dedup-agg retest
+on v1.1.3; fold JSON2 into `gen.sh`.
+
+**Reproduce.**
+```bash
+docker compose -f bench/compose.yml up -d
+N=100000 bench/four-way/gen.sh
+REPS=6 bench/four-way/bench.sh
+# JSON2 micro (GT stable container):
+# CREATE TABLE sj2 (… attributes JSON2 …) WITH (append_mode='true');
+# INSERT VALUES batches of string JSON; ADMIN flush_table('sj2');
+# SELECT attributes.http.status_code sc, count(*) FROM sj2 GROUP BY sc;
+```

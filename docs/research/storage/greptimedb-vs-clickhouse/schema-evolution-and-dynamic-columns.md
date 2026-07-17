@@ -27,8 +27,8 @@ ADD COLUMN` cost, (2) does ingest of an unknown attribute auto-evolve the schema
 (3) how is a dynamic-attribute (`JSON`) column physically stored and queried. All
 three are source-confirmed **and** measured live (Docker, smoke).
 
-Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`),
-re-confirmed latest stable 2026-05-25.
+Pins: GreptimeDB **`v1.1.3`** (`63ef18a7…`), ClickHouse **`v26.6.1.1193-stable`** (`840482cd…`),
+re-pinned Run 173 (2026-07-17). Prior matrix numbers on `v1.0.2` / `26.5.1.882` remain historical.
 
 ## 1. Manual `ADD COLUMN` — both metadata-only, no rewrite
 
@@ -71,12 +71,18 @@ edge to GreptimeDB** (axis: operational fit), with one risk (below).
 When attributes are truly arbitrary, both offer a `JSON` column — but store it
 differently:
 
-| | GreptimeDB `Json` | ClickHouse `JSON` |
-| --- | --- | --- |
-| Physical storage | **One binary (JSONB-style) column.** The whole document is stored per row. | **Each distinct path is its own typed subcolumn** on disk (columnar). |
-| Measured | `DESC` → `attrs Json`; queried `json_get_string(attrs,'k2')` (parses the blob per row). | `JSONAllPathsWithTypes` → `('k1','Int64'),('k2','String'),('k3','Bool')`; `attributes.k2` reads **only that subcolumn**. |
-| Query a path | Per-row blob parse via `json_get_*` — no per-path skipping. | Reads one typed subcolumn — columnar, granule-skippable, ~native-column speed. |
-| New key | absorbed (blob just grows) | absorbed as a new subcolumn, **no ALTER** (bounded by `max_dynamic_paths`; overflow paths share a structure) |
+| | GreptimeDB default `JSON` (Jsonb) | GreptimeDB **`JSON2`** / `JSON(format='structured')` (Run 173) | ClickHouse `JSON` (GA) |
+| --- | --- | --- | --- |
+| Physical storage | **One binary (JSONB-style) column** per row (`JsonFormat::Jsonb`; default SQL `JSON` in `statements.rs`). | **Structured native** (`JsonFormat::Json2` / `JsonNativeType` object/array tree; `SHOW CREATE` prints `JSON(format = 'structured')`). Path reads project subfields. | **Each distinct path is its own typed subcolumn** on disk (columnar). `enable_json_type` production-ready since 25.3 (`SettingsChangesHistory.cpp`); experimental flags obsolete default-true. |
+| Measured | `json_get_int(attrs,'http.status_code') GROUP BY` @100k → **~45–63 ms** (Run 173). | `attributes.http.status_code GROUP BY` @100k → **~9 ms** (~7× faster than Jsonb; counts match). `json_get_int` on `JSON2` can error — use path syntax. | `attributes.http.status_code.:Int64 GROUP BY` @100k → **~4–5 ms**. |
+| Query a path | Per-row blob parse via `json_get_*`. | Path projection (`col.a.b`); much closer to CH. | Typed subcolumn read — ~native-column speed. |
+| New key | absorbed (blob grows) | structure merges / variants (`JsonNativeType::merge` → `Variant` on conflict) | new subcolumn, no ALTER (bounded by `max_dynamic_paths`) |
+| Ingest ergonomics | `parse_json` / pipeline / OTLP map cleanly to default `JSON`. | **VALUES string literals** work; `parse_json` + `INSERT SELECT` string concat **do not** auto-convert to `JSON2` (`Utf8/BinaryView → Struct()`). Plan the write path before adopting. |
+
+**Run 173 verdict on dynamic-attr speed:** the long-standing "~10× CH wins JSON analytics" claim
+**still holds for default `JSON`**, but is **mostly a schema choice** once `JSON2` is used — gap
+compresses to ~1.8× at N=100k. Prefer **typed columns for hot attributes** (still best), else
+**`JSON2` for undeclared-attribute analytics**, else accept Jsonb parse cost.
 
 → For *querying* dynamic attributes by path at volume, **ClickHouse's JSON is
 structurally faster** (typed columnar subcolumn vs whole-blob parse). GreptimeDB's
