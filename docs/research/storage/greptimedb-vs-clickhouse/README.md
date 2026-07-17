@@ -176,6 +176,7 @@ managed quotes remain):
 | p99 panel recheck | **494** | GT 14–18ms / CH 4–5ms |
 | still not done | **495** | top 5 open |
 | adopt+export+pins | **496** | Jaeger/Prom/export OK |
+| still not done | **497** | top 5 open |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
