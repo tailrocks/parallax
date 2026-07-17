@@ -170,3 +170,15 @@ Highest remaining after 220–257:
 5. RPO D2/D3 (D1=225)
 
 Engine smoke on laptop remains saturated. **Comparison not declared done.**
+
+## Run 268 ranking (2026-07-17)
+
+Passes **220–267** on main. Laptop mechanism re-verify **saturated**. Still open:
+
+1. Workload mix shares filled (223 packet)
+2. Server 1M/5M (240 runbook)
+3. Vendor trial quotes (221 rates)
+4. GB cold S3 (235/238 method)
+5. RPO D2/D3 (225 D1 done)
+
+**Do not declare comparison done.**
