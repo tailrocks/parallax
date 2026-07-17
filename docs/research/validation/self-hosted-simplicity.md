@@ -1,6 +1,19 @@
 # Self-Hosted Simplicity
 
-> Kill criterion 6 from the verdict demands that the first Parallax deployment be measurably simpler than self-hosted Sentry for the narrower Sentry-compatible, OTLP-native issue-context job; "simpler" is a measured Phase-1 gate, not a brand claim, currently at status `not_measured`. The source-linked baseline inventory pins the competitors to beat on a fresh-VM run — Sentry self-hosted `26.5.0` (72-service Compose, 4 CPU / 16 GB RAM + 16 GB swap minimum), SigNoz `v0.125.1` (6 services), OpenObserve `v0.90.2` (single-node), Bugsink `2.2.1`, Rustrak `@rustrak/server@0.2.5`, Traceway `backend/v1.7.27`, GoSnag `main`@`418b8b1` (no release), and Urgentry `v0.2.12` — measured by exact release tag/commit, never floating `main`. The Parallax tiny-tier target is `parallax-server` + GreptimeDB standalone + embedded/local metadata + local WAL/raw directory + CLI, with no required broker, Redis, Postgres, ClickHouse, external Collector, or MCP sidecar before the first `parallax issue context <issue-id>` bundle resolves. The result ledger turns the gate into auditable claim levels and forbids any "simple to self-host" or "simpler than self-hosted Sentry" wording until a clean-VM run proves first-useful-bundle time (≤15 min), service count (≤3), resource budget (2 vCPU / 4 GB), Sentry/OTLP ingest smoke, restart durability, backup/restore (≤10 min), upgrade path, and redaction smoke against current baselines. Nothing is decided yet: every Parallax scorecard cell is TBD and no run artifacts exist, so the open gate is the full fresh-VM measurement that would move the claim level from `not_measured` toward `tiny_tier_self_hosted_claim`.
+> Kill criterion 6 from the verdict demands that the first Parallax deployment be measurably simpler than self-hosted Sentry for the narrower Sentry-compatible, OTLP-native issue-context job; "simpler" is a measured Phase-1 gate, not a brand claim, currently at status `not_measured`. The Parallax tiny-tier target is `parallax-server` + GreptimeDB standalone + embedded/local metadata + local WAL/raw directory + CLI, with no required broker, Redis, Postgres, ClickHouse, external Collector, or MCP sidecar before the first useful issue-context bundle resolves. The result ledger forbids any "simple to self-host" or "simpler than self-hosted Sentry" wording until a clean-VM run proves first-useful-bundle time (≤15 min), service count (≤3), resource budget (2 vCPU / 4 GB), Sentry/OTLP ingest smoke, restart durability, backup/restore (≤10 min), upgrade path, and redaction smoke against **current** baselines.
+>
+> **Pass 70 baseline re-pin (2026-07-17, GitHub API — versions only, no Parallax VM run):**
+>
+> | Product | May inventory pin | **2026-07-17 pin** | Notes |
+> | --- | --- | --- | --- |
+> | Sentry self-hosted | `26.5.0` / **72** Compose services | **`26.7.0`** (2026-07-16) / **64** services counted in `docker-compose.yml` | **Service count dropped 72→64** — still heavy vs tiny tier; re-count method = top-level `services:` keys on tagged release file |
+> | SigNoz | `v0.125.1` | **`v0.133.0`** (2026-07-15) | Service count not re-enumerated this pass |
+> | OpenObserve | `v0.90.2` | **`v0.91.2`** (2026-07-17) | Single-node still |
+> | Bugsink | `2.2.1` | **`2.4.0`** (2026-07-10) | Error-only simplicity bar |
+> | Rustrak | `@rustrak/server@0.2.5` | **`@rustrak/server@0.9.2`** (2026-07-15) | + mutating MCP |
+> | Traceway | `backend/v1.7.27` | **`backend/v1.9.1`** (2026-07-15) | OTel + agent MCP pressure |
+>
+> **Claim level unchanged: `not_measured`.** No fresh-VM Parallax scorecard artifacts. May body inventory below is **historical** until rewritten to these pins.
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
