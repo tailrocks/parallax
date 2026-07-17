@@ -8089,3 +8089,7 @@ All four containers still healthy after ~37 minutes continuous research load.
 
 `sj2` `attributes.status_code = 200`: warm **~6–10 ms**. JSON2 path still live
 post re-gen.
+
+### Run 310 — 2026-07-17 — not done
+
+Comparison not declared done.
