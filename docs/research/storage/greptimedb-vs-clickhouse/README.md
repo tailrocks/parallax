@@ -335,6 +335,8 @@ managed quotes remain):
 | still not done | **653** | top 5 product/server |
 | rate/increase | **654** | rate OK; increase 48 both |
 | still not done | **655** | top 5 product/server |
+| re-pin hold | **656** | pins; healthy ~3h+ |
+| still not done | **657** | top 5 product/server |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
