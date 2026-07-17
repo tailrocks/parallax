@@ -21,7 +21,23 @@
 > self-hosted (aligns pass 77). **No** Parallax VM scorecard this pass —
 > gate status remains **`not_measured`**.
 >
-> **Claim level unchanged: `not_measured`.** No fresh-VM Parallax scorecard artifacts. May body inventory below is **historical** until rewritten to these pins.
+> **Pass 133 (2026-07-17) — baseline re-pin + claim split:**
+>
+> | Product | Pin | Delta vs pass 70/87 |
+> | --- | --- | --- |
+> | Sentry self-hosted | **`26.7.0`** (2026-07-16) / **64** Compose services | unchanged |
+> | SigNoz | **`v0.133.0`** (2026-07-15) | unchanged |
+> | OpenObserve | **`v0.91.2`** (2026-07-17) | unchanged |
+>
+> **Do not upgrade claim level from plan 115 dogfood alone.**
+> `docs/research/validation/2026-07-plan-115-v2-server-profile/` (install dogfood,
+> live rehearsal) is **product/server-profile rehearsal** on operator paths —
+> **not** a clean-Ubuntu-LTS VM scorecard under this gate’s
+> `self-hosted-simplicity-runs/<run_id>/` contract (still **absent**).
+>
+> **Claim level unchanged: `not_measured`** for kill-criterion-6 wording
+> (“simpler than self-hosted Sentry” / “simple to self-host”). Allowed: product
+> can serve; formal simplicity gate ledger still empty.
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
