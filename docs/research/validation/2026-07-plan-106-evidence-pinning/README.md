@@ -14,9 +14,11 @@ See [evidence-pinning.md](../../decisions/evidence-pinning.md).
 - Soft max 512 KiB; oversize refused
 - Unit test: round-trip, idempotent upsert, delete, bound
 - `evidence_pin_protection(now)` produces a bounded deterministic generation of
-  live pins; pins expiring exactly at `now` are excluded. Prune discovery and
-  execution still must consume this generation before metadata deletion is
-  considered integrated.
+  live pins; pins expiring exactly at `now` are excluded.
+- Prune discovery excludes live issue and invocation anchors, including issue
+  dependents, and reports typed `pinned` exclusions.
+- Destructive authorization rechecks the live generation. Turso deletion also
+  repeats the active-pin predicate, preserving pins created after discovery.
 
 ## Verify
 

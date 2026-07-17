@@ -285,8 +285,13 @@ impl TursoMetadataStore {
     /// and occurrences. Unresolved and not-yet-expired issues are preserved.
     /// Returns rows deleted from `issues` only (dependents deleted by cascade
     /// or explicit cleanup are not double-counted).
-    async fn execute_issue_prune(&self, cutoff_nanos: u128) -> anyhow::Result<u64> {
+    async fn execute_issue_prune(
+        &self,
+        cutoff_nanos: u128,
+        protection_at_nanos: u128,
+    ) -> anyhow::Result<u64> {
         let cutoff_millis = nanos_to_millis(cutoff_nanos);
+        let protection_at_millis = nanos_to_millis(protection_at_nanos);
         let mut conn = self.conn.lock().await;
         let tx = conn.transaction().await?;
         // Dependents first so a partial failure never leaves orphan parents
@@ -295,23 +300,29 @@ impl TursoMetadataStore {
             "DELETE FROM issue_buckets WHERE fingerprint IN (
                SELECT fingerprint FROM issues
                WHERE status = 'resolved' AND resolved_at IS NOT NULL AND resolved_at <= ?1
+                 AND NOT EXISTS (SELECT 1 FROM evidence_pins p WHERE p.anchor_kind = 'issue'
+                   AND p.anchor_id = issues.fingerprint AND (p.expires_at IS NULL OR p.expires_at > ?2))
              )",
-            [Value::Integer(cutoff_millis)],
+            (cutoff_millis, protection_at_millis),
         )
         .await?;
         tx.execute(
             "DELETE FROM issue_occurrences WHERE fingerprint IN (
                SELECT fingerprint FROM issues
                WHERE status = 'resolved' AND resolved_at IS NOT NULL AND resolved_at <= ?1
+                 AND NOT EXISTS (SELECT 1 FROM evidence_pins p WHERE p.anchor_kind = 'issue'
+                   AND p.anchor_id = issues.fingerprint AND (p.expires_at IS NULL OR p.expires_at > ?2))
              )",
-            [Value::Integer(cutoff_millis)],
+            (cutoff_millis, protection_at_millis),
         )
         .await?;
         let deleted = tx
             .execute(
                 "DELETE FROM issues
-                 WHERE status = 'resolved' AND resolved_at IS NOT NULL AND resolved_at <= ?1",
-                [Value::Integer(cutoff_millis)],
+                 WHERE status = 'resolved' AND resolved_at IS NOT NULL AND resolved_at <= ?1
+                   AND NOT EXISTS (SELECT 1 FROM evidence_pins p WHERE p.anchor_kind = 'issue'
+                     AND p.anchor_id = issues.fingerprint AND (p.expires_at IS NULL OR p.expires_at > ?2))",
+                (cutoff_millis, protection_at_millis),
             )
             .await?;
         tx.commit().await?;
@@ -320,16 +331,23 @@ impl TursoMetadataStore {
 
     /// Delete finished invocations at/under the cutoff. Active/unfinished rows
     /// are preserved.
-    async fn execute_invocation_prune(&self, cutoff_nanos: u128) -> anyhow::Result<u64> {
+    async fn execute_invocation_prune(
+        &self,
+        cutoff_nanos: u128,
+        protection_at_nanos: u128,
+    ) -> anyhow::Result<u64> {
         let cutoff_millis = nanos_to_millis(cutoff_nanos);
+        let protection_at_millis = nanos_to_millis(protection_at_nanos);
         let deleted = self
             .conn
             .lock()
             .await
             .execute(
                 "DELETE FROM invocations
-                 WHERE status = 'finished' AND ended_at IS NOT NULL AND ended_at <= ?1",
-                [Value::Integer(cutoff_millis)],
+                 WHERE status = 'finished' AND ended_at IS NOT NULL AND ended_at <= ?1
+                   AND NOT EXISTS (SELECT 1 FROM evidence_pins p WHERE p.anchor_kind = 'invocation'
+                     AND p.anchor_id = invocations.invocation_id AND (p.expires_at IS NULL OR p.expires_at > ?2))",
+                (cutoff_millis, protection_at_millis),
             )
             .await?;
         Ok(deleted)
@@ -341,6 +359,7 @@ impl TursoMetadataStore {
         &self,
         item: &PruneItem,
         authorization: &PruneAuthorization,
+        protection_at_nanos: u128,
     ) -> anyhow::Result<u64> {
         if authorization.mode() != PruneExecutionMode::Execute || !authorization.permits(item) {
             anyhow::bail!("metadata prune item is not in the authorized destructive plan");
@@ -349,12 +368,18 @@ impl TursoMetadataStore {
             anyhow::bail!("metadata store cannot execute non-Turso prune item");
         }
         match item.class {
-            PruneClass::Issues => self.execute_issue_prune(item.cutoff_nanos).await,
+            PruneClass::Issues => {
+                self.execute_issue_prune(item.cutoff_nanos, protection_at_nanos)
+                    .await
+            }
             PruneClass::IssueBuckets | PruneClass::IssueOccurrences => {
                 // Owner cascade only — executed with Issues.
                 Ok(0)
             }
-            PruneClass::Invocations => self.execute_invocation_prune(item.cutoff_nanos).await,
+            PruneClass::Invocations => {
+                self.execute_invocation_prune(item.cutoff_nanos, protection_at_nanos)
+                    .await
+            }
             PruneClass::Dashboards
             | PruneClass::Investigations
             | PruneClass::SavedViews

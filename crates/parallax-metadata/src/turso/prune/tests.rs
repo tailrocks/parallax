@@ -366,7 +366,7 @@ async fn execute_invocation_prune_deletes_only_eligible_terminal_rows() {
     assert_eq!(before.estimate.rows, Some(1));
 
     let deleted = store
-        .execute_invocation_prune(20_000_000)
+        .execute_invocation_prune(20_000_000, 20_000_000)
         .await
         .expect("execute");
     assert_eq!(deleted, 1);
@@ -383,7 +383,7 @@ async fn execute_invocation_prune_deletes_only_eligible_terminal_rows() {
 
     assert_eq!(
         store
-            .execute_invocation_prune(20_000_000)
+            .execute_invocation_prune(20_000_000, 20_000_000)
             .await
             .expect("repeat"),
         0
@@ -415,7 +415,7 @@ async fn execute_issue_prune_cascades_and_preserves_unresolved() {
     assert_eq!(before.estimate.rows, Some(1));
 
     let deleted = store
-        .execute_issue_prune(20_000_000)
+        .execute_issue_prune(20_000_000, 20_000_000)
         .await
         .expect("execute");
     assert_eq!(deleted, 1);
@@ -433,7 +433,46 @@ async fn execute_issue_prune_cascades_and_preserves_unresolved() {
             .any(|e| e.kind == PruneExclusionKind::Unresolved && e.count >= 1)
     );
     assert_eq!(
-        store.execute_issue_prune(20_000_000).await.expect("repeat"),
+        store
+            .execute_issue_prune(20_000_000, 20_000_000)
+            .await
+            .expect("repeat"),
         0
     );
+}
+
+#[tokio::test]
+async fn execution_preserves_pins_created_after_discovery() {
+    let directory = tempfile::tempdir().expect("temporary directory");
+    let store = TursoMetadataStore::open(directory.path().join("metadata.db"))
+        .await
+        .expect("open metadata");
+    let attributes = serde_json::json!({});
+    store
+        .upsert_issue_occurrence(&issue_occurrence("late-pin", &attributes))
+        .await
+        .expect("seed issue");
+    store
+        .set_issue_status("late-pin", "resolved", 10_000_000)
+        .await
+        .expect("resolve issue");
+    let discovered = store
+        .issue_prune_item(20_000_000, 20_000_000)
+        .await
+        .expect("discover before pin");
+    assert_eq!(discovered.estimate.rows, Some(1));
+
+    store
+        .evidence_pin_upsert(&evidence_pin("issue", "late-pin", None))
+        .await
+        .expect("pin after discovery");
+
+    assert_eq!(
+        store
+            .execute_issue_prune(20_000_000, 20_000_000)
+            .await
+            .expect("execute with defense in depth"),
+        0
+    );
+    assert!(store.issue("late-pin").await.expect("read issue").is_some());
 }

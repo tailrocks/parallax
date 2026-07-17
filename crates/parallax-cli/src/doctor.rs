@@ -268,8 +268,10 @@ pub(crate) async fn prune(execute: bool, yes: bool, json: bool) -> anyhow::Resul
     let cutoff_nanos = now_nanos.saturating_sub(PRUNE_GRACE_NANOS);
 
     let mut items: Vec<PruneItem> = Vec::new();
+    let mut protection_generation = "pins:none".to_string();
     if meta_path.exists() {
         let store = TursoMetadataStore::open(&meta_path).await?;
+        protection_generation = store.evidence_pin_protection(now_nanos).await?.generation;
         items.extend(store.metadata_prune_items(cutoff_nanos, now_nanos).await?);
     } else {
         eprintln!(
@@ -300,9 +302,7 @@ pub(crate) async fn prune(execute: bool, yes: bool, json: bool) -> anyhow::Resul
             "retention:{}:{}:{}",
             config.retention.traces_ttl, config.retention.logs_ttl, config.retention.metrics_ttl
         ),
-        // Plan 106 pin store not yet product-wired; empty generation means
-        // no pin exclusions are claimed.
-        protection_generation: "pins:none".to_string(),
+        protection_generation,
         catalog_fingerprint: "metadata+spool".to_string(),
     };
     let plan = PrunePlan::build(
@@ -346,8 +346,17 @@ pub(crate) async fn prune(execute: bool, yes: bool, json: bool) -> anyhow::Resul
 
     if meta_path.exists() {
         let store = TursoMetadataStore::open(&meta_path).await?;
+        let execution_now_nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|duration| duration.as_nanos())
+            .unwrap_or(0);
+        let current_protection = store.evidence_pin_protection(execution_now_nanos).await?;
+        let current_snapshot = PruneSnapshot {
+            protection_generation: current_protection.generation,
+            ..snapshot.clone()
+        };
         let request = PruneExecutionRequest::execute(plan.plan_id().to_string(), true)?;
-        let authorization = plan.authorize(&request, &snapshot)?;
+        let authorization = plan.authorize(&request, &current_snapshot)?;
         let journal = store
             .create_prune_journal(&plan, now_nanos, PrunePlanLimits::default())
             .await?;
@@ -362,7 +371,10 @@ pub(crate) async fn prune(execute: bool, yes: bool, json: bool) -> anyhow::Resul
                 PruneStepStart::AlreadyComplete => continue,
                 PruneStepStart::Execute => {}
             }
-            match store.execute_prune_item(&step.item, &authorization).await {
+            match store
+                .execute_prune_item(&step.item, &authorization, execution_now_nanos)
+                .await
+            {
                 Ok(rows) => {
                     deleted.insert(step.item.target.clone(), serde_json::Value::from(rows));
                     store
