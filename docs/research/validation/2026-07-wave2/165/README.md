@@ -28,10 +28,10 @@ Full capture: [live-log-patterns.json](./live-log-patterns.json)
 
 ## Browser
 
-| File | Claim |
-|---|---|
-| [browser/logs-patterns.png](./browser/logs-patterns.png) | Patterns mode table |
-| [browser/logs-histogram.png](./browser/logs-histogram.png) | Logs histogram (brush target) |
+agent-browser walk (2026-07-17): Patterns toggle sets `?patterns=true` and
+renders a Template/Count table over live `logPatterns` data. Capture note:
+[browser/patterns-snapshot.txt](./browser/patterns-snapshot.txt). Histogram
+brush remains the existing logs `useChartBrush` path (URL range on drag).
 
 ## Tests
 
