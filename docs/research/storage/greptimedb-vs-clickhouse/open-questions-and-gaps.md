@@ -185,7 +185,8 @@ Do not re-smoke interactive 50k ties without pin bump or new mechanism.
 3. Vendor **trial** quotes (list rates held Run 405; still sales-blocked)
 4. GB–TB cold S3 selective egress
 5. RPO **cluster** D2 (etcd/RDS) + product-schema D3
-6. Optional: CH PromQL volume + more fns (comparator watch)
+6. Optional: CH PromQL **volume** (comparator) — **fn coverage partly filled Run 423**
+   (partial surface documented; volume still owed)
 
 **Do not** burn more interactive 50k ties without pin bump.
 

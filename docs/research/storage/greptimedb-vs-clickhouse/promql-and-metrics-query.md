@@ -242,6 +242,49 @@ On head **26.7.1.1097**:
 **Workaround for CH lab/dashboards:** use `rate(x[w]) * window_seconds` (or SQL
 over samples/tags). GT keeps first-class `increase` / `prom_increase`.
 
+### Run 423 (2026-07-18) — expanded PromQL function matrix (CH head 26.7.1 + GT)
+
+**Setup:** same multi-series counter/gauge load as Run 404 into `ts_r423` (CH) and
+`r423_http` (GT mito). Eval at `2026-07-18 00:04:00`. CH via
+`prometheusQuery(ts, promql, eval_time)`; GT via `TQL EVAL`.
+
+| Expression class | Examples | CH head 26.7.1 | GT v1.1.3 TQL |
+| --- | --- | --- | --- |
+| Instant selector | `up`, label matchers | **OK** | **OK** |
+| Rate family | `rate`, `irate` | **OK** (1.0 / 0.5) | **OK** |
+| Increase | `increase` | **Code 48 NOT_IMPLEMENTED** | **OK** (120 / 60) |
+| Delta family | `delta`, `idelta` | **OK** | (not retested) |
+| Agg + grouping | `sum(rate) by (job)`, `max by (job)` | **OK** (1.5 / 340) | **OK** (`sum by` 1.5) |
+| Ranking | `topk`, `bottomk` | **OK** | **OK** (`topk` → i1) |
+| Last | `last_over_time` | **OK** (170 / 340) | **OK** |
+| Range rollups | `min/max/avg/count_over_time` | **all Code 48** | **all OK** |
+| Extrapolation | `deriv`, `predict_linear` | **Code 48** | (not retested) |
+| Resets/changes | `resets`, `changes` | **Code 48** | (not retested) |
+| Absent / clamp | `absent`, `clamp_min` | **Code 48** | (not retested) |
+| Comparison | `rate(…) > 0.5` | **OK** (filters to i1) | (not retested) |
+| Offset | `http_requests_total offset 1m` | **OK** | (not retested) |
+| `histogram_quantile` | on non-histogram rate | **OK** (returns 0 — wrong input shape, no error) | (not retested) |
+
+**26.6.1 stable:** spot-check same — `last_over_time` + `topk` OK; `min_over_time` Code 48
+(identical gap surface to head for missing fns).
+
+**Mechanism reading:**
+
+- CH experimental PromQL is a **partial** Prometheus surface: strong on **rate +
+  aggregation + ranking + last + binary compare + offset**; weak on **increase**,
+  **`*_over_time` except last**, **deriv/predict_linear**, **resets/changes**,
+  **absent/clamp**.
+- Interesting asymmetry: SQL helper catalog has `timeSeriesResetsToGrid` /
+  `timeSeriesDeltaToGrid` / `timeSeriesDerivToGrid`, but PromQL `resets`/`deriv` still
+  Code 48 — grid helpers ≠ full PromQL function coverage.
+- GT GA path implements the rollups CH lacks (`prom_min/max/avg/count/last_over_time`,
+  `prom_increase`) on plain mito tables.
+
+**Verdict impact:** sharpens maturity gap beyond “experimental flag.” A Grafana board
+that uses `increase`, `avg_over_time`, or `resets` **cannot** drop onto CH TimeSeries
+today without rewrite; GT can. Still **not** a stack flip (product = GT); comparator
+watch for when CH fills `*_over_time` + `increase`.
+
 ## Run 403 mechanism takeaway (why Code 48 is not a death sentence)
 
 `TimeSeries` is closer to a **materialized-view-style multi-target router** than a
