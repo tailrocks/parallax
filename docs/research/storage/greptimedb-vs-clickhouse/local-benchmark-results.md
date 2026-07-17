@@ -7749,3 +7749,10 @@ the slow path.
 GT `matches_term(message,'timeout')` on logs1m: idle **~5–6 ms**; during 30
 background inserts **~6–7 ms** (one cold 24 ms). **No blocking**; penalty ≤~1.3×
 typical. Aligns with Run 226/178 concurrent gate.
+
+### Run 247 — 2026-07-17 — CH PREWHERE + projection compose
+
+`SELECT … FROM spans1m PREWHERE service='s0' WHERE status='OK'`:
+`ReadFromMergeTree (p_svc)` Granules **1/7**. PREWHERE does not disable
+projection selection. GT full-region scan for non-PK `service` (expected without
+partition/index on service).
