@@ -90,6 +90,12 @@
   `CLI_INVOCATION_ID`. It deliberately never substitutes `NEXTEST_RUN_ID` for
   product invocation identity. The support crate/export lifecycle and JUnit
   reconciliation remain for the owning adapter implementation.
+- A bounded streaming JUnit XML authority-layer normalizer now preserves
+  nextest/Surefire `flaky*` and `rerun*` attempt evidence, distinguishes final
+  assertion failures from harness/killed-test errors, unescapes stable suite/
+  class/name identity, and reports missing attempt ordinals for gap fill. It
+  fails closed on malformed, identity-less, oversized, or over-count input;
+  persistence reconciliation remains for the owning adapter implementation.
 
 Design decisions D1–D9 (identity, native tables, status taxonomy, attempt
 chains, shared fingerprints, flaky SM, `/tests` surface, session semantics,
@@ -108,10 +114,9 @@ if needed; do not reopen.
 5. ~~Flaky job over ingested results~~ — pure evaluator + Turso candidate scan
    + result windows + `tick_once` server loop (60s) landed. Residual:
    mute/known flags (no runner quarantine enforcement in V1).
-6. Runner adapters: nextest attempt-identity adapter landed; residual JUnit
-   listener jar, JUnit XML reconciliation gap-fill.
-   crate/export lifecycle, JUnit listener jar, and JUnit XML reconciliation
-   gap-fill.
+6. Runner adapters: nextest attempt identity + bounded JUnit XML gap analysis
+   landed; residual nextest support crate/export lifecycle, JUnit listener jar,
+   and persistence reconciliation of killed/missing attempts.
 7. Live e2e vs plan 154 W4 playground payload; validation evidence under
    `docs/research/validation/`.
 
