@@ -175,7 +175,7 @@ jobs:
       - name: Install Rust target
         env:
           TARGET: ${{ matrix.target }}
-        run: mise exec -- rustup target add "$TARGET"
+        run: rustup target add "$TARGET"
       - name: Cache Cargo build artifacts
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
@@ -202,13 +202,13 @@ jobs:
         env:
           TARGET: ${{ matrix.target }}
           PARALLAX_VERSION_OVERRIDE: ${{ needs.check-version.outputs.version }}
-        run: mise exec -- cargo build --release --locked -p parallax-cli --features embed-ui --target "$TARGET"
+        run: cargo build --release --locked -p parallax-cli --features embed-ui --target "$TARGET"
       - name: Build (Linux zigbuild)
         if: matrix.builder == 'zigbuild'
         env:
           ZIGBUILD_TARGET: ${{ matrix.zigbuild_target }}
           PARALLAX_VERSION_OVERRIDE: ${{ needs.check-version.outputs.version }}
-        run: mise exec -- cargo zigbuild --release --locked -p parallax-cli --features embed-ui,cross-release-vendored --target "$ZIGBUILD_TARGET"
+        run: cargo zigbuild --release --locked -p parallax-cli --features embed-ui,cross-release-vendored --target "$ZIGBUILD_TARGET"
       - name: Package
         id: package
         env:
@@ -218,7 +218,7 @@ jobs:
           set -euo pipefail
           archive="parallax-${VERSION}-${TARGET}.tar.gz"
           source_epoch=$(git show -s --format=%ct "$GITHUB_SHA")
-          mise exec -- cargo xtask release-package \
+          cargo xtask release-package \
             --binary "target/${TARGET}/release/parallax" \
             --archive "$archive" \
             --target "$TARGET" \
@@ -239,7 +239,7 @@ jobs:
           TARGET: ${{ matrix.target }}
           VERSION: ${{ needs.check-version.outputs.version }}
         run: |
-          mise exec -- cargo xtask release-verify \
+          cargo xtask release-verify \
             --archive "$ARCHIVE" \
             --target "$TARGET" \
             --version "$VERSION" \
