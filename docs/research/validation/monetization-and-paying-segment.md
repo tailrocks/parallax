@@ -121,6 +121,32 @@ for whether hard-boundary buyers pay *Parallax* at EE/cloud prices.
 a seat tax that makes free OSS self-host non-viable for all but hobby — already
 partially true for Cloud, not for OSS Grafana CE.
 
+### Pass 117 (2026-07-17) — SigNoz Cloud pricing shape (comparison #2)
+
+Live [signoz.io/pricing](https://signoz.io/pricing/) (usage-based, no host/seat
+meters; extract is **order-of-magnitude**, not a quote):
+
+| Surface | Primary signal (2026-07-17) |
+| --- | --- |
+| **Community (self-host)** | **$0** software; self-managed ops |
+| **Teams Cloud** | **$49/mo** base (page still shows struck **$199** → **$49** promo framing) + usage: logs/traces **~$0.30/GB ingested**; metrics **~$0.10 / million samples**; retention tiers 15d–1yr (logs/traces) |
+| **Enterprise** | Custom; page cites **starts at ~$4,000/mo** class (HIPAA/BAA, volume discounts, dedicated support; Cloud or self-managed EE options) |
+
+**Cross-check with product peer note** [parallax-vs-signoz.md](../market/competitors/parallax-vs-signoz.md)
+(pass 101): same rate card; **Noz = Cloud only**; MCP available to self-host.
+Reinforces survivors' playbook: **free OSS core + usage Cloud + EE ops/compliance**
+— not selling the agent/evidence differentiator as the only paid gate (Noz is
+Cloud AI, not the open MCP path).
+
+**Parity for Parallax design:** managed Cloud as primary revenue motion; EE for
+ops/compliance; keep evidence-bundle generation open (do **not** copy Noz-style
+*in-product AI only on Cloud* for the *core context artifact* — MCP over open
+telemetry is the OSS peer pattern).
+
+**Falsify:** SigNoz moves Noz fully offline free in Community; or Teams Cloud
+drops below free-self-host economics so hard that OSS self-host dies (ops cost
+is separate).
+
 ## 2. Monetization shape (the survivors' playbook, applied)
 
 1. **License: Apache-2.0 for the core, kept consistent — RESOLVED (operator, 2026-05-29).** The
