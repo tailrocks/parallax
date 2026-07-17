@@ -8362,3 +8362,6 @@ Third re-check on head this session; still NOT_IMPLEMENTED. Not done.
 
 ### Run 385 — 2026-07-17 — not done
 
+
+### Run 386 — 2026-07-17 — anchored 210ms after idle; not done
+
