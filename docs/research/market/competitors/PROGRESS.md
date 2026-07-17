@@ -43,7 +43,7 @@
 
 | Product | Deep-dive file | State | Last verified | Next gap |
 | --- | --- | --- | --- | --- |
-| Datadog | [parallax-vs-datadog.md](parallax-vs-datadog.md) | ✅ pass 1 | 2026-07-17 | self-host/agentless reality; gov/FedRAMP posture; exact 2026 OTLP-in-Agent GA scope |
+| Datadog | [parallax-vs-datadog.md](parallax-vs-datadog.md) | ✅ pass 1 | 2026-07-17 | **OTLP-in-Agent GA scope resolved pass 19: Agent OTLP receiver is GA (traces+metrics default, logs manual enable), still transforms to proprietary backend (not OTLP-native storage)**; open: self-host/agentless reality; gov/FedRAMP posture |
 | Sentry | [parallax-vs-sentry.md](parallax-vs-sentry.md) | ✅ pass 3 | 2026-07-17 | **pass 16b correction: Parallax Sentry-envelope ingest is SHIPPED** (`sentry_envelope.rs`+`sentry_http.rs`+`ErrorSource::SentryEnvelope`, verified in `crates/`) — deep-dive's "planned/not-V1" was stale, corrected to shipped; matrix `✅🧪` confirmed-accurate; open: track OTLP-metrics GA; A1-vs-Seer measurement; self-host cost/ops benchmark |
 | Grafana Cloud/LGTM | [parallax-vs-grafana.md](parallax-vs-grafana.md) | ✅ pass 5 | 2026-07-17 | **versions pinned pass 5b**: Grafana v13.1.0 / Mimir mimir-3.1.3 / Loki v3.7.3 / Tempo v2.10.7 / Pyroscope v2.1.1; corrected "Grafana 12.x"→13.1.0 + "Tempo v3 GA"→v3-not-yet-GA; open: A1-vs-Grafana measurement; self-host cost/ops benchmark |
 | Honeycomb | [parallax-vs-honeycomb.md](parallax-vs-honeycomb.md) | ✅ pass 6 | 2026-07-17 | **Pro unit resolved pass 15: $150/50M events (~$3/M, 60-day retention, official page)** — the "$130/100M" was third-party conflation; A1-vs-Honeycomb measurement; high-cardinality query parity benchmark (riskiest regime for GreptimeDB) |
