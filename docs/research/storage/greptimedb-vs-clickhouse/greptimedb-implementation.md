@@ -77,6 +77,8 @@ Pin: GreptimeDB `v1.0.2` (`0ef5451`). DDL features confirmed in
    `SKIPPING INDEX` only when a query needs it (Q5).
 7. **`ttl` per table** + object storage for cheap re-readable retention.
 8. **`PARTITION ON COLUMNS (trace_id)`** on the anchored signals (spans/logs/error_events)
+   — **Run 227 re-verify:** 2-way partition → EXPLAIN ANALYZE hits **1/2 regions** and
+   **file_ranges 1 vs 2** unpartitioned; string bounds must be **single-quoted** literals
    — as the native `opentelemetry_traces` does (Run 86). Measured (Run 87): an anchored
    `trace_id` lookup prunes to the **one matching partition** (~1/N data) → ~3.5× faster
    scan (11 ms vs 39 ms at 8-way) **and ~1/N cold-read S3 egress**, at **no series-

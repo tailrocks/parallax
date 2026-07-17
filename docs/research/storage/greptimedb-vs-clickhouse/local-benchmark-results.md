@@ -7465,3 +7465,41 @@ light concurrent insert; penalty ~1–1.5× typical, occasional CH spike still
 
 **Reproduce.** See session commands: background INSERT loop + warm `trace_id`
 count on `spans1m` after `N=50000` gen.
+
+### Run 227 — 2026-07-17 — GT PARTITION ON (trace_id) prune re-verify
+
+**Pass target.** Re-verify that `PARTITION ON COLUMNS(trace_id)` reduces scanned
+file ranges for anchored lookups (mechanism behind cold-selective ~10× not ~80×
+in Runs 55/88).
+
+**DDL note (syntax).** String partition bounds must use **SQL single-quoted
+literals**. Double-quoted `"t25"` is parsed as an identifier → error
+`Column "t25" in rule expr is not referenced in PARTITION ON`.
+
+**Setup.** N≈50k from `spans1m` into:
+
+- `spans_nopart` — `PRIMARY KEY(trace_id)`, no partition, 1 region
+- `spans_part` — same PK + 2-way `PARTITION ON COLUMNS(trace_id) (trace_id < 'm', trace_id >= 'm')` → **2 regions** (`SHOW REGION`)
+
+Query: `EXPLAIN ANALYZE SELECT span_id, service FROM … WHERE trace_id='t0'`.
+
+| Table | Regions in plan | `file_ranges` | `files` | Notes |
+| --- | --- | ---: | ---: | --- |
+| **spans_nopart** | 1 peer | **2** | 2 | Full table region |
+| **spans_part** | **1 of 2** peers | **1** | 1 | Other region pruned |
+
+**Verdict.** **Partition prune CONFIRMED on v1.1.3.** Anchored equality hits only
+the matching region and half the file ranges in this 2-way split. Mechanism for
+product blueprint: native `opentelemetry_traces` already partitions; custom tables
+should `PARTITION ON` high-card anchors when cold S3 selective egress matters.
+At 50k the latency floor still interactive either way — the win is **request/bytes
+at scale**, not laptop ms.
+
+**Reproduce.**
+
+```bash
+# after gen.sh spans1m
+docker exec parallax-bench-greptimedb-1 curl -s 'http://localhost:4000/v1/sql?db=public' --data-urlencode \
+  "sql=CREATE TABLE spans_part (\"ts\" TIMESTAMP(3) TIME INDEX, \"trace_id\" STRING, \"span_id\" STRING, \"service\" STRING, \"duration_ms\" DOUBLE, \"status\" STRING, PRIMARY KEY (\"trace_id\")) PARTITION ON COLUMNS (\"trace_id\") (trace_id < 'm', trace_id >= 'm') WITH (append_mode='true')"
+# INSERT SELECT + flush + EXPLAIN ANALYZE WHERE trace_id=...
+```
