@@ -82,3 +82,24 @@ and environment evidence exists.
 
 No research prompt changed: this is implementation/authorization evidence for
 an existing plan, not a new research direction.
+
+## Stable readiness protections configured live (2026-07-17)
+
+Per the 2026-07-17 unblock directive, the operator-delegated protections were
+created via the GitHub API and verified by read-back:
+
+- Repository Actions variable `STABLE_RELEASE_ENABLED=true` (created; read-back
+  confirmed name and value).
+- Environment `stable-release` (id 18300879032) with a `required_reviewers`
+  protection rule listing user `donbeave` (id 139017),
+  `prevent_self_review=false`.
+- Repository ruleset `stable tag protection` (id 19090444): `target=tag`,
+  `enforcement=active`, conditions include `refs/tags/v*`, rules
+  `creation`, `update`, `deletion`, `non_fast_forward`; bypass restricted to
+  the repository admin role (`actor_id 5, RepositoryRole, always`).
+
+Remaining for plan 102: one complete four-target preview asset set published
+by the current implementation from a green `main` push (CI on `main` was red
+at configuration time from in-flight Wave 2 alerting work, so the
+`workflow_run`-gated preview publish is pending a green head), then
+per-target `cargo xtask release-verify` plus tap pull-workflow acceptance.
