@@ -8435,3 +8435,17 @@ m2m 50k → 219 KiB.
 | GT SQL type `JSONB` | **unsupported** on v1.1.3 and nightly 1.2.0 | — |
 | GT `JSON2` string INSERT | type mismatch Utf8→Struct (empty table) | — |
 
+### Run 428 — 2026-07-18 — full-text prune shape (logs1m dirty ~52k)
+
+**CH 26.6** `tokenbf_v1` on `message` (`hasToken`):
+
+| Term | count | Skip granules | Shape |
+| --- | --- | --- | --- |
+| `msg0` | 0 | **0/7** | selective prune (no hits) |
+| `error` | 7443 | **7/7** | broad — every granule |
+| `timeout` | 7443 | **7/7** | broad |
+
+**GT v1.1.3** `logs1m.message` still has `FULLTEXT … backend=bloom`; `matches(message,'error')`
+returns 7223 in ~9–93 ms (fixture-dirty counts ≠ CH). **No drift** vs selective-tie /
+broad-scan thesis (Run 157/184).
+
