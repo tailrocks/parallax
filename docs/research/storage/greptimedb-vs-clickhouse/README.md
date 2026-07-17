@@ -287,6 +287,8 @@ managed quotes remain):
 | still not done | **605** | top 5 product/server |
 | re-pin hold | **606** | v1.1.3/26.6; healthy ~3h+ |
 | still not done | **607** | top 5 product/server |
+| export + DELETE ban | **608** | 647 lines; Code 1004 |
+| still not done | **609** | top 5 product/server |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
