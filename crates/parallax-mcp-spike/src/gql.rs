@@ -1,5 +1,7 @@
 //! Thin GraphQL client against a running Parallax API.
 //!
+use rmcp::schemars;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::time::Duration;
 
@@ -119,6 +121,32 @@ pub(crate) struct BundleProjection {
     pub canonical_hash: String,
 }
 
+#[derive(Debug, Deserialize, Serialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct AgentSessionProjection {
+    pub root_span_id: Option<String>,
+    pub total_input_tokens: String,
+    pub total_output_tokens: String,
+    pub error_count: i32,
+    pub truncated: bool,
+    pub steps: Vec<AgentStepProjection>,
+}
+
+#[derive(Debug, Deserialize, Serialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct AgentStepProjection {
+    pub span_id: String,
+    pub trace_id: String,
+    pub kind: String,
+    pub name: String,
+    pub start_nanos: String,
+    pub duration_ns: String,
+    pub is_error: bool,
+    pub gen_ai_operation: Option<String>,
+    pub input_tokens: Option<String>,
+    pub output_tokens: Option<String>,
+}
+
 /// Fetch issue- or invocation-anchored bundle. Exactly one anchor is required.
 pub(crate) async fn fetch_bundle(
     client: &GraphqlClient,
@@ -159,7 +187,7 @@ fn required_string(object: &Value, field: &str) -> anyhow::Result<String> {
 pub(crate) async fn fetch_agent_session(
     client: &GraphqlClient,
     invocation_id: &str,
-) -> anyhow::Result<Value> {
+) -> anyhow::Result<AgentSessionProjection> {
     let response = client
         .graphql(
             AGENT_SESSION_QUERY,
@@ -172,7 +200,7 @@ pub(crate) async fn fetch_agent_session(
     else {
         anyhow::bail!("no agent session detected for invocation {invocation_id}");
     };
-    Ok(session.clone())
+    Ok(serde_json::from_value(session.clone())?)
 }
 
 #[cfg(test)]
@@ -212,5 +240,20 @@ mod tests {
         let _missing = required_string(&valid, "missing").expect_err("missing field");
         let _null =
             required_string(&serde_json::json!({ "json": null }), "json").expect_err("null field");
+    }
+
+    #[test]
+    fn agent_session_projection_rejects_unknown_fields() {
+        let value = serde_json::json!({
+            "rootSpanId": null,
+            "totalInputTokens": "0",
+            "totalOutputTokens": "0",
+            "errorCount": 0,
+            "truncated": false,
+            "steps": [],
+            "unexpected": "denied"
+        });
+        let _error =
+            serde_json::from_value::<AgentSessionProjection>(value).expect_err("unknown field");
     }
 }

@@ -71,6 +71,9 @@ must not return in product output.
   non-destructive, idempotent, and closed-world.
 - Tool anchors are closed-schema and runtime bounded to 1–256 UTF-8 bytes;
   stable invalid-parameter errors do not echo attacker-controlled values.
+- Agent-session output now strictly decodes into a closed typed projection and
+  advertises its generated MCP `outputSchema`; arbitrary GraphQL fields cannot
+  pass through to clients.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded

@@ -78,6 +78,8 @@ Final structured content plus compatibility text has a combined 128 KiB
 ceiling. Oversized results fail closed until resource-reference delivery lands.
 The issue-context tool advertises the checked-in bundle-v2 JSON Schema as its
 MCP `outputSchema`.
+Agent-session responses decode into a closed typed projection and advertise its
+generated MCP `outputSchema`; arbitrary GraphQL fields cannot pass through.
 
 ## Source map
 

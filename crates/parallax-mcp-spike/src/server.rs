@@ -94,7 +94,8 @@ impl SpikeServer {
             destructive_hint = false,
             idempotent_hint = true,
             open_world_hint = false
-        )
+        ),
+        output_schema = rmcp::handler::server::tool::schema_for_type::<gql::AgentSessionProjection>()
     )]
     async fn parallax_agent_session_show(
         &self,
@@ -108,7 +109,9 @@ impl SpikeServer {
         let body = serde_json::to_string(&session)
             .map_err(|_| safe_internal_error("agent_session_invalid"))?;
         ensure_result_budget(&[body.len(), body.len()])?;
-        let mut result = CallToolResult::structured(session);
+        let structured = serde_json::to_value(session)
+            .map_err(|_| safe_internal_error("agent_session_invalid"))?;
+        let mut result = CallToolResult::structured(structured);
         result.content = vec![ContentBlock::text(body)];
         Ok(result)
     }
@@ -354,5 +357,20 @@ mod tests {
             Some("https://github.com/tailrocks/parallax/schema/evidence-bundle.v2.schema.json")
         );
         assert_eq!(schema.get("type").and_then(Value::as_str), Some("object"));
+    }
+
+    #[test]
+    fn agent_session_advertises_a_closed_output_schema() {
+        let server = SpikeServer::new("http://127.0.0.1:4000".to_string()).expect("server");
+        let tools = server.tool_router.list_all();
+        let tool = tools
+            .iter()
+            .find(|tool| tool.name == "parallax_agent_session_show")
+            .expect("agent session tool");
+        let schema = tool.output_schema.as_ref().expect("output schema");
+
+        assert_eq!(schema.get("type"), Some(&json!("object")));
+        assert_eq!(schema.get("additionalProperties"), Some(&json!(false)));
+        assert!(schema.get("required").and_then(Value::as_array).is_some());
     }
 }
