@@ -1,7 +1,7 @@
 # Parallax vs Maple
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17**.
-> Sources: [maple.dev](https://maple.dev/) + [pricing](https://maple.dev/pricing/) + [docs](https://maple.dev/docs), [github.com/Makisuo/maple](https://github.com/Makisuo/maple), and the legacy [maple-deep-research.md](../maple-deep-research.md) (2026-05-31) as a lead.
+> Sources: [maple.dev](https://maple.dev/) + [pricing](https://maple.dev/pricing/) + [docs](https://maple.dev/docs), [github.com/MapleTechLabs/maple](https://github.com/MapleTechLabs/maple) (renamed from `Makisuo/maple`), and the legacy [maple-deep-research.md](../maple-deep-research.md) (2026-05-31) as a lead.
 >
 > **Bottom line up front:** Maple is the **local-experience benchmark** Parallax
 > wants to match — a single Bun binary with embedded chDB (ClickHouse) local mode,
@@ -14,7 +14,7 @@
 
 ## What each product is
 
-- **Maple** (`Makisuo/maple`) — open-source, **OTLP-native full-stack observability platform** (distributed tracing, logs, metrics/dashboards, error tracking, service catalog + dependency map, K8s monitoring, browser session replay, AI/MCP agent surface). Positioned as a New Relic/Datadog/Dash0 alternative. **FSL-1.1** (source-available, self-hostable, competitive-use restrictions — less open than Apache). **TypeScript ~95%** (Effect framework) on **Bun**; Rust only for the local-mode chDB bridge. Storage: **ClickHouse** — **Tinybird hosted** (cloud) / **chDB embedded** (local). **Metadata: SQLite via libSQL (Turso)** — *the same metadata choice as Parallax*. **~0.4k stars, v0.0.11** (legacy June; **re-verify exact latest tag — pre-1.0, fast-moving**).
+- **Maple** (`MapleTechLabs/maple`, renamed from `Makisuo/maple`) — open-source, **OTLP-native full-stack observability platform** (distributed tracing, logs, metrics/dashboards, error tracking, service catalog + dependency map, K8s monitoring, browser session replay, AI/MCP agent surface). Positioned as a New Relic/Datadog/Dash0 alternative. **FSL-1.1** (source-available, self-hostable, competitive-use restrictions — less open than Apache). **TypeScript ~95%** (Effect framework) on **Bun**; Rust only for the local-mode chDB bridge. Storage: **ClickHouse** — **Tinybird hosted** (cloud) / **chDB embedded** (local). **Metadata: SQLite via libSQL (Turso)** — *the same metadata choice as Parallax*. **1,532 stars, v0.0.12** (2026-06-18; GitHub API 2026-07-17 — up from ~0.4k in the June legacy note; pre-1.0, fast-moving).
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable **execution-context engine**: OTLP-native ingest of traces/logs/metrics + CLI/agent traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, serves bounded/redacted evidence bundles to humans and coding agents. GreptimeDB + Turso. **Pre-release.**
 
 Both single-binary-local-first, OTLP-native, Turso-metadata. The closest pair on *local-UX intent* and the *metadata choice*. Differ on language (TS/Bun vs Rust), storage (Tinybird/chDB ClickHouse vs GreptimeDB), license (FSL vs Apache), and product intent (full platform vs evidence engine).
@@ -87,7 +87,7 @@ Both single-binary-local-first, OTLP-native, Turso-metadata. The closest pair on
 
 ## Scalability & performance
 
-- **Maple:** small (~0.4k stars, pre-1.0); ClickHouse (Tinybird) is proven, but Maple's own harness is early. Hosted performance tied to Tinybird.
+- **Maple:** small (~1.5k stars, pre-1.0); ClickHouse (Tinybird) is proven, but Maple's own harness is early. Hosted performance tied to Tinybird.
 - **Parallax:** unproven; benchmark-dependent.
 
 **Verdict:** neither is proven at large self-hosted scale (both early). ClickHouse-vs-GreptimeDB is the measurable question (benchmark-dependent). **Roughly tied on maturity (both pre-scale), with Maple shipping more today.**
@@ -139,13 +139,13 @@ Sources: [maple.dev/pricing](https://maple.dev/pricing/). Maple markets large sa
 
 ## Open questions / what measurement would settle
 
-- **Maple latest version** — pin exact tag (v0.0.11 legacy; pre-1.0, fast-moving).
+- ~~Maple latest version~~ → **pinned v0.0.12 (2026-06-18), 1,532★** (GitHub API 2026-07-17); repo **renamed `Makisuo/maple` → `MapleTechLabs/maple`**.
 - **A1 gate vs Maple:** if a team has Maple for local-mode OTLP obs, does Parallax's bounded bundle add measurable value for production-incident agent fixes? Unproven.
 - **GreptimeDB-vs-ClickHouse/chDB** — measured cost/perf at parity (local + hosted). Benchmark-dependent, unmeasured.
 
 ## Sources (accessed 2026-07-17)
 
 - [maple.dev](https://maple.dev/); [pricing](https://maple.dev/pricing/); [docs](https://maple.dev/docs).
-- [github.com/Makisuo/maple](https://github.com/Makisuo/maple).
+- [github.com/MapleTechLabs/maple](https://github.com/MapleTechLabs/maple) — **v0.0.12 (2026-06-18), 1,532★** (GitHub API 2026-07-17; renamed from `Makisuo/maple`).
 - Legacy internal: [maple-deep-research.md](../maple-deep-research.md) (2026-05-31 — data-flow, tech choices, feature inventory).
 - Parallax side: [decisions/metadata-store.md](../../decisions/metadata-store.md) (the shared Turso choice), [decisions/storage-engine.md](../../decisions/storage-engine.md), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).

@@ -14,7 +14,7 @@ Research date: 2026-05-31
 
 - [maple.dev](https://maple.dev/) — landing page, all feature pages, comparison pages, pricing, roadmap, local mode
 - [docs.maple.dev](https://maple.dev/docs) — introduction, sampling & throughput, OTel conventions, local mode, CLI reference
-- [github.com/Makisuo/maple](https://github.com/Makisuo/maple) — README, DESIGN.md, PRODUCT.md, TODO.md, repo structure
+- [github.com/MapleTechLabs/maple](https://github.com/MapleTechLabs/maple) (renamed from `Makisuo/maple`; **v0.0.12, 1,532★** per GitHub API 2026-07-17) — README, DESIGN.md, PRODUCT.md, TODO.md, repo structure
 - Integration pages — Next.js, Python, Node.js
 
 ## What Maple Is
