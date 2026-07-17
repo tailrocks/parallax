@@ -8084,3 +8084,8 @@ Comparison remains open.
 ### Run 307 — 2026-07-17 — four-way healthy 37m
 
 All four containers still healthy after ~37 minutes continuous research load.
+
+### Run 309 — 2026-07-17 — JSON2 path filter after re-gen
+
+`sj2` `attributes.status_code = 200`: warm **~6–10 ms**. JSON2 path still live
+post re-gen.
