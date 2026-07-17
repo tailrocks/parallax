@@ -8045,3 +8045,8 @@ Baseline for metric-agg scale notes.
 ### Run 299 — 2026-07-17 — health still OK; not done
 
 GT health endpoint live after long session. Comparison still open.
+
+### Run 300 — 2026-07-17 — triple-digit session runs; still not done
+
+Research loop reached Run **300** markers in this cycle. Product/server-gated
+gaps remain. Operator must stop or replace the goal explicitly.
