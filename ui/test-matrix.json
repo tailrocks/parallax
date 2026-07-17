@@ -2,10 +2,10 @@
   "schema_version": 1,
   "ratchets": {
     "fire_event_calls": 28,
-    "legacy_handoffs": 62,
+    "legacy_handoffs": 68,
     "raw_router_builders": 1,
-    "test_cases": 391,
-    "test_files": 66
+    "test_cases": 425,
+    "test_files": 72
   },
   "private_route_imports": [
     {
@@ -61,7 +61,8 @@
         "ColumnMenu",
         "SavedViewsMenu",
         "contextWindow",
-        "parseSavedViewState"
+        "parseSavedViewState",
+        "validateLogsSearch"
       ],
       "removal_plan": 141
     },
@@ -867,7 +868,7 @@
         "t-orphan: a child whose parent never arrives renders as a detached root",
         "t-skew: a cross-service child starting 120ms before its CLIENT parent flags skew with non-negative geometry",
         "t-wide: 521 spans fanning from one root all render with finite geometry",
-        "t-zero: zero-duration next to a 1µs span never yields NaN layout",
+        "t-zero: zero-duration next to a 1\u00b5s span never yields NaN layout",
         "terminates a two-node parent cycle containing an error span",
         "terminates when an error span is its own parent",
         "treats missing parents as orphan roots"
@@ -974,6 +975,8 @@
         "virtualizes log sets over the threshold",
         "keeps existing row DOM nodes when live logs prepend",
         "renders date-aware time for multi-day ranges and opens the sheet",
+        "round-trips the where search param through validateLogsSearch",
+        "drops empty where values",
         "preserves custom ranges in trace drilldown links",
         "opens the document sheet from keyboard row activation",
         "highlights the anchor row and exposes the context action",
@@ -1477,7 +1480,7 @@
       "layer": "model",
       "test_file": "ui/src/hooks/__tests__/use-timeline-interactions.test.tsx",
       "test_ids": [
-        "commits a marquee drag as ZOOM_TO_RANGE with px→ms payload",
+        "commits a marquee drag as ZOOM_TO_RANGE with px\u2192ms payload",
         "ctrl-wheel zooms anchored at the cursor",
         "keeps pointer travel under 4px a click, not a zoom",
         "keyboard: +/- zoom around the viewport center, 0 fits",
@@ -1861,7 +1864,7 @@
         "AND chain with mixed operators",
         "CONTAINS and NOT CONTAINS",
         "NOT without CONTAINS rejected",
-        "OR rejected — grammar is AND-only",
+        "OR rejected \u2014 grammar is AND-only",
         "bare literal value",
         "bare-safe values stay unquoted",
         "case-insensitive keywords",
@@ -1909,6 +1912,164 @@
         "removal_plan": 166,
         "created": "2026-07-15",
         "expires": "plan-166-completion"
+      }
+    },
+    {
+      "id": "vitest-073",
+      "surface": "features/issues",
+      "risk": "Regression coverage for alert-incident-timeline.test.ts",
+      "scenario_owner": "features/issues",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 167,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/alert-incident-timeline.test.ts",
+      "test_ids": [
+        "orders open \u2192 renotify \u2192 resolved with deliveries and checks",
+        "adds renotify when open and last > first",
+        "marks failed deliveries",
+        "sums to 100 with largest remainder",
+        "returns empty for zero total"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/alert-incident-timeline.test.ts",
+        "destination_owner": "features/issues",
+        "removal_plan": 167,
+        "created": "2026-07-15",
+        "expires": "plan-167-completion"
+      }
+    },
+    {
+      "id": "vitest-074",
+      "surface": "features/ecosystem",
+      "risk": "Regression coverage for ecosystem-url.test.ts",
+      "scenario_owner": "features/ecosystem",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 166,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/ecosystem-url.test.ts",
+      "test_ids": [
+        "defaults when empty",
+        "round-trips focus, hops, mode, traffic preset",
+        "omits default hops/mode/traffic from encode",
+        "parses traffic presets and percent strings",
+        "clamps hops and focusMode",
+        "encodeMinTraffic prefers preset labels"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/ecosystem-url.test.ts",
+        "destination_owner": "features/ecosystem",
+        "removal_plan": 166,
+        "created": "2026-07-15",
+        "expires": "plan-166-completion"
+      }
+    },
+    {
+      "id": "vitest-075",
+      "surface": "features/runs",
+      "risk": "Regression coverage for invocation-facets.test.ts",
+      "scenario_owner": "features/runs",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 164,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/invocation-facets.test.ts",
+      "test_ids": [
+        "counts values per dimension, count-desc then value-asc",
+        "derives status through invocationStatus (failed exit codes)",
+        "skips missing values and caps the list"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/invocation-facets.test.ts",
+        "destination_owner": "features/runs",
+        "removal_plan": 164,
+        "created": "2026-07-15",
+        "expires": "plan-164-completion"
+      }
+    },
+    {
+      "id": "vitest-076",
+      "surface": "features/logs",
+      "risk": "Regression coverage for log-pattern-match.test.ts",
+      "scenario_owner": "features/logs",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 165,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/log-pattern-match.test.ts",
+      "test_ids": [
+        "matches parameter churn on the same skeleton",
+        "rejects a different stable skeleton",
+        "requires full-line alignment",
+        "returns longest contiguous stable run",
+        "keeps only matching bodies in order",
+        "escapes regex metacharacters in stable tokens"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/log-pattern-match.test.ts",
+        "destination_owner": "features/logs",
+        "removal_plan": 165,
+        "created": "2026-07-15",
+        "expires": "plan-165-completion"
+      }
+    },
+    {
+      "id": "vitest-077",
+      "surface": "features/logs",
+      "risk": "Regression coverage for log-patterns-url.test.ts",
+      "scenario_owner": "features/logs",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 165,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/log-patterns-url.test.ts",
+      "test_ids": [
+        "defaults when empty",
+        "parses patterns flag variants",
+        "round-trips patterns + template",
+        "omits defaults from encode",
+        "does not encode template when patterns is off",
+        "merges onto existing params without clobbering unrelated keys"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/log-patterns-url.test.ts",
+        "destination_owner": "features/logs",
+        "removal_plan": 165,
+        "created": "2026-07-15",
+        "expires": "plan-165-completion"
+      }
+    },
+    {
+      "id": "vitest-078",
+      "surface": "features/issues",
+      "risk": "Regression coverage for -alerts.test.tsx",
+      "scenario_owner": "features/issues",
+      "lane_owner": "vitest/route-contract",
+      "delivery_plan": 167,
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/__tests__/-alerts.test.tsx",
+      "test_ids": [
+        "serializes a template draft into an input-object mutation",
+        "escapes quotes and includes optional fields",
+        "floors minimumSampleCount at 1 for the API contract",
+        "wraps the url into escaped config JSON",
+        "parses opaque JSON string arrays defensively",
+        "labels rule conditions incl. ranges"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/routes/__tests__/-alerts.test.tsx",
+        "destination_owner": "features/issues",
+        "removal_plan": 167,
+        "created": "2026-07-15",
+        "expires": "plan-167-completion"
       }
     }
   ]
