@@ -72,9 +72,10 @@ must not return in product output.
   SDK's moving `LATEST` constant; client skew fixtures remain unfinished.
 - The GraphQL client denies redirects (preventing loopback-to-remote escape)
   and enforces 5-second connect plus 30-second total request deadlines.
-- Final structured content plus compatibility text is capped at 128 KiB with
-  saturating accounting. Oversized results currently fail closed; the required
-  bounded-summary plus approved-resource-reference path remains unfinished.
+- The fully serialized MCP tool-result payload is capped at 128 KiB, including
+  JSON escaping expansion across structured and compatibility text content.
+  Oversized results currently fail closed; the required bounded-summary plus
+  approved-resource-reference path remains unfinished.
 - Agent-session GraphQL now uses a static syntactically valid variable query
   (removing stale doubled format-string braces), and bundle projections reject
   missing/null/non-string contract fields instead of substituting empty text.

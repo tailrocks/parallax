@@ -120,11 +120,11 @@ impl SpikeServer {
         // Mirror CLI JSON shape: compact re-serialize of the GraphQL object.
         let body = serde_json::to_string(&session)
             .map_err(|_| safe_internal_error("agent_session_invalid"))?;
-        ensure_result_budget(&[body.len(), body.len()])?;
         let structured = serde_json::to_value(session)
             .map_err(|_| safe_internal_error("agent_session_invalid"))?;
         let mut result = CallToolResult::structured(structured);
         result.content = vec![ContentBlock::text(body)];
+        ensure_result_budget(&result)?;
         Ok(result)
     }
 }
@@ -156,11 +156,10 @@ fn validate_anchor(anchor: &str) -> Result<(), McpError> {
     Ok(())
 }
 
-fn ensure_result_budget(part_lengths: &[usize]) -> Result<(), McpError> {
-    let total = part_lengths
-        .iter()
-        .fold(0usize, |total, length| total.saturating_add(*length));
-    if total > MCP_RESULT_MAX_BYTES {
+fn ensure_result_budget(result: &CallToolResult) -> Result<(), McpError> {
+    let serialized =
+        serde_json::to_vec(result).map_err(|_| safe_internal_error("result_invalid"))?;
+    if serialized.len() > MCP_RESULT_MAX_BYTES {
         return Err(safe_internal_error("result_too_large"));
     }
     Ok(())
@@ -170,7 +169,6 @@ fn bundle_tool_result(bundle: gql::BundleProjection) -> Result<CallToolResult, M
     // Parse exactly once for structuredContent. Keep the raw string for
     // comparison outside this function (check subcommand); do not re-serialize
     // the parsed value when comparing hashes.
-    ensure_result_budget(&[bundle.json.len(), bundle.markdown.len()])?;
     let parsed: Value =
         serde_json::from_str(&bundle.json).map_err(|_| safe_internal_error("bundle_invalid"))?;
     if parsed.get("schema_version").and_then(Value::as_str) != Some("bundle-v2") {
@@ -182,6 +180,7 @@ fn bundle_tool_result(bundle: gql::BundleProjection) -> Result<CallToolResult, M
     }
     let mut result = CallToolResult::structured(parsed);
     result.content = vec![ContentBlock::text(bundle.markdown)];
+    ensure_result_budget(&result)?;
     Ok(result)
 }
 
@@ -421,16 +420,22 @@ mod tests {
     }
 
     #[test]
-    fn combined_result_budget_rejects_overflow_without_arithmetic_wrap() {
-        ensure_result_budget(&[MCP_RESULT_MAX_BYTES]).expect("exact boundary");
+    fn result_budget_counts_json_escaping_on_the_wire() {
+        let mut small = CallToolResult::structured(json!({}));
+        small.content = vec![ContentBlock::text("bounded")];
+        ensure_result_budget(&small).expect("small result");
+
+        let escaping_text = "\n".repeat((MCP_RESULT_MAX_BYTES / 2) + 1);
+        assert!(escaping_text.len() < MCP_RESULT_MAX_BYTES);
+        let mut expanded = CallToolResult::structured(json!({}));
+        expanded.content = vec![ContentBlock::text(escaping_text)];
         let error =
-            ensure_result_budget(&[MCP_RESULT_MAX_BYTES, 1]).expect_err("over budget must fail");
+            ensure_result_budget(&expanded).expect_err("escaped wire result is over budget");
         assert!(
             serde_json::to_string(&error)
                 .expect("serialize error")
                 .contains("result_too_large")
         );
-        assert!(ensure_result_budget(&[usize::MAX, usize::MAX]).is_err());
     }
 
     #[test]
