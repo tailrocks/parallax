@@ -122,9 +122,19 @@ Upgrade path in §Falsification unchanged: freeze → overlays → arms → publ
 
 **Not A1:** golden schema stability + HF liveness + product producer existence. Next real move remains operator-owned Phase-0: freeze → overlays → arms → publish ledger.
 
+## Pass 265 addendum (2026-07-18)
+
+| Check | Result |
+| --- | --- |
+| Result-ledger instance | Still **absent** (policy file only) |
+| Golden fixture test | **ok** — re-ran `cargo test -p parallax-evidence bundle_v1_golden` |
+| SWE-bench_Lite | HF HTTP **200** |
+| Comparative arms | **Still not run** |
+| Claim level | still **`not_measured`** |
+
 ## Uncertainty
 
-- Pass 118 did **not** execute agent runs (token cost + harness ownership sit outside pure desk research; agenda still marks comparative runs owed). Pass 159/192/214/222/239/246 re-ran **only** the golden unit test, not arms.
+- Pass 118 did **not** execute agent runs (token cost + harness ownership sit outside pure desk research; agenda still marks comparative runs owed). Pass 159/192/214/222/239/246/265 re-ran **only** the golden unit test, not arms.
 - HF row counts / revision SHAs for Lite were not re-hashed this pass; source liveness only. Pinning remains in the freeze-check notes when Phase 0 starts.
 
 ## Parallax goal fit
