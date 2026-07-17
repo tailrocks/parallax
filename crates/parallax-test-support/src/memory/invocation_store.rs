@@ -48,6 +48,60 @@ impl adapter::InvocationStore for MemoryStore {
         Ok(events)
     }
 
+    async fn invocation_facets(
+        &self,
+        range: RangeInclusive<u128>,
+    ) -> StorageResult<Vec<adapter::Facet>> {
+        let inner = self.lock();
+        let mut per_dimension: Vec<HashMap<String, HashSet<String>>> =
+            vec![HashMap::new(); adapter::INVOCATION_FACET_DIMENSIONS.len()];
+        for span in &inner.spans {
+            if !range.contains(&span.ts_nanos) {
+                continue;
+            }
+            let Some(invocation_id) = span.invocation_id.as_deref().filter(|id| !id.is_empty())
+            else {
+                continue;
+            };
+            for (index, dimension) in adapter::INVOCATION_FACET_DIMENSIONS.iter().enumerate() {
+                let value = match *dimension {
+                    "service" => (!span.service.is_empty()).then(|| span.service.clone()),
+                    other => span
+                        .attributes
+                        .get(other)
+                        .and_then(|v| v.as_str())
+                        .filter(|v| !v.is_empty())
+                        .map(str::to_string),
+                };
+                if let Some(value) = value {
+                    per_dimension[index]
+                        .entry(value)
+                        .or_default()
+                        .insert(invocation_id.to_string());
+                }
+            }
+        }
+        Ok(adapter::INVOCATION_FACET_DIMENSIONS
+            .iter()
+            .zip(per_dimension)
+            .map(|(dimension, counts)| {
+                let mut values: Vec<FieldValueCount> = counts
+                    .into_iter()
+                    .map(|(value, ids)| FieldValueCount {
+                        value,
+                        count: ids.len() as u64,
+                    })
+                    .collect();
+                values.sort_by(|a, b| b.count.cmp(&a.count).then(a.value.cmp(&b.value)));
+                values.truncate(adapter::FACET_VALUES_CAP);
+                adapter::Facet {
+                    dimension: (*dimension).to_string(),
+                    values,
+                }
+            })
+            .collect())
+    }
+
     async fn observed_invocations(
         &self,
         limit: usize,

@@ -262,6 +262,12 @@ impl Query {
     /// registration: this is how external runs appear in the UI.
     async fn observed_invocations(context: &ApiContext, limit: Option<i32>,) -> FieldResult<Vec<ObservedInvocation>> { resolvers::invocations::observed_invocations(context, limit).await }
 
+    /// Bounded invocation facet dimensions (service, app.mode,
+    /// cli.command.name, outcome) with per-value DISTINCT-invocation counts
+    /// for the invocations facet sidebar (plan 164). Bounds default to the
+    /// retained recent window.
+    async fn invocation_facets(context: &ApiContext, from_nanos: Option<String>, to_nanos: Option<String>,) -> FieldResult<Vec<Facet>> { resolvers::invocations::invocation_facets(context, from_nanos, to_nanos).await }
+
     /// Recent traces (root span + aggregates), newest first.
     async fn recent_traces(context: &ApiContext, limit: Option<i32>,) -> FieldResult<Vec<TraceSummary>> { resolvers::traces::recent_traces(context, limit).await }
 

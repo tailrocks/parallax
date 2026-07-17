@@ -214,6 +214,10 @@ pub trait InvocationStore: Send + Sync {
         }
         Ok(events)
     }
+    /// Bounded facet dimensions (`INVOCATION_FACET_DIMENSIONS`) with
+    /// per-value DISTINCT-invocation counts inside `range` (plan 164
+    /// facet sidebar). Empty-valued rows are not counted.
+    async fn invocation_facets(&self, range: RangeInclusive<u128>) -> StorageResult<Vec<Facet>>;
     /// Distinct invocation ids inside `range`, most recent activity first.
     async fn observed_invocations(
         &self,

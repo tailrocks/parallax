@@ -35,6 +35,79 @@ async fn memo_helper_truncates_and_reuses_spans_for_same_trace() {
 }
 
 #[tokio::test]
+async fn invocation_facets_count_distinct_invocations_per_value() {
+    let store = Arc::new(MemoryStore::new());
+    let mut spans = Vec::new();
+    for (run, mode, command, outcome) in [
+        ("run-a", "one_shot", "build", "success"),
+        ("run-b", "one_shot", "build", "failure"),
+        ("run-c", "interactive", "repl", "success"),
+    ] {
+        for i in 0..2u128 {
+            let mut row = span(
+                "api",
+                &format!("{run}-t{i}"),
+                &format!("{run}-s{i}"),
+                1_000 + i,
+                5_000,
+            );
+            row.invocation_id = Some(run.into());
+            row.attributes = serde_json::json!({
+                "app.mode": mode,
+                "cli.command.name": command,
+                "outcome": outcome,
+            });
+            spans.push(row);
+        }
+    }
+    store.push_spans(spans);
+    let schema = build_schema();
+    let context = context_with_memory(store).await;
+    let request = juniper::http::GraphQLRequest::new(
+        r#"{ invocationFacets(fromNanos: "0", toNanos: "10000") { dimension values { value count } } }"#
+            .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, request).await;
+    let json = serde_json::to_value(response).unwrap();
+    let facet = |dimension: &str| {
+        json.pointer("/data/invocationFacets")
+            .and_then(|facets| facets.as_array())
+            .into_iter()
+            .flatten()
+            .find(|facet| facet.pointer("/dimension").and_then(|d| d.as_str()) == Some(dimension))
+            .and_then(|facet| facet.pointer("/values").cloned())
+            .unwrap_or_else(|| panic!("missing {dimension} facet: {json}"))
+    };
+    assert_eq!(
+        facet("service"),
+        serde_json::json!([{ "value": "api", "count": "3" }])
+    );
+    assert_eq!(
+        facet("app.mode"),
+        serde_json::json!([
+            { "value": "one_shot", "count": "2" },
+            { "value": "interactive", "count": "1" }
+        ])
+    );
+    assert_eq!(
+        facet("cli.command.name"),
+        serde_json::json!([
+            { "value": "build", "count": "2" },
+            { "value": "repl", "count": "1" }
+        ])
+    );
+    assert_eq!(
+        facet("outcome"),
+        serde_json::json!([
+            { "value": "success", "count": "2" },
+            { "value": "failure", "count": "1" }
+        ])
+    );
+}
+
+#[tokio::test]
 async fn runs_list_stats_match_single_run() {
     let store = Arc::new(MemoryStore::new());
     let mut spans = Vec::new();

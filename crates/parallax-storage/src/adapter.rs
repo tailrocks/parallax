@@ -423,6 +423,12 @@ pub const FACET_VALUES_CAP: usize = 24;
 pub const LOG_FACET_DIMENSIONS: &[&str] =
     &["service", "severity", "http.request.method", "error.type"];
 
+/// Bounded invocation facet dimensions (plan 164). Counts are DISTINCT
+/// invocation ids observed in the window; dimension names double as
+/// where-clause keys. All values come from generic attributes only.
+pub const INVOCATION_FACET_DIMENSIONS: &[&str] =
+    &["service", "app.mode", "cli.command.name", "outcome"];
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct FieldStats {
     pub key: String,

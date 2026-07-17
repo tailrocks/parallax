@@ -72,6 +72,54 @@ impl crate::adapter::InvocationStore for GreptimeStore {
         Ok(events)
     }
 
+    async fn invocation_facets(
+        &self,
+        range: RangeInclusive<u128>,
+    ) -> StorageResult<Vec<crate::adapter::Facet>> {
+        let start = sql_ts(*range.start());
+        let end = sql_ts(*range.end());
+        let invocation_expr = trace_attr_expr(semconv::CLI_INVOCATION_ID);
+        let mut facets = Vec::new();
+        for dimension in crate::adapter::INVOCATION_FACET_DIMENSIONS {
+            let expr = match *dimension {
+                "service" => r#""service_name""#.to_string(),
+                other => span_attr_ident(other),
+            };
+            let sql = format!(
+                r#"SELECT {expr} AS "value", COUNT(DISTINCT {invocation_expr}) AS "n"
+                   FROM opentelemetry_traces
+                   WHERE {invocation_expr} IS NOT NULL AND {invocation_expr} != ''
+                     AND "timestamp" >= {start} AND "timestamp" <= {end}
+                     AND {expr} IS NOT NULL AND {expr} != ''
+                   GROUP BY "value"
+                   ORDER BY "n" DESC, "value" ASC
+                   LIMIT {}"#,
+                crate::adapter::FACET_VALUES_CAP
+            );
+            let rows = match self.sql_lenient(&sql).await {
+                Ok(rows) => rows,
+                Err(error) if is_missing_column(&error) => Vec::new(),
+                Err(error) => return Err(error.into()),
+            };
+            let values = rows
+                .iter()
+                .filter_map(|row| {
+                    let value = row.first()?.as_str()?.to_string();
+                    let count = row.get(1).and_then(|n| {
+                        n.as_u64()
+                            .or_else(|| n.as_str().and_then(|s| s.parse().ok()))
+                    })?;
+                    Some(FieldValueCount { value, count })
+                })
+                .collect();
+            facets.push(crate::adapter::Facet {
+                dimension: (*dimension).to_string(),
+                values,
+            });
+        }
+        Ok(facets)
+    }
+
     async fn observed_invocations(
         &self,
         limit: usize,

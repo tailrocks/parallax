@@ -382,6 +382,33 @@ pub(crate) async fn observed_invocations(
     Ok(runs.into_iter().map(ObservedInvocation).collect())
 }
 
+/// Bounded invocation facet dimensions (service, app.mode, cli.command.name,
+/// outcome) with per-value DISTINCT-invocation counts (plan 164 sidebar).
+pub(crate) async fn invocation_facets(
+    context: &ApiContext,
+    from_nanos: Option<String>,
+    to_nanos: Option<String>,
+) -> FieldResult<Vec<crate::resolvers::traces::Facet>> {
+    let retained = retained_recent_range();
+    let from: u128 = match from_nanos {
+        Some(s) => s.parse().map_err(|_| field_err("invalid fromNanos"))?,
+        None => *retained.start(),
+    };
+    let to: u128 = match to_nanos {
+        Some(s) => s.parse().map_err(|_| field_err("invalid toNanos"))?,
+        None => *retained.end(),
+    };
+    let facets = context
+        .store
+        .invocation_facets(from..=to)
+        .await
+        .map_err(crate::internal_field_err)?;
+    Ok(facets
+        .into_iter()
+        .map(crate::resolvers::traces::Facet)
+        .collect())
+}
+
 pub(crate) async fn invocations(
     context: &ApiContext,
     limit: Option<i32>,
