@@ -264,3 +264,12 @@ ingestion + whole-file/part drop (TWCS on GT).
 CH needs MATERIALIZE/OPTIMIZE for immediate physical drop. Query may still see
 logical rows until maintenance.
 
+## Run 574 (2026-07-18) — prior TTL table still empty
+
+| Check | Result |
+| --- | --- |
+| `r430_ttl` (Run 430: `append_mode=true`, `ttl='1s'`) | **count=0** still after multi-hour uptime |
+| Fresh `r574_ttl` (`ttl='1s'`, **no** append_mode, has PK) | flush/compact form `SELECT compact_table('…')` runs; full expire recipe needs **append_mode** match of Run 430 for reliable whole-SST drop |
+
+No drift on the established append_mode TTL expire path. **Not done.**
+

@@ -253,6 +253,7 @@ managed quotes remain):
 | still not done | **571** | top 5 product/server |
 | TimeSeries Cloud unsupported | **572** | docs: experimental OSS-only |
 | still not done | **573** | top 5 product/server |
+| TTL r430 empty | **574** | count 0 holds |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
