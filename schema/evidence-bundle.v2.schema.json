@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tailrocks/parallax/schema/evidence-bundle.v2.schema.json",
+  "title": "parallax evidence bundle envelope (bundle-v2)",
+  "description": "Approved Option C contract (docs/research/decisions/evidence-bundle-contract.md, 2026-07-17): a CloudEvents-profile envelope around the immutable bundle-v1 dossier carried verbatim as `data`. This schema governs the envelope; `data` is additionally validated against evidence-bundle.v1.schema.json with its schema_version pinned by this file. Self-contained — no remote $refs.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "bundle_id",
+    "schema_ref",
+    "generated_at",
+    "generator",
+    "project",
+    "window",
+    "access",
+    "data",
+    "canonical_hash"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "bundle-v2",
+      "description": "Must match crates/parallax-evidence SCHEMA_VERSION_V2."
+    },
+    "bundle_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Caller-assigned stable identity for this bundle document."
+    },
+    "schema_ref": {
+      "const": "parallax/evidence/bundle-v2",
+      "description": "Must match crates/parallax-evidence SCHEMA_REF_V2."
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$",
+      "description": "ISO-8601 (RFC 3339) UTC. Envelope times are ISO-8601 by decision; the dossier payload keeps nanosecond strings."
+    },
+    "generator": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Build identity. Excluded from canonical_hash, mirroring bundle-v1."
+    },
+    "project": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Project identity. Conversion from v1 fails closed when absent — never fabricated."
+    },
+    "window": {
+      "type": "object",
+      "required": ["from", "to"],
+      "properties": {
+        "from": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+        },
+        "to": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Inclusive evidence window, ISO-8601 UTC."
+    },
+    "access": {
+      "type": "object",
+      "required": ["policy"],
+      "properties": {
+        "policy": {
+          "const": "local-operator",
+          "description": "The only access-policy label shipped until plan 109 opens remote scope."
+        }
+      },
+      "additionalProperties": false
+    },
+    "data": {
+      "type": "object",
+      "required": ["schema_version"],
+      "properties": {
+        "schema_version": { "const": "bundle-v1" }
+      },
+      "description": "The immutable bundle-v1 dossier, verbatim. Deep shape is governed by evidence-bundle.v1.schema.json; conformance tests validate `data` against it separately so this file stays self-contained."
+    },
+    "canonical_hash": {
+      "anyOf": [
+        { "type": "string", "pattern": "^sha256-jcs:[0-9a-f]{64}$" },
+        { "type": "null" }
+      ],
+      "description": "Version-scoped RFC 8785 (JCS) SHA-256; never interchangeable with the v1 sorted-key sha256: hash. Excludes itself, generator, and the payload's generator/canonical_hash/bounded."
+    }
+  },
+  "additionalProperties": false
+}

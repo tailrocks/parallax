@@ -494,3 +494,47 @@ fn v2_hash_excludes_bounding_and_hash_fields_only() {
         "per-request bounding report stays outside the hash"
     );
 }
+
+#[test]
+fn v2_envelope_conforms_to_bundle_v2_schema_and_payload_to_v1() {
+    let envelope = envelope_v1(
+        assemble(test_inputs(vec![test_span(0, true, 10)]), 8_000),
+        v2_inputs(),
+    )
+    .expect("envelope");
+    let json = serde_json::to_value(&envelope).expect("envelope serializes");
+    let schema: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../schema/evidence-bundle.v2.schema.json"
+    ))
+    .expect("bundle-v2 schema parses as JSON");
+    let validator =
+        jsonschema::validator_for(&schema).expect("bundle-v2 schema is a valid JSON Schema");
+    let errors: Vec<String> = validator
+        .iter_errors(&json)
+        .map(|e| format!("{e}"))
+        .collect();
+    assert!(
+        errors.is_empty(),
+        "envelope must validate against evidence-bundle.v2.schema.json; errors: {errors:?}"
+    );
+    let payload_errors: Vec<String> = bundle_v1_validator()
+        .iter_errors(json.get("data").expect("data payload"))
+        .map(|e| format!("{e}"))
+        .collect();
+    assert!(
+        payload_errors.is_empty(),
+        "v2 payload must stay valid bundle-v1; errors: {payload_errors:?}"
+    );
+    let mut wrong_version = json.clone();
+    wrong_version["schema_version"] = serde_json::json!("bundle-v3");
+    assert!(
+        !validator.is_valid(&wrong_version),
+        "unknown version rejected"
+    );
+    let mut wrong_hash = json;
+    wrong_hash["canonical_hash"] = serde_json::json!("sha256:deadbeef");
+    assert!(
+        !validator.is_valid(&wrong_hash),
+        "v1-style hash rejected on v2"
+    );
+}

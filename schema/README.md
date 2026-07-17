@@ -16,6 +16,7 @@ only and are **not** this contract.
 | File | Governs |
 | --- | --- |
 | [`evidence-bundle.v1.schema.json`](evidence-bundle.v1.schema.json) | `schema_version: "bundle-v1"` — the production Serialize shape of `crates/parallax-evidence/src/bundle.rs` |
+| [`evidence-bundle.v2.schema.json`](evidence-bundle.v2.schema.json) | `schema_version: "bundle-v2"` — the approved Option C envelope (`crates/parallax-evidence/src/bundle/v2.rs`); `data` carries the bundle-v1 dossier verbatim and is validated against the v1 schema |
 
 Dialect: JSON Schema Draft 2020-12. The schema is **self-contained** (no remote
 `$ref` resolution) so CI/conformance tests stay offline.
