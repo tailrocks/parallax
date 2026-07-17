@@ -62,6 +62,9 @@ must not return in product output.
 - Final structured content plus compatibility text is capped at 128 KiB with
   saturating accounting. Oversized results currently fail closed; the required
   bounded-summary plus approved-resource-reference path remains unfinished.
+- Agent-session GraphQL now uses a static syntactically valid variable query
+  (removing stale doubled format-string braces), and bundle projections reject
+  missing/null/non-string contract fields instead of substituting empty text.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded

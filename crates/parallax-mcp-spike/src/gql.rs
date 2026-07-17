@@ -7,6 +7,15 @@ use std::time::Duration;
 /// canonical bundle budget than the HTTP API's 10,000-token default.
 pub(crate) const MCP_BUNDLE_MAX_TOKENS: u32 = 4_000;
 pub(crate) const MCP_GRAPHQL_MAX_BYTES: usize = 1024 * 1024;
+const AGENT_SESSION_QUERY: &str = r#"query AgentSession($invocationId: String!) {
+  agentSession(invocationId: $invocationId) {
+    rootSpanId totalInputTokens totalOutputTokens errorCount truncated
+    steps {
+      spanId traceId kind name startNanos durationNs isError
+      genAiOperation inputTokens outputTokens
+    }
+  }
+}"#;
 
 #[derive(Clone)]
 pub(crate) struct GraphqlClient {
@@ -87,7 +96,7 @@ pub(crate) struct BundleProjection {
     pub canonical_hash: String,
 }
 
-/// Fetch issue- or run-anchored bundle. Exactly one of `fingerprint` / `invocation_id`.
+/// Fetch issue- or invocation-anchored bundle. Exactly one anchor is required.
 pub(crate) async fn fetch_bundle(
     client: &GraphqlClient,
     fingerprint: Option<&str>,
@@ -109,10 +118,18 @@ pub(crate) async fn fetch_bundle(
         anyhow::bail!("bundle not found for the given anchor");
     };
     Ok(BundleProjection {
-        json: bundle["json"].as_str().unwrap_or("").to_string(),
-        markdown: bundle["markdown"].as_str().unwrap_or("").to_string(),
-        canonical_hash: bundle["canonicalHash"].as_str().unwrap_or("").to_string(),
+        json: required_string(bundle, "json")?,
+        markdown: required_string(bundle, "markdown")?,
+        canonical_hash: required_string(bundle, "canonicalHash")?,
     })
+}
+
+fn required_string(object: &Value, field: &str) -> anyhow::Result<String> {
+    object
+        .get(field)
+        .and_then(Value::as_str)
+        .map(str::to_string)
+        .ok_or_else(|| anyhow::anyhow!("GraphQL response has invalid `{field}` field"))
 }
 
 /// Agent-session projection (same GraphQL shape the CLI uses).
@@ -122,15 +139,7 @@ pub(crate) async fn fetch_agent_session(
 ) -> anyhow::Result<Value> {
     let response = client
         .graphql(
-            r#"query AgentSession($invocationId: String!) {
-              agentSession(invocationId: $invocationId) {
-                rootSpanId totalInputTokens totalOutputTokens errorCount truncated
-                steps {{
-                  spanId traceId kind name startNanos durationNs isError
-                  genAiOperation inputTokens outputTokens
-                }}
-              }
-            }"#,
+            AGENT_SESSION_QUERY,
             serde_json::json!({ "invocationId": invocation_id }),
         )
         .await?;
@@ -138,7 +147,7 @@ pub(crate) async fn fetch_agent_session(
         .pointer("/data/agentSession")
         .filter(|v| !v.is_null())
     else {
-        anyhow::bail!("no agent session detected for run {invocation_id}");
+        anyhow::bail!("no agent session detected for invocation {invocation_id}");
     };
     Ok(session.clone())
 }
@@ -156,5 +165,21 @@ mod tests {
 
         assert!(append_bounded(&mut body, &[2]).is_err());
         assert_eq!(body.len(), before, "overflow must not partially append");
+    }
+
+    #[test]
+    fn agent_session_query_uses_real_graphql_braces() {
+        assert!(AGENT_SESSION_QUERY.contains("steps {"));
+        assert!(!AGENT_SESSION_QUERY.contains("{{"));
+        assert!(!AGENT_SESSION_QUERY.contains("}}"));
+    }
+
+    #[test]
+    fn bundle_projection_requires_all_string_fields() {
+        let valid = serde_json::json!({ "json": "{}", "markdown": "#", "canonicalHash": "h" });
+        assert_eq!(required_string(&valid, "json").expect("json"), "{}");
+        let _missing = required_string(&valid, "missing").expect_err("missing field");
+        let _null =
+            required_string(&serde_json::json!({ "json": null }), "json").expect_err("null field");
     }
 }

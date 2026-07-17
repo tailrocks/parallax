@@ -272,7 +272,7 @@ mod tests {
 
     #[test]
     fn combined_result_budget_rejects_overflow_without_arithmetic_wrap() {
-        assert!(ensure_result_budget(&[MCP_RESULT_MAX_BYTES]).is_ok());
+        ensure_result_budget(&[MCP_RESULT_MAX_BYTES]).expect("exact boundary");
         let error =
             ensure_result_budget(&[MCP_RESULT_MAX_BYTES, 1]).expect_err("over budget must fail");
         assert!(
