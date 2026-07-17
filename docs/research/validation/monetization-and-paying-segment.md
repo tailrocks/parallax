@@ -313,6 +313,10 @@ Desk playbook holds. A2 interviews still **0** rows.
 
 Grafana Pro **$19** / SigNoz Teams **$49** / OpenObserve **$0.50/GB** + ≤**50 GB/day** free self-host EE still present. Desk playbook **holds**. A2 still **0** interview rows.
 
+### Pass 343 (2026-07-18) — Grafana pricing pin
+
+Grafana Cloud Pro **$19** class still present on primary pricing page. Full triangle not re-walked this pass (prior **336** holds).
+
 ### Pass 131 (2026-07-17) — Datadog Bits / AI Credits pricing (fixer reference)
 
 Live primary: [datadoghq.com/pricing/?product=ai-credits](https://www.datadoghq.com/pricing/?product=ai-credits#products)

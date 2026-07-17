@@ -260,6 +260,16 @@ docs and release notes.
 
 **UNFIRED:** Seer self-host GA; Bits auto-merge; Sentry OTLP metrics; offline Assistant.
 
+### Pass 343 (2026-07-18) — Seer + Bits (docs primaries; no GH API)
+
+| Source | Finding |
+| --- | --- |
+| develop.sentry.dev/self-hosted | still Seer **closed source** |
+| Bits Code docs | still **never auto-merges** |
+
+**UNFIRED:** Seer self-host GA; Bits auto-merge.
+
+
 
    backend and no Grafana Cloud stack.
 3. **UNFIRED:** portable versioned redacted investigation artifact.

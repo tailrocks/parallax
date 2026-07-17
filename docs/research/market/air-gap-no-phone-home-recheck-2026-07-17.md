@@ -131,6 +131,11 @@ OPW still **route-to-destinations**; Assistant still **Grafana Cloud stack** bac
 
 OPW still **route-to-destinations**. Air-gap combination claim **holds**.
 
+### Pass 343 (2026-07-18) — OPW
+
+OPW still **route-to-destinations**. Air-gap claim **holds**.
+
+
 
 
 

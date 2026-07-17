@@ -240,6 +240,15 @@ Upgrade path in §Falsification unchanged: freeze → overlays → arms → publ
 | Golden fixture test | **ok** (re-ran) |
 | Claim level | still **`not_measured`** |
 
+## Pass 343 addendum (2026-07-18)
+
+| Check | Result |
+| --- | --- |
+| Result-ledger instance | Still **absent** |
+| Golden fixture test | **ok** (re-ran) |
+| SWE-bench_Lite | HF HTTP **200** |
+| Claim level | still **`not_measured`** |
+
 ## Uncertainty
 
 
