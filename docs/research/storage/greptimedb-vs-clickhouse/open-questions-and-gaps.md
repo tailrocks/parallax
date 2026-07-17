@@ -481,3 +481,19 @@ No stack direction flip.
 ## Run 499 (2026-07-18) — still not done
 
 **Not done.** Highest remaining: mix, server 1M/5M, quotes, GB cold, cluster RPO.
+
+## Run 500 (2026-07-18) — milestone; still not done
+
+**Not done.** Pins: GT **v1.1.3** / nightly **1.2.0** (`v1.2.0-nightly-20260713`) /
+CH **26.6.1.1193** / head **26.7.1.1097**. All four healthy. last_value warm interactive.
+
+Highest remaining (unchanged):
+
+1. Workload mix A1–A7 filled shares
+2. Server 1M/5M four-way
+3. Vendor trial quotes
+4. GB–TB cold S3
+5. Cluster D2 + product D3
+
+Runs 423–500 closed PromQL partial surface mapping and many load-bearing re-verifies.
+**No stack direction flip.** Loop continues.
