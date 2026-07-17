@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 144 (Coroot still **v1.23.3 / 7,837★**; MCP
-OAuth+RBAC + `resolve_alerts` mutator; eBPF→app-errors **UNFIRED**). Pass 143 =
-Sentry no OTLP metrics. A1/A2/A4 open; A6 open at mixed gate only.
+Last updated 2026-07-17 after pass 145 (Langfuse still **v3.221.1 / 31,340★** —
+LLMOps loop, not production-incident evidence engine). Pass 144 = Coroot. A1/A2/A4
+open; A6 open at mixed gate only.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in

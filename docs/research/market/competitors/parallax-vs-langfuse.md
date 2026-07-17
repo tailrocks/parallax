@@ -1,11 +1,12 @@
 # Parallax vs Langfuse
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 107**
-> pin + self-host telemetry recheck). Sources: [Langfuse docs](https://langfuse.com/docs)
-> + [observability overview](https://langfuse.com/docs/observability/overview),
-> [Langfuse OTLP/OTel integration](https://langfuse.com/integrations/native/opentelemetry),
-> [Langfuse pricing](https://langfuse.com/pricing) + [self-host pricing](https://langfuse.com/pricing-self-host),
-> GitHub **v3.221.1** (2026-07-17) / **31,340★**.
+> + **pass 145** pin recheck). Sources: [Langfuse docs](https://langfuse.com/docs),
+> OTel integration, pricing/self-host, GitHub **v3.221.1** (2026-07-17) /
+> **31,340★** (push 2026-07-17). **Still LLMOps/dev-loop product** (trace → eval
+> → prompt → experiment), **not** production-incident OTLP full-signal + portable
+> redacted evidence bundle + outcome ledger. Complementary on agent traces;
+> A1 still unproven for Parallax vs raw/Langfuse context.
 >
 > **Bottom line up front:** Langfuse is the archetypal **open-source LLM/agent
 > observability platform** and the most direct AI-wedge competitor to Parallax's
