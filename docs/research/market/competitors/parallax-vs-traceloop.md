@@ -1,8 +1,10 @@
 # Parallax vs Traceloop (OpenLLMetry)
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 46 +
-> **pass 114:** **v0.62.1 / 7,306★** still latest; last push 2026-07-13; ServiceNow
-> ownership / storage-expansion watch **UNFIRED**). Sources:
+> pass 114; **pass 148:** still **v0.62.1 / 7,306★** latest tag 2026-06-28;
+> last push **2026-07-13**; Apache-2.0. ServiceNow ownership / “own store”
+> expansion watch **still UNFIRED** — remains OTel LLM instrumentation SDK +
+> OTLP export, not a production-incident evidence engine). Sources:
 > [traceloop/openllmetry (GitHub)](https://github.com/traceloop/openllmetry)
 > (Apache-2.0, Python), [releases](https://github.com/traceloop/openllmetry/releases)
 > (**v0.62.1**, 2026-06-28), [`traceloop-sdk` on PyPI](https://pypi.org/project/traceloop-sdk/),
