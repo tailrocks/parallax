@@ -305,6 +305,13 @@ impl Query {
     /// case-insensitive substring filter; `kind` filters one metric kind.
     async fn metric_catalog(context: &ApiContext, from_nanos: String, to_nanos: String, q: Option<String>, kind: Option<String>, limit: Option<i32>,) -> FieldResult<Vec<resolvers::MetricCatalogRow>> { resolvers::metrics::metric_catalog(context, from_nanos, to_nanos, q, kind, limit).await }
 
+    /// The single shared metric read path (plan 168): typed kind + aggregation
+    /// legality (gauge→avg|min|max, sum→sum|rate, histogram→p50|p95|p99),
+    /// optional service filter and group-by, contract step rounding (≤120
+    /// buckets, minimum 1s). Explorer, dashboards, and alerts all consume this.
+    #[expect(clippy::too_many_arguments, reason = "GraphQL metric query spec is the public contract")]
+    async fn metric_query(context: &ApiContext, name: String, kind: String, agg: String, from_nanos: String, to_nanos: String, service: Option<String>, group_by: Option<String>, step_seconds: Option<i32>,) -> FieldResult<resolvers::MetricQueryOut> { resolvers::metrics::metric_query(context, name, kind, agg, from_nanos, to_nanos, service, group_by, step_seconds).await }
+
     /// Distinct metric names seen by the store (drives the dashboard
     /// builder), optionally prefix-filtered.
     async fn metric_names(context: &ApiContext, prefix: Option<String>,) -> FieldResult<Vec<String>> { resolvers::metrics::metric_names(context, prefix).await }

@@ -80,6 +80,139 @@ impl MetricExemplar {
     }
 }
 
+/// Effective bucket step per the metric-summary contract: requested step is
+/// rounded up, never down, to cover the window with at most 120 buckets;
+/// minimum one second; default `max(1s, ceil(window / 60))`.
+pub(crate) fn effective_step_seconds(from: u128, to: u128, requested: Option<i32>) -> u128 {
+    const MAX_BUCKETS: u128 = 120;
+    let window_seconds = (to.saturating_sub(from)).div_ceil(1_000_000_000).max(1);
+    let step = match requested {
+        Some(step) if step >= 1 => u128::try_from(step).unwrap_or(1),
+        _ => window_seconds.div_ceil(60).max(1),
+    };
+    step.max(window_seconds.div_ceil(MAX_BUCKETS))
+}
+
+/// One `metricQuery` response: the shared explorer/dashboard/alert read path
+/// (plan 168 — no client forks its own metric SQL).
+pub(crate) struct MetricQueryOut {
+    kind: model::MetricKind,
+    effective_step_seconds: u128,
+    series: Vec<Series>,
+}
+
+#[graphql_object(context = ApiContext)]
+impl MetricQueryOut {
+    fn kind(&self) -> &str {
+        self.kind.as_str()
+    }
+    /// The step actually used after contract rounding (≤120 buckets).
+    fn effective_step_seconds(&self) -> i32 {
+        i32::try_from(self.effective_step_seconds).unwrap_or(i32::MAX)
+    }
+    fn series(&self) -> &[Series] {
+        &self.series
+    }
+}
+
+/// Aggregation legality per metric kind (contract decision 2 — illegal
+/// combinations are rejected with the legal set named).
+fn legal_aggregations(kind: model::MetricKind) -> &'static [&'static str] {
+    match kind {
+        model::MetricKind::Gauge => &["avg", "min", "max"],
+        model::MetricKind::Sum => &["sum", "rate"],
+        model::MetricKind::Histogram => &["p50", "p95", "p99"],
+    }
+}
+
+pub(crate) async fn metric_query(
+    context: &ApiContext,
+    name: String,
+    kind: String,
+    agg: String,
+    from_nanos: String,
+    to_nanos: String,
+    service: Option<String>,
+    group_by: Option<String>,
+    step_seconds: Option<i32>,
+) -> FieldResult<MetricQueryOut> {
+    validate_metric_name(&name)?;
+    let kind = model::MetricKind::parse(&kind)
+        .ok_or_else(|| field_err("kind must be gauge|sum|histogram"))?;
+    let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+    let agg = agg.to_ascii_lowercase();
+    if !legal_aggregations(kind).contains(&agg.as_str()) {
+        return Err(field_err(format!(
+            "agg '{agg}' is illegal for kind '{}' — legal: {}",
+            kind.as_str(),
+            legal_aggregations(kind).join("|"),
+        )));
+    }
+    let step = effective_step_seconds(from, to, step_seconds);
+    let step_ns = step * 1_000_000_000;
+    let series = match kind {
+        model::MetricKind::Histogram => {
+            if group_by.is_some() {
+                return Err(field_err(
+                    "groupBy is not supported for histogram quantiles yet",
+                ));
+            }
+            let q = match agg.as_str() {
+                "p50" => 0.50,
+                "p95" => 0.95,
+                _ => 0.99,
+            };
+            let points = context
+                .store
+                .histogram_quantile(&name, service.as_deref(), from..=to, step_ns, q)
+                .await
+                .map_err(crate::internal_field_err)?;
+            vec![Series {
+                group_value: None,
+                points,
+            }]
+        }
+        model::MetricKind::Gauge | model::MetricKind::Sum => {
+            let agg = MetricAgg::parse(&agg).ok_or_else(|| field_err("unsupported agg"))?;
+            if let Some(group_by) = group_by {
+                validate_metric_group_label(&group_by)?;
+                context
+                    .store
+                    .metric_series_grouped(
+                        &name,
+                        service.as_deref(),
+                        &group_by,
+                        from..=to,
+                        step_ns,
+                        agg,
+                    )
+                    .await
+                    .map_err(crate::internal_field_err)?
+                    .into_iter()
+                    .map(|(group_value, points)| Series {
+                        group_value: Some(group_value),
+                        points,
+                    })
+                    .collect()
+            } else {
+                vec![Series {
+                    group_value: None,
+                    points: context
+                        .store
+                        .metric_series(&name, service.as_deref(), None, from..=to, step_ns, agg)
+                        .await
+                        .map_err(crate::internal_field_err)?,
+                }]
+            }
+        }
+    };
+    Ok(MetricQueryOut {
+        kind,
+        effective_step_seconds: step,
+        series,
+    })
+}
+
 pub(crate) struct MetricCatalogRow(pub(crate) model::MetricCatalogEntry);
 
 #[graphql_object(context = ApiContext)]

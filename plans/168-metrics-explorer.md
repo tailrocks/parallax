@@ -92,7 +92,24 @@ Index status stays TODO.
   filtering is not yet pushed into the Greptime SQL arm, unit inference only
   covers runtime families (`runtime_metric_unit`), catalog excludes
   invocation-extension-only names, and live-engine `m-labels`/`m-shapes`
-  coverage is unrun. `metricQuery(spec)` remains unimplemented.
+  coverage is unrun.
+- `metricQuery` backend slice (helper, 2026-07-17): GraphQL
+  `metricQuery(name, kind, agg, fromNanos, toNanos, service, groupBy,
+  stepSeconds)` returning `MetricQueryOut { kind, effectiveStepSeconds,
+  series }` — the single shared metric read path. Typed aggregation legality
+  (gauge→avg|min|max, sum→sum|rate, histogram→p50|p95|p99; illegal combos
+  rejected naming the legal set), contract step rounding in
+  `effective_step_seconds` (round up, ≤120 buckets, min 1s, default
+  `max(1s, ceil(window/60))`), histogram quantiles via
+  `histogram_quantile`, scalar via `metric_series(_grouped)` (rate reset
+  clamp already in `rate_from_buckets`). Tests: step-rounding table, illegal
+  agg naming legal set, live rate query shape, histogram groupBy rejection.
+  **Peer must verify/extend:** where-filter support is absent (metric_series
+  has no attribute-filter path yet), `last`/`increase`/`avg`-on-histogram
+  aggregations unimplemented, histogram group-by unimplemented, empty-bucket
+  zero-filling per contract not enforced in storage, invocation-scoped reads
+  not exposed here, and dashboards/alerts are not yet migrated onto
+  `metricQuery`. UI still uses the interim intersection list.
 
 **Peer owns:** verify codec against real route schemas; Step 0 plan-105
 decision record; backend catalog/query; `/metrics` routes; graduation wiring;

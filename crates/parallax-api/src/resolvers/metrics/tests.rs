@@ -391,3 +391,106 @@ async fn metric_catalog_rejects_unknown_kind_and_reversed_range() {
         "reversed range rejected: {json}"
     );
 }
+
+#[test]
+fn effective_step_rounds_up_to_contract_bucket_cap() {
+    use super::effective_step_seconds;
+    // 1h window, no step: default ceil(3600/60) = 60s.
+    assert_eq!(effective_step_seconds(0, 3_600_000_000_000, None), 60);
+    // Requested 1s over 1h = 3600 buckets: rounded up to 30s (120 buckets).
+    assert_eq!(effective_step_seconds(0, 3_600_000_000_000, Some(1)), 30);
+    // Requested step already coarse enough is kept.
+    assert_eq!(effective_step_seconds(0, 3_600_000_000_000, Some(120)), 120);
+    // Zero/negative requested falls back to the default.
+    assert_eq!(effective_step_seconds(0, 3_600_000_000_000, Some(0)), 60);
+    // Tiny window: minimum one second.
+    assert_eq!(effective_step_seconds(0, 1, None), 1);
+}
+
+#[tokio::test]
+async fn metric_query_enforces_typed_aggregation_legality() {
+    let store = Arc::new(MemoryStore::new());
+    store
+        .ingest_metrics(
+            vec![
+                MetricPointRow {
+                    ts_nanos: 1_000_000_000,
+                    service: "checkout".into(),
+                    name: "shapes.region.requests_total".into(),
+                    value: 10.0,
+                    is_monotonic: true,
+                    invocation_id: None,
+                    attributes: serde_json::json!({"region": "eu"}),
+                },
+                MetricPointRow {
+                    ts_nanos: 61_000_000_000,
+                    service: "checkout".into(),
+                    name: "shapes.region.requests_total".into(),
+                    value: 40.0,
+                    is_monotonic: true,
+                    invocation_id: None,
+                    attributes: serde_json::json!({"region": "eu"}),
+                },
+            ],
+            Vec::new(),
+            Vec::new(),
+            Default::default(),
+        )
+        .await
+        .unwrap();
+    let schema = build_schema();
+    let context = context_with_memory(store).await;
+
+    let illegal = juniper::http::GraphQLRequest::new(
+        r#"{ metricQuery(name: "shapes.region.requests_total", kind: "sum", agg: "avg", fromNanos: "0", toNanos: "120000000000") { kind } }"#
+            .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, illegal).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(
+        error_messages(&json)
+            .iter()
+            .any(|message| message.contains("illegal for kind 'sum'") && message.contains("sum|rate")),
+        "illegal agg names the legal set: {json}"
+    );
+
+    let legal = juniper::http::GraphQLRequest::new(
+        r#"{ metricQuery(name: "shapes.region.requests_total", kind: "sum", agg: "rate", fromNanos: "0", toNanos: "120000000000", stepSeconds: 60) {
+            kind effectiveStepSeconds series { groupValue points { tsNanos value } }
+        } }"#
+            .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, legal).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(error_messages(&json).is_empty(), "legal rate query: {json}");
+    assert_eq!(json.pointer("/data/metricQuery/kind").unwrap(), "sum");
+    assert_eq!(
+        json.pointer("/data/metricQuery/effectiveStepSeconds")
+            .unwrap(),
+        60
+    );
+    let points = json
+        .pointer("/data/metricQuery/series/0/points")
+        .and_then(|v| v.as_array())
+        .unwrap();
+    assert!(!points.is_empty(), "rate series has points: {json}");
+
+    let histogram_group_by = juniper::http::GraphQLRequest::new(
+        r#"{ metricQuery(name: "http.server.request.duration", kind: "histogram", agg: "p95", groupBy: "region", fromNanos: "0", toNanos: "120000000000") { kind } }"#
+            .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, histogram_group_by).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(
+        error_messages(&json)
+            .iter()
+            .any(|message| message.contains("groupBy is not supported for histogram")),
+        "histogram groupBy rejected: {json}"
+    );
+}
