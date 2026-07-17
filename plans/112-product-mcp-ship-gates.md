@@ -27,6 +27,11 @@ must not return in product output.
 
 ### Preliminary implementation available on `main` (Codex, 2026-07-17)
 
+- The opened product decision is now durable in
+  `docs/research/decisions/agent-access-surface.md`: local stdio only, exact two
+  tools, no resources/raw refs/remote transport, server-assigned
+  `evidence:read`, Codex + Claude Code claimed only after fixtures, and an exact
+  secret-free audit/retention/graduation contract.
 - `rmcp` 2.2.0 was rechecked as the latest stable crate. The spike remains
   local stdio-only with no SDK HTTP/TLS features; its dependency graph contains
   no `rustls` package.

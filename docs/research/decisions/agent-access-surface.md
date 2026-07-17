@@ -1,13 +1,15 @@
 # Agent Access Surface — CLI, HTTP API, and MCP
 
-> **Status (2026-07-12): durable decision and claim-evidence contract, not an
-> active implementation plan.** CLI/HTTP product surfaces and an MCP spike now
-> exist, but no product MCP safety claim is authorized. Plan 104 exclusively
-> owns canonical bundle/projection reconciliation, plan 111 owns production
-> redaction/A6, and blocked plan 112 owns every product MCP ship/no-ship gate.
-> Only [`plans/`](../../../plans/) authorizes implementation. The design decision
-> remains **CLI first, HTTP API underneath, MCP only after its gates pass**; no
-> transport may bypass bundle bounds, redaction, authorization, or audit.
+> **Status (2026-07-17): product MCP GO, local stdio profile only while ship
+> gates execute.** The operator unblock directive in
+> [`plans/README.md`](../../../plans/README.md) opened Plan 112 after Plans
+> 099/104/111. Remote MCP remains excluded until Plan 109's protected transport
+> is separately integrated and proven. No product-safety or supported-client
+> claim exists until Plan 112's client, audit, retention, and graduation gates
+> pass. Only [`plans/`](../../../plans/) authorizes implementation. The design
+> remains **CLI first, HTTP API underneath, read-only MCP over the same canonical
+> evidence**; no transport may bypass bundle bounds, redaction, authorization,
+> or audit.
 > The executable product-code boundary is specified in
 > [agent-trust-boundary-and-prompt-injection.md](agent-trust-boundary-and-prompt-injection.md).
 
@@ -145,6 +147,30 @@ Parallax should use this hierarchy:
 
 The practical answer is **CLI first, API underneath, MCP required before the
 agent-facing product claim**.
+
+### Product MCP GO Contract (2026-07-17)
+
+The operator selected GO through the repository's unblock directive. The most
+conservative complete local profile is binding until another approved plan
+changes it:
+
+| Concern | Product decision |
+| --- | --- |
+| Transport | Local stdio only. The process may call credential-free literal-loopback HTTP. No Streamable HTTP, SSE, remote host, OAuth, bearer token, or TLS surface ships in this profile. |
+| Installation and trust | User-level, explicit client registration only; never checked-in `.codex/`, `.mcp.json`, plugin auto-enable, or repository-provided trust. Server startup additionally requires the literal command-line flag `--allow-local-stdio`. |
+| Authorization | Startup is default-deny. Successful explicit local trust creates one server-assigned local-operator authorization context carrying only `evidence:read`; clients cannot self-assert scopes. No sensitive/raw scope exists. |
+| Claimed clients | Codex and Claude Code, only after their separate registration, discovery, invocation, output, and retention fixtures pass. Until then the implementation is client-compatible, not client-supported. |
+| Tool catalog | Exactly `parallax_issue_context` and `parallax_agent_session_show`; both read-only, non-destructive, idempotent, and closed-world. Shell, SQL, fixer, deploy, and every management capability remain absent. |
+| Resources and attachments | None in the local profile. Prompt/resource/template catalogs are terminal empty lists; direct reads fail method-not-found. Therefore no resource URI, attachment, subscription, or raw reference can bypass tool projection. |
+| Evidence | Canonical bundle-v2 envelope plus deeply validated bundle-v1 `data`, independent canonical-hash verification, and byte-stability under the canonical sanitizer. Agent-session output uses its closed typed projection and the same sanitizer check. |
+| Bounds | Bundle assembly requests 4,000 tokens. Upstream GraphQL is capped at 1 MiB before parse; the fully serialized MCP tool result is capped at 128 KiB. Oversize currently fails closed; bounded summary/reference delivery is not claimed because resources are excluded. |
+| Protocol | Advertise stable `2025-11-25`; accept only the reviewed `2024-11-05`, `2025-03-26`, `2025-06-18`, and `2025-11-25` revisions. No protocol session identity, roots, sampling, elicitation, logging, tasks, prompts, or resources. |
+| Audit | Every eventual supported invocation must durably record one metadata row and one OTel span with event id, time, caller/client identity, transport, protocol revision, tool, server-assigned scopes, bundle id/hash when available, status, duration, serialized output bytes, and policy/schema versions. Never record arguments, anchor values, evidence, Markdown, raw errors, credentials, environment, or client-retained artifacts. |
+| Retention | Codex fixtures must prove external-context memory exclusion; Claude Code fixtures must record output persistence and confirm no resource attachment path exists. Seeded secrets must remain absent from client history/artifacts used by the fixture. |
+| Graduation | Keep the proof crate quarantined and unshipped until both client fixtures and durable audit/OTel gates pass. Then move proven code into a deliberately named product crate/binary and delete the spike identity in one reviewed slice. |
+
+This GO does not authorize remote transport or weaken any unfinished gate. It
+removes the former decision blocker and gives those gates one exact target.
 
 ### Why CLI-Only Is Not Enough
 
