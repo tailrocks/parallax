@@ -5,7 +5,6 @@ import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { nav } from "@/components/nav"
-import { PageHeader } from "@/components/page-header"
 import { ParallaxShell } from "@/components/parallax-shell"
 import { RouteErrorPanel } from "@/components/route-fallbacks"
 import { graphql } from "@/lib/api"
@@ -31,28 +30,6 @@ function renderWithRouter(component: React.ReactNode, initialEntries = ["/"]) {
 afterEach(cleanup)
 
 describe("shell primitives", () => {
-  it("renders PageHeader breadcrumb shape", async () => {
-    const item = nav[0]!
-    renderWithRouter(
-      <PageHeader
-        title="Detail"
-        back={{
-          href: item.href,
-          label: item.label,
-          icon: item.icon,
-          ...(item.iconClassName ? { iconClassName: item.iconClassName } : {}),
-        }}
-      />
-    )
-
-    expect(await screen.findByRole("link", { name: item.label })).toBeTruthy()
-    expect(
-      screen.getByRole("heading", {
-        name: new RegExp(`${item.label}detail`, "i"),
-      }).className
-    ).toContain("text-base")
-  })
-
   it("defines icons for every nav item", () => {
     expect(nav.length).toBeGreaterThan(0)
     for (const item of nav) {

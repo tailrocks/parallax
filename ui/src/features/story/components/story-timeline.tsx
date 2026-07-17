@@ -6,8 +6,8 @@ import {
   IconClock,
 } from "@tabler/icons-react"
 
+import type { StoryBeat } from "@/domain/story/story-beat"
 import { Badge } from "@/components/ui/badge"
-import type { StoryBeat } from "@/lib/api"
 import { formatDurationNs, formatTimeInRange } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -28,7 +28,7 @@ function beatTone(beat: StoryBeat) {
   return { icon: IconCircleDot, badge: "outline" as const, row: "" }
 }
 
-function timeRange(beats: StoryBeat[]) {
+function timeRange(beats: readonly StoryBeat[]) {
   const timestamps = beats.map((beat) => BigInt(beat.tsNanos))
   const start = timestamps.reduce(
     (min, ts) => (ts < min ? ts : min),
@@ -74,7 +74,7 @@ function BeatLink({ beat }: { beat: StoryBeat }) {
   )
 }
 
-export function StoryTimeline({ beats }: { beats: StoryBeat[] }) {
+export function StoryTimeline({ beats }: { beats: readonly StoryBeat[] }) {
   const ordered = beats
   if (ordered.length === 0) {
     return <p className="text-sm text-muted-foreground">No story beats.</p>

@@ -17,7 +17,7 @@ import {
 import type { Icon } from "@tabler/icons-react"
 
 import { navItem } from "@/components/nav"
-import { PageHeader } from "@/components/page-header"
+import { PageHeader } from "@/shared/components/page-header"
 import {
   AlertDialog,
   AlertDialogAction,

@@ -8,9 +8,9 @@ import { useMemo } from "react"
 
 import { EcosystemGraph } from "@/components/console/ecosystem-graph"
 import { useDelayedLoading } from "@/components/console/hooks"
-import { RangePicker } from "@/components/console/range-picker"
+import { RangePicker } from "@/features/time-range"
 import { TableSkeleton } from "@/components/console/skeletons"
-import { PageHeader } from "@/components/page-header"
+import { PageHeader } from "@/shared/components/page-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Select,

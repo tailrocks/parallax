@@ -3,8 +3,8 @@
 import { screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
-import { StoryTimeline } from "@/components/console/story-timeline"
-import type { StoryBeat } from "@/lib/api"
+import type { StoryBeat } from "@/domain/story/story-beat"
+import { StoryTimeline } from "@/features/story"
 import { renderTestRouter } from "@/test/router"
 
 const beats: StoryBeat[] = [

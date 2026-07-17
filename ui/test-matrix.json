@@ -2,10 +2,10 @@
   "schema_version": 1,
   "ratchets": {
     "fire_event_calls": 28,
-    "legacy_handoffs": 64,
+    "legacy_handoffs": 61,
     "raw_router_builders": 1,
-    "test_cases": 433,
-    "test_files": 75
+    "test_cases": 490,
+    "test_files": 92
   },
   "private_route_imports": [
     {
@@ -165,25 +165,17 @@
   "entries": [
     {
       "id": "vitest-001",
-      "surface": "features/overview",
+      "surface": "features/runtime-metrics",
       "risk": "Overview metric refresh can commit stale responses after a newer request wins",
-      "scenario_owner": "features/overview",
+      "scenario_owner": "features/runtime-metrics",
       "lane_owner": "vitest/component",
-      "delivery_plan": 150,
       "layer": "component",
-      "test_file": "ui/src/components/__tests__/metric-strip.test.tsx",
+      "test_file": "ui/src/features/runtime-metrics/tests/components/metric-strip.test.tsx",
       "test_ids": [
         "aborts stale requests and ignores late responses"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/__tests__/metric-strip.test.tsx",
-        "destination_owner": "features/overview",
-        "removal_plan": 150,
-        "created": "2026-07-15",
-        "expires": "plan-150-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-002",
@@ -195,7 +187,6 @@
       "layer": "component",
       "test_file": "ui/src/components/__tests__/shell.test.tsx",
       "test_ids": [
-        "renders PageHeader breadcrumb shape",
         "defines icons for every nav item",
         "keeps the styled error fallback inside the shell",
         "surfaces dashboard navigation load failures",
@@ -434,21 +425,13 @@
       "risk": "Time-range selection can emit an incorrect preset or absolute window",
       "scenario_owner": "capabilities/time-range",
       "lane_owner": "vitest/component",
-      "delivery_plan": 149,
       "layer": "component",
-      "test_file": "ui/src/components/console/__tests__/range-picker.test.tsx",
+      "test_file": "ui/src/features/time-range/tests/components/range-picker.test.tsx",
       "test_ids": [
         "emits preset and custom calendar ranges"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/__tests__/range-picker.test.tsx",
-        "destination_owner": "capabilities/time-range",
-        "removal_plan": 149,
-        "created": "2026-07-15",
-        "expires": "plan-149-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-013",
@@ -475,25 +458,17 @@
     },
     {
       "id": "vitest-014",
-      "surface": "features/investigations",
+      "surface": "features/story",
       "risk": "Investigation timelines can reorder or mislabel causal evidence",
-      "scenario_owner": "features/investigations",
+      "scenario_owner": "features/story",
       "lane_owner": "vitest/component",
-      "delivery_plan": 134,
       "layer": "component",
-      "test_file": "ui/src/components/console/__tests__/story-timeline.test.tsx",
+      "test_file": "ui/src/features/story/tests/components/story-timeline.test.tsx",
       "test_ids": [
         "renders time ordered lanes with linked error beats"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/__tests__/story-timeline.test.tsx",
-        "destination_owner": "features/investigations",
-        "removal_plan": 134,
-        "created": "2026-07-15",
-        "expires": "plan-134-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-015",
@@ -2362,6 +2337,285 @@
       "status": "reserved",
       "dataset_id": "overview-default",
       "state_class": "inventory"
+    },
+    {
+      "id": "vitest-149-rm-domain",
+      "surface": "features/runtime-metrics",
+      "risk": "Runtime metric domain values can lose unit or nanosecond semantics",
+      "layer": "model",
+      "lane_owner": "vitest/unit",
+      "test_file": "ui/src/domain/runtime-metrics/tests/runtime-metric.test.ts",
+      "scenario_owner": "features/runtime-metrics",
+      "test_ids": [
+        "accepts empty points and null unit",
+        "accepts byte and ratio units with ordered points"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-149-story-domain",
+      "surface": "features/story",
+      "risk": "Story beat domain values can lose kind or severity optionality",
+      "layer": "model",
+      "lane_owner": "vitest/unit",
+      "test_file": "ui/src/domain/story/tests/story-beat.test.ts",
+      "scenario_owner": "features/story",
+      "test_ids": [
+        "accepts full and sparse beat shapes",
+        "keeps nanosecond timestamps as strings"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-149-rm-api",
+      "surface": "features/runtime-metrics",
+      "risk": "Runtime metric decode and scope mapping can drop units or series",
+      "layer": "model",
+      "lane_owner": "vitest/unit",
+      "test_file": "ui/src/features/runtime-metrics/tests/api/runtime-metrics-api.test.ts",
+      "scenario_owner": "features/runtime-metrics",
+      "test_ids": [
+        "maps cpu ratio to percent and preserves empty series",
+        "prefers invocationId over service and uses raw transport",
+        "passes service when invocationId is absent",
+        "recognizes GraphQL abort and DOM AbortError"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-149-rm-snapshot",
+      "surface": "features/runtime-metrics",
+      "risk": "Runtime snapshot grouping can drop families or empty-state rules",
+      "layer": "component",
+      "lane_owner": "vitest/component",
+      "test_file": "ui/src/features/runtime-metrics/tests/components/runtime-snapshot-card.test.tsx",
+      "scenario_owner": "features/runtime-metrics",
+      "test_ids": [
+        "groups non-empty families and converts byte units",
+        "renders nothing when every series is empty"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-149-rm-hook",
+      "surface": "features/runtime-metrics",
+      "risk": "Runtime metric live polling can miss visibility pause or cleanup",
+      "layer": "component",
+      "lane_owner": "vitest/component",
+      "test_file": "ui/src/features/runtime-metrics/tests/integration/use-runtime-metrics.test.tsx",
+      "scenario_owner": "features/runtime-metrics",
+      "test_ids": [
+        "loads once when visible and clears panels on failure",
+        "polls every five seconds while live"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-149-page-header",
+      "surface": "shared/console",
+      "risk": "Page header can lose breadcrumb shape or action layout",
+      "layer": "component",
+      "lane_owner": "vitest/component",
+      "test_file": "ui/src/shared/tests/components/page-header.test.tsx",
+      "scenario_owner": "shared/console",
+      "test_ids": [
+        "renders PageHeader breadcrumb shape",
+        "renders title with optional actions and no back link"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-152-widget-series",
+      "surface": "features/dashboards",
+      "risk": "Dashboard widget series documents can exceed alias caps or reorder results",
+      "layer": "model",
+      "lane_owner": "vitest/unit",
+      "test_file": "ui/src/features/dashboards/tests/api/widget-series-contract.test.ts",
+      "scenario_owner": "features/dashboards",
+      "test_ids": [
+        "returns no chunks for an empty widget list",
+        "builds one document for up to 24 widgets with series_<ordinal> aliases",
+        "splits at 24 and preserves order across chunks",
+        "uses only Variable argument nodes",
+        "preserves result order for multi-chunk loads",
+        "rejects alias set mismatch",
+        "rejects malformed series values without leaking payload",
+        "makes no request for an empty widget list"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-152-boundary-diag",
+      "surface": "platform/graphql",
+      "risk": "Boundary diagnostics can leak secrets or lose path bounds",
+      "layer": "platform-contract",
+      "lane_owner": "vitest/unit",
+      "test_file": "ui/src/platform/external-values/tests/boundary-diagnostic.test.ts",
+      "scenario_owner": "platform/graphql",
+      "test_ids": [
+        "renders only stable fields and caps length"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-152-decode-json",
+      "surface": "platform/graphql",
+      "risk": "JSON text decode can accept malformed envelopes",
+      "layer": "platform-contract",
+      "lane_owner": "vitest/unit",
+      "test_file": "ui/src/platform/external-values/tests/decode-json-text.test.ts",
+      "scenario_owner": "platform/graphql",
+      "test_ids": [
+        "decodes a valid JSON string through one decoder",
+        "rejects non-string input kinds without throwing",
+        "rejects invalid JSON",
+        "rejects schema failures",
+        "defends against throwing decoders",
+        "never puts payload sentinels into diagnostics"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-152-gql-client",
+      "surface": "platform/graphql",
+      "risk": "Typed GraphQL client can mishandle variables, cache, or abort",
+      "layer": "platform-contract",
+      "lane_owner": "vitest/unit",
+      "test_file": "ui/src/platform/graphql/tests/client.test.ts",
+      "scenario_owner": "platform/graphql",
+      "test_ids": [
+        "sends operationName, query, and variables",
+        "decodes a valid operation result",
+        "rejects non-empty errors even when data is present",
+        "rejects missing data",
+        "rejects schema-invalid operation data with bounded paths",
+        "maps HTTP failures",
+        "maps abort",
+        "cached form dedupes concurrent identical operations",
+        "cached form serves TTL hit and refetches after expiry",
+        "rejects non-object envelopes"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-152-gql-gen",
+      "surface": "platform/graphql",
+      "risk": "GraphQL generation contract can drift from checked-in fixtures",
+      "layer": "platform-contract",
+      "lane_owner": "vitest/unit",
+      "test_file": "ui/src/platform/graphql/tests/generation-contract.test.ts",
+      "scenario_owner": "platform/graphql",
+      "test_ids": [
+        "probe document is a named TypedDocumentNode with Zod result schema",
+        "generated modules export the probe operation schema"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-152-gql-vars",
+      "surface": "platform/graphql",
+      "risk": "GraphQL variable encoding can reorder or drop keys",
+      "layer": "platform-contract",
+      "lane_owner": "vitest/unit",
+      "test_file": "ui/src/platform/graphql/tests/variables.test.ts",
+      "scenario_owner": "platform/graphql",
+      "test_ids": [
+        "sorts object keys and preserves array order",
+        "omits undefined object properties",
+        "rejects undefined root",
+        "rejects non-finite numbers",
+        "rejects cycles"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-153-live-ctrl",
+      "surface": "platform/live",
+      "risk": "Live stream controller can drop events or leak subscriptions",
+      "layer": "platform-contract",
+      "lane_owner": "vitest/unit",
+      "test_file": "ui/src/platform/sse/tests/live-stream-controller.test.ts",
+      "scenario_owner": "platform/live",
+      "test_ids": [
+        "buffers decoded frames and flushes on interval",
+        "skips malformed frames without closing",
+        "disposes source and timer; ignores late events",
+        "aborts via signal"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-153-storage-client",
+      "surface": "platform/browser",
+      "risk": "Browser storage client can mis-handle quota or missing keys",
+      "layer": "platform-contract",
+      "lane_owner": "vitest/unit",
+      "test_file": "ui/src/platform/storage/tests/browser-storage-client.test.ts",
+      "scenario_owner": "platform/browser",
+      "test_ids": [
+        "reads and writes through injected storage",
+        "maps security/quota exceptions to typed failures"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-153-storage-codec",
+      "surface": "platform/browser",
+      "risk": "Versioned storage codec can accept corrupt payloads",
+      "layer": "platform-contract",
+      "lane_owner": "vitest/unit",
+      "test_file": "ui/src/platform/storage/tests/versioned-storage-codec.test.ts",
+      "scenario_owner": "platform/browser",
+      "test_ids": [
+        "round-trips versioned values",
+        "returns null for missing keys without rewriting",
+        "does not delete corrupt or unsupported-version data"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-153-url-decode",
+      "surface": "platform/browser",
+      "risk": "URL search decode can accept invalid external values",
+      "layer": "platform-contract",
+      "lane_owner": "vitest/unit",
+      "test_file": "ui/src/platform/url/tests/decode-search-value.test.ts",
+      "scenario_owner": "platform/browser",
+      "test_ids": [
+        "returns decoded value on success",
+        "rejects primitives/objects/arrays that fail the feature schema"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-153-visibility",
+      "surface": "platform/browser",
+      "risk": "Page visibility hook can miss hide/show transitions",
+      "layer": "platform-contract",
+      "lane_owner": "vitest/component",
+      "test_file": "ui/src/platform/visibility/tests/use-page-visible.test.tsx",
+      "scenario_owner": "platform/browser",
+      "test_ids": [
+        "tracks document.visibilitychange"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
     }
   ],
   "browser_contract_paths": [

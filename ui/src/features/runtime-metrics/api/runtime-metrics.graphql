@@ -1,0 +1,49 @@
+# Plan 149 — fixed process/runtime strip series (names match shared/semconv
+# CPU_METRICS[0], MEMORY_METRICS[0], TOKIO_RUNTIME_ALIVE_TASKS).
+query RuntimeMetricStrip(
+  $fromNanos: String!
+  $toNanos: String!
+  $stepSeconds: Int!
+  $service: String
+  $invocationId: String
+) {
+  cpu: metricSeries(
+    name: "process.cpu.utilization"
+    fromNanos: $fromNanos
+    toNanos: $toNanos
+    stepSeconds: $stepSeconds
+    service: $service
+    invocationId: $invocationId
+  ) {
+    points {
+      tsNanos
+      value
+    }
+  }
+  memory: metricSeries(
+    name: "process.memory.usage"
+    fromNanos: $fromNanos
+    toNanos: $toNanos
+    stepSeconds: $stepSeconds
+    service: $service
+    invocationId: $invocationId
+  ) {
+    points {
+      tsNanos
+      value
+    }
+  }
+  tasks: metricSeries(
+    name: "tokio.runtime.alive_tasks"
+    fromNanos: $fromNanos
+    toNanos: $toNanos
+    stepSeconds: $stepSeconds
+    service: $service
+    invocationId: $invocationId
+  ) {
+    points {
+      tsNanos
+      value
+    }
+  }
+}

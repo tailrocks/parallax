@@ -29,7 +29,7 @@ import { z } from "zod"
 import { EmptyState } from "@/components/console/empty-state"
 import { FacetSidebar, type Facet } from "@/components/console/facet-sidebar"
 import { useDelayedLoading } from "@/components/console/hooks"
-import { RangePicker } from "@/components/console/range-picker"
+import { RangePicker } from "@/features/time-range"
 import { TableSkeleton } from "@/components/console/skeletons"
 import { useChartBrush } from "@/components/console/use-chart-brush"
 import {
@@ -40,7 +40,7 @@ import {
 } from "@/components/logs-table"
 import type { LogDoc, OptionalLogColumn } from "@/components/logs-table"
 import { useLiveStream } from "@/hooks/use-live-stream"
-import { PageHeader } from "@/components/page-header"
+import { PageHeader } from "@/shared/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {

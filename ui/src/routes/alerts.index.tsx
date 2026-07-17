@@ -10,7 +10,7 @@ import {
 
 import { EmptyState } from "@/components/console/empty-state"
 import { RelativeTime } from "@/components/console/relative-time"
-import { PageHeader } from "@/components/page-header"
+import { PageHeader } from "@/shared/components/page-header"
 import {
   AlertDialog,
   AlertDialogAction,

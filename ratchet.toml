@@ -1482,13 +1482,55 @@ ceiling = 418
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/components/__tests__/metric-strip.test.tsx"
+scope = "ui/src/components/__tests__/shell.test.tsx"
+ceiling = 13
+
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/domain/runtime-metrics/tests/runtime-metric.test.ts"
 ceiling = 5
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/components/__tests__/shell.test.tsx"
-ceiling = 15
+scope = "ui/src/domain/story/tests/story-beat.test.ts"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/runtime-metrics/tests/api/runtime-metrics-api.test.ts"
+ceiling = 9
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/runtime-metrics/tests/components/metric-strip.test.tsx"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/runtime-metrics/tests/components/runtime-snapshot-card.test.tsx"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/runtime-metrics/tests/integration/use-runtime-metrics.test.tsx"
+ceiling = 6
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/story/tests/components/story-timeline.test.tsx"
+ceiling = 6
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/time-range/tests/components/range-picker.test.tsx"
+ceiling = 3
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/shared/tests/components/page-header.test.tsx"
+ceiling = 5
+
 
 [[limits]]
 metric = "typescript.assertions"
@@ -1547,17 +1589,7 @@ ceiling = 19
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/range-picker.test.tsx"
-ceiling = 3
-
-[[limits]]
-metric = "typescript.assertions"
 scope = "ui/src/components/console/__tests__/rpc-stream.test.tsx"
-ceiling = 6
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/story-timeline.test.tsx"
 ceiling = 6
 
 [[limits]]
@@ -2529,11 +2561,6 @@ ceiling = 173
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/components/console/range-picker.tsx:15"
-ceiling = 80
-
-[[limits]]
-metric = "typescript.function-lines"
 scope = "ui/src/components/console/rpc-stream.tsx:104"
 ceiling = 62
 
@@ -2586,16 +2613,6 @@ ceiling = 273
 metric = "typescript.function-lines"
 scope = "ui/src/components/logs-table.tsx:330"
 ceiling = 65
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/metric-strip.tsx:101"
-ceiling = 122
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/metric-strip.tsx:121"
-ceiling = 68
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -3197,18 +3214,28 @@ ceiling = 63
 metric = "typescript.function-lines"
 scope = "ui/src/platform/storage/versioned-storage-codec.ts:32"
 ceiling = 63
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/time-range/components/range-picker.tsx:19"
+ceiling = 80
+
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/runtime-metrics/api/runtime-metrics.generated.ts"
+ceiling = 433
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/runtime-metrics/api/runtime-metrics.generated.ts"
+ceiling = 1
+
 [[ui.ownership]]
 path = "ui/scripts/runtime-probe.ts"
 current_owner = "tooling"
 target_owner = "tooling"
 migration_plan = "100"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/__tests__/metric-strip.test.tsx"
-current_owner = "legacy-components-tests"
-target_owner = "features/runtime-metrics"
-migration_plan = "149"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -3296,24 +3323,10 @@ migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/__tests__/range-picker.test.tsx"
-current_owner = "legacy-console-tests"
-target_owner = "features/time-range"
-migration_plan = "149"
-kind = "handwritten"
-
-[[ui.ownership]]
 path = "ui/src/components/console/__tests__/rpc-stream.test.tsx"
 current_owner = "legacy-console-tests"
 target_owner = "features/traces"
 migration_plan = "142"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/__tests__/story-timeline.test.tsx"
-current_owner = "legacy-console-tests"
-target_owner = "features/story"
-migration_plan = "149"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -3534,13 +3547,6 @@ migration_plan = "134"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/range-picker.tsx"
-current_owner = "legacy-console"
-target_owner = "features/time-range"
-migration_plan = "149"
-kind = "handwritten"
-
-[[ui.ownership]]
 path = "ui/src/components/console/relative-time.tsx"
 current_owner = "legacy-console"
 target_owner = "shared/components/relative-time"
@@ -3587,13 +3593,6 @@ path = "ui/src/components/console/stat-card.tsx"
 current_owner = "legacy-console"
 target_owner = "shared/components/stat-card"
 migration_plan = "100"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/story-timeline.tsx"
-current_owner = "legacy-console"
-target_owner = "features/story"
-migration_plan = "149"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -3660,13 +3659,6 @@ migration_plan = "141"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/metric-strip.tsx"
-current_owner = "legacy-components"
-target_owner = "features/runtime-metrics"
-migration_plan = "149"
-kind = "handwritten"
-
-[[ui.ownership]]
 path = "ui/src/components/nav-icon.tsx"
 current_owner = "layout"
 target_owner = "layout"
@@ -3681,13 +3673,6 @@ migration_plan = "143"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/page-header.tsx"
-current_owner = "legacy-components"
-target_owner = "shared/components/page-header"
-migration_plan = "149"
-kind = "handwritten"
-
-[[ui.ownership]]
 path = "ui/src/components/parallax-shell.tsx"
 current_owner = "layout"
 target_owner = "layout"
@@ -3699,13 +3684,6 @@ path = "ui/src/components/route-fallbacks.tsx"
 current_owner = "layout"
 target_owner = "layout"
 migration_plan = "143"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/runtime-snapshot.tsx"
-current_owner = "legacy-components"
-target_owner = "features/runtime-metrics"
-migration_plan = "149"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -3994,6 +3972,179 @@ current_owner = "shadcn"
 target_owner = "shadcn"
 migration_plan = "none"
 kind = "shadcn"
+
+
+[[ui.ownership]]
+path = "ui/src/domain/runtime-metrics/runtime-metric.ts"
+current_owner = "domain/runtime-metrics"
+target_owner = "domain/runtime-metrics"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/domain/runtime-metrics/tests/runtime-metric.test.ts"
+current_owner = "domain/runtime-metrics"
+target_owner = "domain/runtime-metrics"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/domain/story/story-beat.ts"
+current_owner = "domain/story"
+target_owner = "domain/story"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/domain/story/tests/story-beat.test.ts"
+current_owner = "domain/story"
+target_owner = "domain/story"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/runtime-metrics/index.ts"
+current_owner = "features/runtime-metrics"
+target_owner = "features/runtime-metrics"
+migration_plan = "none"
+kind = "handwritten"
+facade = true
+
+[[ui.ownership]]
+path = "ui/src/features/runtime-metrics/api/runtime-metrics.generated.ts"
+current_owner = "features/runtime-metrics"
+target_owner = "features/runtime-metrics"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/runtime-metrics/api/runtime-metrics-mapper.ts"
+current_owner = "features/runtime-metrics"
+target_owner = "features/runtime-metrics"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/runtime-metrics/api/load-runtime-metrics.ts"
+current_owner = "features/runtime-metrics"
+target_owner = "features/runtime-metrics"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/runtime-metrics/model/runtime-metrics-error.ts"
+current_owner = "features/runtime-metrics"
+target_owner = "features/runtime-metrics"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/runtime-metrics/hooks/use-runtime-metrics.ts"
+current_owner = "features/runtime-metrics"
+target_owner = "features/runtime-metrics"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/runtime-metrics/components/metric-strip.tsx"
+current_owner = "features/runtime-metrics"
+target_owner = "features/runtime-metrics"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/runtime-metrics/components/runtime-snapshot-card.tsx"
+current_owner = "features/runtime-metrics"
+target_owner = "features/runtime-metrics"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/runtime-metrics/tests/api/runtime-metrics-api.test.ts"
+current_owner = "features/runtime-metrics"
+target_owner = "features/runtime-metrics"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/runtime-metrics/tests/components/metric-strip.test.tsx"
+current_owner = "features/runtime-metrics"
+target_owner = "features/runtime-metrics"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/runtime-metrics/tests/components/runtime-snapshot-card.test.tsx"
+current_owner = "features/runtime-metrics"
+target_owner = "features/runtime-metrics"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/runtime-metrics/tests/integration/use-runtime-metrics.test.tsx"
+current_owner = "features/runtime-metrics"
+target_owner = "features/runtime-metrics"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/story/index.ts"
+current_owner = "features/story"
+target_owner = "features/story"
+migration_plan = "none"
+kind = "handwritten"
+facade = true
+
+[[ui.ownership]]
+path = "ui/src/features/story/components/story-timeline.tsx"
+current_owner = "features/story"
+target_owner = "features/story"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/story/tests/components/story-timeline.test.tsx"
+current_owner = "features/story"
+target_owner = "features/story"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/time-range/index.ts"
+current_owner = "features/time-range"
+target_owner = "features/time-range"
+migration_plan = "none"
+kind = "handwritten"
+facade = true
+
+[[ui.ownership]]
+path = "ui/src/features/time-range/components/range-picker.tsx"
+current_owner = "features/time-range"
+target_owner = "features/time-range"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/time-range/tests/components/range-picker.test.tsx"
+current_owner = "features/time-range"
+target_owner = "features/time-range"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/shared/components/page-header.tsx"
+current_owner = "shared/components"
+target_owner = "shared/components"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/shared/tests/components/page-header.test.tsx"
+current_owner = "shared/tests"
+target_owner = "shared/tests"
+migration_plan = "none"
+kind = "handwritten"
+
 
 [[ui.ownership]]
 path = "ui/src/domain/time-range/range.ts"

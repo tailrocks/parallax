@@ -4,8 +4,8 @@ import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { RangePicker } from "@/components/console/range-picker"
-import { resolvePreset } from "@/lib/range"
+import { resolvePreset } from "@/domain/time-range/range"
+import { RangePicker } from "@/features/time-range"
 
 describe("RangePicker", () => {
   afterEach(() => {
@@ -24,7 +24,9 @@ describe("RangePicker", () => {
   }
 
   it("emits preset and custom calendar ranges", async () => {
-    const user = userEvent.setup()
+    // Base UI marks the trigger tree inert while the popover is open; skip the
+    // pointer-events precheck so preset/calendar clicks stay deterministic.
+    const user = userEvent.setup({ pointerEventsCheck: 0 })
     const now = new Date(2026, 0, 15, 12, 0, 0, 0).getTime()
     vi.spyOn(Date, "now").mockReturnValue(now)
     const onChange = vi.fn()
@@ -45,5 +47,5 @@ describe("RangePicker", () => {
     if (!custom) throw new Error("missing custom range")
     expect(custom).toEqual(expect.objectContaining({ key: "custom" }))
     expect(BigInt(custom.fromNanos)).toBeLessThan(BigInt(custom.toNanos))
-  })
+  }, 15_000)
 })

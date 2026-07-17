@@ -12,7 +12,7 @@ use rmcp::{
 };
 use serde::Deserialize;
 use serde_json::{Value, json};
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 const MCP_RESULT_MAX_BYTES: usize = 128 * 1024;
 const MCP_ANCHOR_MAX_BYTES: usize = 256;
@@ -22,6 +22,16 @@ const SUPPORTED_PROTOCOL_VERSIONS: &[ProtocolVersion] = &[
     ProtocolVersion::V_2025_06_18,
     ProtocolVersion::V_2025_11_25,
 ];
+static BUNDLE_V2_VALIDATOR: LazyLock<Result<jsonschema::Validator, ()>> = LazyLock::new(|| {
+    compile_schema(include_str!(
+        "../../../schema/evidence-bundle.v2.schema.json"
+    ))
+});
+static BUNDLE_V1_VALIDATOR: LazyLock<Result<jsonschema::Validator, ()>> = LazyLock::new(|| {
+    compile_schema(include_str!(
+        "../../../schema/evidence-bundle.v1.schema.json"
+    ))
+});
 
 fn evidence_bundle_output_schema() -> Arc<JsonObject> {
     Arc::new(parse_output_schema(include_str!(
@@ -37,29 +47,28 @@ fn parse_output_schema(raw: &str) -> JsonObject {
     })
 }
 
-fn validate_bundle_contract(bundle: &Value) -> Result<(), McpError> {
-    let schema = Value::Object(parse_output_schema(include_str!(
-        "../../../schema/evidence-bundle.v2.schema.json"
-    )));
-    let validator = jsonschema::draft202012::options()
+fn compile_schema(raw: &str) -> Result<jsonschema::Validator, ()> {
+    let schema = Value::Object(parse_output_schema(raw));
+    jsonschema::draft202012::options()
         .should_validate_formats(true)
         .should_ignore_unknown_formats(false)
         .build(&schema)
-        .map_err(|_| safe_internal_error("bundle_schema_invalid"))?;
+        .map_err(|_| ())
+}
+
+fn validate_bundle_contract(bundle: &Value) -> Result<(), McpError> {
+    let validator = BUNDLE_V2_VALIDATOR
+        .as_ref()
+        .map_err(|()| safe_internal_error("bundle_schema_invalid"))?;
     if !validator.is_valid(bundle) {
         return Err(safe_internal_error("bundle_contract_mismatch"));
     }
     let data = bundle
         .get("data")
         .ok_or_else(|| safe_internal_error("bundle_contract_mismatch"))?;
-    let data_schema = Value::Object(parse_output_schema(include_str!(
-        "../../../schema/evidence-bundle.v1.schema.json"
-    )));
-    let data_validator = jsonschema::draft202012::options()
-        .should_validate_formats(true)
-        .should_ignore_unknown_formats(false)
-        .build(&data_schema)
-        .map_err(|_| safe_internal_error("bundle_schema_invalid"))?;
+    let data_validator = BUNDLE_V1_VALIDATOR
+        .as_ref()
+        .map_err(|()| safe_internal_error("bundle_schema_invalid"))?;
     if !data_validator.is_valid(data) {
         return Err(safe_internal_error("bundle_contract_mismatch"));
     }

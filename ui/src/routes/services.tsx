@@ -14,7 +14,7 @@ import { EmptyState } from "@/components/console/empty-state"
 import { ServiceDot } from "@/components/console/service-dot"
 import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
 import { useDelayedLoading } from "@/components/console/hooks"
-import { RangePicker } from "@/components/console/range-picker"
+import { RangePicker } from "@/features/time-range"
 import { RelativeTime } from "@/components/console/relative-time"
 import { TableSkeleton } from "@/components/console/skeletons"
 import {
@@ -23,7 +23,7 @@ import {
   Toolbar,
   sortRows,
 } from "@/components/console/data-table"
-import { PageHeader } from "@/components/page-header"
+import { PageHeader } from "@/shared/components/page-header"
 import {
   Table,
   TableBody,

@@ -20,7 +20,7 @@ import {
 import { CopyButton } from "@/components/console/copy-button"
 import { EmptyState } from "@/components/console/empty-state"
 import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
-import { RangePicker } from "@/components/console/range-picker"
+import { RangePicker } from "@/features/time-range"
 import { RelativeTime } from "@/components/console/relative-time"
 import { ScrollFade } from "@/components/console/scroll-fade"
 import {
@@ -35,7 +35,7 @@ import {
   makeEdgeTick,
   thinTicks,
 } from "@/components/console/trend"
-import { PageHeader } from "@/components/page-header"
+import { PageHeader } from "@/shared/components/page-header"
 import { navItem } from "@/components/nav"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"

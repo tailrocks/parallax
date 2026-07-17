@@ -4,7 +4,7 @@ import { IconClipboardList, IconPlus, IconTrash } from "@tabler/icons-react"
 
 import { EmptyState } from "@/components/console/empty-state"
 import { RelativeTime } from "@/components/console/relative-time"
-import { PageHeader } from "@/components/page-header"
+import { PageHeader } from "@/shared/components/page-header"
 import {
   AlertDialog,
   AlertDialogAction,

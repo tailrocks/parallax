@@ -2,8 +2,12 @@ import { useState } from "react"
 import { IconCalendarEventFilled, IconChevronDown } from "@tabler/icons-react"
 import type { DateRange } from "react-day-picker"
 
-import { RANGE_PRESETS, customRange, formatRangeLabel } from "@/lib/range"
-import type { ResolvedRange } from "@/lib/range"
+import {
+  RANGE_PRESETS,
+  customRange,
+  formatRangeLabel,
+  type ResolvedRange,
+} from "@/domain/time-range/range"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import {

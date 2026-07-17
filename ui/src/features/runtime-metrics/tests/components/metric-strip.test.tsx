@@ -3,30 +3,26 @@
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { MetricStrip } from "@/components/metric-strip"
-import { graphql } from "@/lib/api"
+import { MetricStrip } from "@/features/runtime-metrics"
+import { executeGraphqlOperation } from "@/platform/graphql/client"
 
-vi.mock("@/lib/api", () => ({
-  gqlString: (value: string) =>
-    value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n"),
-  graphql: vi.fn(),
+vi.mock("@/platform/graphql/client", () => ({
+  executeGraphqlOperation: vi.fn(),
 }))
 
-interface MetricPoint {
-  tsNanos: string
-  value: number
+type MetricPayload = {
+  cpu: Array<{ points: Array<{ tsNanos: string; value: number }> }>
+  memory: Array<{ points: Array<{ tsNanos: string; value: number }> }>
+  tasks: Array<{ points: Array<{ tsNanos: string; value: number }> }>
 }
-
-type MetricPayload = Record<
-  "cpu" | "memory" | "tasks",
-  Array<{ points: MetricPoint[] }> | undefined
->
 
 interface GraphqlMock {
   mockImplementationOnce: (
     implementation: (
-      query: string,
-      init?: { signal?: AbortSignal }
+      document: unknown,
+      schema: unknown,
+      variables: unknown,
+      options?: { signal?: AbortSignal }
     ) => Promise<MetricPayload>
   ) => GraphqlMock
 }
@@ -51,14 +47,14 @@ describe("MetricStrip", () => {
     const first = deferred<MetricPayload>()
     const second = deferred<MetricPayload>()
     const signals: AbortSignal[] = []
-    const mockedGraphql = graphql as unknown as GraphqlMock
-    mockedGraphql
-      .mockImplementationOnce((_query, init) => {
-        if (init?.signal) signals.push(init.signal)
+    const mocked = executeGraphqlOperation as unknown as GraphqlMock
+    mocked
+      .mockImplementationOnce((_doc, _schema, _vars, options) => {
+        if (options?.signal) signals.push(options.signal)
         return first.promise
       })
-      .mockImplementationOnce((_query, init) => {
-        if (init?.signal) signals.push(init.signal)
+      .mockImplementationOnce((_doc, _schema, _vars, options) => {
+        if (options?.signal) signals.push(options.signal)
         return second.promise
       })
 

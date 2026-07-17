@@ -9,8 +9,8 @@ import {
 
 import { Button } from "@/components/ui/button"
 
-import { RangePicker } from "@/components/console/range-picker"
-import { PageHeader } from "@/components/page-header"
+import { RangePicker } from "@/features/time-range"
+import { PageHeader } from "@/shared/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {

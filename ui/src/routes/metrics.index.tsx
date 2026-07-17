@@ -8,7 +8,7 @@ import {
   Toolbar,
 } from "@/components/console/data-table"
 import { EmptyState } from "@/components/console/empty-state"
-import { PageHeader } from "@/components/page-header"
+import { PageHeader } from "@/shared/components/page-header"
 import { MetricsTable } from "./-metrics-table"
 import { graphqlCached } from "@/lib/api"
 import { inferMetricKind, type MetricKind } from "@/lib/metric-aggregation"

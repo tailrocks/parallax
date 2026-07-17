@@ -12,8 +12,8 @@ import {
   Toolbar,
 } from "@/components/console/data-table"
 import { InvocationsTable } from "@/components/console/invocations/invocations-table"
-import { RangePicker } from "@/components/console/range-picker"
-import { PageHeader } from "@/components/page-header"
+import { RangePicker } from "@/features/time-range"
+import { PageHeader } from "@/shared/components/page-header"
 import { Button } from "@/components/ui/button"
 import { graphql, graphqlCached } from "@/lib/api"
 import type { Invocation, ObservedInvocation } from "@/lib/api"

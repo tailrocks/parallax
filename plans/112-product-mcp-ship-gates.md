@@ -74,6 +74,8 @@ must not return in product output.
 - The nested immutable `data` dossier is separately validated against the
   checked-in bundle-v1 schema, matching the v2 contract's explicit deep-shape
   rule rather than accepting version-only payloads.
+- Both immutable schema validators compile once per process through fail-closed
+  lazy singletons rather than rebuilding on every tool invocation.
 - The standalone equivalence checker now recomputes bundle-v2's actual
   `sha256-jcs:` scope, including the nested `data` exclusions; fixtures prove
   excluded build/budget changes are stable while evidence changes are not.

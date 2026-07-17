@@ -1,6 +1,7 @@
 import { useMemo } from "react"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 
+import type { RuntimeMetric } from "@/domain/runtime-metrics/runtime-metric"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   ChartContainer,
@@ -8,7 +9,6 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
-import type { RuntimeMetric } from "@/lib/api"
 import { formatTimeShort } from "@/lib/format"
 
 const runtimeConfig = {
@@ -87,7 +87,7 @@ export function RuntimeSnapshotCard({
   metrics,
 }: {
   title?: string
-  metrics: RuntimeMetric[]
+  metrics: readonly RuntimeMetric[]
 }) {
   const grouped = useMemo(() => {
     const rows = new Map<string, RuntimeMetric[]>()

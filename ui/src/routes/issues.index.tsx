@@ -19,10 +19,10 @@ import {
 import { CopyButton } from "@/components/console/copy-button"
 import { EmptyState } from "@/components/console/empty-state"
 import { useDelayedLoading } from "@/components/console/hooks"
-import { RangePicker } from "@/components/console/range-picker"
+import { RangePicker } from "@/features/time-range"
 import { RelativeTime } from "@/components/console/relative-time"
 import { TableSkeleton } from "@/components/console/skeletons"
-import { PageHeader } from "@/components/page-header"
+import { PageHeader } from "@/shared/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,

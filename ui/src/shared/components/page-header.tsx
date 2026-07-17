@@ -11,6 +11,7 @@ export type PageHeaderBack = {
   iconClassName?: string
 }
 
+/** Product-neutral page chrome. Typed title/back/actions only — no nav registry. */
 export function PageHeader({
   title,
   titleLeading,

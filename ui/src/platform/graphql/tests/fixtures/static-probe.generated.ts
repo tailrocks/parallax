@@ -19,7 +19,7 @@ import type {
   AttributeFilterInput,
   AlertRuleInput,
   GraphqlContractStaticProbeQuery,
-} from "../../generated/schema-types.generated"
+} from "@/platform/graphql/generated/schema-types.generated"
 import type { TypedDocumentNode as DocumentNode } from "@/platform/graphql/typed-document"
 export type GraphqlContractStaticProbeQueryVariables = Exact<{
   fromNanos: string

@@ -20,7 +20,7 @@ import { useMemo } from "react"
 
 import { EmptyState } from "@/components/console/empty-state"
 import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
-import { RangePicker } from "@/components/console/range-picker"
+import { RangePicker } from "@/features/time-range"
 import { RelativeTime } from "@/components/console/relative-time"
 import {
   CardSparkline,
@@ -33,8 +33,8 @@ import {
   thinTicks,
 } from "@/components/console/trend"
 import { navItem } from "@/components/nav"
-import { PageHeader } from "@/components/page-header"
-import { RuntimeSnapshotCard } from "@/components/runtime-snapshot"
+import { PageHeader } from "@/shared/components/page-header"
+import { RuntimeSnapshotCard } from "@/features/runtime-metrics"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {

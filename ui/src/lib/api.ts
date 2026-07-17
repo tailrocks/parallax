@@ -120,16 +120,9 @@ export interface TraceDiff {
   changed: TraceDiffChange[]
 }
 
-export interface StoryBeat {
-  tsNanos: string
-  lane: string
-  kind: string
-  title: string
-  traceId: string
-  spanId: string | null
-  severity: string | null
-  durationNs: string | null
-}
+// Domain owners (Plan 149); re-exported for legacy route consumers until
+// feature migrations switch to domain/feature facades.
+export type { StoryBeat } from "@/domain/story/story-beat"
 
 export interface AttributeCompareRow {
   key: string
@@ -169,17 +162,10 @@ export interface FieldStats {
   topValues: FieldValueCount[]
 }
 
-export interface MetricPoint {
-  tsNanos: string
-  value: number
-}
-
-export interface RuntimeMetric {
-  family: string
-  metric: string
-  unit: string | null
-  points: MetricPoint[]
-}
+export type {
+  MetricPoint,
+  RuntimeMetric,
+} from "@/domain/runtime-metrics/runtime-metric"
 
 export interface EvidenceGap {
   kind: string

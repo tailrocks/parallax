@@ -1,4 +1,6 @@
 // Plan 152 — exact Bun GraphQL Code Generator config.
+// Plan 149 — first feature operation: Zod importFrom uses the absolute @/
+// alias so fixture depth and features/<f>/api depth both resolve.
 // Invoke only: bunx --bun --no-install graphql-codegen --config codegen.ts
 // Do not edit generated outputs; re-run the generator.
 
@@ -76,11 +78,8 @@ const config: CodegenConfig = {
             withOperationType: true,
             withObjectType: false,
             zodOptionalType: "nullable",
-            // Fixture depth: platform/graphql/tests/fixtures → generated/
-            // Feature depth (features/<f>/api) uses a different relative path;
-            // when the first feature operation lands, split this generates
-            // entry (Plan 134+) so importFrom matches that depth.
-            importFrom: "../../generated/schema-types.generated",
+            // Absolute alias works for both fixture and feature document depths.
+            importFrom: "@/platform/graphql/generated/schema-types.generated",
             useTypeImports: true,
             validationSchemaExportType: "const",
           },
