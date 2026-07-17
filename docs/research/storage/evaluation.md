@@ -42,9 +42,10 @@ But the skeptical view matters:
    ecosystem depth, and log/trace analytics.
 2. GreptimeDB's public performance evidence is mostly vendor-published, so
    Parallax should not assume "fastest" until running its own benchmark.
-3. GreptimeDB traces are still explicitly marked experimental in the 1.0 docs,
-   and the broader observability surface is young compared with mature
-   single-signal systems.
+3. GreptimeDB traces remain explicitly marked **experimental** on docs **v1.1
+   and Nightly** (**pass 83, 2026-07-17** — not only the old 1.0-doc wording);
+   product still builds on native tables with pin + adapter isolation fallback.
+   Broader observability surface is younger than mature single-signal systems.
 4. GreptimeDB open source is usable, but some production operations features are
    positioned in GreptimeDB Enterprise.
 5. The first Parallax MVP may not need a heavy observability database at all if
@@ -62,6 +63,12 @@ are **stale**. Benchmark and product claims should stay pinned to the current
 stable line unless a nightly is explicitly under test. Version currency does
 **not** by itself prove trace maturity, production operations, retained cost, or
 Parallax bundle-query performance (those remain measurement gates).
+
+**Pass 83 (2026-07-17) — traces maturity docs only:** stable *and* Nightly
+[Traces overview](https://docs.greptime.com/user-guide/traces/overview/) still
+banner experimental; model remains `greptime_trace_v1` /
+`opentelemetry_traces*`. Team Q#2 open — see
+[greptimedb-team-questions.md](greptimedb-team-questions.md).
 
 Primary checks:
 
@@ -389,7 +396,7 @@ for schemas and operational patterns.
 
 | Candidate | Stores metrics/logs/traces in one self-hostable system? | Query model | Storage design | Main weakness for Parallax |
 | --- | --- | --- | --- | --- |
-| GreptimeDB | Yes. One database engine targets metrics, logs, traces, and events. | SQL + PromQL + log/trace APIs. | Compute/storage separation, timestamp-first layout, object storage support. | Young; traces are still experimental in 1.0 docs; public speed/cost evidence is mostly vendor-published. |
+| GreptimeDB | Yes. One database engine targets metrics, logs, traces, and events. | SQL + PromQL + log/trace APIs. | Compute/storage separation, timestamp-first layout, object storage support. | Young; **traces docs still experimental on v1.1 + Nightly (pass 83)**; public speed/cost evidence mostly vendor-published / unmeasured on current pin. |
 | ClickHouse | Yes in practice. ClickStack stores OTel logs, metrics, traces, session replay, and errors in ClickHouse, but ClickStack itself is not a database. | SQL first; HyperDX search when using ClickStack; PromQL story is less native than GreptimeDB/Prometheus-style systems. | Mature columnar OLAP engine; open-source self-host is local-disk oriented, while managed ClickStack gets stronger object-storage economics. | Metrics semantics are stack-level rather than database-native; more operational surface than GreptimeDB for an OSS deployment. |
 | Parseable | Yes by product direction. It describes itself as a telemetry/MELT observability datalake and documents logs, metrics, and traces via OpenTelemetry. | PostgreSQL-compatible SQL; PromQL docs exist. | Object-store-first datalake with local/distributed deployment. | Younger and less battle-tested; more platform-specific than GreptimeDB/ClickHouse as an embeddable storage choice. |
 | OpenSearch Observability Stack | Partly. Logs/traces live in OpenSearch, but metrics discovery uses a Prometheus data source. | PPL for logs/traces; PromQL for metrics. | Search-index architecture with OpenSearch plus Prometheus and OTel/Data Prepper components. | Not one storage engine for all three; likely heavier and less cost-efficient for high-volume telemetry. |

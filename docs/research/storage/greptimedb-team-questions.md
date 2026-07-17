@@ -3,11 +3,11 @@
 <!-- markdownlint-disable MD013 -->
 
 Status: open research packet · Created 2026-06-18 · Consultation protocol updated 2026-07-09 ·
-**Pass 69 (2026-07-17):** docs still mark Traces experimental on **v1.1** line; engine pin
-**v1.1.3**. **Several items empirically confirmed by the 2026-06-18 spike on
-GreptimeDB v1.1.0** (see [native-otel-migration-plan.md](native-otel-migration-plan.md) → "Spike
-results"). Confirmed-by-spike: **#1, #3, #4, #5**. Still for the team: **#2** (traces GA
-*commitment/policy* — works on v1.1.x, docs still experimental), **#6**, **#7**, **#8**.
+**Pass 83 (2026-07-17):** Traces section **still experimental** on both docs **v1.1** and
+**Nightly** (same banner); data model still `table_data_model = 'greptime_trace_v1'` /
+`opentelemetry_traces*` helpers (data-model page last-updated **2026-07-17**). No public
+vendor GA commitment found. Engine pin **`v1.1.3`**. Prior pass 69 same day. Spike-confirmed
+(#1,#3–#5) unchanged. Still for the team: **#2**, **#6**, **#7**, **#8**.
 
 Implementation has moved beyond the original future-tense framing:
 `parallax-greptime` ships native OTLP/HTTP forwarding, SQL/Arrow HTTP reads,
@@ -69,12 +69,26 @@ table, a GreptimeDB pull request, or a major deviation from native OTLP tables:
   us, or a clear migration/versioning contract if it does.
 - **Fallback if no.** Pin a GreptimeDB version, gate upgrades behind our own validation, and isolate
   trace reads behind our adapter so a model change is a localized fix.
-- **Pass 69 recheck (2026-07-17):** GreptimeDB docs **v1.1** Traces overview still banners
-  **"This section currently in the experimental stage and may be adjusted in future versions"**
-  ([docs.greptime.com traces overview](https://docs.greptime.com/user-guide/traces/overview/),
-  fetched live). Engine pin is **v1.1.3** (works for Parallax adapter) but **docs GA commitment
-  still not published**. Question **#2 remains open** for the team — do not treat "it works on
-  v1.1.x" as vendor GA. Fallback (pin version + adapter isolation) still correct.
+- **Pass 69 recheck (2026-07-17):** docs **v1.1** banner still experimental.
+- **Pass 83 recheck (2026-07-17, same day, broader surfaces):**
+  - Stable docs: [Traces overview v1.1](https://docs.greptime.com/user-guide/traces/overview/)
+    — warning: *"This section currently in the experimental stage and may be
+    adjusted in future versions."* Native traces since v0.14.
+  - Nightly docs: [Traces overview Nightly](https://docs.greptime.com/nightly/user-guide/traces/overview/)
+    — **identical experimental banner** (unreleased doc set still not promoted).
+  - Data model (v1.1, last updated **2026-07-17**): still
+    `WITH (… table_data_model = 'greptime_trace_v1')`, tables
+    `opentelemetry_traces` + `opentelemetry_traces_services` /
+    `opentelemetry_traces_operations`
+    ([data model](https://docs.greptime.com/user-guide/traces/data-model/)).
+  - **2026 roadmap blog** (2026-02-11) describes v1.0→v1.3 themes; **no public
+    sentence promoting Traces docs off experimental** found in this pass.
+  - Engine **`v1.1.3`** still the product pin; Parallax adapter continues to use
+    native tables. **#2 remains open** — operational "works" ≠ vendor GA/stability
+    policy. Fallback (pin + adapter isolation + upgrade gates) still correct.
+  - **Falsify #2 closed:** docs remove experimental banner on stable **and**
+    Greptime publishes a versioning/migration contract for `greptime_trace_v1`
+    (or successor), not merely continued feature work.
 
 ## 3. Indexing the native logs table after creation (load-bearing)
 

@@ -12,9 +12,8 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 82 (retention/TTL: whole-SST drop + compaction-gated
-physical reclaim still hold on GreptimeDB **`v1.1.3`**; CH **`v26.6.1`** still
-row-level TTL by default). Pass 81 = live SSE. A1/A2/A4/A6 open.
+Last updated 2026-07-17 after pass 83 (GreptimeDB Traces docs **still experimental**
+on v1.1 **and** Nightly; Q#2 open). Pass 82 = TTL mechanism on `v1.1.3`. A1/A2/A4/A6 open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
@@ -53,7 +52,7 @@ producer rather than treat its construction as future work. Autonomous fixing re
 
 ## Standing watches (cheap, recurring)
 
-- **Engine releases** — re-pin + re-verify load-bearing claims on each new stable (GreptimeDB; ClickHouse feature line). Last: **2026-07-17 pass 60** — GreptimeDB stable **`v1.1.3`**, nightly **`v1.2.0-nightly-20260706`**; ClickHouse feature line **`v26.6.1.1193-stable`** (not LTS). Measurement still owed on the new pins.
+- **Engine releases** — re-pin + re-verify load-bearing claims on each new stable (GreptimeDB; ClickHouse feature line). Last: **2026-07-17 pass 60** — GreptimeDB stable **`v1.1.3`**, nightly **`v1.2.0-nightly-20260706`**; ClickHouse feature line **`v26.6.1.1193-stable`** (not LTS). Measurement still owed on the new pins. **Traces docs GA (team Q#2):** still **experimental** on stable + Nightly (**pass 83**); not closed by engine GA.
 - **Incumbent self-hosted AI** — **Rechecked 2026-07-17 pass 77:** Seer still
   **closed / unavailable** on self-hosted
   ([develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/)).
