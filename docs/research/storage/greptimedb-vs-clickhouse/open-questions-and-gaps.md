@@ -213,3 +213,16 @@ Mechanism/laptop smoke through **Run 283** including harness fix (271–273).
 ## Run 293 — still open
 
 Through Run 292. Highest remaining: mix shares, server 1M/5M, quotes, GB cold, RPO D2/D3.
+
+## Run 308 ranking
+
+Through **307**. Harness improved (logs.trace_id). Instrument improved (OpenDAL
+GetObject). Packets exist for mix/RPO/server/managed. **Execute next:**
+
+1. Operator fills workload-mix A1–A7
+2. Server runs `server-tier-runbook.md`
+3. Request vendor quotes
+4. GB MinIO cold with OpenDAL deltas
+5. Turso dump + meta snapshot drill
+
+Not done.
