@@ -8474,3 +8474,15 @@ Warm: interactive; CH ~2–3× at this N. Cold nightly first query not a regress
 GT counts: logs1m 50500, spans1m 50000, m2m 50020 (concurrent dirt). Not a clean
 four-way rebuild — directional only.
 
+### Run 448 — 2026-07-18 — count-distinct on logs1m.trace_id (~50k dirty)
+
+| Engine | Query | Result | Warm time |
+| --- | --- | --- | --- |
+| GT | `count(distinct trace_id)` | 50000 | 15 / 13 ms (90 ms cold) |
+| GT | `approx_distinct(trace_id)` | 49972 | 7 / 6 / 8 ms |
+| CH | `count(DISTINCT trace_id)` | 50000 | 16 / 13 / 8 ms |
+| CH | `uniq(trace_id)` | 50000 | 10 / 7 / 6 ms |
+
+Function name note: GT uses **`approx_distinct`**, not `approx_count_distinct` /
+`hll_count(Utf8)` (binary sketch type). Capability parity holds (Run 169).
+
