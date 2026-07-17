@@ -7886,3 +7886,14 @@ Warm: GT **~10 ms**, CH **~7–8 ms**. Capability parity holds (Run 169).
 `row_number() OVER (PARTITION BY service ORDER BY ts DESC)` filter rn=1:
 both engines return ranked rows (GT 23 ms / CH 11 ms at ~50k). Window
 capability parity for evidence-bundle ranking (Run 156) holds.
+
+### Run 269 — 2026-07-17 — harness logs1m schema audit (trace_id unkeyed)
+
+Live SHOW CREATE:
+
+- **GT logs1m:** PK `service`, FULLTEXT bloom on `message`, **`trace_id` unindexed**
+- **CH logs1m:** ORDER BY `(service, ts)`, tokenbf on `message`, **`trace_id` not in key**
+
+Explains Run 249 join: logs side **6/6 granules**. Product blueprint must add
+`trace_id` inverted/bloom (GT) or ORDER BY includes `trace_id` (CH comparator) —
+not present in current four-way harness logs table.

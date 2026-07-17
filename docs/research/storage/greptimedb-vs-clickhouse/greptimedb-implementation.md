@@ -389,3 +389,5 @@ See Runs 173–217 for live re-verifies. Key product caveats from re-pin:
 - Continuous agg: Flow works (async lag ok).
 
 **Skipping index ALTER (Run 251):** `CREATE INDEX … USING INVERTED` is **not** supported as a statement keyword; use `ALTER TABLE t MODIFY COLUMN col SET SKIPPING INDEX WITH(type='bloom', granularity=10240)` (live on v1.1.3).
+
+**Harness caveat (Run 269):** four-way `logs1m` uses PK `service` + FULLTEXT `message` but **does not key `trace_id`** — join prune tests against it will full-scan logs. Product tables must still key `trace_id`/`fingerprint` on every signal.
