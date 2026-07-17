@@ -7983,3 +7983,9 @@ Good model for keyed error events.
 
 `26.7.1.1097` logs1m `idx_trace` bloom: **Granules 1/6** for `trace_id='t0'`.
 Matches stable after harness fix.
+
+### Run 286 — 2026-07-17 — OTLP HTTP endpoint responds
+
+`POST /v1/otlp/v1/logs` with empty JSON body → **HTTP 400** (rejects bad payload;
+endpoint live). Native OTLP path present (protobuf body required for success —
+Run 181).
