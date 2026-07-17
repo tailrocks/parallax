@@ -89,6 +89,7 @@ serde_json = "1"
 serde_norway = "0.9.42"
 semver = "1"
 sha2 = "0.10"
+hmac = "0.12"
 tokio = { version = "1", features = ["full"] }
 tokio-stream = { version = "0.1", features = ["net", "sync"] }
 uuid = { version = "1", features = ["v4"] }

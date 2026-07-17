@@ -4,6 +4,8 @@
 pub mod agent_session;
 /// Claude Code stream-json / hook normalizer (plan 120).
 pub mod claude_code;
+/// GitHub deploy/change webhook verify + normalize (plan 121).
+pub mod github_deploy;
 #[expect(
     clippy::cast_precision_loss,
     clippy::too_many_lines,

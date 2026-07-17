@@ -13,10 +13,10 @@
 - **Depends on**: 099, 104, 109, 111, 116
 - **Category**: future provider integration / causal evidence / security
 - **Planned at**: `eefa4617`, 2026-07-12
-- **Status**: OPENED (unblock 2026-07-17) — provider = GitHub
-- **Blocker**: none for scope. Residual before code: exact GitHub
-  deployments/changes API + webhook surface, least-privilege permissions,
-  claim wording, sanitized fixtures. Deps 099/104/109-minimal/111/116 complete.
+- **Status**: IN PROGRESS — GitHub signature + deploy normalize slice 2026-07-17
+- **Blocker**: none for pure verify/normalize. Residual: HTTP webhook route,
+  delivery-id idempotency, Turso state, API backfill, bundle/doctor, claim
+  ledger.
 
 ## Why
 
@@ -80,12 +80,26 @@ Out of scope:
 - Missing/truncated provider data and truthful doctor/claim-level tests.
 - Turso migration/concurrency/retention and bundle hash/projection conformance.
 
+## Current Evidence (2026-07-17)
+
+- Decision:
+  [`docs/research/decisions/github-deploy-change-adapter.md`](../docs/research/decisions/github-deploy-change-adapter.md)
+- Pure module: `crates/parallax-evidence/src/github_deploy.rs`
+  - `verify_signature_256` for `X-Hub-Signature-256`
+  - `normalize_deploy_webhook` for `deployment` / `deployment_status`
+  - description text and sender email excluded from normalized records
+  - edge strength strong only when commit SHA + environment present
+
 ## Done Criteria
 
-- [ ] Operator-approved provider/scope/permissions and claim level are explicit.
-- [ ] Webhooks and backfill are signature/auth checked, bounded, durable, and idempotent.
-- [ ] Stable identifiers dominate; inferred adjacency is visibly weak and never root-cause proof.
-- [ ] Raw provider content is scoped/short-lived and excluded from default agent output.
+- [x] (2026-07-17) Operator-approved provider/scope/permissions and claim level
+  are explicit in the decision doc (`not_measured` until ledger rows).
+- [ ] Webhooks and backfill are signature/auth checked, bounded, durable, and
+  idempotent (signature pure fn landed; HTTP/durable/idempotent open).
+- [x] (partial) Stable identifiers dominate in the normalizer; edge strength
+  is explicit; no causal wording.
+- [x] (partial) Description text excluded from normalized output; raw payload
+  retention still open.
 - [ ] Missing evidence and provider drift fail closed and appear in `doctor` output.
 - [ ] Coverage thresholds have dated real rows before any product claim advances.
 - [ ] Full Turso, bundle, redaction, API, and strict Rust gates pass.
