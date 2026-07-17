@@ -33,6 +33,10 @@ worker**, not self-hosted Datadog product backend. Seer exclusion last deep-chec
 pass **158**. Grafana Assistant hybrid Cloud LLM last pass **158**. Combination
 air-gap claim **still holds**.
 
+**Pass 220 (2026-07-18):** OPW docs still describe Worker that **routes** to
+**destinations** (not a self-hosted Datadog store/UI). Air-gap combination claim
+**still holds**.
+
 **Falsification:** a major incumbent ships **self-hosted, open (or source-available)
 agent evidence with no cloud AI dependency** *and* a portable redacted bundle
 schema; or Seer becomes self-host GA with offline models; or Grafana Assistant

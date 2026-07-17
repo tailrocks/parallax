@@ -3,13 +3,13 @@
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 107**
 > + **pass 145** + **pass 167** + **pass 196** pin recheck). Sources:
 > [Langfuse docs](https://langfuse.com/docs), OTel integration, pricing/self-host,
-> GitHub **v3.221.1** (2026-07-17) / **31,341★** (pass **196**). **Still
+> GitHub **v3.221.1** (2026-07-17) / **31,342★** (pass **220**). **Still
 > LLMOps/dev-loop product** (trace → eval → prompt → experiment), **not**
 > production-incident OTLP full-signal + portable redacted evidence bundle +
 > outcome ledger. Complementary on agent traces; A1 still unproven.
 >
-> **Pass 167/196 MCP:** data-platform MCP docs still say **read and write tools
-> available by default**; client allowlist for read-only. Does **not** close
+> **Pass 167/196/220 MCP:** data-platform MCP docs still say **read and write
+> tools available by default**; client allowlist for read-only. Does **not** close
 > Parallax portable redacted bundle + outcome wedge.
 >
 > **Bottom line up front:** Langfuse is the archetypal **open-source LLM/agent
