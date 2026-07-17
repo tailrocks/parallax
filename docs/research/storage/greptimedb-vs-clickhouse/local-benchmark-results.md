@@ -7897,3 +7897,11 @@ Live SHOW CREATE:
 Explains Run 249 join: logs side **6/6 granules**. Product blueprint must add
 `trace_id` inverted/bloom (GT) or ORDER BY includes `trace_id` (CH comparator) —
 not present in current four-way harness logs table.
+
+### Run 270 — 2026-07-17 — add INVERTED+BLOOM on logs1m.trace_id
+
+`ALTER … MODIFY COLUMN trace_id SET INVERTED INDEX` **and** `SET SKIPPING INDEX
+BLOOM` both accepted. SHOW CREATE shows both on `trace_id`. Filter
+`WHERE trace_id='t0'` **~4–7 ms**. Product path: can add indexes post-create
+without rebuild DDL. Harness should eventually key/index `trace_id` on logs
+tables for join prune fairness.
