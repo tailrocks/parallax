@@ -12,8 +12,8 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 76 (GitHub REST latest **2026-03-10**; plan 121 still on
-`2022-11-28` pin). Pass 75 = agent/CLI. A1/A2/A4/A6 open.
+Last updated 2026-07-17 after pass 77 (incumbent self-hosted AI: Seer still closed; Grafana
+Assistant self-managed UI **requires Cloud backend** — not offline BYO-LLM). A1/A2/A4/A6 open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
@@ -53,7 +53,14 @@ producer rather than treat its construction as future work. Autonomous fixing re
 ## Standing watches (cheap, recurring)
 
 - **Engine releases** — re-pin + re-verify load-bearing claims on each new stable (GreptimeDB; ClickHouse feature line). Last: **2026-07-17 pass 60** — GreptimeDB stable **`v1.1.3`**, nightly **`v1.2.0-nightly-20260706`**; ClickHouse feature line **`v26.6.1.1193-stable`** (not LTS). Measurement still owed on the new pins.
-- **Incumbent self-hosted AI** — Sentry Seer self-host (stated FSL intent, no date); Grafana local-inference/BYO-LLM backend; either would erode the wedge.
+- **Incumbent self-hosted AI** — **Rechecked 2026-07-17 pass 77:** Seer still
+  **closed / unavailable** on self-hosted
+  ([develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/)).
+  Grafana Assistant **UI** is available on self-managed OSS/Enterprise (v13+) but
+  **requires a Grafana Cloud stack** for the LLM backend (not local-inference /
+  air-gap). Full note:
+  [market/incumbent-self-hosted-ai-recheck-2026-07-17.md](market/incumbent-self-hosted-ai-recheck-2026-07-17.md).
+  **UNFIRED:** Seer self-host GA; Grafana offline/BYO-LLM Assistant.
 - **OTel** — any move from per-signal semantics toward incident/investigation/RCA **artifacts**. Last deep recheck: **2026-07-17** ([commoditization note](architecture/evidence-bundle-schema-commoditization-2026-07-17.md)): #1185 attribute issue still open/idle; no bundle schema.
 - **Run-id / invocation-id standardization (active participation, not just a watch)** — no OTel standard for a CLI invocation's cross-trace correlation id (rechecked **2026-07-17 pass 53**). Parallax ships **`cli.invocation.id`** (+ `session.id`). Historical tracker link `semantic-conventions#2883` is **dead**; GenAI session push is [semantic-conventions-genai#51](https://github.com/open-telemetry/semantic-conventions-genai/issues/51). Full table: [capture/run-id-standardization.md](capture/run-id-standardization.md).
 - **Coding-agent capability** — as models improve, the "raw context is enough" threat (item 1) grows; A1 must re-run across model generations.

@@ -18,12 +18,14 @@ dependency.** Narrower claims need care:
 | Sentry Seer available self-hosted | **False — still excluded** | [develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/): "Seer and other AI & ML features… currently closed source" (pass 54 fetch) |
 | Datadog Bits available as self-hosted backend | **False** | Pass 42: Agent + OPW only; no self-hosted Datadog backend |
 | OSS Grafana / LGTM can run offline | **True for OSS core** | Self-host OSS is real; **Enterprise plugins/license keys** and Cloud AI features are separate — do **not** claim "all Grafana phones home" without a dated primary for a specific binary feature |
+| Grafana Assistant on self-managed | **UI yes / AI backend Cloud** | **Pass 77:** plugin + connect to Grafana Cloud stack required; not offline BYO-LLM — [incumbent-self-hosted-ai-recheck-2026-07-17.md](incumbent-self-hosted-ai-recheck-2026-07-17.md) |
 | OSS SigNoz / OpenObserve / Traceway / Rustrak / GlitchTip / Bugsink can air-gap | **True (product can)** | Self-host OSS peers; **none** ship Parallax-style portable redacted evidence bundle + outcome loop (passes 49–53) |
 | Full combination closed | **False** | No peer ships open portable redacted prod-incident bundle + outcome under air-gap |
 
 **Falsification:** a major incumbent ships **self-hosted, open (or source-available)
 agent evidence with no cloud AI dependency** *and* a portable redacted bundle
-schema; or Seer becomes self-host GA with offline models.
+schema; or Seer becomes self-host GA with offline models; or Grafana Assistant
+runs fully offline with BYO-LLM (would fire pass-77 UNFIRED item).
 
 **Uncertainty:** Enterprise license telemetry for Grafana/Elastic/etc. was
 **not** re-instrumented this pass — mark any "X phones home" claim
