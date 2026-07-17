@@ -1,21 +1,27 @@
+import { useEffect, useMemo, useState } from "react"
 import { Link } from "@tanstack/react-router"
 import { IconTerminal2, IconWorld } from "@tabler/icons-react"
 
 import { ServiceDot } from "@/components/console/service-dot"
 import { Badge } from "@/components/ui/badge"
 import type { ServiceMapEdge, ServiceMapNode } from "@/lib/api"
+import {
+  ECOSYSTEM_NODE_HEIGHT,
+  ECOSYSTEM_NODE_WIDTH,
+  ecosystemTopologyKey,
+  fallbackEcosystemLayout,
+  layoutEcosystem,
+} from "@/lib/ecosystem-layout"
+import type { EcosystemLayout } from "@/lib/ecosystem-layout"
 import { formatCount, formatDurationNs, formatPercent } from "@/lib/format"
 import type { ResolvedRange } from "@/lib/range"
 import { rangeLinkSearch } from "@/lib/range"
 import { cn } from "@/lib/utils"
 
-const WIDTH = 960
+const MIN_WIDTH = 960
 const MIN_HEIGHT = 420
-const NODE_WIDTH = 150
-const NODE_HEIGHT = 58
-/** Vertical room per node in a column; columns larger than the minimum
- * canvas grow the canvas instead of overlapping cards (corpus id eco-full). */
-const ROW_SPACING = NODE_HEIGHT + 22
+const NODE_WIDTH = ECOSYSTEM_NODE_WIDTH
+const NODE_HEIGHT = ECOSYSTEM_NODE_HEIGHT
 
 interface PositionedNode extends ServiceMapNode {
   x: number
@@ -32,57 +38,53 @@ function edgeRate(edge: ServiceMapEdge): number {
   return calls > 0 ? count(edge.errorCount) / calls : 0
 }
 
-function layoutNodes(
+function positionedNodes(
+  nodes: ServiceMapNode[],
+  layout: EcosystemLayout
+): PositionedNode[] {
+  const byName = new Map(nodes.map((node) => [node.name, node]))
+  return layout.positions
+    .map(({ id, x, y }) => ({
+      name: id,
+      kind: "service" as const,
+      lastSeenNanos: "0",
+      spanCount: "0",
+      errorCount: "0",
+      p95Ms: null,
+      ...byName.get(id),
+      x: x + NODE_WIDTH / 2,
+      y: y + NODE_HEIGHT / 2,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name))
+}
+
+function useEcosystemLayout(
   nodes: ServiceMapNode[],
   edges: ServiceMapEdge[]
-): { positioned: PositionedNode[]; height: number } {
-  const names = new Set(nodes.map((node) => node.name))
-  for (const edge of edges) {
-    names.add(edge.source)
-    names.add(edge.target)
-  }
-  const depth = new Map([...names].sort().map((name) => [name, 0]))
-  for (let pass = 0; pass < names.size; pass += 1) {
-    for (const edge of edges) {
-      const sourceDepth = depth.get(edge.source) ?? 0
-      depth.set(
-        edge.target,
-        Math.max(depth.get(edge.target) ?? 0, sourceDepth + 1)
-      )
-    }
-  }
-  const maxDepth = Math.max(0, ...depth.values())
-  const groups = new Map<number, string[]>()
-  for (const [name, level] of depth) {
-    groups.set(level, [...(groups.get(level) ?? []), name])
-  }
-  const byName = new Map(nodes.map((node) => [node.name, node]))
-  const maxColumn = Math.max(0, ...[...groups.values()].map((g) => g.length))
-  const height = Math.max(MIN_HEIGHT, (maxColumn + 1) * ROW_SPACING)
-  const positioned = [...groups.entries()]
-    .flatMap(([level, groupNames]) => {
-      const sorted = groupNames.sort()
-      const x =
-        maxDepth === 0
-          ? WIDTH / 2
-          : 80 + (level * (WIDTH - 160)) / Math.max(1, maxDepth)
-      return sorted.map((name, index) => {
-        const y = ((index + 1) * height) / (sorted.length + 1)
-        return {
-          name,
-          kind: "service" as const,
-          lastSeenNanos: "0",
-          spanCount: "0",
-          errorCount: "0",
-          p95Ms: null,
-          ...byName.get(name),
-          x,
-          y,
-        }
-      })
+): EcosystemLayout {
+  const key = ecosystemTopologyKey({ nodes, edges })
+  const [resolved, setResolved] = useState<{
+    key: string
+    layout: EcosystemLayout
+  }>(() => ({ key, layout: fallbackEcosystemLayout({ nodes, edges }) }))
+  const layout = useMemo(
+    () =>
+      resolved.key === key
+        ? resolved.layout
+        : fallbackEcosystemLayout({ nodes, edges }),
+    [edges, key, nodes, resolved]
+  )
+
+  useEffect(() => {
+    let current = true
+    void layoutEcosystem({ nodes, edges }).then((next) => {
+      if (current) setResolved({ key, layout: next })
     })
-    .sort((a, b) => a.name.localeCompare(b.name))
-  return { positioned, height }
+    return () => {
+      current = false
+    }
+  }, [edges, key, nodes])
+  return layout
 }
 
 function EdgePath({
@@ -124,7 +126,10 @@ export function EcosystemGraph({
   edges: ServiceMapEdge[]
   range: ResolvedRange
 }) {
-  const { positioned, height } = layoutNodes(nodes, edges)
+  const layout = useEcosystemLayout(nodes, edges)
+  const positioned = positionedNodes(nodes, layout)
+  const width = Math.max(MIN_WIDTH, layout.width)
+  const height = Math.max(MIN_HEIGHT, layout.height)
   const byName = new Map(positioned.map((node) => [node.name, node]))
   const renderedEdges = edges
     .map((edge) => ({
@@ -173,7 +178,7 @@ export function EcosystemGraph({
         style={{ minHeight: height }}
       >
         <svg
-          viewBox={`0 0 ${WIDTH} ${height}`}
+          viewBox={`0 0 ${width} ${height}`}
           className="absolute inset-0 size-full text-muted-foreground"
           role="img"
           aria-label="service dependency graph"
@@ -208,7 +213,7 @@ export function EcosystemGraph({
             errors > 0 && "border-rose-500/50"
           )
           const style = {
-            left: `${((node.x - NODE_WIDTH / 2) / WIDTH) * 100}%`,
+            left: `${((node.x - NODE_WIDTH / 2) / width) * 100}%`,
             top: `${((node.y - NODE_HEIGHT / 2) / height) * 100}%`,
             width: NODE_WIDTH,
             minHeight: NODE_HEIGHT,
@@ -260,7 +265,7 @@ export function EcosystemGraph({
         })}
 
         {renderedEdges.map(({ edge, source, target }) => {
-          const x = ((source.x + target.x) / 2 / WIDTH) * 100
+          const x = ((source.x + target.x) / 2 / width) * 100
           const y = ((source.y + target.y) / 2 / height) * 100
           return (
             <Link
