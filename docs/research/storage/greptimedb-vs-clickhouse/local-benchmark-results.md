@@ -8244,3 +8244,6 @@ GT warm **~9–10 ms**; CH **~5–6 ms**. Interactive; CH slight lead on broad t
 
 GT `date_bin('1 minute', ts)` avg: **73 ms** (includes cold-ish); CH
 `toStartOfMinute` **24 ms**. Both complete; CH faster on bucketed line shape.
+
+### Run 348 — 2026-07-17 — not done
+
