@@ -192,6 +192,15 @@ Full wedge combination **still not closed**.
 
 Full combination **still not closed**.
 
+**Pass 256 recheck (2026-07-18):** **TMA1 + Odigos** watches —
+
+| Product | Pin | Watch |
+| --- | --- | --- |
+| **TMA1** | [tma1-ai/tma1](https://github.com/tma1-ai/tma1) **109★**; latest tag still **`v0.2.0-alpha12`**; push 2026-07-17 | Recent commits = GreptimeDB min **v1.1.3**, install probe, session-detail perf, launchd/codex hooks. Keyword scan last **40** commit messages: **no** sentry/redact/envelope/outcome/fingerprint/pii/evidence hits. **23rd UNFIRED** prod-collision (Sentry envelope / portable redacted prod evidence / fix-outcome). Still local-first LLM/agent loop scope. |
+| **Odigos** | [odigos-io/odigos](https://github.com/odigos-io/odigos) **3,668★**; **`v1.31.2`** (2026-07-09) | eBPF auto-instrumentation **export** path — **not** own evidence store. Own-store collision **UNFIRED**. |
+
+Full combination **still not closed**.
+
 **Pass 249 recheck (2026-07-18):** **Traceway** + Sentry OTLP metrics kill —
 
 | Field | Value |
