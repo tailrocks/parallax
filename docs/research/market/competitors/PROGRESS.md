@@ -22,6 +22,7 @@
 | 4 | 2026-07-17 | **Langfuse** deep-dive ([parallax-vs-langfuse.md](parallax-vs-langfuse.md)): the archetypal OSS LLM/agent-obs platform — most direct AI-wedge competitor. Pricing verified (self-host MIT **free unlimited**; Cloud Hobby free / Pro $199/mo + $8/100k units / Enterprise $2499/mo; self-host EE ~$500/mo). OTLP backend at `/api/public/otel` confirmed. No-bias: Langfuse wins decisively on LLM-tracing/evals/prompts/datasets/community/MIT-free; Parallax edges (prod telemetry breadth, prod error+outcome loop, bounded agent bundle) all unproven (A1). Open: pin exact Langfuse release tag + self-host backing store. | _pending_ |
 | 5 | 2026-07-17 | **Grafana Cloud/LGTM** deep-dive ([parallax-vs-grafana.md](parallax-vs-grafana.md)): largest OSS-origin full-stack competitor. Cloud pricing verified (Free / Pro $195/mo; metrics ~$6.50/1k series, logs/traces/profiles ~$0.45-0.50/GB; app-obs $0.04/host-hour); Tempo v3 cut from in-repo reference note. No-bias: Grafana wins decisively on breadth/dashboards(OSS standard)/OTLP-native-at-parity/ecosystem/scale/compliance; Parallax edges scoped to self-host simplicity (vs distributed Mimir+Loki+Tempo+Pyroscope), Apache vs AGPLv3, native error-workflow (Grafana has none), bundle thesis (unproven A1). | _pending_ |
 | 6 | 2026-07-17 | **Honeycomb** deep-dive ([parallax-vs-honeycomb.md](parallax-vs-honeycomb.md)): defining high-cardinality wide-event platform. Pricing verified (Free 20M events/mo; Pro from $150/50M events; Enterprise custom; cardinality NOT priced separately). AI: stale "Bubbleuppy" codename corrected → **Query Assistant (NLQ) + Canvas + MCP**. No-bias: Honeycomb wins decisively on high-cardinality interactive exploration/event-model-maturity/NLQ-Canvas-MCP/SaaS-scale; Parallax edges scoped to self-host (Honeycomb store is SaaS-only), Apache vs closed, native error-workflow (Honeycomb has none), bundle thesis (unproven A1). High-cardinality query is the riskiest regime for GreptimeDB — benchmark-flagged. | _pending_ |
+| 7 | 2026-07-17 | **Arize Phoenix** deep-dive ([parallax-vs-arize-phoenix.md](parallax-vs-arize-phoenix.md)): completes the AI-obs trio (Langfuse/LangSmith/Phoenix). Latest pinned **arize-phoenix-v18.1.0** (2026-07-17). **License corrected: ELv2, not Apache** (self-host free/unlimited, not OSI-open, managed-service restriction — less permissive than Langfuse MIT / Parallax Apache-2.0). OTLP-native + OpenInference (Arize drives the AI-span semantic standard) confirmed. Pricing (self-host free; Cloud Free/Core $29/Pro $199; AX from $50/mo). No-bias: Phoenix wins on LLM-tracing/evals/OpenInference/self-host-free; Parallax edges (prod telemetry breadth, error+outcome loop, bounded bundle) all unproven (A1). Open: self-host backing store. | _pending_ |
 
 ## Deep-dive status (per product)
 
@@ -39,7 +40,7 @@
 | TMA1 | — | 🟡 inherited | 2026-06 (legacy) | write `parallax-vs-tma1.md`; bundle artifact drift check |
 | Highlight.io | — | 🔴 missing | n/a | write deep-dive; closest SaaS session-replay+errors peer |
 | Langfuse | [parallax-vs-langfuse.md](parallax-vs-langfuse.md) | ✅ pass 4 | 2026-07-17 | **latest pinned: v3.219.0 (2026-07-17)** + SDK-v4 OTLP-native/MCP-tracing + self-host-SSO-free added pass 4b; open: self-host backing store (Postgres/ClickHouse); A1-vs-Langfuse measurement; Langfuse changelog (production-error extension risk) |
-| Arize Phoenix | — | 🔴 missing | n/a | write deep-dive (AI wedge); OSS evals |
+| Arize Phoenix | [parallax-vs-arize-phoenix.md](parallax-vs-arize-phoenix.md) | ✅ pass 7 | 2026-07-17 | **latest pinned: arize-phoenix-v18.1.0 (2026-07-17)**; license corrected Apache→**ELv2**; open: self-host backing store; A1-vs-Phoenix measurement; watch triggers in [parallax-vs-arize-phoenix.md](parallax-vs-arize-phoenix.md) |
 | LangSmith | — | 🔴 missing | n/a | write deep-dive (AI wedge) |
 | Dynatrace / Splunk Obs / Elastic Obs / Sumo / Chronosphere / Observe / Axiom | — | 🔴 missing | n/a | tier 2: one per later pass |
 | Uptrace / HyperDX / Odigos | — | 🔴 watch | n/a | brief coverage; verify relevance first |
@@ -63,9 +64,10 @@ are 🟡 inherited** (sources dated 2026-05/06). Priority for re-verification:
 
 ## Next highest-value gaps (ranked)
 
-1. **Arize Phoenix deep-dive** — OSS LLM/agent-obs (AI wedge); completes the AI-observability trio with Langfuse/LangSmith.
-2. **New Relic deep-dive** — full-platform incumbent; entity model + NRAI + pricing.
-3. **OpenObserve deep-dive** — nearest Rust single-binary OSS platform; AI/MCP gating + free-tier (legacy note aging).
+1. **New Relic deep-dive** — full-platform incumbent; entity model + NRAI + pricing.
+2. **OpenObserve deep-dive** — nearest Rust single-binary OSS platform; AI/MCP gating + free-tier (legacy note aging).
+3. **LangSmith deep-dive** — AI-wedge trio completion (Langfuse + Phoenix done); closed LLM tracing/eval.
+4. **Phoenix drift watch** — pin self-host backing store; A1-vs-Phoenix measurement; watch triggers in [parallax-vs-arize-phoenix.md](parallax-vs-arize-phoenix.md).
 4. **SigNoz cell re-verification** — exact current star count + MCP server version (v0.5.1 last confirmed 2026-06-17); trace/metric throughput (no current public number). Watch triggers in [parallax-vs-signoz.md](parallax-vs-signoz.md).
 5. **Sentry drift watch** — OTLP-metrics GA (absent today); A1-vs-Seer measurement; self-host cost/ops benchmark vs Parallax single binary.
 
