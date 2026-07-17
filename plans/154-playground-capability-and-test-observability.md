@@ -1,19 +1,18 @@
 # Plan 154: Live multi-backend fan-out acceptance residual
 
 > **Executor instructions**: W1–W5 implementation complete. Do not redesign.
-> Parallax-backend arm DONE via plan 159. External multi-backend plumbing
-> re-verified 2026-07-17 one-at-a-time (OO/Maple/SigNoz PASS; Sentry setup in
-> flight). Remaining: Sentry finish + playground acceptance wrappers +
-> disposition rows + workflow.
+> Parallax-backend arm DONE via plan 159. External multi-backend **plumbing**
+> five-way green 2026-07-17 (one external at a time). Remaining: playground
+> acceptance wrappers + product disposition rows + workflow.
 
 ## Status
 
 - **Priority**: P1
-- **Effort**: S–M remaining
+- **Effort**: S remaining
 - **Risk**: MEDIUM
-- **Depends on**: Docker host (available); Sentry self-hosted finish
+- **Depends on**: Docker host (available)
 - **Category**: cross-repository playground / live validation
-- **Status**: IN PROGRESS — external fan-out 3/4 green; Sentry + acceptance residual
+- **Status**: IN PROGRESS — fan-out matrix green; acceptance/disposition residual
 - **Evidence**:
   [`docs/research/validation/2026-07-17-plan-154-multi-backend/`](../docs/research/validation/2026-07-17-plan-154-multi-backend/README.md)
 
@@ -30,33 +29,31 @@ Evidence bundle under
 |---|---|
 | OpenObserve | PASS — 102 traces via Rotel; Parallax copy 102 |
 | Maple v0.0.12 | PASS — `maple traces` shows `maple-fanout`; Parallax 102 |
-| SigNoz v0.129.0 | PASS — CH `signoz-smoke=102`, `signoz-smoke2=82`; first-org OpAMP gate re-confirmed |
-| Sentry self-hosted | setup.sh running this session — not yet verify.sh |
+| SigNoz v0.129.0 | PASS — CH `signoz-smoke=102`, `signoz-smoke2=82`; OpAMP first-org gate |
+| Sentry self-hosted 26.6.0 | PASS — `verify.sh` OTLP 200 + A15/A16 `times_seen=5` |
 
 ## Residual only
 
-1. Finish Sentry: `setup.sh` → `onboard.sh` → paste Rotel exporters →
-   `verify.sh` (A1/A15/A16).
-2. Collector-backed playground acceptance wrappers per stack still owed
+1. Collector-backed playground acceptance wrappers per stack
    (`parallax run start -- scripts/observable-test-session.sh <stack>
    --acceptance` + `test-verify`) against the fan-out path (Parallax arm was
    plan 159).
-3. Record W5 histogram / db-semconv / cross-language error **product
-   disposition** rows in playground `VERIFICATION.md` (plumbing green; UI
-   disposition pending).
-4. Push playground workflow at same head; preserve SHA + artifacts.
-5. Reconcile plan 122 disposition; preserve validation evidence; retire when
-   five-backend matrix + acceptance + workflow are green.
+2. Record W5 histogram / db-semconv / cross-language error **product
+   disposition** rows in playground `VERIFICATION.md`.
+3. Push playground workflow at same head; preserve SHA + artifacts for the
+   acceptance residual.
+4. Reconcile plan 122 disposition; retire when acceptance + disposition +
+   workflow are green.
 
 ## Done Criteria
 
-- [x] Collector fan-out plumbing: OpenObserve, Maple, SigNoz (+ prior Parallax).
-- [ ] Sentry self-hosted re-verify on current pin.
+- [x] Collector fan-out plumbing: OpenObserve, Maple, SigNoz, Sentry (+ prior
+      Parallax).
 - [ ] Scenario/acceptance wrappers + exact-head playground workflow pass.
 - [ ] Disposition rows recorded for histogram / cross-language error.
 
 ## STOP / Remove When
 
 STOP if real fan-out replaced by mocks/screenshots or a product fallback
-backend is introduced. Delete when five-backend matrix + acceptance wrappers
-+ workflow pass.
+backend is introduced. Delete when acceptance wrappers + disposition rows +
+workflow pass on top of the green five-backend plumbing matrix.

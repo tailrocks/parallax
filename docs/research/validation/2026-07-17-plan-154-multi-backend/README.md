@@ -31,7 +31,7 @@ For each backend:
 | **OpenObserve** | `compose.yml` rotel+openobserve | **PASS** — OO search `count(*)=102` for traces; Parallax `service_name=smoke` → **102** rows | `./smoke.sh` green; OO UI `:5080`; healthz ok |
 | **Maple** v0.0.12 | `compose.maple.yml`, OO stopped | **PASS** — `docker exec pfanout-maple maple traces` shows `serviceName=maple-fanout` spans; Parallax SQL **102** rows for `maple-fanout` | image build from `maple/Dockerfile`; host UI `:8081` |
 | **SigNoz** v0.129.0 | `compose.signoz.yml` + vendor clone; first-org register | **PASS** — ClickHouse `distributed_signoz_index_v3`: `signoz-smoke=102`, `signoz-smoke2=82`; Parallax SQL `signoz-smoke=102` | UI `:3301`; admin `admin@parallax.lab` via `/api/v1/register`; OpAMP opens collector OTLP `:4317` only after register |
-| **Sentry** self-hosted | `sentry/setup.sh` (getsentry ~72 services) | **IN PROGRESS / pending** — install started this session (`/tmp/sentry-setup.log`); not yet onboarded/verify.sh | 20–40 min first install; residual until `onboard.sh` + `verify.sh` + Rotel `sentry` exporter |
+| **Sentry** self-hosted v26.6.0 | `sentry/setup.sh` + own compose stack | **PASS** — `verify.sh` A1 OTLP 200 + A15/A16 `times_seen=5` on `PaymentError: payment failure (chaos)`; DSN `http://14685f…@localhost:9000/1` | setup ~20 min; onboard admin; Rotel HTTP OTLP to `host.docker.internal:9000/api/1/integration/otlp` |
 
 ### OpenObserve detail
 
@@ -54,23 +54,26 @@ For each backend:
 ### Sentry detail
 
 - Script path: `bench/otlp-fanout/sentry/{setup,onboard,verify}.sh`, pin `SENTRY_REF=26.6.0`.
-- Install process launched this session; not yet at `onboard.sh` / DSN / Rotel exporter paste.
-- Historical 2026-06-23 lab already proved OTLP 200 + A15/A16 on this stack; this residual re-runs on current pins.
+- Setup completed this session (~20 min install + compose `--wait`); onboard
+  created `admin@parallax.lab`; public key `14685f5828032726db98ad5933e1bcbe`.
+- `./sentry/verify.sh <DSN>` → **ASSERT PASS**: OTLP ingest HTTP 200; five
+  identical errors grouped into one issue with `times_seen=5`.
+- Rotel env (local, gitignored): `sentry` on traces+logs only; metrics stay
+  Parallax-only for this arm.
 
 ## Not closed in this packet (still plan 154 residual)
 
-1. **Sentry arm** live re-verify after setup completes.
-2. **Playground collector-backed acceptance** per stack
+1. **Playground collector-backed acceptance** per stack
    (`parallax run start -- scripts/observable-test-session.sh <stack> --acceptance`
    + `playground test-verify`) — not re-run against each external in this
    session (Parallax arm covered under plan 159).
-3. **Scenario sweep** baggage/gateway/Kafka + W5 histogram disposition table
+2. **Scenario sweep** baggage/gateway/Kafka + W5 histogram disposition table
    rows still `pending live run` in playground `VERIFICATION.md` for
-   Maple/SigNoz/OpenObserve/Sentry product rendering (fan-out plumbing is
-   green; product-UI disposition rows are separate).
-4. **Playground workflow** exact-head push + artifact preserve.
-5. **Plan 122** disposition reconcile after the five-backend matrix is fully
-   green including Sentry + acceptance wrappers.
+   product rendering (fan-out plumbing is green; product-UI disposition rows
+   are separate).
+3. **Playground workflow** exact-head CI artifact preserve for the residual
+   acceptance wrappers.
+4. **Plan 122** disposition reconcile after acceptance wrappers close.
 
 ## STOP check
 
