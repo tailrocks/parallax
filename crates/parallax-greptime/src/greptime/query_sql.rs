@@ -159,7 +159,15 @@ impl GreptimeStore {
     }
 
     pub(super) fn select_spans_sql(where_clause: &str, order: &str, limit_clause: &str) -> String {
-        format!(r#"SELECT * FROM opentelemetry_traces WHERE {where_clause}{order}{limit_clause}"#)
+        // `*` keeps the auto-widening `span_attributes.*` columns; the Json
+        // columns are additionally projected through json_to_string because
+        // the arrow HTTP path returns raw JSONB bytes for `*`-selected Json
+        // columns (links decoded null, events decoded as an integer).
+        format!(
+            r#"SELECT *, json_to_string("span_links") AS "span_links_json",
+                      json_to_string("span_events") AS "span_events_json"
+               FROM opentelemetry_traces WHERE {where_clause}{order}{limit_clause}"#
+        )
     }
 
     pub(super) fn select_logs_sql(where_clause: &str, order: &str, limit_clause: &str) -> String {

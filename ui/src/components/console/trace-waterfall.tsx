@@ -110,6 +110,10 @@ export function TraceWaterfall({
     () => Array.from(new Set(spans.map((span) => span.service))),
     [spans]
   )
+  const spanIds = useMemo(
+    () => new Set(spans.map((span) => span.spanId)),
+    [spans]
+  )
   const shouldVirtualize = visualItems.length > 300
   const itemIndexBySpanId = useMemo(() => {
     const index = new Map<string, number>()
@@ -174,6 +178,7 @@ export function TraceWaterfall({
     const active = span.spanId === selectedId
     const highlighted = highlightIds?.has(span.spanId) ?? false
     const failed = span.statusCode === "STATUS_CODE_ERROR"
+    const detached = Boolean(span.parentSpanId) && !spanIds.has(span.parentSpanId ?? "")
     const meta = spanKindMeta(span.kind, span.statusCode)
     return (
       <button
@@ -204,6 +209,14 @@ export function TraceWaterfall({
             <div className="mt-1 flex flex-wrap items-center gap-1">
               <Badge variant="outline">{span.service}</Badge>
               {failed ? <Badge variant="rose">error</Badge> : null}
+              {detached ? (
+                <Badge
+                  variant="amber"
+                  title="Parent span never arrived; shown at the top level"
+                >
+                  detached
+                </Badge>
+              ) : null}
             </div>
           </div>
         </div>

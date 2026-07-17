@@ -296,7 +296,7 @@ impl GreptimeStore {
                 // native: `timestamp` is the span start TIME INDEX (ns);
                 // `duration_nano` is the generated duration in ns.
                 let (attributes, resource) = cols.reassemble_attrs(row);
-                let events = match cols.json("span_events", row) {
+                let events = match cols.json("span_events_json", row) {
                     serde_json::Value::Null => None,
                     value => Some(value.to_string()),
                 };
@@ -328,7 +328,7 @@ impl GreptimeStore {
                         }),
                     scope_name: cols.string("scope_name", row),
                     events,
-                    links: cols.json("span_links", row),
+                    links: cols.json("span_links_json", row),
                     attributes,
                     resource,
                 }

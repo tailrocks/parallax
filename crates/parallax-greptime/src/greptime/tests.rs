@@ -132,6 +132,10 @@ fn golden_select_spans_and_logs_sql() {
     );
     assert!(spans.contains("opentelemetry_traces"));
     assert!(spans.contains("LIMIT 10"));
+    // Span links/events are Json columns: `*`-selected they cross the arrow
+    // wire as raw JSONB (null / integer garbage) — D-005, corpus id t-links.
+    assert!(spans.contains(r#"json_to_string("span_links") AS "span_links_json""#));
+    assert!(spans.contains(r#"json_to_string("span_events") AS "span_events_json""#));
     let logs = GreptimeStore::select_logs_sql("1 = 1", "", " LIMIT 5");
     assert!(logs.contains("opentelemetry_logs"));
     // JSON columns must cross the arrow wire as strings — a raw JSON column

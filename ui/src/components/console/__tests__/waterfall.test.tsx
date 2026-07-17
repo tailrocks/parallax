@@ -186,3 +186,47 @@ describe("TraceWaterfall modes", () => {
     expect(onSelect).toHaveBeenCalledWith("child")
   })
 })
+
+describe("corpus regressions (plan 160)", () => {
+  it("D-002 t-deep: span names render on one truncating line, never char-wrapped", () => {
+    render(
+      <TraceWaterfall spans={spans} selectedId={null} onSelect={() => {}} />
+    )
+    const name = screen.getByText("GET /checkout")
+    expect(name.className).toContain("truncate")
+    expect(name.className).not.toContain("break-words")
+    expect(name.getAttribute("title")).toBe("GET /checkout")
+  })
+
+  it("t-orphan: a span whose parent never arrived is flagged detached", () => {
+    render(
+      <TraceWaterfall
+        spans={[
+          spans[0]!,
+          {
+            spanId: "lost",
+            parentSpanId: "never-arrived",
+            tsNanos: "150",
+            durationNs: "10",
+            service: "api",
+            name: "orphan.detached_child",
+            kind: "INTERNAL",
+            statusCode: "STATUS_CODE_UNSET",
+            statusMessage: "",
+          },
+        ]}
+        selectedId={null}
+        onSelect={() => {}}
+      />
+    )
+    expect(screen.getByText("orphan.detached_child")).toBeTruthy()
+    expect(screen.getByText("detached")).toBeTruthy()
+  })
+
+  it("true children are not flagged detached", () => {
+    render(
+      <TraceWaterfall spans={spans} selectedId={null} onSelect={() => {}} />
+    )
+    expect(screen.queryByText("detached")).toBeNull()
+  })
+})
