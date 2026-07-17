@@ -7060,3 +7060,9 @@ No mechanism drift. Full matrix in scratch `run184-four-way-matrix.txt`. Notes:
 `EXPLAIN indexes=1`: projection `p_svc` → Granules **2/12**; no projection → **12/12**.
 Mechanism no drift. GT inverted vs unindexed ~tie at 100k absolute ms. Note:
 `projections-and-access-paths.md`.
+
+### Run 186 — 2026-07-17 — DELETE forbidden on GT append_mode (v1.1.3)
+
+GT append_mode table: `DELETE` → error 1004. GT default mito: DELETE works (1000→999).
+CH lightweight + ALTER DELETE work. **Blueprint:** append event tables need alternate
+GDPR path. Note: `deletes-and-mutations.md`, `greptimedb-implementation.md`.

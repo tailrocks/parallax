@@ -368,3 +368,10 @@ The ClickHouse counterpart is `clickhouse-implementation.md` (next pass); the tw
 are kept structurally parallel so the design differences — native metric engine +
 inverted-index lookups + object-store-native vs MergeTree `ORDER BY` + skip indexes
 + S3-disk-policy — are directly comparable.
+
+## Run 186 note — append_mode blocks SQL DELETE
+
+`DELETE FROM` on `append_mode=true` tables is **rejected** on GreptimeDB v1.1.3
+(`DELETE is not allowed under append mode`). Event/log/span tables that use append for
+ingest speed need a separate redact path for GDPR; do not plan in-place DELETE on those
+tables. See `deletes-and-mutations.md` Run 186.

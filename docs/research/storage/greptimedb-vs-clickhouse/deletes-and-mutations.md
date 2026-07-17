@@ -131,3 +131,25 @@ rows/columns) — write-amp ∝ data touched. Two lighter paths now exist:
 - Cross-refs: `dedup-and-update-semantics.md` (filter_deleted, upsert/merge_mode),
   `retention-and-ttl.md` (TTL = whole-SST drop, the bulk cousin),
   `promql-and-metrics-query.md` (same experimental-catch-up pattern).
+
+## Run 186 (2026-07-17) — DELETE on append_mode vs dedup (v1.1.3 / 26.6)
+
+**Load-bearing correction for Parallax event tables.**
+
+| Engine / mode | DELETE | Live result |
+| --- | --- | --- |
+| GT mito **`append_mode=true`** | `DELETE FROM del_t WHERE id=42` | **Rejected:** `DELETE is not allowed under append mode` (code 1004). Row remains. |
+| GT mito **default (dedup)** | `DELETE FROM del_d WHERE id=42` | **OK** — `WHERE id=42` → 0 rows; count 1000→999. |
+| CH lightweight `DELETE FROM` | yes | id=42 gone; count 999 |
+| CH `ALTER TABLE … DELETE` | yes | id=43 gone |
+| CH `OPTIMIZE FINAL` | physical merge | count 998 after both deletes |
+
+**Blueprint implication:** append-mode logs/spans/events (the Run 114 hot path) **cannot use
+SQL DELETE for GDPR erase**. Options: (1) keep a **non-append** redact/privacy table for
+PII that must be erasable; (2) **TTL** whole-file drop when retention is the control; (3)
+proxy-side drop of future ingest + accept tombstone path only on dedup tables; (4) wait for
+upstream append-mode delete if it ships. Do **not** assume `DELETE FROM logs` works on the
+adopt-append blueprint.
+
+Physical purge still deferred to compaction/merge on both engines after logical delete
+(Run 167 nuance holds for the dedup/CH paths that accept DELETE).
