@@ -151,6 +151,7 @@ managed quotes remain):
 | still not done | **469** | top 5 open |
 | adopt-native + pins | **470** | identity OK; pins hold |
 | still not done | **471** | top 5 open |
+| projection hold @2h | **472** | p_svc both builds |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
