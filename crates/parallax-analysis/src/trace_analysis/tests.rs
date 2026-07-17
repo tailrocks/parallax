@@ -132,6 +132,48 @@ fn critical_path_handles_zero_duration_spans() {
 }
 
 #[test]
+fn critical_path_terminates_on_self_parent() {
+    let path = critical_path(&[span("loop", Some("loop"), 0, 100)]);
+    assert_eq!(path_ids(&path), vec!["loop"]);
+}
+
+#[test]
+fn critical_path_terminates_on_parent_cycle() {
+    let spans = vec![span("a", Some("b"), 0, 100), span("b", Some("a"), 10, 80)];
+    let path = critical_path(&spans);
+    assert_eq!(path_ids(&path), vec!["a", "b"]);
+}
+
+proptest::proptest! {
+    #![proptest_config(proptest::test_runner::Config::with_cases(128))]
+
+    #[test]
+    fn critical_path_is_stable_for_bounded_parent_graphs(
+        parents in proptest::collection::vec(0_usize..12, 1..12),
+        starts in proptest::collection::vec(0_u16..500, 1..12),
+        durations in proptest::collection::vec(0_u16..500, 1..12),
+    ) {
+        let count = parents.len().min(starts.len()).min(durations.len());
+        let spans = (0..count)
+            .map(|index| {
+                let parent = parents[index] % (count + 1);
+                let parent = (parent < count).then(|| format!("span-{parent:02}"));
+                span(&format!("span-{index:02}"), parent.as_deref(), u128::from(starts[index]), u128::from(durations[index]))
+            })
+            .collect::<Vec<_>>();
+        let expected = critical_path(&spans);
+        let mut reversed = spans.clone();
+        reversed.reverse();
+
+        proptest::prop_assert_eq!(critical_path(&reversed), expected.clone());
+        let hop_ids = expected.hops.iter().map(|hop| hop.span_id.as_str()).collect::<BTreeSet<_>>();
+        proptest::prop_assert_eq!(hop_ids.len(), expected.hops.len());
+        proptest::prop_assert!(expected.unattached.windows(2).all(|pair| pair[0] < pair[1]));
+        proptest::prop_assert_eq!(expected.total_gated_ns, expected.hops.iter().map(|hop| hop.self_time_ns).sum::<u128>());
+    }
+}
+
+#[test]
 fn compare_identical_traces_has_empty_diff() {
     let spans = vec![named(
         "a",

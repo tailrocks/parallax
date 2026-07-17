@@ -108,21 +108,25 @@ pub fn critical_path(spans: &[SpanRow]) -> CriticalPath {
     let root = roots[0];
 
     let mut hops = Vec::new();
+    let mut visited = HashSet::new();
     collect_critical_hops(
         root,
         root.ts_nanos,
         root.ts_nanos.saturating_add(root.duration_ns),
         &children,
+        &mut visited,
         &mut hops,
     );
 
     let mut attached = BTreeSet::new();
     collect_attached(root, &children, &mut attached);
-    let unattached = spans
+    let mut unattached = spans
         .iter()
         .filter(|span| !attached.contains(span.span_id.as_str()))
         .map(|span| span.span_id.clone())
-        .collect();
+        .collect::<Vec<_>>();
+    unattached.sort();
+    unattached.dedup();
     let total_gated_ns = hops.iter().map(|hop| hop.self_time_ns).sum();
 
     CriticalPath {
@@ -152,8 +156,12 @@ fn collect_critical_hops<'a>(
     effective_start: u128,
     effective_end: u128,
     children: &HashMap<&'a str, Vec<&'a SpanRow>>,
+    visited: &mut HashSet<&'a str>,
     hops: &mut Vec<CriticalHop>,
 ) {
+    if !visited.insert(span.span_id.as_str()) {
+        return;
+    }
     let child_intervals = children
         .get(span.span_id.as_str())
         .map(|kids| {
@@ -244,7 +252,7 @@ fn collect_critical_hops<'a>(
 
     for child in selected {
         if let Some(interval) = child_interval(child, effective_start, effective_end) {
-            collect_critical_hops(child, interval.start, interval.end, children, hops);
+            collect_critical_hops(child, interval.start, interval.end, children, visited, hops);
         }
     }
 }
