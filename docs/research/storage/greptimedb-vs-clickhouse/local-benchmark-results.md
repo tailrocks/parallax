@@ -7177,3 +7177,8 @@ GT example.toml S3 storage; CH storage_configuration s3 disks. Live both local-o
 ### Run 210 — 2026-07-17 — re-pin check
 
 Still GT v1.1.3 / CH 26.6.1.1193 latest stables. No pin bump.
+
+### Run 211 — 2026-07-17 — four-way N=50k floor smoke
+
+All four builds healthy after re-pin. Directions hold; JSON2 ~4–5 ms vs jsonb ~30 ms vs CH ~4 ms.
+Scratch `run211-four-way.txt`.

@@ -17,6 +17,23 @@ Status: created 2026-05-25 (Run 131); **re-pinned Run 173 (2026-07-17)**. The op
 **Do not pin bare `v1.1.0`:** GitHub marks it prerelease; it carries a critical JSON upgrade bug.
 Use ≥`v1.1.1` (current stable = `v1.1.3`).
 
+## Run 211 — N=50,000 floor smoke (2026-07-17, REPS=4)
+
+Minimum meaningful tier. Directions hold; all ≪300 ms. JSON2 ~tie with CH.
+
+| Query | GT 1.1.3 | GT 1.2-n | CH 26.6 | CH head |
+| --- | ---: | ---: | ---: | ---: |
+| anchored | 9 | 11 | 8 | 3 |
+| metric-agg | 11 | 10 | 5 | 5 |
+| last-value | 7 | 7 | 3 | 3 |
+| fulltext-selective | 4 | 3 | 3 | 4 |
+| fulltext-broad | 8 | 7 | 4 | 5 |
+| jsonb | 31 | 27 | 4 | 4 |
+| json2 | 4 | 5 | 4 | 3 |
+| cross-tier-join | 13 | 10 | 5 | 3 |
+
+Full: scratch `run211-four-way.txt`.
+
 ## Run 184 — N=100,000 matrix refresh (2026-07-17, REPS=8)
 
 Same pins as Run 173. Full harness medians (selected load-bearing rows):
