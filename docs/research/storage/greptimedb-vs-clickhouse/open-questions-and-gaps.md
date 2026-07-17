@@ -129,7 +129,7 @@ re-verifies — **no direction drift**).
 Highest-value *remaining* items (not “done”):
 
 1. **Workload mix shares filled** (product) — Run 223 packet; fill A1–A7 + proxy counters.
-2. **Server-tier 1M/5M four-way** on v1.1.3 + 26.6 — dedup-agg regression + magnitude ratios.
+2. **Server-tier 1M/5M four-way** on v1.1.3 + 26.6 — dedup-agg regression + magnitude ratios. Contract: [`server-tier-runbook.md`](server-tier-runbook.md) (Run 240).
 3. **Vendor-sized managed quotes** — Run 221 list rates; trial/sales quote for fixed profile.
 4. **Cold S3 selective egress at GB scale** — layout+instrumentation (220/234/235);
    **GB–TB** selective cold still owed.
