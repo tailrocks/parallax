@@ -69,6 +69,13 @@ Still **offline validators only** — never runtime deps on the tiny tier.
 | Multi-surface red-team ledger | **Still absent** |
 | `agent_visible_mixed_pass` | **Still open** |
 
+### Pass 226 addendum (2026-07-18)
+
+| Check | Result |
+| --- | --- |
+| Public-safe canary unit test | **ok** (re-ran) |
+| `agent_visible_mixed_pass` | **Still open** |
+
 ## Claim levels applied
 
 From [redaction.md claim table](../capture/redaction.md):
