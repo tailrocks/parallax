@@ -121,8 +121,8 @@ Fixed decisions (approver: the operator, alexey@chainargos.com, 2026-07-17):
 - **Plan 116**: adopt the plan's own proposed lifecycle contract verbatim as
   the approved contract; executor writes the decision record.
 - **Plans 109/115**: V2 auth + server scope opened, minimal recommended
-  shapes. Plan 109 minimal slice DONE/retired (2026-07-17); plan 115 residual
-  server profile remains.
+  shapes. Plan 109 minimal slice DONE/retired (2026-07-17); plan 115 V2
+  server profile residual DONE/retired (2026-07-17 residual closure).
 - **Plans 112/118/120/121/123/124**: scopes opened with defaults — product
   MCP proceeds behind its evidence gates (local transport until 109);
   Sentry-compatible ingest open; first agent-session adapter = Claude Code;
@@ -377,10 +377,10 @@ external facts still BLOCKED where noted. Plan 102 and plan 109 retired
 
 | Plan | Depends on | Trigger / residual | Status |
 |------|------------|--------------------|--------|
-| [110](110-server-profile-ingest-concurrency.md) | 115 + saturation packet | Measured single-worker bottleneck on supported profile | BLOCKED on 115 profile + measurements |
+| 110 | 115 + saturation packet | Measured single-worker bottleneck on supported profile | DONE/retired (2026-07-17) — V2 profile retains single-worker; load packet under envelope without stage isolation ([residual-closure](../docs/research/validation/2026-07-plan-115-v2-server-profile/residual-closure-2026-07-17.md)) |
 | 112 | 099, 104, 111 | Local-stdio product MCP ship gates | DONE (2026-07-17) — graduated `parallax-mcp`; live Codex/Claude discovery; [evidence](../docs/research/validation/2026-07-plan-112-product-mcp/README.md) |
 | [114](114-retire-legacy-spool-reader.md) | Stable raw-frame release cycle + expired legacy segments | Remove NDJSON reader after cycle | BLOCKED — only rolling `preview` tag (recheck 2026-07-17T16:08Z) |
-| [115](115-v2-server-profile.md) | Auth contract + release pipeline (102/109 DONE) | Rehearsals + load packet (ADR + example config landed) | IN PROGRESS — live non-loopback lab packet 2026-07-17; plan 110 still closed |
+| 115 | Auth contract + release pipeline (102/109 DONE) | Rehearsals + load packet | DONE/retired (2026-07-17) — [residual-closure](../docs/research/validation/2026-07-plan-115-v2-server-profile/residual-closure-2026-07-17.md) |
 | 118 | Sentry envelope adapter | fixture + ack + redaction + HTTP e2e | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-118-sentry-envelope/README.md) |
 | 120 | Claude Code session capture | fixtures + import CLI + Turso ledger + loss bounds | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-120-claude-code/README.md) |
 | 121 | GitHub deploy/change context | webhook + REST backfill + claim rows + linkage bundle | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-121-deploy-context/README.md) |
@@ -431,8 +431,8 @@ The main restructuring path is:
 093 + 097 + 099 ------------------------------> 116
 092 + 104 + 116 ------------------------------> 106
 093 + 097 + 099 + 104 ------------------------> 125
-auth contract + release proof (109/102 DONE) -> 115
-099 + 113 + 115 ------------------------------> 110
+auth contract + release proof (109/102 DONE) -> 115 (DONE 2026-07-17)
+099 + 113 + 115 ------------------------------> 110 (DONE 2026-07-17; single-worker retained)
 099 + 104 + 111 -- operator trigger ----------> 112
 093 + 099 + 104 + 111 + 116 -- operator ------> 118
 099 + 104 + 111 + 119 -- operator ------------> 120

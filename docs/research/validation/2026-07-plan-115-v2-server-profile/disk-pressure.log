@@ -1,0 +1,11 @@
+df_before: /dev/disk3s1   926Gi   266Gi   635Gi    30%    2.6M  6.7G    0%   /System/Volumes/Data
+466M	/tmp/parallax-plan115-residual/data
+2048+0 records in
+2048+0 records out
+2147483648 bytes transferred in 0.655529 secs (3275955218 bytes/sec)
+df_after_fill: /dev/disk3s1   926Gi   268Gi   633Gi    30%    2.6M  6.6G    0%   /System/Volumes/Data
+2.5G	/tmp/parallax-plan115-residual/data
+2.0G	/tmp/parallax-plan115-residual/data/_pressure
+df_after_reclaim: /dev/disk3s1   926Gi   266Gi   635Gi    30%    2.6M  6.7G    0%   /System/Volumes/Data
+466M	/tmp/parallax-plan115-residual/data
+reclaimed 2GiB operator ballast under data_dir; serve still healthy=ok

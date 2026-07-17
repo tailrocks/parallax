@@ -1,0 +1,5 @@
+2026-07-17T16:21:03.828Z	INFO	traces/worker.go:112	traces generated	{"worker": 0, "traces": 3656}
+2026-07-17T16:21:03.828Z	INFO	traces/worker.go:112	traces generated	{"worker": 2, "traces": 3639}
+2026-07-17T16:21:03.828Z	INFO	traces/worker.go:112	traces generated	{"worker": 1, "traces": 3645}
+2026-07-17T16:21:03.828Z	INFO	traces/worker.go:112	traces generated	{"worker": 3, "traces": 3646}
+2026-07-17T16:21:03.828Z	INFO	traces/traces.go:74	stop the batch span processor

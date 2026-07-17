@@ -1,6 +1,7 @@
 # V2 supported server profile (contract v1)
 
-- **Status:** Implemented supported profile; active plan 115 retains hardening evidence
+- **Status:** Implemented supported profile; plan 115 residual closed 2026-07-17
+  ([residual-closure](../validation/2026-07-plan-115-v2-server-profile/residual-closure-2026-07-17.md))
 - **Contract version:** 1
 - **Decision date:** 2026-07-17
 - **Approved by:** alexey@chainargos.com (unblock directive)
@@ -90,10 +91,11 @@ Until then, single-worker remains mandatory.
 | Slice | State |
 | --- | --- |
 | ADR (this file) | landed |
-| Validated server config composition + rehearsal scripts | implemented; rehearsal/hardening evidence remains in plan 115 |
-| Release package install on supported targets | residual (uses plan 102 pipeline) |
-| Remote CLI contexts | implemented; broader workload evidence remains residual |
-| OTLP ingest tokens | residual if remote ingest opens beyond trusted network |
+| Validated server config composition + rehearsals | landed (live + residual packets 2026-07-17) |
+| Release package install on supported targets | landed (plan 102 four-target + host install dogfood) |
+| Remote CLI contexts + TLS edge | landed (HTTPS edge dogfood) |
+| OTLP ingest tokens | deferred — open OTLP on trusted network only; optional tokens if public remote ingest opens |
+| Plan 110 concurrency | **closed** — single-worker retained; load packet under envelope without worker stage isolation |
 
 ## STOP
 

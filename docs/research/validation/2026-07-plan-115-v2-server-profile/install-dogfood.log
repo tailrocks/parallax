@@ -1,0 +1,34 @@
+host_install: aarch64-apple-darwin
+archive_sha256: 7889417208b4333124ccec60e2d52879922ca2f8f7a073cfacf48134af8fb909
+version: 0.1.0-preview.1295+e37a65d
+four_target_HEAD: all 200
+7889417208b4333124ccec60e2d52879922ca2f8f7a073cfacf48134af8fb909  parallax-aarch64-apple-darwin.tar.gz
+parallax 0.1.0-preview.1295+e37a65d
+=== aarch64-apple-darwin ===
+HTTP/2 302 
+content-length: 0
+HTTP/2 200 
+last-modified: Fri, 17 Jul 2026 11:24:07 GMT
+etag: "0x8DEE3F5EA7FCF56"
+content-length: 56499635
+=== x86_64-apple-darwin ===
+HTTP/2 302 
+content-length: 0
+HTTP/2 200 
+last-modified: Fri, 17 Jul 2026 11:24:09 GMT
+etag: "0x8DEE3F5EBFDEC1A"
+content-length: 61091729
+=== aarch64-unknown-linux-gnu ===
+HTTP/2 302 
+content-length: 0
+HTTP/2 200 
+last-modified: Fri, 17 Jul 2026 11:24:07 GMT
+etag: "0x8DEE3F5EABA14E2"
+content-length: 68879699
+=== x86_64-unknown-linux-gnu ===
+HTTP/2 302 
+content-length: 0
+HTTP/2 200 
+last-modified: Fri, 17 Jul 2026 11:24:06 GMT
+etag: "0x8DEE3F5EA24A860"
+content-length: 65973414

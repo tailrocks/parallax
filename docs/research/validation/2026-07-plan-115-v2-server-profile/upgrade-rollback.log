@@ -1,0 +1,55 @@
+[2026-07-17T16:16:34Z] start prev binary as baseline
+[2026-07-17T16:16:49Z] baseline ready 15s pid=15863
+
+  Parallax ready — Ctrl-C to stop
+
+    UI         http://0.0.0.0:4500
+    GraphQL    http://0.0.0.0:4500/graphql
+    OTLP/gRPC  0.0.0.0:15317
+    OTLP/HTTP  0.0.0.0:15318
+    storage    managed GreptimeDB on 127.0.0.1:24000
+    metadata   Turso at /tmp/parallax-plan115-residual/data/meta.db
+    data       /tmp/parallax-plan115-residual/data
+    self-otlp   off (set PARALLAX_SELF_OTLP to export)
+    alerting   on (eval 60s / deliver 10s)
+    auth       bearer-token
+
+oknoauth=401
+unauthorized[2026-07-17T16:16:49Z] TLS edge check
+okunauthorized[2026-07-17T16:16:49Z] SIGTERM baseline for upgrade
+[2026-07-17T16:16:50Z] prev exited 2s
+[2026-07-17T16:16:52Z] start new binary (upgrade)
+[2026-07-17T16:16:53Z] upgrade ready 2s pid=16769
+
+  Parallax ready — Ctrl-C to stop
+
+    UI         http://0.0.0.0:4500
+    GraphQL    http://0.0.0.0:4500/graphql
+    OTLP/gRPC  0.0.0.0:15317
+    OTLP/HTTP  0.0.0.0:15318
+    storage    managed GreptimeDB on 127.0.0.1:24000
+    metadata   Turso at /tmp/parallax-plan115-residual/data/meta.db
+    data       /tmp/parallax-plan115-residual/data
+    self-otlp   off (set PARALLAX_SELF_OTLP to export)
+    alerting   on (eval 60s / deliver 10s)
+    auth       bearer-token
+
+unauthorized[2026-07-17T16:16:53Z] SIGTERM upgrade for rollback
+[2026-07-17T16:16:53Z] upgrade exited 1s
+[2026-07-17T16:16:55Z] start prev binary (rollback)
+[2026-07-17T16:16:56Z] rollback ready 2s pid=16889
+
+  Parallax ready — Ctrl-C to stop
+
+    UI         http://0.0.0.0:4500
+    GraphQL    http://0.0.0.0:4500/graphql
+    OTLP/gRPC  0.0.0.0:15317
+    OTLP/HTTP  0.0.0.0:15318
+    storage    managed GreptimeDB on 127.0.0.1:24000
+    metadata   Turso at /tmp/parallax-plan115-residual/data/meta.db
+    data       /tmp/parallax-plan115-residual/data
+    self-otlp   off (set PARALLAX_SELF_OTLP to export)
+    alerting   on (eval 60s / deliver 10s)
+    auth       bearer-token
+
+unauthorized[2026-07-17T16:16:56Z] upgrade/rollback COMPLETE same data_dir=/tmp/parallax-plan115-residual/data

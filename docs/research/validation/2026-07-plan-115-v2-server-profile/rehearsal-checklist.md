@@ -40,9 +40,10 @@ proves the single worker is the bottleneck (not disk/network/Greptime).
 - [x] Offline backup snapshot of config + managed data dir (restore procedure
       documented; not cut over against live lab)
 - [x] Retention prune dry-run JSON (execute still gated by pin protection)
-- [ ] Operator TLS edge (reverse-proxy cert terminate) WAN dogfood
-- [ ] Measured upgrade/rollback binary swap log on same data dir
-- [ ] Disk-pressure injection + prune reclaim under free-space stress
-- [ ] Four-target release artifact install dogfood
-- [ ] Plan 110 load packet isolating single-worker stage costs (micro GraphQL +
-      invocation timings recorded; **not** a concurrency trigger)
+- [x] Operator TLS edge (reverse-proxy cert terminate) lab dogfood —
+      [`residual-closure-2026-07-17.md`](residual-closure-2026-07-17.md)
+- [x] Measured upgrade/rollback binary swap log on same data dir
+- [x] Disk-pressure injection + reclaim under free-space stress
+- [x] Four-target release artifact install dogfood (host aarch64 + HEAD all four)
+- [x] Plan 110 load packet (GraphQL micro + OTLP ~2.9k spans/s); **gate CLOSED**
+      — no stage isolation; single-worker retained

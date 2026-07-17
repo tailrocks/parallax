@@ -1,0 +1,11 @@
+probe code=None dt=0.0140s body='HTTP Error 400: Bad Request'
+batch 0 fail code=None body=HTTP Error 400: Bad Request
+batch 1 fail code=None body=HTTP Error 400: Bad Request
+batch 2 fail code=None body=HTTP Error 400: Bad Request
+ingest_batches=50 batch_spans=100 ok=0 fails=50 spans=0
+wall_s=0.055 spans_per_s=0.0
+batch_p50_s=0.0004 batch_p95_s=0.0005 batch_max_s=0.0005
+stage_isolation=NOT_AVAILABLE — no per-stage counters in this packet
+plan_110_trigger=CLOSED — cannot attribute bottleneck to single worker vs disk/network/Greptime
+product_decision: V2 single-node profile retains single-worker until true stage isolation proves otherwise
+graphql_auth n=200 workers=20 ok=200 rps=2765.5 p50_ms=3.6 p95_ms=34.3 wall=0.072
