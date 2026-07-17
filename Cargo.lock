@@ -3234,6 +3234,7 @@ dependencies = [
  "anyhow",
  "clap",
  "jsonschema",
+ "parallax-evidence",
  "reqwest",
  "rmcp",
  "serde",

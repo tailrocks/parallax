@@ -158,6 +158,7 @@ impl SpikeServer {
         // Mirror CLI JSON shape: compact re-serialize of the GraphQL object.
         let body = serde_json::to_string(&session)
             .map_err(|_| safe_internal_error("agent_session_invalid"))?;
+        ensure_already_redacted(&[&body], "agent_session_redaction_mismatch")?;
         let structured = serde_json::to_value(session)
             .map_err(|_| safe_internal_error("agent_session_invalid"))?;
         let mut result = CallToolResult::structured(structured);
@@ -203,10 +204,24 @@ fn ensure_result_budget(result: &CallToolResult) -> Result<(), McpError> {
     Ok(())
 }
 
+fn ensure_already_redacted(parts: &[&str], code: &'static str) -> Result<(), McpError> {
+    if parts
+        .iter()
+        .any(|part| parallax_evidence::sanitize_text(part) != *part)
+    {
+        return Err(safe_internal_error(code));
+    }
+    Ok(())
+}
+
 fn bundle_tool_result(bundle: gql::BundleProjection) -> Result<CallToolResult, McpError> {
     // Parse exactly once for structuredContent. Keep the raw string for
     // comparison outside this function (check subcommand); do not re-serialize
     // the parsed value when comparing hashes.
+    ensure_already_redacted(
+        &[&bundle.json, &bundle.markdown],
+        "bundle_redaction_mismatch",
+    )?;
     let parsed: Value =
         serde_json::from_str(&bundle.json).map_err(|_| safe_internal_error("bundle_invalid"))?;
     validate_bundle_contract(&parsed)?;
@@ -569,6 +584,33 @@ mod tests {
                 .expect("serialize MCP error")
                 .contains("bundle_contract_mismatch")
         );
+    }
+
+    #[test]
+    fn correctly_hashed_seeded_secret_fails_closed() {
+        let mut projection = valid_bundle_projection();
+        let mut value: Value = serde_json::from_str(&projection.json).expect("bundle JSON");
+        let canary = "ghp_0123456789ABCDEFGHIJKLMNOPQRST";
+        value["data"]["logs"] = json!([format!("token={canary}")]);
+        let hash = crate::check::recompute_canonical_hash(&value.to_string()).expect("hash");
+        value["canonical_hash"] = json!(hash);
+        projection.json = value.to_string();
+        projection.canonical_hash = hash;
+
+        let error = bundle_tool_result(projection).expect_err("seeded secret must fail");
+        let encoded = serde_json::to_string(&error).expect("serialize MCP error");
+        assert!(encoded.contains("bundle_redaction_mismatch"));
+        assert!(!encoded.contains(canary));
+    }
+
+    #[test]
+    fn agent_session_redaction_verifier_rejects_secret_patterns() {
+        let canary = "sk-ant-0123456789ABCDEFGHIJKLMN";
+        let error = ensure_already_redacted(&[canary], "agent_session_redaction_mismatch")
+            .expect_err("seeded secret must fail");
+        let encoded = serde_json::to_string(&error).expect("serialize MCP error");
+        assert!(encoded.contains("agent_session_redaction_mismatch"));
+        assert!(!encoded.contains(canary));
     }
 
     #[test]

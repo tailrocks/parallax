@@ -94,6 +94,9 @@ The adapter streams GraphQL responses through a hard 1 MiB pre-parse ceiling,
 including chunked responses and agent-session projections.
 Final structured content plus compatibility text has a combined 128 KiB
 ceiling. Oversized results fail closed until resource-reference delivery lands.
+Bundle JSON/Markdown and agent-session JSON must already be unchanged by the
+canonical evidence sanitizer; detected secret/control patterns fail closed
+rather than being mutated after canonical hashing.
 The issue-context tool advertises the checked-in bundle-v2 JSON Schema as its
 MCP `outputSchema`.
 Agent-session responses decode into a closed typed projection and advertise its

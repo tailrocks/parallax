@@ -69,6 +69,9 @@ must not return in product output.
 - Canonical evidence redaction now strips C0/C1 terminal controls (including
   ANSI ESC, NUL, and DEL) while preserving tab/newline/CR and records the
   removal count, preventing control injection across structured/text clients.
+- MCP independently requires bundle JSON/Markdown and agent-session JSON to be
+  byte-stable under the canonical evidence sanitizer; known seeded secret or
+  control patterns fail closed instead of being rewritten after hashing.
 - Bundle output fails closed unless the separately projected GraphQL canonical
   hash exactly matches the hash embedded in the bundle-v2 object.
 - The MCP tool path independently recomputes the canonical v2 hash as well;
