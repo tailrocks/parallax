@@ -258,3 +258,17 @@ Not done. Mix/server/quotes/GB/D2–D3.
 ## Run 388
 
 Not done. Top 5 gaps stand.
+
+## Run 393 (2026-07-17) — operator-facing remaining work
+
+Laptop engine smoke + instrument + packets **exhausted** for this machine.
+
+| Do next | Where |
+| --- | --- |
+| Fill A1–A7 shares | `workload-mix-decision-input.md` |
+| Run N=1M/5M four-way | `server-tier-runbook.md` |
+| Get vendor quotes | `managed-cloud-vs-self-host.md` Run 221 rates |
+| GB MinIO cold GETs | recipe in `caching-and-cold-warm.md` |
+| RPO D2/D3 drills | `product-rpo-runbook.md` |
+
+**Not done** until operator stops the loop or these execute.
