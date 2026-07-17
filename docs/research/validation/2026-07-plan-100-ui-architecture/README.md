@@ -53,4 +53,9 @@ cd ui && bun run --bun test:ci -- src/platform src/domain/time-range
 cd ui && bun run typecheck
 ```
 
-Exact command output and SHA are recorded in the retirement commit message.
+**Verified SHA:** `090ea92b` on `main`.
+
+Gates green twice for `ui.architecture` + `ui.ratchets`; `ui.tests`,
+`typescript` policy, focused platform/domain Vitest (21), full Vitest
+(72 files / 434 tests), `bun run check`, `bun run lint`, and `bun run typecheck`
+passed before push.
