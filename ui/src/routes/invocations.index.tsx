@@ -5,6 +5,7 @@ import { z } from "zod"
 
 import { CopyButton } from "@/components/console/copy-button"
 import { EmptyState } from "@/components/console/empty-state"
+import { FacetSidebar, type Facet } from "@/components/console/facet-sidebar"
 import {
   FilterSelect,
   SearchInput,
@@ -54,6 +55,10 @@ type InvocationsSearchPatch = {
   [K in keyof InvocationsSearch]?: InvocationsSearch[K] | undefined
 }
 
+function invocationFacetsQuery(range: ResolvedRange) {
+  return `invocationFacets(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") { dimension values { value count } }`
+}
+
 const INVOCATIONS_QUERY = `
   {
     invocations {
@@ -86,6 +91,11 @@ const INVOCATIONS_QUERY = `
 interface InvocationsQueryData {
   invocations: Invocation[]
   observedInvocations: ObservedInvocation[]
+}
+
+interface InvocationFacet {
+  dimension: string
+  values: Array<{ value: string; count: string }>
 }
 
 export function filterInvocationsByRange(
@@ -128,10 +138,21 @@ export const Route = createFileRoute("/invocations/")({
     if (parsed.to) result.to = parsed.to
     return result
   },
-  loader: async () => {
-    const data = await graphqlCached<InvocationsQueryData>(INVOCATIONS_QUERY)
+  loaderDeps: ({ search }) => ({
+    range: search.range,
+    from: search.from,
+    to: search.to,
+  }),
+  loader: async ({ deps }) => {
+    const range = resolveRangeSearch(deps)
+    const facetsQuery = `{ ${invocationFacetsQuery(range)} }`
+    const [data, facetsData] = await Promise.all([
+      graphqlCached<InvocationsQueryData>(INVOCATIONS_QUERY),
+      graphqlCached<{ invocationFacets: InvocationFacet[] }>(facetsQuery),
+    ])
     return {
       rows: mergeInvocations(data.invocations, data.observedInvocations),
+      facets: facetsData.invocationFacets,
     }
   },
   component: InvocationsPage,
@@ -177,6 +198,7 @@ function InvocationsPage() {
   return (
     <InvocationsContent
       rows={polledRows ?? data.rows}
+      facets={data.facets}
       search={search}
       range={range}
       live={live}
@@ -195,6 +217,7 @@ function InvocationsPage() {
 
 export function InvocationsContent({
   rows: allRows,
+  facets = [],
   search,
   range,
   live,
@@ -203,6 +226,7 @@ export function InvocationsContent({
   onOpen,
 }: {
   rows: InvocationRow[]
+  facets?: InvocationFacet[]
   search: InvocationsSearch
   range: ResolvedRange
   live: boolean
@@ -210,6 +234,36 @@ export function InvocationsContent({
   onRefresh: () => void
   onOpen: (invocationId: string) => void
 }) {
+  // Facet clicks drive the existing URL params: app.mode → mode,
+  // outcome → outcome, service / cli.command.name → the text query.
+  const facetSelections: Record<string, string[]> = {
+    ...(search.mode ? { "app.mode": [search.mode] } : {}),
+    ...(search.outcome ? { outcome: [search.outcome] } : {}),
+    ...(search.q
+      ? { service: [search.q], "cli.command.name": [search.q] }
+      : {}),
+  }
+  const toggleFacet = (dimension: string, value: string) => {
+    if (dimension === "app.mode") {
+      const mode = MODES.find((candidate) => candidate === value)
+      onSearch({ mode: search.mode === mode ? undefined : mode })
+    } else if (dimension === "outcome") {
+      const outcome = OUTCOMES.find((candidate) => candidate === value)
+      onSearch({ outcome: search.outcome === outcome ? undefined : outcome })
+    } else {
+      onSearch({ q: search.q === value ? undefined : value })
+    }
+  }
+  const sidebarFacets: Facet[] = facets.map((facet) => ({
+    dimension: facet.dimension,
+    label: facet.dimension,
+    values: facet.values.map((entry) => ({
+      value: entry.value,
+      count: Number(entry.count),
+    })),
+    serviceDots: facet.dimension === "service",
+    searchable: true,
+  }))
   const query = search.q?.toLowerCase() ?? ""
   const rowsInWindow = filterInvocationsByRange(allRows, range)
   const rows = rowsInWindow.filter((row) => {
@@ -297,24 +351,38 @@ export function InvocationsContent({
         </span>
       </Toolbar>
 
-      {rows.length === 0 ? (
-        <EmptyState
-          icon={IconTerminal2}
-          title="No CLI invocations yet"
-          description={
-            <span className="inline-flex items-center gap-2">
-              <code>parallax invocation start -- &lt;your command&gt;</code>
-              <CopyButton value="parallax invocation start -- <your command>" />
-            </span>
-          }
-        />
-      ) : (
-        <InvocationsTable
-          rows={rows}
-          detailSearch={rangeLinkSearch(range)}
-          onOpen={onOpen}
-        />
-      )}
+      <div className="flex items-start gap-4">
+        {sidebarFacets.length > 0 ? (
+          <FacetSidebar
+            facets={sidebarFacets}
+            selections={facetSelections}
+            onToggle={toggleFacet}
+            onClear={() =>
+              onSearch({ q: undefined, mode: undefined, outcome: undefined })
+            }
+          />
+        ) : null}
+        <div className="min-w-0 flex-1">
+          {rows.length === 0 ? (
+            <EmptyState
+              icon={IconTerminal2}
+              title="No CLI invocations yet"
+              description={
+                <span className="inline-flex items-center gap-2">
+                  <code>parallax invocation start -- &lt;your command&gt;</code>
+                  <CopyButton value="parallax invocation start -- <your command>" />
+                </span>
+              }
+            />
+          ) : (
+            <InvocationsTable
+              rows={rows}
+              detailSearch={rangeLinkSearch(range)}
+              onOpen={onOpen}
+            />
+          )}
+        </div>
+      </div>
     </div>
   )
 }
