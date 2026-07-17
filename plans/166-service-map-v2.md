@@ -71,9 +71,13 @@ Peer still owns live corpus/browser proof and may deepen the control layout.
 External-scenario prerequisite landed in both repositories: `a36b774` adds
 `server.address` to the canonical semconv contract and regenerates Parallax;
 playground `e665914` regenerates its Rust/Java/TypeScript/wire artifacts. The
-`eco-external` shape itself is deferred only until the peer's concurrent
-Plan-165 edits leave the shared playground shape/dispatcher/matrix files;
-do not add a literal attribute or overwrite that work.
+playground's `15de5c3` now lands `eco-external`: a checkout SERVER root with
+an `api.stripe.test` CLIENT child carrying generated `server.address` and no
+matching instrumented SERVER span, plus dispatcher/catalog/matrix coverage.
+Its exact shape test passes, as do strict playground clippy and rustfmt gates.
+The scenario-catalog checker was structurally corrected to include the
+corner-case matrix and normalize fixed dispatcher arguments; peer-owned alert
+scenario edits remained isolated from this commit.
 
 ## Why this matters
 
