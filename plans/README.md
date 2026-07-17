@@ -180,7 +180,6 @@ Plan 129 DONE (2026-07-17): macOS forced-Bun Vitest dual-run + matrix ownership
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [100](100-ui-feature-architecture.md) | Establish the TypeScript layer graph, ownership ledger, facades, and placement policy | P1 | L | 095, 101, 128, 129 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 | [152](152-graphql-contract-foundation.md) | Establish the generated GraphQL contract foundation | P1 | L | 095, 100, 101, 128, 129, 130 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 | [153](153-runtime-boundary-foundation.md) | Establish non-GraphQL runtime boundary foundations | P1 | L | 095, 100, 101, 128, 129, 130 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 | [132](132-playwright-bun-foundation.md) | Establish a Bun-only Playwright test foundation | P1 | L | 094, 101, 128, 129 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |

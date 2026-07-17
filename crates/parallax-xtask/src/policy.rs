@@ -1,4 +1,5 @@
 mod architecture;
+mod browser_foundation;
 mod config;
 mod docs;
 mod product;
@@ -11,6 +12,7 @@ mod structural;
 )]
 #[expect(clippy::too_many_lines, reason = "compiler analysis")]
 mod typescript;
+mod ui_architecture;
 mod ui_tests;
 
 use std::path::Path;
@@ -26,11 +28,18 @@ pub(crate) fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()>
     if let Some(rule) = only
         && !matches!(
             rule,
-            "architecture" | "typescript" | "product" | "structural" | "ui.tests"
+            "architecture"
+                | "typescript"
+                | "product"
+                | "structural"
+                | "ui.tests"
+                | "ui.architecture"
+                | "ui.ratchets"
+                | "ui.browser-foundation"
         )
     {
         bail!(
-            "unknown policy family `{rule}`; available: architecture, product, structural, typescript, ui.tests"
+            "unknown policy family `{rule}`; available: architecture, product, structural, typescript, ui.architecture, ui.browser-foundation, ui.ratchets, ui.tests"
         );
     }
     let ratchet = config::Ratchet::load(&root.join("ratchet.toml"))?;
@@ -41,6 +50,12 @@ pub(crate) fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()>
     if only.is_none() || only == Some("typescript") {
         findings.extend(typescript::check_workspace(root)?);
     }
+    if only.is_none() || only == Some("ui.architecture") {
+        findings.extend(ui_architecture::check_workspace(root, &ratchet)?);
+    }
+    if only.is_none() || only == Some("ui.ratchets") {
+        findings.extend(ui_architecture::check_ratchets(root, &ratchet)?);
+    }
     if only.is_none() || only == Some("product") {
         findings.extend(product::check_workspace(root, &ratchet)?);
     }
@@ -49,6 +64,9 @@ pub(crate) fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()>
     }
     if only.is_none() || only == Some("ui.tests") {
         findings.extend(ui_tests::check_workspace(root)?);
+    }
+    if only.is_none() || only == Some("ui.browser-foundation") {
+        findings.extend(browser_foundation::check_workspace(root)?);
     }
     if only.is_none() {
         findings.extend(docs::check_workspace(root, &ratchet)?);

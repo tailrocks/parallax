@@ -109,3 +109,94 @@ major upgrades. The root [`AGENTS.md`](../AGENTS.md) and the
     (ServiceDot identity, kind glyphs, severity-worded error chips).
     Timeline/chart surfaces (waterfall, flamegraph, Recharts) are not
     graphs in this sense and keep their dedicated renderers.
+
+## Architecture (Plan 100 control plane)
+
+25. **One package, one strict project.** Keep `ui/` as a single Bun package.
+    Do not add internal npm packages or TypeScript project references without a
+    separate measured plan.
+
+26. **Canonical tree** (create a directory only with its first real file):
+
+    ```text
+    ui/src/
+      app/                 router/provider composition (plan 143)
+      layout/              shell/nav/theme/fallbacks (plan 143)
+      routes/              thin TanStack adapters only → export Route
+      features/<feature>/  api/ model/ components/ hooks/ tests/ index.ts
+      domain/<concept>/    framework-neutral product concepts
+      platform/<adapter>/  GraphQL, SSE, browser adapters
+      shared/              product-neutral components/hooks/lib
+      test/                Vitest builders only (no test bodies)
+      components/ui/       shadcn CLI island
+      lib/utils.ts         shadcn `cn` island
+    ui/tests/harness/      plan 129 harness self-tests
+    ui/tests/e2e/          Playwright (plans 132+)
+    ```
+
+27. **Closed dependency graph** (Oxc-enforced via
+    `cargo xtask policy --only ui.architecture`):
+
+    | From | Allowed | Forbidden |
+    |------|---------|-----------|
+    | app | all layers for composition | imported by lower layers |
+    | routes | feature facades, domain, shared; root-only layout | feature internals, platform, other routes, app |
+    | layout | feature facades, domain, shared | routes, feature internals, platform, app |
+    | features | own internals, domain, platform, shared, approved feature facades | other feature internals, routes, layout, app |
+    | platform | platform, domain, shared | features, routes, layout, app |
+    | domain | domain, product-neutral shared | React/TanStack/browser/transport, features |
+    | shared | shadcn + third-party only | Parallax feature/domain concepts, upper layers |
+
+    Generated `routeTree.gen.ts` is the only reverse composition exception.
+    Cross-feature imports need an exact `[[ui.feature_edges]]` row in
+    `ratchet.toml`. Feature `index.ts` is the only public facade (named
+    exports only; no handwritten `export *`).
+
+28. **Feature catalog / migration owners**
+
+    | Owner | Surfaces | Plan |
+    |-------|----------|------|
+    | investigations | `/investigations` | 134 |
+    | sql | `/sql` | 135 |
+    | ecosystem | `/ecosystem` | 136 |
+    | dashboards | dashboards | 137 |
+    | services | services | 138 |
+    | issues | issues | 139 |
+    | runs | invocations | 140 |
+    | logs | logs | 141 |
+    | traces | traces | 142 |
+    | alerts | `/alerts` | dedicated alerts migration (ledger `alerts`) |
+    | runtime-metrics, story, time-range, page-header | route-less | 149 |
+    | overview | `/` | 150 |
+    | app, layout, app-status, quick-navigation | shell/root | 143 |
+    | platform/graphql | transport | 152 hardens |
+    | platform/sse, platform/browser | live/visibility | 153 hardens |
+
+29. **Placement decision** for a new file:
+    1. shadcn primitive? → `components/ui` via CLI only.
+    2. Technical adapter (GraphQL/SSE/storage/clock/visibility)? → `platform/`.
+    3. Framework-neutral Parallax concept used by ≥2 features? → `domain/`.
+    4. Product-neutral UI with ≥2 independent consumers? → `shared/`.
+    5. Product feature behavior? → `features/<feature>/…` behind `index.ts`.
+    6. Route URL/search/loader only? → `routes/` exporting `Route` only.
+    7. Shell/nav/theme? → `layout/` (plan 143).
+    8. Always add/update `[[ui.ownership]]` in `ratchet.toml` same change.
+
+30. **Module rules:** kebab-case files; named exports; `use*` hooks; `*Schema`
+    runtime schemas; external data enters as `unknown` (decode once — plan 152/
+    153); Result-shaped expected failures; discriminated async/UI state;
+    no new catch-all `utils.ts`/`helpers.ts`/`types.ts`/`common.ts`.
+
+31. **Tests:** bodies never share production files; final directory name is
+    `tests/` under the owner; `src/test/` is builders only; every test has a
+    `ui/test-matrix.json` owner. Compatibility reexports are
+    `kind = "compatibility-reexport"` with a removal plan.
+
+32. **Verify placement/architecture:**
+
+    ```bash
+    cargo xtask policy --only ui.architecture
+    cargo xtask policy --only ui.ratchets
+    cargo xtask policy --only ui.tests
+    cd ui && bun run check && bun run lint && bun run typecheck && bun run --bun test:ci && bun run build
+    ```

@@ -504,419 +504,19 @@ class = "test-support"
 
 
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/components/console/command-palette.tsx"
-ceiling = 370
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/components/console/field-explorer.tsx"
-ceiling = 397
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/components/console/trace-waterfall.tsx"
-ceiling = 672
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/components/logs-table.tsx"
-ceiling = 507
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/components/ui/chart.tsx"
-ceiling = 334
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/components/ui/sidebar.tsx"
-ceiling = 676
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/lib/api.ts"
-ceiling = 381
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/__tests__/-dashboards.test.tsx"
-ceiling = 177
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/__tests__/-issues.test.tsx"
-ceiling = 163
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/__tests__/-logs.test.tsx"
-ceiling = 294
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/__tests__/-overview.test.tsx"
-ceiling = 191
 
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/__tests__/-services.test.tsx"
-ceiling = 294
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/dashboards.$dashboardId.tsx"
-ceiling = 492
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/dashboards.index.tsx"
-ceiling = 498
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/index.tsx"
-ceiling = 955
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/investigations.$investigationId.tsx"
-ceiling = 269
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/investigations.index.tsx"
-ceiling = 195
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/issues.$fingerprint.tsx"
-ceiling = 731
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/issues.index.tsx"
-ceiling = 585
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/logs.tsx"
-ceiling = 799
-
-
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/services.$service.tsx"
-ceiling = 831
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/services.tsx"
-ceiling = 492
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/sql.tsx"
-ceiling = 669
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/traces.$traceId.tsx"
-ceiling = 1575
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/traces.index.tsx"
-ceiling = 725
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/__tests__/kit.test.tsx:21"
-ceiling = 71
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/__tests__/use-chart-brush.test.tsx:15"
-ceiling = 62
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/agent-session.tsx:76"
-ceiling = 78
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/attribute-compare.tsx:50"
-ceiling = 61
-
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/field-explorer.tsx:166"
-ceiling = 248
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/field-explorer.tsx:91"
-ceiling = 74
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/pin-button.tsx:29"
-ceiling = 173
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/range-picker.tsx:15"
-ceiling = 80
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/rpc-stream.tsx:104"
-ceiling = 62
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/rpc-stream.tsx:99"
-ceiling = 70
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/top-movers.tsx:85"
-ceiling = 77
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/use-chart-brush.ts:54"
-ceiling = 87
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/metric-strip.tsx:121"
-ceiling = 68
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/metric-strip.tsx:101"
-ceiling = 122
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/parallax-shell.tsx:163"
-ceiling = 104
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/parallax-shell.tsx:62"
-ceiling = 61
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/ui/calendar.tsx:15"
-ceiling = 163
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/ui/chart.tsx:119"
-ceiling = 153
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/ui/chart.tsx:202"
-ceiling = 66
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/ui/sidebar.tsx:153"
-ceiling = 101
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/ui/sidebar.tsx:57"
-ceiling = 95
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/hooks/__tests__/use-live-stream.test.tsx:77"
-ceiling = 146
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/__tests__/graphql-trace.test.ts:24"
-ceiling = 150
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/__tests__/rpc-trace.test.ts:45"
-ceiling = 108
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/__tests__/stacktrace.test.ts:5"
-ceiling = 83
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/__tests__/trace-tree.test.ts:34"
-ceiling = 235
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/graphql-trace.ts:146"
-ceiling = 152
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/stacktrace.ts:51"
-ceiling = 112
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/__tests__/waterfall.test.tsx:107"
-ceiling = 82
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/__tests__/-dashboards.test.tsx:54"
-ceiling = 143
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/__tests__/-issues.test.tsx:87"
-ceiling = 92
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/__tests__/-logs.test.tsx:168"
-ceiling = 72
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/__tests__/-overview.test.tsx:131"
-ceiling = 78
-
-
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/__tests__/-services.test.tsx:124"
-ceiling = 69
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/__tests__/-services.test.tsx:194"
-ceiling = 125
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/__tests__/-sql.test.tsx:37"
-ceiling = 70
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/__tests__/-trace-links.test.tsx:48"
-ceiling = 68
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/__tests__/-trace-links.test.tsx:49"
-ceiling = 66
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/dashboards.index.tsx:128"
-ceiling = 182
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/dashboards.index.tsx:371"
-ceiling = 87
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/dashboards.index.tsx:459"
-ceiling = 65
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/index.tsx:272"
-ceiling = 170
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/index.tsx:448"
-ceiling = 142
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/investigations.$investigationId.tsx:80"
-ceiling = 204
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/investigations.index.tsx:57"
-ceiling = 147
-
-
-
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/issues.index.tsx:253"
-ceiling = 125
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/issues.index.tsx:379"
-ceiling = 237
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/issues.index.tsx:457"
-ceiling = 123
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/logs.tsx:255"
-ceiling = 390
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/logs.tsx:650"
-ceiling = 88
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/logs.tsx:781"
-ceiling = 61
-
-
-
-
-
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/services.$service.tsx:358"
-ceiling = 135
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/services.$service.tsx:596"
-ceiling = 62
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/services.$service.tsx:659"
-ceiling = 139
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/services.$service.tsx:799"
-ceiling = 69
 
 
 
@@ -1087,289 +687,10 @@ ceiling = 7
 
 
 
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/__tests__/metric-strip.test.tsx"
-ceiling = 5
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/__tests__/shell.test.tsx"
-ceiling = 15
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/agent-session.test.tsx"
-ceiling = 10
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/attribute-compare.test.tsx"
-ceiling = 7
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/command-palette.test.tsx"
-ceiling = 11
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/ecosystem-graph.test.tsx"
-ceiling = 12
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/evidence-gaps.test.tsx"
-ceiling = 5
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/field-explorer.test.tsx"
-ceiling = 8
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/graphql-operation.test.tsx"
-ceiling = 8
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/heat-cell.test.tsx"
-ceiling = 12
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/kit.test.tsx"
-ceiling = 19
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/range-picker.test.tsx"
-ceiling = 3
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/rpc-stream.test.tsx"
-ceiling = 6
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/story-timeline.test.tsx"
-ceiling = 6
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/top-movers.test.tsx"
-ceiling = 8
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/use-chart-brush.test.tsx"
-ceiling = 4
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/waterfall.test.tsx"
-ceiling = 25
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/ui/__tests__/primitives.test.tsx"
-ceiling = 5
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/hooks/__tests__/use-live-stream.test.tsx"
-ceiling = 21
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/api.test.ts"
-ceiling = 12
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/format.test.ts"
-ceiling = 22
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/graphql-trace.test.ts"
-ceiling = 15
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/investigations.test.ts"
-ceiling = 8
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/quick-jump.test.ts"
-ceiling = 6
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/range.test.ts"
-ceiling = 5
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/rpc-trace.test.ts"
-ceiling = 10
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/stacktrace.test.ts"
-ceiling = 9
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/trace-tree.test.ts"
-ceiling = 33
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/use-visible.test.tsx"
-ceiling = 3
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-dashboards.test.tsx"
-ceiling = 15
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-issues.test.tsx"
-ceiling = 15
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-logs.test.tsx"
-ceiling = 36
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-overview.test.tsx"
-ceiling = 23
-
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-services.test.tsx"
-ceiling = 44
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-sql.test.tsx"
-ceiling = 16
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-trace-graphql.test.tsx"
-ceiling = 3
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-trace-links.test.tsx"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-trace-rpc.test.tsx"
-ceiling = 9
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-trace-view-modes.test.tsx"
-ceiling = 9
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-traces-search.test.tsx"
-ceiling = 11
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/console/field-explorer.tsx:166"
-ceiling = 18
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/console/top-movers.tsx:85"
-ceiling = 30
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/ui/chart.tsx:149"
-ceiling = 16
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/ui/chart.tsx:202"
-ceiling = 36
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/ui/chart.tsx:330"
-ceiling = 22
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/graphql-trace.ts:146"
-ceiling = 19
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/stacktrace.ts:51"
-ceiling = 26
-
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/issues.index.tsx:253"
-ceiling = 17
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/logs.tsx:142"
-ceiling = 17
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/logs.tsx:255"
-ceiling = 66
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/components/ui/chart.tsx:202"
-ceiling = 18
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/lib/stacktrace.ts:51"
-ceiling = 14
 
 
 
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/issues.index.tsx:379"
-ceiling = 13
 
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/logs.tsx:142"
-ceiling = 14
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/logs.tsx:255"
-ceiling = 27
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/lib/api.ts"
-ceiling = 1
 [[limits]]
 metric = "agent-doc-bytes"
 scope = "AGENTS.md"
@@ -2063,15 +1384,6 @@ scope = "crates/parallax-server/tests/m8_invocation_contract_greptime.rs"
 ceiling = 1
 
 
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/sql.tsx:166"
-ceiling = 17
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/sql.tsx:382"
-ceiling = 16
 
 
 
@@ -2079,187 +1391,6 @@ ceiling = 16
 
 
 
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/sql.tsx:197"
-ceiling = 65
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/sql.tsx:276"
-ceiling = 62
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/sql.tsx:344"
-ceiling = 357
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/issues.$fingerprint.tsx:548"
-ceiling = 26
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/issues.$fingerprint.tsx:191"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/issues.$fingerprint.tsx:548"
-ceiling = 14
-
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/issues.$fingerprint.tsx:191"
-ceiling = 233
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/issues.$fingerprint.tsx:479"
-ceiling = 68
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/issues.$fingerprint.tsx:707"
-ceiling = 63
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/invocations/__tests__/-session-journey.test.tsx"
-ceiling = 7
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/-invocation.test.ts"
-ceiling = 20
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-invocations.test.tsx"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/__tests__/-invocations.test.tsx"
-ceiling = 188
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/invocations.$invocationId.tsx"
-ceiling = 542
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/invocations.index.tsx"
-ceiling = 303
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/console/invocations/session-journey.tsx:177"
-ceiling = 28
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/console/invocations/session-journey.tsx:47"
-ceiling = 22
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/console/invocations/sessions-tab.tsx:28"
-ceiling = 19
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/invocation.ts:36"
-ceiling = 18
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/invocation.ts:83"
-ceiling = 20
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/components/console/invocations/session-journey.tsx:177"
-ceiling = 17
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/components/console/invocations/session-journey.tsx:47"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/components/console/invocations/sessions-tab.tsx:28"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/invocation-errors-tab.tsx:34"
-ceiling = 85
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/invocation-traces-tab.tsx:51"
-ceiling = 85
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/jobs-cycles-tab.tsx:114"
-ceiling = 87
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/jobs-cycles-tab.tsx:133"
-ceiling = 61
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/jobs-cycles-tab.tsx:44"
-ceiling = 69
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/session-journey.tsx:177"
-ceiling = 113
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/session-journey.tsx:47"
-ceiling = 66
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/sessions-tab.tsx:155"
-ceiling = 68
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/sessions-tab.tsx:224"
-ceiling = 66
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/sessions-tab.tsx:28"
-ceiling = 126
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/invocations.index.tsx:196"
-ceiling = 125
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/invocations/__tests__/-tabs.test.tsx"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/__tests__/-tabs.test.tsx:75"
-ceiling = 73
 
 
 [[limits]]
@@ -2271,81 +1402,6 @@ ceiling = 420
 metric = "rust.test-wall-clocks"
 scope = "crates/parallax-api/src/resolvers/invocations/tests.rs"
 ceiling = 2
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/graphql-trace.ts:226"
-ceiling = 28
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/dashboards.$dashboardId.tsx:189"
-ceiling = 22
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/invocations.$invocationId.tsx:296"
-ceiling = 28
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/lib/graphql-trace.ts:226"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/invocations.$invocationId.tsx:296"
-ceiling = 23
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/__tests__/format.test.ts:15"
-ceiling = 67
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/__tests__/trace-tree.test.ts:170"
-ceiling = 86
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/graphql-trace.ts:226"
-ceiling = 61
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/dashboards.$dashboardId.tsx:216"
-ceiling = 180
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/dashboards.$dashboardId.tsx:397"
-ceiling = 117
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/invocations.$invocationId.tsx:122"
-ceiling = 61
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/invocations.$invocationId.tsx:205"
-ceiling = 90
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/invocations.$invocationId.tsx:296"
-ceiling = 210
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/invocations.$invocationId.tsx:507"
-ceiling = 63
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/lib/format.ts"
-ceiling = 1
 
 
 [[limits]]
@@ -2409,10 +1465,60 @@ metric = "rust.test-wall-clocks"
 scope = "crates/parallax-analysis/src/log_patterns/tests.rs"
 ceiling = 1
 
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-test-support/src/memory/trace_analytics.rs"
+ceiling = 418
+
+# ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+
+# Plan 100 refreshed TypeScript over-budget ceilings (shrink-only)
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/__tests__/metric-strip.test.tsx"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/__tests__/shell.test.tsx"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/console/__tests__/agent-session.test.tsx"
+ceiling = 10
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/console/__tests__/attribute-compare.test.tsx"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/console/__tests__/command-palette.test.tsx"
+ceiling = 11
+
 [[limits]]
 metric = "typescript.assertions"
 scope = "ui/src/components/console/__tests__/duration-filter.test.tsx"
 ceiling = 6
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/console/__tests__/ecosystem-graph.test.tsx"
+ceiling = 9
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/console/__tests__/evidence-gaps.test.tsx"
+ceiling = 5
 
 [[limits]]
 metric = "typescript.assertions"
@@ -2421,8 +1527,58 @@ ceiling = 14
 
 [[limits]]
 metric = "typescript.assertions"
+scope = "ui/src/components/console/__tests__/field-explorer.test.tsx"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/console/__tests__/graphql-operation.test.tsx"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/console/__tests__/heat-cell.test.tsx"
+ceiling = 12
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/console/__tests__/kit.test.tsx"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/console/__tests__/range-picker.test.tsx"
+ceiling = 3
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/console/__tests__/rpc-stream.test.tsx"
+ceiling = 6
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/console/__tests__/story-timeline.test.tsx"
+ceiling = 6
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/console/__tests__/top-movers.test.tsx"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
 scope = "ui/src/components/console/__tests__/trace-flamegraph.test.tsx"
 ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/console/__tests__/use-chart-brush.test.tsx"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/console/__tests__/waterfall.test.tsx"
+ceiling = 25
 
 [[limits]]
 metric = "typescript.assertions"
@@ -2431,8 +1587,38 @@ ceiling = 11
 
 [[limits]]
 metric = "typescript.assertions"
+scope = "ui/src/components/console/invocations/__tests__/-session-journey.test.tsx"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/console/invocations/__tests__/-tabs.test.tsx"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/ui/__tests__/primitives.test.tsx"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/domain/time-range/tests/range.test.ts"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
 scope = "ui/src/hooks/__tests__/use-timeline-interactions.test.tsx"
 ceiling = 15
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/lib/__tests__/-invocation.test.ts"
+ceiling = 20
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/lib/__tests__/alert-incident-timeline.test.ts"
+ceiling = 9
 
 [[limits]]
 metric = "typescript.assertions"
@@ -2461,8 +1647,43 @@ ceiling = 38
 
 [[limits]]
 metric = "typescript.assertions"
+scope = "ui/src/lib/__tests__/ecosystem-url.test.ts"
+ceiling = 22
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/lib/__tests__/format.test.ts"
+ceiling = 22
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/lib/__tests__/graphql-trace.test.ts"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/lib/__tests__/investigations.test.ts"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/lib/__tests__/invocation-facets.test.ts"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
 scope = "ui/src/lib/__tests__/log-histogram-brush.test.ts"
 ceiling = 17
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/lib/__tests__/log-pattern-match.test.ts"
+ceiling = 10
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/lib/__tests__/log-patterns-url.test.ts"
+ceiling = 19
 
 [[limits]]
 metric = "typescript.assertions"
@@ -2473,6 +1694,21 @@ ceiling = 21
 metric = "typescript.assertions"
 scope = "ui/src/lib/__tests__/metric-aggregation.test.ts"
 ceiling = 35
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/lib/__tests__/quick-jump.test.ts"
+ceiling = 6
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/lib/__tests__/rpc-trace.test.ts"
+ceiling = 10
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/lib/__tests__/stacktrace.test.ts"
+ceiling = 9
 
 [[limits]]
 metric = "typescript.assertions"
@@ -2491,8 +1727,38 @@ ceiling = 23
 
 [[limits]]
 metric = "typescript.assertions"
+scope = "ui/src/lib/__tests__/trace-tree.test.ts"
+ceiling = 33
+
+[[limits]]
+metric = "typescript.assertions"
 scope = "ui/src/lib/__tests__/where-clause.test.ts"
 ceiling = 27
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/browser/tests/use-page-visible.test.tsx"
+ceiling = 3
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/graphql/tests/transport.test.ts"
+ceiling = 12
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/sse/tests/use-live-stream.test.tsx"
+ceiling = 21
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/__tests__/-alerts.test.tsx"
+ceiling = 35
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/__tests__/-dashboards.test.tsx"
+ceiling = 15
 
 [[limits]]
 metric = "typescript.assertions"
@@ -2500,14 +1766,219 @@ scope = "ui/src/routes/__tests__/-ecosystem-focus.test.ts"
 ceiling = 2
 
 [[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/__tests__/-invocations.test.tsx"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/__tests__/-issues.test.tsx"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/__tests__/-logs.test.tsx"
+ceiling = 43
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/__tests__/-overview.test.tsx"
+ceiling = 23
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/__tests__/-services.test.tsx"
+ceiling = 44
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/__tests__/-sql.test.tsx"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/__tests__/-trace-graphql.test.tsx"
+ceiling = 3
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/__tests__/-trace-links.test.tsx"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/__tests__/-trace-rpc.test.tsx"
+ceiling = 9
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/__tests__/-trace-view-modes.test.tsx"
+ceiling = 9
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/__tests__/-traces-search.test.tsx"
+ceiling = 11
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/components/console/command-palette.tsx"
+ceiling = 370
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/components/console/field-explorer.tsx"
+ceiling = 397
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/components/console/trace-waterfall.tsx"
+ceiling = 672
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/components/logs-table.tsx"
+ceiling = 507
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/components/ui/chart.tsx"
+ceiling = 334
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/components/ui/sidebar.tsx"
+ceiling = 676
+
+[[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/lib/trace-tree.ts"
-ceiling = 350
+ceiling = 351
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/__tests__/-dashboards.test.tsx"
+ceiling = 177
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/__tests__/-invocations.test.tsx"
+ceiling = 188
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/__tests__/-issues.test.tsx"
+ceiling = 163
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/__tests__/-logs.test.tsx"
+ceiling = 320
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/__tests__/-overview.test.tsx"
+ceiling = 191
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/__tests__/-services.test.tsx"
+ceiling = 294
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/alerts.index.tsx"
+ceiling = 642
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/dashboards.$dashboardId.tsx"
+ceiling = 492
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/dashboards.index.tsx"
+ceiling = 520
 
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/routes/ecosystem.tsx"
 ceiling = 278
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/index.tsx"
+ceiling = 955
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/investigations.$investigationId.tsx"
+ceiling = 269
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/investigations.index.tsx"
+ceiling = 195
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/invocations.$invocationId.tsx"
+ceiling = 542
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/invocations.index.tsx"
+ceiling = 369
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/issues.$fingerprint.tsx"
+ceiling = 731
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/issues.index.tsx"
+ceiling = 585
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/logs.tsx"
+ceiling = 1010
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/metrics.$metricName.tsx"
+ceiling = 419
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/metrics.index.tsx"
+ceiling = 172
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/services.$service.tsx"
+ceiling = 831
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/services.tsx"
+ceiling = 492
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/sql.tsx"
+ceiling = 669
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/traces.$traceId.tsx"
+ceiling = 1585
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/traces.index.tsx"
+ceiling = 871
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -2516,8 +1987,33 @@ ceiling = 16
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/components/console/field-explorer.tsx:166"
+ceiling = 18
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/components/console/invocations/invocations-table.tsx:68"
 ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/components/console/invocations/session-journey.tsx:177"
+ceiling = 28
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/components/console/invocations/session-journey.tsx:47"
+ceiling = 22
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/components/console/invocations/sessions-tab.tsx:28"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/components/console/top-movers.tsx:85"
+ceiling = 30
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -2551,6 +2047,26 @@ ceiling = 18
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/components/ui/chart.tsx:149"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/components/ui/chart.tsx:202"
+ceiling = 36
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/components/ui/chart.tsx:330"
+ceiling = 22
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/lib/alert-incident-timeline.ts:56"
+ceiling = 36
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/lib/alert-rule-form.ts:52"
 ceiling = 25
 
@@ -2576,6 +2092,26 @@ ceiling = 17
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/lib/graphql-trace.ts:146"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/lib/graphql-trace.ts:226"
+ceiling = 28
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/lib/invocation.ts:36"
+ceiling = 18
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/lib/invocation.ts:83"
+ceiling = 20
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/lib/log-histogram-brush.ts:29"
 ceiling = 16
 
@@ -2586,17 +2122,22 @@ ceiling = 37
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/trace-tree.ts:221"
+scope = "ui/src/lib/stacktrace.ts:51"
+ceiling = 26
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/lib/trace-tree.ts:222"
 ceiling = 49
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/trace-tree.ts:288"
+scope = "ui/src/lib/trace-tree.ts:289"
 ceiling = 16
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/trace-tree.ts:334"
+scope = "ui/src/lib/trace-tree.ts:335"
 ceiling = 24
 
 [[limits]]
@@ -2616,8 +2157,43 @@ ceiling = 42
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/routes/dashboards.$dashboardId.tsx:189"
+ceiling = 22
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/routes/index.tsx:597"
 ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/routes/invocations.$invocationId.tsx:296"
+ceiling = 29
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/routes/issues.$fingerprint.tsx:548"
+ceiling = 26
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/routes/issues.index.tsx:253"
+ceiling = 17
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/routes/logs.tsx:170"
+ceiling = 26
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/routes/logs.tsx:326"
+ceiling = 113
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/routes/services.$service.tsx:358"
+ceiling = 17
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -2626,7 +2202,17 @@ ceiling = 29
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/traces.$traceId.tsx:1391"
+scope = "ui/src/routes/sql.tsx:166"
+ceiling = 17
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/routes/sql.tsx:382"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/routes/traces.$traceId.tsx:1401"
 ceiling = 16
 
 [[limits]]
@@ -2637,17 +2223,32 @@ ceiling = 17
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/routes/traces.$traceId.tsx:294"
-ceiling = 32
+ceiling = 33
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/traces.index.tsx:314"
-ceiling = 56
+scope = "ui/src/routes/traces.index.tsx:369"
+ceiling = 69
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/components/console/invocations/invocations-table.tsx:68"
 ceiling = 15
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/components/console/invocations/session-journey.tsx:177"
+ceiling = 17
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/components/console/invocations/session-journey.tsx:47"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/components/console/invocations/sessions-tab.tsx:28"
+ceiling = 13
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
@@ -2671,6 +2272,16 @@ ceiling = 16
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/components/ui/chart.tsx:202"
+ceiling = 18
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/lib/alert-incident-timeline.ts:56"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/lib/alert-rule-form.ts:52"
 ceiling = 17
 
@@ -2686,6 +2297,11 @@ ceiling = 19
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/lib/graphql-trace.ts:226"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/lib/metric-aggregation.ts:142"
 ceiling = 13
 
@@ -2696,12 +2312,17 @@ ceiling = 16
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/lib/trace-tree.ts:221"
+scope = "ui/src/lib/stacktrace.ts:51"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/lib/trace-tree.ts:222"
 ceiling = 20
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/lib/trace-tree.ts:334"
+scope = "ui/src/lib/trace-tree.ts:335"
 ceiling = 13
 
 [[limits]]
@@ -2721,6 +2342,51 @@ ceiling = 14
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/routes/invocations.$invocationId.tsx:296"
+ceiling = 24
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/routes/invocations.index.tsx:218"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/routes/issues.$fingerprint.tsx:191"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/routes/issues.$fingerprint.tsx:548"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/routes/issues.index.tsx:379"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/routes/logs.tsx:170"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/routes/logs.tsx:241"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/routes/logs.tsx:326"
+ceiling = 38
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/routes/services.$service.tsx:358"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/routes/services.tsx:150"
 ceiling = 13
 
@@ -2731,23 +2397,48 @@ ceiling = 13
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/traces.$traceId.tsx:1391"
+scope = "ui/src/routes/traces.$traceId.tsx:1401"
 ceiling = 16
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/routes/traces.$traceId.tsx:294"
-ceiling = 29
+ceiling = 30
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/traces.index.tsx:314"
-ceiling = 28
+scope = "ui/src/routes/traces.index.tsx:369"
+ceiling = 34
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/__tests__/kit.test.tsx:21"
+ceiling = 71
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/__tests__/use-chart-brush.test.tsx:15"
+ceiling = 62
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/__tests__/waterfall.test.tsx:107"
+ceiling = 82
 
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/components/console/__tests__/where-clause-editor.test.tsx:18"
 ceiling = 92
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/agent-session.tsx:76"
+ceiling = 78
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/attribute-compare.tsx:50"
+ceiling = 61
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2761,8 +2452,8 @@ ceiling = 126
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/components/console/ecosystem-graph.tsx:123"
-ceiling = 192
+scope = "ui/src/components/console/ecosystem-graph.tsx:134"
+ceiling = 120
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2771,8 +2462,98 @@ ceiling = 108
 
 [[limits]]
 metric = "typescript.function-lines"
+scope = "ui/src/components/console/field-explorer.tsx:166"
+ceiling = 248
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/field-explorer.tsx:91"
+ceiling = 74
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/invocations/__tests__/-tabs.test.tsx:75"
+ceiling = 73
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/invocations/invocation-errors-tab.tsx:34"
+ceiling = 85
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/invocations/invocation-traces-tab.tsx:51"
+ceiling = 85
+
+[[limits]]
+metric = "typescript.function-lines"
 scope = "ui/src/components/console/invocations/invocations-table.tsx:68"
 ceiling = 103
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/invocations/jobs-cycles-tab.tsx:114"
+ceiling = 87
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/invocations/jobs-cycles-tab.tsx:133"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/invocations/jobs-cycles-tab.tsx:44"
+ceiling = 69
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/invocations/session-journey.tsx:177"
+ceiling = 113
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/invocations/session-journey.tsx:47"
+ceiling = 66
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/invocations/sessions-tab.tsx:155"
+ceiling = 68
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/invocations/sessions-tab.tsx:224"
+ceiling = 66
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/invocations/sessions-tab.tsx:28"
+ceiling = 126
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/pin-button.tsx:29"
+ceiling = 173
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/range-picker.tsx:15"
+ceiling = 80
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/rpc-stream.tsx:104"
+ceiling = 62
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/rpc-stream.tsx:99"
+ceiling = 70
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/top-movers.tsx:85"
+ceiling = 77
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2788,6 +2569,11 @@ ceiling = 106
 metric = "typescript.function-lines"
 scope = "ui/src/components/console/trace-waterfall.tsx:96"
 ceiling = 600
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/console/use-chart-brush.ts:54"
+ceiling = 87
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2811,6 +2597,51 @@ ceiling = 65
 
 [[limits]]
 metric = "typescript.function-lines"
+scope = "ui/src/components/metric-strip.tsx:101"
+ceiling = 122
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/metric-strip.tsx:121"
+ceiling = 68
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/parallax-shell.tsx:163"
+ceiling = 104
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/parallax-shell.tsx:62"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/ui/calendar.tsx:15"
+ceiling = 163
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/ui/chart.tsx:119"
+ceiling = 153
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/ui/chart.tsx:202"
+ceiling = 66
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/ui/sidebar.tsx:153"
+ceiling = 101
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/ui/sidebar.tsx:57"
+ceiling = 95
+
+[[limits]]
+metric = "typescript.function-lines"
 scope = "ui/src/hooks/__tests__/use-timeline-interactions.test.tsx:59"
 ceiling = 102
 
@@ -2821,8 +2652,48 @@ ceiling = 176
 
 [[limits]]
 metric = "typescript.function-lines"
+scope = "ui/src/lib/__tests__/alert-incident-timeline.test.ts:8"
+ceiling = 71
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/lib/__tests__/format.test.ts:15"
+ceiling = 67
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/lib/__tests__/graphql-trace.test.ts:24"
+ceiling = 150
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/lib/__tests__/rpc-trace.test.ts:45"
+ceiling = 108
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/lib/__tests__/stacktrace.test.ts:5"
+ceiling = 83
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/lib/__tests__/trace-tree.test.ts:170"
+ceiling = 86
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/lib/__tests__/trace-tree.test.ts:34"
+ceiling = 235
+
+[[limits]]
+metric = "typescript.function-lines"
 scope = "ui/src/lib/__tests__/where-clause.test.ts:11"
 ceiling = 126
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/lib/alert-incident-timeline.ts:56"
+ceiling = 76
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2831,12 +2702,27 @@ ceiling = 65
 
 [[limits]]
 metric = "typescript.function-lines"
+scope = "ui/src/lib/graphql-trace.ts:146"
+ceiling = 152
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/lib/graphql-trace.ts:226"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/lib/stacktrace.ts:51"
+ceiling = 112
+
+[[limits]]
+metric = "typescript.function-lines"
 scope = "ui/src/lib/timeline-viewport.ts:107"
 ceiling = 64
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/lib/trace-tree.ts:334"
+scope = "ui/src/lib/trace-tree.ts:335"
 ceiling = 61
 
 [[limits]]
@@ -2851,8 +2737,103 @@ ceiling = 75
 
 [[limits]]
 metric = "typescript.function-lines"
+scope = "ui/src/platform/sse/tests/use-live-stream.test.tsx:77"
+ceiling = 146
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/__tests__/-dashboards.test.tsx:54"
+ceiling = 143
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/__tests__/-issues.test.tsx:87"
+ceiling = 92
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/__tests__/-logs.test.tsx:170"
+ceiling = 72
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/__tests__/-overview.test.tsx:131"
+ceiling = 78
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/__tests__/-services.test.tsx:124"
+ceiling = 69
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/__tests__/-services.test.tsx:194"
+ceiling = 125
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/__tests__/-sql.test.tsx:37"
+ceiling = 70
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/__tests__/-trace-links.test.tsx:48"
+ceiling = 68
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/__tests__/-trace-links.test.tsx:49"
+ceiling = 66
+
+[[limits]]
+metric = "typescript.function-lines"
 scope = "ui/src/routes/__tests__/-trace-view-modes.test.tsx:15"
 ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/alerts.index.tsx:115"
+ceiling = 243
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/alerts.index.tsx:405"
+ceiling = 174
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/alerts.index.tsx:580"
+ceiling = 88
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/dashboards.$dashboardId.tsx:216"
+ceiling = 180
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/dashboards.$dashboardId.tsx:397"
+ceiling = 117
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/dashboards.index.tsx:134"
+ceiling = 182
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/dashboards.index.tsx:317"
+ceiling = 71
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/dashboards.index.tsx:389"
+ceiling = 91
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/dashboards.index.tsx:481"
+ceiling = 65
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2866,8 +2847,133 @@ ceiling = 69
 
 [[limits]]
 metric = "typescript.function-lines"
+scope = "ui/src/routes/index.tsx:272"
+ceiling = 170
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/index.tsx:448"
+ceiling = 142
+
+[[limits]]
+metric = "typescript.function-lines"
 scope = "ui/src/routes/index.tsx:597"
 ceiling = 169
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/investigations.$investigationId.tsx:80"
+ceiling = 204
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/investigations.index.tsx:57"
+ceiling = 147
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/invocations.$invocationId.tsx:122"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/invocations.$invocationId.tsx:205"
+ceiling = 90
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/invocations.$invocationId.tsx:296"
+ceiling = 210
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/invocations.$invocationId.tsx:507"
+ceiling = 63
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/invocations.index.tsx:218"
+ceiling = 171
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/issues.$fingerprint.tsx:191"
+ceiling = 233
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/issues.$fingerprint.tsx:479"
+ceiling = 68
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/issues.$fingerprint.tsx:707"
+ceiling = 63
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/issues.index.tsx:253"
+ceiling = 125
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/issues.index.tsx:379"
+ceiling = 237
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/issues.index.tsx:457"
+ceiling = 123
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/logs.tsx:326"
+ceiling = 536
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/logs.tsx:867"
+ceiling = 88
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/logs.tsx:998"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/metrics.$metricName.tsx:113"
+ceiling = 74
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/metrics.$metricName.tsx:202"
+ceiling = 238
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/metrics.index.tsx:82"
+ceiling = 101
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/services.$service.tsx:358"
+ceiling = 135
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/services.$service.tsx:596"
+ceiling = 62
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/services.$service.tsx:659"
+ceiling = 139
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/services.$service.tsx:799"
+ceiling = 69
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2881,36 +2987,1677 @@ ceiling = 98
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/traces.$traceId.tsx:1132"
+scope = "ui/src/routes/sql.tsx:197"
+ceiling = 65
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/sql.tsx:276"
+ceiling = 62
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/sql.tsx:344"
+ceiling = 357
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/traces.$traceId.tsx:1142"
 ceiling = 90
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/traces.$traceId.tsx:1223"
+scope = "ui/src/routes/traces.$traceId.tsx:1233"
 ceiling = 68
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/traces.$traceId.tsx:1391"
+scope = "ui/src/routes/traces.$traceId.tsx:1401"
 ceiling = 212
 
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/routes/traces.$traceId.tsx:294"
-ceiling = 487
+ceiling = 497
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/traces.index.tsx:314"
-ceiling = 352
+scope = "ui/src/routes/traces.index.tsx:369"
+ceiling = 447
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/traces.index.tsx:667"
+scope = "ui/src/routes/traces.index.tsx:817"
 ceiling = 89
 
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/lib/format.ts"
+ceiling = 1
 
 [[limits]]
-metric = "rust.file-lines"
-scope = "crates/parallax-test-support/src/memory/trace_analytics.rs"
-ceiling = 418
+metric = "typescript.suppressions"
+scope = "ui/src/platform/graphql/transport.ts"
+ceiling = 1
+
+# # Plan 100: UI ownership ledger (machine-checked by ui.architecture)
+# path = live file; current_owner = present role; target_owner = final home;
+# migration_plan = plan that moves or hardens the file; kind classifies origin.
+# ---------------------------------------------------------------------------
+
+[[ui.ownership]]
+path = "ui/scripts/runtime-probe.ts"
+current_owner = "tooling"
+target_owner = "tooling"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/__tests__/metric-strip.test.tsx"
+current_owner = "legacy-components-tests"
+target_owner = "features/runtime-metrics"
+migration_plan = "149"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/__tests__/shell.test.tsx"
+current_owner = "layout-tests"
+target_owner = "layout/tests"
+migration_plan = "143"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/__tests__/agent-session.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "features/runs"
+migration_plan = "140"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/__tests__/attribute-compare.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/__tests__/command-palette.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "features/quick-navigation"
+migration_plan = "143"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/__tests__/duration-filter.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/__tests__/ecosystem-graph.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "features/ecosystem"
+migration_plan = "136"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/__tests__/evidence-gaps.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "features/investigations"
+migration_plan = "134"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/__tests__/facet-sidebar.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/__tests__/field-explorer.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/__tests__/graphql-operation.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/__tests__/heat-cell.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "shared/tests"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/__tests__/kit.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "shared/tests"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/__tests__/range-picker.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "features/time-range"
+migration_plan = "149"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/__tests__/rpc-stream.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/__tests__/story-timeline.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "features/story"
+migration_plan = "149"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/__tests__/top-movers.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "features/overview"
+migration_plan = "150"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/__tests__/trace-flamegraph.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/__tests__/use-chart-brush.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "shared/tests"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/__tests__/waterfall.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/__tests__/where-clause-editor.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/agent-session.tsx"
+current_owner = "legacy-console"
+target_owner = "features/runs"
+migration_plan = "140"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/attribute-compare.tsx"
+current_owner = "legacy-console"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/chip.tsx"
+current_owner = "legacy-console"
+target_owner = "shared/components/chip"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/command-palette.tsx"
+current_owner = "legacy-console"
+target_owner = "features/quick-navigation"
+migration_plan = "143"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/copy-button.tsx"
+current_owner = "legacy-console"
+target_owner = "shared/components/copy-button"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/data-table.tsx"
+current_owner = "legacy-console"
+target_owner = "shared/components/data-table"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/duration-filter.tsx"
+current_owner = "legacy-console"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/ecosystem-graph.tsx"
+current_owner = "legacy-console"
+target_owner = "features/ecosystem"
+migration_plan = "136"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/empty-state.tsx"
+current_owner = "legacy-console"
+target_owner = "shared/components/empty-state"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/evidence-gaps.tsx"
+current_owner = "legacy-console"
+target_owner = "features/investigations"
+migration_plan = "134"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/facet-sidebar.tsx"
+current_owner = "legacy-console"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/field-explorer.tsx"
+current_owner = "legacy-console"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/graphql-operation.tsx"
+current_owner = "legacy-console"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/heat-cell.tsx"
+current_owner = "legacy-console"
+target_owner = "shared/components/heat-cell"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/hooks.ts"
+current_owner = "legacy-console"
+target_owner = "shared/hooks"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/invocations/__tests__/-session-journey.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "features/runs"
+migration_plan = "140"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/invocations/__tests__/-tabs.test.tsx"
+current_owner = "legacy-console-tests"
+target_owner = "features/runs"
+migration_plan = "140"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/invocations/invocation-errors-tab.tsx"
+current_owner = "legacy-console"
+target_owner = "features/runs"
+migration_plan = "140"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/invocations/invocation-status-badge.tsx"
+current_owner = "legacy-console"
+target_owner = "features/runs"
+migration_plan = "140"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/invocations/invocation-traces-tab.tsx"
+current_owner = "legacy-console"
+target_owner = "features/runs"
+migration_plan = "140"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/invocations/invocations-table.tsx"
+current_owner = "legacy-console"
+target_owner = "features/runs"
+migration_plan = "140"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/invocations/jobs-cycles-tab.tsx"
+current_owner = "legacy-console"
+target_owner = "features/runs"
+migration_plan = "140"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/invocations/screen-visit-lane.tsx"
+current_owner = "legacy-console"
+target_owner = "features/runs"
+migration_plan = "140"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/invocations/session-journey.tsx"
+current_owner = "legacy-console"
+target_owner = "features/runs"
+migration_plan = "140"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/invocations/sessions-tab.tsx"
+current_owner = "legacy-console"
+target_owner = "features/runs"
+migration_plan = "140"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/pin-button.tsx"
+current_owner = "legacy-console"
+target_owner = "features/investigations"
+migration_plan = "134"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/range-picker.tsx"
+current_owner = "legacy-console"
+target_owner = "features/time-range"
+migration_plan = "149"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/relative-time.tsx"
+current_owner = "legacy-console"
+target_owner = "shared/components/relative-time"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/rpc-stream.tsx"
+current_owner = "legacy-console"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/scroll-fade.tsx"
+current_owner = "legacy-console"
+target_owner = "shared/components/scroll-fade"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/service-dot.tsx"
+current_owner = "legacy-console"
+target_owner = "shared/components/service-dot"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/skeletons.tsx"
+current_owner = "legacy-console"
+target_owner = "shared/components/skeletons"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/span-kind.tsx"
+current_owner = "legacy-console"
+target_owner = "shared/components/span-kind"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/stat-card.tsx"
+current_owner = "legacy-console"
+target_owner = "shared/components/stat-card"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/story-timeline.tsx"
+current_owner = "legacy-console"
+target_owner = "features/story"
+migration_plan = "149"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/top-movers.tsx"
+current_owner = "legacy-console"
+target_owner = "features/overview"
+migration_plan = "150"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/trace-flamegraph.tsx"
+current_owner = "legacy-console"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/trace-waterfall.tsx"
+current_owner = "legacy-console"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/trend.tsx"
+current_owner = "legacy-console"
+target_owner = "shared/components/trend"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/use-chart-brush.ts"
+current_owner = "legacy-console"
+target_owner = "shared/hooks/use-chart-brush"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/use-copied.ts"
+current_owner = "legacy-console"
+target_owner = "shared/hooks/use-copied"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/console/where-clause-editor.tsx"
+current_owner = "legacy-console"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/live-stream-panel.tsx"
+current_owner = "legacy-components"
+target_owner = "features/logs"
+migration_plan = "141"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/logs-table.tsx"
+current_owner = "legacy-components"
+target_owner = "features/logs"
+migration_plan = "141"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/metric-strip.tsx"
+current_owner = "legacy-components"
+target_owner = "features/runtime-metrics"
+migration_plan = "149"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/nav-icon.tsx"
+current_owner = "layout"
+target_owner = "layout"
+migration_plan = "143"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/nav.ts"
+current_owner = "layout"
+target_owner = "layout"
+migration_plan = "143"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/page-header.tsx"
+current_owner = "legacy-components"
+target_owner = "shared/components/page-header"
+migration_plan = "149"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/parallax-shell.tsx"
+current_owner = "layout"
+target_owner = "layout"
+migration_plan = "143"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/route-fallbacks.tsx"
+current_owner = "layout"
+target_owner = "layout"
+migration_plan = "143"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/runtime-snapshot.tsx"
+current_owner = "legacy-components"
+target_owner = "features/runtime-metrics"
+migration_plan = "149"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/theme-switcher.tsx"
+current_owner = "layout"
+target_owner = "layout"
+migration_plan = "143"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/__tests__/primitives.test.tsx"
+current_owner = "shadcn-tests"
+target_owner = "shared/tests"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/alert-dialog.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/avatar.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/badge.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/breadcrumb.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/button.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/calendar.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/card.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/chart.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/checkbox.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/combobox.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/command.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/dialog.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/drawer.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/dropdown-menu.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/empty.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/field.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/input-group.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/input.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/item.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/kbd.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/label.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/loader.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/popover.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/progress.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/scroll-area.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/select.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/separator.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/sheet.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/sidebar.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/skeleton.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/sonner.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/spinner.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/switch.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/table.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/tabs.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/textarea.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/toggle-group.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/toggle.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/components/ui/tooltip.tsx"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/domain/time-range/range.ts"
+current_owner = "domain/time-range"
+target_owner = "domain/time-range"
+migration_plan = "149"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/domain/time-range/tests/range.test.ts"
+current_owner = "domain/time-range"
+target_owner = "domain/time-range"
+migration_plan = "149"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/hooks/__tests__/use-timeline-interactions.test.tsx"
+current_owner = "legacy-hooks-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/hooks/use-live-stream.ts"
+current_owner = "compatibility-reexport"
+target_owner = "platform/sse"
+migration_plan = "151"
+kind = "compatibility-reexport"
+
+[[ui.ownership]]
+path = "ui/src/hooks/use-mobile.ts"
+current_owner = "compatibility-reexport"
+target_owner = "platform/browser"
+migration_plan = "143"
+kind = "compatibility-reexport"
+
+[[ui.ownership]]
+path = "ui/src/hooks/use-timeline-interactions.ts"
+current_owner = "legacy-hooks"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/-invocation.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/runs"
+migration_plan = "140"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/alert-incident-timeline.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/alerts"
+migration_plan = "alerts"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/alert-rule-form.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/alerts"
+migration_plan = "alerts"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/color-by.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "shared/lib/color-by"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/colors.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "shared/lib/colors"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/ecosystem-layout.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/ecosystem"
+migration_plan = "136"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/ecosystem-topology.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/ecosystem"
+migration_plan = "136"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/ecosystem-url.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/ecosystem"
+migration_plan = "136"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/format.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "shared/lib/format"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/graphql-trace.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/investigations.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/investigations"
+migration_plan = "134"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/invocation-facets.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/runs"
+migration_plan = "140"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/log-histogram-brush.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/logs"
+migration_plan = "141"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/log-pattern-match.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/logs"
+migration_plan = "141"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/log-patterns-url.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/logs"
+migration_plan = "141"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/log-table-prefs.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/logs"
+migration_plan = "141"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/metric-aggregation.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/runtime-metrics"
+migration_plan = "149"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/quick-jump.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/app-status"
+migration_plan = "143"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/rpc-trace.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/stacktrace.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/issues"
+migration_plan = "139"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/timeline-minimap.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/timeline-viewport.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/trace-tree-flame.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/trace-tree.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/__tests__/where-clause.test.ts"
+current_owner = "legacy-lib-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/alert-incident-timeline.ts"
+current_owner = "legacy-lib"
+target_owner = "features/alerts"
+migration_plan = "alerts"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/alert-rule-form.ts"
+current_owner = "legacy-lib"
+target_owner = "features/alerts"
+migration_plan = "alerts"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/alerts-gql.ts"
+current_owner = "legacy-lib"
+target_owner = "features/alerts"
+migration_plan = "alerts"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/api.ts"
+current_owner = "compatibility-reexport"
+target_owner = "platform/graphql+feature-dtos"
+migration_plan = "151"
+kind = "compatibility-reexport"
+
+[[ui.ownership]]
+path = "ui/src/lib/color-by.ts"
+current_owner = "legacy-lib"
+target_owner = "shared/lib/color-by"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/colors.ts"
+current_owner = "legacy-lib"
+target_owner = "shared/lib/colors"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/ecosystem-layout.ts"
+current_owner = "legacy-lib"
+target_owner = "features/ecosystem"
+migration_plan = "136"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/ecosystem-topology.ts"
+current_owner = "legacy-lib"
+target_owner = "features/ecosystem"
+migration_plan = "136"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/ecosystem-url.ts"
+current_owner = "legacy-lib"
+target_owner = "features/ecosystem"
+migration_plan = "136"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/format.ts"
+current_owner = "legacy-lib"
+target_owner = "shared/lib/format"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/graphql-trace.ts"
+current_owner = "legacy-lib"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/investigations.ts"
+current_owner = "legacy-lib"
+target_owner = "features/investigations"
+migration_plan = "134"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/invocation-facets.ts"
+current_owner = "legacy-lib"
+target_owner = "features/runs"
+migration_plan = "140"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/invocation.ts"
+current_owner = "legacy-lib"
+target_owner = "features/runs"
+migration_plan = "140"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/log-histogram-brush.ts"
+current_owner = "legacy-lib"
+target_owner = "features/logs"
+migration_plan = "141"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/log-pattern-match.ts"
+current_owner = "legacy-lib"
+target_owner = "features/logs"
+migration_plan = "141"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/log-patterns-url.ts"
+current_owner = "legacy-lib"
+target_owner = "features/logs"
+migration_plan = "141"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/log-table-prefs.ts"
+current_owner = "legacy-lib"
+target_owner = "features/logs"
+migration_plan = "141"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/metric-aggregation.ts"
+current_owner = "legacy-lib"
+target_owner = "features/runtime-metrics"
+migration_plan = "149"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/quick-jump.ts"
+current_owner = "legacy-lib"
+target_owner = "features/app-status"
+migration_plan = "143"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/range.ts"
+current_owner = "compatibility-reexport"
+target_owner = "domain/time-range"
+migration_plan = "149"
+kind = "compatibility-reexport"
+
+[[ui.ownership]]
+path = "ui/src/lib/rpc-trace.ts"
+current_owner = "legacy-lib"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/stacktrace.ts"
+current_owner = "legacy-lib"
+target_owner = "features/issues"
+migration_plan = "139"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/timeline-minimap.ts"
+current_owner = "legacy-lib"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/timeline-viewport.ts"
+current_owner = "legacy-lib"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/trace-tree.ts"
+current_owner = "legacy-lib"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/use-visible.ts"
+current_owner = "compatibility-reexport"
+target_owner = "platform/browser"
+migration_plan = "151"
+kind = "compatibility-reexport"
+
+[[ui.ownership]]
+path = "ui/src/lib/utils.ts"
+current_owner = "shadcn"
+target_owner = "shadcn"
+migration_plan = "none"
+kind = "shadcn"
+
+[[ui.ownership]]
+path = "ui/src/lib/where-clause.ts"
+current_owner = "legacy-lib"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/browser/tests/use-page-visible.test.tsx"
+current_owner = "platform/browser"
+target_owner = "platform/browser"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/browser/use-is-mobile.ts"
+current_owner = "platform/browser"
+target_owner = "platform/browser"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/browser/use-page-visible.ts"
+current_owner = "platform/browser"
+target_owner = "platform/browser"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/graphql/tests/transport.test.ts"
+current_owner = "platform/graphql"
+target_owner = "platform/graphql"
+migration_plan = "152"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/graphql/transport.ts"
+current_owner = "platform/graphql"
+target_owner = "platform/graphql"
+migration_plan = "152"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/sse/tests/use-live-stream.test.tsx"
+current_owner = "platform/sse"
+target_owner = "platform/sse"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/sse/use-live-stream.ts"
+current_owner = "platform/sse"
+target_owner = "platform/sse"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routeTree.gen.ts"
+current_owner = "generated"
+target_owner = "generated"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/router.tsx"
+current_owner = "app"
+target_owner = "app"
+migration_plan = "143"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/__root.tsx"
+current_owner = "app"
+target_owner = "app"
+migration_plan = "143"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/__tests__/-alerts.test.tsx"
+current_owner = "routes-tests"
+target_owner = "features/alerts"
+migration_plan = "alerts"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/__tests__/-dashboards.test.tsx"
+current_owner = "routes-tests"
+target_owner = "features/dashboards"
+migration_plan = "137"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/__tests__/-ecosystem-focus.test.ts"
+current_owner = "routes-tests"
+target_owner = "features/ecosystem"
+migration_plan = "136"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/__tests__/-invocations.test.tsx"
+current_owner = "routes-tests"
+target_owner = "features/runs"
+migration_plan = "140"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/__tests__/-issues.test.tsx"
+current_owner = "routes-tests"
+target_owner = "features/issues"
+migration_plan = "139"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/__tests__/-logs.test.tsx"
+current_owner = "routes-tests"
+target_owner = "features/logs"
+migration_plan = "141"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/__tests__/-overview.test.tsx"
+current_owner = "routes-tests"
+target_owner = "features/overview"
+migration_plan = "150"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/__tests__/-services.test.tsx"
+current_owner = "routes-tests"
+target_owner = "features/services"
+migration_plan = "138"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/__tests__/-sql.test.tsx"
+current_owner = "routes-tests"
+target_owner = "features/sql"
+migration_plan = "135"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/__tests__/-trace-graphql.test.tsx"
+current_owner = "routes-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/__tests__/-trace-links.test.tsx"
+current_owner = "routes-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/__tests__/-trace-rpc.test.tsx"
+current_owner = "routes-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/__tests__/-trace-view-modes.test.tsx"
+current_owner = "routes-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/__tests__/-traces-search.test.tsx"
+current_owner = "routes-tests"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/alerts.index.tsx"
+current_owner = "routes"
+target_owner = "features/alerts"
+migration_plan = "alerts"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/dashboards.$dashboardId.tsx"
+current_owner = "routes"
+target_owner = "features/dashboards"
+migration_plan = "137"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/dashboards.index.tsx"
+current_owner = "routes"
+target_owner = "features/dashboards"
+migration_plan = "137"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/ecosystem.tsx"
+current_owner = "routes"
+target_owner = "features/ecosystem"
+migration_plan = "136"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/index.tsx"
+current_owner = "routes"
+target_owner = "features/overview"
+migration_plan = "150"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/investigations.$investigationId.tsx"
+current_owner = "routes"
+target_owner = "features/investigations"
+migration_plan = "134"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/investigations.index.tsx"
+current_owner = "routes"
+target_owner = "features/investigations"
+migration_plan = "134"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/invocations.$invocationId.tsx"
+current_owner = "routes"
+target_owner = "features/runs"
+migration_plan = "140"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/invocations.index.tsx"
+current_owner = "routes"
+target_owner = "features/runs"
+migration_plan = "140"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/issues.$fingerprint.tsx"
+current_owner = "routes"
+target_owner = "features/issues"
+migration_plan = "139"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/issues.index.tsx"
+current_owner = "routes"
+target_owner = "features/issues"
+migration_plan = "139"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/logs.tsx"
+current_owner = "routes"
+target_owner = "features/logs"
+migration_plan = "141"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/metrics.$metricName.tsx"
+current_owner = "routes"
+target_owner = "features/runtime-metrics"
+migration_plan = "149"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/metrics.index.tsx"
+current_owner = "routes"
+target_owner = "features/runtime-metrics"
+migration_plan = "149"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/services.$service.tsx"
+current_owner = "routes"
+target_owner = "features/services"
+migration_plan = "138"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/services.tsx"
+current_owner = "routes"
+target_owner = "features/services"
+migration_plan = "138"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/sql.tsx"
+current_owner = "routes"
+target_owner = "features/sql"
+migration_plan = "135"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/traces.$traceId.tsx"
+current_owner = "routes"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/traces.index.tsx"
+current_owner = "routes"
+target_owner = "features/traces"
+migration_plan = "142"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/shared/semconv.ts"
+current_owner = "shared"
+target_owner = "shared"
+migration_plan = "100"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/test/diagnostics.ts"
+current_owner = "test-support"
+target_owner = "test-support"
+migration_plan = "129"
+kind = "test-support"
+
+[[ui.ownership]]
+path = "ui/src/test/fixtures.ts"
+current_owner = "test-support"
+target_owner = "test-support"
+migration_plan = "129"
+kind = "test-support"
+
+[[ui.ownership]]
+path = "ui/src/test/network.ts"
+current_owner = "test-support"
+target_owner = "test-support"
+migration_plan = "129"
+kind = "test-support"
+
+[[ui.ownership]]
+path = "ui/src/test/resets.ts"
+current_owner = "test-support"
+target_owner = "test-support"
+migration_plan = "129"
+kind = "test-support"
+
+[[ui.ownership]]
+path = "ui/src/test/router.tsx"
+current_owner = "test-support"
+target_owner = "test-support"
+migration_plan = "129"
+kind = "test-support"
+
+[[ui.ownership]]
+path = "ui/src/test/setup.ts"
+current_owner = "test-support"
+target_owner = "test-support"
+migration_plan = "129"
+kind = "test-support"
+
+[[ui.ownership]]
+path = "ui/src/test/timers.ts"
+current_owner = "test-support"
+target_owner = "test-support"
+migration_plan = "129"
+kind = "test-support"
+
+[[ui.ownership]]
+path = "ui/src/test/wire-fixtures.ts"
+current_owner = "test-support"
+target_owner = "test-support"
+migration_plan = "129"
+kind = "test-support"
+
+[[ui.ownership]]
+path = "ui/src/workers/ecosystem-layout.worker.ts"
+current_owner = "workers"
+target_owner = "features/ecosystem"
+migration_plan = "136"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/tests/harness/boundaries.test.ts"
+current_owner = "test-support"
+target_owner = "test-support"
+migration_plan = "129"
+kind = "test-support"
+
+[[ui.ownership]]
+path = "ui/tests/harness/diagnostics.test.ts"
+current_owner = "test-support"
+target_owner = "test-support"
+migration_plan = "129"
+kind = "test-support"
+
+[[ui.ownership]]
+path = "ui/tests/harness/router.test.tsx"
+current_owner = "test-support"
+target_owner = "test-support"
+migration_plan = "129"
+kind = "test-support"
+
+[[ui.ownership]]
+path = "ui/tests/harness/wire-fixtures.test.ts"
+current_owner = "test-support"
+target_owner = "test-support"
+migration_plan = "129"
+kind = "test-support"

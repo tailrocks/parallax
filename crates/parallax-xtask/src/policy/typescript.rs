@@ -26,6 +26,7 @@ mod workspace;
 
 use boundaries::*;
 use health_metrics::*;
+pub(in crate::policy) use boundaries::collect_source_files;
 pub(super) use workspace::{check_workspace, health};
 
 #[derive(Clone, Debug, Eq, PartialEq)]

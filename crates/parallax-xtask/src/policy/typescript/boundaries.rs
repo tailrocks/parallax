@@ -35,7 +35,10 @@ pub(super) fn resolver(
     })
 }
 
-pub(super) fn collect_source_files(directory: &Path, files: &mut Vec<PathBuf>) -> Result<()> {
+pub(in crate::policy) fn collect_source_files(
+    directory: &Path,
+    files: &mut Vec<PathBuf>,
+) -> Result<()> {
     for entry in fs::read_dir(directory)
         .with_context(|| format!("failed to read directory {}", directory.display()))?
     {
@@ -161,8 +164,9 @@ pub(super) fn check_boundary(
             to,
             Layer::Features | Layer::Domain | Layer::Platform | Layer::Shared
         ),
-        Layer::Platform => matches!(to, Layer::Domain | Layer::Shared),
-        Layer::Domain => to == Layer::Shared,
+        // Same-layer platform/domain modules may compose; product edges stay downward.
+        Layer::Platform => matches!(to, Layer::Platform | Layer::Domain | Layer::Shared),
+        Layer::Domain => matches!(to, Layer::Domain | Layer::Shared),
         Layer::Shared => to == Layer::Shared,
     };
     if !allowed {

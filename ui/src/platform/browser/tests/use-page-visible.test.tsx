@@ -3,7 +3,7 @@
 import { act, cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
-import { usePageVisible } from "@/lib/use-visible"
+import { usePageVisible } from "@/platform/browser/use-page-visible"
 
 function Harness() {
   const visible = usePageVisible()

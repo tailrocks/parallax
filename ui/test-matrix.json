@@ -2,7 +2,7 @@
   "schema_version": 1,
   "ratchets": {
     "fire_event_calls": 28,
-    "legacy_handoffs": 68,
+    "legacy_handoffs": 64,
     "raw_router_builders": 1,
     "test_cases": 425,
     "test_files": 72
@@ -607,9 +607,8 @@
       "risk": "Live SSE state can reconnect incorrectly, leak stale data, or ignore cancellation",
       "scenario_owner": "platform/live",
       "lane_owner": "vitest/unit",
-      "delivery_plan": 153,
       "layer": "platform-contract",
-      "test_file": "ui/src/hooks/__tests__/use-live-stream.test.tsx",
+      "test_file": "ui/src/platform/sse/tests/use-live-stream.test.tsx",
       "test_ids": [
         "buffers frames and flushes after flushMs via onBatch",
         "skips malformed frames when parse throws without killing the stream",
@@ -619,14 +618,7 @@
         "closes the stream while the tab is hidden and reconnects on visible"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/hooks/__tests__/use-live-stream.test.tsx",
-        "destination_owner": "platform/live",
-        "removal_plan": 153,
-        "created": "2026-07-15",
-        "expires": "plan-153-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-020",
@@ -634,9 +626,8 @@
       "risk": "GraphQL transport can mishandle success, error, cancellation, caching, or invalid envelopes",
       "scenario_owner": "platform/graphql",
       "lane_owner": "vitest/unit",
-      "delivery_plan": 152,
       "layer": "platform-contract",
-      "test_file": "ui/src/lib/__tests__/api.test.ts",
+      "test_file": "ui/src/platform/graphql/tests/transport.test.ts",
       "test_ids": [
         "escapes backslash, quote, newline, and tab",
         "strips carriage returns",
@@ -650,14 +641,7 @@
         "is available in the browser (client-side cache active)"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/api.test.ts",
-        "destination_owner": "platform/graphql",
-        "removal_plan": 152,
-        "created": "2026-07-15",
-        "expires": "plan-152-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-021",
@@ -772,9 +756,8 @@
       "risk": "Preset and custom time ranges can retain stale bounds or serialize incorrectly",
       "scenario_owner": "capabilities/time-range",
       "lane_owner": "vitest/unit",
-      "delivery_plan": 149,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/range.test.ts",
+      "test_file": "ui/src/domain/time-range/tests/range.test.ts",
       "test_ids": [
         "clears explicit bounds for preset windows",
         "pins custom windows",
@@ -782,14 +765,7 @@
         "mirrors update shape for cross-route links"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/range.test.ts",
-        "destination_owner": "capabilities/time-range",
-        "removal_plan": 149,
-        "created": "2026-07-15",
-        "expires": "plan-149-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-026",
@@ -889,21 +865,13 @@
       "risk": "Visibility observation can report stale intersection state",
       "scenario_owner": "platform/browser",
       "lane_owner": "vitest/unit",
-      "delivery_plan": 153,
       "layer": "platform-contract",
-      "test_file": "ui/src/lib/__tests__/use-visible.test.tsx",
+      "test_file": "ui/src/platform/browser/tests/use-page-visible.test.tsx",
       "test_ids": [
         "tracks document.visibilitychange"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/use-visible.test.tsx",
-        "destination_owner": "platform/browser",
-        "removal_plan": 153,
-        "created": "2026-07-15",
-        "expires": "plan-153-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-030",

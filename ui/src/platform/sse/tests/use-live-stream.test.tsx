@@ -3,8 +3,8 @@
 import { act, cleanup, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { useLiveStream } from "@/hooks/use-live-stream"
-import type { LiveStreamStatus } from "@/hooks/use-live-stream"
+import { useLiveStream } from "@/platform/sse/use-live-stream"
+import type { LiveStreamStatus } from "@/platform/sse/use-live-stream"
 
 type Handler = ((event: MessageEvent) => void) | null
 type VoidHandler = (() => void) | null

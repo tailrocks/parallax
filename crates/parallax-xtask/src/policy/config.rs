@@ -10,6 +10,8 @@ pub(super) struct Ratchet {
     pub budgets: Budgets,
     pub product: Product,
     #[serde(default)]
+    pub ui: UiPolicy,
+    #[serde(default)]
     pub limits: Vec<Limit>,
     #[serde(default)]
     pub generated: Vec<Generated>,
@@ -17,6 +19,49 @@ pub(super) struct Ratchet {
     pub exceptions: Vec<Exception>,
     #[serde(default)]
     pub rust_suppressions: Vec<RustSuppression>,
+}
+
+/// Plan-100 UI architecture control plane.
+#[derive(Debug, Default, Deserialize)]
+pub(super) struct UiPolicy {
+    /// Exact current→target ownership for every handwritten UI source file.
+    #[serde(default)]
+    pub ownership: Vec<UiOwnership>,
+    /// Shrink-only approved cross-feature facade edges (`feature-a -> feature-b`).
+    #[serde(default)]
+    pub feature_edges: Vec<UiFeatureEdge>,
+    /// Exact current layer-graph exceptions with a removal plan.
+    #[serde(default)]
+    pub layer_exceptions: Vec<UiLayerException>,
+}
+
+#[derive(Debug, Deserialize)]
+pub(super) struct UiOwnership {
+    pub path: String,
+    pub current_owner: String,
+    pub target_owner: String,
+    pub migration_plan: String,
+    pub kind: String,
+    #[serde(default)]
+    pub facade: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub(super) struct UiFeatureEdge {
+    pub from_feature: String,
+    pub to_feature: String,
+    pub reason: String,
+    pub owner: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub(super) struct UiLayerException {
+    pub source: String,
+    pub target: String,
+    pub rule: String,
+    pub owner: String,
+    pub removal_plan: String,
+    pub reason: String,
 }
 
 #[derive(Debug, Deserialize)]

@@ -7,6 +7,7 @@ fn ratchet() -> Ratchet {
         architecture: Architecture { packages: vec![] },
         budgets: Budgets::default(),
         product: Product::default(),
+        ui: Default::default(),
         limits: vec![],
         generated: vec![],
         exceptions: vec![],

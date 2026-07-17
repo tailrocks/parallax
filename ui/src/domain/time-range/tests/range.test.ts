@@ -6,7 +6,7 @@ import {
   resolvePreset,
   resolveRangeSearch,
   updateRangeSearch,
-} from "@/lib/range"
+} from "@/domain/time-range/range"
 
 describe("range search helpers", () => {
   it("clears explicit bounds for preset windows", () => {
