@@ -1619,16 +1619,6 @@ ceiling = 11
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/components/console/invocations/__tests__/-session-journey.test.tsx"
-ceiling = 7
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/console/invocations/__tests__/-tabs.test.tsx"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.assertions"
 scope = "ui/src/components/ui/__tests__/primitives.test.tsx"
 ceiling = 5
 
@@ -1785,11 +1775,6 @@ ceiling = 2
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-invocations.test.tsx"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.assertions"
 scope = "ui/src/routes/__tests__/-overview.test.tsx"
 ceiling = 23
 
@@ -1851,11 +1836,6 @@ ceiling = 351
 
 [[limits]]
 metric = "typescript.file-lines"
-scope = "ui/src/routes/__tests__/-invocations.test.tsx"
-ceiling = 188
-
-[[limits]]
-metric = "typescript.file-lines"
 scope = "ui/src/routes/__tests__/-overview.test.tsx"
 ceiling = 191
 
@@ -1871,16 +1851,6 @@ ceiling = 642
 metric = "typescript.file-lines"
 scope = "ui/src/routes/index.tsx"
 ceiling = 914
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/invocations.$invocationId.tsx"
-ceiling = 542
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/invocations.index.tsx"
-ceiling = 369
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -1907,26 +1877,6 @@ ceiling = 16
 metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/components/console/field-explorer.tsx:166"
 ceiling = 18
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/console/invocations/invocations-table.tsx:68"
-ceiling = 16
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/console/invocations/session-journey.tsx:177"
-ceiling = 28
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/console/invocations/session-journey.tsx:47"
-ceiling = 22
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/console/invocations/sessions-tab.tsx:28"
-ceiling = 19
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -2049,11 +1999,6 @@ ceiling = 42
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/invocations.$invocationId.tsx:296"
-ceiling = 29
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/routes/traces.$traceId.tsx:1401"
 ceiling = 16
 
@@ -2071,26 +2016,6 @@ ceiling = 33
 metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/routes/traces.index.tsx:369"
 ceiling = 69
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/components/console/invocations/invocations-table.tsx:68"
-ceiling = 15
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/components/console/invocations/session-journey.tsx:177"
-ceiling = 17
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/components/console/invocations/session-journey.tsx:47"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/components/console/invocations/sessions-tab.tsx:28"
-ceiling = 13
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
@@ -2158,16 +2083,6 @@ metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/lib/where-clause.ts:77"
 ceiling = 15
 
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/invocations.$invocationId.tsx:296"
-ceiling = 24
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/invocations.index.tsx:218"
-ceiling = 15
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
@@ -2239,66 +2154,6 @@ ceiling = 248
 metric = "typescript.function-lines"
 scope = "ui/src/components/console/field-explorer.tsx:91"
 ceiling = 74
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/__tests__/-tabs.test.tsx:75"
-ceiling = 73
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/invocation-errors-tab.tsx:34"
-ceiling = 85
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/invocation-traces-tab.tsx:51"
-ceiling = 85
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/invocations-table.tsx:68"
-ceiling = 103
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/jobs-cycles-tab.tsx:114"
-ceiling = 87
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/jobs-cycles-tab.tsx:133"
-ceiling = 61
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/jobs-cycles-tab.tsx:44"
-ceiling = 69
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/session-journey.tsx:177"
-ceiling = 113
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/session-journey.tsx:47"
-ceiling = 66
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/sessions-tab.tsx:155"
-ceiling = 68
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/sessions-tab.tsx:224"
-ceiling = 66
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/invocations/sessions-tab.tsx:28"
-ceiling = 126
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2507,31 +2362,6 @@ ceiling = 88
 
 
 
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/invocations.$invocationId.tsx:122"
-ceiling = 61
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/invocations.$invocationId.tsx:205"
-ceiling = 90
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/invocations.$invocationId.tsx:296"
-ceiling = 210
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/invocations.$invocationId.tsx:507"
-ceiling = 63
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/invocations.index.tsx:218"
-ceiling = 171
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -3101,6 +2931,176 @@ metric = "typescript.function-lines"
 scope = "ui/src/features/logs/tests/components/logs-contracts.test.tsx:168"
 ceiling = 72
 
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/invocations/tests/components/invocations-contracts.test.tsx"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/invocations/tests/components/session-journey.test.tsx"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/invocations/tests/components/tabs.test.tsx"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/tests/-invocations-routes.test.tsx"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx"
+ceiling = 543
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/invocations/components/invocations-page.tsx"
+ceiling = 373
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:297"
+ceiling = 29
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/invocations/components/invocations-table.tsx:68"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/invocations/components/session-journey.tsx:177"
+ceiling = 28
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/invocations/components/session-journey.tsx:47"
+ceiling = 22
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/invocations/components/sessions-tab.tsx:28"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:297"
+ceiling = 24
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/invocations/components/invocations-page.tsx:224"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/invocations/components/invocations-table.tsx:68"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/invocations/components/session-journey.tsx:177"
+ceiling = 17
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/invocations/components/session-journey.tsx:47"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/invocations/components/sessions-tab.tsx:28"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocation-errors-tab.tsx:34"
+ceiling = 85
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:122"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:201"
+ceiling = 95
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:297"
+ceiling = 210
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:508"
+ceiling = 63
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocation-traces-tab.tsx:51"
+ceiling = 85
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocations-page.tsx:224"
+ceiling = 171
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocations-table.tsx:68"
+ceiling = 103
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/jobs-cycles-tab.tsx:114"
+ceiling = 87
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/jobs-cycles-tab.tsx:133"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/jobs-cycles-tab.tsx:44"
+ceiling = 69
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/session-journey.tsx:177"
+ceiling = 113
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/session-journey.tsx:47"
+ceiling = 66
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/sessions-tab.tsx:155"
+ceiling = 68
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/sessions-tab.tsx:224"
+ceiling = 66
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/sessions-tab.tsx:28"
+ceiling = 126
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/tests/components/tabs.test.tsx:75"
+ceiling = 73
+
 [[ui.ownership]]
 path = "ui/src/features/investigations/api/investigation-api.ts"
 current_owner = "features/investigations"
@@ -3437,76 +3437,6 @@ path = "ui/src/components/console/hooks.ts"
 current_owner = "legacy-console"
 target_owner = "shared/hooks"
 migration_plan = "100"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/invocations/__tests__/-session-journey.test.tsx"
-current_owner = "legacy-console-tests"
-target_owner = "features/runs"
-migration_plan = "140"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/invocations/__tests__/-tabs.test.tsx"
-current_owner = "legacy-console-tests"
-target_owner = "features/runs"
-migration_plan = "140"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/invocations/invocation-errors-tab.tsx"
-current_owner = "legacy-console"
-target_owner = "features/runs"
-migration_plan = "140"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/invocations/invocation-status-badge.tsx"
-current_owner = "legacy-console"
-target_owner = "features/runs"
-migration_plan = "140"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/invocations/invocation-traces-tab.tsx"
-current_owner = "legacy-console"
-target_owner = "features/runs"
-migration_plan = "140"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/invocations/invocations-table.tsx"
-current_owner = "legacy-console"
-target_owner = "features/runs"
-migration_plan = "140"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/invocations/jobs-cycles-tab.tsx"
-current_owner = "legacy-console"
-target_owner = "features/runs"
-migration_plan = "140"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/invocations/screen-visit-lane.tsx"
-current_owner = "legacy-console"
-target_owner = "features/runs"
-migration_plan = "140"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/invocations/session-journey.tsx"
-current_owner = "legacy-console"
-target_owner = "features/runs"
-migration_plan = "140"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/invocations/sessions-tab.tsx"
-current_owner = "legacy-console"
-target_owner = "features/runs"
-migration_plan = "140"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -4749,13 +4679,6 @@ kind = "handwritten"
 
 
 [[ui.ownership]]
-path = "ui/src/routes/__tests__/-invocations.test.tsx"
-current_owner = "routes-tests"
-target_owner = "features/runs"
-migration_plan = "140"
-kind = "handwritten"
-
-[[ui.ownership]]
 path = "ui/src/routes/__tests__/-overview.test.tsx"
 current_owner = "routes-tests"
 target_owner = "features/overview"
@@ -4849,17 +4772,123 @@ migration_plan = "134"
 kind = "handwritten"
 
 [[ui.ownership]]
+path = "ui/src/features/invocations/components/invocation-errors-tab.tsx"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/invocations/components/invocation-hub-page.tsx"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/invocations/components/invocation-status-badge.tsx"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/invocations/components/invocation-traces-tab.tsx"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/invocations/components/invocations-page.tsx"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/invocations/components/invocations-table.tsx"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/invocations/components/jobs-cycles-tab.tsx"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/invocations/components/screen-visit-lane.tsx"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/invocations/components/session-journey.tsx"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/invocations/components/sessions-tab.tsx"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/invocations/index.ts"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "none"
+kind = "handwritten"
+facade = true
+
+[[ui.ownership]]
+path = "ui/src/features/invocations/tests/components/invocations-contracts.test.tsx"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/invocations/tests/components/session-journey.test.tsx"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/invocations/tests/components/tabs.test.tsx"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/tests/-invocations-routes.test.tsx"
+current_owner = "routes-tests"
+target_owner = "routes-tests"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
 path = "ui/src/routes/invocations.$invocationId.tsx"
 current_owner = "routes"
 target_owner = "features/runs"
-migration_plan = "140"
+migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
 path = "ui/src/routes/invocations.index.tsx"
 current_owner = "routes"
 target_owner = "features/runs"
-migration_plan = "140"
+migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]

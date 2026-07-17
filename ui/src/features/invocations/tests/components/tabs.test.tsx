@@ -3,10 +3,10 @@
 import { cleanup, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
-import { InvocationErrorsTab } from "@/components/console/invocations/invocation-errors-tab"
-import { InvocationTracesTab } from "@/components/console/invocations/invocation-traces-tab"
-import { JobsCyclesTab } from "@/components/console/invocations/jobs-cycles-tab"
-import { SessionsTab } from "@/components/console/invocations/sessions-tab"
+import { InvocationErrorsTab } from "@/features/invocations/components/invocation-errors-tab"
+import { InvocationTracesTab } from "@/features/invocations/components/invocation-traces-tab"
+import { JobsCyclesTab } from "@/features/invocations/components/jobs-cycles-tab"
+import { SessionsTab } from "@/features/invocations/components/sessions-tab"
 import { renderTestRouter } from "@/test/router"
 
 const range = { key: "custom", fromNanos: "0", toNanos: "9000000000" }

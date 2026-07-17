@@ -7,9 +7,9 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   InvocationsContent,
   filterInvocationsByRange,
-} from "@/routes/invocations.index"
-import { errorTypeBreakdown } from "@/components/console/invocations/invocation-errors-tab"
-import { mergeLiveTraces } from "@/components/console/invocations/invocation-traces-tab"
+} from "@/features/invocations"
+import { errorTypeBreakdown } from "@/features/invocations/components/invocation-errors-tab"
+import { mergeLiveTraces } from "@/features/invocations/components/invocation-traces-tab"
 import { mergeInvocations } from "@/lib/invocation"
 import { renderTestRouter } from "@/test/router"
 

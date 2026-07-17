@@ -2,21 +2,12 @@
   "schema_version": 1,
   "ratchets": {
     "fire_event_calls": 28,
-    "legacy_handoffs": 49,
+    "legacy_handoffs": 46,
     "raw_router_builders": 1,
-    "test_cases": 500,
-    "test_files": 101
+    "test_cases": 501,
+    "test_files": 102
   },
   "private_route_imports": [
-    {
-      "test_file": "ui/src/routes/__tests__/-invocations.test.tsx",
-      "module": "@/routes/invocations.index",
-      "symbols": [
-        "InvocationsContent",
-        "filterInvocationsByRange"
-      ],
-      "removal_plan": 140
-    },
     {
       "test_file": "ui/src/routes/__tests__/-overview.test.tsx",
       "module": "@/routes/index",
@@ -833,13 +824,12 @@
     },
     {
       "id": "vitest-034",
-      "surface": "features/runs",
+      "surface": "features/invocations",
       "risk": "Invocation merging, filtering, status derivation, and live-trace prepends can be inconsistent",
-      "scenario_owner": "features/runs",
-      "lane_owner": "vitest/route",
-      "delivery_plan": 140,
-      "layer": "route-contract",
-      "test_file": "ui/src/routes/__tests__/-invocations.test.tsx",
+      "scenario_owner": "features/invocations",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/features/invocations/tests/components/invocations-contracts.test.tsx",
       "test_ids": [
         "renders merged rows with mode, status, outcome, and links",
         "toggles live mode through the search params",
@@ -849,14 +839,7 @@
         "prepends unseen live traces and aggregates spans per trace"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/routes/__tests__/-invocations.test.tsx",
-        "destination_owner": "features/runs",
-        "removal_plan": 140,
-        "created": "2026-07-15",
-        "expires": "plan-140-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-035",
@@ -1090,13 +1073,12 @@
     },
     {
       "id": "vitest-071",
-      "surface": "features/runs",
+      "surface": "features/invocations",
       "risk": "Journey interleave or error-to-screen attribution can drop or misplace entries",
-      "scenario_owner": "features/runs",
+      "scenario_owner": "features/invocations",
       "lane_owner": "vitest/component",
-      "delivery_plan": 140,
       "layer": "component",
-      "test_file": "ui/src/components/console/invocations/__tests__/-session-journey.test.tsx",
+      "test_file": "ui/src/features/invocations/tests/components/session-journey.test.tsx",
       "test_ids": [
         "interleaves entries chronologically",
         "attributes errors to the screen whose visit interval contains them",
@@ -1105,24 +1087,16 @@
         "marks an open session without a session-end entry"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/invocations/__tests__/-session-journey.test.tsx",
-        "destination_owner": "features/runs",
-        "removal_plan": 140,
-        "created": "2026-07-15",
-        "expires": "plan-140-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-072",
-      "surface": "features/runs",
+      "surface": "features/invocations",
       "risk": "Hub tab empty states or populated tab tables can break silently",
-      "scenario_owner": "features/runs",
+      "scenario_owner": "features/invocations",
       "lane_owner": "vitest/component",
-      "delivery_plan": 140,
       "layer": "component",
-      "test_file": "ui/src/components/console/invocations/__tests__/-tabs.test.tsx",
+      "test_file": "ui/src/features/invocations/tests/components/tabs.test.tsx",
       "test_ids": [
         "renders the explicit empty state",
         "renders cycle aggregates and job attempt chips with trace links",
@@ -1130,14 +1104,7 @@
         "renders sessions, visits, actions, and conversations"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/invocations/__tests__/-tabs.test.tsx",
-        "destination_owner": "features/runs",
-        "removal_plan": 140,
-        "created": "2026-07-15",
-        "expires": "plan-140-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-w2-9466",
@@ -2563,6 +2530,20 @@
       "test_file": "ui/src/routes/tests/-logs-routes.test.tsx",
       "test_ids": [
         "exposes public search and loader for thin route wiring"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-invocations-route",
+      "surface": "features/invocations",
+      "risk": "Invocations route wiring can lose public search/loader facade contracts",
+      "scenario_owner": "features/invocations",
+      "lane_owner": "vitest/route",
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/tests/-invocations-routes.test.tsx",
+      "test_ids": [
+        "exposes public search and loaders for thin route wiring"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
