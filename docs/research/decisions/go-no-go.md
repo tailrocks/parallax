@@ -188,6 +188,26 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > | TMA1 prod-incident collision | Pass **293** — **26th UNFIRED** | **No** |
 > | Datadog OPW = Bits store | Pass **291** — still route-only | **No** |
 >
+> **Pass 303 (2026-07-18) — GO composite reaffirm** after passes **296–302**.
+> Live primary re-fetch this pass on kill-adjacent watches. **Still GO
+> (narrow product).** Kill criteria **still unfired** (desk + unit hygiene;
+> empirical A1/A2/A4/A6 mixed still **open**, not failed):
+>
+> | Kill / reverse trigger | Latest recheck | Fired? |
+> | --- | --- | --- |
+> | A1: bundles do not beat raw context | Pass **303** — golden **ok**; no comparative result ledger | **No** (open) |
+> | A2: no paying segment | Pass **301** — **0** interview rows; desk triangle holds | **No** (open) |
+> | Full wedge closed by peer | Pass **303** — Traceway **1,024★**/v1.9.1; TMA1 **alpha12** **28th UNFIRED** | **No** |
+> | OTel commoditizes evidence-bundle schema | Pass **303** — #1185 idle (`updated_at` 2025-10-24); OCSF **1.8.0** | **No** |
+> | Incumbent self-host Seer-class AI | Pass **303** — Seer closed; Assistant hybrid Cloud backend | **No** |
+> | App-code auto-merge commodity | Pass **303** — Bits still **never auto-merges** PRs/MRs | **No** |
+> | A4 real messy telemetry reliability | Pass **302** — no reliability-runs ledger | **No** (open) |
+> | A6 agent-visible mixed redaction | Pass **300** — canary ok; mixed open | **No** (open) |
+> | A3 external schema adoption | Pass **284** — still none | **No** (open) |
+> | Sentry OTLP metrics GA | Pass **303** — still unsupported | **No** |
+> | TMA1 prod-incident collision | Pass **303** — **28th UNFIRED** | **No** |
+> | Datadog OPW = Bits store | Pass **303** — still route-to-destinations Worker | **No** |
+>
 > **Narrow product identity holds.** Research program continues.
 
 ## Verdict

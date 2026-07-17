@@ -12,9 +12,10 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 302 (GDB **v1.1.3** / nightly **20260706**;
-Detect ledger **absent**; A4 still **`not_measured`**; `fixer_outcome` **3/3**).
-Pass 301 = monetization/A2. A1/A2/A3/A4 open; A6 mixed open.
+Last updated 2026-07-18 after pass 303 (GO composite after **296–302**; kill
+criteria still **unfired**; A1 golden **ok** / still **`not_measured`**;
+Traceway **1,024★**/v1.9.1; TMA1 alpha12 **28th UNFIRED**; #1185 idle; OCSF
+**1.8.0**). Pass 302 = engine/Detect/A4. A1/A2/A3/A4 open; A6 mixed open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
@@ -27,8 +28,8 @@ producer rather than treat its construction as future work. Autonomous fixing re
 | --- | --- | --- | --- | --- | --- |
 | **1** | **Does a bounded bundle beat *raw* context for agent fix-quality, on runtime-dependent bugs?** (A1) | **#1 product-validation risk.** Capable 2026 agents fix repo-logic bugs from raw context; if a bundle doesn't beat agentic-raw on R1–R3 bugs, the schema moat collapses. | Offline eval using the shipped bundle producer: class-labeled corpus → frozen noisy overlay → arms A/B/B′/C/D → hidden-test grading. | **Pass 299:** claim level still **`not_measured`**. Golden **ok** (re-ran); no result ledger. Design + producer **≠** C-vs-B. Next: freeze → overlays → arms. | [validation/a1-bundle-value/](validation/a1-bundle-value/) ([status recheck](validation/a1-bundle-value/a1-claim-status-recheck-2026-07-17.md), [fair-test](validation/a1-bundle-value/runtime-dependence-and-raw-baseline.md)) |
 | **2** | **Is there a sustainable *paying* segment, and what is the product that captures it?** (A2 + business model) | **#1 business risk.** Open self-hosted is structurally non-paying; survivors monetized via managed cloud / enterprise-gating. | Desk + interviews. | **Desk playbook holds** (pass **301** triangle re-scrape; prior 281/242). A2 interview ledger still **zero rows** / gate OPEN. Operator runbook owed. | [validation/monetization-and-paying-segment.md](validation/monetization-and-paying-segment.md), [validation/a2-user-demand.md](validation/a2-user-demand.md), [validation/business-model.md](validation/business-model.md), [market/oss-agent-surface-gating-2026-07-17.md](market/oss-agent-surface-gating-2026-07-17.md) |
-| **3** | **Will an open standard commoditize the evidence-bundle schema?** (esp. an OTel investigation/incident convention) | Kills the schema moat if it ships before adoption compounds. | Recurring web-watch (OTel semconv repo + Service/Deployment SIG; MCP roadmap). | **Pass 300:** still **not commoditized.** #1185 still **open/idle** (`updated_at` 2025-10-24). OCSF GA still **1.8.0**. Prior: pass 48/85/123/157/189/211/243/268/285. | [architecture/evidence-bundle-schema-commoditization-2026-07-17.md](architecture/evidence-bundle-schema-commoditization-2026-07-17.md), [architecture/evidence-bundle-schema.md](architecture/evidence-bundle-schema.md), [decisions/skeptical-reassessment-2026-05.md](decisions/skeptical-reassessment-2026-05.md) |
-| **4** | **Does a wedge-closer ship the full combination first?** (Rustrak/SigNoz/GlitchTip/Traceway add OTLP + portable bundle + outcome) | Closes the technical wedge before Parallax has users → NO-GO trigger. | Recurring web-watch. | **Pass 298:** Traceway still **1,024★**/v1.9.1; TMA1 alpha12 **27th UNFIRED**; Bugsink v2.4.0 error-only. Combo **not closed**. | [market/wedge-closer-lightweight-recheck-2026-07-17.md](market/wedge-closer-lightweight-recheck-2026-07-17.md), [market/competitor-watch.md](market/competitor-watch.md) |
+| **3** | **Will an open standard commoditize the evidence-bundle schema?** (esp. an OTel investigation/incident convention) | Kills the schema moat if it ships before adoption compounds. | Recurring web-watch (OTel semconv repo + Service/Deployment SIG; MCP roadmap). | **Pass 303:** still **not commoditized.** #1185 still **open/idle** (`updated_at` 2025-10-24). OCSF GA still **1.8.0**. Prior: pass 48/85/123/157/189/211/243/268/285/300. | [architecture/evidence-bundle-schema-commoditization-2026-07-17.md](architecture/evidence-bundle-schema-commoditization-2026-07-17.md), [architecture/evidence-bundle-schema.md](architecture/evidence-bundle-schema.md), [decisions/skeptical-reassessment-2026-05.md](decisions/skeptical-reassessment-2026-05.md) |
+| **4** | **Does a wedge-closer ship the full combination first?** (Rustrak/SigNoz/GlitchTip/Traceway add OTLP + portable bundle + outcome) | Closes the technical wedge before Parallax has users → NO-GO trigger. | Recurring web-watch. | **Pass 303:** Traceway still **1,024★**/v1.9.1; TMA1 alpha12 **28th UNFIRED**. Combo **not closed**. | [market/wedge-closer-lightweight-recheck-2026-07-17.md](market/wedge-closer-lightweight-recheck-2026-07-17.md), [market/competitor-watch.md](market/competitor-watch.md) |
 | **5** | **Sized storage cost + cold-read latency + self-host-vs-cloud + current stable re-test** | Characterizes the mandatory GreptimeDB engine. **Lower priority** — storage was never the existential risk. | Server-tier benchmark (cannot run in the dev capsule). | **Pass 302 (API pin only):** still **unproven** for size/cost. Stable Latest **`v1.1.3`**; nightly **`v1.2.0-nightly-20260706`**. Traces still **experimental**. Server-tier owed. | [decisions/storage-engine.md](decisions/storage-engine.md), [storage/size-and-object-cost.md](storage/size-and-object-cost.md), [open-questions-and-gaps.md](storage/greptimedb-vs-clickhouse/open-questions-and-gaps.md) |
 | **6** | **Do the loop-stage designs hold under replay?** (Detect trigger precision/recall, dispatch idempotency, recurrence verdicts on replayed telemetry) | The autonomous-fix-loop needs its own fixture ledger before any Detect/Dispatch claim; PoC kernels exist but a kernel is not a gate pass. | Create the Detect trigger ledger + replay harness over recorded telemetry. | **Pass 302:** offline residual + `fixer_outcome` unit tests **3/3 pass**; **no** Detect trigger ledger; live replay **open**. PoC ≠ gate. | [loop-stage status](validation/loop-stage-claim-status-recheck-2026-07-17.md), [autonomous-fix-loop.md](architecture/autonomous-fix-loop.md), [poc-evidence-loop-coverage.md](architecture/poc-evidence-loop-coverage.md), [plan 123](validation/2026-07-plan-123-fixer-offline/README.md) |
 
@@ -46,7 +47,7 @@ producer rather than treat its construction as future work. Autonomous fixing re
    GB–TB): characterize the mandatory engine and identify fix-forward work; this no longer reopens the
    committed GreptimeDB + Turso stack. → item 5. (Query mix already resolved: anchored.)
 5. **Air-gapped agent-evidence: Parallax vs incumbents** — confirm the differentiator stays unique.
-   **Rechecked 2026-07-18 pass 291** (prior 56/151/158/178/220/251/261/279): Seer self-host-excluded; Datadog OPW =
+   **Rechecked 2026-07-18 pass 303** (prior 56/151/158/178/220/251/261/279/291): Seer self-host-excluded; Datadog OPW =
    still **route-to-destinations**; **BYOC Logs** hub live hybrid (not offline agent-evidence);
    Grafana Assistant Cloud LLM; OSS peers can air-gap but lack portable redacted bundle+outcome. Note:
    [market/air-gap-no-phone-home-recheck-2026-07-17.md](market/air-gap-no-phone-home-recheck-2026-07-17.md).
@@ -57,12 +58,13 @@ producer rather than treat its construction as future work. Autonomous fixing re
   still **experimental** on docs v1.1
   ([Traces overview](https://docs.greptime.com/user-guide/traces/overview/)
   warning reconfirmed pass **266**).
-- **Incumbent self-hosted AI** — **Rechecked 2026-07-18 pass 283** (prior 77/126/158/188/210/238/245/260/274):
+- **Incumbent self-hosted AI** — **Rechecked 2026-07-18 pass 303** (prior 77/126/158/188/210/238/245/260/274/283/294/299):
   Seer still **closed / unavailable** on self-hosted
   ([develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/)
   still lists "Seer and other AI & ML features… closed source"). Self-host release
   still **`26.7.0`**. Grafana
-  Assistant **UI** on self-managed still requires **Cloud LLM backend**.
+  Assistant **UI** on self-managed still requires **Cloud LLM backend**
+  ([self-managed Assistant docs](https://grafana.com/docs/grafana/latest/administration/assistant/)).
   Bits Code still **never auto-merges** PRs/MRs
   ([Bits Code docs](https://docs.datadoghq.com/bits_ai/bits_ai_dev_agent/)).
   Sentry still **no OTLP metrics**
@@ -70,7 +72,7 @@ producer rather than treat its construction as future work. Autonomous fixing re
   Full note:
   [market/incumbent-self-hosted-ai-recheck-2026-07-17.md](market/incumbent-self-hosted-ai-recheck-2026-07-17.md).
   **UNFIRED:** Seer self-host GA; Grafana offline/BYO-LLM Assistant; Bits auto-merge; Sentry OTLP metrics.
-- **OTel** — any move from per-signal semantics toward incident/investigation/RCA **artifacts**. Last deep recheck: **2026-07-18 pass 285** ([commoditization note](architecture/evidence-bundle-schema-commoditization-2026-07-17.md)): #1185 attribute issue still open/idle (`updated_at` 2025-10-24); no bundle schema; OCSF GA still 1.8.0.
+- **OTel** — any move from per-signal semantics toward incident/investigation/RCA **artifacts**. Last deep recheck: **2026-07-18 pass 303** ([commoditization note](architecture/evidence-bundle-schema-commoditization-2026-07-17.md)): #1185 attribute issue still open/idle (`updated_at` 2025-10-24); no bundle schema; OCSF GA still 1.8.0.
 - **Run-id / invocation-id standardization (active participation, not just a watch)** — no OTel standard for a CLI invocation's cross-trace correlation id (rechecked **2026-07-18 pass 278**; prior 53/92/127/163/207/252). Parallax ships **`cli.invocation.id`** (+ `session.id`). GenAI session push [semantic-conventions-genai#51](https://github.com/open-telemetry/semantic-conventions-genai/issues/51) still **open/idle** (`updated_at` 2026-05-05). CLI model still process attrs only (`spans.yaml`); semconv code search `cli.invocation` **0**. Full table: [capture/run-id-standardization.md](capture/run-id-standardization.md).
 - **Coding-agent capability** — as models improve, the "raw context is enough" threat (item 1) grows; A1 must re-run across model generations.
 
