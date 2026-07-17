@@ -210,7 +210,7 @@ Dynatrace pricing is **public** ([dynatrace.com/pricing](https://www.dynatrace.c
 
 - **A1 gate vs Davis:** does a Parallax bounded bundle beat Davis-causal-RCA-as-context for coding-agent fix outcomes? Unproven — and Davis's deterministic causation is a high bar.
 - **Dynatrace "agent control plane" substance** — is it a real bounded agent surface or marketing? Track Perform 2026 follow-through.
-- **Dynatrace exact current pricing** — confirm host-hr/pod/GB/seat rates on the live pricing page (third-party figures are indicative).
+- **Dynatrace exact current pricing** — **RESOLVED pass 39** (official [rate-card](https://www.dynatrace.com/pricing/rate-card/)): Full-Stack **$0.01/GiB-hr memory-metered** (not the pass-16 third-party "$0.08/host-hr" — corrected; 8 GiB ≈ $58/mo, Davis bundled), Infrastructure $0.04/host-hr flat, Mainframe $0.10/MSU-hr, K8s $1.40/pod-mo, Grail log $0.40-0.60/GB. Still-open (NOT desk-research): A1-vs-Dynatrace-MCP-grounding measurement.
 
 ## Sources (accessed 2026-07-17; agent-control-plane watch resolved pass 38)
 
