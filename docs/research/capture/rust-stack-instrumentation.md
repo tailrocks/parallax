@@ -2,12 +2,12 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-06-12 (all crate versions verified against crates.io/GitHub/docs.rs on this
-date). Operator statement #7 defines the concrete capture targets: a Ratatui TUI, a CLI driving
-Docker over the socket (bollard), tonic-gRPC microservices (some axum HTTP), Juniper GraphQL with
-DataLoaders, **tokio-postgres** and the official **`clickhouse`** crate (operator correction:
-not sqlx), Redis, RabbitMQ (lapin). This note answers "what can a Rust application actually send
-to Parallax, and how" — the full emission scope per layer, with gaps named.
+Research date: 2026-06-12 (crate versions verified crates.io/GitHub/docs.rs) · **Pass 73 recheck
+2026-07-17** (crates.io sparse index). Operator statement #7 defines the concrete capture targets:
+a Ratatui TUI, a CLI driving Docker over the socket (bollard), tonic-gRPC microservices (some axum
+HTTP), Juniper GraphQL with DataLoaders, **tokio-postgres** and the official **`clickhouse`** crate
+(operator correction: not sqlx), Redis, RabbitMQ (lapin). This note answers "what can a Rust
+application actually send to Parallax, and how" — the full emission scope per layer, with gaps named.
 
 **Parallax receiver status (2026-07-17):** the receiver described here is
 shipped for traces, logs, and metrics on OTLP/gRPC `:4317` and OTLP/HTTP
@@ -22,6 +22,21 @@ trace/span-ID correlation), metrics via the OTel Meter API; `opentelemetry-otlp`
 gRPC :4317 / HTTP :4318. **Version lockstep is the #1 operational hazard:** otel 0.32 ⇄
 tracing-opentelemetry 0.33 ⇄ davidB middleware crates 0.38 ⇄ tower-otel 0.10 are aligned today;
 system-metrics and the metrics-crate bridge lag at 0.31.
+
+**Pass 73 (2026-07-17) crates.io sparse-index re-pin:**
+
+| Crate | June note | Latest stable observed |
+| --- | --- | --- |
+| `opentelemetry` | 0.32 | **0.32.0** (still; no 0.33 on index) |
+| `tracing-opentelemetry` | 0.33 | **0.33.0** |
+| `tonic` | 0.14.6 | **0.14.6** |
+| `axum` | 0.8 | **0.8.9** (patch) |
+| `clickhouse` | 0.15.1 | **0.15.1** |
+| `fred` | 10.1 | **10.1.0** |
+
+Matrix emission conclusions **unchanged**. Lockstep hazard still #1 — do not bump otel without
+middleware crates. Traces-still-beta claim not re-verified against 0.32 release notes this pass
+(leave as June theory until otel-rust changelog re-read).
 
 ## The matrix
 
