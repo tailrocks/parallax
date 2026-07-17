@@ -7807,3 +7807,13 @@ vendor trial quotes, RPO D2/D3.
 `spans1m` already has `PRIMARY KEY(service)` so this is bloom-on-PK column (still
 valid for skipping-index syntax live-check). Product secondary-filter columns
 use same ALTER form when not in PK.
+
+### Run 252 — 2026-07-17 — lightweight DELETE both engines
+
+| Engine | Op | Result |
+| --- | --- | --- |
+| CH | `DELETE FROM del_ch WHERE id='1'` (1000→999) | **OK** lightweight delete |
+| GT non-append `del_t` | `DELETE … id='z1'` | **affectedrows=1**, remaining z2 only |
+| GT append_mode | (Run 229) | Code 1004 forbidden |
+
+GDPR path: non-append GT table or CH DELETE + force compact for physical purge.
