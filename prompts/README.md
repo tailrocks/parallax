@@ -9,6 +9,7 @@ OpenCode) so a piece of work runs the same way every time.
 | File | Purpose |
 | --- | --- |
 | `deep-research-parallax.md` | Deep, critical research brief that validates, re-verifies, and extends the Parallax direction indefinitely; every prior finding is treated as a hypothesis until current evidence supports it. |
+| `objective-research-reality.md` | **Critical objectivity program:** re-read project state; keep `docs/research/` aligned with shipped `crates/`/`ui/` (code-reality ledger); clean stale planned-vs-shipped language; maintain multi-angle economics and openness (price, TCO, contribute, lock-in, ecosystem); prefer transparency over bias toward Parallax or any competitor. Complements `parallax-vs-competitors.md` (market deep-dives) with code-authority discipline and correction posture. |
 | `greptimedb-vs-clickhouse-internals.md` | Never-ending `/goal` or Claude Code `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison: read the source, explain which design decisions make each fast or slow per signal, re-verify every claim against the live Docker stack with production-realistic, no-tricks, reproducible benchmarks, check each system's native out-of-the-box metrics/logs/traces structure (adopt-native vs custom), decide which to build Parallax on, and (when one wins but lacks features) map what the winner must implement to close the gap. Writes to `docs/research/storage/greptimedb-vs-clickhouse/`. |
 | `parallax-vs-competitors.md` | Never-ending `/goal` brief that builds and maintains one canonical, **unbiased** competitor comparison under `docs/research/market/competitors/`: a wide feature-presence matrix across the whole ecosystem (Parallax + Datadog, Sentry, Grafana, Honeycomb, New Relic, Dynatrace, SigNoz, OpenObserve, Coroot, the LLM-agent observability tools, and every other relevant open- and closed-source product), plus deep one-to-one `parallax-vs-<product>.md` comparisons with real, sourced numbers where they exist and explicit "no public number" markers where they do not. Every prior finding is a hypothesis to re-verify; Parallax's own losses are written plainly. |
 
@@ -165,6 +166,33 @@ do not stop shallow or early.
 A vague bounded goal like "research Parallax" lets an agent declare victory
 early. For indefinite improvement, use the explicit indefinite `/goal` or Claude
 Code `/loop` examples above.
+
+### Running the objective research-reality program
+
+`objective-research-reality.md` keeps research honest against shipped code and
+against the industry without pro-Parallax bias. Prefer `/goal` as an indefinite
+re-verification loop. Pair with `parallax-vs-competitors.md` when the highest-value
+gap is a market deep-dive; this prompt owns code-reality ledger discipline,
+stale present-tense cleanup, multi-angle economics/openness, and navigation.
+
+```text
+/goal Follow prompts/objective-research-reality.md as the active indefinite
+research-reality brief. Prefer transparency, clarity, and falsifiability over
+bias toward Parallax or any competitor.
+
+Each pass: re-read the prompt and docs/research/code-reality-ledger.md; re-verify
+shipped surfaces against crates/, ui/, schema/, and active plans/; pick the
+highest-value gap (ledger drift, front-door contradiction, freestyle
+planned/designed language for shipped surfaces, missing price/TCO/contribute/
+lock-in axes, dead plan ownership links, or unreadable historical vs current
+navigation); fix or banner; update the ledger and a dated note under
+docs/research/audits/ when authority changes; commit and push; continue to the
+next gap.
+
+Never invent competitor prices. Never present unproven A1/bundle value or scale
+claims as fact. Never declare the program complete unless I explicitly stop or
+replace this goal.
+```
 
 ### Running the GreptimeDB vs ClickHouse internals comparison
 

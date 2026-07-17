@@ -22,6 +22,7 @@ This directory is the research record behind Parallax. It is organized so a read
 | **Decisions (ADR-style current truth)** | [decisions/](decisions/) |
 | **Unbiased competitor comparisons** | [market/competitors/](market/competitors/) (canonical); older `market/*-deep-research.md` and matrices are **sources**, not dual truth |
 | **How to correct a wrong cell** | PR with dated primary source or crate path that falsifies the claim; see [competitors/README.md](market/competitors/README.md) no-bias rules |
+| **Standing objectivity + code-reality program** | Runnable brief: [`prompts/objective-research-reality.md`](../../prompts/objective-research-reality.md) (pairs with [`prompts/parallax-vs-competitors.md`](../../prompts/parallax-vs-competitors.md) for market deep-dives) |
 
 Historical architecture/capture notes keep evidence under dated or **historical** banners. They do not override the ledger or `main` code.
 
@@ -137,6 +138,7 @@ Historical architecture/capture notes keep evidence under dated or **historical*
 - [competitor-watch.md](market/competitor-watch.md) — consolidated watch: OpenObserve, SigNoz, Coroot, Bugsink, Rustrak, Traceway, GoSnag, Urgentry, Sentry/Seer/MCP, the MCP-power boundary, and the drift ledger.
 - [wedge-closer-lightweight-recheck-2026-07-17.md](market/wedge-closer-lightweight-recheck-2026-07-17.md) — pass-49 pin of lightweight Sentry-compat + Traceway agent-first pressure; full combination still open.
 - [air-gap-no-phone-home-recheck-2026-07-17.md](market/air-gap-no-phone-home-recheck-2026-07-17.md) — pass-56 air-gap differentiator recheck.
+- [incumbent-self-hosted-ai-recheck-2026-07-17.md](market/incumbent-self-hosted-ai-recheck-2026-07-17.md) — pass-77 Seer still closed; Grafana Assistant self-managed = Cloud backend.
 - [oss-agent-surface-gating-2026-07-17.md](market/oss-agent-surface-gating-2026-07-17.md) — pass-59 SigNoz Noz Cloud-only / OpenObserve SDR Enterprise.
 - [alternatives-deep-analysis.md](market/alternatives-deep-analysis.md) — balanced skeptical analysis: 60+ alternatives surveyed, arguments FOR and AGAINST Parallax, empirical gates, and kill criteria.
 - [competitive-comparison-matrix.md](market/competitive-comparison-matrix.md) — quick-reference matrix of all competitors against Parallax's 8 wedge dimensions.
