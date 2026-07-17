@@ -44,7 +44,9 @@ surfaces map to real agent consumption, and the [evidence-bundle schema](evidenc
   against an optional `outputSchema` (JSON Schema 2020-12); the spec says a tool returning
   `structuredContent` **SHOULD also emit the JSON as a text block** (compatibility). `structuredContent`
   landed in **MCP 2025-06-18**; **latest stable = 2025-11-25** (Tasks/async, OAuth); **2026-07-28 is a
-  Release Candidate, not stable** — build to **2025-11-25**.
+  Release Candidate, not stable** — build to **2025-11-25**. **Rechecked 2026-07-17 pass 61:**
+  GitHub releases still list **2025-11-25** as latest non-prerelease; RC blog still RC (stateless
+  core, Extensions, Tasks-as-extension, Apps) — do not treat RC as shipping gate.
 - **Per-agent reality:** **Claude Code** — MCP results >10K tokens warn; default cap **25K**
   (`MAX_MCP_OUTPUT_TOKENS`, server ceiling 500K chars via `_meta`); large results persisted to disk +
   replaced with a file reference; **resources `@`-mentioned and auto-attached**; **prompts →

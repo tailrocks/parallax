@@ -12,9 +12,8 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 60 (A3 claim-level correction: schema **artifacts shipped**,
-adoption/corpus still **none**; ClickHouse feature pin **v26.6.1.1193-stable**). A1/A2 remain
-empirical open gates.
+Last updated 2026-07-17 after pass 61 (MCP stable still **2025-11-25**; 2026-07-28 still RC). Pass 60
+= A3 artifacts-shipped correction + CH 26.6 pin. A1/A2 remain empirical open gates.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
@@ -53,7 +52,7 @@ producer rather than treat its construction as future work. Autonomous fixing re
 
 ## Standing watches (cheap, recurring)
 
-- **Engine releases** — re-pin + re-verify load-bearing claims on each new stable (GreptimeDB; ClickHouse feature line). Last: **2026-07-17** — GreptimeDB stable **`v1.1.3`**, nightly **`v1.2.0-nightly-20260706`** (supersedes 2026-06-11 `v1.0.2` / stalled-nightly note). Measurement still owed on the new pins.
+- **Engine releases** — re-pin + re-verify load-bearing claims on each new stable (GreptimeDB; ClickHouse feature line). Last: **2026-07-17 pass 60** — GreptimeDB stable **`v1.1.3`**, nightly **`v1.2.0-nightly-20260706`**; ClickHouse feature line **`v26.6.1.1193-stable`** (not LTS). Measurement still owed on the new pins.
 - **Incumbent self-hosted AI** — Sentry Seer self-host (stated FSL intent, no date); Grafana local-inference/BYO-LLM backend; either would erode the wedge.
 - **OTel** — any move from per-signal semantics toward incident/investigation/RCA **artifacts**. Last deep recheck: **2026-07-17** ([commoditization note](architecture/evidence-bundle-schema-commoditization-2026-07-17.md)): #1185 attribute issue still open/idle; no bundle schema.
 - **Run-id / invocation-id standardization (active participation, not just a watch)** — no OTel standard for a CLI invocation's cross-trace correlation id (rechecked **2026-07-17 pass 53**). Parallax ships **`cli.invocation.id`** (+ `session.id`). Historical tracker link `semantic-conventions#2883` is **dead**; GenAI session push is [semantic-conventions-genai#51](https://github.com/open-telemetry/semantic-conventions-genai/issues/51). Full table: [capture/run-id-standardization.md](capture/run-id-standardization.md).

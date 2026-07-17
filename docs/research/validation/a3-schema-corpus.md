@@ -126,7 +126,7 @@ Do not declare "schema published" until all of these exist in the repo:
 
 | Artifact | Required content |
 | --- | --- |
-| Canonical JSON Schema | `schemas/evidence-bundle/v0.1.0/schema.json` with `$schema`, `$id`, semver `schema_version`, required top-level fields, node/edge/hypothesis/redaction/source-field-policy definitions, and extension rules. |
+| Canonical JSON Schema | **Shipped (2026-07):** [`schema/evidence-bundle.v1.schema.json`](../../../schema/evidence-bundle.v1.schema.json) + [`v2`](../../../schema/evidence-bundle.v2.schema.json) with `$schema` (Draft 2020-12), `$id`, `schema_version`, required fields, redaction/source-policy defs. Historical gate path `schemas/evidence-bundle/v0.1.0/schema.json` was never used — do not require that string. |
 | Example fixtures | At least one valid fixture for issue, trace, CI failure, CLI invocation, agent session anchors, and an MCP structured tool-result wrapper. |
 | Negative fixtures | Missing `redaction_report`, missing source-field policy status for eval/corpus bundles, source-field policy violation, missing `missing_evidence`, uncited hypothesis, invalid edge target, unknown required field, oversized inline dump, MCP text-only result counted as canonical, and safety fields hidden only in `_meta`. |
 | Validator | A small CLI or test command that validates all positive/negative fixtures. |
