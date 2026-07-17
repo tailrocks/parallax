@@ -58,6 +58,16 @@ Fallback timing on the operator's arm64 host (2026-07-17): 1,000 layouts of a
 mean), far below the plan's 100ms sync-fallback STOP threshold. Peer still
 verifies the real corpus and browser worker path.
 
+`e83a414` adds URL-persisted focus service, 1/2-hop, dim/hide, and relative
+traffic controls. Projection uses the full topology for hop membership before
+traffic filtering, preventing a low-rate link from silently shrinking the
+focus neighborhood. Range changes preserve focus state; stale/invalid params
+canonicalize safely; dimmed nodes/edges and combined hidden counts render in
+the graph. Four focused files pass 28 tests, targeted lint, full UI typecheck,
+and the production build. Vite emitted the real ELK worker chunk
+(`ecosystem-layout.worker-*.js`, 1.43 MB), closing the worker-bundling check.
+Peer still owns live corpus/browser proof and may deepen the control layout.
+
 ## Why this matters
 
 The ecosystem page answers "who calls whom", but only for instrumented
