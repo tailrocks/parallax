@@ -13,9 +13,9 @@
 - **Depends on**: 099, 104, 111; 109 before any remote transport
 - **Category**: agent surface / MCP / security
 - **Planned at**: `eefa4617`, 2026-07-12
-- **Status**: BLOCKED
-- **Blocker**: The operator has not opened a product MCP ship decision; the
-  current crate is an unshipped stdio projection-equivalence spike.
+- **Status**: IN PROGRESS — local-stdio product GO (unblock 2026-07-17); ship gates incomplete
+- **Blocker**: none for local scope. Residual gates: claimed-client fixtures,
+  resources/oversized summary path, audit/OTel, spike graduation/quarantine.
 
 ## Current Evidence
 
