@@ -23,6 +23,10 @@ The raw-frame spool change deliberately retained reads for legacy `.ndjson`
 segments. The default reaper age is 72 hours, but elapsed wall time alone is
 not release evidence and operators may configure longer retention.
 
+- 2026-07-17 recheck: only published tag is rolling `preview`. No qualifying
+  stable release cycle completed for raw-frame writer + full compatibility
+  window. Trigger **false** — do not remove legacy NDJSON reader.
+
 ## Scope
 
 - Exact release/age/inventory trigger proof, legacy-reader and fixture removal,

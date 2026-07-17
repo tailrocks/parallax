@@ -73,6 +73,7 @@ pub(crate) async fn serve(runtime: Runtime) -> anyhow::Result<()> {
         None => println!("    self-otlp   off (set PARALLAX_SELF_OTLP to export)"),
     }
     println!("    alerting   {}", handle.alerting_status);
+    println!("    auth       {}", config.auth_status_label());
     println!();
     let mut sigterm = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
     tokio::select! {

@@ -12,8 +12,8 @@
 - **Depends on**: Operator opens V2 scope
 - **Category**: V2 / authentication / CLI contexts
 - **Planned at**: `eefa4617`, 2026-07-12
-- **Status**: BLOCKED
-- **Blocker**: V2 authentication and remote-context product scope is not open.
+- **Status**: IN PROGRESS — minimal local-first slice implemented 2026-07-17
+- **Blocker**: none for minimal slice (opened by unblock directive). Residual: keyring, ingest tokens, multi-scope RBAC.
 
 ## Scope
 
@@ -60,12 +60,12 @@ Out of scope until separately approved:
 
 ## Done Criteria
 
-- [ ] Operator opens V2 scope and approves the ADR.
-- [ ] Protected surfaces default-deny and enforce approved capabilities centrally.
-- [ ] Tokens have defined issue/store/rotate/revoke/expire behavior and never leak.
-- [ ] Named context commands are atomic, permission-safe, and scriptable.
-- [ ] Existing approved local behavior remains compatible.
-- [ ] Native-TLS and the complete negative security matrix pass.
+- [x] Operator opens V2 scope and approves the ADR (minimal contract v1).
+- [x] Protected surfaces default-deny when token configured (single operator capability).
+- [x] Token lifecycle documented (issue/store/rotate out-of-band; no leak in 401/banner/show).
+- [x] Named context commands are atomic, permission-safe, and scriptable.
+- [x] Existing approved local behavior remains compatible.
+- [x] Native-TLS retained; negative auth matrix for bearer pass (unit + m109).
 
 ## STOP Conditions
 

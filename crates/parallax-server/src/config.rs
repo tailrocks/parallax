@@ -41,6 +41,11 @@ pub struct ServerConfig {
     /// Directory of the built UI (SPA shell + assets). Empty = autodetect
     /// (./ui/dist/client for dev checkouts); missing dir = API-only mode.
     pub ui_dist: String,
+    /// Optional shared API bearer token (plan 109). Empty = auth disabled on
+    /// loopback. Prefer env `PARALLAX_API_TOKEN` over committing secrets here.
+    /// See `docs/research/decisions/v2-auth-and-context-contract.md`.
+    #[serde(default)]
+    pub api_token: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -100,6 +105,7 @@ impl Default for ServerConfig {
             otlp_grpc_port: 4317,
             otlp_http_port: 4318,
             ui_dist: String::new(),
+            api_token: String::new(),
         }
     }
 }
@@ -181,7 +187,41 @@ impl Config {
                 "storage.mode=external requires greptime_url".to_string(),
             ));
         }
+        let token = self.resolved_api_token();
+        if let Some(token) = token.as_deref() {
+            let len = token.len();
+            if !(16..=256).contains(&len) {
+                return Err(ConfigError::Invalid(
+                    "server API token must be 16–256 UTF-8 bytes after trim".to_string(),
+                ));
+            }
+        } else if !is_loopback_bind(&self.server.bind) {
+            return Err(ConfigError::Invalid(
+                "non-loopback server.bind requires an API token                  (set PARALLAX_API_TOKEN or [server] api_token);                  see docs/research/decisions/v2-auth-and-context-contract.md"
+                    .to_string(),
+            ));
+        }
         Ok(())
+    }
+
+    /// Resolve the active API token: env `PARALLAX_API_TOKEN` wins over config.
+    /// Empty/whitespace values mean auth disabled.
+    #[must_use]
+    pub fn resolved_api_token(&self) -> Option<String> {
+        resolve_api_token_from(
+            std::env::var("PARALLAX_API_TOKEN").ok(),
+            &self.server.api_token,
+        )
+    }
+
+    /// Ready-banner label that never includes the secret.
+    #[must_use]
+    pub fn auth_status_label(&self) -> &'static str {
+        if self.resolved_api_token().is_some() {
+            "bearer-token"
+        } else {
+            "off"
+        }
     }
 
     /// Expand `~` in `storage.data_dir` against the user's home directory.
@@ -195,6 +235,43 @@ impl Config {
         }
         PathBuf::from(raw)
     }
+}
+
+/// Env override (even empty/`off`) wins over the config key.
+pub(crate) fn resolve_api_token_from(
+    env: Option<String>,
+    config_token: &str,
+) -> Option<String> {
+    match env {
+        Some(value) => {
+            let trimmed = value.trim();
+            if trimmed.is_empty() || trimmed.eq_ignore_ascii_case("off") {
+                None
+            } else {
+                Some(trimmed.to_string())
+            }
+        }
+        None => {
+            let trimmed = config_token.trim();
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed.to_string())
+            }
+        }
+    }
+}
+
+/// True when the bind host is loopback-only (`127.0.0.1`, `::1`, localhost).
+#[must_use]
+pub(crate) fn is_loopback_bind(bind: &str) -> bool {
+    let host = bind
+        .split_once(':')
+        .map_or(bind, |(host, _)| host)
+        .trim()
+        .trim_matches(|c| c == '[' || c == ']')
+        .to_ascii_lowercase();
+    matches!(host.as_str(), "127.0.0.1" | "::1" | "localhost" | "")
 }
 
 #[cfg(test)]

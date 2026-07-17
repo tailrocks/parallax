@@ -166,6 +166,35 @@ pub(crate) enum Command {
         #[arg(long)]
         yes: bool,
     },
+    /// Manage named API contexts (`~/.parallax/contexts.toml`).
+    Context {
+        #[command(subcommand)]
+        command: ContextCommand,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum ContextCommand {
+    /// Add a named context (URL + optional token).
+    Add {
+        name: String,
+        #[arg(long)]
+        url: String,
+        /// Store a literal token in the contexts file (mode 0600). Prefer `--token-env`.
+        #[arg(long)]
+        token: Option<String>,
+        /// Store an environment variable name; the secret is resolved at runtime.
+        #[arg(long = "token-env")]
+        token_env: Option<String>,
+    },
+    /// List contexts; `*` marks the current selection.
+    List,
+    /// Set the default context used when `--context` is omitted.
+    Use { name: String },
+    /// Show one context (tokens masked).
+    Show { name: Option<String> },
+    /// Remove a named context.
+    Remove { name: String },
 }
 
 #[derive(Subcommand)]

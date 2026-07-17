@@ -31,6 +31,12 @@ The independently actionable exemplar primary-key correction was split into
 
 ## Current Evidence
 
+- 2026-07-17 recheck: `cargo search greptimedb-ingester --limit 5` still reports
+  **0.18.0** as latest. Published crate still hard-enables tonic `tls-ring`
+  (rustls path). Step 0 conditions fail; plan remains blocked pending upstream
+  native-TLS/plaintext feature. No product-code change.
+
+
 - `crates/parallax-storage/src/greptime.rs` builds SQL `INSERT ... VALUES`
   batches for all three derived tables.
 - The managed engine exposes a local gRPC port, while external configuration

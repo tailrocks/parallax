@@ -1,11 +1,11 @@
-//! Developer-API host protection and GraphQL request handling.
+//! Developer-API host protection, optional bearer auth, and GraphQL handling.
 
 use crate::config::LimitsConfig;
 use axum::Json;
 use axum::extract::{Request, State};
 use axum::http::{StatusCode, header};
 use axum::middleware::Next;
-use axum::response::Response;
+use axum::response::{IntoResponse, Response};
 use parallax_api::{ApiContext, Schema as ParallaxSchema};
 use parallax_storage::{adapter::TelemetryStore, metadata::MetadataStore};
 use std::net::SocketAddr;
@@ -107,6 +107,114 @@ pub(super) async fn host_guard_middleware(
         Ok(next.run(request).await)
     } else {
         Err(StatusCode::FORBIDDEN)
+    }
+}
+
+
+/// Shared operator bearer token for protected developer API routes (plan 109).
+/// `None` keeps the surface open (local-first default).
+#[derive(Clone)]
+pub(super) struct ApiAuth {
+    token: Option<Arc<str>>,
+}
+
+impl ApiAuth {
+    pub(super) fn from_token(token: Option<String>) -> Self {
+        Self {
+            token: token.map(|value| Arc::from(value.into_boxed_str())),
+        }
+    }
+
+    fn required(&self) -> bool {
+        self.token.is_some()
+    }
+}
+
+pub(super) async fn api_auth_middleware(
+    State(auth): State<ApiAuth>,
+    request: Request,
+    next: Next,
+) -> Response {
+    let Some(expected) = auth.token.as_deref() else {
+        return next.run(request).await;
+    };
+    let presented = request
+        .headers()
+        .get(header::AUTHORIZATION)
+        .and_then(|value| value.to_str().ok())
+        .and_then(extract_bearer);
+    match presented {
+        Some(candidate) if constant_time_eq(candidate.as_bytes(), expected.as_bytes()) => {
+            tracing::debug!(auth.result = "ok", "api auth accepted");
+            next.run(request).await
+        }
+        _ => {
+            tracing::info!(auth.result = "deny", "api auth rejected");
+            (
+                StatusCode::UNAUTHORIZED,
+                [(header::WWW_AUTHENTICATE, "Bearer")],
+                "unauthorized",
+            )
+                .into_response()
+        }
+    }
+}
+
+fn extract_bearer(header: &str) -> Option<&str> {
+    let header = header.trim();
+    let token = header
+        .strip_prefix("Bearer ")
+        .or_else(|| header.strip_prefix("bearer "))?
+        .trim();
+    if token.is_empty() {
+        None
+    } else {
+        Some(token)
+    }
+}
+
+/// Constant-time equality for equal-length secrets; unequal lengths always fail.
+fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    let mut diff = 0u8;
+    for (left, right) in a.iter().zip(b.iter()) {
+        diff |= left ^ right;
+    }
+    diff == 0
+}
+
+#[cfg(test)]
+mod auth_tests {
+    use super::{ApiAuth, constant_time_eq, extract_bearer};
+
+    #[test]
+    fn bearer_extraction_is_strict() {
+        assert_eq!(
+            extract_bearer("Bearer secret-token-value"),
+            Some("secret-token-value")
+        );
+        assert_eq!(
+            extract_bearer("bearer secret-token-value"),
+            Some("secret-token-value")
+        );
+        assert_eq!(extract_bearer("Basic secret"), None);
+        assert_eq!(extract_bearer("Bearer "), None);
+        assert_eq!(extract_bearer(""), None);
+    }
+
+    #[test]
+    fn constant_time_compare_rejects_length_mismatch() {
+        assert!(constant_time_eq(b"abcdefghijklmnop", b"abcdefghijklmnop"));
+        assert!(!constant_time_eq(b"abcdefghijklmnop", b"abcdefghijklmnoq"));
+        assert!(!constant_time_eq(b"short", b"abcdefghijklmnop"));
+    }
+
+    #[test]
+    fn open_mode_when_token_absent() {
+        assert!(!ApiAuth::from_token(None).required());
+        assert!(ApiAuth::from_token(Some("a".repeat(16))).required());
     }
 }
 

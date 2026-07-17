@@ -24,7 +24,9 @@ use tokio::net::TcpListener;
 use tokio::task::JoinHandle;
 
 mod http;
-use http::{GraphQlState, HostGuard, graphql_handler, host_guard_middleware};
+use http::{
+    ApiAuth, GraphQlState, HostGuard, api_auth_middleware, graphql_handler, host_guard_middleware,
+};
 
 #[expect(missing_debug_implementations, reason = "opaque runtime handles")]
 pub struct ServerHandle {
@@ -233,6 +235,7 @@ fn build_api_router(
         limits: config.limits.clone(),
     };
     let host_guard = HostGuard::for_listener(&config.server.bind, state.api_addr);
+    let api_auth = ApiAuth::from_token(config.resolved_api_token());
     let router = Router::new()
         .merge(
             Router::new()
@@ -246,6 +249,10 @@ fn build_api_router(
                 .route("/v1/traces/stream", get(crate::live::stream_traces))
                 .with_state(live)
                 .layer(middleware::from_fn_with_state(
+                    api_auth.clone(),
+                    api_auth_middleware,
+                ))
+                .layer(middleware::from_fn_with_state(
                     host_guard.clone(),
                     host_guard_middleware,
                 )),
@@ -254,6 +261,10 @@ fn build_api_router(
             Router::new()
                 .route("/graphql", post(graphql_handler))
                 .with_state(graphql_state)
+                .layer(middleware::from_fn_with_state(
+                    api_auth,
+                    api_auth_middleware,
+                ))
                 .layer(middleware::from_fn_with_state(
                     host_guard,
                     host_guard_middleware,

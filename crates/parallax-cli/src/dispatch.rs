@@ -1,13 +1,17 @@
 //! Parsed-command dispatch, kept separate from clap declarations and runtime setup.
 
-use crate::client::{Client, gql_str, resolve_url};
+use crate::client::{self, Client, gql_str};
 use crate::{
-    Cli, Command, InvocationCommand, IssueCommand, TraceCommand, commands, doctor, runtime,
+    Cli, Command, ContextCommand, InvocationCommand, IssueCommand, TraceCommand, commands, doctor,
+    runtime,
 };
 
 pub(crate) async fn execute(cli: Cli, runtime: runtime::Runtime) -> anyhow::Result<()> {
-    let client =
-        || -> anyhow::Result<Client> { Ok(Client::new(resolve_url(cli.context.as_deref())?)) };
+    let client = || -> anyhow::Result<Client> {
+        Ok(Client::from_resolved(client::resolve_context(
+            cli.context.as_deref(),
+        )?))
+    };
     match cli.command {
         Command::Serve { .. } => runtime::serve(runtime).await,
         Command::Invocation { command } => invocation(command, &client).await,
@@ -89,8 +93,25 @@ pub(crate) async fn execute(cli: Cli, runtime: runtime::Runtime) -> anyhow::Resu
         Command::Doctor => doctor::doctor().await,
         Command::Prune { execute, yes, json } => doctor::prune(execute, yes, json).await,
         Command::Uninstall { purge, yes } => doctor::uninstall(purge, yes),
+        Command::Context { command } => context_cmd(command),
     }
 }
+
+fn context_cmd(command: ContextCommand) -> anyhow::Result<()> {
+    match command {
+        ContextCommand::Add {
+            name,
+            url,
+            token,
+            token_env,
+        } => client::context_add(&name, &url, token.as_deref(), token_env.as_deref()),
+        ContextCommand::List => client::context_list(),
+        ContextCommand::Use { name } => client::context_use(&name),
+        ContextCommand::Show { name } => client::context_show(name.as_deref()),
+        ContextCommand::Remove { name } => client::context_remove(&name),
+    }
+}
+
 
 async fn invocation(
     command: InvocationCommand,
