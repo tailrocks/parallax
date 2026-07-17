@@ -1,15 +1,18 @@
 # Parallax vs Sumo Logic
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17**.
-> Sources: [Sumo Logic pricing](https://www.sumologic.com/pricing), [OTel guide](https://www.sumologic.com/guides/opentelemetry), [CNCF OTel-bet blog](https://cncf.io/blog/2022/12/13/why-sumo-logic-is-betting-its-future-on-opentelemetry/), third-party pricing (Last9/Coralogix/Parseable).
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 41
+> Flex pricing + Dojo AI RESOLVED**). Sources: live [sumologic.com/pricing](https://www.sumologic.com/pricing),
+> [Cloud Flex Credit overview](https://www.sumologic.com/pricing/cloud-flex-credit),
+> [OTel guide](https://www.sumologic.com/guides/opentelemetry),
+> [CNCF OTel-bet blog](https://cncf.io/blog/2022/12/13/why-sumo-logic-is-betting-its-future-on-opentelemetry/).
 >
 > **Bottom line up front:** Sumo Logic is a **cloud logs-first observability + SIEM
-> SaaS** (Francisco Partners-owned since 2023) with a distinctive **Flex (query-time
-> scan) pricing** model and early OpenTelemetry adoption. On **logs-first intelligence,
-> SIEM/security, scan-based pricing, and SaaS maturity, Sumo is far ahead of
-> pre-release Parallax.** Parallax's honest edges are **open-source/self-host**
-> (Sumo is closed SaaS), **Apache-2.0**, **full-signal-native** (Sumo is logs-first),
-> and the *unproven* bounded agent bundle (A1).
+> SaaS** (Francisco Partners-owned since 2023) with distinctive **Flex (ingest free;
+> pay scan + storage credits)** pricing and early OpenTelemetry adoption. **Dojo AI**
+> (Mobot + Query/Knowledge/Summary/SOC-Analyst agents) is now on the live pricing
+> page — another incumbent AI surface. On logs/SIEM/scan-pricing/SaaS maturity, Sumo
+> is far ahead of pre-release Parallax. Parallax edges = open/self-host, Apache-2.0,
+> full-signal + error workflow, unproven bundle (A1).
 
 ## What each product is
 
@@ -64,10 +67,10 @@ Both OTLP/OTel-capable. Sumo is a closed logs-first + SIEM SaaS; Parallax is an 
 
 ## AI-native / agent-context story
 
-- **Sumo Logic:** AI/ML for anomaly detection, log classification, the SIEM; assistive analytics. A human-platform + security-analytics tool; **not a bounded, read-only, redacted agent-context projection.**
+- **Sumo Logic (pass 41 re-verify on live pricing page):** **Dojo AI** ships a multi-agent surface — **Mobot** conversational UI + **Query Agent** (NL→query) + **Knowledge Agent** (platform how-to) + **Summary Agent** (Insight signal condensation; SIEM) + **SOC Analyst Agent (preview)** (alert triage; SIEM). Plus AI-driven alerting / ML RCA / anomaly. This is a **shipped multi-agent assistive/investigation surface** — human+security-ops oriented, **not** a bounded/redacted/portable coding-agent evidence bundle.
 - **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (planned, A1).
 
-**Honest verdict:** Sumo ships more AI/ML today than Parallax. On shipped AI, **Sumo leads.** Parallax's differentiated agent-context claim is **unproven (A1).**
+**Honest verdict (no-bias):** Sumo now ships **agent-flavored investigation tools** (Dojo AI), so “Sumo has only classic ML anomaly” is **stale**. On shipped AI investigation, **Sumo leads** pre-release Parallax. Parallax’s residual claim is still the **bounded/redacted/portable prod-incident bundle + outcome loop** (A1 unproven) — not “AI exists.”
 
 ## Architecture & deployment
 
@@ -97,21 +100,26 @@ Both OTLP/OTel-capable. Sumo is a closed logs-first + SIEM SaaS; Parallax is an 
 
 **Verdict:** on **openness and lock-in cost, Parallax wins decisively** (Apache OSS + OTLP-native + self-host vs closed SaaS).
 
-## Pricing & economics — the distinctive Flex model
+## Pricing & economics — Flex RESOLVED pass 41 (no fixed public $/GB without calculator)
 
-Sumo Logic pricing is **public** ([sumologic.com/pricing](https://www.sumologic.com/pricing)), with a distinctive **Flex** component:
+Primary: live [sumologic.com/pricing](https://www.sumologic.com/pricing) (accessed 2026-07-17).
 
-| Model | Detail |
+| Fact | Status |
 | --- | --- |
-| **Flex (logs)** | charge for data **scanned at query time**, not ingested — log **ingest itself is free** ([Coralogix](https://coralogix.com/blog/coralogix-vs-sumo-logic-features/)) |
-| **Tiered (metrics/logs)** | by data volume + retention; entry ~**$90/mo**, mid ~**$500–$1,000/mo** ([Last9](https://last9.io/blog/how-sumo-logic-pricing-works/)); metrics ~**3 credits / 1,000 DPM** ($0.15/credit) |
-| **Included (lower tiers)** | logs up to 5 GB/day, metrics up to 50,000/day |
+| **Plans** | **Essentials** (self-serve trial) + **Enterprise Suite** (sales) |
+| **Flex model** | **$0 log ingest** (excl. Cloud SIEM path); credits consumed by **storage + query scan**; SIEM ingest *does* consume credits |
+| **Scan-usage profiles (MSRP estimator)** | **500–750** / **750–1,500** / **1,500–2,000** scans per GB ingested (low / mid / high analytics intensity) |
+| **Estimated $/TB scanned** | **Interactive calculator only** — page does **not** publish a static dollar rate without region + profile inputs. Secondary proxies historically ~**$2.05–$3.14 / TB scanned** by usage band ([Exabeam explainer](https://www.exabeam.com/explainers/sumo-logic/sumo-logic-solution-overview-limitations-and-alternatives/), older LinkedIn/teardowns) — treat as **medium/low confidence**, not live list price |
+| **Credit unit** | Annual credit buckets; self-serve credit-card up to **$25,000**; real-time credit tracking |
+| **Essentials capacity (live matrix)** | Metrics up to **50,000/day**; tracing up to **5 GB/day**; log retention up to **365 days**; 300/500 real-time log/metric monitors |
+| **Enterprise Suite capacity** | Metrics/tracing **unlimited** (volume-quoted); customer-defined log retention; SIEM + SOAR activation subject to mins |
+| **DPM (metrics)** | Defined on pricing FAQ as average metric data points per minute in 1k increments (licensing unit) |
 
-**The Flex scan-pricing is genuinely distinctive** — it inverts the usual per-ingest model (ingest free, pay for what you query). Whether it's cheaper than alternatives depends on query-vs-ingest ratio. **Confirm exact current tiers/credits on [sumologic.com/pricing](https://www.sumologic.com/pricing).**
+**What is *not* public as a single number:** a universal list **$/GB scanned** or **$/credit** independent of region, commitment, and analytics profile. Honest label: **no single public number** — quote/estimator required.
 
-**Parallax pricing:** none public yet (pre-release); self-host = no per-event/per-scan tax by design.
+**Parallax pricing:** **no public number** (pre-release); self-host = no per-event/per-scan tax by design.
 
-**Honest cost read:** Sumo's Flex scan-pricing is an interesting cost model but still SaaS-metered (pay for scan). Whether Parallax self-host is cheaper is benchmark-dependent/unmeasured — different cost models, not directly comparable.
+**Honest cost read:** Flex inverts ingest-tax (ingest free, pay scan+storage) — distinctive vs Datadog-style ingest. Still **SaaS-metered**. Head-to-head vs Parallax self-host **unmeasured**.
 
 ## Where Sumo Logic plainly wins
 
@@ -133,13 +141,14 @@ Sumo Logic pricing is **public** ([sumologic.com/pricing](https://www.sumologic.
 
 ## Open questions / what measurement would settle
 
-- **A1 gate:** does a Parallax bundle add value beyond Sumo's logs/SIEM for coding-agent incident fixes? Unproven.
-- **Sumo exact pricing** — confirm current Flex scan rates + tier inclusions on sumologic.com/pricing.
-- **Francisco Partners strategy** — track whether the 2023 take-private changes product direction/cadence (relevance to drift).
+- **A1 gate:** does a Parallax bundle add value beyond Sumo's logs/SIEM + Dojo AI for coding-agent incident fixes? Unproven.
+- **Sumo list $/TB scanned** — **resolved as no static public number**; estimator/quote only. Capacity matrix + Flex model verified.
+- **Francisco Partners strategy** — track product direction/cadence under private ownership.
+- **Dojo AI → bounded agent artifact** — if Sumo ships a portable redacted coding-agent bundle, collision with Parallax wedge.
 
-## Sources (accessed 2026-07-17)
+## Sources (accessed 2026-07-17; pass 41 re-verify)
 
-- [Sumo Logic pricing](https://www.sumologic.com/pricing); [OTel guide](https://www.sumologic.com/guides/opentelemetry); [OTel glossary](https://www.sumologic.com/glossary/opentelemetry).
-- [CNCF: Sumo betting on OTel](https://cncf.io/blog/2022/12/13/why-sumo-logic-is-betting-its-future-on-opentelemetry/).
-- Third-party pricing: [Last9](https://last9.io/blog/how-sumo-logic-pricing-works/), [Coralogix](https://coralogix.com/blog/coralogix-vs-sumo-logic-features/), [Parseable](https://www.parseable.com/blog/sumo-logic-alternatives).
+- [Sumo Logic pricing](https://www.sumologic.com/pricing) (live Flex estimator, Essentials/Enterprise matrix, Dojo AI feature list); [Cloud Flex Credit overview](https://www.sumologic.com/pricing/cloud-flex-credit).
+- [OTel guide](https://www.sumologic.com/guides/opentelemetry); [CNCF: Sumo betting on OTel](https://cncf.io/blog/2022/12/13/why-sumo-logic-is-betting-its-future-on-opentelemetry/).
+- Secondary scan-rate proxies only: [Exabeam](https://www.exabeam.com/explainers/sumo-logic/sumo-logic-solution-overview-limitations-and-alternatives/), [Coralogix](https://coralogix.com/blog/coralogix-vs-sumo-logic-features/).
 - Parallax side: [decisions/storage-engine.md](../../decisions/storage-engine.md), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).

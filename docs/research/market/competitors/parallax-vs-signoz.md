@@ -170,7 +170,7 @@ architecturally, early in productization.
 | Capability | SigNoz | Parallax |
 |---|---|---|
 | Official MCP server | ✅ **Apache-2.0, both hosted + self-hosted**, **v0.8.0** (2026-07-15), stdio + HTTP(OAuth) | 🟡 planned, read-only after safety gates |
-| MCP tool surface | **~38 tools (25 read + 13 write/destructive)** — can mutate/delete alerts, dashboards, views, channels | read-only bounded projection (intended) |
+| MCP tool surface | **41 tools** (pass 41 recount of [signoz-mcp-server README](https://github.com/SigNoz/signoz-mcp-server) table) — includes write/destructive tools (create/update/delete alerts, dashboards, views, notification channels) | read-only bounded projection (local-stdio MCP shipped; remote 🏗) |
 | Skills marketplace | ✅ `agent-skills` repo — 12 skills, incl. read-only `signoz-investigating-alerts` RCA skill **with eval cases** | ❌ |
 | AI root-cause | ✅ MCP RCA skill (3-tier, mandated cite-every-claim) | 🟡 planned |
 | Coding-agent clients | ✅ Claude Code, Cursor, VS Code/Copilot, Codex, Gemini | ✅ (intended) |
@@ -290,8 +290,8 @@ self-hosted Parallax could undercut but that is unmeasured.
 
 - [github.com/SigNoz/signoz](https://github.com/SigNoz/signoz) — README, LICENSE, releases, architecture
 - [github.com/SigNoz/signoz LICENSE](https://github.com/SigNoz/signoz/blob/main/LICENSE), [ee/LICENSE](https://github.com/SigNoz/signoz/blob/develop/ee/LICENSE), [discussion #4231](https://github.com/SigNoz/signoz/discussions/4231) (license split)
-- [github.com/SigNoz/signoz/releases](https://github.com/SigNoz/signoz/releases) — latest **v0.133.0** (2026-07-15); v0.131.0 (2026-07-01, ClickHouse 25.12.5); **30,144 stars** (GitHub API, 2026-07-17)
-- [github.com/SigNoz/signoz-mcp-server/releases](https://github.com/SigNoz/signoz-mcp-server/releases) — MCP server latest **v0.8.0** (2026-07-15)
+- [github.com/SigNoz/signoz/releases](https://github.com/SigNoz/signoz/releases) — latest **v0.133.0** (2026-07-15); **30,235 stars** (GitHub API, 2026-07-17 pass 41)
+- [github.com/SigNoz/signoz-mcp-server/releases](https://github.com/SigNoz/signoz-mcp-server/releases) — MCP server latest **v0.8.0** (2026-07-15); **41 tools** counted from README tool table (pass 41; was ~38)
 - [github.com/SigNoz/signoz/releases](https://github.com/SigNoz/signoz/releases)
 - [signoz.io/docs/architecture](https://signoz.io/docs/architecture/), [install/self-host](https://signoz.io/docs/install/self-host/)
 - [signoz.io/blog/oss-improvements](https://signoz.io/blog/oss-improvements/) (SQLite→Postgres metadata)

@@ -16,7 +16,7 @@
 
 ## What each product is
 
-- **PostHog** — the leading **open-source product-analytics platform**: product analytics (funnels, retention, paths), **session replay**, **feature flags**, A/B **experiments**, surveys, customer data platform, and (newer) **LLM observability** (tracing/evals for LLM apps). Self-hostable OSS **or** PostHog Cloud. Large OSS community. **License:** PostHog's own open-source license (self-hostable; **note PostHog moved from MIT to its own license terms with competitive-use clauses — verify exact current terms; not pure Apache/MIT**). **Generous usage-based pricing** (Product Analytics: 1M events/mo free, ~$0.00005/event).
+- **PostHog** — the leading **open-source product-analytics platform**: product analytics (funnels, retention, paths), **session replay**, **feature flags**, A/B **experiments**, surveys, customer data platform, and (newer) **LLM observability** (tracing/evals for LLM apps). Self-hostable OSS **or** PostHog Cloud. Large OSS community (**~36k★**, 2026-07-17). **License (pass 41 RESOLVED against live GitHub LICENSE):** **MIT Expat for core** + **proprietary `ee/`** (paid features); GitHub reports `NOASSERTION` (mixed). **Not** a BSL/competitive-use core license — pass-22 claim of “moved from MIT to own competitive-use terms” was **wrong**. Pure-FOSS path = [`posthog-foss`](https://github.com/PostHog/posthog-foss) (strips `ee/`). **Generous usage-based pricing** (Product Analytics: 1M events/mo free, ~$0.00005/event).
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable **execution-context engine**: OTLP-native ingest of traces/logs/metrics + CLI/agent traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, serves bounded/redacted evidence bundles to humans and coding agents. GreptimeDB + Turso. **Pre-release.**
 
 Both OSS, self-hostable, with an LLM/agent-obs surface. But the **core domains differ**: PostHog = product/user-behavior analytics (frontend/product-team); Parallax = production-incident evidence (backend/SRE/coding-agent). The comparison is mostly "different jobs," with overlap at LLM-obs + OSS-self-host.
@@ -76,7 +76,7 @@ Both OSS, self-hostable, with an LLM/agent-obs surface. But the **core domains d
 - **PostHog:** **self-host OSS** (ClickHouse-backed, multi-component) **or** PostHog Cloud (managed). Large, mature self-host community.
 - **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0.
 
-**Verdict:** on **OSS-self-host maturity + community, PostHog wins** (large, proven). On single-binary Rust local-first, Parallax's target is a different ergonomics story. **License differs** — PostHog's own license (competitive-use clauses) vs Parallax Apache-2.0 (verify PostHog's exact current terms).
+**Verdict:** on **OSS-self-host maturity + community, PostHog wins** (large, proven). On single-binary Rust local-first, Parallax's target is a different ergonomics story. **License:** both permissive-core (PostHog **MIT Expat** + proprietary `ee/`; Parallax **uniform Apache-2.0**, no `ee/`). Parallax’s edge is **uniform OSI openness** (no proprietary EE directory), not “competitive-use clauses” (those do not apply to PostHog core).
 
 ## Operational footprint / Scalability
 
@@ -94,10 +94,10 @@ Both OSS, self-hostable, with an LLM/agent-obs surface. But the **core domains d
 
 ## Openness, licensing & vendor lock-in
 
-- **PostHog:** **open-source, self-hostable** — but **PostHog's own license** (moved from MIT; competitive-use clauses for some features). **Verify exact current terms.** Moderate lock-in (event schema, product-analytics model). Self-host viable at scale.
-- **Parallax:** **Apache-2.0**, fully open (OSI, no competitive-use clauses), OTLP-native, portable bundle.
+- **PostHog:** **MIT Expat core** + **proprietary `ee/`** (live [LICENSE](https://github.com/PostHog/posthog/blob/master/LICENSE), 2026-07-17). Self-hostable; pure-FOSS via `posthog-foss`. Moderate product lock-in (event schema). Self-host mature at scale.
+- **Parallax:** **Apache-2.0**, fully open (no proprietary `ee/` directory), OTLP-native, portable bundle.
 
-**Verdict:** on **license permissiveness, Parallax (Apache-2.0) likely edges PostHog** (PostHog's competitive-use clauses are less permissive) — **but verify PostHog's current license before asserting.** Both self-hostable; PostHog's self-host is more mature.
+**Verdict:** on **uniform OSI openness, Parallax edges** (no paid-feature EE carve-out). On **core permissiveness, both are permissive OSS** (MIT vs Apache-2.0 — **not** a competitive-use fight). PostHog self-host is more mature.
 
 ## Pricing & economics — real numbers
 
@@ -127,22 +127,23 @@ Sources: [schematic](https://schematichq.com/blog/posthog-pricing), [checkthat.a
 
 - **Domain fit** — Parallax is production-incident evidence; PostHog is product/user analytics. *(Different jobs; Parallax where PostHog doesn't play.)*
 - **Production error events + fix-outcome loop** — PostHog has neither (not its domain). *(Real: error events shipped; fix-outcome planned/unproven, A1.)*
-- **License permissiveness** — Apache-2.0 (likely) vs PostHog's own competitive-use license. *(Narrow; verify PostHog terms.)*
+- **Uniform OSI openness** — Apache-2.0 with no proprietary `ee/` vs PostHog MIT core + proprietary `ee/`. *(Narrow; not “competitive-use.”)*
 - **Sentry-envelope compatibility** — PostHog has none; Parallax ships it. *(Real.)*
 - **Bounded, redacted, agent-safe evidence bundle** — PostHog has none. *(Thesis, unproven, A1.)*
 
-> **Honest summary:** PostHog and Parallax **barely overlap on core domain** — PostHog is the leading OSS product-analytics + replay + flags platform (a job Parallax doesn't do); Parallax is production-incident evidence (a job PostHog doesn't do). The real overlap is **LLM/agent observability** + **OSS-self-host**. On shipped LLM-obs + OSS-self-host maturity + community, **PostHog leads** pre-release Parallax. Parallax's defensible delta is its **production-incident + agent-bundle** scope (where PostHog doesn't play) + likely **Apache-vs-PostHog-license** + **Sentry-envelope**. Don't frame these as direct competitors on the product-analytics axis — they aren't.
+> **Honest summary:** PostHog and Parallax **barely overlap on core domain**. Real overlap is **LLM/agent observability** + **OSS-self-host**. On shipped LLM-obs + self-host maturity + community, **PostHog leads**. Parallax delta = production-incident + agent-bundle scope + **Sentry-envelope** + **uniform Apache-2.0** (vs PostHog MIT core + proprietary `ee/`). Not direct competitors on product analytics.
 
 ## Open questions / what measurement would settle
 
-- **A1 gate:** for LLM/agent observability specifically, does a Parallax bundle add value beyond PostHog's LLM-obs (or Langfuse/Phoenix)? Unproven — and PostHog's LLM-obs + product-analytics correlation is a different angle.
-- **PostHog exact license (2026)** — confirm current terms (competitive-use clauses?) vs Apache-2.0; this determines whether Parallax has a real license edge.
+- **A1 gate:** for LLM/agent observability specifically, does a Parallax bundle add value beyond PostHog's LLM-obs (or Langfuse/Phoenix)? Unproven.
+- **PostHog exact license (2026)** — **RESOLVED pass 41: MIT Expat core + proprietary `ee/`** (not competitive-use). Remaining: which features are EE-only.
 - **PostHog → production-backend expansion** — if PostHog adds production-error/OTLP-backend semantics, the domain gap narrows. Track.
 
 ## Sources (accessed 2026-07-17)
 
-- [posthog.com](https://posthog.com/); [pricing](https://posthog.com/pricing).
-- [schematic PostHog pricing 2026](https://schematichq.com/blog/posthog-pricing); [checkthat.ai 2026](https://checkthat.ai/brands/posthog/pricing); [userpilot](https://userpilot.com/blog/posthog-pricing/).
+- [posthog.com](https://posthog.com/); [pricing](https://posthog.com/pricing); [contribute / licensing](https://posthog.com/docs/contribute).
+- [PostHog LICENSE (MIT Expat core + ee/ carve-out)](https://github.com/PostHog/posthog/blob/master/LICENSE) — re-verified 2026-07-17; ~**36,084★**.
+- [schematic PostHog pricing 2026](https://schematichq.com/blog/posthog-pricing); [checkthat.ai 2026](https://checkthat.ai/brands/posthog/pricing).
 - [OpenPanel OSS analytics survey 2026](https://openpanel.dev/articles/open-source-web-analytics).
 - Parallax side: [00-vision/ai-native-observability.md](../../00-vision/ai-native-observability.md), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).
 - Sibling AI-obs deep-dives: [parallax-vs-langfuse.md](parallax-vs-langfuse.md), [parallax-vs-arize-phoenix.md](parallax-vs-arize-phoenix.md), [parallax-vs-langsmith.md](parallax-vs-langsmith.md).

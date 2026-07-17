@@ -1,11 +1,11 @@
 # Parallax vs Bugsink
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 40 —
-> first canonical deep-dive; fills a gap on Parallax's own Sentry-envelope wedge).
-> Sources: [github.com/bugsink/bugsink](https://github.com/bugsink/bugsink) (1,939★,
-> Apache-style open-core w/ `ee/`, Python/Django, last push 2026-07-17 — active;
-> latest **v2.4.0**, 2026-07-10), [bugsink.com](https://www.bugsink.com/)
-> (error-tracking / built-to-self-host / Sentry-SDK-compatible / scalable).
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 40
+> deep-dive; **pass 41 pricing RESOLVED** against live [bugsink.com](https://www.bugsink.com/)).
+> Sources: [github.com/bugsink/bugsink](https://github.com/bugsink/bugsink) (1,940★,
+> open-core w/ `ee/`, Python/Django, last push 2026-07-17 — active; latest
+> **v2.4.0**, 2026-07-10), [bugsink.com](https://www.bugsink.com/) (pricing +
+> error-tracking / built-to-self-host / Sentry-SDK-compatible).
 >
 > **Bottom line up front:** Bugsink is a **focused, self-hosted, Sentry-SDK-
 > compatible error-tracking server** (Python/Django). It is the cleanest "just run
@@ -26,18 +26,19 @@
   Sentry SDK at it via DSN; it accepts Sentry events/envelopes and runs a real
   **issue lifecycle** — grouping/fingerprinting, assignment, resolve/regress,
   release tracking, alerting). Positioned as "the simplest way to self-host error
-  tracking" / a self-hosted Highlight alternative. **1,939★, v2.4.0 (2026-07-10),
-> very active (pushed 2026-07-17).** **Open-core:** core self-host code is
-> source-available; `ee/` directory carries a separate (proprietary) EE license;
-> the `sentry/` directory is BSD-3-Clause (forked Sentry reference code) — hence
-> GitHub reports the license as `NOASSERTION` (mixed). Docker-first deploy.
+  tracking" / a self-hosted Highlight alternative. **1,940★, v2.4.0 (2026-07-10),
+  very active (pushed 2026-07-17).** **Open-core:** core self-host code is
+  source-available; `ee/` directory carries a separate (proprietary) EE license;
+  the `sentry/` directory is BSD-3-Clause (forked Sentry reference code) — hence
+  GitHub reports the license as `NOASSERTION` (mixed). Docker-first deploy.
+  **Hosted Cloud is public-priced (EUR, per-event tiers); self-host core is free.**
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable
   **execution-context engine**: OTLP-native ingest of traces/logs/metrics +
   CLI/agent traces, derives owned `error_event`s, fingerprints, correlates into a
-> typed evidence graph, serves bounded/redacted evidence bundles to humans and
-> coding agents. **Also ingests Sentry envelopes** (`sentry_http.rs`, shipped) —
-> but as *one* signal feeding error-derivation, not a Sentry-server product.
-> GreptimeDB + Turso. **Pre-release.**
+  typed evidence graph, serves bounded/redacted evidence bundles to humans and
+  coding agents. **Also ingests Sentry envelopes** (`sentry_http.rs`, shipped) —
+  but as *one* signal feeding error-derivation, not a Sentry-server product.
+  GreptimeDB + Turso. **Pre-release.**
 
 **Crucial framing:** both touch the Sentry protocol, but at **different depths**.
 Bugsink **is** a Sentry server (full issue-management product). Parallax **consumes**
@@ -113,8 +114,8 @@ verdict. Bugsink's backing store is unproven head-to-head vs GreptimeDB
 - **Bugsink:** **open-core, source-available** — core self-host code is open;
   `ee/` is proprietary (separate license); `sentry/` dir is BSD-3 (forked Sentry
   code). GitHub `NOASSERTION` (mixed). **Less open than Parallax's Apache-2.0**
-  (Parallax has no `ee/` paywall — it's uniformly Apache-2.0). Hosted/Cloud option
-  likely (bugsink.com) — *(confirm exact Cloud + EE pricing on bugsink.com).*
+  (Parallax has no `ee/` paywall — it's uniformly Apache-2.0). **Hosted Cloud is
+  public-priced** (see Pricing below); self-host core remains free.
 - **Parallax:** **Apache-2.0**, uniformly open, no EE paywall, OTLP-native,
   portable bundle.
 
@@ -126,9 +127,40 @@ Bugsink's open-core/NOASSERTION. A real, if narrow, Parallax edge.
 - **Self-hosted Sentry-alternative completeness** — full issue lifecycle
   (grouping/assignment/resolve/regress/release/alerts), Sentry-SDK-native.
 - **Simplicity** — "install in minutes," single Docker container, focused.
-- **Maturity on the error-tracking axis** — shipped, active (v2.4.0, 1,939★,
-  pushed today), real product (not pre-release).
+- **Maturity on the error-tracking axis** — shipped, active (v2.4.0, 1,940★,
+  pushed today), real product (not pre-release); **1,400+ teams use Bugsink every week** (vendor claim, bugsink.com).
 - **Drop-in for Sentry shops** — point existing Sentry SDKs at it.
+- **Transparent Hosted pricing + free self-host** — public EUR event tiers; self-host unlimited free.
+
+## Pricing & economics — RESOLVED pass 41
+
+Live [bugsink.com](https://www.bugsink.com/) (accessed 2026-07-17). Currency = **EUR**.
+
+### Hosted
+
+| Plan | Price | Monthly events | Retention / users |
+| --- | --- | --- | --- |
+| **15K / Evaluation** | **Free** | 15K | 5K events retained; single user |
+| **75K Events** | **€16 / mo** | 75K | 75K retained; unlimited users |
+| **600K Events** | **€50 / mo** | 600K | 600K retained; unlimited users |
+| **3M Events** | **€158 / mo** | 3M | 3M retained; unlimited users |
+| **15M Events** | **€568 / mo** | 15M | (volume tier) |
+| **50M Events** | **€1,288 / mo** | 50M | (volume tier) |
+| Higher | **on request** | >50M | contact |
+
+Vendor markets **“80% cheaper at scale”** vs Sentry Hosted (claim, not independently measured).
+
+### Self-hosted
+
+| Plan | Price | Notes |
+| --- | --- | --- |
+| **Self-hosted** | **Free** | Unlimited users; all features; volume = your hardware |
+| **Premium Support** | **€15 / user / mo** | Priority email + 1h onboarding; moderate volume |
+| **Enterprise Support** | **Custom** | All-channels support, integration/tuning, roadmap influence |
+
+**Parallax pricing:** **no public number** (pre-release); self-host = no per-event tax by design.
+
+**Honest cost read:** Bugsink Hosted is **public, cheap, event-metered** for error-only; self-host core is free (ops = your box). Direct TCO vs Parallax is **not comparable on the same product surface** (error-tracker vs full-signal context engine). On pure self-hosted Sentry-replacement economics, Bugsink is the simpler bill of materials.
 
 ## Where Parallax honestly edges Bugsink
 
@@ -156,18 +188,18 @@ Bugsink's open-core/NOASSERTION. A real, if narrow, Parallax edge.
 
 - Adds **OTLP ingest** (traces/logs/metrics) — would broaden from error-only toward full-stack (collision with Parallax's breadth edge).
 - Adds an **AI/agent-context** surface or **outcome tracking**.
-- **Cloud/SaaS + EE pricing** materially changes the openness posture (confirm exact Cloud/EE terms on bugsink.com).
+- **Hosted pricing or EE scope** shifts (e.g. free-self-host features move behind paywall).
 
 ## Open questions / what measurement would settle
 
 - **A1 gate vs Bugsink:** for a team that "just needs self-hosted error tracking,"
   does Parallax's full-signal engine + bundle beat "run Bugsink + existing APM" for
   coding-agent incident fixes? **Unproven** — and Bugsink's simplicity is the high bar.
-- **Bugsink exact license terms** (core license + `ee/` terms) + Cloud/EE pricing — confirm on bugsink.com.
+- **Bugsink exact core + `ee/` license SPDX text** (GitHub `NOASSERTION`; confirm SPDX on repo files if asserting in legal copy).
 
-## Sources (accessed 2026-07-17)
+## Sources (accessed 2026-07-17; pricing re-verified pass 41)
 
-- [github.com/bugsink/bugsink](https://github.com/bugsink/bugsink) — 1,939★, Python/Django, last push 2026-07-17 (GitHub API); latest **v2.4.0** (2026-07-10); license `NOASSERTION` (open-core: core + proprietary `ee/` + BSD-3 `sentry/` fork).
-- [bugsink.com](https://www.bugsink.com/) — [error tracking](https://www.bugsink.com/error-tracking/), [built to self-host](https://www.bugsink.com/built-to-self-host/), [Sentry-SDK compatible](https://www.bugsink.com/connect-any-application/), [scalable and reliable](https://www.bugsink.com/scalable-and-reliable/).
+- [github.com/bugsink/bugsink](https://github.com/bugsink/bugsink) — **1,940★**, Python/Django, last push 2026-07-17 (GitHub API); latest **v2.4.0** (2026-07-10); license `NOASSERTION` (open-core: core + proprietary `ee/` + BSD-3 `sentry/` fork).
+- [bugsink.com](https://www.bugsink.com/) — live **Hosted + Self-hosted pricing** (EUR tiers above); [error tracking](https://www.bugsink.com/error-tracking/), [built to self-host](https://www.bugsink.com/built-to-self-host/), [Sentry-SDK compatible](https://www.bugsink.com/sentry-sdk-compatible/).
 - Parallax side: [Sentry-envelope ingest](parallax-vs-sentry.md) (`sentry_http.rs` shipped), [decisions/storage-engine.md](../../decisions/storage-engine.md), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).
 - Sibling (Sentry-alternative / error-tracking peers): [parallax-vs-sentry.md](parallax-vs-sentry.md) (the reference), [parallax-vs-highlight.md](parallax-vs-highlight.md) (wound down). Other small Sentry-alts referenced in legacy [alternatives-deep-analysis.md](../alternatives-deep-analysis.md) (Rustrak, edde746/bugs, Urgentry, GlitchTip) — not separately deep-dived yet.

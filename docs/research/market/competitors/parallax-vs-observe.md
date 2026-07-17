@@ -1,7 +1,11 @@
 # Parallax vs Observe
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17**.
-> Sources: [observeinc.com](https://www.observeinc.com/) + [pricing](https://www.observeinc.com/pricing) + [why-observe (Context Graph)](https://www.observeinc.com/why-observe), [Snowflake acquisition press](https://www.snowflake.com/en/news/press-releases/snowflake-announces-intent-to-acquire-observe-to-deliver-ai-powered-observability-at-enterprise-scale/), [AI SRE / o11y.ai PR](https://www.prnewswire.com/news-releases/observe-introduces-ai-sre-and-o11yai-agents-accelerating-developer-productivity-while-cutting-enterprise-observability-costs-302603717.html).
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 41
+> pricing re-verify**). Sources: live [observeinc.com/pricing](https://www.observeinc.com/pricing)
+> (Logs **$0.49/GiB**, Traces **$0.59/GiB**, Metrics **$0.008/DPM**, retention **$0.01/GiB/mo**),
+> [observeinc.com](https://www.observeinc.com/) + [why-observe (Context Graph)](https://www.observeinc.com/why-observe),
+> [Snowflake acquisition press](https://www.snowflake.com/en/news/press-releases/snowflake-announces-intent-to-acquire-observe-to-deliver-ai-powered-observability-at-enterprise-scale/),
+> [AI SRE / o11y.ai PR](https://www.prnewswire.com/news-releases/observe-introduces-ai-sre-and-o11yai-agents-accelerating-developer-productivity-while-cutting-enterprise-observability-costs-302603717.html).
 >
 > **Bottom line up front:** Observe is a **data-/SQL-centric observability platform
 > built on a streaming data lake** (now **Snowflake-owned**, ~$1B, Jan 2026), with a
@@ -105,11 +109,12 @@ Observe pricing is **public** ([observeinc.com/pricing](https://www.observeinc.c
 
 | Data type | Price |
 | --- | --- |
-| **Logs** | **$0.59 / GiB** ingested |
+| **Logs** | **$0.49 / GiB** ingested *(pass 41 live re-verify — was wrongly listed as $0.59)* |
 | **Traces** | **$0.59 / GiB** ingested |
-| **Metrics** | **$0.008 / data-point-million (DPM)** |
+| **Metrics** | **$0.008 / DPM** |
+| **Extended retention** | **$0.01 / GiB / month** |
 
-**Compute included** in the price; **unlimited users**; 30-day default + **13-month hot** O11y Data Lake retention. Marketed **"cut observability costs 60–70%"** (RelationalAI cited at ¼ the cost). **Confirm current Snowflake-era rates on the pricing page.**
+**Compute included** in the price; **unlimited users**; marketed **no overage bills** (pricing page meta). **13-month hot** O11y Data Lake retention (product copy). Marketed **"cut observability costs 60–70%."** **Live [observeinc.com/pricing](https://www.observeinc.com/pricing) 2026-07-17.**
 
 **Parallax pricing:** none public yet (pre-release); self-host = no per-ingest tax by design.
 
@@ -143,7 +148,7 @@ Observe pricing is **public** ([observeinc.com/pricing](https://www.observeinc.c
 ## Open questions / what measurement would settle
 
 - **A1 gate vs o11y.ai agents:** does a Parallax bounded bundle beat Observe-o11y.ai-agents-over-the-Knowledge-Graph for coding-agent fix outcomes? Unproven — and Observe's shipped graph+agents are a high bar.
-- **Observe exact current pricing (Snowflake-era)** — confirm $0.59/GiB logs/traces, $0.008/DPM metrics on the live page.
+- **Observe exact current pricing (Snowflake-era)** — **RESOLVED pass 41:** live page = **Logs $0.49/GiB**, **Traces $0.59/GiB**, **Metrics $0.008/DPM**, extended retention **$0.01/GiB/mo**.
 - **Snowflake integration trajectory** — track whether acquisition accelerates or constrains Observe's product direction.
 
 ## Sources (accessed 2026-07-17)

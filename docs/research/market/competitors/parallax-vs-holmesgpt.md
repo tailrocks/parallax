@@ -1,7 +1,11 @@
 # Parallax vs HolmesGPT
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17**.
-> Sources: [HolmesGPT/holmesgpt (GitHub)](https://github.com/HolmesGPT/holmesgpt), [holmesgpt.dev docs](https://holmesgpt.dev/), [CNCF project page](https://www.cncf.io/projects/holmesgpt/), [CNCF blog Apr 2026](https://www.cncf.io/blog/2026/04/21/auto-diagnosing-kubernetes-alerts-with-holmesgpt-and-cncf-tools/), [Robusta.dev](https://robusta.dev/).
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 41
+> version pin**). Sources: [HolmesGPT/holmesgpt (GitHub)](https://github.com/HolmesGPT/holmesgpt)
+> (**v0.36.0**, 2026-07-13; **2,873★**; Apache-2.0; last push 2026-07-16 — active),
+> [holmesgpt.dev docs](https://holmesgpt.dev/), [CNCF project page](https://www.cncf.io/projects/holmesgpt/),
+> [CNCF blog Apr 2026](https://www.cncf.io/blog/2026/04/21/auto-diagnosing-kubernetes-alerts-with-holmesgpt-and-cncf-tools/),
+> [Robusta.dev](https://robusta.dev/).
 >
 > **Bottom line up front:** HolmesGPT is a **CNCF Sandbox, Apache-2.0 AI SRE agent** that
 > **investigates alerts by querying your existing telemetry stack** (Prometheus/Loki/Tempo/K8s)
@@ -16,7 +20,7 @@
 
 ## What each product is
 
-- **HolmesGPT** (`HolmesGPT/holmesgpt`, by Robusta.dev) — an **open-source (Apache-2.0) AI SRE agent**, **CNCF Sandbox** project. **Investigates alerts/tickets** (from Alertmanager/Prometheus/Jira/PagerDuty), pulls evidence from **K8s/cloud/DBs/VMs** for root-cause analysis (often <30s), runs **Markdown runbooks**, and groups alerts into incidents (via Robusta). **MCP toolset support** (extensible data sources). Works across the CNCF stack: **Prometheus/Alertmanager, OpenTelemetry, Grafana Mimir/Loki/Tempo, Kubernetes.** **Apache-2.0.** Commercial **Robusta** platform builds on it (incident grouping, memory, broader platform). **No own telemetry store** — it queries yours.
+- **HolmesGPT** (`HolmesGPT/holmesgpt`, by Robusta.dev) — an **open-source (Apache-2.0) AI SRE agent**, **CNCF Sandbox** project. Latest **v0.36.0** (2026-07-13), **2,873★**, active (pushed 2026-07-16). **Investigates alerts/tickets** (Alertmanager/Prometheus/Jira/PagerDuty), pulls evidence from **K8s/cloud/DBs/VMs** for RCA (often <30s claim), runs **Markdown runbooks**, groups alerts into incidents (via Robusta). **MCP toolset support**. CNCF stack: Prometheus/Alertmanager, OpenTelemetry, Grafana Mimir/Loki/Tempo, Kubernetes. Commercial **Robusta** optional. **No own telemetry store** — queries yours.
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable **execution-context engine**: OTLP-native ingest of traces/logs/metrics + CLI/agent traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, serves bounded/redacted evidence bundles to humans and coding agents. GreptimeDB + Turso. **Pre-release.**
 
 Both Apache-2.0, agent-facing, in the "AI investigation" space. **HolmesGPT is the investigation agent (no store); Parallax is the telemetry+context-engine (own store).** Parallax's own framing ("context engine, not the fixer") literally describes the HolmesGPT relationship — HolmesGPT is the fixer/investigator Parallax feeds.
@@ -107,7 +111,8 @@ HolmesGPT **has no storage, no query engine, no error-derivation, no issue lifec
 
 ## Sources (accessed 2026-07-17)
 
-- [HolmesGPT/holmesgpt (GitHub)](https://github.com/HolmesGPT/holmesgpt); [holmesgpt.dev](https://holmesgpt.dev/); [CNCF project page](https://www.cncf.io/projects/holmesgpt/).
+- [HolmesGPT/holmesgpt (GitHub)](https://github.com/HolmesGPT/holmesgpt) — **v0.36.0** (2026-07-13), **2,873★**, Apache-2.0, last push 2026-07-16 (pass 41 pin).
+- [holmesgpt.dev](https://holmesgpt.dev/); [CNCF project page](https://www.cncf.io/projects/holmesgpt/).
 - [CNCF blog: Auto-diagnosing K8s alerts with HolmesGPT (Apr 2026)](https://www.cncf.io/blog/2026/04/21/auto-diagnosing-kubernetes-alerts-with-holmesgpt-and-cncf-tools/); [Robusta.dev](https://robusta.dev/).
 - Parallax side: [00-vision/north-star-autonomous-fix-loop.md](../../00-vision/north-star-autonomous-fix-loop.md), [reference/agent-observability-review.md](../../reference/agent-observability-review.md), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).
 - Sibling (different-layer peers): [parallax-vs-causely.md](parallax-vs-causely.md) (causal-MCP layer), [parallax-vs-odigos.md](parallax-vs-odigos.md) (instrumentation), [parallax-vs-mezmo.md](parallax-vs-mezmo.md) (pipeline).
