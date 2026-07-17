@@ -72,6 +72,7 @@ export const HTTP_RESPONSE_STATUS_CODE = "http.response.status_code" as const
 export const URL_PATH = "url.path" as const
 export const HTTP_SERVER_REQUEST_DURATION =
   "http.server.request.duration" as const
+export const SERVER_ADDRESS = "server.address" as const
 export const MESSAGING_SYSTEM = "messaging.system" as const
 export const MESSAGING_DESTINATION_NAME = "messaging.destination.name" as const
 export const MESSAGING_OPERATION_NAME = "messaging.operation.name" as const
@@ -105,7 +106,11 @@ export const APP_SCREEN_CHECKOUT = "checkout" as const
 export const UI_ACTION_CART_ADD = "cart.add" as const
 export const UI_ACTION_CHECKOUT_SUBMIT = "checkout.submit" as const
 export const UI_ACTION_SCREEN_BACK = "screen.back" as const
-export const GEN_AI_AGENT_NAMES = ["claude", "codex", "amp"] as const
+export const GEN_AI_AGENT_NAMES = [
+  "claude",
+  "codex",
+  "amp",
+] as const
 export const GEN_AI_PROVIDER_NAMES = [
   "anthropic",
   "openai",

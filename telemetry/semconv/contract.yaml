@@ -68,6 +68,7 @@ constants:
   - { id: http.response.status_code, rust: HTTP_RESPONSE_STATUS_CODE, typescript: HTTP_RESPONSE_STATUS_CODE, java: HTTP_RESPONSE_STATUS_CODE, value: http.response.status_code, owner: playground }
   - { id: url.path, rust: URL_PATH, typescript: URL_PATH, java: URL_PATH, value: url.path, owner: playground }
   - { id: http.server.request.duration, rust: HTTP_SERVER_REQUEST_DURATION, typescript: HTTP_SERVER_REQUEST_DURATION, java: HTTP_SERVER_REQUEST_DURATION, value: http.server.request.duration, owner: playground }
+  - { id: server.address, rust: SERVER_ADDRESS, typescript: SERVER_ADDRESS, java: SERVER_ADDRESS, value: server.address, owner: playground }
   - { id: messaging.system, rust: MESSAGING_SYSTEM, typescript: MESSAGING_SYSTEM, java: MESSAGING_SYSTEM, value: messaging.system, owner: playground }
   - { id: messaging.destination.name, rust: MESSAGING_DESTINATION_NAME, typescript: MESSAGING_DESTINATION_NAME, java: MESSAGING_DESTINATION_NAME, value: messaging.destination.name, owner: playground }
   - { id: messaging.operation.name, rust: MESSAGING_OPERATION_NAME, typescript: MESSAGING_OPERATION_NAME, java: MESSAGING_OPERATION_NAME, value: messaging.operation.name, owner: playground }
