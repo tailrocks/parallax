@@ -3292,7 +3292,6 @@ dependencies = [
  "parallax-model",
  "parallax-redaction",
  "proptest",
- "regex",
  "serde",
  "serde_json",
  "sha2",

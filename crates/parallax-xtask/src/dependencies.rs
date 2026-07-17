@@ -127,6 +127,11 @@ fn tls_policy(root: &Path) -> Result<Vec<Finding>> {
             "parallax-cli",
             "--features",
             "cross-release-vendored",
+            // Pin a Linux target: on Apple hosts native-tls resolves to
+            // Secure Transport and never activates openssl-src, so an
+            // unpinned tree makes this check host-dependent.
+            "--target",
+            "x86_64-unknown-linux-gnu",
             "-e",
             "features",
         ],
