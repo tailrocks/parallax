@@ -8057,3 +8057,8 @@ Live `system.columns`: spans1m/logs1m `service` is plain **String**, not
 `LowCardinality(String)`. Harness prioritizes fairness over CH-optimal codecs.
 CH density/scan numbers are therefore slightly conservative vs production CH
 schemas that use LowCardinality (Run 208).
+
+### Run 302 — 2026-07-17 — comparison not done
+
+Highest remaining still: (1) mix shares (2) server 1M/5M (3) vendor quotes
+(4) GB cold S3 (5) RPO D2/D3. Will not self-complete.
