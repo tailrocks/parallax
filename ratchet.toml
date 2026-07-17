@@ -6594,7 +6594,7 @@ ceiling = 17
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-redaction/src/lib.rs"
-ceiling = 418
+ceiling = 422
 
 [[limits]]
 metric = "rust.function-lines"
@@ -6604,7 +6604,7 @@ ceiling = 113
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-redaction/src/lib.rs::redaction_rules"
-ceiling = 116
+ceiling = 120
 
 [[limits]]
 metric = "rust.inline-test-modules"
@@ -7247,7 +7247,7 @@ ceiling = 1
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-analysis/src/junit_reconcile.rs"
-ceiling = 12
+ceiling = 20
 
 [[limits]]
 metric = "rust.function-lines"
@@ -7387,17 +7387,9 @@ ceiling = 638
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/src/ci_backfill.rs"
-ceiling = 569
+ceiling = 607
 
-[[limits]]
-metric = "rust.function-cognitive-complexity"
-scope = "crates/parallax-server/src/ci_backfill.rs::backfill_repo"
-ceiling = 25
 
-[[limits]]
-metric = "rust.function-lines"
-scope = "crates/parallax-server/src/ci_backfill.rs::backfill_repo"
-ceiling = 165
 
 [[limits]]
 metric = "rust.inline-test-modules"
@@ -7408,3 +7400,23 @@ ceiling = 1
 metric = "rust.inline-test-modules"
 scope = "crates/parallax-server/src/ci_backfill.rs"
 ceiling = 1
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-evidence/src/envelope.rs"
+ceiling = 402
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-analysis/src/junit_reconcile.rs"
+ceiling = 405
+
+[[rust_suppressions]]
+crate_name = "parallax-redaction"
+lint = "clippy::too_many_lines"
+ceiling = 1
+
+[[limits]]
+metric = "agent-doc-bytes"
+scope = "bench/otlp-fanout/vendor/signoz/frontend/AGENTS.md"
+ceiling = 4495

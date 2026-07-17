@@ -125,6 +125,113 @@ pub(crate) async fn tick_once(
     report
 }
 
+async fn mark_fail(
+    metadata: &TursoMetadataStore,
+    repo: &str,
+    error: &str,
+    reset_at_nanos: Option<u128>,
+) {
+    if let Err(store_error) = metadata
+        .fail_ci_backfill(repo, error, reset_at_nanos)
+        .await
+    {
+        tracing::warn!(%repo, %store_error, "ci backfill fail_ci_backfill write failed");
+    }
+}
+
+fn completed_at_nanos(raw: Option<&str>) -> u128 {
+    raw.and_then(|value| {
+        time::OffsetDateTime::parse(value, &time::format_description::well_known::Rfc3339)
+            .ok()
+            .and_then(|ts| u128::try_from(ts.unix_timestamp_nanos()).ok())
+    })
+    .unwrap_or(0)
+}
+
+fn rest_delivery_record(
+    repo: &str,
+    attempt: parallax_evidence::github_actions::NormalizedCiAttempt,
+    now_nanos: u128,
+) -> CiAttemptDeliveryRecord {
+    let body_bytes = serde_json::to_vec(&serde_json::json!({
+        "job": {
+            "id": attempt.job_id,
+            "run_id": attempt.workflow_run_id,
+            "run_attempt": attempt.attempt,
+            "name": attempt.name,
+            "conclusion": attempt.conclusion,
+            "completed_at": attempt.completed_at,
+        }
+    }))
+    .unwrap_or_default();
+    CiAttemptDeliveryRecord {
+        delivery_id: format!(
+            "rest:{}:{}:{}:{}",
+            repo, attempt.workflow_run_id, attempt.job_id, attempt.attempt
+        ),
+        attempt_id: attempt_identity(&attempt),
+        provider: attempt.provider,
+        repo_full_name: attempt.repo_full_name,
+        workflow_run_id: attempt.workflow_run_id,
+        job_id: attempt.job_id,
+        attempt: attempt.attempt,
+        conclusion: attempt.conclusion,
+        name: attempt.name,
+        lossiness: attempt.lossiness,
+        payload_hash: payload_sha256_hex(&body_bytes),
+        received_at_nanos: now_nanos,
+    }
+}
+
+struct PageAcceptState<'a> {
+    cursor_completed: u128,
+    cursor_run: i64,
+    now_nanos: u128,
+    report: &'a mut CiBackfillTickReport,
+    page_advance_ts: u128,
+    page_advance_run: i64,
+    advanced: bool,
+}
+
+async fn accept_page(
+    metadata: &TursoMetadataStore,
+    repo: &str,
+    page: parallax_evidence::github_actions::RestJobsPage,
+    state: &mut PageAcceptState<'_>,
+) {
+    for attempt in page.attempts.into_iter().take(REST_JOBS_PAGE_CAP) {
+        let completed = completed_at_nanos(attempt.completed_at.as_deref());
+        if !is_after_backfill_cursor(
+            completed,
+            attempt.workflow_run_id,
+            state.cursor_completed,
+            state.cursor_run,
+        ) {
+            continue;
+        }
+        let record = rest_delivery_record(repo, attempt, state.now_nanos);
+        match metadata.accept_ci_attempt_delivery(&record).await {
+            Ok(CiAttemptAccept::Inserted) => state.report.jobs_accepted += 1,
+            Ok(CiAttemptAccept::Duplicate) => state.report.jobs_duplicate += 1,
+            Err(CiAttemptStoreError::Collision(_)) => state.report.errors += 1,
+            Err(CiAttemptStoreError::Internal(error)) => {
+                tracing::warn!(%error, "ci backfill accept failed");
+                state.report.errors += 1;
+            }
+        }
+        if is_after_backfill_cursor(
+            completed,
+            record.workflow_run_id,
+            state.page_advance_ts,
+            state.page_advance_run,
+        ) {
+            state.page_advance_ts = completed;
+            state.page_advance_run = record.workflow_run_id;
+            state.advanced = true;
+        }
+    }
+}
+
 async fn backfill_repo(
     metadata: &TursoMetadataStore,
     http: &dyn JobsHttp,
@@ -151,16 +258,12 @@ async fn backfill_repo(
     let runs = match http.list_recent_workflow_runs(repo, 1, etag).await {
         Ok(response) => response,
         Err(JobsHttpError::RateLimited { reset_at_nanos }) => {
-            let _ = metadata
-                .fail_ci_backfill(repo, "rate limited", reset_at_nanos)
-                .await;
+            mark_fail(metadata, repo, "rate limited", reset_at_nanos).await;
             report.rate_limited = true;
             return Ok(report);
         }
         Err(error) => {
-            let _ = metadata
-                .fail_ci_backfill(repo, &error.to_string(), None)
-                .await;
+            mark_fail(metadata, repo, &error.to_string(), None).await;
             return Err(error);
         }
     };
@@ -168,125 +271,64 @@ async fn backfill_repo(
         return Ok(report);
     }
     if runs.rate_limit_remaining == Some(0) {
-        let _ = metadata
-            .fail_ci_backfill(repo, "rate limited", runs.rate_limit_reset_at_nanos)
-            .await;
+        mark_fail(metadata, repo, "rate limited", runs.rate_limit_reset_at_nanos).await;
         report.rate_limited = true;
         return Ok(report);
     }
 
     let run_ids = extract_run_ids(&runs.body, config.max_runs_per_tick);
-    let mut page_advance_ts = cursor_completed;
-    let mut page_advance_run = cursor_run;
-    let mut advanced = false;
-
-    for run_id in run_ids {
-        report.runs_fetched += 1;
-        let jobs = match http.list_workflow_run_jobs(repo, run_id, 1, None).await {
-            Ok(response) => response,
-            Err(JobsHttpError::RateLimited { reset_at_nanos }) => {
-                let _ = metadata
-                    .fail_ci_backfill(repo, "rate limited", reset_at_nanos)
-                    .await;
-                report.rate_limited = true;
-                break;
-            }
-            Err(error) => {
-                let _ = metadata
-                    .fail_ci_backfill(repo, &error.to_string(), None)
-                    .await;
-                report.errors += 1;
-                continue;
-            }
+    let (advanced, advance_ts, advance_run) = {
+        let mut accept = PageAcceptState {
+            cursor_completed,
+            cursor_run,
+            now_nanos,
+            report: &mut report,
+            page_advance_ts: cursor_completed,
+            page_advance_run: cursor_run,
+            advanced: false,
         };
-        let page = parse_rest_jobs_page(repo, &jobs.body);
-        for attempt in page.attempts.into_iter().take(REST_JOBS_PAGE_CAP) {
-            let completed = attempt
-                .completed_at
-                .as_deref()
-                .and_then(|raw| {
-                    time::OffsetDateTime::parse(raw, &time::format_description::well_known::Rfc3339)
-                        .ok()
-                        .and_then(|ts| u128::try_from(ts.unix_timestamp_nanos()).ok())
-                })
-                .unwrap_or(0);
-            if !is_after_backfill_cursor(
-                completed,
-                attempt.workflow_run_id,
-                cursor_completed,
-                cursor_run,
-            ) {
-                continue;
-            }
-            let body_bytes = serde_json::to_vec(&serde_json::json!({
-                "job": {
-                    "id": attempt.job_id,
-                    "run_id": attempt.workflow_run_id,
-                    "run_attempt": attempt.attempt,
-                    "name": attempt.name,
-                    "conclusion": attempt.conclusion,
-                    "completed_at": attempt.completed_at,
-                }
-            }))
-            .unwrap_or_default();
-            let record = CiAttemptDeliveryRecord {
-                delivery_id: format!(
-                    "rest:{}:{}:{}:{}",
-                    repo, attempt.workflow_run_id, attempt.job_id, attempt.attempt
-                ),
-                attempt_id: attempt_identity(&attempt),
-                provider: attempt.provider,
-                repo_full_name: attempt.repo_full_name,
-                workflow_run_id: attempt.workflow_run_id,
-                job_id: attempt.job_id,
-                attempt: attempt.attempt,
-                conclusion: attempt.conclusion,
-                name: attempt.name,
-                lossiness: attempt.lossiness,
-                payload_hash: payload_sha256_hex(&body_bytes),
-                received_at_nanos: now_nanos,
-            };
-            match metadata.accept_ci_attempt_delivery(&record).await {
-                Ok(CiAttemptAccept::Inserted) => report.jobs_accepted += 1,
-                Ok(CiAttemptAccept::Duplicate) => report.jobs_duplicate += 1,
-                Err(CiAttemptStoreError::Collision(_)) => report.errors += 1,
-                Err(CiAttemptStoreError::Internal(error)) => {
-                    tracing::warn!(%error, "ci backfill accept failed");
-                    report.errors += 1;
-                }
-            }
-            if is_after_backfill_cursor(
-                completed,
-                record.workflow_run_id,
-                page_advance_ts,
-                page_advance_run,
-            ) {
-                page_advance_ts = completed;
-                page_advance_run = record.workflow_run_id;
-                advanced = true;
-            }
-        }
-        if let Some(remaining) = jobs.rate_limit_remaining
-            && remaining == 0
-        {
-            let _ = metadata
-                .fail_ci_backfill(repo, "rate limited", jobs.rate_limit_reset_at_nanos)
-                .await;
-            report.rate_limited = true;
-            break;
-        }
-    }
 
-    if advanced {
-        let _ = metadata
-            .advance_ci_backfill(
+        for run_id in run_ids {
+            accept.report.runs_fetched += 1;
+            let jobs = match http.list_workflow_run_jobs(repo, run_id, 1, None).await {
+                Ok(response) => response,
+                Err(JobsHttpError::RateLimited { reset_at_nanos }) => {
+                    mark_fail(metadata, repo, "rate limited", reset_at_nanos).await;
+                    accept.report.rate_limited = true;
+                    break;
+                }
+                Err(error) => {
+                    mark_fail(metadata, repo, &error.to_string(), None).await;
+                    accept.report.errors += 1;
+                    continue;
+                }
+            };
+            accept_page(
+                metadata,
                 repo,
-                page_advance_ts,
-                page_advance_run,
-                runs.etag.as_deref(),
-                now_nanos,
+                parse_rest_jobs_page(repo, &jobs.body),
+                &mut accept,
             )
             .await;
+            if jobs.rate_limit_remaining == Some(0) {
+                mark_fail(metadata, repo, "rate limited", jobs.rate_limit_reset_at_nanos).await;
+                accept.report.rate_limited = true;
+                break;
+            }
+        }
+        (
+            accept.advanced,
+            accept.page_advance_ts,
+            accept.page_advance_run,
+        )
+    };
+    if advanced
+        && let Err(error) = metadata
+            .advance_ci_backfill(repo, advance_ts, advance_run, runs.etag.as_deref(), now_nanos)
+            .await
+    {
+        tracing::warn!(%repo, %error, "ci backfill cursor advance failed");
+        report.errors += 1;
     }
     Ok(report)
 }

@@ -357,13 +357,14 @@ as owned by 154. Plan 155 is the Parallax-side product surface consuming the
 154 W4 payload: a dedicated Tests page with a stable test-identity registry,
 attempt chains, failed-vs-broken taxonomy, a flaky state machine, and
 failure fingerprints shared with production issues (evidence:
-`docs/research/market/test-reporting-ecosystem.md`). Plan 124 keeps
-CI-provider API collection; 155 consumes OTLP-ingested telemetry only.
+`docs/research/market/test-reporting-ecosystem.md`). Plan 124 DONE
+(2026-07-17): CI webhook + REST backfill + claim rows; 155 consumes
+OTLP-ingested telemetry only.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | [154](154-playground-capability-and-test-observability.md) | Live multi-backend fan-out acceptance residual | P1 | S–M | Sentry finish + playground acceptance | IN PROGRESS — OO/Maple/SigNoz live PASS 2026-07-17; Sentry setup + acceptance residual |
-| [155](155-test-reporting-surface.md) | Test reporting surface residual | P1 | XL | 149, 152, 153, 140 DONE; soft 121/124 | IN PROGRESS — flaky scan job loop landed; residual UI/mute/JUnit adapters/e2e |
+| [155](155-test-reporting-surface.md) | Test reporting surface residual | P1 | XL | 149, 152, 153, 140 DONE; soft 121 open; 124 DONE | IN PROGRESS — flaky scan job loop landed; residual UI/mute/JUnit adapters/e2e |
 
 ### Triggered Or Residual Work
 
@@ -382,7 +383,7 @@ external facts still BLOCKED where noted. Plan 102 and plan 109 retired
 | [121](121-deploy-and-change-context-collectors.md) | 099, 104, 111, 116 | Backfill, claim ledger (HTTP + doctor inventory landed) | IN PROGRESS — webhook + Turso + doctor deploy-context |
 | 122 | 105, 151 | Disposition table + retained scenarios | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-122-playground-disposition/README.md) |
 | [123](123-fixer-outcome-loop.md) | 120, 121 residual | Offline outcome harness; fixer separate from core | BLOCKED on 120/121 storage/projection residuals |
-| [124](124-ci-and-flaky-test-evidence-collector.md) | 121 durable path (landed) | GHA webhook+Turso+doctor inventory landed; residual REST backfill + claim rows | IN PROGRESS |
+| 124 | CI/flaky evidence adapter | webhook + REST backfill + claim rows + linkage-only bundle | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-124-ci-evidence/README.md) |
 
 ## Dependency Order
 

@@ -43,10 +43,11 @@ Parallax's first deploy/change provider is **GitHub** (read-only).
 
 ## Open gates
 
-The HTTP webhook endpoint and durable ingest path are implemented. Active plans
-121 and 124 retain these residual gates:
+The HTTP webhook endpoint and durable ingest path are implemented. Plan 124
+(CI evidence) closed 2026-07-17 with REST backfill + claim rows. Plan 121
+residual gates:
 
-1. API backfill/reconciliation under rate limits
-2. Broader deploy/change and CI entity coverage
-3. Bundle projection + doctor coverage diagnostics
-4. Measured claim-level rows
+1. Deploy API backfill/reconciliation under rate limits
+2. Broader deploy/change entity coverage beyond deployment webhooks
+3. Bundle projection for deploy adjacency (linkage helpers landed; API wiring residual)
+4. Measured claim-level rows (Turso `evidence_claim_rows` domain `deploy_context` seeded on webhook accept)
