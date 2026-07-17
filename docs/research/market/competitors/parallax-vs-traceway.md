@@ -1,8 +1,9 @@
 # Parallax vs Traceway
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 50**
-> first deep-dive). Sources: [github.com/tracewayapp/traceway](https://github.com/tracewayapp/traceway)
-> (README + releases API), [tracewayapp.com](https://tracewayapp.com),
+> first deep-dive; **pass 54** cloud pricing; **pass 84** commercial + AI-row
+> recheck). Sources: [github.com/tracewayapp/traceway](https://github.com/tracewayapp/traceway)
+> (README + releases API), [tracewayapp.com/cloud](https://tracewayapp.com/cloud),
 > [docs.tracewayapp.com](https://docs.tracewayapp.com), concurrent
 > [wedge-closer recheck](../wedge-closer-lightweight-recheck-2026-07-17.md).
 >
@@ -143,7 +144,7 @@ from the **embedded GreptimeDB MCP** angle.
 single-binary GreptimeDB story is real in code but pre-release; Traceway's
 embedded SQLite/DuckDB is a strong local-dev competitor to Maple/TMA1-class UX.
 
-## Pricing & economics (**pass 54** — live [tracewayapp.com/cloud](https://tracewayapp.com/cloud))
+## Pricing & economics (**pass 54** + **pass 84 recheck** — live [tracewayapp.com/cloud](https://tracewayapp.com/cloud))
 
 | Mode | Traceway | Parallax |
 | --- | --- | --- |
@@ -154,15 +155,32 @@ embedded SQLite/DuckDB is a strong local-dev competitor to Maple/TMA1-class UX.
 | Cloud Enterprise | **$499.99/mo**: 200M exceptions + **2 TB**; overage **$0.20/GB**; custom retention | n/a |
 | Enterprise+ | Custom managed self-host (data stays in your cloud) | n/a |
 
-**No per-host / per-seat** fees (vendor FAQ). HTTP requests and background task
-runs **not** metered. Metrics retention: 1-min for 30d, 1-hour rollups 1yr;
-profiling 30d (FAQ). **No-bias:** Cloud is **public and cheap** at hobby/small-
-team scale vs many incumbents — favors Traceway transparency (prior “no public
-$/unit” was a research miss, not a competitor gap).
+**Pass 84 (2026-07-17):** live cloud page **unchanged** vs pass 54 numbers
+(Free/$12.99/$24.99/$499.99; GB allowances and overage rates match). Backend pin
+still **`backend/v1.9.1`** (2026-07-15); GitHub **1,024★**, last push 2026-07-17.
+FAQ reaffirms: **no per-host / per-seat**; HTTP requests and background task runs
+**not** metered; data billed by **ingested** GB after allowance; self-host =
+same code, zero license fee. Metrics retention note on page: 1-min for 30d,
+1-hour rollups 1yr; profiling 30d on every plan. **Compliance:** page shows
+**SOC 2 Type II** and **ISO 27001** as **In progress** (not attained) — do not
+market Traceway as certified.
+
+**Pricing-table row "Archive & resolve workflow (AI)" — do not over-read.** Live
+matrix lists this under exceptions; README explains (1) **symbolication**
+("resolves minified production errors") and (2) agent skills + CLI for RCA /
+archive-with-`--yes`. That is **productized agent investigation + issue
+lifecycle**, **not** a portable redacted multi-signal **evidence-bundle schema**
+and **not** a closed fix-outcome / recurrence loop. Wedge combination still
+**open** (same as pass 49/50).
+
+**No-bias:** Cloud is **public and cheap** at hobby/small-team scale vs many
+incumbents — favors Traceway transparency (prior “no public $/unit” was a
+research miss).
 
 **Hidden cost:** Traceway self-host TCO = ops for ClickHouse+Postgres (or accept
-embedded store limits). Parallax = GreptimeDB+Turso ops (unproven). License:
-Traceway **MIT** is a **real marketing edge** vs AGPL peers (OpenObserve/Uptrace).
+embedded SQLite/**DuckDB** image limits — README still markets both). Parallax =
+GreptimeDB+Turso ops (unproven). License: Traceway **MIT** is a **real marketing
+edge** vs AGPL peers (OpenObserve/Uptrace).
 
 ## Openness & lock-in
 
