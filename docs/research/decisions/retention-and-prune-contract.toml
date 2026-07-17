@@ -1,0 +1,52 @@
+schema_version = 1
+record_sha256 = "d128f4d9509983b28e591fa308522d072b041e6ca0aaf6ef8c880aade44d6f22"
+status = "approved"
+decision_date = "2026-07-17"
+approved_by = "alexey@chainargos.com"
+approval = "operator-unblock-directive-2026-07-17"
+data_classes = [
+  "raw-traces",
+  "raw-logs",
+  "raw-metrics",
+  "error-events",
+  "invocation-metric-points",
+  "metric-exemplars",
+  "issues",
+  "issue-buckets",
+  "issue-occurrences",
+  "invocations",
+  "dashboards",
+  "investigations",
+  "saved-views",
+  "alert-rules",
+  "alert-rule-states",
+  "alert-incidents",
+  "alert-destinations",
+  "alert-delivery-events",
+  "alert-checks",
+  "spool",
+  "pinned-evidence",
+]
+raw_traces = "greptime-native-configured-ttl"
+raw_logs = "greptime-native-configured-ttl"
+raw_metrics = "greptime-native-configured-ttl"
+derived_extensions = "greptime-signal-matched-ttl"
+mutable_issue_state = "turso-unresolved-retained-resolved-plus-30d"
+invocations = "turso-active-retained-terminal-plus-30d"
+saved_state = "turso-explicit-delete-only"
+alert_state = "turso-owner-policy-no-normal-prune"
+spool = "local-bounded-config-and-immediate-prune"
+pinned_evidence = "protect-reachable-until-unpinned-or-expired"
+legal_user_expectations = "no-surprise-delete-user-state-or-live-evidence"
+default_traces_ttl = "7d"
+default_logs_ttl = "7d"
+default_metrics_ttl = "14d"
+default_error_events_ttl = "30d"
+resolved_grace_days = 30
+dry_run_default = true
+destructive_confirmation = "execute-plus-interactive-confirm-or-yes"
+cross_store_recovery = "durable-resumable-journal"
+logical_reclaim = "required-before-success"
+physical_reclaim = "measured-async-compaction-may-remain-pending"
+native_metric_ttl = "catalog-reconcile-existing-and-creation-hint-new"
+compatibility = "replace-spool-only-prune-with-planned-all-class-prune"

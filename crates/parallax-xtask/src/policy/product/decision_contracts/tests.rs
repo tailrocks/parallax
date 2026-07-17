@@ -58,6 +58,13 @@ fn missing_record_and_fixture_fail_closed() {
             .count(),
         2
     );
+    assert_eq!(
+        findings
+            .iter()
+            .filter(|finding| finding.rule_id == "product.retention-decision")
+            .count(),
+        2
+    );
 }
 
 #[test]

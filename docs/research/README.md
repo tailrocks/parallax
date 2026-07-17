@@ -44,6 +44,7 @@ This directory is the research record behind Parallax. It is organized so a read
 - [stack-decision.md](decisions/stack-decision.md) — A5 stack-decision: rolls storage/metadata/ingest/setup gates into stack claim levels and fallback triggers.
 - [metadata-store.md](decisions/metadata-store.md) — relational metadata store: Turso is mandatory; historical Postgres fallback findings are superseded (evidence in [storage/metadata/](storage/metadata/)).
 - [metric-summary-contract.md](decisions/metric-summary-contract.md) — approved bounded metric point/trend semantics, native-name collision behavior, metric-only service discovery, and the `parallax metrics --invocation` promise shared by plans 105/168.
+- [retention-and-prune-contract.md](decisions/retention-and-prune-contract.md) — approved ownership, grace, pin protection, confirmation, recovery, and truthful logical/physical reclaim semantics for plan 116.
 - [agent-access-surface.md](decisions/agent-access-surface.md) — canonical HTTP API, day-one CLI, read-only MCP after safety gates.
 - [fixer-boundary.md](decisions/fixer-boundary.md) — the separate fixer component, outcome loop, and why PR creation is commodity while outcome feedback is the moat.
 

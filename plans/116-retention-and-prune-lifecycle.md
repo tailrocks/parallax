@@ -50,25 +50,53 @@ confirmation policy, compatibility/migration behavior, and approval date. Add a
 decision-policy fixture that fails missing, draft, rejected, or incomplete
 approval.
 
-## Current Blocker Evidence (2026-07-14)
+### Preliminary decision work landed (helper, 2026-07-17) — peer verify/extend
 
-`docs/research/decisions/retention-and-prune-contract.md` does not exist.
+**Do not retire yet.** Plan/index status intentionally remains unchanged under
+the helper objective; the peer executor owns the status transition.
+
+- `docs/research/decisions/retention-and-prune-contract.md` records contract
+  version 1 under the operator unblock directive: every current data class and
+  the rule for future derived extensions have an owner/lifecycle;
+  unresolved/active/saved/pinned protections are explicit; resolved issues and
+  terminal invocations receive 30 days;
+  prune defaults to a deterministic dry run; destructive execution requires
+  confirmation; cross-store work uses a durable resumable journal.
+- Physical-reclaim wording follows current GreptimeDB 1.1 documentation: TTL
+  expiry and compaction are asynchronous. Success requires logical deletion;
+  measured physical bytes and pending compaction are reported separately.
+  Existing native metric tables are reconciled through the bounded catalog,
+  while creation hints cover newly created tables.
+- `retention-and-prune-contract.toml` pins the record digest and every
+  destructive decision. `product.retention-decision` validates approval,
+  ownership, defaults, protections, confirmation, recovery, reclaim honesty,
+  native metric TTL reconciliation, and compatibility; focused positive and
+  mutation tests are included.
+- Peer must challenge the lifecycle matrix against live schema/current product
+  intent, expand mutation coverage if needed, then implement Steps 2-5 and run
+  the live Greptime/CLI proof. Do not treat this preliminary record alone as
+  implementation completion.
+
+## Historical Blocker Evidence (2026-07-14; superseded 2026-07-17)
+
+At that date, `docs/research/decisions/retention-and-prune-contract.md` did not
+exist.
 The current V1 scope explicitly says `parallax prune` reclaims spool segments
 only and assigns immediate physical reclaim to this plan. No approved record
 names the required data-class ownership, resolved/unresolved policy, pin
 protection, cross-store recovery, or truthful physical-reclaim promise.
-Consequently Steps 2-5 remain forbidden; this plan contains no safe
-implementation work until the operator supplies the required approved contract.
+Consequently Steps 2-5 were forbidden until the operator supplied the required
+approved contract.
 
 Fresh audit on 2026-07-15 at `691cf17`: repository search still finds no
 `docs/research/decisions/retention-and-prune-contract.md`, and no operator
 approval names the destructive lifecycle fields required by Step 1. The
 spool-only implementation remains authoritative and no deletion work is safe.
 
-Steps 2-5 are forbidden until that exact record is approved. If approval is
-unavailable, rejects every proposal, or changes storage/product scope, mark this
-plan `BLOCKED` with the exact open decision and stop. Never infer destructive
-semantics from prose or implement a partial delete path.
+The operator unblock directive and preliminary decision record above supersede
+this blocker evidence. Peer review of that record is still required before
+destructive implementation; never infer different destructive semantics from
+prose or implement a partial delete path.
 
 ## Steps
 

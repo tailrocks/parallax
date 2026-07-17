@@ -8,6 +8,8 @@ use crate::diagnostic::Finding;
 
 use super::error;
 
+mod retention;
+
 const METRIC_RECORD: &str = "docs/research/decisions/metric-summary-contract.md";
 const METRIC_FIXTURE: &str = "docs/research/decisions/metric-summary-contract.toml";
 
@@ -41,6 +43,12 @@ struct MetricSummaryContract {
 }
 
 pub(super) fn check(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
+    check_metric(root, findings)?;
+    retention::check(root, findings)?;
+    Ok(())
+}
+
+fn check_metric(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
     let record = match fs::read(root.join(METRIC_RECORD)) {
         Ok(content) => Some(content),
         Err(io_error) if io_error.kind() == std::io::ErrorKind::NotFound => {
