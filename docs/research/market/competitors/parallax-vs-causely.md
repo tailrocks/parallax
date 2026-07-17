@@ -43,7 +43,7 @@ backend**.
 | **Pitch** | "live causal model via MCP — stop guessing, burn fewer tokens, act before things break" | [causely.ai/product](https://www.causely.ai/product) |
 | **Telemetry ownership** | **none** — consumes your existing observability primitives via curated MCP servers | arXiv paper |
 | **License / model** | **closed-source commercial** (SaaS reasoning engine + in-cluster agents; **not OSS**, **not full self-host** — agents only, engine managed) — resolved pass 35 | [causely.ai/pricing](https://www.causely.ai/pricing), [docs.causely.ai/installation](https://docs.causely.ai/installation/) |
-| **Pricing** | **Professional $2,000/mo (≤500 services); Enterprise custom** — no free/OSS tier (resolved pass 35) | [causely.ai/pricing](https://www.causely.ai/pricing) |
+| **Pricing** | **Professional $2,000/mo (≤500 services); Enterprise custom** — no free/OSS tier; **30-day free trial** (pass 35 + **pass 64** re-confirm) | [causely.ai/pricing](https://www.causely.ai/pricing) |
 | **MCP server** | ✅ shipped — **30+ structured tools across 5 categories** for IDE/agents (Cursor/Claude/Copilot); **Gemini integration** (Oct 2025); blast-radius + remediation guidance | [causely.ai/blog](https://www.causely.ai/blog) |
 | **Benchmark claim** | lower time / tokens / tool-calls when agents get causal context | causely.ai/product |
 | **Category fit** | "AI investigation / causal-context layer" — complementary to telemetry stores; competitive with Parallax's *agent-context* thesis | this analysis |

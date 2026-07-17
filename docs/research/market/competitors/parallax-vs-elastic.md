@@ -16,7 +16,7 @@
 
 ## What each product is
 
-- **Elastic Observability** (Elastic N.V.) — the observability stack on **Elasticsearch/Kibana**: logs, metrics, traces/APM, continuous profiling, synthetics, RUM, + **SIEM/security** (unified search + observability + security). Query via **ES|QL/KQL**. **OTLP-native** ingest via **EDOT** (Elastic Distributions of OpenTelemetry) + auto-instrumentation; data stored in the **native OTel schema** (no translation). Sold as **Elastic Cloud Hosted** and **Elastic Cloud Serverless** + **self-host**. **License: Elastic License v2 (ELv2)** — source-available, self-hostable, **but with a managed-service restriction** (you cannot offer Elastic as a hosted service to others). Current major line **8.x / 9.x** (Elasticsearch 9 line; **pin exact latest**). Search-engine-origin backend.
+- **Elastic Observability** (Elastic N.V.) — the observability stack on **Elasticsearch/Kibana**: logs, metrics, traces/APM, continuous profiling, synthetics, RUM, + **SIEM/security** (unified search + observability + security). Query via **ES|QL/KQL**. **OTLP-native** ingest via **EDOT** (Elastic Distributions of OpenTelemetry) + auto-instrumentation; data stored in the **native OTel schema** (no translation). Sold as **Elastic Cloud Hosted** and **Elastic Cloud Serverless** + **self-host**. **License: Elastic License v2 (ELv2)** — source-available, self-hostable, **but with a managed-service restriction** (you cannot offer Elastic as a hosted service to others). Current major line **Elasticsearch 9.x** — latest tag **v9.4.3** (GitHub releases, 2026-06-30; pass 64). Search-engine-origin backend.
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable **execution-context engine**: OTLP-native ingest of traces/logs/metrics + CLI/agent traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, serves bounded/redacted evidence bundles to humans and coding agents. GreptimeDB + Turso. **Pre-release.**
 
 Both OSS-origin, self-hostable, OTLP-native, with a columnar/search backend. The core difference: **Elastic is a search engine (Lucene) repurposed for observability**; **Parallax is a purpose-built telemetry-native engine on GreptimeDB**. Different optimization center.
@@ -115,19 +115,25 @@ Both OSS-origin, self-hostable, OTLP-native, with a columnar/search backend. The
 
 **Verdict:** on **license permissiveness, Parallax (Apache-2.0) edges Elastic (ELv2)** — ELv2's managed-service restriction is a real (if narrow) difference for users who care about OSI-openness or offering a hosted service. Both are self-hostable OSS-origin, so the gap is smaller than vs Datadog/LangSmith (closed). Honest: a narrow edge, not decisive.
 
-## Pricing & economics — model + verify-flag
+## Pricing & economics (**pass 64** live Serverless rates)
 
-Elastic Observability pricing is **public** ([elastic.co/pricing](https://www.elastic.co/pricing)), **usage-based** across **Hosted** and **Serverless** plans (resolved pass 36 against the live page + [cubeapm 2026](https://cubeapm.com/blog/elastic-observability-pricing-and-review/) + [Serverless billing-dimensions docs](https://www.elastic.co/docs/deploy-manage/cloud-organization/billing/elastic-observability-billing-dimensions)):
+Elastic Observability pricing is **public** ([elastic.co/pricing](https://www.elastic.co/pricing) + **[Serverless Observability](https://www.elastic.co/pricing/serverless-observability)**):
 
 | Component | Rate | Notes |
 | --- | --- | --- |
-| **Hosted Standard ingest** | **~$0.09 / GB** | e.g. 3,000 GB ≈ $270 |
-| **Hosted Standard retention** | **~$0.019 / GB** | e.g. 3,000 GB ≈ $57 |
-| **Serverless** | **GB-ingested + retention** (consumption-metered) | per official billing-dimensions docs |
-| **APM add-on** | **~$31 / host / mo** | (~$15/host/mo infra-only) |
-| **Small deployments** | **~$1,500–$8,000 / mo** | Standard/Gold; Platinum/Enterprise $10K+/mo |
+| **Serverless Complete ingest (logs/traces/etc.)** | **$0.09 / GB** | live page |
+| **Serverless Complete ingest (TSDS metrics)** | **$0.023 / GB** | effective 2026-07-01 |
+| **Serverless Complete retention (non-metrics)** | **$0.019 / GB / mo** | |
+| **Serverless Complete retention (TSDS metrics)** | **$0.005 / GB / mo** | |
+| **Logs Essentials ingest/retain** | as low as **$0.07 / GB** + **$0.017 / GB / mo** | logs-only tier |
+| **Egress** | **$0.05 / GB** after 50 GB free | |
+| **Agent Builder** | 10k free exec then as low as **$0.025 / exec** | Complete add-on |
+| **Workflows** | 10k free then as low as **$0.0108 / exec** | Complete add-on |
+| **Elastic Managed LLM** | **$4.50 / M in** + **$21 / M out** tokens | Complete add-on |
+| **Hosted** | resource/calculator; prior ~$0.09/GB-class | Hosted vs Serverless split |
+| **APM host-class (secondary)** | **~$31 / host / mo** | still cited in prior Hosted analyses |
 
-Self-host ELv2 = **$0 software cost** (you operate the cluster). Hosted Standard tier starts ~$99 + usage. **Confirm exact live rates on [elastic.co/pricing](https://www.elastic.co/pricing)** (Elastic uses a calculator; the above are the documented 2026 components).
+Self-host ELv2 = **$0 software** (you operate the cluster). **Agent Builder** = public unit-priced agent surface (not sales-only).
 
 **Parallax pricing:** none public yet (pre-release).
 
@@ -139,7 +145,7 @@ Self-host ELv2 = **$0 software cost** (you operate the cluster). Hosted Standard
 - **Unified observability + security (SIEM)** — one backend for both.
 - OTLP-native (EDOT, native OTel schema) at parity.
 - Proven-at-scale + mature + broad compliance (SOC2/ISO/HIPAA/FedRAMP).
-- AI assistant + ES|QL + anomaly + error assistant.
+- AI assistant + ES|QL + anomaly + error assistant + **priced Agent Builder / Workflows** (pass 64).
 - Self-host OSS (ELv2) viability.
 
 ## Where Parallax honestly edges Elastic
@@ -156,10 +162,11 @@ Self-host ELv2 = **$0 software cost** (you operate the cluster). Hosted Standard
 
 - **A1 gate vs Elastic AI Error Assistant:** does a Parallax bundle beat Elastic-AI-assistant-as-context for coding-agent fix outcomes? Unproven.
 - **GreptimeDB-vs-Elasticsearch telemetry cost/perf** — measured ingest/query/cost at a representative telemetry workload. Benchmark-dependent, unmeasured; a real opening given Elastic's search-engine overhead.
-- **Elastic exact latest version + pricing rates** — **RESOLVED pass 36**: current major line = **Elasticsearch 9.x** (the v9 line; v8.x legacy); Hosted Standard ~$0.09/GB ingest + ~$0.019/GB retain; Serverless = GB + retention; APM ~$31/host. Still confirm exact live calculator rates for a specific workload.
+- ~~Elastic exact latest version + pricing rates~~ → **pass 64:** ES **v9.4.3**; Serverless Complete **$0.09/$0.019** (+ TSDS **$0.023/$0.005**); Agent Builder **$0.025/exec** after 10k free.
 
-## Sources (accessed 2026-07-17)
+## Sources (accessed 2026-07-17; pass 64)
 
-- [Elastic Observability](https://www.elastic.co/observability/); [OpenTelemetry/EDOT](https://www.elastic.co/observability/opentelemetry); [pricing](https://www.elastic.co/pricing).
-- [cubeapm Elastic pricing & review 2026](https://cubeapm.com/blog/elastic-observability-pricing-and-review/).
+- [Elastic Observability](https://www.elastic.co/observability/); [EDOT](https://www.elastic.co/observability/opentelemetry); [pricing](https://www.elastic.co/pricing); **[Serverless Observability](https://www.elastic.co/pricing/serverless-observability)**.
+- [elasticsearch v9.4.3](https://github.com/elastic/elasticsearch/releases/tag/v9.4.3).
+- [cubeapm 2026](https://cubeapm.com/blog/elastic-observability-pricing-and-review/) (secondary Hosted).
 - Parallax side: [decisions/storage-engine.md](../../decisions/storage-engine.md), [storage/greptimedb-vs-clickhouse/](../../storage/greptimedb-vs-clickhouse/), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).

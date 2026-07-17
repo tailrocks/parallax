@@ -175,7 +175,7 @@ LangSmith pricing is **public** ([langchain.com/pricing](https://www.langchain.c
 
 ## Sources (accessed 2026-07-17)
 
-- [LangChain pricing](https://www.langchain.com/pricing) (re-fetched 2026-07-17, pass 14 — LCU/LSU metering, 180-day extended retention); [LangSmith docs](https://docs.smith.langchain.com/).
+- [LangChain pricing](https://www.langchain.com/pricing) (**pass 64 re-confirm:** LCU **$1.50** / LSU **$1.00**; Plus **$39/seat**; Engine on Plus; agent-as-MCP-server feature); [LangSmith docs](https://docs.smith.langchain.com/).
 - [Trace with OpenTelemetry — LangChain docs](https://docs.langchain.com/langsmith/trace-with-opentelemetry); [End-to-end OpenTelemetry in LangSmith — LangChain blog](https://www.langchain.com/blog/end-to-end-opentelemetry-langsmith); [langsmith-collector-proxy](https://github.com/langchain-ai/langsmith-collector-proxy).
 - Self-host: [architectural overview](https://docs.langchain.com/langsmith/architectural-overview), [AWS](https://docs.langchain.com/langsmith/aws-self-hosted)/[GCP](https://docs.langchain.com/langsmith/gcp-self-hosted)/[Azure](https://docs.langchain.com/langsmith/azure-self-hosted) guides.
 - 2026 pricing analyses: [pecollective](https://pecollective.com/blog/langsmith-pricing/), [checkthat.ai](https://checkthat.ai/brands/langsmith/pricing), [laminar.sh](https://laminar.sh/blog/2026-01-29-laminar-vs-langfuse-vs-langsmith-llm-observability-compared), [inference.net](https://inference.net/content/langsmith-pricing/).
