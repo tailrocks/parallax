@@ -2,6 +2,13 @@ use super::*;
 
 impl GreptimeStore {
     /// Pure SQL builder for `traces_search` (golden-tested).
+    ///
+    /// One window pass over the scan: representative pick (`rn`), span count,
+    /// and error flag are all PARTITION BY "trace_id" window aggregates. The
+    /// previous shape joined a ROW_NUMBER subquery to a GROUP BY subquery on
+    /// "trace_id"; the live engine mis-executes that subquery-to-subquery
+    /// join (returned 6 of 794 traces), same defect family as the semi-join
+    /// documented on `invocation_trace_ids`.
     pub(super) fn traces_search_sql(
         scan_where: &str,
         participation: &str,
@@ -11,9 +18,8 @@ impl GreptimeStore {
         offset: usize,
     ) -> (String, String) {
         let listed = format!(
-            r#"SELECT "root"."trace_id", "root"."span_name", "root"."service_name",
-                      "root"."ts_nanos", "root"."dur", "agg"."span_count",
-                      "agg"."has_error"
+            r#"SELECT "trace_id", "span_name", "service_name", "ts_nanos", "dur",
+                      "span_count", "has_error"
                FROM (
                  SELECT "trace_id", "span_name", "service_name",
                         CAST("timestamp" AS BIGINT) AS "ts_nanos",
@@ -23,18 +29,13 @@ impl GreptimeStore {
                           ORDER BY (CASE WHEN "parent_span_id" IS NULL OR "parent_span_id" = ''
                                          THEN 0 ELSE 1 END) ASC,
                                    "timestamp" ASC
-                        ) AS "rn"
+                        ) AS "rn",
+                        COUNT(*) OVER (PARTITION BY "trace_id") AS "span_count",
+                        MAX(CASE WHEN "span_status_code" = 'STATUS_CODE_ERROR' THEN 1 ELSE 0 END)
+                          OVER (PARTITION BY "trace_id") AS "has_error"
                  FROM opentelemetry_traces
                  WHERE {scan_where}{participation}
                ) AS "root"
-               JOIN (
-                 SELECT "trace_id", COUNT(*) AS "span_count",
-                        MAX(CASE WHEN "span_status_code" = 'STATUS_CODE_ERROR' THEN 1 ELSE 0 END)
-                        AS "has_error"
-                 FROM opentelemetry_traces
-                 WHERE {scan_where}
-                 GROUP BY "trace_id"
-               ) AS "agg" ON "root"."trace_id" = "agg"."trace_id"
                WHERE {rep_where}"#
         );
         // Single-pass page + total (plan 075 Step 2): window function avoids a

@@ -24,11 +24,32 @@ impl crate::adapter::TraceAnalyticsStore for GreptimeStore {
             scan.join(" AND ")
         };
         // `service` matches any in-window trace the service participates in.
+        // Materialized client-side: `"trace_id" IN (SELECT …)` semi-joins
+        // return zero rows on the live engine (see invocation_trace_ids).
         let participation = match &query.service {
-            Some(service) => format!(
-                r#" AND "trace_id" IN (SELECT "trace_id" FROM opentelemetry_traces WHERE "service_name" = '{}' AND {scan_where})"#,
-                escape(service)
-            ),
+            Some(service) => {
+                let ids_sql = format!(
+                    r#"SELECT DISTINCT "trace_id" FROM opentelemetry_traces
+                       WHERE "service_name" = '{}' AND {scan_where}
+                       LIMIT {MAX_ROWS}"#,
+                    escape(service)
+                );
+                let ids: Vec<String> = self
+                    .sql_lenient(&ids_sql)
+                    .await?
+                    .iter()
+                    .filter_map(|row| row.first().and_then(|v| v.as_str()))
+                    .filter(|id| !id.is_empty())
+                    .map(|id| format!("'{}'", escape(id)))
+                    .collect();
+                if ids.is_empty() {
+                    return Ok(crate::adapter::TraceList {
+                        items: Vec::new(),
+                        total: 0,
+                    });
+                }
+                format!(r#" AND "trace_id" IN ({})"#, ids.join(", "))
+            }
             None => String::new(),
         };
         // Representative-span filters, applied after the per-trace pick.

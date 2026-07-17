@@ -86,10 +86,9 @@ fn log_filter_clauses_use_matches_term_and_service_coalesce() {
 
 #[test]
 fn golden_traces_search_sql_includes_adversarial_service() {
-    let participation = format!(
-        r#" AND "trace_id" IN (SELECT "trace_id" FROM opentelemetry_traces WHERE "service_name" = '{}')"#,
-        escape("svc'quote")
-    );
+    // Participation is a materialized literal id list (semi-joins and
+    // subquery-to-subquery joins both mis-execute on the live engine).
+    let participation = format!(r#" AND "trace_id" IN ('{}')"#, escape("id'quote"));
     let (listed, page) = GreptimeStore::traces_search_sql(
         r#""timestamp" >= 1"#,
         &participation,
@@ -98,13 +97,14 @@ fn golden_traces_search_sql_includes_adversarial_service() {
         50,
         0,
     );
-    assert!(listed.contains("svc''quote"));
-    assert!(
-        listed.contains("WHERE {scan_where}")
-            || listed.contains(r#""timestamp" >= 1"#)
-            || listed.contains("WHERE ")
-    );
-    // windowed agg subquery + single-pass total (plan 075)
+    assert!(listed.contains("id''quote"));
+    assert!(listed.contains(r#""timestamp" >= 1"#));
+    // Single scan: per-trace stats are window aggregates, never a join —
+    // the live engine collapses subquery-to-subquery joins on "trace_id".
+    assert!(!listed.contains("JOIN"));
+    assert!(listed.contains(r#"COUNT(*) OVER (PARTITION BY "trace_id")"#));
+    assert!(listed.contains(r#"OVER (PARTITION BY "trace_id") AS "has_error""#));
+    // windowed single-pass total (plan 075)
     assert!(page.contains("COUNT(*) OVER ()"));
     assert!(page.contains("LIMIT 50 OFFSET 0"));
     assert!(page.contains(&listed));
