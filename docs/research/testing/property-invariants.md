@@ -67,3 +67,25 @@ ingest hot path. First observation, 2026-07-17, Apple Silicon dev host:
 
 Run: `cd bench-alloc && cargo run --release`. The scheduled-measurement
 workflow records it nightly beside the criterion samples.
+
+## Advanced-tool evaluation (plan 103, Step 6 — 2026-07-17)
+
+Per the plan's adoption bar (named uncovered defect class, owner, cost
+baseline, decision threshold, removal policy), none of the candidate tools
+is adopted now:
+
+- **Miri**: the workspace forbids unsafe code in product crates; the only
+  unsafe lives in the excluded bench-alloc counting allocator, which
+  delegates verbatim to the system allocator. No uncovered defect class.
+- **Mutation testing (cargo-mutants)**: the ratchet/policy machinery already
+  fails on assertion-count drops, and runtime cost on this workspace is
+  hours per run; revisit if a real escaped-mutant incident names a class.
+- **Dylint**: no repository-specific lint need that oxc/clippy strict plus
+  the xtask policy families do not already express.
+- **Hakari**: workspace-hack optimizes build times, not correctness; CI
+  caching (sccache, per-job target caches) already owns that concern.
+- **Chaos / self-hosted runners**: no measured flakiness or runner-capacity
+  signal; the live-engine lanes are deterministic and green.
+
+Removal rule for this record: revisit whenever one of the above gains a
+named defect class with evidence; otherwise it stands.

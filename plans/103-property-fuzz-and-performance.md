@@ -144,8 +144,13 @@ spike produces useful stable signal.
 - [ ] Ratchets use measured variance and fail without auto-refreshing
   baselines. (Waits on accumulated scheduled-measurement samples — per this
   plan, thresholds must not be chosen before variance is modeled.)
-- [ ] Deferred hot-path candidates are optimized only when evidence warrants it.
-- [ ] Every adopted advanced tool has an owner, threshold, cost, and removal rule.
+- [x] (standing rule) Hot-path candidates (Greptime row clones, `SELECT *`,
+  fingerprint normalizer, per-point attribute JSON in normalize) are
+  characterized in the invariant doc and stay unoptimized until scheduled
+  measurements justify a change.
+- [x] (2026-07-17) Step-6 evaluation recorded in the invariant doc: no
+  advanced tool meets the adoption bar today; none adopted, revisit rule
+  stated.
 
 ## STOP Conditions
 
