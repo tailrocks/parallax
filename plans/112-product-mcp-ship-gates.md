@@ -34,6 +34,8 @@ must not return in product output.
   canonical object remains in `structuredContent`.
 - Tests assert tools are advertised while roots, sampling, elicitation,
   prompts, resources, tasks, and other unapproved capabilities remain absent.
+- Discovery tests lock the exact two-tool preliminary catalog and require
+  closed input schemas with one mandatory anchor each.
 - GraphQL anchors use variables rather than copied partial string escaping,
   removing the control-character/injection class at this adapter boundary.
 - Bundle calls explicitly request a 4,000-token canonical budget rather than

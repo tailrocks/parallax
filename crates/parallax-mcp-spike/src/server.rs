@@ -21,14 +21,16 @@ fn evidence_bundle_output_schema() -> Arc<JsonObject> {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct IssueContextArgs {
     /// Issue fingerprint (canonical issue anchor).
     pub fingerprint: String,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct AgentSessionArgs {
-    /// Run id whose agent-session projection to show.
+    /// Invocation id whose agent-session projection to show.
     pub invocation_id: String,
 }
 
@@ -70,7 +72,7 @@ impl SpikeServer {
 
     #[tool(
         name = "parallax_agent_session_show",
-        description = "Sanitized agent-session timeline for a run id (tool steps, token totals). Null/error when no agent spans were detected."
+        description = "Sanitized agent-session timeline for an invocation id (tool steps, token totals). Null/error when no agent spans were detected."
     )]
     async fn parallax_agent_session_show(
         &self,
@@ -142,6 +144,38 @@ mod tests {
                 capabilities.get(denied),
                 None,
                 "{denied} must stay disabled"
+            );
+        }
+    }
+
+    #[test]
+    fn tool_catalog_is_exact_and_inputs_are_closed() {
+        let server = SpikeServer::new("http://127.0.0.1:4000".to_string());
+        let tools = server.tool_router.list_all();
+        let names = tools
+            .iter()
+            .map(|tool| tool.name.as_ref())
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            names,
+            ["parallax_agent_session_show", "parallax_issue_context"]
+        );
+        for tool in tools {
+            assert_eq!(
+                tool.input_schema.get("additionalProperties"),
+                Some(&Value::Bool(false)),
+                "{} input must reject unknown fields",
+                tool.name
+            );
+            assert_eq!(
+                tool.input_schema
+                    .get("required")
+                    .and_then(Value::as_array)
+                    .map(Vec::len),
+                Some(1),
+                "{} input must require its anchor",
+                tool.name
             );
         }
     }
