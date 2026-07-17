@@ -62,6 +62,8 @@ must not return in product output.
   rewritten.
 - Checker status and subprocess errors no longer render issue fingerprints,
   invocation IDs, or the argument vector containing them.
+- Failed equivalence cases suppress raw GraphQL/parser error chains, which may
+  contain seeded or upstream-reflected evidence.
 - Bundle output fails closed unless the separately projected GraphQL canonical
   hash exactly matches the hash embedded in the bundle-v2 object.
 - All GraphQL responses stream through a hard 1 MiB ceiling before JSON parse;

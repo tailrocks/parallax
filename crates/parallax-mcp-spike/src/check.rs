@@ -44,10 +44,10 @@ pub(crate) async fn run(args: CheckArgs) -> anyhow::Result<()> {
     for case in &cases {
         match check_one(&client, &args, case).await {
             Ok(()) => println!("equivalence: OK  ({})", case.label),
-            Err(e) => {
+            Err(_) => {
                 failed += 1;
                 println!("equivalence: FAIL ({})", case.label);
-                println!("{e:#}");
+                println!("details omitted because upstream errors may contain sensitive evidence");
             }
         }
     }
