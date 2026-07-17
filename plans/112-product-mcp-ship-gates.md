@@ -51,6 +51,8 @@ must not return in product output.
 - Malformed bundle contracts and upstream failures return stable secret-free
   MCP errors; the adapter no longer silently substitutes an empty object or
   forwards raw upstream error strings.
+- Bundle output fails closed unless the separately projected GraphQL canonical
+  hash exactly matches the hash embedded in the bundle-v2 object.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded

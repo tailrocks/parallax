@@ -106,6 +106,10 @@ fn bundle_tool_result(bundle: gql::BundleProjection) -> Result<CallToolResult, M
     if parsed.get("schema_version").and_then(Value::as_str) != Some("bundle-v2") {
         return Err(safe_internal_error("bundle_contract_mismatch"));
     }
+    let embedded_hash = parsed.get("canonical_hash").and_then(Value::as_str);
+    if embedded_hash.is_none() || embedded_hash != Some(bundle.canonical_hash.as_str()) {
+        return Err(safe_internal_error("bundle_hash_mismatch"));
+    }
     let mut result = CallToolResult::structured(parsed);
     result.content = vec![ContentBlock::text(bundle.markdown)];
     Ok(result)
@@ -194,7 +198,8 @@ mod tests {
     #[test]
     fn bundle_result_has_no_comparison_only_raw_metadata() {
         let result = bundle_tool_result(gql::BundleProjection {
-            json: r#"{"schema_version":"bundle-v2"}"#.to_string(),
+            json: r#"{"schema_version":"bundle-v2","canonical_hash":"sha256-jcs:test"}"#
+                .to_string(),
             markdown: "# Evidence".to_string(),
             canonical_hash: "sha256-jcs:test".to_string(),
         })
@@ -204,7 +209,10 @@ mod tests {
         assert_eq!(encoded.get("_meta"), None);
         assert_eq!(
             encoded.get("structuredContent"),
-            Some(&json!({"schema_version": "bundle-v2"}))
+            Some(&json!({
+                "schema_version": "bundle-v2",
+                "canonical_hash": "sha256-jcs:test"
+            }))
         );
     }
 
@@ -223,6 +231,22 @@ mod tests {
             assert!(!encoded.contains("seeded-secret"));
             assert!(encoded.contains("Parallax could not produce a safe MCP result"));
         }
+    }
+
+    #[test]
+    fn bundle_hash_mismatch_fails_closed() {
+        let error = bundle_tool_result(gql::BundleProjection {
+            json: r#"{"schema_version":"bundle-v2","canonical_hash":"sha256-jcs:embedded"}"#
+                .to_string(),
+            markdown: "# Evidence".to_string(),
+            canonical_hash: "sha256-jcs:projected".to_string(),
+        })
+        .expect_err("mismatched projection must fail");
+        let encoded = serde_json::to_string(&error).expect("serialize MCP error");
+
+        assert!(encoded.contains("bundle_hash_mismatch"));
+        assert!(!encoded.contains("embedded"));
+        assert!(!encoded.contains("projected"));
     }
 
     #[test]
