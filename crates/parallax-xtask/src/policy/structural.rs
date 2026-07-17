@@ -72,9 +72,10 @@ pub(super) fn health(root: &Path) -> Result<Vec<Finding>> {
         for entry in fs::read_dir(&directory)? {
             let path = entry?.path();
             if path.is_dir() {
+                // Skip cache/deps, gitignored vendor trees, and nested agent worktrees.
                 if !matches!(
                     path.file_name().and_then(|name| name.to_str()),
-                    Some(".git" | "node_modules" | "target")
+                    Some(".git" | "node_modules" | "target" | "vendor" | ".claude")
                 ) {
                     stack.push(path);
                 }

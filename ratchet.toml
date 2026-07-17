@@ -7699,7 +7699,3 @@ scope = "crates/parallax-analysis/src/test_adapter_export.rs"
 ceiling = 1
 
 
-[[limits]]
-metric = "agent-doc-bytes"
-scope = "bench/otlp-fanout/vendor/signoz/frontend/AGENTS.md"
-ceiling = 4495
