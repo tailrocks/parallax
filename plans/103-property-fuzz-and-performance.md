@@ -116,7 +116,12 @@ spike produces useful stable signal.
 
 ## Done Criteria
 
-- [ ] Named invariants have bounded property/golden coverage and regressions.
+- [x] (first slice, 2026-07-17) Rust invariants named and covered: counter
+  reset clamping, histogram avg shape, canonical metric identity, JSON
+  attribute path shape, where-clause literal balance — see
+  docs/research/testing/property-invariants.md. Remaining Rust invariants
+  (normalization determinism, redaction idempotence, bundle hash stability,
+  trace trees, serialization, retry no-replay) still open.
 - [ ] UI search, runtime decoder, Query identity, live ordering, and state
   invariants have bounded generated coverage.
 - [ ] Four initial fuzz boundaries have maintained minimized corpora.
