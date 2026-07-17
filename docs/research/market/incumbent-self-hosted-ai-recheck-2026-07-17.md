@@ -160,6 +160,14 @@ auto-merge commodity.
 
 **UNFIRED:** Seer self-host GA; Bits auto-merge.
 
+### Pass 327 (2026-07-18) — Sentry OTLP metrics kill
+
+| Source | Finding |
+| --- | --- |
+| docs.sentry.io/concepts/otlp | still **"does not support OTLP metrics at this time"** — **UNFIRED** |
+
+
+
 
 
 

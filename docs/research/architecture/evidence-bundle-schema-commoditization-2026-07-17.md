@@ -116,6 +116,9 @@ OCSF GA still **`1.8.0`**; `/1.9.0/` still **404**. **Still not commoditized.**
 
 **Pass 323 primary re-fetch (2026-07-18):** #1185 still **open/idle** (`updated_at` **2025-10-24**). **Still not commoditized.**
 
+**Pass 327 primary re-fetch (2026-07-18):** #1185 still **open/idle** (2025-10-24); OCSF still **1.8.0**. **Still not commoditized.**
+
+
 
 
 **Evidence class:** primary GitHub issue/tree + first-party release pages +

@@ -291,6 +291,9 @@ Full combination **still not closed**.
 
 
 
+
+**Pass 327 recheck (2026-07-18):** Traceway **1,024★**; TMA1 **alpha12** → **32nd UNFIRED**; combo **not closed**.
+
 **Pass 258 recheck (2026-07-18):** **Maple + Uptrace** —
 
 | Product | Pin | Watch |
