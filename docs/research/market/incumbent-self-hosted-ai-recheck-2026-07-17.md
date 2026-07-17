@@ -283,6 +283,11 @@ docs and release notes.
 
 **UNFIRED:** offline Assistant; Sentry OTLP metrics GA.
 
+### Pass 351 (2026-07-18) — Seer
+
+Seer still **closed source** on self-hosted. **UNFIRED.**
+
+
 
 ### Pass 348 (2026-07-18) — Bits
 
