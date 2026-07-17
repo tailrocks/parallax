@@ -11,8 +11,10 @@ permissions:
   contents: read
 
 concurrency:
+  # Keep one publish in flight. Do not cancel real multi-target builds when
+  # thrashing main CI completions enqueue skipped workflow_run previews.
   group: homebrew-parallax-publish
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   source-changed:
