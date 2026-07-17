@@ -7989,3 +7989,9 @@ Matches stable after harness fix.
 `POST /v1/otlp/v1/logs` with empty JSON body → **HTTP 400** (rejects bad payload;
 endpoint live). Native OTLP path present (protobuf body required for success —
 Run 181).
+
+### Run 288 — 2026-07-17 — Flow durability across uptime
+
+After ~30+ min container uptime, `SHOW FLOWS` still lists `r228_flow` /
+`r228_flow2`; `flow_sink` count remains **3**. Flow definitions persist in
+standalone process.
