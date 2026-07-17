@@ -103,16 +103,16 @@ run-anchored evidence bundles), plus jackin' as a second real CLI emitter.
 
 ## Tracking (update this table as threads move)
 
-| Thread | Why it matters | State (**2026-07-17 pass 53 + 92 + 127**) | Our move |
+| Thread | Why it matters | State (**2026-07-18 pass 163**; prior 53/92/127) | Our move |
 | --- | --- | --- | --- |
-| ~~`open-telemetry/semantic-conventions#2883`~~ | Historical citation for "generalize session.id" | **Pass 127:** GitHub **redirects** this number to **genai#51** (API `html_url` = semantic-conventions-genai/issues/51). Not a CLI-invocation issue. Do not cite as a separate live thread. | Drop; use GenAI issue below |
-| [semantic-conventions-genai#51 — Add session.id to GenAI conventions](https://github.com/open-telemetry/semantic-conventions-genai/issues/51) | Live GenAI `session.id` reuse push (multi-step/multi-agent workflows) | **Still open** (pass 127: `updated_at` still **2026-05-05**). GenAI-scoped, **not** CLI-invocation. | Comment only if framing expands beyond GenAI |
-| [CLI semconv](https://opentelemetry.io/docs/specs/semconv/cli/cli-spans/) ([model/cli/spans.yaml](https://github.com/open-telemetry/semantic-conventions/blob/main/model/cli/spans.yaml)) | Where a CLI invocation correlation id would land | **Pass 127:** `model/cli/` still only **`spans.yaml`**; attrs still **process.\*** only (`executable.name/path`, `pid`, `exit.code`, `command_args`) — **no** `cli.invocation.id` / cross-trace correlation attribute | **Primary move:** open dedicated semconv issue citing Parallax/`jackin` shipping reference |
+| ~~`open-telemetry/semantic-conventions#2883`~~ | Historical citation for "generalize session.id" | **Pass 127:** GitHub **redirects** this number to **genai#51**. Not a CLI-invocation issue. Do not cite as a separate live thread. | Drop; use GenAI issue below |
+| [semantic-conventions-genai#51 — Add session.id to GenAI conventions](https://github.com/open-telemetry/semantic-conventions-genai/issues/51) | Live GenAI `session.id` reuse push (multi-step/multi-agent workflows) | **Still open** (pass 163: `updated_at` still **2026-05-05**; label `enhancement`). GenAI-scoped, **not** CLI-invocation. | Comment only if framing expands beyond GenAI |
+| [CLI semconv](https://opentelemetry.io/docs/specs/semconv/cli/cli-spans/) ([model/cli/spans.yaml](https://github.com/open-telemetry/semantic-conventions/blob/main/model/cli/spans.yaml)) | Where a CLI invocation correlation id would land | **Pass 163:** `model/cli/` still only **`spans.yaml`**; code search `cli.invocation` in semconv repo **total_count 0** — **no** OTel `cli.invocation.id` | **Primary move:** open dedicated semconv issue citing Parallax/`jackin` shipping reference |
 | [CICD conventions](https://opentelemetry.io/docs/specs/semconv/resource/cicd/) | Owns `*.run.id` naming | `cicd.pipeline.run.id` still Development (not re-diffed this pass) | Watch; naming precedent only — do not alias pipeline run to CLI invocation |
 | [Session conventions / registry](https://opentelemetry.io/docs/specs/semconv/general/session/) | Scope of `session.id` | Still **development** / client application + end user wording (not re-diffed body this pass) | Scope broadening = adopt-as-alias trigger; **not fired** |
 
-**Pass-53 + pass-92 + pass-127 verdict:** still **no OTel standard** for a CLI
-invocation correlation id. GenAI#51 idle since 2026-05. CLI model still process
+**Pass-53 + pass-92 + pass-127 + pass-163 verdict:** still **no OTel standard** for a
+CLI invocation correlation id. GenAI#51 idle since 2026-05. CLI model still process
 attrs only. Parallax's `cli.invocation.id` remains a justified generic-CLI
 choice, not a standard. Upstream engagement order unchanged: (1) **dedicated
 CLI semconv issue**, (2) optional GenAI#51 comment, (3) PR if SIG interest.
@@ -126,6 +126,7 @@ CLI semconv issue**, (2) optional GenAI#51 comment, (3) PR if SIG interest.
 | 2026-07-17 pass 53 | Re-fetch #2883 + CLI docs + session registry | **#2883 link broken**; GenAI work lives at **genai#51**; CLI still lacks invocation id; session still client-scoped |
 | 2026-07-17 pass 92 | Re-fetch genai#51 + CLI spans + session registry | genai#51 **still open**, last activity **2026-05-05**; CLI/session **no drift** |
 | 2026-07-17 pass 127 | API re-fetch genai#51 + #2883 + model/cli | genai#51 **still open/idle** (2026-05-05); #2883 **redirects to genai#51**; CLI spans.yaml **unchanged** (no invocation id) |
+| 2026-07-18 pass 163 | API re-fetch genai#51 + model/cli listing + code search | genai#51 **still open/idle** (`updated_at` 2026-05-05); `model/cli/` = `spans.yaml` only; `cli.invocation` search **0 hits**; product still ships `CLI_INVOCATION_ID = "cli.invocation.id"` |
 
 ## Current implementation state (Parallax, 2026-07-17; re-verified in source)
 
