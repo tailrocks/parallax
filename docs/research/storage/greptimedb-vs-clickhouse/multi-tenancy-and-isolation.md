@@ -159,3 +159,7 @@ multi-tenant Parallax"; it is "GreptimeDB cannot be the user-facing authorizatio
 Flip trigger: if Parallax needs direct customer SQL/BI access to the telemetry store early, or if proxy
 authorization is deliberately minimized, ClickHouse becomes the safer default because its engine can
 enforce row/column grants and quotas without waiting for Enterprise GreptimeDB or a custom provider.
+
+## Run 262 re-verify (2026-07-17)
+
+`CREATE QUOTA` still works on CH 26.6; GT still rejects the keyword (Code 1001). No drift from Run 179.
