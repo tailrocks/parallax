@@ -25,7 +25,7 @@ Legend for the **State** column:
 | **Sentry** | Error tracking + tracing + logs + metrics + profiling + replay + Seer AI; OTLP traces+logs (no OTLP metrics); best-in-class issue lifecycle. | Source-available FSL (→Apache/MIT @2yr). | Errors + perf + replay. | [deep-dive](parallax-vs-sentry.md) |
 | **Grafana Cloud / LGTM** | Managed stack on Prometheus/Mimir, Loki, Tempo, Pyroscope, Grafana; OTLP-native. | Mixed OSS + Cloud SaaS (Grafana Labs). | Metrics + logs + traces + profiles. | [deep-dive](parallax-vs-grafana.md) |
 | **Honeycomb** | High-cardinality event-pipeline observability; exploratory query; Query Assistant/Canvas AI + MCP. | Closed SaaS (Refinery OSS). | Events / traces (high cardinality). | [deep-dive](parallax-vs-honeycomb.md) |
-| **New Relic** | Full-platform SaaS; entity-centric; AI (NRAI). | Closed SaaS. | All signals. | stub |
+| **New Relic** | Full-platform SaaS; entity-centric; AI (NRAI + **AI Coding Obs** for Claude Code/Cursor/Copilot/Windsurf/Q); OTLP-native. | Closed SaaS (no self-host). | All signals. | [deep-dive](parallax-vs-new-relic.md) |
 | **Dynatrace** | AI-driven (Davis) full-stack; deep auto-instrumentation via OneAgent. | Closed SaaS. | All signals + topology. | stub |
 | **Splunk Observability Cloud** | Observability on top of Splunk (post-Cisco); OTel-native metrics/traces + logs. | Closed SaaS. | Logs + metrics + traces. | stub |
 | **Elastic Observability** | ES/Kibana stack (search + observability + security); ES|QL. | Elastic License v2 (source-available). | Logs + metrics + traces + security. | stub |

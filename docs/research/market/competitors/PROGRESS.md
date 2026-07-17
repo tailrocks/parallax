@@ -23,6 +23,7 @@
 | 5 | 2026-07-17 | **Grafana Cloud/LGTM** deep-dive ([parallax-vs-grafana.md](parallax-vs-grafana.md)): largest OSS-origin full-stack competitor. Cloud pricing verified (Free / Pro $195/mo; metrics ~$6.50/1k series, logs/traces/profiles ~$0.45-0.50/GB; app-obs $0.04/host-hour); Tempo v3 cut from in-repo reference note. No-bias: Grafana wins decisively on breadth/dashboards(OSS standard)/OTLP-native-at-parity/ecosystem/scale/compliance; Parallax edges scoped to self-host simplicity (vs distributed Mimir+Loki+Tempo+Pyroscope), Apache vs AGPLv3, native error-workflow (Grafana has none), bundle thesis (unproven A1). | _pending_ |
 | 6 | 2026-07-17 | **Honeycomb** deep-dive ([parallax-vs-honeycomb.md](parallax-vs-honeycomb.md)): defining high-cardinality wide-event platform. Pricing verified (Free 20M events/mo; Pro from $150/50M events; Enterprise custom; cardinality NOT priced separately). AI: stale "Bubbleuppy" codename corrected → **Query Assistant (NLQ) + Canvas + MCP**. No-bias: Honeycomb wins decisively on high-cardinality interactive exploration/event-model-maturity/NLQ-Canvas-MCP/SaaS-scale; Parallax edges scoped to self-host (Honeycomb store is SaaS-only), Apache vs closed, native error-workflow (Honeycomb has none), bundle thesis (unproven A1). High-cardinality query is the riskiest regime for GreptimeDB — benchmark-flagged. | _pending_ |
 | 7 | 2026-07-17 | **Arize Phoenix** deep-dive ([parallax-vs-arize-phoenix.md](parallax-vs-arize-phoenix.md)): completes the AI-obs trio (Langfuse/LangSmith/Phoenix). Latest pinned **arize-phoenix-v18.1.0** (2026-07-17). **License corrected: ELv2, not Apache** (self-host free/unlimited, not OSI-open, managed-service restriction — less permissive than Langfuse MIT / Parallax Apache-2.0). OTLP-native + OpenInference (Arize drives the AI-span semantic standard) confirmed. Pricing (self-host free; Cloud Free/Core $29/Pro $199; AX from $50/mo). No-bias: Phoenix wins on LLM-tracing/evals/OpenInference/self-host-free; Parallax edges (prod telemetry breadth, error+outcome loop, bounded bundle) all unproven (A1). Open: self-host backing store. | _pending_ |
+| 8 | 2026-07-17 | **New Relic** deep-dive ([parallax-vs-new-relic.md](parallax-vs-new-relic.md)): last big closed-source incumbent without a deep-dive. Pricing verified (100GB free + **$0.40/GB Original / $0.60 Data Plus**, $49/user). **OTLP-native ingest GA since 2021** (traces; metrics+logs after). **AI is the headline: AI Agent Platform (Feb 2026) + AI Coding Observability (June 2026: Claude Code/Cursor/Copilot/Windsurf/Amazon Q) + AIM + MCP** — shipped, direct overlap w/ Parallax's agent wedge, New Relic ahead today. No-bias: New Relic wins on breadth/entity-model/OTLP-maturity/AI/scale/compliance; Parallax edges scoped to self-host/data-ownership (New Relic SaaS-only), Apache vs closed, bundle+outcome thesis (unproven A1). | _pending_ |
 
 ## Deep-dive status (per product)
 
@@ -32,7 +33,7 @@
 | Sentry | [parallax-vs-sentry.md](parallax-vs-sentry.md) | ✅ pass 3 | 2026-07-17 | track OTLP-metrics GA; A1-vs-Seer measurement; self-host cost/ops benchmark |
 | Grafana Cloud/LGTM | [parallax-vs-grafana.md](parallax-vs-grafana.md) | ✅ pass 5 | 2026-07-17 | **versions pinned pass 5b**: Grafana v13.1.0 / Mimir mimir-3.1.3 / Loki v3.7.3 / Tempo v2.10.7 / Pyroscope v2.1.1; corrected "Grafana 12.x"→13.1.0 + "Tempo v3 GA"→v3-not-yet-GA; open: A1-vs-Grafana measurement; self-host cost/ops benchmark |
 | Honeycomb | [parallax-vs-honeycomb.md](parallax-vs-honeycomb.md) | ✅ pass 6 | 2026-07-17 | Pro exact unit ($150/50M vs $130/100M); A1-vs-Honeycomb measurement; high-cardinality query parity benchmark (riskiest regime for GreptimeDB) |
-| New Relic | — | 🔴 missing | n/a | write deep-dive; entity model + NRAI + pricing |
+| New Relic | [parallax-vs-new-relic.md](parallax-vs-new-relic.md) | ✅ pass 8 | 2026-07-17 | pricing verified (100GB free + $0.40/GB Original / $0.60 Data Plus, ~$49/user); OTLP-native GA since 2021; **AI Coding Obs (June 2026: Claude Code/Cursor/Copilot/Windsurf/Q) = direct overlap w/ Parallax agent wedge — New Relic ahead**; open: NRAI-vs-bundle A1 measurement; self-host never (SaaS-only) |
 | SigNoz | [parallax-vs-signoz.md](parallax-vs-signoz.md) | ✅ pass 2 | 2026-07-17 | outstanding: exact current star count + MCP server version (v0.5.1 last confirmed 2026-06-17); current trace/metric throughput (no public number) |
 | OpenObserve | — | 🟡 inherited | 2026-06 (legacy) | write `parallax-vs-openobserve.md`; AI/MCP gating + free-tier |
 | Coroot | — | 🟡 inherited | 2026-06 (legacy) | write `parallax-vs-coroot.md`; eBPF partial-span limit + MCP RBAC |
@@ -64,12 +65,11 @@ are 🟡 inherited** (sources dated 2026-05/06). Priority for re-verification:
 
 ## Next highest-value gaps (ranked)
 
-1. **New Relic deep-dive** — full-platform incumbent; entity model + NRAI + pricing.
-2. **OpenObserve deep-dive** — nearest Rust single-binary OSS platform; AI/MCP gating + free-tier (legacy note aging).
-3. **LangSmith deep-dive** — AI-wedge trio completion (Langfuse + Phoenix done); closed LLM tracing/eval.
-4. **Phoenix drift watch** — pin self-host backing store; A1-vs-Phoenix measurement; watch triggers in [parallax-vs-arize-phoenix.md](parallax-vs-arize-phoenix.md).
+1. **OpenObserve deep-dive** — nearest Rust single-binary OSS platform; AI/MCP gating + free-tier (legacy note aging).
+2. **LangSmith deep-dive** — AI-wedge trio completion (Langfuse + Phoenix done); closed LLM tracing/eval.
+3. **Coroot deep-dive** — nearest eBPF/RCA OSS; best MCP RBAC safety model (legacy note aging).
 4. **SigNoz cell re-verification** — exact current star count + MCP server version (v0.5.1 last confirmed 2026-06-17); trace/metric throughput (no current public number). Watch triggers in [parallax-vs-signoz.md](parallax-vs-signoz.md).
-5. **Sentry drift watch** — OTLP-metrics GA (absent today); A1-vs-Seer measurement; self-host cost/ops benchmark vs Parallax single binary.
+5. **Drift watch (Phoenix/Honeycomb/Sentry)** — Phoenix self-host backing store pin; Honeycomb Pro exact unit ($150/50M vs $130/100M); Sentry OTLP-metrics GA + A1-vs-Seer.
 
 ## Bias audit (this pass)
 
