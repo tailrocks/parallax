@@ -2,7 +2,9 @@
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 50**
 > first deep-dive; **pass 54** cloud pricing; **pass 84** commercial + AI-row
-> recheck). Sources: [github.com/tracewayapp/traceway](https://github.com/tracewayapp/traceway)
+> recheck; **pass 122** pin + cloud + wedge re-fetch — still **1,024★**,
+> **v1.9.1**, combination **not closed**). Sources:
+> [github.com/tracewayapp/traceway](https://github.com/tracewayapp/traceway)
 > (README + releases API), [tracewayapp.com/cloud](https://tracewayapp.com/cloud),
 > [docs.tracewayapp.com](https://docs.tracewayapp.com), concurrent
 > [wedge-closer recheck](../wedge-closer-lightweight-recheck-2026-07-17.md).
@@ -47,16 +49,18 @@
 context. Traceway is a **broader productized APM** (replay, endpoints, skills
 marketplace-style install). Parallax is a **narrower evidence/bundle engine**.
 
-## Current pin (2026-07-17)
+## Current pin (2026-07-17; pass 122 re-fetch)
 
 | Field | Value | Source |
 | --- | --- | --- |
-| Stars | **1,024** | GitHub API |
-| Backend / CLI | **v1.9.1** | releases 2026-07-15 |
+| Stars | **1,024** | GitHub API (pass 122) |
+| Backend / CLI | **v1.9.1** (still latest; no newer tag after 2026-07-15) | releases API |
+| Last push | **2026-07-17** | GitHub `pushed_at` |
 | License | **MIT** | GitHub SPDX + README |
 | Language | Go (+ SvelteKit UI) | GitHub |
 | Telemetry store | ClickHouse (standalone); SQLite or DuckDB (embedded) | README tech stack |
 | Relational | PostgreSQL (standalone); SQLite (embedded) | README |
+| Cloud pricing | Free / **$12.99** / **$24.99** / **$499.99** + **$0.25–$0.20/GB** overage | [cloud page](https://tracewayapp.com/cloud) pass 122 |
 | Homepage | [tracewayapp.com](https://tracewayapp.com) | repo |
 
 ## Signal coverage

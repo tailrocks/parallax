@@ -28,6 +28,17 @@ shipped MCP). Parallax's remaining exclusive cells among this cohort remain
 **portable redacted bundle + fix-outcome loop** (code-shipped / offline residual;
 **value unproven A1**).
 
+**Pass 122 recheck (2026-07-17):** Traceway GitHub API + README +
+[tracewayapp.com/cloud](https://tracewayapp.com/cloud) primary re-fetch —
+**still not closed**. Pins **unchanged**: **1,024★**, latest
+**`backend/v1.9.1` + `cli/v1.9.1`** (2026-07-15), last push **2026-07-17**,
+**MIT**. Cloud still public Free / **$12.99** / **$24.99** / **$499.99** +
+overage **$0.25–$0.20/GB**; FAQ still claims **100% OSS, no feature gating**.
+README still **no Sentry envelope**, **no versioned portable redacted evidence
+bundle schema**, **no fix-outcome loop**. Agent path still skills + CLI + MCP.
+Cohort table Traceway row below still valid; other cohort stars not re-polled
+this pass (Traceway-focused).
+
 **Evidence class:** primary GitHub API + README/release tags (2026-07-17). Not
 a live deploy test of each product.
 
