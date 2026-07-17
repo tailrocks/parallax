@@ -333,6 +333,10 @@ Grafana Cloud Pro **$19** class still present.
 
 SigNoz Teams **$49** and OpenObserve **$0.50/GB** still present. Triangle holds with Grafana $19 (pass 355).
 
+### Pass 359 (2026-07-18) — Grafana $19 pin
+
+Grafana Cloud Pro **$19** class still present. Triangle desk playbook **holds**.
+
 ### Pass 131 (2026-07-17) — Datadog Bits / AI Credits pricing (fixer reference)
 
 Live primary: [datadoghq.com/pricing/?product=ai-credits](https://www.datadoghq.com/pricing/?product=ai-credits#products)
