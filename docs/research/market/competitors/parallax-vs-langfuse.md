@@ -1,7 +1,11 @@
 # Parallax vs Langfuse
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17**.
-> Sources: [Langfuse docs](https://langfuse.com/docs) + [observability overview](https://langfuse.com/docs/observability/overview), [Langfuse OTLP/OTel integration](https://langfuse.com/integrations/native/opentelemetry), [Langfuse pricing](https://langfuse.com/pricing) + [self-host pricing](https://langfuse.com/pricing-self-host), and 2026 third-party comparisons.
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 107**
+> pin + self-host telemetry recheck). Sources: [Langfuse docs](https://langfuse.com/docs)
+> + [observability overview](https://langfuse.com/docs/observability/overview),
+> [Langfuse OTLP/OTel integration](https://langfuse.com/integrations/native/opentelemetry),
+> [Langfuse pricing](https://langfuse.com/pricing) + [self-host pricing](https://langfuse.com/pricing-self-host),
+> GitHub **v3.221.1** (2026-07-17) / **31,340★**.
 >
 > **Bottom line up front:** Langfuse is the archetypal **open-source LLM/agent
 > observability platform** and the most direct AI-wedge competitor to Parallax's
@@ -17,7 +21,18 @@
 
 ## What each product is
 
-- **Langfuse** — open-source (**MIT core**) LLM engineering platform: tracing (LLM + non-LLM spans, hierarchical, multi-turn), evaluation scores (human + automated/model-based), prompt management (versioned, linked to traces), datasets, experiments, analytics (latency / cost / token usage), and a prompt playground. Open-core: MIT self-host (free, all core features, unlimited scale) + Langfuse Cloud + a self-host Enterprise license (RBAC/SCIM). Large OSS community (~28k+ GitHub stars per legacy note; verify exact current count). **Latest release: v3.221.1 (2026-07-17, [github.com/langfuse/langfuse/releases](https://github.com/langfuse/langfuse/releases)); ~31.3k★; extremely fast cadence.** v3.x = the post-rewrite, self-hostable line; **on 2025-06-04 Langfuse open-sourced all remaining product features under MIT** ([changelog](https://langfuse.com/changelog/2025-06-04-open-sourcing-langfuse)), so self-host ≥3.65 has no feature gating on core.
+- **Langfuse** — open-source (**MIT core**; `ee/` folders excepted per LICENSE)
+  LLM engineering platform: tracing (LLM + non-LLM spans, hierarchical, multi-turn),
+  evaluation scores (human + automated/model-based), prompt management (versioned,
+  linked to traces), datasets, experiments, analytics (latency / cost / token usage),
+  and a prompt playground. Open-core: MIT self-host (free core) + Langfuse Cloud +
+  self-host Enterprise (RBAC/SCIM). **Latest: v3.221.1 (2026-07-17); 31,340★;
+  extremely fast cadence (pass 107).** v3.x self-hostable; **2025-06-04** open-sourced
+  remaining product features under MIT ([changelog](https://langfuse.com/changelog/2025-06-04-open-sourcing-langfuse)).
+  **Pass 107 air-gap nuance:** README states self-hosted instances **default to
+  reporting basic usage stats to a centralized PostHog** (not raw traces/prompts);
+  opt-out via [telemetry docs](https://langfuse.com/self-hosting/security/telemetry).
+  Do **not** claim Langfuse CE is phone-home-free without that opt-out.
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable **execution-context engine**: OTLP-native ingest of traces/logs/metrics + CLI/coding-agent execution traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, serves **bounded, redacted, schema-valid evidence bundles** to humans and coding agents. GreptimeDB + Turso. **Pre-release.**
 
 These overlap on **agent/LLM tracing and "context for agents,"** but were built for different primary jobs. Compare axis-by-axis.
