@@ -507,6 +507,15 @@ async fn test_reporting_schema_has_reference_and_mutable_state_tables() {
         let row = rows.next().await.expect("read count").expect("count row");
         assert_eq!(integer(&row, 0), 1, "missing {table}");
     }
+    let mut rows = conn
+        .query(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = ?1",
+            ("test_results_flaky_scan",),
+        )
+        .await
+        .expect("query flaky index");
+    let row = rows.next().await.expect("read count").expect("count row");
+    assert_eq!(integer(&row, 0), 1, "missing flaky scan index");
 }
 
 async fn seed_test_reporting(store: &dyn parallax_storage::metadata::MetadataStore) {
@@ -743,6 +752,117 @@ async fn test_case_variants_and_variant_history_are_bounded_and_isolated() {
     assert_eq!(invalid.kind(), MetadataErrorKind::InvalidInput);
 }
 
+fn flaky_result(
+    variant_key: parallax_model::TestVariantKey,
+    invocation_id: &str,
+    attempt: u32,
+    status: parallax_model::TestStatus,
+    ended_at_nanos: u128,
+) -> parallax_model::TestResultRecord {
+    use parallax_model::{TestAttempt, TestConfiguration, TestResultKey, TraceId};
+    use std::str::FromStr;
+
+    parallax_model::TestResultRecord {
+        key: TestResultKey {
+            variant_key,
+            invocation_id: invocation_id.into(),
+            attempt: TestAttempt::new(attempt).expect("attempt"),
+        },
+        status,
+        trace_id: TraceId::from_str("efefefefefefefefefefefefefefefef").expect("trace"),
+        span_id: "abababababababab".into(),
+        started_at_nanos: ended_at_nanos.saturating_sub(1_000_000),
+        ended_at_nanos,
+        service: "checkout".into(),
+        service_version: None,
+        vcs_head_revision: Some("deadbeef".into()),
+        configuration: TestConfiguration::default(),
+        failure_fingerprint: None,
+    }
+}
+
+#[tokio::test]
+async fn flaky_candidate_cursor_and_result_window_are_lossless_and_bounded() {
+    use parallax_model::{TestFlakyCursor, TestStatus, TestVariantKey};
+    use parallax_storage::metadata::{MetadataErrorKind, MetadataStore as MetadataStorePort};
+    use std::str::FromStr;
+
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(&path).await.expect("open");
+    let port: &dyn MetadataStorePort = &store;
+    seed_test_reporting(port).await;
+    let newer = TestVariantKey::from_str(&format!("tv1:{}", "d".repeat(64))).expect("newer");
+    let tied = TestVariantKey::from_str(&format!("tv1:{}", "e".repeat(64))).expect("tied");
+    for row in [
+        flaky_result(newer.clone(), "old", 1, TestStatus::Failed, 5_000_000),
+        flaky_result(newer.clone(), "new", 1, TestStatus::Failed, 7_000_000),
+        flaky_result(newer.clone(), "new", 2, TestStatus::Passed, 8_000_000),
+        flaky_result(tied.clone(), "other", 1, TestStatus::Passed, 8_000_000),
+    ] {
+        port.upsert_test_result(&row).await.expect("result");
+    }
+
+    let first = port
+        .test_flaky_candidates(0, 10_000_000, None, 1)
+        .await
+        .expect("first");
+    assert!(first.has_more);
+    assert_eq!(first.items[0].last_ended_nanos, 3_000_000);
+    let cursor = TestFlakyCursor {
+        last_ended_nanos: first.items[0].last_ended_nanos,
+        variant_key: first.items[0].variant_key.clone(),
+    };
+    let second = port
+        .test_flaky_candidates(0, 10_000_000, Some(&cursor), 1)
+        .await
+        .expect("second");
+    assert!(second.has_more);
+    assert_eq!(second.items[0].variant_key, newer);
+    let tie_cursor = TestFlakyCursor {
+        last_ended_nanos: second.items[0].last_ended_nanos,
+        variant_key: second.items[0].variant_key.clone(),
+    };
+    let third = port
+        .test_flaky_candidates(0, 10_000_000, Some(&tie_cursor), 1)
+        .await
+        .expect("third");
+    assert!(!third.has_more);
+    assert_eq!(third.items[0].variant_key, tied);
+
+    let exact = port
+        .test_flaky_candidates(3_000_000, 3_000_000, None, 10)
+        .await
+        .expect("exact");
+    assert_eq!(exact.items, first.items);
+    let window = port
+        .test_results_for_variant_window(newer.as_str(), 5_000_000, 8_000_000, 2)
+        .await
+        .expect("window");
+    assert!(window.truncated);
+    assert_eq!(window.items.len(), 2);
+    assert_eq!(window.items[0].ended_at_nanos, 5_000_000);
+    assert_eq!(window.items[1].ended_at_nanos, 7_000_000);
+    let reversed = port
+        .test_results_for_variant_window(newer.as_str(), 9, 8, 10)
+        .await
+        .expect_err("reversed");
+    assert_eq!(reversed.kind(), MetadataErrorKind::InvalidInput);
+    let invalid = port
+        .test_results_for_variant_window("not-versioned", 0, 1, 10)
+        .await
+        .expect_err("invalid variant");
+    assert_eq!(invalid.kind(), MetadataErrorKind::InvalidInput);
+    let outside = TestFlakyCursor {
+        last_ended_nanos: 11_000_000,
+        variant_key: newer,
+    };
+    let outside = port
+        .test_flaky_candidates(0, 10_000_000, Some(&outside), 10)
+        .await
+        .expect_err("outside cursor");
+    assert_eq!(outside.kind(), MetadataErrorKind::InvalidInput);
+}
+
 #[tokio::test]
 async fn test_explorer_rolls_up_attempts_and_filters_through_port() {
     use parallax_model::{
@@ -826,6 +946,10 @@ async fn test_explorer_rolls_up_attempts_and_filters_through_port() {
 }
 
 #[tokio::test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "multi-case explorer fixture proves filters, latest invocation, and rollups together"
+)]
 async fn test_explorer_filters_latest_variant_invocation_and_rollups() {
     use parallax_model::{
         AttemptRollup, FlakyState, TestAttempt, TestCaseIdentitySource, TestCaseKey,
@@ -989,7 +1113,7 @@ async fn test_explorer_filters_latest_variant_invocation_and_rollups() {
             0,
         )
         .await;
-    assert!(bad_range.is_err());
+    bad_range.expect_err("reversed explorer range must fail");
 
     // Seed flaky state and filter on it.
     seed_test_reporting(port).await;
