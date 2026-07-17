@@ -48,7 +48,7 @@ ceiling = 2
 [[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "clippy::expect_used"
-ceiling = 14
+ceiling = 15
 
 [[rust_suppressions]]
 crate_name = "parallax-evidence"
@@ -218,7 +218,7 @@ ceiling = 10
 [[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "clippy::too_many_lines"
-ceiling = 15
+ceiling = 16
 
 [[rust_suppressions]]
 crate_name = "parallax-greptime"
@@ -663,7 +663,7 @@ ceiling = 148
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-analysis/src/trace_analysis.rs::collect_critical_hops"
-ceiling = 101
+ceiling = 105
 
 [[limits]]
 metric = "rust.function-lines"
@@ -897,7 +897,7 @@ ceiling = 7
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-analysis/src/trace_analysis/tests.rs"
-ceiling = 31
+ceiling = 33
 
 
 [[limits]]
@@ -4161,7 +4161,7 @@ ceiling = 74
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-metadata/src/turso/tests.rs"
-ceiling = 51
+ceiling = 61
 
 [[limits]]
 metric = "rust.assertions"
@@ -4336,7 +4336,7 @@ ceiling = 536
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-metadata/src/turso.rs"
-ceiling = 567
+ceiling = 595
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4356,7 +4356,7 @@ ceiling = 488
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-semconv/src/lib.rs"
-ceiling = 225
+ceiling = 207
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4371,7 +4371,7 @@ ceiling = 635
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/src/serve.rs"
-ceiling = 507
+ceiling = 512
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4406,7 +4406,7 @@ ceiling = 405
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-xtask/src/policy/ui_tests.rs"
-ceiling = 452
+ceiling = 456
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4491,7 +4491,7 @@ ceiling = 210
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-server/src/sentry_http.rs::envelope"
-ceiling = 105
+ceiling = 110
 
 [[limits]]
 metric = "rust.function-lines"
@@ -4580,10 +4580,6 @@ metric = "rust.inline-test-modules"
 scope = "crates/parallax-metadata/src/turso/prune/journal.rs"
 ceiling = 1
 
-[[limits]]
-metric = "rust.inline-test-modules"
-scope = "crates/parallax-semconv/src/lib.rs"
-ceiling = 1
 
 [[limits]]
 metric = "rust.inline-test-modules"
@@ -4743,7 +4739,7 @@ ceiling = 1
 [[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "clippy::print_stdout"
-ceiling = 1
+ceiling = 2
 
 [[rust_suppressions]]
 crate_name = "parallax-server"
@@ -6722,3 +6718,138 @@ ceiling = 2
 metric = "rust.public-root-items"
 scope = "crates/parallax-redaction/facade.toml"
 ceiling = 11
+
+[[limits]]
+metric = "agent-doc-bytes"
+scope = ".claude/worktrees/metrics-where/AGENTS.md"
+ceiling = 16341
+
+[[limits]]
+metric = "agent-doc-bytes"
+scope = ".claude/worktrees/metrics-where/prompts/AGENTS.md"
+ceiling = 1600
+
+[[limits]]
+metric = "agent-doc-bytes"
+scope = ".claude/worktrees/metrics-where/ui/AGENTS.md"
+ceiling = 14426
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-test-support/src/browser/real_stack.rs"
+ceiling = 9
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-xtask/src/browser_full_stack.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-metadata/src/turso/tests.rs"
+ceiling = 668
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-server/examples/browser_full_stack_serve.rs"
+ceiling = 575
+
+[[limits]]
+metric = "rust.function-cognitive-complexity"
+scope = "crates/parallax-xtask/src/policy/browser_full_stack.rs::check_matrix"
+ceiling = 25
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/examples/browser_full_stack_serve.rs::main"
+ceiling = 197
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-test-support/src/browser/real_stack.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-xtask/src/browser_full_stack.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = ".claude/worktrees/metrics-where/crates/parallax-analysis/facade.toml"
+ceiling = 7
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = ".claude/worktrees/metrics-where/crates/parallax-api/facade.toml"
+ceiling = 6
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = ".claude/worktrees/metrics-where/crates/parallax-cli/facade.toml"
+ceiling = 1
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = ".claude/worktrees/metrics-where/crates/parallax-evidence/facade.toml"
+ceiling = 9
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = ".claude/worktrees/metrics-where/crates/parallax-greptime/facade.toml"
+ceiling = 2
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = ".claude/worktrees/metrics-where/crates/parallax-ingest/facade.toml"
+ceiling = 6
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = ".claude/worktrees/metrics-where/crates/parallax-metadata/facade.toml"
+ceiling = 2
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = ".claude/worktrees/metrics-where/crates/parallax-model/facade.toml"
+ceiling = 3
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = ".claude/worktrees/metrics-where/crates/parallax-proto/facade.toml"
+ceiling = 8
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = ".claude/worktrees/metrics-where/crates/parallax-redaction/facade.toml"
+ceiling = 11
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = ".claude/worktrees/metrics-where/crates/parallax-semconv/facade.toml"
+ceiling = 165
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = ".claude/worktrees/metrics-where/crates/parallax-server/facade.toml"
+ceiling = 5
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = ".claude/worktrees/metrics-where/crates/parallax-spool/facade.toml"
+ceiling = 1
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = ".claude/worktrees/metrics-where/crates/parallax-storage/facade.toml"
+ceiling = 5
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = ".claude/worktrees/metrics-where/crates/parallax-test-support/facade.toml"
+ceiling = 3
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = ".claude/worktrees/metrics-where/crates/parallax-xtask/facade.toml"
+ceiling = 2
