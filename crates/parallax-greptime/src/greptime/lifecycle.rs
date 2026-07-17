@@ -277,9 +277,9 @@ impl GreptimeStore {
     /// forward auto-creates `opentelemetry_traces`.
     ///
     /// Fingerprint-to-trace correlation is owned by the derived `error_events`
-    /// relation. Existing native nullable `fingerprint` columns are inert
-    /// legacy schema: no query reads them and startup never backfills or drops
-    /// a native table column without a separately live-proven migration.
+    /// relation (plan 125). Legacy never-populated `fingerprint` columns on
+    /// native traces are dropped when present (guarded on information_schema;
+    /// DROP is live-proven safe on stable 1.1 and nightly 1.2 probes).
     pub(super) async fn ensure_traces_deviations(&self) {
         if self
             .traces_deviations_done
@@ -291,6 +291,7 @@ impl GreptimeStore {
                 escape(&self.traces_ttl)
             );
             crate::outcomes::warn_error(self.sql(&sql).await, "traces TTL reconcile");
+            self.drop_legacy_trace_fingerprint_column().await;
             // Pre-create the correlation/projection attribute columns the
             // invocation queries reference, so COALESCE over span + resource
             // sources never hits "column not found" on sparse emitters. The
@@ -324,6 +325,36 @@ impl GreptimeStore {
                 ));
             }
             self.try_deviations(alters).await;
+        }
+    }
+
+    /// Drop the legacy unpopulated native `fingerprint` column when present
+    /// (plan 125). Safe on empty legacy columns; guarded so missing columns
+    /// do not error (code 4002).
+    async fn drop_legacy_trace_fingerprint_column(&self) {
+        let present = self
+            .sql(
+                r#"SELECT "column_name" FROM information_schema.columns
+                   WHERE "table_name" = 'opentelemetry_traces'
+                     AND "column_name" = 'fingerprint'
+                   LIMIT 1"#,
+            )
+            .await
+            .ok()
+            .is_some_and(|rows| !rows.is_empty());
+        if !present {
+            return;
+        }
+        if let Err(error) = self
+            .sql(r#"ALTER TABLE opentelemetry_traces DROP COLUMN "fingerprint""#)
+            .await
+        {
+            let text = error.to_string().to_ascii_lowercase();
+            if !text.contains("not exist") && !text.contains("not found") {
+                tracing::warn!("legacy fingerprint drop failed: {error:#}");
+            }
+        } else {
+            tracing::info!("dropped legacy unpopulated opentelemetry_traces.fingerprint column");
         }
     }
 

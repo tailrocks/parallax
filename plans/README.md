@@ -148,6 +148,10 @@ reproducible evidence, and work continues elsewhere.
 
 ### Storage
 
+Plan 125 DONE (2026-07-17): drop legacy native fingerprint column
+([evidence](../docs/research/validation/2026-07-plan-125-fingerprint/README.md)).
+
+
 Plan 116 DONE (2026-07-17): retention contract + deterministic prune CLI
 ([evidence](../docs/research/validation/2026-07-plan-116-retention-prune/README.md)).
 
@@ -155,7 +159,6 @@ Plan 116 DONE (2026-07-17): retention contract + deterministic prune CLI
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | P2 | M | upstream `greptimedb-ingester` native-TLS/plaintext feature fix | TODO — rescoped (unblock directive 2026-07-17): contribute the native-TLS/plaintext feature upstream to `greptimedb-ingester` (fix-forward policy); HTTP row path stays until the upstream release lands |
-| [125](125-native-trace-fingerprint-deviation.md) | Resolve the unpopulated native trace fingerprint deviation and migration contract | P2 | M | 093, 097, 099, 104 | TODO — 104 decided (Option C) and Docker host available for live probes (unblock directive 2026-07-17) |
 
 ### Foundation And Delivery
 
