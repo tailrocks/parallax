@@ -4,6 +4,15 @@
 
 Research date: 2026-05-25
 
+> **Status (2026-07-17): implemented contract with historical design detail
+> below.** Parallax ships `bundle-v1` assembly and the `envelope-v2` projection,
+> including bounding, evidence ranking, redaction, canonical hashing, missing
+> evidence, and deterministic JSON/Markdown output. Validator-backed JSON Schema
+> artifacts are committed at `schema/evidence-bundle.v1.schema.json` and
+> `schema/evidence-bundle.v2.schema.json`. References to a current `v0` draft or
+> absent schema artifacts below describe the 2026-05 research state, not current
+> repository truth.
+
 ## Purpose
 
 This document specifies the **Parallax evidence bundle** — the portable,
@@ -25,9 +34,9 @@ correlation layers) into one coherent, externally consumable contract. The
 implementation concept says *what Parallax stores*; this document says *what
 Parallax hands back* and *how that contract stays stable as the product grows*.
 
-Version freshness rule: this is a `v0` schema draft as of the research date. It
-is intended to be implemented, benchmarked, and revised — not frozen. Every field
-here is a proposal to validate against real Sentry/OTLP/CI/agent data.
+Historical version note: this began as a `v0` schema draft. The implemented
+contracts are bundle v1 and envelope v2; their committed JSON Schemas, fixtures,
+and implementation now govern exact fields.
 
 Interoperability sources checked for this pass: JSON Schema Draft 2020-12 is the
 schema dialect to target; MCP `2025-11-25` defaults tool input/output schemas to
@@ -75,19 +84,18 @@ governance + the failure/fix-outcome corpus — the assets a profile cannot be c
 
 ## Current Artifact Boundary
 
-As of this re-check, the repository contains a Markdown schema draft, not a
-released evidence-bundle schema. A local artifact scan found no
-`schemas/evidence-bundle/.../schema.json`, no committed fixture corpus, no
-validator command, no canonicalizer command, no projection-equivalence harness,
-and no MCP `outputSchema` fixture. The current claim level is therefore
-`schema_draft` only, matching the
+As of 2026-07-17, the repository contains the implemented assembly pipeline and
+two released repository contracts:
+`schema/evidence-bundle.v1.schema.json` and
+`schema/evidence-bundle.v2.schema.json`. `parallax-evidence` owns assembly,
+bounding, ranking, redaction, hashing, gap detection, and JSON/Markdown
+projection. This establishes implementation and conformance claims; external
+adoption and corpus-moat claims still require the
 [A3 schema adoption and corpus ledger](../validation/a3-schema-corpus.md).
 
-Do not treat the examples below as validator-backed artifacts. Until the
-missing artifacts exist, Parallax cannot claim an adoption clock, schema
-gravity, ecosystem standard, projection-equivalent agent surfaces, or
-validator-backed portable bundles. It can only claim that the bundle contract is
-specified as a research draft.
+Treat examples below as explanatory historical sketches; use the schemas and
+tests for validator-backed field truth. Implementation does not by itself prove
+schema gravity, ecosystem-standard status, or external adoption.
 
 The first countable implementation event must include:
 

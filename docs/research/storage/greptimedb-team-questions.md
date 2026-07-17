@@ -17,8 +17,8 @@ the answer is "no". Ranked load-bearing first.
 Implementation has moved beyond the original future-tense framing:
 `parallax-greptime` ships native OTLP/HTTP forwarding, SQL/Arrow HTTP reads,
 Arrow IPC decoding, lifecycle/TTL reconciliation, and telemetry analytics. The
-derived extension tables are `error_events`, `run_metric_points`, and
-`metric_exemplars`; extension-table gRPC writes remain active plan 089. These
+derived extension tables are `error_events`, `invocation_metric_points`, and
+`metric_exemplars` (legacy `run_metric_points` is dropped at bootstrap); extension-table gRPC writes remain active plan 089. These
 questions now validate support policy, tuning, and future improvements rather
 than block the existing adapter.
 
@@ -121,7 +121,7 @@ table, a GreptimeDB pull request, or a major deviation from native OTLP tables:
 
 - **Context.** We need "metrics for one CLI run" (`run_id` is high-cardinality — a new value per run).
   We **do not** put `run_id` on the metric engine (it would create one series per run = cardinality
-  explosion). The shipped `run_metric_points` **append/event table** uses a high-cardinality run key
+  explosion). The shipped `invocation_metric_points` **append/event table** uses a high-cardinality invocation key
   (modeled on the `http_logs_v4` high-cardinality example), keeping the metric engine for low-card
   aggregates only.
 - **Our assumption.** This events-table-with-skipping-index pattern is the recommended GreptimeDB way

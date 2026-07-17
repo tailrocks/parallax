@@ -41,7 +41,7 @@ These overlap maximally on architecture — both Rust, single-binary, self-host,
 
 - **OTLP:** OpenObserve is genuinely **OTLP-native** (logs/metrics/traces over OTLP/gRPC + HTTP). Same native stance Parallax designs for. **Parity on the OTLP-native claim** — but OpenObserve ships it, Parallax does not yet.
 - **Protocols:** OTLP, Prometheus remote-write, Fluent/Vector, many log shippers, Sentry (partial). Broad.
-- **Parallax:** OTLP gateway + (planned) Sentry-envelope adapter.
+- **Parallax:** OTLP gateway + shipped Sentry-envelope adapter.
 
 **Verdict:** on OTLP-native ingest, **tied in design; OpenObserve wins in that it ships today.** On protocol breadth, **OpenObserve wins.**
 
@@ -156,7 +156,7 @@ OpenObserve pricing is **public** ([openobserve.ai/pricing](https://openobserve.
 - **License permissiveness** — Apache-2.0 vs AGPL-3.0 (network-use copyleft). *(Real, narrow.)*
 - **Read-only, safe-by-default agent projection** — OpenObserve's MCP is Enterprise-gated + write/destructive; Parallax designs read-only+redacted. *(Real design contrast; Parallax planned.)*
 - **Redaction as a free, first-class pre-exposure gate** — OpenObserve's Sensitive Data Redaction is Enterprise-gated. *(Real philosophical edge; Parallax A6 planned.)*
-- **Sentry-envelope compatibility** — OpenObserve has no Sentry-envelope path; Parallax plans to absorb Sentry's 30+ SDKs. *(Real; Parallax planned.)*
+- **Sentry-envelope compatibility** — OpenObserve has no Sentry-envelope path; Parallax ships envelope ingest to absorb Sentry's 30+ SDKs. *(Real; Parallax shipped; plan 118 residual.)*
 - **Production error-issue workflow + fix-outcome loop** — OpenObserve has none. *(Real gap; Parallax planned/unproven.)*
 - **GreptimeDB native-OTLP storage** — a different storage bet (vs Parquet/DataFusion). *(Design choice; advantage unproven.)*
 - **Bounded, redacted, agent-safe evidence bundle** — the differentiated thesis. *(Thesis, **unproven** — A1 gate.)*

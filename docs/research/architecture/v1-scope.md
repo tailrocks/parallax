@@ -16,6 +16,14 @@ with the verified emission matrix in
 Milestone mapping: **V1 = M0 + M1 + M2 + the UI milestone, plus the packaging/self-sufficiency
 slice**; M3+ (server/cloud profiles) becomes the V2 line.
 
+> **Status (2026-07-17): V1 shipped and expanded.** Current commands use
+> `invocation` rather than the historical `run` noun and add metrics, traces,
+> logs, SQL, doctor, prune, uninstall, and context management. OTLP gRPC/HTTP,
+> Sentry envelope and GitHub webhook ingest, evidence bundle v1/envelope v2,
+> dashboards, investigations, ecosystem, alerting, and SSE live tails are
+> implemented. Plans 093, 104, 109, 111, 116, 117, and 128 are closed and own no
+> residual work. Historical launch acceptance language below remains provenance.
+
 > **V1 in one sentence.** A developer installs one tool, runs one command, points any app at it
 > with standard OTel env vars, and from that moment every run, panic, log, trace, and metric on
 > their machine is captured, grouped, and servable as a bounded evidence bundle their coding
@@ -119,10 +127,9 @@ parallax uninstall --purge
 The CLI talks only to the local API (GraphQL/HTTP on `:4000`); `--context` plumbing exists but
 V1 ships with the implicit `local` context only.
 
-Immediate physical reclamation/`prune` is owned by Plan 116, and a distinct
-metrics CLI is owned by Plan 105. Neither is claimed as shipped here. OTLP
-profiles ingest is also outside V1 until GreptimeDB has a researched native
-path and the operator opens that scope.
+Physical reclamation through `prune` and the metrics CLI are implemented.
+Profiles remain outside the shipped raw-signal contract until GreptimeDB has a
+native OTLP profile table and the required research gate clears.
 
 ### 2.5a The web UI (statement #7 — V1 scope)
 
@@ -150,8 +157,9 @@ away.
 
 Telemetry TTL 7 days (per-signal configurable), issues and rollups kept until resolved+30d,
 spool bounded; the current `parallax prune` reclaims spool segments only.
-Telemetry TTL/physical reclamation semantics remain Plan 116 work. Disk is the laptop's — defaults stay
-small and visible (`parallax doctor` reports usage).
+Telemetry TTL and deterministic prune/reclamation semantics are implemented.
+Disk is the laptop's — defaults stay small and visible (`parallax doctor`
+reports usage).
 
 ### 2.8 Documentation shipped with V1
 
@@ -164,12 +172,12 @@ encodings).
 
 | Out | Where it lives |
 | --- | --- |
-| Server + cloud profiles, tokens/auth, remote contexts | V2 — Plans 109/115; build-plan M3 is historical projection only ([deployment map](deployment-architecture-map.md) angles B/C) |
+| Server + cloud profiles, tokens/auth, remote contexts | Outside shipped local profile; build-plan M3 is historical projection only ([deployment map](deployment-architecture-map.md) angles B/C) |
 | ~~Web UI~~ | **Moved into V1** by statement #7 (§2.5a); only the fix-review screen stays deferred with the fixer rails |
 | MCP adapter | Gated ([agent-access-surface.md](../decisions/agent-access-surface.md)); CLI is the V1 agent path |
-| Sentry envelope ingest | Future adapter ([sentry-ingest.md](../capture/sentry-ingest.md)) |
+| Sentry envelope ingest | **Shipped** compatibility adapter; retained here only because it was outside the original V1 launch boundary. |
 | Trigger/dispatch machinery, autonomy budgets, fixer rails, outcome ledger | Deferred nice-to-have (statement #5); schemas stay versioned |
-| Deploy-event ingestion, GitHub webhooks | V2 with the server profile (local deploys are rare; `vcs.*` resource attrs still captured) |
+| Deploy-event ingestion, GitHub webhooks | GitHub webhook ingest subsequently shipped; this row records only the original V1 exclusion. |
 | Browser/frontend first-class capture | Roadmap ([frontend.md](../capture/frontend.md)); V1 is backend/CLI Rust apps first |
 | Multi-user, multi-tenant anything | V2+ |
 
@@ -178,14 +186,17 @@ encodings).
 The original build checklist below is retained as a shipped contract inventory,
 not an active implementation runner. Dated V1 evidence lives in
 [v1-gates-report.md](v1-gates-report.md). Every remaining implementation
-divergence is indexed only under [`plans/`](../../../plans/): plan 093 owns
-contract reconciliation, 105 metrics, 111 redaction, 116 retention/prune, and
-the triggered V2/MCP plans own work outside V1.
+divergence is indexed only under currently present files in
+[`plans/`](../../../plans/). Former plans 093, 104, 109, 111, 116, 117, and 128
+are closed and no longer own work.
 
-1. **Crates** (per the [build plan](v1-build-plan.md) layout): `parallax-server`, `parallax-core`
-   (graduating the 21 PoC kernels), `parallax-storage` (greptime + turso + memory adapters),
-   `parallax-api`, `parallax-proto`, `parallax-cli` — plus the `ui/` TanStack Start app embedded
-   into the server build.
+1. **Workspace:** 17 crates: `parallax-cli`, `parallax-analysis`, `parallax-api`,
+   `parallax-evidence`, `parallax-greptime`, `parallax-ingest`,
+   `parallax-mcp`, `parallax-metadata`, `parallax-model`,
+   `parallax-proto`, `parallax-redaction`, `parallax-semconv`,
+   `parallax-server`, `parallax-spool`, `parallax-storage`,
+   `parallax-test-support`, and `parallax-xtask`, plus the `ui/` TanStack Start
+   app. There is no `parallax-core` crate.
 0. **The concrete contracts** — [v1-implementation-spec.md](v1-implementation-spec.md):
    storage DDL (GreptimeDB + Turso), the OTLP→column mapping, the GraphQL SDL, ports (managed
    GreptimeDB child shifted to 24000–24003 to avoid the :4000 collision), `config.toml` keys,

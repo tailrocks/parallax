@@ -60,7 +60,7 @@ the others are measured against.
 | OTLP traces | ✅ | ✅ | ✅ | ✅ | ✅ | 🟡 beta | ❌ |
 | OTLP logs | ✅ | ✅ | ✅ | ✅ | ✅ | 🟡 beta | ✅ |
 | OTLP metrics | ✅ | ✅ | ✅ | ✅ | 🟡 Prom remote-write | ❌ no OTLP metrics | ❌ |
-| **Sentry envelope / DSN ingest** | ✅ planned | ❌ | ❌ | ❌ | ❌ | ✅ native | ❌ |
+| **Sentry envelope / DSN ingest** | ✅ shipped | ❌ | ❌ | ❌ | ❌ | ✅ native | ❌ |
 | Prometheus scrape / remote-write | 🟡 | ❌ | ✅ metrics | ✅ PromQL | ✅ primary | ❌ | ❌ |
 | eBPF zero-instrumentation capture | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
 | stdin / file / k8s log tail | ❌ | ❌ | ❌ | ❌ | 🟡 (agent) | ❌ | ✅ |

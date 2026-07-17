@@ -2,33 +2,33 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Living backlog of the research that still gates Parallax, **ranked cheapest-to-kill-first** (the
-de-risking order from [build-roadmap](architecture/build-roadmap.md): validate the assumptions that
-could kill the project before the comfortable engineering). The full per-assumption proof-gate list
+Living backlog of research still needed to validate and extend the **shipped Parallax V1**, ranked
+cheapest-to-kill-first. This is no longer a pre-build gate or implementation backlog: V1 ships as a
+17-crate Rust workspace with CLI/server, OTLP and Sentry-envelope ingest, GraphQL, GreptimeDB +
+Turso, evidence/redaction/analysis, alerting and SSE, plus a 19-route UI. Unfinished engineering is
+owned only by active numbered files in [`plans/`](../../plans/). The full per-assumption proof-gate list
 (A1–A7 and the conformance ledgers) lives in
 [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md); this
 file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed. Last
-updated 2026-06-11 (post vision-statements #1–#5, the autonomous-fix-loop/integration-contract
-concept docs, and the `poc/evidence-loop` kernels — see the
-[PoC coverage map](architecture/poc-evidence-loop-coverage.md); the ranking below did not change:
-A1 and A2 still carry the GO).
+updated 2026-07-17 after V1 shipment. A1 and A2 remain product/market validation risks, not blockers
+to code that already shipped. Autonomous-loop kernels remain PoCs; product MCP and fixer outcome
+work remain active in plans 112 and 123.
 
-**Build-priority note (statement #5):** the operator's build focus is goals 1+2 — local
-visibility and the server profile, per [architecture/v1-build-plan.md](architecture/v1-build-plan.md)
-— with autonomous fixing deferred to nice-to-have. Building for operator-as-user-#1 proceeds in
-parallel with, and does not substitute for, the A1/A2 market gates below; M2's bundle output is
-the Arm-C generator A1 needs, so the tracks feed each other.
+**Shipment note:** local visibility and the server product are implemented, including the human UI,
+alerting, live streaming, and bounded evidence production. The historical build sequence remains in
+[architecture/v1-build-plan.md](architecture/v1-build-plan.md). A1 should now evaluate the real bundle
+producer rather than treat its construction as future work. Autonomous fixing remains outside V1.
 
 ## Priority queue
 
 | # | Question (what we must learn) | Why it gates the GO | Method | Status | Output / home |
 | --- | --- | --- | --- | --- | --- |
-| **1** | **Does a bounded bundle beat *raw* context for agent fix-quality, on runtime-dependent bugs?** (A1) | **#1 existential.** Capable 2026 agents fix repo-logic bugs from raw context; if a bundle doesn't beat agentic-raw on R1–R3 bugs, the schema moat collapses. | Offline eval, **no engine build**: class-labeled corpus → frozen noisy overlay → arms A/B/B′/C/D → hidden-test grading. | **Design sharpened + tooling seeded (2026-06-11)**: the PoC contributes overlay shape templates and a deterministic Arm-C bundle assembler ([seed-corpus §PoC scenario seed](validation/a1-bundle-value/bundle-value-seed-corpus.md)). **Next concrete step: freeze the task manifest and generate the first overlays.** Agent runs still owed. | [validation/a1-bundle-value/](validation/a1-bundle-value/) ([fair-test](validation/a1-bundle-value/runtime-dependence-and-raw-baseline.md)) |
+| **1** | **Does a bounded bundle beat *raw* context for agent fix-quality, on runtime-dependent bugs?** (A1) | **#1 product-validation risk.** Capable 2026 agents fix repo-logic bugs from raw context; if a bundle doesn't beat agentic-raw on R1–R3 bugs, the schema moat collapses. | Offline eval using the shipped bundle producer: class-labeled corpus → frozen noisy overlay → arms A/B/B′/C/D → hidden-test grading. | **Product and PoC machinery exist; comparative agent runs remain owed.** Next: freeze the task manifest, generate overlays, and run the arms against shipped bundles. | [validation/a1-bundle-value/](validation/a1-bundle-value/) ([fair-test](validation/a1-bundle-value/runtime-dependence-and-raw-baseline.md)) |
 | **2** | **Is there a sustainable *paying* segment, and what is the product that captures it?** (A2 + business model) | **#1 business risk.** Open self-hosted is structurally non-paying; survivors monetized via managed cloud / enterprise-gating. | Desk + interviews. | **Segment sized + monetization shape designed (2026-05-29)**: paying buyer = hard-boundary (air-gap/classified/sovereign/geo-fenced) self-hoster; product = Apache-2.0 open core (kept consistent) + gated enterprise-ops + managed cloud + outcome-priced fixer. **A2 interviews still open.** | [validation/monetization-and-paying-segment.md](validation/monetization-and-paying-segment.md), [validation/a2-user-demand.md](validation/a2-user-demand.md), [validation/business-model.md](validation/business-model.md) |
 | **3** | **Will an open standard commoditize the evidence-bundle schema?** (esp. an OTel investigation/incident convention) | Kills the schema moat if it ships before adoption compounds. | Recurring web-watch (OTel semconv repo + Service/Deployment SIG; MCP roadmap). | **Checked 2026-05-29: none on the roadmap.** **Constructive answer (2026-05-29): define the bundle as a PROFILE over OTel + Sentry-grouping + OCSF + CloudEvents (don't invent) to blunt this risk** — see [architecture/evidence-bundle-schema.md](architecture/evidence-bundle-schema.md). Watch the Feb-2026 HN "incident bundle" tool as prior art. | [decisions/skeptical-reassessment-2026-05.md](decisions/skeptical-reassessment-2026-05.md), [architecture/evidence-bundle-schema.md](architecture/evidence-bundle-schema.md), [capture/otlp.md](capture/otlp.md) |
 | **4** | **Does a wedge-closer ship the full combination first?** (Rustrak/SigNoz/GlitchTip add OTLP-native ingest + a portable bundle) | Closes the technical wedge before Parallax has users → NO-GO trigger. | Recurring web-watch. | **Checked 2026-06-11: not closed.** Post-DASH drift (Bits Code GA, Bits Remediation preview, Sentry "self-healing workflow" APIs) accelerates the L2/L3 commodity race, but nobody ships closed-loop app-code fixing or open outcome/recurrence records — the earned-autonomy substrate stays unclaimed. | [market/competitor-watch.md](market/competitor-watch.md) |
 | **5** | **Sized storage cost + cold-read latency + self-host-vs-cloud + v1.1 GA re-test** | Finalizes the storage engine. **Lower priority** — storage was never the existential risk. | Server-tier benchmark (cannot run in the dev capsule). | **Blocked/deferred.** v1.1 still not GA (re-verified 2026-06-11: stable `v1.0.2`, nightly line stalled at `v1.1.0-nightly-20260525`; JSON2 is the in-flight headline). | [decisions/storage-engine.md](decisions/storage-engine.md), [storage/size-and-object-cost.md](storage/size-and-object-cost.md) |
-| **6** | **Do the loop-stage designs hold under replay?** (Detect trigger precision/recall, dispatch idempotency, recurrence verdicts on replayed telemetry) | The autonomous-fix-loop concept needs its own fixture ledger before any Detect/Dispatch claim; PoC kernels exist but a kernel is not a gate pass. | Create the Detect trigger ledger + replay harness over recorded telemetry. | **Designed + kernels executable (2026-06-11)**; ledger not yet created. Below items 1–2 by design — build-phase work, not GO-gating research. | [architecture/autonomous-fix-loop.md](architecture/autonomous-fix-loop.md), [architecture/poc-evidence-loop-coverage.md](architecture/poc-evidence-loop-coverage.md) |
+| **6** | **Do the loop-stage designs hold under replay?** (Detect trigger precision/recall, dispatch idempotency, recurrence verdicts on replayed telemetry) | The autonomous-fix-loop needs its own fixture ledger before any Detect/Dispatch claim; PoC kernels exist but a kernel is not a gate pass. | Create the Detect trigger ledger + replay harness over recorded telemetry. | **Executable PoC kernels exist; product outcome-loop work is active in plan 123; replay proof remains open.** | [architecture/autonomous-fix-loop.md](architecture/autonomous-fix-loop.md), [architecture/poc-evidence-loop-coverage.md](architecture/poc-evidence-loop-coverage.md) |
 
 ## Comparisons still owed (research = compare, then decide)
 
@@ -41,7 +41,8 @@ the Arm-C generator A1 needs, so the tracks feed each other.
 3. **Evidence-bundle schema vs any emerging OTel investigation/incident schema**: structural overlap
    and whether to align with / extend the standard rather than compete. → item 3.
 4. **Storage engines on sized cost** (GreptimeDB 1× object store vs OSS ClickHouse N× replicas; cold-read
-   GB–TB): the last open input to finalize the engine. → item 5. (Query mix already resolved: anchored.)
+   GB–TB): characterize the mandatory engine and identify fix-forward work; this no longer reopens the
+   committed GreptimeDB + Turso stack. → item 5. (Query mix already resolved: anchored.)
 5. **Air-gapped agent-evidence: Parallax vs incumbents** — confirm the "no-phone-home" differentiator
    stays unique (Grafana on-prem still phones cloud; Seer cloud-only; Datadog SaaS). → standing watch in
    competitor-watch.
@@ -56,8 +57,10 @@ the Arm-C generator A1 needs, so the tracks feed each other.
 
 ## How this maps to the kill criteria
 
-Items 1 and 2 are the two gates the [skeptical re-assessment](decisions/skeptical-reassessment-2026-05.md)
-says the GO now rests on. Items 3 and 4 are the live NO-GO triggers from the
+Items 1 and 2 are the unresolved assumptions the historical
+[skeptical re-assessment](decisions/skeptical-reassessment-2026-05.md) made load-bearing. V1 has
+since shipped; failures here would change positioning and investment, not erase implementation
+reality. Items 3 and 4 are live strategic triggers from the
 [verdict's competitive window](decisions/go-no-go.md) and the
-[bear case](decisions/risks-and-bear-case.md). Item 5 is a finalize-not-a-gate. Resolve 1 and 2
-before further build investment.
+[bear case](decisions/risks-and-bear-case.md). Item 5 characterizes the committed stack rather than
+selecting it. Active implementation proceeds only through `plans/`; this agenda does not own it.

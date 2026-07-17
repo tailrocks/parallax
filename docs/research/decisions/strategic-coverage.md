@@ -8,8 +8,14 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > 2026-06-18): GreptimeDB + Turso are mandatory.** ClickHouse and Postgres are
 > research comparators only. Capability adapters exist for ownership and tests,
 > not product substitution. Historical build sequencing in this synthesis is not
-> an active queue: contract cleanup is plan 093 and server work is plan 115;
+> an active queue: plan 093 is closed and server hardening remains in plan 115;
 > every other unfinished implementation item must first exist in `plans/`.
+>
+> **Implementation status (2026-07-17): local V1 and its broad product surface
+> are shipped.** This includes OTLP and Sentry ingest, GitHub webhooks, evidence
+> bundles, 76 GraphQL queries/14 mutations, CLI, alerting, dashboards,
+> investigations, SQL, and the TanStack UI. `parallax-mcp` is proof code,
+> not product MCP; active plan 112 remains authoritative for graduation.
 
 > **Decision record — strategic synthesis and coverage map.** Status: GO (narrow), tying the
 > research notes into one verdict and mapping every prompt area to its evidence. The current
@@ -74,9 +80,9 @@ Rust service / CLI / coding agent
   -> API context bundle / later read-only MCP projection
 ```
 
-This is not executable work. Local V1 subsequently shipped. Plans 093 and 115
-own current contract and server-profile work. Sentry compatibility and product
-MCP are blocked in plans 118 and 112. Any external stream remains research until
+This is not executable work. Local V1 subsequently shipped. Plan 093 closed;
+plan 115 owns remaining server-profile work. Sentry envelope ingest shipped;
+product MCP remains blocked in active plan 112. Any external stream remains research until
 the operator authorizes a numbered plan. ClickHouse benchmark deltas expose
 GreptimeDB risks; they do not activate a fallback.
 
@@ -142,8 +148,8 @@ GreptimeDB risks; they do not activate a fallback.
 | Processing | Rust workers, deterministic normalization/grouping/correlation before AI. |
 | Context model | Typed evidence graph in tables first. |
 | Execution surfaces | Services, CI runs, CLI apps, and coding agents. |
-| Agent surface | CLI/HTTP context first; read-only MCP after the access-surface gate; PR workflow later; no production mutation. |
-| UI | Minimal issue/evidence UI later; object-centric evidence, not dashboard suite. |
+| Agent surface | CLI/HTTP context are shipped; a read-only local-stdio MCP spike exists and remains non-product pending plan 112; no production mutation. |
+| UI | TanStack Start + shadcn UI shipped with 16 feature modules and 19 product routes, including object-centric evidence, dashboards, investigations, alerts, logs, traces, metrics, and ecosystem graph views. |
 
 ## What Is Still Unproven
 

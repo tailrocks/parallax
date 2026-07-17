@@ -215,8 +215,8 @@ where ClickHouse was.
 | Read-only MCP serving a "bundle" | ✅ (7 tools) | ✅ |
 | Embedded dashboard | ✅ (vanilla JS) | ✅ |
 | **Separate metadata store (Turso)** | ❌ GreptimeDB-only | ✅ Turso |
-| **Durable stream / backpressure** | 🟡 in-process semaphore only | ✅ Apache Iggy planned |
-| **Sentry envelope ingest** | ❌ | ✅ (future adapter) |
+| **Durable stream / backpressure** | 🟡 in-process semaphore only | 🟡 local spool/WAL shipped; external stream (Iggy) deferred |
+| **Sentry envelope ingest** | ❌ | ✅ shipped (plan 118 residual) |
 | **Derived `error_event` + fingerprinting (production)** | ❌ per-tool-call failure columns only; no grouping/issues | ✅ |
 | **Redaction as a gate** | ❌ zero redaction; raw paths/commands/errors | ✅ (A6) |
 | **Portable VERSIONED bundle schema** | ❌ live unversioned JSON snapshot | ✅ |

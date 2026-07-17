@@ -1,5 +1,10 @@
 # Reference UI Transfer For Parallax
 
+> **Status (2026-07-17): implemented direction.** The current TanStack Start UI
+> uses the custom token theme, shadcn/Base UI, React Flow + ELK for ecosystem
+> graphs, Recharts for charts, and the shared feature/platform boundaries. The
+> follow-up bar below guides refinement rather than describing an unbuilt UI.
+
 Research date: 2026-07-03
 
 ## Brief
@@ -53,7 +58,7 @@ The Live HUD docs describe local SSE streaming of execution steps/tool calls/tok
 
 ## Follow-Up Design Bar
 
-Future UI work should compare against these reference-derived patterns:
+UI refinements compare against these reference-derived patterns:
 
 1. Every page starts with a concise heading and dense KPI summary.
 2. Data is framed in dark raised panels, not loose text or raw tables.

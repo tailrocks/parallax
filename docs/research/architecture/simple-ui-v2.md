@@ -8,6 +8,17 @@ ruled the UI very important and part of V1, alongside CLI and API, with **no aut
 V1** (local, single-user; auth arrives with the server profiles). The filename keeps its
 historical name; this is the V1 UI specification.
 
+> **Status (2026-07-17): implemented and expanded beyond this launch
+> specification.** Current routes are `/`, `/alerts`, `/dashboards`,
+> `/dashboards/$id`, `/ecosystem`, `/investigations`, `/invocations`, `/issues`,
+> `/logs`, `/metrics`, `/metrics/$name`, `/services`, `/services/$service`,
+> `/sql`, `/traces`, and `/traces/$traceId`. Sixteen feature modules cover
+> alerts, app status, dashboards, ecosystem, investigations, invocations,
+> issues, logs, overview, quick navigation, runtime metrics, services, SQL,
+> story, time range, and traces. React Flow + ELK renders ecosystem graphs;
+> Recharts renders charts; SSE provides live tails. Playwright runs foundation,
+> contracts, full-stack, cross-browser, mobile, accessibility, and visual suites.
+
 > **Decision.** V1 ships a local web UI over the same Parallax API the CLI and agents use. It is
 > an investigation console, not a dashboard suite: Sentry-grade grouped issues, standard service
 > dashboards plus **user-defined dashboards built from whatever metrics the apps send**, trace
@@ -64,7 +75,8 @@ occurrence, → logs around it, → `parallax issue context` CLI snippet to hand
    metric names), choose chart type (shadcn chart variants), label it, place it on a grid; saved
    to the metadata store, listed in the sidebar. V1 keeps it deliberately simple: metric +
    aggregation + group-by-attribute + chart type. No alerting, no sharing, no templating —
-   that is the entire builder.
+   that was the launch builder. Alert rules, destinations, checks, and incidents
+   now ship as a separate first-class surface.
 
 ### Traces
 
@@ -112,7 +124,7 @@ build) so V1 stays one binary + one URL.
 
 ## Non-goals (V1)
 
-Alerting UI; multi-user/orgs/auth; dashboard sharing/templating; full Grafana parity; session
+Multi-user/orgs/auth; dashboard sharing/templating; full Grafana parity; session
 replay; the fix-review screen (waits for outcome data to exist — deferred with the fixer rails);
 uptime/crons. The **2026-06-11 trust-surface addendum** (trace lookup, fix review) is folded in
 above: trace lookup ships in V1; fix review stays deferred.

@@ -107,7 +107,7 @@ Both OSS, self-hostable, touching LLM/agent calls. But **Helicone is an LLM-call
 ## Where Parallax honestly edges Helicone
 
 - **Production-backend telemetry breadth** — OTLP-native logs/metrics/traces; Helicone is LLM-call-only. *(Real domain difference.)*
-- **Production error events + fix-outcome loop** — Helicone has neither. *(Real; Parallax planned.)*
+- **Production error events + fix-outcome loop** — Helicone has neither. *(Real: error events shipped; fix-outcome planned/unproven, A1.)*
 - **Sentry-envelope compatibility** — Helicone has none; Parallax ships it. *(Real.)*
 - **Bounded, redacted, agent-safe evidence bundle** — Helicone has none. *(Thesis, unproven, A1.)*
 

@@ -4,19 +4,21 @@
 
 Research date: 2026-05-24
 
-> **Status (2026-07-12): historical architecture research, not an active plan,
+> **Status (2026-07-17): historical architecture research, not an active plan,
 > backlog, or supported-profile contract.** The local V1 subsequently shipped.
-> Plans 093 and 104 own current contract/bundle reconciliation; plans 109, 110,
-> and 115 own future auth, concurrency, and server profiles; plan 112 owns
-> product MCP; and plan 118 owns conditional Sentry migration. Only
-> [`plans/`](../../../plans/) authorizes implementation. GreptimeDB plus Turso is
+> OTLP and Sentry ingest, GraphQL, SSE, evidence bundles, the broad UI/CLI, and
+> alerting are implemented. Former plans 093, 104, 109, 111, 116, 117, and 128
+> are closed; they own no current work. Only active files in
+> [`plans/`](../../../plans/) authorize implementation. GreptimeDB plus Turso is
 > mandatory in every product profile. Earlier Iggy, ClickHouse, Postgres, and
 > engine-substitution projections below are design history, not authority.
 
-Update: 2026-06-03. Sentry-compatible ingest is now a future adapter, not V1
-scope. V1 starts with OpenTelemetry/OTLP ingest for traces, logs, and metrics;
-Parallax derives its own `error_event` rows from exception span events, span
-error status, and ERROR/FATAL logs. See [API concept](api-concept.md) and
+Historical note (2026-06-03 design posture, **superseded by code**): early research
+moved Sentry-compatible ingest to a "future adapter." **Current code (2026-07-17)
+ships bounded Sentry envelope HTTP ingest** (`POST /api/{project_id}/envelope/`)
+alongside OTLP; plan 118 remains only for migration-adapter hardening. V1 also
+derives `error_event` rows from exception span events, span error status, and
+ERROR/FATAL logs. See [API concept](api-concept.md) and
 [Local-first V1](local-first-v1.md).
 
 ## Executive Summary
@@ -24,7 +26,7 @@ error status, and ERROR/FATAL logs. See [API concept](api-concept.md) and
 The stronger Parallax thesis is not CI-first debugging. It is:
 
 > The research proposed a Rust-first, self-hosted observability and error-context system that is
-> OpenTelemetry-native first, can later add Sentry-compatible ingestion, and is
+> OpenTelemetry-native first, now ships bounded Sentry-compatible envelope ingestion, and is
 > much simpler and cheaper to operate than self-hosted Sentry.
 
 The target user is a small engineering team that:
@@ -45,13 +47,13 @@ Applications
   -> GreptimeDB for logs/traces/metrics/derived error events
   -> Turso metadata store for projects/issues/users
   -> simple UI + CLI + agent context API
-  -> conditional Sentry-compatible adapter only through plan 118
+  -> Sentry-compatible envelope ingest
 ```
 
 The product should not start as a full Sentry clone. It should start as a
 local OTLP evidence server and context API with deterministic grouping, nearby
-telemetry lookup, and a small operational footprint. Sentry-compatible ingestion
-becomes a migration adapter after the local loop is proven.
+telemetry lookup, and a small operational footprint. Bounded Sentry-envelope
+ingest is now shipped; remaining migration-adapter work is plan 118 only.
 
 ## Product Boundary
 
@@ -61,7 +63,7 @@ needs:
 | Need | Parallax stance |
 | --- | --- |
 | Keep standard telemetry setup | Accept OTLP for traces, logs, and metrics; derive Parallax error rows from exception/error evidence. |
-| Conditional Sentry migration | Design evidence is retained here; plan 118 alone can authorize it. |
+| Sentry envelope ingest | Shipped (`sentry_http` + envelope parse/derive/ack); plan 118 owns residual migration hardening. |
 | Group recurring errors | Implement deterministic grouping first. |
 | Show what happened around an error | Correlate errors with logs, traces, metrics, releases, deploys, and host context. |
 | Keep cost predictable | Self-host with bounded retention, object storage where useful, and no SaaS event quota anxiety. |
@@ -127,11 +129,16 @@ and future protocol-compatibility option, but refuses that runtime profile, whic
 is why its stream (Apache Iggy, Rust), storage (GreptimeDB in Rust or ClickHouse
 in C++), and gateway/processors all stay on lean compiled runtimes.
 
-## Future Sentry-Compatible Ingestion
+## Sentry-Compatible Ingestion (Now Implemented)
 
-This section is future compatibility research, not V1 scope. V1 should not block
-on Sentry envelope compatibility. It should accept OTLP first, normalize
-OpenTelemetry signals into Parallax-owned records, and prove local run-id
+This section was future compatibility research, not V1 scope. The adapter has
+since shipped: Parallax accepts bounded Sentry envelopes, spools raw frames
+before acknowledgement, and normalizes supported events. OTLP remains the
+primary ingest contract. The historical subset rationale below explains the
+compatibility boundary.
+
+V1 did not block on Sentry envelope compatibility. It accepted OTLP first, normalized
+OpenTelemetry signals into Parallax-owned records, and proved local run-id
 investigation before adding migration adapters.
 
 Sentry envelopes are the right compatibility target. Sentry's SDK docs define
@@ -161,7 +168,7 @@ Future adapter support should be a deliberately small subset:
 | `profile` | Reject or drop explicitly. | Later feature. |
 | `logs` / `metrics` / `spans` | Prefer OTLP path first. | Avoid chasing every Sentry telemetry extension early. |
 
-A future Sentry adapter should retain a bounded raw envelope reference for
+The Sentry adapter retains a bounded raw envelope reference for
 debugging parser mistakes and forward compatibility. Sentry's Relay best
 practices emphasize that protocol and API changes need forward compatibility
 and that older relays should not drop data they do not understand. Parallax can
@@ -350,7 +357,7 @@ Consumers can be separated by responsibility:
 
 | Consumer | Responsibility |
 | --- | --- |
-| `event-normalizer` | Derive Parallax error rows from OTLP exception span events, span error status, ERROR/FATAL logs, and future Sentry envelope events. |
+| `event-normalizer` | Derive Parallax error rows from OTLP exception span events, span error status, ERROR/FATAL logs, and Sentry envelope events. |
 | `otel-normalizer` | Normalize OTLP logs/traces/metrics metadata. |
 | `grouping-worker` | Compute fingerprints and issue membership. |
 | `storage-writer` | Write normalized telemetry to GreptimeDB and metadata store. |
@@ -521,7 +528,7 @@ the point of the product.
 ## Historical Deployment Profiles
 
 Only the local profile shipped. The server/scale-out sketches are not supported
-contracts; plans 109, 110, and 115 own any future implementation.
+contracts; the cited plans are closed and no longer own future implementation.
 
 ### Profile 1: Tiny Single Server
 

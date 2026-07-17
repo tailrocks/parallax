@@ -2,13 +2,15 @@
 
 <!-- markdownlint-disable MD013 -->
 
-> **Status (2026-07-12): historical sequencing record, not an active plan.**
-> M0-M2, the V1 UI, packaging, and the initial M5 measurements shipped. All
-> unfinished implementation work now lives only in [`plans/`](../../../plans/):
-> contract reconciliation (093), metrics (105), evidence pinning (106),
-> production redaction (111), V2 auth/profile work (109/115), product MCP (112),
-> and retention/prune (116). Older Postgres/ClickHouse/fallback alternatives in
-> this projection are superseded by the mandatory GreptimeDB + Turso policy.
+> **Status (2026-07-17): historical sequencing record, not an active plan.**
+> M0-M2, the V1 UI, packaging, and the initial M5 measurements shipped. Body
+> text may still name historical extension table `run_metric_points` — current
+> code uses `invocation_metric_points` and drops the legacy table at bootstrap.
+> Unfinished implementation lives only in active [`plans/`](../../../plans/)
+> (e.g. 089, 103, 107, 110, 112, 114, 115, 118, 120, 121, 123, 124, 154, 155).
+> Closed plans (093, 105, 106, 109, 111, 116, etc.) are not active queues.
+> Older Postgres/ClickHouse/fallback alternatives in this projection are
+> superseded by the mandatory GreptimeDB + Turso policy.
 
 Research date: 2026-06-11. Operator statement #5 recorded 2026-06-11. This is the finalized
 technical projection of **what gets built and how**, synthesizing the decided stack

@@ -4,6 +4,10 @@ Decision date: 2026-07-17
 
 Status: **APPROVED**
 
+Implementation status (2026-07-17): **SHIPPED** across the shared GreptimeDB
+read path, GraphQL, metric explorer, dashboards, alerts, and CLI. The proof list
+below is the enduring conformance contract, not unfinished implementation.
+
 Approval: operator unblock directive dated 2026-07-17, executed through
 Plans 105 and 168
 
@@ -106,7 +110,7 @@ value rules as GraphQL.
 
 ## Required conformance evidence
 
-Implementation is incomplete until fixtures prove: inclusive endpoints;
+Conformance remains valid only while fixtures prove: inclusive endpoints;
 finite versus non-finite samples; one-count-per-histogram export; empty bucket
 filling and the 120-bucket cap; ambiguous native-name rejection; a metric-only
 service; MemoryStore/GreptimeDB parity; GraphQL snapshots; and

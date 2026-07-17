@@ -12,9 +12,13 @@ Decision date baseline: 2026-05-29. Operator confirmations followed on
 > Storage and metadata traits are capability, ownership, and test boundaries;
 > they do not promise engine substitution. The in-memory adapter is test/dev
 > support only. Contract cleanup is owned by
-> [Plan 093 validation](../validation/2026-07-12-plan-093-baseline/README.md),
+> completed [Plan 093 validation](../validation/2026-07-12-plan-093-baseline/README.md),
 > and any supported server profile is owned by
 > [`plans/115-v2-server-profile.md`](../../../plans/115-v2-server-profile.md).
+>
+> **Implementation status (2026-07-17): shipped.** Product telemetry uses
+> GreptimeDB native OTLP tables and product metadata uses Turso. No product
+> fallback exists; the in-memory adapter is test-only.
 >
 > The dated selection, fallback, and flip analysis below is preserved as
 > benchmark history. It cannot authorize a product backend change.

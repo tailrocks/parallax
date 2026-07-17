@@ -2,33 +2,52 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-06-12; updated 2026-06-15 (standing page — update on every upstream movement
-or internal migration step). Owner question (operator): one CLI invocation
-("a run") produces many traces, logs, and metrics; we correlate them under a
-run id. What is the standard, and how do we get to one?
+Research date: 2026-06-12; updated 2026-06-15; **re-verified 2026-07-17 against
+source** (standing page — update on every upstream movement or internal
+migration step). Owner question (operator): one CLI invocation ("a run")
+produces many traces, logs, and metrics; we correlate them under an invocation
+id. What is the standard, and how do we get to one?
 
-## Position (operator, 2026-06-15)
+> **Current authority (operator, 2026-07-17; verified in source
+> 2026-07-17): Parallax correlates CLI invocations on `cli.invocation.id`
+>  (+ `session.id`), not `parallax.run.id`.** The vendor-namespaced
+> `parallax.run.id` key is **retired** — it is never read, written, or
+> COALESCE'd at ingest (negative contract: `crates/parallax-ingest/src/tests.rs`,
+> `crates/parallax-server/tests/m8_invocation_contract_greptime.rs`). This is
+> the internal realization of *Upstream proposal* option 2 below (a dedicated
+> CLI-namespace attribute). The `runs`/`run` GraphQL surface and CLI verbs
+> were renamed to `invocations`/`invocation` (`invocationStart`/`invocationFinish`).
+> Program: plans 156–161; decision:
+> [decisions/native-otel-tables.md](../decisions/native-otel-tables.md);
+> generated constants in [parallax-semconv](../../crates/parallax-semconv/) from
+> [`telemetry/semconv/contract.yaml`](../../telemetry/semconv/contract.yaml).
 
-1. **There is no OTel standard for this concept today**, and `session.id`
-   **is not what we need** — it is a client-side-application convention
-   (mobile/browser user sessions, Development stability), not a local CLI
-   invocation boundary.
+## Position (operator, 2026-07-17; re-verified in source)
+
+1. **There is still no OTel standard for a CLI invocation correlation id**,
+   and `session.id` alone is not sufficient — it is a client-side-application
+   convention (mobile/browser user sessions, Development stability), not a
+   local CLI invocation boundary. Parallax now emits **both** `cli.invocation.id`
+   and `session.id` so the generalized-session thread (#2883) can adopt either.
 2. **We want a real standard and intend to help make one.** Parallax will
-   bring its run concept to the OpenTelemetry semantic-conventions
+   bring its invocation concept to the OpenTelemetry semantic-conventions
    discussion as a proposal and participate in the threads where the gap is
    already being felt (see *Upstream proposal* and *Tracking* below).
-3. **Internal standardization is one key only.** Parallax uses
-   `parallax.run.id` and does not accept `session.id`,
-   `cicd.pipeline.run.id`, or tool-specific ids as run aliases. If
-   `parallax.run.id` is absent, telemetry is not run-scoped.
+3. **Internal standardization is generic-attribute-only.** Parallax resolves
+   an invocation id from **`cli.invocation.id`** — signal attribute first
+   (root-span / log attrs, the jackin shape), then resource attribute — and
+   does not accept `cicd.pipeline.run.id` or tool-specific ids as aliases. If
+   `cli.invocation.id` is absent, telemetry is not invocation-scoped. The
+   retired `parallax.run.id` is explicitly **not** a fallback.
 
 Historical ladder:
 
    | Step | What | Status |
    | --- | --- | --- |
-   | 1 | `jackin.run_id` migrates to **`parallax.run.id`** as the only Parallax-facing OTLP resource key | updated recommendation, 2026-06-15 |
-   | 2 | `parallax.run.id` is the one canonical run key across Tailrocks tools — vendor-namespaced exactly as the [OTel naming guidance](https://opentelemetry.io/docs/specs/semconv/general/naming/) prescribes for concepts no convention covers | **current state** |
-   | 3 | When an OTel standard exists (ours or someone else's), it becomes an accepted ingest alias immediately, then the canonical key once it reaches stability — `parallax.run.id` demotes to the legacy alias | future, tracked here |
+   | 1 | `jackin.run_id` migrates to **`parallax.run.id`** as the only Parallax-facing OTLP resource key | superseded 2026-07-17 |
+   | 2 | `parallax.run.id` is the canonical run key across Tailrocks tools | **superseded 2026-07-17** by `cli.invocation.id` (plans 156–161) |
+   | 3 | Adopt a generic OTel attribute; `parallax.run.id` demotes to a legacy alias | **realized 2026-07-17 as `cli.invocation.id`** — no legacy alias kept (forward-only cutover); `parallax.run.id` is dropped outright, not demoted |
+   | 4 | When an OTel standard reaches stability, adopt it as alias then canonical | future, tracked here |
 
 ## Why the existing conventions don't fit (primary sources, checked 2026-06-12)
 
@@ -46,6 +65,11 @@ Adjacent industry: ML experiment trackers (MLflow `run_id`, W&B runs) use
 the same word for the same shape — no OTel bridge exists there either.
 
 ## Upstream proposal (draft to bring to OTel)
+
+> **Status (2026-07-17): option 2 below was realized internally as
+> `cli.invocation.id`.** The proposal to the OTel community stands unchanged —
+> Parallax now ships the reference implementation that proves option 2, plus
+> `session.id` for the option-1 generalization case.
 
 **Thesis:** bounded executions that produce telemetry across multiple traces
 need a first-class correlation id. Two acceptable shapes, in preference
@@ -88,14 +112,26 @@ Engagement order: (1) comment on #2883, (2) dedicated semconv issue for the
 CLI case, (3) if traction, a PR amending the session/CLI docs with the
 wording above. Every step gets a dated row appended here.
 
-## Current implementation state (Parallax, 2026-06-15)
+## Current implementation state (Parallax, 2026-07-17; re-verified in source)
 
-- **Ingest aliases** (`parallax-core/normalize.rs`): run id resolves
-- **Ingest** (`parallax-core/normalize.rs`): run id resolves only from
-  `parallax.run.id` on spans, logs, and metric points (spec §7).
-- **Wrapper emit**: `parallax run start` injects
-  `OTEL_RESOURCE_ATTRIBUTES=parallax.run.id=<id>`.
+- **Canonical constant** (`crates/parallax-semconv/src/lib.rs`):
+  `CLI_INVOCATION_ID = "cli.invocation.id"` (generated from
+  `telemetry/semconv/contract.yaml`); `SESSION_ID` likewise.
+- **Ingest** (`crates/parallax-ingest/src/lib.rs`): `invocation_id` resolves
+  the signal attribute first (root-span / log attrs — jackin shape), then the
+  resource attribute, for traces and logs. The retired `parallax.run.id` is
+  never read (negative contract in `crates/parallax-ingest/src/tests.rs` and
+  `crates/parallax-server/tests/m8_invocation_contract_greptime.rs`).
+- **Wrapper emit** (`crates/parallax-cli/src/commands/forwarding.rs`):
+  `forward_resource_attrs` stamps `cli.invocation.id` (and `session.id`) into
+  `OTEL_RESOURCE_ATTRIBUTES` for the wrapped child.
+- **Storage reads** (`crates/parallax-storage/src/adapter/traits.rs`):
+  `traces_by_invocation`, `logs_by_invocation`, and invocation-scoped metric
+  points key solely on `cli.invocation.id`.
+- **GraphQL surface** (`crates/parallax-api/src/lib.rs`): `runs`/`run` were
+  renamed to `invocations`/`invocation` (`invocationStart`/`invocationFinish`,
+  plus `tracesByInvocation`, `logsByInvocation`, `invocationMetrics`).
 - **Guide**: [conventions.md](../../guide/conventions.md) documents the
-  single-key rule for integrators.
-- **jackin'**: recommended to adopt `parallax.run.id` as the only
-  Parallax-facing run key.
+  generic-attribute rule for integrators.
+- **jackin'**: adopts `cli.invocation.id` + `session.id` (the unified-CLI
+  observability program, plans 156–161).

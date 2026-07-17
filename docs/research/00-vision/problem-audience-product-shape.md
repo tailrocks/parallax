@@ -8,6 +8,13 @@ who it is for, and what shape the product takes.** The operator's standing instr
 this framing sharp as the vision evolves — when a pass changes the answer to any of the three
 questions, this file is updated in the same change.
 
+**Implementation status, 2026-07-17:** V1 has shipped this shape: the Rust CLI/server, OTLP
+gRPC/HTTP ingest, GraphQL API, mandatory GreptimeDB + Turso storage, bounded redacted evidence,
+alerting/live streaming, and the full TanStack Start investigation UI are implemented. Sentry
+envelope HTTP ingest is implemented; its migration adapter remains plan 118. MCP remains a spike
+and plan 112 ship-gate project, not a product surface. Historical build-order statements below are
+preserved as the record that led to V1.
+
 > **One paragraph.** Parallax is for developers — human and AI — who can now build and ship
 > software fast but lose all of that speed the moment something breaks at runtime. It combines
 > the best concept from three worlds — **OpenTelemetry** (how data is collected, as an open
@@ -40,7 +47,7 @@ given it at all. The end state this serves is the
 | World | What it got right | What Parallax takes |
 | --- | --- | --- |
 | **OpenTelemetry** | One vendor-neutral standard for emitting traces, logs, metrics | The only collection path: standard OTel SDKs + resource conventions, no proprietary SDK ([integration-contract.md](../architecture/integration-contract.md)) |
-| **Sentry** | Errors become grouped, deduplicated, workflow-ready *issues*, not log lines | Deterministic fingerprinting, issue model, release/deploy linkage — derived from OTLP, Sentry-protocol ingest only as a future adapter |
+| **Sentry** | Errors become grouped, deduplicated, workflow-ready *issues*, not log lines | Deterministic fingerprinting and issue workflow derived from OTLP; Sentry-envelope HTTP ingest is live, while the migration adapter remains active work |
 | **Grafana** | Humans understand systems by looking *across* signals | The cross-signal investigation UI (plus Kibana's object-centric log view, Tempo's waterfall) — [simple-ui-v2.md](../architecture/simple-ui-v2.md) |
 
 The difference from all three: Parallax is designed **for AI first**. Every view a human gets is
@@ -69,7 +76,8 @@ people the UI to see the same truth.
   matter where the server is deployed or which storage backend it runs.
 - **UI** is the human window over the same API — Sentry-style issues plus Grafana/Kibana-style
   cross-signal inspection. Humans need to know what is going on too; the UI is how.
-- **MCP** is a fourth, read-only projection for agents, after safety gates.
+- **MCP** is a tested spike only. Plan 112 owns the safety and product ship gates for a future
+  read-only projection.
 
 One API + swappable `StorageAdapter` is what makes the scale ladder below a topology change
 rather than a rewrite.
@@ -116,7 +124,7 @@ build *for* yet — it is a constraint to design *under*: horizontal scalability
 infrastructure are baked in from the start so the same product carries a team from small startup
 to the largest company by topology change, never by rewrite.
 
-**Priority sharpened (operator statement #5, 2026-06-11): build the visibility tool; defer the
+**Historical priority (operator statement #5, 2026-06-11): build the visibility tool; defer the
 fixer.** Goals 1 (local-machine visibility — slightly first, the operator uses it daily on his
 own Rust tools) and 2 (the same binary deployed on a server, analyzing his existing deployed
 services) are co-equal top priorities and the entire build focus. **Autonomous fixing is a
@@ -124,7 +132,7 @@ future nice-to-have**: its schemas and contracts stay versioned so the loop rema
 but no fix-loop components are built until goals 1 and 2 are achieved. The concrete milestone
 plan is [architecture/v1-build-plan.md](../architecture/v1-build-plan.md).
 
-**Version boundary (operator statement #6, 2026-06-12): V1 = the self-sufficient local
+**Historical version boundary (operator statement #6, 2026-06-12): V1 = the self-sufficient local
 machine.** V1 solves goal 1 completely — one binary, one command, everything on the laptop, no
 network or second system required — per the exhaustive inventory in
 [architecture/v1-scope.md](../architecture/v1-scope.md). Goal 2 (server profiles) opens V2 with
@@ -219,8 +227,8 @@ instrumentation gap-closing mechanic that makes `missing_evidence` a load-bearin
 
 Operator statement #5 (2026-06-11) adds the build-order ruling: goals 1 and 2 (local visibility,
 then the same tool on a server) are the co-equal top priorities with local slightly first;
-**autonomous fixing is demoted to a future nice-to-have** — schemas stay versioned, components
-stay unbuilt until goals 1 and 2 land. See
+**autonomous fixing is demoted to a future nice-to-have** — schemas stayed versioned while goals 1
+and 2 landed; remaining outcome-loop product work is now plan 123. See
 [architecture/v1-build-plan.md](../architecture/v1-build-plan.md).
 
 Operator statement #4 (2026-06-11) adds: the **one-binary-plus-profile** deployment model

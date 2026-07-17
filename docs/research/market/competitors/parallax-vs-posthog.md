@@ -126,7 +126,7 @@ Sources: [schematic](https://schematichq.com/blog/posthog-pricing), [checkthat.a
 ## Where Parallax honestly edges PostHog
 
 - **Domain fit** — Parallax is production-incident evidence; PostHog is product/user analytics. *(Different jobs; Parallax where PostHog doesn't play.)*
-- **Production error events + fix-outcome loop** — PostHog has neither (not its domain). *(Real; Parallax planned.)*
+- **Production error events + fix-outcome loop** — PostHog has neither (not its domain). *(Real: error events shipped; fix-outcome planned/unproven, A1.)*
 - **License permissiveness** — Apache-2.0 (likely) vs PostHog's own competitive-use license. *(Narrow; verify PostHog terms.)*
 - **Sentry-envelope compatibility** — PostHog has none; Parallax ships it. *(Real.)*
 - **Bounded, redacted, agent-safe evidence bundle** — PostHog has none. *(Thesis, unproven, A1.)*

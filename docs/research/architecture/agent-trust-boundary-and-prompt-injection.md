@@ -4,6 +4,12 @@
 
 Research date: 2026-05-29
 
+> **Status (2026-07-17): implemented bundle-boundary controls, continuing threat
+> model.** Evidence assembly now bounds, ranks, redacts, hashes, and reports gaps
+> before JSON/Markdown projection. This does not make attacker-controlled
+> telemetry trusted; the constraints and residual risks below continue to govern
+> every agent-facing surface.
+
 ## Purpose
 
 A safety gap the record did not cover. [redaction.md](../capture/redaction.md) (A6) protects against

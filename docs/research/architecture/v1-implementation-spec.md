@@ -236,12 +236,12 @@ V1 **adopts GreptimeDB's native OTLP model** (`opentelemetry_traces`, `opentelem
 one-table-per-metric metric engine) for the three raw signals. The adapter **forwards raw OTLP straight
 to GreptimeDB's `/v1/otlp/` endpoints (Path A)** so native tables auto-create and ride Greptime's
 optimizations, and **tees** the same bytes in-process to derive the **custom extension** tables
-(`error_events`, `run_metric_points`, and `metric_exemplars`). Native
-attributes are columns (traces) / JSON (logs); `run_id` is a resource attribute →
-`resource_attributes.parallax.run.id` on traces, promoted via `X-Greptime-Log-Extract-Keys` on logs,
-and **never a metric tag** (high cardinality). `error_events`, `run_metric_points`, and
-`metric_exemplars` stay custom because they are derived Parallax product facts, not raw-signal
-replacement tables. **GreptimeDB + Turso only** — ClickHouse and Postgres are
+(`error_events`, `invocation_metric_points`, and `metric_exemplars`). Native
+attributes are columns (traces) / JSON (logs); the correlation key is a resource attribute →
+`resource_attributes."cli.invocation.id"` on traces (was `parallax.run.id` until 2026-07-17), promoted
+via `X-Greptime-Log-Extract-Keys` on logs, and **never a metric tag** (high cardinality). `error_events`,
+`invocation_metric_points`, and `metric_exemplars` stay custom because they are derived Parallax product
+facts, not raw-signal replacement tables. **GreptimeDB + Turso only** — ClickHouse and Postgres are
 comparators, not product targets. **Greenfield:** the `otel_spans`/`otel_logs`/`otel_metrics_*` DDL below is **removed**, not
 migrated (research stage, no users). Canonical decision and historical adoption record:
 [decisions/native-otel-tables.md](../decisions/native-otel-tables.md) ·
@@ -272,13 +272,15 @@ CREATE TABLE IF NOT EXISTS issues (
   last_trace_id TEXT,
   tags          TEXT NOT NULL DEFAULT '{}'      -- JSON: top tag values cache
 );
-CREATE TABLE IF NOT EXISTS runs (
-  run_id      TEXT PRIMARY KEY,
-  command     TEXT,
-  started_at  INTEGER NOT NULL,
-  ended_at    INTEGER,
-  exit_code   INTEGER,
-  status      TEXT NOT NULL DEFAULT 'running'   -- running | finished | external
+CREATE TABLE IF NOT EXISTS invocations (                       -- was `runs`; renamed 2026-07-17
+  invocation_id TEXT PRIMARY KEY,
+  command       TEXT,
+  started_at    INTEGER NOT NULL,
+  ended_at      INTEGER,
+  exit_code     INTEGER,
+  status        TEXT NOT NULL DEFAULT 'running',  -- running | finished | external
+  app_mode      TEXT,
+  outcome       TEXT
 );
 CREATE TABLE IF NOT EXISTS dashboards (
   id          TEXT PRIMARY KEY,
@@ -323,10 +325,10 @@ Counters (`event_count`, `last_seen`) are updated by the ingest worker on each n
 event; the same transaction increments the minute-grained `issue_buckets` rollup that feeds the
 trend sparkline (`issueTrend` sums it into coarser steps in SQL) and merges the event's scalar
 attributes into the bounded `tags` cache (`{key: {value: count}}`; ≤16 keys, ≤8 values per key,
-values ≤64 chars, `exception.*` excluded). Runs whose `parallax.run.id` first appears in
-telemetry without a CLI `runStart` are auto-registered by the worker with status `external`
-(first-seen timestamp as `started_at`) so run-scoped UI/CLI lookups work for foreign run ids
-(the jackin follow-up, 2026-06-12).
+values ≤64 chars, `exception.*` excluded). Invocations whose `cli.invocation.id` first appears in
+telemetry without a CLI `invocationStart` are auto-registered by the worker with status `external`
+(first-seen timestamp as `started_at`) so invocation-scoped UI/CLI lookups work for foreign
+invocation ids (the jackin follow-up; renamed from `parallax.run.id`/`runStart` on 2026-07-17).
 
 ## 7. OTLP → storage mapping (the load-bearing rows)
 
@@ -343,7 +345,7 @@ telemetry without a CLI `runStart` are auto-registered by the worker with status
 | log `body.string_value` | `body` |
 | metric gauge/sum data points | `otel_metrics_points` (one row per point; `is_monotonic` from sum) |
 | metric histogram data points | `otel_metrics_histograms` |
-| `resource.attributes["parallax.run.id"]` | **promoted to a real `run_id` column** on `otel_spans`/`otel_logs`/`otel_metrics_points` (the key contains a dot, making JSON-path filtering fragile; a column makes run-scoped reads exact and fast — and puts a run's CPU/memory beside its traces and logs). No aliases are accepted: `session.id` is a broader client-session key, and `cicd.pipeline.run.id` is scoped to CI/CD pipeline systems. Decision + sources: [capture/run-id-standardization.md](../capture/run-id-standardization.md) |
+| `resource/span.attributes["cli.invocation.id"]` (+ `session.id`) | **the invocation correlation key.** Resolved signal-attr first (root span / log attrs — jackin shape), then resource attr. On native traces it is a `span_attributes."cli.invocation.id"` column and free JSON `resource_attributes."cli.invocation.id"`; on native logs it is promoted via `X-Greptime-Log-Extract-Keys`; invocation-scoped metric points land in the `invocation_metric_points` extension (never a native metric tag — high cardinality). Supersedes the legacy `parallax.run.id`→`run_id` column (retired 2026-07-17, forward-only). Decision + sources: [capture/run-id-standardization.md](../capture/run-id-standardization.md) |
 
 `TraceId` is a transparent model value at external boundaries: OTLP requires
 exactly 16 non-zero bytes, GraphQL/CLI accept exactly 32 non-zero hexadecimal
@@ -353,10 +355,17 @@ the boundary pilot.
 
 > **⚠ 2026-06-18 (native-OTLP decision):** the right-hand custom-table targets above (`otel_spans`,
 > `otel_logs`, `otel_metrics_*`) are **superseded** — raw signals now land in GreptimeDB's native tables
-> (`opentelemetry_traces`/`opentelemetry_logs`/metric engine) via OTLP forward; run-scoped metrics go to
-> the `run_metric_points` extension, trace/span metric exemplars go to `metric_exemplars`, and derived
-> error rows go to `error_events`. `run_id` is a resource attribute (column on traces, extract-key
-> column on logs, never a metric tag). See
+> (`opentelemetry_traces`/`opentelemetry_logs`/metric engine) via OTLP forward; invocation-scoped
+> metrics go to the `invocation_metric_points` extension (was `run_metric_points`), trace/span metric
+> exemplars go to `metric_exemplars`, and derived error rows go to `error_events`. The correlation key
+> is a resource attribute (column on traces, extract-key column on logs, never a metric tag). See
+> [decisions/native-otel-tables.md](../decisions/native-otel-tables.md).
+>
+> **⚠ 2026-07-17 (unified-CLI observability, plans 156–161):** the correlation key is now
+> `cli.invocation.id` (resolved signal-attr first, then resource-attr), not the retired
+> `parallax.run.id`; the run-scoped extension table is `invocation_metric_points`. The legacy
+> `run_metric_points` table is **dropped at bootstrap** (forward-only, no migration). See
+> [capture/run-id-standardization.md](../capture/run-id-standardization.md) and
 > [decisions/native-otel-tables.md](../decisions/native-otel-tables.md).
 
 Fingerprinting and derivation logic: graduate `poc/evidence-loop/src/{derive,fingerprint}.rs`
@@ -379,88 +388,71 @@ to i32. Where the original draft said `Time`/`JSON` scalars and `TimeRange`/`*Fi
 this implemented dialect is the contract.
 
 ```graphql
+// The SDL below is the V1-launch core preserved as a contract record. The
+// authoritative, always-current SDL is GENERATED from the Juniper schema by
+// `cargo xtask ui graphql export` and checked into
+// [`ui/graphql/schema.graphql`](../../../ui/graphql/schema.graphql) (drift-checked by
+// `cargo xtask ui graphql check`). Treat that file as the source of truth; the
+// sketch here is historical and intentionally partial.
+//
+// Re-verified 2026-07-17 against `crates/parallax-api/src/lib.rs`: the live
+// schema is Juniper code-first with **67 Query fields, 14 Mutation fields, and
+// ZERO Subscription fields** (`RootNode<Query, Mutation, EmptySubscription>`).
+// Beyond the V1 core below it has grown: `overview`, `serviceMap`/`serviceRed`/
+// `serviceCatalog`, `ecosystem` service topology, `invocations`/`invocation`/
+`invocationFacets`/`observedInvocations`, `sessions`/`agentSession`/`story`/
+`screenVisits`/`uiActions`/`backgroundCycles`/`jobs`/`conversations`/`evidenceGaps`,
+`investigations`/`investigation`/`savedViews`, `alertRules`/`alertRule`/
+`alertRuleStates`/`alertIncidents`/`alertIncident`/`alertDestinations`/`alertChecks`,
+`testCases`/`testCase`, trace analytics (`traceEvents`/`linkedTraces`/
+`traceCriticalPath`/`traceCompare`/`traceFacets`/`traceDurationStats`/`tracesPage`),
+log analytics (`logsAround`/`logCountSeries`/`logFacets`/`logPatterns`), and a
+metrics explorer (`metricCatalog`/`metricQuery`/`metricLabels`/`metricLabelValues`/
+`metricExemplars`/`runtimeSnapshot`/`histogramQuantile`).
+//
+// **Run → invocation rename (2026-07-17, plans 156–161):** `runs`/`run`/
+// `runStart`/`runFinish`/`tracesByRun`/`logsByRun` are gone; the live fields are
+// `invocations`/`invocation`/`invocationStart`/`invocationFinish`/
+// `tracesByInvocation`/`logsByInvocation`/`invocationMetrics`, keyed on
+// `cli.invocation.id` (see [capture/run-id-standardization.md](../capture/run-id-standardization.md)).
+// Live tail is SSE, not subscriptions (see the live-tail note below).
+//
+// Historical V1-launch core (field set as shipped at V1; names and shapes that
+// have since been renamed are retained only to read older notes):
 type Query {
   health: String!
   version: String!
-  runs(limit: Int = 50): [Run!]!
-  run(runId: String!): Run
-  issues(service: String, status: String, query: String,
-         fromNanos: String, toNanos: String,          # window on lastSeen
-         tagKey: String, tagValue: String,
-         sort: IssueSort = LAST_SEEN, limit: Int = 50, offset: Int = 0): IssueList!
+  invocations(limit: Int = 50): [Invocation!]!        # was `runs`; renamed 2026-07-17
+  invocation(invocationId: String!): Invocation        # was `run(runId:)`
+  issues(...): IssueList!
   issue(fingerprint: String!): Issue
   issueTrend(fingerprint: String!, hours: Int = 24, stepSeconds: Int = 3600): [TrendPoint!]!
   trace(traceId: String!): Trace
-  tracesByRun(runId: String!, limit: Int = 200): [TraceSummary!]!
-  traces(service: String, fromNanos: String, toNanos: String,
-         minDurationMs: Float, errorOnly: Boolean,
-         query: String, limit: Int = 50): [TraceSummary!]!  # filtered browse; root-span
-                                                            # filters, errorOnly = whole trace
-  logs(traceId: String, runId: String, service: String,
-       fromNanos: String, toNanos: String, severityMin: Int,
-       query: String, limit: Int = 500): [LogRecord!]!   # unified browse; newest first
-  logsByTrace(traceId: String!): [LogRecord!]!           # anchored reads, time ascending
-  logsByRun(runId: String!, limit: Int = 500): [LogRecord!]!
+  tracesByInvocation(invocationId: String!, limit: Int = 200): [TraceSummary!]!  # was tracesByRun
+  traces(...): [TraceSummary!]!
+  logs(...): [LogRecord!]!
+  logsByTrace(traceId: String!): [LogRecord!]!
+  logsByInvocation(invocationId: String!, limit: Int = 500): [LogRecord!]!        # was logsByRun
   metricNames(prefix: String): [String!]!
   services: [String!]!
-  metricSeries(name: String!, fromNanos: String!, toNanos: String!, service: String,
-               runId: String,                              # run-anchored cross-analytics
-               groupBy: String, stepSeconds: Int = 60, agg: String = "avg"): [Series!]!
-  histogramQuantile(name: String!, fromNanos: String!, toNanos: String!, q: Float!,
-                    service: String, stepSeconds: Int = 60): [Point!]!
-  serviceOverview(service: String!, fromNanos: String!, toNanos: String!,
-                  stepSeconds: Int = 60): ServiceOverview!
-  bundle(fingerprint: String, runId: String, traceId: String,
-         maxTokens: Int = 10000): BundleOut               # exactly one anchor
+  metricSeries(name:, ..., invocationId: String, ...): [Series!]!   # was runId
+  histogramQuantile(...): [Point!]!
+  serviceOverview(...): ServiceOverview!
+  bundle(fingerprint: String, invocationId: String, traceId: String, maxTokens: Int = 10000): BundleOut
   dashboards: [Dashboard!]!
   dashboard(id: String!): Dashboard
-  sql(query: String!): SqlResult!    # raw read-only engine SQL (see note)
+  sql(query: String!): SqlResult!
 }
 type Mutation {
-  issueSetStatus(fingerprint: String!, status: String!): Issue!   # open | resolved
-  dashboardSave(name: String!, layout: String!, id: String): Dashboard!
+  issueSetStatus(fingerprint: String!, status: String!): Issue!
+  dashboardSave(...): Dashboard!
   dashboardDelete(id: String!): Boolean!
-  runStart(runId: String!, command: String, startedAtNanos: String!): Boolean!
-  runFinish(runId: String!, endedAtNanos: String!, exitCode: Int!): Boolean!
+  invocationStart(invocationId: String!, command: String, appMode: String, startedAtNanos: String!): Boolean!
+  invocationFinish(invocationId: String!, endedAtNanos: String!, exitCode: Int!, outcome: String): Boolean!
 }
-
-enum IssueSort { LAST_SEEN FIRST_SEEN EVENTS TREND }   # TREND = last-24h occurrence sum
-
-type IssueList { items: [Issue!]!, total: Int! }   # total capped at the 1000-row scan window
-type Issue {
-  fingerprint: String!, title: String!, errorType: String!, culprit: String,
-  service: String!, status: String!, firstSeenNanos: String!, lastSeenNanos: String!,
-  eventCount: Int!, lastTraceId: String, tags: String!,            # JSON: {key: {value: count}}
-  trend: [TrendPoint!]!,                                           # last 24h, hourly
-  latestEvent: ErrorEvent,
-  events(limit: Int = 50, fromNanos: String, toNanos: String): [ErrorEvent!]!
-}
-type ErrorEvent { tsNanos: String!, service: String!, fingerprint: String!, errorType: String!,
-  message: String!, stacktrace: String, source: String!, traceId: String!, spanId: String!,
-  attributes: String! }
-type Trace { traceId: String!, spans: [Span!]! }
-type Span { tsNanos: String!, service: String!, traceId: String!, spanId: String!,
-  parentSpanId: String, name: String!, kind: String!, statusCode: String!,
-  statusMessage: String!, durationNs: String!, runId: String, scopeName: String!,
-  links: String!,             # OTel span links JSON: [{traceId, spanId, attributes}]
-  attributes: String!, resource: String! }
-type TraceSummary { traceId: String!, rootName: String, service: String, tsNanos: String!,
-  durationNs: String!, spanCount: Int!, errorCount: Int! }   # errorCount = ERROR-status spans
-type LogRecord { tsNanos: String!, service: String!, severityNum: Int!, severityText: String!,
-  body: String!, traceId: String!, spanId: String!, runId: String, scopeName: String!,
-  attributes: String!, resource: String! }
-type Series { groupValue: String, points: [Point!]! }   # groupValue null when ungrouped
-type Point { tsNanos: String!, value: Float! }
-type TrendPoint { tsNanos: String!, count: Int! }
-type Run { runId: String!, command: String, startedAtNanos: String!, endedAtNanos: String,
-  exitCode: Int, status: String!,                  # running | finished | external
-  errorCount: Int!, traceCount: Int!, issues: [Issue!]! }
-type Dashboard { id: String!, name: String!, layout: String!, updatedAtNanos: String! }
-type ServiceOverview { cpu: [Point!]!, memory: [Point!]!,
-  requestRate: [Point!]!, latencyP50: [Point!]!, latencyP95: [Point!]!, latencyP99: [Point!]!,
-  errorRate: [Point!]! }
-type BundleOut { json: String!, markdown: String!, canonicalHash: String! }
-type SqlResult { columns: [String!]!, rows: [String!]!, rowCount: Int! }  # rows are JSON arrays
+// ... (Issue, ErrorEvent, Trace, Span, TraceSummary, LogRecord, Series, Point,
+//      TrendPoint, Invocation [was Run], Dashboard, ServiceOverview, BundleOut,
+//      SqlResult) — see the generated schema.graphql for current shapes.
 ```
 
 `sql` exposes the telemetry engine's full read query power (the logs page's
@@ -477,16 +469,18 @@ the hot path stays clone-free). Live is explicitly narrower than the polling
 queries, by design and per industry practice (Datadog Live Tail, Loki `tail`):
 **per-row predicates only, no time ranges, no aggregation, no SQL.** Filters
 are query params mirroring the polling vocabulary where it applies to a single
-row — logs: `service`, `severity_min`, `q`, `trace_id`, `run_id`; traces (a
+row — logs: `service`, `severity_min`, `q`, `trace_id`, `invocationId`; traces (a
 finished-span feed): `service`, `min_duration_ms`, `errors_only`, `q`,
-`trace_id`, `run_id`. Each SSE frame is a JSON array of matching rows; lagging
+`trace_id`, `invocationId`. Each SSE frame is a JSON array of matching rows; lagging
 consumers drop batches (broadcast semantics = tail semantics). Rationale and
 sources: [live-telemetry-streaming.md](live-telemetry-streaming.md). The CLI
 mirror is `--follow` on `parallax logs`/`parallax traces`, with `--for <window>`
 to watch a fixed window and report the match count (the agent verification
-loop). `parallax run watch <run_id>` combines both streams run-scoped
-(interleaved `[log]`/`[span]` lines), mirroring the run page's explicit
-Go-live mode (run-filtered SSE tails + 5 s metric/status repolls).
+loop). `parallax invocation watch <invocation_id>` combines both streams
+invocation-scoped (interleaved `[log]`/`[span]` lines), mirroring the invocation
+hub's explicit Go-live mode (invocation-filtered SSE tails + 5 s metric/status
+repolls). (The `run_id`/`run watch` spellings were retired in the 2026-07-17
+rename.)
 
 Pagination/row caps are resolver-level (500 rows; issue scans capped at 1000) — Juniper has no
 schema-level depth/complexity middleware; the `[limits]` config keys wait on the M5 query-cost
@@ -497,19 +491,19 @@ with graceful absence (empty series + the gap surfaced — feeds instrumentation
 runtime families (`process.*`, `system.*`, `jvm.*`, `tokio.runtime.*`, `container.*`, and
 `db.client.connection.*`). Rust playground runtime scenarios should prefer the emitted
 `tokio.runtime.*` names; `process.*` remains a supported family for hosts/CLI/SDKs that emit it.
-`bundle` accepts exactly one anchor: `fingerprint` (issue), `runId` (run-anchored: the run's
-traces, logs, and grouped issues), or `traceId`.
+`bundle` accepts exactly one anchor: `fingerprint` (issue), `invocationId` (invocation-anchored:
+the invocation's traces, logs, and grouped issues), or `traceId`.
 
 **Bundle correlation sections (`metric_window`).** The bundle is the
 correlation artifact — every anchor assembles **trace + logs + metric
 windows** together (the scope §1 acceptance wording). `metric_windows[]`
-entries carry `{metric, scope ("run"|"service"), window {from_nanos,
+entries carry `{metric, scope ("invocation"|"service"), window {from_nanos,
 to_nanos, step_seconds}, points [{ts_nanos, value}], stats {min, max, avg,
 last}}` for supported runtime metrics such as `process.cpu.utilization`,
-`process.memory.usage`, and `tokio.runtime.alive_tasks`: run anchors use the
-run's own run-scoped points over the run's lifespan (5 s steps); issue/trace
+`process.memory.usage`, and `tokio.runtime.alive_tasks`: invocation anchors use the
+invocation's own invocation-scoped points over its lifespan (5 s steps); issue/trace
 anchors use a ±5-minute window around the anchor event (30 s steps),
-run-scoped when the anchor's spans carry a run id, service-scoped otherwise.
+invocation-scoped when the anchor's spans carry an invocation id, service-scoped otherwise.
 Windows are bounded (≤60 points per metric), participate in the canonical
 hash like every section, and absent instruments contribute no entry —
 graceful absence, surfaced through `missing_evidence`.
@@ -532,28 +526,33 @@ graceful absence, surfaced through `missing_evidence`.
 
 Every read command supports `--format table|json|md` (default `table` on TTY, `json` when
 piped). `issue context` defaults to `md` (agent-facing). Exit codes: 0 ok, 1 error, 2 not-found.
-`run start -- <cmd>` propagates the child's exit code.
+`invocation start -- <cmd>` propagates the child's exit code.
 
-**`run start` OTLP forwarding (compare mode).** `run start` injects the full
-standard OTel env (`OTEL_EXPORTER_OTLP_*` for all signals + protocols),
-`OTEL_RESOURCE_ATTRIBUTES=parallax.run.id=<id>`, `PARALLAX_RUN_ID`, and a W3C
-`TRACEPARENT` into the child. The carrier is the context of an exported
-`parallax.run.session` span that remains open for the wrapped command, so test
-runners and other context-aware children can join one run trace. The API reports
-both active OTLP receiver ports; the wrapper also injects
-`PARALLAX_OTLP_HTTP_TRACES_ENDPOINT` for HTTP/protobuf-only clients. The destination is
-resolved: `--otlp-forward <url|rotel|off>` flag > `PARALLAX_OTLP_FORWARD` env >
-a pre-existing `OTEL_EXPORTER_OTLP_ENDPOINT` (respected, not clobbered) > the
-Parallax default `http://127.0.0.1:4317`. When forwarding (compare mode) the
-injected resource attrs also carry `parallax.lab=1` +
-`deployment.environment.name` (from `PARALLAX_ENV`, default `lab`) for cross-tool
-alignment; the OTLP protocol follows the endpoint port (`:4318`→http, else grpc).
-In Rotel compare mode the HTTP traces endpoint uses Rotel's paired `:4318`
-receiver, preserving fan-out for browser exporters while the standard child
-endpoint remains gRPC on `:4317`.
+**`invocation start` OTLP forwarding (compare mode).** `parallax invocation
+start` injects the full standard OTel env (`OTEL_EXPORTER_OTLP_*` for all
+signals + protocols), `OTEL_RESOURCE_ATTRIBUTES=cli.invocation.id=<id>` (plus
+`session.id`), `PARALLAX_INVOCATION_ID`, and a W3C `TRACEPARENT` into the child
+(`crates/parallax-cli/src/commands/forwarding.rs::forward_resource_attrs`). The
+carrier is the context of an exported agent-session span that remains open for
+the wrapped command, so test runners and other context-aware children can join
+one invocation trace. The API reports both active OTLP receiver ports; the
+wrapper also injects `PARALLAX_OTLP_HTTP_TRACES_ENDPOINT` for
+HTTP/protobuf-only clients. The destination is resolved: `--otlp-forward
+<url|rotel|off>` flag > `PARALLAX_OTLP_FORWARD` env > a pre-existing
+`OTEL_EXPORTER_OTLP_ENDPOINT` (respected, not clobbered) > the Parallax default
+`http://127.0.0.1:4317`. When forwarding (compare mode) the injected resource
+attrs also carry `parallax.lab=1` + `deployment.environment.name` (from
+`PARALLAX_ENV`, default `lab`) for cross-tool alignment; the OTLP protocol
+follows the endpoint port (`:4318`→http, else grpc). In Rotel compare mode the
+HTTP traces endpoint uses Rotel's paired `:4318` receiver, preserving fan-out
+for browser exporters while the standard child endpoint remains gRPC on `:4317`.
 `--print-env` prints the env block and exits (dry-run). Config-file surface
-(`[run].otlp_forward`) is deferred — v1 is env + flag only. This is the lab hook
-in [`otlp-fanout-comparison-lab.md`](../validation/otlp-fanout-comparison-lab.md).
+(`[invocation].otlp_forward`) is deferred — v1 is env + flag only. This is the
+lab hook in [`otlp-fanout-comparison-lab.md`](../validation/otlp-fanout-comparison-lab.md).
+**(2026-07-17 rename)** this was `parallax run start` injecting
+`parallax.run.id`/`PARALLAX_RUN_ID`; the unified-CLI observability program
+(plans 156–161) renamed both the verb and the correlation key, with no legacy
+fallback.
 
 ## 11. GreptimeDB supervision contract
 

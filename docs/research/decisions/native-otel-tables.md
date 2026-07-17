@@ -12,7 +12,8 @@ vendor questions in [../storage/greptimedb-team-questions.md](../storage/greptim
 > raw OTLP straight to GreptimeDB's native tables (`opentelemetry_traces`, `opentelemetry_logs`, the
 > per-metric metric engine) and **tees** the same bytes in-process to derive its product signals
 > (error grouping / "issues") into a few **custom extension tables** (`error_events`,
-> `run_metric_points`, `metric_exemplars`). **Hard rule:** raw observability signals must stay
+> `invocation_metric_points`, `metric_exemplars`). Legacy `run_metric_points` is dropped at
+> bootstrap (forward-only rename). **Hard rule:** raw observability signals must stay
 > in GreptimeDB-native tables. Parallax may extend native tables and may keep derived product extension
 > tables, but must not replace native logs/traces/metrics with hand-rolled raw-signal tables. **ClickHouse
 > is deferred** — no longer a V1 fallback or a design constraint (revisit only if a concrete benefit

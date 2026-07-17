@@ -4,11 +4,11 @@
 
 Research date: 2026-05-25
 
-> **Status (2026-07-12): historical architecture research, not an active
+> **Status (2026-07-17): historical architecture research, not an active
 > implementation plan or current stack contract.** V1 subsequently shipped.
-> Unfinished contract and bundle work is owned by plans 093 and 104; server,
-> authentication, concurrency, and profile work by plans 109, 110, and 115;
-> product MCP by plan 112; and conditional Sentry compatibility by plan 118.
+> OTLP/Sentry ingest, GreptimeDB + Turso persistence, GraphQL/SSE, evidence
+> bundles, CLI/UI, and alerting are implemented. Closed plans cited below no
+> longer own work; only currently present numbered plans do.
 > Only [`plans/`](../../../plans/) authorizes implementation. GreptimeDB plus
 > Turso is mandatory in every product profile. The older ClickHouse, Postgres,
 > engine-free, and storage-substitution projections below are superseded and
@@ -55,8 +55,8 @@ owners named above and the mandatory storage policy.
 
 | Layer | Recommendation | Why |
 | --- | --- | --- |
-| Rust app collection | `tracing`, `tracing-error`, and `opentelemetry-otlp` first; future Sentry adapter after V1. | Only in-process collection sees panic messages, typed error chains, span fields, release/env, and backtraces. |
-| External protocol | V1 accepts OTLP HTTP/gRPC. Sentry envelope `event` subset is future compatibility work. | Keeps V1 one ingest model. Preserves Sentry migration as later adoption path without making Sentry compatibility a V1 blocker. |
+| Rust app collection | `tracing`, `tracing-error`, and `opentelemetry-otlp` first; Sentry is a compatibility adapter. | Only in-process collection sees panic messages, typed error chains, span fields, release/env, and backtraces. |
+| External protocol | OTLP HTTP/gRPC is primary; the bounded Sentry envelope compatibility endpoint is implemented. | Keeps one internal ingest model while preserving a Sentry migration path. |
 | Ingest gateway | Build a Rust `parallax-ingest` service. | Parallax needs auth, redaction, size limits, raw evidence retention, grouping hooks, and idempotency before storage. |
 | Message stream | No external broker in the tiny deployment. Use a local WAL/outbox. Add Apache Iggy for the durable profile. | The first version must stay simpler than Sentry. Iggy is the best Rust-native append-only stream once replay and processor isolation matter. |
 | Storage default | GreptimeDB native observability tables for raw telemetry and approved derived extension tables only. | The adapter is a capability/test boundary, not an engine-substitution promise. |
@@ -74,16 +74,18 @@ This section locks the decisions required after the GO verdict in
 
 ### API Standard Decision
 
-Support **OpenTelemetry first**. Keep Sentry-compatible ingest as a future adapter:
+Support **OpenTelemetry first**. Sentry-compatible envelope ingest is **shipped**
+(historical text said "future adapter"; plan 118 is residual migration only):
 
 | API surface | Decision | What Parallax supports | What Parallax stores |
 | --- | --- | --- | --- |
 | OpenTelemetry / OTLP | Native telemetry standard. | OTLP/gRPC on `4317`, OTLP/HTTP on `4318`, `/v1/traces`, `/v1/logs`, `/v1/metrics`, binary protobuf first, gzip, partial-success responses, retryable overload responses, strict body limits. | Normalized spans, logs, metric samples, resources, trace/span IDs, service identity, deployment attributes, semantic attributes, and raw payload refs. High-volume rows go to GreptimeDB; raw refs go to local disk/object storage. |
-| Sentry envelope API | Future compatibility and migration standard for error events. | Later: `POST /api/<project_id>/envelope/`, starting with `event` items only. Parse `exception`, stacktrace, release, environment, tags, breadcrumbs, `contexts.trace`, `debug_meta`, and client fingerprints. Reject or metadata-only-store high-risk items until explicitly supported. | Later: raw envelope refs, normalized error events, stack frames, Rust panic/error-chain fields, grouping material, issue/fingerprint metadata, release linkage, and trace/span correlation keys. |
+| Sentry envelope API | Shipped compatibility and migration standard for error events. | `POST /api/<project_id>/envelope/`, event-first tolerant parsing. Parse `exception`, stacktrace, release, environment, tags, breadcrumbs, `contexts.trace`, `debug_meta`, and client fingerprints. Unsupported side items get explicit non-agent-visible outcomes. | Raw envelope frames (spool), normalized error events, stack frames, grouping material, issue/fingerprint metadata, release linkage, and trace/span correlation keys; event acks in Turso. |
 | Parallax context API | Product API above OTEL/Sentry. | JSON and Markdown evidence bundles by issue, event, trace, CI run, CLI invocation, or agent session. All responses include redaction status, evidence refs, confidence, missing-data warnings, and query manifest. | Product/query state, investigation runs, bundle manifests, audit records, agent access logs, and accepted/rejected fix outcomes in Turso. |
 
 Do not invent a new telemetry wire protocol. OTLP is the V1 wire format for
-logs/traces/metrics and runtime errors. Sentry envelopes are a future wire format for migration.
+logs/traces/metrics and runtime errors. Sentry envelopes are the implemented
+compatibility wire format for migration.
 Parallax's unique API is the context bundle and evidence graph above them.
 Normalized telemetry rows are not themselves the agent-facing product; they
 become claimable agent context only when they assemble into schema-valid
@@ -132,8 +134,8 @@ Access decision:
 
 ### Historical Named Stack Per Layer
 
-This was a topology option map, not a supported-profile matrix. Plans 109, 110,
-and 115 own any future server topology.
+This was a topology option map, not a supported-profile matrix. Closed plan
+references in this section no longer own future server topology.
 
 | Layer | Simple default | Scalable path | Very scalable path |
 | --- | --- | --- | --- |
@@ -647,7 +649,7 @@ Sources:
 ## Historical Scaling Projection
 
 The tiers below were design sketches, not supported profiles or an execution
-queue. Plans 109, 110, and 115 exclusively own any future server/profile work.
+queue. Only a currently active numbered plan can own future server/profile work.
 
 ### Tier 1: Simple
 

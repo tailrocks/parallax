@@ -1,5 +1,10 @@
 # Releases Lane Design
 
+> **Status (2026-07-17): historical spike/design record.** Current GraphQL and UI
+> provide service, issue, trace, dashboard, investigation, and alert surfaces;
+> this note does not imply a separate shipped Releases route. Any remaining
+> release-lane work requires current plan ownership.
+
 Plan 041 spike output. Current target: ship service release windows and a
 latest-release badge without changing the ingest hot path.
 

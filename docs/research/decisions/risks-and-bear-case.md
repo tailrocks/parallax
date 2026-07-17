@@ -4,6 +4,12 @@
 
 Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 
+> **Status (2026-07-17): historical market risk record, not implementation
+> status.** The core feasibility risk has retired: Parallax ships the mandatory
+> GreptimeDB + Turso stack, OTLP/Sentry/GitHub ingest, GraphQL/CLI/UI, evidence
+> bundles, and full alert delivery. A1/A2/A3, monetization, adoption, fixer
+> outcomes, and product-MCP safety remain genuine proof gates.
+
 > **Decision record — adversarial counterweight to [go-no-go.md](go-no-go.md).** Status: the GO
 > survives the bear case. The real danger is **distribution, monetization, and scope
 > discipline**, not feasibility. Load-bearing assumptions A1 (bundle value), A2 (real users),

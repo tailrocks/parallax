@@ -11,13 +11,13 @@
   (`parallax_issue_context`, `parallax_agent_session_show`).
 - Resources, mutating tools, shell/SQL/management: permanently denied for this
   profile.
-- Spike disposition: remains `parallax-mcp-spike` until remaining ship gates
-  (client fixtures, oversized summary path, audit/OTel, graduation) pass.
+- Spike disposition: **graduated** to product crate `parallax-mcp` (local-stdio only);
+  compatibility bin alias `parallax-mcp` retained for one migration cycle.
 
 ## Spike verification (2026-07-17)
 
 ```text
-cargo test -p parallax-mcp-spike
+cargo test -p parallax-mcp
 # 30 passed
 ```
 
@@ -35,7 +35,7 @@ explicit install decision.
 
 ```toml
 [mcp_servers.parallax]
-command = "parallax-mcp-spike"
+command = "parallax-mcp"
 args = ["--allow-local-stdio"]
 # optional: env = { PARALLAX_URL = "http://127.0.0.1:4000" }
 ```
@@ -46,7 +46,7 @@ Prefer user scope; require workspace trust before enabling in a project.
 ### Claude Code (user scope)
 
 ```bash
-claude mcp add --scope user parallax -- parallax-mcp-spike --allow-local-stdio
+claude mcp add --scope user parallax -- parallax-mcp --allow-local-stdio
 ```
 
 Notes from local client docs:
@@ -63,7 +63,7 @@ Notes from local client docs:
 | --- | --- |
 | Live Codex/Claude discovery + invocation fixtures | unfinished |
 | Oversized → bounded summary + approved resource refs | fail-closed only |
-| Per-call audit row + OTel span | **audit row landed 2026-07-17** (`parallax-mcp-spike/src/audit.rs`): secret-free in-process rows (tool/principal/scopes/status/result_bytes/duration); no anchors/evidence; 1024-row cap; wired on both tools. OTel span still unfinished (spike still installs no tracing subscriber by design). |
+| Per-call audit row + OTel span | **audit row landed 2026-07-17** (`parallax-mcp/src/audit.rs`): secret-free in-process rows (tool/principal/scopes/status/result_bytes/duration); no anchors/evidence; 1024-row cap; wired on both tools. OTel span still unfinished (spike still installs no tracing subscriber by design). |
 | Client retention matrix (memory / attachments) | documented residual only |
 | Graduate spike → product binary / package | not started |
 | Remote transport | blocked on deliberate 109 integration into MCP |

@@ -2,11 +2,11 @@
 
 <!-- markdownlint-disable MD013 -->
 
-> **Status (2026-07-12): design history, not an active plan or supported-profile
+> **Status (2026-07-17): design history, not an active plan or supported-profile
 > contract.** Local V1 shipped, but the projected `server` and `cloud` profiles
-> did not. Plans 109, 110, and 115 exclusively own any future auth, concurrency,
-> and supported server-profile work; plans 106 and 116 own evidence pinning and
-> retention. Every supported profile must use GreptimeDB + Turso, native TLS,
+> did not. Former plans 109, 111, 116, 117, and 128 are closed and no longer own
+> work; only currently present numbered plans may authorize future profile work.
+> Every supported profile must use GreptimeDB + Turso, native TLS,
 > and no fallback engine. Commands and topology in this dated projection are
 > illustrative unless the live CLI and a numbered plan say otherwise.
 
@@ -134,7 +134,7 @@ parallax --context prod issue list
   the exact backup, restore, replication, and process topology before any server
   profile is supported; Postgres is not an escape hatch.
 - The projection required per-project OTLP ingest tokens and API tokens for
-  humans/agents; plans 109 and 115 own the current contract.
+  humans/agents; those closed plans no longer own a current contract.
 - The projection routed `parallax.deploy.v0` events from CI to
   deploy-adjacent-regression detection without automatic dispatch.
 

@@ -4,10 +4,12 @@
 
 Decision date: 2026-06-03
 
-> **Decision — Parallax API is GraphQL-first for query/exploration and OTLP-first for V1 ingest.**
-> Sentry-compatible ingest is a future adapter, not V1 scope. Product clients use Parallax API only.
-> UI, CLI, agents, and future MCP adapters must not query GreptimeDB, Turso, Postgres, ClickHouse, or
-> any future backend directly.
+> **Status (2026-07-17): implemented and substantially broader than the original
+> sketch.** Parallax uses Juniper code-first GraphQL with 76 queries, 14
+> mutations, and no subscriptions. OTLP traces/logs/metrics and Sentry envelopes
+> are accepted now; GitHub webhooks are also implemented. Live delivery uses
+> SSE. Product clients use the Parallax API and never query GreptimeDB or Turso
+> directly. The schema generated at `ui/graphql/schema.graphql` is authoritative.
 
 ## API Roles
 
@@ -16,8 +18,9 @@ Parallax has three different API jobs:
 | Job | API | Why |
 | --- | --- | --- |
 | Telemetry ingest | OTLP HTTP/gRPC | Standard path for traces, logs, and metrics; Parallax derives `error_event` rows from exception span events, span error status, and ERROR/FATAL logs. |
-| Error compatibility ingest | Future minimal Sentry envelope endpoint | Migration path for Sentry-style error events and grouping fields after V1 proves the OTLP/local loop. |
-| Query/exploration | GraphQL | Runs/issues/traces/logs/metrics/bundles are graph-shaped and need flexible field selection. |
+| Error compatibility ingest | Sentry envelope HTTP endpoint | Shipped migration path for Sentry-style events. Raw frames are spooled before queue acknowledgement. |
+| Integration ingest | GitHub webhooks | Shipped deploy, workflow, check, pull-request, and review context. |
+| Query/exploration | GraphQL | The shipped code-first schema covers observability, evidence, product state, testing, and alerting. |
 
 Keep these separate. GraphQL should not ingest raw telemetry.
 
@@ -29,11 +32,10 @@ All product clients go through Parallax API:
 CLI
 UI
 agents
-future MCP adapter
   -> Parallax API
      -> services
         -> storage adapters
-           -> GreptimeDB / Turso / Postgres / ClickHouse / future backend
+           -> GreptimeDB / Turso
 ```
 
 Only storage adapters talk directly to databases. This centralizes:
@@ -47,20 +49,21 @@ Only storage adapters talk directly to databases. This centralizes:
 
 ## Endpoints
 
-Recommended V1/V2 surface:
+Implemented core transport surface:
 
 ```text
 POST /graphql
-GET  /graphql/ws       # later subscriptions
 POST /v1/traces        # OTLP HTTP
 POST /v1/logs          # OTLP HTTP
 POST /v1/metrics       # OTLP HTTP
+GET  /v1/logs/stream   # SSE
+GET  /v1/traces/stream # SSE
 GET  /healthz
 GET  /readyz
 GET  /version
 ```
 
-OTLP/gRPC can listen on the normal OTLP gRPC port when implemented:
+OTLP/gRPC and HTTP listen on the standard ports:
 
 ```text
 4317  OTLP/gRPC
@@ -69,7 +72,20 @@ OTLP/gRPC can listen on the normal OTLP gRPC port when implemented:
 
 ## GraphQL Query Shape
 
-Initial schema sketch:
+The original schema sketch below is historical. Current truth: 76 query fields
+and 14 mutation fields span health/version; services, topology, RED analytics;
+issues and trends; tests and flakiness; traces, links, events, critical paths,
+and compare; logs, facets, and patterns; story/agent sessions and evidence gaps;
+fields and read-only SQL; journeys, sessions, jobs, and conversations;
+dashboards, investigations, and saved views; metric catalog, queries, summaries,
+exemplars, and runtime metrics; invocations; and alert rules, destinations,
+incidents, and checks. Mutations cover issue status, invocation lifecycle,
+dashboards, investigations, saved views, alert rules, and alert destinations.
+
+There is deliberately no GraphQL `Subscription` root; live logs and spans use
+SSE. See generated schema for exact names and arguments.
+
+Historical initial sketch:
 
 ```graphql
 type Query {
@@ -97,7 +113,8 @@ type Subscription {
 }
 ```
 
-Subscriptions are optional. Do them after query/mutation works.
+The `Subscription` example is superseded: the implemented schema uses
+`EmptySubscription`, and live transport is SSE.
 
 ## Core Types
 
@@ -182,15 +199,19 @@ The ingest layer normalizes data into Parallax evidence rows and writes through 
 from span events named `exception`, spans with error status and `error.type`, and OTLP log records
 with ERROR/FATAL severity plus `exception.*`, `trace_id`, and `span_id` when present.
 
-### Future Sentry Envelope
+### Sentry Envelope (Implemented)
 
-Parallax may later expose minimal Sentry-compatible ingest:
+Parallax exposes Sentry-compatible envelope ingest and normalizes supported
+items into its evidence model:
 
 ```text
 POST /api/<project_id>/envelope/
 ```
 
-Future scope:
+Implemented scope includes envelope framing, bounded HTTP ingest, raw-frame
+spooling, acknowledgement tracking, and normalized error evidence. Unsupported
+items remain bounded by the endpoint contract; Parallax does not claim full
+Sentry API parity.
 
 - accept `event` item;
 - parse exception, stacktrace, release, environment, tags, breadcrumbs, trace context, debug metadata,
@@ -209,7 +230,7 @@ GraphQL must be safe by default:
 - required pagination for logs/events/spans;
 - max time-window per request;
 - max log rows per page;
-- no arbitrary SQL/PromQL passthrough in V1;
+- read-only SQL is exposed through the guarded `sql` query;
 - no direct backend object IDs unless wrapped as evidence refs;
 - every bundle includes redaction and missing-evidence fields.
 
@@ -219,17 +240,17 @@ GraphQL must be safe by default:
 | --- | --- |
 | CLI | GraphQL + health/version endpoints. |
 | TanStack Start UI | GraphQL only. |
-| Coding agent | GraphQL, later MCP adapter over same service methods. |
-| App telemetry | OTLP in V1; future optional Sentry envelope adapter. |
-| Admin/ops | health/version; later limited GraphQL mutations. |
+| Coding agent | CLI/GraphQL over the same service boundary. |
+| App telemetry | OTLP traces/logs/metrics; Sentry envelope compatibility ingest. |
+| Admin/ops | Health/version plus the implemented bounded GraphQL mutations. |
 
 ## Rust Implementation Direction
 
-Likely server stack:
+Implemented server stack:
 
 - `axum` for HTTP server and health endpoints;
-- `async-graphql` for GraphQL schema/resolvers;
-- `tonic`/OTLP crates for OTLP/gRPC later;
+- Juniper for the code-first GraphQL schema and resolvers;
+- `tonic`/OTLP crates for OTLP/gRPC;
 - service layer between GraphQL resolvers and storage adapters.
 
 Important rule:
@@ -248,8 +269,8 @@ GraphQL resolver -> GreptimeDB SQL directly
 
 - [GraphQL specification](https://spec.graphql.org/) — typed schema, query/mutation/subscription root
   operation model, introspection.
-- [async-graphql](https://github.com/async-graphql/async-graphql) — Rust GraphQL server library with
-  framework integrations and subscriptions.
+- [Juniper](https://github.com/graphql-rust/juniper) — implemented code-first
+  Rust GraphQL server library.
 - [OpenTelemetry OTLP specification](https://opentelemetry.io/docs/specs/otlp/) — telemetry ingest
   protocol for traces/logs/metrics.
 - [Sentry envelopes](https://develop.sentry.dev/sdk/foundations/envelopes/) — compatibility endpoint

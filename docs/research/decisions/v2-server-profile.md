@@ -1,6 +1,6 @@
 # V2 supported server profile (contract v1)
 
-- **Status:** Approved (operator unblock 2026-07-17; recommended minimal shape)
+- **Status:** Implemented supported profile; active plan 115 retains hardening evidence
 - **Contract version:** 1
 - **Decision date:** 2026-07-17
 - **Approved by:** alexey@chainargos.com (unblock directive)
@@ -21,11 +21,11 @@ in-memory product mode.
 | Topology | 1 VM/host, one `parallax serve` process, one GreptimeDB, one Turso file |
 | Storage | GreptimeDB + Turso only; native OTLP tables for raw signals |
 | TLS | OS native TLS only (never rustls); terminate TLS at the OS / reverse proxy for remote binds |
-| Auth | Plan 109 bearer required when `server.bind` is non-loopback |
+| Auth | Shipped plan 109 bearer contract required when `server.bind` is non-loopback |
 | Ingest tokens | Optional OTLP project token deferred until measured need; default open OTLP on trusted network only |
 | Ports (defaults) | API/UI `4000`, OTLP gRPC `4317`, OTLP HTTP `4318` |
 | Health | `GET /health` open; ready banner names every surface |
-| Retention | Config-driven TTLs (plan 116 prune CLI); no silent infinite growth |
+| Retention | Config-driven TTLs and shipped `parallax prune` (closed plan 116); no silent infinite growth |
 | Backup | Offline file-level: Greptime data dir + Turso `meta.db` + config; restore = stop → replace → start |
 | Unsupported | Postgres/ClickHouse/SQLite product engines, multi-writer Turso, multi-region active-active, rustls, hidden fallback stores |
 
@@ -65,7 +65,7 @@ measured profile or shrink load.
 [ Sentry SDK ] --public key-----> [ /api/<project>/envelope ] (optional, disabled default)
 ```
 
-- Remote binds **must** set plan 109 bearer; validation fails otherwise.
+- Remote binds **must** use the shipped bearer contract; validation fails otherwise.
 - Webhooks and Sentry adapter stay **opt-in** and off by default.
 - No product path may enable rustls or ship a custom CA bundle as the only trust store.
 
@@ -90,9 +90,9 @@ Until then, single-worker remains mandatory.
 | Slice | State |
 | --- | --- |
 | ADR (this file) | landed |
-| Validated server config composition + rehearsal scripts | residual (plan 115) |
+| Validated server config composition + rehearsal scripts | implemented; rehearsal/hardening evidence remains in plan 115 |
 | Release package install on supported targets | residual (uses plan 102 pipeline) |
-| Remote CLI dogfood + workload evidence | residual |
+| Remote CLI contexts | implemented; broader workload evidence remains residual |
 | OTLP ingest tokens | residual if remote ingest opens beyond trusted network |
 
 ## STOP

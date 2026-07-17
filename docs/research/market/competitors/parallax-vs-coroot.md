@@ -32,7 +32,7 @@ Both Apache-2.0 OSS, self-hostable, with an agent/MCP surface and AI RCA. The ov
 | **App-level errors / exceptions / panics / stack traces** | ❌ **(eBPF spans are partial — no app error chains)** | ✅ derived `error_event` + fingerprint (🏗) |
 | Service map / dependency graph | ✅ (instant, eBPF) | ❌ (🏗) |
 | SLO-based alerting | ✅ | 🟡 (🏗) |
-| Sentry envelope / DSN | ❌ | ✅ planned (🏗) |
+| Sentry envelope / DSN | ❌ | ✅ shipped |
 
 **Verdict:** Coroot's coverage is broad and all shipped, BUT its defining limitation — **eBPF spans are protocol-level, no app-level errors/panics/stacks** (Coroot's own docs say so) — is **exactly Parallax's whole point.** Parallax derives production error events from real services; Coroot deliberately does not. On coverage breadth, **Coroot wins;** on **app-level error semantics, Parallax targets a real Coroot gap** (planned/unproven).
 
@@ -42,7 +42,7 @@ Both Apache-2.0 OSS, self-hostable, with an agent/MCP surface and AI RCA. The ov
 - **eBPF zero-instrumentation:** Coroot's signature — deploy the node-agent DaemonSet, get a service map with no app changes. Parallax has **no eBPF story** (relies on OTel SDKs).
 - **Sentry envelope:** Coroot has **none**. Parallax plans compatibility.
 
-**Verdict:** on **eBPF zero-instrumentation adoption friction, Coroot wins decisively** (Parallax has none). On OTLP-native + Sentry-envelope, **Parallax's design is broader** (planned).
+**Verdict:** on **eBPF zero-instrumentation adoption friction, Coroot wins decisively** (Parallax has none). On OTLP-native + Sentry-envelope, **Parallax ships both** (plan 118 residual).
 
 ## Storage architecture
 
@@ -138,12 +138,12 @@ Sources: [coroot.com/pricing](https://coroot.com/pricing), [coroot.com/enterpris
 ## Where Parallax honestly edges Coroot
 
 - **App-level error events / panics / stack traces** — Coroot's eBPF spans are partial/protocol-level by design; Parallax's whole point is production error derivation. *(Real, sharp Coroot gap; Parallax planned.)*
-- **Sentry-envelope compatibility** — Coroot has none. *(Real; Parallax planned.)*
+- **Sentry-envelope compatibility** — Coroot has none. *(Real; Parallax shipped.)*
 - **Strictly read-only + redaction-gated agent bundle** — Coroot's MCP has 1 mutating tool and no redaction gate. *(Real narrowing edge; Parallax planned/unproven, A1.)*
 - **Single-binary local-first** — Coroot is multi-container. *(Real design edge.)*
 - **Fix-outcome loop + bounded/versioned bundle** — Coroot has neither. *(Thesis, unproven, A1.)*
 
-> **Honest summary:** Coroot ships the best "safe agent" MCP (RBAC) and the best adoption-friction story (eBPF) — two axes adjacent to Parallax's thesis, both already occupied and mature. Parallax's defensible delta is **app-level error semantics** (Coroot's biggest structural gap — eBPF can't see app errors), **Sentry-envelope**, **single-binary**, **strict read-only + redaction**, and the **bounded+outcome bundle** — most planned/unproven (A1). Do not claim "safe agent projection" as uniquely Parallax; Coroot ships the best one.
+> **Honest summary:** Coroot ships the best "safe agent" MCP (RBAC) and the best adoption-friction story (eBPF) — two axes adjacent to Parallax's thesis, both already occupied and mature. Parallax's defensible delta is **app-level error semantics** (Coroot's biggest structural gap — eBPF can't see app errors), **Sentry-envelope**, **single-binary**, **strict read-only + redaction**, and the **bounded+outcome bundle** — Sentry envelope shipped; bundle value/outcome unproven (A1). Do not claim "safe agent projection" as uniquely Parallax; Coroot ships the best one.
 
 ## Open questions / what measurement would settle
 

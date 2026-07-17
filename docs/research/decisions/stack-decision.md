@@ -9,7 +9,7 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > observability signals use GreptimeDB native tables. ClickHouse, Postgres, and
 > other engines are research comparators only; component gates cannot activate a
 > fallback. Storage/metadata traits are capability and test boundaries, not
-> substitution promises. Contract cleanup belongs to
+> substitution promises. Contract cleanup completed in
 > [Plan 093 validation](../validation/2026-07-12-plan-093-baseline/README.md),
 > and supported server-profile work belongs to
 > [`plans/115-v2-server-profile.md`](../../../plans/115-v2-server-profile.md).
@@ -20,6 +20,10 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > claim restriction, or fix-forward item; it never selects another engine. The
 > historical candidate and fallback fields below remain only where needed to
 > interpret old rows.
+>
+> **Implementation status (2026-07-17): the mandatory stack is implemented and
+> shipped.** “A5 open” below means the broad benchmark/assurance claim lacks one
+> complete roll-up packet; it does not mean storage integration is unbuilt.
 
 ## Purpose
 

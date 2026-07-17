@@ -1,27 +1,25 @@
 # Metric Exemplars Design
 
-Status: **shipped design record**. The historical plan 033 implementation now
-normalizes number/histogram exemplars, persists them in the
-`metric_exemplars` extension table, and exposes bounded API reads. The remaining
-schema correction is active only in
-[Plan 092 closure](https://github.com/tailrocks/parallax/commit/953409b):
-remove high-cardinality trace/span identifiers from the primary key and migrate
-existing data. The design rationale below describes the adopted shape, not an
-unfinished implementation plan.
+Status: **shipped design record** (re-verified 2026-07-17 against source). The
+historical plan 033 implementation normalizes number/histogram exemplars,
+persists them in the `metric_exemplars` extension table, and exposes bounded
+API reads. Invocation-scoped metric points live in `invocation_metric_points`
+(legacy `run_metric_points` is dropped at bootstrap). The design rationale
+below describes the adopted shape, not an unfinished implementation plan.
 
 ## Storage Shape
 
-Exemplars should not be added only to `run_metric_points`.
+Exemplars should not be added only to `invocation_metric_points`.
 
-`run_metric_points` is useful for the run-scoped subset because it already
-stores Parallax-owned point rows outside the Greptime metric engine, and a
-`run_id` column on exemplar rows preserves run filtering when present. It is
-not enough for the general case because most metric points do not carry
-`parallax.run.id`; keeping exemplars there would silently drop non-run metric
-to trace links.
+`invocation_metric_points` is useful for the invocation-scoped subset because
+it already stores Parallax-owned point rows outside the Greptime metric engine,
+and an invocation/run key on exemplar rows preserves run filtering when
+present. It is not enough for the general case because most metric points do
+not carry `cli.invocation.id` / legacy `parallax.run.id`; keeping exemplars
+there would silently drop non-invocation metric to trace links.
 
 The adopted Parallax extension table, `metric_exemplars`, follows the same
-bootstrap and batched insert pattern as `run_metric_points`:
+bootstrap and batched insert pattern as `invocation_metric_points`:
 
 - `ts` as `TIMESTAMP(9)` time index
 - `service`, `name`, `value`

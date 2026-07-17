@@ -4,6 +4,11 @@
 
 Research date: 2026-05-29
 
+> **Status (2026-07-17): bundle delivery is implemented through CLI/GraphQL;
+> repo-intent linkage remains design research.** Bundle v1/envelope v2 provides
+> bounded JSON and Markdown projections. `parallax-mcp` remains an isolated
+> proof rather than a packaged product surface.
+
 ## Purpose
 
 Answers two questions the record under-specified (menu items C + D): **how do real 2026 coding agents

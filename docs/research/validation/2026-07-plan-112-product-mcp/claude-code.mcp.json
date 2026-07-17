@@ -2,7 +2,7 @@
   "_comment": "Example only — do not auto-trust repositories. Explicit local install decision required. Place under Claude Code MCP settings after the operator accepts local-stdio GO.",
   "mcpServers": {
     "parallax": {
-      "command": "parallax-mcp-spike",
+      "command": "parallax-mcp",
       "args": ["--allow-local-stdio"]
     }
   }

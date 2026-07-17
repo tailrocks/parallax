@@ -1,5 +1,11 @@
 # Skeptical Re-Assessment — Whole Concept (2026-05-29)
 
+> **Status (2026-07-17): historical market reassessment.** Its competitive and
+> business warnings remain useful, but the implementation premise has advanced:
+> Parallax now ships Sentry envelope and OTLP ingest, evidence bundles,
+> GraphQL/CLI/UI, GitHub webhooks, and alerting. MCP exists only as a quarantined
+> spike pending active plan 112; fixer outcome proof remains active plan 123.
+
 <!-- markdownlint-disable MD013 -->
 
 A dated, adversarial re-research of the whole Parallax concept against the current (2026-05)

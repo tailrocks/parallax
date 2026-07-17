@@ -4,6 +4,8 @@
 - **Decision date:** 2026-07-17
 - **Approved by:** alexey@chainargos.com (operator unblock directive + plan 104/116 closure)
 - **Depends on:** plan 104 Option C, plan 116 lifecycle
+- **Implementation status (2026-07-17):** Shipped. Plans 104 and 116 are
+  closed historical dependencies.
 
 ## Decision (GO)
 
@@ -41,5 +43,5 @@ raw-signal table and not a second observability store.
 ## Implementation
 
 `evidence_pins` Turso table + `TursoMetadataStore::evidence_pin_*` CRUD with
-size bound and idempotent upsert. GraphQL/CLI projections can land as thin
-wrappers; the storage contract is the durable V1 path.
+size bound and idempotent upsert are implemented. GraphQL and CLI expose the
+same durable V1 pin contract.

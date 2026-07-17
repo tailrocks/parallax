@@ -19,7 +19,7 @@ or persistence capabilities through the workspace graph.
 
 The name-based classification check is fail-closed for future product packages
 whose names contain `agent` or `mcp`: they cannot enter the graph without the
-marker. The current `parallax-mcp-spike` remains class `proof`, is not packaged,
+marker. The current `parallax-mcp` remains class `proof`, is not packaged,
 and cannot establish a product safety claim.
 
 ## Prompt-injection model

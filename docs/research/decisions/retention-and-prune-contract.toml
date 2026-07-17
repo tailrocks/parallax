@@ -1,5 +1,5 @@
 schema_version = 1
-record_sha256 = "d128f4d9509983b28e591fa308522d072b041e6ca0aaf6ef8c880aade44d6f22"
+record_sha256 = "48c2a34b29c365b23c9a66e4b32008bbc6f9a949cd1fd08f2e6b8a80eb07debc"
 status = "approved"
 decision_date = "2026-07-17"
 approved_by = "alexey@chainargos.com"

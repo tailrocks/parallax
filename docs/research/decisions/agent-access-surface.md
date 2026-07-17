@@ -12,6 +12,11 @@
 > or audit.
 > The executable product-code boundary is specified in
 > [agent-trust-boundary-and-prompt-injection.md](agent-trust-boundary-and-prompt-injection.md).
+>
+> **Current implementation:** `parallax-mcp` uses `rmcp` and provides
+> `serve` (stdio, requiring `--allow-local-stdio`) and `check`. Its closed tool
+> catalog is `parallax_issue_context` and `parallax_agent_session_show`. This is
+> working spike evidence, not a shipped or supported product surface.
 
 This decision record consolidates the following previously-separate research files, each preserved in full below:
 
@@ -366,9 +371,9 @@ not satisfy the Parallax schema/adoption or source-field policy gates.
 
 ### Implementation Ownership
 
-The former phase ordering is retired. Plan 104 owns the canonical bundle and
-projection contract, plan 111 owns the redaction/source-field safety boundary,
-and plan 112 owns the product MCP decision, client fixtures, auth/scope,
+The former phase ordering is retired. Closed plans 104 and 111 delivered the
+canonical bundle/projection and redaction/source-field safety boundaries;
+active plan 112 owns the product MCP decision, client fixtures, auth/scope,
 resources, capabilities, output budgets, auditing, and spike graduation or
 removal. This document supplies requirements and claim levels only.
 

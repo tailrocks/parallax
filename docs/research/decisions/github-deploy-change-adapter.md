@@ -1,6 +1,6 @@
 # GitHub deploy/change context adapter (plan 121)
 
-**Status:** preliminary approved shape; fixture proof required before product claim  
+**Status:** first GitHub webhook ingest slice implemented; broader coverage remains fixture-gated
 **Decision date:** 2026-07-17  
 **Approver:** operator unblock directive (plan 121 provider = GitHub)  
 **Owner:** Plan 121
@@ -43,7 +43,10 @@ Parallax's first deploy/change provider is **GitHub** (read-only).
 
 ## Open gates
 
-1. HTTP endpoint + durable Turso state + delivery-id idempotency
-2. API backfill/reconciliation under rate limits
+The HTTP webhook endpoint and durable ingest path are implemented. Active plans
+121 and 124 retain these residual gates:
+
+1. API backfill/reconciliation under rate limits
+2. Broader deploy/change and CI entity coverage
 3. Bundle projection + doctor coverage diagnostics
 4. Measured claim-level rows

@@ -20,16 +20,16 @@ features they provide**. It synthesizes the per-tool deep-dives, the
 Closeness is measured against Parallax's V1 product shape (per the vision/overview/local-first docs):
 
 1. **Rust-first**, self-hosted, **single binary**, "much simpler/cheaper than self-hosted Sentry".
-2. **OTLP-native first** (traces/logs/metrics); **Sentry-compatible ingest = future adapter, not V1**.
-3. Pipeline: **OTLP gateway → Apache Iggy durable stream → Rust processors → GreptimeDB** (logs/traces/
-   metrics/derived `error_event`) **+ Turso** metadata.
+2. **OTLP-native first** (traces/logs/metrics); **Sentry envelope ingest = shipped** (plan 118 residual).
+3. Pipeline: **OTLP gateway → local spool/WAL (Iggy deferred) → Rust processors → GreptimeDB** (logs/traces/
+   metrics/derived `error_event`) **+ Turso** metadata. *(2026-07-17 code SoT: no product Iggy path yet.)*
 4. **Derives its own `error_event`** from exception span-events, span error status, ERROR/FATAL logs —
    then **fingerprints**.
 5. **Portable, auditable, redacted, versioned evidence/context bundles** as the output artifact.
-6. **Read-only, safe agent surface** (CLI + HTTP + MCP) that serves *bundles*, not raw queries.
-7. **Fix-outcome loop** (accepted/rejected/reverted/recurred) — the data moat.
+6. **Read-only agent surface**: CLI + HTTP shipped; MCP remains `parallax-mcp` (plan 112 gates).
+7. **Fix-outcome loop** (accepted/rejected/reverted/recurred) — the data moat (plan 123; unproven).
 8. Captures more than app telemetry: **deploys, CI runs, agent/CLI sessions, repo intent** → a bounded
-   failure dossier a coding agent can safely act on.
+   failure dossier a coding agent can safely act on (partially shipped; residual plans 120/121/124).
 
 Scoring dimensions (✅ match / 🟡 partial / ❌ miss) per tool below. "Closeness" is the overall judgment,
 not a sum — architecture-shape and product-intent matches weigh most.

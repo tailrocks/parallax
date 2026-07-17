@@ -2,7 +2,17 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-06-11. Status: **design, not measured.** This note pins down the outward-facing
+Research date: 2026-06-11.
+
+> **Status (2026-07-17): core attachment contract implemented.** OTLP gRPC
+> (`:4317`) and HTTP (`:4318`) ingest traces, logs, and metrics with gzip, body
+> limits, and raw-frame spool-before-ack durability. Sentry envelope HTTP and
+> GitHub webhook ingest are implemented. The semconv source is
+> `telemetry/semconv/contract.yaml`, generated for Rust/TypeScript/Java by
+> `cargo xtask semconv generate`. Deploy payloads and autonomous-fixer surfaces
+> shown below remain conceptual where no current API contract exposes them.
+
+This note pins down the outward-facing
 contract that other documents assume but none owned: what an application, a CI job, a deploy
 system, a browser, a coding agent, and a fixer each do, concretely, to participate.
 
@@ -10,8 +20,8 @@ system, a browser, a coding agent, and a fixer each do, concretely, to participa
 > OpenTelemetry with a small set of required resource attributes. If Parallax disappeared, nothing
 > in the application would need to change. Everything Parallax-specific lives server-side
 > (derivation, grouping, bundling) or in optional tooling (CLI, CI action) — never as a lock-in
-> client library. Sentry-protocol ingest remains a future migration adapter
-> ([capture/sentry-ingest.md](../capture/sentry-ingest.md)), not the integration path.
+> client library. Sentry-protocol ingest is a shipped migration adapter
+> ([capture/sentry-ingest.md](../capture/sentry-ingest.md)), not the primary integration path.
 
 ## 1. Applications (services, CLIs): standard OTel + conventions
 
@@ -170,13 +180,13 @@ Reconciler fill CI/review/merge/recurrence rows even when a fixer forgets to rep
 | Direction | Posture |
 | --- | --- |
 | In: OTLP | Primary, conformance-gated ([capture/otlp.md](../capture/otlp.md)) |
-| In: Sentry envelopes | Future adapter, fixture-gated, never required |
+| In: Sentry envelopes | Implemented compatibility adapter, fixture-gated, never required |
 | In: deploy/VCS webhooks | GitHub first, provider-pluggable |
 | Out: bundles | Versioned open schema, canonical hash, projection-equivalent everywhere |
 | Out: dispatch events | Versioned (`parallax.fix_candidate.v0`), transport-agnostic |
 
-Everything in this note is concept-stage: endpoint names, payloads, and the action are
-illustrative until the V1 API freezes. The invariants that are *not* illustrative: no proprietary
+Concept-only deploy/fixer endpoint names, payloads, and actions remain
+illustrative. The invariants that are *not* illustrative: no proprietary
 app SDK, required resource attributes as the correlation contract, both exception encodings
 accepted, deploy events as first-class evidence, read-only agent surfaces, append-only fixer
 write-back.

@@ -7,8 +7,15 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > **Current stack authority (operator, 2026-06-12): GreptimeDB + Turso are
 > mandatory.** ClickHouse and Postgres remain research comparators only. This GO
 > verdict authorizes the product direction, not an implementation queue or an
-> alternate backend. Current contract work is plan 093; supported server work is
-> plan 115; all other unfinished implementation must live in `plans/`.
+> alternate backend. Plan 093 is closed; supported server hardening remains in
+> active plan 115; all other unfinished implementation must live in `plans/`.
+>
+> **Implementation status (2026-07-17): the narrow product described here has
+> shipped.** Parallax now has native-table OTLP gRPC/HTTP ingest, Sentry envelope
+> ingest, GitHub webhooks, deterministic issues, bundle-v1/envelope-v2 evidence,
+> the code-first GraphQL API, CLI, alerting, dashboards, investigations, SQL,
+> and the TanStack UI. MCP remains a quarantined `parallax-mcp`; active
+> plan 112 owns product ship gates.
 
 > **Decision record — Status: GO (narrow product).** Build the open-source, Rust-first,
 > self-hosted execution-context engine; do **not** build the generic AI-RCA chatbot,
@@ -33,8 +40,8 @@ Build Parallax, but only as the narrow version:
 > OpenTelemetry traces/logs/metrics, derives Parallax-owned error rows from
 > exception spans and ERROR/FATAL logs, accepts CLI invocation traces and
 > coding-agent session records from tested capture adapters, then stores and
-> serves bounded evidence bundles for humans and agents. Sentry-compatible ingest
-> is future migration compatibility, not V1 scope.
+> serves bounded evidence bundles for humans and agents. Sentry-compatible Rust
+> error-event ingest is shipped as an opt-in migration adapter.
 
 Do not build the broad version:
 
@@ -124,7 +131,7 @@ The architecture is plausible with current open-source components:
 
 | Layer | Gate decision | Evidence |
 | --- | --- | --- |
-| Error compatibility | Support the Sentry envelope `event` path, not the whole Sentry product. | Current registry checks still show Rust `sentry`/`sentry-types` `0.48.2`, JS SDKs `10.53.1`, Go `v0.46.2`, and Python `2.60.0`; "Sentry-compatible" remains only a target until those SDK-generated fixtures pass parser, normalization, grouping, redaction, projection, and unsupported-item gates. |
+| Error compatibility | The bounded Sentry envelope `event` path is implemented, not the whole Sentry product. | The shipped adapter parses and normalizes bounded envelopes into the existing spool, issue, redaction, and evidence paths. Compatibility claims remain limited to fixture-proven SDK/version coverage. |
 | Telemetry standard | Use OpenTelemetry as the native telemetry protocol. | OTLP `1.10.0` is stable for traces, metrics, and logs, and gives shared `trace_id`, `span_id`, resource, and semantic-convention context. This proves the wire substrate, not agent readiness: public OTLP claims require the conformance ledger, canonical bundle/projection checks, and MCP structured-output validation. |
 | Observability store | GreptimeDB only, on native OTLP tables; see [native-otel-tables.md](native-otel-tables.md). | Historical comparison found ClickHouse faster on heavy analytical scans while GreptimeDB fit the anchored workload and Rust strategy. ClickHouse remains comparator evidence, not a fallback. |
 | Stream | Current local WAL/spool only; external streams remain research until explicitly planned. | Iggy is a useful comparator, but this verdict does not authorize a durable external-stream profile. |
@@ -151,7 +158,7 @@ Sources:
 
 ## What Parallax Actually Solves
 
-Parallax should solve these concrete jobs:
+Parallax solves these concrete jobs; outcome-corpus and product-MCP claims remain gated:
 
 1. Preserve runtime evidence cheaply enough that teams do not fear diagnostic
    cost spikes.
@@ -159,8 +166,8 @@ Parallax should solve these concrete jobs:
 3. Join Sentry-style errors with OTLP traces, logs, metrics, releases, deploys,
    CI runs, CLI invocations, and agent sessions.
 4. Build an evidence graph with typed edge strengths, not a loose text blob.
-5. Serve bounded context bundles through CLI and HTTP first, then MCP after
-   projection-equivalence and safety gates pass.
+5. Serve bounded context bundles through CLI and HTTP; the MCP spike serves the
+   two approved read-only tools but is not a product surface until plan 112 passes.
 6. Record what an agent saw, queried, changed, tested, proposed, and shipped.
 7. Say "inconclusive" when evidence is missing instead of inventing certainty.
 

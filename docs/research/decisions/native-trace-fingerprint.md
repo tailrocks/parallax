@@ -2,7 +2,9 @@
 
 - **Status:** Approved
 - **Decision date:** 2026-07-17
-- **Depends on:** plan 104 Option C; live probes stable+nightly
+- **Depends on:** closed plan 104 Option C; live probes stable+nightly
+- **Implementation status (2026-07-17):** Shipped, including legacy-column
+  cleanup and product-query prohibition.
 
 ## Decision
 

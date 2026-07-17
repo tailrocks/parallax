@@ -999,8 +999,8 @@ structured-output, or unsupported-item behavior.
 
 Freshness conclusion: keep the version matrix, incorporate the broader
 unsupported-item fixture requirements from the item-policy recheck, and keep
-public wording at **planned Sentry-compatible ingestion** until real
-SDK-generated envelopes pass the ledger.
+public wording at **shipped envelope ingest; SDK matrix compatibility unproven**
+until real SDK-generated envelopes pass the ledger.
 
 ### 2026-05-25 Item-Policy Recheck
 
@@ -1021,7 +1021,7 @@ See [Sentry envelope item policy recheck](sentry-ingest.md).
 
 | Level | Meaning | Allowed wording |
 | --- | --- | --- |
-| `not_measured` | No current SDK-generated fixture run exists. | "Sentry-compatible ingestion is planned." |
+| `not_measured` | No current SDK-generated fixture run exists. | "Envelope HTTP path exists in code; multi-SDK compatibility is unproven." |
 | `parser_only` | Envelope parser accepts syntactically valid envelopes and rejects malformed envelopes deterministically, but no SDK matrix has passed. | "Envelope parser prototype." |
 | `rust_error_event_compatible` | Current Rust SDK panic, captured error, message, and tracing event fixtures normalize into Parallax error rows. | "Compatible with current Sentry Rust SDK error-event envelopes." |
 | `rust_trace_link_compatible` | Rust SDK fixtures carrying Sentry trace context join to matching OTLP trace/log rows. | "Sentry Rust errors link to OpenTelemetry trace context." |

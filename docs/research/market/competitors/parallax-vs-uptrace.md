@@ -116,7 +116,7 @@ Both OSS, OTLP-native, ClickHouse-adjacent, self-hostable. Uptrace is a tracing-
 - **License permissiveness** — Apache-2.0 vs AGPL (network-use copyleft). *(Real, narrow.)*
 - **Engine choice (GreptimeDB-native telemetry)** — vs ClickHouse (unproven advantage).
 - **Sentry-envelope compatibility** — Uptrace has none; Parallax ships it. *(Real.)*
-- **Production error events + fix-outcome loop** — Uptrace has neither. *(Real; Parallax planned.)*
+- **Production error events + fix-outcome loop** — Uptrace has neither. *(Real: error events shipped; fix-outcome planned/unproven, A1.)*
 - **Bounded, redacted, agent-safe evidence bundle** — Uptrace has none. *(Thesis, unproven, A1.)*
 
 > **Honest summary:** Uptrace is a solid **OSS tracing-first APM** (AGPL, ClickHouse+Postgres, OTLP-native, cheap, Bun-author lineage) — same family as SigNoz/OpenObserve/HyperDX but tracing-centric. Ahead of pre-release Parallax on tracing-APM maturity, ClickHouse+Postgres, AGPL-self-host-free, cost. Parallax's defensible delta is **Apache-vs-AGPL**, **GreptimeDB-native** (vs ClickHouse, unproven), **Sentry-envelope**, **prod-error + outcome loop**, and the **bounded+outcome bundle** (A1 unproven). Lower strategic priority than SigNoz/OpenObserve (more niche), but completes the OSS-ClickHouse-OTLP-platform coverage.

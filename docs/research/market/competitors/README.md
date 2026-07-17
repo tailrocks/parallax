@@ -43,13 +43,13 @@ Prefer hard, current, sourced numbers: pricing tiers, ingest throughput, query l
 
 > **Parallax column verified (pass 15, 2026-07-17):** every Parallax cell below
 > re-checked against shipped code (`crates/parallax-server`, `parallax-analysis`,
-> `parallax-evidence`, `parallax-redaction`, `parallax-mcp-spike`). Corrections
+> `parallax-evidence`, `parallax-redaction`, `parallax-mcp`). Corrections
 > this pass: **Sentry envelope ingest is shipped** (`sentry_http.rs` router wired
 > in `serve.rs`), not planned; **error derivation + test-result derivation are
 > shipped** (`parallax-analysis::{derive,fingerprint,test_reporting}`); the
 > **bounded redacted bundle exists in code** (`parallax-evidence::bundle` +
 > `REDACTION_POLICY_V1`) but remains **A1-unproven**; **MCP is a spike crate
-> only** (`parallax-mcp-spike`, separate binary) — not a shipped product surface.
+> only** (`parallax-mcp`, separate binary) — not a shipped product surface.
 
 ---
 
@@ -106,7 +106,7 @@ Cost/performance cells are **⚪ benchmark-dependent** — not filled until meas
 | Capability | Parallax | Datadog | Sentry | SigNoz | OpenObserve | Coroot | Langfuse |
 |---|---|---|---|---|---|---|---|
 | Context engine for autonomous agents (bounded, redacted bundle) | 🟡🧪 bundle+redaction in code (`parallax-evidence`), **A1-unproven** | ❌ (human dashboard + chat) | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Read-only / safe-by-default agent projection | 🏗 MCP spike only (`parallax-mcp-spike`, not a product surface) | ❌ (write-capable management) | 🟡 | ❌ write/delete | ❌ write/delete default | 🟡 1 mutating tool | 🟡 |
+| Read-only / safe-by-default agent projection | 🏗 MCP spike only (`parallax-mcp`, not a product surface) | ❌ (write-capable management) | 🟡 | ❌ write/delete | ❌ write/delete default | 🟡 1 mutating tool | 🟡 |
 | AI root-cause / investigation | 🏗 planned (no shipped AI RCA) | ✅ Bits AI (Investigation) | ✅ Seer autofix | ✅ MCP RCA skill | ✅ AI SRE | ✅ 2-stage ML+LLM | ❌ |
 | AI pricing model | (self-hosted compute) | credit-metered ($500/500cr) | paid (Seer) | free (MCP) | Enterprise+BYO-key | Enterprise/Cloud | self-host or cloud |
 | LLM/agent trace evals + experiments | 🏗 planned | ✅ (Agent Observability) | ❌ | ❌ | 🟡 | ❌ | ✅ core |
@@ -151,14 +151,14 @@ Cost/performance cells are **⚪ benchmark-dependent** — not filled until meas
    - **Strongest collision (pass 38): [Dynatrace](parallax-vs-dynatrace.md) now explicitly ships and names "bounded agent context"** (Perform 2026: Dynatrace Intelligence + Smartscape truth-graph + an MCP Server + auto-remediating Intelligence Agents) — the *exact phrase* at the center of Parallax's thesis, executed on a far more mature substrate (Davis causal RCA + Grail 10-yr lakehouse).
    Net: **"LLM/agent tracing," "autonomous investigation," and even "bounded context for agents" are no longer Parallax-unique edges** — they are shipping at the incumbents. Parallax's surviving differentiation narrows to the **portable, redacted, versioned production-incident bundle for a coding-agent fix loop** specifically (A1) — which differs in *mechanism* from Dynatrace's live-SaaS-MCP-topology-grounding, but whose value over all of them is **unproven, not assumed**.
 
-## Full deep-dive roster (31 products + layers)
+## Full deep-dive roster (32 products + layers)
 
 The wide matrix above is a readable 10-column slice; the authoritative roster
 lives in [`comparison-set.md`](comparison-set.md). Every product with a
 `parallax-vs-<product>.md` deep-dive:
 
 - **Closed incumbents** — [Datadog](parallax-vs-datadog.md), [Sentry](parallax-vs-sentry.md), [Grafana Cloud](parallax-vs-grafana.md), [Honeycomb](parallax-vs-honeycomb.md), [New Relic](parallax-vs-new-relic.md), [Dynatrace](parallax-vs-dynatrace.md), [Splunk Obs](parallax-vs-splunk.md), [Elastic](parallax-vs-elastic.md), [Sumo Logic](parallax-vs-sumo.md), [Chronosphere](parallax-vs-chronosphere.md), [Observe](parallax-vs-observe.md), [Axiom](parallax-vs-axiom.md).
-- **OSS / self-host platforms** — [SigNoz](parallax-vs-signoz.md), [OpenObserve](parallax-vs-openobserve.md), [Coroot](parallax-vs-coroot.md), [Highlight.io](parallax-vs-highlight.md) *(🛑 wound down — acquired by LaunchDarkly, standalone shut down 2026-02-28; repo unmaintained; historical/reference)*, [Uptrace](parallax-vs-uptrace.md), [HyperDX](parallax-vs-hyperdx.md) *(ClickHouse Inc.'s ClickStack)*, [Odigos](parallax-vs-odigos.md) *(eBPF instrumentation)*, [Traceloop](parallax-vs-traceloop.md) *(OpenLLMetry — OTel LLM instrumentation, ServiceNow-owned; LLM sibling of Odigos)*, [Maple](parallax-vs-maple.md), **[TMA1](parallax-vs-tma1.md)** *(nearest architectural mirror)*.
+- **OSS / self-host platforms** — [SigNoz](parallax-vs-signoz.md), [OpenObserve](parallax-vs-openobserve.md), [Coroot](parallax-vs-coroot.md), [Highlight.io](parallax-vs-highlight.md) *(🛑 wound down — acquired by LaunchDarkly, standalone shut down 2026-02-28; repo unmaintained; historical/reference)*, [Uptrace](parallax-vs-uptrace.md), [HyperDX](parallax-vs-hyperdx.md) *(ClickHouse Inc.'s ClickStack)*, [Odigos](parallax-vs-odigos.md) *(eBPF instrumentation)*, [Traceloop](parallax-vs-traceloop.md) *(OpenLLMetry — OTel LLM instrumentation, ServiceNow-owned; LLM sibling of Odigos)*, [Maple](parallax-vs-maple.md), **[TMA1](parallax-vs-tma1.md)** *(nearest architectural mirror)*, [Bugsink](parallax-vs-bugsink.md) *(self-hosted Sentry-SDK-compatible error tracker — Sentry-alternative on Parallax's own wedge)*.
 - **AI / LLM-agent observability** — [Langfuse](parallax-vs-langfuse.md), [LangSmith](parallax-vs-langsmith.md), [Arize Phoenix](parallax-vs-arize-phoenix.md), [PostHog](parallax-vs-posthog.md), [Helicone](parallax-vs-helicone.md), [Braintrust](parallax-vs-braintrust.md).
 - **Different-layer (causal / investigation / pipeline)** — **[Causely](parallax-vs-causely.md)** *(clearest shipped "agent-context layer" — BYO-telemetry causal MCP)*, [HolmesGPT](parallax-vs-holmesgpt.md) *(CNCF AI SRE)*, [Mezmo](parallax-vs-mezmo.md) *(pipeline)*.
 

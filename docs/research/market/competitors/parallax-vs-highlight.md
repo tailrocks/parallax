@@ -97,11 +97,11 @@ backend production telemetry Parallax's *design* is comparable but unshipped.
 - **Highlight: OTLP-native** — OTLP endpoints for traces + logs; native OTel
   error monitoring; OpenTelemetry persistent session mapping (replay ↔ trace).
   Plus proprietary browser/mobile SDKs for replay.
-- **Parallax: OTLP-native (all signals) + planned Sentry-envelope.**
+- **Parallax: OTLP-native (all signals) + shipped Sentry-envelope.**
 
 > **Both OTLP-native.** Highlight's edge: **replay↔trace correlation** (the
 > persistent OTel session mapping) + a mature browser-SDK fleet. Parallax's edge:
-> general multi-signal + planned Sentry path (not shipped).
+> general multi-signal + shipped Sentry envelope path (plan 118 residual).
 
 ### Storage architecture
 

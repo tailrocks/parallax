@@ -17,8 +17,8 @@
 - **Single-binary local-first simplicity, Rust-first runtime-error capture,
   Sentry-compatible ingest, and the bounded redacted evidence-bundle +
   fix-outcome thesis: Parallax's intended edges.** Of these, only the
-  architectural/local-first shape is real today; the bundle + outcome + Sentry
-  edges are **planned or unproven**, not parity.
+  architectural/local-first shape is real today; Sentry-envelope ingest is shipped;
+  bundle value (A1) and outcome loop remain unproven — not full parity.
 - **SigNoz pressures the agent-native + "evidence" narrative harder than any
   other OSS tool** (hosted+self-hosted MCP, skills marketplace, evals, "Postmortem
   Evidence Pack" / "open investigation format"). It does **not** ship Parallax's
@@ -103,13 +103,12 @@ not yet shipped or proven.
   **No Sentry-envelope / Sentry-SDK ingestion; no issue grouping/lifecycle.**
   Migration from Sentry = re-instrument with OTel. Bear-case trigger
   ("SigNoz adds Sentry ingest") **has not fired.**
-- **Parallax: OTLP-native in V1; Sentry-envelope ingest = planned future adapter,
-  not V1.** This is a key honesty point: the "Sentry-compatible" lane is roadmap,
-  not shipped. Read the legacy matrix's "Sentry envelope ✅" as **planned**.
+- **Parallax: OTLP-native in V1; Sentry-envelope ingest is shipped**
+  (`sentry_http` + envelope parse/derive/ack; plan 118 residual migration
+  hardening only). SigNoz has **no** Sentry-envelope path.
 
-> Both are OTLP-native; neither ingests Sentry envelopes today. The
-> Sentry-migration lane is **open but not yet claimed by either side** — Parallax
-> intends it, has not shipped it.
+> Both are OTLP-native. **Parallax alone claims the Sentry-envelope migration
+> lane** with a shipped ingest adapter; residual migration work is plan 118.
 
 ### Storage architecture
 
@@ -262,7 +261,7 @@ self-hosted Parallax could undercut but that is unmeasured.
 ## Where Parallax intends an edge (scoped; mostly planned/unproven)
 
 1. **Single-binary local-first** — the one *real today* architectural edge (GreptimeDB+Turso, no ~5-container stack).
-2. **Sentry-compatible ingest lane** — planned, not V1; open, unclaimed.
+2. **Sentry-compatible ingest lane** — shipped; plan 118 residual migration hardening.
 3. **Portable versioned redacted evidence bundle** — designed; **value unproven (A1 gate)**.
 4. **Fix-outcome loop** — designed; **unproven**.
 5. **Rust-first runtime-error capture** — real bet, early.

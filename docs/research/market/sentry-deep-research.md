@@ -148,7 +148,7 @@ lifecycle**; Seer autofix + official MCP; broad signal coverage; mature alerting
 5. **No fix-outcome loop** (accepted/rejected/reverted) — Seer opens a PR but does not track outcomes.
 
 **Where Parallax must interoperate, not beat:** the Sentry **envelope is the de-facto error-ingest
-standard**. Parallax's planned Sentry-envelope compatibility is the wedge to absorb Sentry's SDK fleet
+standard**. Parallax's shipped Sentry-envelope compatibility is the wedge to absorb Sentry's SDK fleet
 while offering OTLP-native + local-first + redaction + outcome tracking on top.
 
 ## Backend & Data Flow

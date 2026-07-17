@@ -84,11 +84,11 @@ multi-coding-agent observability is live.
 - **New Relic: OTLP-native, GA since 2021** — traces/metrics/logs via OTLP
   (0.18.0, exp. histograms, stable logs). **Collection is reversible** (swap the
   OTel exporter to leave — low ingest lock-in). Plus proprietary agents/SDKs.
-- **Parallax: OTLP-native (all signals) + planned Sentry-envelope.**
+- **Parallax: OTLP-native (all signals) + shipped Sentry-envelope.**
 
 > **Both OTLP-native; New Relic has been GA for ~5 years.** On OTLP maturity +
   ingest reversibility, New Relic wins. Parallax's only ingest edge is the
-  planned Sentry-envelope path (not shipped).
+  shipped Sentry-envelope path (plan 118 residual).
 
 ### Storage architecture
 

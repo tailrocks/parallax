@@ -4,13 +4,14 @@
 
 Research date: 2026-05-25
 
-> **Status (2026-07-12): historical sequencing and research-gate record, not an
+> **Status (2026-07-17): historical sequencing and research-gate record, not an
 > active implementation roadmap.** Phase 1 shipped. Every unfinished product or
 > engineering item is authoritative only in [`plans/`](../../../plans/).
 > Research experiments and market-validation protocols remain in their linked
 > research ledgers, but no implementation may start from this file. The
 > GreptimeDB + Turso decision also supersedes every fallback reference in the
-> original projection.
+> original projection. Closed plans cited in historical phase notes own no
+> current work.
 
 ## Recorded Verification Rule
 

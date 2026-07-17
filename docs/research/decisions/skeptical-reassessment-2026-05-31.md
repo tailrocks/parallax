@@ -9,6 +9,12 @@ tools, 10 Sentry-compatible OSS tools, and Maple (maple.dev) deep research.
 This document does not replace [go-no-go.md](go-no-go.md); it stress-tests the
 verdict with the widest possible market lens.
 
+> **Status (2026-07-17): historical competitive snapshot.** The matrix records
+> the May 2026 concept, not current implementation status. Parallax now ships
+> Sentry envelope + OTLP ingest, deterministic issues, bundle-v1/envelope-v2,
+> GraphQL/CLI/UI, GitHub webhooks, dashboards, investigations, SQL, and alerting.
+> Outcome-loop proof and product MCP remain gated by active plans 123 and 112.
+
 > **Verdict: GO survives, narrower than ever, conditional on three gates.**
 > The technical wedge remains **unoccupied** — no single tool or combination of
 > tools ships one cheap, self-hosted, no-phone-home engine that does
@@ -60,7 +66,7 @@ dimensions. Each cell is `+` (has it), `~` (partial / announced but incomplete),
 
 | Tool | Sentry ingest | OTLP ingest | Evidence bundles | Outcome tracking | Agent/CLI/CI capture | Air-gapped | Rust | Single binary |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| **Parallax (planned)** | + | + | + | + | + | + | + | + |
+| **Parallax (May 2026 planned target; core now shipped)** | + | + | + | + | + | + | + | + |
 | **Rustrak** | + | - | - | - | - | + | + | ~ |
 | **edde746/bugs** | + | - | - | - | - | + | + | + |
 | **Errex** | + | - | - | - | - | + | + | + |

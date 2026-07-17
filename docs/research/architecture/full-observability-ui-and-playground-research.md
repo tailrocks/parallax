@@ -2,12 +2,14 @@
 
 Research date: 2026-07-06
 
-> **Status (2026-07-12): historical brainstorming and design evidence, not an
+> **Status (2026-07-17): historical brainstorming and design evidence, not an
 > active implementation plan, backlog, checklist, or ordering authority.** Many
-> candidate surfaces subsequently shipped. Plan 100 owns current UI structure,
-> plan 105 owns metric overview/trends, plan 119 owns Weaver/semantic conventions,
-> and plan 122 owns any remaining causal-UI/playground breadth. Only
-> [`plans/`](../../../plans/) authorizes implementation. Lists below are dated
+> candidate surfaces subsequently shipped: alerts, dashboards, ecosystem graph,
+> investigations, invocations, issues, logs, metrics/runtime metrics, services,
+> SQL, story, traces, evidence gaps, and SSE live tails. React Flow + ELK owns
+> graph rendering. Closed plan references below are historical, not ownership.
+> Only current files in
+> [`plans/`](../../../plans/) authorize implementation. Lists below are dated
 > option inventories and may be stale; do not implement from them.
 
 ## Executive thesis
@@ -1391,8 +1393,12 @@ preserve those details without keeping the duplicate root file.
 
 ### Current UI and API inventory from the removed brainstorm
 
-Current UI routes and reusable primitives matter because future work should
-extend them instead of inventing parallel surfaces:
+The dated inventory below is superseded. Current routes are `/`, `/alerts`,
+`/dashboards`, `/dashboards/$id`, `/ecosystem`, `/investigations`,
+`/invocations`, `/issues`, `/logs`, `/metrics`, `/metrics/$name`, `/services`,
+`/services/$service`, `/sql`, `/traces`, and `/traces/$traceId`.
+
+Historical inventory:
 
 - Routes: `/`, `/services`, `/services/$service`, `/issues`,
   `/issues/$fingerprint`, `/traces`, `/traces/$traceId`, `/logs`, `/runs`,
@@ -1412,7 +1418,8 @@ extend them instead of inventing parallel surfaces:
   `HeatCell`, `TrendChart`, `RangePicker`, data-table search/filter/sort/
   pagination, and stack-frame parsing with app-frame classification.
 
-Current GraphQL fields to preserve as the canonical API boundary:
+Historical GraphQL snapshot (the generated schema now has 76 queries, 14
+mutations, and zero subscriptions):
 
 - Queries: `overview`, `serviceList`, `serviceRed`, `issues`, `issue`,
   `issueTrend`, `trace`, `logsByTrace`, `tracesByRun`, `logsByRun`, `logs`,
@@ -1799,7 +1806,8 @@ Local research constraints:
 - `docs/research/market/closest-to-parallax-ranked.md`
 - `docs/research/validation/telemetry-playground-sample-project.md`
 
-Code pointers a future agent should verify before implementation:
+Historical code pointers (paths may no longer exist; current agents must locate
+the owning feature/crate rather than use these as implementation pointers):
 
 - `ui/src/routes/traces.$traceId.tsx:65`
 - `ui/src/components/console/trace-waterfall.tsx:22`

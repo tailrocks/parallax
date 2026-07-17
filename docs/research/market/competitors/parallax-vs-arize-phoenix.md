@@ -86,7 +86,7 @@ Sources: [arize.com/phoenix](https://arize.com/phoenix/), [Cekura pricing analys
   built on **OpenTelemetry + OpenInference** (Arize authored OpenInference, the
   semantic-convention standard for AI/LLM spans — a real standards-leadership
   edge). Multi-agent tracing auto-logs each agent/tool interaction as a span.
-- **Parallax: OTLP-native (traces/logs/metrics) + planned Sentry-envelope.**
+- **Parallax: OTLP-native (traces/logs/metrics) + shipped Sentry-envelope.**
 
 > Both OTLP-native. Phoenix's edge: **OpenInference** (the AI-span semantic
 > standard) + deep LLM-framework instrumentation. Parallax's edge: general

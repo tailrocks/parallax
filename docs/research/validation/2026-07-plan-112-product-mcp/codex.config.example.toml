@@ -2,5 +2,5 @@
 # Place under ~/.codex/config.toml after an explicit local install decision.
 
 [mcp_servers.parallax]
-command = "parallax-mcp-spike"
+command = "parallax-mcp"
 args = ["--allow-local-stdio"]

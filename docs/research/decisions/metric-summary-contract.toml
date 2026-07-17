@@ -1,5 +1,5 @@
 schema_version = 1
-record_sha256 = "a0f01c718a7e02506345f720852820ffb428a07c873493963edbebe99fcdb7db"
+record_sha256 = "f947a7be4033cf0d0917715065b97b55cef0b89c924e3c643fb4a521a3cd662c"
 status = "approved"
 decision_date = "2026-07-17"
 approval = "operator-directive-2026-07-17"

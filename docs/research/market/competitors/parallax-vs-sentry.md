@@ -24,7 +24,7 @@ These overlap most directly on **error tracking + tracing**. Sentry is a broad p
 
 ## Signal coverage
 
-| Signal | Sentry (shipped, 2026) | Parallax (planned) |
+| Signal | Sentry (shipped, 2026) | Parallax (pre-release; many surfaces shipped) |
 | --- | --- | --- |
 | Errors / exceptions | ✅ best-in-class grouping + lifecycle + ownership | ✅ derived `error_event` + fingerprint (🏗) |
 | Tracing / distributed traces | ✅ | ✅ OTLP traces (🏗) |

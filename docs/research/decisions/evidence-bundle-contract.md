@@ -11,6 +11,13 @@ approval_date = "2026-07-17"
 
 # Evidence-bundle canonical contract decision
 
+**Implementation status (2026-07-17): SHIPPED.** `bundle-v1` and the
+`envelope-v2` wrapper are implemented with assembly, bounding, ranking,
+redaction, hashing, Markdown projection, and JSON Schemas at
+`schema/evidence-bundle.v1.schema.json` and
+`schema/evidence-bundle.v2.schema.json`. Plan 104 references below are closed
+historical provenance.
+
 Decision prepared: 2026-07-13  
 Decision approved: 2026-07-17 (operator unblock directive recorded in
 `plans/README.md`, Triggered Or Operator-Blocked Work: "DECIDED … Option C —
@@ -25,7 +32,7 @@ as a typed payload inside a standards-shaped envelope. `bundle-v1` remains an
 immutable, permanently readable contract; it is never overloaded with new
 shape.
 
-Required field decisions (plan 104 Step 2):
+Required field decisions (closed plan 104 Step 2):
 
 - **Envelope/correlation model**: CloudEvents-profile envelope —
   `bundle_id`, schema reference, generated timestamp, generator identity,

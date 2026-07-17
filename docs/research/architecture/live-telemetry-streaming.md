@@ -3,6 +3,11 @@
 Research date: 2026-06-12 (operator request: live traces/logs per service,
 explicit live enable, "verify my concern that live must have fewer features").
 
+> **Status (2026-07-17): implemented.** Logs and finished spans stream over SSE;
+> GraphQL intentionally has zero subscriptions. The UI platform layer owns SSE
+> connection/reconnect/visibility behavior, while stored GraphQL queries retain
+> the richer historical filters and aggregations described below.
+
 ## The operator's concern, verified
 
 The concern: refresh mode reads pre-calculated, fully-indexed data from the

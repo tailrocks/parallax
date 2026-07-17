@@ -40,7 +40,7 @@ Both touch a **cost** story, but Chronosphere is a closed metrics-scale/cost-con
 - **Telemetry Pipeline:** a distinctive ingest-governance layer — control/drop/shape metrics/logs/traces from source to destination (vendor-agnostic routing, anti-lock-in).
 - **Sentry envelope:** none.
 
-**Verdict:** on metrics-scale ingest + telemetry-pipeline governance, **Chronosphere wins.** On OTLP-native + Sentry-envelope, **Parallax's design is broader** (planned/shipped).
+**Verdict:** on metrics-scale ingest + telemetry-pipeline governance, **Chronosphere wins.** On OTLP-native + Sentry-envelope, **Parallax ships both** (plan 118 residual).
 
 ## Storage architecture
 

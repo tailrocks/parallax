@@ -6,19 +6,17 @@
 
 ### Open Source, CLI-First Observability & Flaky Test Investigation
 
-**Status:** idea validation document
+**Status:** historical idea-validation document; V1 shipped
 
 **Purpose:** share with engineers, founders, investors, and observability/SRE practitioners to collect critical feedback.
 
-**Current research status, refreshed 2026-07-12:** the maintained verdict is **GO only for
-the narrow version**: a Rust-first, self-hostable runtime evidence/context
-engine that accepts OTLP traces/logs/metrics, derives Parallax-owned error
-events from exception spans and ERROR/FATAL logs, accepts CLI invocation traces
-and tested coding-agent session records, then serves schema-valid, redacted
-evidence bundles. Sentry-compatible ingest is future migration compatibility,
-not V1 scope. Do not read this thesis as a claim for a generic AI RCA chatbot,
-a full dashboard suite, or autonomous production mutation. The
-current storage posture is also narrower than early drafts: GreptimeDB native
+**Current implementation status, refreshed 2026-07-17:** the narrow product described by the
+maintained GO verdict has shipped: a 17-crate Rust workspace accepts OTLP traces/logs/metrics and
+Sentry envelopes, derives and analyzes issues, and serves bounded redacted evidence through its
+CLI, GraphQL API, and full 19-route UI. Alerting, SSE live streaming, spool durability, and the
+mandatory GreptimeDB + Turso adapters are implemented. MCP remains a spike, and autonomous
+production mutation remains outside the product. Do not read the original proposal below as the
+current scope or inventory. The storage posture is also narrower than early drafts: GreptimeDB native
 tables are mandatory for telemetry and Turso is mandatory for metadata (see
 [storage engine decision](../decisions/storage-engine.md)). ClickHouse/Postgres
 remain comparators only, and benchmark gates bound claims rather than reopen the
@@ -29,12 +27,13 @@ investigation first" recommendation is superseded. The current first product is 
 **local-first `run_id` evidence server for agent-assisted development** (the developer on a dev
 machine is user #1), followed by the same binary on a server — see
 [problem-audience-product-shape.md](problem-audience-product-shape.md) and the
-[V1 build plan](../architecture/v1-build-plan.md). Flaky-test/CI investigation remains a future
-capture area ([ci-and-flaky-tests.md](../capture/ci-and-flaky-tests.md)), not the entry wedge.
+[V1 build plan](../architecture/v1-build-plan.md). Flaky-test/CI collection and reporting are now
+active in plans 124, 154, and 155 rather than part of the shipped entry wedge.
 The same statements also defer autonomous fixing to a future nice-to-have, and the "build
 direction includes Sentry envelope migration" phrasing below should be read per
-[sentry-ingest.md](../capture/sentry-ingest.md): a future, fixture-gated adapter, never V1
-scope. The rest of this document is preserved as the original idea-validation record.
+[sentry-ingest.md](../capture/sentry-ingest.md): envelope HTTP ingest is implemented, while plan
+118 owns the remaining migration adapter. The rest of this document is preserved as the original
+idea-validation record.
 
 Maintained follow-ups:
 

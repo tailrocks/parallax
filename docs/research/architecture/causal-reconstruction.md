@@ -4,6 +4,14 @@
 
 Research date: 2026-05-25
 
+> **Status (2026-07-17): core mechanisms implemented; autonomy guidance remains
+> design policy.** Parallax derives issues and trace topology, exposes links,
+> events, critical paths, comparisons, stories, investigations, and evidence
+> gaps, and assembles bounded/ranked/redacted evidence bundles. GreptimeDB native
+> OTLP tables hold telemetry; Turso holds mutable metadata. Recommendations below
+> about autonomous action and production-data access remain safety constraints,
+> not claims that an autonomous fixer ships.
+
 ## Executive Summary
 
 Parallax should not promise that telemetry can always prove "the root cause."

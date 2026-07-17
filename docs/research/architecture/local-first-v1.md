@@ -4,11 +4,10 @@
 
 Decision date: 2026-06-03
 
-> **Status (2026-07-12): implemented V1 design record, not an active plan or
-> supported-profile contract.** The local profile shipped. Plans 093 and 104 own
-> remaining contract/bundle reconciliation; plans 109, 110, and 115 exclusively
-> own future authentication and server profiles; plan 118 owns conditional
-> Sentry migration. Only [`plans/`](../../../plans/) authorizes implementation.
+> **Status (2026-07-17): implemented V1 design record, not an active plan or
+> supported-profile contract.** The local profile and its expanded product
+> surfaces shipped. Closed plans cited in historical sections no longer own
+> work; only currently present files in [`plans/`](../../../plans/) do.
 > GreptimeDB plus Turso is mandatory. The older `--no-greptime`, Turso-only,
 > Postgres, and engine-substitution projections below are superseded.
 
@@ -63,7 +62,7 @@ parallax issue list --run <run_id>
 parallax issue context <issue_id>
 ```
 
-V1 output should be useful to humans and agents:
+V1 output is useful to humans and agents:
 
 - JSON bundle;
 - Markdown bundle;
@@ -72,7 +71,7 @@ V1 output should be useful to humans and agents:
 
 ## API Surface
 
-V1 should expose an API because agents and tools need stable access.
+V1 exposes a stable API for agents and tools.
 
 Preferred shape:
 

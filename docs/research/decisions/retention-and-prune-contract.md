@@ -6,6 +6,8 @@
 - **Approved by:** alexey@chainargos.com
 - **Authority:** Operator unblock directive, 2026-07-17
 - **Research refresh:** 2026-07-17, GreptimeDB 1.1 documentation
+- **Implementation status:** Shipped in `parallax prune`; closed plan 116 is
+  historical provenance, not an active owner.
 
 ## Decision
 
@@ -54,7 +56,7 @@ disk recovery. This follows the current GreptimeDB
 | Alert delivery events | Turso `alert_delivery_events` | Alert-owner retry/audit policy | Never selected by normal prune | Pending delivery and audit ownership remain intact |
 | Alert checks | Turso `alert_checks` | Existing bounded newest-per-rule owner policy | Never selected by normal prune | Rule owner controls bounded audit rows |
 | Spool frames and segments | Local disk | Existing configured maximum age and total bytes | Automatic reaper; manual prune includes all closed segments and truncates active segments safely | In-flight append/rotation owns its synchronization boundary |
-| Pinned evidence | Plan 106 owner; metadata in Turso and a bounded materialized evidence artifact outside expiring native rows | Retained until explicitly unpinned or the pin's own expiry | Never while reachable from a live pin | Reachability protects the materialized artifact; it does not alter uniform native raw-table TTLs |
+| Pinned evidence | Turso metadata plus bounded materialized bundle-v2 JSON outside expiring native rows | Retained until explicitly unpinned or the pin's own expiry | Never while reachable from a live pin | Reachability protects the materialized artifact; it does not alter uniform native raw-table TTLs |
 
 No data class silently inherits an infinite lifetime. Conversely, normal prune
 never deletes unresolved issues, active invocations, saved dashboards or
@@ -128,7 +130,7 @@ planning/journal limits are additive. Existing data is not rewritten; native
 table TTL reconciliation applies configured policy to existing tables, and
 Turso rows become eligible only under the state/grace rules above.
 
-## Required proof before implementation closure
+## Shipped conformance proof
 
 - Decision-policy validation rejects missing, malformed, draft, rejected,
   digest-mismatched, or incomplete contracts.

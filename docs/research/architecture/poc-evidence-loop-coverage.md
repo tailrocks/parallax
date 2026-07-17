@@ -1,5 +1,10 @@
 # PoC Coverage Map: What `poc/evidence-loop` Proves, and What It Does Not
 
+> **Status (2026-07-17): current PoC inventory.** `poc/evidence-loop` remains a
+> 20-module autonomous fix-loop data-plane proof, not product code or a product
+> claim. `poc/read-transport-bench` separately compares GreptimeDB read
+> transports. Shipped product evidence assembly lives in `parallax-evidence`.
+
 <!-- markdownlint-disable MD013 -->
 
 Research date: 2026-06-11. Status note: this map keeps the claim-wording discipline intact while

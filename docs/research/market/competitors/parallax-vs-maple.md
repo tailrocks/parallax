@@ -31,7 +31,7 @@ Both single-binary-local-first, OTLP-native, Turso-metadata. The closest pair on
 | Service catalog / dependency map | ✅ (latency, Apdex, dep edges, commit SHA) | ❌ (🏗) |
 | K8s monitoring | ✅ (Helm) | ❌ |
 | LLM / agent spans | 🟡 (explore) | ✅ (🏗) |
-| Sentry envelope / DSN | ❌ | ✅ planned (🏗) |
+| Sentry envelope / DSN | ❌ | ✅ shipped |
 
 **Verdict:** Maple's coverage is broader and all shipped — it is a full platform. Parallax is narrower (evidence engine). On coverage, **Maple wins decisively.** Same gap as the other platforms: **no Sentry-envelope path, no fix-outcome loop.**
 
@@ -41,7 +41,7 @@ Both single-binary-local-first, OTLP-native, Turso-metadata. The closest pair on
 - **Sentry envelope:** Maple has **none**. Parallax plans compatibility.
 - **Local mode capture:** single Bun binary + libchdb; standard OTel SDKs target `localhost:4318`.
 
-**Verdict:** on OTLP-native ingest, **tied in design; Maple ships it.** On Sentry-envelope, **Parallax's design is broader** (planned).
+**Verdict:** on OTLP-native ingest, **tied in design; Maple ships it.** On Sentry-envelope, **Parallax ships bounded envelope ingest** (plan 118 residual).
 
 ## Storage architecture — same metadata, different telemetry engine + a vendor coupling
 
@@ -132,10 +132,10 @@ Sources: [maple.dev/pricing](https://maple.dev/pricing/). Maple markets large sa
 - **License permissiveness** — Apache-2.0 vs FSL-1.1 (competitive-use restrictions). *(Real.)*
 - **No vendor coupling on the fast path** — self-hosted GreptimeDB vs Maple's Tinybird-hosted ClickHouse. *(Real; Maple's hosted perf depends on a vendor.)*
 - **Rust vs TS/Bun** — Parallax's stated substrate. *(Minor.)*
-- **Sentry-envelope compatibility** — Maple has none. *(Real; Parallax planned.)*
+- **Sentry-envelope compatibility** — Maple has none. *(Real; Parallax shipped.)*
 - **Fix-outcome loop + bounded/versioned/redacted bundle** — Maple has neither. *(Thesis, unproven, A1.)*
 
-> **Honest summary:** Maple is the local-UX benchmark and ships a polished single-binary-local OTLP platform with the same Turso metadata Parallax chose. Parallax's defensible delta is **Apache-vs-FSL**, **no-Tinybird-vendor-coupling** (self-hosted GreptimeDB), **Sentry-envelope**, and the **bounded+outcome bundle** — most planned/unproven (A1). Borrow Maple's local-mode polish; do not assume GreptimeDB beats ClickHouse without measurement.
+> **Honest summary:** Maple is the local-UX benchmark and ships a polished single-binary-local OTLP platform with the same Turso metadata Parallax chose. Parallax's defensible delta is **Apache-vs-FSL**, **no-Tinybird-vendor-coupling** (self-hosted GreptimeDB), **Sentry-envelope** (shipped), and the **bounded+outcome bundle** — residual unproven (A1). Borrow Maple's local-mode polish; do not assume GreptimeDB beats ClickHouse without measurement.
 
 ## Open questions / what measurement would settle
 

@@ -113,7 +113,7 @@ Sources: [cekura 2026](https://www.cekura.ai/blogs/braintrust-pricing), [aitools
 ## Where Parallax honestly edges Braintrust
 
 - **Production-backend telemetry breadth** — OTLP-native logs/metrics/traces; Braintrust is LLM-eval/trace-centric. *(Real domain difference.)*
-- **Production error events + fix-outcome loop** — Braintrust has neither. *(Real; Parallax planned.)*
+- **Production error events + fix-outcome loop** — Braintrust has neither. *(Real: error events shipped; fix-outcome planned/unproven, A1.)*
 - **Openness** — Apache-2.0 OSS core vs Braintrust's closed core (OSS SDK only). *(Real.)*
 - **Sentry-envelope compatibility** — Braintrust has none; Parallax ships it. *(Real.)*
 - **Bounded, redacted, agent-safe evidence bundle** — Braintrust has none. *(Thesis, unproven, A1 — and Braintrust's eval tooling could help *measure* the A1 gate.)*

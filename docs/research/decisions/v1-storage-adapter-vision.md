@@ -9,7 +9,11 @@ Decision date: 2026-06-03 · Updated after local-first clarification 2026-06-03
 > signal tables; Turso owns metadata. ClickHouse, Postgres, SQLite, and Turso-only
 > telemetry are not product modes. Capability traits exist for ownership and
 > tests, not backend replacement. This is a historical V1 design record, not an
-> active plan. Contract cleanup is plan 093 and server work is plan 115.
+> active plan. Plan 093 is closed; remaining server work is active plan 115.
+>
+> **Implementation status (2026-07-17): shipped.** The capability boundaries
+> now back the mandatory GreptimeDB-native telemetry + Turso metadata product;
+> in-memory storage remains test/dev-harness only.
 
 ## What This Means
 
@@ -116,9 +120,9 @@ Minimum storage profiles:
 
 | Profile | Role | Status |
 | --- | --- | --- |
-| `local-greptimedb` | Default local V1 evidence profile using managed GreptimeDB standalone. | Build first for CLI/local runs. |
-| `local-metadata` | Turso metadata/grouping capability. | Mandatory with local GreptimeDB. |
-| `greptimedb` | Default production/server observability storage. | Same model as local GreptimeDB, scaled up. |
+| `local-greptimedb` | Default local V1 evidence profile using managed GreptimeDB standalone. | Implemented for CLI/local runs. |
+| `local-metadata` | Turso metadata/grouping capability. | Implemented; mandatory with local GreptimeDB. |
+| `greptimedb` | Default production/server observability storage. | Implemented; same mandatory engine in the server profile. |
 
 ## Why Keep It Extensible
 

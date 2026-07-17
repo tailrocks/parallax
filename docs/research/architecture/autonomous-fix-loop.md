@@ -1,5 +1,11 @@
 # The Autonomous Fix Loop (Concept)
 
+> **Status (2026-07-17): historical loop design, not a shipped autonomous
+> fixer.** Detection context is materially implemented: issues, evidence
+> bundles, investigations, GitHub webhook ingest, alert evaluation/delivery, and
+> incidents now exist. Dispatch budgets, an external fixer, reconciliation, and
+> learning/outcome policy remain conceptual unless owned by a current plan.
+
 <!-- markdownlint-disable MD013 -->
 
 Research date: 2026-06-11. Status: **design, not measured** — every stage below carries the

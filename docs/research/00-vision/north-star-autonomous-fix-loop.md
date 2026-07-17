@@ -4,6 +4,11 @@
 
 Research date: 2026-06-11. Operator vision statement recorded 2026-06-11.
 
+**Implementation status, 2026-07-17:** the evidence substrate this moonshot requires has shipped:
+ingest, deterministic analysis, bounded/redacted v1/v2 bundles, alerting, live delivery, and durable
+storage are product code. `poc/evidence-loop` provides executable concept kernels, but no autonomous
+fixer product surface has shipped. Plan 123 owns the active fixer outcome loop; plan 112 owns MCP.
+
 > **North star.** Parallax exists so that, eventually, most production bugs are fixed by AI without
 > a human gathering context — and in routine cases without a human being asked at all. A failure is
 > detected from telemetry, root-caused from evidence, patched by a coding agent, validated against
@@ -27,8 +32,8 @@ Recorded as durable intent, condensed from the operator's own words:
    figuring out what went wrong in production and fixing it. "Magically AI fixing all your bugs,"
    mostly without asking, is the hardest unclaimed problem in the industry — and the goal.
 2. **OpenTelemetry as far as it goes.** Collect everything an application can emit through the
-   standard protocol. Extend with Sentry-protocol compatibility only where OTLP genuinely lacks
-   data, and only as a future adapter ([capture/sentry-ingest.md](../capture/sentry-ingest.md)).
+   standard protocol. Sentry envelope HTTP ingest now fills protocol gaps; plan 118 owns the
+   remaining migration-adapter work ([capture/sentry-ingest.md](../capture/sentry-ingest.md)).
 3. **Pre-aggregate, pre-process, structure.** Telemetry is shaped on the way in,
    then lands in GreptimeDB native observability tables plus approved derived
    extensions, while mandatory Turso owns relational metadata. Capability

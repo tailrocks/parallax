@@ -39,7 +39,7 @@ Both OTLP/OTel-capable. Sumo is a closed logs-first + SIEM SaaS; Parallax is an 
 - **Sentry envelope:** none.
 - **Collection:** Sumo agents + OTel Collector.
 
-**Verdict:** on OTel ingestion, **Sumo wins on maturity** (shipped). On OTLP-native storage + Sentry-envelope, **Parallax's design is broader** (planned/shipped).
+**Verdict:** on OTel ingestion, **Sumo wins on maturity** (shipped). On OTLP-native storage + Sentry-envelope, **Parallax ships both**.
 
 ## Storage architecture
 

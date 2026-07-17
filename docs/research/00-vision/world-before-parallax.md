@@ -4,6 +4,11 @@
 
 Research date: 2026-06-03
 
+**Historical status, 2026-07-17:** this note preserves the baseline and early design reasoning.
+Parallax V1 now ships the CLI, API, UI, GreptimeDB telemetry, and Turso metadata shape proposed
+here. The speculative storage tiers and “UI later” language below are superseded: GreptimeDB +
+Turso are mandatory in every product profile, with no fallback engine, and the full UI is shipped.
+
 ## Current World
 
 Before Parallax, self-hosted production debugging normally means a stack, not one system:

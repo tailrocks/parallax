@@ -2,11 +2,12 @@
 
 Checked: 2026-07-09
 
-> **Status (2026-07-12): design evidence, not an active plan or build
-> checklist.** The Weaver investigation and candidate registry shape are retained
-> here for reference. Numbered plan 119 in [`plans/`](../../../plans/) exclusively
-> owns any registry, generated constants, or CI enforcement. Do not implement
-> from this file.
+> **Status (2026-07-17): implemented without Weaver in the generation path.**
+> The Weaver investigation and candidate layout below are historical evidence.
+> Current source of truth is `telemetry/semconv/contract.yaml`; custom deterministic
+> generation via `cargo xtask semconv generate` emits Rust, TypeScript, and Java
+> constants. `parallax-semconv` owns Rust constants. No active plan owns the
+> already-shipped generator.
 
 ## Current Weaver State
 
@@ -119,18 +120,18 @@ generator. It emits the dependency-free `parallax-semconv` crate and the
 checked-in TypeScript, companion Rust, and companion Java constants; ordinary
 product builds consume those files without Weaver, Docker, or network access.
 
-`cargo xtask semconv check` validates the overlay with pinned Weaver, exercises
+`cargo xtask semconv check` validates the overlay, exercises
 invalid-schema fixtures, regenerates into temporary storage, compares every
 artifact byte-for-byte, rejects legacy Rust ownership and mutable playground
 wire literals, and supports the versioned JSON diagnostic envelope. The shared
 wire-contract fixture is executed by TypeScript and Java consumers, while a
 Rust OTLP protobuf round trip freezes representative emitted names and values.
-Registry changes route to both Rust and UI CI lanes, whose policy job installs
-the pinned Weaver tool and runs the same read-only check. The companion
+Registry changes route to both Rust and UI CI lanes and run the same read-only
+check without requiring Weaver. The companion
 repository's native Rust, Bun, and Gradle gates compile and test the checked-in
 outputs independently of generation.
 
 The implementation intentionally uses repository-owned renderers instead of
-Weaver templates: Weaver remains the schema validator, while the small local
+Weaver: the small local
 renderers give all three target languages one reviewed, deterministic contract
 without coupling product builds to an external generator lifecycle.

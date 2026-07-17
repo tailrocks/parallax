@@ -3,9 +3,12 @@
 <!-- markdownlint-disable MD013 -->
 
 Status: **implemented historical adoption record** (started 2026-06-18;
-reclassified 2026-07-12). Parallax now forwards raw OTLP to GreptimeDB native
-trace/log/per-metric tables and keeps only approved derived extension tables.
-The settled contract lives in
+reclassified 2026-07-12; re-verified 2026-07-17). Parallax now forwards raw OTLP
+to GreptimeDB native trace/log/per-metric tables and keeps only approved derived
+extension tables: `error_events`, `invocation_metric_points`, `metric_exemplars`
+(body text below may still say historical `run_metric_points` — that name was
+renamed; bootstrap **drops** any legacy `run_metric_points` table). The settled
+contract lives in
 [decisions/native-otel-tables.md](../decisions/native-otel-tables.md) and the
 [V1 implementation spec](../architecture/v1-implementation-spec.md). This file
 preserves spike evidence and design reasoning; it is not an active plan. Current

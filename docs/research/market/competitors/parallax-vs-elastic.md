@@ -33,7 +33,7 @@ Both OSS-origin, self-hostable, OTLP-native, with a columnar/search backend. The
 | SIEM / security | ✅ (unified obs + sec) | ❌ |
 | Errors / exceptions | 🟡 (queryable; no Sentry-grade issue lifecycle) | ✅ derived `error_event` + fingerprint (🏗) |
 | ES|QL / KQL query | ✅ | ❌ (SQL via GreptimeDB) |
-| Sentry envelope / DSN | ❌ | ✅ planned (🏗) |
+| Sentry envelope / DSN | ❌ | ✅ shipped |
 
 **Verdict:** Elastic's coverage is broad and all shipped, with a distinctive **search-grade log analytics + unified obs/security** strength. On coverage, **Elastic wins decisively.** No Sentry-envelope path, no fix-outcome loop (same gap).
 
@@ -43,7 +43,7 @@ Both OSS-origin, self-hostable, OTLP-native, with a columnar/search backend. The
 - **Beats/Elastic Agent:** legacy + current collectors alongside EDOT.
 - **Sentry envelope:** none.
 
-**Verdict:** on OTLP-native ingest, **tied in design; Elastic ships it.** On Sentry-envelope, **Parallax's design is broader** (planned).
+**Verdict:** on OTLP-native ingest, **tied in design; Elastic ships it.** On Sentry-envelope, **Parallax ships bounded envelope ingest** (plan 118 residual).
 
 ## Storage architecture — the central contrast
 
@@ -147,7 +147,7 @@ Self-host ELv2 = **$0 software cost** (you operate the cluster). Hosted Standard
 - **Self-host operational simplicity** — single-binary Rust vs Elastic's heavy distributed JVM cluster. *(Real, significant ops edge; Parallax pre-release.)*
 - **Purpose-built telemetry-native storage** — GreptimeDB vs search-engine-as-backend (targets Elastic's cost/overhead at telemetry workloads). *(Design bet; unproven.)*
 - **License permissiveness** — Apache-2.0 (OSI, no managed-service restriction) vs ELv2. *(Narrow but real.)*
-- **Sentry-envelope compatibility** — Elastic has none. *(Real; Parallax planned.)*
+- **Sentry-envelope compatibility** — Elastic has none. *(Real; Parallax shipped.)*
 - **Fix-outcome loop + bounded/versioned/redacted bundle** — Elastic has neither. *(Thesis, unproven, A1.)*
 
 > **Honest summary:** Elastic is a hyperscale, search-grade, obs+security-unified incumbent — far ahead of pre-release Parallax on breadth/scale/search/security/compliance. Parallax's defensible delta is **self-host operational simplicity** (Elastic is famously heavy to operate), **purpose-built-telemetry storage cost** (vs search-engine overhead — unproven), **Apache-vs-ELv2**, **Sentry-envelope**, and the **bounded+outcome bundle** (A1). The GreptimeDB-vs-Elasticsearch telemetry-cost question is a real, measurable opening.

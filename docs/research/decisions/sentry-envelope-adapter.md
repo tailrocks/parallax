@@ -1,13 +1,13 @@
 # Sentry envelope adapter contract
 
-**Status:** preliminary approved shape; fixture proof required before product claim  
+**Status:** implemented; compatibility wording remains fixture-version bounded
 **Decision date:** 2026-07-17  
 **Approver:** operator unblock directive (`plans/README.md`)  
 **Owner:** Plan 118
 
 ## Decision
 
-Parallax may add one migration endpoint:
+Parallax implements one migration endpoint:
 
 ```text
 POST /api/<project_id>/envelope/
@@ -18,7 +18,7 @@ GreptimeDB-native telemetry, Turso issue state, redaction, retention, and
 bundle-v2 boundaries. OTLP remains primary. No Relay-compatible forwarding,
 parallel raw-signal table, or second issue model is introduced.
 
-The first claim is **Sentry-compatible Rust error-event ingestion**, verified
+The shipped claim is **Sentry-compatible Rust error-event ingestion**, verified
 against sanitized envelopes emitted by the latest stable `sentry` Rust SDK.
 The 2026-07-17 documentation recheck found `sentry 0.48.5`; execution must
 refresh that version before generating fixtures.
@@ -67,7 +67,7 @@ retain borrowed request buffers after normalization.
 The path project ID, DSN project ID, and registered public key must resolve to
 one server-owned project context. A Sentry public key is a routing credential,
 not a secret or user authentication mechanism. Remote exposure therefore also
-requires Plan 109 bearer authentication; local-only exposure may use the
+requires the shipped plan 109 bearer authentication contract; local-only exposure may use the
 server-assigned local operator context.
 
 Return success only after the accepted normalized record is durably appended
@@ -105,16 +105,16 @@ change a durable event acceptance response.
 
 ## Required fixture gate
 
-Before code or compatibility wording, generate real sanitized Rust SDK fixtures
+Compatibility maintenance generates real sanitized Rust SDK fixtures
 for every Plan 118 case and capture exact bytes plus expected parse,
 normalization, outcome, identity, and redaction records. Negative fixtures must
 cover both compressed and decompressed limits, all frame truncation points,
 invalid lengths/newline termination, duplicate events, unknown items, PII/
 secret canaries, duplicate IDs, and collision IDs.
 
-This document fixes the preliminary contract; it does not prove compatibility.
-The executor must extend or correct it from current primary-source and live
-fixture evidence before shipping rather than weakening a failing gate.
+This document fixes the shipped bounded contract. Compatibility remains only as
+broad as current primary-source and live fixture evidence; failing new fixtures
+must narrow the claim or fix the adapter, never weaken the gate.
 
 ## Primary sources
 
@@ -124,4 +124,3 @@ fixture evidence before shipping rather than weakening a failing gate.
 - [Sentry Rust `Envelope`](https://docs.rs/sentry/latest/sentry/protocol/struct.Envelope.html)
 - [Sentry Rust `EnvelopeItem`](https://docs.rs/sentry/latest/sentry/protocol/enum.EnvelopeItem.html)
 - [Sentry Rust transports](https://docs.rs/sentry/latest/sentry/transports/)
-
