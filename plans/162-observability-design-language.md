@@ -47,11 +47,12 @@ ServiceDot surfaces (ecosystem graph), and browser evidence under
 - Utilities: `.content-enter`, `.tabular-stack`.
 - `ui/AGENTS.md`: three-axis rules, tabular-nums, motion, empty-state voice,
   six-item browser checklist.
+- Latency charts: overview + service detail RED/p50/p95/p99 →
+  `--chart-p*` / `--chart-error` / `--chart-throughput` (`fd4b044`).
 
 **Needs verify / deepen:**
 - [ ] Full `bun run typecheck/lint/check/test:ci/build`.
-- [ ] Percentile tokens on every latency chart (index trends, metric-strip,
-  services detail).
+- [ ] Remaining charts (metric-strip, dashboards) on percentile/series helpers.
 - [ ] Ecosystem graph + command palette ServiceDot; remaining severity chips.
 - [ ] Empty-state copy sweep; content-enter on table refresh.
 - [ ] Browser evidence pack (same-service-same-color ≥4 pages, numerals,
