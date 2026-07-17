@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 177 (HolmesGPT still **v0.36.0 / 2,874★**;
-no own store; Operator/PR path pressure only — **not** portable evidence bundle).
-Pass 176 = Traceloop. A1/A2/A4 open; A6 open at mixed gate only.
+Last updated 2026-07-18 after pass 178 (Datadog still **no self-hosted product
+backend** — OPW is in-infra **router** only; air-gap combination claim **holds**).
+Pass 177 = HolmesGPT. A1/A2/A4 open; A6 open at mixed gate only.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
@@ -46,9 +46,9 @@ producer rather than treat its construction as future work. Autonomous fixing re
    GB–TB): characterize the mandatory engine and identify fix-forward work; this no longer reopens the
    committed GreptimeDB + Turso stack. → item 5. (Query mix already resolved: anchored.)
 5. **Air-gapped agent-evidence: Parallax vs incumbents** — confirm the differentiator stays unique.
-   **Rechecked 2026-07-17 pass 56 + pass 151:** Seer still self-host-excluded (develop.sentry.dev
-   primary); Datadog no self-hosted backend; OSS peers can air-gap but lack portable redacted
-   bundle+outcome. Avoid unscoped "Grafana phones home" without primary. Note:
+   **Rechecked 2026-07-18 pass 178** (prior 56/151/158): Seer self-host-excluded; Datadog OPW =
+   route-only not product store; Grafana Assistant Cloud LLM; OSS peers can air-gap but lack
+   portable redacted bundle+outcome. Note:
    [market/air-gap-no-phone-home-recheck-2026-07-17.md](market/air-gap-no-phone-home-recheck-2026-07-17.md).
 
 ## Standing watches (cheap, recurring)

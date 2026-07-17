@@ -9,14 +9,14 @@ no-phone-home agent-evidence** differentiator stay unique vs incumbents?
 plane / no mandatory cloud AI; Seer and Bits are cloud; Grafana on-prem may
 still phone home for some features.
 
-**Verdict (pass 56 + pass 151):** **Still unique for the *combination* of
-air-gap-capable open core + portable agent evidence + no closed cloud AI
+**Verdict (pass 56 + pass 151 + pass 178):** **Still unique for the *combination*
+of air-gap-capable open core + portable agent evidence + no closed cloud AI
 dependency.** Narrower claims need care:
 
-| Claim | Status 2026-07-17 | Evidence |
+| Claim | Status 2026-07-18 (pass 178) | Evidence |
 | --- | --- | --- |
-| Sentry Seer available self-hosted | **False — still excluded** | [develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/): "Seer and other AI & ML features… currently closed source" (**pass 126 + pass 151** primary re-fetch) |
-| Datadog Bits available as self-hosted backend | **False** | Pass 42 + **pass 111:** only OSS Agent + Observability Pipelines Worker (routes into SaaS); **no self-hosted Datadog store/UI**. Secondary market sources still “SaaS-only” (2026); primary product remains cloud backend. |
+| Sentry Seer available self-hosted | **False — still excluded** | [develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/): "Seer and other AI & ML features… currently closed source" (**pass 126 + pass 151 + 158** primary re-fetch) |
+| Datadog Bits / product as self-hosted backend | **False** | Pass 42 + **111** + **178:** [Observability Pipelines](https://docs.datadoghq.com/observability_pipelines/) — Worker runs in-infra to **route** logs/metrics to **destinations** (Datadog, SIEM, cloud storage). **Not** a self-hosted Datadog store/UI/Bits backend. |
 | OSS Grafana / LGTM can run offline | **True for OSS core** | Self-host OSS is real; **Enterprise plugins/license keys** and Cloud AI features are separate — do **not** claim "all Grafana phones home" without a dated primary for a specific binary feature |
 | Grafana Assistant on self-managed | **UI yes / AI backend Cloud** | **Pass 77:** plugin + connect to Grafana Cloud stack required; not offline BYO-LLM — [incumbent-self-hosted-ai-recheck-2026-07-17.md](incumbent-self-hosted-ai-recheck-2026-07-17.md) |
 | OSS SigNoz / OpenObserve / Traceway / Rustrak / GlitchTip / Bugsink can air-gap | **True (product can)** | Self-host OSS peers; **none** ship Parallax-style portable redacted evidence bundle + outcome loop (passes 49–53 + 122–125 + 134) |
@@ -27,6 +27,11 @@ dependency.** Narrower claims need care:
 Wedge combination rechecks (Traceway/Bugsink/Rustrak/TMA1/GlitchTip) still show
 **no** portable redacted prod-incident bundle + outcome under pure air-gap.
 Differentiator **holds as combination claim**; A1 value still unproven.
+
+**Pass 178 (2026-07-18):** Datadog OPW primary docs reconfirm **in-infra routing
+worker**, not self-hosted Datadog product backend. Seer exclusion last deep-checked
+pass **158**. Grafana Assistant hybrid Cloud LLM last pass **158**. Combination
+air-gap claim **still holds**.
 
 **Falsification:** a major incumbent ships **self-hosted, open (or source-available)
 agent evidence with no cloud AI dependency** *and* a portable redacted bundle
