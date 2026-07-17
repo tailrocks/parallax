@@ -1,7 +1,12 @@
 # Parallax vs Uptrace
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17**.
-> Sources: [uptrace.dev](https://uptrace.dev/) + [editions](https://uptrace.dev/editions) + [pricing-update April 2026](https://uptrace.dev/blog/pricing-update-april-2026), [github.com/uptrace/uptrace](https://github.com/uptrace/uptrace), [OneUptime setup guide](https://oneuptime.com/blog/post/2026-02-06-setup-uptrace-opentelemetry-backend/view).
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 116**
+> pin: **v2.1.0-beta.7** still latest GitHub release 2026-06-05; **4,242★**;
+> last push 2026-06-14 — quieter cadence than fast-movers). Sources:
+> [uptrace.dev](https://uptrace.dev/) + [editions](https://uptrace.dev/editions)
+> + [pricing-update April 2026](https://uptrace.dev/blog/pricing-update-april-2026),
+> [github.com/uptrace/uptrace](https://github.com/uptrace/uptrace),
+> [OneUptime setup guide](https://oneuptime.com/blog/post/2026-02-06-setup-uptrace-opentelemetry-backend/view).
 >
 > **Bottom line up front:** Uptrace is an **open-source (AGPL), OTLP-native,
 > tracing-first APM** on ClickHouse+Postgres — same family as SigNoz/OpenObserve/HyperDX
