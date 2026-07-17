@@ -412,6 +412,9 @@ managed quotes remain):
 | milestone 730 | **730** | NOT DONE |
 | last_value p_svc DELETE | **731** | holds |
 | still not done | **732** | top 5 product/server |
+| still not done | **733** | top 5 product/server |
+| re-pin hold | **734** | pins healthy |
+| still not done | **735** | top 5 product/server |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
