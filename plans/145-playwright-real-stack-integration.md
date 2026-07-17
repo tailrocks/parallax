@@ -22,7 +22,7 @@
 - **Depends on**: 093, 101, 132, 144
 - **Category**: tests / integration / GreptimeDB / Turso
 - **Planned at**: `e3e7997`, revised 2026-07-12
-- **Status**: BLOCKED — Plans 132 and 144 are not complete
+- **Status**: IN PROGRESS — 132/144 done; host ports 24000-24003 occupied by greptime; scaffolding next when ports free (2026-07-17)
 
 ## Why This Matters
 

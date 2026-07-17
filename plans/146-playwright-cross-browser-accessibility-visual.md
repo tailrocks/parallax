@@ -24,7 +24,7 @@
 - **Depends on**: 101, 132, 144, 145
 - **Category**: tests / compatibility / accessibility / visual
 - **Planned at**: `e3e7997`, revised 2026-07-12
-- **Status**: BLOCKED — Plans 132, 144, and 145 are not complete
+- **Status**: BLOCKED — waits on 145 config ownership; Chromium foundation ready (2026-07-17)
 
 ## Why This Matters
 

@@ -182,8 +182,8 @@ Plan 129 DONE (2026-07-17): macOS forced-Bun Vitest dual-run + matrix ownership
 |------|-------|----------|--------|------------|--------|
 | 152 | Establish the generated GraphQL contract foundation | P1 | L | 095, 100, 101, 128, 129, 130 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-152-graphql-contract/README.md) |
 | 153 | Establish non-GraphQL runtime boundary foundations | P1 | L | 095, 100, 101, 128, 129, 130 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-153-runtime-boundaries/README.md) |
-| [145](145-playwright-real-stack-integration.md) | Prove critical UI flows against managed GreptimeDB and isolated Turso | P1 | L | 093, 101, 132, 144 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
-| [146](146-playwright-cross-browser-accessibility-visual.md) | Establish cross-browser, mobile, accessibility, and visual Playwright gates | P1 | L | 101, 132, 144, 145 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [145](145-playwright-real-stack-integration.md) | Prove critical UI flows against managed GreptimeDB and isolated Turso | P1 | L | 093, 101, 132, 144 | IN PROGRESS — host ports occupied; see evidence  |
+| [146](146-playwright-cross-browser-accessibility-visual.md) | Establish cross-browser, mobile, accessibility, and visual Playwright gates | P1 | L | 101, 132, 144, 145 | BLOCKED on 145 config ownership ([evidence](../docs/research/validation/2026-07-plan-146-playwright-breadth/README.md)) |
 
 ### TypeScript Capability And Feature Migrations
 
