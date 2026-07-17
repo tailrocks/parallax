@@ -131,6 +131,17 @@ pub(crate) fn redact(text: &str, report: &mut RedactionReport) -> String {
             *report.redacted_counts.entry(name).or_insert(0) += hits;
         }
     }
+    let control_characters = out
+        .chars()
+        .filter(|character| character.is_control() && !matches!(character, '\n' | '\r' | '\t'))
+        .count() as u64;
+    if control_characters > 0 {
+        out.retain(|character| !character.is_control() || matches!(character, '\n' | '\r' | '\t'));
+        *report
+            .redacted_counts
+            .entry("control_character")
+            .or_insert(0) += control_characters;
+    }
     out
 }
 
@@ -151,5 +162,17 @@ mod tests {
         let output = redact("Authorization: Basic dXNlcjpwYXNzd29yZHh4eHg=", &mut report);
         assert_eq!(output, "Authorization: [REDACTED:basic_auth]");
         assert_eq!(report.redacted_counts.get("basic_auth"), Some(&1));
+    }
+
+    #[test]
+    fn terminal_controls_are_removed_but_text_whitespace_is_preserved() {
+        let mut report = RedactionReport {
+            policy: "test",
+            ..Default::default()
+        };
+        let output = redact("safe\n\t\u{1b}[31mred\u{0}\u{7f}\rtext", &mut report);
+
+        assert_eq!(output, "safe\n\t[31mred\rtext");
+        assert_eq!(report.redacted_counts.get("control_character"), Some(&3));
     }
 }

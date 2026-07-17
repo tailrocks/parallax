@@ -66,6 +66,9 @@ must not return in product output.
   contain seeded or upstream-reflected evidence.
 - The spike installs no tracing subscriber; environment log directives cannot
   activate dependency-level MCP protocol/result logging of anchors or evidence.
+- Canonical evidence redaction now strips C0/C1 terminal controls (including
+  ANSI ESC, NUL, and DEL) while preserving tab/newline/CR and records the
+  removal count, preventing control injection across structured/text clients.
 - Bundle output fails closed unless the separately projected GraphQL canonical
   hash exactly matches the hash embedded in the bundle-v2 object.
 - The MCP tool path independently recomputes the canonical v2 hash as well;
