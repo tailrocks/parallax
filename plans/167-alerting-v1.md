@@ -79,6 +79,17 @@ evidence. Index status stays TODO.
   to `parallax-server`. Peer wires the tokio interval loop + shutdown,
   measurement queries per signal type, delivery worker I/O, and re-verifies
   incident-id determinism and renotify-key policy.
+- `crates/parallax-server/src/alerting/delivery_worker.rs` (`493c9e0`,
+  helper agent 2026-07-17) — Step 3 I/O pass: `deliver_due_once(store,
+  client, claimer, base_url, now_nanos, limit) → DeliveryReport` claims
+  due outbox rows (30s lease), builds webhook/slack payloads from stored
+  rule/incident/destination, POSTs via reqwest, marks delivered /
+  backed-off retry (helpers' 1m/5m/30m, dead at 5 attempts) / permanent
+  dead-letter for unbuildable payloads. Four tests against a local HTTP
+  listener (success + payload assertions, 500 backoff not-yet-due,
+  config-without-url dead-letter, slack text payload). Peer wires the
+  tokio interval loops + graceful shutdown in serve.rs, ready-banner line,
+  config knobs, and the live end-to-end webhook evidence.
 
 **Peer owns (verify/deepen/complete):**
 - [ ] Re-verify state machine + delivery helpers vs plan exhaustiveness;
