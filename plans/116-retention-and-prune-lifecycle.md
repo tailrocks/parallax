@@ -109,6 +109,11 @@ the helper objective; the peer executor owns the status transition.
   inclusive-cutoff eligible rows plus typed unresolved/not-expired exclusions.
   This remains read-only candidate discovery: no issue or cascade deletion is
   authorized by this slice, and pin protection still must land before execution.
+- The same bounded Turso read now estimates `issue_buckets` and
+  `issue_occurrences` reachable from eligible resolved owners. Both items state
+  that execution is owner-cascade-only; unresolved/recent owners contribute no
+  dependent candidates. Standalone occurrence-ledger compaction remains the
+  existing ingest-maintenance concern and is not broadened by prune planning.
 
 ## Historical Blocker Evidence (2026-07-14; superseded 2026-07-17)
 

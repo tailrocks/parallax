@@ -1,6 +1,6 @@
 use super::super::*;
 use parallax_model::IssueOccurrence;
-use parallax_storage::{MetadataPruneStore, PruneClass, PruneExclusionKind, PruneStore};
+use parallax_storage::{PruneClass, PruneExclusionKind, PruneStore};
 
 fn issue_occurrence<'a>(
     fingerprint: &'a str,
@@ -53,6 +53,21 @@ async fn issue_discovery_uses_persisted_resolution_time_and_preserves_open_issue
     assert_eq!(item.exclusions[0].count, 1);
     assert_eq!(item.exclusions[1].kind, PruneExclusionKind::NotExpired);
     assert_eq!(item.exclusions[1].count, 1);
+
+    let dependents = store
+        .issue_dependent_prune_items(20_000_000)
+        .await
+        .expect("discover issue-owned candidates");
+    assert_eq!(dependents.len(), 2);
+    assert_eq!(dependents[0].class, PruneClass::IssueBuckets);
+    assert_eq!(dependents[0].estimate.rows, Some(1));
+    assert_eq!(dependents[1].class, PruneClass::IssueOccurrences);
+    assert_eq!(dependents[1].estimate.rows, Some(1));
+    assert!(
+        dependents
+            .iter()
+            .all(|item| item.warnings == ["deleted only through the eligible issue owner cascade"])
+    );
 
     store
         .set_issue_status("eligible", "open", 40_000_000)

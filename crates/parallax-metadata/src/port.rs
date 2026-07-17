@@ -14,6 +14,15 @@ impl MetadataPruneStore for TursoMetadataStore {
             .map_err(MetadataError::internal)
     }
 
+    async fn issue_dependent_prune_items(
+        &self,
+        cutoff_nanos: u128,
+    ) -> MetadataResult<Vec<PruneItem>> {
+        Self::issue_dependent_prune_items(self, cutoff_nanos)
+            .await
+            .map_err(MetadataError::internal)
+    }
+
     async fn invocation_prune_item(&self, cutoff_nanos: u128) -> MetadataResult<PruneItem> {
         Self::invocation_prune_item(self, cutoff_nanos)
             .await
