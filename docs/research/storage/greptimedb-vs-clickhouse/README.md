@@ -78,6 +78,7 @@ managed quotes remain):
 | TWCS multi-window SST prune | 230 | files 2→1 on time filter |
 | CH PREWHERE plan shape | 231 | 1/6 granules; ms ~tie @50k |
 | CH projection p_svc non-PK filter | 232 | ReadFromMergeTree(p_svc) 1/7 |
+| Gap ranking after 220–232 | 233 | server/quotes/mix still top |
 
 ## Method
 

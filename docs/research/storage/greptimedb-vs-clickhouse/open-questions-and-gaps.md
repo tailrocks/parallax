@@ -121,23 +121,19 @@ implementation; this ledger does not authorize it.
 boundary for the indefinite research brief — **do not** re-run local four-way
 smoke as if it closed agenda item 5. Server-tier + workload-mix remain **unproven**.
 
-Engine-smoke re-verify cycle after v1.1.3 re-pin is **saturated** for laptop scale.
+Engine-smoke re-verify cycle after v1.1.3 re-pin is **saturated** for laptop scale
+(Runs 220–232 added MinIO pin fix, managed list rates, RPO runbook+D1 drill,
+workload-mix packet, partition/TWCS/PREWHERE/projection/Flow/freshness/concurrent
+re-verifies — **no direction drift**).
+
 Highest-value *remaining* items (not “done”):
 
-1. **Workload mix model** (product) — Run 223 packet exists; **fill shares + counters**
-   still owed (only input that re-weights DQ5 flip rule).
-2. **Server-tier 1M/5M four-way** on v1.1.3 + 26.6 — especially dedup-agg regression retest.
-3. **Managed $ quotes** — Run 221 locked **primary list rates** (CH Cloud
-   calculator-transparent; GT from $290 opaque above floor). Still need
-   **vendor-sized trial quotes** for a fixed Parallax profile.
-4. **Cold S3 selective egress at GB scale** — Run 220 re-verified object layout at
-   N=100k on current pins (GT 3 vs CH 22 objects); **GB–TB selective cold + GET
-   parity for GT** still owed (server/MinIO large tier; `mc admin trace` broken on
-   current MinIO — use CH `system.events`, need GT OpenDAL counters).
-5. **Product RPO runbook** — **Run 222** drafted
-   [`product-rpo-runbook.md`](product-rpo-runbook.md); **Run 225** live D1 drill
-   (GT parquet COPY + CH BACKUP 50k match). Remaining: D2 cluster meta drill,
-   D3 Turso dump, customer-tier SLOs, job manifests.
+1. **Workload mix shares filled** (product) — Run 223 packet; fill A1–A7 + proxy counters.
+2. **Server-tier 1M/5M four-way** on v1.1.3 + 26.6 — dedup-agg regression + magnitude ratios.
+3. **Vendor-sized managed quotes** — Run 221 list rates; trial/sales quote for fixed profile.
+4. **Cold S3 selective egress at GB scale** — Run 220 layout @100k; need large MinIO + GT GET counters.
+5. **RPO D2/D3 drills** — Run 225 D1 done; cluster meta snapshot + Turso dump still owed.
+6. **GT OpenDAL/S3 request metrics** — instrument gap vs CH `system.events` (Run 220).
 
-Do **not** burn passes re-confirming interactive 100k ties or small-N S3 object
-counts unless a pin bumps.
+Do **not** burn passes re-confirming interactive 50k–100k ties, small-N object counts,
+or plan-shape re-verifies of PREWHERE/projection/TWCS/PARTITION unless a **pin bumps**.
