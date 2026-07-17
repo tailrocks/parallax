@@ -86,6 +86,11 @@
 > - SO **2025** still **200**; **2026** results still **404**.
 > - Ledger paths still **absent**.
 > - **Operator interview runbook still owed.**
+>
+> **Pass 301 recheck (2026-07-18):** gate **still OPEN / zero rows**.
+> - Monetization triangle re-scrape **holds** (pass 301). SO **2025** **200** /
+>   **2026** **404**. Ledger still **absent**.
+> - **Operator interview runbook still owed.**
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 

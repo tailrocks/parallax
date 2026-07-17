@@ -262,6 +262,18 @@ Live primary re-fetch of all three pricing surfaces + Noz docs tag.
 
 **Falsify:** same as pass 242 (AI/SDR into free unlimited OSS core + portable bundle; offline free Noz; Assistant offline free; cloud rates collapse).
 
+### Pass 301 (2026-07-18) — triangle primary re-scrape
+
+Live re-fetch holds:
+
+| Vendor | Signal |
+| --- | --- |
+| **Grafana Cloud** | Pro **$19** / Enterprise **$25,000** commit still present |
+| **SigNoz** | Teams **$49** + **$0.30**/GB; **MCP Server** + **Noz** still listed |
+| **OpenObserve** | **$0.50**/GB; EE **SDR + AI SRE**; free self-host EE ≤**50 GB/day** |
+
+**Desk playbook holds.** A2 interviews still **zero rows**.
+
 ### Pass 131 (2026-07-17) — Datadog Bits / AI Credits pricing (fixer reference)
 
 Live primary: [datadoghq.com/pricing/?product=ai-credits](https://www.datadoghq.com/pricing/?product=ai-credits#products)
