@@ -705,7 +705,28 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > | OPW = Bits store | Pass **397** — route-only | **No** |
 > | Detect gate | Pass **397** — no ledger; `fixer_outcome` **3/3** | **No** (open) |
 >
-> **Narrow product identity holds.** Research program continues.
+>
+> **Pass 400 (2026-07-18) — GO composite reaffirm** after passes **397–399**.
+> Milestone: 400th research pass in this indefinite program. **Still GO
+> (narrow product).** Kill criteria **still unfired**:
+>
+> | Kill / reverse trigger | Latest recheck | Fired? |
+> | --- | --- | --- |
+> | A1: bundles do not beat raw context | Pass **398** — golden ok; no result ledger | **No** (open) |
+> | A2: no paying segment | Pass **399** — **0** interviews; desk triangle holds | **No** (open) |
+> | Full wedge closed by peer | Pass **342**/389 — not closed (GH rate limit) | **No** |
+> | OTel commoditizes evidence-bundle schema | Pass **342**/389 — #1185 idle hold | **No** |
+> | Incumbent self-host Seer-class AI | Pass **398** — Seer closed; Assistant hybrid (**399**) | **No** |
+> | App-code auto-merge commodity | Pass **398** — Bits never auto-merges | **No** |
+> | A4 real messy telemetry reliability | Pass **399** — no reliability-runs | **No** (open) |
+> | A6 agent-visible mixed redaction | Pass **399** — canary ok; mixed open | **No** (open) |
+> | A3 external schema adoption | Pass **399** — still none | **No** (open) |
+> | Sentry OTLP metrics GA | Pass **399** — still unsupported | **No** |
+> | Datadog OPW = Bits store | Pass **398** — still route-only | **No** |
+> | Detect/loop product gate | Pass **399** — no Detect ledger; `fixer_outcome` **3/3** | **No** (open) |
+>
+> **Narrow product identity holds.** Research program continues. Empirical
+> A1/A2 remain the highest-value residual (operator-owned).
 
 ## Verdict
 
