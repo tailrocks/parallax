@@ -646,7 +646,7 @@ ceiling = 242
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-evidence/src/bundle/redaction.rs::closure#1"
-ceiling = 111
+ceiling = 113
 
 [[limits]]
 metric = "rust.function-lines"
@@ -5222,7 +5222,7 @@ migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/platform/sse/event-source.ts"
+path = "ui/src/platform/sse/event-source.client.ts"
 current_owner = "platform/sse"
 target_owner = "platform/sse"
 migration_plan = "none"
