@@ -64,6 +64,19 @@ pressure, idle incident-attribute track).
 
 **Still not commoditized.** No material movement vs pass 211/237.
 
+**Pass 268 primary re-fetch (2026-07-18):**
+
+| Source | Finding |
+| --- | --- |
+| [semconv #1185](https://github.com/open-telemetry/semantic-conventions/issues/1185) | Still **open**; labels still `cicd:phase-2`, `triage:accepted:ready-with-sig`; `updated_at` still **2025-10-24T14:40:05Z** (**~9 months** idle). Attribute-scope only. |
+| [semconv #1081 alerts](https://github.com/open-telemetry/semantic-conventions/issues/1081) | Still **open**; `updated_at` still **2025-11-09** |
+| `model/` name filter (`incid|invest|rca|evidence|bundle|postmortem|forensic|alert`) | Still **empty** (contents API) |
+| Code search `incident` yaml under `model/` | **total_count 0** |
+| [genai#51](https://github.com/open-telemetry/semantic-conventions-genai/issues/51) | Still **open/idle** (`updated_at` **2026-05-05**) |
+| OCSF releases + schema.ocsf.io | GA still **`1.8.0`** (2026-03-18); picker still shows **`1.9.0-dev`** only |
+
+**Still not commoditized.** No material movement vs pass 243.
+
 **Evidence class:** primary GitHub issue/tree + first-party release pages +
 vendor product docs (desk recheck). Not a measurement of A1 value.
 
