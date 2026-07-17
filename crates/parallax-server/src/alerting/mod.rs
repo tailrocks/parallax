@@ -5,7 +5,10 @@
 //! loops, GraphQL, UI, and playground breach scenarios. Do not treat as Done.
 
 mod delivery;
+mod evaluator;
 mod state_machine;
+
+pub use evaluator::{GroupMeasurement, MeasurementSource, TickReport, eval_config, tick_once};
 
 pub use delivery::{
     CLAIM_LEASE_SECS, DeliveryEventType, MAX_DELIVERY_ATTEMPTS, NotificationContext,

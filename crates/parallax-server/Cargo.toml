@@ -17,6 +17,7 @@ parallax-analysis = { workspace = true }
 anyhow = { workspace = true }
 juniper = { workspace = true }
 axum = { workspace = true }
+async-trait = { workspace = true }
 bytes = { workspace = true }
 parallax-api = { workspace = true }
 parallax-greptime = { workspace = true }
