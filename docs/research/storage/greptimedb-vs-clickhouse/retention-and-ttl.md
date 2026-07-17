@@ -2,29 +2,53 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: pass 36, re-verified + refined pass 100 (Run 64 — both ClickHouse TTL merge
-paths measured live; GreptimeDB read-time TTL filter confirmed) + **Run 111 (refined: CH drops a
-*fully-expired* part cheaply (whole-part drop, verified) — the rewrite cost is only a *boundary*
-part with expired+live mixed, or a non-time-ordered part; for time-ordered ingestion both engines
-are cheap, GT's edge is zero-config TWCS vs CH cheap-when-time-partitioned; GT TTL purge is
-eventual/background, not forced by `compact_table`)** + **Run 144 (SOURCE: the cheap whole-SST TTL
-drop is a TWCS *structural* property — `TwcsPicker` groups SSTs by time window and compacts only
-within a window, so each time window is its own SST; a TTL-expired window's SST drops whole, no
-rewrite of survivors. `compaction/twcs.rs`, `window.rs` @v1.0.2)**. White-box teardown of
-the **TTL expiry mechanism** in each engine
-— *when* old data is dropped, and *what it costs* to drop it. This is a first-class
-lever for an observability product: Parallax keeps every signal on a retention
-window (spans 30d, logs 30d, metrics 90d–400d, issue history long), and at steady
-state the dominant background cost is **expiring old data**, not ingesting new. The
-question is not "can it TTL" (both can) but **"does expiry rewrite surviving data or
-just drop whole files,"** because that decides retention write-amplification and
-object-storage churn. Absorbs the retention-cost references the comparison notes
-left dangling. (The repo-wide `docs/research/storage/size-and-object-cost.md` cost gate is a
-separate, broader artifact — not this note.)
+Status: **pass 82 recheck 2026-07-17** — mechanism still holds on current stables;
+prior history = pass 36 + pass 100 (Run 64 live CH paths + GT read-time filter) +
+Run 111 (CH wholly-expired part drop; GT purge eventual) + Run 144 (TWCS structural
+whole-SST drop @ `v1.0.2`). White-box teardown of **TTL expiry** — *when* old data
+drops and *what it costs*. First-class lever for observability: Parallax retains
+signals on TTL windows; at steady state dominant background cost is **expiry**, not
+ingest. Question is not "can it TTL" but **"does expiry rewrite survivors or drop
+whole files?"** (write-amp + object churn). Product lifecycle contract (logical prune
+vs physical reclaim) lives in
+[retention-and-prune-contract.md](../../decisions/retention-and-prune-contract.md);
+sized $/GB gate in [size-and-object-cost.md](../size-and-object-cost.md).
 
-Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`).
-Both re-confirmed latest stable on 2026-05-25 (GreptimeDB v1.1.0 is nightly-only;
-ClickHouse 26.5.x is the highest line, 26.2.19 is a 26.2 backport).
+### Pass 82 recheck (2026-07-17) — pins + primary sources
+
+| Pin / surface | Pass 82 check | Verdict |
+| --- | --- | --- |
+| GreptimeDB stable | GitHub latest release **`v1.1.3`** (published 2026-07-17) | **Current.** Prior note pin `v1.0.2` is **historical** (Runs 64/111/144). |
+| ClickHouse feature line | Source tag **`v26.6.1.1193-stable`** (agenda pin; not LTS) | **Current for comparator.** Prior `v26.5.1.882-stable` was earlier line. |
+| GT docs TTL (v1.1) | [Manage data — TTL policies](https://docs.greptime.com/user-guide/manage-data/overview/#manage-data-retention-with-ttl-policies) | Table + DB `WITH ('ttl'=…)` / `ALTER … SET/UNSET 'ttl'`; values duration / `instant` / `forever`. **Expired rows deleted during compaction (async background), not immediately** — explicit doc callout. |
+| GT source TTL drop @`v1.1.3` | `src/mito2/src/compaction/twcs.rs` (~245–250): still calls `get_expired_ssts`, marks expired SSTs compacting; `compactor.rs` still **`// Include expired SSTs in removals — these don't depend on merge success`** (~600) and tests `test_expired_ssts_always_removed` | **Mechanism unchanged** vs Run 144: whole-SST removal independent of merge success. |
+| CH source defaults @`v26.6.1.1193-stable` | `MergeTreeSettings.cpp`: `merge_with_ttl_timeout = 3600 * 4` (4h); **`ttl_only_drop_parts = false`** default; docs still row-level when disabled | **Defaults unchanged** vs earlier note. |
+| Parallax product contract | [retention-and-prune-contract.md](../../decisions/retention-and-prune-contract.md) (approved 2026-07-17) | Already aligned: prune reports logical reclaim separately from physical bytes pending GT compaction/GC. |
+
+**Kept claims (strengthened, not flipped):**
+
+1. GreptimeDB physical TTL reclaim is **compaction-gated** (docs + source) — not a
+   synchronous DELETE at expiry second.
+2. Cheap physical drop remains **whole expired SSTs** via TWCS + `get_expired_ssts`
+   (source @`v1.1.3`).
+3. ClickHouse default remains **row-level TTL rewrite** unless
+   `ttl_only_drop_parts=1` + time-aligned parts/partitions (source defaults still
+   false/4h).
+4. Live magnitude numbers from Runs 17/64/111 remain **historical smoke on older
+   pins** — **not re-measured this pass** (no benchmark agent run). Treat write-amp
+   *magnitude* at production volume as **unproven** on `v1.1.3` / `26.6.x`.
+
+**Product windows (contract, not this engine note):** default product TTLs in the
+prune contract are shorter than the old research example windows (traces/logs
+`7d`, metrics `14d` in the decision matrix) — engine mechanism is independent of
+the numeric window.
+
+**Falsify this pass:** GreptimeDB removes TTL via row-rewrite merges by default;
+docs claim synchronous physical delete; CH flips `ttl_only_drop_parts` default to
+true; or a live re-measure on `v1.1.3` shows whole-SST drop abandoned.
+
+Historical pins (Runs 64/111/144 era): GreptimeDB `v1.0.2`, ClickHouse
+`v26.5.1.882-stable` — mechanism evidence, not current product pins.
 
 ## GreptimeDB — whole-SST drop, no rewrite (source-confirmed)
 
@@ -203,12 +227,17 @@ directional only.
 
 ## Source / evidence
 
-- GreptimeDB: `src/mito2/src/compaction.rs` (`find_dynamic_options:716`,
-  `get_expired_ssts:1091`), `src/mito2/src/compaction/twcs.rs:219-224`
-  (`get_expired_ssts` + mark-compacting), `src/mito2/src/compaction/compactor.rs:581`
-  (`// Include expired SSTs in removals — these don't depend on merge success`).
-- ClickHouse: `src/Storages/MergeTree/MergeTreeSettings.cpp:1669` (`merge_with_ttl_timeout`
-  = 4h), `:1675` (`ttl_only_drop_parts` default `false`, with the row-vs-part doc text).
-- Cross-refs: `compaction-and-merge.md` (TWCS vs SimpleMergeSelector),
-  `compression-and-cost.md` (object-storage cost), `clickhouse-implementation.md`
-  (DDL correction).
+- **Pass 82 (2026-07-17), current pins:**
+  - GreptimeDB **`v1.1.3`** source: `src/mito2/src/compaction/twcs.rs` (`get_expired_ssts`
+    + mark-compacting ~245–250), `src/mito2/src/compaction/compactor.rs` (~600:
+    expired SSTs in removals independent of merge success; `test_expired_ssts_always_removed`).
+  - GreptimeDB docs **v1.1**: [Manage data retention with TTL](https://docs.greptime.com/user-guide/manage-data/overview/#manage-data-retention-with-ttl-policies)
+    (compaction-async delete; table/DB TTL; `ALTER SET/UNSET`).
+  - ClickHouse **`v26.6.1.1193-stable`**: `MergeTreeSettings.cpp` —
+    `merge_with_ttl_timeout = 3600*4`, `ttl_only_drop_parts = false` (row-level default).
+  - Product: [retention-and-prune-contract.md](../../decisions/retention-and-prune-contract.md).
+- **Historical line numbers (Runs 64/111/144 @`v1.0.2` / CH 26.5):**
+  `compaction.rs` `get_expired_ssts`, `twcs.rs` mark-compacting, `compactor.rs`
+  removals comment — same control flow re-found on `v1.1.3` at shifted lines.
+- Cross-refs: `compaction-and-merge.md`, `compression-and-cost.md`,
+  `clickhouse-implementation.md` (DDL correction), `size-and-object-cost.md`.
