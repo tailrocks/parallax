@@ -9,8 +9,12 @@ import {
   type EventSourceFactory,
   type EventSourceLike,
 } from "@/platform/sse/event-source.client"
+import { createBoundedFrameBuffer } from "@/platform/sse/bounded-frame-buffer"
 
 export type LiveStreamStatus = "idle" | "connecting" | "open" | "error"
+
+/** Default arrival buffer cap (plan 147) — not the feature visible cap. */
+export const DEFAULT_MAX_BUFFERED_ITEMS = 2_000
 
 export interface LiveStreamControllerOptions<T> {
   readonly url: string | null
@@ -21,6 +25,8 @@ export interface LiveStreamControllerOptions<T> {
   readonly visible?: boolean
   readonly signal?: AbortSignal
   readonly eventSourceFactory?: EventSourceFactory
+  /** Max items held between flushes. Overflow drops oldest. */
+  readonly maxBufferedItems?: number
 }
 
 export interface LiveStreamController {
@@ -39,12 +45,15 @@ export function createLiveStreamController<T>(
 ): LiveStreamController {
   const flushMs = options.flushMs ?? 250
   const factory = options.eventSourceFactory ?? browserEventSourceFactory
+  const frameBuffer = createBoundedFrameBuffer<T>({
+    maxBufferedItems: options.maxBufferedItems ?? DEFAULT_MAX_BUFFERED_ITEMS,
+    dropOldest: true,
+  })
   let url = options.url
   let visible = options.visible ?? true
   let generation = 0
   let source: EventSourceLike | null = null
   let timer: ReturnType<typeof setInterval> | null = null
-  let buffer: T[] = []
   let disposed = false
 
   const setStatus = (status: LiveStreamStatus) => {
@@ -70,7 +79,7 @@ export function createLiveStreamController<T>(
 
   const invalidate = () => {
     generation += 1
-    buffer = []
+    frameBuffer.clear()
     clearTimer()
     closeSource()
   }
@@ -104,14 +113,13 @@ export function createLiveStreamController<T>(
         return
       }
       if (decoded.value.length > 0) {
-        buffer.push(...decoded.value)
+        frameBuffer.push(decoded.value)
       }
     }
     timer = setInterval(() => {
       if (gen !== generation || disposed) return
-      if (buffer.length === 0) return
-      const incoming = buffer
-      buffer = []
+      if (frameBuffer.size === 0) return
+      const incoming = frameBuffer.flush()
       options.onBatch(incoming)
     }, flushMs)
   }

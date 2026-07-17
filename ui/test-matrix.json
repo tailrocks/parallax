@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 526,
-    "test_files": 126
+    "test_cases": 529,
+    "test_files": 128
   },
   "private_route_imports": [],
   "entries": [
@@ -344,8 +344,8 @@
         "escapes NUL as a unicode escape",
         "leaves plain ASCII unchanged",
         "dedupes concurrent identical queries into one fetch",
-        "serves a second call from cache within TTL",
-        "refetches after the TTL expires",
+        "serves a second call from Query cache within staleTime",
+        "refetches after invalidate",
         "raw graphql always hits the network",
         "is available in the browser (client-side cache active)"
       ],
@@ -1856,8 +1856,8 @@
         "maps HTTP failures",
         "maps abort",
         "cached form dedupes concurrent identical operations",
-        "cached form serves TTL hit and refetches after expiry",
-        "rejects non-object envelopes"
+        "rejects non-object envelopes",
+        "cached form serves Query hit and refetches after invalidate"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -2512,6 +2512,35 @@
       "status": "implemented",
       "dataset_id": "investigations-pilot",
       "state_class": "cross-engine"
+    },
+    {
+      "id": "vitest-merge-live-logs",
+      "surface": "features/logs",
+      "risk": "Live log merge may mutate inputs, lose identity, or exceed capacity",
+      "scenario_owner": "features/logs",
+      "lane_owner": "vitest/model",
+      "layer": "model",
+      "test_file": "ui/src/features/logs/tests/model/merge-live-logs.test.ts",
+      "test_ids": [
+        "prepends ordered fresh items without mutating incoming",
+        "dedupes by identity and respects capacity"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-bounded-frame-buffer",
+      "surface": "platform/sse",
+      "risk": "SSE frame buffer may grow unbounded between flushes",
+      "scenario_owner": "platform/sse",
+      "lane_owner": "vitest/platform",
+      "layer": "platform-contract",
+      "test_file": "ui/src/platform/sse/tests/bounded-frame-buffer.test.ts",
+      "test_ids": [
+        "drops oldest on overflow and reports diagnostics"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
     }
   ],
   "browser_contract_paths": [

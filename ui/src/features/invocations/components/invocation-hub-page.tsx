@@ -27,6 +27,8 @@ import { StatCard } from "@/shared/console/stat-card"
 import { StoryTimeline } from "@/features/story"
 import { useLiveStream } from "@/platform/sse/use-live-stream"
 import { LogsTable, LOG_FIELDS, type LogDoc } from "@/features/logs"
+import { mergeLiveLogs } from "@/features/logs/model/merge-live-logs"
+import { mergeLiveSpans } from "@/features/traces/model/merge-live-spans"
 import { MetricStrip } from "@/features/runtime-metrics"
 import { navItem } from "@/shared/navigation"
 import { PageHeader } from "@/shared/components/page-header"
@@ -207,7 +209,7 @@ export function InvocationHubPage({
       return Array.isArray(batch) ? (batch as LogDoc[]) : []
     },
     onBatch: (incoming) =>
-      setLiveLogs((current) => [...incoming.reverse(), ...current].slice(0, 300)),
+      setLiveLogs((current) => mergeLiveLogs(current, incoming, 300).items as LogDoc[]),
   })
   const spanStatus = useLiveStream<LiveSpan>({
     url: live ? `/v1/traces/stream?invocation_id=${encodeURIComponent(invocationId)}` : null,
@@ -216,7 +218,7 @@ export function InvocationHubPage({
       return Array.isArray(batch) ? (batch as LiveSpan[]) : []
     },
     onBatch: (incoming) =>
-      setLiveSpans((current) => [...incoming.reverse(), ...current].slice(0, 300)),
+      setLiveSpans((current) => mergeLiveSpans(current, incoming, 300).items as LiveSpan[]),
   })
 
   useEffect(() => {

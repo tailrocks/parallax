@@ -56,6 +56,7 @@ import {
 } from "@/features/logs/components/logs-table"
 import type { LogDoc, OptionalLogColumn } from "@/features/logs/components/logs-table"
 import { contextWindow, stepSecondsForRange } from "@/features/logs/model/logs-range"
+import { mergeLiveLogs } from "@/features/logs/model/merge-live-logs"
 import {
   parseSavedViewState,
   serializeLogsSearch,
@@ -255,7 +256,7 @@ export function LogsPage({ data, search }: { data: LogsData; search: LogsSearch 
       return Array.isArray(batch) ? assignLogKeys(batch as LogDoc[]) : []
     },
     onBatch: (incoming) => {
-      setLogs((current) => [...incoming.reverse(), ...current].slice(0, PAGE_SIZE))
+      setLogs((current) => mergeLiveLogs(current, incoming, PAGE_SIZE).items as LogDoc[])
     },
   })
 

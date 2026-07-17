@@ -50,6 +50,7 @@ import { RelativeTime } from "@/shared/console/relative-time"
 import { TableSkeleton } from "@/shared/console/skeletons"
 import { formatCount, formatDurationNs, formatTimeInRange } from "@/shared/format"
 import { gqlString, graphqlCached } from "@/platform/graphql/transport"
+import { mergeLiveSpans } from "@/features/traces/model/merge-live-spans"
 import type { AttributeCompareRow, LiveSpan, TraceSummary } from "@/features/traces/model/wire"
 import { rangeLinkSearch, resolveRangeSearch, updateRangeSearch } from "@/domain/time-range/range"
 import type { ResolvedRange } from "@/domain/time-range/range"
@@ -434,7 +435,7 @@ export function TracesPage({ data, search }: { data: TracesLoaderData; search: T
       return Array.isArray(batch) ? (batch as SpanDoc[]) : []
     },
     onBatch: (incoming) => {
-      setSpans((current) => [...incoming.reverse(), ...current].slice(0, 100))
+      setSpans((current) => mergeLiveSpans(current, incoming, 100).items as SpanDoc[])
     },
   })
 
