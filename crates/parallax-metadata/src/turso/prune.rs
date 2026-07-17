@@ -1,0 +1,59 @@
+//! Bounded Turso prune candidate discovery.
+
+use super::*;
+use parallax_storage::{
+    PruneClass, PruneEstimate, PruneExclusion, PruneExclusionKind, PruneItem, PruneStore,
+};
+
+impl TursoMetadataStore {
+    pub async fn invocation_prune_item(&self, cutoff_nanos: u128) -> anyhow::Result<PruneItem> {
+        let cutoff_millis = nanos_to_millis(cutoff_nanos);
+        let conn = self.conn.lock().await;
+        let mut rows = conn
+            .query(
+                "SELECT
+                   COALESCE(SUM(CASE WHEN status = 'finished' AND ended_at IS NOT NULL AND ended_at <= ?1 THEN 1 ELSE 0 END), 0),
+                   COALESCE(SUM(CASE WHEN status != 'finished' OR ended_at IS NULL THEN 1 ELSE 0 END), 0),
+                   COALESCE(SUM(CASE WHEN status = 'finished' AND ended_at IS NOT NULL AND ended_at > ?1 THEN 1 ELSE 0 END), 0)
+                 FROM invocations",
+                [Value::Integer(cutoff_millis)],
+            )
+            .await?;
+        let row = rows
+            .next()
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("invocation prune aggregate returned no row"))?;
+        let eligible = u64::try_from(integer(&row, 0)).unwrap_or(0);
+        let active = u64::try_from(integer(&row, 1)).unwrap_or(0);
+        let not_expired = u64::try_from(integer(&row, 2)).unwrap_or(0);
+        let mut exclusions = Vec::new();
+        if active > 0 {
+            exclusions.push(PruneExclusion {
+                kind: PruneExclusionKind::Active,
+                count: active,
+            });
+        }
+        if not_expired > 0 {
+            exclusions.push(PruneExclusion {
+                kind: PruneExclusionKind::NotExpired,
+                count: not_expired,
+            });
+        }
+        Ok(PruneItem {
+            store: PruneStore::Turso,
+            class: PruneClass::Invocations,
+            target: "invocations".to_string(),
+            cutoff_nanos,
+            estimate: PruneEstimate {
+                rows: Some(eligible),
+                objects: None,
+                bytes: None,
+            },
+            exclusions,
+            warnings: Vec::new(),
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests;

@@ -96,6 +96,13 @@ the helper objective; the peer executor owns the status transition.
   CLI human/JSON presentation, durable journal execution, and real-store
   dry-run/execution parity. Revisit caps with live cardinality evidence; this
   core alone performs no deletion.
+- `MetadataPruneStore::invocation_prune_item` plus the Turso adapter now adds
+  one read-only bounded aggregate for terminal invocation eligibility. It
+  treats the cutoff as inclusive, counts active and not-yet-expired rows as
+  typed exclusions, and emits no identifiers or unbounded row set. The focused
+  temp-Turso test covers eligible-at-boundary, active, and recent terminal
+  rows. Peer must add pin exclusions and the remaining metadata classes before
+  claiming complete store discovery.
 
 ## Historical Blocker Evidence (2026-07-14; superseded 2026-07-17)
 

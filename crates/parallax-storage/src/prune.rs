@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 
+use crate::metadata::MetadataResult;
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum PruneStore {
@@ -143,6 +145,13 @@ impl PruneExecutionRequest {
 pub enum PruneAuthorization {
     DryRun,
     Execute,
+}
+
+#[async_trait::async_trait]
+pub trait MetadataPruneStore: Send + Sync {
+    /// One bounded aggregate over invocation metadata. `cutoff_nanos` is the
+    /// terminal-time eligibility boundary chosen by the immutable plan.
+    async fn invocation_prune_item(&self, cutoff_nanos: u128) -> MetadataResult<PruneItem>;
 }
 
 #[derive(Debug, Error)]

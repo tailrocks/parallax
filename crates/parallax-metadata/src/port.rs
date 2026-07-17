@@ -4,6 +4,16 @@ use parallax_model::{
     SavedView, TrendPoint,
 };
 use parallax_storage::metadata::{MetadataError, MetadataResult};
+use parallax_storage::{MetadataPruneStore, PruneItem};
+
+#[async_trait::async_trait]
+impl MetadataPruneStore for TursoMetadataStore {
+    async fn invocation_prune_item(&self, cutoff_nanos: u128) -> MetadataResult<PruneItem> {
+        Self::invocation_prune_item(self, cutoff_nanos)
+            .await
+            .map_err(MetadataError::internal)
+    }
+}
 
 #[async_trait::async_trait]
 impl parallax_storage::metadata::MetadataStore for TursoMetadataStore {
