@@ -33,8 +33,8 @@ use axum::response::IntoResponse;
 use axum::routing::any;
 use parallax_server::{Config, ServerHandle};
 use parallax_test_support::browser::{
-    RealStackIds, live_followup_log, live_followup_logs, live_followup_span, logs_request,
-    metrics_request, traces_request,
+    RealStackIds, live_followup_log, live_followup_logs, live_followup_span, live_followup_spans,
+    logs_request, metrics_request, traces_request,
 };
 use prost::Message as _;
 use serde::Deserialize;
@@ -496,6 +496,47 @@ async fn handle_control(stream: TcpStream, state: ControlState) -> Result<()> {
                 "span_name": name,
                 "span_id": span_id,
                 "ts_nanos": ts.to_string(),
+            })
+        }
+        "seed-live-span-duplicate-pair" => {
+            let name = request
+                .span_name
+                .or(request.body)
+                .unwrap_or_else(|| format!("pw.live.span.dup.{}", state.ids.dataset_id));
+            let span_id = request.span_id.unwrap_or_else(|| {
+                let nanos = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .expect("clock")
+                    .as_nanos();
+                format!("{nanos:032x}")
+                    .chars()
+                    .rev()
+                    .take(16)
+                    .collect::<String>()
+                    .chars()
+                    .rev()
+                    .collect()
+            });
+            let ts = parse_ts_or_now(request.ts_nanos.as_deref(), state.ids.start_nanos);
+            let req = live_followup_spans(
+                &state.ids,
+                &[
+                    (span_id.as_str(), name.as_str(), ts),
+                    (span_id.as_str(), name.as_str(), ts),
+                ],
+            );
+            post_proto(
+                &reqwest::Client::new(),
+                &format!("{}/v1/traces", state.otlp_http),
+                req.encode_to_vec(),
+            )
+            .await?;
+            json!({
+                "ok": true,
+                "span_name": name,
+                "span_id": span_id,
+                "ts_nanos": ts.to_string(),
+                "count": 2,
             })
         }
         other => json!({ "ok": false, "error": format!("unknown op {other}") }),

@@ -3749,7 +3749,7 @@ migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/platform/sse/event-source.client.ts"
+path = "ui/src/platform/sse/event-source.ts"
 current_owner = "platform/sse"
 target_owner = "platform/sse"
 migration_plan = "none"

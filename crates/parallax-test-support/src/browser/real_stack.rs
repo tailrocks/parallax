@@ -207,36 +207,57 @@ pub fn live_followup_span(
     name: &str,
     ts_nanos: u64,
 ) -> ExportTraceServiceRequest {
-    let span_id = hex_decode(span_id_hex);
-    let span_id = if span_id.len() == 8 {
-        span_id
-    } else {
-        // Stable 8-byte material from the provided hex/name when short/invalid.
-        simple_digest(format!("{span_id_hex}:{name}").as_bytes())[16..24].to_vec()
-    };
+    live_followup_spans(ids, &[(span_id_hex, name, ts_nanos)])
+}
+
+/// Multi-span live export (plan 147 identity cases — pass the same triple twice).
+pub fn live_followup_spans(
+    ids: &RealStackIds,
+    rows: &[(&str, &str, u64)],
+) -> ExportTraceServiceRequest {
+    let spans = rows
+        .iter()
+        .map(|(span_id_hex, name, ts_nanos)| {
+            let span_id = hex_decode(span_id_hex);
+            let span_id = if span_id.len() == 8 {
+                span_id
+            } else {
+                simple_digest(format!("{span_id_hex}:{name}").as_bytes())[16..24].to_vec()
+            };
+            // Unique trace id so hub mergeLiveTraces does not skip as known seed root.
+            let mut trace_id =
+                simple_digest(format!("live-trace:{span_id_hex}:{name}:{ts_nanos}").as_bytes())
+                    [..16]
+                    .to_vec();
+            if trace_id.iter().all(|b| *b == 0) {
+                trace_id[0] = 0xC1;
+            }
+            Span {
+                trace_id,
+                span_id,
+                name: (*name).into(),
+                kind: 2,
+                start_time_unix_nano: *ts_nanos,
+                end_time_unix_nano: ts_nanos.saturating_add(2_000_000),
+                status: Some(Status {
+                    code: status::StatusCode::Ok as i32,
+                    message: String::new(),
+                }),
+                attributes: vec![
+                    string_kv("cli.invocation.id", &ids.invocation_id),
+                    string_kv("session.id", &ids.session_id),
+                    string_kv("parallax.dataset.id", &ids.dataset_id),
+                    string_kv("pw.live", "1"),
+                ],
+                ..Default::default()
+            }
+        })
+        .collect();
     ExportTraceServiceRequest {
         resource_spans: vec![ResourceSpans {
             resource: Some(resource(ids)),
             scope_spans: vec![ScopeSpans {
-                spans: vec![Span {
-                    trace_id: ids.trace_id_bytes(),
-                    span_id,
-                    name: name.into(),
-                    kind: 2,
-                    start_time_unix_nano: ts_nanos,
-                    end_time_unix_nano: ts_nanos + 2_000_000,
-                    status: Some(Status {
-                        code: status::StatusCode::Ok as i32,
-                        message: String::new(),
-                    }),
-                    attributes: vec![
-                        string_kv("cli.invocation.id", &ids.invocation_id),
-                        string_kv("session.id", &ids.session_id),
-                        string_kv("parallax.dataset.id", &ids.dataset_id),
-                        string_kv("pw.live", "1"),
-                    ],
-                    ..Default::default()
-                }],
+                spans,
                 ..ScopeSpans::default()
             }],
             ..ResourceSpans::default()

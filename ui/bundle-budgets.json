@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "total_raw_ceiling": 3706837,
+  "total_gzip_ceiling": 1115249,
+  "file_count_ceiling": 110,
+  "largest_gzip_ceiling": 446811,
+  "source_map_files_ceiling": 0,
+  "clean_build_tolerance_bytes": 0,
+  "notes": "Plan 148 shrink-only ceilings from measured production client (raw=3670135 gzip=1104206 files=102 largestGzip=442387 maps=0) + 1% deterministic tolerance on bytes; file count allows small chunk-split noise."
+}

@@ -182,6 +182,30 @@ export async function seedLiveSpan(options?: {
   }
 }
 
+/** Two identical spans in one export — merge must keep one row by spanId. */
+export async function seedLiveSpanDuplicatePair(options?: {
+  spanName?: string
+  spanId?: string
+}): Promise<{ span_name: string; span_id: string; ts_nanos: string }> {
+  const response = (await controlRequest({
+    op: "seed-live-span-duplicate-pair",
+    span_name: options?.spanName,
+    span_id: options?.spanId,
+  })) as {
+    ok?: boolean
+    span_name?: string
+    span_id?: string
+    ts_nanos?: string
+    error?: string
+  }
+  expect(response.ok, response.error ?? "seed-live-span-duplicate-pair failed").toBe(true)
+  return {
+    span_name: response.span_name ?? "",
+    span_id: response.span_id ?? "",
+    ts_nanos: response.ts_nanos ?? "",
+  }
+}
+
 export async function graphqlQuery<T>(query: string): Promise<T> {
   const manifest = readFullStackManifest()
   const response = await fetch(manifest.graphql_url, {

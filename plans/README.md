@@ -219,8 +219,12 @@ work.
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | 133 | Replace the UI TTL cache with feature-owned TanStack Query | P1 | L | 095, 101, 128, 129, 132, 144, 145, 151 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-133-tanstack-query/README.md) |
-| [147](147-ui-live-data-performance.md) | Make live telemetry updates typed, bounded, and identity-stable | P1 | L | 095, 101, 129, 133, 140, 141, 142, 145, 151 | IN PROGRESS — decoder cutover + reconnect + merge perf ([evidence](../docs/research/validation/2026-07-plan-147-live-data/README.md)); residual @live e2e |
-| [148](148-ui-bundle-performance.md) | Enforce route-owned production chunks and deterministic bundle budgets | P1 | L | 095, 100, 101, 105, 132, 133, 144, 146, 147, 151 | IN PROGRESS — build contract + `bundle:analyze`; residual ratchets/@bundle |
+Plan 147 DONE (2026-07-17): typed bounded live data + `@live` full-stack + p95 ratchets
+([evidence](../docs/research/validation/2026-07-plan-147-live-data/README.md)).
+
+Plan 148 DONE (2026-07-17): production bundle budgets + two clean builds + `@bundle` gates
+([evidence](../docs/research/validation/2026-07-plan-148-ui-bundle/README.md)).
+
 
 ### Dependencies, Tests, And Performance
 
