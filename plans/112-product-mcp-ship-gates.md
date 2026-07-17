@@ -110,6 +110,9 @@ must not return in product output.
   non-destructive, idempotent, and closed-world.
 - Tool anchors are closed-schema and runtime bounded to 1–256 UTF-8 bytes;
   stable invalid-parameter errors do not echo attacker-controlled values.
+- Before GraphQL or future audit paths see an anchor, runtime validation rejects
+  any value changed by the canonical sanitizer, including known secret and
+  terminal-control patterns.
 - Agent-session output now strictly decodes into a closed typed projection and
   advertises its generated MCP `outputSchema`; arbitrary GraphQL fields cannot
   pass through to clients.

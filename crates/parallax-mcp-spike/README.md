@@ -30,8 +30,9 @@ equivalence). See:
 No shell, SQL, deploy, rollback, or management tools exist in this binary.
 Both tools advertise MCP annotations as read-only, non-destructive, idempotent,
 and closed-world.
-Anchor schemas and runtime validation require 1–256 UTF-8 bytes; invalid-input
-errors never echo the supplied anchor.
+Anchor schemas require 1–256 UTF-8 bytes; runtime validation additionally
+rejects canonical sanitizer changes (known secret/control patterns) before any
+upstream call. Invalid-input errors never echo the supplied anchor.
 Missing bundles and sessions return stable MCP resource-not-found errors;
 transport and malformed-response failures remain secret-free internal errors.
 

@@ -186,9 +186,12 @@ fn map_fetch_error(error: gql::FetchError, unavailable_code: &'static str) -> Mc
 }
 
 fn validate_anchor(anchor: &str) -> Result<(), McpError> {
-    if anchor.is_empty() || anchor.len() > MCP_ANCHOR_MAX_BYTES {
+    if anchor.is_empty()
+        || anchor.len() > MCP_ANCHOR_MAX_BYTES
+        || parallax_evidence::sanitize_text(anchor) != anchor
+    {
         return Err(McpError::invalid_params(
-            "anchor must contain 1 to 256 UTF-8 bytes",
+            "anchor must contain 1 to 256 safe UTF-8 bytes",
             Some(json!({ "code": "invalid_anchor" })),
         ));
     }
@@ -409,6 +412,17 @@ mod tests {
             .expect("join server")
             .expect("stop server");
         names
+    }
+
+    fn assert_method_not_found(error: &rmcp::ServiceError) {
+        assert!(
+            matches!(
+                error,
+                rmcp::ServiceError::McpError(data)
+                    if data.code == rmcp::model::ErrorCode::METHOD_NOT_FOUND
+            ),
+            "expected protocol method-not-found, got {error:?}"
+        );
     }
 
     #[test]
@@ -636,7 +650,12 @@ mod tests {
     fn anchor_validation_is_bounded_and_does_not_echo_input() {
         validate_anchor("a").expect("one byte");
         validate_anchor(&"a".repeat(MCP_ANCHOR_MAX_BYTES)).expect("exact boundary");
-        for denied in [String::new(), "seeded-secret".repeat(30)] {
+        for denied in [
+            String::new(),
+            "seeded-secret".repeat(30),
+            "ghp_0123456789ABCDEFGHIJKLMNOPQRST".to_string(),
+            "fp\u{1b}[31m".to_string(),
+        ] {
             let error = validate_anchor(&denied).expect_err("invalid anchor");
             let encoded = serde_json::to_string(&error).expect("serialize error");
             assert!(encoded.contains("invalid_anchor"));
@@ -729,7 +748,7 @@ mod tests {
             .get_prompt(GetPromptRequestParams::new("forbidden"))
             .await
             .expect_err("prompt reads must remain unavailable");
-        assert!(prompt_error.to_string().contains("method not found"));
+        assert_method_not_found(&prompt_error);
 
         let resources = client
             .peer()
@@ -750,7 +769,7 @@ mod tests {
             .read_resource(ReadResourceRequestParams::new("parallax://forbidden"))
             .await
             .expect_err("resource reads must remain unavailable");
-        assert!(resource_error.to_string().contains("method not found"));
+        assert_method_not_found(&resource_error);
         for denied in ["run_shell", "dashboard_create"] {
             let error = client
                 .call_tool(CallToolRequestParams::new(denied))
