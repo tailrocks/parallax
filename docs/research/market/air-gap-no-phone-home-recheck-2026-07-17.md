@@ -93,6 +93,16 @@ still: collect/process then **route** to destinations; Worker **aggregate,
 process, and route**. Still **not** self-hosted Bits/APM store. BYOC Logs
 hybrid story (pass 261) unchanged. Air-gap combination claim **holds**.
 
+### Pass 291 (2026-07-18) — OPW + BYOC hub + Assistant hybrid
+
+| Source | Finding |
+| --- | --- |
+| Observability Pipelines docs | still **route** / Worker **aggregate, process, and route** |
+| docs.datadoghq.com/cloudprem/ | still **HTTP 200** BYOC Logs hub (hybrid SaaS-integrated log store) |
+| Grafana Assistant self-managed | still **backend/billing in Grafana Cloud** |
+
+Air-gap combination claim **holds**. OPW ≠ Bits store; BYOC ≠ offline agent-evidence; Assistant ≠ offline BYO-LLM.
+
 Air-gap combination claim (open core + portable redacted evidence + no closed
 cloud AI) **still holds** as a *combination* (A1 still unproven).
 
