@@ -8326,3 +8326,6 @@ Third re-check on head this session; still NOT_IMPLEMENTED. Not done.
 ### Run 372 — 2026-07-17 — GT logs service PK filter
 
 `WHERE service='s0'` on logs1m: warm **~4–5 ms**. PK filter interactive.
+
+### Run 373 — 2026-07-17 — not done
+
