@@ -48,15 +48,6 @@ enum Command {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // Logging to stderr only — stdout is the MCP JSON-RPC wire.
-    tracing_subscriber::fmt()
-        .with_writer(std::io::stderr)
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("warn")),
-        )
-        .init();
-
     let mut cli = Cli::parse();
     if let Ok(url) = std::env::var("PARALLAX_URL")
         && !url.is_empty()

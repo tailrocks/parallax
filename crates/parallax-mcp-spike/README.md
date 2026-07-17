@@ -62,6 +62,9 @@ the local boundary.
 Authenticated remote transport remains deferred to Plan 109.
 HTTP redirects are disabled so loopback cannot bounce a request to a remote
 origin; connects time out after 5 seconds and calls after 30 seconds.
+The spike installs no tracing subscriber, so `RUST_LOG` cannot enable MCP
+protocol/result logging or persist anchors and evidence through dependency
+diagnostics.
 
 ## SDK / TLS
 

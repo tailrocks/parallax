@@ -64,6 +64,8 @@ must not return in product output.
   invocation IDs, or the argument vector containing them.
 - Failed equivalence cases suppress raw GraphQL/parser error chains, which may
   contain seeded or upstream-reflected evidence.
+- The spike installs no tracing subscriber; environment log directives cannot
+  activate dependency-level MCP protocol/result logging of anchors or evidence.
 - Bundle output fails closed unless the separately projected GraphQL canonical
   hash exactly matches the hash embedded in the bundle-v2 object.
 - The MCP tool path independently recomputes the canonical v2 hash as well;
