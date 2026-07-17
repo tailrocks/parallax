@@ -116,6 +116,16 @@ gravity.
 
 **A3 moat still unproven.** Kill "external schema adoption closes moat" still **unfired** (open ≠ failed; adoption is zero, not "failed moat measurement").
 
+### Pass 321 (2026-07-18) — adoption + liveness
+
+| Probe | Result |
+| --- | --- |
+| Declared `$id` HTTP GET | Still **404** |
+| raw.githubusercontent v1 schema | Still **200** |
+| In-repo `$id` host file hits | still **6** — no external consumer |
+| Adoption ledger | Still **absent** |
+| Claim stack | still `schema_artifacts_shipped` + `schema_adoption_none` |
+
 ## Artifact inventory (repo paths)
 
 | Artifact | Path |
