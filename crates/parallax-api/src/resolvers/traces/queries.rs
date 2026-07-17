@@ -175,9 +175,6 @@ pub(crate) async fn traces(
         max_duration_ns: max_duration_ms.and_then(duration_ms_to_ns),
         error_only: error_only.unwrap_or(false),
         name_contains: query.filter(|q| !q.trim().is_empty()),
-        // Plan 164: GraphQL `attributeFilters` wiring lands next; empty keeps
-        // the concurrent adapter field green without changing list semantics.
-        attribute_filters: Vec::new(),
         limit: clamp_limit(limit, 50),
         offset: offset
             .map_or(0, |value| usize::try_from(value.max(0)).unwrap_or(0))
@@ -222,9 +219,6 @@ pub(crate) async fn traces_page(
         max_duration_ns: max_duration_ms.and_then(duration_ms_to_ns),
         error_only: error_only.unwrap_or(false),
         name_contains: query.filter(|q| !q.trim().is_empty()),
-        // Plan 164: GraphQL `attributeFilters` wiring lands next; empty keeps
-        // the concurrent adapter field green without changing list semantics.
-        attribute_filters: Vec::new(),
         limit: clamp_limit(limit, 50),
         offset: offset
             .map_or(0, |value| usize::try_from(value.max(0)).unwrap_or(0))
