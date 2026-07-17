@@ -8529,3 +8529,14 @@ Pins: GT `v1.1.3` / CH `26.6.1.1193`. Table `logs1m` (tokenbf `idx_msg` on `mess
 Thesis holds: selective full-text prunes; broad term does not. PREWHERE service still prunes.
 **Not done.**
 
+## Run 568 (2026-07-18) — re-pin + last_value warm
+
+| Build | Version | Health |
+| --- | --- | --- |
+| GT stable | `1.1.3` (`63ef18a`) | 200 |
+| GT nightly | `1.2.0` (`c12f40c`, tag 20260713) | 200 |
+| CH stable | `26.6.1.1193` | 200 |
+| CH head | `26.7.1.1097` | 200 |
+
+last_value/argMax on `m2m` warm: GT **8–9 ms** (first 20 ms), CH **~3 ms**. Jaeger/Prom **200**. **Not done.**
+
