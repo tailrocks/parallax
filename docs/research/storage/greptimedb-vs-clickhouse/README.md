@@ -352,6 +352,9 @@ managed quotes remain):
 | milestone 670 | **670** | NOT DONE |
 | rate join PREWHERE | **671** | holds |
 | still not done | **672** | top 5 product/server |
+| still not done | **673** | top 5 product/server |
+| export + last_value | **674** | schema OK; warm |
+| still not done | **675** | top 5 product/server |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
