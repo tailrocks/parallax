@@ -49,6 +49,8 @@ pressure, idle incident-attribute track).
 | `model/` name filter | Still **empty** for incident/investigation/bundle |
 | OCSF latest | Still **`1.8.0`** (2026-03-18) |
 
+**Pass 211 primary re-fetch (2026-07-18):** #1185 still **open/idle** (2025-10-24); OCSF still **1.8.0**.
+
 **Still not commoditized.**
 
 **Evidence class:** primary GitHub issue/tree + first-party release pages +
