@@ -25,6 +25,12 @@
 > Claim level for agent-visible DB query tools: still **`not_measured`** and
 > **not V1 product**. PostgreSQL/OWASP/MCP safety sources below remain valid
 > *if* Tier 2 is ever authorized — they do not authorize building it now.
+>
+> **Pass 137 (2026-07-17):** boundary **reaffirmed**. `parallax-mcp` has **no**
+> free-form `run_sql` / execute-SQL tool surface (repo grep). Tier 2 remains
+> **out of product** by operator boundary (pass 80); claim level still
+> **`not_measured`** for agent-visible direct DB evidence — and **should not**
+> be pursued as V1. Tier 0 telemetry-only remains the path.
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
