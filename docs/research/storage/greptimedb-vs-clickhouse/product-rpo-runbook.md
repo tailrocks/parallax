@@ -226,3 +226,9 @@ Reproducibility log: `/tmp/run559_dr/` (host scratch). Pins unchanged.
 
 **Status:** D1 paths still green on `v1.1.3` / `26.6.1.1193`. D2/D3 still open
 (standalone raft-engine snapshot fail re-confirmed Run 558).
+
+#### Run 578 (2026-07-18) — export-v2 schema-only
+
+Snapshot `7b03b73c-…`; `public.sql` **623 lines** (grew with bench tables);
+`manifest.json` 315 B; Jaeger **200**. D1 portability still green. **Not done.**
+
