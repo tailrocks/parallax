@@ -7771,3 +7771,15 @@ partition/index on service).
 
 **Verdict.** Shape matches Run 159/189 direction at small N: GT denser on
 logs+metrics; spans closer. Not a substitute for 5M density matrix.
+
+### Run 249 — 2026-07-17 — cross-tier join prune re-verify
+
+Anchored join `spans1m ⋈ logs1m ON trace_id WHERE trace_id='t0'`:
+
+| Engine | Timing | Plan notes |
+| --- | --- | --- |
+| GT | **~10–12 ms** | join path; still interactive |
+| CH | **~3–4 ms** | spans **Granules 1/6** (trace_id PK); logs **6/6** (trace_id not keyed) |
+
+**No drift:** both interactive; CH prunes the keyed side; unkeyed logs still full
+scan → product blueprint: **key `trace_id` on every signal** (Run 158).
