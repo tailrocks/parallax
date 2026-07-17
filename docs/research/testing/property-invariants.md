@@ -24,11 +24,12 @@ boundaries, each smoke-run 20k executions clean on 2026-07-17:
 | `otlp_traces_normalize` | OTLP traces protobuf decode + normalization | same |
 | `redaction_text` | redaction text projection | no panic; `sanitize_text` idempotent |
 | `bundle_envelope_json` | evidence bundle JSON parse + canonicalization | no panic; `canonical_json` is a fixpoint |
+| `spool_framing` | PSPL frame counting over arbitrary on-disk bytes | no panic; no unbounded allocation (hostile length prefixes now seek, never allocate — defect fixed 2026-07-17) |
 
 Run: `cargo +nightly fuzz run <target>` from the repo root. Minimized crash
 corpora will be committed under `fuzz/corpus/<target>/` when found.
-Remaining Step-3 boundaries (Arrow response decode, spool framing/recovery)
-need small pub entry points first. Target/workflow drift validation and the
+Remaining Step-3 boundary (Arrow response decode) needs a small pub entry
+point first. Target/workflow drift validation and the
 scheduled CI lane are still open.
 
 Deferred (blocked on their owners): UI search round-trips, runtime decoder

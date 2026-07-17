@@ -22,8 +22,18 @@ path = "../crates/parallax-ingest"
 [dependencies.parallax-proto]
 path = "../crates/parallax-proto"
 
+[dependencies.parallax-spool]
+path = "../crates/parallax-spool"
+
 [dependencies.parallax-semconv]
 path = "../crates/parallax-semconv"
+
+[[bin]]
+name = "spool_framing"
+path = "fuzz_targets/spool_framing.rs"
+test = false
+doc = false
+bench = false
 
 [[bin]]
 name = "otlp_metrics_normalize"

@@ -1,4 +1,5 @@
 use super::*;
+use std::io::Seek;
 
 impl Spool {
     pub fn line_count(&self, signal: Signal) -> anyhow::Result<usize> {
@@ -33,9 +34,14 @@ pub(super) fn count_pspl_frames(path: &Path) -> anyhow::Result<usize> {
             Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
             Err(e) => return Err(e.into()),
         }
-        let len = u32::from_le_bytes(len_buf) as usize;
-        let mut skip = vec![0u8; len];
-        file.read_exact(&mut skip)?;
+        // The length prefix is attacker-controlled on-disk data: seek past
+        // the frame instead of allocating up to 4 GiB to skip it. A frame
+        // running past EOF counts as truncation, not a frame.
+        let len = u32::from_le_bytes(len_buf);
+        let position = file.seek(std::io::SeekFrom::Current(i64::from(len)))?;
+        if position > file.metadata()?.len() {
+            break;
+        }
         count += 1;
     }
     Ok(count)
