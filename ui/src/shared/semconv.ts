@@ -95,6 +95,26 @@ export const BUNDLE_WINDOW_METRICS = [
 export const PLAYGROUND_NAMESPACE = "playground" as const
 export const DEFAULT_ENVIRONMENT = "playground" as const
 export const SESSION_ID = "session.id" as const
+export const JOB_TYPE_ORDER_DISPATCH = "order_dispatch" as const
+export const JOB_TYPE_FULFILLMENT_SHIPMENT = "fulfillment_shipment" as const
+export const BACKGROUND_CYCLE_QUEUE_HEALTH = "queue_health" as const
+export const BACKGROUND_CYCLE_PRICE_REFRESH = "price_refresh" as const
+export const APP_SCREEN_HOME = "home" as const
+export const APP_SCREEN_CART = "cart" as const
+export const APP_SCREEN_CHECKOUT = "checkout" as const
+export const UI_ACTION_CART_ADD = "cart.add" as const
+export const UI_ACTION_CHECKOUT_SUBMIT = "checkout.submit" as const
+export const UI_ACTION_SCREEN_BACK = "screen.back" as const
+export const GEN_AI_AGENT_NAMES = [
+  "claude",
+  "codex",
+  "amp",
+] as const
+export const GEN_AI_PROVIDER_NAMES = [
+  "anthropic",
+  "openai",
+  "sourcegraph",
+] as const
 export const APP_SCREEN_NAME = "app.screen.name" as const
 export const APP_WIDGET_NAME = "app.widget.name" as const
 export const TELEMETRY_PROPAGATION_DISABLED =

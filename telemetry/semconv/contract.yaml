@@ -79,6 +79,18 @@ constants:
   - { id: playground.namespace, rust: PLAYGROUND_NAMESPACE, typescript: PLAYGROUND_NAMESPACE, java: PLAYGROUND_NAMESPACE, value: playground, owner: playground }
   - { id: playground.default.environment, rust: DEFAULT_ENVIRONMENT, typescript: DEFAULT_ENVIRONMENT, java: DEFAULT_ENVIRONMENT, value: playground, owner: playground }
   - { id: session.id, rust: SESSION_ID, typescript: SESSION_ID, java: SESSION_ID, value: session.id, owner: shared }
+  - { id: job.type.order_dispatch, rust: JOB_TYPE_ORDER_DISPATCH, typescript: JOB_TYPE_ORDER_DISPATCH, java: JOB_TYPE_ORDER_DISPATCH, value: order_dispatch, owner: playground }
+  - { id: job.type.fulfillment_shipment, rust: JOB_TYPE_FULFILLMENT_SHIPMENT, typescript: JOB_TYPE_FULFILLMENT_SHIPMENT, java: JOB_TYPE_FULFILLMENT_SHIPMENT, value: fulfillment_shipment, owner: playground }
+  - { id: background.cycle.queue_health, rust: BACKGROUND_CYCLE_QUEUE_HEALTH, typescript: BACKGROUND_CYCLE_QUEUE_HEALTH, java: BACKGROUND_CYCLE_QUEUE_HEALTH, value: queue_health, owner: playground }
+  - { id: background.cycle.price_refresh, rust: BACKGROUND_CYCLE_PRICE_REFRESH, typescript: BACKGROUND_CYCLE_PRICE_REFRESH, java: BACKGROUND_CYCLE_PRICE_REFRESH, value: price_refresh, owner: playground }
+  - { id: app.screen.home, rust: APP_SCREEN_HOME, typescript: APP_SCREEN_HOME, java: APP_SCREEN_HOME, value: home, owner: playground }
+  - { id: app.screen.cart, rust: APP_SCREEN_CART, typescript: APP_SCREEN_CART, java: APP_SCREEN_CART, value: cart, owner: playground }
+  - { id: app.screen.checkout, rust: APP_SCREEN_CHECKOUT, typescript: APP_SCREEN_CHECKOUT, java: APP_SCREEN_CHECKOUT, value: checkout, owner: playground }
+  - { id: ui.action.cart_add, rust: UI_ACTION_CART_ADD, typescript: UI_ACTION_CART_ADD, java: UI_ACTION_CART_ADD, value: cart.add, owner: playground }
+  - { id: ui.action.checkout_submit, rust: UI_ACTION_CHECKOUT_SUBMIT, typescript: UI_ACTION_CHECKOUT_SUBMIT, java: UI_ACTION_CHECKOUT_SUBMIT, value: checkout.submit, owner: playground }
+  - { id: ui.action.screen_back, rust: UI_ACTION_SCREEN_BACK, typescript: UI_ACTION_SCREEN_BACK, java: UI_ACTION_SCREEN_BACK, value: screen.back, owner: playground }
+  - { id: gen_ai.agents, rust: GEN_AI_AGENT_NAMES, typescript: GEN_AI_AGENT_NAMES, java: GEN_AI_AGENT_NAMES, values: [claude, codex, amp], owner: playground }
+  - { id: gen_ai.providers, rust: GEN_AI_PROVIDER_NAMES, typescript: GEN_AI_PROVIDER_NAMES, java: GEN_AI_PROVIDER_NAMES, values: [anthropic, openai, sourcegraph], owner: playground }
   - { id: app.screen.name, rust: APP_SCREEN_NAME, typescript: APP_SCREEN_NAME, java: APP_SCREEN_NAME, value: app.screen.name, owner: playground }
   - { id: app.widget.name, rust: APP_WIDGET_NAME, typescript: APP_WIDGET_NAME, java: APP_WIDGET_NAME, value: app.widget.name, owner: playground }
   - { id: telemetry.propagation.disabled, rust: TELEMETRY_PROPAGATION_DISABLED, typescript: TELEMETRY_PROPAGATION_DISABLED, java: TELEMETRY_PROPAGATION_DISABLED, value: telemetry.propagation.disabled, owner: playground }

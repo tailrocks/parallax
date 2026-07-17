@@ -94,6 +94,26 @@ pub const BUNDLE_WINDOW_METRICS: &[&str] = &[
 pub const PLAYGROUND_NAMESPACE: &str = "playground";
 pub const DEFAULT_ENVIRONMENT: &str = "playground";
 pub const SESSION_ID: &str = "session.id";
+pub const JOB_TYPE_ORDER_DISPATCH: &str = "order_dispatch";
+pub const JOB_TYPE_FULFILLMENT_SHIPMENT: &str = "fulfillment_shipment";
+pub const BACKGROUND_CYCLE_QUEUE_HEALTH: &str = "queue_health";
+pub const BACKGROUND_CYCLE_PRICE_REFRESH: &str = "price_refresh";
+pub const APP_SCREEN_HOME: &str = "home";
+pub const APP_SCREEN_CART: &str = "cart";
+pub const APP_SCREEN_CHECKOUT: &str = "checkout";
+pub const UI_ACTION_CART_ADD: &str = "cart.add";
+pub const UI_ACTION_CHECKOUT_SUBMIT: &str = "checkout.submit";
+pub const UI_ACTION_SCREEN_BACK: &str = "screen.back";
+pub const GEN_AI_AGENT_NAMES: &[&str] = &[
+    "claude",
+    "codex",
+    "amp",
+];
+pub const GEN_AI_PROVIDER_NAMES: &[&str] = &[
+    "anthropic",
+    "openai",
+    "sourcegraph",
+];
 pub const APP_SCREEN_NAME: &str = "app.screen.name";
 pub const APP_WIDGET_NAME: &str = "app.widget.name";
 pub const TELEMETRY_PROPAGATION_DISABLED: &str = "telemetry.propagation.disabled";
