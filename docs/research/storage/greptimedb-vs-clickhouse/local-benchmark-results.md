@@ -7783,3 +7783,16 @@ Anchored join `spans1m ⋈ logs1m ON trace_id WHERE trace_id='t0'`:
 
 **No drift:** both interactive; CH prunes the keyed side; unkeyed logs still full
 scan → product blueprint: **key `trace_id` on every signal** (Run 158).
+
+### Run 250 — 2026-07-17 — session milestone (220–249); comparison not done
+
+This session advanced **Runs 220–249** on main without declaring the comparison
+complete. Highlights:
+
+- **S3 harness pins fixed** + object layout + OpenDAL GetObject method (220, 234–235, 238)
+- **Managed list rates** + **product RPO** + **workload-mix packet** + **server-tier runbook** (221–223, 240)
+- Live re-verifies: partition, TWCS, PREWHERE, projection, Flow, freshness, DELETE,
+  concurrent, JSON2, PromQL, identity, TimeSeries, density, joins (224–249)
+
+**Still open (do not stop):** filled mix shares, server 1M/5M, GB cold S3,
+vendor trial quotes, RPO D2/D3.

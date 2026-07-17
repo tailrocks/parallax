@@ -90,6 +90,7 @@ managed quotes remain):
 | JSON2 vs Jsonb @50k | 243 | 3 vs 18 vs CH 2 ms |
 | re-pin still current | 244 | no bump |
 | Gap ranking 220–245 | 246 | server/GB/mix/quotes top |
+| Session milestone 220–249 | 250 | not done; server/GB open |
 
 ## Method
 
