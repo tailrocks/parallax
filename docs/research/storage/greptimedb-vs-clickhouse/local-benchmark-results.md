@@ -7871,3 +7871,12 @@ WAL/fsync framing; no new product path.
 
 `count(DISTINCT trace_id)` on spans1m → **50043** both engines (exact match).
 Warm: GT **~10 ms**, CH **~7–8 ms**. Capability parity holds (Run 169).
+
+### Run 266 — 2026-07-17 — HLL / approx distinct
+
+| Engine | Function | Value | vs exact 50043 |
+| --- | --- | ---: | --- |
+| GT | `approx_distinct(trace_id)` | **49994** | −49 (~0.1%) |
+| CH | `uniq` / `uniqExact` | **50043** / **50043** | exact on this N |
+
+`hll_count` requires Binary not Utf8. Approx path exists on both; error small.
