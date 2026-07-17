@@ -104,6 +104,26 @@ mis-stored — encrypt at rest (age/sops/KMS) and restrict IAM. Do not ship dump
 to the same bucket principal that the live GT process uses for SSTs without
 separation of duties.
 
+#### Run 409 (2026-07-18) — D3 logical dump drill (local SQLite / Turso file shape)
+
+**Not** the product schema (product Turso DDL still evolving). Smoke of the
+**runbook pattern** on a stand-in issue store:
+
+| Step | Result |
+| --- | --- |
+| Create WAL file DB with `issues` + `issue_events` (2 issues, 4 events) | OK |
+| `PRAGMA wal_checkpoint(FULL)` | OK |
+| `sqlite3 $DB .dump > dump.sql` | 26 lines, ~1 KiB |
+| `sqlite3 restored.db < dump.sql` | OK |
+| Row equality (`id\|fingerprint\|status`) | **ROW_MATCH=OK** (2 issues / 4 events) |
+
+**CLI note:** host has `sqlite3` 3.51; `turso` CLI **not** installed in this
+environment. For Turso Cloud or `turso db shell`, substitute the documented
+`.dump` / redirect load. Pattern is SQLite-compatible either way.
+
+**Still owed:** product-schema D3 against real `parallax-metadata` DDL + CI
+fixture; encrypt-at-rest path for dump files.
+
 ## Restore order (cold site / total loss)
 
 Assume empty machines, intact off-box backups.

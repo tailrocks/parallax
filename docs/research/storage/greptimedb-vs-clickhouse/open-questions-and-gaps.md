@@ -134,8 +134,9 @@ Highest-value *remaining* items (not “done”):
 4. **Cold S3 selective egress at GB scale** — layout+instrumentation (220/234/235);
    **GB–TB** selective cold still owed.
 5. **RPO D2/D3 drills** — Run 225 D1 done; **Run 405:** standalone cannot use
-   `meta snapshot save` (raft-engine path); need etcd/RDS cluster for true D2.
-   Turso dump still owed.
+   `meta snapshot save` (raft-engine); need etcd/RDS for true D2. **Run 409:**
+   D3 logical dump/restore pattern OK on SQLite stand-in (`ROW_MATCH`); product
+   schema + Turso CLI still owed.
 6. ~~GT OpenDAL/S3 request metrics~~ — **closed Runs 234–235** (`opendal_http_*GetObject`).
 7. ~~CH TimeSeries "broken"~~ — **Run 403** query path real; **Run 404** `rate`/`sum`/
    `avg by` match GT, **`increase` still NOT_IMPLEMENTED** on 26.6+26.7. Remaining watch:
