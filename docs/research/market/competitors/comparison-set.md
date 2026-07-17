@@ -72,7 +72,7 @@ These sit *on top of* your telemetry (metrics/logs/traces/K8s) as reasoning/grou
 | Product | What it is | License / model | Layer | State |
 | --- | --- | --- | --- | --- |
 | **Causely** | Causal-intelligence layer + MCP server — "live causal model via MCP" so agents stop guessing / burn fewer tokens / act before break; BYO telemetry. | Closed commercial (verify self-host). | Causal-context MCP over BYO telemetry. | [deep-dive](parallax-vs-causely.md) |
-| **HolmesGPT** (CNCF Sandbox) | Open AI SRE that investigates + explains over Prometheus/Loki/Tempo/etc.; no own store; strongly MCP. | Apache-2.0. | AI-investigation query layer (complementary). | reference (not deep-dived) |
+| **HolmesGPT** (CNCF Sandbox) | Open AI SRE that investigates + explains over Prometheus/Loki/Tempo/etc.; no own store; strongly MCP. **= the shipped "fixer agent" Parallax's "context engine, not the fixer" framing positions against.** | Apache-2.0. | AI-investigation query layer (complementary). | [deep-dive](parallax-vs-holmesgpt.md) |
 
 ## Maintenance notes
 
