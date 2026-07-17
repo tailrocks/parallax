@@ -7961,3 +7961,9 @@ containers healthy ~27 min uptime. No bump.
 
 GT `avg(val) GROUP BY service` during inserts: warm **~8–9 ms** (same as idle
 **~8–10 ms** after first). Scan/agg absorbs light contention (Run 53/226).
+
+### Run 280 — 2026-07-17 — session milestone 220–279; still not done
+
+Major session advances: S3 pins+OpenDAL GET method, managed rates, RPO D1+runbook,
+workload-mix packet, server-tier runbook, harness logs.trace_id index, 50+ live
+re-verifies. **Open:** mix shares, server 1M/5M, vendor quotes, GB cold, RPO D2/D3.
