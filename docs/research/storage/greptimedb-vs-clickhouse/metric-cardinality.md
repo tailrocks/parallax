@@ -245,3 +245,19 @@ a speed win.
 - Cross-refs: `greptimedb-internals.md` (metric engine physical layout, pass 32),
   `query-execution-engine.md` (why CH aggregates faster), `per-signal-verdict.md`
   (metrics rows), `compression-and-cost.md`.
+
+## Run 192 (2026-07-17) — cardinality-insensitive *ingest* on v1.1.3
+
+N=100k `INSERT…SELECT` / `numbers()`, append_mode mito, median of 3 trials
+(`execution_time_ms` GT; wall for CH docker path).
+
+| Shape | GT exec ms | CH wall ms |
+| --- | ---: | ---: |
+| 12 distinct series keys | **49** | 88 |
+| 100k distinct series keys | **45** | 89 |
+| Ratio high/low | **~0.92×** (flat / slightly faster) | **~1.01×** (flat) |
+
+**No drift** from Runs 84/101/132: GreptimeDB ingest does **not** cliff on series
+cardinality for this synthetic path. CH also flat here at 100k (real CH cliff is more about
+`LowCardinality` overflow on storage/query, Run 76–79). Caveat: synthetic `INSERT…SELECT` is
+not native OTLP bulk; still the relative GT cardinality story holds.

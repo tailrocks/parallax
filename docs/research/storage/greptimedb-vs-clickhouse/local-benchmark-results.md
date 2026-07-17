@@ -7094,3 +7094,8 @@ v1.1-GA wait with 5M dedup residual).
 
 Immediate select after insert always sees the row (GT+CH). Batch 1k visible without flush on GT.
 `write-path-and-ingestion.md`.
+
+### Run 192 — 2026-07-17 — cardinality-insensitive ingest (v1.1.3)
+
+GT append INSERT 12-series 49 ms vs 100k-series 45 ms (~flat). CH wall ~flat too at 100k.
+`metric-cardinality.md`.
