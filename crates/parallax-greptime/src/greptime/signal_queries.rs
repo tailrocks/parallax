@@ -132,7 +132,15 @@ impl MetricStore for GreptimeStore {
                 )
             })
             .collect();
-        let rows = self.sql_arrow_lenient(&arms.join("\nUNION ALL\n")).await?;
+        // One giant UNION ALL over hundreds of per-metric tables can exhaust
+        // the engine (observed: standalone GreptimeDB killed mid-query on a
+        // 7-day catalog scan). Batch the arms: still one bounded query per
+        // chunk, never per-metric round trips.
+        const CATALOG_UNION_CHUNK: usize = 24;
+        let mut rows = Vec::new();
+        for chunk in arms.chunks(CATALOG_UNION_CHUNK) {
+            rows.extend(self.sql_arrow_lenient(&chunk.join("\nUNION ALL\n")).await?);
+        }
         let mut by_name: BTreeMap<String, MetricCatalogEntry> = BTreeMap::new();
         for family in &selected {
             by_name.insert(
