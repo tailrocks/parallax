@@ -22,6 +22,11 @@
 >
 > Runtime engine remains Parallax-owned Rust. A6 red-team ledger still **empty**
 > → claim stays **`not_measured`**. No new canary-run artifacts this pass.
+>
+> **Pass 105 (2026-07-17):** GitHub/PyPI latest pins **unchanged** vs pass 63
+> (Gitleaks **v8.30.1**, Betterleaks **v1.6.1**, TruffleHog **v3.95.9**,
+> detect-secrets **v1.5.0**, Presidio **2.2.363**). Still offline comparators only;
+> **no** red-team canary ledger run this pass → **`not_measured`**.
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
