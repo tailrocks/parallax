@@ -219,7 +219,7 @@ work.
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | 133 | Replace the UI TTL cache with feature-owned TanStack Query | P1 | L | 095, 101, 128, 129, 132, 144, 145, 151 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-133-tanstack-query/README.md) |
-| [147](147-ui-live-data-performance.md) | Make live telemetry updates typed, bounded, and identity-stable | P1 | L | 095, 101, 129, 133, 140, 141, 142, 145, 151 | IN PROGRESS — 133 closed; live boundedness |
+| [147](147-ui-live-data-performance.md) | Make live telemetry updates typed, bounded, and identity-stable | P1 | L | 095, 101, 129, 133, 140, 141, 142, 145, 151 | IN PROGRESS — buffer+merge landed ([evidence](../docs/research/validation/2026-07-plan-147-live-data/README.md)); residual @live/perf |
 | [148](148-ui-bundle-performance.md) | Enforce route-owned production chunks and deterministic bundle budgets | P1 | L | 095, 100, 101, 105, 132, 133, 144, 146, 147, 151 | TODO — waits on 133/147 |
 
 ### Dependencies, Tests, And Performance
