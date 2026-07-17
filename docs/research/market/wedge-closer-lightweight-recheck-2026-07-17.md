@@ -39,6 +39,18 @@ bundle schema**, **no fix-outcome loop**. Agent path still skills + CLI + MCP.
 Cohort table Traceway row below still valid; other cohort stars not re-polled
 this pass (Traceway-focused).
 
+**Pass 125 recheck (2026-07-17):** **Bugsink** + **Rustrak** primary re-poll —
+combination **still not closed**.
+
+| Product | Stars | Latest pin | Push | Combo cells |
+| --- | --- | --- | --- | --- |
+| **Bugsink** | **1,940** | **v2.4.0** (2026-07-10) | 2026-07-17 | Still **Sentry-compat error-only** (README); no OTLP multi-signal / portable bundle / outcome in README probe |
+| **Rustrak** | **64** | **`@rustrak/server@0.9.2`** + **`@rustrak/mcp@0.2.13`** (2026-07-15) | 2026-07-17 | Still Sentry SDK path + **MCP**; no OTLP multi-signal / portable redacted bundle / outcome in README probe |
+
+Pins match the cohort table rows (no material version/star move since table write).
+Falsification for this pass: either ships OTLP full-signal **and** portable
+redacted evidence bundle **and** outcome loop — **not observed**.
+
 **Evidence class:** primary GitHub API + README/release tags (2026-07-17). Not
 a live deploy test of each product.
 
