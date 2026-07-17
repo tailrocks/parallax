@@ -265,6 +265,7 @@ managed quotes remain):
 | still not done | **583** | top 5 product/server |
 | join + OTLP | **584** | PK+bloom 1/1; protobuf-only |
 | still not done | **585** | top 5 product/server |
+| append DELETE + health | **586** | Code 1004; all 200 |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
