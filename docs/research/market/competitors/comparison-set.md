@@ -81,6 +81,14 @@ These sit *on top of* your telemetry (metrics/logs/traces/K8s) as reasoning/grou
 | **Causely** | Causal-intelligence layer + MCP server — "live causal model via MCP" so agents stop guessing / burn fewer tokens / act before break; BYO telemetry. | Closed commercial (verify self-host). | Causal-context MCP over BYO telemetry. | [deep-dive](parallax-vs-causely.md) |
 | **HolmesGPT** (CNCF Sandbox) | Open AI SRE over Prometheus/Loki/Tempo/K8s; no own store; MCP-extensible. **v0.36.0, 2,873★.** **= the shipped "fixer agent"** Parallax's "context engine, not the fixer" framing positions against. | Apache-2.0 (+ Robusta commercial). | AI-investigation query layer (complementary). | [deep-dive](parallax-vs-holmesgpt.md) |
 
+## Watch-tier Sentry-alts / lightweight (not full deep-dives yet)
+
+| Product | Note | State |
+| --- | --- | --- |
+| **Rustrak** | Rust Sentry-compat + **MCP 18 tools** (mutating resolve); **64★**, `@rustrak/server@0.9.2` / `@rustrak/mcp@0.2.13` (2026-07-15). Error-only. | watch (wedge-closer) |
+| **GlitchTip** | Django Sentry-compat; GitLab-primary; GitHub mirror ~159★. Classic error product. | watch (low priority) |
+| **GoSnag / Urgentry** | Tiny Sentry-compat self-hosts; low stars / quiet cadence. | watch (low priority) |
+
 ## Maintenance notes
 
 - When a product enters **deep-dive**, move its row's State to `[deep-dive](parallax-vs-<product>.md)` and flip the PROGRESS row.

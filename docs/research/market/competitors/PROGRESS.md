@@ -73,6 +73,7 @@
 | 50 | 2026-07-17 | **Traceway deep-dive** ([parallax-vs-traceway.md](parallax-vs-traceway.md)): MIT OTel full-stack; **MCP local+remote OAuth**; mostly read-only tools; no Sentry/bundle/outcome. Roster gap closed. Note: concurrent threads also used pass-48/49 numbers for Grafana pricing + Tempo GA — treat pass ids as log rows not a global mutex. | _pending_ |
 | 48 | 2026-07-17 | **Grafana Cloud + OpenObserve + Uptrace pricing re-verify:** (1) **Grafana Pro base $195→$19/mo+usage** (live grafana.com/pricing) — pass-5 stale; logs/traces Process/Write/Retain $0.05+$0.40+$0.10/GB; App Obs $0.025/host-hr; Assistant $20/AI user; Enterprise from $25k/yr. Grafana **v13.1.0** re-confirmed. (2) **OpenObserve Cloud** public units: **$0.50/GB ingest + $0.01/GB query**; AI free preview (20 credits); self-host Enterprise free ≤50GB/day. (3) **Uptrace Cloud** **50 GB free** then ~$0.075–0.10/GB (volume → ~$0.016); metrics from $0.025/1M DPs. **No-bias:** corrections favor Grafana/O2/Uptrace cost transparency. | `9a976d4f` |
 | 49 | 2026-07-17 | **Tempo v3 GA + AI-matrix sweep + drift:** (1) **Tempo GA corrected** v2.10.7→**v3.0.2** (v3.0.0 2026-05-28; TraceQL metrics GA, Kafka-log, vParquet5, trace redaction) — pass-48 “v3 not GA” **stale**. LGTM re-pin: Mimir **3.1.3**, Loki **3.7.3**, Tempo **3.0.2**, Pyroscope **2.1.1**, Grafana **13.1.0**. (2) **README AI-native extended matrix** — Honeycomb/NR/Dynatrace/Splunk/Observe/Grafana/Chronosphere/HolmesGPT/Causely/TMA1/LangSmith/Axiom/Odigos; AgentiX left **planned not GA** (PANW press “planned”; no product page). (3) **TMA1 watch 7th UNFIRED** (alpha12/109★; install/perf only). Fast-movers stable (SigNoz 30.2k/v0.133.0, Langfuse 31.3k/v3.221.0, O2 20.2k/v0.91.2, Coroot 7.8k/v1.23.3, Odigos 3.7k/v1.31.2, HolmesGPT 2.9k/0.36.0). Code-reality honesty wording folded (bundle code-shipped / A1 unproven). | `54856351` |
+| 50 | 2026-07-17 | **Traceway deep-dive** ([parallax-vs-traceway.md](parallax-vs-traceway.md)): MIT OTel multi-signal APM (**1,024★ / v1.9.1**); agent skills + agent-first CLI + MCP; ClickHouse/SQLite/DuckDB; replay + AI tracing; **no Sentry envelope**; Cloud **no public $/unit** verified. **No-bias:** agent-native self-host OTel no longer scarce. Wired comparison-set + README. Rustrak/GlitchTip left **watch** (not full deep-dives). | `d7e4160f` |
 
 ## Deep-dive status (per product)
 
@@ -137,8 +138,9 @@
 3. **Benchmark-dependent cells** — GreptimeDB vs ClickHouse/M3/ES; NoSample storage; self-host ops TCO; Tempo v3 vs GreptimeDB.
 4. **Drift watches (active)** — TMA1 (**7× UNFIRED**); **Chronosphere/PANW AgentiX (still planned, not GA — pass 49)**; **Observe MCP coding-agents PARTIAL FIRE**; Dynatrace MCP; Sumo Dojo; Coroot eBPF (UNFIRED); Maple Tinybird (UNFIRED); Traceloop (UNFIRED); Helicone Mintlify sunset; Odigos own-store; Sentry OTLP-metrics GA.
 5. ~~Overview-matrix AI-native column sweep~~ → **DONE pass 49** (extended matrix + Odigos/AgentiX honesty). Re-fire when a watch fires.
-6. **Small Sentry-alts** (GlitchTip) — low priority after Bugsink.
-7. **Parallax-column refresh** — keep planned/shipped + A1 honesty (pass 49 wording folded).
+6. ~~**Traceway deep-dive**~~ → **DONE pass 50**. Residual: Cloud $/unit; Rustrak full deep-dive if MCP+Sentry pressure rises; GlitchTip low priority.
+7. **Parallax-column refresh** — keep planned/shipped + A1 honesty.
+8. **A1 eval program** remains the blocking gate for all “bundle beats X” claims.
 
 ## Bias audit (this pass)
 
@@ -185,3 +187,4 @@
 - ✅ Pass 46 Odigos — recorded **AI SRE marketing** without inventing a backend competitor (still instrumentation layer); Enterprise **no public number** stated honestly. Chronosphere AgentiX left as **planned not GA** (did not claim watch fully fired). Maple/Coroot/Traceloop non-findings recorded without spinning as Parallax wins.
 - ✅ Pass 48 Grafana/OpenObserve/Uptrace — pricing corrections **favor competitors** (Grafana Pro $195→$19; O2 public $/GB; Uptrace 50GB free). No pro-Parallax understatement of their Cloud affordability.
 - ✅ Pass 49 Tempo v3 GA — corrected a **pro-Parallax understatement of Grafana maturity** (claiming Tempo v3 “not GA” when v3.0.2 has been GA since 2026-06). Recorded TraceQL metrics GA + redaction as **shipped Grafana strength**. AgentiX left planned (did not invent GA). TMA1 7th UNFIRED not spun as competitor failure. AI matrix expansion **increases** visible competitor coverage rather than shrinking the field.
+- ✅ Pass 50 Traceway — **hard no-bias test on agent-native self-host OTel**: written plainly that Traceway ships the multi-signal + skills/CLI/MCP combination and that the field no longer lacks this product shape. Parallax edges scoped tightly (Sentry envelope + portable redacted bundle + outcome); A1 unproven. Cloud rates left **no public number** rather than invented.

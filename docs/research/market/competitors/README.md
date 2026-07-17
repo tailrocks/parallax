@@ -185,8 +185,9 @@ Extended slice (pass **49** AI-column sweep — incumbents + layers; full depth 
    - **Strongest collision (pass 38): [Dynatrace](parallax-vs-dynatrace.md) now explicitly ships and names "bounded agent context"** (Perform 2026: Dynatrace Intelligence + Smartscape + MCP Server + Intelligence Agents).
    Net: **"LLM/agent tracing," "autonomous investigation," "coding-agent observability," and even "bounded context for agents" are no longer Parallax-unique** — they ship at incumbents. Surviving differentiation narrows to the **portable, redacted, versioned production-incident bundle for a coding-agent fix loop** (A1) — value **unproven, not assumed**.
 7. **Pass 49 stack pin (Grafana/LGTM):** Tempo is **GA at v3.0.2** (Kafka-log write path, TraceQL metrics GA, vParquet5, trace redaction) — prior matrix/deep-dive “Tempo v3 not GA / still 2.10.7” was **stale and corrected**. Strengthens Grafana’s shipped-architecture lead; does not change Parallax’s self-host-simplicity wedge vs the full distributed LGTM stack.
+8. **Pass 50 — Traceway enters the set:** [Traceway](parallax-vs-traceway.md) (**MIT**, **1,024★**, v1.9.1) ships OTel multi-signal + session replay + **agent skills/CLI/MCP**. **No-bias:** “open self-host OTel + agent-native production debug” is **no longer scarce**. Parallax’s remaining exclusive cells vs Traceway = Sentry-envelope + portable redacted bundle + outcome loop (A1 unproven).
 
-## Full deep-dive roster (32 products + layers)
+## Full deep-dive roster (33 products + layers)
 
 The wide matrix above is a readable 10-column slice; the authoritative roster
 lives in [`comparison-set.md`](comparison-set.md). Every product with a
@@ -207,4 +208,4 @@ lives in [`comparison-set.md`](comparison-set.md). Every product with a
 
 ## Sources
 
-Every deep-dive (all **30** products + layers, verified **2026-07-17**) carries its own dated primary-source list. The matrix above is backed by those deep-dives — **no cell relies on un-reverified legacy 2026-05/06 notes**; the legacy market notes are sources/leads only, with superseded-pointers into this folder. Drift-sensitive figures (version, stars, pricing) are pinned *per deep-dive* with a date; **those** are what re-verification targets each pass (products release; numbers age). See [`PROGRESS.md`](PROGRESS.md) for the per-product verification state, open questions, and the next-gap queue.
+Every deep-dive (all **33** products + layers through pass 50, verified **2026-07-17**) carries its own dated primary-source list. The matrix above is backed by those deep-dives — **no cell relies on un-reverified legacy 2026-05/06 notes**; the legacy market notes are sources/leads only, with superseded-pointers into this folder. Drift-sensitive figures (version, stars, pricing) are pinned *per deep-dive* with a date; **those** are what re-verification targets each pass (products release; numbers age). See [`PROGRESS.md`](PROGRESS.md) for the per-product verification state, open questions, and the next-gap queue.
