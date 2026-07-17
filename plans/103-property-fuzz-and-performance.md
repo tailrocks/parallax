@@ -122,8 +122,10 @@ spike produces useful stable signal.
   docs/research/testing/property-invariants.md.
 - [x] (2026-07-17 later) Redaction idempotence (`sanitize_text` fixpoint),
   bundle canonical-JSON fixpoint + version-scoped hash stability, fingerprint
-  determinism + `normalize_message` fixpoint. Remaining Rust invariants still
-  open: OTLP normalization determinism, trace trees, serialization contracts,
+  determinism + `normalize_message` fixpoint.
+- [x] (2026-07-17) OTLP normalization determinism: proptest on
+  `normalize_traces` / `normalize_logs` in `parallax-ingest` (`property_tests`).
+  Remaining Rust invariants still open: trace trees, serialization contracts,
   retry no-replay.
 - [ ] UI search, runtime decoder, Query identity, live ordering, and state
   invariants have bounded generated coverage.

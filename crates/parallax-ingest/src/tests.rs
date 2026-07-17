@@ -356,3 +356,102 @@ fn resource_invocation_ids_reads_root_span_attribute() {
     let ids: Vec<(String, u128)> = resource_invocation_ids(&request).collect();
     assert_eq!(ids, vec![("inv-root".to_string(), 10)]);
 }
+
+/// Plan-103: OTLP normalize is a pure function of the export request.
+mod property_tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    fn span_request(
+        service: &str,
+        span_name: &str,
+        start: u64,
+        end: u64,
+        status_code: i32,
+    ) -> ExportTraceServiceRequest {
+        use parallax_proto::trace::{ResourceSpans, ScopeSpans, Span, Status};
+        ExportTraceServiceRequest {
+            resource_spans: vec![ResourceSpans {
+                resource: Some(parallax_proto::resource::Resource {
+                    attributes: vec![string_kv("service.name", service)],
+                    ..Default::default()
+                }),
+                scope_spans: vec![ScopeSpans {
+                    spans: vec![Span {
+                        trace_id: vec![0xab; 16],
+                        span_id: vec![0xcd; 8],
+                        name: span_name.to_string(),
+                        start_time_unix_nano: start,
+                        end_time_unix_nano: end.max(start),
+                        status: Some(Status {
+                            code: status_code,
+                            message: String::new(),
+                        }),
+                        ..Default::default()
+                    }],
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+        }
+    }
+
+    proptest! {
+        /// Same OTLP request always yields identical SpanRow vectors (determinism).
+        #[test]
+        fn normalize_traces_is_deterministic(
+            service in "[a-zA-Z0-9._-]{1,32}",
+            name in "[a-zA-Z0-9._/ -]{0,64}",
+            start in 0u64..1_000_000_000_000u64,
+            duration in 0u64..1_000_000_000u64,
+            status in 0i32..=2,
+        ) {
+            let request = span_request(&service, &name, start, start.saturating_add(duration), status);
+            let a = normalize_traces(&request);
+            let b = normalize_traces(&request);
+            // SpanRow is not PartialEq; compare via stable serde JSON.
+            let a_json = serde_json::to_value(&a).expect("a");
+            let b_json = serde_json::to_value(&b).expect("b");
+            prop_assert_eq!(a_json, b_json);
+            prop_assert_eq!(a.len(), 1);
+            prop_assert_eq!(&a[0].service, &service);
+            prop_assert_eq!(&a[0].name, &name);
+        }
+    }
+
+    proptest! {
+        /// Log normalize is deterministic for bounded service/body pairs.
+        #[test]
+        fn normalize_logs_is_deterministic(
+            service in "[a-zA-Z0-9._-]{1,32}",
+            body in ".*{0,128}",
+            severity in 1i32..=24,
+        ) {
+            let request = ExportLogsServiceRequest {
+                resource_logs: vec![parallax_proto::logs::ResourceLogs {
+                    resource: Some(parallax_proto::resource::Resource {
+                        attributes: vec![string_kv("service.name", &service)],
+                        ..Default::default()
+                    }),
+                    scope_logs: vec![parallax_proto::logs::ScopeLogs {
+                        log_records: vec![parallax_proto::logs::LogRecord {
+                            time_unix_nano: 1_000_000_000,
+                            severity_number: severity,
+                            body: Some(AnyValue {
+                                value: Some(AnyValueEnum::StringValue(body.clone())),
+                            }),
+                            ..Default::default()
+                        }],
+                        ..Default::default()
+                    }],
+                    ..Default::default()
+                }],
+            };
+            let a = normalize_logs(&request);
+            let b = normalize_logs(&request);
+            let a_json = serde_json::to_value(&a).expect("a");
+            let b_json = serde_json::to_value(&b).expect("b");
+            prop_assert_eq!(a_json, b_json);
+        }
+    }
+}

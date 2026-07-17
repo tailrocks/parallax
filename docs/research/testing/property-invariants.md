@@ -15,6 +15,7 @@ in normal `cargo nextest` CI — bounded, seeded, shrinkable), and removal rule
 | Redaction text idempotence | re-sanitizing already-redacted text mutates storage titles/messages | arbitrary ≤4 KiB UTF-8 strings | `sanitize_text` is a fixpoint (`f(f(x)) = f(x)`) | `parallax-evidence/src/redaction_policy.rs` property_tests |
 | Canonical JSON + version-scoped hash stability | non-deterministic key order or non-fixpoint canonicalization breaks bundle-v2 hashes | arbitrary JSON trees depth ≤3, ≤4 children | `canonical_json` re-parse is a fixpoint; version-scoped hash stable | `parallax-evidence/src/envelope.rs` property_tests |
 | Fingerprint determinism | non-pure fingerprinting splits one defect class across issues | arbitrary type/message/stack strings | same inputs → identical 16-hex fingerprint; `normalize_message` fixpoint | `parallax-analysis/src/fingerprint.rs` property_tests |
+| OTLP normalize determinism | non-pure OTLP projection would fork identity/query results | service/name/body strings + status/severity ints | two normalize calls over the same request yield equal JSON-encoded rows | `parallax-ingest/src/tests.rs` property_tests |
 
 ## Fuzz boundaries (plan 103, Step 3 — first slice)
 

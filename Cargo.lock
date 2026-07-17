@@ -3326,6 +3326,7 @@ dependencies = [
  "parallax-model",
  "parallax-proto",
  "parallax-semconv",
+ "proptest",
  "serde_json",
 ]
 
