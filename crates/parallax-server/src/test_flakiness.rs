@@ -208,4 +208,43 @@ mod tests {
                 .is_none()
         );
     }
+
+    #[tokio::test]
+    async fn cursor_pages_complete_one_frozen_sweep() {
+        let directory = tempfile::tempdir().expect("tempdir");
+        let store = TursoMetadataStore::open(directory.path().join("metadata.db"))
+            .await
+            .expect("store");
+        let first_variant =
+            TestVariantKey::from_str(&format!("tv1:{}", "c".repeat(64))).expect("variant");
+        let second_variant =
+            TestVariantKey::from_str(&format!("tv1:{}", "d".repeat(64))).expect("variant");
+        for row in [
+            result(&first_variant, 1, TestStatus::Passed),
+            result(&second_variant, 1, TestStatus::Passed),
+        ] {
+            MetadataStore::upsert_test_result(&store, &row)
+                .await
+                .expect("result");
+        }
+
+        let first = tick_once(&store, 100, policy(1, 10), None)
+            .await
+            .expect("first page");
+        assert_eq!(first.states_upserted, 1);
+        let cursor = first.next_cursor.expect("cursor");
+        let second = tick_once(&store, 100, policy(1, 10), Some(&cursor))
+            .await
+            .expect("second page");
+        assert_eq!(second.states_upserted, 1);
+        assert_eq!(second.next_cursor, None);
+        for variant in [first_variant, second_variant] {
+            assert!(
+                MetadataStore::test_flaky_state(&store, variant.as_str())
+                    .await
+                    .expect("state")
+                    .is_some()
+            );
+        }
+    }
 }
