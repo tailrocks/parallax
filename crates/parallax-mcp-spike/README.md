@@ -60,6 +60,8 @@ unfinished.
 Wire fixtures require empty, terminal prompt/resource/template catalogs and
 method-level denial for prompt/resource reads; those capabilities remain
 disabled.
+Fresh transports over the same server state must rediscover the identical tool
+catalog; discovery does not depend on an MCP session identifier.
 The API origin is restricted to credential-free plaintext HTTP on literal
 loopback IPs; hostnames are rejected so DNS/hosts configuration cannot escape
 the local boundary.

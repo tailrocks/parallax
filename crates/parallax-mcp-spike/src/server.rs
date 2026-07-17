@@ -371,6 +371,31 @@ mod tests {
             .expect("stop server");
     }
 
+    async fn discover_tools_on_fresh_transport(server: SpikeServer) -> Vec<String> {
+        let (server_transport, client_transport) = tokio::io::duplex(64 * 1024);
+        let server_task = tokio::spawn(async move {
+            server.serve(server_transport).await?.waiting().await?;
+            anyhow::Ok(())
+        });
+        let client = ().serve(client_transport).await.expect("initialize client");
+        let names = client
+            .peer()
+            .list_tools(None)
+            .await
+            .expect("tools/list response")
+            .tools
+            .into_iter()
+            .map(|tool| tool.name.into_owned())
+            .collect();
+
+        client.cancel().await.expect("cancel client");
+        server_task
+            .await
+            .expect("join server")
+            .expect("stop server");
+        names
+    }
+
     #[test]
     fn advertises_tools_without_unapproved_capabilities() {
         let info = SpikeServer::new("http://127.0.0.1:4000".to_string())
@@ -712,5 +737,18 @@ mod tests {
         for protocol_version in SUPPORTED_PROTOCOL_VERSIONS {
             assert_protocol_negotiates(protocol_version.clone()).await;
         }
+    }
+
+    #[tokio::test]
+    async fn wire_discovery_does_not_depend_on_prior_session_state() {
+        let server = SpikeServer::new("http://127.0.0.1:4000".to_string()).expect("server");
+        let first = discover_tools_on_fresh_transport(server.clone()).await;
+        let second = discover_tools_on_fresh_transport(server).await;
+
+        assert_eq!(first, second);
+        assert_eq!(
+            first,
+            ["parallax_agent_session_show", "parallax_issue_context"]
+        );
     }
 }

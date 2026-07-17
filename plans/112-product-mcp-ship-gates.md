@@ -127,6 +127,9 @@ must not return in product output.
 - Wire fixtures negotiate every reviewed legacy revision and assert the server
   returns that exact revision, while the future-version denial remains
   protocol-level; claimed-client skew evidence remains unfinished.
+- Two fresh transports over the same server state rediscover the identical
+  terminal catalog, proving preliminary discovery has no prior-session or MCP
+  session-ID dependency.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded
