@@ -1,0 +1,13 @@
+NAME                                    STATUS
+telemetry-playground-broker-1           Up 2 hours
+telemetry-playground-checkout-1         Up 2 hours
+telemetry-playground-flagd-1            Up 2 hours
+telemetry-playground-inventory-1        Up 2 hours
+telemetry-playground-notifications-1    Up 2 hours
+telemetry-playground-orders-1           Up 2 hours
+telemetry-playground-payment-1          Up 2 hours
+telemetry-playground-postgres-1         Up 2 hours (healthy)
+telemetry-playground-pricing-1          Up 2 hours
+telemetry-playground-recommendation-1   Up 2 hours
+telemetry-playground-storefront-1       Up 2 hours
+telemetry-playground-web-1              Up 19 minutes

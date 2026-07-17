@@ -1,0 +1,12 @@
+
+  Parallax ready — Ctrl-C to stop
+
+    UI         http://127.0.0.1:4000
+    GraphQL    http://127.0.0.1:4000/graphql
+    OTLP/gRPC  127.0.0.1:4317
+    OTLP/HTTP  127.0.0.1:4318
+    storage    managed GreptimeDB on 127.0.0.1:24000
+    metadata   Turso at /tmp/parallax-qa/data/meta.db
+    data       /tmp/parallax-qa/data
+    self-otlp   off (set PARALLAX_SELF_OTLP to export)
+

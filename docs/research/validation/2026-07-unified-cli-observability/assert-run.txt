@@ -1,0 +1,29 @@
+PASS 1.drive observed appMode=one_shot
+PASS 1.drive terminal outcome
+PASS 1.cron observed appMode=one_shot
+PASS 1.cron terminal outcome
+PASS 1.console observed appMode=interactive
+PASS 1.console terminal outcome
+PASS 1.daemon observed appMode=daemon
+PASS 2.sessions one closed pair
+PASS 2.screenVisits >=2 strictly increasing
+PASS 2.uiActions >=2 incl checkout.submit
+PASS 2.checkout.submit trace crosses into checkout service
+PASS 3.daemon cycles >=1 name with count>=1
+PASS 4.order_dispatch job present
+PASS 4.fulfillment_shipment job present
+PASS 4.shipment jobId crosses the Kafka hop (two span kinds share it)
+PASS 5.daemon conversation with agent+provider
+PASS 6.drive logs non-empty
+PASS 6.drive traces non-empty
+PASS 6.serviceMap kinds cli+browser+service
+PASS 7.j-error failure inside checkout visit with widget context
+PASS 7.j-error error event timestamp inside checkout visit
+PASS 7.j-outside error resolves to no visit
+PASS 7.j-reattach >=3-link previous chain
+PASS 7.j-parallel non-bleeding signal sets
+PASS 8.legacy run(runId:) fails schema validation
+PASS 8.no corpus signal carries parallax.run.id
+PASS 8.legacy-only span minted no invocation
+
+assert.sh failures: 0
