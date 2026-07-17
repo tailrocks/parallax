@@ -40,7 +40,7 @@
 | Product | Deep-dive file | State | Last verified | Next gap |
 | --- | --- | --- | --- | --- |
 | Datadog | [parallax-vs-datadog.md](parallax-vs-datadog.md) | ✅ pass 1 | 2026-07-17 | self-host/agentless reality; gov/FedRAMP posture; exact 2026 OTLP-in-Agent GA scope |
-| Sentry | [parallax-vs-sentry.md](parallax-vs-sentry.md) | ✅ pass 3 | 2026-07-17 | track OTLP-metrics GA; A1-vs-Seer measurement; self-host cost/ops benchmark |
+| Sentry | [parallax-vs-sentry.md](parallax-vs-sentry.md) | ✅ pass 3 | 2026-07-17 | **pass 16b correction: Parallax Sentry-envelope ingest is SHIPPED** (`sentry_envelope.rs`+`sentry_http.rs`+`ErrorSource::SentryEnvelope`, verified in `crates/`) — deep-dive's "planned/not-V1" was stale, corrected to shipped; matrix `✅🧪` confirmed-accurate; open: track OTLP-metrics GA; A1-vs-Seer measurement; self-host cost/ops benchmark |
 | Grafana Cloud/LGTM | [parallax-vs-grafana.md](parallax-vs-grafana.md) | ✅ pass 5 | 2026-07-17 | **versions pinned pass 5b**: Grafana v13.1.0 / Mimir mimir-3.1.3 / Loki v3.7.3 / Tempo v2.10.7 / Pyroscope v2.1.1; corrected "Grafana 12.x"→13.1.0 + "Tempo v3 GA"→v3-not-yet-GA; open: A1-vs-Grafana measurement; self-host cost/ops benchmark |
 | Honeycomb | [parallax-vs-honeycomb.md](parallax-vs-honeycomb.md) | ✅ pass 6 | 2026-07-17 | **Pro unit resolved pass 15: $150/50M events (~$3/M, 60-day retention, official page)** — the "$130/100M" was third-party conflation; A1-vs-Honeycomb measurement; high-cardinality query parity benchmark (riskiest regime for GreptimeDB) |
 | New Relic | [parallax-vs-new-relic.md](parallax-vs-new-relic.md) | ✅ pass 8 | 2026-07-17 | pricing verified (100GB free + $0.40/GB Original / $0.60 Data Plus, ~$49/user); OTLP-native GA since 2021; **AI Coding Obs (June 2026: Claude Code/Cursor/Copilot/Windsurf/Q) = direct overlap w/ Parallax agent wedge — New Relic ahead**; open: NRAI-vs-bundle A1 measurement; self-host never (SaaS-only) |
@@ -77,7 +77,7 @@ are 🟡 inherited** (sources dated 2026-05/06). Priority for re-verification:
 
 ## Next highest-value gaps (ranked)
 
-1. **Overview-matrix re-verification (Parallax column)** — with the primary-set deep-dives complete, the inherited 🟡 overview matrix is the weakest-sourced surface; every Parallax-column cell is self-assessed (bias-prone). Mark shipped vs planned explicitly across all rows. (🔴 priority)
+1. **Tier-2 incumbents** — Splunk Obs / Sumo / Chronosphere / Observe / Axiom (Elastic done pass 15, Dynatrace pass 16; 5 remain). *(Overview-matrix Parallax column resolved: peer split `✅🧪` shipped vs `🏗` planned across all rows; the most consequential self-assessed claim — Sentry-envelope ingest — was verified against `crates/` pass 16b and is genuinely shipped.)*
 2. **SigNoz cell re-verification** — exact current star count + MCP server version; trace/metric throughput (no public number).
 3. **Tier-2 incumbents** — Splunk Obs / Sumo / Chronosphere / Observe / Axiom (one per later pass; Elastic done pass 15, Dynatrace done pass 16).
 4. **Overview-matrix re-verification** — Parallax-column cells (bias-prone, self-assessed) + AI-native column (fast-moving) across all competitors; reframe inherited 🟡 verdicts no-bias.
