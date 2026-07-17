@@ -192,6 +192,9 @@ Full wedge combination **still not closed**.
 
 Full combination **still not closed**.
 
+**Pass 278 recheck (2026-07-18):** Phoenix/Coroot/Holmes pins **unchanged**
+(10,600★/v18.1.0; 7,837★/v1.23.3; 2,874★/0.36.0). Combo **not closed**.
+
 **Pass 256 recheck (2026-07-18):** **TMA1 + Odigos** watches —
 
 | Product | Pin | Watch |
