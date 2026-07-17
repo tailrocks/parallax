@@ -238,6 +238,15 @@ Full combination **still not closed**.
 
 Combo **still not closed**.
 
+**Pass 293 recheck (2026-07-18):** **TMA1 + Odigos** —
+
+| Product | Pin | Watch |
+| --- | --- | --- |
+| **TMA1** | **109★** / **alpha12**; 15 commits **no** collision keywords | **26th UNFIRED** |
+| **Odigos** | **3,668★** / **v1.31.2** | export-only **UNFIRED** own-store |
+
+Combo **still not closed**.
+
 **Pass 258 recheck (2026-07-18):** **Maple + Uptrace** —
 
 | Product | Pin | Watch |

@@ -131,6 +131,7 @@ CLI semconv issue**, (2) optional GenAI#51 comment, (3) PR if SIG interest.
 | 2026-07-18 pass 207 | API re-fetch genai#51 + model/cli + code search | genai#51 **still open/idle** (2026-05-05); CLI model **spans.yaml** only; `cli.invocation` **0 hits** — still no OTel standard |
 | 2026-07-18 pass 252 | API re-fetch genai#51 + model/cli + code search | genai#51 **still open/idle** (`updated_at` **2026-05-05**); `model/cli/` still **only `spans.yaml`** (process attrs; **no** invocation id); `cli.invocation` code search **total_count 0** — **still no OTel standard** |
 | 2026-07-18 pass 278 | API re-fetch genai#51 + model/cli + code search | genai#51 **still open/idle** (2026-05-05); CLI **spans.yaml** only; `cli.invocation` **0** — **still no OTel standard** |
+| 2026-07-18 pass 293 | API re-fetch genai#51 + code search | genai#51 **still open/idle** (2026-05-05); `cli.invocation` **0** — **still no OTel standard** |
 
 ## Current implementation state (Parallax, 2026-07-17; re-verified in source)
 
