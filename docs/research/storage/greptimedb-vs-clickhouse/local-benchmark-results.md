@@ -7066,3 +7066,8 @@ Mechanism no drift. GT inverted vs unindexed ~tie at 100k absolute ms. Note:
 GT append_mode table: `DELETE` → error 1004. GT default mito: DELETE works (1000→999).
 CH lightweight + ALTER DELETE work. **Blueprint:** append event tables need alternate
 GDPR path. Note: `deletes-and-mutations.md`, `greptimedb-implementation.md`.
+
+### Run 187 — 2026-07-17 — TTL expire live (GT compact / CH OPTIMIZE)
+
+GT `ttl='1s'` + compact → rows gone. CH `TTL … + 1 SECOND` + OPTIMIZE FINAL → expired row gone.
+No drift. `retention-and-ttl.md`.

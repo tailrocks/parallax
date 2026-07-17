@@ -241,3 +241,14 @@ directional only.
   removals comment — same control flow re-found on `v1.1.3` at shifted lines.
 - Cross-refs: `compaction-and-merge.md`, `compression-and-cost.md`,
   `clickhouse-implementation.md` (DDL correction), `size-and-object-cost.md`.
+
+## Run 187 (2026-07-17) — TTL live on v1.1.3 / 26.6.1.1193
+
+| Engine | Setup | Result |
+| --- | --- | --- |
+| GT | `WITH (append_mode='true', ttl='1s')`, insert, sleep 2, flush, **`ADMIN compact_table`** | count **1 → 0** after compact |
+| CH | `TTL ts + INTERVAL 1 SECOND`, insert past+future rows, **`OPTIMIZE FINAL`** | expired row dropped; remaining `[2]` |
+
+**No drift:** both expire data; GT TTL purge is **compaction-triggered** (background/eventual until
+compact), CH boundary/part drop on OPTIMIZE/merge. Cheap retention still favors time-ordered
+ingestion + whole-file/part drop (TWCS on GT).
