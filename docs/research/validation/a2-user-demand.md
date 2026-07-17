@@ -99,7 +99,11 @@
 > 
 This note consolidates the following previously-separate research files, each preserved**Pass 315 recheck (2026-07-18):** gate **still OPEN / zero rows**.
 > No `docs/research/a2-deployment-intent-results.md`; no `interview_id: A2-*` result
-> rows. Desk cannot substitute. Operator interview runbook still owed.
+> rows. Desk cannot substitute. Operator interv**Pass 326 recheck (2026-07-18):** gate **still OPEN / zero rows**.
+> No deployment-intent results ledger file; no non-template A2 interview rows.
+> Operator runbook still owed.
+>
+> iew runbook still owed.
 >
 >  in full below:
 

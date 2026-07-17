@@ -190,7 +190,8 @@ work in `plans/`.
   [Traces overview](https://docs.greptime.com/user-guide/traces/overview/) still **experimental stage**.
   Size/cost still **unproven** (no server-tier measurement this pass).
 - **Version re-pin 2026-07-18 pass 322 (API only — no bench):** GreptimeDB Latest still **`v1.1.3`**;
-  nightly still **`v1.2.0-nightly-20260706`**. Size/cost **unproven**.
+  nightly still **`v1.2.0-nightly-20260706`**. Size/cost **unproven**.- **Version re-pin 2026-07-18 pass 326 (API only — no bench):** GreptimeDB Latest still **`v1.1.3`**. Size/cost **unproven**.
+
 - **Historical re-verify 2026-06-03 (official docs + GitHub releases — version pins superseded):**
   - GreptimeDB docs still describe a unified observability database for metrics, logs, and traces with
     SQL and PromQL support, OpenTelemetry ingestion paths for metrics/logs/traces, and a distributed
