@@ -402,3 +402,14 @@ forbidden. CH four-way still shows only hand `otel_logs` MergeTree + experimenta
 
 **ADOPT native** on GT unchanged; CH remains collector + custom schema.
 
+## Run 562 (2026-07-18) — adopt-native + join prune (no drift)
+
+| Check | Result |
+| --- | --- |
+| OTLP JSON `POST /v1/otlp/v1/logs` | HTTP **400** — protobuf-only message holds |
+| `greptime_identity` → `run562_id` | first insert cols `msg,k1`; second adds **`k2` Int64** schema-on-write |
+| Jaeger `/v1/jaeger/api/services` | HTTP **200** (empty services OK) |
+| CH join prune `r424_spans ⋈ r424_logs` on `trace_id=t0` | Left **PrimaryKey** + right **bloom `idx_trace`** both **Granules 1/1** |
+
+**ADOPT native** GT still; join-pushdown thesis still holds. **Not done.**
+
