@@ -74,7 +74,13 @@ impl crate::adapter::IngestStore for GreptimeStore {
         // where `invocation_id` is an indexed column.
         let values = points
             .iter()
-            .filter(|p| p.invocation_id.as_deref().is_some_and(|id| !id.is_empty()))
+            // Non-finite samples never count (metric-summary contract) and a
+            // bare NaN/inf literal breaks the whole INSERT batch — filter here
+            // so one poisoned sample cannot drop every sibling point.
+            .filter(|p| {
+                p.value.is_finite()
+                    && p.invocation_id.as_deref().is_some_and(|id| !id.is_empty())
+            })
             .map(|p| {
                 format!(
                     "({},'{}','{}','{}','{}',{},{})",
