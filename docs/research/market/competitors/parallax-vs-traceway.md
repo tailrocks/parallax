@@ -2,8 +2,8 @@
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 50**
 > first deep-dive; **pass 54** cloud pricing; **pass 84** commercial + AI-row
-> recheck; **pass 122** pin + cloud + wedge re-fetch; **pass 156** re-pin —
-> still **1,024★**, **v1.9.1**, combination **not closed**). Sources:
+> recheck; **pass 122** pin + cloud + wedge re-fetch; **pass 156** + **pass 185**
+> re-pin — still **1,024★**, **v1.9.1**, combination **not closed**). Sources:
 > [github.com/tracewayapp/traceway](https://github.com/tracewayapp/traceway)
 > (README + releases API), [tracewayapp.com/cloud](https://tracewayapp.com/cloud),
 > [docs.tracewayapp.com](https://docs.tracewayapp.com), concurrent
