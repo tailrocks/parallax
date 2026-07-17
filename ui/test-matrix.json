@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 571,
-    "test_files": 144
+    "test_cases": 572,
+    "test_files": 145
   },
   "private_route_imports": [],
   "entries": [
@@ -2255,6 +2255,22 @@
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "issues-full-stack",
+      "state_class": "inventory"
+    },
+    {
+      "id": "pw-full-stack-tests",
+      "surface": "features/tests",
+      "risk": "Tests explorer product chrome fails to mount on the managed full stack",
+      "scenario_owner": "features/tests",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/tests.spec.ts",
+      "test_ids": [
+        "tests explorer loads product chrome @pw-full-stack-tests"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "implemented",
+      "dataset_id": "tests-full-stack",
       "state_class": "inventory"
     },
     {

@@ -649,10 +649,6 @@ async fn test_reporting_upserts_are_idempotent_and_reference_native_spans() {
 }
 
 #[tokio::test]
-#[expect(
-    clippy::too_many_lines,
-    reason = "fixture seeds multiple cases/variants/results for isolation + batch detail clamps"
-)]
 async fn test_case_variants_and_variant_history_are_bounded_and_isolated() {
     use parallax_model::{
         TestAttempt, TestCaseIdentitySource, TestCaseKey, TestCaseRecord, TestConfiguration,
@@ -742,21 +738,6 @@ async fn test_case_variants_and_variant_history_are_bounded_and_isolated() {
     assert_eq!(history[1].key.invocation_id, "inv-new");
     assert_eq!(history[2].key.invocation_id, "inv-old");
 
-    let detail = port
-        .test_case_detail(case_key.as_str(), 10, 2)
-        .await
-        .expect("detail")
-        .expect("case present");
-    assert_eq!(detail.case.key, case_key);
-    let newer = detail
-        .variants
-        .iter()
-        .find(|row| row.variant.key == newer_variant)
-        .expect("newer variant in batch");
-    // result_limit=2 clamps newest-first history in the batched path.
-    assert_eq!(newer.history.len(), 2);
-    assert_eq!(newer.history[0].key.attempt.get(), 2);
-    assert_eq!(newer.history[1].key.invocation_id, "inv-new");
     assert_eq!(
         port.test_results_for_variant(newer_variant.as_str(), 1)
             .await
@@ -770,6 +751,81 @@ async fn test_case_variants_and_variant_history_are_bounded_and_isolated() {
         .await
         .expect_err("invalid case key");
     assert_eq!(invalid.kind(), MetadataErrorKind::InvalidInput);
+}
+
+#[tokio::test]
+async fn test_case_detail_batches_history_and_clamps_per_variant() {
+    use parallax_model::{
+        TestAttempt, TestCaseIdentitySource, TestCaseKey, TestCaseRecord, TestConfiguration,
+        TestResultKey, TestResultRecord, TestStatus, TestVariantKey, TestVariantRecord, TraceId,
+    };
+    use parallax_storage::metadata::MetadataStore as MetadataStorePort;
+    use std::str::FromStr;
+
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(&path).await.expect("open");
+    let port: &dyn MetadataStorePort = &store;
+    let case_key = TestCaseKey::from_str(&format!("tc1:{}", "a".repeat(64))).expect("case");
+    let variant_key =
+        TestVariantKey::from_str(&format!("tv1:{}", "d".repeat(64))).expect("variant");
+    port.upsert_test_case(&TestCaseRecord {
+        key: case_key.clone(),
+        identity_source: TestCaseIdentitySource::NamePath,
+        explicit_id: None,
+        code_reference: None,
+        suite_path: vec!["suite".into()],
+        name: "case".into(),
+        first_seen_nanos: 1_000_000,
+        last_seen_nanos: 9_000_000,
+    })
+    .await
+    .expect("case");
+    port.upsert_test_variant(&TestVariantRecord {
+        key: variant_key.clone(),
+        case_key: case_key.clone(),
+        parameters: Vec::new(),
+        first_seen_nanos: 1_000_000,
+        last_seen_nanos: 9_000_000,
+    })
+    .await
+    .expect("variant");
+    for (invocation, attempt, started) in [
+        ("inv-old", 1_u32, 4_000_000_u128),
+        ("inv-new", 1, 6_000_000),
+        ("inv-new", 2, 7_000_000),
+    ] {
+        port.upsert_test_result(&TestResultRecord {
+            key: TestResultKey {
+                variant_key: variant_key.clone(),
+                invocation_id: invocation.into(),
+                attempt: TestAttempt::new(attempt).expect("attempt"),
+            },
+            status: TestStatus::Failed,
+            trace_id: TraceId::from_str("abababababababababababababababab").expect("trace"),
+            span_id: "cdcdcdcdcdcdcdcd".into(),
+            started_at_nanos: started,
+            ended_at_nanos: started + 1_000_000,
+            service: "checkout".into(),
+            service_version: None,
+            vcs_head_revision: None,
+            configuration: TestConfiguration::default(),
+            failure_fingerprint: None,
+        })
+        .await
+        .expect("result");
+    }
+
+    let detail = port
+        .test_case_detail(case_key.as_str(), 10, 2)
+        .await
+        .expect("detail")
+        .expect("case present");
+    assert_eq!(detail.case.key, case_key);
+    assert_eq!(detail.variants.len(), 1);
+    assert_eq!(detail.variants[0].variant.key, variant_key);
+    assert_eq!(detail.variants[0].history.len(), 2);
+    assert_eq!(detail.variants[0].history[0].key.attempt.get(), 2);
+    assert_eq!(detail.variants[0].history[1].key.invocation_id, "inv-new");
 }
 
 fn flaky_result(
