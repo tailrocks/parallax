@@ -92,6 +92,16 @@ managed quotes remain):
 | Gap ranking 220–245 | 246 | server/GB/mix/quotes top |
 | Session milestone 220–249 | 250 | not done; server/GB open |
 
+## Remaining execute work (Run 393+)
+
+Laptop smoke is saturated. Highest remaining:
+
+1. Workload mix A1–A7 fill (`workload-mix-decision-input.md`)
+2. Server 1M/5M (`server-tier-runbook.md`)
+3. Vendor trial quotes (`managed-cloud-vs-self-host.md`)
+4. GB cold S3 (`caching-and-cold-warm.md` recipe)
+5. RPO D2/D3 (`product-rpo-runbook.md`)
+
 ## Method
 
 - Compare the latest stable release of each system; record exact versions and the source commit SHA in every note.
