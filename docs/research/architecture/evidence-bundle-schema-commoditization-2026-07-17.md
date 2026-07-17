@@ -41,6 +41,16 @@ pressure, idle incident-attribute track).
 | [genai#51 session.id](https://github.com/open-telemetry/semantic-conventions-genai/issues/51) | Still **open**; `updated_at` still **2026-05-05** (adjacent GenAI session pressure, **not** an investigation artifact) |
 | OCSF releases | Latest still **`1.8.0`** (published **2026-03-18**) |
 
+**Pass 189 primary re-fetch (2026-07-18):**
+
+| Source | Finding |
+| --- | --- |
+| [semconv #1185](https://github.com/open-telemetry/semantic-conventions/issues/1185) | Still **open**; `updated_at` still **2025-10-24** |
+| `model/` name filter | Still **empty** for incident/investigation/bundle |
+| OCSF latest | Still **`1.8.0`** (2026-03-18) |
+
+**Still not commoditized.**
+
 **Evidence class:** primary GitHub issue/tree + first-party release pages +
 vendor product docs (desk recheck). Not a measurement of A1 value.
 
