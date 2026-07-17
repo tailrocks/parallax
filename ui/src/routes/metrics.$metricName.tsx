@@ -302,26 +302,28 @@ function MetricDetailPage() {
             ))}
           </SelectContent>
         </Select>
-        <Select
-          value={search.groupBy ?? NO_GROUP}
-          onValueChange={(next) =>
-            setSearch({
-              groupBy: next == null || next === NO_GROUP ? undefined : next,
-            })
-          }
-        >
-          <SelectTrigger size="sm" className="w-44">
-            <SelectValue placeholder="Group by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={NO_GROUP}>No grouping</SelectItem>
-            {labels.map((label) => (
-              <SelectItem key={label} value={label}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {backendKind(kind) !== "histogram" ? (
+          <Select
+            value={search.groupBy ?? NO_GROUP}
+            onValueChange={(next) =>
+              setSearch({
+                groupBy: next == null || next === NO_GROUP ? undefined : next,
+              })
+            }
+          >
+            <SelectTrigger size="sm" className="w-44">
+              <SelectValue placeholder="Group by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NO_GROUP}>No grouping</SelectItem>
+              {labels.map((label) => (
+                <SelectItem key={label} value={label}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : null}
         <Select
           value={search.step ?? "60"}
           onValueChange={(next) => setSearch({ step: next ?? undefined })}

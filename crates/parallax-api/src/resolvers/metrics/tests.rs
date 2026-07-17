@@ -564,8 +564,11 @@ async fn metric_query_supports_last_and_increase_aggregations() {
         .pointer("/data/metricQuery/series/0/points")
         .and_then(|v| v.as_array())
         .unwrap();
-    assert_eq!(points.len(), 1, "one delta bucket: {json}");
-    assert_eq!(points[0].get("value").unwrap().as_f64().unwrap(), 30.0);
+    // Sum-family series zero-fill the window (contract): 0s, 60s, 120s.
+    assert_eq!(points.len(), 3, "zero-filled window: {json}");
+    assert_eq!(points[0].get("value").unwrap().as_f64().unwrap(), 0.0);
+    assert_eq!(points[1].get("value").unwrap().as_f64().unwrap(), 30.0);
+    assert_eq!(points[2].get("value").unwrap().as_f64().unwrap(), 0.0);
 
     // last: latest gauge sample inside the single bucket.
     let last = juniper::http::GraphQLRequest::new(

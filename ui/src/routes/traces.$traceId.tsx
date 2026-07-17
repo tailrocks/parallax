@@ -429,8 +429,7 @@ function TracePage() {
       />
     )
   }
-  const rootSpan =
-    spans.find((span) => !span.parentSpanId) ?? firstSorted
+  const rootSpan = spans.find((span) => !span.parentSpanId) ?? firstSorted
   const tracesBack = navItem("/traces")
   const invocationId =
     spans.find((span) => span.invocationId)?.invocationId ?? null

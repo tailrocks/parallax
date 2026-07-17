@@ -230,11 +230,50 @@ pub(crate) async fn metric_query(
             }
         }
     };
+    // Contract: sum-family buckets zero-fill so aligned windows stay
+    // comparable; gauges and histograms keep honest gaps (no fabricated
+    // samples).
+    let series = if kind == model::MetricKind::Sum {
+        series
+            .into_iter()
+            .map(|s| Series {
+                group_value: s.group_value,
+                points: zero_fill_buckets(s.points, from, to, step_ns),
+            })
+            .collect()
+    } else {
+        series
+    };
     Ok(MetricQueryOut {
         kind,
         effective_step_seconds: step,
         series,
     })
+}
+
+/// Fill missing epoch-aligned buckets in `[from, to]` with zero values.
+/// Empty input stays empty — an absent series is not fabricated.
+fn zero_fill_buckets(
+    points: Vec<SeriesPoint>,
+    from: u128,
+    to: u128,
+    step_ns: u128,
+) -> Vec<SeriesPoint> {
+    if points.is_empty() || step_ns == 0 {
+        return points;
+    }
+    let by_ts: std::collections::BTreeMap<u128, f64> =
+        points.into_iter().map(|p| (p.ts_nanos, p.value)).collect();
+    let mut out = Vec::new();
+    let mut ts = (from / step_ns) * step_ns;
+    while ts <= to {
+        out.push(SeriesPoint {
+            ts_nanos: ts,
+            value: by_ts.get(&ts).copied().unwrap_or(0.0),
+        });
+        ts += step_ns;
+    }
+    out
 }
 
 pub(crate) struct MetricCatalogRow(pub(crate) model::MetricCatalogEntry);
