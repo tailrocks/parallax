@@ -7578,3 +7578,23 @@ halves file_ranges. Whole-SST TTL drop story still rests on this layout.
 **Verdict.** PREWHERE plan shape **confirmed**; both PK-prune equally at this
 selectivity. Latency floor too small to show PREWHERE win at 50k — value is
 column read reduction on wide rows at larger N (mechanism still valid).
+
+### Run 232 — 2026-07-17 — CH projection p_svc serves non-primary filter
+
+**Pass target.** Re-verify projections as second physical order (Runs 185/171).
+
+**Setup.** `spans1m` ORDER BY `(trace_id, ts)` — `service` not in primary key.
+`ALTER … ADD PROJECTION p_svc (SELECT * ORDER BY service, ts)` + MATERIALIZE +
+OPTIMIZE FINAL. Projection part: **50,040 rows Compact**.
+
+**EXPLAIN** `WHERE service='s0'`:
+
+```
+ReadFromMergeTree (p_svc)
+Indexes: PrimaryKey service … Granules: 1/7
+```
+
+**Verdict.** **Confirmed:** projection **p_svc** is chosen for non-primary
+`service` filter; 1/7 granules. GT has no equivalent second physical order
+(secondary indexes only). Product: if ad-hoc service filters dominate, CH
+projection edge matters; Parallax anchored path still key-on-trace_id first.

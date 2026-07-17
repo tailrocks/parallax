@@ -77,6 +77,7 @@ managed quotes remain):
 | Freshness + append_mode DELETE | 229 | no drift |
 | TWCS multi-window SST prune | 230 | files 2→1 on time filter |
 | CH PREWHERE plan shape | 231 | 1/6 granules; ms ~tie @50k |
+| CH projection p_svc non-PK filter | 232 | ReadFromMergeTree(p_svc) 1/7 |
 
 ## Method
 
