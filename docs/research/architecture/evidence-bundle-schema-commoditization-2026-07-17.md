@@ -10,10 +10,11 @@ investigation/incident convention)?
 [research-agenda.md](../research-agenda.md) / pass **48** (same day): still not
 commoditized. Pass **85** re-opens the theory after concurrent wedge/pricing
 work to catch any same-day OTel/OCSF movement. **Pass 123** re-fetches primary
-API pins after A1–A6 / monetization / wedge passes.
+API pins after A1–A6 / monetization / wedge passes. **Pass 157** re-polls the
+same kill signals after pass 156 wedge work.
 
-**Verdict (pass 48 + pass 85 + pass 123):** **Still not commoditized.** No
-OpenTelemetry semantic convention ships a portable, versioned, redacted,
+**Verdict (pass 48 + pass 85 + pass 123 + pass 157):** **Still not commoditized.**
+No OpenTelemetry semantic convention ships a portable, versioned, redacted,
 validator-backed investigation/evidence bundle comparable to Parallax's
 `bundle-v1` / `envelope-v2`. Adjacent standards remain **attribute fragments**
 (OTel) or **security-incident event shapes** (OCSF), not coding-agent fix-loop
@@ -28,6 +29,17 @@ pressure, idle incident-attribute track).
 | [semconv #1185](https://github.com/open-telemetry/semantic-conventions/issues/1185) | Still **open**; `updated_at` still **2025-10-24T14:40:05Z** (no 2026 activity) |
 | `model/` dirs (contents API) | Still **no** `incident` / `investigation` / `rca` / `postmortem`; `mcp` present (tool telemetry); `artifact` present (SLSA packages) |
 | OCSF releases | Latest still **`1.8.0`** (2026-03-18) |
+
+**Pass 157 primary re-fetch (2026-07-18):**
+
+| Source | Finding |
+| --- | --- |
+| [semconv #1185](https://github.com/open-telemetry/semantic-conventions/issues/1185) | Still **open**; labels still `cicd:phase-2`, `triage:accepted:ready-with-sig`; `updated_at` still **2025-10-24T14:40:05Z** (**~9 months** idle into 2026) |
+| [semconv #1081 alerts](https://github.com/open-telemetry/semantic-conventions/issues/1081) | Still **open**; `updated_at` still **2025-11-09**; experts-needed — alert **events**, not investigation packs |
+| `model/` name filter (`incid|invest|rca|evidence|bundle|postmortem|forensic`) | **Empty** (contents API) |
+| Code search `filename:incident` + `path:model investigation` | **total_count 0** each (authenticated search) |
+| [genai#51 session.id](https://github.com/open-telemetry/semantic-conventions-genai/issues/51) | Still **open**; `updated_at` still **2026-05-05** (adjacent GenAI session pressure, **not** an investigation artifact) |
+| OCSF releases | Latest still **`1.8.0`** (published **2026-03-18**) |
 
 **Evidence class:** primary GitHub issue/tree + first-party release pages +
 vendor product docs (desk recheck). Not a measurement of A1 value.
