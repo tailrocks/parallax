@@ -695,9 +695,13 @@ rustflags = ["-C", "link-arg=-Wl,-headerpad,0x10000"]
 static PARALLAX_RELEASE_IDENTITY: &[u8] = b"parallax-release-identity:0.1.0-spike+deadbeef";
 "#,
         )?;
+        // Isolate the spike from the outer workspace CARGO_TARGET_DIR so the
+        // binary lands under project/target/release (not a shared target tree).
         let status = Command::new("cargo")
             .args(["build", "--release"])
             .current_dir(&project)
+            .env_remove("CARGO_TARGET_DIR")
+            .env_remove("CARGO_ENCODED_RUSTFLAGS")
             .status()
             .context("cargo build spike")?;
         ensure!(status.success(), "cargo build failed: {status}");
