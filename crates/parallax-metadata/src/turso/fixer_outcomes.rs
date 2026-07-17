@@ -50,7 +50,9 @@ impl TursoMetadataStore {
 
     pub async fn count_fixer_outcomes(&self) -> anyhow::Result<u64> {
         let conn = self.conn.lock().await;
-        let mut rows = conn.query("SELECT COUNT(*) FROM fixer_outcomes", ()).await?;
+        let mut rows = conn
+            .query("SELECT COUNT(*) FROM fixer_outcomes", ())
+            .await?;
         let row = rows
             .next()
             .await?

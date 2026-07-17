@@ -139,7 +139,9 @@ pub fn transition(
 }
 
 /// Mark success only when review passed and no recurrence was observed.
-pub fn mark_success(mut record: FixerOutcomeRecord) -> Result<FixerOutcomeRecord, FixerTransitionError> {
+pub fn mark_success(
+    mut record: FixerOutcomeRecord,
+) -> Result<FixerOutcomeRecord, FixerTransitionError> {
     if record.terminal.is_some() {
         return Err(FixerTransitionError::TerminalAlreadySet);
     }
@@ -161,31 +163,33 @@ pub fn mark_success(mut record: FixerOutcomeRecord) -> Result<FixerOutcomeRecord
 fn phase_allowed(from: FixerPhase, to: FixerPhase) -> bool {
     matches!(
         (from, to),
-        (
-            FixerPhase::Requested,
-            FixerPhase::Bundled
-        ) | (
-            FixerPhase::Bundled,
-            FixerPhase::AgentSession
-        ) | (
-            FixerPhase::AgentSession,
-            FixerPhase::PatchProposed
-        ) | (
-            FixerPhase::PatchProposed,
-            FixerPhase::DraftPrOpened | FixerPhase::Closed
-        ) | (
-            FixerPhase::DraftPrOpened,
-            FixerPhase::CiObserved | FixerPhase::HumanReviewed | FixerPhase::Closed
-        ) | (
-            FixerPhase::CiObserved,
-            FixerPhase::HumanReviewed | FixerPhase::Closed
-        ) | (
-            FixerPhase::HumanReviewed,
-            FixerPhase::Merged | FixerPhase::Closed
-        ) | (
-            FixerPhase::Merged,
-            FixerPhase::Reverted | FixerPhase::RuntimeRecurrence | FixerPhase::Closed
-        ) | (FixerPhase::Reverted | FixerPhase::RuntimeRecurrence, FixerPhase::Closed)
+        (FixerPhase::Requested, FixerPhase::Bundled)
+            | (FixerPhase::Bundled, FixerPhase::AgentSession)
+            | (FixerPhase::AgentSession, FixerPhase::PatchProposed)
+            | (
+                FixerPhase::PatchProposed,
+                FixerPhase::DraftPrOpened | FixerPhase::Closed
+            )
+            | (
+                FixerPhase::DraftPrOpened,
+                FixerPhase::CiObserved | FixerPhase::HumanReviewed | FixerPhase::Closed
+            )
+            | (
+                FixerPhase::CiObserved,
+                FixerPhase::HumanReviewed | FixerPhase::Closed
+            )
+            | (
+                FixerPhase::HumanReviewed,
+                FixerPhase::Merged | FixerPhase::Closed
+            )
+            | (
+                FixerPhase::Merged,
+                FixerPhase::Reverted | FixerPhase::RuntimeRecurrence | FixerPhase::Closed
+            )
+            | (
+                FixerPhase::Reverted | FixerPhase::RuntimeRecurrence,
+                FixerPhase::Closed
+            )
     )
 }
 

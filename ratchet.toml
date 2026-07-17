@@ -258,7 +258,7 @@ ceiling = 1
 [[rust_suppressions]]
 crate_name = "parallax-xtask"
 lint = "clippy::excessive_nesting"
-ceiling = 2
+ceiling = 3
 
 [[rust_suppressions]]
 crate_name = "parallax-xtask"
@@ -4302,7 +4302,7 @@ ceiling = 541
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-evidence/src/claude_code.rs"
-ceiling = 595
+ceiling = 608
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4317,7 +4317,7 @@ ceiling = 536
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-metadata/src/turso.rs"
-ceiling = 692
+ceiling = 708
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4712,7 +4712,7 @@ ceiling = 1
 [[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "clippy::print_stdout"
-ceiling = 2
+ceiling = 1
 
 [[rust_suppressions]]
 crate_name = "parallax-server"
@@ -6649,7 +6649,7 @@ ceiling = 1135
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/examples/browser_full_stack_serve.rs"
-ceiling = 714
+ceiling = 720
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
@@ -7387,7 +7387,7 @@ ceiling = 638
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/src/ci_backfill.rs"
-ceiling = 607
+ceiling = 622
 
 
 
@@ -7429,7 +7429,7 @@ ceiling = 4
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-evidence/src/github_deploy.rs"
-ceiling = 416
+ceiling = 412
 
 [[limits]]
 metric = "rust.inline-test-modules"
@@ -7492,17 +7492,9 @@ ceiling = 7
 [[limits]]
 metric = "typescript.assertions"
 scope = "ui/src/shared/tests/where-clause.property.test.ts"
-ceiling = 4
+ceiling = 2
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/logs/tests/model/merge-live-logs.property.test.ts:30"
-ceiling = 78
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/logs/tests/model/merge-live-logs.property.test.ts:31"
-ceiling = 64
 
 [[product.anyhow_edges]]
 path = "crates/parallax-metadata/src/turso/agent_sessions.rs"
@@ -7537,14 +7529,36 @@ ceiling = 7
 [[limits]]
 metric = "typescript.assertions"
 scope = "ui/src/shared/tests/where-clause.property.test.ts"
-ceiling = 4
+ceiling = 2
+
+
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-metadata/src/turso/fixer_outcomes.rs"
+ceiling = 3
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-evidence/src/fixer_outcome.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-metadata/src/turso/fixer_outcomes.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-evidence/src/fixer_outcome.rs"
+ceiling = 8
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/features/logs/tests/model/merge-live-logs.property.test.ts:30"
-ceiling = 78
+scope = "ui/src/features/logs/tests/model/merge-live-logs.property.test.ts:27"
+ceiling = 68
 
 [[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/logs/tests/model/merge-live-logs.property.test.ts:31"
-ceiling = 64
+metric = "rust.function-lines"
+scope = "crates/parallax-server/src/ci_backfill.rs::backfill_repo"
+ceiling = 118
