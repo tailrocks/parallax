@@ -81,6 +81,7 @@ A benchmark number the internals cannot explain is a flag that one of them is wr
 - [`distributed-and-scaling.md`](distributed-and-scaling.md) — single-node ceiling and horizontal-scale design.
 - [`storage-cost-and-tiering.md`](storage-cost-and-tiering.md) — CH performance/local-first vs GT S3-native/cost-first; hot/cold hybrid.
 - [`multi-tenancy-and-isolation.md`](multi-tenancy-and-isolation.md) — tenant isolation, RBAC, row policies, quotas, and proxy-owned auth.
+- [`backup-and-disaster-recovery.md`](backup-and-disaster-recovery.md) — engine backup/export/restore surfaces (GT COPY+cli meta/data vs CH BACKUP/RESTORE).
 
 **Per-signal, benchmarks, and public claims**
 - [`per-signal-verdict.md`](per-signal-verdict.md) — scenario matrix: metrics vs logs vs traces vs evidence-bundle correlation.

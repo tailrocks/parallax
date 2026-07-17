@@ -6861,3 +6861,28 @@ REPS=6 bench/four-way/bench.sh
 # INSERT VALUES batches of string JSON; ADMIN flush_table('sj2');
 # SELECT attributes.http.status_code sc, count(*) FROM sj2 GROUP BY sc;
 ```
+
+### Run 174 — 2026-07-17 — BACKUP / DR engine surface (gap #4 closed at engine layer)
+
+**Pass target.** After Run 173 re-pin, close open-questions **backup/disaster recovery** with
+source + live Docker on GT `v1.1.3` / CH `26.6.1.1193`.
+
+**Live (same bench containers as Run 173 stables)**
+
+| Op | Result |
+| --- | --- |
+| GT `COPY spans1m TO parquet` | 100k rows, 508 KiB, 279 ms |
+| GT `COPY DATABASE public TO parquet dir` | 1.6 MiB after dropping empty JSON2 leftovers (JSON2 empty table broke align) |
+| GT CLI | `greptime cli data export|import|export-v2|import-v2`; `greptime cli meta snapshot save|restore|info` |
+| CH `BACKUP TABLE spans1m TO File('backups/spans1m')` | BACKUP_CREATED; 1.1 MiB, 11 files (allowed_path=`backups`) |
+| CH multi-table BACKUP | 4.4 MiB |
+| CH `RESTORE … AS spans1m_restored` | **count=100000** match |
+
+**Source.** GT `src/cli/src/metadata/snapshot.rs` + data export CLI; CH `src/Backups/` (File/Disk/S3/Azure).
+
+**Verdict.** No stack flip. DR *shape* differs: GT leans object-store durability + meta snapshot +
+logical export; CH leans SQL BACKUP of parts. Product still needs Turso+meta combined runbook.
+
+**Note:** `backup-and-disaster-recovery.md` added; gap ledger updated.
+
+**Reproduce.** See that note's command block.

@@ -58,8 +58,10 @@ sub-study's scope, but they are "not addressed"):
   See `multi-tenancy-and-isolation.md`.
 - **Auth / access control** — engine layer partly answered by Run 172; remaining work is the
   Parallax product/API permission model (projects, teams, tokens, internal analyst access).
-- **Backup / disaster recovery** — operational story for each (object-store snapshots, Keeper/metasrv
-  state).
+- **Backup / disaster recovery** — **engine layer answered in Run 174**
+  (`backup-and-disaster-recovery.md`): GT = `COPY`/cli data export + `meta snapshot` (+ S3-native
+  data plane); CH = first-class `BACKUP`/`RESTORE` SQL (File/Disk/S3/Azure), live restore count
+  match. Remaining: product runbook (Turso + Greptime meta + object store RPO/RTO), not engine choice.
 - **Rate-limiting / quotas / ingestion protection** — the proxy's protective layer.
 
 ## 5. Managed-cloud vs self-host — changes the whole cost/ops calculus
