@@ -82,6 +82,12 @@
   variants recover to `Fixed` only after the configured clean-pass threshold;
   the prior permanent-`Broken` behavior would have made scheduled evaluation
   preserve stale failure state forever.
+- The nextest adapter foundation now strictly normalizes the documented
+  per-test process variables (`NEXTEST_*`, available since 0.9.116), retry
+  bounds, unique attempt ID, optional `TRACEPARENT`, and the wrapper-provided
+  `CLI_INVOCATION_ID`. It deliberately never substitutes `NEXTEST_RUN_ID` for
+  product invocation identity. The support crate/export lifecycle and JUnit
+  reconciliation remain for the owning adapter implementation.
 
 Design decisions D1–D9 (identity, native tables, status taxonomy, attempt
 chains, shared fingerprints, flaky SM, `/tests` surface, session semantics,
@@ -101,8 +107,9 @@ if needed; do not reopen.
    bounded Turso candidate scan + result windows landed (port + fixtures);
    residual scheduler loop that applies evaluate_flaky_evidence + state
    upserts, and mute/known flags (no runner quarantine enforcement in V1).
-6. Runner adapters: nextest support crate, JUnit listener jar, JUnit XML
-   reconciliation gap-fill.
+6. Runner adapters: nextest env normalization landed; residual nextest support
+   crate/export lifecycle, JUnit listener jar, and JUnit XML reconciliation
+   gap-fill.
 7. Live e2e vs plan 154 W4 playground payload; validation evidence under
    `docs/research/validation/`.
 
