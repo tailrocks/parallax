@@ -204,3 +204,11 @@ Turso fixture in `bench/`).
 
 2026-07-17 — Run 222. Revisit when Turso Cloud is adopted, when metasrv backend
 changes, or when object-store vendor/region changes.
+
+#### Run 456 (2026-07-18) — export-v2 schema-only re-verify
+
+`greptime cli data export-v2 create --schema-only --to file:///tmp/r456_export --force`
+exported `greptime_private` + `public` DDL; snapshot id
+`2110c353-9ca0-446d-bb01-4352d90ff454`; `public.sql` **508 lines** (grew with bench
+tables). Complements D1 portability (Run 405).
+

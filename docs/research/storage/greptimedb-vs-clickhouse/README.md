@@ -135,6 +135,7 @@ managed quotes remain):
 | still not done | **453** | top 5 open |
 | health pins adopt | **454** | 2h up; Prom/Jaeger 200 |
 | still not done | **455** | top 5 open |
+| export-v2 schema-only | **456** | public.sql 508 lines |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
