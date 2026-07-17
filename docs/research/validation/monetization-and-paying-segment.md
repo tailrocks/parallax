@@ -274,6 +274,21 @@ Live re-fetch holds:
 
 **Desk playbook holds.** A2 interviews still **zero rows**.
 
+### Pass 305 (2026-07-18) — triangle primary re-scrape (A2 desk)
+
+Live primary re-fetch of Grafana / SigNoz / OpenObserve pricing + SigNoz Noz docs.
+**Desk playbook holds.** A2 interview ledger still **zero rows** (open, not failed).
+
+| Vendor | Pin (primary 2026-07-18) | vs prior |
+| --- | --- | --- |
+| **Grafana Cloud** | Free; **Pro from $19/mo + usage**; Enterprise **starts $25,000/yr** spend commit. Metrics Pro from **$6.50/1k series** (Free limited **10k** series). Logs three-part Pro meters still **Process $0.05/GB**, **Write $0.40/GB**, **Retain $0.10/GB**. Assistant Pro **$20 / active AI user** (includes **40M tokens/user**) + **$2 / 1M** additional tokens. | **Holds** pass 281/301 |
+| **SigNoz** | Teams Cloud still **$49/mo** (struck **$199** promo) + traces/logs **$0.30/GB**, metrics **$0.10/mn samples**; Enterprise **starts $4000/month**. Community self-host free. Noz docs still under **`SigNoz Cloud`** article section; Noz vs MCP distinction still present. | **Holds** |
+| **OpenObserve** | Cloud Professional ingest **$0.50/GB** + query **$0.01/GB**; EE feature list still **SDR + AI-Powered Observability + AI SRE Agent + AI Assistant**; Self-Hosted Enterprise free ≤**50 GB/day**; AI features **free during preview** with **20 credits**. | **Holds** |
+
+**Implication:** survivors still monetize via **usage Cloud + EE/AI gates**. Open self-host OSS core remains structurally non-paying. Parallax playbook (open core + managed cloud primary + EE ops gate; do **not** gate the evidence-bundle generator the way OO gates AI SRE) **still the desk default**.
+
+**Falsify:** same as pass 242/301. **Does not close A2** — interviews still operator-owned.
+
 ### Pass 131 (2026-07-17) — Datadog Bits / AI Credits pricing (fixer reference)
 
 Live primary: [datadoghq.com/pricing/?product=ai-credits](https://www.datadoghq.com/pricing/?product=ai-credits#products)

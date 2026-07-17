@@ -91,7 +91,12 @@
 > - Monetization triangle re-scrape **holds** (pass 301). SO **2025** **200** /
 >   **2026** **404**. Ledger still **absent**.
 > - **Operator interview runbook still owed.**
-
+**Pass 305 recheck (2026-07-18):** gate **still OPEN / zero rows**.
+> Monetization triangle primary re-scrape **holds** (Grafana Pro $19 / SigNoz Teams $49 /
+> OpenObserve $0.50/GB + EE AI gates + ≤50 GB/day free self-host EE). Desk **cannot**
+> substitute interviews. Operator interview runbook still owed.
+>
+> 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
 - `user-interview-and-deployment-intent-gate.md`
