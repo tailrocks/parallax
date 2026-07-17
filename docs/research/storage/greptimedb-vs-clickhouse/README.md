@@ -82,6 +82,7 @@ managed quotes remain):
 | GT OpenDAL /metrics for S3 reads | 234 | opendal_operation_bytes |
 | Live S3 cold GetObject deltas | 235 | GT +5 vs CH +3 @20k |
 | CH head TimeSeries SELECT | 236 | still Code 48 |
+| greptime_identity schema-on-write | 237 | auto columns; no drift |
 
 ## Method
 

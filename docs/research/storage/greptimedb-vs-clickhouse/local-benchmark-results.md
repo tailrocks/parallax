@@ -7688,3 +7688,11 @@ SELECT * FROM ts_r236 LIMIT 1;
 **Verdict.** **No drift** — TimeSeries remains experimental **write-side / protocol
 surface** without SQL SELECT on head. GT PromQL remains the durable metrics-query
 edge for Parallax. Do not plan product queries on CH TimeSeries until SELECT ships.
+
+### Run 237 — 2026-07-17 — greptime_identity schema-on-write re-verify
+
+POST JSON log without `trace_id` → table `run237_id` with `[greptime_timestamp,level,msg]`.
+Second POST with `trace_id` + `latency_ms` → columns **auto-added** (`DESCRIBE`:
+`latency_ms Int64`, `trace_id String`). **No drift** vs Run 182/151. Adopt-native
+logs + identity pipeline still correct.
+

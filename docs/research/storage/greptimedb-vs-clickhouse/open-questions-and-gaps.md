@@ -131,9 +131,11 @@ Highest-value *remaining* items (not “done”):
 1. **Workload mix shares filled** (product) — Run 223 packet; fill A1–A7 + proxy counters.
 2. **Server-tier 1M/5M four-way** on v1.1.3 + 26.6 — dedup-agg regression + magnitude ratios.
 3. **Vendor-sized managed quotes** — Run 221 list rates; trial/sales quote for fixed profile.
-4. **Cold S3 selective egress at GB scale** — Run 220 layout @100k; need large MinIO + GT GET counters.
+4. **Cold S3 selective egress at GB scale** — layout+instrumentation (220/234/235);
+   **GB–TB** selective cold still owed.
 5. **RPO D2/D3 drills** — Run 225 D1 done; cluster meta snapshot + Turso dump still owed.
-6. **GT OpenDAL/S3 request metrics** — instrument gap vs CH `system.events` (Run 220).
+6. ~~GT OpenDAL/S3 request metrics~~ — **closed Runs 234–235** (`opendal_http_*GetObject`).
+7. **CH TimeSeries SQL SELECT** — still Code 48 on head 26.7 (Run 236); watch nightlies.
 
 Do **not** burn passes re-confirming interactive 50k–100k ties, small-N object counts,
 or plan-shape re-verifies of PREWHERE/projection/TWCS/PARTITION unless a **pin bumps**.
