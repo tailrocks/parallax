@@ -71,6 +71,13 @@
   owning agent should replace the bounded per-variant reads with one batched
   metadata query before large multi-variant UI loads and regenerate all UI
   operation artifacts with the currently owned schema work.
+- Pure flaky-window evaluation now groups attempt rows into completed
+  invocation chains before deriving evidence, so fail-then-pass retries set
+  only the intra-invocation signal and cannot fabricate cross-invocation
+  transitions. It handles exact time bounds, same-revision divergence,
+  recovery streaks, consistent-failure precedence, missing revisions, and
+  malformed duplicate attempts deterministically. Scheduling, bounded Turso
+  scans, and state upserts remain for the owning job integration.
 
 Design decisions D1–D9 (identity, native tables, status taxonomy, attempt
 chains, shared fingerprints, flaky SM, `/tests` surface, session semantics,
@@ -86,8 +93,9 @@ if needed; do not reopen.
    operations, attempt-chain history, mute/known/owner fields when schema exists.
 4. UI `features/tests`: list + detail + live session tree (after architecture
    owners; React Flow not required here).
-5. Flaky job over ingested results; mute/known flags (no runner quarantine
-   enforcement in V1).
+5. Flaky job over ingested results — pure invocation-chain evaluator landed;
+   residual scheduler, bounded Turso scan/state upserts, and mute/known flags
+   (no runner quarantine enforcement in V1).
 6. Runner adapters: nextest support crate, JUnit listener jar, JUnit XML
    reconciliation gap-fill.
 7. Live e2e vs plan 154 W4 playground payload; validation evidence under
