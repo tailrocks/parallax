@@ -7134,3 +7134,8 @@ CH fsync_after_insert default 0. `wal-and-durability.md`.
 
 Source-confirmed PREWHERE-style parquet prefilter + result cache remain in mito2.
 `query-execution-engine.md`.
+
+### Run 202 — 2026-07-17 — adopt-native logs reaffirm
+
+GT greptime_identity auto-schema 200; CH needs hand OTEL-like DDL. No drift.
+`write-path-and-ingestion.md`.

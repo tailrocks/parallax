@@ -337,3 +337,14 @@ N=20 single-row insert→select: **GT 20/20**, **CH 20/20** visible immediately 
 Select `execution_time_ms` p50: GT ~3 ms, CH ~2 ms. Batch insert 1000 rows then immediate
 `WHERE id BETWEEN` → **1000** on GT (memtable visible). Freshness remains a **tie**, not a
 decision axis (reconfirms Runs 116/166/178).
+
+## Run 202 (2026-07-17) — adopt-native logs: GT pipeline vs CH hand schema
+
+| System | Native logs path | Live |
+| --- | --- | --- |
+| GT v1.1.3 | `POST …/v1/events/logs?pipeline_name=greptime_identity` | **200**; auto-creates `run202_logs` with typed columns |
+| CH 26.6 | No in-DB log pipeline | Hand-rolled ClickStack-like `otel_logs` MergeTree DDL succeeds; **must** be defined up front |
+
+**Adopt-native decision reaffirmed:** logs → adopt GT pipeline (then add indexes); CH requires
+external collector + pre-modelled schema. `information_schema.pipelines` may be absent in
+standalone SQL catalog (table-not-found); pipeline endpoint still works.
