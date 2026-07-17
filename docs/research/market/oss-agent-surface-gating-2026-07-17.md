@@ -8,6 +8,8 @@ core or gate to cloud/EE (affects Parallax air-gap + A6 positioning).
 
 **Evidence class:** primary GitHub READMEs + vendor pricing/docs (2026-07-17).
 **Pass 94** re-fetched OpenObserve pricing FAQ + SigNoz Noz docs.
+**Pass 242** (2026-07-18) re-fetched triangle pricing + Noz docs + release pins
+— agent/AI gates **hold** (see table below).
 
 ## Findings
 
@@ -21,6 +23,10 @@ core or gate to cloud/EE (affects Parallax air-gap + A6 positioning).
 - **Pass 94:** Noz docs still tagged **`SigNoz Cloud`** (updated 2026-06-29);
   page contrasts Noz (UI) vs **MCP Server** (IDE/agents) — does not document a
   Community/self-host Noz path.
+- **Pass 242:** Noz docs still tagged **`SigNoz Cloud`**. Pricing Teams copy
+  still lists **"Access to MCP Server and Noz"** under **$49/mo** Cloud
+  ([signoz.io/pricing](https://signoz.io/pricing/)). Latest release **`v0.133.0`**
+  (~30.3k★). Community self-host remains free software, not free Noz.
 - **Implication:** air-gap teams using SigNoz OSS get **MCP tools over raw
   telemetry**, not a free in-product Noz investigator. Aligns with Parallax's
   "context engine, not the fixer" + possible HolmesGPT/Traceway as fixers.
@@ -35,10 +41,20 @@ core or gate to cloud/EE (affects Parallax air-gap + A6 positioning).
   Self-Hosted Enterprise free **≤ 50 GB/day** (FAQ, two answers — prior 200 GB
   conflict treated **resolved to 50**). Cloud AI "free during preview" with
   **20 credits** is **not** OSS-core AI.
+- **Pass 242:** same pricing shape reconfirmed; release **`v0.91.2`** (~20.2k★,
+  AGPL). AI still EE list + Cloud preview credits.
 - **Implication:** Parallax's **bundle-path redaction (open core)** vs
   Enterprise-gated SDR is a real openness difference *if* A6 proves trustworthy.
   Do not claim unique "redaction exists" — claim **open-core agent-facing
   redaction contract** when A6 holds.
+
+### Grafana Assistant (pass 242 pin)
+
+- [grafana.com/pricing](https://grafana.com/pricing/) lists **Grafana Assistant**
+  as its own meter: Free **3 active AI users**; Pro **$20 / active AI user** +
+  **$2 / 1M tokens**.
+- Reinforces: **in-product AI is a paid Cloud surface**, not free self-host OSS
+  (self-managed UI still needs Cloud LLM backend — pass 238 incumbent note).
 
 ### Coroot (**pass 103** primary re-fetch)
 

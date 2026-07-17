@@ -57,6 +57,12 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > | A3 external schema adoption | Pass **226** — `$id` search total 6 in-tree | **No** |
 > | Sentry OTLP metrics GA | Pass **224** — still unsupported | **No** |
 >
+> **Pass 242 (2026-07-18) — GO reaffirm (A2 desk only).** Monetization triangle
+> primary re-scrape **holds** (Grafana / SigNoz / OpenObserve). A2 kill still
+> **unfired**: **0** interview rows (open, not failed); survivors still use
+> usage-Cloud + EE/AI gates. Full kill table not re-walked this pass (wedge =
+> pass 241; Seer = pass 238). **Still GO (narrow product).**
+>
 > **Narrow product identity holds.** Research program continues.
 
 ## Verdict

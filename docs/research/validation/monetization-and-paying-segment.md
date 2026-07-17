@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-05-29 · **Desk recheck 2026-07-17 (pass 54 + 94 + 106 + 117 + 119 + 131 + 132)**
+Research date: 2026-05-29 · **Desk recheck 2026-07-17…18 (pass 54 + 94 + 106 + 117 + 119 + 131 + 132 + 216 + 242)**
 
 ## Purpose
 
@@ -199,6 +199,38 @@ point to **usage cloud + EE gates**, not pure free OSS self-host as paying produ
 ships portable redacted evidence bundles + outcome records; or public Cloud rates
 collapse so that managed cloud is no longer a viable peer revenue motion (unlikely
 from this re-fetch).
+
+### Pass 242 (2026-07-18) — triangle primary re-scrape + Assistant SKU pin
+
+Live primary re-fetch of the three public pricing surfaces + SigNoz Noz docs +
+GitHub release/star pins. **Desk survivors' playbook holds.** Material detail
+upgrades only (not a design flip). **A2 interviews still cannot close** from
+desk work (pass 242 ledger still zero rows — see [a2-user-demand.md](a2-user-demand.md)).
+
+| Vendor | Primary signal (2026-07-18 pass 242) | vs pass 216 |
+| --- | --- | --- |
+| **Grafana Cloud** | Free / **Pro from $19/mo + usage** / Enterprise **starts $25,000/yr** spend commit. Metrics Pro from **$6.50/1k series** (platform includes **10k** series). Logs/traces Pro three-part meters: **Process $0.05/GB**, **Write $0.40/GB**, **Retain $0.10/GB** (volume discounts). Users **$8/active**; EE plugins **$55/active**. | Platform floors **hold**. Log meter is **more precise** than older "~$0.05/GB class" shorthand — use three-part rates going forward. |
+| **Grafana Assistant** | Explicit product SKU on pricing page: Free **3 active AI users/mo** (40M tokens/user) + 25M service-account tokens; Pro **$20 / active AI user** (includes 40M tokens) then **$2 / 1M tokens**. | **New pin strength:** AI is **metered product revenue**, not free OSS. Aligns pass 238 hybrid Cloud-LLM self-managed story. |
+| **SigNoz** | Teams Cloud still **$49/mo** (struck **$199** promo) + logs/traces **$0.30/GB**, metrics **$0.10/mil samples**; Teams copy explicitly includes **MCP Server and Noz**. Enterprise **starts ~$4,000/mo**. Community self-host free. | **Holds** pass 117/216. Noz docs still tagged **`SigNoz Cloud`** ([noz docs](https://signoz.io/docs/ai/noz/)). |
+| **OpenObserve** | Cloud Professional ingest **$0.50/GB** + query **$0.01/GB**; Enterprise lists **SDR + AI-Powered Observability + AI SRE Agent + AI Assistant** + SSO/RBAC/audit; Self-Hosted Enterprise free ≤**50 GB/day** (FAQ twice); AI "free during preview" with **20 credits**. | **Holds** pass 94/119/216. No 200 GB FAQ reappearance. |
+
+**GitHub pins (API, 2026-07-18):**
+
+| Repo | Latest release | Stars (approx) |
+| --- | --- | --- |
+| [SigNoz/signoz](https://github.com/SigNoz/signoz) | **`v0.133.0`** (2026-07-15) | **~30,309** |
+| [openobserve/openobserve](https://github.com/openobserve/openobserve) | **`v0.91.2`** (2026-07-17) | **~20,198** (AGPL-3.0) |
+
+**Parity for Parallax monetization design (unchanged theory):**
+
+1. **Primary revenue motion = managed Cloud (usage)** — all three peers.
+2. **EE / compliance / ops gates** for SSO, audit, SDR, high retention, support.
+3. **In-product AI investigator is Cloud- or EE-metered** (Noz Cloud; O2 AI SRE EE + preview credits; Grafana Assistant seat/token meters). **Do not** gate the portable redacted evidence-bundle *generation* the way O2 gates SDR/AI SRE.
+4. **Apache-2.0 open core** still operator-settled; free self-host remains adoption door, not the paying product.
+
+**Cannot close from this pass:** hard-boundary ACV size; whether *Parallax* buyers pay at EE/cloud prices; A2 interview bar. Desk rechecks only reaffirm the **shape** of a viable peer business.
+
+**Falsify pass-242 holds:** (a) OpenObserve moves AI SRE + SDR into free unlimited OSS core *and* ships portable redacted evidence bundles + outcome records; (b) SigNoz ships offline free Noz in Community; (c) Grafana puts Assistant fully offline free on self-managed OSS without Cloud LLM; (d) public Cloud usage rates collapse so managed cloud is no longer a peer revenue motion. **Does not falsify:** more SaaS FedRAMP/IL5 or star growth.
 
 ### Pass 131 (2026-07-17) — Datadog Bits / AI Credits pricing (fixer reference)
 

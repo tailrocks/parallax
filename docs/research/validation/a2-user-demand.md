@@ -49,6 +49,14 @@
 > **Pass 239 recheck (2026-07-18):** gate **still OPEN / zero rows**; ledger
 > paths still **absent**; desk monetization/wedge rechecks **cannot** close A2;
 > **operator interview runbook still owed**.
+>
+> **Pass 242 recheck (2026-07-18):** gate **still OPEN / zero rows**.
+> - Monetization triangle primary re-scrape ([monetization-and-paying-segment.md](monetization-and-paying-segment.md)
+>   pass 242) **holds** survivors' playbook (Grafana Pro ~$19 + usage + Assistant
+>   seat/token meters; SigNoz Teams $49 + Noz Cloud; O2 $0.50/GB + EE AI/SDR /
+>   ≤50 GB/day free self-host EE). Desk **cannot** substitute interviews.
+> - Ledger paths still **absent**; no `interview_id: A2-*` result rows.
+> - **Operator interview runbook still owed.**
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
