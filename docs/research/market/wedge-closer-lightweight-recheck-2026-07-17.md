@@ -99,6 +99,12 @@ Stars unchanged; **real release-line move** on backend only.
 | --- | --- | --- |
 | **TMA1** | **109★**; **`v0.2.0-alpha12`** still latest; push 2026-07-17 | **20th UNFIRED** — commits still GreptimeDB **v1.1.3** min + session UI. No Sentry envelope / portable redacted prod evidence / fix-outcome collision. |
 
+**Pass 204 recheck (2026-07-18):** **Traceway** —
+
+| Product | Pin | Combo |
+| --- | --- | --- |
+| **Traceway** | **1,024★**; **`backend/v1.9.1` + `cli/v1.9.1`** still latest | Still OTLP multi-signal + agent path; README **no** Sentry/envelope/evidence-bundle/outcome. Combo **not closed**. |
+
 **Pass 156 recheck (2026-07-18):** **Traceway-focused** wedge re-poll + Bugsink/Rustrak
 star-pin hygiene — combination **still not closed**.
 
