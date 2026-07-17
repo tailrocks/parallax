@@ -65,6 +65,15 @@ Component-level (the "stack it yourself" pieces, referenced not deep-dived):
 | **Helicone** | LLM gateway/proxy + observability; caching + cost analytics; zero LLM-cost markup. | MIT + Cloud. | LLM proxies + traces. | [deep-dive](parallax-vs-helicone.md) |
 | **Braintrust** | Eval-first LLM eval/experiment platform (datasets/scorers/playground); OSS SDK + closed core. | OSS SDK + SaaS. | LLM evals + experiments. | [deep-dive](parallax-vs-braintrust.md) |
 
+## E. AI investigation / causal-context layers (different layer — consume telemetry, not stores)
+
+These sit *on top of* your telemetry (metrics/logs/traces/K8s) as reasoning/grounding layers for agents. They overlap Parallax's "context for production agents" thesis but **do not own the telemetry** — a different layer than the stores above. Referenced for completeness; only **Causely** is deep-dived (it is the clearest shipped "agent-context layer").
+
+| Product | What it is | License / model | Layer | State |
+| --- | --- | --- | --- | --- |
+| **Causely** | Causal-intelligence layer + MCP server — "live causal model via MCP" so agents stop guessing / burn fewer tokens / act before break; BYO telemetry. | Closed commercial (verify self-host). | Causal-context MCP over BYO telemetry. | [deep-dive](parallax-vs-causely.md) |
+| **HolmesGPT** (CNCF Sandbox) | Open AI SRE that investigates + explains over Prometheus/Loki/Tempo/etc.; no own store; strongly MCP. | Apache-2.0. | AI-investigation query layer (complementary). | reference (not deep-dived) |
+
 ## Maintenance notes
 
 - When a product enters **deep-dive**, move its row's State to `[deep-dive](parallax-vs-<product>.md)` and flip the PROGRESS row.
