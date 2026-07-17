@@ -55,7 +55,9 @@ export interface FocusResult<N extends TopologyNode, E extends TopologyEdge> {
 }
 
 /** Build undirected adjacency for hop expansion. */
-export function buildAdjacency(edges: readonly TopologyEdge[]): Map<string, Set<string>> {
+export function buildAdjacency(
+  edges: readonly TopologyEdge[]
+): Map<string, Set<string>> {
   const adj = new Map<string, Set<string>>()
   const add = (a: string, b: string) => {
     let set = adj.get(a)
@@ -104,7 +106,10 @@ export function applyFocus<N extends TopologyNode, E extends TopologyEdge>(
   edges: readonly E[],
   options: FocusOptions
 ): FocusResult<N, E> {
-  if (!options.focus) {
+  const knownIds = new Set(nodes.map((node) => node.id))
+  // A bookmarked focus can outlive a renamed/removed service. Treat that as
+  // no focus instead of returning an empty graph in hide mode.
+  if (!options.focus || !knownIds.has(options.focus)) {
     const all = new Set(nodes.map((n) => n.id))
     return {
       nodes: [...nodes],
@@ -113,8 +118,14 @@ export function applyFocus<N extends TopologyNode, E extends TopologyEdge>(
       outside: new Set(),
     }
   }
-  const inFocus = neighborhoodIds(options.focus, Math.max(0, options.hops), edges)
-  const outside = new Set(nodes.map((n) => n.id).filter((id) => !inFocus.has(id)))
+  const inFocus = neighborhoodIds(
+    options.focus,
+    Math.max(0, options.hops),
+    edges
+  )
+  const outside = new Set(
+    nodes.map((n) => n.id).filter((id) => !inFocus.has(id))
+  )
   if (options.mode === "dim") {
     return {
       nodes: [...nodes],
@@ -213,7 +224,10 @@ export function resolveExternalNode(
   const dbSystem = attrs["db.system.name"] ?? attrs["db.system"]
   if (dbSystem) {
     const name =
-      attrs["db.namespace"] ?? attrs["db.name"] ?? attrs["server.address"] ?? dbSystem
+      attrs["db.namespace"] ??
+      attrs["db.name"] ??
+      attrs["server.address"] ??
+      dbSystem
     return { kind: "database", name, system: dbSystem }
   }
   const messaging = attrs["messaging.system"]
@@ -229,7 +243,9 @@ export function resolveExternalNode(
 }
 
 /** Edge error rate in [0, 1]; 0 when no calls. */
-export function edgeErrorRate(edge: Pick<TopologyEdge, "callCount" | "errorCount">): number {
+export function edgeErrorRate(
+  edge: Pick<TopologyEdge, "callCount" | "errorCount">
+): number {
   if (edge.callCount <= 0) return 0
   return (edge.errorCount ?? 0) / edge.callCount
 }
