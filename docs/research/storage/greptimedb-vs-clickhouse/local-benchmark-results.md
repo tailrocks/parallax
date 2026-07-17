@@ -8279,3 +8279,6 @@ Nightly cold after idle can spike; warm path still interactive. Not done.
 ### Run 357 — 2026-07-17 — anchored warm re-sample
 
 `trace_id='t42'`: warm **~4–7 ms** on GT stable. Interactive floor holds.
+
+### Run 358 — 2026-07-17 — not done
+
