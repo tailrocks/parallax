@@ -377,6 +377,10 @@ Grafana **$19** / SigNoz **$49** still present. Triangle holds.
 
 Grafana **$19** / SigNoz **$49** still present. Triangle holds.
 
+### Pass 386 (2026-07-18) — OpenObserve pin
+
+OpenObserve **$0.50/GB** class still present. Triangle holds.
+
 ### Pass 131 (2026-07-17) — Datadog Bits / AI Credits pricing (fixer reference)
 
 Live primary: [datadoghq.com/pricing/?product=ai-credits](https://www.datadoghq.com/pricing/?product=ai-credits#products)
