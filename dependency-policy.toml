@@ -57,6 +57,13 @@ install = "explicit browser provisioning after ignore-scripts install"
 # test-environment directives, or deliberately invoked maintainer tooling.
 reviewed-non-ast = [
   "@fontsource-variable/geist-mono",
+  "@graphql-codegen/add",
+  "@graphql-codegen/cli",
+  "@graphql-codegen/near-operation-file-preset",
+  "@graphql-codegen/typed-document-node",
+  "@graphql-codegen/typescript-operations",
+  "@graphql-typed-document-node/core",
+  "graphql-codegen-typescript-validation-schema",
   "@fontsource-variable/inter",
   "@testing-library/dom",
   "@toolwind/corner-shape",

@@ -162,6 +162,9 @@ pub(super) fn registry_and_license(directory: &Path) -> Result<Vec<Finding>> {
         "BlueOak-1.0.0",
         "CC-BY-4.0",
         "CC0-1.0",
+        // EPL-2.0 is ASF "Category B": permitted as an unmodified binary
+        // dependency (elkjs is consumed prebuilt via dynamic import).
+        "EPL-2.0",
         "ISC",
         "MIT",
         "MIT AND ISC",
@@ -179,7 +182,14 @@ pub(super) fn registry_and_license(directory: &Path) -> Result<Vec<Finding>> {
             package.get("name")?;
             package.get("version")?;
             let license = package.get("license").and_then(serde_json::Value::as_str)?;
-            (!allowed.contains(&license)).then_some(format!("{} ({license})", path.display()))
+            // An SPDX OR disjunction is acceptable when any branch is allowed.
+            let acceptable = allowed.contains(&license)
+                || license
+                    .trim_start_matches('(')
+                    .trim_end_matches(')')
+                    .split(" OR ")
+                    .any(|branch| allowed.contains(&branch.trim()));
+            (!acceptable).then_some(format!("{} ({license})", path.display()))
         })
         .collect::<Vec<_>>();
     Ok(
