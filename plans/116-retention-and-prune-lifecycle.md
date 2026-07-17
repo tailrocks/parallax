@@ -77,6 +77,26 @@ the helper objective; the peer executor owns the status transition.
   the live Greptime/CLI proof. Do not treat this preliminary record alone as
   implementation completion.
 
+### Preliminary deterministic plan core (helper, 2026-07-17) — peer verify/extend
+
+- `parallax_storage::prune` defines the query-neutral Step-2 contract:
+  canonical store/class ordering across every approved lifecycle class, typed
+  row/object/byte estimates, typed active/unresolved/pinned/not-expired
+  exclusions, bounded warnings, and string-encoded nanosecond cutoffs for safe
+  machine output.
+- `PrunePlan::build` fails closed on item/annotation/text caps, empty snapshot
+  generations, cutoff disagreement, missing estimates, empty/duplicate targets,
+  and produces a stable SHA-256 plan identity independent of input item or
+  annotation ordering.
+- `validate_snapshot` and `authorize` bind execution to the exact plan ID and
+  unchanged config/protection/catalog generations. Dry-run needs no destructive
+  confirmation; execution does. Eight focused tests and strict storage clippy
+  cover the preliminary contract.
+- Peer must wire bounded store-owned candidate discovery, progress reporting,
+  CLI human/JSON presentation, durable journal execution, and real-store
+  dry-run/execution parity. Revisit caps with live cardinality evidence; this
+  core alone performs no deletion.
+
 ## Historical Blocker Evidence (2026-07-14; superseded 2026-07-17)
 
 At that date, `docs/research/decisions/retention-and-prune-contract.md` did not

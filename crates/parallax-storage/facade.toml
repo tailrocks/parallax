@@ -4,6 +4,7 @@ schema_version = 1
 "lib.rs" = [
     "mod adapter",
     "mod metadata",
+    "mod prune",
     "mod projections",
     "use parallax_model as model",
 ]
