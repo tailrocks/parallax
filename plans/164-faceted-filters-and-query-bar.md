@@ -152,6 +152,16 @@ whether OR-within-dimension needs a backend argument.
   also carries the primary executor's staged plan-168 metrics slice —
   shared-index sweep; verified green post-hoc, 124 tests + strict clippy.)
 
+- Live GraphQL assertions against the running QA stack (read-only, repo
+  head `7302672`): evidence at
+  `docs/research/validation/2026-07-wave2/164/live-graphql-assertions.md`.
+  Proven on the real engine: filter narrowing (POST → 45, exact match
+  with `sql` `COUNT(DISTINCT trace_id)` ground truth), both injection
+  proofs (`x' OR 1=1--` → 0 rows, no error, traces and logs), all four
+  trace facet dimensions + log facets answering, duration stats over the
+  filtered set, and facet/series/filter three-way consistency
+  (`ERROR 4234 + FATAL 4000 = 8234` = filtered `logCountSeries` sum).
+
 Still open (full plan scope): live facet verification against `f-attrs`
 (70/20/10) + the facet-window cap decision; executing the m9 live suite;
 logs route wiring (in the primary executor's
