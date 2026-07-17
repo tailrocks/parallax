@@ -293,6 +293,13 @@ Detect precision/recall or dispatch idempotency on real telemetry.
 | Detect trigger ledger | **Still absent** |
 | `fixer_outcome` unit tests | **3/3 pass** (re-ran) |
 
+### Pass 402 addendum (2026-07-18)
+
+| Check | Result |
+| --- | --- |
+| Detect trigger ledger | **Still absent** |
+| `fixer_outcome` unit tests | **3/3 pass** (re-ran) |
+
 ## Allowed vs forbidden wording
 
 

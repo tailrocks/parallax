@@ -320,6 +320,11 @@ docs and release notes.
 
 **UNFIRED:** offline Assistant; Sentry OTLP metrics.
 
+### Pass 402 (2026-07-18) — Assistant + Sentry OTLP
+
+Assistant hybrid Cloud; Sentry no OTLP metrics. **UNFIRED.**
+
+
 ### Pass 401 (2026-07-18) — Seer + Bits
 
 Seer still **closed source**; Bits still **never auto-merges**. **UNFIRED.**
