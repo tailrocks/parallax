@@ -246,6 +246,22 @@ Live [openobserve.ai/pricing](https://openobserve.ai/pricing/) still:
 
 **Holds** pass 242 O2 row. Desk playbook unchanged. A2 interviews still open.
 
+### Pass 281 (2026-07-18) — full triangle primary re-scrape
+
+Live primary re-fetch of all three pricing surfaces + Noz docs tag.
+
+| Vendor | Primary signal (pass 281) | vs pass 242/263 |
+| --- | --- | --- |
+| **Grafana Cloud** | Free / **Pro from $19/mo + usage** / Enterprise **$25,000/yr** commit. Assistant still **$20 / active AI user** + **$2 / 1M tokens**. | **Holds** |
+| **SigNoz** | Teams still **$49/mo** (struck **$199** promo) + logs/traces **$0.30/GB**, metrics **$0.10/mn samples**; Teams includes **MCP Server and Noz**; Enterprise **starts $4000/mo**. Noz docs still tagged **`SigNoz Cloud`**. | **Holds** |
+| **OpenObserve** | Cloud **$0.50/GB** + **$0.01/GB** query; EE **SDR + AI SRE + AI Assistant**; self-host EE free ≤**50 GB/day**; AI **20 credits** preview. | **Holds** |
+
+**GitHub stars (API):** SigNoz **~30,318★**; OpenObserve **~20,198★**.
+
+**Desk playbook still holds.** A2 interview ledger still **zero rows** — desk cannot close A2.
+
+**Falsify:** same as pass 242 (AI/SDR into free unlimited OSS core + portable bundle; offline free Noz; Assistant offline free; cloud rates collapse).
+
 ### Pass 131 (2026-07-17) — Datadog Bits / AI Credits pricing (fixer reference)
 
 Live primary: [datadoghq.com/pricing/?product=ai-credits](https://www.datadoghq.com/pricing/?product=ai-credits#products)

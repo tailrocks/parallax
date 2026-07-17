@@ -70,6 +70,12 @@
 > - SO **2025** still **200**; **2026** results still **404**.
 > - Ledger paths still **absent**; desk rechecks through pass **270** cannot close A2.
 > - **Operator interview runbook still owed.**
+>
+> **Pass 281 recheck (2026-07-18):** gate **still OPEN / zero rows**.
+> - Monetization triangle primary re-scrape ([monetization-and-paying-segment.md](monetization-and-paying-segment.md)
+>   pass 281) **holds** survivors' playbook. Desk **cannot** substitute interviews.
+> - Ledger paths still **absent**.
+> - **Operator interview runbook still owed.**
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
