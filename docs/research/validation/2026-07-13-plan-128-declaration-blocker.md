@@ -157,3 +157,25 @@ Farm, Rsbuild/Rspack, Bun, esbuild, Rolldown/Rollup, unloader, and webpack
 adapters, so forcing that version would not produce the required clean graph.
 No override, patch, ambient declaration, unused adapter, cast, exclusion, or
 compiler weakening remains in the tree.
+
+## Fresh reproduction (2026-07-17, branch head `d47a9be`, helper agent)
+
+The mandatory Bun-only probe (`bun ./node_modules/typescript/bin/tsc --noEmit
+--skipLibCheck false --pretty false` from `ui/`) reproduces the same owners:
+Redux Toolkit `AsyncThunkConfig`/`PreventCircular`/`TaskAbortError.code`
+diagnostics and Tabler's nonexistent `ReactSVG` import from
+`@types/react@19.2.17`, with the TanStack Router Core SSR and
+unplugin optional-adapter graphs unchanged behind them.
+
+Registry state at probe time: `@reduxjs/toolkit` latest is still 2.12.0
+(unchanged, still failing); `@tabler/icons-react` 3.45.0 is newly published,
+but its published `dist/tabler-icons-react.d.ts` (inspected via unpkg, not
+installed) still imports `ReactSVG` from `react`, so upgrading would not
+clear the diagnostic; `unplugin` 3.3.0's published `dist/index.d.mts`
+(same read-only inspection) still eagerly imports Farm, Rsbuild/Rspack, Bun,
+esbuild, Rolldown/Rollup, unloader, and webpack adapters;
+`@tanstack/router-core` 1.171.15 is already the installed version. No
+lockfile, dependency, declaration, or compiler change was made by this probe
+— the working tree carried concurrent Wave 2 UI work, so all inspection was
+network-read-only. The upstream-compatible-release STOP condition remains
+active; Plan 128 stays BLOCKED.
