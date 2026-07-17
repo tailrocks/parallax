@@ -34,21 +34,24 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > Status remains **GO (narrow product)**. Kill criteria that would reverse GO
 > were re-checked in recent passes; **none fired**.
 >
-> **Pass 171 (2026-07-18) — GO reaffirm** after passes **156–170** (wedge,
-> commoditization, Seer/Grafana AI, A1/A2/A4/A6 claim hygiene, engines, run-id,
-> SigNoz, auto-merge, Langfuse, Phoenix, Coroot, HyperDX). **Still GO (narrow
-> product).** Kill criteria **still unfired**:
+> **Pass 171 (2026-07-18) — GO reaffirm** after passes **156–170**. **Still GO.**
+>
+> **Pass 197 (2026-07-18) — GO reaffirm** after passes **171–196** (A1–A6 desk
+> hygiene, wedge Traceway/GlitchTip/Bugsink/Rustrak/TMA1, O2 MCP, Sentry OTLP
+> metrics, A3 adoption, engines, Seer/Grafana, OTel commoditization, auto-merge,
+> SigNoz, Langfuse). **Still GO (narrow product).** Kill criteria **still unfired**:
 >
 > | Kill / reverse trigger | Latest recheck | Fired? |
 > | --- | --- | --- |
-> | A1: bundles do not beat raw context | Pass **159** — still **`not_measured`** (golden ok; no result ledger) | **No** (unproven ≠ failed) |
-> | A2: no paying segment | Pass **160** — interviews **0 rows**; SO 2026 collection open, results unpublished | **No** (open) |
-> | Full wedge closed by peer | Pass **156** Traceway **1,024★/v1.9.1** + Bugsink/Rustrak; **164** SigNoz; **168–170** LLMOps/eBPF/CH peers — **not** full combo | **No** |
-> | OTel commoditizes evidence-bundle schema | Pass **157** — #1185 idle 2025-10-24; OCSF 1.8.0 | **No** |
-> | Incumbent self-host Seer-class AI | Pass **158** — Seer closed-source excluded; Grafana Assistant Cloud LLM backend | **No** |
-> | App-code auto-merge + open outcome becomes commodity | Pass **165** — Bits still “never auto-merges”; Seer max **Stop after PR Drafted** | **No** |
-> | A4 correlation reliable on real messy telemetry | Pass **161** — still **`not_measured`** (no real_pilot ledger) | **No** (open) |
-> | A6 agent-visible redaction gate closed by peer or failed | Pass **166** — synthetic canary **ok**; mixed gate **open** | **No** |
+> | A1: bundles do not beat raw context | Pass **192** — still **`not_measured`** | **No** (unproven ≠ failed) |
+> | A2: no paying segment | Pass **193** — interviews **0 rows**; SO 2026 results still 404 | **No** (open) |
+> | Full wedge closed by peer | Pass **185** Traceway **1,024★/v1.9.1**; GlitchTip **v6.2.1** error-only; Bugsink/Rustrak/TMA1 — **not** full combo | **No** |
+> | OTel commoditizes evidence-bundle schema | Pass **189** — #1185 idle 2025-10-24; OCSF 1.8.0 | **No** |
+> | Incumbent self-host Seer-class AI | Pass **188** — Seer closed-source excluded; Grafana Assistant Cloud LLM | **No** |
+> | App-code auto-merge + open outcome becomes commodity | Pass **190** — Bits still “never auto-merges”; Seer max **Stop after PR Drafted** | **No** |
+> | A4 correlation reliable on real messy telemetry | Pass **194** — still **`not_measured`** | **No** (open) |
+> | A6 agent-visible redaction gate closed by peer or failed | Pass **195** — synthetic canary **ok**; mixed gate **open** | **No** |
+> | A3 schema moat proven by external adoption | Pass **184** — artifacts shipped; external adoption **zero** | **No** (unproven) |
 >
 > **Narrow product identity holds:** evidence/context engine, not generic dashboard
 > suite or autonomous SRE. Implementation shipped does **not** close A1–A6 empirical
