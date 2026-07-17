@@ -139,6 +139,17 @@ Stars unchanged; **real release-line move** on backend only.
 
 Full wedge combination **still not closed**.
 
+**Pass 232 recheck (2026-07-18):** **Traceway** cloud pricing + pins —
+
+| Field | Value |
+| --- | --- |
+| Stars | **1,024** |
+| Version | still **v1.9.1** (prior pin) |
+| Cloud prices (scrape) | Free / **$12.99** / **$24.99** / **$499.99** + **$0.25–$0.20/GB** class overage still present |
+| Rustrak / Holmes | **64★** / **v0.36.0** unchanged |
+
+Combo still **not closed** (no Sentry envelope + portable redacted bundle + outcome).
+
 **Pass 156 recheck (2026-07-18):** **Traceway-focused** wedge re-poll + Bugsink/Rustrak
 star-pin hygiene — combination **still not closed**.
 
