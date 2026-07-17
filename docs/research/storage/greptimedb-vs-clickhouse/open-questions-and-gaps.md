@@ -209,3 +209,7 @@ Mechanism/laptop smoke through **Run 283** including harness fix (271–273).
 | RPO D2/D3 | Cluster meta + Turso fixture |
 
 **Comparison not done.**
+
+## Run 293 — still open
+
+Through Run 292. Highest remaining: mix shares, server 1M/5M, quotes, GB cold, RPO D2/D3.
