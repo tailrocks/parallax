@@ -43,9 +43,9 @@ must not return in product output.
   resource-reference behavior remains unfinished.
 - Issue-context discovery advertises the checked-in bundle-v2 schema as the MCP
   `outputSchema`; client discovery/conformance evidence remains unfinished.
-- Invalid checked-in bundle schema content now fails server construction rather
-  than silently advertising an open empty schema; discovery locks its canonical
-  identifier and closed-object policy.
+- Invalid checked-in bundle schema content now advertises a deny-all schema
+  rather than silently widening discovery with an open empty schema; discovery
+  locks its canonical identifier and closed-object policy.
 - Stdio startup requires an explicit `--allow-local-stdio` command-line trust
   decision; environment and repository files cannot supply that opt-in.
 - API origins are restricted to credential-free plaintext loopback HTTP;
@@ -54,6 +54,9 @@ must not return in product output.
 - Malformed bundle contracts and upstream failures return stable secret-free
   MCP errors; the adapter no longer silently substitutes an empty object or
   forwards raw upstream error strings.
+- Projection-equivalence mismatch diagnostics no longer print evidence
+  previews (or byte-slice UTF-8); they expose only lengths, first differing
+  byte, and SHA-256 digests.
 - Bundle output fails closed unless the separately projected GraphQL canonical
   hash exactly matches the hash embedded in the bundle-v2 object.
 - All GraphQL responses stream through a hard 1 MiB ceiling before JSON parse;

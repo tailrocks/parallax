@@ -24,11 +24,17 @@ const SUPPORTED_PROTOCOL_VERSIONS: &[ProtocolVersion] = &[
 ];
 
 fn evidence_bundle_output_schema() -> Arc<JsonObject> {
-    let schema = serde_json::from_str(include_str!(
+    Arc::new(parse_output_schema(include_str!(
         "../../../schema/evidence-bundle.v2.schema.json"
-    ))
-    .expect("checked-in evidence bundle schema must be valid JSON Schema");
-    Arc::new(schema)
+    )))
+}
+
+fn parse_output_schema(raw: &str) -> JsonObject {
+    serde_json::from_str(raw).unwrap_or_else(|_| {
+        // `{}` accepts every value. `{"not": {}}` accepts none, so corrupted
+        // checked-in schema content cannot silently widen the tool contract.
+        JsonObject::from_iter([("not".to_string(), json!({}))])
+    })
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -460,6 +466,14 @@ mod tests {
             schema.get("additionalProperties"),
             Some(&json!(false)),
             "canonical output discovery must stay closed-schema"
+        );
+    }
+
+    #[test]
+    fn malformed_output_schema_falls_back_to_deny_all() {
+        assert_eq!(
+            Value::Object(parse_output_schema("not-json")),
+            json!({ "not": {} })
         );
     }
 

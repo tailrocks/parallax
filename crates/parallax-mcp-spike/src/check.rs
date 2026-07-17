@@ -222,27 +222,35 @@ fn canonical(value: &Value) -> String {
 }
 
 fn diff_err(a_name: &str, a: &str, b_name: &str, b: &str) -> anyhow::Error {
-    let max = 200usize;
-    let a_show = if a.len() > max {
-        format!("{}…(+{}B)", &a[..max], a.len() - max)
-    } else {
-        a.to_string()
-    };
-    let b_show = if b.len() > max {
-        format!("{}…(+{}B)", &b[..max], b.len() - max)
-    } else {
-        b.to_string()
-    };
     // Find first differing byte for a tight diagnostic.
     let pos = a
         .bytes()
         .zip(b.bytes())
         .position(|(x, y)| x != y)
         .unwrap_or_else(|| a.len().min(b.len()));
+    let a_hash = Sha256::digest(a.as_bytes());
+    let b_hash = Sha256::digest(b.as_bytes());
     anyhow::anyhow!(
         "byte mismatch {a_name} vs {b_name} at offset {pos} \
-         (len {a_name}={} {b_name}={}):\n  {a_name}: {a_show}\n  {b_name}: {b_show}",
+         (len {a_name}={} {b_name}={}; sha256 {a_name}={a_hash:x} {b_name}={b_hash:x})",
         a.len(),
         b.len()
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn mismatch_diagnostic_does_not_disclose_evidence_or_slice_utf8() {
+        let secret_a = "🦀seeded-secret-a";
+        let secret_b = "🦀seeded-secret-b";
+        let diagnostic = diff_err("MCP", secret_a, "CLI", secret_b).to_string();
+
+        assert!(diagnostic.contains("byte mismatch MCP vs CLI"));
+        assert!(diagnostic.contains("sha256 MCP="));
+        assert!(!diagnostic.contains("seeded-secret"));
+        assert!(!diagnostic.contains('🦀'));
+    }
 }
