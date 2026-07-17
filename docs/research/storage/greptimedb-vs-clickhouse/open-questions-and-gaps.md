@@ -616,3 +616,7 @@ Runs 423–550: PromQL partial surface + load-bearing re-verifies. No direction 
 ## Run 555 (2026-07-18) — still not done
 
 **Not done.** Highest remaining: mix, server 1M/5M, quotes, GB cold, cluster RPO.
+
+## Run 557 (2026-07-18) — still not done
+
+**Not done.** Highest remaining: mix, server 1M/5M, quotes, GB cold, cluster RPO.
