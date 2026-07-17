@@ -101,6 +101,24 @@ evidence. Index status stays TODO.
   / log_count_series / metric_series) plus the live-engine tick test, and
   re-verifies the ungrouped worst-service percentile policy against the
   plan's ROOT-span RED convention decision.
+- `ui/src/routes/alerts.index.tsx` + nav entry (`1e4be3f`, helper agent
+  2026-07-17) — Step 4 skeleton: rules list cards, create dialog with the
+  five template presets + `validateAlertRuleDraft`, `draftToArgs`
+  mutation-argument serializer (two vitest cases), and a graceful
+  "backend not wired yet" empty state while the `alertRules` field is
+  absent (loader catches instead of crashing). Assumed GraphQL shape:
+  query `alertRules { id name enabled signalType comparator threshold
+  severity windowMinutes }`, mutation `alertRuleSave(name, enabled,
+  signalType, comparator, threshold, windowMinutes, minimumSampleCount,
+  consecutiveBreachesRequired, consecutiveHealthyRequired, severity,
+  renotifyIntervalMinutes, [thresholdUpper, metricName,
+  metricAggregation, services]) { id }` — peer aligns the resolver naming
+  or adjusts this page, then builds rule detail (threshold chart,
+  plan-162 tokens), incidents, destinations, and browser evidence.
+  UI typecheck/lint/format green; the four full-suite vitest failures at
+  this head reproduce identically without this slice (parallel-run
+  timeouts in dashboards/sql/overview/range-picker lanes) and pass in
+  isolation — peer's flaky-lane concern, not introduced here.
 
 **Peer owns (verify/deepen/complete):**
 - [ ] Re-verify state machine + delivery helpers vs plan exhaustiveness;
