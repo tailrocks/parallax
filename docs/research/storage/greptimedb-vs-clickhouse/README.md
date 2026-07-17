@@ -84,6 +84,7 @@ managed quotes remain):
 | CH head TimeSeries SELECT | 236 | outer Code 48 (facade) |
 | CH TimeSeries INSERT+prometheusQuery real | **403** | drift: query path works 26.6+26.7 |
 | CH PromQL rate/sum OK; increase missing | **404** | matches GT on rate; Code 48 increase |
+| Managed $ list hold + D2 CLI limit | **405** | rates no drift; standalone meta snap fail |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |

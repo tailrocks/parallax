@@ -71,6 +71,18 @@ off-box copy. This is **not** the production DR model.
 
 Without D2, D1 objects are **not** a self-describing cluster (Run 174).
 
+#### Run 405 (2026-07-18) — live CLI surface on standalone `v1.1.3`
+
+| Primitive | Live result | Implication |
+| --- | --- | --- |
+| `greptime cli meta snapshot {save,restore,info}` | Subcommands present | Documented D2 tool exists in the binary |
+| `meta snapshot save --backend raft-engine-store --store-addrs <path>` | **Fails** — `Empty store addresses` without addrs; with path → `Failed to parse url` / `Invalid url scheme` (only etcd/postgres/mysql URL forms accepted) | **Standalone** embeds meta in local raft-engine under `/greptimedb_data/metadata/*.raftlog` — the **CLI snapshot path is for external metasrv stores**, not the standalone raftlog dir |
+| Standalone D2 practical backup | Copy/stop-consistent snapshot of `/greptimedb_data/metadata/` (+ full data dir if local SSTs) | Tiny self-host runbook must **not** assume `meta snapshot save` alone covers standalone |
+| HA / external metasrv D2 | Still: `meta snapshot save --backend {etcd,postgres,mysql}-store --store-addrs …` (± `--s3`) | Unchanged; full restore drill still owed on a real cluster |
+| `greptime cli data export-v2 create --schema-only --to file:///…` | **OK** — exported `public` + `greptime_private` DDL + `manifest.json` (snapshot id) | Complements D1 logical portability; not a meta-route restore |
+
+**Do not close gap “D2 drill done”** for production HA until etcd/RDS metasrv snapshot+restore is practiced. Standalone tiny-tier: treat **metadata raftlog + data dir filesystem snapshot** as the D2/D1 pair.
+
 ### D3 — Turso metadata
 
 Name the deployment shape every time (decision rule from `metadata-store.md`):
