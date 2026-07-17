@@ -12,8 +12,8 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 317 (wedge **not closed**; TMA1 **30th
-UNFIRED**; Traceway **1,024★**/v1.9.1). Pass 316 = OTel. A1/A2/A3/A4 open; A6 mixed open.
+Last updated 2026-07-18 after pass 318 (Seer closed; Bits never auto-merges;
+Sentry no OTLP metrics). Pass 317 = wedge. A1/A2/A3/A4 open; A6 mixed open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
@@ -56,7 +56,7 @@ producer rather than treat its construction as future work. Autonomous fixing re
   still **experimental** on docs v1.1
   ([Traces overview](https://docs.greptime.com/user-guide/traces/overview/)
   warning reconfirmed pass **312**).
-- **Incumbent self-hosted AI** — **Rechecked 2026-07-18 pass 309** (prior 77/126/158/188/210/238/245/260/274/283/294/299/303):
+- **Incumbent self-hosted AI** — **Rechecked 2026-07-18 pass 318** (prior 77/126/158/188/210/238/245/260/274/283/294/299/303/309):
   Seer still **closed / unavailable** on self-hosted
   ([develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/)
   still lists "Seer and other AI & ML features… closed source"). Self-host release
