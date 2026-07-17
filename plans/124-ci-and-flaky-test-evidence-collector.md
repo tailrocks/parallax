@@ -30,7 +30,9 @@
 3. ~~Signature-verified workflow-job webhook + Turso wiring~~ landed
    (`POST /webhooks/github` + `ci_attempts` / `ci_attempt_deliveries`).
 4. ~~`doctor` CI evidence inventory~~ landed (secret presence + delivery/attempt
-   counts). Still open: bounded REST backfill cursor.
+   counts). Durable REST cursor state is landed with monotonic
+   `(completed_at, workflow_run_id)` ordering, ETag, success/error, and
+   rate-limit reset persistence. Still open: bounded HTTP backfill tick wiring.
 5. Bundle correlation without root-cause overclaim; dated coverage rows.
 
 ## Done Criteria

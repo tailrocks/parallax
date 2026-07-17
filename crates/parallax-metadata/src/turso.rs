@@ -27,7 +27,7 @@ pub use alerts::{
     ALERT_CHECKS_KEEP_PER_RULE, AlertCheckRecord, AlertDeliveryEventRecord, AlertDestinationRecord,
     AlertIncidentRecord, AlertRuleRecord, AlertRuleStateRecord,
 };
-pub use ci::{CiAttemptAccept, CiAttemptDeliveryRecord, CiAttemptStoreError};
+pub use ci::{CiAttemptAccept, CiAttemptDeliveryRecord, CiAttemptStoreError, CiBackfillState};
 pub use deploy::{DeployAccept, DeployDeliveryRecord, DeployStoreError, payload_sha256_hex};
 pub use sentry_ack::{SentryAck, SentryAckError};
 pub(crate) mod pins;
@@ -286,6 +286,15 @@ CREATE TABLE IF NOT EXISTS ci_attempt_deliveries (
 );
 CREATE INDEX IF NOT EXISTS ci_attempt_deliveries_attempt
   ON ci_attempt_deliveries(attempt_id, received_at);
+CREATE TABLE IF NOT EXISTS ci_backfill_state (
+  repo_full_name       TEXT PRIMARY KEY,
+  completed_at         INTEGER NOT NULL DEFAULT 0,
+  workflow_run_id      INTEGER NOT NULL DEFAULT 0,
+  etag                 TEXT,
+  last_success_at      INTEGER,
+  last_error           TEXT,
+  rate_limit_reset_at  INTEGER
+);
 CREATE TABLE IF NOT EXISTS sentry_event_acks (
   project_id   TEXT NOT NULL,
   event_id     TEXT NOT NULL,

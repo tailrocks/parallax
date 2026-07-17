@@ -30,6 +30,17 @@ pub enum CiAttemptStoreError {
     Internal(anyhow::Error),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CiBackfillState {
+    pub repo_full_name: String,
+    pub completed_at_nanos: u128,
+    pub workflow_run_id: i64,
+    pub etag: Option<String>,
+    pub last_success_at_nanos: Option<u128>,
+    pub last_error: Option<String>,
+    pub rate_limit_reset_at_nanos: Option<u128>,
+}
+
 impl std::fmt::Display for CiAttemptStoreError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -129,6 +140,104 @@ impl TursoMetadataStore {
             .ok_or_else(|| anyhow::anyhow!("missing count row"))?;
         Ok(u64::try_from(integer(&row, 0)).unwrap_or(0))
     }
+
+    pub async fn ci_backfill_state(
+        &self,
+        repo_full_name: &str,
+    ) -> anyhow::Result<Option<CiBackfillState>> {
+        let conn = self.conn.lock().await;
+        let mut rows = conn
+            .query(
+                "SELECT repo_full_name, completed_at, workflow_run_id, etag,
+                        last_success_at, last_error, rate_limit_reset_at
+                 FROM ci_backfill_state WHERE repo_full_name = ?1",
+                (repo_full_name,),
+            )
+            .await?;
+        rows.next()
+            .await?
+            .map(|row| decode_backfill_state(&row))
+            .transpose()
+    }
+
+    /// Advance only after a complete REST page has been durably persisted.
+    pub async fn advance_ci_backfill(
+        &self,
+        repo_full_name: &str,
+        completed_at_nanos: u128,
+        workflow_run_id: i64,
+        etag: Option<&str>,
+        succeeded_at_nanos: u128,
+    ) -> anyhow::Result<()> {
+        let conn = self.conn.lock().await;
+        conn.execute(
+            "INSERT INTO ci_backfill_state
+               (repo_full_name, completed_at, workflow_run_id, etag, last_success_at,
+                last_error, rate_limit_reset_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, NULL, NULL)
+             ON CONFLICT(repo_full_name) DO UPDATE SET
+               completed_at = CASE
+                 WHEN excluded.completed_at > completed_at
+                   OR (excluded.completed_at = completed_at
+                       AND excluded.workflow_run_id > workflow_run_id)
+                 THEN excluded.completed_at ELSE completed_at END,
+               workflow_run_id = CASE
+                 WHEN excluded.completed_at > completed_at
+                   OR (excluded.completed_at = completed_at
+                       AND excluded.workflow_run_id > workflow_run_id)
+                 THEN excluded.workflow_run_id ELSE workflow_run_id END,
+               etag = excluded.etag,
+               last_success_at = excluded.last_success_at,
+               last_error = NULL,
+               rate_limit_reset_at = NULL",
+            (
+                repo_full_name,
+                nanos_to_millis(completed_at_nanos),
+                workflow_run_id,
+                etag,
+                nanos_to_millis(succeeded_at_nanos),
+            ),
+        )
+        .await?;
+        Ok(())
+    }
+
+    /// Record a failed/rate-limited tick without moving its durable cursor.
+    pub async fn fail_ci_backfill(
+        &self,
+        repo_full_name: &str,
+        error: &str,
+        rate_limit_reset_at_nanos: Option<u128>,
+    ) -> anyhow::Result<()> {
+        let conn = self.conn.lock().await;
+        conn.execute(
+            "INSERT INTO ci_backfill_state
+               (repo_full_name, last_error, rate_limit_reset_at)
+             VALUES (?1, ?2, ?3)
+             ON CONFLICT(repo_full_name) DO UPDATE SET
+               last_error = excluded.last_error,
+               rate_limit_reset_at = excluded.rate_limit_reset_at",
+            (
+                repo_full_name,
+                error,
+                rate_limit_reset_at_nanos.map(nanos_to_millis),
+            ),
+        )
+        .await?;
+        Ok(())
+    }
+}
+
+fn decode_backfill_state(row: &turso::Row) -> anyhow::Result<CiBackfillState> {
+    Ok(CiBackfillState {
+        repo_full_name: text(row, 0),
+        completed_at_nanos: millis_to_nanos(integer(row, 1)),
+        workflow_run_id: integer(row, 2),
+        etag: opt_text(row, 3),
+        last_success_at_nanos: opt_integer(row, 4).map(millis_to_nanos),
+        last_error: opt_text(row, 5),
+        rate_limit_reset_at_nanos: opt_integer(row, 6).map(millis_to_nanos),
+    })
 }
 
 async fn upsert_ci_attempt(
@@ -267,5 +376,52 @@ mod tests {
             store.accept_ci_attempt_delivery(&collided_delivery).await,
             Err(CiAttemptStoreError::Collision(_))
         ));
+    }
+
+    #[tokio::test]
+    async fn backfill_cursor_is_monotonic_restart_safe_and_failure_stable() {
+        let directory = tempfile::tempdir().expect("tempdir");
+        let path = directory.path().join("meta.db");
+        let store = TursoMetadataStore::open(&path).await.expect("store");
+        store
+            .advance_ci_backfill(
+                "tailrocks/parallax",
+                2_000_000,
+                20,
+                Some("etag-1"),
+                3_000_000,
+            )
+            .await
+            .expect("advance");
+        store
+            .advance_ci_backfill(
+                "tailrocks/parallax",
+                2_000_000,
+                19,
+                Some("etag-2"),
+                4_000_000,
+            )
+            .await
+            .expect("ignore regression");
+        store
+            .fail_ci_backfill("tailrocks/parallax", "rate limited", Some(9_000_000))
+            .await
+            .expect("failure");
+        drop(store);
+
+        let store = TursoMetadataStore::open(path).await.expect("restart");
+        let state = store
+            .ci_backfill_state("tailrocks/parallax")
+            .await
+            .expect("state")
+            .expect("present");
+        assert_eq!(
+            (state.completed_at_nanos, state.workflow_run_id),
+            (2_000_000, 20)
+        );
+        assert_eq!(state.etag.as_deref(), Some("etag-2"));
+        assert_eq!(state.last_success_at_nanos, Some(4_000_000));
+        assert_eq!(state.last_error.as_deref(), Some("rate limited"));
+        assert_eq!(state.rate_limit_reset_at_nanos, Some(9_000_000));
     }
 }
