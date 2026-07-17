@@ -96,6 +96,10 @@
   class/name identity, and reports missing attempt ordinals for gap fill. It
   fails closed on malformed, identity-less, oversized, or over-count input;
   persistence reconciliation remains for the owning adapter implementation.
+- JUnit/telemetry reconciliation now emits deterministic missing ordinals and
+  terminal authority without fabricating attempts. Duplicate identities,
+  unknown/out-of-range ordinals, and ambiguous mixed retry gaps fail closed;
+  persistence writes remain for the owning adapter integration.
 
 Design decisions D1–D9 (identity, native tables, status taxonomy, attempt
 chains, shared fingerprints, flaky SM, `/tests` surface, session semantics,
@@ -116,7 +120,7 @@ if needed; do not reopen.
    mute/known flags (no runner quarantine enforcement in V1).
 6. Runner adapters: nextest attempt identity + bounded JUnit XML gap analysis
    landed; residual nextest support crate/export lifecycle, JUnit listener jar,
-   and persistence reconciliation of killed/missing attempts.
+   and persistence writes for reconciled killed/missing attempts.
 7. Live e2e vs plan 154 W4 playground payload; validation evidence under
    `docs/research/validation/`.
 

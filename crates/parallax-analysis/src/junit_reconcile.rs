@@ -3,7 +3,7 @@
 use quick_xml::Reader;
 use quick_xml::XmlVersion;
 use quick_xml::events::{BytesStart, Event};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 const MAX_XML_BYTES: usize = 16 * 1024 * 1024;
@@ -25,6 +25,109 @@ pub struct JUnitCaseEvidence {
     pub outcome: JUnitOutcome,
     pub prior_assertion_failures: u32,
     pub prior_harness_errors: u32,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct JUnitAttemptReconciliation {
+    pub code_reference: String,
+    pub terminal_outcome: JUnitOutcome,
+    pub attempt_count: u32,
+    pub observed_attempts: Vec<u32>,
+    pub missing_attempts: Vec<u32>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum JUnitReconcileError {
+    DuplicateIdentity(String),
+    UnknownIdentity(String),
+    AttemptOutOfRange {
+        code_reference: String,
+        attempt: u32,
+        attempt_count: u32,
+    },
+    AmbiguousRetryOrder(String),
+}
+
+impl fmt::Display for JUnitReconcileError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::DuplicateIdentity(identity) => {
+                write!(formatter, "duplicate JUnit identity: {identity}")
+            }
+            Self::UnknownIdentity(identity) => {
+                write!(
+                    formatter,
+                    "observed attempt has no JUnit identity: {identity}"
+                )
+            }
+            Self::AttemptOutOfRange {
+                code_reference,
+                attempt,
+                attempt_count,
+            } => write!(
+                formatter,
+                "attempt {attempt} exceeds JUnit attempt count {attempt_count} for {code_reference}"
+            ),
+            Self::AmbiguousRetryOrder(identity) => write!(
+                formatter,
+                "JUnit aggregate retry ordering is ambiguous for {identity}"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for JUnitReconcileError {}
+
+/// Reconcile JUnit aggregate retry authority with telemetry attempt ordinals.
+///
+/// Missing ordinals are evidence gaps only. This never fabricates a raw test
+/// result or assigns an assertion/harness outcome to an aggregate retry slot.
+pub fn reconcile_junit_attempts(
+    cases: &[JUnitCaseEvidence],
+    observed: &BTreeMap<String, BTreeSet<u32>>,
+) -> Result<Vec<JUnitAttemptReconciliation>, JUnitReconcileError> {
+    let mut identities = BTreeSet::new();
+    let mut reconciled = Vec::with_capacity(cases.len());
+    for case in cases {
+        let code_reference = case.code_reference();
+        if !identities.insert(code_reference.clone()) {
+            return Err(JUnitReconcileError::DuplicateIdentity(code_reference));
+        }
+        let observed_attempts = observed.get(&code_reference).cloned().unwrap_or_default();
+        let attempt_count = case.attempt_count();
+        if let Some(attempt) = observed_attempts
+            .iter()
+            .copied()
+            .find(|attempt| *attempt == 0 || *attempt > attempt_count)
+        {
+            return Err(JUnitReconcileError::AttemptOutOfRange {
+                code_reference,
+                attempt,
+                attempt_count,
+            });
+        }
+        let missing_attempts = case.missing_attempts(&observed_attempts);
+        if !missing_attempts.is_empty()
+            && case.prior_assertion_failures > 0
+            && case.prior_harness_errors > 0
+        {
+            return Err(JUnitReconcileError::AmbiguousRetryOrder(code_reference));
+        }
+        reconciled.push(JUnitAttemptReconciliation {
+            code_reference,
+            terminal_outcome: case.outcome,
+            attempt_count,
+            observed_attempts: observed_attempts.into_iter().collect(),
+            missing_attempts,
+        });
+    }
+    if let Some(identity) = observed
+        .keys()
+        .find(|identity| !identities.contains(*identity))
+    {
+        return Err(JUnitReconcileError::UnknownIdentity(identity.clone()));
+    }
+    Ok(reconciled)
 }
 
 impl JUnitCaseEvidence {
@@ -271,5 +374,67 @@ mod tests {
     fn input_byte_bound_is_fail_closed() {
         let xml = vec![b'x'; MAX_XML_BYTES + 1];
         assert_eq!(parse_junit_cases(&xml), Err(JUnitParseError::TooLarge));
+    }
+
+    fn case(
+        name: &str,
+        outcome: JUnitOutcome,
+        prior_assertion_failures: u32,
+        prior_harness_errors: u32,
+    ) -> JUnitCaseEvidence {
+        JUnitCaseEvidence {
+            suite_id: "crate".into(),
+            class_name: Some("suite".into()),
+            name: name.into(),
+            outcome,
+            prior_assertion_failures,
+            prior_harness_errors,
+        }
+    }
+
+    #[test]
+    fn reconciliation_emits_only_proven_gaps_and_terminal_authority() {
+        let retry = case("retry", JUnitOutcome::Passed, 2, 0);
+        let killed = case("killed", JUnitOutcome::Broken, 0, 0);
+        let observed = BTreeMap::from([
+            (retry.code_reference(), BTreeSet::from([1, 3])),
+            (killed.code_reference(), BTreeSet::from([1])),
+        ]);
+        let reconciled = reconcile_junit_attempts(&[retry, killed], &observed).expect("reconcile");
+        assert_eq!(reconciled[0].missing_attempts, [2]);
+        assert_eq!(reconciled[0].terminal_outcome, JUnitOutcome::Passed);
+        assert!(reconciled[1].missing_attempts.is_empty());
+        assert_eq!(reconciled[1].terminal_outcome, JUnitOutcome::Broken);
+    }
+
+    #[test]
+    fn reconciliation_rejects_duplicate_range_unknown_and_ambiguous_inputs() {
+        let retry = case("retry", JUnitOutcome::Passed, 1, 0);
+        assert!(matches!(
+            reconcile_junit_attempts(&[retry.clone(), retry.clone()], &BTreeMap::new()),
+            Err(JUnitReconcileError::DuplicateIdentity(_))
+        ));
+        assert!(matches!(
+            reconcile_junit_attempts(
+                std::slice::from_ref(&retry),
+                &BTreeMap::from([(retry.code_reference(), BTreeSet::from([3]))])
+            ),
+            Err(JUnitReconcileError::AttemptOutOfRange { .. })
+        ));
+        assert!(matches!(
+            reconcile_junit_attempts(
+                std::slice::from_ref(&retry),
+                &BTreeMap::from([("other".into(), BTreeSet::from([1]))])
+            ),
+            Err(JUnitReconcileError::UnknownIdentity(_))
+        ));
+        let ambiguous = case("mixed", JUnitOutcome::Passed, 1, 1);
+        assert!(matches!(
+            reconcile_junit_attempts(
+                std::slice::from_ref(&ambiguous),
+                &BTreeMap::from([(ambiguous.code_reference(), BTreeSet::from([3]))])
+            ),
+            Err(JUnitReconcileError::AmbiguousRetryOrder(_))
+        ));
     }
 }
