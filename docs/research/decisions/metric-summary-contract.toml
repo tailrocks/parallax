@@ -1,0 +1,15 @@
+schema_version = 1
+status = "approved"
+decision_date = "2026-07-17"
+approval = "operator-directive-2026-07-17"
+window = "explicit-inclusive"
+eligible_samples = ["gauge", "sum", "explicit-histogram"]
+non_finite = "exclude"
+histogram_count = "count-row-once"
+trend_bucket_limit = 120
+trend_default_buckets = 60
+trend_min_step_seconds = 1
+native_name_collision = "error"
+metric_only_services = "finite-sample-in-window"
+cli = "metrics-invocation"
+graphql_compatibility = "preserve-v1"

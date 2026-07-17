@@ -12,11 +12,13 @@ use crate::diagnostic::Finding;
 use super::config::Ratchet;
 
 mod anyhow_edges;
+mod decision_contracts;
 mod toolchain;
 
 pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Finding>> {
     let mut findings = Vec::new();
     check_cargo(root, &mut findings)?;
+    decision_contracts::check(root, &mut findings)?;
     check_bun(root, &mut findings)?;
     check_native_tables(root, &mut findings)?;
     check_composition(root, &mut findings)?;

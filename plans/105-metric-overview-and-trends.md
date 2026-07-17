@@ -28,9 +28,10 @@ The operator-authorized Step-1 decision is now durable in
 explicit inclusive windows, finite gauge/sum and one-row-per-explicit-
 histogram-export counting, ≤120 aligned trend buckets, fail-closed native-name
 collisions, bounded metric-only service discovery, and retained
-`parallax metrics --invocation`. This helper slice does not satisfy the
-required decision-policy fixture or compatibility/conformance evidence; the
-primary executor must verify/deepen the record before beginning backend work.
+`parallax metrics --invocation`. The product-policy validator now fails closed
+when this record is missing, draft/rejected, lacks approval authority/date, or
+omits a required contract section; its positive and negative fixtures pass.
+Adapter/API/CLI compatibility and conformance evidence remain peer-owned.
 
 ## Why
 

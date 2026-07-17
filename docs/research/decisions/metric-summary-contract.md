@@ -7,6 +7,11 @@ Status: **APPROVED**
 Approval: operator unblock directive dated 2026-07-17, executed through
 Plans 105 and 168
 
+Machine-enforced mirror:
+[`metric-summary-contract.toml`](metric-summary-contract.toml). Product policy
+rejects a missing record/fixture, unknown or missing fields, and any value that
+differs from this approved contract.
+
 This record defines the bounded metric-summary semantics shared by the
 overview, metric explorer, dashboards, alerts, and CLI. It preserves
 GreptimeDB native per-metric tables; it does not authorize another raw metric

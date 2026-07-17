@@ -31,22 +31,17 @@
 Index status stays TODO.
 
 **Already landed:**
-- `/metrics` + `/metrics/$metricName` routes + Metrics nav entry (`f402da7`,
-  UI gates green): browse list over `metricNames` with search + inferred-kind
-  filter; detail view with agg/groupBy/step selects **restricted to what the
-  current backend accepts** (`metricSeries` avg/min/max/sum/rate,
-  `histogramQuantile` p50/p95/p99 — see `supportedAggregations` in the route),
-  grouped line chart, URL-encoded state. Peer replaces the intersection list
-  with the full legality table once `metricQuery` lands, adds catalog
-  richness, breakdown click-to-filter, where-filter, dashed tail, and
-  graduation buttons, then browser-verifies against `m-labels`/`m-shapes`.
 - `docs/research/decisions/metric-summary-contract.md`: the operator-authorized
   Plan-105/168 Step-0 contract now records exact window/count semantics,
   non-finite and histogram treatment, trend bucket cap, fail-closed native-name
   collision behavior, metric-only service discovery, GraphQL compatibility,
   and the retained `parallax metrics --invocation` promise. Plan 105 links the
-  record. Peer must add the decision-policy fixture and prove adapter/API/CLI
-  conformance before treating Step 0 as closed.
+  record. `product.metric-decision` now enforces the record fail-closed with
+  positive and missing/draft/rejected/incomplete negative fixtures. Focused
+  xtask tests and strict xtask clippy pass; the full product-policy invocation
+  currently continues past this check then fails on the peer's concurrent,
+  unregistered `parallax-metadata/src/turso/alerts.rs` anyhow edge. Peer must
+  prove adapter/API/CLI conformance before treating Step 0 as closed.
 - `ui/src/lib/metric-aggregation.ts` (typecheck fixed at `90527b4`): typed
   aggregation legality per metric kind (contract decision 2 — illegal combos
   unrepresentable), `coerceAggregation`, `inferMetricKind`, `MetricQuerySpec`
