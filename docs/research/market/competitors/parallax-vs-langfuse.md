@@ -17,7 +17,7 @@
 
 ## What each product is
 
-- **Langfuse** — open-source (**MIT core**) LLM engineering platform: tracing (LLM + non-LLM spans, hierarchical, multi-turn), evaluation scores (human + automated/model-based), prompt management (versioned, linked to traces), datasets, experiments, analytics (latency / cost / token usage), and a prompt playground. Open-core: MIT self-host (free, all core features, unlimited scale) + Langfuse Cloud + a self-host Enterprise license (RBAC/SCIM). Large OSS community (~28k+ GitHub stars per legacy note; verify exact current count). **Latest release: v3.220.0 (2026-07-17, [github.com/langfuse/langfuse/releases](https://github.com/langfuse/langfuse/releases)); extremely fast cadence (~1–2 releases/day — v3.219.0–v3.217.0 shipped 2026-07-16/17).** v3.x = the post-rewrite, self-hostable line; **on 2025-06-04 Langfuse open-sourced all remaining product features under MIT** ([changelog](https://langfuse.com/changelog/2025-06-04-open-sourcing-langfuse)), so self-host ≥3.65 has no feature gating on core.
+- **Langfuse** — open-source (**MIT core**) LLM engineering platform: tracing (LLM + non-LLM spans, hierarchical, multi-turn), evaluation scores (human + automated/model-based), prompt management (versioned, linked to traces), datasets, experiments, analytics (latency / cost / token usage), and a prompt playground. Open-core: MIT self-host (free, all core features, unlimited scale) + Langfuse Cloud + a self-host Enterprise license (RBAC/SCIM). Large OSS community (~28k+ GitHub stars per legacy note; verify exact current count). **Latest release: v3.221.0 (2026-07-17, [github.com/langfuse/langfuse/releases](https://github.com/langfuse/langfuse/releases)); ~31.3k★; extremely fast cadence.** v3.x = the post-rewrite, self-hostable line; **on 2025-06-04 Langfuse open-sourced all remaining product features under MIT** ([changelog](https://langfuse.com/changelog/2025-06-04-open-sourcing-langfuse)), so self-host ≥3.65 has no feature gating on core.
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable **execution-context engine**: OTLP-native ingest of traces/logs/metrics + CLI/coding-agent execution traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, serves **bounded, redacted, schema-valid evidence bundles** to humans and coding agents. GreptimeDB + Turso. **Pre-release.**
 
 These overlap on **agent/LLM tracing and "context for agents,"** but were built for different primary jobs. Compare axis-by-axis.
@@ -163,14 +163,14 @@ A "unit" ≈ a traced event/observation. **Self-host OSS is free with no limits*
 
 - **A1 gate vs Langfuse:** if a team already has Langfuse for agent traces + evals, does adding a Parallax bounded bundle measurably improve coding-agent fix outcomes for *production incidents*? Unproven — and this is the existential question for Parallax's wedge against the AI-observability category Langfuse leads.
 - **Langfuse extension risk:** Langfuse could add production-error derivation / a bounded export. If it does, Parallax's AI-wedge differentiation collapses. Track Langfuse changelog.
-- ~~Langfuse exact version + backing store~~ → **pinned v3.220.0 + v3 stack (Postgres + ClickHouse + Redis + S3 + async worker)**, 2026-07-17.
+- ~~Langfuse exact version + backing store~~ → **pinned v3.221.0 (pass 44) + v3 stack (Postgres + ClickHouse + Redis + S3 + async worker)**.
 
 ## Sources (accessed 2026-07-17)
 
 - [Langfuse docs home](https://langfuse.com/docs); [observability overview](https://langfuse.com/docs/observability/overview).
 - [Langfuse OTLP/OTel integration](https://langfuse.com/integrations/native/opentelemetry) (OTLP backend at `/api/public/otel`; OTEL-native **SDK v4**); [MCP tracing docs](https://langfuse.com/docs/observability/features/mcp-tracing).
 - [Langfuse changelog: open-sourced all remaining product features under MIT (2025-06-04)](https://langfuse.com/changelog/2025-06-04-open-sourcing-langfuse); [self-host SSO](https://langfuse.com/self-hosting/security/authentication-and-sso).
-- [GitHub releases — latest v3.220.0 (2026-07-17)](https://github.com/langfuse/langfuse/releases).
+- [GitHub releases — latest v3.221.0 (2026-07-17)](https://github.com/langfuse/langfuse/releases).
 - [Langfuse pricing](https://langfuse.com/pricing); [self-host pricing](https://langfuse.com/pricing-self-host).
 - 2026 comparisons: [OpenObserve LLM obs tools](https://openobserve.ai/blog/llm-observability-tools/), [Firecrawl](https://www.firecrawl.dev/blog/best-llm-observability-tools), [MLflow top-5](https://mlflow.org/top-5-agent-observability-tools/).
 - Parallax side: [00-vision/ai-native-observability.md](../../00-vision/ai-native-observability.md), [reference/agent-observability-review.md](../../reference/agent-observability-review.md), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).

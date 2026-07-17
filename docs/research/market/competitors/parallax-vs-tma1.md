@@ -1,6 +1,6 @@
 # Parallax vs TMA1
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17**.
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 44: **6th consecutive watch UNFIRED** — recent commits install/GreptimeDB/perf only; still alpha12/109★).
 > Sources: [github.com/tma1-ai/tma1](https://github.com/tma1-ai/tma1), [tma1.ai](https://tma1.ai/), and the legacy [tma1-deep-research.md](../tma1-deep-research.md) (2026-06-22, a full source-code teardown) as the lead.
 >
 > **Bottom line up front:** TMA1 is the **single closest architectural competitor

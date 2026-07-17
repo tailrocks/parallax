@@ -4,9 +4,9 @@
 > is written. Where Parallax's edge is only *planned* or *unproven*, that is
 > stated, not hidden.
 >
-> Research date: **2026-07-17**. Promoted from `watch` to deep-dive this pass.
-> Version, license, and signals re-checked against live primary sources. No
-> legacy deep-research note exists — this is the first canonical comparison.
+> Research date: **2026-07-17** (**pass 44 pricing RESOLVED** against live
+> [hyperdx.io/pricing](https://www.hyperdx.io/pricing) + ClickStack Managed beta).
+> Promoted from `watch` to deep-dive pass 25.
 
 ## TL;DR verdict (scoped per axis)
 
@@ -38,13 +38,32 @@ as "Datadog without the price tag." Now also distributed by ClickHouse Inc. as
 | **Signals** | session replay + logs + metrics + traces + errors (full-stack incl. RUM/replay) | repo + [hyperdx.io](https://www.hyperdx.io/) |
 | **Storage** | **ClickHouse** (Lucene-style log search); the HyperDX UI is also ClickHouse Inc.'s **ClickStack** | [clickhouse.com/clickstack](https://clickhouse.com/clickstack) |
 | **Ingest** | OTLP-native **+ multi-protocol**: OTel, syslog, Elasticsearch, Loki, Datadog formats | ClickStack docs |
-| **Latest release** | `@hyperdx/otel-collector@2.30.1` (npm-scoped monorepo). ⚠️ last ClickStack feature blog **July 2025** — verify current cadence | GitHub releases, [ClickStack July-2025 update](https://clickhouse.com/blog/whats-new-clickstack-july-2025) |
-| **Self-host** | ✅ Docker (MIT); **or** HyperDX Cloud (managed, usage-priced) | repo + hyperdx.io |
-| **Correlation** | auto-correlates logs ↔ traces ↔ metrics ↔ infra in one view | [Horovits/ClickStack analysis](https://horovits.medium.com/clickstack-clickhouses-new-observability-stack-unveiled-73f129a179a3) |
-| **Pricing** | Cloud tiers via hyperdx.io (positioned cheaper than Datadog); self-host free (MIT). **Verify live page** — no public per-unit number quoted here. | hyperdx.io |
+| **Latest release** | `@hyperdx/app@2.30.1` (2026-07-13); monorepo active (push 2026-07-17). ClickStack **active in 2026** (Managed ClickStack beta **2026-02-04**) — pass-25 “July 2025 last feature blog” is **stale** | GitHub + [Managed ClickStack](https://clickhouse.com/blog/introducing-managed-clickstack-beta) |
+| **Self-host** | ✅ Docker (MIT); **or** HyperDX Cloud; **or** Managed ClickStack on ClickHouse Cloud | repo + hyperdx.io + clickhouse.com |
+| **Correlation** | auto-correlates logs ↔ traces ↔ metrics ↔ infra in one view | product |
+| **Pricing** | **RESOLVED pass 44** — Free 3GB / Starter **$20 + $0.40/GB** / Enterprise custom | [hyperdx.io/pricing](https://www.hyperdx.io/pricing) |
 
-> Parallax pricing: **no public number** (pre-release). Direct cost comparison
-> **benchmark-dependent, unmeasured.**
+## Pricing & economics — RESOLVED pass 44
+
+### HyperDX Cloud (live [hyperdx.io/pricing](https://www.hyperdx.io/pricing), 2026-07-17)
+
+| Plan | Price | Included | Overage | Retention / seats |
+| --- | --- | --- | --- | --- |
+| **Free** | **$0/mo** | **3 GB/mo** | n/a | 3-day; 1 user |
+| **Starter** | **$20/mo** | **50 GB/mo** | **$0.40 / GB** logs+traces; **$0.40 per 100 metrics (1 DPM)** | 30-day; **unlimited users**, $0/seat, $0/host |
+| **Enterprise** | custom | custom | volume discounts | custom retention; SAML SSO |
+
+- GB = **uncompressed** data sent (spans, sessions, logs).
+- Metric unit = **DPM**; higher resolution multiplies bill.
+- Vendor **~10× vs Datadog** claim on example 10 TB / 30-day workload — marketing, not independently measured.
+
+### Managed ClickStack (ClickHouse Cloud)
+
+[Managed ClickStack beta (2026-02-04)](https://clickhouse.com/blog/introducing-managed-clickstack-beta): priced on **infrastructure (compute+storage), not events**. Vendor claims full-fidelity OTel retention economics **< ~$0.03/GB/mo**. **No single public rate card** independent of ClickHouse Cloud SKUs.
+
+**Parallax pricing:** **no public number** (pre-release). Self-host = no per-GB tax by design.
+
+**Honest cost read:** HyperDX Cloud is **public, simple, cheap** ($0.40/GB, $20 entry) — strong cost transparency. Head-to-head vs Parallax self-host **unmeasured**. Managed ClickStack is the strongest commercial “just use ClickHouse” counter to GreptimeDB.
 
 ## Axis-by-axis comparison
 
@@ -157,9 +176,9 @@ Datadog/Sentry.
 
 ### Pricing & economics
 
-HyperDX: positioned cheaper than Datadog; self-host free (MIT); Cloud
-usage-priced (verify live hyperdx.io for per-unit). Parallax: **no public
-number.** Direct comparison **benchmark-dependent, unmeasured.**
+See **Pricing & economics — RESOLVED pass 44** above. HyperDX Cloud is public
+($0.40/GB); MIT self-host free. Parallax: **no public number.** Direct TCO
+**benchmark-dependent, unmeasured.**
 
 ## Where HyperDX plainly wins (no bias)
 

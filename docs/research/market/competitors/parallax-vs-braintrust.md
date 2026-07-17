@@ -1,7 +1,9 @@
 # Parallax vs Braintrust
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17**.
-> Sources: [braintrust.dev](https://www.braintrust.dev/) + [playgrounds-vs-experiments docs](https://www.braintrust.dev/foundations/playgrounds-vs-experiments), [cekura 2026 pricing](https://www.cekura.ai/blogs/braintrust-pricing), [aitoolsbakery 2026 review](https://aitoolsbakery.com/blog/braintrust-review/).
+> Sources: live [braintrust.dev/pricing](https://www.braintrust.dev/pricing) (**pass 44
+> pricing RESOLVED**), [braintrust.dev](https://www.braintrust.dev/),
+> [playgrounds-vs-experiments](https://www.braintrust.dev/foundations/playgrounds-vs-experiments).
 >
 > **Bottom line up front:** Braintrust is the **eval-first LLM observability** platform
 > — the specialist on **LLM evaluations + experiments** (datasets, scorers, playgrounds,
@@ -14,7 +16,7 @@
 
 ## What each product is
 
-- **Braintrust** (braintrust.dev) — an **eval-first AI evaluation + observability platform**: **experiments** (`Eval()` against datasets; compare prompts/models side-by-side), **scorers** (LLM/code/human), **datasets**, **playgrounds** (ephemeral prompt scratchpads) vs **experiments** (permanent comparable snapshots), production tracing/monitoring, **cost tracking integrated with experiments**, and **Loop** (AI feature). Positioned as **"eval-driven development"** — the strongest eval/experiment-specialist in the AI-obs set. **OSS SDK**; core platform SaaS (self-hosting discussed but not a primary OSS path). Pricing: Free $0 / Pro **$249/mo** (5 GB processed) / Enterprise custom.
+- **Braintrust** (braintrust.dev) — an **eval-first AI evaluation + observability platform**: **experiments** (`Eval()` against datasets), **scorers** (LLM/code/human), **datasets**, **playgrounds** vs **experiments**, production tracing/monitoring, cost tracking, and **Loop agent** (built-in AI that runs evals, generates test cases, iterates prompts autonomously). **"Eval-driven development"** specialist. **OSS SDK**; core platform SaaS (Enterprise: on-prem or hosted). Live pricing (pass 44): Starter **$0** / Pro **$249/mo** / Enterprise custom.
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable **execution-context engine**: OTLP-native ingest of traces/logs/metrics + CLI/agent traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, serves bounded/redacted evidence bundles to humans and coding agents. GreptimeDB + Turso. **Pre-release.**
 
 Both touch "evaluation" of AI behavior, but **Braintrust = LLM-app eval/experimentation** (improve your LLM app); **Parallax = production-incident evidence for coding agents**. Narrow overlap.
@@ -94,15 +96,15 @@ Both touch "evaluation" of AI behavior, but **Braintrust = LLM-app eval/experime
 
 | Plan | Price | Notes |
 | --- | --- | --- |
-| **Free** | $0 | limited usage |
-| **Pro** | **$249/mo** | 5 GB processed data |
+| **Starter** | **$0/mo** | $10 credits + tok rates; **1 GB** processed then **$4/GB**; **10k scores** then **$2.50/1k**; **14-day** retention; unlimited users/projects/datasets/playgrounds/experiments |
+| **Pro** | **$249/mo** | $249 credits (was $100 on older secondary cites); **5 GB** processed then **$3/GB**; **50k scores** then **$1.50/1k**; **30-day** retention then **$0.50/GB/mo**; custom charts, environments, priority support, basic RBAC; Loop agent |
 | **Enterprise** | custom | |
 
-Sources: [cekura 2026](https://www.cekura.ai/blogs/braintrust-pricing), [aitoolsbakery 2026](https://aitoolsbakery.com/blog/braintrust-review/). **Confirm current rates on [braintrust.dev](https://www.braintrust.dev/).**
+Source: live [braintrust.dev/pricing](https://www.braintrust.dev/pricing) (2026-07-17). Topics metering: **$0.06/mtok input, $0.40/mtok output** after included credits. Enterprise: custom retention/export, SAML SSO, on-prem or hosted, BAA/HIPAA path.
 
-**Parallax pricing:** none public yet (pre-release).
+**Parallax pricing:** **no public number** (pre-release).
 
-**Honest cost read:** Braintrust's $249/mo Pro positions it as a paid eval/experiment platform (vs Langfuse/Phoenix OSS-free). Not a domain Parallax competes in.
+**Honest cost read:** Braintrust Pro **$249/mo** is a real paid eval platform (vs Langfuse/Phoenix free self-host). Not a domain Parallax competes in — except Braintrust-class tooling can **measure** Parallax A1.
 
 ## Where Braintrust plainly wins
 
@@ -123,7 +125,7 @@ Sources: [cekura 2026](https://www.cekura.ai/blogs/braintrust-pricing), [aitools
 ## Open questions / what measurement would settle
 
 - **A1 gate tooling** — could Braintrust's eval harness measure the Parallax A1 question (bundle-vs-raw-context for agent fix outcomes)? Worth exploring as a validation method, not a competitive overlap.
-- **Braintrust exact pricing + OSS scope (2026)** — confirm Pro $249/5GB + whether any core self-host path exists now.
+- **Braintrust exact pricing + OSS scope (2026)** — **RESOLVED pass 44** on live page (Starter free / Pro $249 / Enterprise custom + overage rates above). Enterprise offers on-prem or hosted; core remains closed SaaS (OSS SDK only).
 
 ## Sources (accessed 2026-07-17)
 

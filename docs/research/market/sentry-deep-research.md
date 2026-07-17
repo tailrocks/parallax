@@ -5,9 +5,10 @@
 > (no-bias deep-dive, verified 2026-07-17). This legacy note (2026-06-22) is a
 > **source**; OTLP is **still open beta** (HTTP-only, traces+logs, still no OTLP
 > metrics or gRPC) — self-hosted native OTLP ingest shipped ~v25.8.0 (#3830),
-> but it is **not GA**. Self-hosted latest is **26.4.2** (this note's 26.6.0
-> claim is unresolved). Seer is now **$40/active contributor/mo, unlimited**.
-> Re-verify specifics in the canonical deep-dive before trusting.
+> but it is **not GA**. Self-hosted latest is **26.7.0** (2026-07-16; pass 44 —
+> this note's older 26.6.0/26.4.2 pins are superseded). Seer is now
+> **$40/active contributor/mo, unlimited**. Re-verify specifics in the
+> canonical deep-dive before trusting.
 
 Research date: 2026-06-22
 
