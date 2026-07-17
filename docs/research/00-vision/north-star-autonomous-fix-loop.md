@@ -67,18 +67,24 @@ Recorded as durable intent, condensed from the operator's own words:
 Every serious incumbent now generates fixes. **None of them closes the loop for application
 code** (auto-detect → auto-PR → **auto-merge** with open outcome/recurrence records).
 
-**Rechecked 2026-07-17 (pass 48 + pass 99, primary product docs):** Bits Code still
-lands PRs for **human review/merge**; Seer still stops at PR/MR creation (or external
-coding-agent handoff). **Pass 99** re-fetched both: Seer docs still describe **PR
-Creation** + human review path; Bits Code blog still *“engineers decide what to
-merge.”* **HolmesGPT Operator mode** (pass 95) adds continuous SRE health + optional
-**GitHub open-PR** — still **not** unattended app-code auto-merge + portable open
-outcome corpus.
+**Rechecked 2026-07-17 (pass 48 + pass 99 + pass 138, primary product docs):**
+Bits Code still lands PRs for **human review/merge**; Seer still stops at PR/MR
+creation (or external coding-agent handoff). **No incumbent ships unattended
+app-code auto-merge + open outcome/recurrence corpus.**
+
+**Pass 138 primary re-fetch:**
+
+| Source | Finding |
+| --- | --- |
+| [Bits Code docs](https://docs.datadoghq.com/bits_ai/bits_code/) | Explicit: **“Bits Code never auto-merges PRs or MRs.”** Automations deliver PR/MR (optionally draft) or Slack — not merge. |
+| [Bits Code product/blog](https://www.datadoghq.com/blog/bits-code/) | “The agent proposes pull requests, but **engineers decide what to merge**.” |
+| [Seer Autofix docs](https://docs.sentry.io/product/ai-in-sentry/seer/autofix/) | Automation caps: **Stop after Root Cause / Plan / PR Drafted**. Max automation = **open a PR**; human still merges. Handoff to Claude/Cursor/Copilot Cloud still PR/local checkout path. |
+| HolmesGPT (pass 95) | Operator mode + optional GitHub open-PR — not auto-merge + portable outcome ledger |
 
 | Player | How far they go | The stated stopping point |
 | --- | --- | --- |
-| Sentry Seer | Root cause → solution → code changes → **opens PR** (auto-PR by actionability threshold); "self-healing workflow" APIs and external coding-agent handoff | No app-code auto-merge; human merges/reviews ([Seer docs](https://docs.sentry.io/product/ai-in-sentry/seer/) rechecked 2026-07-17 pass **99**) |
-| Datadog Bits AI | Bits Code **GA** (fix generation + CI iterate + open PR); Bits Remediation / infra ops for pre-approved actions | **Human review path:** "resulting pull request still goes through normal human review" / "engineers decide what to merge" ([Bits Code blog](https://www.datadoghq.com/blog/bits-ai-dev-agent/) rechecked pass **99**) |
+| Sentry Seer | Root cause → solution → code changes → **opens PR** (cap: Stop after PR Drafted); external coding-agent handoff | **No app-code auto-merge** — max auto is PR draft/create ([Autofix docs](https://docs.sentry.io/product/ai-in-sentry/seer/autofix/) pass **138**) |
+| Datadog Bits AI | Bits Code: fix gen + CI iterate + open PR/MR; automations optional | **Never auto-merges** ([Bits Code docs](https://docs.datadoghq.com/bits_ai/bits_code/) pass **138**); humans decide merge |
 | HolmesGPT (CNCF) | Investigation agent over your stack; **Operator mode** background health + Slack fix messaging; GitHub toolset can **open PRs** | No own store/outcome ledger; PR open ≠ auto-merge; SRE/infra automation path ([README](https://github.com/HolmesGPT/holmesgpt) pass **95/99**) |
 | GitLab Duo | "Ready-to-merge" AI fix MRs | Humans decide the merge ([GitLab blog](https://about.gitlab.com/blog/automate-remediation-with-ready-to-merge-ai-code-fixes/)) |
 | GitHub Copilot coding agent | Issue → draft PR via Agent Tasks | Normal review required; Actions gated ([docs](https://docs.github.com/en/copilot/concepts/about-copilot-coding-agent)) |
