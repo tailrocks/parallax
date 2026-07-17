@@ -84,8 +84,16 @@ statuses intentionally untouched:
   against the memory adapter. The UI where-clause path is now open
   end-to-end for traces — peer sends the parsed clause from the route.
 
-Still open (full plan scope): facet-count queries; logs/invocations filter
-compilation (the compiler is span-table-only so far); live-engine narrowing
+- Backend `traceFacets` (`e079950`): `Facet` type + fixed
+  `TRACE_FACET_DIMENSIONS` (service, status, http.request.method,
+  error.type; names double as where-clause keys), 24-value cap, DISTINCT-
+  trace counts inside the shared scan/participation clauses on GreptimeDB,
+  in-memory parity, GraphQL `traceFacets` honoring the full filter set
+  incl. `attributeFilters`. E2e distinct-count test. 106 tests green.
+
+Still open (full plan scope): live facet verification against `f-attrs`
+(70/20/10) + the facet-window cap decision; logs/invocations facets +
+filter compilation (the compiler is span-table-only so far); live-engine narrowing
 + injection assertions; route wiring + URL schemas (Step 3); `F` keyboard
 shortcut; syntax-highlight overlay (editor currently plain input);
 browser evidence. The `f-attrs` playground scenario landed on the
