@@ -7859,3 +7859,10 @@ GT `1.2.0` nightly: PromQL **200**, Jaeger **200**, greptime_identity POST **200
 CH `CREATE QUOTA … MAX queries` → listed in `SHOW QUOTAS`; dropped cleanly.
 GT `CREATE QUOTA` → **Code 1001 SQL statement is not supported**. Multi-tenant
 SQL quotas remain CH OSS edge / GT proxy-owned (Run 179/172).
+
+### Run 263 — 2026-07-17 — CH durability settings surface
+
+Live CH 26.6 settings: `async_insert=1`, `wait_for_async_insert=1`,
+`fsync_metadata=1`. GT exposes flush latency histograms
+(`greptime_datanode_handle_region_request_elapsed{Flush}`). Aligns with Run 199
+WAL/fsync framing; no new product path.
