@@ -5,12 +5,11 @@
 > stated, not hidden.
 >
 > Research date: **2026-07-17** (**pass 44 pricing; pass 64; pass 115; pass 147;
-> pass 170 pin:** `@hyperdx/app@2.30.1` still latest monorepo tag 2026-07-13;
-> **9,680★**; last push **2026-07-17**; MIT). ClickStack / ClickHouse-backed
-> full-stack APM still the framing — **not** portable redacted evidence-bundle +
-> outcome product. **Pass 170** reconfirm pricing scrape Free / Starter **$20** +
-> **$0.40/GB** class numbers still on [hyperdx.io/pricing](https://www.hyperdx.io/pricing).
-> README still no MCP/agent-evidence product surface (ClickHouse search UI focus).
+> pass 170 + pass 200 pin:** `@hyperdx/app@2.30.1` still latest monorepo tag
+> 2026-07-13; **9,680★**; last push **2026-07-17**; MIT). ClickStack /
+> ClickHouse-backed full-stack APM still the framing — **not** portable redacted
+> evidence-bundle + outcome product. **Pass 200** pricing scrape still Free /
+> Starter **$20** + **$0.40/GB** class on [hyperdx.io/pricing](https://www.hyperdx.io/pricing).
 
 ## TL;DR verdict (scoped per axis)
 
