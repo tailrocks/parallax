@@ -8027,3 +8027,8 @@ interactive (Run 184/157).
 
 Engine loop still open per operator brief. Next high-value requires server or
 product input. Will keep re-pinning and re-verifying until stopped.
+
+### Run 296 — 2026-07-17 — log-tail ORDER BY ts DESC
+
+`WHERE service ORDER BY ts DESC LIMIT 50`: GT **~6–10 ms**; CH **~3–7 ms**.
+Both interactive; CH slight lead (ORDER BY locality). No drift.
