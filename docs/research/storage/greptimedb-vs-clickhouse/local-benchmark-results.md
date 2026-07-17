@@ -7914,3 +7914,15 @@ Updated `bench/four-way/gen.sh`:
 - CH: `INDEX idx_trace trace_id TYPE bloom_filter`
 
 Fixes Run 269 harness gap so future four-way joins can prune logs by `trace_id`.
+
+### Run 272 — 2026-07-17 — post-harness join prune re-verify
+
+After Run 271 gen.sh + `N=50000` re-gen:
+
+**CH** `WHERE trace_id='t0'` on logs1m: Skip index `idx_trace` bloom → **Granules 1/6**
+(was **6/6** unindexed, Run 249).
+
+**CH** join spans⋈logs: spans PK **1/6** + logs bloom **1/6**.
+
+GT logs CREATE shows `trace_id … INVERTED INDEX`. Product blueprint validated
+in harness.
