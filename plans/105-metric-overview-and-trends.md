@@ -14,6 +14,8 @@
 - **Planned at**: `eefa4617`, 2026-07-12
 - **Status**: BLOCKED — Plans 133 and 151 are incomplete
 
+**Status: IN PROGRESS — claimed 2026-07-17 by Claude Code agent (session 5904).**
+
 ## Contract reconciliation (2026-07-17)
 
 Plan 156 replaces `parallax.run.id` with `cli.invocation.id` and renames
