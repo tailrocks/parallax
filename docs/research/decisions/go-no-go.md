@@ -629,6 +629,25 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > | Datadog OPW = Bits store | Pass **388** — still route-only | **No** |
 > | Detect/loop product gate | Pass **388** — no Detect ledger; `fixer_outcome` **3/3** | **No** (open) |
 >
+>
+> **Pass 390 (2026-07-18) — GO composite** after **388–389**. **Still GO.** Kills **unfired**
+> (desk + unit; GH API still rate-limited for repo stars/OTel):
+>
+> | Kill / reverse trigger | Latest recheck | Fired? |
+> | --- | --- | --- |
+> | A1 | Pass **390** — golden ok; no ledger | **No** (open) |
+> | A2 | Pass **390** — **0** interviews; triangle holds | **No** (open) |
+> | Wedge closed | Pass **342**/389 — not closed | **No** |
+> | OTel commoditize schema | Pass **342**/389 — #1185 idle hold | **No** |
+> | Seer self-host | Pass **390** — closed | **No** |
+> | Bits auto-merge | Pass **390** — never | **No** |
+> | A4 reliability | Pass **390** — no ledger | **No** (open) |
+> | A6 mixed redaction | Pass **390** — canary ok; mixed open | **No** (open) |
+> | A3 adoption | Pass **390** — none | **No** (open) |
+> | Sentry OTLP metrics | Pass **390** — unsupported | **No** |
+> | OPW = Bits store | Pass **390** — route-only | **No** |
+> | Detect gate | Pass **390** — no ledger; `fixer_outcome` **3/3** | **No** (open) |
+>
 > **Narrow product identity holds.** Research program continues.
 
 ## Verdict

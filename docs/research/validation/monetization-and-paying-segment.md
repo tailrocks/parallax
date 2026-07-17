@@ -385,6 +385,10 @@ OpenObserve **$0.50/GB** class still present. Triangle holds.
 
 Grafana **$19** / SigNoz **$49** / OO **$0.50** still present. Desk playbook **holds**. A2 still **0** interview rows.
 
+### Pass 390 (2026-07-18) — triangle primary re-scrape
+
+Grafana **$19** / SigNoz **$49** / OO **$0.50** still present. Desk playbook **holds**.
+
 ### Pass 131 (2026-07-17) — Datadog Bits / AI Credits pricing (fixer reference)
 
 Live primary: [datadoghq.com/pricing/?product=ai-credits](https://www.datadoghq.com/pricing/?product=ai-credits#products)

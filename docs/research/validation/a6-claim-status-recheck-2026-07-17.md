@@ -295,6 +295,13 @@ From [redaction.md claim table](../capture/redaction.md):
 | Public-safe canary unit test | **ok** (re-ran) |
 | `agent_visible_mixed_pass` | **Still open** |
 
+### Pass 390 addendum (2026-07-18)
+
+| Check | Result |
+| --- | --- |
+| Public-safe canary unit test | **ok** (re-ran) |
+| `agent_visible_mixed_pass` | **Still open** |
+
 ### Allowed wording
 
 - "Parallax ships a default-deny Rust redaction engine and public-safe canary unit tests."
