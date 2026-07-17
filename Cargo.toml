@@ -10,6 +10,7 @@ members = [
     "crates/parallax-model",
     "crates/parallax-api",
     "crates/parallax-proto",
+    "crates/parallax-redaction",
     "crates/parallax-semconv",
     "crates/parallax-server",
     "crates/parallax-spool",
@@ -44,6 +45,7 @@ parallax-ingest = { path = "crates/parallax-ingest" }
 parallax-metadata = { path = "crates/parallax-metadata" }
 parallax-model = { path = "crates/parallax-model" }
 parallax-proto = { path = "crates/parallax-proto" }
+parallax-redaction = { path = "crates/parallax-redaction" }
 parallax-semconv = { path = "crates/parallax-semconv" }
 parallax-server = { path = "crates/parallax-server" }
 parallax-spool = { path = "crates/parallax-spool" }

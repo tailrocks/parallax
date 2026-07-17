@@ -36,7 +36,7 @@ lint = "missing_debug_implementations"
 ceiling = 2
 
 [[rust_suppressions]]
-crate_name = "parallax-evidence"
+crate_name = "parallax-redaction"
 lint = "clippy::expect_used"
 ceiling = 1
 
@@ -435,6 +435,11 @@ class = "product"
 tier = 0
 
 [[architecture.packages]]
+name = "parallax-redaction"
+class = "product"
+tier = 1
+
+[[architecture.packages]]
 name = "parallax-model"
 class = "product"
 tier = 0
@@ -643,15 +648,7 @@ metric = "rust.function-lines"
 scope = "crates/parallax-evidence/src/bundle/assembly.rs::assemble"
 ceiling = 242
 
-[[limits]]
-metric = "rust.function-lines"
-scope = "crates/parallax-evidence/src/bundle/redaction.rs::closure#1"
-ceiling = 113
 
-[[limits]]
-metric = "rust.function-lines"
-scope = "crates/parallax-evidence/src/bundle/redaction.rs::redaction_rules"
-ceiling = 116
 
 [[limits]]
 metric = "rust.function-lines"
@@ -756,7 +753,7 @@ ceiling = 161
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-analysis/facade.toml"
-ceiling = 5
+ceiling = 7
 
 [[limits]]
 metric = "rust.public-root-items"
@@ -771,17 +768,17 @@ ceiling = 1
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-evidence/facade.toml"
-ceiling = 4
+ceiling = 9
 
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-ingest/facade.toml"
-ceiling = 4
+ceiling = 6
 
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-model/facade.toml"
-ceiling = 2
+ceiling = 3
 
 [[limits]]
 metric = "rust.public-root-items"
@@ -799,7 +796,7 @@ ceiling = 5
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-metadata/facade.toml"
-ceiling = 1
+ceiling = 2
 
 [[limits]]
 metric = "rust.public-root-items"
@@ -4084,10 +4081,6 @@ metric = "rust.assertions"
 scope = "crates/parallax-cli/src/client.rs"
 ceiling = 9
 
-[[limits]]
-metric = "rust.assertions"
-scope = "crates/parallax-evidence/src/bundle/redaction.rs"
-ceiling = 4
 
 [[limits]]
 metric = "rust.assertions"
@@ -4104,10 +4097,6 @@ metric = "rust.assertions"
 scope = "crates/parallax-evidence/src/envelope.rs"
 ceiling = 27
 
-[[limits]]
-metric = "rust.assertions"
-scope = "crates/parallax-evidence/src/redaction_policy.rs"
-ceiling = 11
 
 [[limits]]
 metric = "rust.assertions"
@@ -4332,7 +4321,7 @@ ceiling = 483
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-evidence/src/claude_code.rs"
-ceiling = 439
+ceiling = 444
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4549,10 +4538,6 @@ metric = "rust.inline-test-modules"
 scope = "crates/parallax-cli/src/client.rs"
 ceiling = 1
 
-[[limits]]
-metric = "rust.inline-test-modules"
-scope = "crates/parallax-evidence/src/bundle/redaction.rs"
-ceiling = 1
 
 [[limits]]
 metric = "rust.inline-test-modules"
@@ -4564,10 +4549,6 @@ metric = "rust.inline-test-modules"
 scope = "crates/parallax-evidence/src/envelope.rs"
 ceiling = 1
 
-[[limits]]
-metric = "rust.inline-test-modules"
-scope = "crates/parallax-evidence/src/redaction_policy.rs"
-ceiling = 1
 
 [[limits]]
 metric = "rust.inline-test-modules"
@@ -4687,12 +4668,12 @@ ceiling = 2
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-semconv/facade.toml"
-ceiling = 148
+ceiling = 165
 
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-storage/facade.toml"
-ceiling = 6
+ceiling = 5
 
 [[limits]]
 metric = "rust.public-root-items"
@@ -6696,15 +6677,6 @@ scope = "ui/src/shared/format.ts"
 ceiling = 1
 
 
-[[exceptions]]
-rule = "arch.dependency.direction"
-scope = "parallax-metadata -> parallax-evidence (normal)"
-evidence = "crates/parallax-metadata/src/turso.rs sanitizes issue titles/culprits with parallax_evidence::sanitize_text before persistence (plan 111 A6 gate applied at write time)"
-owner = "storage"
-created = "2026-07-17"
-expires = "2026-09-30"
-removal_condition = "extract the pure redaction detector engine and source policy into a tier-1 crate both metadata and evidence consume"
-replacement = "sanitize at the storage port boundary through the extracted redaction crate"
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -6714,9 +6686,39 @@ ceiling = 69
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-model/src/test_reporting/tests.rs"
-ceiling = 23
+ceiling = 27
 
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/platform/sse/use-live-stream.ts:39"
 ceiling = 69
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-redaction/src/lib.rs"
+ceiling = 15
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-redaction/src/lib.rs"
+ceiling = 410
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-redaction/src/lib.rs::closure#1"
+ceiling = 113
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-redaction/src/lib.rs::redaction_rules"
+ceiling = 116
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-redaction/src/lib.rs"
+ceiling = 2
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = "crates/parallax-redaction/facade.toml"
+ceiling = 11

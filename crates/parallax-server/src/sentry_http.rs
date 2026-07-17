@@ -124,7 +124,7 @@ async fn envelope(
             }
             if state
                 .ingest
-                .enqueue(Signal::Sentry, IngestItem::Sentry(row), true)
+                .enqueue(Signal::Sentry, IngestItem::Sentry(Box::new(row)), true)
                 .await
                 .is_err()
             {

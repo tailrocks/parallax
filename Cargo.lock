@@ -3288,6 +3288,7 @@ dependencies = [
  "jsonschema",
  "parallax-analysis",
  "parallax-model",
+ "parallax-redaction",
  "proptest",
  "regex",
  "serde",
@@ -3354,8 +3355,8 @@ version = "0.1.0-dev"
 dependencies = [
  "anyhow",
  "async-trait",
- "parallax-evidence",
  "parallax-model",
+ "parallax-redaction",
  "parallax-semconv",
  "parallax-storage",
  "serde_json",
@@ -3382,6 +3383,15 @@ dependencies = [
  "opentelemetry-proto",
  "parallax-semconv",
  "prost",
+]
+
+[[package]]
+name = "parallax-redaction"
+version = "0.1.0-dev"
+dependencies = [
+ "proptest",
+ "regex",
+ "serde",
 ]
 
 [[package]]

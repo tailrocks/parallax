@@ -17,7 +17,9 @@ pub(crate) enum IngestItem {
     Traces(ExportTraceServiceRequest, bytes::Bytes),
     Logs(ExportLogsServiceRequest, bytes::Bytes),
     Metrics(ExportMetricsServiceRequest, bytes::Bytes),
-    Sentry(ErrorEventRow),
+    // Boxed: one small variant beside three large decoded-request variants
+    // would otherwise inflate every queued item.
+    Sentry(Box<ErrorEventRow>),
 }
 
 #[derive(Clone, Debug)]

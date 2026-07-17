@@ -1,5 +1,6 @@
 use super::v2::canonical_hash_v2;
 use super::*;
+use std::collections::BTreeMap;
 
 fn test_issue() -> Issue {
     Issue {

@@ -4,8 +4,7 @@ schema_version = 1
 "lib.rs" = [
     "mod adapter",
     "mod metadata",
-    "mod prune",
     "mod projections",
-    "use prune::{MetadataPruneStore, PruneAuthorization, PruneClass, PruneEstimate, PruneExclusion, PruneExclusionKind, PruneExecutionMode, PruneExecutionRequest, PruneItem, PrunePlan, PrunePlanError, PrunePlanLimits, PruneSnapshot, PruneStore}",
     "use parallax_model as model",
+    "use prune::{MetadataPruneJournalStore, MetadataPruneStore, PRUNE_JOURNAL_ERROR_MAX_BYTES, PruneAuthorization, PruneClass, PruneEstimate, PruneExclusion, PruneExclusionKind, PruneExecutionMode, PruneExecutionRequest, PruneItem, PruneJournal, PruneJournalStep, PruneJournalStepState, PrunePlan, PrunePlanError, PrunePlanLimits, PruneSnapshot, PruneStepStart, PruneStore ,}",
 ]

@@ -295,11 +295,11 @@ impl TursoMetadataStore {
             }
             // Plan 111: never persist raw title/culprit — sanitize at the write
             // boundary so every caller (worker, tests, migrations) is covered.
-            let safe_title = parallax_evidence::sanitize_text(occurrence.title.as_str());
+            let safe_title = parallax_redaction::sanitize_text(occurrence.title.as_str());
             let safe_culprit = occurrence
                 .culprit
                 .as_deref()
-                .map(parallax_evidence::sanitize_text);
+                .map(parallax_redaction::sanitize_text);
             tx.execute(
                 "INSERT INTO issues
                        (fingerprint, title, error_type, culprit, service,
@@ -621,8 +621,8 @@ impl TursoMetadataStore {
             let fingerprint = text(&row, 0);
             let title = text(&row, 1);
             let culprit = opt_text(&row, 2);
-            let safe_title = parallax_evidence::sanitize_text(&title);
-            let safe_culprit = culprit.as_deref().map(parallax_evidence::sanitize_text);
+            let safe_title = parallax_redaction::sanitize_text(&title);
+            let safe_culprit = culprit.as_deref().map(parallax_redaction::sanitize_text);
             if safe_title != title || safe_culprit != culprit {
                 updates.push((fingerprint, safe_title, safe_culprit));
             }

@@ -4,10 +4,8 @@
 //! `bundle` field, the CLI's `issue context`, and the UI's bundle preview.
 
 use parallax_model::{ErrorEventRow, InvocationRecord, Issue, LogRow, SpanRow};
-use regex::Regex;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
-use std::{collections::BTreeMap, sync::OnceLock};
 
 mod assembly;
 mod bounding;
@@ -23,6 +21,7 @@ use hash::*;
 pub use markdown::to_markdown;
 use ranking::*;
 use redaction::estimate_tokens;
+#[cfg(test)]
 pub(crate) use redaction::redact;
 pub use v2::{
     ACCESS_POLICY_LOCAL, EnvelopeAccess, EnvelopeError, EnvelopeInputs, EnvelopeV2, EnvelopeWindow,
@@ -32,7 +31,7 @@ pub use v2::{
 pub const SCHEMA_VERSION: &str = "bundle-v1";
 /// Immutable serialized policy label shipped by bundle-v1. New source-policy
 /// machinery may strengthen behavior but cannot rewrite version-1 bytes.
-pub const REDACTION_POLICY_V1: &str = "redaction-lite-v3";
+pub use parallax_redaction::REDACTION_POLICY_V1;
 
 #[derive(Debug, Serialize)]
 pub struct Bundle {
@@ -202,20 +201,7 @@ pub struct Hypothesis {
     pub evidence: Vec<String>,
 }
 
-#[derive(Debug, Serialize)]
-pub struct RedactionReport {
-    pub policy: &'static str,
-    pub redacted_counts: BTreeMap<&'static str, u64>,
-}
-
-impl Default for RedactionReport {
-    fn default() -> Self {
-        Self {
-            policy: REDACTION_POLICY_V1,
-            redacted_counts: BTreeMap::new(),
-        }
-    }
-}
+pub use parallax_redaction::RedactionReport;
 
 #[derive(Debug, Default, Serialize)]
 pub struct BoundReport {

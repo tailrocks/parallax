@@ -3,7 +3,9 @@ schema_version = 1
 [roots]
 "lib.rs" = [
     "fn resource_invocation_ids",
+    "mod sentry_envelope",
     "use logs::{normalize_logs, promote_log_identity_attributes}",
     "use metrics::{NormalizedMetrics, normalize_metrics}",
+    "use sentry_envelope::{EnvelopeOutcome, RejectReason, UnsupportedItem, parse_envelope}",
     "use traces::normalize_traces",
 ]

@@ -61,8 +61,7 @@ pub fn verify_signature_256(
     for (i, chunk) in hex.as_bytes().chunks(2).enumerate() {
         expected[i] = parse_hex_byte(chunk).ok_or(SignatureError::InvalidHex)?;
     }
-    let mut mac =
-        HmacSha256::new_from_slice(secret).map_err(|_| SignatureError::EmptySecret)?;
+    let mut mac = HmacSha256::new_from_slice(secret).map_err(|_| SignatureError::EmptySecret)?;
     mac.update(body);
     let digest = mac.finalize().into_bytes();
     if !constant_time_eq(digest.as_slice(), &expected) {

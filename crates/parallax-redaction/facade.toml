@@ -1,0 +1,16 @@
+schema_version = 1
+
+[roots]
+"lib.rs" = [
+    "const DETECTOR_POLICY_VERSION",
+    "const REDACTION_POLICY_V1",
+    "const SOURCE_POLICY_VERSION",
+    "enum EvidenceField",
+    "enum SourceAction",
+    "fn decide",
+    "fn project_text",
+    "fn redact",
+    "fn sanitize_text",
+    "struct RedactionReport",
+    "struct SourceDecision",
+]

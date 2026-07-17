@@ -3,7 +3,7 @@ schema_version = 1
 package = "parallax-evidence"
 class = "product"
 tier = 2
-dependencies = ["parallax-analysis", "parallax-model"]
+dependencies = ["parallax-analysis", "parallax-model", "parallax-redaction"]
 facade_roots = ["lib.rs"]
 +++
 

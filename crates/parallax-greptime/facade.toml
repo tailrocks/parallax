@@ -1,4 +1,7 @@
 schema_version = 1
 
 [roots]
-"lib.rs" = ["use greptime::GreptimeStore", "mod arrow_sql"]
+"lib.rs" = [
+    "mod arrow_sql",
+    "use greptime::GreptimeStore",
+]

@@ -200,10 +200,7 @@ fn ingest_stream_object(session: &mut NormalizedSession, value: &Value) {
     }
 }
 
-fn ingest_system_init(
-    session: &mut NormalizedSession,
-    object: &serde_json::Map<String, Value>,
-) {
+fn ingest_system_init(session: &mut NormalizedSession, object: &serde_json::Map<String, Value>) {
     if let Some(model) = object.get("model").and_then(Value::as_str) {
         session.model = Some(model.to_string());
     }
@@ -426,7 +423,12 @@ mod tests {
                 .any(|a| a.kind == ActionKind::SessionEnd)
         );
         assert!(session.lossiness.iter().any(|r| r == "result_is_error"));
-        assert!(session.lossiness.iter().any(|r| r == "prompt_body_redacted"));
+        assert!(
+            session
+                .lossiness
+                .iter()
+                .any(|r| r == "prompt_body_redacted")
+        );
         // Body text must not appear in action hashes input path — ensure
         // raw login message is not stored on the session struct fields.
         let encoded = serde_json::to_string(&session).expect("json");
@@ -481,7 +483,10 @@ mod tests {
 
     #[test]
     fn oversized_line_is_skipped() {
-        let huge = format!(r#"{{"type":"user","message":"{}"}}"#, "x".repeat(MAX_LINE_BYTES));
+        let huge = format!(
+            r#"{{"type":"user","message":"{}"}}"#,
+            "x".repeat(MAX_LINE_BYTES)
+        );
         let session = normalize_stream_json(&huge);
         assert_eq!(session.skipped_oversized_lines, 1);
         assert!(session.actions.is_empty());

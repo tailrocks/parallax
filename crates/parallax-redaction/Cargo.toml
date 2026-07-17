@@ -1,0 +1,20 @@
+[package]
+name = "parallax-redaction"
+description = "Secret-detector engine and default-deny source policy for Parallax"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+regex = { workspace = true }
+serde = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
