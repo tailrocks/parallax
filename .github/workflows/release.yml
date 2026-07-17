@@ -288,6 +288,7 @@ jobs:
             artifacts/parallax-*.tar.gz.sbom.json
           )
           gh release create "$tag" \
+            --repo "$GITHUB_REPOSITORY" \
             --verify-tag \
             --title "Parallax ${VERSION}" \
             --notes "Parallax ${VERSION}" \

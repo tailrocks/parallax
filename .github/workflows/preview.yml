@@ -334,26 +334,27 @@ jobs:
             artifacts/parallax-*.tar.gz.sbom.json
           )
 
-          if view_output=$(gh release view preview --json tagName 2>&1); then
+          if view_output=$(gh release view preview --repo "$GITHUB_REPOSITORY" --json tagName 2>&1); then
             echo "preview release exists: $view_output"
             gh release edit preview \
+              --repo "$GITHUB_REPOSITORY" \
               --prerelease \
               --target "$SHA" \
               --title "Preview ${VERSION}" \
               --notes "$notes"
-            gh release upload preview "${assets[@]}" --clobber
-            exit 0
-          fi
-
-          status=$?
-          if echo "$view_output" | grep -qiE 'release not found|not found|release does not exist'; then
-            gh release create preview \
-              --prerelease \
-              --target "$SHA" \
-              --title "Preview ${VERSION}" \
-              --notes "$notes" \
-              "${assets[@]}"
+            gh release upload preview --repo "$GITHUB_REPOSITORY" "${assets[@]}" --clobber
           else
-            echo "::error::gh release view failed: $view_output"
-            exit "$status"
+            status=$?
+            if echo "$view_output" | grep -qiE 'release not found|not found|release does not exist'; then
+              gh release create preview \
+                --repo "$GITHUB_REPOSITORY" \
+                --prerelease \
+                --target "$SHA" \
+                --title "Preview ${VERSION}" \
+                --notes "$notes" \
+                "${assets[@]}"
+            else
+              echo "::error::gh release view failed: $view_output"
+              exit "$status"
+            fi
           fi
