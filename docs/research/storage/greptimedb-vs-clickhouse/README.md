@@ -317,6 +317,9 @@ managed quotes remain):
 | still not done | **635** | top 5 product/server |
 | re-pin hold | **636** | v1.1.3/26.6 healthy |
 | still not done | **637** | top 5 product/server |
+| last_value + join | **638** | warm OK; PK+bloom 1/1 |
+| still not done | **639** | top 5 product/server |
+| milestone 640 | **640** | healthy pins; NOT DONE |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
