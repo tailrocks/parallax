@@ -50,7 +50,7 @@ are high-value; the rest is confirmation that Parallax's lean is sound.
 | Storage | `vParquet5` on object storage, custom Go | `StorageAdapter` over **GreptimeDB** (lean) / ClickHouse — Parquet-on-object-store either way | Same physics, different engine |
 | Ingest | Kafka log → block-builder → live-store | [Messaging/ingestion layer](../storage/streaming/messaging-and-ingestion-layer.md) under study; [replay/backpressure gate](../storage/streaming/ingest-log-replay-and-backpressure-gate.md) open | Tempo just validated the log-WAL shape in prod |
 | Redaction | Post-hoc block-rewrite job; can hide whole traces | [A6](../capture/redaction.md): default-deny **pre**-exposure pipeline + red-team gate | Different point in lifecycle — complementary |
-| Agent access | None (Grafana UI / API) | CLI/HTTP first, read-only MCP after safety gates | Parallax-only surface |
+| Agent access | None (Grafana UI / API) | CLI/HTTP first, read-only local-stdio MCP graduated (plan 112 DONE; remote deferred) | Parallax-only surface |
 | Language | Go | Rust-first | — |
 
 ## Can We Borrow? — Yes, Three High-Value, Rest Is Confirmation

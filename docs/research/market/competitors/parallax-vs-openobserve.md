@@ -73,7 +73,7 @@ These overlap maximally on architecture — both Rust, single-binary, self-host,
   - **140+-tool MCP server** — Claude/GPT/IDEs query logs/metrics/traces in natural language, create alerts, etc. **Enterprise-gated, write/destructive by default** (not read-only-safe).
   - **AI Assistant** (Enterprise).
   - **All AI/MCP features are Enterprise-gated** (AGPL core does not include them); **Sensitive Data Redaction is also Enterprise.**
-- **Parallax's claim (planned):** bounded, redacted, agent-safe evidence bundle served to coding agents (CLI/HTTP first, MCP after safety gates) — **read-only by design**, redaction as a first-class pre-exposure gate.
+- **Parallax's claim (planned):** bounded, redacted, agent-safe evidence bundle served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) — **read-only by design**, redaction as a first-class pre-exposure gate.
 
 **Honest verdict:** OpenObserve ships far more AI today (AI SRE + 140-tool MCP + assistant) than Parallax. On shipped AI, **OpenObserve leads.** But OpenObserve's AI is **Enterprise-gated + BYO-key + write-capable** — not the safe, bounded, self-hostable, read-only agent-context projection Parallax designs. That specific cell (free, read-only, redacted, bounded, agent-safe) stays unoccupied — but it is **unproven (A1 gate).** A real OpenObserve weakness, written plainly: its AI/MCP is paywalled and write-capable, not a safe open agent surface.
 

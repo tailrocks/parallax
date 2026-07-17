@@ -52,7 +52,7 @@ The defensible version is:
 > accepts CLI invocation traces and coding-agent session records from tested
 > capture adapters, builds
 > deterministic evidence graphs, and serves bounded context bundles to humans
-> and coding agents through API first and MCP after projection/safety gates.
+> and coding agents through API first and graduated local-stdio MCP (plan 112 DONE; remote → 109).
 
 That version can become the intelligence layer between telemetry systems, CI,
 CLI tools, deploys, issue trackers, repos, and autonomous coding agents.

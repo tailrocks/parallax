@@ -1,0 +1,20 @@
+
+Failing input:
+
+	fuzz/artifacts/redaction_text/crash-6839e8e788fad641a2bbb0f78403de94c6202e8d
+
+Output of `std::fmt::Debug`:
+
+	"C@\u{6}2.srea@T"
+
+Reproduce with:
+
+	cargo fuzz run redaction_text fuzz/artifacts/redaction_text/crash-6839e8e788fad641a2bbb0f78403de94c6202e8d
+
+Minimize test case with:
+
+	cargo fuzz tmin redaction_text fuzz/artifacts/redaction_text/crash-6839e8e788fad641a2bbb0f78403de94c6202e8d
+
+────────────────────────────────────────────────────────────────────────────────
+
+Error: Fuzz target exited with exit status: 77

@@ -15,7 +15,7 @@ Legend for the **State** column:
 
 ## A. Parallax (the reference, not a competitor)
 
-- **Parallax** — open-source (Apache-2.0), Rust-first, self-hosted **execution-context engine**: ingests OTLP traces/logs/metrics + CLI/agent execution traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, and serves bounded, redacted, schema-valid **evidence bundles** to humans and coding agents (CLI/HTTP first, read-only MCP after safety gates). Storage: GreptimeDB (telemetry native OTLP tables) + Turso (metadata). Pre-release. **It is the reference design the rest are measured against, not the assumed winner.**
+- **Parallax** — open-source (Apache-2.0), Rust-first, self-hosted **execution-context engine**: ingests OTLP traces/logs/metrics + CLI/agent execution traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, and serves bounded, redacted, schema-valid **evidence bundles** to humans and coding agents (CLI/HTTP first, read-only local-stdio MCP graduated (plan 112 DONE; remote deferred)). Storage: GreptimeDB (telemetry native OTLP tables) + Turso (metadata). Pre-release. **It is the reference design the rest are measured against, not the assumed winner.**
 
 ## B. Closed-source / commercial observability platforms
 

@@ -581,10 +581,10 @@ This topology remains a historical sketch unless a numbered plan adopts it.
 
 The original sequence covered OTLP fixtures, normalized rows, deterministic
 grouping, GreptimeDB/Turso persistence, GraphQL/CLI access, and issue context.
-Those V1 surfaces shipped; this section no longer orders work. Contract and
-bundle residuals belong to plans 093 and 104. Product MCP belongs to plan 112,
-conditional Sentry ingest to plan 118, and all server/profile work to plans 109,
-110, and 115.
+Those V1 surfaces shipped; this section no longer orders work. Plans 093 and
+104 are closed. Local-stdio product MCP graduated plan 112 (DONE). Residual
+Sentry migration hardening is plan 118; server-profile residual is plans 110 and
+115 (Plan 109 remains auth/context design residual where still open).
 
 The sequence was organized around this product question:
 

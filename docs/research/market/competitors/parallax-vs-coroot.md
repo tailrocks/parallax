@@ -68,7 +68,7 @@ Both Apache-2.0 OSS, self-hostable, with an agent/MCP surface and AI RCA. The ov
 ## AI-native / agent-context story — the safe-agent crux
 
 - **Coroot's AI (shipped, Enterprise/Cloud-gated):** 2-stage RCA (deterministic-ML-then-LLM), OpenAI-compatible/BYO key, "what broke, why, how to fix." **And the key one: the best MCP safety model in the field** — per-user **OAuth + RBAC projection**, ~18 tools, **only `resolve_alerts` mutates.** This is the closest shipped thing to Parallax's "read-only safe agent projection" thesis.
-- **Parallax's claim (planned):** bounded, redacted, agent-safe evidence bundle served to coding agents (CLI/HTTP first, MCP after safety gates) — **read-only by design**, redaction as a first-class gate.
+- **Parallax's claim (planned):** bounded, redacted, agent-safe evidence bundle served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) — **read-only by design**, redaction as a first-class gate.
 
 **Honest verdict:** On shipped AI (2-stage RCA) **Coroot leads.** On **safe-agent-projection — a recurring Parallax claim — Coroot already ships the best RBAC-scoped MCP in the market.** This is a direct, uncomfortable test of Parallax's wedge: the "safe agent surface" is NOT unoccupied; Coroot owns the best version of it. Parallax's narrowing differentiators: (a) **strictly read-only** (Coroot has one mutating tool), (b) **redaction-before-access as a gate** (Coroot's MCP doesn't redact), (c) **bounded/versioned bundle** (Coroot serves queries, not a bounded artifact), (d) **production-incident evidence** scope. Most planned/unproven (A1). Write it plainly: Parallax cannot claim "safe agent projection" as unique — Coroot ships the best one today.
 

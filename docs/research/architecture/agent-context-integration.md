@@ -4,10 +4,9 @@
 
 Research date: 2026-05-29
 
-> **Status (2026-07-17): bundle delivery is implemented through CLI/GraphQL;
+> **Status (2026-07-17): bundle delivery is implemented through CLI/GraphQL/MCP;
 > repo-intent linkage remains design research.** Bundle v1/envelope v2 provides
-> bounded JSON and Markdown projections. `parallax-mcp` remains an isolated
-> proof rather than a packaged product surface.
+> bounded JSON and Markdown projections. Local-stdio product MCP is `parallax-mcp` (aux; plan 112 DONE 2026-07-17); tools `parallax_issue_context` + `parallax_agent_session_show`; remote MCP deferred to Plan 109.
 
 ## Purpose
 

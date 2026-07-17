@@ -7,8 +7,9 @@
 > text may still name historical extension table `run_metric_points` — current
 > code uses `invocation_metric_points` and drops the legacy table at bootstrap.
 > Unfinished implementation lives only in active [`plans/`](../../../plans/)
-> (e.g. 089, 103, 107, 110, 112, 114, 115, 118, 120, 121, 123, 124, 154, 155).
-> Closed plans (093, 105, 106, 109, 111, 116, etc.) are not active queues.
+> files that still exist (e.g. 089, 103, 107, 110, 114, 115, 118, 120, 121, 123, 124, 154, 155). Plan 112 graduated local-stdio
+> MCP and is DONE/deleted. Closed plans (093, 104, 105, 106, 109, 111, 112, 116,
+> etc.) are not active queues.
 > Older Postgres/ClickHouse/fallback alternatives in this projection are
 > superseded by the mandatory GreptimeDB + Turso policy.
 
@@ -174,10 +175,11 @@ retention/prune is plan 116, and raw-ref/evidence pinning is plan 106.
 
 ### M6+ — Parked until goals 1+2 are achieved (operator statement #5)
 
-Read-only MCP (active only as blocked plan 112 after access-surface gates); Sentry envelope adapter (fixture-gated, breadcrumbs
-being the named gap it fills); fixer rails — dispatch, outcome write-back, Reconciler, Learner,
-autonomy budgets. Nothing in M0–M5 blocks them: the bundle schema, `fix_candidate.v0` draft, and
-outcome contracts are already versioned, which is the whole cost of "keeping it in mind."
+Local-stdio MCP graduated plan 112 (DONE: `Local-stdio product MCP is `parallax-mcp` (aux; plan 112 DONE 2026-07-17); tools `parallax_issue_context` + `parallax_agent_session_show`; remote MCP deferred to Plan 109.`); residual remote MCP
+is Plan 109. Sentry envelope ingest is shipped (plan 118 residual migration
+hardening). Fixer rails — dispatch, outcome write-back, Reconciler, Learner,
+autonomy budgets — remain plan 123. Nothing in M0–M5 blocks them: the bundle
+schema, `fix_candidate.v0` draft, and outcome contracts are already versioned.
 
 ## 4. Cross-cutting rules
 

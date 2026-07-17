@@ -157,7 +157,7 @@ No Parallax-specific browser SDK; same no-lock-in principle.
 ## 5. Coding agents: read-only context surfaces
 
 Per [agent-access-surface.md](../decisions/agent-access-surface.md), one canonical contract,
-three transports — CLI first, HTTP canonical, MCP after safety gates. Loop addition: the
+three transports — CLI first, HTTP canonical, local-stdio MCP graduated (plan 112 DONE; remote → 109). Loop addition: the
 **dispatch subscription** ([autonomous-fix-loop.md](autonomous-fix-loop.md) §Stage 3) — webhook,
 work-item, or pull. v0 read surface (names indicative):
 

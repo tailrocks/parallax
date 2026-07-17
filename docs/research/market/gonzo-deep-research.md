@@ -125,7 +125,7 @@ See [backend-and-data-flow.md](backend-and-data-flow.md) for the side-by-side. G
 | **Signals** | Logs only | Errors + OTLP traces/metrics/logs |
 | **OTLP** | Receiver, logs only (gRPC/HTTP) | Full OTLP + Sentry envelope |
 | **AI surface** | Per-entry summarize/analyze (optional) | Bounded redacted evidence bundles to agents |
-| **MCP** | None in OSS (Dstl8 commercial has it) | CLI-first + read-only MCP after safety gates |
+| **MCP** | None in OSS (Dstl8 commercial has it) | CLI-first + read-only local-stdio MCP graduated (plan 112 DONE; remote deferred) |
 | **Evidence bundles / outcome loop** | None | Core thesis |
 | **License** | MIT | Apache-2.0 |
 

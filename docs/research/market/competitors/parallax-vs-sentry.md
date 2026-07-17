@@ -93,7 +93,7 @@ These overlap most directly on **error tracking + tracing**. Sentry is a broad p
 ## AI-native / agent-context story
 
 - **Sentry's AI (Seer, shipped, additional cost):** Root Cause Analysis, **Fix Generation (Autofix → creates a branch + opens a PR with the fix)**, Error Prediction, AI Code Review, and a **Seer Agent** (Jan 2026: expanded into local-development + code-review debugging). Pricing confirmed: **$40 / active contributor / month, unlimited usage**, add-on for any paid plan (Team/Business/Enterprise) — [BusinessWire announcement](https://www.businesswire.com/news/home/20260127739891/en/Sentry-Adds-Local-Development-and-Code-Review-Debugging-to-Seer) (2026-01) + [sentry.io/product/seer](https://sentry.io/product/seer/). This is shipped, production AI debugging — directly overlapping Parallax's "context → fix" thesis.
-- **Parallax's AI claim (planned/unproven):** a bounded, redacted, agent-safe evidence bundle served to coding agents (CLI/HTTP first, MCP after safety gates) — a *context engine*, not a chat/autofix tool.
+- **Parallax's AI claim (planned/unproven):** a bounded, redacted, agent-safe evidence bundle served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) — a *context engine*, not a chat/autofix tool.
 
 **Honest verdict:** Seer already does much of "context → root cause → proposed fix → PR" today, from SaaS, at scale. On every *shipped* AI axis, **Sentry is ahead.** Parallax's differentiated claim is the bounded/redacted/agent-safe bundle — unoccupied but **unproven** (A1 gate). The burden of proof that a Parallax bundle beats Seer-as-context for agent fix quality is on Parallax and unmet. Sentry's Seer is a real competitive pressure on the A1 thesis, written plainly.
 

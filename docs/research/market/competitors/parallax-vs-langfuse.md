@@ -78,7 +78,7 @@ These overlap on **agent/LLM tracing and "context for agents,"** but were built 
 This is the axis that matters most for Parallax's thesis, so be most honest.
 
 - **Langfuse's position:** it is an **LLMOps platform for developers improving their LLM applications** — trace, evaluate, iterate prompts, run experiments. It is a **human dev loop + analytics**, not a *context engine that serves bounded, redacted evidence to autonomous coding agents for production incident resolution*. Langfuse does not derive production error events, does not run a fix-outcome loop, and does not serve a read-only bounded agent-context projection.
-- **Parallax's claim:** a bounded, redacted, agent-safe evidence bundle served to coding agents (CLI/HTTP first, MCP after safety gates) for *production incidents* — a context engine, not an LLMOps dashboard.
+- **Parallax's claim:** a bounded, redacted, agent-safe evidence bundle served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) for *production incidents* — a context engine, not an LLMOps dashboard.
 
 **Honest verdict:** Langfuse is **far more mature** on the thing both touch — capturing and structuring agent/LLM execution traces. On shipped capability, **Langfuse leads.** Parallax's differentiation is entirely in the cells Langfuse does not occupy: production-error derivation, fix-outcome loop, and a bounded/redacted agent-context artifact — all **unproven (A1 gate).** A fair read: today, a team wanting "agent traces + evals" gets far more from Langfuse than from pre-release Parallax. Parallax's bet is that *production-incident evidence for coding agents* is a different, valuable job Langfuse doesn't do — and that bet is unvalidated.
 
