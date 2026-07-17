@@ -3,10 +3,17 @@
 Research date: 2026-06-12 (operator request: live traces/logs per service,
 explicit live enable, "verify my concern that live must have fewer features").
 
-> **Status (2026-07-17): implemented.** Logs and finished spans stream over SSE;
-> GraphQL intentionally has zero subscriptions. The UI platform layer owns SSE
+> **Status (2026-07-17): implemented.** Logs and finished spans stream over SSE
+> (`/v1/logs/stream`, `/v1/traces/stream` in `parallax-server`); GraphQL
+> intentionally has zero subscriptions. The UI platform layer owns SSE
 > connection/reconnect/visibility behavior, while stored GraphQL queries retain
 > the richer historical filters and aggregations described below.
+>
+> **Pass 81 industry recheck (2026-07-17):** Datadog Live Tail still documents
+> **uniform random sampling** when throughput exceeds the stream budget
+> ([live_tail.md](https://docs.datadoghq.com/logs/explorer/live_tail.md)).
+> Live-vs-refresh feature split remains industry practice; Parallax mapping
+> table below still holds. No product change required.
 
 ## The operator's concern, verified
 
