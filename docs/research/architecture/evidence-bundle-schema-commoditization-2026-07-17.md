@@ -7,16 +7,17 @@ the Parallax evidence-bundle schema (especially an OTel
 investigation/incident convention)?
 
 **Status of prior claim (theory under test):**
-[research-agenda.md](../research-agenda.md) last recorded **"Checked 2026-05-29:
-none on the roadmap."** That check was ~7 weeks stale on 2026-07-17.
+[research-agenda.md](../research-agenda.md) / pass **48** (same day): still not
+commoditized. Pass **85** re-opens the theory after concurrent wedge/pricing
+work to catch any same-day OTel/OCSF movement.
 
-**Verdict (this pass):** **Still not commoditized.** No OpenTelemetry semantic
-convention ships a portable, versioned, redacted, validator-backed
+**Verdict (pass 48 + pass 85):** **Still not commoditized.** No OpenTelemetry
+semantic convention ships a portable, versioned, redacted, validator-backed
 investigation/evidence bundle comparable to Parallax's `bundle-v1` /
 `envelope-v2`. Adjacent standards remain **attribute fragments** (OTel) or
 **security-incident event shapes** (OCSF), not coding-agent fix-loop artifacts.
 Confidence: **high** for "no OTel investigation schema GA"; **medium** for
-"field will not ship one in 12 months" (active GenAI/CI/CD pressure, slow
+"field will not ship one in 12 months" (active GenAI/CI/CD pressure, idle
 incident-attribute track).
 
 **Evidence class:** primary GitHub issue/tree + first-party release pages +
@@ -48,11 +49,13 @@ Until then: keep the constructive strategy (profile over OTel + Sentry grouping
 
 | Source | What was checked | Finding |
 | --- | --- | --- |
-| [OTel semconv #1185 — Add incident attributes](https://github.com/open-telemetry/semantic-conventions/issues/1185) | state, labels, body, `updated_at` | **Still open.** Labels: `cicd:phase-2`, `triage:accepted:ready-with-sig`. Last update **2025-10-24** (no 2026 activity). Scope = **attributes** (`outage.incident` suggested), not a bundle artifact. `incident.yaml` was **removed** from an earlier CI/CD PR for separate re-evaluation. |
-| OTel `model/` tree (GitHub contents API) | directories under `model/` | Present: `cicd`, `error`, `event`, `exceptions`, `gen-ai`, `deployment`, `cli`, … **No** `incident`, `investigation`, `rca`, or `postmortem` model directory. Recursive path search for those names: **empty**. |
-| Code search `incident` yaml in semconv repo | filename:yaml | **0 hits** for committed incident yaml (issue body still refers to deferred file). |
+| [OTel semconv #1185 — Add incident attributes](https://github.com/open-telemetry/semantic-conventions/issues/1185) | state, labels, body, `updated_at` | **Still open.** Labels: `cicd:phase-2`, `triage:accepted:ready-with-sig`. Last update **2025-10-24** (no 2026 activity). Scope = **attributes** (`outage.incident` suggested), not a bundle artifact. `incident.yaml` was **removed** from an earlier CI/CD PR for separate re-evaluation. **Pass 85:** API re-fetch identical (`updated_at` still 2025-10-24). |
+| OTel `model/` tree (GitHub contents API) | directories under `model/` | Present: `cicd`, `error`, `event`, `exceptions`, `gen-ai`, `deployment`, `cli`, `mcp` (see below), `artifact` (SLSA package files — **not** investigation packs), `session`, … **No** `incident`, `investigation`, `rca`, or `postmortem` model directory. Recursive path search for those names: **empty** (pass 48 + pass 85). |
+| Code search `incident` yaml in semconv repo | filename:yaml | **0 hits** for committed incident yaml (issue body still refers to deferred file). **Pass 85:** total_count still **0**. |
+| OTel `model/mcp/` | tree listing | **Only `deprecated/`** (MCP attributes **moved**; registry/spans/metrics marked deprecated). MCP semconv is **agent tool-call telemetry**, not an investigation/evidence **artifact** schema. Do not confuse MCP attributes with a portable evidence bundle. |
+| OTel `model/artifact/` | `registry.yaml` | **SLSA/package** artifact attributes (`artifact.filename`, `purl`, `hash`) — software supply-chain distribution objects, **not** Parallax-style failure evidence packs. |
 | [OTel #1081 — Semantic conventions for alerts](https://github.com/open-telemetry/semantic-conventions/issues/1081) | state | **Still open** (`triage:accepted:needs-sig`, experts needed). Alert **events**, not investigation bundles. Last update 2025-11-09. |
-| [OCSF schema](https://github.com/ocsf/ocsf-schema) | releases + `events/findings/incident_finding.json` | Latest release tag **1.8.0** (2026-03-18). Live browser also serves **1.8.0**. **`incident_finding`** exists under findings: security-incident create/update/close activity, MITRE ATT&CK, confidence, assignees — **not** app error fingerprints, OTLP multi-signal evidence graphs, redaction reports, or fix-outcome rows. |
+| [OCSF schema](https://github.com/ocsf/ocsf-schema) | releases + browser version | Latest release tag still **1.8.0** (2026-03-18); schema.ocsf.io still serves **1.8.0** (pass 85). **`incident_finding`** remains security-domain. No newer OCSF GA line in this window. |
 | [Datadog Bits Code blog](https://www.datadoghq.com/blog/bits-ai-dev-agent/) | merge policy language | PR generation + CI iterate; **"resulting pull request still goes through normal human review"** / **"agent proposes pull requests, but engineers decide what to merge."** |
 | [Sentry Seer docs](https://docs.sentry.io/product/ai-in-sentry/seer/) | PR creation / merge | Autofix → **PR Creation** (or handoff to external coding agent). Docs describe opening PRs / MRs; **human review/merge** path remains; org settings can **disable** default PR creation. |
 | [GreptimeDB releases](https://github.com/GreptimeTeam/greptimedb/releases) | latest stable/nightly | Stable **v1.1.3** (2026-07-17). Nightly line **v1.2.0-nightly-20260706**. Agenda item 5's `v1.0.2` / stalled-nightly claim is **stale** (version pin only; no storage benchmark this pass). |
@@ -121,17 +124,17 @@ not wait for OTel to invent the whole moat layer.
 
 ## Actions taken in-repo this pass
 
-- This note.
-- [research-agenda.md](../research-agenda.md) items 3–5 + engine watch re-dated.
-- [evidence-bundle-schema.md](evidence-bundle-schema.md) recheck stamp.
-- [north-star-autonomous-fix-loop.md](../00-vision/north-star-autonomous-fix-loop.md)
-  closed-loop table recheck stamp.
+- Pass 48: this note + agenda items 3–5 + related stamps.
+- **Pass 85:** re-verified #1185 idle; confirmed `model/` still lacks
+  investigation dirs; clarified `model/mcp` (deprecated tool telemetry) and
+  `model/artifact` (SLSA packages) are **not** bundle commoditization;
+  OCSF still **1.8.0**.
 
 ## Next highest-value research gaps (post this pass)
 
 1. **A1 empirical** — still #1 product risk; desk research cannot close it.
 2. **A2 interviews** — still #1 business risk.
-3. **Wedge-closer recheck (agenda #4)** on lightweight Sentry-compatible
-   tools (Bugsink / Rustrak / Traceway) for portable bundle + OTLP combination.
+3. **Wedge-closer** — Traceway commercial recheck done (pass 84); still watch
+   Rustrak/Bugsink for portable bundle + OTLP combination.
 4. **Consume** any new four-way GreptimeDB bench artifacts when the benchmark
    agent lands them against **v1.1.3** (not v1.0.2).
