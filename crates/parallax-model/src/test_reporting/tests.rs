@@ -46,6 +46,94 @@ fn keys_and_attempts_reject_noncanonical_wire_values() {
 }
 
 #[test]
+fn identity_fallback_and_variant_projection_are_stable() {
+    let input = TestCaseIdentityInput {
+        explicit_id: Some(" stable-42 ".into()),
+        code_reference: Some("old::test".into()),
+        suite_path: vec!["old".into()],
+        name: "old".into(),
+    };
+    let explicit = TestCaseIdentity::derive(&input).expect("identity");
+    let changed = TestCaseIdentity::derive(&TestCaseIdentityInput {
+        explicit_id: Some("stable-42".into()),
+        code_reference: Some("new::test".into()),
+        suite_path: vec!["new".into()],
+        name: "new".into(),
+    })
+    .expect("identity");
+    assert_eq!(explicit.key(), changed.key());
+    assert_eq!(explicit.source(), TestCaseIdentitySource::Explicit);
+    TestCaseIdentity::derive(&TestCaseIdentityInput {
+        explicit_id: Some(" ".into()),
+        code_reference: Some("valid".into()),
+        suite_path: vec![],
+        name: "valid".into(),
+    })
+    .expect_err("blank selected source");
+
+    let parameters = [
+        TestParameter {
+            name: "browser".into(),
+            value: "chromium".into(),
+            excluded: false,
+        },
+        TestParameter {
+            name: "seed".into(),
+            value: "one".into(),
+            excluded: true,
+        },
+    ];
+    let base = TestVariantIdentity::derive(explicit.key(), &parameters).expect("variant");
+    let changed_excluded = TestVariantIdentity::derive(
+        explicit.key(),
+        &[
+            TestParameter {
+                name: "browser".into(),
+                value: "chromium".into(),
+                excluded: false,
+            },
+            TestParameter {
+                name: "ignored".into(),
+                value: "two".into(),
+                excluded: true,
+            },
+        ],
+    )
+    .expect("variant");
+    assert_eq!(base.key(), changed_excluded.key());
+    assert_eq!(base.parameters().len(), 1);
+    let changed_value = TestVariantIdentity::derive(
+        explicit.key(),
+        &[TestParameter {
+            name: "browser".into(),
+            value: "firefox".into(),
+            excluded: false,
+        }],
+    )
+    .expect("variant");
+    assert_ne!(base.key(), changed_value.key());
+    let left = TestVariantIdentity::derive(
+        explicit.key(),
+        &[TestParameter {
+            name: "ab".into(),
+            value: "c".into(),
+            excluded: false,
+        }],
+    )
+    .expect("variant");
+    let right = TestVariantIdentity::derive(
+        explicit.key(),
+        &[TestParameter {
+            name: "a".into(),
+            value: "bc".into(),
+            excluded: false,
+        }],
+    )
+    .expect("variant");
+    assert_ne!(left.key(), right.key());
+}
+
+#[test]
 fn attempt_chain_preserves_attempts_and_never_masks_flaky_pass() {
     let variant = key("tv1", 'b');
     let chain = AttemptChain::new(vec![
