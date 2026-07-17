@@ -249,6 +249,25 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > | Datadog OPW = Bits store | Pass **314** — still route-only | **No** |
 > | Detect/loop product gate | Pass **319** — no Detect ledger; `fixer_outcome` **3/3** | **No** (open) |
 >
+>
+> **Pass 325 (2026-07-18) — GO composite reaffirm** after passes **319–324**.
+> **Still GO (narrow product).** Kill criteria **still unfired**:
+>
+> | Kill / reverse trigger | Latest recheck | Fired? |
+> | --- | --- | --- |
+> | A1: bundles do not beat raw context | Pass **321** — golden ok; no result ledger | **No** (open) |
+> | A2: no paying segment | Pass **320** — **0** interviews; desk triangle holds | **No** (open) |
+> | Full wedge closed by peer | Pass **323** — TMA1 **31st UNFIRED** / Traceway stable | **No** |
+> | OTel commoditizes evidence-bundle schema | Pass **323** — #1185 idle | **No** |
+> | Incumbent self-host Seer-class AI | Pass **324** — Seer closed; Assistant hybrid | **No** |
+> | App-code auto-merge commodity | Pass **324** — Bits never auto-merges | **No** |
+> | A4 real messy telemetry reliability | Pass **319** — no reliability-runs | **No** (open) |
+> | A6 agent-visible mixed redaction | Pass **323** — canary ok; mixed open | **No** (open) |
+> | A3 external schema adoption | Pass **321** — still none | **No** (open) |
+> | Sentry OTLP metrics GA | Pass **318** — still unsupported | **No** |
+> | TMA1 prod-incident collision | Pass **323** — **31st UNFIRED** | **No** |
+> | Datadog OPW = Bits store | Pass **324** — still route-only | **No** |
+>
 > **Narrow product identity holds.** Research program continues.
 
 ## Verdict
