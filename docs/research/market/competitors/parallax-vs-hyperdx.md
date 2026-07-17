@@ -4,9 +4,12 @@
 > is written. Where Parallax's edge is only *planned* or *unproven*, that is
 > stated, not hidden.
 >
-> Research date: **2026-07-17** (**pass 44 pricing; pass 64 re-confirm** live
-> [hyperdx.io/pricing](https://www.hyperdx.io/pricing) — Free 3GB / Starter **$20 + $0.40/GB** + **$0.40/100 DPM** hold; **9,680★**).
-> Promoted from `watch` to deep-dive pass 25.
+> Research date: **2026-07-17** (**pass 44 pricing; pass 64 re-confirm; pass 115
+> pin:** `@hyperdx/app@2.30.1` still latest release tag 2026-07-13; **9,680★**;
+> last push 2026-07-17). Live
+> [hyperdx.io/pricing](https://www.hyperdx.io/pricing) — Free 3GB / Starter
+> **$20 + $0.40/GB** + **$0.40/100 DPM** (pass 64). Promoted from `watch` to
+> deep-dive pass 25.
 
 ## TL;DR verdict (scoped per axis)
 
