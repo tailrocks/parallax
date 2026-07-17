@@ -3,8 +3,11 @@
 import { screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
-import { EcosystemGraph } from "@/components/console/ecosystem-graph"
-import type { ServiceMapEdge, ServiceMapNode } from "@/lib/api"
+import { EcosystemGraph } from "@/features/ecosystem/components/ecosystem-graph"
+import type {
+  ServiceMapEdge,
+  ServiceMapNode,
+} from "@/features/ecosystem/model/service-map"
 import { customRange } from "@/lib/range"
 import { renderTestRouter } from "@/test/router"
 

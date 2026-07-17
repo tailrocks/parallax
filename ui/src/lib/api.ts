@@ -286,26 +286,3 @@ export interface TraceSummary {
   spanCount: number
   hasError: boolean
 }
-
-export interface ServiceMapNode {
-  name: string
-  kind: "cli" | "browser" | "service"
-  lastSeenNanos: string
-  spanCount: string
-  errorCount: string
-  p95Ms: number | null
-}
-
-export interface ServiceMapEdge {
-  source: string
-  target: string
-  callCount: string
-  errorCount: string
-  p50Ms: number
-  p95Ms: number
-}
-
-export interface ServiceMap {
-  nodes: ServiceMapNode[]
-  edges: ServiceMapEdge[]
-}

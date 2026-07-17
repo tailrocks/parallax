@@ -10,7 +10,7 @@ import {
   TRAFFIC_PRESETS,
   type FocusMode,
   type TrafficPreset,
-} from "@/lib/ecosystem-topology"
+} from "@/features/ecosystem/model/ecosystem-topology"
 
 export interface EcosystemUrlState {
   focus: string | null

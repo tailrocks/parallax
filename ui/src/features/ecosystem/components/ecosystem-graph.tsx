@@ -13,15 +13,18 @@ import "@xyflow/react/dist/style.css"
 
 import { ServiceDot } from "@/components/console/service-dot"
 import { Badge } from "@/components/ui/badge"
-import type { ServiceMapEdge, ServiceMapNode } from "@/lib/api"
+import type {
+  ServiceMapEdge,
+  ServiceMapNode,
+} from "@/features/ecosystem/model/service-map"
 import {
   ECOSYSTEM_NODE_HEIGHT,
   ECOSYSTEM_NODE_WIDTH,
   ecosystemTopologyKey,
   fallbackEcosystemLayout,
   layoutEcosystem,
-} from "@/lib/ecosystem-layout"
-import type { EcosystemLayout } from "@/lib/ecosystem-layout"
+} from "@/features/ecosystem/model/service-map-layout"
+import type { EcosystemLayout } from "@/features/ecosystem/model/service-map-layout"
 import { formatCount, formatDurationNs, formatPercent } from "@/lib/format"
 import type { ResolvedRange } from "@/lib/range"
 import { rangeLinkSearch } from "@/lib/range"

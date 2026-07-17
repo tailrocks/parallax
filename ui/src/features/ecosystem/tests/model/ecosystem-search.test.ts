@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { validateEcosystemSearch } from "@/routes/ecosystem"
+import { validateEcosystemSearch } from "@/features/ecosystem/model/ecosystem-search"
 
 describe("ecosystem focus search", () => {
   it("preserves valid focus controls", () => {

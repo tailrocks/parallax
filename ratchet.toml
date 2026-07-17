@@ -1554,7 +1554,7 @@ ceiling = 6
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/ecosystem-graph.test.tsx"
+scope = "ui/src/features/ecosystem/tests/components/ecosystem-graph.test.tsx"
 ceiling = 9
 
 [[limits]]
@@ -1669,17 +1669,17 @@ ceiling = 18
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/ecosystem-layout.test.ts"
+scope = "ui/src/features/ecosystem/tests/model/service-map-layout.test.ts"
 ceiling = 11
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/ecosystem-topology.test.ts"
+scope = "ui/src/features/ecosystem/tests/model/ecosystem-topology.test.ts"
 ceiling = 38
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/ecosystem-url.test.ts"
+scope = "ui/src/features/ecosystem/tests/model/ecosystem-url.test.ts"
 ceiling = 22
 
 [[limits]]
@@ -1789,7 +1789,7 @@ ceiling = 14
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-ecosystem-focus.test.ts"
+scope = "ui/src/features/ecosystem/tests/model/ecosystem-search.test.ts"
 ceiling = 2
 
 [[limits]]
@@ -1923,15 +1923,11 @@ metric = "typescript.file-lines"
 scope = "ui/src/routes/dashboards.index.tsx"
 ceiling = 520
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/ecosystem.tsx"
-ceiling = 278
 
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/routes/index.tsx"
-ceiling = 955
+ceiling = 914
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -2085,15 +2081,7 @@ metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/lib/colors.ts:103"
 ceiling = 19
 
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/ecosystem-layout.ts:99"
-ceiling = 36
 
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/ecosystem-topology.ts:78"
-ceiling = 17
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -2161,10 +2149,6 @@ scope = "ui/src/lib/where-clause.ts:77"
 ceiling = 42
 
 
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/index.tsx:597"
-ceiling = 16
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -2283,10 +2267,6 @@ metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/lib/colors.ts:103"
 ceiling = 15
 
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/lib/ecosystem-layout.ts:99"
-ceiling = 19
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
@@ -2328,10 +2308,6 @@ metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/lib/where-clause.ts:77"
 ceiling = 15
 
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/index.tsx:597"
-ceiling = 14
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
@@ -2443,10 +2419,6 @@ metric = "typescript.function-lines"
 scope = "ui/src/components/console/duration-filter.tsx:45"
 ceiling = 126
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/console/ecosystem-graph.tsx:134"
-ceiling = 120
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2668,10 +2640,6 @@ metric = "typescript.function-lines"
 scope = "ui/src/lib/alert-incident-timeline.ts:56"
 ceiling = 76
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/ecosystem-layout.ts:99"
-ceiling = 65
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2796,30 +2764,10 @@ metric = "typescript.function-lines"
 scope = "ui/src/routes/dashboards.index.tsx:481"
 ceiling = 65
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/ecosystem.tsx:142"
-ceiling = 79
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/ecosystem.tsx:222"
-ceiling = 69
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/index.tsx:272"
-ceiling = 170
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/index.tsx:448"
-ceiling = 142
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/index.tsx:597"
-ceiling = 169
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -3323,12 +3271,6 @@ target_owner = "features/traces"
 migration_plan = "142"
 kind = "handwritten"
 
-[[ui.ownership]]
-path = "ui/src/components/console/__tests__/ecosystem-graph.test.tsx"
-current_owner = "legacy-console-tests"
-target_owner = "features/ecosystem"
-migration_plan = "136"
-kind = "handwritten"
 
 [[ui.ownership]]
 path = "ui/src/components/console/__tests__/evidence-gaps.test.tsx"
@@ -3463,12 +3405,6 @@ target_owner = "features/traces"
 migration_plan = "142"
 kind = "handwritten"
 
-[[ui.ownership]]
-path = "ui/src/components/console/ecosystem-graph.tsx"
-current_owner = "legacy-console"
-target_owner = "features/ecosystem"
-migration_plan = "136"
-kind = "handwritten"
 
 [[ui.ownership]]
 path = "ui/src/components/console/empty-state.tsx"
@@ -4266,26 +4202,8 @@ target_owner = "shared/lib/colors"
 migration_plan = "100"
 kind = "handwritten"
 
-[[ui.ownership]]
-path = "ui/src/lib/__tests__/ecosystem-layout.test.ts"
-current_owner = "legacy-lib-tests"
-target_owner = "features/ecosystem"
-migration_plan = "136"
-kind = "handwritten"
 
-[[ui.ownership]]
-path = "ui/src/lib/__tests__/ecosystem-topology.test.ts"
-current_owner = "legacy-lib-tests"
-target_owner = "features/ecosystem"
-migration_plan = "136"
-kind = "handwritten"
 
-[[ui.ownership]]
-path = "ui/src/lib/__tests__/ecosystem-url.test.ts"
-current_owner = "legacy-lib-tests"
-target_owner = "features/ecosystem"
-migration_plan = "136"
-kind = "handwritten"
 
 [[ui.ownership]]
 path = "ui/src/lib/__tests__/format.test.ts"
@@ -4441,26 +4359,8 @@ target_owner = "shared/lib/colors"
 migration_plan = "100"
 kind = "handwritten"
 
-[[ui.ownership]]
-path = "ui/src/lib/ecosystem-layout.ts"
-current_owner = "legacy-lib"
-target_owner = "features/ecosystem"
-migration_plan = "136"
-kind = "handwritten"
 
-[[ui.ownership]]
-path = "ui/src/lib/ecosystem-topology.ts"
-current_owner = "legacy-lib"
-target_owner = "features/ecosystem"
-migration_plan = "136"
-kind = "handwritten"
 
-[[ui.ownership]]
-path = "ui/src/lib/ecosystem-url.ts"
-current_owner = "legacy-lib"
-target_owner = "features/ecosystem"
-migration_plan = "136"
-kind = "handwritten"
 
 [[ui.ownership]]
 path = "ui/src/lib/format.ts"
@@ -4903,12 +4803,6 @@ target_owner = "features/dashboards"
 migration_plan = "137"
 kind = "handwritten"
 
-[[ui.ownership]]
-path = "ui/src/routes/__tests__/-ecosystem-focus.test.ts"
-current_owner = "routes-tests"
-target_owner = "features/ecosystem"
-migration_plan = "136"
-kind = "handwritten"
 
 [[ui.ownership]]
 path = "ui/src/routes/__tests__/-invocations.test.tsx"
@@ -5006,7 +4900,7 @@ kind = "handwritten"
 path = "ui/src/routes/ecosystem.tsx"
 current_owner = "routes"
 target_owner = "features/ecosystem"
-migration_plan = "136"
+migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -5581,3 +5475,210 @@ ceiling = 69
 metric = "typescript.function-lines"
 scope = "ui/src/features/sql/hooks/use-sql-workspace.ts:47"
 ceiling = 133
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/api/service-map-api.ts"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/api/service-map.generated.ts"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/components/ecosystem-controls.tsx"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/components/ecosystem-graph.tsx"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/components/ecosystem-page.tsx"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/index.ts"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+facade = true
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/model/ecosystem-error.ts"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/model/ecosystem-search.ts"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/model/ecosystem-topology.ts"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/model/ecosystem-url.ts"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/model/project-service-map.ts"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/model/service-map-layout.ts"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/model/service-map.ts"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/tests/components/ecosystem-graph.test.tsx"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/tests/model/ecosystem-search.test.ts"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/tests/model/ecosystem-topology.test.ts"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/tests/model/ecosystem-url.test.ts"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/tests/model/service-map-layout.test.ts"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/ecosystem/api/service-map.generated.ts"
+ceiling = 1
+
+
+
+
+
+
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/ecosystem/model/ecosystem-topology.ts:78"
+ceiling = 17
+
+
+
+[[ui.ownership]]
+path = "ui/src/lib/overview-chart-helpers.ts"
+current_owner = "legacy-lib"
+target_owner = "features/overview"
+migration_plan = "150"
+kind = "handwritten"
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/routes/index.tsx:619"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/routes/index.tsx:619"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/index.tsx:278"
+ceiling = 186
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/index.tsx:470"
+ceiling = 142
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/index.tsx:619"
+ceiling = 169
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/ecosystem/components/ecosystem-controls.tsx:11"
+ceiling = 79
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/ecosystem/components/ecosystem-graph.tsx:137"
+ceiling = 120
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/ecosystem/components/ecosystem-page.tsx:17"
+ceiling = 73
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/ecosystem/model/service-map-layout.ts:102"
+ceiling = 36
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/ecosystem/model/service-map-layout.ts:102"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/ecosystem/model/service-map-layout.ts:102"
+ceiling = 65

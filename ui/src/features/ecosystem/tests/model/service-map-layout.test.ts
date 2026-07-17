@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it } from "vitest"
 
-import type { ServiceMapEdge, ServiceMapNode } from "@/lib/api"
+import type {
+  ServiceMapEdge,
+  ServiceMapNode,
+} from "@/features/ecosystem/model/service-map"
 import {
   clearEcosystemLayoutCache,
   ecosystemTopologyKey,
   fallbackEcosystemLayout,
   layoutEcosystem,
-} from "@/lib/ecosystem-layout"
+} from "@/features/ecosystem/model/service-map-layout"
 
 const node = (name: string, spanCount = "1"): ServiceMapNode => ({
   name,

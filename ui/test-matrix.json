@@ -2,7 +2,7 @@
   "schema_version": 1,
   "ratchets": {
     "fire_event_calls": 28,
-    "legacy_handoffs": 59,
+    "legacy_handoffs": 54,
     "raw_router_builders": 1,
     "test_cases": 497,
     "test_files": 98
@@ -19,14 +19,6 @@
         "serializeWidgets"
       ],
       "removal_plan": 137
-    },
-    {
-      "test_file": "ui/src/routes/__tests__/-ecosystem-focus.test.ts",
-      "module": "@/routes/ecosystem",
-      "symbols": [
-        "validateEcosystemSearch"
-      ],
-      "removal_plan": 166
     },
     {
       "test_file": "ui/src/routes/__tests__/-invocations.test.tsx",
@@ -268,23 +260,15 @@
       "risk": "Ecosystem topology can drop service edges or generate incorrect navigation targets",
       "scenario_owner": "features/ecosystem",
       "lane_owner": "vitest/component",
-      "delivery_plan": 136,
       "layer": "component",
-      "test_file": "ui/src/components/console/__tests__/ecosystem-graph.test.tsx",
+      "test_file": "ui/src/features/ecosystem/tests/components/ecosystem-graph.test.tsx",
       "test_ids": [
-        "D-014 eco-full: a 9-node column grows the canvas instead of overlapping cards",
+        "renders trace-path graph nodes and edge links",
         "dims outside-focus nodes and reports hidden topology",
-        "renders trace-path graph nodes and edge links"
+        "D-014 eco-full: a 9-node column grows the canvas instead of overlapping cards"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/__tests__/ecosystem-graph.test.tsx",
-        "destination_owner": "features/ecosystem",
-        "removal_plan": 136,
-        "created": "2026-07-15",
-        "expires": "plan-136-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-007",
@@ -1488,26 +1472,18 @@
       "risk": "wave-2 ecosystem layout regression",
       "scenario_owner": "features/ecosystem",
       "lane_owner": "vitest/model",
-      "delivery_plan": 166,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/ecosystem-layout.test.ts",
+      "test_file": "ui/src/features/ecosystem/tests/model/service-map-layout.test.ts",
       "test_ids": [
-        "changes with topology",
-        "handles an empty graph",
-        "is deterministic across fallback runs and input order",
         "is stable across input order and metric changes",
+        "changes with topology",
+        "is deterministic across fallback runs and input order",
         "lays a directed chain from left to right",
-        "memoizes identical topology"
+        "memoizes identical topology",
+        "handles an empty graph"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/ecosystem-layout.test.ts",
-        "destination_owner": "features/ecosystem",
-        "removal_plan": 166,
-        "created": "2026-07-15",
-        "expires": "plan-166-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-w2-7323",
@@ -1515,37 +1491,29 @@
       "risk": "wave-2 ecosystem topology regression",
       "scenario_owner": "features/ecosystem",
       "lane_owner": "vitest/model",
-      "delivery_plan": 166,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/ecosystem-topology.test.ts",
+      "test_file": "ui/src/features/ecosystem/tests/model/ecosystem-topology.test.ts",
       "test_ids": [
+        "includes only the focus at 0 hops",
+        "expands 1-hop undirected neighborhood",
+        "reaches kafka at 2 hops from checkout",
+        "hide mode drops outside nodes and edges",
+        "dim mode keeps full graph and tags outside",
+        "null focus keeps everything in-focus",
+        "stale focus keeps the graph visible",
+        "all preset hides nothing",
         "1% preset hides the low-rate CLI edge",
         "5% keeps edges at exactly the threshold, hides below",
-        "all preset hides nothing",
-        "computes error rate from counts",
-        "dim mode keeps full graph and tags outside",
-        "expands 1-hop undirected neighborhood",
-        "falls back to legacy db.system and server.address name",
-        "hide mode drops outside nodes and edges",
-        "includes only the focus at 0 hops",
-        "null focus keeps everything in-focus",
         "prefers db.system.name ladder for database nodes",
-        "reaches kafka at 2 hops from checkout",
-        "resolves bare server.address as external HTTP",
+        "falls back to legacy db.system and server.address name",
         "resolves messaging as queue",
+        "resolves bare server.address as external HTTP",
         "returns null without external attributes",
-        "scales width with log2(callCount)",
-        "stale focus keeps the graph visible"
+        "computes error rate from counts",
+        "scales width with log2(callCount)"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/ecosystem-topology.test.ts",
-        "destination_owner": "features/ecosystem",
-        "removal_plan": 166,
-        "created": "2026-07-15",
-        "expires": "plan-166-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-w2-1288",
@@ -1793,22 +1761,14 @@
       "risk": "wave-2  ecosystem focus regression",
       "scenario_owner": "features/ecosystem",
       "lane_owner": "vitest/model",
-      "delivery_plan": 166,
       "layer": "model",
-      "test_file": "ui/src/routes/__tests__/-ecosystem-focus.test.ts",
+      "test_file": "ui/src/features/ecosystem/tests/model/ecosystem-search.test.ts",
       "test_ids": [
-        "canonicalizes defaults and rejects invalid values",
-        "preserves valid focus controls"
+        "preserves valid focus controls",
+        "canonicalizes defaults and rejects invalid values"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/routes/__tests__/-ecosystem-focus.test.ts",
-        "destination_owner": "features/ecosystem",
-        "removal_plan": 166,
-        "created": "2026-07-15",
-        "expires": "plan-166-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-073",
@@ -1842,9 +1802,8 @@
       "risk": "Regression coverage for ecosystem-url.test.ts",
       "scenario_owner": "features/ecosystem",
       "lane_owner": "vitest/model",
-      "delivery_plan": 166,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/ecosystem-url.test.ts",
+      "test_file": "ui/src/features/ecosystem/tests/model/ecosystem-url.test.ts",
       "test_ids": [
         "defaults when empty",
         "round-trips focus, hops, mode, traffic preset",
@@ -1854,14 +1813,7 @@
         "encodeMinTraffic prefers preset labels"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/ecosystem-url.test.ts",
-        "destination_owner": "features/ecosystem",
-        "removal_plan": 166,
-        "created": "2026-07-15",
-        "expires": "plan-166-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-075",

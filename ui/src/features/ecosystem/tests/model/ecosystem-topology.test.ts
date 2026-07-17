@@ -10,7 +10,7 @@ import {
   resolveExternalNode,
   type TopologyEdge,
   type TopologyNode,
-} from "@/lib/ecosystem-topology"
+} from "@/features/ecosystem/model/ecosystem-topology"
 
 const nodes: TopologyNode[] = [
   { id: "checkout", name: "checkout" },

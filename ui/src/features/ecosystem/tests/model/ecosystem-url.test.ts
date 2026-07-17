@@ -8,8 +8,8 @@ import {
   encodeMinTraffic,
   parseFocusMode,
   parseMinTraffic,
-} from "@/lib/ecosystem-url"
-import { TRAFFIC_PRESETS } from "@/lib/ecosystem-topology"
+} from "@/features/ecosystem/model/ecosystem-url"
+import { TRAFFIC_PRESETS } from "@/features/ecosystem/model/ecosystem-topology"
 
 describe("ecosystem URL codec", () => {
   it("defaults when empty", () => {

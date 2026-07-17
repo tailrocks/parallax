@@ -1,0 +1,28 @@
+query ServiceMap(
+  $fromNanos: String!
+  $toNanos: String!
+  $maxTraces: Int
+) {
+  serviceMap(
+    fromNanos: $fromNanos
+    toNanos: $toNanos
+    maxTraces: $maxTraces
+  ) {
+    nodes {
+      name
+      kind
+      lastSeenNanos
+      spanCount
+      errorCount
+      p95Ms
+    }
+    edges {
+      source
+      target
+      callCount
+      errorCount
+      p50Ms
+      p95Ms
+    }
+  }
+}

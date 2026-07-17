@@ -1,8 +1,8 @@
-import { runElkLayout } from "@/lib/ecosystem-layout"
+import { runElkLayout } from "@/features/ecosystem/model/service-map-layout"
 import type {
   EcosystemLayoutRequest,
   EcosystemLayoutResponse,
-} from "@/lib/ecosystem-layout"
+} from "@/features/ecosystem/model/service-map-layout"
 
 const workerScope = globalThis as unknown as {
   onmessage: ((event: MessageEvent<EcosystemLayoutRequest>) => void) | null
