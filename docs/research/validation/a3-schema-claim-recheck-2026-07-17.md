@@ -67,6 +67,15 @@
 | Claim stack | Still **`schema_artifacts_shipped` + `schema_adoption_none` + `corpus_empty_public`** |
 | [traceloop/openllmetry](https://github.com/traceloop/openllmetry) | **7,307★**; latest **`0.62.1`** (2026-06-28) — GenAI OTel instrumentation peer; **not** Parallax evidence-bundle consumer |
 
+### Pass 273 (2026-07-18) — adoption re-probe + Seer watch
+
+| Probe | Result |
+| --- | --- |
+| In-repo `$id` host refs | Still **only** this repo (schema + PoC + MCP test + research notes) |
+| External adoption ledger | Still **absent** / **zero** external consumers |
+| Claim stack | Unchanged: **`schema_artifacts_shipped` + `schema_adoption_none` + `corpus_empty_public`** |
+| Seer self-host (adjacent kill) | develop.sentry.dev still **"Seer and other AI & ML features… closed source"** — **UNFIRED** |
+
 **A3 split holds:** schema **artifacts shipped**; **external adoption = zero** (moat unproven).
 
 **Implication:** `$id` is currently an **identifier**, not a **dereferenceable

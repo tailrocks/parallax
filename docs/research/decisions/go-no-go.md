@@ -126,6 +126,10 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > never auto-merges; Sentry still no OTLP metrics. Related kills **unfired**.
 > **Still GO (narrow product).**
 >
+> **Pass 273 (2026-07-18) — GO reaffirm (A3 + Seer).** External evidence-bundle
+> schema adoption still **none**; Seer still closed on self-host. Related kills
+> **unfired** (open ≠ failed for A3). **Still GO (narrow product).**
+>
 > **Narrow product identity holds.** Research program continues.
 
 ## Verdict
