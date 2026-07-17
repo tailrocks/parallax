@@ -34,7 +34,7 @@ use resolvers::{
     DurationStats, EvidenceGap, Facet, FieldKey, FieldStats, Investigation, Invocation, Issue,
     IssueList, IssueSort, LogRecord, MetricExemplar, ObservedInvocation, Overview, Point,
     ReleaseWindow, RuntimeMetric, SavedView, Series, ServiceCatalogRow, ServiceMap,
-    ServiceOverview, ServiceSummary, SignalKind, SpanRed, SqlResultOut, StoryBeat,
+    ServiceOverview, ServiceSummary, SignalKind, SpanRed, SqlResultOut, StoryBeat, TestCaseDetail,
     TestConfigurationFilterInput, TestExplorerPage, TestExplorerSort, TestFlakyState, TestRollup,
     Trace, TraceDiff, TraceEventsOut, TraceList, TraceSort, TraceSummary, TrendPoint,
 };
@@ -162,6 +162,9 @@ impl Query {
     /// flaky-pass; every row references its latest native test span.
     #[expect(clippy::too_many_arguments, reason = "GraphQL test explorer filters are the public query contract")]
     async fn test_cases(context: &ApiContext, query: Option<String>, suite: Option<String>, service: Option<String>, service_version: Option<String>, status: Option<TestRollup>, flaky_state: Option<TestFlakyState>, configuration: Option<TestConfigurationFilterInput>, from_nanos: Option<String>, to_nanos: Option<String>, sort: Option<TestExplorerSort>, limit: Option<i32>, offset: Option<i32>,) -> FieldResult<TestExplorerPage> { resolvers::tests::test_cases(context, query, suite, service, service_version, status, flaky_state, configuration, from_nanos, to_nanos, sort, limit, offset).await }
+
+    /// One test case with bounded variants and newest-first attempt history.
+    async fn test_case(context: &ApiContext, case_key: String, variant_limit: Option<i32>, result_limit: Option<i32>,) -> FieldResult<Option<TestCaseDetail>> { resolvers::tests::test_case(context, case_key, variant_limit, result_limit).await }
 
     /// Occurrence counts per bucket for one issue's sparkline, oldest
     /// first. Defaults: the last 24 hours in one-hour buckets.

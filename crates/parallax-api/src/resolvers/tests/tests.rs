@@ -32,7 +32,7 @@ async fn test_explorer_exposes_rollup_and_native_span_links() {
         .metadata
         .upsert_test_variant(&TestVariantRecord {
             key: variant_key.clone(),
-            case_key,
+            case_key: case_key.clone(),
             parameters: Vec::new(),
             first_seen_nanos: 1_000_000,
             last_seen_nanos: 2_000_000,
@@ -80,6 +80,27 @@ async fn test_explorer_exposes_rollup_and_native_span_links() {
         item["lastResult"]["traceId"],
         "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
     );
+
+    let detail_request = juniper::http::GraphQLRequest::new(
+        format!(
+            r#"{{ testCase(caseKey: "{}", variantLimit: 5000, resultLimit: 5000) {{ caseKey identitySource name variants {{ variantKey history {{ invocationId attempt status traceId failureFingerprint }} }} }} }}"#,
+            case_key.as_str()
+        ),
+        None,
+        None,
+    );
+    let detail = serde_json::to_value(execute(&build_schema(), &context, detail_request).await)
+        .expect("detail json");
+    assert!(error_messages(&detail).is_empty(), "test detail: {detail}");
+    let detail_case = detail.pointer("/data/testCase").expect("detail case");
+    assert_eq!(detail_case["caseKey"], case_key.as_str());
+    assert_eq!(
+        detail_case["variants"][0]["variantKey"],
+        variant_key.as_str()
+    );
+    assert_eq!(detail_case["identitySource"], "EXPLICIT");
+    assert_eq!(detail_case["variants"][0]["history"][0]["attempt"], 2);
+    assert_eq!(detail_case["variants"][0]["history"][1]["attempt"], 1);
 }
 
 #[tokio::test]
@@ -98,5 +119,20 @@ async fn test_explorer_rejects_invalid_configuration_filter() {
             .iter()
             .any(|message| message.contains("test configuration filter is invalid")),
         "expected configuration filter rejection, got {messages:?}"
+    );
+
+    let invalid_detail = juniper::http::GraphQLRequest::new(
+        r#"{ testCase(caseKey: "not-versioned") { caseKey } }"#.into(),
+        None,
+        None,
+    );
+    let invalid_detail =
+        serde_json::to_value(execute(&build_schema(), &context, invalid_detail).await)
+            .expect("detail json");
+    assert!(
+        error_messages(&invalid_detail)
+            .iter()
+            .any(|message| message == "invalid test case key"),
+        "expected invalid case key rejection: {invalid_detail}"
     );
 }

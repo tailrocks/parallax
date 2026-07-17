@@ -31,6 +31,12 @@ enum TestFlakyState {
   BROKEN
 }
 
+enum TestIdentitySource {
+  EXPLICIT
+  CODE_REFERENCE
+  NAME_PATH
+}
+
 enum TestResultStatus {
   PASSED
   FAILED
@@ -634,6 +640,8 @@ type Query {
     flaky-pass; every row references its latest native test span.
   """
   testCases(query: String, suite: String, service: String, serviceVersion: String, status: TestRollup, flakyState: TestFlakyState, configuration: TestConfigurationFilterInput, fromNanos: String, toNanos: String, sort: TestExplorerSort, limit: Int, offset: Int): TestExplorerPage!
+  "One test case with bounded variants and newest-first attempt history."
+  testCase(caseKey: String!, variantLimit: Int, resultLimit: Int): TestCaseDetail
   """
     Occurrence counts per bucket for one issue's sparkline, oldest
     first. Defaults: the last 24 hours in one-hour buckets.
@@ -1003,6 +1011,18 @@ type StoryBeat {
   durationNs: String
 }
 
+type TestCaseDetail {
+  caseKey: String!
+  name: String!
+  identitySource: TestIdentitySource!
+  suitePath: [String!]!
+  codeReference: String
+  explicitId: String
+  firstSeenNanos: String!
+  lastSeenNanos: String!
+  variants: [TestVariantDetail!]!
+}
+
 type TestDimension {
   key: String!
   value: String!
@@ -1058,6 +1078,15 @@ type TestResult {
   vcsHeadRevision: String
   failureFingerprint: String
   configuration: [TestDimension!]!
+}
+
+type TestVariantDetail {
+  variantKey: String!
+  parameters: [TestParameter!]!
+  firstSeenNanos: String!
+  lastSeenNanos: String!
+  history: [TestResult!]!
+  flaky: TestFlaky
 }
 
 type Trace {

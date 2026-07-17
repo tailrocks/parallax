@@ -62,8 +62,15 @@
   and variant-to-result-history (500) reads with strict versioned-key
   validation and deterministic newest-first history. A Turso fixture proves
   case isolation, attempt-chain preservation, ordering, and caller limits;
-  the GraphQL `testCase` composition and broader independent verification
-  remain for the owning agent.
+  the preliminary GraphQL `testCase` composition now consumes these reads;
+  broader independent verification remains for the owning agent.
+- A preliminary typed `testCase` GraphQL detail now exposes case identity,
+  at most 20 variants, and at most 50 newest-first result references plus
+  flaky evidence per variant. Malformed keys fail as invalid input and valid
+  missing cases return null. Targeted API tests and strict Clippy pass; the
+  owning agent should replace the bounded per-variant reads with one batched
+  metadata query before large multi-variant UI loads and regenerate all UI
+  operation artifacts with the currently owned schema work.
 
 Design decisions D1–D9 (identity, native tables, status taxonomy, attempt
 chains, shared fingerprints, flaky SM, `/tests` surface, session semantics,
@@ -75,8 +82,8 @@ if needed; do not reopen.
 1. ~~Explorer/filter + Turso schema~~ — landed (metadata explorer + fixtures).
 2. ~~Ingest derivation~~ — landed (`parallax-analysis` + worker persist).
 3. ~~GraphQL explorer~~ — `testCases` + SDL export landed; residual:
-   compose the landed bounded detail/history reads into `testCase`,
-   attempt-chain history, mute/known/owner fields when schema exists.
+   batch the preliminary `testCase` detail/history reads, regenerate UI
+   operations, attempt-chain history, mute/known/owner fields when schema exists.
 4. UI `features/tests`: list + detail + live session tree (after architecture
    owners; React Flow not required here).
 5. Flaky job over ingested results; mute/known flags (no runner quarantine

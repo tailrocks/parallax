@@ -71,7 +71,8 @@ pub(crate) use sql::SqlResultOut;
 pub(crate) use story::AgentSessionOut;
 pub(crate) use story::StoryBeat;
 pub(crate) use tests::{
-    TestConfigurationFilterInput, TestExplorerPage, TestExplorerSort, TestFlakyState, TestRollup,
+    TestCaseDetail, TestConfigurationFilterInput, TestExplorerPage, TestExplorerSort,
+    TestFlakyState, TestRollup,
 };
 pub(crate) use traces::AttributeFilterInput;
 pub(crate) use traces::CriticalPath;

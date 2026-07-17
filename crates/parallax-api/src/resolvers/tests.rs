@@ -4,6 +4,10 @@ use crate::{ApiContext, clamp_limit, field_err, internal_field_err, nanos_string
 use juniper::{FieldResult, graphql_object};
 use parallax_storage::metadata::{TEST_EXPLORER_MAX_LIMIT, TEST_EXPLORER_MAX_OFFSET};
 use parallax_storage::model;
+use std::str::FromStr;
+
+const TEST_DETAIL_VARIANT_LIMIT: usize = 20;
+const TEST_DETAIL_HISTORY_LIMIT: usize = 50;
 
 #[derive(juniper::GraphQLEnum, Clone, Copy, Debug)]
 pub(crate) enum TestRollup {
@@ -162,6 +166,92 @@ impl TestExplorerRow {
     }
     fn flaky(&self) -> Option<TestFlaky> {
         self.0.flaky.clone().map(TestFlaky)
+    }
+}
+
+pub(crate) struct TestCaseDetail {
+    case: model::TestCaseRecord,
+    variants: Vec<TestVariantDetail>,
+}
+
+#[graphql_object]
+impl TestCaseDetail {
+    fn case_key(&self) -> &str {
+        self.case.key.as_str()
+    }
+    fn name(&self) -> &str {
+        &self.case.name
+    }
+    fn identity_source(&self) -> TestIdentitySource {
+        self.case.identity_source.into()
+    }
+    fn suite_path(&self) -> &[String] {
+        &self.case.suite_path
+    }
+    fn code_reference(&self) -> Option<&str> {
+        self.case.code_reference.as_deref()
+    }
+    fn explicit_id(&self) -> Option<&str> {
+        self.case.explicit_id.as_deref()
+    }
+    fn first_seen_nanos(&self) -> String {
+        nanos_string(self.case.first_seen_nanos)
+    }
+    fn last_seen_nanos(&self) -> String {
+        nanos_string(self.case.last_seen_nanos)
+    }
+    fn variants(&self) -> &[TestVariantDetail] {
+        &self.variants
+    }
+}
+
+#[derive(juniper::GraphQLEnum, Clone, Copy, Debug)]
+pub(crate) enum TestIdentitySource {
+    Explicit,
+    CodeReference,
+    NamePath,
+}
+
+impl From<model::TestCaseIdentitySource> for TestIdentitySource {
+    fn from(value: model::TestCaseIdentitySource) -> Self {
+        match value {
+            model::TestCaseIdentitySource::Explicit => Self::Explicit,
+            model::TestCaseIdentitySource::CodeReference => Self::CodeReference,
+            model::TestCaseIdentitySource::NamePath => Self::NamePath,
+        }
+    }
+}
+
+pub(crate) struct TestVariantDetail {
+    variant: model::TestVariantRecord,
+    results: Vec<TestResult>,
+    flaky: Option<TestFlaky>,
+}
+
+#[graphql_object]
+impl TestVariantDetail {
+    fn variant_key(&self) -> &str {
+        self.variant.key.as_str()
+    }
+    fn parameters(&self) -> Vec<TestParameter> {
+        self.variant
+            .parameters
+            .clone()
+            .into_iter()
+            .map(TestParameter)
+            .collect()
+    }
+    fn first_seen_nanos(&self) -> String {
+        nanos_string(self.variant.first_seen_nanos)
+    }
+    fn last_seen_nanos(&self) -> String {
+        nanos_string(self.variant.last_seen_nanos)
+    }
+    fn history(&self) -> &[TestResult] {
+        &self.results
+    }
+    fn flaky(&self) -> Option<&TestFlaky> {
+        self.flaky.as_ref()
     }
 }
 
@@ -329,6 +419,56 @@ pub(crate) async fn test_cases(
         .await
         .map_err(map_metadata_err)?;
     Ok(TestExplorerPage(page))
+}
+
+pub(crate) async fn test_case(
+    context: &ApiContext,
+    case_key: String,
+    variant_limit: Option<i32>,
+    result_limit: Option<i32>,
+) -> FieldResult<Option<TestCaseDetail>> {
+    let case_key =
+        model::TestCaseKey::from_str(&case_key).map_err(|_| field_err("invalid test case key"))?;
+    let case_key = case_key.as_str();
+    let Some(case) = context
+        .metadata
+        .test_case(case_key)
+        .await
+        .map_err(map_metadata_err)?
+    else {
+        return Ok(None);
+    };
+    let variants = context
+        .metadata
+        .test_variants_for_case(
+            case_key,
+            clamp_limit(variant_limit, TEST_DETAIL_VARIANT_LIMIT).min(TEST_DETAIL_VARIANT_LIMIT),
+        )
+        .await
+        .map_err(map_metadata_err)?;
+    let result_limit =
+        clamp_limit(result_limit, TEST_DETAIL_HISTORY_LIMIT).min(TEST_DETAIL_HISTORY_LIMIT);
+    let mut details = Vec::with_capacity(variants.len());
+    for variant in variants {
+        let (results, flaky) = tokio::try_join!(
+            context
+                .metadata
+                .test_results_for_variant(variant.key.as_str(), result_limit),
+            context.metadata.test_flaky_state(variant.key.as_str()),
+        )
+        .map_err(map_metadata_err)?;
+        let results = results.into_iter().map(TestResult).collect();
+        let flaky = flaky.map(TestFlaky);
+        details.push(TestVariantDetail {
+            variant,
+            results,
+            flaky,
+        });
+    }
+    Ok(Some(TestCaseDetail {
+        case,
+        variants: details,
+    }))
 }
 
 fn map_metadata_err(error: parallax_storage::metadata::MetadataError) -> juniper::FieldError {
