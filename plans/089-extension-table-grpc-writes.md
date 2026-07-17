@@ -16,7 +16,7 @@
 - **Blocker**: Published `greptimedb-ingester` ≤0.18.0 hard-enables tonic
   `tls-ring` (rustls). Contribution
   [greptimedb-ingester-rust#58](https://github.com/GreptimeTeam/greptimedb-ingester-rust/pull/58)
-  is OPEN, not merged (recheck 2026-07-17T14:40Z UTC). crates.io still 0.18.0;
+  is OPEN, not merged (recheck 2026-07-17T15:55Z UTC). crates.io still 0.18.0;
   latest GitHub release tag remains `v0.18.0` (2026-05-13).
 
 ## Residual only

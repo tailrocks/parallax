@@ -159,7 +159,7 @@ Plan 116 DONE (2026-07-17): retention contract + deterministic prune CLI
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | P2 | M | upstream `greptimedb-ingester` native-TLS/plaintext feature fix | BLOCKED — crates.io still 0.18.0; upstream PR #58 OPEN not merged (recheck 2026-07-17T14:40Z); HTTP SQL path remains |
+| [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | P2 | M | upstream `greptimedb-ingester` native-TLS/plaintext feature fix | BLOCKED — crates.io still 0.18.0; upstream PR #58 OPEN not merged (recheck 2026-07-17T15:55Z); HTTP SQL path remains |
 
 ### Foundation And Delivery
 
@@ -376,7 +376,7 @@ external facts still BLOCKED where noted. Plan 102 and plan 109 retired
 |------|------------|--------------------|--------|
 | [110](110-server-profile-ingest-concurrency.md) | 115 + saturation packet | Measured single-worker bottleneck on supported profile | BLOCKED on 115 profile + measurements |
 | 112 | 099, 104, 111 | Local-stdio product MCP ship gates | DONE (2026-07-17) — graduated `parallax-mcp`; live Codex/Claude discovery; [evidence](../docs/research/validation/2026-07-plan-112-product-mcp/README.md) |
-| [114](114-retire-legacy-spool-reader.md) | Stable raw-frame release cycle + expired legacy segments | Remove NDJSON reader after cycle | BLOCKED — only rolling `preview` tag (recheck 2026-07-17T14:40Z) |
+| [114](114-retire-legacy-spool-reader.md) | Stable raw-frame release cycle + expired legacy segments | Remove NDJSON reader after cycle | BLOCKED — only rolling `preview` tag (recheck 2026-07-17T15:55Z) |
 | [115](115-v2-server-profile.md) | Auth contract + release pipeline (102/109 DONE) | Rehearsals + load packet (ADR + example config landed) | IN PROGRESS — example-config.toml validates |
 | 118 | Sentry envelope adapter | fixture + ack + redaction + HTTP e2e | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-118-sentry-envelope/README.md) |
 | 120 | Claude Code session capture | fixtures + import CLI + Turso ledger + loss bounds | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-120-claude-code/README.md) |
