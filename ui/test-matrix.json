@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 556,
-    "test_files": 137
+    "test_cases": 560,
+    "test_files": 138
   },
   "private_route_imports": [],
   "entries": [
@@ -2697,6 +2697,23 @@
       "dataset_id": "shell-empty",
       "state_class": "bundle-resources",
       "delivery_plan": 148
+    },
+    {
+      "id": "vitest-103-query-key-identity",
+      "surface": "platform/query",
+      "risk": "GraphQL Query keys may collide or churn across equal variables",
+      "scenario_owner": "platform/query",
+      "lane_owner": "vitest/unit",
+      "layer": "platform-contract",
+      "test_file": "ui/src/platform/query/tests/graphql-query-key.test.ts",
+      "test_ids": [
+        "is stable for identical operation + variables key",
+        "differs when operation name or variables change",
+        "canonical variable encoding is order-stable for object keys",
+        "keys by exact query string"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
     }
   ],
   "browser_contract_paths": [

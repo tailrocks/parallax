@@ -1,17 +1,19 @@
 # Plan 103: Focused property, fuzz, and performance residual gates
 
 > **Executor instructions**: Do not invent ratchet thresholds before scheduled
-> variance samples. UI property work stays gated on plans 133/147/148 owners.
+> variance samples. No auto-refresh of baselines.
 
 ## Status
 
 - **Priority**: P2
-- **Effort**: M remaining
+- **Effort**: S remaining
 - **Risk**: MEDIUM
-- **Depends on**: 133, 147, 148 (UI properties); scheduled-measurement samples
-  (ratchets)
+- **Depends on**: scheduled-measurement samples (ratchets only)
 - **Category**: testing / fuzzing / performance
-- **Status**: IN PROGRESS — Rust lanes largely landed; residual below
+- **Status**: BLOCKED — fail-closed performance ratchets need measured variance
+- **Blocker**: Nightly `scheduled-measurement.yml` uploads artifacts only;
+  no durable multi-run variance model is committed yet (recheck
+  2026-07-17T14:45Z UTC). Inventing thresholds is forbidden.
 - **Evidence**:
   [`docs/research/testing/property-invariants.md`](../docs/research/testing/property-invariants.md)
 
@@ -26,29 +28,27 @@
 - Six `fuzz/` boundaries + PR `fuzz-bench` lane + nightly
   `scheduled-measurement.yml`; drift gate in `parallax-xtask`.
 - Criterion benches + `bench-alloc/`; Step-6 advanced tools rejected for now.
+- UI properties: live merge/identity/decoder (plan 147), route-search
+  round-trips across features, Query-key identity
+  (`ui/src/platform/query/tests/graphql-query-key.test.ts`).
 
 ## Residual only
 
-1. ~~**Rust properties**~~: flaky-state record JSON fixpoint
-   (`parallax-model` serde_contract) and plan-099 late-retry no-replay
-   properties landed.
-2. **UI properties** (partial 147 owners): live merge/identity/decoder tests
-   landed with 147; still open: route-search round trips; Query-key identity;
-   feature state machines (waits remaining 147/148).
-3. **Ratchets**: adopt relative/allocation fail-closed thresholds only after
+1. **Ratchets**: adopt relative/allocation fail-closed thresholds only after
    enough scheduled-measurement samples model variance; no auto-refresh.
-4. Optional: commit minimized crash corpora as fuzz finds them.
+2. Optional: commit minimized crash corpora as fuzz finds them.
 
 ## Done Criteria
 
 - [x] Residual Rust properties (trace trees, serialization, retry no-replay)
       have seeded coverage with oracles.
-- [ ] UI search/decoder/Query/live/state properties have bounded Bun coverage
-      once 133/147/148 establish owners.
+- [x] UI search/decoder/Query/live/state properties have bounded Bun coverage
+      (owners: plans 133/147/148 + query-key identity tests).
 - [ ] Ratchets use measured variance and fail without auto-refreshing baselines.
 
 ## STOP / Remove When
 
 STOP if a target has no oracle, a threshold is copied, or measurement clones
-hot-path telemetry. Delete this plan when residual gates are enforced and
-stable.
+hot-path telemetry. Delete this plan when residual ratchets are enforced from
+measured samples, or operator permanently rejects fail-closed performance
+ratchets for this program phase.

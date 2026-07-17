@@ -230,7 +230,7 @@ Plan 148 DONE (2026-07-17): production bundle budgets + two clean builds + `@bun
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [103](103-property-fuzz-and-performance.md) | Residual Rust/UI property, fuzz, and performance gates | P2 | M | 133, 147, 148 (UI); scheduled samples (ratchets) | IN PROGRESS — Rust properties landed; residual UI properties and variance ratchets |
+| [103](103-property-fuzz-and-performance.md) | Residual Rust/UI property, fuzz, and performance gates | P2 | S | scheduled-measurement samples (ratchets) | BLOCKED — UI/Rust properties landed; fail-closed ratchets need measured variance (no invent) |
 
 ### Evidence Contracts And Closure
 
