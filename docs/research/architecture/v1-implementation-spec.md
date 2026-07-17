@@ -398,8 +398,8 @@ this implemented dialect is the contract.
 // Re-verified 2026-07-17 against `crates/parallax-api/src/lib.rs` and
 // `ui/graphql/schema.graphql`: the live schema is Juniper code-first with
 // **76 Query fields, 14 Mutation fields, and ZERO Subscription fields**
-// (`RootNode<Query, Mutation, EmptySubscription>`). Counts re-checked against
-// the generated schema (code-reality-ledger); do not hardcode without re-count.
+// (`RootNode<Query, Mutation, EmptySubscription>`). Count by skipping GraphQL
+// description blocks (naive line regex falsely yields 80/15 — see ledger).
 // Beyond the V1 core below it has grown: `overview`, `serviceMap`/`serviceRed`/
 // `serviceCatalog`, `ecosystem` service topology, `invocations`/`invocation`/
 `invocationFacets`/`observedInvocations`, `sessions`/`agentSession`/`story`/

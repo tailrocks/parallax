@@ -53,7 +53,7 @@ not override code.
 
 | Claim | Status | In-repo pointer | Notes |
 | --- | --- | --- | --- |
-| GraphQL query API | **shipped** | `crates/parallax-api/`; exported schema `ui/graphql/schema.graphql` | **76** Query fields, **14** Mutation fields (re-counted 2026-07-17 from `ui/graphql/schema.graphql` + `impl Query`/`Mutation`; "80/15" claims are wrong) |
+| GraphQL query API | **shipped** | `crates/parallax-api/`; exported schema `ui/graphql/schema.graphql` | **76** Query fields, **14** Mutation fields. **Count method (SoT):** walk `type Query` / `type Mutation` in the generated SDL; **skip `"""…"""` description blocks** (and single-line `"` descriptions); then match `fieldName(` or `fieldName:`. A naive line regex that does **not** skip descriptions falsely reports **80/15** by treating prose tokens (`registration`, `kind`, `legality`, `retention`, …) as fields. Re-count before changing this row. |
 | CLI (`parallax serve` + client commands) | **shipped** | `crates/parallax-cli/src/main.rs` | serve, invocation, issue, trace, metrics, logs, traces, sql, doctor, prune, uninstall, context |
 | TanStack Start UI | **shipped** | `ui/src/routes/`, `ui/src/features/` | Issues, traces, logs, metrics, services, invocations, investigations, dashboards, ecosystem, SQL, alerts, tests, … (~16 feature modules) |
 | Local-stdio read-only MCP | **shipped** | `crates/parallax-mcp/`; [validation/2026-07-plan-112-product-mcp](validation/2026-07-plan-112-product-mcp/README.md) | Plan **112 DONE**. Tools: `parallax_issue_context`, `parallax_agent_session_show` |

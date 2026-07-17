@@ -13,7 +13,7 @@ claims; improve navigation; keep market comparisons multi-angle and non-biased
 | OTLP gRPC/HTTP all 3 signals | `parallax-server` otlp_* + `parallax-ingest` | Mostly OK; some market cells still 🏗 planned |
 | Sentry envelope HTTP | `sentry_http.rs` + `sentry_envelope.rs` + `analysis/sentry.rs`; plan **118 DONE** | **Yes** — root README + design bodies still "future adapter / not V1" |
 | GreptimeDB + Turso mandatory | adapters + AGENTS.md policy | OK on decisions; residual historical fallback language bannered |
-| GraphQL surface | `ui/graphql/schema.graphql`: **76** Query, **14** Mutation | "80/15" interim claims inverted truth — **corrected to 76/14** |
+| GraphQL surface | `ui/graphql/schema.graphql`: **76** Query, **14** Mutation | SoT when description blocks are skipped; naive line-match yields false **80/15** — see ledger count method |
 | CLI | serve, invocation, issue, trace, metrics, logs, traces, sql, doctor, prune, uninstall, context | OK |
 | UI | ~16 feature modules under `ui/src/features/` | "19-route" prose was approximate |
 | Local MCP | `parallax-mcp` plan 112 DONE | Legacy matrices still "MCP planned" |
@@ -55,16 +55,30 @@ claims; improve navigation; keep market comparisons multi-angle and non-biased
 # Staleness patterns
 rg -n -i 'future (adapter|migration)|Sentry.*future|not V1 scope' docs/research README.md --glob '*.md'
 rg -n 'OTLP.*(🏗)|error_event.*\(🏗\)' docs/research/market/competitors --glob 'parallax-vs-*.md'
-rg -n '76 quer|14 mutation|76 Query|14 Mutation|76 GraphQL' docs/research --glob '*.md'
+# Wrong GraphQL count (naive description-token parse) — present-tense should be 76/14
+rg -n '80 quer|15 mutation|80 Query|15 Mutation|\*\*80\*\*.*mutation|80/15' docs/research README.md --glob '*.md'
 # Ledger still points at real paths
 test -f crates/parallax-server/src/sentry_http.rs
 test -f crates/parallax-mcp/src/main.rs
 test -f schema/evidence-bundle.v1.schema.json
 ```
 
-## Follow-up (skeptic pass, same day)
+## GraphQL field-count method (do not thrash)
 
-Present-tense GraphQL counts fixed to **76/14** (schema SoT; 80/15 was wrong) on `api-concept`, `strategic-coverage`,
-`rust-workspace-map`, `v1-implementation-spec`, and the full-observability
-snapshot note. Thesis no longer says plan 118 “owns remaining migration.”
-Live assert: `ui/graphql/schema.graphql` = 76 Query / 14 Mutation.
+Live SoT for root fields is **`ui/graphql/schema.graphql`**:
+
+1. Take the body of `type Query { … }` / `type Mutation { … }`.
+2. **Skip** multiline `"""…"""` and single-line `"…"` description blocks.
+3. Match only lines that start a field: `name(` or `name:`.
+
+That yields **76 Query / 14 Mutation** (2026-07-17). A naive
+`^\s+\w+\(` over every non-comment line **inside** descriptions also matches
+prose (`registration`, `kind`, `legality`, `retention`) and falsely reports
+**80/15**. Any recount must use the description-skipping method above (or
+Juniper `impl Query` / `impl Mutation` field methods — same total).
+
+## Follow-up (same day)
+
+- Present-tense product surfaces hold **76/14** after structural pass `2426cce8`.
+- Thesis plan **118 DONE** ownership fixed earlier.
+- Ledger + this audit document the count method so 80/15 thrash does not recur.

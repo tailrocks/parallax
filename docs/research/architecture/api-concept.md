@@ -6,7 +6,8 @@ Decision date: 2026-06-03
 
 > **Status (2026-07-17): implemented and substantially broader than the original
 > sketch.** Parallax uses Juniper code-first GraphQL with **76** Query fields and
-> **14** Mutation fields (counted from `ui/graphql/schema.graphql`; see
+> **14** Mutation fields (from `ui/graphql/schema.graphql`, counting only field
+> definitions after skipping description blocks — see
 > [code-reality-ledger.md](../code-reality-ledger.md)), and no subscriptions.
 > OTLP traces/logs/metrics and Sentry envelopes are accepted now; GitHub webhooks
 > for `deployment`/`deployment_status`/`workflow_job` are implemented. Live
