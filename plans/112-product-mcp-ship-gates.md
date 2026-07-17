@@ -53,6 +53,8 @@ must not return in product output.
   forwards raw upstream error strings.
 - Bundle output fails closed unless the separately projected GraphQL canonical
   hash exactly matches the hash embedded in the bundle-v2 object.
+- All GraphQL responses stream through a hard 1 MiB ceiling before JSON parse;
+  chunked responses cannot bypass the bound or partially append overflow bytes.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded

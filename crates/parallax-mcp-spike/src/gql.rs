@@ -5,6 +5,7 @@ use serde_json::Value;
 /// MCP returns both structured JSON and compatibility text, so use a tighter
 /// canonical bundle budget than the HTTP API's 10,000-token default.
 pub(crate) const MCP_BUNDLE_MAX_TOKENS: u32 = 4_000;
+pub(crate) const MCP_GRAPHQL_MAX_BYTES: usize = 1024 * 1024;
 
 #[derive(Clone)]
 pub(crate) struct GraphqlClient {
@@ -21,7 +22,7 @@ impl GraphqlClient {
     }
 
     pub(crate) async fn graphql(&self, query: &str, variables: Value) -> anyhow::Result<Value> {
-        let response: Value = self
+        let mut response = self
             .http
             .post(format!("{}/graphql", self.base_url))
             .header("Host", host_header_for(&self.base_url))
@@ -34,8 +35,18 @@ impl GraphqlClient {
                     self.base_url
                 )
             })?
-            .json()
-            .await?;
+            .error_for_status()?;
+        let mut body = Vec::with_capacity(
+            response
+                .content_length()
+                .and_then(|length| usize::try_from(length).ok())
+                .unwrap_or_default()
+                .min(MCP_GRAPHQL_MAX_BYTES),
+        );
+        while let Some(chunk) = response.chunk().await? {
+            append_bounded(&mut body, &chunk)?;
+        }
+        let response: Value = serde_json::from_slice(&body)?;
         if let Some(errors) = response.get("errors")
             && !errors.as_array().is_none_or(Vec::is_empty)
         {
@@ -43,6 +54,14 @@ impl GraphqlClient {
         }
         Ok(response)
     }
+}
+
+fn append_bounded(body: &mut Vec<u8>, chunk: &[u8]) -> anyhow::Result<()> {
+    if body.len().saturating_add(chunk.len()) > MCP_GRAPHQL_MAX_BYTES {
+        anyhow::bail!("GraphQL response exceeds MCP byte budget");
+    }
+    body.extend_from_slice(chunk);
+    Ok(())
 }
 
 /// Host header value matching the local-loopback guard on `/graphql`.
@@ -117,4 +136,20 @@ pub(crate) async fn fetch_agent_session(
         anyhow::bail!("no agent session detected for run {invocation_id}");
     };
     Ok(session.clone())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn response_byte_budget_accepts_boundary_and_rejects_overflow() {
+        let mut body = vec![0; MCP_GRAPHQL_MAX_BYTES - 1];
+        append_bounded(&mut body, &[1]).expect("exact boundary");
+        assert_eq!(body.len(), MCP_GRAPHQL_MAX_BYTES);
+        let before = body.len();
+
+        assert!(append_bounded(&mut body, &[2]).is_err());
+        assert_eq!(body.len(), before, "overflow must not partially append");
+    }
 }
