@@ -7817,3 +7817,9 @@ use same ALTER form when not in PK.
 | GT append_mode | (Run 229) | Code 1004 forbidden |
 
 GDPR path: non-append GT table or CH DELETE + force compact for physical purge.
+
+### Run 253 — 2026-07-17 — GT TTL=5s expire after compact
+
+`ttl='5s'` table: insert hour-old + now rows (count=2); flush; sleep 6s; compact
+→ **count=0**. TTL drop path still works (whole-window/SST removal after compact).
+No drift vs Run 187/144 mechanism.
