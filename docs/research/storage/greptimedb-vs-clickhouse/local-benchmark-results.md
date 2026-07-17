@@ -7531,3 +7531,13 @@ aggregate.
 **Verdict.** **Capability parity holds** — both engines close recurring rollups.
 CH insert-triggered MV is snappier on this smoke; GT Flow works after short
 batch delay. Ad-hoc analytics gap (no Flow) unchanged.
+
+### Run 229 — 2026-07-17 — freshness + append_mode DELETE re-verify
+
+**Freshness (visible-on-write):** GT insert→count 1 then 2 without flush; CH same
+1→2. **No drift** vs Runs 166/191.
+
+**append_mode DELETE:** `DELETE FROM fresh_t` → **Code 1004**
+`DELETE is not allowed under append mode`. Non-append `del_t` DELETE →
+affectedrows=1, count=0. **No drift** vs Run 186 — GDPR path needs non-append
+or force-compact table design.

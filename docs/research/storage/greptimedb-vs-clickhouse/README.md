@@ -73,6 +73,8 @@ managed quotes remain):
 | Live D1 COPY/BACKUP restore drill | 225 | 50k full match both engines |
 | Concurrent ingest + anchored query | 226 | ~1.5× GT / ~1.2× CH; no drift |
 | PARTITION ON(trace_id) file_ranges | 227 | 1/2 regions; 1 vs 2 ranges |
+| Flow + CH MV continuous agg | 228 | parity; Flow async lag |
+| Freshness + append_mode DELETE | 229 | no drift |
 
 ## Method
 
