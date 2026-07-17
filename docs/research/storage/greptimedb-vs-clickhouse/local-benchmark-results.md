@@ -8093,3 +8093,7 @@ post re-gen.
 ### Run 310 — 2026-07-17 — not done
 
 Comparison not declared done.
+
+### Run 311 — 2026-07-17 — tsr avg-by-svc
+
+`tsr` 50k: `avg(v) GROUP BY svc` warm **~6–7 ms**. Interactive metric shape.
