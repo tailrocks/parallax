@@ -31,9 +31,9 @@ machine is user #1), followed by the same binary on a server — see
 active in plans 124, 154, and 155 rather than part of the shipped entry wedge.
 The same statements also defer autonomous fixing to a future nice-to-have, and the "build
 direction includes Sentry envelope migration" phrasing below should be read per
-[sentry-ingest.md](../capture/sentry-ingest.md): envelope HTTP ingest is implemented, while plan
-118 owns the remaining migration adapter. The rest of this document is preserved as the original
-idea-validation record.
+[sentry-ingest.md](../capture/sentry-ingest.md): envelope HTTP ingest is **shipped** (plan **118
+DONE**); multi-SDK public-compatibility wording remains ledger-gated, not an active plan owner.
+The rest of this document is preserved as the original idea-validation record.
 
 Maintained follow-ups:
 

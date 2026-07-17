@@ -13,7 +13,7 @@ claims; improve navigation; keep market comparisons multi-angle and non-biased
 | OTLP gRPC/HTTP all 3 signals | `parallax-server` otlp_* + `parallax-ingest` | Mostly OK; some market cells still 🏗 planned |
 | Sentry envelope HTTP | `sentry_http.rs` + `sentry_envelope.rs` + `analysis/sentry.rs`; plan **118 DONE** | **Yes** — root README + design bodies still "future adapter / not V1" |
 | GreptimeDB + Turso mandatory | adapters + AGENTS.md policy | OK on decisions; residual historical fallback language bannered |
-| GraphQL surface | `ui/graphql/schema.graphql`: **80** Query, **15** Mutation | Research said 76/14 — **stale counts** |
+| GraphQL surface | `ui/graphql/schema.graphql`: **76** Query, **14** Mutation | "80/15" interim claims inverted truth — **corrected to 76/14** |
 | CLI | serve, invocation, issue, trace, metrics, logs, traces, sql, doctor, prune, uninstall, context | OK |
 | UI | ~16 feature modules under `ui/src/features/` | "19-route" prose was approximate |
 | Local MCP | `parallax-mcp` plan 112 DONE | Legacy matrices still "MCP planned" |
@@ -25,7 +25,7 @@ claims; improve navigation; keep market comparisons multi-angle and non-biased
 
 1. **Code-reality ledger** created (`docs/research/code-reality-ledger.md`).
 2. **Root README** — status + Working Direction: Sentry is shipped, not future/V1-excluded; link ledger.
-3. **Research index + agenda** — front door to ledger; GraphQL 80/15; conventions; plan 118 DONE wording.
+3. **Research index + agenda** — front door to ledger; GraphQL 76/14; conventions; plan 118 DONE wording.
 4. **capture/sentry-ingest.md** — historical body banner; executive summary no longer present-tense "future only".
 5. **capture/rust.md**, **storage/streaming/messaging-…** — Sentry "future" lines corrected/bannered.
 6. **Market competitors** — bulk replace OTLP/error 🏗 → ✅🧪 shipped pre-release across 31 deep-dives; TMA1 BLUF no longer "Parallax has not shipped architecture"; SigNoz/Datadog/Sentry/TMA1 economics/hidden-cost axes tightened; competitors README economics rules + correction invitation; combination claim no longer "(future) Sentry".
@@ -55,8 +55,16 @@ claims; improve navigation; keep market comparisons multi-angle and non-biased
 # Staleness patterns
 rg -n -i 'future (adapter|migration)|Sentry.*future|not V1 scope' docs/research README.md --glob '*.md'
 rg -n 'OTLP.*(🏗)|error_event.*\(🏗\)' docs/research/market/competitors --glob 'parallax-vs-*.md'
+rg -n '76 quer|14 mutation|76 Query|14 Mutation|76 GraphQL' docs/research --glob '*.md'
 # Ledger still points at real paths
 test -f crates/parallax-server/src/sentry_http.rs
 test -f crates/parallax-mcp/src/main.rs
 test -f schema/evidence-bundle.v1.schema.json
 ```
+
+## Follow-up (skeptic pass, same day)
+
+Present-tense **76/14 → 80/15** fixed on `api-concept`, `strategic-coverage`,
+`rust-workspace-map`, `v1-implementation-spec`, and the full-observability
+snapshot note. Thesis no longer says plan 118 “owns remaining migration.”
+Live assert: `ui/graphql/schema.graphql` = 80 Query / 15 Mutation.

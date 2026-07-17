@@ -1138,7 +1138,8 @@ Candidate materializations recorded by the same pass:
 
 ### L. Playground additions from this pass
 
-The pass also recorded scenario candidates; plan 122 owns any activation:
+The pass also recorded scenario candidates; plan 122 is closed — activation
+needs an active plan (e.g. 154) or stays design-only:
 
 - **Exemplar demo:** p99 checkout latency chart contains exemplar dots that open
   exact traces; control scenario lacks exemplars and shows lower confidence.
@@ -1307,7 +1308,8 @@ Additional chaos cases:
 
 ### Historical Playground Topology Options
 
-Plan 122 owns any selected topology or instrumentation change.
+Plan 122 is closed; any selected topology/instrumentation change needs a new
+or active plan (e.g. 154), not this historical brief.
 
 - Wire inventory/catalog to the existing Postgres container.
 - Keep cache scenarios inside existing services; do not add Redis or another
@@ -1418,8 +1420,8 @@ Historical inventory:
   `HeatCell`, `TrendChart`, `RangePicker`, data-table search/filter/sort/
   pagination, and stack-frame parsing with app-frame classification.
 
-Historical GraphQL snapshot (the generated schema now has 76 queries, 14
-mutations, and zero subscriptions):
+Historical GraphQL snapshot (the generated schema now has **80** queries, **15**
+mutations, and zero subscriptions — live count 2026-07-17; names below may lag):
 
 - Queries: `overview`, `serviceList`, `serviceRed`, `issues`, `issue`,
   `issueTrend`, `trace`, `logsByTrace`, `tracesByRun`, `logsByRun`, `logs`,
@@ -1644,7 +1646,9 @@ Plans 100, 105, and 122 own any current work represented by this map.
 
 ### Telemetry contract enforcement with OpenTelemetry Weaver
 
-Plan 119 exclusively owns any implementation of the following design evidence.
+**Plan 119 is DONE/deleted.** `parallax-semconv` + `cargo xtask semconv` ship
+generated constants today; the following remains design evidence (no exclusive
+active plan owner for Weaver productization):
 
 Parallax should treat telemetry names as public API:
 
@@ -1885,14 +1889,14 @@ External references retained for follow-up research:
 The former sequence covered inventory, Ecosystem, span links, Story, attribute
 compare, execution-stack scenarios, evidence gaps, and dashboards. The first
 six product surfaces largely shipped through retired plans; this file no longer
-orders follow-up work. Plan 100 owns UI restructuring, plan 105 owns metric
-overview/trends, plan 119 owns Weaver, and plan 122 owns any remaining causal UI
-or playground expansion.
+orders follow-up work. Plans 100/105/119/122 are **closed/deleted**. Residual
+UI/playground ownership is only active numbered `plans/*.md` (e.g. 154/155);
+this file is design history.
 
 ## Historical Design Questions
 
-Plan 122 must revalidate these questions if its trigger clears; they are not an
-execution checklist here.
+These questions are historical design prompts (plan 122 closed); revalidate
+only under an active plan (e.g. 154) or leave as research questions.
 
 - Which current GraphQL resolvers already expose enough data for a service graph?
 - Are span links queryable by trace id and resolvable across traces, or only
