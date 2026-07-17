@@ -7025,3 +7025,24 @@ explicit error). Adopt-native trio holds. `write-path-and-ingestion.md`.
 
 Pipeline auto-creates table; new JSON keys become STRING columns (NULL-backfill). CH rejects
 unknown columns (Code 16). No drift. `schema-evolution-and-dynamic-columns.md`.
+
+### Run 183 — 2026-07-17 — PromQL vs SQL re-verify (v1.1.3): gap is ~1.5–2× at N=100k, not ~5.6×
+
+**Pass target.** Re-verify Run 105 PromQL tax on re-pinned stables.
+
+**Pins.** GT `v1.1.3` / nightly `1.2.0`; CH `26.6.1.1193` / head `26.7.1.1097`. No version bump.
+
+**Fair method.** Compare GT SQL vs GT **`TQL EVAL`** via `/v1/sql` `execution_time_ms` (same channel).
+Do **not** compare Prometheus HTTP wall (docker+curl ~65 ms) to engine SQL ms.
+
+| Query | GT SQL | GT TQL | CH SQL | Ratio TQL/SQL |
+| --- | ---: | ---: | ---: | ---: |
+| avg-by-service, 40 series | 6 | 7–8 | 3–4 | ~1.2× |
+| avg-by-service, 400 series + narrow TQL | 8 | 15 | — | ~1.9× |
+| wide TQL 100m / 60s | 8 | 13 | — | ~1.6× |
+| wide TQL rate[5m] | 8 | 14 | — | ~1.8× |
+
+**Correction.** ~5.6× is scale/window-specific (Run 105); at 100k the tax compresses to ~1.5–2×.
+Ordering CH SQL > GT SQL > GT PromQL holds. Instant PromQL needs `time=` in data window.
+CH TimeSeries still experimental/default-off. Evidence: scratch `run183-promql-vs-sql.txt`.
+Note: `promql-and-metrics-query.md`.

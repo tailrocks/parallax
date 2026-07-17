@@ -27,8 +27,7 @@ PromQL→SQL layer" is **outdated as of ClickHouse 26.x**. ClickHouse now ships
 **GA-native-ergonomic (GreptimeDB) vs experimental-off-by-default-setup-heavy
 (ClickHouse)**. This narrows, but does not flip, the metrics verdict.
 
-Pins: GreptimeDB `v1.0.2` (`0ef5451`), ClickHouse `v26.5.1.882-stable` (`5b96a8d8`),
-re-confirmed latest stable 2026-05-25.
+Pins: GreptimeDB **`v1.1.3`** / CH **`26.6.1.1193`** (Run 183 re-pin 2026-07-17); historical Run 105 numbers were on `v1.0.2` / `26.5.1.882`.
 
 ## GreptimeDB — native PromQL planner, GA and default-on
 
@@ -196,3 +195,53 @@ and real (pass 45). This is the precise shape of the metrics-pillar advantage no
   `SeriesNormalize` fixed-setup mechanism)**.
 - Cross-refs: `per-signal-verdict.md`, `verdict-which-to-choose.md`,
   `write-path-and-ingestion.md` (ingest side), `query-execution-engine.md` (speed).
+
+## Run 183 (2026-07-17) — PromQL vs SQL re-verify on v1.1.3 (scale-shape correction)
+
+**Pass target.** Re-check Run 105 claim: GT PromQL ~5.6× slower than GT SQL on
+`avg by(service)` (and both behind CH SQL). Method: server-side timings only for
+fair GT SQL vs GT PromQL — use **`TQL EVAL`** (returns `execution_time_ms`, same HTTP SQL
+channel as SQL). Prometheus HTTP `/query` wall includes `docker exec`+curl (~60–75 ms)
+and is **not** comparable to `execution_time_ms`.
+
+**Dataset.** N=100k, flushed mito tables with `greptime_value` double (PromQL value column).
+
+| Case | GT SQL | GT TQL/PromQL | CH SQL | Notes |
+| --- | ---: | ---: | ---: | --- |
+| `prom_m` 40 series, `avg by (service)` | **6 ms** | TQL **7–8 ms** (~1.2×) | **3–4 ms** | fixed-overhead |
+| `prom_hc` 400 series, flat SQL avg | **8 ms** | — | — | |
+| `prom_hc` TQL narrow 100s / step 10s | — | **15 ms** (~1.9× SQL) | — | |
+| `prom_hc` TQL wide 100m / step 60s | — | **13 ms** (~1.6× SQL) | — | |
+| `prom_hc` TQL `rate()[5m]` wide | — | **14 ms** (~1.8× SQL) | — | |
+| SQL `date_bin` 1-min panel | **9 ms** | — | — | closest SQL panel to range |
+
+Warm median of 8; GT `execution_time_ms`; CH `clickhouse-client --time`.
+
+**Instant PromQL gotcha:** `/v1/prometheus/api/v1/query` with default `time=now` against
+historical fixture timestamps returns **empty vector**. Pin `time=` inside the data window
+(or use `query_range`) — then 40 series return correctly.
+
+**CH PromQL:** `allow_experimental_time_series_table=0` still. Enabling flag + naive
+`ENGINE=TimeSeries` DDL rejected (needs INNER COLUMNS form) — experimental setup still
+heavier than GT GA PromQL. Not a GA-ergonomic path.
+
+**Verdict / correction**
+
+1. Ordering **holds**: CH SQL ≥ GT SQL ≥ GT TQL/PromQL at equal effort.
+2. The **~5.6× PromQL tax is not universal** — at N=100k laptop tier, TQL is only
+   **~1.5–2×** SQL for the shapes above. Run 105’s ~5.6× was a **wide PromQL range over
+   denser/higher-card data**; treat it as scale-shaped, not a constant multiplier.
+3. **Blueprint unchanged:** drive hot Parallax panels with **SQL or Flow**; use PromQL when
+   clients require Prometheus API compatibility, not for the absolute hottest path.
+4. Mechanism (unchanged): PromQL lowers through `PromExtensionPlanner` + series
+   normalize/divide plans (`src/promql`, registered in `query_engine/state.rs`) — extra plan
+   stages vs plain DataFusion SQL agg.
+
+**Reproduce**
+```bash
+# after gen or create prom_hc as above
+docker exec parallax-bench-greptimedb-1 curl -s 'http://localhost:4000/v1/sql?db=public' \
+  --data-urlencode "sql=SELECT service, avg(greptime_value) FROM prom_hc GROUP BY service"
+docker exec parallax-bench-greptimedb-1 curl -s 'http://localhost:4000/v1/sql?db=public' \
+  --data-urlencode "sql=TQL EVAL (1716000000, 1716060000, '60s') avg by (service) (prom_hc)"
+```
