@@ -55,15 +55,7 @@ pub(crate) const METRIC_BOOKKEEPING_COLUMNS: &[&str] =
     &["greptime_timestamp", "greptime_value", "le"];
 
 fn native_metric_base(name: &str) -> String {
-    name.chars()
-        .map(|ch| {
-            if ch.is_ascii_alphanumeric() || ch == '_' {
-                ch
-            } else {
-                '_'
-            }
-        })
-        .collect()
+    parallax_semconv::native_metric_table_base(name)
 }
 
 pub(crate) fn metric_table_candidates(name: &str, suffix: Option<&str>) -> Vec<String> {

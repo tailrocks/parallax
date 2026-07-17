@@ -77,11 +77,12 @@ impl crate::adapter::IngestStore for GreptimeStore {
             .filter(|p| p.invocation_id.as_deref().is_some_and(|id| !id.is_empty()))
             .map(|p| {
                 format!(
-                    "({},'{}','{}','{}',{},{})",
+                    "({},'{}','{}','{}','{}',{},{})",
                     p.ts_nanos, // TIMESTAMP(9): nanos
                     escape(p.invocation_id.as_deref().unwrap_or_default()),
                     escape(&p.service),
                     escape(&p.name),
+                    escape(&parallax_semconv::native_metric_table_base(&p.name)),
                     p.value,
                     json_literal(&p.attributes),
                 )
@@ -89,7 +90,7 @@ impl crate::adapter::IngestStore for GreptimeStore {
             .collect();
         self.insert(
             "invocation_metric_points",
-            "\"ts\", \"invocation_id\", \"service\", \"name\", \"value\", \"attributes\"",
+            "\"ts\", \"invocation_id\", \"service\", \"name\", \"canonical_name\", \"value\", \"attributes\"",
             values,
         )
         .await?;

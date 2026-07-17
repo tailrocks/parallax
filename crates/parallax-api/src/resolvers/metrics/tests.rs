@@ -657,3 +657,97 @@ async fn metric_query_applies_attribute_where_filters() {
         "bad operator rejected: {json}"
     );
 }
+
+#[tokio::test]
+async fn invocation_metrics_project_canonical_bounded_summaries() {
+    let store = Arc::new(MemoryStore::new());
+    store
+        .ingest_metrics(
+            vec![
+                MetricPointRow {
+                    ts_nanos: 1_000_000_000,
+                    service: "cli".into(),
+                    name: "app.render.time".into(),
+                    value: 5.0,
+                    is_monotonic: false,
+                    invocation_id: Some("inv-1".into()),
+                    attributes: serde_json::json!({}),
+                },
+                MetricPointRow {
+                    ts_nanos: 2_000_000_000,
+                    service: "cli".into(),
+                    name: "app.render.time".into(),
+                    value: 9.0,
+                    is_monotonic: false,
+                    invocation_id: Some("inv-1".into()),
+                    attributes: serde_json::json!({}),
+                },
+                // Non-finite samples never count (contract).
+                MetricPointRow {
+                    ts_nanos: 3_000_000_000,
+                    service: "cli".into(),
+                    name: "app.render.time".into(),
+                    value: f64::NAN,
+                    is_monotonic: false,
+                    invocation_id: Some("inv-1".into()),
+                    attributes: serde_json::json!({}),
+                },
+                // Another invocation stays out of scope.
+                MetricPointRow {
+                    ts_nanos: 1_500_000_000,
+                    service: "cli".into(),
+                    name: "app.render.time".into(),
+                    value: 1.0,
+                    is_monotonic: false,
+                    invocation_id: Some("inv-2".into()),
+                    attributes: serde_json::json!({}),
+                },
+            ],
+            Vec::new(),
+            Vec::new(),
+            Default::default(),
+        )
+        .await
+        .unwrap();
+    let schema = build_schema();
+    let context = context_with_memory(store).await;
+
+    let request = juniper::http::GraphQLRequest::new(
+        r#"{ invocationMetrics(invocationId: "inv-1", fromNanos: "0", toNanos: "60000000000") {
+            name pointCount lastValue lastTsNanos
+        } }"#
+            .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, request).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(error_messages(&json).is_empty(), "query ok: {json}");
+    let rows = json
+        .pointer("/data/invocationMetrics")
+        .and_then(|v| v.as_array())
+        .unwrap();
+    assert_eq!(rows.len(), 1, "one canonical family: {json}");
+    // Dotted OTLP name maps to the persisted canonical table base.
+    assert_eq!(rows[0].get("name").unwrap(), "app_render_time");
+    assert_eq!(rows[0].get("pointCount").unwrap(), "2");
+    assert_eq!(rows[0].get("lastValue").unwrap().as_f64().unwrap(), 9.0);
+
+    let unknown = juniper::http::GraphQLRequest::new(
+        r#"{ invocationMetrics(invocationId: "inv-none", fromNanos: "0", toNanos: "60000000000") { name } }"#
+            .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, unknown).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(error_messages(&json).is_empty());
+    assert_eq!(
+        json.pointer("/data/invocationMetrics")
+            .and_then(|v| v.as_array())
+            .unwrap()
+            .len(),
+        0,
+        "known-empty invocation returns an empty list: {json}"
+    );
+}

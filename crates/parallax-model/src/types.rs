@@ -217,6 +217,17 @@ pub struct MetricCatalogEntry {
     pub point_count: u64,
 }
 
+/// One invocation-scoped metric family summary (plan 105): the canonical
+/// native-family identity with bounded window stats. `name` is the
+/// persisted `canonical_name` (Prometheus-normalized table base).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct InvocationMetricSummary {
+    pub name: String,
+    pub point_count: u64,
+    pub last_value: f64,
+    pub last_ts_nanos: u128,
+}
+
 /// Aggregations for metric series (RATE applies to monotonic sums: per-second
 /// delta of the bucketed sum).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

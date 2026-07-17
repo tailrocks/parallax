@@ -211,6 +211,15 @@ pub trait MetricAnalyticsStore: Send + Sync {
         range: RangeInclusive<u128>,
         step_nanos: u128,
     ) -> StorageResult<Vec<SeriesPoint>>;
+    /// Bounded invocation-scoped metric family summaries (plan 105): one row
+    /// per canonical native-family identity, name ascending, finite samples
+    /// only, at most `limit` rows. Never scans the native catalog.
+    async fn invocation_metric_summaries(
+        &self,
+        invocation_id: &str,
+        range: RangeInclusive<u128>,
+        limit: usize,
+    ) -> StorageResult<Vec<InvocationMetricSummary>>;
     /// Trace-linked metric exemplars, time-bounded and newest first.
     async fn metric_exemplars(
         &self,

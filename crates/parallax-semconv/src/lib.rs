@@ -195,6 +195,25 @@ pub fn resource_json_path(attr: &str) -> String {
     format!(r#"$."{}""#, attr.replace('"', "\\\""))
 }
 
+/// Prometheus-style native metric table base name: every non
+/// `[A-Za-z0-9_]` byte becomes `_` — the same normalization GreptimeDB's
+/// OTLP ingest applies when it creates per-metric tables. This is the
+/// canonical machine identity for a metric family (metric-summary
+/// contract); ingest persists it so invocation-scoped reads never repair
+/// names with a catalog scan.
+#[must_use]
+pub fn native_metric_table_base(name: &str) -> String {
+    name.chars()
+        .map(|ch| {
+            if ch.is_ascii_alphanumeric() || ch == '_' {
+                ch
+            } else {
+                '_'
+            }
+        })
+        .collect()
+}
+
 #[must_use]
 pub fn resource_column(attr: &str) -> String {
     format!("resource_attributes.{attr}")

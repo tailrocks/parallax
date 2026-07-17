@@ -539,6 +539,14 @@ mod tests {
         ) -> StorageResult<Vec<MetricExemplarRow>> {
             unimplemented!("not used by the measurement shim")
         }
+        async fn invocation_metric_summaries(
+            &self,
+            _invocation_id: &str,
+            _range: RangeInclusive<u128>,
+            _limit: usize,
+        ) -> StorageResult<Vec<parallax_storage::model::InvocationMetricSummary>> {
+            unimplemented!("not used by the measurement shim")
+        }
     }
 
     fn rule(

@@ -147,6 +147,7 @@ schema_version = 1
     "const WEB_VITAL_RATING",
     "const WEB_VITAL_VALUE",
     "fn resource_column",
+    "fn native_metric_table_base",
     "fn resource_json_path",
     "fn span_column",
 ]

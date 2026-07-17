@@ -156,6 +156,37 @@ impl MetricAnalyticsStore for MemoryStore {
         Ok(adapter::histogram_avg_from_cumulative(&sums, &counts))
     }
 
+    async fn invocation_metric_summaries(
+        &self,
+        invocation_id: &str,
+        range: RangeInclusive<u128>,
+        limit: usize,
+    ) -> StorageResult<Vec<parallax_storage::model::InvocationMetricSummary>> {
+        let mut by_name: BTreeMap<String, parallax_storage::model::InvocationMetricSummary> =
+            BTreeMap::new();
+        for point in self.lock().metric_points.iter().filter(|p| {
+            p.invocation_id.as_deref() == Some(invocation_id)
+                && range.contains(&p.ts_nanos)
+                && p.value.is_finite()
+        }) {
+            let canonical = parallax_semconv::native_metric_table_base(&point.name);
+            let entry = by_name.entry(canonical.clone()).or_insert_with(|| {
+                parallax_storage::model::InvocationMetricSummary {
+                    name: canonical,
+                    point_count: 0,
+                    last_value: point.value,
+                    last_ts_nanos: point.ts_nanos,
+                }
+            });
+            entry.point_count += 1;
+            if point.ts_nanos >= entry.last_ts_nanos {
+                entry.last_ts_nanos = point.ts_nanos;
+                entry.last_value = point.value;
+            }
+        }
+        Ok(by_name.into_values().take(limit).collect())
+    }
+
     async fn metric_exemplars(
         &self,
         name: &str,

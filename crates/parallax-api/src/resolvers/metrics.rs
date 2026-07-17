@@ -276,6 +276,50 @@ fn zero_fill_buckets(
     out
 }
 
+pub(crate) struct InvocationMetricRow(pub(crate) model::InvocationMetricSummary);
+
+#[graphql_object(context = ApiContext)]
+impl InvocationMetricRow {
+    /// Canonical native-family identity persisted at ingest.
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+    fn point_count(&self) -> String {
+        self.0.point_count.to_string()
+    }
+    fn last_value(&self) -> f64 {
+        self.0.last_value
+    }
+    fn last_ts_nanos(&self) -> String {
+        nanos_string(self.0.last_ts_nanos)
+    }
+}
+
+/// Bounded invocation-scoped metric summaries (plan 105): the typed
+/// projection over `invocation_metric_points` the CLI snapshot consumes.
+pub(crate) async fn invocation_metrics(
+    context: &ApiContext,
+    invocation_id: String,
+    from_nanos: Option<String>,
+    to_nanos: Option<String>,
+    limit: Option<i32>,
+) -> FieldResult<Vec<InvocationMetricRow>> {
+    let range = match (from_nanos, to_nanos) {
+        (Some(from), Some(to)) => {
+            let (from, to) = parse_range(&from, &to)?;
+            from..=to
+        }
+        _ => retained_recent_range(),
+    };
+    let limit = clamp_limit(limit, 200);
+    let rows = context
+        .store
+        .invocation_metric_summaries(&invocation_id, range, limit)
+        .await
+        .map_err(crate::internal_field_err)?;
+    Ok(rows.into_iter().map(InvocationMetricRow).collect())
+}
+
 pub(crate) struct MetricCatalogRow(pub(crate) model::MetricCatalogEntry);
 
 #[graphql_object(context = ApiContext)]

@@ -96,13 +96,25 @@ impl GreptimeStore {
             format!(
                 r#"CREATE TABLE IF NOT EXISTS invocation_metric_points (
                    "ts" TIMESTAMP(9) NOT NULL, "invocation_id" STRING SKIPPING INDEX,
-                   "service" STRING, "name" STRING, "value" DOUBLE, "attributes" JSON,
+                   "service" STRING, "name" STRING, "canonical_name" STRING,
+                   "value" DOUBLE, "attributes" JSON,
                    TIME INDEX ("ts"), PRIMARY KEY ("service", "name")
                  ) WITH (append_mode = 'true', ttl = '{metrics_ttl}')"#
             ),
         ];
         for statement in statements {
             self.sql(&statement).await?;
+        }
+        // Older installs predate the persisted canonical family identity
+        // (plan 105): widen in place; new rows fill it at ingest.
+        if let Err(error) = self
+            .sql(
+                r#"ALTER TABLE invocation_metric_points
+                   ADD COLUMN IF NOT EXISTS "canonical_name" STRING"#,
+            )
+            .await
+        {
+            tracing::warn!("canonical_name widen skipped: {error}");
         }
         self.ensure_metric_exemplars(metrics_ttl).await?;
         self.try_logs_deviations().await;

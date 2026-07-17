@@ -206,6 +206,65 @@ impl MetricAnalyticsStore for GreptimeStore {
         ))
     }
 
+    async fn invocation_metric_summaries(
+        &self,
+        invocation_id: &str,
+        range: RangeInclusive<u128>,
+        limit: usize,
+    ) -> StorageResult<Vec<parallax_storage::model::InvocationMetricSummary>> {
+        // One bounded extension-table read: no native catalog discovery.
+        // Legacy rows predate the persisted canonical identity; their name
+        // normalizes client-side with the same deterministic function
+        // ingest uses (never a catalog scan).
+        let rows = self
+            .sql_arrow_lenient(&format!(
+                r#"SELECT COALESCE(CAST("canonical_name" AS STRING), '') AS "canonical",
+                          CAST("name" AS STRING) AS "name",
+                          COUNT("value") AS "cnt",
+                          CAST(MAX("ts") AS BIGINT) AS "last_ts",
+                          last_value("value" ORDER BY "ts") AS "last_value"
+                   FROM invocation_metric_points
+                   WHERE "invocation_id" = '{}'
+                     AND "ts" >= {} AND "ts" <= {}
+                     AND "value" >= -1.7976931348623157e308
+                     AND "value" <= 1.7976931348623157e308
+                   GROUP BY "canonical", "name"
+                   ORDER BY "canonical", "name""#,
+                escape(invocation_id),
+                sql_ts(*range.start()),
+                sql_ts(*range.end()),
+            ))
+            .await?;
+        let mut by_name: BTreeMap<String, parallax_storage::model::InvocationMetricSummary> =
+            BTreeMap::new();
+        for row in &rows {
+            let stored = str_at(row, 0);
+            let raw_name = str_at(row, 1);
+            let canonical = if stored.is_empty() {
+                parallax_semconv::native_metric_table_base(&raw_name)
+            } else {
+                stored
+            };
+            let count = u128_at(row, 2) as u64;
+            let last_ts = u128_at(row, 3);
+            let last_value = row.get(4).and_then(|v| v.as_f64()).unwrap_or(0.0);
+            let entry = by_name.entry(canonical.clone()).or_insert_with(|| {
+                parallax_storage::model::InvocationMetricSummary {
+                    name: canonical,
+                    point_count: 0,
+                    last_value,
+                    last_ts_nanos: last_ts,
+                }
+            });
+            entry.point_count += count;
+            if last_ts >= entry.last_ts_nanos {
+                entry.last_ts_nanos = last_ts;
+                entry.last_value = last_value;
+            }
+        }
+        Ok(by_name.into_values().take(limit).collect())
+    }
+
     async fn metric_exemplars(
         &self,
         name: &str,
