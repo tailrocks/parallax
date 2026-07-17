@@ -37,6 +37,29 @@ air-gap claim **still holds**.
 **destinations** (not a self-hosted Datadog store/UI). Air-gap combination claim
 **still holds**.
 
+**Pass 251 (2026-07-18):** Datadog [Observability Pipelines](https://docs.datadoghq.com/observability_pipelines/)
+primary re-fetch (markdown/docs body):
+
+- Overview: collect/process logs and metrics **within your own infrastructure**,
+  then **route** data to different **destinations**.
+- Worker: runs in-infra to **aggregate, process, and route** data.
+- Destinations examples: **Datadog, SIEM tools, or cloud storage** (archive
+  templates → S3/GCS/Azure).
+- Control plane: Observability Pipelines **UI** is a centralized place to build
+  pipelines / deploy Workers (Datadog product surface — not "full Datadog offline").
+
+**Still route-only for OPW** — **not** a self-hosted Datadog APM/Bits/UI product
+store. **UNFIRED** as air-gap Seer/Bits replacement.
+
+**Watch (not a falsification of OPW claim):** further-reading links mention
+Datadog **BYOC Logs / CloudPrem** ("store and search logs… in your own
+infrastructure") — separate product narrative. Track if it becomes a
+self-hosted **agent evidence + Bits** store without phone-home AI; **do not**
+conflate with OPW Worker today.
+
+Air-gap combination claim (open core + portable redacted evidence + no closed
+cloud AI) **still holds** as a *combination* (A1 still unproven).
+
 **Falsification:** a major incumbent ships **self-hosted, open (or source-available)
 agent evidence with no cloud AI dependency** *and* a portable redacted bundle
 schema; or Seer becomes self-host GA with offline models; or Grafana Assistant

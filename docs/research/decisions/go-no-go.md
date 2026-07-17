@@ -90,6 +90,11 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > still absent; `fixer_outcome` unit **3/3** ok; live replay open. Loop-stage
 > product claims still open (not failed). **Still GO (narrow product).**
 >
+> **Pass 251 (2026-07-18) — GO reaffirm (OPW air-gap).** Datadog OPW still
+> route-to-destinations Worker, not self-hosted Bits/store. Air-gap combination
+> differentiator still holds (combination claim; A1 open). **Still GO (narrow
+> product).**
+>
 > **Narrow product identity holds.** Research program continues.
 
 ## Verdict
