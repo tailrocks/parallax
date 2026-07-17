@@ -370,9 +370,9 @@ external facts still BLOCKED where noted. Plan 102 and plan 109 retired
 | Plan | Depends on | Trigger / residual | Status |
 |------|------------|--------------------|--------|
 | [110](110-server-profile-ingest-concurrency.md) | 115 + saturation packet | Measured single-worker bottleneck on supported profile | BLOCKED on 115 profile + measurements |
-| [112](112-product-mcp-ship-gates.md) | 099, 104, 111 | Claimed-client fixtures, OTel export verify, spike graduation (oversized summary landed) | IN PROGRESS — local-stdio GO; residual ship gates |
+| [112](112-product-mcp-ship-gates.md) | 099, 104, 111 | Live client discovery/retention + spike graduation (registration fixtures + OTel span verify landed) | IN PROGRESS — local-stdio GO; residual graduation |
 | [114](114-retire-legacy-spool-reader.md) | Stable raw-frame release cycle + expired legacy segments | Remove NDJSON reader after cycle | BLOCKED — only rolling `preview` tag (recheck 2026-07-17T13:06Z) |
-| [115](115-v2-server-profile.md) | Auth contract + release pipeline (102/109 DONE) | Validated config + rehearsals + load packet (ADR landed) | IN PROGRESS — ADR in decisions/v2-server-profile.md |
+| [115](115-v2-server-profile.md) | Auth contract + release pipeline (102/109 DONE) | Rehearsals + load packet (ADR + example config landed) | IN PROGRESS — example-config.toml validates |
 | [118](118-sentry-envelope-migration-adapter.md) | 093, 099, 104, 111, 116 | Cross-source identity, bundle/redaction, live gates (SDK fixture landed) | IN PROGRESS — parser + HTTP + ledger + Python SDK fixture |
 | [120](120-agent-session-capture-adapters.md) | 099, 104, 111, 119 | Storage/API/UI, consent CLI, loss ledger (success fixture landed) | IN PROGRESS — normalizer + success-path fixture |
 | [121](121-deploy-and-change-context-collectors.md) | 099, 104, 111, 116 | Backfill, claim ledger (HTTP + doctor inventory landed) | IN PROGRESS — webhook + Turso + doctor deploy-context |

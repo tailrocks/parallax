@@ -1,0 +1,50 @@
+# Plan 115 — validated single-node V2 server profile example (contract v1).
+# GreptimeDB + Turso only; OS native TLS at the edge; no in-memory product mode.
+#
+# Non-loopback binds REQUIRE a 16–256 byte API token via PARALLAX_API_TOKEN
+# (or server.api_token). This checked-in example stays on loopback so `Config::load`
+# validates without secrets.
+
+[server]
+bind = "127.0.0.1"
+api_port = 4000
+otlp_grpc_port = 4317
+otlp_http_port = 4318
+# For a LAN/WAN operator box: bind = "0.0.0.0" and set PARALLAX_API_TOKEN.
+api_token = ""
+ui_dist = ""
+
+[storage]
+mode = "managed"
+greptime_url = "http://127.0.0.1:4000"
+greptime_version = "v1.1.2"
+data_dir = ""
+
+[retention]
+traces_ttl = "7d"
+logs_ttl = "7d"
+metrics_ttl = "30d"
+error_events_ttl = "30d"
+spool_max_segment_bytes = 67108864
+spool_max_total_bytes = 1073741824
+spool_max_age_hours = 72
+
+[limits]
+
+[telemetry]
+
+[alerting]
+enabled = true
+evaluate_interval_secs = 60
+deliver_interval_secs = 10
+claim_interval_secs = 60
+
+# Optional adapters — disabled by default (fail closed).
+[sentry]
+enabled = false
+project_id = "1"
+public_key = ""
+
+[github_deploy]
+enabled = false
+webhook_secret = ""
