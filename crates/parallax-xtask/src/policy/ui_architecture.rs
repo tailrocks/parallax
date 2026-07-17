@@ -23,9 +23,7 @@ pub(super) fn check_workspace(root: &Path, ratchet: &Ratchet) -> Result<Vec<Find
     let reexports = compatibility_reexport_paths(ratchet);
     let exceptions = layer_exception_set(ratchet);
     let mut findings = typescript::check_workspace(root)?;
-    findings.retain(|finding| {
-        !is_allowed_layer_finding(root, finding, &reexports, &exceptions)
-    });
+    findings.retain(|finding| !is_allowed_layer_finding(root, finding, &reexports, &exceptions));
     findings.extend(check_ownership_ledger(root, ratchet)?);
     findings.extend(check_feature_edges(ratchet)?);
     findings.extend(check_layer_exceptions(ratchet)?);
@@ -355,7 +353,8 @@ fn is_allowed_layer_finding(
     }
     // Exact exception rows match source path embedded in the finding file field.
     exceptions.iter().any(|(exception_source, _, rule)| {
-        rule == &finding.rule_id && (exception_source == &source || source.ends_with(exception_source))
+        rule == &finding.rule_id
+            && (exception_source == &source || source.ends_with(exception_source))
     })
 }
 

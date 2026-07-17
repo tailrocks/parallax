@@ -423,7 +423,10 @@ struct MachHeaderFields {
 fn parse_header(data: &[u8]) -> Result<Header> {
     ensure!(data.len() >= 32, "Mach-O header truncated");
     let magic = read_u32(data, 0);
-    ensure!(magic == MH_MAGIC_64, "not a 64-bit Mach-O (magic {magic:#x})");
+    ensure!(
+        magic == MH_MAGIC_64,
+        "not a 64-bit Mach-O (magic {magic:#x})"
+    );
     let cputype = read_u32(data, 4);
     let cpusubtype = read_u32(data, 8);
     let filetype = read_u32(data, 12);
@@ -479,7 +482,10 @@ fn dwarf_sections_from_companion(companion: &[u8]) -> Result<Vec<DwarfSection>> 
             let end = fileoff
                 .checked_add(usize_off(size, "section size")?)
                 .context("section range overflow")?;
-            ensure!(end <= companion.len(), "section {name} exceeds companion EOF");
+            ensure!(
+                end <= companion.len(),
+                "section {name} exceeds companion EOF"
+            );
             sections.push(DwarfSection {
                 name,
                 data: companion[fileoff..end].to_vec(),

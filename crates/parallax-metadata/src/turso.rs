@@ -594,9 +594,7 @@ impl TursoMetadataStore {
             let title = text(&row, 1);
             let culprit = opt_text(&row, 2);
             let safe_title = parallax_evidence::sanitize_text(&title);
-            let safe_culprit = culprit
-                .as_deref()
-                .map(parallax_evidence::sanitize_text);
+            let safe_culprit = culprit.as_deref().map(parallax_evidence::sanitize_text);
             if safe_title != title || safe_culprit != culprit {
                 updates.push((fingerprint, safe_title, safe_culprit));
             }

@@ -374,7 +374,10 @@ fn validate_vitest_entry(root: &Path, entry: &Entry, findings: &mut Vec<Finding>
 fn validate_browser_entry(root: &Path, entry: &Entry, findings: &mut Vec<Finding>) {
     let valid_lane = matches!(
         entry.lane_owner.as_str(),
-        "playwright/contracts" | "playwright/foundation" | "playwright/full-stack" | "playwright/breadth"
+        "playwright/contracts"
+            | "playwright/foundation"
+            | "playwright/full-stack"
+            | "playwright/breadth"
     );
     let valid_status = matches!(entry.status.as_str(), "implemented" | "reserved");
     if entry.layer != "browser-contract"

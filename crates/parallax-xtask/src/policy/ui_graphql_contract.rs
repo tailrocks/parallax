@@ -23,8 +23,8 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
             RERUN,
         ));
     } else {
-        let text = fs::read_to_string(&schema)
-            .with_context(|| format!("read {}", schema.display()))?;
+        let text =
+            fs::read_to_string(&schema).with_context(|| format!("read {}", schema.display()))?;
         if text.trim().is_empty() || !text.contains("type Query") {
             findings.push(Finding::error(
                 "ui.graphql-contract.schema.empty",

@@ -125,7 +125,10 @@ fn check_matrix(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
             findings.push(error(
                 "ui.browser-contracts.matrix",
                 MATRIX,
-                &format!("implemented entry `{}` missing spec {}", entry.id, entry.test_file),
+                &format!(
+                    "implemented entry `{}` missing spec {}",
+                    entry.id, entry.test_file
+                ),
             ));
         }
     }

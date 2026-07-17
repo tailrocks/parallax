@@ -1,6 +1,6 @@
 # Plan 149 — Route-less capability foundation
 
-**Recorded:** 2026-07-17  
+**Recorded:** 2026-07-17
 **Scope:** Permanent owners + facades for runtime metrics, story, time-range
 presentation, and product-neutral page header. Import-only consumer switches.
 No Query/cache, live-algorithm, bundle, or product-feature restructuring.

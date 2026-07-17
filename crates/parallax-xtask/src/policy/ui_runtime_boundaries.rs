@@ -61,8 +61,8 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
             ));
             continue;
         }
-        let source = fs::read_to_string(&path)
-            .with_context(|| format!("read {}", path.display()))?;
+        let source =
+            fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
         if !source.contains(needle) {
             findings.push(Finding::error(
                 "ui.runtime-boundaries.owner.surface",

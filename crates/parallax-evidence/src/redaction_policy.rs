@@ -88,7 +88,10 @@ pub fn project_text(
 ) -> Option<String> {
     match decide(field).action {
         SourceAction::Drop => {
-            *report.redacted_counts.entry("source.unknown.drop").or_insert(0) += 1;
+            *report
+                .redacted_counts
+                .entry("source.unknown.drop")
+                .or_insert(0) += 1;
             None
         }
         SourceAction::ValidateStructural => {
