@@ -295,6 +295,11 @@ Full combination **still not closed**. Version pins **unchanged** vs pass
 **v6.2.1**/354★). README probes still **no** OTLP multi-signal + portable
 redacted bundle + outcome. Combo **not closed**.
 
+**Pass 287 recheck (2026-07-18):** Bugsink **1,940★**/v2.4.0; Rustrak **64★** /
+server **0.9.2** + MCP **0.2.13**; GlitchTip backend **v6.2.1** — **unchanged**.
+SigNoz still **v0.133.0** / **~30,319★**; Noz docs still tagged **`SigNoz Cloud`**.
+Combo **not closed**.
+
 **Pass 156 recheck (2026-07-18):** **Traceway-focused** wedge re-poll + Bugsink/Rustrak
 star-pin hygiene — combination **still not closed**.
 
