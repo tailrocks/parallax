@@ -1,5 +1,12 @@
 # Competitor Watch
 
+> **Superseded as the canonical comparison by [`competitors/`](competitors/)** —
+> see the [overview matrix](competitors/README.md) + [comparison set](competitors/comparison-set.md)
+> + the per-product `competitors/parallax-vs-<product>.md` deep-dives (30 products,
+> all verified 2026-07-17). This legacy note (a survey / watch / analysis **source**)
+> is a **lead, not the destination**; re-verify specifics in the canonical folder
+> before trusting, and migrate still-true content there.
+
 > **Implementation ownership (2026-07-12):** this is a rolling market-evidence
 > record, not a product roadmap. Historical product recommendations are mapped to
 > plan 104 (bundle contract), blocked plan 118 (conditional Sentry migration),

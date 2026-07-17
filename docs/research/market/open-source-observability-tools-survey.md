@@ -1,5 +1,12 @@
 # Open-Source Observability Tools Survey
 
+> **Superseded as the canonical comparison by [`competitors/`](competitors/)** —
+> see the [overview matrix](competitors/README.md) + [comparison set](competitors/comparison-set.md)
+> + the per-product `competitors/parallax-vs-<product>.md` deep-dives (30 products,
+> all verified 2026-07-17). This legacy note (a survey / watch / analysis **source**)
+> is a **lead, not the destination**; re-verify specifics in the canonical folder
+> before trusting, and migrate still-true content there.
+
 > Research date: 2026-05-31
 > Scope: Open-source, self-hostable tools for observability, error tracking, distributed tracing, log management, AI-powered debugging, MCP-based observability, Sentry-compatible ingestion, and OTLP-native telemetry.
 > Excluded: OpenObserve, SigNoz, Coroot, Maple, Bugsink, Rustrak, Traceway, GoSnag, Urgentry, Sentry, Datadog, Grafana/Loki/Tempo/Mimir, New Relic, Dynatrace, Splunk, Dash0, GlitchTip, HyperDX, Uptrace, ClickStack, LangSmith, Langfuse, Phoenix, Braintrust, AgentOps, BuildPulse, Trunk, CloudBees, Colimit, Daxtack, neverbreak, WarpFix, UnfoldCI, Robusta, HolmesGPT, Causely.

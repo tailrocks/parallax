@@ -1,5 +1,12 @@
 # Agent-Debugging Competitor Drift
 
+> **Superseded as the canonical comparison by [`competitors/`](competitors/)** —
+> see the [overview matrix](competitors/README.md) + [comparison set](competitors/comparison-set.md)
+> + the per-product `competitors/parallax-vs-<product>.md` deep-dives (30 products,
+> all verified 2026-07-17). This legacy note (a survey / watch / analysis **source**)
+> is a **lead, not the destination**; re-verify specifics in the canonical folder
+> before trusting, and migrate still-true content there.
+
 <!-- markdownlint-disable MD013 -->
 
 Research date: 2026-06-02
