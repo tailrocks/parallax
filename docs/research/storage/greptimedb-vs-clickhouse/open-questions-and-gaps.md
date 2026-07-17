@@ -373,3 +373,13 @@ After runs 423–448: PromQL partial surface mapped; load-bearing holds re-verif
 
 Pins hold. Laptop 423–452: PromQL surface, join/TTL/FT/projection, windows,
 percentiles, density. **Not done.** Top five: mix, server, quotes, GB cold, cluster RPO.
+
+## Run 455 (2026-07-18) — still not done
+
+Highest remaining (unchanged):
+
+1. Workload mix A1–A7 filled shares
+2. Server 1M/5M four-way  
+3. Vendor trial quotes
+4. GB–TB cold S3
+5. Cluster D2 + product D3
