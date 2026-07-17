@@ -67,7 +67,14 @@ The Apple integration test:
    via `addr2line` resolving `main` → `main.rs`)
 5. Executes the rewritten binary successfully
 
-## Remaining for plan 102 retirement
+## Plan 102 retirement
+
+The four-target preview + tap acceptance evidence is in
+[`2026-07-13-plan-102-release-baseline.md`](2026-07-13-plan-102-release-baseline.md)
+§ Current-implementation four-target preview proof and § Retirement.
+Plan 102 is retired (2026-07-17).
+
+## Historical residual (closed)
 
 - Publish one complete four-target preview from a green `main` head that
   includes this fix

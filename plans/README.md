@@ -121,7 +121,8 @@ Fixed decisions (approver: the operator, alexey@chainargos.com, 2026-07-17):
 - **Plan 116**: adopt the plan's own proposed lifecycle contract verbatim as
   the approved contract; executor writes the decision record.
 - **Plans 109/115**: V2 auth + server scope opened, minimal recommended
-  shapes; sequenced after Wave 2 and the core UI chain.
+  shapes. Plan 109 minimal slice DONE/retired (2026-07-17); plan 115 residual
+  server profile remains.
 - **Plans 112/118/120/121/123/124**: scopes opened with defaults — product
   MCP proceeds behind its evidence gates (local transport until 109);
   Sentry-compatible ingest open; first agent-session adapter = Claude Code;
@@ -158,13 +159,13 @@ Plan 116 DONE (2026-07-17): retention contract + deterministic prune CLI
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | P2 | M | upstream `greptimedb-ingester` native-TLS/plaintext feature fix | BLOCKED — crates.io still 0.18.0; upstream PR #58 OPEN not merged (recheck 2026-07-17); HTTP SQL path remains |
+| [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | P2 | M | upstream `greptimedb-ingester` native-TLS/plaintext feature fix | BLOCKED — crates.io still 0.18.0; upstream PR #58 OPEN not merged (recheck 2026-07-17T11:50Z); HTTP SQL path remains |
 
 ### Foundation And Delivery
 
-| Plan | Title | Priority | Effort | Depends on | Status |
-|------|-------|----------|--------|------------|--------|
-| [102](102-deterministic-release-pipeline.md) | Prove the deterministic release pipeline externally | P1 | S–M | 094, 096, 101; post-fix four-target preview + release-verify | IN PROGRESS — Mach-O embed landed; external preview proof residual |
+Plan 102 DONE (2026-07-17): four-target preview `0.1.0-preview.1295+e37a65d`
+passed exact-SHA `release-verify` + tap pull
+([evidence](../docs/research/validation/2026-07-13-plan-102-release-baseline.md)).
 
 ### Quality Tooling And Rust
 
@@ -225,7 +226,7 @@ work.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [103](103-property-fuzz-and-performance.md) | Add focused Rust/UI property/fuzz corpora and measured performance/allocation gates | P2 | L | 097, 099, 101, 104, 133, 147, 148 | IN PROGRESS — Rust properties (math/semconv/SQL/redaction/canonical-JSON/fingerprint) + six fuzz targets + first benches; residual OTLP-normalize/trace-tree/retry properties, CI fuzz lane, UI properties (133/147/148), ratchets |
+| [103](103-property-fuzz-and-performance.md) | Residual Rust/UI property, fuzz, and performance gates | P2 | M | 133, 147, 148 (UI); scheduled samples (ratchets) | IN PROGRESS — Rust properties/fuzz/benches/CI lanes landed; residual trace-tree/serialization/retry properties, UI properties, variance ratchets |
 
 ### Evidence Contracts And Closure
 
@@ -334,7 +335,8 @@ Considered and deferred (recorded so they are not re-audited): session
 replay / rrweb studio (large new subsystem; browser corpus first),
 AI triage + chat + MCP tool catalog page (product MCP is operator-gated by
 plan 112), anomaly detection (needs alerting v1 baseline first),
-org/multi-tenancy + billing surfaces (V2 scope, plan 109 gate), Expo mobile
+org/multi-tenancy + billing surfaces (V2 auth expansions beyond minimal
+  slice; plan 115 / future RBAC), Expo mobile
 app, demo-seed onboarding (playground covers it), ReactFlow adoption (the
 hand-rolled SVG renderer stays; only ELK layout is adopted), Maple's
 mono-as-body typography and amber theme (Parallax keeps its identity),
@@ -356,27 +358,27 @@ CI-provider API collection; 155 consumes OTLP-ingested telemetry only.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [154](154-playground-capability-and-test-observability.md) | Validate playground observability on the live fan-out | P1 | M | Five backends; Parallax arm → plan 159 | TODO — run the four externals SELF-HOSTED in Docker (Maple local mode, SigNoz, OpenObserve, Sentry self-hosted), one backend at a time on the 16 GB host; no external credentials (unblock directive 2026-07-17) |
-| [155](155-test-reporting-surface.md) | Test reporting and test observability surface | P1 | XL | 149, 152, 153; soft 104, 119, 121, 124, 140 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [154](154-playground-capability-and-test-observability.md) | Live multi-backend fan-out acceptance residual | P1 | M | Self-hosted Maple/SigNoz/OpenObserve/Sentry (Parallax arm → plan 159 DONE) | BLOCKED — multi-backend arm only; one self-hosted external at a time on 16 GB host |
+| [155](155-test-reporting-surface.md) | Test reporting surface residual | P1 | XL | 149, 152, 153, 140 DONE; soft 121/124 | IN PROGRESS — domain model + identity derivation landed; residual Turso/ingest/GraphQL/UI/adapters |
 
-### Triggered Or Operator-Blocked Work
+### Triggered Or Residual Work
 
-These are unfinished and therefore remain as plan files, but execution must not
-invent the missing product or operator decision.
+Unfinished residuals only. Operator unblock (2026-07-17) opened scopes; hard
+external facts still BLOCKED where noted. Plan 102 and plan 109 retired
+2026-07-17 (release four-target proof; minimal auth + context).
 
-| Plan | Depends on | Trigger | Status |
-|------|------------|---------|--------|
-| [109](109-v2-auth-and-context-management.md) | Operator opens V2 scope | Operator opens V2 authentication and remote-context scope | IN PROGRESS (2026-07-17): minimal local-first bearer + context CLI shipped ([evidence](../docs/research/validation/2026-07-plan-109-v2-auth/README.md)); residual keyring/OTLP-token/RBAC |
-| [110](110-server-profile-ingest-concurrency.md) | 099, 113, 115; measured saturation | Plan 115 ships a supported profile and measurements prove single-worker saturation | OPENED (unblock directive 2026-07-17): producing the saturation measurements is now in scope; execute after 115 |
-| [112](112-product-mcp-ship-gates.md) | 099, 104, 111; 109 before any remote transport | Operator opens the product MCP ship/no-ship decision after evidence-safety prerequisites | IN PROGRESS (2026-07-17): local-stdio GO; spike green (33 tests); secret-free per-call audit rows landed; residual live client fixtures/resources/OTel span/graduation |
-| [114](114-retire-legacy-spool-reader.md) | A qualifying release cycle and expired legacy segments | A raw-frame release completes one compatibility cycle and all supported legacy segments expire | TIME-TRIGGERED (recheck 2026-07-17): only `preview` tag exists; compatibility cycle not complete — keep legacy NDJSON reader |
-| [115](115-v2-server-profile.md) | 102, 109; operator opens V2 server scope | Operator opens V2 server scope and approves a supported profile contract | OPENED (unblock directive 2026-07-17): adopt the plan's recommended profile; execute after 102 and 109 |
-| [118](118-sentry-envelope-migration-adapter.md) | 093, 099, 104, 111, 116 | Operator opens Sentry-compatible ingest after evidence makes it the next adoption constraint | IN PROGRESS (2026-07-17): pure envelope framing parser + unit fixtures landed (`parallax-ingest::sentry_envelope`); residual real SDK fixtures, HTTP, DSN map, spool ack, normalize |
-| [120](120-agent-session-capture-adapters.md) | 099, 104, 111, 119 | Operator selects and opens one coding-agent session capture adapter | OPENED (unblock directive 2026-07-17): first adapter = Claude Code session capture; execute after its listed dependencies |
-| [121](121-deploy-and-change-context-collectors.md) | 099, 104, 109, 111, 116 | Operator selects and opens one deploy/change provider integration | OPENED (unblock directive 2026-07-17): provider = GitHub (deployments/changes); execute after its listed dependencies |
-| [122](122-playground-residual-program.md) | 105, 111, 119, 151 | Plans 105, 111, and 151 complete their product contracts | TODO — ready when 105, 111, and 151 complete (unblock directive 2026-07-17) |
-| [123](123-fixer-outcome-loop.md) | 104, 111, 120, 121 | Operator opens a separate fixer after A1/A2/A3/redaction gates | OPENED (unblock directive 2026-07-17): fixer scope open once 104/111/120/121 gates pass; runs late, before 107 |
-| [124](124-ci-and-flaky-test-evidence-collector.md) | 099, 104, 111, 121 | Operator selects and opens product CI-provider collection | OPENED (unblock directive 2026-07-17): provider = GitHub Actions on the tailrocks repos; execute after its listed dependencies |
+| Plan | Depends on | Trigger / residual | Status |
+|------|------------|--------------------|--------|
+| [110](110-server-profile-ingest-concurrency.md) | 115 + saturation packet | Measured single-worker bottleneck on supported profile | BLOCKED on 115 profile + measurements |
+| [112](112-product-mcp-ship-gates.md) | 099, 104, 111 | Claimed-client fixtures, oversized summary+resource, OTel export verify, spike graduation | IN PROGRESS — local-stdio GO; residual ship gates |
+| [114](114-retire-legacy-spool-reader.md) | Stable raw-frame release cycle + expired legacy segments | Remove NDJSON reader after cycle | BLOCKED — only rolling `preview` tag (recheck 2026-07-17) |
+| [115](115-v2-server-profile.md) | Auth contract + release pipeline (102/109 DONE) | ADR + one supported server profile | TODO — scope open; contract not written |
+| [118](118-sentry-envelope-migration-adapter.md) | 093, 099, 104, 111, 116 | Real SDK fixtures, event-id idempotency, bundle/redaction, live gates | IN PROGRESS — parser + HTTP + normalize landed |
+| [120](120-agent-session-capture-adapters.md) | 099, 104, 111, 119 | Success-path fixtures, storage/API/UI, consent CLI, loss ledger | IN PROGRESS — Claude Code pure normalizer landed |
+| [121](121-deploy-and-change-context-collectors.md) | 099, 104, 111, 116 | Webhook route, durable idempotency, backfill, doctor, claim ledger | IN PROGRESS — HMAC + deploy normalize landed |
+| [122](122-playground-residual-program.md) | 105, 151 (111/119 DONE) | Disposition table + retained scenarios only | BLOCKED on 105 + 151 |
+| [123](123-fixer-outcome-loop.md) | 120, 121 residual | Offline outcome harness; fixer separate from core | BLOCKED on 120/121 |
+| [124](124-ci-and-flaky-test-evidence-collector.md) | 121 residual | GHA read-only collect + flaky multi-attempt evidence | BLOCKED on 121 durable path |
 
 ## Dependency Order
 
@@ -413,7 +415,7 @@ The main restructuring path is:
 095 + 100 + 101 + 105 + 132 + 133 +
   144 + 146 + 147 + 151 --------------> 148
 097 + 099 + 133 + 151 ----------------> 105
-094 + 096 + 101 ------------------------------> 102
+094 + 096 + 101 ------------------------------> 102 (DONE 2026-07-17)
 097 + 099 + 101 + 104 + 133 + 147 + 148 -----> 103
 095 + 099 ------------------------------------> 113
 095 ------------------------------------------> 117
@@ -421,13 +423,13 @@ The main restructuring path is:
 093 + 097 + 099 ------------------------------> 116
 092 + 104 + 116 ------------------------------> 106
 093 + 097 + 099 + 104 ------------------------> 125
-102 + 109 ------------------------------------> 115
+auth contract + release proof (109/102 DONE) -> 115
 099 + 113 + 115 ------------------------------> 110
 099 + 104 + 111 -- operator trigger ----------> 112
 093 + 099 + 104 + 111 + 116 -- operator ------> 118
 099 + 104 + 111 + 119 -- operator ------------> 120
-099 + 104 + 109 + 111 + 116 -- operator ------> 121
-105 + 111 + 119 + 151 -- cross-repo ----------> 122
+099 + 104 + 111 + 116 -- operator ------------> 121
+105 + 151 (111/119 DONE) -- cross-repo -------> 122
 104 + 111 + 120 + 121 -- operator ------------> 123
 099 + 104 + 111 + 121 -- operator ------------> 124
 all actionable plans --------------------------> 107

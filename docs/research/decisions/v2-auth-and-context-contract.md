@@ -7,7 +7,9 @@
 - **Authority:** Operator unblock directive, 2026-07-17 — Plans 109/115 opened
   with the plan's recommended minimal shape; this record is the executable ADR
   for the first shippable auth surface.
-- **Plan owner:** [plans/109-v2-auth-and-context-management.md](../../../plans/109-v2-auth-and-context-management.md)
+- **Plan owner:** plan 109 (retired 2026-07-17; minimal slice shipped —
+  [evidence](../validation/2026-07-plan-109-v2-auth/README.md)). Later auth
+  expansions stay on this ADR / plan 115 / plan 112 as noted below.
 
 ## Decision
 

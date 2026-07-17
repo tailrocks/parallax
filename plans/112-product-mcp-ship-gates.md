@@ -1,266 +1,54 @@
-# Plan 112: Decide and prove the product MCP surface
+# Plan 112: Product MCP residual ship gates
 
-> **Executor instructions**: Projection equivalence from the spike is only one
-> gate. Do not rename/package the spike as product, expose raw GraphQL/storage,
-> add mutating tools, or enable repository-provided client config. Execution
-> starts only after an explicit operator ship decision.
+> **Executor instructions**: Local-stdio GO only. Do not rename the spike as
+> product without graduation, expose raw GraphQL/storage, add mutating tools,
+> or enable repository auto-trust. Remote MCP waits on auth/TLS edge integration.
 
 ## Status
 
-- **Priority**: P1 when opened
-- **Effort**: XL
+- **Priority**: P1
+- **Effort**: L remaining
 - **Risk**: CRITICAL
-- **Depends on**: 099, 104, 111; 109 before any remote transport
+- **Depends on**: 099, 104, 111 (done); remote needs auth contract + TLS edge
 - **Category**: agent surface / MCP / security
-- **Planned at**: `eefa4617`, 2026-07-12
-- **Status**: IN PROGRESS — local-stdio product GO (unblock 2026-07-17); ship gates incomplete
-- **Blocker**: none for local scope. Residual gates: claimed-client fixtures,
-  resources/oversized summary path, independent OTel-span verification, spike
-  graduation/quarantine.
+- **Status**: IN PROGRESS — local-stdio product GO; residual ship gates open
+- **Evidence**:
+  [`docs/research/validation/2026-07-plan-112-product-mcp/README.md`](../docs/research/validation/2026-07-plan-112-product-mcp/README.md)
+  and
+  [`docs/research/decisions/agent-access-surface.md`](../docs/research/decisions/agent-access-surface.md)
 
-## Current Evidence
+## Landed (do not replay)
 
-The spike proves byte-equivalent bounded bundle projection for two read-only
-tools. It does not prove client registration/discovery, resources, scopes,
-remote auth, audit, output limits, protocol drift, capability denial, or client
-retention. Its former comparison-only `_meta` raw JSON has been removed and
-must not return in product output.
+Spike local-stdio: two read-only tools, closed schemas, loopback-only GraphQL,
+`--allow-local-stdio` trust, `evidence:read`, secret-free errors, 128 KiB result
+cap, 1 MiB GraphQL body, redaction/hash/schema fail-closed, audit row +
+`parallax.mcp.audit` span (in-memory capture), wire init/`tools/list`/negative
+capability fixtures, protocol pin, no rustls. Full crate tests + Clippy green
+at evidence time.
 
-### Preliminary implementation available on `main` (Codex, 2026-07-17)
+## Residual only
 
-Evidence packet: [`docs/research/validation/2026-07-plan-112-product-mcp/README.md`](../docs/research/validation/2026-07-plan-112-product-mcp/README.md).
-
-- The opened product decision is now durable in
-  `docs/research/decisions/agent-access-surface.md`: local stdio only, exact two
-  tools, no resources/raw refs/remote transport, server-assigned
-  `evidence:read`, Codex + Claude Code claimed only after fixtures, and an exact
-  secret-free audit/retention/graduation contract.
-- `rmcp` 2.2.0 was rechecked as the latest stable crate. The spike remains
-  local stdio-only with no SDK HTTP/TLS features; its dependency graph contains
-  no `rustls` package.
-- Comparison-only raw canonical JSON was removed from MCP `_meta` while the
-  canonical object remains in `structuredContent`.
-- Tests assert tools are advertised while roots, sampling, elicitation,
-  prompts, resources, tasks, and other unapproved capabilities remain absent.
-- Discovery tests lock the exact two-tool preliminary catalog and require
-  closed input schemas with one mandatory anchor each.
-- GraphQL anchors use variables rather than copied partial string escaping,
-  removing the control-character/injection class at this adapter boundary.
-- Bundle calls explicitly request a 4,000-token canonical budget rather than
-  inheriting the HTTP API's 10,000-token default; full oversized-summary and
-  resource-reference behavior remains unfinished.
-- Issue-context discovery advertises the checked-in bundle-v2 schema as the MCP
-  `outputSchema`; client discovery/conformance evidence remains unfinished.
-- Invalid checked-in bundle schema content now advertises a deny-all schema
-  rather than silently widening discovery with an open empty schema; discovery
-  locks its canonical identifier and closed-object policy.
-- Stdio startup requires an explicit `--allow-local-stdio` command-line trust
-  decision; environment and repository files cannot supply that opt-in.
-- The explicit trust path constructs a private server-assigned
-  `local-operator` context carrying exactly `evidence:read`; both tools check
-  it, missing scope denies, and no client input can assert or elevate scopes.
-- API origins are restricted to credential-free plaintext loopback HTTP;
-  arbitrary hosts, TLS, URL credentials, paths, queries, and fragments fail
-  closed until Plan 109 supplies the remote transport contract.
-- Malformed bundle contracts and upstream failures return stable secret-free
-  MCP errors; the adapter no longer silently substitutes an empty object or
-  forwards raw upstream error strings.
-- Projection-equivalence mismatch diagnostics no longer print evidence
-  previews (or byte-slice UTF-8); they expose only lengths, first differing
-  byte, and SHA-256 digests.
-- Equivalence subprocess failures omit potentially sensitive CLI stderr, and
-  invalid UTF-8 stdout now fails exact comparison instead of being lossily
-  rewritten.
-- Checker status and subprocess errors no longer render issue fingerprints,
-  invocation IDs, or the argument vector containing them.
-- Failed equivalence cases suppress raw GraphQL/parser error chains, which may
-  contain seeded or upstream-reflected evidence.
-- The spike installs no tracing subscriber; environment log directives cannot
-  activate dependency-level MCP protocol/result logging of anchors or evidence.
-- Each finished tool call now also emits one parent-subscriber-compatible
-  `parallax.mcp.audit` span with fixed tool/principal/scopes/status/result-size/
-  duration fields. Success and error fixtures capture the span, require stable
-  fields, and reject seeded secret shapes. The spike still installs no runtime
-  subscriber or exporter and adds no TLS surface. Full crate tests (33) and
-  spike-only strict Clippy pass; the next executor must independently verify
-  exporter integration before treating the OTel gate as terminal.
-- The call guard is cancellation-safe: dropping an unfinished async call emits
-  exactly one bounded `cancelled` row/span, while explicit success/error
-  completion suppresses the fallback. This removes future early-return and
-  task-cancellation audit gaps; a focused fixture locks the one-row invariant.
-- Canonical evidence redaction now strips C0/C1 terminal controls (including
-  ANSI ESC, NUL, and DEL) while preserving tab/newline/CR and records the
-  removal count, preventing control injection across structured/text clients.
-- MCP independently requires bundle JSON/Markdown and agent-session JSON to be
-  byte-stable under the canonical evidence sanitizer; known seeded secret or
-  control patterns fail closed instead of being rewritten after hashing.
-- Bundle output fails closed unless the separately projected GraphQL canonical
-  hash exactly matches the hash embedded in the bundle-v2 object.
-- The MCP tool path independently recomputes the canonical v2 hash as well;
-  matching but forged upstream embedded/projected hashes fail closed.
-- Before hash verification or output, the MCP tool validates the envelope
-  against the checked-in Draft 2020-12 bundle-v2 schema with formats enabled;
-  correctly hashed unknown fields and malformed contracts fail secret-free.
-- The nested immutable `data` dossier is separately validated against the
-  checked-in bundle-v1 schema, matching the v2 contract's explicit deep-shape
-  rule rather than accepting version-only payloads.
-- Both immutable schema validators compile once per process through fail-closed
-  lazy singletons rather than rebuilding on every tool invocation.
-- The standalone equivalence checker now recomputes bundle-v2's actual
-  `sha256-jcs:` scope, including the nested `data` exclusions; fixtures prove
-  excluded build/budget changes are stable while evidence changes are not.
-- All GraphQL responses stream through a hard 1 MiB ceiling before JSON parse;
-  chunked responses cannot bypass the bound or partially append overflow bytes.
-- Oversized declared `Content-Length` is rejected before body streaming, while
-  the streaming ceiling still covers chunked or decoded responses.
-- Server discovery explicitly pins stable MCP `2025-11-25` rather than the
-  SDK's moving `LATEST` constant; client skew fixtures remain unfinished.
-- The GraphQL client denies redirects (preventing loopback-to-remote escape)
-  and enforces 5-second connect plus 30-second total request deadlines.
-- The fully serialized MCP tool-result payload is capped at 128 KiB, including
-  JSON escaping expansion across structured and compatibility text content.
-  Oversized results currently fail closed; the required bounded-summary plus
-  approved-resource-reference path remains unfinished.
-- Agent-session GraphQL now uses a static syntactically valid variable query
-  (removing stale doubled format-string braces), and bundle projections reject
-  missing/null/non-string contract fields instead of substituting empty text.
-- Loopback-origin enforcement now lives inside the GraphQL client constructor,
-  preventing future internal callers from bypassing the CLI-level validation.
-- Only literal loopback IPs are accepted; even `localhost` is rejected so DNS
-  or hosts-file configuration cannot redirect the supposedly local transport.
-- Both preliminary tools advertise and test exact MCP annotations: read-only,
-  non-destructive, idempotent, and closed-world.
-- Tool anchors are closed-schema and runtime bounded to 1–256 UTF-8 bytes;
-  stable invalid-parameter errors do not echo attacker-controlled values.
-- Before GraphQL or future audit paths see an anchor, runtime validation rejects
-  any value changed by the canonical sanitizer, including known secret and
-  terminal-control patterns.
-- Agent-session output now strictly decodes into a closed typed projection and
-  advertises its generated MCP `outputSchema`; arbitrary GraphQL fields cannot
-  pass through to clients.
-- An in-memory stdio-equivalent wire fixture now proves MCP initialization,
-  stable protocol negotiation, and the exact terminal `tools/list` catalog
-  with no next cursor. Codex and Claude registration/discovery fixtures remain
-  unfinished.
-- The wire fixture also invokes representative forbidden shell and management
-  names and requires protocol-level `tool not found` failures.
-- Wire-level prompt/resource/template catalogs must remain empty with no next
-  cursor, and direct prompt/resource reads must fail method-not-found while
-  those capabilities are unapproved.
-- Missing bundles/sessions now map to stable MCP resource-not-found codes,
-  distinct from secret-free internal transport/parse failures.
-- Initialization overrides the SDK's echo-any-known-version behavior: only the
-  reviewed `2024-11-05` through `2025-11-25` revisions are accepted; future
-  `2026-07-28` and unknown versions fail closed on the wire.
-- Wire fixtures negotiate every reviewed legacy revision and assert the server
-  returns that exact revision, while the future-version denial remains
-  protocol-level; claimed-client skew evidence remains unfinished.
-- Two fresh transports over the same server state rediscover the identical
-  terminal catalog, proving preliminary discovery has no prior-session or MCP
-  session-ID dependency.
-- All spike test bodies now live in external child modules; production files
-  contain only `#[cfg(test)] mod tests;`, and both production/test files remain
-  below the active Rust structural ceilings.
-
-This is preliminary hardening, not completion. The next executor must still
-define scopes/install trust, graduate or remove the spike, implement bounded
-resources and audit/OTel evidence, and run both claimed-client fixtures plus
-the full negative matrices below.
-
-## Scope
-
-In scope after a GO decision:
-
-- An explicit local-stdio-only versus authenticated-remote transport contract.
-- Product crate/config/package lifecycle and deletion/quarantine of the spike.
-- Read-only bundle tools/resources, client conformance, authorization, audit,
-  bounds, redaction, protocol/capability policy, and retention documentation.
-
-Out of scope:
-
-- Shell, SQL, deploy, rollback, delete, alert/dashboard/user/role/pipeline CRUD.
-- Raw refs without an approved sensitive scope and plan 111 coverage.
-- Auto-enable/trust from repository config or unauthenticated remote transport.
-
-## Steps After Trigger
-
-### Step 1: Decide the product and transport boundary
-
-Approve tool/resource catalog, supported clients, local install/trust behavior,
-remote inclusion/deferment, scope names, output budget, audit schema, raw-ref
-policy, and spike graduate/delete decision. If remote MCP is included, plan 109
-must provide issuer/audience/PKCE/resource-indicator/token-passthrough rules.
-
-### Step 2: Prove client and discovery behavior
-
-For each claimed Codex/Claude client, record configuration source/precedence,
-trust prompts, credentials, `tools/list`, tool search/deferred loading,
-negative-tool absence, `resources/list/read/templates`, attachment behavior,
-structured content, and oversized-output handling.
-
-### Step 3: Enforce scope and transport safety
-
-Require `evidence:read` and a separately approved sensitive scope for any raw
-reference. Local stdio has explicit install/trust and approved credential
-sources. Remote transport, if authorized, uses native TLS plus protected
-resource metadata, resource indicators, audience, PKCE, and no token
-passthrough. Missing/invalid scope fails closed.
-
-### Step 4: Enforce evidence and audit invariants
-
-Every result comes from plan 111's bounded canonical bundle. Test source-field
-policy, redaction, output budget with summary/resource refs, and one audit row
-plus OTel span per call containing caller/tool/scopes/bundle/status/policy but
-no sensitive evidence.
-
-### Step 5: Pin protocol, capabilities, and client retention
-
-Record stable/observed MCP versions and eliminate session-ID assumptions.
-Deny/audit roots, sampling, elicitation, tasks, and other unapproved
-capabilities. Document Codex memory and Claude file/resource persistence; keep
-sensitive evidence out of memory and persisted client artifacts.
-
-### Step 6: Graduate or remove the spike
-
-Move only proven code into a deliberate product crate and permanent projection
-fixture, or delete/quarantine the spike on NO-GO. Remove comparison-only raw
-metadata. Do not update the user agent guide until all selected ship gates pass.
-
-## Test Plan
-
-- Claimed-client registration, trust, discovery, invocation, resource, and
-  retention fixtures.
-- Scope/auth/PKCE/audience/token-passthrough negative matrix where remote exists.
-- Canonical projection/redaction/source-field/output-budget equivalence.
-- Audit/OTel no-secret fixtures.
-- Permanent negative tool/management catalog and capability assertions.
-- Protocol-version/skew and no-session-dependence tests.
+1. **Claimed-client fixtures**: real Codex + Claude Code registration, trust,
+   discovery, invocation, retention (not only in-process wire mock).
+2. **Oversized path**: bounded summary + approved resource reference (today
+   fails closed at 128 KiB only).
+3. **Independent OTel verification**: exporter/subscriber integration of audit
+   spans outside unit capture.
+4. **Spike disposition**: graduate deliberate product crate **or**
+   delete/quarantine spike; remove comparison-only paths permanently.
+5. Remote transport remains out of residual until a separate GO wires auth +
+   native TLS + PKCE/audience/no-passthrough.
 
 ## Done Criteria
 
-- [ ] Operator records GO/NO-GO and the supported transport/client contract.
-- [ ] Client fixture and tool-discovery fixture pass for every claimed client.
-- [ ] Resource read/templates/attachment behavior is bounded and raw-ref safe.
-- [ ] Scope defaults deny; remote auth gates pass if remote is supported.
-- [ ] Local stdio install/trust/credential behavior is explicit and safe.
-- [ ] Redaction and source-field fixtures pass across structured/text output.
-- [ ] Oversized output becomes bounded summaries plus approved resource refs.
-- [ ] Every call produces safe audit and OTel evidence.
-- [ ] Negative tool and management catalogs remain permanently empty.
-- [ ] Protocol and unapproved capability fixtures fail closed.
-- [ ] Client retention behavior is documented and sensitive-safe.
-- [ ] The spike is graduated deliberately or deleted/quarantined.
+- [ ] Client fixtures pass for every claimed client.
+- [ ] Oversized output → bounded summary + approved resource refs.
+- [ ] Every call produces safe audit + independently verified OTel evidence.
+- [ ] Spike graduated or deleted/quarantined deliberately.
+- [ ] Negative tool/capability/protocol fixtures remain permanently empty/fail-closed.
 
-## STOP Conditions
+## STOP / Remove When
 
-- Product MCP is not explicitly opened by the operator.
-- Plans 099/104/111 are incomplete, or remote work starts before plan 109.
-- A client requires repository auto-trust, raw GraphQL/storage, unbounded text,
-  token passthrough, rustls, or an unapproved mutating capability.
-- Projection or audit output can disclose a seeded secret.
-
-## Remove When
-
-Delete this plan and index row after an explicit NO-GO removes/quarantines the
-spike, or a GO delivers every selected product/client/security gate and the
-spike has a terminal disposition.
+STOP if a client requires auto-trust, raw GraphQL, unbounded text, token
+passthrough, rustls, or mutating tools. Delete after GO gates pass and spike
+has terminal disposition, or NO-GO removes/quarantines the spike.

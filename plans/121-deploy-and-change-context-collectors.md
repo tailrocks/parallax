@@ -1,119 +1,42 @@
-# Plan 121: Collect deploy, release, code-change, and work-item context
+# Plan 121: GitHub deploy/change context residual
 
-> **Executor instructions**: Provider text is untrusted evidence, never policy or
-> root-cause proof. Start read-only with one approved provider and stable IDs.
-> Do not add writeback, broad repository tokens, raw issue text in bundles, or a
-> provider claim that has not passed real webhook/backfill fixtures.
+> **Executor instructions**: Provider text is untrusted evidence, never policy
+> or root-cause proof. Read-only; no writeback; no raw issue text in default
+> bundles.
 
 ## Status
 
 - **Priority**: P3
-- **Effort**: XL
+- **Effort**: L remaining
 - **Risk**: HIGH
-- **Depends on**: 099, 104, 109, 111, 116
-- **Category**: future provider integration / causal evidence / security
-- **Planned at**: `eefa4617`, 2026-07-12
-- **Status**: IN PROGRESS — GitHub signature + deploy normalize slice 2026-07-17
-- **Blocker**: none for pure verify/normalize. Residual: HTTP webhook route,
-  delivery-id idempotency, Turso state, API backfill, bundle/doctor, claim
-  ledger.
-
-## Why
-
-The deploy/change research defines releases, deployments, commits, PRs, CI
-checks, workflow jobs, and work items as useful context for "what changed?" but
-not causality by themselves. It also contains a provider implementation order
-while its evidence ledger remains `not_measured`. This plan is the sole future
-implementation owner and keeps provider work gated until auth, redaction,
-retention, and exact claim scope are approved.
-
-## Scope
-
-In scope after the blocker clears:
-
-- One selected provider's read-only webhook/API ingestion with least-privilege
-  credentials, signature verification, delivery IDs, replay protection, and
-  deterministic backfill/reconciliation.
-- Versioned release, deploy, commit, compare, PR/file, check/job, and work-item
-  records with strong/medium/weak edge rules and explicit missing evidence.
-- Stable joins to telemetry through commit SHA, release, environment, service,
-  run, trace, and provider IDs before time-window inference.
-- Turso ownership for mutable integration/config/state and bounded approved
-  derived evidence; raw provider payloads remain short-lived scoped references.
-- Redacted summaries and source-field/projection policy in canonical bundles.
-- `doctor` coverage diagnostics and the claim-level measurement ledger.
-
-Out of scope:
-
-- Root-cause claims from adjacency alone, provider writeback, issue mutation,
-  deployment control, repository administration, generic GitHub/Linear/Jira MCP,
-  or direct production access.
-- Adding all providers at once or accepting broad organization tokens.
-- Storing raw comments, customer requests, release notes, or deploy logs in
-  default agent-visible projections.
-
-## Steps
-
-1. Reproduce the trigger and record the first provider, exact API/webhook
-   versions, supported entities, least-privilege permissions, and claim wording.
-2. Specify typed normalized records, stable IDs, edge strengths, retry/replay,
-   retention, redaction, missing-evidence, and conflict/backfill semantics.
-3. Generate sanitized real fixtures for delivery, redelivery, missing/out-of-order
-   state, pagination, compare bases, PR file truncation, protected deployments,
-   renamed/deleted entities, rate limits, and schema drift.
-4. Implement signature-verified ingestion and bounded API backfill through typed
-   provider ports. Persist mutable state in Turso and acknowledge webhooks only
-   after durable idempotent acceptance.
-5. Build release/deploy/code/work-item edges and canonical bundle projections.
-   Strong linkage still requires runtime evidence before causal ranking.
-6. Add `parallax doctor deploy-context` and measure release/commit/deploy/status/
-   compare/file-list/work-item coverage against predeclared thresholds.
-7. Admit another provider only through a separate adapter/fixture slice. Keep
-   writeback blocked until plan 123's outcome loop is independently proven.
-
-## Test Plan
-
-- Signature/auth/permission, replay, redelivery, pagination, rate-limit, and
-  backfill reconciliation tests from sanitized provider fixtures.
-- Stable-ID/edge-strength tests including contradictory and time-only evidence.
-- Seeded secret/PII/prompt-injection provider text across storage and projections.
-- Missing/truncated provider data and truthful doctor/claim-level tests.
-- Turso migration/concurrency/retention and bundle hash/projection conformance.
-
-## Current Evidence (2026-07-17)
-
-- Decision:
+- **Depends on**: 099, 104, 111, 116; auth contract for remote webhook surface
+- **Category**: future provider integration / causal evidence
+- **Status**: IN PROGRESS — pure verify/normalize landed; residual below
+- **Decision**:
   [`docs/research/decisions/github-deploy-change-adapter.md`](../docs/research/decisions/github-deploy-change-adapter.md)
-- Pure module: `crates/parallax-evidence/src/github_deploy.rs`
-  - `verify_signature_256` for `X-Hub-Signature-256`
-  - `normalize_deploy_webhook` for `deployment` / `deployment_status`
-  - description text and sender email excluded from normalized records
-  - edge strength strong only when commit SHA + environment present
+
+## Landed (do not replay)
+
+- `verify_signature_256` + `normalize_deploy_webhook` for
+  `deployment` / `deployment_status` (`parallax-evidence::github_deploy`).
+- Description text + sender email excluded; strong edge only with SHA + env.
+
+## Residual only
+
+1. HTTP webhook route; durable accept only after Turso/idempotent write.
+2. Delivery-id idempotency + redelivery fixtures.
+3. API backfill/reconciliation under rate limits.
+4. Bundle projection + `doctor deploy-context`; claim ledger rows before any
+   product claim advances.
+5. No causal wording from adjacency alone.
 
 ## Done Criteria
 
-- [x] (2026-07-17) Operator-approved provider/scope/permissions and claim level
-  are explicit in the decision doc (`not_measured` until ledger rows).
-- [ ] Webhooks and backfill are signature/auth checked, bounded, durable, and
-  idempotent (signature pure fn landed; HTTP/durable/idempotent open).
-- [x] (partial) Stable identifiers dominate in the normalizer; edge strength
-  is explicit; no causal wording.
-- [x] (partial) Description text excluded from normalized output; raw payload
-  retention still open.
-- [ ] Missing evidence and provider drift fail closed and appear in `doctor` output.
-- [ ] Coverage thresholds have dated real rows before any product claim advances.
-- [ ] Full Turso, bundle, redaction, API, and strict Rust gates pass.
+- [ ] Webhooks/backfill signature-checked, bounded, durable, idempotent.
+- [ ] Missing evidence/provider drift in doctor; coverage thresholds measured.
+- [ ] Full Turso/bundle/redaction/API/strict Rust gates pass.
 
-## STOP Conditions
+## STOP / Remove When
 
-- Provider/product/auth scope is not explicitly opened.
-- Required access exceeds least privilege or cannot separate read from write/admin.
-- Provider delivery/backfill cannot be made idempotent and auditable.
-- Product wording would imply causality from release/deploy adjacency alone.
-- Implementation requires a fallback store or raw unredacted agent projection.
-
-## Remove When
-
-Delete this plan and row when every approved provider adapter and claim gate is
-shipped and measured, or when provider context is explicitly rejected and no
-actionable integration remains.
+STOP if least-privilege impossible, idempotency fails, or product wording
+implies causality from deploy adjacency. Delete when adapter ships or rejected.

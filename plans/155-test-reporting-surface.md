@@ -1,337 +1,60 @@
-# Plan 155: Test reporting and test observability surface
+# Plan 155: Test reporting surface residual
 
-> **Executor instructions**: This plan adds a new Parallax product capability:
-> tests as a first-class, filterable surface fused with traces, logs, issues,
-> and runs. It was collected as an information-only packet on 2026-07-14
-> (operator-directed); no code changed at planning time. Evidence base:
-> [`docs/research/market/test-reporting-ecosystem.md`](../docs/research/market/test-reporting-ecosystem.md).
-> The playground emits the matching payload under plan 154 W4. Plan 124 keeps
-> CI-provider (GitHub Actions API) collection; this plan consumes only
-> telemetry that arrives through OTLP ingest. Do not create branches or PRs.
+> **Executor instructions**: Tests as first-class surface fused with traces,
+> logs, issues, runs. Native Greptime tables only; Turso for mutable registry.
+> Identity never uses invocation/run as test identity (plan 156 contract:
+> `(test_variant_key, cli.invocation.id, attempt)`). Do not half-land UI.
 
 ## Status
 
 - **Priority**: P1
-- **Effort**: XL
+- **Effort**: XL residual
 - **Risk**: MEDIUM
-- **Depends on**: 149, 152, 153 (UI foundations; cannot land during plan
-  140's move-only migration — extend Runs/Tests surfaces only after 140
-  closes); soft 104 (test-mode bundle anchor), 119 (semconv constants), 121
-  (deploy/change joins), 124 (CI-provider enrichment), 140 (Runs feature)
+- **Depends on**: 149, 152, 153, 140 (DONE hard deps); soft 121/124 open
 - **Category**: product capability / ingest derivation / UI surface
-- **Planned at**: `8f24808`, 2026-07-14
-- **Status**: TODO — hard deps 149/152/153/140 DONE (2026-07-17); soft 121/124
-  still open. Ready to start domain model + OTLP test derivation once claimed;
-  XL surface — do not half-land UI.
+- **Status**: IN PROGRESS — domain model + identity derivation landed
+- **Evidence base**:
+  [`docs/research/market/test-reporting-ecosystem.md`](../docs/research/market/test-reporting-ecosystem.md)
 
-## Contract reconciliation (2026-07-17)
+## Landed (do not replay)
 
-Plan 156 renames the session correlation key before this plan starts: every
-"session = `parallax.run.id`" statement reads as "session invocation =
-`cli.invocation.id`" (the operator's warning stands — it links results to a
-session, never to test identity); the result key becomes
-`(test_variant_key, cli.invocation.id, attempt)`; `PARALLAX_RUN_ID` env
-forwarding becomes `CLI_INVOCATION_ID`; run start/finish + live SSE read as
-the renamed invocation mutations/streams. See
-plans/156-unified-cli-observability-contract.md.
+- `parallax-model` test reporting domain: versioned `TestCaseKey` /
+  `TestVariantKey`, result identity, attempt chains, rollups (`FlakyPass`),
+  flaky state machine boundary, identity fallback
+  (explicit → code reference → name path).
+- Suites in `crates/parallax-model/src/test_reporting/`.
 
-## Why
+Design decisions D1–D9 (identity, native tables, status taxonomy, attempt
+chains, shared fingerprints, flaky SM, `/tests` surface, session semantics,
+runner adapters) remain binding — see Git history of this plan for full text
+if needed; do not reopen.
 
-Operator direction (2026-07-14): Parallax is not only a telemetry viewer — it
-must also work as a **test reporting system**. Every test visible; every
-failed test opens the error, the attempt chain, and the distributed trace of
-the system under test; tests get their own page with filters, history,
-flakiness, and version-under-test attribution.
+## Residual only
 
-Research (see evidence doc) shows the field splits into report generators
-with no store or trace linkage (Allure), closed test-as-telemetry platforms
-(Datadog Test Optimization), flaky-detection SaaS bolted onto JUnit XML
-(Trunk, Codecov, Buildkite), and an abandoned trace-based-testing niche
-(Tracetest). Nobody ships: SUT telemetry inside the test window, or one
-fingerprint space shared between test failures and production issues. Sentry
-owned both halves and sold the test half (Codecov → Harness, 2026-06) without
-fusing them. Parallax's existing engines (native OTLP ingest, fingerprinting,
-issues, runs, evidence bundles) cover most of the hard parts; what is missing
-is the test domain model and the surface.
-
-## Design decisions (bound by this plan)
-
-### D1 — Identity model (three separated layers + explicit override)
-
-The operator explicitly flagged: do not assume `parallax.run.id` is the test
-identity. It is not. A run scopes ONE session invocation; test history must
-survive across runs, branches, and CI jobs (ReportPortal's deprecated
-launch-name-in-identity is the canonical mistake). Model:
-
-1. **`test_case_key`** — stable identity of a test case. Fallback chain,
-   highest wins: explicit `parallax.test.id` attribute (ALLURE_ID pattern,
-   survives renames) → code reference (fully qualified name; never
-   line/column — Allure's Playwright adapter breaks history on line shifts)
-   → name path (suite chain + test name). Hash stored, components stored
-   queryable.
-2. **`test_variant_key`** — `test_case_key` + ordered non-excluded parameter
-   values (Allure `historyId` analog). History, retries, and flaky state key
-   on the variant.
-3. **Configuration axis, NOT in any hash** — environment/os/browser/service
-   attributes (`test.configuration.*`-shaped) stored as queryable dimensions
-   so "flaky only on macOS" is a filter, not a fork (Datadog/Trunk/Buildkite
-   lesson).
-4. Results are keyed `(test_variant_key, parallax.run.id, attempt)`; the run
-   id links a result to its session, never to identity.
-
-### D2 — Signal mapping (native tables only)
-
-Test telemetry arrives as ordinary OTLP: test = root span (steps = child
-spans, assertion failure = span status ERROR + exception event), session =
-`parallax.run.id`, semconv `test.*` + `cicd.pipeline.*` + `vcs.*` +
-`service.version`. Test spans/logs live in the native GreptimeDB
-`opentelemetry_traces`/`opentelemetry_logs` tables — **no hand-rolled
-raw-signal table** (AGENTS.md native-table rule). Mutable state
-(case/variant registry, flaky state, mute/known flags) lives in **Turso**
-(same rationale as issue identity). Any derived acceleration table follows
-the documented extension process in
-`docs/research/decisions/native-otel-tables.md` first.
-
-### D3 — Status taxonomy
-
-`passed / failed / broken / skipped / unknown`, where failed = assertion
-(product defect) and broken = any other harness/infra error — derived from
-`error.type`/exception class family at analysis time. This split is Allure's
-most-praised triage feature and no OTel attribute carries it today; derive
-it, store the rule, and surface it (failed → SUT owner; broken → harness
-owner).
-
-### D4 — Attempt chains, never latest-wins
-
-Every attempt is kept and displayed as a chain (CTRF `retryAttempts` shape).
-Aggregations state which policy they use; the default rollup marks a
-pass-after-fail result as **flaky-pass**, not pass (Allure's latest-wins
-masks flakiness — do not copy it).
-
-### D5 — Failure clustering shares the production fingerprint space
-
-Test failures run through the existing
-`fingerprint_with_operation(error_type, message, stacktrace, operation)`
-pipeline. Two independent axes: failure fingerprint (message/stack
-normalized; NO test identity inside → one root cause clusters across many
-tests, and a test failure can equal a production issue) × test variant
-(history). The Tests surface shows both: "this failure = issue <fingerprint>"
-and "this test's history".
-
-### D6 — Flaky state machine (per variant, in Turso)
-
-Detection signals: same-commit divergence (pass+fail on one
-`vcs.ref.head.revision`), intra-run attempt mix, windowed transition count.
-States: `healthy → flaky → fixed(expiry)` plus `broken` (consistently
-failing) — broken is never classified flaky (Trunk lesson). Expiry: N
-consecutive passes (default 30) or operator action. Mute/known flags follow
-plan 124's guardrail: flaky ≠ "any retry"; multi-attempt evidence required.
-Quarantine *enforcement* (runner fetches state / exit-code rewriting) is a
-recorded trigger, not V1.
-
-### D7 — Separate Tests surface
-
-Operator direction: tests get their own page, not a Runs tab. `/tests` +
-`/tests/$caseKey` routes (post-migration: `features/tests` behind plan-149
-facades, plan-152 generated GraphQL documents), nav entry in `workspaceNav`
-next to Runs. Tests link to Runs (session), Traces (stitched SUT trace),
-Logs (test window), Issues (shared fingerprint) via declared feature edges.
-
-### D8 — Run-preview semantics (Allure TestOps second-pass research, 2026-07-14)
-
-The test-session view follows the TestOps launch model where it is proven,
-and beats it where Parallax has structural advantages (research doc §4):
-
-- **Session lifecycle**: a test session (run) is *open* while results stream
-  and *closed* afterward; closing finalizes statistics. An **auto-close
-  policy** (idle timeout) handles crashed producers. Parallax reuses the
-  existing run start/finish plus live SSE — the run detail **fills in live
-  per finished test** (TestOps needs polling; push updates are the
-  out-execution win).
-- **Status vs resolution**: a failure is *unresolved* until triaged
-  (issue-linked or muted). The session headline number is unresolved
-  failures, not raw failures.
-- Tier-1 view set (research doc §4.4): session list with status counts +
-  open/closed + metadata chips; live-filling session detail with a grouped
-  test tree (suite rollups); result detail = error + stack + nested step
-  tree (rendered by the existing trace waterfall) + parameters +
-  attachments; retries grouped under one logical result.
-- Tier-2: per-test history + flaky badge; "similar failures" via shared
-  fingerprints; transition badges (new/regressed/**malfunctioned**/fixed —
-  passed→broken vs passed→failed distinguished); mute with required reason,
-  **environment-scoped with optional expiry** (TestOps lacks both); session
-  comparison matrix (defer if needed).
-- Declarative matcher rules (defect-record regexes auto-resolving future
-  failures) stay a recorded trigger until fingerprint override rules exist.
-
-### D9 — Runner adapters (how tests reach Parallax)
-
-Parallax ships thin client-side adapters; identity attributes follow D1 and
-the research doc §5 mechanisms:
-
-- **Gradle/JUnit 5**: a `TestExecutionListener` + `LauncherSessionListener`
-  jar (ServiceLoader-registered, `testRuntimeOnly`). Identity from JUnit
-  `UniqueId` segments (param-signature-aware); full `recordException`;
-  concurrent-safe span map (no `Span.current()`); flush in
-  `launcherSessionClosed` per forked JVM; optional Jupiter
-  `InvocationInterceptor` so OTel-javaagent spans (Spring Boot integration
-  tests) nest under per-test spans; `TRACEPARENT`/`PARALLAX_RUN_ID`
-  forwarded explicitly through the `Test` task env (daemon drift). The
-  atkinsondev Gradle plugin is the documented zero-code fallback with known
-  losses (displayName identity, 5-frame stacks, no attempt counter).
-- **cargo-nextest**: a small Rust test-support crate — per-process lazy
-  subscriber (process-per-test makes it contention-free), identity from
-  `NEXTEST_RUN_ID` / `NEXTEST_BINARY_ID` / `NEXTEST_TEST_NAME` /
-  `NEXTEST_ATTEMPT` / `NEXTEST_ATTEMPT_ID` env, parent from passed-through
-  `TRACEPARENT`, export via `SimpleSpanProcessor` or explicit provider
-  shutdown (never Drop-at-exit; libtest `process::exit` skips destructors).
-- **Reconciliation in the wrapper**: `parallax run` (or a `parallax test`
-  subcommand) parses post-run JUnit XML — Gradle with `mergeReruns=true`,
-  nextest `[profile.ci.junit]` — to classify flaky/rerun attempts
-  authoritatively and gap-fill tests killed before flushing (SIGKILL /
-  timeout). Stock `cargo test` (no nextest) is supported only via the
-  unstable-JSON wrapper path and documented as degraded.
-- TLS policy note: OTLP gRPC TLS in `opentelemetry-otlp` 0.32 is
-  rustls-only; adapters target plaintext local `:4317`/`:4318`, and any
-  remote-TLS path must be OTLP/HTTP over a native-TLS client.
-
-## Scope
-
-In scope:
-
-- Turso entities + migrations: `test_cases`, `test_variants`, `test_results`
-  (result index rows referencing native span ids), flaky state fields.
-- Ingest-side derivation: recognize test root spans (semconv `test.*` or
-  `parallax.test.*`), populate registry, attempt chains, status taxonomy,
-  fingerprint linkage.
-- GraphQL `tests` namespace (resolver module pattern of `runs.rs`/`issues.rs`):
-  `test_runs` (sessions), `test_cases` (explorer with filters:
-  suite, service, status, flaky state, owner, environment, release, time
-  range), `test_case(caseKey)` (history, variants, attempts), links to
-  traces/logs/issues/runs.
-- UI: Tests list page (filter toolbar + virtualized table — `issues.index`
-  is the template) and test detail (history trend per variant, attempt
-  chain, failure message/stack, linked trace waterfall, logs-in-window,
-  related issue, release/version attribution, flaky badge with evidence);
-  test-session view per D8 (live-filling tree with rollups via existing SSE,
-  unresolved-failures headline, transition badges, mute-with-reason).
-- Runner adapters per D9: JUnit Platform listener jar, nextest test-support
-  crate, wrapper-side JUnit XML reconciliation; adapter distribution
-  (artifact coordinates, versioning) is an operator decision recorded before
-  first release.
-- Overview/Runs cross-links: a run that is a test session shows its test
-  rollup; a failed test deep-links its evidence.
-- Semconv constants for `test.*`, `cicd.pipeline.*`, `parallax.test.id`
-  (hand-written until plan 119 codegen, then generated).
-- Evidence: verified end-to-end against plan 154 W4 playground payload
-  (nextest, JUnit 5, Playwright).
-
-Out of scope (recorded triggers):
-
-- JUnit XML / CTRF file ingestion (reopen when a real consumer cannot emit
-  OTLP; normalize JUnit → CTRF-shaped internal model when opened).
-- Runner-enforced quarantine protocol, PR/MR feedback comments, test impact
-  analysis/selection, manual test cases / TMS features (authoring, plans,
-  milestones — never rebuild), declarative category-rule files (evaluate
-  after fingerprint override rules exist), AI failure triage.
-- Any GreptimeDB custom raw-signal table (STOP + escalation process instead).
-- Evidence-bundle test-anchor kind — additive `bundle-v1` change goes through
-  plan 104's contract decision, not here.
-
-## Steps
-
-### Preliminary domain-model slice (Codex, 2026-07-17)
-
-`parallax-model` now owns validated versioned case/variant keys, nonzero attempt
-ordinals, the exact `(test_variant_key, cli.invocation.id, attempt)` result
-identity, configuration dimensions outside identity, complete attempt chains,
-named rollups, and the pure healthy/flaky/fixed/broken transition boundary.
-Fail/broken followed by pass rolls up as `FlakyPass`; duplicate attempts and
-mixed invocation/variant chains fail closed; consistent failure takes
-precedence over flaky evidence; recovery requires the explicit policy
-threshold. Five model suites and strict crate Clippy pass.
-
-This is preliminary, not completion. Key derivation/domain-separated hashing,
-identity fallback selection, failed-versus-broken analysis, persistent Turso
-records, ingest derivation, GraphQL, UI, and live playground proof remain for
-the next executor to implement and independently verify. Plan status is
-intentionally unchanged.
-
-1. Write the domain contract first: identity derivation (D1), status
-   taxonomy mapping (D3), attempt semantics (D4), flaky signals/states (D6)
-   as a spec section in this plan's implementation commit; add semconv
-   constants.
-2. Turso migrations + `parallax-model` types (`TestCaseRecord`,
-   `TestVariantRecord`, `TestResultRecord`) + `parallax-metadata` modules
-   following `turso/runs.rs` pattern.
-3. Analysis/derivation: test-span recognition, registry upsert, attempt
-   chaining, failed/broken derivation, fingerprint linkage
-   (`parallax-analysis`), unit + property tests over normalization.
-4. GraphQL namespace + resolvers + clamped queries; wire into `lib.rs` Query
-   root; fixtures.
-5. UI Tests feature (after plans 149/152/153 land and 140 closes): list +
-   detail routes per D7, generated GraphQL documents, Playwright contract
-   rows (plans 144-146 gates).
-6. Flaky state machine job over ingested results (same-commit divergence
-   needs `vcs.ref.head.revision` present — playground provides it; document
-   degraded mode when absent).
-7. Runner adapters (D9): nextest test-support crate first (dogfoods on
-   Parallax's own test suite), then the JUnit listener jar (verified against
-   the playground's Gradle services), then wrapper-side JUnit XML
-   reconciliation; each adapter lands with a live-vs-reconciled fixture
-   pair proving killed-test gap-fill.
-8. Verify end-to-end with plan 154 W4 payload: one failed Playwright test and
-   one failed Rust integration test produce list/detail/history/trace/issue
-   linkage, watched live on an open session; record evidence in
+1. Turso migrations + metadata modules (`test_cases` / `test_variants` /
+   `test_results`).
+2. Ingest derivation: test root-span recognition, registry upsert, failed vs
+   broken, fingerprint linkage (`parallax-analysis`).
+3. GraphQL `tests` namespace + clamped queries.
+4. UI `features/tests`: list + detail + live session tree (after architecture
+   owners; React Flow not required here).
+5. Flaky job over ingested results; mute/known flags (no runner quarantine
+   enforcement in V1).
+6. Runner adapters: nextest support crate, JUnit listener jar, JUnit XML
+   reconciliation gap-fill.
+7. Live e2e vs plan 154 W4 playground payload; validation evidence under
    `docs/research/validation/`.
-
-## Test Plan
-
-- Unit/property: identity fallback chain, parameter exclusion, hash
-  stability across attribute reordering; failed-vs-broken mapping table;
-  flaky state transitions incl. broken-never-flaky and expiry.
-- Integration: OTLP fixture batches (Rust/Java/Playwright shapes from the
-  playground) → registry rows, attempt chains, fingerprints asserted via
-  GraphQL.
-- UI: Bun Vitest for feature logic; Playwright contract tests for list
-  filters, detail tabs, cross-links (fixture-backed per plan 144).
-- Cross-repo: plan 154 W4 §19 acceptance demo doubles as this plan's live
-  gate.
 
 ## Done Criteria
 
-- [ ] Identity/status/attempt/flaky contracts implemented exactly as D1-D6
-      with tests; no run/launch identity inside test identity.
-- [ ] Test spans/logs remain solely in native GreptimeDB tables; mutable
-      state solely in Turso; no new raw-signal table.
-- [ ] GraphQL `tests` namespace + `/tests` UI surface shipped behind the
-      plan-149/152 architecture with Playwright gates green.
-- [ ] Failed test detail shows: error, attempt chain, stitched SUT trace,
-      logs window, shared-fingerprint issue link, release/version, history.
-- [ ] Flaky states computed from at least two signals with expiry; visibly
-      badged with evidence counts.
-- [ ] Test-session detail fills live over SSE while a session is open;
-      sessions auto-close on idle policy; unresolved-failures headline and
-      transition badges present.
-- [ ] Both D9 adapters (JUnit listener jar, nextest support crate) ship with
-      the reconciliation path proven on a killed-test fixture; Gradle
-      fallback plugin losses documented.
-- [ ] Live verification against the plan 154 playground recorded under
-      `docs/research/validation/`.
+- [ ] Identity/status/attempt/flaky contracts + tests; no run id in identity.
+- [ ] Native Greptime only for raw test spans/logs; Turso for mutable state.
+- [ ] GraphQL + `/tests` UI with Playwright gates; failed detail shows error,
+      attempts, SUT trace, logs window, issue link, version, history.
+- [ ] Flaky from ≥2 signals with expiry; live session SSE + unresolved headline.
+- [ ] Both D9 adapters + killed-test reconciliation proven.
 
-## STOP Conditions
+## STOP / Remove When
 
-- The derivation would require a custom GreptimeDB raw-signal table →
-  native-otel-tables escalation process instead.
-- Plans 149/152/153 not landed or plan 140 still migrating → do not start
-  the UI step (backend steps 1-4 may proceed).
-- `bundle-v1` change needed → route through plan 104.
-- Identity contract conflicts with what plan 154 W4 emitters can produce →
-  reconcile the cross-repo contract before writing code.
-
-## Remove When
-
-All done criteria checked with live evidence, triggers recorded in the
-`plans/README.md` ledger (JUnit/CTRF ingestion, quarantine protocol, PR
-feedback, impact analysis), and the operator confirms the surface; delete
-this file and its index row in the same commit.
+STOP on custom raw-signal table or identity that embeds invocation/run.
+Delete when surface ships with live playground proof.

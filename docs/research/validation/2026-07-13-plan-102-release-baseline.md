@@ -242,5 +242,19 @@ Independent tap acceptance:
 - Formula version: `0.1.0-preview.1295+e37a65d`
 
 The tap formula changed only through its repository-local workflow. No tap
-credential or cross-repository write path was added to Parallax. Plan status
-and retirement are intentionally left to the independent verifier.
+credential or cross-repository write path was added to Parallax.
+
+## Retirement (2026-07-17)
+
+Independent verification confirms the Remove When criteria:
+
+1. Protections remain configured (`STABLE_RELEASE_ENABLED=true` read-back).
+2. Preview `0.1.0-preview.1295+e37a65d` published all four targets from the
+   post-Mach-O implementation SHA `e37a65d7239b207dc9b6ab6c5fdd55a3eef6fdbb`.
+3. Each target passed `cargo xtask release-verify` at the exact SHA/ref in run
+   `29575421066`.
+4. Tap pull run `29576725410` accepted the set and committed formula
+   `e31cb27e`.
+
+Plan 102 retired: plan file and index row deleted; this validation record is
+the durable evidence.
