@@ -48,7 +48,7 @@ ceiling = 2
 [[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "clippy::expect_used"
-ceiling = 15
+ceiling = 16
 
 [[rust_suppressions]]
 crate_name = "parallax-evidence"
@@ -4352,7 +4352,7 @@ ceiling = 635
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/src/serve.rs"
-ceiling = 626
+ceiling = 635
 
 [[limits]]
 metric = "rust.file-lines"
@@ -7434,4 +7434,14 @@ ceiling = 416
 [[limits]]
 metric = "rust.inline-test-modules"
 scope = "crates/parallax-server/src/deploy_backfill.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/tests/m118_sentry_envelope.rs"
+ceiling = 4
+
+[[limits]]
+metric = "rust.test-sleeps"
+scope = "crates/parallax-server/tests/m118_sentry_envelope.rs"
 ceiling = 1

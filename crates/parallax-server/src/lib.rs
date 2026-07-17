@@ -67,4 +67,4 @@ pub use self_telemetry::{
     Installed as InstalledSelfTelemetry, SelfTelemetry, install as install_self_telemetry,
     resolve_endpoint as resolve_self_telemetry_endpoint,
 };
-pub use serve::{ServerHandle, start, start_with_capabilities};
+pub use serve::{ServerHandle, start, start_with_capabilities, start_with_turso};

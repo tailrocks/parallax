@@ -195,6 +195,18 @@ pub async fn start_with_capabilities(
     start_assembled(config, store, metadata, None, None).await
 }
 
+/// Integration-test composition with optional concrete Turso (ack ledgers,
+/// alerting, CI/deploy claim rows).
+#[doc(hidden)]
+pub async fn start_with_turso(
+    config: &Config,
+    store: Arc<dyn TelemetryStore>,
+    metadata: Arc<dyn MetadataStore>,
+    turso: Option<Arc<TursoMetadataStore>>,
+) -> ServerResult<ServerHandle> {
+    start_assembled(config, store, metadata, turso, None).await
+}
+
 struct RouterState {
     store: Arc<dyn TelemetryStore>,
     metadata: Arc<dyn MetadataStore>,
