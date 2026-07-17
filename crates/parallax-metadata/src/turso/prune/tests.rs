@@ -248,3 +248,107 @@ async fn invocation_discovery_counts_eligible_active_and_not_expired_rows() {
     assert_eq!(item.exclusions[1].count, 1);
     assert!(item.warnings.is_empty());
 }
+
+#[tokio::test]
+async fn execute_invocation_prune_deletes_only_eligible_terminal_rows() {
+    let directory = tempfile::tempdir().expect("temporary directory");
+    let store = TursoMetadataStore::open(directory.path().join("metadata.db"))
+        .await
+        .expect("open metadata");
+
+    store
+        .start_invocation("eligible", None, None, 1_000_000)
+        .await
+        .expect("start eligible");
+    store
+        .finish_invocation("eligible", 20_000_000, 0, Some("success"))
+        .await
+        .expect("finish eligible");
+    store
+        .start_invocation("keep-active", None, None, 3_000_000)
+        .await
+        .expect("start active");
+    store
+        .start_invocation("keep-recent", None, None, 2_000_000)
+        .await
+        .expect("start recent");
+    store
+        .finish_invocation("keep-recent", 30_000_000, 0, Some("success"))
+        .await
+        .expect("finish recent");
+
+    let before = store
+        .invocation_prune_item(20_000_000)
+        .await
+        .expect("discover");
+    assert_eq!(before.estimate.rows, Some(1));
+
+    let deleted = store
+        .execute_invocation_prune(20_000_000)
+        .await
+        .expect("execute");
+    assert_eq!(deleted, 1);
+
+    let after = store
+        .invocation_prune_item(20_000_000)
+        .await
+        .expect("rediscover");
+    assert_eq!(after.estimate.rows, Some(0));
+    assert_eq!(after.exclusions[0].kind, PruneExclusionKind::Active);
+    assert_eq!(after.exclusions[0].count, 1);
+    assert_eq!(after.exclusions[1].kind, PruneExclusionKind::NotExpired);
+    assert_eq!(after.exclusions[1].count, 1);
+
+    assert_eq!(
+        store
+            .execute_invocation_prune(20_000_000)
+            .await
+            .expect("repeat"),
+        0
+    );
+}
+
+#[tokio::test]
+async fn execute_issue_prune_cascades_and_preserves_unresolved() {
+    let directory = tempfile::tempdir().expect("temporary directory");
+    let store = TursoMetadataStore::open(directory.path().join("metadata.db"))
+        .await
+        .expect("open metadata");
+    let attributes = serde_json::json!({});
+    for fingerprint in ["eligible", "open"] {
+        store
+            .upsert_issue_occurrence(&issue_occurrence(fingerprint, &attributes))
+            .await
+            .expect("seed issue");
+    }
+    store
+        .set_issue_status("eligible", "resolved", 20_000_000)
+        .await
+        .expect("resolve eligible");
+
+    let before = store
+        .issue_prune_item(20_000_000)
+        .await
+        .expect("discover");
+    assert_eq!(before.estimate.rows, Some(1));
+
+    let deleted = store
+        .execute_issue_prune(20_000_000)
+        .await
+        .expect("execute");
+    assert_eq!(deleted, 1);
+
+    let after = store
+        .issue_prune_item(20_000_000)
+        .await
+        .expect("rediscover");
+    assert_eq!(after.estimate.rows, Some(0));
+    // Open issue remains unresolved.
+    assert!(
+        after
+            .exclusions
+            .iter()
+            .any(|e| e.kind == PruneExclusionKind::Unresolved && e.count >= 1)
+    );
+    assert_eq!(store.execute_issue_prune(20_000_000).await.expect("repeat"), 0);
+}

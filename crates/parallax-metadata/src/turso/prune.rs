@@ -239,6 +239,86 @@ impl TursoMetadataStore {
             warnings: Vec::new(),
         })
     }
+
+    /// Delete resolved issues at/under the cutoff and cascade their buckets
+    /// and occurrences. Unresolved and not-yet-expired issues are preserved.
+    /// Returns rows deleted from `issues` only (dependents deleted by cascade
+    /// or explicit cleanup are not double-counted).
+    pub async fn execute_issue_prune(&self, cutoff_nanos: u128) -> anyhow::Result<u64> {
+        let cutoff_millis = nanos_to_millis(cutoff_nanos);
+        let mut conn = self.conn.lock().await;
+        let tx = conn.transaction().await?;
+        // Dependents first so a partial failure never leaves orphan parents
+        // while dropping owned rows (owner-cascade only).
+        tx.execute(
+            "DELETE FROM issue_buckets WHERE fingerprint IN (
+               SELECT fingerprint FROM issues
+               WHERE status = 'resolved' AND resolved_at IS NOT NULL AND resolved_at <= ?1
+             )",
+            [Value::Integer(cutoff_millis)],
+        )
+        .await?;
+        tx.execute(
+            "DELETE FROM issue_occurrences WHERE fingerprint IN (
+               SELECT fingerprint FROM issues
+               WHERE status = 'resolved' AND resolved_at IS NOT NULL AND resolved_at <= ?1
+             )",
+            [Value::Integer(cutoff_millis)],
+        )
+        .await?;
+        let deleted = tx
+            .execute(
+                "DELETE FROM issues
+                 WHERE status = 'resolved' AND resolved_at IS NOT NULL AND resolved_at <= ?1",
+                [Value::Integer(cutoff_millis)],
+            )
+            .await?;
+        tx.commit().await?;
+        Ok(u64::try_from(deleted).unwrap_or(0))
+    }
+
+    /// Delete finished invocations at/under the cutoff. Active/unfinished rows
+    /// are preserved.
+    pub async fn execute_invocation_prune(&self, cutoff_nanos: u128) -> anyhow::Result<u64> {
+        let cutoff_millis = nanos_to_millis(cutoff_nanos);
+        let deleted = self
+            .conn
+            .lock()
+            .await
+            .execute(
+                "DELETE FROM invocations
+                 WHERE status = 'finished' AND ended_at IS NOT NULL AND ended_at <= ?1",
+                [Value::Integer(cutoff_millis)],
+            )
+            .await?;
+        Ok(u64::try_from(deleted).unwrap_or(0))
+    }
+
+    /// Execute one planned metadata class. Classes retained by policy delete
+    /// zero rows and succeed (plan disclosed them with zero eligibility).
+    pub async fn execute_prune_item(&self, item: &PruneItem) -> anyhow::Result<u64> {
+        if item.store != PruneStore::Turso {
+            anyhow::bail!("metadata store cannot execute non-Turso prune item");
+        }
+        match item.class {
+            PruneClass::Issues => self.execute_issue_prune(item.cutoff_nanos).await,
+            PruneClass::IssueBuckets | PruneClass::IssueOccurrences => {
+                // Owner cascade only — executed with Issues.
+                Ok(0)
+            }
+            PruneClass::Invocations => self.execute_invocation_prune(item.cutoff_nanos).await,
+            PruneClass::Dashboards
+            | PruneClass::Investigations
+            | PruneClass::SavedViews
+            | PruneClass::AlertRules
+            | PruneClass::AlertRuleStates
+            | PruneClass::AlertIncidents
+            | PruneClass::AlertDestinations
+            | PruneClass::AlertDeliveryEvents
+            | PruneClass::AlertChecks => Ok(0),
+            other => anyhow::bail!("unsupported Turso prune class: {other:?}"),
+        }
+    }
 }
 
 fn issue_dependent_item(
