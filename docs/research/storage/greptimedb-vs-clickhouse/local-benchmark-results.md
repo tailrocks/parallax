@@ -7124,3 +7124,8 @@ Two far time windows → sst_num=2; compact does not collapse across windows. TW
 
 CH 20 inserts → 5 parts → OPTIMIZE FINAL → 1. GT 5 same-window flushes → sst_num=2 after compact.
 `compaction-and-merge.md`.
+
+### Run 199 — 2026-07-17 — WAL options / fsync defaults
+
+GT WalOptions RaftEngine|Kafka|Noop in source; `sync_write` WITH key not recognized on v1.1.3.
+CH fsync_after_insert default 0. `wal-and-durability.md`.

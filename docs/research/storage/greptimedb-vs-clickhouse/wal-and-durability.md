@@ -186,3 +186,25 @@ Not a fair engine comparison (exec overhead); shows both accept writes promptly.
 A leftover `CREATE QUOTA … MAX queries = 2` from Run 179 caused CH inserts to fail with
 **Code 201 `QUOTA_EXCEEDED`**: `queries = 3/2` — first-class quota enforcement **confirmed live**
 on 26.6.1.1193 (not only Access source). Dropped before durability timing.
+
+## Run 199 (2026-07-17) — WAL option surface on v1.1.3 source + live defaults
+
+**GreptimeDB (source `v1.1.3`):** `WalOptions` enum includes **`RaftEngine` | `Kafka` | `Noop`**
+(`common_wal::options`, wired in `mito2` `engine.rs` / `handle_write.rs`). Kafka path for
+remote WAL; RaftEngine local default; Noop skips WAL write. Table option `sync_write` is
+**not** accepted as DDL key on v1.1.3 live (`Unrecognized table option key: sync_write`) —
+strict sync may be write-request / region config, not the simple WITH key assumed earlier.
+
+**ClickHouse 26.6 live defaults:**
+
+| `system.merge_tree_settings` | value |
+| --- | --- |
+| `fsync_after_insert` | **0** (false) |
+| `fsync_part_directory` | **0** (false) |
+
+Source: `MergeTreeSettings.cpp` defaults false; `MergeTreeData.cpp` / `MergeTreeDataWriter.cpp`
+apply fsync when enabled (whole part / directory). Matches Run 180: enable via **table**
+SETTINGS, not query SETTINGS.
+
+**Parity:** both default for throughput over per-write fsync; strict durability is opt-in and
+architecturally cheaper as WAL-append (GT) than part fsync (CH) when configured (Run 75 thesis).
