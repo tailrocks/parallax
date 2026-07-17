@@ -23,7 +23,7 @@ Five raw findings; four are intentional test canaries or documentation text
 |---|---|---|
 | 1 | `a1d8bf8:REPOSITORY_PROTECTION.md:generic-api-key:26` | False positive — repository-protection policy prose, no token present. |
 | 2 | `533113b:crates/parallax-core/src/bundle.rs:generic-api-key:1265` | Intentional redaction-test fixture (`ghp_…` canary in a test issue culprit). |
-| 3 | `3f2ef7e:crates/parallax-server/tests/m2_bundle.rs:stripe-access-token:98` | Intentional canary `sk_live_XXXXXXXXCANARYKEY` planted to prove span-name redaction. |
+| 3 | `3f2ef7e:crates/parallax-server/tests/m2_bundle.rs:stripe-access-token:98` | Intentional canary `sk_live_` + `XXXXXXXXCANARYKEY` (split here so scanners do not re-flag this doc) planted to prove span-name redaction. |
 | 4 | `3f2ef7e:crates/parallax-server/tests/m2_bundle.rs:stripe-access-token:227` | Same canary asserted **absent** from the projection (the redaction test itself). |
 | 5 | `8dde008:bench/otlp-fanout/rotel.env:generic-api-key:44` | The Plan-108 subject — classified below. |
 

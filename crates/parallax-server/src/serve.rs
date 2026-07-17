@@ -377,13 +377,8 @@ async fn start_assembled(
         }
     }));
 
-    let alerting_status = spawn_alerting_loops(
-        config,
-        &mut tasks,
-        store.clone(),
-        alerts.clone(),
-        api_addr,
-    );
+    let alerting_status =
+        spawn_alerting_loops(config, &mut tasks, store.clone(), alerts.clone(), api_addr);
 
     tracing::info!(%api_addr, %otlp_grpc_addr, %otlp_http_addr, "parallax listening");
     Ok(ServerHandle {

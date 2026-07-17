@@ -297,3 +297,101 @@ pub(crate) async fn log_facets(
         .map(crate::resolvers::traces::Facet)
         .collect())
 }
+
+/// One Drain pattern cluster (plan 165). Built in-process over a bounded
+/// sample of log bodies from the same filter set as `logs`.
+pub(crate) struct LogPattern(pub(crate) parallax_analysis::log_patterns::LogPatternCluster);
+
+#[graphql_object(context = ApiContext)]
+impl LogPattern {
+    fn template(&self) -> &str {
+        &self.0.template
+    }
+    fn count(&self) -> String {
+        self.0.count.to_string()
+    }
+    fn sample_log_id(&self) -> Option<&str> {
+        self.0.sample_log_id.as_deref()
+    }
+    fn first_nanos(&self) -> Option<String> {
+        self.0.first_nanos.map(|n| n.to_string())
+    }
+    fn last_nanos(&self) -> Option<String> {
+        self.0.last_nanos.map(|n| n.to_string())
+    }
+    /// JSON object of severity → count for mix bars.
+    fn severity_mix_json(&self) -> String {
+        let map: serde_json::Map<String, serde_json::Value> = self
+            .0
+            .severity_counts
+            .iter()
+            .map(|(k, v)| (k.clone(), serde_json::Value::from(*v)))
+            .collect();
+        serde_json::Value::Object(map).to_string()
+    }
+}
+
+const LOG_PATTERNS_SAMPLE_LIMIT: usize = 10_000;
+
+/// Drain-style log body clusters for the Patterns view (plan 165). Samples up
+/// to 10k log rows under the same filters as `logs`, then clusters in-process.
+#[expect(clippy::too_many_arguments, reason = "public GraphQL filter contract")]
+pub(crate) async fn log_patterns(
+    context: &ApiContext,
+    from_nanos: Option<String>,
+    to_nanos: Option<String>,
+    service: Option<String>,
+    severity_min: Option<i32>,
+    severity_max: Option<i32>,
+    query: Option<String>,
+    attribute_filters: Option<Vec<AttributeFilterInput>>,
+    limit: Option<i32>,
+) -> FieldResult<Vec<LogPattern>> {
+    let attribute_filters = attribute_filters
+        .unwrap_or_default()
+        .into_iter()
+        .map(|filter| filter.into_adapter().map_err(field_err))
+        .collect::<FieldResult<Vec<_>>>()?;
+    let from: u128 = match from_nanos {
+        Some(s) => s.parse().map_err(|_| field_err("invalid fromNanos"))?,
+        None => 0,
+    };
+    let to: u128 = match to_nanos {
+        Some(s) => s.parse().map_err(|_| field_err("invalid toNanos"))?,
+        None => u128::MAX,
+    };
+    let sample_limit = clamp_limit(limit, LOG_PATTERNS_SAMPLE_LIMIT as i32);
+    let sample_limit = sample_limit.min(LOG_PATTERNS_SAMPLE_LIMIT);
+    let logs = context
+        .store
+        .logs_search(
+            service.as_deref(),
+            from..=to,
+            severity_min,
+            severity_max,
+            query.as_deref(),
+            &attribute_filters,
+            sample_limit,
+        )
+        .await
+        .map_err(crate::internal_field_err)?;
+    let log_ids: Vec<String> = logs
+        .iter()
+        .map(|row| format!("{}:{}:{}", row.ts_nanos, row.service, row.trace_id))
+        .collect();
+    let inputs: Vec<parallax_analysis::log_patterns::LogLineInput<'_>> = logs
+        .iter()
+        .zip(log_ids.iter())
+        .map(|(row, id)| parallax_analysis::log_patterns::LogLineInput {
+            body: row.body.as_str(),
+            severity: Some(row.severity_text.as_str()).filter(|s| !s.is_empty()),
+            timestamp_nanos: u64::try_from(row.ts_nanos.min(u128::from(u64::MAX))).ok(),
+            log_id: Some(id.as_str()),
+        })
+        .collect();
+    let clusters = parallax_analysis::log_patterns::cluster_logs(
+        &inputs,
+        parallax_analysis::log_patterns::DrainConfig::default(),
+    );
+    Ok(clusters.into_iter().map(LogPattern).collect())
+}

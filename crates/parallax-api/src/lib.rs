@@ -230,6 +230,10 @@ impl Query {
     #[expect(clippy::too_many_arguments, reason = "GraphQL log filters are the public query contract")]
     async fn log_facets(context: &ApiContext, from_nanos: Option<String>, to_nanos: Option<String>, service: Option<String>, severity_min: Option<i32>, severity_max: Option<i32>, query: Option<String>, attribute_filters: Option<Vec<AttributeFilterInput>>,) -> FieldResult<Vec<Facet>> { resolvers::logs::log_facets(context, from_nanos, to_nanos, service, severity_min, severity_max, query, attribute_filters).await }
 
+    /// Drain-style log body patterns over a bounded sample (plan 165).
+    #[expect(clippy::too_many_arguments, reason = "GraphQL log filters are the public query contract")]
+    async fn log_patterns(context: &ApiContext, from_nanos: Option<String>, to_nanos: Option<String>, service: Option<String>, severity_min: Option<i32>, severity_max: Option<i32>, query: Option<String>, attribute_filters: Option<Vec<AttributeFilterInput>>, limit: Option<i32>,) -> FieldResult<Vec<resolvers::logs::LogPattern>> { resolvers::logs::log_patterns(context, from_nanos, to_nanos, service, severity_min, severity_max, query, attribute_filters, limit).await }
+
     /// One CLI invocation by id (wrapper-registered or auto-registered external).
     async fn invocation(context: &ApiContext, invocation_id: String) -> FieldResult<Option<Invocation>> { resolvers::invocations::invocation(context, invocation_id).await }
 
