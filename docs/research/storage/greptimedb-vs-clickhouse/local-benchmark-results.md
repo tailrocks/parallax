@@ -7837,3 +7837,9 @@ No drift vs Run 187/144 mechanism.
 
 **CH ~3–4×** at this N; nightly slightly tighter than stable. No new mechanism.
 Server 5M still decides if gap widens.
+
+### Run 257 — 2026-07-17 — CH head projection + PREWHERE
+
+On `26.7.1.1097`: MATERIALIZE `p_svc` → EXPLAIN shows `ReadFromMergeTree (p_svc)`
+with **Prewhere filter** on `service='s0'`, Granules **1/6**. Projection path
+works on head; EXPLAIN format differs from 26.6 but mechanism same.
