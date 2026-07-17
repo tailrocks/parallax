@@ -445,3 +445,10 @@ With `allow_experimental_time_series_table=1`:
 
 **No drift from Run 24/164:** CH PromQL remains experimental and setup-heavy; table create works
 but ordinary SQL SELECT is still unimplemented. GT PromQL stays the GA-native path.
+
+### Run 576 (2026-07-18) — rate still works; increase still missing
+
+Fresh `r576_c` counter on `ts_r423`: `sum(rate(r576_c[2m]))` → **1.0**;
+`increase` → **Code 48**. Four-way health **200**. No drift vs Run 560.
+**Not done.**
+
