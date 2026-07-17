@@ -84,6 +84,12 @@ interface InvocationRecordData {
   issues: Array<
     InvocationIssue & { lastSeenNanos: string; lastTraceId: string | null }
   >
+  errorEvents: Array<{
+    tsNanos: string
+    title: string
+    fingerprint: string
+    traceId: string | null
+  }>
 }
 
 interface HubSearch {
@@ -110,6 +116,7 @@ const RECORD_QUERY = (escaped: string) =>
        invocationId command appMode outcome status exitCode
        startedAtNanos endedAtNanos errorCount traceCount sessionCount
        issues { fingerprint title errorType status eventCount lastSeenNanos lastTraceId }
+       errorEvents { tsNanos title fingerprint traceId }
      } }`
 
 export async function loadInvocationHub(
@@ -150,7 +157,7 @@ export async function loadInvocationHub(
          enteredNanos exitedNanos
        }
        uiActions(invocationId: "${escaped}") {
-         name screenId sessionId traceId startNanos durationMs outcome hasError
+         name screenId widgetName sessionId traceId startNanos durationMs outcome hasError
        }
        backgroundCycles(invocationId: "${escaped}", fromNanos: "${fromNanos}", toNanos: "${toNanos}") {
          name count errorCount p50Ms p95Ms lastNanos lastTraceId
@@ -323,12 +330,17 @@ export function InvocationHubContent({
         .slice(0, 500),
     [data.logsByInvocation, liveLogs, live]
   )
-  const journeyErrors: JourneyError[] = (record?.issues ?? []).map((issue) => ({
-    tsNanos: issue.lastSeenNanos,
-    title: issue.errorType ? `${issue.errorType}: ${issue.title}` : issue.title,
-    fingerprint: issue.fingerprint,
-    traceId: issue.lastTraceId ?? null,
-  }))
+  // Per-occurrence events with intact nanosecond timestamps: journey beats
+  // place each occurrence at its exact time (an issue's ms-truncated
+  // last-seen mis-attributed between-screen errors to the previous screen).
+  const journeyErrors: JourneyError[] = (record?.errorEvents ?? []).map(
+    (event) => ({
+      tsNanos: event.tsNanos,
+      title: event.title,
+      fingerprint: event.fingerprint,
+      traceId: event.traceId ?? null,
+    })
+  )
 
   if (empty) {
     return (

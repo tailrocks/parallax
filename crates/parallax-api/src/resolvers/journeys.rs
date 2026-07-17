@@ -65,6 +65,10 @@ impl UiActionOut {
     fn screen_id(&self) -> Option<&str> {
         self.0.screen_id.as_deref()
     }
+    /// `app.widget.name` of the triggering widget, when instrumented.
+    fn widget_name(&self) -> Option<&str> {
+        self.0.widget_name.as_deref()
+    }
     fn session_id(&self) -> Option<&str> {
         self.0.session_id.as_deref()
     }

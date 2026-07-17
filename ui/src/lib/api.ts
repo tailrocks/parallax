@@ -339,6 +339,7 @@ export interface ScreenVisit {
 export interface UiAction {
   name: string
   screenId: string | null
+  widgetName: string | null
   sessionId: string | null
   traceId: string
   startNanos: string

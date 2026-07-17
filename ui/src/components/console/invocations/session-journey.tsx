@@ -241,6 +241,11 @@ function JourneyEntryBody({ entry }: { entry: JourneyEntry }) {
               on {entry.action.screenId}
             </span>
           ) : null}
+          {entry.action.widgetName ? (
+            <span className="text-xs text-muted-foreground">
+              via {entry.action.widgetName}
+            </span>
+          ) : null}
           {entry.action.outcome ? (
             <Badge
               variant={entry.action.outcome === "success" ? "emerald" : "rose"}

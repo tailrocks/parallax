@@ -145,3 +145,45 @@ fn run_error(
         attributes: serde_json::Value::Null,
     }
 }
+
+#[tokio::test]
+async fn external_invocation_derives_completion_from_root_command_span() {
+    // Plan 160 (corpus j-happy): an external invocation whose root
+    // `cli.command` span recorded an outcome has ended — it must not sit at
+    // `running` until the stale timeout.
+    let store = Arc::new(MemoryStore::new());
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let mut root = span("playground-cli", "t-ext", "root", now, 5_000_000_000);
+    root.name = "cli.command".into();
+    root.kind = "SPAN_KIND_INTERNAL".into();
+    root.invocation_id = Some("ext-run".into());
+    root.attributes = serde_json::json!({
+        "cli.command.name": "playground.console",
+        "outcome": "success",
+    });
+    store.push_spans(vec![root]);
+    let context = context_with_memory(store).await;
+    context
+        .metadata
+        .ensure_invocation("ext-run", now)
+        .await
+        .unwrap();
+    let schema = build_schema();
+    let q = juniper::http::GraphQLRequest::new(
+        r#"{ invocation(invocationId: "ext-run") { status outcome endedAtNanos } }"#.into(),
+        None,
+        None,
+    );
+    let json = serde_json::to_value(execute(&schema, &context, q).await).unwrap();
+    assert!(error_messages(&json).is_empty(), "{json}");
+    let inv = json.pointer("/data/invocation").unwrap();
+    assert_eq!(inv["status"], "finished");
+    assert_eq!(inv["outcome"], "success");
+    assert_eq!(
+        inv["endedAtNanos"].as_str().unwrap(),
+        (now + 5_000_000_000).to_string()
+    );
+}

@@ -113,6 +113,7 @@ describe("SessionsTab", () => {
           {
             name: "submit",
             screenId: "home",
+            widgetName: null,
             sessionId: "s1",
             traceId: "trace-a",
             startNanos: "300",

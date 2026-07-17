@@ -35,6 +35,7 @@ const actions: UiAction[] = [
   {
     name: "submit_form",
     screenId: "home",
+    widgetName: null,
     sessionId: "s1",
     traceId: "trace-1",
     startNanos: "3000",

@@ -69,6 +69,8 @@ pub struct ScreenVisit {
 pub struct UiAction {
     pub name: String,
     pub screen_id: Option<String>,
+    /// `app.widget.name` — the widget that triggered the action.
+    pub widget_name: Option<String>,
     pub session_id: Option<String>,
     pub trace_id: String,
     pub start_nanos: u128,

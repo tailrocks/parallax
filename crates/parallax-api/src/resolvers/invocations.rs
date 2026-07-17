@@ -54,10 +54,23 @@ pub(crate) struct Invocation {
     stats: tokio::sync::OnceCell<InvocationStats>,
 }
 
+/// One error occurrence surfaced on the invocation hub (journey beats).
+#[derive(juniper::GraphQLObject)]
+#[graphql(context = ApiContext)]
+struct InvocationErrorEvent {
+    ts_nanos: String,
+    title: String,
+    fingerprint: String,
+    trace_id: Option<String>,
+}
+
 struct InvocationStats {
     trace_ids: Vec<String>,
     events: Vec<model::ErrorEventRow>,
     last_span_nanos: u128,
+    /// End + outcome of the latest completed root `cli.command` span, for
+    /// external invocations whose lifecycle was never wrapper-registered.
+    command_completion: Option<(u128, String)>,
 }
 
 /// An unfinished invocation with no signal newer than this is `stale`.
@@ -100,6 +113,7 @@ impl Invocation {
                         trace_ids.push(trace_id);
                     }
                 }
+                let command_completion = command_completion(&spans);
                 let events = context
                     .store
                     .error_events_by_traces(&trace_ids, MAX_ROWS)
@@ -109,6 +123,7 @@ impl Invocation {
                     trace_ids,
                     events,
                     last_span_nanos,
+                    command_completion,
                 })
             })
             .await
@@ -141,7 +156,29 @@ fn invocation_stats_from_spans(
         trace_ids,
         events,
         last_span_nanos,
+        command_completion: command_completion(spans),
     }
+}
+
+/// Latest completed root `cli.command` span carrying an `outcome` attribute:
+/// the observed end of an external (non-wrapper-registered) invocation. The
+/// outcome attribute is recorded at span completion, so its presence means
+/// the command finished.
+fn command_completion(spans: &[model::SpanRow]) -> Option<(u128, String)> {
+    spans
+        .iter()
+        .filter(|span| {
+            span.name == parallax_analysis::semconv::CLI_COMMAND_SPAN_NAME
+                && span.parent_span_id.as_deref().is_none_or(str::is_empty)
+        })
+        .filter_map(|span| {
+            let outcome = span
+                .attributes
+                .get(parallax_analysis::semconv::OUTCOME)
+                .and_then(|value| value.as_str())?;
+            Some((span.ts_nanos + span.duration_ns, outcome.to_string()))
+        })
+        .max_by_key(|(end, _)| *end)
 }
 
 #[graphql_object(context = ApiContext)]
@@ -155,8 +192,18 @@ impl Invocation {
     fn started_at_nanos(&self) -> String {
         nanos_string(self.record.started_at_nanos)
     }
-    fn ended_at_nanos(&self) -> Option<String> {
-        self.record.ended_at_nanos.map(nanos_string)
+    /// Wrapper-registered end, else the observed end of the latest completed
+    /// root `cli.command` span (external invocations).
+    async fn ended_at_nanos(&self, context: &ApiContext) -> FieldResult<Option<String>> {
+        if let Some(ended) = self.record.ended_at_nanos {
+            return Ok(Some(nanos_string(ended)));
+        }
+        Ok(self
+            .stats(context)
+            .await?
+            .command_completion
+            .as_ref()
+            .map(|(end, _)| nanos_string(*end)))
     }
     fn exit_code(&self) -> Option<i32> {
         self.record.exit_code
@@ -174,9 +221,18 @@ impl Invocation {
         self.record.app_mode.as_deref()
     }
     /// Bounded result taxonomy (success | failure | error | timeout | skip |
-    /// cancellation), when registered at finish.
-    fn outcome(&self) -> Option<&str> {
-        self.record.outcome.as_deref()
+    /// cancellation): wrapper-registered, else observed from the root
+    /// `cli.command` span's outcome attribute.
+    async fn outcome(&self, context: &ApiContext) -> FieldResult<Option<String>> {
+        if let Some(outcome) = self.record.outcome.as_deref() {
+            return Ok(Some(outcome.to_string()));
+        }
+        Ok(self
+            .stats(context)
+            .await?
+            .command_completion
+            .as_ref()
+            .map(|(_, outcome)| outcome.clone()))
     }
     /// Derived lifecycle: running | finished | failed | stale. `failed` is a
     /// finished invocation with a non-zero exit code; `stale` is an unfinished
@@ -188,6 +244,17 @@ impl Invocation {
             } else {
                 "finished".to_string()
             });
+        }
+        // External invocations end when their observed root command span
+        // completes (its outcome attribute is recorded at completion).
+        if let Some((_, outcome)) = &self.stats(context).await?.command_completion {
+            return Ok(
+                if matches!(outcome.as_str(), "failure" | "error" | "timeout") {
+                    "failed".to_string()
+                } else {
+                    "finished".to_string()
+                },
+            );
         }
         let now_nanos = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -230,6 +297,23 @@ impl Invocation {
             .await
             .map_err(crate::internal_field_err)?;
         Ok(saturate_i32(sessions.len() as u64))
+    }
+    /// Per-occurrence error events inside this run's traces, nanosecond
+    /// timestamps intact — journey attribution needs each occurrence at its
+    /// exact time, not the group's ms-truncated last-seen.
+    async fn error_events(&self, context: &ApiContext) -> FieldResult<Vec<InvocationErrorEvent>> {
+        Ok(self
+            .stats(context)
+            .await?
+            .events
+            .iter()
+            .map(|event| InvocationErrorEvent {
+                ts_nanos: nanos_string(event.ts_nanos),
+                title: parallax_analysis::derive::issue_title(&event.error_type, &event.message),
+                fingerprint: event.fingerprint.clone(),
+                trace_id: (!event.trace_id.is_empty()).then(|| event.trace_id.clone()),
+            })
+            .collect())
     }
     /// Grouped issues whose events fell inside this run's traces.
     async fn issues(&self, context: &ApiContext) -> FieldResult<Vec<Issue>> {

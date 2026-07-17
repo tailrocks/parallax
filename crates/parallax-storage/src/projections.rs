@@ -148,6 +148,8 @@ pub fn project_ui_actions(spans: &[SpanRow], limit: usize) -> Vec<UiAction> {
                 .unwrap_or(&span.name)
                 .to_string(),
             screen_id: attr_str(&span.attributes, semconv::APP_SCREEN_ID).map(str::to_string),
+            widget_name: attr_str(&span.attributes, semconv::APP_WIDGET_NAME)
+                .map(str::to_string),
             session_id: span
                 .session_id
                 .clone()
