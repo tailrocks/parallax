@@ -27,6 +27,10 @@ pub struct BundleInputs {
     /// Pre-fetched, pre-bounded metric windows (the API layer queries the
     /// adapter; assembly stays pure).
     pub metric_windows: Vec<MetricWindow>,
+    /// Linkage-only CI adjacency statements (never root-cause wording).
+    pub ci_adjacency: Vec<String>,
+    /// Linkage-only deploy adjacency statements (never root-cause wording).
+    pub deploy_adjacency: Vec<String>,
 }
 
 use crate::redaction_policy::{EvidenceField, project_text};
@@ -233,6 +237,8 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
         latest_event.as_ref(),
         trace.as_ref(),
         &anchor,
+        &inputs.ci_adjacency,
+        &inputs.deploy_adjacency,
     );
 
     let mut bundle = Bundle {

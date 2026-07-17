@@ -21,7 +21,7 @@ lint = "dead_code"
 ceiling = 1
 
 [[rust_suppressions]]
-crate_name = "parallax-mcp-spike"
+crate_name = "parallax-mcp"
 lint = "dead_code"
 ceiling = 1
 
@@ -435,6 +435,11 @@ class = "product"
 tier = 0
 
 [[architecture.packages]]
+name = "parallax-mcp"
+class = "aux"
+agent_context = true
+
+[[architecture.packages]]
 name = "parallax-redaction"
 class = "product"
 tier = 1
@@ -493,10 +498,6 @@ tier = 4
 name = "parallax-cli"
 class = "product"
 tier = 5
-
-[[architecture.packages]]
-name = "parallax-mcp-spike"
-class = "proof"
 
 [[architecture.packages]]
 name = "parallax-xtask"
@@ -636,7 +637,7 @@ ceiling = 25
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-api/src/resolvers/issues.rs::bundle"
-ceiling = 163
+ceiling = 169
 
 [[limits]]
 metric = "rust.function-lines"
@@ -646,7 +647,7 @@ ceiling = 114
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-evidence/src/bundle/assembly.rs::assemble"
-ceiling = 242
+ceiling = 245
 
 
 
@@ -4085,17 +4086,17 @@ ceiling = 9
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-evidence/src/bundle/tests.rs"
-ceiling = 85
+ceiling = 91
 
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-evidence/src/claude_code.rs"
-ceiling = 35
+ceiling = 44
 
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-evidence/src/envelope.rs"
-ceiling = 27
+ceiling = 28
 
 
 [[limits]]
@@ -4113,30 +4114,10 @@ metric = "rust.assertions"
 scope = "crates/parallax-ingest/src/sentry_envelope.rs"
 ceiling = 13
 
-[[limits]]
-metric = "rust.assertions"
-scope = "crates/parallax-mcp-spike/src/audit.rs"
-ceiling = 25
 
-[[limits]]
-metric = "rust.assertions"
-scope = "crates/parallax-mcp-spike/src/check/tests.rs"
-ceiling = 7
 
-[[limits]]
-metric = "rust.assertions"
-scope = "crates/parallax-mcp-spike/src/gql/tests.rs"
-ceiling = 8
 
-[[limits]]
-metric = "rust.assertions"
-scope = "crates/parallax-mcp-spike/src/server/tests.rs"
-ceiling = 65
 
-[[limits]]
-metric = "rust.assertions"
-scope = "crates/parallax-mcp-spike/src/tests.rs"
-ceiling = 4
 
 [[limits]]
 metric = "rust.assertions"
@@ -4291,7 +4272,7 @@ ceiling = 444
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-api/src/resolvers/issues.rs"
-ceiling = 451
+ceiling = 457
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4316,12 +4297,12 @@ ceiling = 450
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-cli/src/doctor.rs"
-ceiling = 503
+ceiling = 533
 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-evidence/src/claude_code.rs"
-ceiling = 464
+ceiling = 553
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4336,7 +4317,7 @@ ceiling = 536
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-metadata/src/turso.rs"
-ceiling = 651
+ceiling = 674
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4371,7 +4352,7 @@ ceiling = 635
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/src/serve.rs"
-ceiling = 567
+ceiling = 597
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4497,7 +4478,7 @@ ceiling = 105
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-server/src/serve.rs::start_assembled"
-ceiling = 107
+ceiling = 108
 
 [[limits]]
 metric = "rust.function-lines"
@@ -4556,10 +4537,6 @@ metric = "rust.inline-test-modules"
 scope = "crates/parallax-ingest/src/sentry_envelope.rs"
 ceiling = 1
 
-[[limits]]
-metric = "rust.inline-test-modules"
-scope = "crates/parallax-mcp-spike/src/audit.rs"
-ceiling = 1
 
 [[limits]]
 metric = "rust.inline-test-modules"
@@ -6612,12 +6589,12 @@ ceiling = 29
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-redaction/src/lib.rs"
-ceiling = 15
+ceiling = 17
 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-redaction/src/lib.rs"
-ceiling = 410
+ceiling = 418
 
 [[limits]]
 metric = "rust.function-lines"
@@ -6937,7 +6914,7 @@ ceiling = 13
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-evidence/src/github_actions.rs"
-ceiling = 20
+ceiling = 27
 
 [[limits]]
 metric = "rust.assertions"
@@ -6962,7 +6939,7 @@ ceiling = 115
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-cli/src/doctor.rs::doctor"
-ceiling = 114
+ceiling = 145
 
 [[limits]]
 metric = "rust.function-lines"
@@ -7249,7 +7226,7 @@ kind = "handwritten"
 
 [[product.anyhow_edges]]
 path = "crates/parallax-metadata/src/turso/deploy.rs"
-ceiling = 8
+ceiling = 9
 reason = "private deploy-context persistence composition is converted at the typed metadata port"
 
 [[product.anyhow_edges]]
@@ -7292,7 +7269,7 @@ kind = "handwritten"
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-metadata/src/turso/ci.rs"
-ceiling = 7
+ceiling = 12
 
 [[limits]]
 metric = "rust.inline-test-modules"
@@ -7301,15 +7278,133 @@ ceiling = 1
 
 [[product.anyhow_edges]]
 path = "crates/parallax-metadata/src/turso/ci.rs"
-ceiling = 8
+ceiling = 13
 reason = "private CI-evidence persistence composition is converted at the typed metadata port"
 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/src/github_webhook.rs"
-ceiling = 427
+ceiling = 508
+
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-mcp/src/audit.rs"
+ceiling = 25
+
+[[product.anyhow_edges]]
+path = "crates/parallax-mcp/src/check.rs"
+ceiling = 16
+reason = "private MCP composition reports through the typed tool-result path"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-mcp/src/server.rs"
+ceiling = 2
+reason = "private MCP composition reports through the typed tool-result path"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-mcp/src/gql.rs"
+ceiling = 18
+reason = "private MCP composition reports through the typed tool-result path"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-mcp/src/main.rs"
+ceiling = 2
+reason = "private MCP composition reports through the typed tool-result path"
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-mcp/src/check/tests.rs"
+ceiling = 7
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-mcp/src/gql/tests.rs"
+ceiling = 8
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-mcp/src/server/tests.rs"
+ceiling = 65
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-mcp/src/tests.rs"
+ceiling = 4
+
+[[limits]]
+metric = "rust.function-cognitive-complexity"
+scope = "crates/parallax-cli/src/doctor.rs::doctor"
+ceiling = 25
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-mcp/src/audit.rs"
+ceiling = 1
+
+[[ui.ownership]]
+path = "ui/src/platform/query/tests/graphql-query-key.test.ts"
+current_owner = "platform"
+target_owner = "platform"
+migration_plan = "none"
+kind = "handwritten"
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/query/tests/graphql-query-key.test.ts"
+ceiling = 9
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-metadata/src/turso/ci.rs"
+ceiling = 440
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/query/tests/graphql-query-key.test.ts"
+ceiling = 9
+
+[[product.anyhow_edges]]
+path = "crates/parallax-metadata/src/turso/claims.rs"
+ceiling = 6
+reason = "private composition converted at the typed port boundary"
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-metadata/src/turso/claims.rs"
+ceiling = 2
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/src/ci_backfill.rs"
+ceiling = 7
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-evidence/src/bundle/tests.rs"
+ceiling = 638
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-server/src/ci_backfill.rs"
+ceiling = 569
+
+[[limits]]
+metric = "rust.function-cognitive-complexity"
+scope = "crates/parallax-server/src/ci_backfill.rs::backfill_repo"
+ceiling = 25
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-server/src/github_webhook.rs::webhook"
-ceiling = 122
+scope = "crates/parallax-server/src/ci_backfill.rs::backfill_repo"
+ceiling = 165
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-metadata/src/turso/claims.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-server/src/ci_backfill.rs"
+ceiling = 1

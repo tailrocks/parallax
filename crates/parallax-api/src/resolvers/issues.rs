@@ -302,6 +302,8 @@ pub(crate) async fn bundle(
             trace_spans,
             trace_logs,
             metric_windows: Vec::new(),
+            ci_adjacency: Vec::new(),
+            deploy_adjacency: Vec::new(),
         }
     } else if let Some(invocation_id) = invocation_id {
         let Some(run) = context
@@ -361,6 +363,8 @@ pub(crate) async fn bundle(
             trace_spans,
             trace_logs,
             metric_windows: Vec::new(),
+            ci_adjacency: Vec::new(),
+            deploy_adjacency: Vec::new(),
         }
     } else {
         let trace_id = trace_id.unwrap_or_default();
@@ -386,6 +390,8 @@ pub(crate) async fn bundle(
             trace_spans: Arc::unwrap_or_clone(trace_spans),
             trace_logs: Arc::unwrap_or_clone(trace_logs),
             metric_windows: Vec::new(),
+            ci_adjacency: Vec::new(),
+            deploy_adjacency: Vec::new(),
         }
     };
 

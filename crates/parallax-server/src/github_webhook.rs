@@ -10,13 +10,16 @@ use axum::extract::{DefaultBodyLimit, State};
 use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use axum::routing::post;
+use parallax_evidence::github_actions::{CI_ADJACENCY_CLAIM_WORDING, CI_CLAIM_KEYS};
 use parallax_evidence::github_actions::{attempt_identity, normalize_workflow_job};
+use parallax_evidence::github_deploy::{DEPLOY_ADJACENCY_CLAIM_WORDING, DEPLOY_CLAIM_KEYS};
 use parallax_evidence::github_deploy::{
     DeployState, EdgeStrength, normalize_deploy_webhook, verify_signature_256,
 };
 use parallax_metadata::{
     CiAttemptAccept, CiAttemptDeliveryRecord, CiAttemptStoreError, DeployAccept,
-    DeployDeliveryRecord, DeployStoreError, TursoMetadataStore, payload_sha256_hex,
+    DeployDeliveryRecord, DeployStoreError, EvidenceClaimRow, TursoMetadataStore,
+    payload_sha256_hex,
 };
 use std::sync::Arc;
 
@@ -149,12 +152,15 @@ async fn accept_deploy(
     };
 
     match metadata.accept_deploy_delivery(&record).await {
-        Ok(DeployAccept::Inserted | DeployAccept::Duplicate) => (
-            StatusCode::OK,
-            [(header::CONTENT_TYPE, "application/json")],
-            r#"{"ok":true}"#,
-        )
-            .into_response(),
+        Ok(DeployAccept::Inserted | DeployAccept::Duplicate) => {
+            seed_deploy_webhook_claims(metadata, record.received_at_nanos).await;
+            (
+                StatusCode::OK,
+                [(header::CONTENT_TYPE, "application/json")],
+                r#"{"ok":true}"#,
+            )
+                .into_response()
+        }
         Err(DeployStoreError::Collision(_)) => {
             (StatusCode::CONFLICT, "delivery payload collision").into_response()
         }
@@ -165,6 +171,39 @@ async fn accept_deploy(
                 "deploy delivery store unavailable",
             )
                 .into_response()
+        }
+    }
+}
+
+async fn seed_deploy_webhook_claims(metadata: &TursoMetadataStore, now_nanos: u128) {
+    for key in DEPLOY_CLAIM_KEYS {
+        let wording = match *key {
+            "webhook_hmac_accept" => {
+                "Deploy webhook accept is HMAC-verified before durable write".to_string()
+            }
+            "delivery_id_idempotent" => {
+                "Deploy delivery-id + payload-hash is idempotent".to_string()
+            }
+            "description_email_excluded" => {
+                "Deploy description text and sender email are excluded from storage".to_string()
+            }
+            "strong_edge_requires_sha_and_env" => {
+                "Strong deploy edges require both commit SHA and environment".to_string()
+            }
+            "no_causal_wording_from_adjacency" => DEPLOY_ADJACENCY_CLAIM_WORDING.to_string(),
+            _ => DEPLOY_ADJACENCY_CLAIM_WORDING.to_string(),
+        };
+        let row = EvidenceClaimRow {
+            domain: "deploy_context".into(),
+            claim_key: (*key).into(),
+            level: "fixture_proven".into(),
+            measured_at_nanos: now_nanos,
+            coverage_numerator: Some(1),
+            coverage_denominator: Some(1),
+            wording,
+        };
+        if let Err(error) = metadata.upsert_evidence_claim(&row).await {
+            tracing::warn!(%error, claim = *key, "deploy claim row upsert failed");
         }
     }
 }
@@ -193,12 +232,15 @@ async fn accept_workflow_job(
         received_at_nanos: now_nanos(),
     };
     match metadata.accept_ci_attempt_delivery(&record).await {
-        Ok(CiAttemptAccept::Inserted | CiAttemptAccept::Duplicate) => (
-            StatusCode::OK,
-            [(header::CONTENT_TYPE, "application/json")],
-            r#"{"ok":true}"#,
-        )
-            .into_response(),
+        Ok(CiAttemptAccept::Inserted | CiAttemptAccept::Duplicate) => {
+            seed_ci_webhook_claim(metadata, record.received_at_nanos).await;
+            (
+                StatusCode::OK,
+                [(header::CONTENT_TYPE, "application/json")],
+                r#"{"ok":true}"#,
+            )
+                .into_response()
+        }
         Err(CiAttemptStoreError::Collision(_)) => {
             (StatusCode::CONFLICT, "CI attempt evidence collision").into_response()
         }
@@ -209,6 +251,42 @@ async fn accept_workflow_job(
                 "CI attempt store unavailable",
             )
                 .into_response()
+        }
+    }
+}
+
+async fn seed_ci_webhook_claim(metadata: &TursoMetadataStore, now_nanos: u128) {
+    for key in CI_CLAIM_KEYS {
+        let wording = match *key {
+            "workflow_job_webhook_accept" => {
+                "workflow_job webhook accept is HMAC-verified and idempotent".to_string()
+            }
+            "attempt_identity_stable" => {
+                "CI attempt identity is stable across webhook redelivery and REST".to_string()
+            }
+            "flaky_requires_multi_attempt" => {
+                "Flaky labels require mixed multi-attempt evidence".to_string()
+            }
+            "raw_logs_not_agent_default" => {
+                "Raw CI logs are never the agent-visible default".to_string()
+            }
+            "rest_backfill_rate_aware" => {
+                // Webhook path does not prove REST; leave not_measured wording until backfill runs.
+                continue;
+            }
+            _ => CI_ADJACENCY_CLAIM_WORDING.to_string(),
+        };
+        let row = EvidenceClaimRow {
+            domain: "ci_evidence".into(),
+            claim_key: (*key).into(),
+            level: "fixture_proven".into(),
+            measured_at_nanos: now_nanos,
+            coverage_numerator: Some(1),
+            coverage_denominator: Some(1),
+            wording,
+        };
+        if let Err(error) = metadata.upsert_evidence_claim(&row).await {
+            tracing::warn!(%error, claim = *key, "ci webhook claim row upsert failed");
         }
     }
 }
@@ -408,6 +486,7 @@ mod tests {
             actions_config: GithubActionsConfig {
                 enabled: true,
                 webhook_secret: secret.into(),
+                ..GithubActionsConfig::default()
             },
             actions_secret: Some(secret.into()),
             metadata: Some(metadata.clone()),

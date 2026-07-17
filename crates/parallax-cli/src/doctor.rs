@@ -290,6 +290,14 @@ pub(crate) async fn doctor() -> anyhow::Result<()> {
                     Ok(count) => println!("  ci-evidence attempts: {count}"),
                     Err(err) => println!("  ci-evidence attempts: unavailable ({err})"),
                 }
+                match store.count_evidence_claims(Some("ci_evidence")).await {
+                    Ok(count) => println!("  ci-evidence claim rows: {count}"),
+                    Err(err) => println!("  ci-evidence claim rows: unavailable ({err})"),
+                }
+                match store.count_evidence_claims(Some("deploy_context")).await {
+                    Ok(count) => println!("  deploy-context claim rows: {count}"),
+                    Err(err) => println!("  deploy-context claim rows: unavailable ({err})"),
+                }
             }
             Err(err) => println!("  deploy-context deliveries: open failed ({err})"),
         }

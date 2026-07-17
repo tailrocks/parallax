@@ -95,6 +95,12 @@ pub enum ParsedBundle {
 
 /// JCS-style canonical JSON: object keys sorted by code point, compact
 /// separators, serde_json leaf rendering (see module note on numbers).
+///
+/// JSON numbers are re-serialized until the form is a serde_json fixpoint
+/// (bounded). Extreme scientific values such as `9E294` are not a single-pass
+/// ryu fixpoint (`9.000000000000001e+294` → `…2e+294` → `…3e+294`); without
+/// this loop the hash of the same logical number drifts under re-parse
+/// (fuzz crash from scheduled-measurement run 29582532812).
 #[must_use]
 pub fn canonical_json(value: &serde_json::Value) -> String {
     match value {
@@ -121,8 +127,26 @@ pub fn canonical_json(value: &serde_json::Value) -> String {
                 .collect::<Vec<_>>()
                 .join(",")
         ),
+        serde_json::Value::Number(_) => stable_json_number(value),
         leaf => serde_json::to_string(leaf).unwrap_or_default(),
     }
+}
+
+/// Render a JSON number so re-parsing and re-rendering yields the same bytes.
+fn stable_json_number(value: &serde_json::Value) -> String {
+    let mut rendered = serde_json::to_string(value).unwrap_or_default();
+    // Bounded: probe of 9E294 stabilizes in 3 serde_json passes; 8 is headroom.
+    for _ in 0..8 {
+        let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&rendered) else {
+            break;
+        };
+        let next = serde_json::to_string(&parsed).unwrap_or_default();
+        if next == rendered {
+            break;
+        }
+        rendered = next;
+    }
+    rendered
 }
 
 fn sha256_hex(input: &str) -> String {
@@ -462,6 +486,23 @@ mod tests {
                 let hash_b = version_scoped_hash("bundle-v2", &canonical_json(&parsed));
                 prop_assert_eq!(hash_a, hash_b);
             }
+        }
+
+        /// Minimized corpus from scheduled-measurement run 29582532812
+        /// (`fuzz/artifacts/bundle_envelope_json/crash-2c2054cc…`).
+        #[test]
+        fn fuzz_crash_scientific_number_fixpoint() {
+            let value: serde_json::Value =
+                serde_json::from_slice(b"9E294").expect("parse fuzz crash bytes");
+            let canonical = canonical_json(&value);
+            let reparsed: serde_json::Value =
+                serde_json::from_str(&canonical).expect("canonical must re-parse");
+            assert_eq!(
+                canonical_json(&reparsed),
+                canonical,
+                "canonical_json must be a fixpoint for 9E294"
+            );
+            drop(parse_bundle_json(value));
         }
     }
 }

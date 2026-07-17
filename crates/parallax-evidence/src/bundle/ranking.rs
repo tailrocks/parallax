@@ -5,6 +5,8 @@ pub(super) fn rank_hypotheses(
     latest_event: Option<&EventDetail>,
     trace: Option<&TraceSection>,
     anchor: &Anchor,
+    ci_adjacency: &[String],
+    deploy_adjacency: &[String],
 ) -> Vec<Hypothesis> {
     let mut hypotheses = Vec::new();
     let message = latest_event
@@ -64,6 +66,24 @@ pub(super) fn rank_hypotheses(
                 evidence: vec![format!("trace {}", trace.trace_id)],
             });
         }
+    }
+
+    // Linkage-only adjacency is never a root-cause claim (plans 121/124).
+    for statement in deploy_adjacency.iter().take(3) {
+        hypotheses.push(Hypothesis {
+            kind: "deploy_adjacency",
+            statement: statement.clone(),
+            confidence: "low",
+            evidence: vec![anchor_evidence.clone(), "deploy delivery ledger".into()],
+        });
+    }
+    for statement in ci_adjacency.iter().take(3) {
+        hypotheses.push(Hypothesis {
+            kind: "ci_adjacency",
+            statement: statement.clone(),
+            confidence: "low",
+            evidence: vec![anchor_evidence.clone(), "ci attempt ledger".into()],
+        });
     }
 
     if hypotheses.is_empty() {

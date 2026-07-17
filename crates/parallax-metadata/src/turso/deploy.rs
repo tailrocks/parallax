@@ -158,6 +158,33 @@ impl TursoMetadataStore {
             .ok_or_else(|| anyhow::anyhow!("missing count row"))?;
         Ok(u64::try_from(integer(&row, 0)).unwrap_or(0))
     }
+
+    /// Newest-first deploy inventory for bundle correlation (bounded).
+    pub async fn list_deploy_deliveries_for_repo(
+        &self,
+        repo_full_name: &str,
+        limit: usize,
+    ) -> anyhow::Result<Vec<DeployDeliveryRecord>> {
+        let limit = i64::try_from(limit.clamp(1, 100)).unwrap_or(100);
+        let conn = self.conn.lock().await;
+        let mut rows = conn
+            .query(
+                "SELECT delivery_id, provider, event_name, deployment_id, repo_full_name,
+                        ref_name, commit_sha, environment, state, task, actor_login,
+                        edge_strength, lossiness, payload_hash, received_at
+                 FROM deploy_deliveries
+                 WHERE repo_full_name = ?1
+                 ORDER BY received_at DESC, delivery_id DESC
+                 LIMIT ?2",
+                (repo_full_name, limit),
+            )
+            .await?;
+        let mut out = Vec::new();
+        while let Some(row) = rows.next().await? {
+            out.push(decode_deploy_delivery(&row)?);
+        }
+        Ok(out)
+    }
 }
 
 fn decode_deploy_delivery(row: &turso::Row) -> anyhow::Result<DeployDeliveryRecord> {

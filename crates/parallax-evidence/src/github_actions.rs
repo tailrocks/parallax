@@ -155,6 +155,115 @@ pub fn redacted_log_fingerprint(redacted_bytes: &[u8]) -> String {
     format!("sha256:{}", encode_hex(&hasher.finalize()))
 }
 
+/// Product claim wording for CI adjacency — never root-cause language.
+pub const CI_ADJACENCY_CLAIM_WORDING: &str =
+    "CI job attempt is adjacent evidence only; never treat adjacency as root cause.";
+
+/// Allowed claim keys for the CI evidence domain (dated coverage rows).
+pub const CI_CLAIM_KEYS: &[&str] = &[
+    "workflow_job_webhook_accept",
+    "rest_backfill_rate_aware",
+    "attempt_identity_stable",
+    "flaky_requires_multi_attempt",
+    "raw_logs_not_agent_default",
+];
+
+/// One REST page of completed workflow jobs (plan 124 backfill).
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct RestJobsPage {
+    pub attempts: Vec<NormalizedCiAttempt>,
+    /// Max `(completed_at_nanos, workflow_run_id)` among completed jobs.
+    pub advance_completed_at_nanos: Option<u128>,
+    pub advance_workflow_run_id: Option<i64>,
+    pub truncated: bool,
+}
+
+/// Cap jobs accepted from a single REST page (rate/output budget).
+pub const REST_JOBS_PAGE_CAP: usize = 100;
+
+/// Parse a GitHub Actions list-jobs-for-a-workflow-run JSON body.
+///
+/// Expects either `{ "jobs": [ ... ] }` or a bare job array. Each job is
+/// normalized as `rest.job` with an injected repository full name.
+#[must_use]
+pub fn parse_rest_jobs_page(repo_full_name: &str, body: &Value) -> RestJobsPage {
+    let jobs = body
+        .get("jobs")
+        .and_then(Value::as_array)
+        .or_else(|| body.as_array());
+    let Some(jobs) = jobs else {
+        return RestJobsPage::default();
+    };
+    let truncated = jobs.len() > REST_JOBS_PAGE_CAP;
+    let mut page = RestJobsPage {
+        truncated,
+        ..RestJobsPage::default()
+    };
+    for job in jobs.iter().take(REST_JOBS_PAGE_CAP) {
+        let mut wrapped = job.clone();
+        if let Some(object) = wrapped.as_object_mut() {
+            object
+                .entry("repository".to_string())
+                .or_insert_with(|| Value::String(repo_full_name.to_owned()));
+        }
+        let Some(mut attempt) = normalize_workflow_job("rest.job", &wrapped) else {
+            continue;
+        };
+        if attempt.repo_full_name == "unknown/unknown" {
+            repo_full_name.clone_into(&mut attempt.repo_full_name);
+            attempt
+                .lossiness
+                .retain(|flag| flag != "missing_repo_full_name");
+        }
+        if let Some(completed_at) = attempt.completed_at.as_deref().and_then(rfc3339_to_nanos) {
+            let advance = page
+                .advance_completed_at_nanos
+                .zip(page.advance_workflow_run_id)
+                .is_none_or(|(prev_ts, prev_run)| {
+                    completed_at > prev_ts
+                        || (completed_at == prev_ts && attempt.workflow_run_id > prev_run)
+                });
+            if advance {
+                page.advance_completed_at_nanos = Some(completed_at);
+                page.advance_workflow_run_id = Some(attempt.workflow_run_id);
+            }
+        }
+        page.attempts.push(attempt);
+    }
+    page
+}
+
+/// Whether a durable cursor should skip a job (already covered by prior ticks).
+#[must_use]
+pub fn is_after_backfill_cursor(
+    completed_at_nanos: u128,
+    workflow_run_id: i64,
+    cursor_completed_at_nanos: u128,
+    cursor_workflow_run_id: i64,
+) -> bool {
+    completed_at_nanos > cursor_completed_at_nanos
+        || (completed_at_nanos == cursor_completed_at_nanos
+            && workflow_run_id > cursor_workflow_run_id)
+}
+
+/// Linkage-only hypothesis statement for a CI attempt next to an issue window.
+#[must_use]
+pub fn ci_adjacency_statement(attempt: &NormalizedCiAttempt) -> String {
+    let name = attempt.name.as_deref().unwrap_or("job");
+    let conclusion = attempt.conclusion.as_deref().unwrap_or("unknown");
+    format!(
+        "CI attempt `{name}` on {} (run {}, attempt {}, conclusion={conclusion}) is \
+         adjacent timing evidence only — {CI_ADJACENCY_CLAIM_WORDING}",
+        attempt.repo_full_name, attempt.workflow_run_id, attempt.attempt
+    )
+}
+
+fn rfc3339_to_nanos(raw: &str) -> Option<u128> {
+    let parsed =
+        time::OffsetDateTime::parse(raw, &time::format_description::well_known::Rfc3339).ok()?;
+    u128::try_from(parsed.unix_timestamp_nanos()).ok()
+}
+
 fn encode_hex(bytes: &[u8]) -> String {
     const HEX: &[u8; 16] = b"0123456789abcdef";
     let mut out = String::with_capacity(bytes.len() * 2);
@@ -297,5 +406,44 @@ mod tests {
             redacted_log_fingerprint(b"a"),
             redacted_log_fingerprint(b"b")
         );
+    }
+
+    #[test]
+    fn parses_rest_jobs_page_and_advances_cursor() {
+        let body = json!({
+            "jobs": [
+                {
+                    "id": 1,
+                    "run_id": 50,
+                    "run_attempt": 1,
+                    "name": "unit",
+                    "conclusion": "success",
+                    "html_url": "https://github.com/tailrocks/parallax/actions/runs/50/job/1",
+                    "completed_at": "2026-07-17T01:00:00Z"
+                },
+                {
+                    "id": 2,
+                    "run_id": 51,
+                    "run_attempt": 2,
+                    "name": "unit",
+                    "conclusion": "failure",
+                    "html_url": "https://github.com/tailrocks/parallax/actions/runs/51/job/2",
+                    "completed_at": "2026-07-17T02:00:00Z"
+                }
+            ]
+        });
+        let page = parse_rest_jobs_page("tailrocks/parallax", &body);
+        assert_eq!(page.attempts.len(), 2);
+        assert_eq!(page.advance_workflow_run_id, Some(51));
+        assert!(page.advance_completed_at_nanos.is_some());
+        assert!(is_after_backfill_cursor(
+            page.advance_completed_at_nanos.unwrap(),
+            51,
+            0,
+            0
+        ));
+        assert!(!is_after_backfill_cursor(1, 1, 2, 0));
+        assert!(ci_adjacency_statement(&page.attempts[0]).contains("adjacent"));
+        assert!(CI_CLAIM_KEYS.contains(&"rest_backfill_rate_aware"));
     }
 }

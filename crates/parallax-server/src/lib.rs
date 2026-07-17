@@ -25,6 +25,7 @@
 //! ```
 
 mod alerting;
+mod ci_backfill;
 mod config;
 mod engine_io;
 mod errors;

@@ -12,6 +12,7 @@ use turso::Value;
 
 mod alerts;
 mod ci;
+mod claims;
 mod connection;
 mod deploy;
 mod invocations;
@@ -28,6 +29,7 @@ pub use alerts::{
     AlertIncidentRecord, AlertRuleRecord, AlertRuleStateRecord,
 };
 pub use ci::{CiAttemptAccept, CiAttemptDeliveryRecord, CiAttemptStoreError, CiBackfillState};
+pub use claims::EvidenceClaimRow;
 pub use deploy::{DeployAccept, DeployDeliveryRecord, DeployStoreError, payload_sha256_hex};
 pub use sentry_ack::{SentryAck, SentryAckError};
 pub(crate) mod pins;
@@ -295,6 +297,18 @@ CREATE TABLE IF NOT EXISTS ci_backfill_state (
   last_error           TEXT,
   rate_limit_reset_at  INTEGER
 );
+CREATE TABLE IF NOT EXISTS evidence_claim_rows (
+  domain                TEXT NOT NULL,
+  claim_key             TEXT NOT NULL,
+  level                 TEXT NOT NULL,
+  measured_at           INTEGER NOT NULL,
+  coverage_numerator    INTEGER,
+  coverage_denominator  INTEGER,
+  wording               TEXT NOT NULL,
+  PRIMARY KEY (domain, claim_key)
+);
+CREATE INDEX IF NOT EXISTS evidence_claim_rows_domain
+  ON evidence_claim_rows(domain, measured_at);
 CREATE TABLE IF NOT EXISTS sentry_event_acks (
   project_id   TEXT NOT NULL,
   event_id     TEXT NOT NULL,

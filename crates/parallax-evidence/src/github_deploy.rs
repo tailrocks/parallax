@@ -14,6 +14,40 @@ type HmacSha256 = Hmac<Sha256>;
 pub const PROVIDER: &str = "github";
 pub const API_VERSION_DEFAULT: &str = "2022-11-28";
 
+/// Product claim wording for deploy adjacency — never root-cause language.
+pub const DEPLOY_ADJACENCY_CLAIM_WORDING: &str =
+    "Deploy adjacency is linkage evidence only; never treat adjacency as root cause.";
+
+/// Allowed claim keys for the deploy_context domain (dated coverage rows).
+pub const DEPLOY_CLAIM_KEYS: &[&str] = &[
+    "webhook_hmac_accept",
+    "delivery_id_idempotent",
+    "description_email_excluded",
+    "strong_edge_requires_sha_and_env",
+    "no_causal_wording_from_adjacency",
+];
+
+/// Linkage-only hypothesis statement for a deploy next to an issue window.
+#[must_use]
+pub fn deploy_adjacency_statement(deploy: &NormalizedDeploy) -> String {
+    let env = deploy.environment.as_deref().unwrap_or("unknown-env");
+    let sha = deploy
+        .commit_sha
+        .as_deref()
+        .map(|sha| &sha[..sha.len().min(12)])
+        .unwrap_or("no-sha");
+    let repo = deploy
+        .repo_full_name
+        .as_deref()
+        .unwrap_or("unknown/unknown");
+    format!(
+        "Deploy {id} on {repo} ({env}, sha={sha}, strength={strength:?}) is adjacent \
+         timing evidence only — {DEPLOY_ADJACENCY_CLAIM_WORDING}",
+        id = deploy.deployment_id,
+        strength = deploy.edge_strength,
+    )
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SignatureError {
     MissingHeader,

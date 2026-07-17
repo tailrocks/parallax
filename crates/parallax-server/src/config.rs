@@ -59,8 +59,8 @@ pub struct GithubDeployConfig {
     pub webhook_secret: String,
 }
 
-/// GitHub Actions `workflow_job` webhook receiver (plan 124).
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+/// GitHub Actions `workflow_job` webhook + optional REST backfill (plan 124).
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct GithubActionsConfig {
     /// When false, workflow-job events return 404.
@@ -68,6 +68,33 @@ pub struct GithubActionsConfig {
     /// HMAC secret for `X-Hub-Signature-256`. Prefer env
     /// `PARALLAX_GITHUB_ACTIONS_WEBHOOK_SECRET`.
     pub webhook_secret: String,
+    /// When true (and repos are set), run the bounded REST backfill loop.
+    pub backfill_enabled: bool,
+    /// Repos in `owner/name` form for REST backfill (read-only Actions API).
+    pub backfill_repos: Vec<String>,
+    /// Prefer env `PARALLAX_GITHUB_TOKEN` over this value.
+    pub token: String,
+    /// Seconds between REST backfill ticks (floor 30).
+    pub backfill_interval_secs: u64,
+    /// Jobs/runs page size (1–100).
+    pub backfill_page_size: u32,
+    /// Max workflow runs inspected per tick per repo.
+    pub backfill_max_runs_per_tick: u32,
+}
+
+impl Default for GithubActionsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            webhook_secret: String::new(),
+            backfill_enabled: false,
+            backfill_repos: Vec::new(),
+            token: String::new(),
+            backfill_interval_secs: 300,
+            backfill_page_size: 30,
+            backfill_max_runs_per_tick: 5,
+        }
+    }
 }
 
 /// Alert evaluator + delivery worker (plan 167). Defaults keep alerting on
@@ -307,6 +334,20 @@ impl Config {
             .map(str::to_string)
             .or_else(|| {
                 let trimmed = self.github_actions.webhook_secret.trim();
+                (!trimmed.is_empty()).then(|| trimmed.to_string())
+            })
+    }
+
+    /// Resolve the GitHub token for read-only Actions REST backfill.
+    #[must_use]
+    pub fn resolved_github_token(&self) -> Option<String> {
+        let env = std::env::var("PARALLAX_GITHUB_TOKEN").ok();
+        env.as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string)
+            .or_else(|| {
+                let trimmed = self.github_actions.token.trim();
                 (!trimmed.is_empty()).then(|| trimmed.to_string())
             })
     }

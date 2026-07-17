@@ -11,7 +11,7 @@ pub use turso::{
     ALERT_CHECKS_KEEP_PER_RULE, AlertCheckRecord, AlertDeliveryEventRecord, AlertDestinationRecord,
     AlertIncidentRecord, AlertRuleRecord, AlertRuleStateRecord, CiAttemptAccept,
     CiAttemptDeliveryRecord, CiAttemptStoreError, CiBackfillState, DeployAccept,
-    DeployDeliveryRecord, DeployStoreError, SentryAck, SentryAckError, TursoMetadataStore,
-    payload_sha256_hex,
+    DeployDeliveryRecord, DeployStoreError, EvidenceClaimRow, SentryAck, SentryAckError,
+    TursoMetadataStore, payload_sha256_hex,
 };
 // re-export keeps pin types public while the module stays crate-private

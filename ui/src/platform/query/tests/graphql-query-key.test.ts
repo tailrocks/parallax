@@ -2,10 +2,7 @@
 
 import { describe, expect, it } from "vitest"
 
-import {
-  graphqlOperationQueryKey,
-  graphqlRawQueryKey,
-} from "@/platform/query/graphql-query"
+import { graphqlOperationQueryKey, graphqlRawQueryKey } from "@/platform/query/graphql-query"
 import { encodeGraphqlVariables } from "@/platform/graphql/variables"
 
 describe("graphqlOperationQueryKey identity", () => {
@@ -27,9 +24,7 @@ describe("graphqlOperationQueryKey identity", () => {
     const left = encodeGraphqlVariables({ b: 1, a: 2 })
     const right = encodeGraphqlVariables({ a: 2, b: 1 })
     expect(left).toBe(right)
-    expect(graphqlOperationQueryKey("Op", left)).toEqual(
-      graphqlOperationQueryKey("Op", right)
-    )
+    expect(graphqlOperationQueryKey("Op", left)).toEqual(graphqlOperationQueryKey("Op", right))
   })
 })
 

@@ -34,6 +34,10 @@ fn static_regex(pattern: &str) -> Regex {
     Regex::new(pattern).expect("static regex")
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "static detector table; keep rules co-located"
+)]
 fn redaction_rules() -> &'static [(&'static str, Regex, &'static str)] {
     static CELL: OnceLock<Vec<(&'static str, Regex, &'static str)>> = OnceLock::new();
     CELL.get_or_init(|| {
@@ -153,15 +157,14 @@ fn redaction_rules() -> &'static [(&'static str, Regex, &'static str)] {
 
 /// Apply every detector rule plus control-character stripping, counting
 /// hits into `report`.
+///
+/// Control characters (except `\n`/`\r`/`\t`) are stripped **before** detector
+/// rules. Stripping after detectors broke the `sanitize_text` fixpoint: a
+/// control character could mask a detector match on pass 1, then after strip
+/// the same secret pattern fired on pass 2 (fuzz crash
+/// `C@\u{6}2.srea@T` → pass1 `C@2.srea@T`, pass2 email redaction).
 pub fn redact(text: &str, report: &mut RedactionReport) -> String {
     let mut out = text.to_string();
-    for (name, rule, replacement) in redaction_rules() {
-        let hits = rule.find_iter(&out).count() as u64;
-        if hits > 0 {
-            out = rule.replace_all(&out, *replacement).into_owned();
-            *report.redacted_counts.entry(name).or_insert(0) += hits;
-        }
-    }
     let control_characters = out
         .chars()
         .filter(|character| character.is_control() && !matches!(character, '\n' | '\r' | '\t'))
@@ -172,6 +175,13 @@ pub fn redact(text: &str, report: &mut RedactionReport) -> String {
             .redacted_counts
             .entry("control_character")
             .or_insert(0) += control_characters;
+    }
+    for (name, rule, replacement) in redaction_rules() {
+        let hits = rule.find_iter(&out).count() as u64;
+        if hits > 0 {
+            out = rule.replace_all(&out, *replacement).into_owned();
+            *report.redacted_counts.entry(name).or_insert(0) += hits;
+        }
     }
     out
 }
@@ -435,6 +445,18 @@ mod tests {
                 let twice = sanitize_text(&once);
                 prop_assert_eq!(once, twice);
             }
+        }
+
+        /// Minimized corpus from scheduled-measurement run 29582532812
+        /// (`fuzz/artifacts/redaction_text/crash-6839e8e7…`).
+        #[test]
+        fn fuzz_crash_control_char_masks_email_then_fires() {
+            let input = "C@\u{6}2.srea@T";
+            let once = sanitize_text(input);
+            let twice = sanitize_text(&once);
+            assert_eq!(once, twice, "once={once:?} twice={twice:?}");
+            // Control strip first so the email detector fires on pass 1.
+            assert_eq!(once, "[REDACTED:email_address]@T");
         }
     }
 }

@@ -66,6 +66,8 @@ fn test_inputs(spans: Vec<SpanRow>) -> BundleInputs {
         trace_spans: spans,
         trace_logs: Vec::new(),
         metric_windows: Vec::new(),
+        ci_adjacency: Vec::new(),
+        deploy_adjacency: Vec::new(),
     }
 }
 
@@ -240,6 +242,8 @@ fn markdown_delimits_untrusted_and_fence_safe() {
         trace_spans: vec![],
         trace_logs: vec![],
         metric_windows: vec![],
+        ci_adjacency: Vec::new(),
+        deploy_adjacency: Vec::new(),
     };
     let bundle = assemble(inputs, 8_000);
     let md = to_markdown(&bundle);
@@ -340,6 +344,8 @@ fn assembled_bundle_conforms_to_bundle_v1_schema() {
             trace_spans: vec![span, slow],
             trace_logs: vec![log],
             metric_windows: vec![metric],
+            ci_adjacency: Vec::new(),
+            deploy_adjacency: Vec::new(),
         },
         8_000,
     );
@@ -396,6 +402,8 @@ fn a6_json_and_markdown_projections_share_redacted_bundle() {
             trace_spans: vec![span],
             trace_logs: vec![log],
             metric_windows: vec![],
+            ci_adjacency: Vec::new(),
+            deploy_adjacency: Vec::new(),
         },
         8_000,
     );
@@ -474,6 +482,8 @@ fn sentry_event_cannot_bypass_canonical_bundle_redaction() {
             trace_spans: Vec::new(),
             trace_logs: Vec::new(),
             metric_windows: Vec::new(),
+            ci_adjacency: Vec::new(),
+            deploy_adjacency: Vec::new(),
         },
         8_000,
     );

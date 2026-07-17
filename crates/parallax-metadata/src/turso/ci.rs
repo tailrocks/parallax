@@ -226,6 +226,46 @@ impl TursoMetadataStore {
         .await?;
         Ok(())
     }
+
+    /// Newest-first attempt inventory for bundle correlation (bounded).
+    pub async fn list_ci_attempts_for_repo(
+        &self,
+        repo_full_name: &str,
+        limit: usize,
+    ) -> anyhow::Result<Vec<CiAttemptDeliveryRecord>> {
+        let limit = i64::try_from(limit.clamp(1, 100)).unwrap_or(100);
+        let conn = self.conn.lock().await;
+        let mut rows = conn
+            .query(
+                "SELECT attempt_id, provider, repo_full_name, workflow_run_id, job_id,
+                        attempt, conclusion, name, lossiness, updated_at
+                 FROM ci_attempts
+                 WHERE repo_full_name = ?1
+                 ORDER BY updated_at DESC, attempt_id DESC
+                 LIMIT ?2",
+                (repo_full_name, limit),
+            )
+            .await?;
+        let mut out = Vec::new();
+        while let Some(row) = rows.next().await? {
+            let lossiness: Vec<String> = serde_json::from_str(&text(&row, 8)).unwrap_or_default();
+            out.push(CiAttemptDeliveryRecord {
+                delivery_id: String::new(),
+                attempt_id: text(&row, 0),
+                provider: text(&row, 1),
+                repo_full_name: text(&row, 2),
+                workflow_run_id: integer(&row, 3),
+                job_id: integer(&row, 4),
+                attempt: u32::try_from(integer(&row, 5)).unwrap_or(u32::MAX),
+                conclusion: opt_text(&row, 6),
+                name: opt_text(&row, 7),
+                lossiness,
+                payload_hash: String::new(),
+                received_at_nanos: millis_to_nanos(integer(&row, 9)),
+            });
+        }
+        Ok(out)
+    }
 }
 
 fn decode_backfill_state(row: &turso::Row) -> anyhow::Result<CiBackfillState> {

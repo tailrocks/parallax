@@ -412,6 +412,7 @@ async fn start_assembled(
     let alerting_status =
         spawn_alerting_loops(config, &mut tasks, store.clone(), alerts.clone(), api_addr);
     spawn_test_flakiness_loop(&mut tasks, metadata.clone());
+    spawn_ci_backfill_loop(config, &mut tasks, alerts.clone());
 
     tracing::info!(%api_addr, %otlp_grpc_addr, %otlp_http_addr, "parallax listening");
     Ok(ServerHandle {
@@ -471,6 +472,36 @@ fn spawn_test_flakiness_loop(tasks: &mut Vec<JoinHandle<()>>, metadata: Arc<dyn 
         }
     }));
     tracing::info!(interval_secs = 60, "test flakiness scanner ready");
+}
+
+fn spawn_ci_backfill_loop(
+    config: &Config,
+    tasks: &mut Vec<JoinHandle<()>>,
+    alerts: Option<Arc<TursoMetadataStore>>,
+) {
+    if !config.github_actions.backfill_enabled {
+        return;
+    }
+    let Some(metadata) = alerts else {
+        tracing::warn!("ci evidence REST backfill enabled but Turso metadata unavailable");
+        return;
+    };
+    let repos = config.github_actions.backfill_repos.clone();
+    if repos.is_empty() {
+        tracing::warn!("ci evidence REST backfill enabled but backfill_repos is empty");
+        return;
+    }
+    crate::ci_backfill::spawn_loop(
+        tasks,
+        metadata,
+        crate::ci_backfill::CiBackfillConfig {
+            repos,
+            page_size: config.github_actions.backfill_page_size,
+            max_runs_per_tick: config.github_actions.backfill_max_runs_per_tick,
+        },
+        config.resolved_github_token(),
+        config.github_actions.backfill_interval_secs,
+    );
 }
 
 /// Spawn evaluator + delivery interval loops when alerting is enabled and a
