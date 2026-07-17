@@ -311,6 +311,11 @@ docs and release notes.
 
 **UNFIRED:** Seer self-host GA; Bits auto-merge; offline Assistant.
 
+### Pass 361 (2026-07-18) — Seer
+
+Seer still **closed source** on self-hosted. **UNFIRED.**
+
+
 
 ### Pass 356 (2026-07-18) — Seer + Bits
 
