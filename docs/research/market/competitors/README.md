@@ -49,7 +49,7 @@ Prefer hard, current, sourced numbers: pricing tiers, ingest throughput, query l
 > shipped** (`parallax-analysis::{derive,fingerprint,test_reporting}`); the
 > **bounded redacted bundle exists in code** (`parallax-evidence::bundle` +
 > `REDACTION_POLICY_V1`) but remains **A1-unproven**; **local-stdio MCP graduated
-> only** (`parallax-mcp`, separate binary) — not a shipped product surface.
+> plan 112 (DONE)** — `parallax-mcp` is the aux product surface (remote → Plan 109).
 
 ---
 
