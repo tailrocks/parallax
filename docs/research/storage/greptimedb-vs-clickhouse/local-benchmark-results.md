@@ -8545,3 +8545,15 @@ last_value/argMax on `m2m` warm: GT **8–9 ms** (first 20 ms), CH **~3 ms**. Ja
 CH `r424_spans ⋈ r424_logs` on `trace_id=t0`: left PrimaryKey **1/1**, right
 bloom **1/1**. OTLP JSON still HTTP **400**. **Not done.**
 
+## Run 602 (2026-07-18) — four-way last_value/argMax warm
+
+| Build | Warm (ms) | Notes |
+| --- | --- | --- |
+| GT stable `1.1.3` | **8–9** (first 68) | `last_value` GROUP BY service LIMIT 5 |
+| GT nightly `1.2.0` | **9** (first **276** cold) | same SQL |
+| CH `26.6.1` | **~3** (first 13) | `argMax(val,ts)` |
+| CH head `26.7.1` | **~3** (first 10) | same |
+
+Direction holds (~2–3× CH lead at 50k, both interactive). Cold first-hit not a regression.
+**Not done.**
+

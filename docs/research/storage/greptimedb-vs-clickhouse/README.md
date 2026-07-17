@@ -281,6 +281,7 @@ managed quotes remain):
 | still not done | **599** | top 5 product/server |
 | milestone 600 | **600** | pins/healthy; NOT DONE |
 | still not done | **601** | top 5 product/server |
+| four-way last_value | **602** | GT~8ms / CH~3ms warm |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
