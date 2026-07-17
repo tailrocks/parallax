@@ -1,6 +1,16 @@
 # A2 — User Demand and Deployment Intent
 
 > A2 — "enough teams want self-hosted + open + low-ops Parallax to form a real user base" — is operationalized as a concrete interview gate plus a privacy-preserving evidence contract, not as a market-size or star-count argument. The runbook fixes six target interview slices (with quotas), a past-behavior question bank grounded in The Mom Test and YC's "How To Talk To Users," a seven-dimension 0-4 scoring rubric, a commitment ladder, and explicit pass/continue/kill outcomes; the initial pass bar deliberately matches the bear case (>=6 teams score 16+, >=4 make Level 3+ deployment/data commitments, >=2 show a funding/sustainability path, >=5 slices covered), and A2 fails — reopening the GO verdict — if fewer than 3 teams would deploy or 0 would fund/sustain. The companion evidence ledger turns each call into one redacted YAML row (stable IDs, segment/role/stage buckets, score vector, fixed evidence classes, contradictions, consent level) committed to `docs/research/a2-deployment-intent-results.md`, while names, recordings, and contact logistics stay out of the repo by default. Bias controls (24-hour scoring, mandatory second reviewer for 22+ scores, a cap of 6 operator-network calls in the first 20, aggregate updates after calls 5/10/15/20) guard against founder optimism and operator-only signal. The decision is the protocol and the contract themselves; the gate remains OPEN — no interviews are logged yet, and no A2 pass claim is valid until the redacted ledger and aggregate summary are committed. Broad AI coding-tool adoption is explicitly not an A2 signal; only an observed agentic workflow, a context-permission surface, an audit/control need, or a concrete agent-caused/agent-fixed incident counts.
+>
+> **Pass 66 recheck (2026-07-17):** gate status **unchanged = OPEN / zero rows**.
+> - No `docs/research/a2-deployment-intent-results.md` (ledger file still absent).
+> - Desk research (pass 54 monetization, competitive Traceway/MCP pressure) **cannot**
+>   substitute interviews; product **V1 now ships**, so the interview protocol is
+>   more executable (demo a real binary/UI/bundle) than when written as pre-build.
+> - [Stack Overflow Developer Survey 2025](https://survey.stackoverflow.co/2025/)
+>   still returns HTTP 200; **2026 survey URL 404** this pass — keep 2025 as
+>   current public SO survey cite until 2026 lands; still **not** an A2 pass signal.
+> - **Next real move is operator execution of the runbook**, not more desk theory.
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
