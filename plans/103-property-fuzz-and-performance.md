@@ -19,14 +19,16 @@
 
 - Named Rust invariants: math/semconv/SQL, redaction/canonical-JSON/fingerprint
   fixpoints, OTLP normalize determinism proptest.
+- Trace parent-graph traversal is cycle-safe and permutation-stable under a
+  bounded seeded proptest; unattached identifiers are canonicalized.
 - Six `fuzz/` boundaries + PR `fuzz-bench` lane + nightly
   `scheduled-measurement.yml`; drift gate in `parallax-xtask`.
 - Criterion benches + `bench-alloc/`; Step-6 advanced tools rejected for now.
 
 ## Residual only
 
-1. **Rust properties still open**: trace parent/child trees; serialization
-   compatibility contracts; plan-099 late-retry no-replay properties.
+1. **Rust properties still open**: serialization compatibility contracts;
+   plan-099 late-retry no-replay properties.
 2. **UI properties** (blocked until 133/147/148 owners exist): route-search
    round trips; GraphQL/SSE runtime decoders; Query-key identity; live
    ordering/dedup; feature state machines.

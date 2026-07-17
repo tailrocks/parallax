@@ -16,6 +16,7 @@ in normal `cargo nextest` CI — bounded, seeded, shrinkable), and removal rule
 | Canonical JSON + version-scoped hash stability | non-deterministic key order or non-fixpoint canonicalization breaks bundle-v2 hashes | arbitrary JSON trees depth ≤3, ≤4 children | `canonical_json` re-parse is a fixpoint; version-scoped hash stable | `parallax-evidence/src/envelope.rs` property_tests |
 | Fingerprint determinism | non-pure fingerprinting splits one defect class across issues | arbitrary type/message/stack strings | same inputs → identical 16-hex fingerprint; `normalize_message` fixpoint | `parallax-analysis/src/fingerprint.rs` property_tests |
 | OTLP normalize determinism | non-pure OTLP projection would fork identity/query results | service/name/body strings + status/severity ints | two normalize calls over the same request yield equal JSON-encoded rows | `parallax-ingest/src/tests.rs` property_tests |
+| Trace parent graph determinism | cyclic parents recurse forever or ingest order changes analysis | bounded unique spans with arbitrary missing, self, and cyclic parents | traversal terminates; hop IDs stay unique/input-backed; permutation preserves path and sorted unattached IDs | `parallax-analysis/src/trace_analysis/tests.rs` |
 
 ## Fuzz boundaries (plan 103, Step 3 — first slice)
 
