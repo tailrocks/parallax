@@ -12,9 +12,8 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 74 (Iggy still **server-0.8.0**; clustering issue closed for
-inactivity, not HA-ready; local spool product decision holds). Pass 73 = Rust OTel pins. A1/A2/A4/A6
-open.
+Last updated 2026-07-17 after pass 75 (agent/CLI tracing: semconv **1.43.0**; Claude adapter shipped;
+multi-tool measurement still **not_measured**). Pass 74 = Iggy. A1/A2/A4/A6 open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in

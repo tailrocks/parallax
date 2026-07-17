@@ -2,7 +2,18 @@
 
 <!-- markdownlint-disable MD013 -->
 
-> Parallax should be an evidence engine for software execution — services, CI runs, CLI tools, and coding agents — not only an observability backend for services, and coding-agent sessions plus CLI invocations are first-class execution evidence. OpenTelemetry GenAI, MCP, CLI, process, and CI/CD semantic conventions (catalog `1.41.0`, still development-stage for GenAI/MCP/CLI) are ingestion vocabulary that must be mapped into stable Parallax `agent_session`, `agent_action`, `cli_invocation`, and `ci_run` rows with recorded `semconv_version`, lossiness reports, and state verification — never stored as the durable product schema. Agent-session tracing across real tools (Codex CLI `0.133.0`, Claude Code `2.1.150`, Amp `0.0.1779639467-g6d0650`, OpenCode `1.15.10`) is viable only as a lossy, redacted, normalized execution audit via per-tool adapters (native OTel, hooks, streaming/run JSON, export/plugin, server/API, ACP), not as complete reasoning capture, and the agent-session ledger status is **not measured** (initial level `not_measured`). CLI tracing is default-on only for structural capture; redacted output excerpts require a separate canary-plus-overhead proof gate, raw args/env/stdout/stderr/config are opt-in raw refs only, and the CLI trace safety ledger status is likewise **not measured**. The decided posture is conservative wording with default-deny redaction and explicit claim levels; the open gates are the dated four-arm measurement runs that move both ledgers above `not_measured` (at minimum two agents through non-brittle surfaces, zero seeded canary leaks across canonical JSON/Markdown/CLI/HTTP/MCP projections, state-verification rows before any "validated/changed/deployed/fixed" wording, and positive audit-value lift).
+> Parallax should be an evidence engine for software execution — services, CI runs, CLI tools, and coding agents — not only an observability backend for services, and coding-agent sessions plus CLI invocations are first-class execution evidence. OpenTelemetry GenAI, MCP, CLI, process, and CI/CD semantic conventions are ingestion vocabulary that must be mapped into stable Parallax `agent_session`, `agent_action`, `cli_invocation`, and `ci_run` rows with recorded `semconv_version`, lossiness reports, and state verification — never stored as the durable product schema. Agent-session tracing across real tools is viable only as a lossy, redacted, normalized execution audit via per-tool adapters, not as complete reasoning capture; multi-tool agent-session ledger status is **not measured**. CLI trace safety ledger likewise **not measured**.
+>
+> **Pass 75 recheck (2026-07-17):**
+> - OTel semantic-conventions catalog pin: **v1.43.0** (2026-07-03; was 1.41.0 in May prose) — pass 71.
+> - Product: Claude Code adapter **plan 120 DONE**; CLI invocation model uses
+>   `cli.invocation.id` (not retired `parallax.run.id`) — pass 53.
+> - Historical tool versions below (Codex 0.133.0, Claude 2.1.150, …) are
+>   **2026-05-25 environment probes**, not current universal pins. Claude Code
+>   decision floor: `2.1.150`–`2.1.212` per
+>   [claude-code-session-adapter.md](../decisions/claude-code-session-adapter.md).
+> - Cross-tool measurement gate still **open** (`not_measured`); no four-arm
+>   ledger run artifacts found this pass.
 
 > **Implementation ownership (2026-07-17):** this file preserves trace models,
 > adapter evidence, safety defaults, claim levels, and measurement protocols. It
