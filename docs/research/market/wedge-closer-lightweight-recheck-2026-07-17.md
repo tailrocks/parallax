@@ -239,6 +239,15 @@ Full wedge combination **still not closed** (Traceway lacks Sentry envelope + po
 
 Combo **still not closed**.
 
+**Pass 274 recheck (2026-07-18):** **Traceway** + Grafana Assistant —
+
+| Field | Value |
+| --- | --- |
+| Traceway | still **1,024★** / **v1.9.1**; README **0** sentry/bundle/outcome hits — combo **not closed** |
+| Grafana Assistant self-managed | still **hybrid**: backend/usage/billing in **Grafana Cloud**; prompts leave self-managed — offline BYO-LLM **UNFIRED** |
+
+Combo **still not closed**.
+
 **Pass 244 recheck (2026-07-18):** **Bugsink + Rustrak + GlitchTip** primary
 version/README hygiene (error-tracker peer cluster) —
 

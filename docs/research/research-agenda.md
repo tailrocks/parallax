@@ -12,8 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 273 (A3 still **schema_adoption_none**; Seer
-still **closed** self-host). Pass 272 = error peers. A1/A2/A3/A4 open; A6 mixed open.
+Last updated 2026-07-18 after pass 274 (Traceway still **1,024★**/v1.9.1 no combo;
+Grafana Assistant still **hybrid Cloud**). Pass 273 = A3/Seer. A1/A2/A3/A4 open;
+A6 mixed open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
