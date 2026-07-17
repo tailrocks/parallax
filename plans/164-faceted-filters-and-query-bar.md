@@ -76,7 +76,11 @@ type; facet-count queries and `durationStats`; logs/invocations filter
 compilation (the compiler is span-table-only so far); live-engine narrowing
 + injection assertions; route wiring + URL schemas (Step 3); `F` keyboard
 shortcut; syntax-highlight overlay (editor currently plain input);
-`f-attrs` playground scenario; browser evidence. Preliminary components are controlled/presentational —
+browser evidence. The `f-attrs` playground scenario landed on the
+playground's main at `2083a89` (100 spans + 100 logs,
+`http.request.method` exactly 70/20/10 GET/POST/DELETE, unit-tested split;
+run `scenarios/run.sh f-attrs`) — peer verifies live counts against it.
+Preliminary components are controlled/presentational —
 verify their contracts against the GraphQL shapes you build and refactor
 freely; they carry no route or fetch coupling.
 

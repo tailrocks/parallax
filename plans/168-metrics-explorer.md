@@ -40,6 +40,12 @@ Index status stays TODO.
 - `ui/src/lib/__tests__/metric-aggregation.test.ts` — real unit tests over the
   shipped helpers (legality matrix, coerce, infer, URL round-trip, graduation
   params, counter-reset clamp). Green under `bun run test:ci` for this file.
+- Playground `m-labels` scenario landed on the playground's main at
+  `2083a89`: gauge `shapes.region.load` + monotonic sum
+  `shapes.region.requests_total`, `region` ∈ eu/us/ap at fixed 6/3/1
+  magnitudes over 4×5-minute timestamps, unit-tested; wired into
+  `corner-cases.sh`, `run.sh`, and `docs/corner-case-matrix.md`. Run
+  `scenarios/run.sh m-labels`; peer supplies live evidence.
 
 **Peer owns:** verify codec against real route schemas; Step 0 plan-105
 decision record; backend catalog/query; `/metrics` routes; graduation wiring;
