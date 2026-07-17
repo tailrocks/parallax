@@ -8036,3 +8036,8 @@ Both interactive; CH slight lead (ORDER BY locality). No drift.
 ### Run 297 — 2026-07-17 — pins + containers still healthy
 
 Four-way still healthy; GT 1.1.3 / CH 26.6. Loop continues without declaring done.
+
+### Run 298 — 2026-07-17 — m2m cardinality 40 series groups
+
+`count(DISTINCT service)` on m2m = **40** both engines (matches gen 40 services).
+Baseline for metric-agg scale notes.
