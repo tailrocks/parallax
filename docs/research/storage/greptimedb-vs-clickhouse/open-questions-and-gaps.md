@@ -362,5 +362,9 @@ Comparison **not done**. Pins hold. Highest remaining still:
 2. Server 1M/5M four-way  
 3. Vendor trial quotes  
 4. GB–TB cold S3  
-5. Cluster D2 + product D3  
+5. Cluster D2 + product D3
 
+## Run 449 (2026-07-18) — still not done
+
+After runs 423–448: PromQL partial surface mapped; load-bearing holds re-verified.
+**Not done.** Top five still product/server-gated.
