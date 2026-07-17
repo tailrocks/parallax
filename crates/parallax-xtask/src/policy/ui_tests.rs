@@ -291,7 +291,8 @@ fn validate_entry(
         ));
     }
 
-    let is_browser = entry.lane_owner.starts_with("playwright/");
+    let is_browser =
+        entry.lane_owner.starts_with("playwright/") || entry.lane_owner.starts_with("performance/");
     if is_browser {
         validate_browser_entry(root, entry, findings);
     } else {
@@ -378,10 +379,13 @@ fn validate_browser_entry(root: &Path, entry: &Entry, findings: &mut Vec<Finding
             | "playwright/foundation"
             | "playwright/full-stack"
             | "playwright/breadth"
+            // Plan 147/148 temporary delivery lanes (scenario_owner remains final).
+            | "performance/live"
+            | "performance/bundle"
     );
     let valid_layer = matches!(
         entry.layer.as_str(),
-        "browser-contract" | "browser-full-stack" | "browser-breadth"
+        "browser-contract" | "browser-contracts" | "browser-full-stack" | "browser-breadth"
     );
     let valid_status = matches!(entry.status.as_str(), "implemented" | "reserved");
     if !valid_layer

@@ -42,6 +42,11 @@ pub(crate) enum Command {
     BrowserContractsServe,
     /// Serve/attach managed GreptimeDB + Turso full-stack browser lane (plan 145).
     BrowserFullStackServe,
+    /// Production UI bundle analysis / two-clean-build gates (plan 148).
+    UiBundle {
+        #[command(subcommand)]
+        action: UiBundleAction,
+    },
     /// Run the distinct Rust doctest integration partition.
     Integration,
     /// Validate repository documentation.
@@ -173,6 +178,14 @@ pub(crate) enum UiGraphqlAction {
     Export,
     /// Fail when the checked-in schema (and codegen artifacts) drift.
     Check,
+}
+
+#[derive(Debug, Subcommand)]
+pub(crate) enum UiBundleAction {
+    /// Analyze the current (or freshly built) production client against budgets.
+    Analyze,
+    /// Build production UI twice and require identical normalized inventories.
+    BuildTwice,
 }
 
 #[derive(Debug, Subcommand)]

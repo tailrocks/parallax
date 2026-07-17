@@ -33,7 +33,8 @@ use axum::response::IntoResponse;
 use axum::routing::any;
 use parallax_server::{Config, ServerHandle};
 use parallax_test_support::browser::{
-    RealStackIds, live_followup_log, logs_request, metrics_request, traces_request,
+    RealStackIds, live_followup_log, live_followup_logs, live_followup_span, logs_request,
+    metrics_request, traces_request,
 };
 use prost::Message as _;
 use serde::Deserialize;
@@ -58,6 +59,14 @@ struct ControlState {
 struct ControlRequest {
     op: String,
     body: Option<String>,
+    /// Optional burst size for `seed-live-log-burst` (default 5, max 50).
+    count: Option<u32>,
+    /// Optional fixed timestamp for identity/duplicate cases.
+    ts_nanos: Option<String>,
+    /// Optional span name for `seed-live-span`.
+    span_name: Option<String>,
+    /// Optional span id hex for `seed-live-span` identity cases.
+    span_id: Option<String>,
 }
 
 #[tokio::main]
@@ -404,13 +413,7 @@ async fn handle_control(stream: TcpStream, state: ControlState) -> Result<()> {
             let body = request
                 .body
                 .unwrap_or_else(|| format!("pw-live-{}", state.ids.dataset_id));
-            let ts = u64::try_from(
-                SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .expect("clock")
-                    .as_nanos(),
-            )
-            .unwrap_or(state.ids.start_nanos + 10_000_000);
+            let ts = parse_ts_or_now(request.ts_nanos.as_deref(), state.ids.start_nanos);
             let req = live_followup_log(&state.ids, &body, ts);
             post_proto(
                 &reqwest::Client::new(),
@@ -419,6 +422,66 @@ async fn handle_control(stream: TcpStream, state: ControlState) -> Result<()> {
             )
             .await?;
             json!({ "ok": true, "body": body, "ts_nanos": ts.to_string() })
+        }
+        "seed-live-log-burst" => {
+            let count = request.count.unwrap_or(5).clamp(1, 50) as usize;
+            let prefix = request
+                .body
+                .unwrap_or_else(|| format!("pw-live-burst-{}", state.ids.dataset_id));
+            let base_ts = parse_ts_or_now(request.ts_nanos.as_deref(), state.ids.start_nanos);
+            let mut rows: Vec<(String, u64)> = Vec::with_capacity(count);
+            for i in 0..count {
+                rows.push((format!("{prefix}-{i}"), base_ts.saturating_add(i as u64)));
+            }
+            let refs: Vec<(&str, u64)> = rows.iter().map(|(b, t)| (b.as_str(), *t)).collect();
+            let req = live_followup_logs(&state.ids, &refs);
+            post_proto(
+                &reqwest::Client::new(),
+                &format!("{}/v1/logs", state.otlp_http),
+                req.encode_to_vec(),
+            )
+            .await?;
+            json!({
+                "ok": true,
+                "prefix": prefix,
+                "count": count,
+                "bodies": rows.iter().map(|(b, _)| b.clone()).collect::<Vec<_>>(),
+                "ts_nanos": base_ts.to_string(),
+            })
+        }
+        "seed-live-span" => {
+            let name = request
+                .span_name
+                .or(request.body)
+                .unwrap_or_else(|| format!("pw.live.span.{}", state.ids.dataset_id));
+            let span_id = request.span_id.unwrap_or_else(|| {
+                let nanos = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .expect("clock")
+                    .as_nanos();
+                format!("{nanos:032x}")
+                    .chars()
+                    .rev()
+                    .take(16)
+                    .collect::<String>()
+                    .chars()
+                    .rev()
+                    .collect()
+            });
+            let ts = parse_ts_or_now(request.ts_nanos.as_deref(), state.ids.start_nanos);
+            let req = live_followup_span(&state.ids, &span_id, &name, ts);
+            post_proto(
+                &reqwest::Client::new(),
+                &format!("{}/v1/traces", state.otlp_http),
+                req.encode_to_vec(),
+            )
+            .await?;
+            json!({
+                "ok": true,
+                "span_name": name,
+                "span_id": span_id,
+                "ts_nanos": ts.to_string(),
+            })
         }
         other => json!({ "ok": false, "error": format!("unknown op {other}") }),
     };
@@ -530,6 +593,21 @@ async fn seed_otlp(otlp_http: &str, ids: &RealStackIds) -> Result<()> {
     )
     .await?;
     Ok(())
+}
+
+fn parse_ts_or_now(raw: Option<&str>, start_nanos: u64) -> u64 {
+    if let Some(raw) = raw
+        && let Ok(parsed) = raw.parse::<u64>()
+    {
+        return parsed;
+    }
+    u64::try_from(
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock")
+            .as_nanos(),
+    )
+    .unwrap_or(start_nanos.saturating_add(10_000_000))
 }
 
 async fn post_proto(client: &reqwest::Client, url: &str, body: Vec<u8>) -> Result<()> {

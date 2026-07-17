@@ -6,7 +6,8 @@ use crate::browser_contracts;
 use crate::browser_foundation;
 use crate::browser_full_stack;
 use crate::cli::{
-    Cli, Command, DocsAction, FacadeAction, Output, SemconvAction, UiAction, UiGraphqlAction,
+    Cli, Command, DocsAction, FacadeAction, Output, SemconvAction, UiAction, UiBundleAction,
+    UiGraphqlAction,
 };
 use crate::closure_final;
 use crate::dependencies::{self, Selection};
@@ -16,6 +17,7 @@ use crate::nextest_evidence;
 use crate::policy;
 use crate::release;
 use crate::semconv;
+use crate::ui_bundle;
 use crate::ui_graphql;
 
 pub(crate) fn execute(cli: Cli) -> Result<()> {
@@ -28,6 +30,10 @@ pub(crate) fn execute(cli: Cli) -> Result<()> {
         Command::BrowserFoundationServe => browser_foundation::run(&root),
         Command::BrowserContractsServe => browser_contracts::run(&root),
         Command::BrowserFullStackServe => browser_full_stack::run(&root),
+        Command::UiBundle { action } => match action {
+            UiBundleAction::Analyze => ui_bundle::analyze(&root),
+            UiBundleAction::BuildTwice => ui_bundle::build_twice(&root),
+        },
         Command::Integration => integration(&root),
         Command::Docs { action } => execute_docs(&root, action, cli.output),
         Command::Policy { only } => policy::run(&root, only.as_deref(), cli.output),

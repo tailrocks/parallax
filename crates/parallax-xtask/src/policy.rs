@@ -16,6 +16,7 @@ mod structural;
 #[expect(clippy::too_many_lines, reason = "compiler analysis")]
 mod typescript;
 mod ui_architecture;
+mod ui_bundles;
 mod ui_graphql_contract;
 mod ui_runtime_boundaries;
 mod ui_tests;
@@ -44,12 +45,13 @@ pub(crate) fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()>
                 | "ui.browser-contracts"
                 | "ui.browser-full-stack"
                 | "ui.browser-breadth"
+                | "ui.bundles"
                 | "ui.graphql-contract"
                 | "ui.runtime-boundaries"
         )
     {
         bail!(
-            "unknown policy family `{rule}`; available: architecture, product, structural, typescript, ui.architecture, ui.browser-breadth, ui.browser-contracts, ui.browser-foundation, ui.browser-full-stack, ui.graphql-contract, ui.ratchets, ui.runtime-boundaries, ui.tests"
+            "unknown policy family `{rule}`; available: architecture, product, structural, typescript, ui.architecture, ui.browser-breadth, ui.browser-contracts, ui.browser-foundation, ui.browser-full-stack, ui.bundles, ui.graphql-contract, ui.ratchets, ui.runtime-boundaries, ui.tests"
         );
     }
     let ratchet = config::Ratchet::load(&root.join("ratchet.toml"))?;
@@ -86,6 +88,9 @@ pub(crate) fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()>
     }
     if only.is_none() || only == Some("ui.browser-breadth") {
         findings.extend(browser_breadth::check_workspace(root)?);
+    }
+    if only.is_none() || only == Some("ui.bundles") {
+        findings.extend(ui_bundles::check_workspace(root)?);
     }
     if only.is_none() || only == Some("ui.graphql-contract") {
         findings.extend(ui_graphql_contract::check_workspace(root)?);

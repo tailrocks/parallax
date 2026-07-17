@@ -137,9 +137,7 @@ describe("useLiveStream", () => {
 
   it("maps onerror after open to reconnecting, then open again", () => {
     const onBatch = vi.fn()
-    render(
-      <StatusHarness url="/v1/logs/stream" decoder={stringArrayDecoder} onBatch={onBatch} />
-    )
+    render(<StatusHarness url="/v1/logs/stream" decoder={stringArrayDecoder} onBatch={onBatch} />)
 
     expect(screen.getByTestId("status").textContent).toBe("connecting")
 
@@ -162,9 +160,7 @@ describe("useLiveStream", () => {
 
   it("maps onerror during connecting to error", () => {
     const onBatch = vi.fn()
-    render(
-      <StatusHarness url="/v1/logs/stream" decoder={stringArrayDecoder} onBatch={onBatch} />
-    )
+    render(<StatusHarness url="/v1/logs/stream" decoder={stringArrayDecoder} onBatch={onBatch} />)
     const source = MockEventSource.instances[0]!
     act(() => {
       source.emitError()
@@ -218,9 +214,7 @@ describe("useLiveStream", () => {
     })
 
     const onBatch = vi.fn()
-    render(
-      <StatusHarness url="/v1/logs/stream" decoder={stringArrayDecoder} onBatch={onBatch} />
-    )
+    render(<StatusHarness url="/v1/logs/stream" decoder={stringArrayDecoder} onBatch={onBatch} />)
     expect(MockEventSource.instances).toHaveLength(1)
     const first = MockEventSource.instances[0]!
 

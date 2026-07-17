@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 545,
-    "test_files": 133
+    "test_cases": 556,
+    "test_files": 137
   },
   "private_route_imports": [],
   "entries": [
@@ -2601,7 +2601,8 @@
       "test_ids": [
         "dedupes by spanId and prepends freshest",
         "enforces capacity drop from the tail",
-        "does not mutate incoming"
+        "does not mutate incoming",
+        "merges 10k current + 1k incoming under 16ms p95 (canonical Bun)"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -2622,6 +2623,80 @@
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
+    },
+    {
+      "id": "pw-live-logs-burst",
+      "surface": "features/logs",
+      "risk": "Live log burst may drop, reorder, or unbound visible capacity",
+      "scenario_owner": "features/logs",
+      "lane_owner": "performance/live",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/logs-live-performance.spec.ts",
+      "test_ids": [
+        "burst of five live logs each appear once @pw-live-logs-burst",
+        "duplicate identity does not double-render @pw-live-logs-dedup",
+        "filter generation change drops old stream delivery @pw-live-logs-filter-reset"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "implemented",
+      "dataset_id": "pw-storage",
+      "state_class": "live-burst",
+      "delivery_plan": 147
+    },
+    {
+      "id": "pw-live-traces-identity",
+      "surface": "features/traces",
+      "risk": "Live span identity/order may double-render or lose capacity bounds",
+      "scenario_owner": "features/traces",
+      "lane_owner": "performance/live",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/traces-live-performance.spec.ts",
+      "test_ids": [
+        "live span appears once by name @pw-live-traces-identity",
+        "duplicate spanId does not double-render @pw-live-traces-dedup"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "implemented",
+      "dataset_id": "pw-storage",
+      "state_class": "live-identity",
+      "delivery_plan": 147
+    },
+    {
+      "id": "pw-live-runs-hub",
+      "surface": "features/invocations",
+      "risk": "Invocation hub dual live streams may miss correlated log/span events",
+      "scenario_owner": "features/invocations",
+      "lane_owner": "performance/live",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/runs-live-performance.spec.ts",
+      "test_ids": [
+        "hub live log appears under invocation stream @pw-live-runs-log",
+        "hub live span appears once @pw-live-runs-span"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "implemented",
+      "dataset_id": "pw-storage",
+      "state_class": "live-hub",
+      "delivery_plan": 147
+    },
+    {
+      "id": "pw-bundle-shell-entry",
+      "surface": "layout/shell",
+      "risk": "Initial shell load may pull route-only chunks or source maps",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "performance/bundle",
+      "layer": "browser-contracts",
+      "test_file": "ui/tests/e2e/contracts/bundle-resources.spec.ts",
+      "test_ids": [
+        "direct shell entry loads without source maps @pw-bundle-shell-entry",
+        "logs navigation does not request source maps @pw-bundle-logs-nav",
+        "traces navigation does not request source maps @pw-bundle-traces-nav"
+      ],
+      "required_environment": "contracts-chromium",
+      "status": "implemented",
+      "dataset_id": "shell-empty",
+      "state_class": "bundle-resources",
+      "delivery_plan": 148
     }
   ],
   "browser_contract_paths": [

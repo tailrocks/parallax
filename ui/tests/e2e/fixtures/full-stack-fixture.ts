@@ -107,13 +107,67 @@ export async function fullStackSnapshot(): Promise<{
   }
 }
 
-export async function seedLiveLog(body?: string): Promise<{ body: string; ts_nanos: string }> {
+export async function seedLiveLog(
+  body?: string,
+  tsNanos?: string
+): Promise<{ body: string; ts_nanos: string }> {
   const response = (await controlRequest({
     op: "seed-live-log",
     body,
+    ...(tsNanos ? { ts_nanos: tsNanos } : {}),
   })) as { ok?: boolean; body?: string; ts_nanos?: string; error?: string }
   expect(response.ok, response.error ?? "seed-live-log failed").toBe(true)
   return { body: response.body ?? "", ts_nanos: response.ts_nanos ?? "" }
+}
+
+export async function seedLiveLogBurst(
+  count = 5,
+  prefix?: string
+): Promise<{ prefix: string; count: number; bodies: string[]; ts_nanos: string }> {
+  const response = (await controlRequest({
+    op: "seed-live-log-burst",
+    count,
+    body: prefix,
+  })) as {
+    ok?: boolean
+    prefix?: string
+    count?: number
+    bodies?: string[]
+    ts_nanos?: string
+    error?: string
+  }
+  expect(response.ok, response.error ?? "seed-live-log-burst failed").toBe(true)
+  return {
+    prefix: response.prefix ?? "",
+    count: response.count ?? 0,
+    bodies: response.bodies ?? [],
+    ts_nanos: response.ts_nanos ?? "",
+  }
+}
+
+export async function seedLiveSpan(options?: {
+  spanName?: string
+  spanId?: string
+  tsNanos?: string
+}): Promise<{ span_name: string; span_id: string; ts_nanos: string }> {
+  const response = (await controlRequest({
+    op: "seed-live-span",
+    span_name: options?.spanName,
+    span_id: options?.spanId,
+    ...(options?.tsNanos ? { ts_nanos: options.tsNanos } : {}),
+  })) as {
+    ok?: boolean
+    span_name?: string
+    span_id?: string
+    ts_nanos?: string
+    error?: string
+  }
+  expect(response.ok, response.error ?? "seed-live-span failed").toBe(true)
+  return {
+    span_name: response.span_name ?? "",
+    span_id: response.span_id ?? "",
+    ts_nanos: response.ts_nanos ?? "",
+  }
 }
 
 export async function graphqlQuery<T>(query: string): Promise<T> {

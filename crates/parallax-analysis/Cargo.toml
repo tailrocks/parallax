@@ -16,6 +16,7 @@ workspace = true
 parallax-model = { workspace = true }
 parallax-proto = { workspace = true }
 parallax-semconv = { workspace = true }
+quick-xml = { workspace = true }
 regex = { workspace = true }
 serde_json = { workspace = true }
 sha2 = { workspace = true }

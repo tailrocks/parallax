@@ -3232,6 +3232,7 @@ dependencies = [
  "parallax-proto",
  "parallax-semconv",
  "proptest",
+ "quick-xml",
  "regex",
  "serde_json",
  "sha2",

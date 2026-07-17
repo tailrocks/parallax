@@ -12,6 +12,7 @@ mod nextest_evidence;
 mod policy;
 mod release;
 mod semconv;
+mod ui_bundle;
 mod ui_graphql;
 
 use anyhow::Result;

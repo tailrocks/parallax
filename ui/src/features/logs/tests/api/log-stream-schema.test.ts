@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  decodeLogStreamRow,
-  logStreamBatchDecoder,
-} from "@/features/logs/api/log-stream-schema"
+import { decodeLogStreamRow, logStreamBatchDecoder } from "@/features/logs/api/log-stream-schema"
 
 describe("logStreamBatchDecoder", () => {
   it("decodes valid rows and drops incomplete ones", () => {

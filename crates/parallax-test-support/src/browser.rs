@@ -13,7 +13,8 @@ pub use datasets::{
     catalog, dataset_ids, manifest_for, pilot_investigation_state_json,
 };
 pub use real_stack::{
-    RealStackIds, live_followup_log, logs_request, metrics_request, traces_request,
+    RealStackIds, live_followup_log, live_followup_logs, live_followup_span, logs_request,
+    metrics_request, traces_request,
 };
 pub use seed::{
     InvestigationSnapshot, clear_metadata, investigation_snapshot, postconditions_hold,

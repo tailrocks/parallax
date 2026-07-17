@@ -165,29 +165,81 @@ pub fn live_followup_log(
     body: &str,
     ts_nanos: u64,
 ) -> ExportLogsServiceRequest {
+    live_followup_logs(ids, &[(body, ts_nanos)])
+}
+
+/// Multi-event live log burst (plan 147 @live capacity/identity cases).
+pub fn live_followup_logs(ids: &RealStackIds, rows: &[(&str, u64)]) -> ExportLogsServiceRequest {
     ExportLogsServiceRequest {
         resource_logs: vec![ResourceLogs {
             resource: Some(resource(ids)),
             scope_logs: vec![ScopeLogs {
-                log_records: vec![LogRecord {
-                    time_unix_nano: ts_nanos,
-                    observed_time_unix_nano: ts_nanos,
-                    severity_number: 9,
-                    severity_text: "INFO".into(),
-                    event_name: "pw.storage.live".into(),
-                    body: Some(AnyValue {
-                        value: Some(any_value::Value::StringValue(body.into())),
-                    }),
-                    attributes: vec![
-                        string_kv("cli.invocation.id", &ids.invocation_id),
-                        string_kv("parallax.dataset.id", &ids.dataset_id),
-                        string_kv("pw.live", "1"),
-                    ],
-                    ..LogRecord::default()
-                }],
+                log_records: rows
+                    .iter()
+                    .map(|(body, ts_nanos)| LogRecord {
+                        time_unix_nano: *ts_nanos,
+                        observed_time_unix_nano: *ts_nanos,
+                        severity_number: 9,
+                        severity_text: "INFO".into(),
+                        event_name: "pw.storage.live".into(),
+                        body: Some(AnyValue {
+                            value: Some(any_value::Value::StringValue((*body).into())),
+                        }),
+                        attributes: vec![
+                            string_kv("cli.invocation.id", &ids.invocation_id),
+                            string_kv("parallax.dataset.id", &ids.dataset_id),
+                            string_kv("pw.live", "1"),
+                        ],
+                        ..LogRecord::default()
+                    })
+                    .collect(),
                 ..ScopeLogs::default()
             }],
             ..ResourceLogs::default()
+        }],
+    }
+}
+
+/// One live follow-up span with caller-owned span id/name (plan 147 @live traces).
+pub fn live_followup_span(
+    ids: &RealStackIds,
+    span_id_hex: &str,
+    name: &str,
+    ts_nanos: u64,
+) -> ExportTraceServiceRequest {
+    let span_id = hex_decode(span_id_hex);
+    let span_id = if span_id.len() == 8 {
+        span_id
+    } else {
+        // Stable 8-byte material from the provided hex/name when short/invalid.
+        simple_digest(format!("{span_id_hex}:{name}").as_bytes())[16..24].to_vec()
+    };
+    ExportTraceServiceRequest {
+        resource_spans: vec![ResourceSpans {
+            resource: Some(resource(ids)),
+            scope_spans: vec![ScopeSpans {
+                spans: vec![Span {
+                    trace_id: ids.trace_id_bytes(),
+                    span_id,
+                    name: name.into(),
+                    kind: 2,
+                    start_time_unix_nano: ts_nanos,
+                    end_time_unix_nano: ts_nanos + 2_000_000,
+                    status: Some(Status {
+                        code: status::StatusCode::Ok as i32,
+                        message: String::new(),
+                    }),
+                    attributes: vec![
+                        string_kv("cli.invocation.id", &ids.invocation_id),
+                        string_kv("session.id", &ids.session_id),
+                        string_kv("parallax.dataset.id", &ids.dataset_id),
+                        string_kv("pw.live", "1"),
+                    ],
+                    ..Default::default()
+                }],
+                ..ScopeSpans::default()
+            }],
+            ..ResourceSpans::default()
         }],
     }
 }
