@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 529,
-    "test_files": 128
+    "test_cases": 545,
+    "test_files": 133
   },
   "private_route_imports": [],
   "entries": [
@@ -328,8 +328,7 @@
         "closes the stream while the tab is hidden and reconnects on visible"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "delivery_plan": 147
+      "status": "implemented"
     },
     {
       "id": "vitest-020",
@@ -2540,6 +2539,86 @@
       "test_file": "ui/src/platform/sse/tests/bounded-frame-buffer.test.ts",
       "test_ids": [
         "drops oldest on overflow and reports diagnostics"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-147-log-stream-schema",
+      "surface": "features/logs",
+      "risk": "Live log frames can decode wrongly or accept malformed payloads",
+      "scenario_owner": "features/logs",
+      "lane_owner": "vitest/unit",
+      "layer": "model",
+      "test_file": "ui/src/features/logs/tests/api/log-stream-schema.test.ts",
+      "test_ids": [
+        "decodes valid rows and drops incomplete ones",
+        "rejects non-array frames",
+        "decodeLogStreamRow requires tsNanos and body"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-147-merge-live-logs-perf",
+      "surface": "features/logs",
+      "risk": "Live log merge can regress ordering, identity, or cost",
+      "scenario_owner": "features/logs",
+      "lane_owner": "vitest/unit",
+      "layer": "model",
+      "test_file": "ui/src/features/logs/tests/model/merge-live-logs.perf.test.ts",
+      "test_ids": [
+        "merges 10k current + 1k incoming under 16ms p95 (canonical Bun)",
+        "preserves reference identity for unchanged current items"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-147-span-stream-schema",
+      "surface": "features/traces",
+      "risk": "Live span frames can decode wrongly or accept malformed payloads",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/unit",
+      "layer": "model",
+      "test_file": "ui/src/features/traces/tests/api/span-stream-schema.test.ts",
+      "test_ids": [
+        "decodes spans with spanId and drops others",
+        "rejects non-array frames",
+        "decodeSpanStreamRow requires spanId"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-147-merge-live-spans",
+      "surface": "features/traces",
+      "risk": "Live span merge can regress ordering, identity, or dedup",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/unit",
+      "layer": "model",
+      "test_file": "ui/src/features/traces/tests/model/merge-live-spans.test.ts",
+      "test_ids": [
+        "dedupes by spanId and prepends freshest",
+        "enforces capacity drop from the tail",
+        "does not mutate incoming"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-147-stream-state",
+      "surface": "platform/live",
+      "risk": "Shared stream state can reconnect incorrectly or leak buffers",
+      "scenario_owner": "platform/live",
+      "lane_owner": "vitest/unit",
+      "layer": "platform-contract",
+      "test_file": "ui/src/platform/sse/tests/stream-state.test.ts",
+      "test_ids": [
+        "starts connecting then opens",
+        "marks reconnecting after open transport error",
+        "marks error when connect fails before open",
+        "stops to idle"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"

@@ -4191,7 +4191,7 @@ ceiling = 28
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-server/src/config/tests.rs"
-ceiling = 9
+ceiling = 15
 
 [[limits]]
 metric = "rust.assertions"
@@ -6781,7 +6781,7 @@ ceiling = 23
 
 [[product.anyhow_edges]]
 path = "crates/parallax-metadata/src/turso/test_reporting.rs"
-ceiling = 27
+ceiling = 31
 reason = "private test-report persistence composition is converted at the typed metadata port"
 
 [[limits]]
@@ -6927,7 +6927,7 @@ ceiling = 11
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-analysis/src/test_flakiness/tests.rs"
-ceiling = 17
+ceiling = 18
 
 [[limits]]
 metric = "rust.assertions"
@@ -7112,4 +7112,157 @@ ceiling = 158
 [[rust_suppressions]]
 crate_name = "parallax-metadata"
 lint = "clippy::too_many_lines"
+ceiling = 1
+
+[[ui.ownership]]
+path = "ui/scripts/bundle-analyze.ts"
+current_owner = "tooling"
+target_owner = "tooling"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/investigations/queries/keys.ts"
+current_owner = "features/investigations"
+target_owner = "features/investigations"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/investigations/queries/options.ts"
+current_owner = "features/investigations"
+target_owner = "features/investigations"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/logs/api/log-stream-schema.ts"
+current_owner = "features/logs"
+target_owner = "features/logs"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/logs/model/merge-live-logs.ts"
+current_owner = "features/logs"
+target_owner = "features/logs"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/logs/tests/api/log-stream-schema.test.ts"
+current_owner = "features/logs"
+target_owner = "features/logs"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/logs/tests/model/merge-live-logs.perf.test.ts"
+current_owner = "features/logs"
+target_owner = "features/logs"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/logs/tests/model/merge-live-logs.test.ts"
+current_owner = "features/logs"
+target_owner = "features/logs"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/api/span-stream-schema.ts"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/model/merge-live-spans.ts"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/tests/api/span-stream-schema.test.ts"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/tests/model/merge-live-spans.test.ts"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/query/client.ts"
+current_owner = "platform"
+target_owner = "platform"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/query/graphql-query.ts"
+current_owner = "platform"
+target_owner = "platform"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/query/provider.tsx"
+current_owner = "platform"
+target_owner = "platform"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/sse/bounded-frame-buffer.ts"
+current_owner = "platform"
+target_owner = "platform"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/sse/stream-state.ts"
+current_owner = "platform"
+target_owner = "platform"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/sse/tests/bounded-frame-buffer.test.ts"
+current_owner = "platform"
+target_owner = "platform"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/sse/tests/stream-state.test.ts"
+current_owner = "platform"
+target_owner = "platform"
+migration_plan = "none"
+kind = "handwritten"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-metadata/src/turso/deploy.rs"
+ceiling = 8
+reason = "private deploy-context persistence composition is converted at the typed metadata port"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-metadata/src/turso/sentry_ack.rs"
+ceiling = 4
+reason = "private sentry-ack persistence composition is converted at the typed metadata port"
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/src/test_flakiness.rs"
+ceiling = 10
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-server/src/test_flakiness.rs"
 ceiling = 1

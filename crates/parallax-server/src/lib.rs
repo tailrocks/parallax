@@ -50,6 +50,7 @@ mod outcomes;
 mod self_telemetry;
 mod sentry_http;
 mod serve;
+mod test_flakiness;
 mod worker;
 
 pub use config::{

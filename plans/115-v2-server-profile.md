@@ -21,8 +21,10 @@
 ## Residual only
 
 1. ~~ADR~~ landed (`docs/research/decisions/v2-server-profile.md`).
-2. Validated server config: native TLS, least privilege, external endpoints,
-   progress, health/readiness, graceful drain; no in-memory product path.
+2. ~~Validated example config composition~~ landed
+   (`docs/research/validation/2026-07-plan-115-v2-server-profile/example-config.toml`
+   + `Config::load` unit gate). Still open: production non-loopback rehearsals
+   with operator TLS edge, graceful drain evidence.
 3. Live rehearsal: backup/restore, upgrade/rollback, disk pressure, retention.
 4. Package via verified release pipeline; remote CLI acceptance for
    issue/bundle/trace.

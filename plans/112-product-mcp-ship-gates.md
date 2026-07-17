@@ -28,12 +28,15 @@ at evidence time.
 
 ## Residual only
 
-1. **Claimed-client fixtures**: real Codex + Claude Code registration, trust,
-   discovery, invocation, retention (not only in-process wire mock).
+1. ~~**Claimed-client registration fixtures**~~: Codex
+   (`codex.config.example.toml`) + Claude Code
+   (`claude-code.mcp.json`) registration examples landed under validation
+   evidence. Still open: live discovery/invocation/retention against real
+   clients (not only in-process wire mock).
 2. ~~**Oversized path**~~: bounded summary + approved `parallax://evidence/…`
    resource refs when wire JSON exceeds 128 KiB (landed).
-3. **Independent OTel verification**: exporter/subscriber integration of audit
-   spans outside unit capture.
+3. ~~**Independent OTel verification**~~: `tracing` audit spans verified via
+   subscriber Layer capture in `audit.rs` tests (outside in-memory row log).
 4. **Spike disposition**: graduate deliberate product crate **or**
    delete/quarantine spike; remove comparison-only paths permanently.
 5. Remote transport remains out of residual until a separate GO wires auth +

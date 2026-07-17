@@ -61,3 +61,18 @@ fn env_off_disables_config_token() {
         Some("configured-token-value")
     );
 }
+
+#[test]
+fn plan_115_example_config_loads_and_validates() {
+    let path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../docs/research/validation/2026-07-plan-115-v2-server-profile/example-config.toml"
+    );
+    let config = Config::load(Some(std::path::Path::new(path))).expect("example config");
+    assert_eq!(config.storage.mode, "managed");
+    assert!(is_loopback_bind(&config.server.bind));
+    assert!(!config.sentry.enabled);
+    assert!(!config.github_deploy.enabled);
+    assert_eq!(config.server.api_port, 4000);
+    assert_eq!(config.server.otlp_grpc_port, 4317);
+}
