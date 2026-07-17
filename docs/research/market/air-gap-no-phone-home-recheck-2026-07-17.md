@@ -127,6 +127,11 @@ Air-gap combination claim **holds**.
 
 OPW still **route-to-destinations**; Assistant still **Grafana Cloud stack** backend; Seer still closed. Air-gap combination claim **holds**.
 
+### Pass 334 (2026-07-18) — OPW
+
+OPW still **route-to-destinations**. Air-gap combination claim **holds**.
+
+
 
 
 Air-gap combination claim (open core + portable redacted evidence + no closed
