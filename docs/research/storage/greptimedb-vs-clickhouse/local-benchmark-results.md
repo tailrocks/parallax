@@ -8123,3 +8123,7 @@ GT total `ssts_storage` sum across all tables **~5.5 MiB** (includes indexes +
 experiment tables). CH logs grew vs earlier run with bloom on message+trace.
 Shape still product-relevant; multi-table GT sum not per-table comparable without
 region map this pass.
+
+### Run 316 — 2026-07-17 — not done
+
+Still open.
