@@ -2,21 +2,17 @@
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 53**
 > first deep-dive; **pass 59** GitLab star pin; **pass 93** re-verify;
-> **pass 134** GitLab re-pin; **pass 173** version bump). Sources:
-> [glitchtip.com](https://glitchtip.com),
-> [glitchtip.com/pricing](https://glitchtip.com/pricing) (FAQ + plan structure;
-> Angular SPA hard to scrape — tier dollars cross-checked against 2026 secondary
-> summaries and marked where primary HTML did not yield numbers),
+> **pass 134** GitLab re-pin; **pass 173** version bump; **pass 208** re-pin).
+> Sources: [glitchtip.com](https://glitchtip.com),
+> [glitchtip.com/pricing](https://glitchtip.com/pricing),
 > [documentation/install](https://glitchtip.com/documentation/install),
 > [GitLab primary](https://gitlab.com/glitchtip/glitchtip) (**161★**, last_activity
-> **2026-07-06** — pass 173; backend **354★**, last_activity **2026-07-17**;
-> frontend **68★**, act **2026-07-17**),
-> [GitHub mirror](https://github.com/burke-software/GlitchTip) (stale — do not use
-> mirror stars as activity),
-> [MCP docs](https://glitchtip.com/documentation/mcp/), Bugsink/Rustrak peers.
-> **Pass 173:** still Sentry-API error tracker (README reconfirm); backend tag
-> moved **v6.1.8 → v6.2.1** (2026-07-15) — **still no OTLP full-signal + portable
-> redacted bundle + outcome** combination. MCP docs page still exists.
+> **2026-07-06**; backend **354★**, last_activity **2026-07-17**),
+> [GitHub mirror](https://github.com/burke-software/GlitchTip) (stale),
+> [MCP docs](https://glitchtip.com/documentation/mcp/).
+> **Pass 208:** backend still **v6.2.1** (2026-07-15 latest tag) — still
+> Sentry-API error-only; **no** OTLP multi-signal + portable redacted bundle +
+> outcome.
 >
 > **Bottom line up front:** GlitchTip is a **mature, MIT, Sentry-API-compatible
 > error-tracking product** (Django/Python) with hosted + free self-host, optional
