@@ -91,6 +91,15 @@ fn record_error(reason: &str) -> Finding {
 
 fn violations(contract: &MetricSummaryContract) -> Vec<&'static str> {
     let mut violations = Vec::new();
+    check_approval(contract, &mut violations);
+    check_samples(contract, &mut violations);
+    check_trends(contract, &mut violations);
+    check_names(contract, &mut violations);
+    check_consumers(contract, &mut violations);
+    violations
+}
+
+fn check_approval(contract: &MetricSummaryContract, violations: &mut Vec<&'static str>) {
     require(
         contract.record_sha256.len() == 64
             && contract
@@ -98,124 +107,135 @@ fn violations(contract: &MetricSummaryContract) -> Vec<&'static str> {
                 .bytes()
                 .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase()),
         "record_sha256 must be a lowercase SHA-256 digest",
-        &mut violations,
+        violations,
     );
     require(
         contract.schema_version == 1,
         "schema_version must be 1",
-        &mut violations,
+        violations,
     );
     require(
         contract.status == "approved",
         "status must be approved",
-        &mut violations,
+        violations,
     );
     require(
         contract.decision_date == "2026-07-17",
         "decision date must match the operator directive",
-        &mut violations,
+        violations,
     );
+}
+
+fn check_samples(contract: &MetricSummaryContract, violations: &mut Vec<&'static str>) {
     require(
         contract.approval == "operator-directive-2026-07-17",
         "approval must identify the operator directive",
-        &mut violations,
+        violations,
     );
     require(
         contract.window == "explicit-inclusive",
         "window must be explicit-inclusive",
-        &mut violations,
+        violations,
     );
     require(
         contract.eligible_samples == ["gauge", "sum", "explicit-histogram"],
         "eligible samples must be gauge, sum, and explicit-histogram",
-        &mut violations,
+        violations,
     );
     require(
         contract.non_finite == "exclude",
         "non-finite samples must be excluded",
-        &mut violations,
+        violations,
     );
+}
+
+fn check_trends(contract: &MetricSummaryContract, violations: &mut Vec<&'static str>) {
     require(
         contract.histogram_count == "count-row-once",
         "histograms must count the count row once",
-        &mut violations,
+        violations,
     );
     require(
         contract.trend_bucket_limit == 120,
         "trend bucket limit must be 120",
-        &mut violations,
+        violations,
     );
     require(
         contract.trend_default_buckets == 60,
         "default trend bucket count must be 60",
-        &mut violations,
+        violations,
     );
     require(
         contract.trend_min_step_seconds == 1,
         "minimum trend step must be one second",
-        &mut violations,
+        violations,
     );
     require(
         contract.bucket_boundaries == "left-closed-right-open-final-inclusive",
         "bucket boundaries must be left-closed/right-open with final endpoint inclusive",
-        &mut violations,
+        violations,
     );
     require(
         contract.bucket_timestamp == "start",
         "bucket timestamps must be bucket starts",
-        &mut violations,
+        violations,
     );
     require(
         contract.empty_buckets == "zero",
         "empty buckets must be zero-filled",
-        &mut violations,
+        violations,
     );
+}
+
+fn check_names(contract: &MetricSummaryContract, violations: &mut Vec<&'static str>) {
     require(
         contract.step_rounding == "up",
         "trend steps must round up",
-        &mut violations,
+        violations,
     );
     require(
         contract.canonical_name == "native-public-table-base",
         "canonical names must be native public-table bases",
-        &mut violations,
+        violations,
     );
     require(
         contract.histogram_family == "complete-family-only",
         "histogram suffixes collapse only for complete families",
-        &mut violations,
+        violations,
     );
     require(
         contract.alias_resolution == "exactly-one-match",
         "metric aliases must resolve to exactly one family",
-        &mut violations,
+        violations,
     );
     require(
         contract.lossy_reverse == "forbidden",
         "lossy native-name reversal must be forbidden",
-        &mut violations,
+        violations,
     );
+}
+
+fn check_consumers(contract: &MetricSummaryContract, violations: &mut Vec<&'static str>) {
     require(
         contract.native_name_collision == "error",
         "native-name collisions must error",
-        &mut violations,
+        violations,
     );
     require(
         contract.metric_only_services == "finite-sample-in-window",
         "metric-only services require a finite sample in-window",
-        &mut violations,
+        violations,
     );
     require(
         contract.cli == "metrics-invocation",
         "CLI must retain metrics --invocation",
-        &mut violations,
+        violations,
     );
     require(
         contract.graphql_compatibility == "preserve-v1",
         "GraphQL compatibility must preserve V1",
-        &mut violations,
+        violations,
     );
-    violations
 }
 
 fn require(condition: bool, violation: &'static str, violations: &mut Vec<&'static str>) {
