@@ -27,6 +27,10 @@ import {
 import { z } from "zod"
 
 import { EmptyState } from "@/components/console/empty-state"
+import {
+  FacetSidebar,
+  type Facet,
+} from "@/components/console/facet-sidebar"
 import { useDelayedLoading } from "@/components/console/hooks"
 import { RangePicker } from "@/components/console/range-picker"
 import { TableSkeleton } from "@/components/console/skeletons"
@@ -74,6 +78,15 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { gqlString, graphql, graphqlCached, LOG_FIELDS } from "@/lib/api"
+import {
+  WhereClauseChips,
+  WhereClauseEditor,
+} from "@/components/console/where-clause-editor"
+import {
+  serializeWhereClause,
+  whereClauseFromSearch,
+  type WhereFilter,
+} from "@/lib/where-clause"
 import { formatCount, formatDateTime, formatTimeInRange } from "@/lib/format"
 import { resolveRangeSearch, updateRangeSearch } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
@@ -83,10 +96,16 @@ interface SeriesPoint {
   value: number
 }
 
+interface LogFacet {
+  dimension: string
+  values: Array<{ value: string; count: string }>
+}
+
 interface LogsData {
   services: string[]
   logs: LogDoc[]
   logCountSeries: SeriesPoint[]
+  logFacets: LogFacet[]
   savedViews: SavedView[]
 }
 
@@ -102,6 +121,7 @@ interface LogsSearch {
   q?: string | undefined
   service?: string | undefined
   sev?: number | undefined
+  where?: string | undefined
   range?: string | undefined
   from?: string | undefined
   to?: string | undefined
@@ -131,6 +151,7 @@ const logsSearchSchema = z.object({
   q: z.unknown().optional(),
   service: z.unknown().optional(),
   sev: z.unknown().optional(),
+  where: z.unknown().optional(),
   range: z.unknown().optional(),
   from: z.unknown().optional(),
   to: z.unknown().optional(),
@@ -151,6 +172,10 @@ export function validateLogsSearch(
         ? parsed.service
         : undefined,
     sev: Number.isFinite(severity) && severity > 0 ? severity : undefined,
+    where:
+      typeof parsed.where === "string" && parsed.where
+        ? parsed.where
+        : undefined,
     range: typeof parsed.range === "string" ? parsed.range : undefined,
     from: typeof parsed.from === "string" ? parsed.from : undefined,
     to: typeof parsed.to === "string" ? parsed.to : undefined,
@@ -205,6 +230,7 @@ function serializeLogsSearch(search: LogsSearch) {
   if (search.q) params.set("q", search.q)
   if (search.service) params.set("service", search.service)
   if (search.sev) params.set("sev", String(search.sev))
+  if (search.where) params.set("where", search.where)
   if (search.range) params.set("range", search.range)
   if (search.from) params.set("from", search.from)
   if (search.to) params.set("to", search.to)
@@ -213,6 +239,18 @@ function serializeLogsSearch(search: LogsSearch) {
   if (search.anchor) params.set("anchor", search.anchor)
   const value = params.toString()
   return value ? `?${value}` : ""
+}
+
+function logAttributeFilters(where: string | undefined): string | null {
+  const filters = whereClauseFromSearch(where)
+  if (filters.length === 0) return null
+  const items = filters
+    .map(
+      (filter) =>
+        `{key: "${gqlString(filter.key)}", op: "${gqlString(filter.op)}", value: "${gqlString(filter.value)}"}`
+    )
+    .join(", ")
+  return `attributeFilters: [${items}]`
 }
 
 export async function loadLogs(search: LogsSearch): Promise<LogsData> {
@@ -224,11 +262,12 @@ export async function loadLogs(search: LogsSearch): Promise<LogsData> {
     search.service ? `service: "${gqlString(search.service)}"` : "",
     search.sev ? `severityMin: ${search.sev}` : "",
     search.q ? `query: "${gqlString(search.q)}"` : "",
+    logAttributeFilters(search.where) ?? "",
   ].filter(Boolean)
   if (search.live) {
     return graphqlCached<LogsData>(
-      `{ services savedViews(page: "/logs") { id name page state updatedAtNanos } logs(limit: 0) { ${LOG_FIELDS} } logCountSeries(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", stepSeconds: ${stepSeconds}) { tsNanos value } }`
-    )
+      `{ services savedViews(page: "/logs") { id name page state updatedAtNanos } logs(limit: 0) { ${LOG_FIELDS} } logCountSeries(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", stepSeconds: ${stepSeconds}) { tsNanos value } logFacets(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") { dimension values { value count } } }`
+    ).then((data) => ({ ...data, logFacets: data.logFacets ?? [] }))
   }
   const logsQuery = search.anchor
     ? `logs: logsAround(anchorNanos: "${search.anchor}", windowSeconds: 30, ${search.service ? `service: "${gqlString(search.service)}", ` : ""}limit: ${PAGE_SIZE}) { ${LOG_FIELDS} }`
@@ -244,12 +283,18 @@ export async function loadLogs(search: LogsSearch): Promise<LogsData> {
     ...filters,
     `stepSeconds: ${stepSeconds}`,
   ].join(", ")
+  const facetArgs = [
+    `fromNanos: "${range.fromNanos}"`,
+    `toNanos: "${range.toNanos}"`,
+    ...filters,
+  ].join(", ")
   return graphqlCached<LogsData>(`{
     services
     savedViews(page: "/logs") { id name page state updatedAtNanos }
     ${logsQuery}
     logCountSeries(${seriesArgs}) { tsNanos value }
-  }`)
+    logFacets(${facetArgs}) { dimension values { value count } }
+  }`).then((data) => ({ ...data, logFacets: data.logFacets ?? [] }))
 }
 
 function LogsPage() {
@@ -278,6 +323,8 @@ function LogsPage() {
   const logsGeneration = useRef(0)
   const live = search.live === true
   const columns = parseLogColumns(search.cols)
+  // Plan 164: `F` focuses the where-clause editor.
+  const [whereFocusKey, setWhereFocusKey] = useState(0)
 
   useEffect(() => {
     logsGeneration.current += 1
@@ -288,6 +335,24 @@ function LogsPage() {
   useEffect(() => setSavedViews(data.savedViews), [data.savedViews])
 
   useEffect(() => setPendingQuery(search.q ?? ""), [search.q])
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "f" && event.key !== "F") return
+      if (event.metaKey || event.ctrlKey || event.altKey) return
+      const target = event.target
+      if (
+        target instanceof HTMLElement &&
+        target.closest("input, textarea, select, [contenteditable]")
+      ) {
+        return
+      }
+      event.preventDefault()
+      setWhereFocusKey((current) => current + 1)
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [])
 
   const streamUrl = useMemo(() => {
     if (!live) return null
@@ -378,6 +443,46 @@ function LogsPage() {
     update(updateRangeSearch(next))
   }
 
+  const whereFilters = useMemo(
+    () => whereClauseFromSearch(search.where),
+    [search.where]
+  )
+  const applyWhereFilters = (filters: WhereFilter[]) =>
+    update({ where: serializeWhereClause(filters) || undefined })
+  const facetSelections = useMemo(() => {
+    const selections: Record<string, string[]> = {}
+    for (const filter of whereFilters) {
+      if (filter.op !== "=") continue
+      selections[filter.key] = [...(selections[filter.key] ?? []), filter.value]
+    }
+    return selections
+  }, [whereFilters])
+  const toggleFacet = (dimension: string, value: string) => {
+    const existing = whereFilters.findIndex(
+      (filter) =>
+        filter.key === dimension && filter.op === "=" && filter.value === value
+    )
+    const next =
+      existing >= 0
+        ? whereFilters.filter((_, index) => index !== existing)
+        : [...whereFilters, { key: dimension, op: "=" as const, value }]
+    applyWhereFilters(next)
+  }
+  const facets: Facet[] = (data.logFacets ?? []).map((facet) => ({
+    dimension: facet.dimension,
+    label: facet.dimension,
+    values: facet.values.map((entry) => ({
+      value: entry.value,
+      count: Number(entry.count),
+    })),
+    serviceDots: facet.dimension === "service",
+    searchable: true,
+  }))
+  const facetValueSuggestions = (key: string) =>
+    (data.logFacets ?? [])
+      .find((facet) => facet.dimension === key)
+      ?.values.map((entry) => entry.value) ?? []
+
   const loadOlder = async () => {
     const oldest = logs.at(-1)
     if (!oldest) return
@@ -391,6 +496,7 @@ function LogsPage() {
         search.service ? `service: "${gqlString(search.service)}"` : "",
         search.sev ? `severityMin: ${search.sev}` : "",
         search.q ? `query: "${gqlString(search.q)}"` : "",
+        logAttributeFilters(search.where) ?? "",
         `limit: ${PAGE_SIZE}`,
       ]
         .filter(Boolean)
@@ -486,6 +592,19 @@ function LogsPage() {
             placeholder="Filter log bodies"
           />
         </form>
+        <WhereClauseEditor
+          key={whereFocusKey}
+          autoFocus={whereFocusKey > 0}
+          className="min-w-72 flex-1"
+          filters={whereFilters}
+          onApply={applyWhereFilters}
+          keySuggestions={
+            facets.length > 0
+              ? facets.map((facet) => facet.dimension)
+              : ["service", "severity", "body"]
+          }
+          valueSuggestionsFor={facetValueSuggestions}
+        />
         <ColumnMenu
           columns={columns}
           onChange={(next) => update({ cols: serializeLogColumns(next) })}
@@ -509,6 +628,13 @@ function LogsPage() {
           Refresh
         </Button>
       </div>
+
+      <WhereClauseChips
+        filters={whereFilters}
+        onRemove={(index) =>
+          applyWhereFilters(whereFilters.filter((_, i) => i !== index))
+        }
+      />
 
       {viewError ? (
         <p className="text-sm text-destructive">{viewError}</p>
@@ -578,67 +704,79 @@ function LogsPage() {
         total={total}
       />
 
-      {delayedLoading ? (
-        <TableSkeleton rows={8} />
-      ) : logs.length === 0 ? (
-        <EmptyState
-          title={
-            search.q || search.service || search.sev
-              ? "No matching logs"
-              : "No logs yet"
-          }
-          description={
-            search.q || search.service || search.sev
-              ? "Clear filters or widen the time range."
-              : "No log records in this window — send OTLP logs to 127.0.0.1:4317/4318 or wrap a command with parallax invocation start."
-          }
-          icon={IconArticleFilled}
-          className="rounded-xl border border-dashed"
-        />
-      ) : (
-        <div className="content-enter overflow-hidden rounded-xl border border-border/70">
-          {live ? (
-            <div className="flex items-center gap-2 border-b border-border/70 px-3 py-2 text-xs">
-              {streamStatus === "open" ? (
-                <>
-                  <span className="size-2 animate-pulse rounded-full bg-emerald-500" />
-                  <Badge variant="emerald">Live</Badge>
-                </>
-              ) : streamStatus === "error" ? (
-                <Badge variant="amber">reconnecting…</Badge>
-              ) : (
-                <Badge variant="secondary">connecting…</Badge>
-              )}
-              <span className="text-muted-foreground">
-                {formatCount(logs.length)} records buffered
-              </span>
-            </div>
-          ) : null}
-          <LogsTable
-            logs={logs}
-            range={range}
-            columns={columns}
-            anchorNanos={search.anchor}
-            onShowContext={showContext}
+      <div className="flex items-start gap-4">
+        {!live && facets.length > 0 ? (
+          <FacetSidebar
+            facets={facets}
+            selections={facetSelections}
+            onToggle={toggleFacet}
+            onClear={() => update({ where: undefined })}
           />
-          {!live && !search.anchor && !exhausted ? (
-            <div className="flex flex-col gap-2 border-t border-border/70 p-2">
-              {olderError ? (
-                <p className="px-2 text-sm text-destructive">{olderError}</p>
+        ) : null}
+        <div className="min-w-0 flex-1">
+          {delayedLoading ? (
+            <TableSkeleton rows={8} />
+          ) : logs.length === 0 ? (
+            <EmptyState
+              title={
+                search.q || search.service || search.sev || search.where
+                  ? "No matching logs"
+                  : "No logs yet"
+              }
+              description={
+                search.q || search.service || search.sev || search.where
+                  ? "Clear filters or widen the time range."
+                  : "No log records in this window — send OTLP logs to 127.0.0.1:4317/4318 or wrap a command with parallax invocation start."
+              }
+              icon={IconArticleFilled}
+              className="rounded-xl border border-dashed"
+            />
+          ) : (
+            <div className="content-enter overflow-hidden rounded-xl border border-border/70">
+              {live ? (
+                <div className="flex items-center gap-2 border-b border-border/70 px-3 py-2 text-xs">
+                  {streamStatus === "open" ? (
+                    <>
+                      <span className="size-2 animate-pulse rounded-full bg-emerald-500" />
+                      <Badge variant="emerald">Live</Badge>
+                    </>
+                  ) : streamStatus === "error" ? (
+                    <Badge variant="amber">reconnecting…</Badge>
+                  ) : (
+                    <Badge variant="secondary">connecting…</Badge>
+                  )}
+                  <span className="text-muted-foreground">
+                    {formatCount(logs.length)} records buffered
+                  </span>
+                </div>
               ) : null}
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full"
-                onClick={() => void loadOlder()}
-                disabled={olderLoading}
-              >
-                Load older
-              </Button>
+              <LogsTable
+                logs={logs}
+                range={range}
+                columns={columns}
+                anchorNanos={search.anchor}
+                onShowContext={showContext}
+              />
+              {!live && !search.anchor && !exhausted ? (
+                <div className="flex flex-col gap-2 border-t border-border/70 p-2">
+                  {olderError ? (
+                    <p className="px-2 text-sm text-destructive">{olderError}</p>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full"
+                    onClick={() => void loadOlder()}
+                    disabled={olderLoading}
+                  >
+                    Load older
+                  </Button>
+                </div>
+              ) : null}
             </div>
-          ) : null}
+          )}
         </div>
-      )}
+      </div>
     </div>
   )
 }

@@ -638,6 +638,7 @@ function TracesPage() {
                   errors: undefined,
                   minMs: undefined,
                   maxMs: undefined,
+                  where: undefined,
                   live: undefined,
                 })
               }

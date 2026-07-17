@@ -29,7 +29,12 @@ import {
   SavedViewsMenu,
   contextWindow,
   parseSavedViewState,
+  validateLogsSearch,
 } from "@/routes/logs"
+import {
+  serializeWhereClause,
+  whereClauseFromSearch,
+} from "@/lib/where-clause"
 import { renderTestRouter } from "@/test/router"
 
 const range: ResolvedRange = {
@@ -235,6 +240,32 @@ describe("LogsTable", () => {
     expect(
       screen.getByRole("link", { name: /run run-a/i }).getAttribute("href")
     ).toBe("/invocations/run-a?range=7d")
+  })
+})
+
+describe("logs where-clause URL (plan 164)", () => {
+  it("round-trips the where search param through validateLogsSearch", () => {
+    const clause = 'service = "checkout" AND http.request.method = "POST"'
+    const parsed = validateLogsSearch({ where: clause, service: "checkout" })
+    expect(parsed.where).toBe(clause)
+    expect(parsed.service).toBe("checkout")
+    const filters = whereClauseFromSearch(parsed.where)
+    expect(filters).toEqual([
+      { key: "service", op: "=", value: "checkout" },
+      { key: "http.request.method", op: "=", value: "POST" },
+    ])
+    // Serialize omits quotes when values have no whitespace.
+    expect(serializeWhereClause(filters)).toBe(
+      "service = checkout AND http.request.method = POST"
+    )
+    expect(whereClauseFromSearch(serializeWhereClause(filters))).toEqual(
+      filters
+    )
+  })
+
+  it("drops empty where values", () => {
+    expect(validateLogsSearch({ where: "" }).where).toBeUndefined()
+    expect(validateLogsSearch({ where: 12 }).where).toBeUndefined()
   })
 })
 
