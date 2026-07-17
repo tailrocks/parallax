@@ -8017,3 +8017,8 @@ for warm-path diagnosis alongside OpenDAL cold counters (Run 234–235).
 `system.asynchronous_metrics` exposes `FilesystemCacheBytes/Files/Capacity`
 (0 in this local-disk config without configured FS cache). Pair with GT mito
 cache metrics (Run 291) for warm-path comparison instrumentation.
+
+### Run 294 — 2026-07-17 — full-text selective after re-gen
+
+Selective term on logs1m: GT **~4–9 ms** warm; CH **~3 ms**. Near-tie
+interactive (Run 184/157).
