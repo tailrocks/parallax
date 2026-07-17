@@ -152,15 +152,16 @@ Both ingest events/traces and value rich context, but Honeycomb is a human-explo
 
 ## Pricing & economics — real numbers
 
-Honeycomb pricing is **public** ([honeycomb.io/pricing](https://www.honeycomb.io/pricing), accessed 2026-07-17), **event-based** (high cardinality is **not** priced separately — it's included):
+Honeycomb pricing is **public** ([honeycomb.io/pricing](https://www.honeycomb.io/pricing), **pass 62** re-confirm 2026-07-17), **event-based** (high cardinality is **not** priced separately):
 
-| Tier | Price | Volume |
+| Tier | Price | Volume / notes |
 | --- | --- | --- |
-| **Free** | $0 | up to **20M events/mo** + 100M time-series data points |
-| **Pro** | **from $150/mo / 50M events** (~$3/M events, 60-day retention + distributed tracing; **official honeycomb.io/pricing, 2026-07-17**) | scalable to 750M–1.5B events/mo |
-| **Enterprise** | custom (volume discounts) | avg ~$293K/yr per [Spendhound](https://www.spendhound.com/marketplace/honeycomb-pricing) (third-party, indicative) |
+| **Free** | $0 | up to **20M events/mo** + **100M** metrics data points; Canvas AI + **MCP** included; **Agent Timeline not on Free** |
+| **Pro** | **from $150/mo / 50M events** (~$3/M) | up to **750M events** + **3.75B** metrics DP; **Agent Timeline** included; 100 triggers / 2 SLOs / SSO |
+| **Enterprise** | custom | volume discounts; service map; from ~10B events/yr base (marketing FAQ); third-party ~$293K/yr avg is **indicative only** |
+| **Telemetry pipeline (add-on path)** | **from $0.10 / GB** | OTel processing/fleet (live pricing page) — separate from event ingest |
 
-**Pro unit resolved (official honeycomb.io/pricing, 2026-07-17): $150 / 50M events** (~$3/M, 60-day retention, distributed tracing included). The earlier "$130/100M" figure was a third-party conflation, not on the live page. Key point: **cardinality is free** — you pay per event, not per series/dimension, which is Honeycomb's economic pitch against metric-based tools.
+**Pro unit re-confirmed pass 62.** Key point: **cardinality is free** — pay per event, not per series.
 
 **Parallax pricing:** none public yet (pre-release).
 

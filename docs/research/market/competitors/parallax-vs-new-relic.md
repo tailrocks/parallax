@@ -43,18 +43,26 @@ incumbents alongside Datadog and Dynatrace.
 | **Ownership** | Taken private **2023** (Francisco Partners + TPG, ~$6.5B); no longer public | public record |
 | **Compliance** | SOC 2, FedRAMP, HIPAA-eligible, GDPR — enterprise-grade | newrelic.com |
 
-### Pricing (re-cited 2026-07-17; verify live page)
+### Pricing (**pass 62** live [newrelic.com/pricing](https://newrelic.com/pricing) — full-user cell was **understated**)
 
 | Component | Price | Notes |
 |---|---|---|
-| **Free tier** | **$0** | **100 GB/mo** data ingest + **1 full-platform user**, perpetual, no credit card |
-| **Original/Standard data** | **$0.40 / GB** | beyond free 100 GB *(one source cites $0.35 — legacy/promo; $0.40 is most consistent across 2026 sources)* |
-| **Data Plus** | **$0.60 / GB** | higher-value/longer-retention tier |
-| **Full-platform user** | ~**$49 / user / mo** | beyond the 1 free user (first user sometimes from ~$10) |
+| **Free tier** | **$0** | **100 GB/mo** ingest + **1 full-platform user** + unlimited basic users; perpetual |
+| **Original data ingest** | **$0.40 / GB** | beyond free 100 GB (live table) |
+| **Data Plus ingest** | **$0.60 / GB** | extended retention + governance; Enterprise path for FedRAMP/HIPAA eligibility |
+| **EU data center** | **+$0.05 / GB** | optional |
+| **Basic users** | **$0** | unlimited (all editions) |
+| **Core users** | **$49 / user / mo** | CodeStream/logs/error-tracking tier — **not** full platform |
+| **Full platform (Standard)** | **$10 first user** then **$99 / user** (max 5 full users) | ticketed support, SAML |
+| **Full platform (Pro)** | **$349 / user / mo** annual commit · **$418.80 / user** monthly PAYG | unlimited full users; Data Plus eligible |
+| **Full platform (Enterprise)** | **custom (no public $)** | FedRAMP/HIPAA with Data Plus path |
+| **Advanced Compute (CCU)** | **no public unit** on marketing page | Pro/Enterprise sales; Feature Control Manager toggles |
 
-Formula: data cost = (GB − 100) × per-GB rate; + user cost. Sources:
-[newrelic.com/pricing](https://newrelic.com/pricing), [Motadata](https://www.motadata.com/blog/new-relic-pricing),
-[SigNoz guide](https://signoz.io/guides/new-relic-pricing/), [CubeAPM calc](https://cubeapm.com/pricing-calculator/new-relic/).
+**Pass-8/45 error:** listing “full-platform ~$49/user” **conflated Core with Full**. Live: **Core = $49**; **Full Pro = $349 annual / $418.80 monthly**. Using $49 as full-stack seat cost **understates New Relic** — corrected no-bias.
+
+Formula (user+data model): data = (GB − 100) × rate; + seat cost by type/edition. Optional **compute model** (no user licenses) also public as product path — CCU rates **no public number** without sales/quote.
+
+Sources: live [newrelic.com/pricing](https://newrelic.com/pricing) (pass 62); secondary blogs demoted where they say “$49 full platform.”
 
 > Parallax pricing: **no public number** (pre-release). Direct comparison
 > **benchmark-dependent, unmeasured.**
@@ -173,7 +181,7 @@ wins** on ecosystem breadth.
 
 ### Pricing & economics
 
-New Relic: 100 GB free + $0.40–0.60/GB + ~$49/user/mo — usage + user based,
+New Relic: 100 GB free + $0.40–0.60/GB + **Core $49 / Full Pro $349–$418.80**/user (pass 62) — usage + user based,
 public, transparent. Parallax: **no public number**. Direct cost comparison
 **benchmark-dependent, unmeasured.** New Relic's free tier (100 GB + 1 user) is
 generous for small teams; at scale the user+data metering compounds.
@@ -188,7 +196,7 @@ generous for small teams; at scale the user+data metering compounds.
 4. **AIM "APM for AI"** + MCP + Canvas + NRAI.
 5. **SaaS scale + zero-ops + multi-region.**
 6. **Compliance (SOC2/FedRAMP/HIPAA/GDPR)** + SSO/RBAC/audit.
-7. **100 GB free tier** + transparent usage pricing.
+7. **100 GB free tier** + public data rates (seat model is edition-steep for full platform — pass 62).
 8. **Proven-at-scale, ~15yr incumbent.**
 
 ## Where Parallax honestly edges New Relic
@@ -213,7 +221,7 @@ generous for small teams; at scale the user+data metering compounds.
 
 ## Sources (checked 2026-07-17)
 
-- [newrelic.com/pricing](https://newrelic.com/pricing); [how pricing works](https://docs.newrelic.com/docs/accounts/accounts-billing/new-relic-one-pricing-billing/new-relic-one-pricing-billing/).
+- Live [newrelic.com/pricing](https://newrelic.com/pricing) (**pass 62:** Core $49 vs Full Pro $349/$418.80); [how pricing works](https://docs.newrelic.com/docs/accounts/accounts-billing/new-relic-one-pricing-billing/new-relic-one-pricing-billing/).
 - [OTLP native ingest GA (2021-09-23)](https://docs.newrelic.com/whats-new/2021/09/whats-new-09-23-2021-otel-native-ga/); [what's new](https://docs.newrelic.com/whats-new/).
 - [New Relic AI (NRAI)](https://newrelic.com/platform/new-relic-ai); [AI Agent Platform + OTel tools (TechCrunch 2026-02-24)](https://techcrunch.com/2026/02/24/new-relic-launches-new-ai-agent-platform-and-opentelemetry-tools/); [AI Coding Observability press release 20260608](https://newrelic.com/press-release/20260608); [AIM](https://newrelic.com/resources/video/introducing-new-relic-ai-monitoring-aim).
 - Pricing analyses: [Motadata](https://www.motadata.com/blog/new-relic-pricing), [SigNoz guide](https://signoz.io/guides/new-relic-pricing/), [CubeAPM calc](https://cubeapm.com/pricing-calculator/new-relic/), [Nurbak ($0.35 discrepancy)](https://nurbak.com/en/blog/new-relic-pricing/).
