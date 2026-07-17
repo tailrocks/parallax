@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 52 (storage-engine + thesis GreptimeDB pin → **v1.1.3**; A1 steelman
-baselines cite Traceway/HolmesGPT). Pass 51 = Rustrak; pass 50 = Traceway; pass 49 = wedge-closer;
-pass 48 = OTel schema commoditization. A1/A2 remain product/market validation risks.
+Last updated 2026-07-17 after pass 53 (run-id tracker: #2883 dead link; CLI still no invocation id).
+Pass 52 = GreptimeDB v1.1.3 pin + A1 steelman; pass 51 = Rustrak; pass 50 = Traceway. A1/A2 remain
+product/market validation risks.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
@@ -54,7 +54,7 @@ producer rather than treat its construction as future work. Autonomous fixing re
 - **Engine releases** — re-pin + re-verify load-bearing claims on each new stable (GreptimeDB; ClickHouse feature line). Last: **2026-07-17** — GreptimeDB stable **`v1.1.3`**, nightly **`v1.2.0-nightly-20260706`** (supersedes 2026-06-11 `v1.0.2` / stalled-nightly note). Measurement still owed on the new pins.
 - **Incumbent self-hosted AI** — Sentry Seer self-host (stated FSL intent, no date); Grafana local-inference/BYO-LLM backend; either would erode the wedge.
 - **OTel** — any move from per-signal semantics toward incident/investigation/RCA **artifacts**. Last deep recheck: **2026-07-17** ([commoditization note](architecture/evidence-bundle-schema-commoditization-2026-07-17.md)): #1185 attribute issue still open/idle; no bundle schema.
-- **Run-id standardization (active participation, not just a watch)** — no OTel standard exists for a CLI run's cross-trace correlation id; we intend to propose one (generalize `session.id` per [semantic-conventions#2883](https://github.com/open-telemetry/semantic-conventions/issues/2883), or a `cli.run.id`) and track every thread in [capture/run-id-standardization.md](capture/run-id-standardization.md). Adopt-as-alias the moment anything lands; `parallax.run.id` stays canonical until a standard reaches stability.
+- **Run-id / invocation-id standardization (active participation, not just a watch)** — no OTel standard for a CLI invocation's cross-trace correlation id (rechecked **2026-07-17 pass 53**). Parallax ships **`cli.invocation.id`** (+ `session.id`). Historical tracker link `semantic-conventions#2883` is **dead**; GenAI session push is [semantic-conventions-genai#51](https://github.com/open-telemetry/semantic-conventions-genai/issues/51). Full table: [capture/run-id-standardization.md](capture/run-id-standardization.md).
 - **Coding-agent capability** — as models improve, the "raw context is enough" threat (item 1) grows; A1 must re-run across model generations.
 
 ## How this maps to the kill criteria
