@@ -8222,3 +8222,6 @@ GT warm **~7–10 ms**; CH **~3–4 ms**. Interactive both (trace-explorer shape
 ### Run 341 — 2026-07-17 — high-group-agg by trace_id
 
 `GROUP BY trace_id LIMIT 100`: GT warm **~10–13 ms**; CH **~6–8 ms**. Interactive.
+
+### Run 342 — 2026-07-17 — not done
+
