@@ -201,7 +201,7 @@ work.
 |------|-------|----------|--------|------------|--------|
 | 149 | Establish route-less UI capabilities before feature moves | P1 | L | 100, 129, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-149-route-less-capabilities/README.md) |
 | 134 | Migrate investigations behind a strict feature facade | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-134-investigations/README.md) |
-| [138](138-services-feature-migration.md) | Move services into one bounded feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| 138 | Move services into one bounded feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-138-services/README.md) |
 | [139](139-issues-feature-migration.md) | Move issues and stacktrace ownership into one feature | P1 | L | 100, 129, 132, 134, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 | [141](141-logs-feature-migration.md) | Move logs and the reusable log table into one feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 | [140](140-runs-feature-migration.md) | Move runs, sessions, and live observation into one feature | P1 | L | 100, 129, 132, 134, 141, 144, 145, 146, 149, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |

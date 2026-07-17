@@ -5,15 +5,15 @@ import userEvent from "@testing-library/user-event"
 import { defaultParseSearch } from "@tanstack/react-router"
 import { afterEach, describe, expect, it } from "vitest"
 
-import { customRange, resolvePreset } from "@/lib/range"
+import { ServicesIndexContent } from "@/features/services/components/services-page"
+import { ServiceDetailContent } from "@/features/services/components/service-detail-page"
+import type { ServiceDetailData } from "@/features/services/model/service-detail"
 import {
-  ServicesIndexContent,
   serviceErrorRate,
   serviceHref,
-} from "@/routes/services"
-import type { ServicesData } from "@/routes/services"
-import { ServiceDetailContent } from "@/routes/services.$service"
-import type { ServiceDetailData } from "@/routes/services.$service"
+  type ServicesData,
+} from "@/features/services/model/service-summary"
+import { customRange, resolvePreset } from "@/lib/range"
 import { renderTestRouter } from "@/test/router"
 
 afterEach(cleanup)
@@ -121,7 +121,7 @@ function renderWithRouter(component: React.ReactNode, path = "/services") {
   })
 }
 
-describe("Services route", () => {
+describe("Services feature", () => {
   it("derives error rates and encoded detail hrefs", () => {
     expect(serviceErrorRate(servicesFixture.serviceList[0]!)).toBe(0.1)
     expect(serviceHref("checkout/core")).toBe("/services/checkout%2Fcore")
@@ -191,7 +191,7 @@ describe("Services route", () => {
   })
 })
 
-describe("Service detail route", () => {
+describe("Service detail feature", () => {
   it("renders detail stats and hides infra band without CPU/memory", async () => {
     renderWithRouter(
       <ServiceDetailContent

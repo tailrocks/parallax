@@ -2,10 +2,10 @@
   "schema_version": 1,
   "ratchets": {
     "fire_event_calls": 28,
-    "legacy_handoffs": 53,
+    "legacy_handoffs": 52,
     "raw_router_builders": 1,
-    "test_cases": 497,
-    "test_files": 98
+    "test_cases": 498,
+    "test_files": 99
   },
   "private_route_imports": [
     {
@@ -56,26 +56,6 @@
         "loadOverview"
       ],
       "removal_plan": 150
-    },
-    {
-      "test_file": "ui/src/routes/__tests__/-services.test.tsx",
-      "module": "@/routes/services",
-      "symbols": [
-        "ServicesData",
-        "ServicesIndexContent",
-        "serviceErrorRate",
-        "serviceHref"
-      ],
-      "removal_plan": 138
-    },
-    {
-      "test_file": "ui/src/routes/__tests__/-services.test.tsx",
-      "module": "@/routes/services.$service",
-      "symbols": [
-        "ServiceDetailContent",
-        "ServiceDetailData"
-      ],
-      "removal_plan": 138
     },
     {
       "test_file": "ui/src/routes/__tests__/-trace-graphql.test.tsx",
@@ -936,10 +916,9 @@
       "surface": "features/services",
       "risk": "Service list and detail metrics, ranges, exemplars, and links can diverge",
       "scenario_owner": "features/services",
-      "lane_owner": "vitest/route",
-      "delivery_plan": 138,
-      "layer": "route-contract",
-      "test_file": "ui/src/routes/__tests__/-services.test.tsx",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/features/services/tests/components/services-contracts.test.tsx",
       "test_ids": [
         "derives error rates and encoded detail hrefs",
         "renders index rows with detail links",
@@ -949,14 +928,7 @@
         "opens trace exemplar popovers from latency markers"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/routes/__tests__/-services.test.tsx",
-        "destination_owner": "features/services",
-        "removal_plan": 138,
-        "created": "2026-07-15",
-        "expires": "plan-138-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-037",
@@ -2605,6 +2577,20 @@
       "required_environment": "jsdom-or-bun",
       "status": "implemented",
       "raw_router_reason": "Composes the public SqlPage behind a private memory router for route chrome assertions without importing Route.options.component"
+    },
+    {
+      "id": "vitest-services-route",
+      "surface": "features/services",
+      "risk": "Services route wiring can lose public search/loader facade contracts",
+      "scenario_owner": "features/services",
+      "lane_owner": "vitest/route",
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/tests/-services-routes.test.tsx",
+      "test_ids": [
+        "exposes public search and loaders for thin route wiring"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
     }
   ],
   "browser_contract_paths": [

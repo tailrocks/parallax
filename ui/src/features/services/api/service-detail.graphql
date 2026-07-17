@@ -1,0 +1,151 @@
+query ServiceDetail(
+  $service: String!
+  $fromNanos: String!
+  $toNanos: String!
+  $stepSeconds: Int!
+  $httpDurationMetric: String!
+  $rpcDurationMetric: String!
+) {
+  red: serviceRed(
+    service: $service
+    fromNanos: $fromNanos
+    toNanos: $toNanos
+    stepSeconds: $stepSeconds
+  ) {
+    rate {
+      tsNanos
+      value
+    }
+    errorRate {
+      tsNanos
+      value
+    }
+    p50 {
+      tsNanos
+      value
+    }
+    p95 {
+      tsNanos
+      value
+    }
+    p99 {
+      tsNanos
+      value
+    }
+  }
+  overview: serviceOverview(
+    service: $service
+    fromNanos: $fromNanos
+    toNanos: $toNanos
+    stepSeconds: $stepSeconds
+  ) {
+    cpu {
+      tsNanos
+      value
+    }
+    memory {
+      tsNanos
+      value
+    }
+    requestRate {
+      tsNanos
+      value
+    }
+    errorRate {
+      tsNanos
+      value
+    }
+    latencyP50 {
+      tsNanos
+      value
+    }
+    latencyP95 {
+      tsNanos
+      value
+    }
+    latencyP99 {
+      tsNanos
+      value
+    }
+  }
+  releases(service: $service, fromNanos: $fromNanos, toNanos: $toNanos) {
+    version
+    firstSeenNanos
+    lastSeenNanos
+    spanCount
+  }
+  serviceCatalog(fromNanos: $fromNanos, toNanos: $toNanos) {
+    name
+    serviceVersion
+    serviceNamespace
+    deploymentEnvironment
+    telemetrySdkLanguage
+    telemetrySdkName
+    telemetrySdkVersion
+    lastSeenNanos
+    instanceCount
+  }
+  httpDurationExemplars: metricExemplars(
+    name: $httpDurationMetric
+    service: $service
+    fromNanos: $fromNanos
+    toNanos: $toNanos
+    limit: 50
+  ) {
+    tsNanos
+    service
+    name
+    value
+    traceId
+    spanId
+    invocationId
+    attributes
+  }
+  rpcDurationExemplars: metricExemplars(
+    name: $rpcDurationMetric
+    service: $service
+    fromNanos: $fromNanos
+    toNanos: $toNanos
+    limit: 50
+  ) {
+    tsNanos
+    service
+    name
+    value
+    traceId
+    spanId
+    invocationId
+    attributes
+  }
+  runtimeSnapshot(
+    service: $service
+    fromNanos: $fromNanos
+    toNanos: $toNanos
+    stepSeconds: $stepSeconds
+  ) {
+    family
+    metric
+    unit
+    points {
+      tsNanos
+      value
+    }
+  }
+  tracesPage(
+    service: $service
+    sort: START_DESC
+    limit: 10
+    fromNanos: $fromNanos
+    toNanos: $toNanos
+  ) {
+    items {
+      traceId
+      rootName
+      service
+      startNanos
+      durationNs
+      spanCount
+      hasError
+    }
+  }
+}

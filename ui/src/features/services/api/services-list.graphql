@@ -1,0 +1,20 @@
+query ServicesList($fromNanos: String!, $toNanos: String!) {
+  serviceList(fromNanos: $fromNanos, toNanos: $toNanos) {
+    name
+    lastSeenNanos
+    spanCount
+    errorCount
+    p95Ms
+  }
+  serviceCatalog(fromNanos: $fromNanos, toNanos: $toNanos) {
+    name
+    serviceVersion
+    serviceNamespace
+    deploymentEnvironment
+    telemetrySdkLanguage
+    telemetrySdkName
+    telemetrySdkVersion
+    lastSeenNanos
+    instanceCount
+  }
+}

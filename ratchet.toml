@@ -1810,12 +1810,6 @@ ceiling = 23
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-services.test.tsx"
-ceiling = 44
-
-
-[[limits]]
-metric = "typescript.assertions"
 scope = "ui/src/routes/__tests__/-trace-graphql.test.tsx"
 ceiling = 3
 
@@ -1897,11 +1891,6 @@ ceiling = 191
 
 [[limits]]
 metric = "typescript.file-lines"
-scope = "ui/src/routes/__tests__/-services.test.tsx"
-ceiling = 294
-
-[[limits]]
-metric = "typescript.file-lines"
 scope = "ui/src/routes/alerts.index.tsx"
 ceiling = 642
 
@@ -1942,17 +1931,6 @@ ceiling = 1010
 metric = "typescript.file-lines"
 scope = "ui/src/routes/metrics.$metricName.tsx"
 ceiling = 419
-
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/services.$service.tsx"
-ceiling = 831
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/services.tsx"
-ceiling = 492
 
 
 [[limits]]
@@ -2161,18 +2139,6 @@ ceiling = 113
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/services.$service.tsx:358"
-ceiling = 17
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/services.tsx:260"
-ceiling = 29
-
-
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/routes/traces.$traceId.tsx:1401"
 ceiling = 16
 
@@ -2332,21 +2298,6 @@ ceiling = 13
 metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/routes/logs.tsx:326"
 ceiling = 38
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/services.$service.tsx:358"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/services.tsx:150"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/services.tsx:260"
-ceiling = 13
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
@@ -2683,17 +2634,6 @@ ceiling = 78
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/__tests__/-services.test.tsx:124"
-ceiling = 69
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/__tests__/-services.test.tsx:194"
-ceiling = 125
-
-
-[[limits]]
-metric = "typescript.function-lines"
 scope = "ui/src/routes/__tests__/-trace-links.test.tsx:48"
 ceiling = 68
 
@@ -2812,39 +2752,6 @@ ceiling = 74
 metric = "typescript.function-lines"
 scope = "ui/src/routes/metrics.$metricName.tsx:202"
 ceiling = 238
-
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/services.$service.tsx:358"
-ceiling = 135
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/services.$service.tsx:596"
-ceiling = 62
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/services.$service.tsx:659"
-ceiling = 139
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/services.$service.tsx:799"
-ceiling = 69
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/services.tsx:260"
-ceiling = 258
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/services.tsx:413"
-ceiling = 98
-
-
 
 
 [[limits]]
@@ -3067,6 +2974,91 @@ ceiling = 433
 [[limits]]
 metric = "typescript.suppressions"
 scope = "ui/src/features/runtime-metrics/api/runtime-metrics.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/services/tests/components/services-contracts.test.tsx"
+ceiling = 44
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/tests/-services-routes.test.tsx"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/services/api/service-detail.generated.ts"
+ceiling = 1064
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/services/components/service-detail-page.tsx:71"
+ceiling = 17
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/services/components/service-detail-page.tsx:71"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/services/model/service-summary.ts:47"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/components/service-detail-page.tsx:71"
+ceiling = 134
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/components/service-recent-traces.tsx:22"
+ceiling = 69
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/components/service-red-charts.tsx:119"
+ceiling = 139
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/components/service-red-charts.tsx:56"
+ceiling = 62
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/components/services-page.tsx:77"
+ceiling = 85
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/components/services-table.tsx:27"
+ceiling = 165
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/components/services-table.tsx:95"
+ceiling = 92
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/tests/components/services-contracts.test.tsx:124"
+ceiling = 69
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/tests/components/services-contracts.test.tsx:194"
+ceiling = 125
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/services/api/service-detail.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/services/api/services-list.generated.ts"
 ceiling = 1
 
 [[ui.ownership]]
@@ -4765,12 +4757,6 @@ target_owner = "features/overview"
 migration_plan = "150"
 kind = "handwritten"
 
-[[ui.ownership]]
-path = "ui/src/routes/__tests__/-services.test.tsx"
-current_owner = "routes-tests"
-target_owner = "features/services"
-migration_plan = "138"
-kind = "handwritten"
 
 
 [[ui.ownership]]
@@ -4914,17 +4900,144 @@ migration_plan = "149"
 kind = "handwritten"
 
 [[ui.ownership]]
+path = "ui/src/features/services/api/service-detail.generated.ts"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/services/api/services-list.generated.ts"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/services/api/services-api.ts"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/services/api/services-mapper.ts"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/services/components/service-detail-page.tsx"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/services/components/service-identity-card.tsx"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/services/components/service-recent-traces.tsx"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/services/components/service-red-charts.tsx"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/services/components/service-release-strip.tsx"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/services/components/services-page.tsx"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/services/components/services-table.tsx"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/services/index.ts"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "none"
+kind = "handwritten"
+facade = true
+
+[[ui.ownership]]
+path = "ui/src/features/services/model/service-detail.ts"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/services/model/service-summary.ts"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/services/model/services-error.ts"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/services/model/services-search.ts"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/services/tests/components/services-contracts.test.tsx"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/tests/-services-routes.test.tsx"
+current_owner = "routes-tests"
+target_owner = "routes-tests"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
 path = "ui/src/routes/services.$service.tsx"
 current_owner = "routes"
 target_owner = "features/services"
-migration_plan = "138"
+migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
 path = "ui/src/routes/services.tsx"
 current_owner = "routes"
 target_owner = "features/services"
-migration_plan = "138"
+migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
