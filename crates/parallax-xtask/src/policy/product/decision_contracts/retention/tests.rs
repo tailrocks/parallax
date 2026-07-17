@@ -47,6 +47,10 @@ fn record_inventory_fails_closed_when_a_required_class_is_missing() {
 }
 
 #[test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "one exhaustive per-field mutation table"
+)]
 fn every_contract_field_fails_closed_when_changed() {
     let approved_contract = parse_fixture(valid_fixture());
     let changed = valid_fixture().replacen(&approved_contract.record_sha256, "invalid", 1);
@@ -172,12 +176,11 @@ fn malformed_rejected_or_incomplete_fixture_fails_closed() {
         unknown,
     ];
     for source in sources {
-        match toml::from_str::<Contract>(&source) {
-            Ok(contract) => assert!(
+        if let Ok(contract) = toml::from_str::<Contract>(&source) {
+            assert!(
                 !violations(&contract).is_empty(),
                 "invalid contract accepted"
-            ),
-            Err(_) => {}
+            );
         }
     }
 }

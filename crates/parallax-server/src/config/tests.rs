@@ -24,7 +24,7 @@ fn external_storage_requires_url() {
 #[test]
 fn loopback_without_token_is_valid() {
     let config = Config::default();
-    assert!(config.validate().is_ok());
+    config.validate().unwrap();
     assert_eq!(config.auth_status_label(), "off");
     assert!(is_loopback_bind("127.0.0.1"));
     assert!(is_loopback_bind("::1"));
@@ -47,7 +47,7 @@ fn api_token_length_bounds() {
     config.server.api_token = "short".to_string();
     assert!(config.validate().is_err());
     config.server.api_token = "a".repeat(16);
-    assert!(config.validate().is_ok());
+    config.validate().unwrap();
 }
 
 #[test]

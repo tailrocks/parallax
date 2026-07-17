@@ -264,6 +264,7 @@ async fn metric_exemplars_filters_by_metric_service_range_and_limit() {
 }
 
 #[tokio::test]
+#[expect(clippy::too_many_lines, reason = "one seeded end-to-end metric scenario")]
 async fn metric_labels_values_and_runtime_snapshot_derive_from_points() {
     let store = MemoryStore::new();
     store

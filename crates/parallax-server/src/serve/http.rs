@@ -110,7 +110,6 @@ pub(super) async fn host_guard_middleware(
     }
 }
 
-
 /// Shared operator bearer token for protected developer API routes (plan 109).
 /// `None` keeps the surface open (local-first default).
 #[derive(Clone)]
@@ -125,6 +124,10 @@ impl ApiAuth {
         }
     }
 
+    #[cfg_attr(
+        not(test),
+        expect(dead_code, reason = "auth-mode assertions exercise this in tests")
+    )]
     fn required(&self) -> bool {
         self.token.is_some()
     }
@@ -166,11 +169,7 @@ fn extract_bearer(header: &str) -> Option<&str> {
         .strip_prefix("Bearer ")
         .or_else(|| header.strip_prefix("bearer "))?
         .trim();
-    if token.is_empty() {
-        None
-    } else {
-        Some(token)
-    }
+    if token.is_empty() { None } else { Some(token) }
 }
 
 /// Constant-time equality for equal-length secrets; unequal lengths always fail.
@@ -183,39 +182,6 @@ fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
         diff |= left ^ right;
     }
     diff == 0
-}
-
-#[cfg(test)]
-mod auth_tests {
-    use super::{ApiAuth, constant_time_eq, extract_bearer};
-
-    #[test]
-    fn bearer_extraction_is_strict() {
-        assert_eq!(
-            extract_bearer("Bearer secret-token-value"),
-            Some("secret-token-value")
-        );
-        assert_eq!(
-            extract_bearer("bearer secret-token-value"),
-            Some("secret-token-value")
-        );
-        assert_eq!(extract_bearer("Basic secret"), None);
-        assert_eq!(extract_bearer("Bearer "), None);
-        assert_eq!(extract_bearer(""), None);
-    }
-
-    #[test]
-    fn constant_time_compare_rejects_length_mismatch() {
-        assert!(constant_time_eq(b"abcdefghijklmnop", b"abcdefghijklmnop"));
-        assert!(!constant_time_eq(b"abcdefghijklmnop", b"abcdefghijklmnoq"));
-        assert!(!constant_time_eq(b"short", b"abcdefghijklmnop"));
-    }
-
-    #[test]
-    fn open_mode_when_token_absent() {
-        assert!(!ApiAuth::from_token(None).required());
-        assert!(ApiAuth::from_token(Some("a".repeat(16))).required());
-    }
 }
 
 /// The hand-rolled Juniper-over-axum handler (spec §2 note). Wrapped in a
@@ -259,4 +225,37 @@ pub(super) async fn graphql_handler(
     }
     .instrument(tracing::info_span!("graphql.request", otel.name = %operation))
     .await
+}
+
+#[cfg(test)]
+mod auth_tests {
+    use super::{ApiAuth, constant_time_eq, extract_bearer};
+
+    #[test]
+    fn bearer_extraction_is_strict() {
+        assert_eq!(
+            extract_bearer("Bearer secret-token-value"),
+            Some("secret-token-value")
+        );
+        assert_eq!(
+            extract_bearer("bearer secret-token-value"),
+            Some("secret-token-value")
+        );
+        assert_eq!(extract_bearer("Basic secret"), None);
+        assert_eq!(extract_bearer("Bearer "), None);
+        assert_eq!(extract_bearer(""), None);
+    }
+
+    #[test]
+    fn constant_time_compare_rejects_length_mismatch() {
+        assert!(constant_time_eq(b"abcdefghijklmnop", b"abcdefghijklmnop"));
+        assert!(!constant_time_eq(b"abcdefghijklmnop", b"abcdefghijklmnoq"));
+        assert!(!constant_time_eq(b"short", b"abcdefghijklmnop"));
+    }
+
+    #[test]
+    fn open_mode_when_token_absent() {
+        assert!(!ApiAuth::from_token(None).required());
+        assert!(ApiAuth::from_token(Some("a".repeat(16))).required());
+    }
 }

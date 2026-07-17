@@ -1,5 +1,6 @@
 #![expect(
     clippy::cast_precision_loss,
+    clippy::float_cmp,
     clippy::too_many_lines,
     reason = "exact telemetry fixture scenario"
 )]

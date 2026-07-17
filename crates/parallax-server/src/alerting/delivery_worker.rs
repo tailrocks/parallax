@@ -14,11 +14,11 @@ use super::{
 };
 
 /// Default lease for a claimed outbox row.
-pub const DELIVERY_LEASE_SECS: u32 = 30;
+pub(crate) const DELIVERY_LEASE_SECS: u32 = 30;
 
 /// Summary of one delivery pass.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
-pub struct DeliveryReport {
+pub(crate) struct DeliveryReport {
     pub claimed: usize,
     pub delivered: usize,
     pub retried: usize,
@@ -115,7 +115,7 @@ async fn record_failure(
 /// Claim and attempt up to `limit` due deliveries. Safe to call repeatedly;
 /// lease-claimed rows are invisible to other workers until expiry.
 /// `base_url` is the operator-facing UI origin used in payload links.
-pub async fn deliver_due_once(
+pub(crate) async fn deliver_due_once(
     store: &TursoMetadataStore,
     client: &reqwest::Client,
     claimer: &str,
@@ -170,6 +170,10 @@ pub async fn deliver_due_once(
 }
 
 #[cfg(test)]
+#[expect(
+    clippy::excessive_nesting,
+    reason = "inline HTTP fixture server reads clearest as one loop"
+)]
 mod tests {
     use super::*;
     use parallax_metadata::{AlertDestinationRecord, AlertIncidentRecord, AlertRuleRecord};
@@ -213,11 +217,11 @@ mod tests {
                         }
                     }
                 };
-                let _ = tx.send(body);
+                drop(tx.send(body));
                 let reply = format!(
                     "HTTP/1.1 {status} X\r\ncontent-length: 0\r\nconnection: close\r\n\r\n"
                 );
-                let _ = stream.write_all(reply.as_bytes());
+                drop(stream.write_all(reply.as_bytes()));
             }
         });
         (format!("http://{addr}/hook"), rx)

@@ -29,6 +29,8 @@ pub(crate) struct NamedContext {
 
 #[derive(Debug, Clone)]
 pub(crate) struct ResolvedContext {
+    /// Context name; asserted in tests and kept for operator-facing output.
+    #[cfg_attr(not(test), expect(dead_code, reason = "read by context tests"))]
     pub name: String,
     pub url: String,
     pub token: Option<String>,
@@ -51,7 +53,10 @@ fn write_contexts_atomic(path: &Path, file: &ContextsFile) -> anyhow::Result<()>
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
-            drop(fs::set_permissions(parent, fs::Permissions::from_mode(0o700)));
+            drop(fs::set_permissions(
+                parent,
+                fs::Permissions::from_mode(0o700),
+            ));
         }
     }
     let text = toml::to_string_pretty(file)?;
@@ -139,10 +144,6 @@ fn normalize_token(raw: Option<String>) -> Option<String> {
     })
 }
 
-pub(crate) fn resolve_url(context: Option<&str>) -> anyhow::Result<String> {
-    Ok(resolve_context(context)?.url)
-}
-
 pub(crate) struct Client {
     base_url: String,
     token: Option<String>,
@@ -150,10 +151,6 @@ pub(crate) struct Client {
 }
 
 impl Client {
-    pub(crate) fn new(base_url: String) -> Self {
-        Self::with_token(base_url, None)
-    }
-
     pub(crate) fn from_resolved(resolved: ResolvedContext) -> Self {
         Self::with_token(resolved.url, resolved.token)
     }
@@ -314,7 +311,12 @@ pub(crate) fn context_list() -> anyhow::Result<()> {
 pub(crate) fn context_list_at(path: impl AsRef<Path>) -> anyhow::Result<()> {
     let file = load_contexts_at(path.as_ref())?;
     let current = file.current.as_deref().unwrap_or(RESERVED_LOCAL);
-    print_row(current == RESERVED_LOCAL, RESERVED_LOCAL, DEFAULT_LOCAL_URL, false);
+    print_row(
+        current == RESERVED_LOCAL,
+        RESERVED_LOCAL,
+        DEFAULT_LOCAL_URL,
+        false,
+    );
     for entry in &file.contexts {
         print_row(
             current == entry.name,
@@ -400,7 +402,10 @@ pub(crate) fn context_remove(name: &str) -> anyhow::Result<()> {
 
 pub(crate) fn context_remove_at(path: impl AsRef<Path>, name: &str) -> anyhow::Result<()> {
     let name = name.trim();
-    anyhow::ensure!(name != RESERVED_LOCAL, "cannot remove reserved context 'local'");
+    anyhow::ensure!(
+        name != RESERVED_LOCAL,
+        "cannot remove reserved context 'local'"
+    );
     let path = path.as_ref();
     let mut file = load_contexts_at(path)?;
     let before = file.contexts.len();
@@ -433,7 +438,10 @@ mod tests {
         .expect("add");
         let loaded = load_contexts_at(&path).expect("load");
         assert_eq!(loaded.contexts[0].url, "https://parallax.internal");
-        assert_eq!(loaded.contexts[0].token.as_deref(), Some("super-secret-token"));
+        assert_eq!(
+            loaded.contexts[0].token.as_deref(),
+            Some("super-secret-token")
+        );
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
@@ -451,8 +459,14 @@ mod tests {
     fn env_token_overrides_context_token() {
         let dir = tempdir().expect("tempdir");
         let path = dir.path().join("contexts.toml");
-        context_add_at(&path, "prod", "https://example.test", Some("file-token-value"), None)
-            .expect("add");
+        context_add_at(
+            &path,
+            "prod",
+            "https://example.test",
+            Some("file-token-value"),
+            None,
+        )
+        .expect("add");
         let resolved = resolve_context_at(
             Some("prod"),
             Some(&path),

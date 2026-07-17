@@ -1,6 +1,8 @@
 //! Plan-103 baseline: spool append + frame count on a temp dir.
 //! Measurement only — no thresholds until variance is modeled.
 
+#![expect(clippy::expect_used, reason = "bench fixture construction")]
+
 use criterion::{Criterion, criterion_group, criterion_main};
 use parallax_spool::{Signal, Spool};
 use std::hint::black_box;
@@ -17,11 +19,11 @@ fn bench_spool(criterion: &mut Criterion) {
         b.iter(|| {
             runtime
                 .block_on(spool.append_raw(Signal::Metrics, black_box(&payload)))
-                .expect("append")
-        })
+                .expect("append");
+        });
     });
     criterion.bench_function("spool_line_count", |b| {
-        b.iter(|| black_box(spool.line_count(Signal::Metrics).expect("count")))
+        b.iter(|| black_box(spool.line_count(Signal::Metrics).expect("count")));
     });
 }
 

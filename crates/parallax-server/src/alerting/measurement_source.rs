@@ -11,8 +11,8 @@
 //! - `log_count` — `log_count_series` with a single window-wide bucket,
 //!   severity floor ERROR (OTLP severity number 17; the plan's "logs at
 //!   >= severity" — the rule record carries no explicit log-severity field,
-//!   peer re-verifies this floor) and the rule's attribute filters parsed as
-//!   the plan-164 `{key, op, value}` shape.
+//!   > peer re-verifies this floor) and the rule's attribute filters parsed as
+//!   > the plan-164 `{key, op, value}` shape.
 //! - `metric` — `metric_series` with a single window-wide bucket using the
 //!   rule's `metric_name`/`metric_aggregation`; missing name or unknown
 //!   aggregation is a config error (surfaces as a `status='error'` audit row).
@@ -22,6 +22,11 @@
 //! single unfiltered call. Sample counts for `log_count` are the counted logs
 //! themselves; for `metric` they are the number of aggregated buckets (weak —
 //! a real datapoint count needs a new adapter surface; peer decides).
+
+#![expect(
+    clippy::excessive_nesting,
+    reason = "sequential measurement mapping over bounded window counts"
+)]
 
 use std::ops::RangeInclusive;
 use std::sync::Arc;
@@ -39,18 +44,18 @@ use super::{
 };
 
 /// OTLP `SeverityNumber` floor counted by `log_count` rules (ERROR = 17).
-pub const LOG_COUNT_SEVERITY_FLOOR: i32 = 17;
+pub(crate) const LOG_COUNT_SEVERITY_FLOOR: i32 = 17;
 
 /// [`MeasurementSource`] over the storage adapter traits. Generic over the
 /// concrete store (GreptimeDB in production, the in-memory store in tests)
 /// because `dyn TelemetryStore` does not satisfy per-trait bounds; wire it
 /// with the concrete `Arc` before type erasure.
-pub struct AdapterMeasurementSource<S: ?Sized> {
+pub(crate) struct AdapterMeasurementSource<S: ?Sized> {
     store: Arc<S>,
 }
 
 impl<S: ?Sized> AdapterMeasurementSource<S> {
-    pub fn new(store: Arc<S>) -> Self {
+    pub(crate) fn new(store: Arc<S>) -> Self {
         Self { store }
     }
 }
@@ -358,6 +363,12 @@ where
 }
 
 #[cfg(test)]
+#[expect(
+    clippy::unimplemented,
+    clippy::type_complexity,
+    clippy::cast_precision_loss,
+    reason = "measurement shim stubs only the capabilities the tests exercise"
+)]
 mod tests {
     use std::collections::HashMap;
     use std::sync::Mutex;
@@ -488,7 +499,7 @@ mod tests {
             _name: &str,
             service: Option<&str>,
             _invocation_id: Option<&str>,
-            _attribute_filters: &[parallax_storage::adapter::AttributeFilter],
+            _attribute_filters: &[AttributeFilter],
             _range: RangeInclusive<u128>,
             _step_nanos: u128,
             _agg: MetricAgg,
@@ -513,7 +524,7 @@ mod tests {
             &self,
             _name: &str,
             _service: Option<&str>,
-            _attribute_filters: &[parallax_storage::adapter::AttributeFilter],
+            _attribute_filters: &[AttributeFilter],
             _range: RangeInclusive<u128>,
             _step_nanos: u128,
             _q: f64,
@@ -524,7 +535,7 @@ mod tests {
             &self,
             _name: &str,
             _service: Option<&str>,
-            _attribute_filters: &[parallax_storage::adapter::AttributeFilter],
+            _attribute_filters: &[AttributeFilter],
             _range: RangeInclusive<u128>,
             _step_nanos: u128,
         ) -> StorageResult<Vec<SeriesPoint>> {
@@ -655,11 +666,11 @@ mod tests {
     async fn metric_requires_name_and_known_aggregation() {
         let source = source(StubStore::default());
         let nameless = rule("metric", "[]", "[]", None);
-        assert!(source.measure(&nameless, 0, MIN_NANOS).await.is_err());
+        source.measure(&nameless, 0, MIN_NANOS).await.unwrap_err();
         let mut bad_agg = rule("metric", "[]", "[]", None);
         bad_agg.metric_name = Some("shapes.region.load".to_string());
         bad_agg.metric_aggregation = Some("median".to_string());
-        assert!(source.measure(&bad_agg, 0, MIN_NANOS).await.is_err());
+        source.measure(&bad_agg, 0, MIN_NANOS).await.unwrap_err();
     }
 
     #[tokio::test]
@@ -686,9 +697,9 @@ mod tests {
                 .unwrap();
         assert_eq!(parsed.len(), 1);
         assert_eq!(parsed[0].key, "http.route");
-        assert!(parse_attribute_filters("not json").is_err());
-        assert!(parse_attribute_filters(r#"{"key":"x"}"#).is_err());
-        assert!(parse_attribute_filters(r#"[{"key":"x","op":"~~","value":"y"}]"#).is_err());
+        parse_attribute_filters("not json").unwrap_err();
+        parse_attribute_filters(r#"{"key":"x"}"#).unwrap_err();
+        parse_attribute_filters(r#"[{"key":"x","op":"~~","value":"y"}]"#).unwrap_err();
     }
 
     #[test]

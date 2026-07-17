@@ -126,6 +126,10 @@ fn legal_aggregations(kind: model::MetricKind) -> &'static [&'static str] {
     }
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "one typed legality dispatch per kind"
+)]
 pub(crate) async fn metric_query(
     context: &ApiContext,
     name: String,

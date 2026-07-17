@@ -1,0 +1,32 @@
+//! Alerting v1 pure evaluation + delivery surface (plan 167).
+//!
+//! Preliminary: consecutive-breach state machine + delivery payload/backoff/
+//! claim helpers. Peer must wire Turso schema/CRUD, evaluator/delivery I/O
+//! loops, GraphQL, UI, and playground breach scenarios. Do not treat as Done.
+
+mod delivery;
+mod delivery_worker;
+mod evaluator;
+mod measurement;
+mod measurement_source;
+
+pub(crate) use measurement_source::AdapterMeasurementSource;
+
+pub(crate) use measurement::{
+    ServiceWindowStats, SignalType, groups_by_service, scalar_measurement, service_in_scope,
+    span_measurements,
+};
+
+pub(crate) use delivery_worker::deliver_due_once;
+mod state_machine;
+
+pub(crate) use evaluator::{GroupMeasurement, MeasurementSource, tick_once};
+
+pub(crate) use delivery::{
+    DeliveryEventType, NotificationContext, backoff_after_failure, is_dead_letter,
+    slack_webhook_payload_json, unique_delivery_key, webhook_payload_json,
+};
+pub(crate) use state_machine::{
+    AlertComparator, AlertMeasurement, AlertSeverity, AlertTransition, NoDataBehavior,
+    RuleEvalConfig, RuleEvalState, evaluate_rule,
+};

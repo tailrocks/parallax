@@ -4,8 +4,8 @@ struct TempDir(PathBuf);
 
 impl TempDir {
     fn new(name: &str) -> Self {
-        let nanos = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_nanos();
         let path = std::env::temp_dir().join(format!(

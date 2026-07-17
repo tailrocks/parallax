@@ -6,6 +6,10 @@
 //! outbox deliveries. Measurement itself is behind the trait so the GreptimeDB
 //! query implementation (peer-owned) plugs in without touching this flow; the
 //! tokio interval loop wrapping `tick_once` is also peer-owned.
+#![expect(
+    clippy::excessive_nesting,
+    reason = "sequential lease/breach state machine reads clearest inline"
+)]
 
 use std::collections::BTreeSet;
 
@@ -21,7 +25,7 @@ use super::{
 
 /// One measured group within a rule's scope.
 #[derive(Debug, Clone, PartialEq)]
-pub struct GroupMeasurement {
+pub(crate) struct GroupMeasurement {
     /// Empty string = the rule's single ungrouped scope.
     pub group_key: String,
     pub measurement: AlertMeasurement,
@@ -31,7 +35,7 @@ pub struct GroupMeasurement {
 /// (error rate / percentiles / throughput / log count / metric aggregate)
 /// is peer-owned; tests use stubs.
 #[async_trait::async_trait]
-pub trait MeasurementSource: Send + Sync {
+pub(crate) trait MeasurementSource: Send + Sync {
     async fn measure(
         &self,
         rule: &AlertRuleRecord,
@@ -41,7 +45,7 @@ pub trait MeasurementSource: Send + Sync {
 }
 
 /// Parse a stored rule's evaluation parameters into the pure config.
-pub fn eval_config(rule: &AlertRuleRecord) -> anyhow::Result<RuleEvalConfig> {
+pub(crate) fn eval_config(rule: &AlertRuleRecord) -> anyhow::Result<RuleEvalConfig> {
     let comparator = match rule.comparator.as_str() {
         "gt" => AlertComparator::Gt,
         "gte" => AlertComparator::Gte,
@@ -121,7 +125,7 @@ fn destination_ids(rule: &AlertRuleRecord) -> Vec<String> {
 
 /// Summary of one tick, for tests and the serve ready-banner counters.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
-pub struct TickReport {
+pub(crate) struct TickReport {
     pub rules_seen: usize,
     pub rules_claimed: usize,
     pub groups_evaluated: usize,
@@ -177,7 +181,8 @@ async fn enqueue_deliveries(
 /// Run one evaluation pass over every enabled rule. Idempotent under repeated
 /// invocation within `claim_interval_secs` (the CAS claim skips re-claimed
 /// rules), safe under concurrent server instances.
-pub async fn tick_once(
+#[expect(clippy::too_many_lines, reason = "one sequential evaluation tick")]
+pub(crate) async fn tick_once(
     store: &TursoMetadataStore,
     source: &dyn MeasurementSource,
     now_nanos: u128,

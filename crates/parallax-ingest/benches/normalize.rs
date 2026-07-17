@@ -1,6 +1,8 @@
 //! Plan-103 baseline: OTLP metrics normalization over a representative
 //! batch. Measurement only — no thresholds until variance is modeled.
 
+#![expect(clippy::cast_precision_loss, reason = "bench fixture construction")]
+
 use criterion::{Criterion, criterion_group, criterion_main};
 use parallax_proto::collector_metrics::ExportMetricsServiceRequest;
 use parallax_proto::common::any_value::Value as AnyValueEnum;
@@ -60,7 +62,7 @@ fn request(points_per_metric: usize) -> ExportMetricsServiceRequest {
 fn bench_normalize(criterion: &mut Criterion) {
     let request = request(1_000);
     criterion.bench_function("normalize_metrics_1k_points", |b| {
-        b.iter(|| black_box(parallax_ingest::normalize_metrics(black_box(&request))))
+        b.iter(|| black_box(parallax_ingest::normalize_metrics(black_box(&request))));
     });
 }
 

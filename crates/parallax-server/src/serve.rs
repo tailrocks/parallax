@@ -409,6 +409,10 @@ async fn start_assembled(
 
 /// Spawn evaluator + delivery interval loops when alerting is enabled and a
 /// Turso handle is present. Returns the ready-banner status string.
+#[expect(
+    clippy::excessive_nesting,
+    reason = "three sibling background loops with inline outcome logging"
+)]
 fn spawn_alerting_loops(
     config: &Config,
     tasks: &mut Vec<JoinHandle<()>>,

@@ -1,6 +1,13 @@
 //! Plan-103 baseline: Arrow IPC response decode (uncompressed + zstd).
 //! Measurement only — no thresholds until variance is modeled.
 
+#![expect(
+    clippy::cast_possible_wrap,
+    clippy::cast_precision_loss,
+    clippy::expect_used,
+    reason = "bench fixture construction"
+)]
+
 use arrow::array::{Float64Array, Int64Array, RecordBatch, StringArray};
 use arrow::datatypes::{DataType, Field, Schema};
 use arrow_ipc::CompressionType;
@@ -22,7 +29,9 @@ fn fixture(zstd: bool, rows: usize) -> Vec<u8> {
                 (0..rows).map(|i| Some(i as i64)).collect::<Vec<_>>(),
             )),
             Arc::new(StringArray::from(
-                (0..rows).map(|i| Some(format!("svc-{}", i % 8))).collect::<Vec<_>>(),
+                (0..rows)
+                    .map(|i| Some(format!("svc-{}", i % 8)))
+                    .collect::<Vec<_>>(),
             )),
             Arc::new(Float64Array::from(
                 (0..rows).map(|i| Some(i as f64)).collect::<Vec<_>>(),
@@ -51,14 +60,18 @@ fn bench_decode(criterion: &mut Criterion) {
     let plain = fixture(false, 10_000);
     let compressed = fixture(true, 10_000);
     criterion.bench_function("arrow_decode_10k_rows", |b| {
-        b.iter(|| black_box(parallax_greptime::arrow_sql::decode_arrow_ipc(black_box(&plain))))
+        b.iter(|| {
+            black_box(parallax_greptime::arrow_sql::decode_arrow_ipc(black_box(
+                &plain,
+            )))
+        });
     });
     criterion.bench_function("arrow_decode_10k_rows_zstd", |b| {
         b.iter(|| {
             black_box(parallax_greptime::arrow_sql::decode_arrow_ipc(black_box(
                 &compressed,
             )))
-        })
+        });
     });
 }
 

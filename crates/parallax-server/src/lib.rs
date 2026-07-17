@@ -51,7 +51,8 @@ mod serve;
 mod worker;
 
 pub use config::{
-    Config, LimitsConfig, RetentionConfig, ServerConfig, StorageConfig, TelemetryConfig,
+    AlertingConfig, Config, LimitsConfig, RetentionConfig, ServerConfig, StorageConfig,
+    TelemetryConfig,
 };
 pub use errors::{
     ConfigError, ConfigErrorKind, ConfigResult, ServerError, ServerErrorKind, ServerResult,

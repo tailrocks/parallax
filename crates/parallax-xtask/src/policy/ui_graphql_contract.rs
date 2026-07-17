@@ -10,19 +10,14 @@ use crate::diagnostic::Finding;
 const RERUN: &str = "cargo xtask policy --only ui.graphql-contract";
 
 /// Enforce checked-in GraphQL contract artifacts and generation surface.
+#[expect(
+    clippy::too_many_lines,
+    reason = "one linear contract-artifact checklist"
+)]
 pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
     let mut findings = Vec::new();
     let schema = root.join("ui/graphql/schema.graphql");
-    if !schema.is_file() {
-        findings.push(Finding::error(
-            "ui.graphql-contract.schema.missing",
-            "ui/graphql/schema.graphql",
-            1,
-            "checked-in GraphQL SDL is missing",
-            "run `cargo xtask ui graphql export`",
-            RERUN,
-        ));
-    } else {
+    if schema.is_file() {
         let text =
             fs::read_to_string(&schema).with_context(|| format!("read {}", schema.display()))?;
         if text.trim().is_empty() || !text.contains("type Query") {
@@ -45,6 +40,15 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
                 RERUN,
             ));
         }
+    } else {
+        findings.push(Finding::error(
+            "ui.graphql-contract.schema.missing",
+            "ui/graphql/schema.graphql",
+            1,
+            "checked-in GraphQL SDL is missing",
+            "run `cargo xtask ui graphql export`",
+            RERUN,
+        ));
     }
 
     let codegen = root.join("ui/codegen.ts");
@@ -108,16 +112,7 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
     }
 
     let client = root.join("ui/src/platform/graphql/client.ts");
-    if !client.is_file() {
-        findings.push(Finding::error(
-            "ui.graphql-contract.client.missing",
-            "ui/src/platform/graphql/client.ts",
-            1,
-            "decoded GraphQL client is missing",
-            "restore platform/graphql/client.ts",
-            RERUN,
-        ));
-    } else {
+    if client.is_file() {
         let source = fs::read_to_string(&client)?;
         for needle in [
             "executeGraphqlOperation",
@@ -135,6 +130,15 @@ pub(super) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
                 ));
             }
         }
+    } else {
+        findings.push(Finding::error(
+            "ui.graphql-contract.client.missing",
+            "ui/src/platform/graphql/client.ts",
+            1,
+            "decoded GraphQL client is missing",
+            "restore platform/graphql/client.ts",
+            RERUN,
+        ));
     }
 
     let widget = root.join("ui/src/features/dashboards/api/widget-series-operation.ts");

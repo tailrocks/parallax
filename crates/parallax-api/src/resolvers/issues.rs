@@ -437,10 +437,10 @@ fn bundle_window_nanos(bundle: &parallax_evidence::bundle::Bundle) -> Option<(u1
         if let Ok(v) = invocation.started_at_nanos.parse::<u128>() {
             times.push(v);
         }
-        if let Some(ended) = &invocation.ended_at_nanos {
-            if let Ok(v) = ended.parse::<u128>() {
-                times.push(v);
-            }
+        if let Some(ended) = &invocation.ended_at_nanos
+            && let Ok(v) = ended.parse::<u128>()
+        {
+            times.push(v);
         }
     }
     let from = *times.iter().min()?;

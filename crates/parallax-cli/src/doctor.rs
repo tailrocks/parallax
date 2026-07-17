@@ -257,6 +257,10 @@ pub(crate) async fn doctor() -> anyhow::Result<()> {
 const PRUNE_GRACE_NANOS: u128 = 30 * 24 * 60 * 60 * 1_000_000_000;
 
 /// Deterministic lifecycle prune plan (dry-run default) with optional execute.
+#[expect(
+    clippy::too_many_lines,
+    reason = "one linear prune walkthrough with narration"
+)]
 pub(crate) async fn prune(execute: bool, yes: bool, json: bool) -> anyhow::Result<()> {
     let config = load_config();
     let dir = config.data_dir();
@@ -290,7 +294,7 @@ pub(crate) async fn prune(execute: bool, yes: bool, json: bool) -> anyhow::Resul
         estimate: PruneEstimate {
             rows: None,
             // Plan contract requires a row or object estimate on every item.
-            objects: Some(if spool_bytes > 0 { 1 } else { 0 }),
+            objects: Some(u64::from(spool_bytes > 0)),
             bytes: Some(spool_bytes),
         },
         exclusions: Vec::new(),
@@ -407,17 +411,14 @@ pub(crate) async fn prune(execute: bool, yes: bool, json: bool) -> anyhow::Resul
             .steps
             .iter()
             .find(|s| s.item.class == PruneClass::Spool)
+            && step.state != PruneJournalStepState::Complete
+            && let Ok(PruneStepStart::Execute) = store
+                .begin_prune_step(plan.plan_id(), step.step_index, now_nanos)
+                .await
         {
-            if step.state != PruneJournalStepState::Complete {
-                if let Ok(PruneStepStart::Execute) = store
-                    .begin_prune_step(plan.plan_id(), step.step_index, now_nanos)
-                    .await
-                {
-                    let _unused = store
-                        .complete_prune_step(plan.plan_id(), step.step_index, now_nanos)
-                        .await;
-                }
-            }
+            let _unused = store
+                .complete_prune_step(plan.plan_id(), step.step_index, now_nanos)
+                .await;
         }
     } else {
         let reclaimed = prune_dir(&spool_dir)?;

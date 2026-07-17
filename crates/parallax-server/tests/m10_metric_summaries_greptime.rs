@@ -8,7 +8,12 @@
 //!
 //! Run with: `cargo nextest run -p parallax-server --test m10_metric_summaries_greptime --run-ignored only`
 
-#![allow(clippy::expect_used, clippy::panic, reason = "test fixture assertions")]
+#![allow(
+    clippy::expect_used,
+    clippy::float_cmp,
+    clippy::panic,
+    reason = "test fixture assertions"
+)]
 #![expect(clippy::too_many_lines, reason = "one seeded end-to-end scenario")]
 
 use parallax_proto::collector_metrics::ExportMetricsServiceRequest;
@@ -195,7 +200,13 @@ async fn metric_summaries_conform_on_live_engine() {
         .await
         .expect("metric trend");
     let trend_total: f64 = trend.iter().map(|point| point.value).sum();
-    assert_eq!(trend_total as u64, 3, "trend buckets: {trend:?}");
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "small positive test count"
+    )]
+    let trend_count = trend_total as u64;
+    assert_eq!(trend_count, 3, "trend buckets: {trend:?}");
 
     // (4) Invocation summaries: canonical name, finite-only, last value.
     // The extension write can trail native visibility; poll like the corpus.

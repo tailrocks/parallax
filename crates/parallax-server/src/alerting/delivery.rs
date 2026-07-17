@@ -8,7 +8,7 @@ use std::time::Duration;
 
 /// Outbox event kinds enqueued by the evaluator.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum DeliveryEventType {
+pub(crate) enum DeliveryEventType {
     Triggered,
     Resolved,
     Renotify,
@@ -16,7 +16,7 @@ pub enum DeliveryEventType {
 
 impl DeliveryEventType {
     #[must_use]
-    pub fn as_str(self) -> &'static str {
+    pub(crate) fn as_str(self) -> &'static str {
         match self {
             Self::Triggered => "triggered",
             Self::Resolved => "resolved",
@@ -25,7 +25,7 @@ impl DeliveryEventType {
     }
 
     #[must_use]
-    pub fn parse(s: &str) -> Option<Self> {
+    pub(crate) fn parse(s: &str) -> Option<Self> {
         match s {
             "triggered" => Some(Self::Triggered),
             "resolved" => Some(Self::Resolved),
@@ -37,7 +37,7 @@ impl DeliveryEventType {
 
 /// Inputs for a single notification payload (rule + incident snapshot).
 #[derive(Debug, Clone, PartialEq)]
-pub struct NotificationContext<'a> {
+pub(crate) struct NotificationContext<'a> {
     pub rule_id: &'a str,
     pub rule_name: &'a str,
     pub signal_type: &'a str,
@@ -58,7 +58,7 @@ pub struct NotificationContext<'a> {
 /// Stable unique delivery key: one successful delivery per
 /// (incident, destination, event type) — prevents double-delivery.
 #[must_use]
-pub fn unique_delivery_key(
+pub(crate) fn unique_delivery_key(
     incident_id: &str,
     destination_id: &str,
     event_type: DeliveryEventType,
@@ -69,7 +69,7 @@ pub fn unique_delivery_key(
 /// Generic webhook JSON body (documented plan-167 API shape).
 /// Keys are stable for external integrators.
 #[must_use]
-pub fn webhook_payload_json(ctx: &NotificationContext<'_>) -> String {
+pub(crate) fn webhook_payload_json(ctx: &NotificationContext<'_>) -> String {
     let value = match ctx.observed_value {
         Some(v) => format!("{v}"),
         None => "null".to_string(),
@@ -111,7 +111,7 @@ pub fn webhook_payload_json(ctx: &NotificationContext<'_>) -> String {
 
 /// Slack incoming-webhook payload (`text` + attachment-style fields).
 #[must_use]
-pub fn slack_webhook_payload_json(ctx: &NotificationContext<'_>) -> String {
+pub(crate) fn slack_webhook_payload_json(ctx: &NotificationContext<'_>) -> String {
     let verb = match ctx.event_type {
         DeliveryEventType::Triggered => "FIRING",
         DeliveryEventType::Resolved => "RESOLVED",
@@ -151,7 +151,7 @@ fn escape_json(s: &str) -> String {
 /// Backoff schedule: attempt 1 → 1m, 2 → 5m, 3 → 30m, then cap at 30m.
 /// `attempt` is 1-based (first failure → attempt 1).
 #[must_use]
-pub fn backoff_after_failure(attempt: u32) -> Duration {
+pub(crate) fn backoff_after_failure(attempt: u32) -> Duration {
     match attempt.max(1) {
         1 => Duration::from_secs(60),
         2 => Duration::from_secs(5 * 60),
@@ -160,40 +160,38 @@ pub fn backoff_after_failure(attempt: u32) -> Duration {
 }
 
 /// Max delivery attempts before dead-letter (plan 167: 5).
-pub const MAX_DELIVERY_ATTEMPTS: u32 = 5;
+pub(crate) const MAX_DELIVERY_ATTEMPTS: u32 = 5;
 
 #[must_use]
-pub fn is_dead_letter(attempt_count: u32) -> bool {
+pub(crate) fn is_dead_letter(attempt_count: u32) -> bool {
     attempt_count >= MAX_DELIVERY_ATTEMPTS
-}
-
-/// Whether an outbox row is claimable now given optional prior claim expiry.
-/// `now_unix_secs` and `claim_expires_at` are unix seconds.
-#[must_use]
-pub fn claim_is_available(
-    now_unix_secs: i64,
-    claim_expires_at: Option<i64>,
-    delivered: bool,
-) -> bool {
-    if delivered {
-        return false;
-    }
-    match claim_expires_at {
-        None => true,
-        Some(exp) => now_unix_secs >= exp,
-    }
-}
-
-/// Default claim lease length for the delivery worker (30s CAS-style).
-pub const CLAIM_LEASE_SECS: i64 = 30;
-
-#[must_use]
-pub fn claim_expires_at(now_unix_secs: i64) -> i64 {
-    now_unix_secs.saturating_add(CLAIM_LEASE_SECS)
 }
 
 #[cfg(test)]
 mod tests {
+    /// Whether an outbox row is claimable now given optional prior claim expiry.
+    /// `now_unix_secs` and `claim_expires_at` are unix seconds.
+    fn claim_is_available(
+        now_unix_secs: i64,
+        claim_expires_at: Option<i64>,
+        delivered: bool,
+    ) -> bool {
+        if delivered {
+            return false;
+        }
+        match claim_expires_at {
+            None => true,
+            Some(exp) => now_unix_secs >= exp,
+        }
+    }
+    /// Default claim lease length for the delivery worker (30s CAS-style);
+    /// kept beside its arithmetic test until a caller claims it.
+    const CLAIM_LEASE_SECS: i64 = 30;
+
+    fn claim_expires_at(now_unix_secs: i64) -> i64 {
+        now_unix_secs.saturating_add(CLAIM_LEASE_SECS)
+    }
+
     use super::*;
 
     fn ctx() -> NotificationContext<'static> {

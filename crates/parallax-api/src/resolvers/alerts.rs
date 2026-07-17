@@ -320,6 +320,10 @@ fn positive_u32(value: Option<i32>, default: u32, label: &str) -> FieldResult<u3
     }
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "one typed rule-field validation pass"
+)]
 fn validated_rule(
     input: AlertRuleInput,
     existing: Option<&AlertRuleRecord>,

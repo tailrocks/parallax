@@ -73,11 +73,11 @@ pub fn decode_arrow_ipc(bytes: &[u8]) -> anyhow::Result<(Vec<String>, Vec<Vec<Va
 /// is not possible here, so this guards the first-allocation class only.
 fn validate_ipc_frame_lengths(bytes: &[u8]) -> anyhow::Result<()> {
     let mut offset = 0usize;
-    let mut word = |offset: &mut usize| -> Option<u32> {
+    let word = |offset: &mut usize| -> Option<u32> {
         let end = *offset + 4;
         let value = bytes
             .get(*offset..end)
-            .map(|b| u32::from_le_bytes(b.try_into().expect("4 bytes")));
+            .and_then(|b| b.try_into().ok().map(u32::from_le_bytes));
         *offset = end;
         value
     };

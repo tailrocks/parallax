@@ -8,6 +8,11 @@
 
 #![expect(clippy::expect_used, reason = "harness exits on setup failure")]
 #![expect(
+    clippy::excessive_nesting,
+    clippy::too_many_lines,
+    reason = "self-contained browser-contract fixture server"
+)]
+#![expect(
     clippy::print_stdout,
     reason = "progress narration for long-running serve"
 )]
@@ -185,7 +190,7 @@ async fn main() -> Result<()> {
             .expect("proxy serve");
     });
 
-    tokio::signal::ctrl_c().await.ok();
+    drop(tokio::signal::ctrl_c().await);
     handle.shutdown();
     control_task.abort();
     proxy_task.abort();
@@ -331,7 +336,7 @@ async fn handle_control(stream: TcpStream, state: ControlState) -> Result<()> {
     let payload = serde_json::to_vec(&response)?;
     stream.write_all(&payload).await?;
     stream.write_all(b"\n").await?;
-    stream.shutdown().await.ok();
+    drop(stream.shutdown().await);
     Ok(())
 }
 

@@ -12,7 +12,7 @@ use super::{AlertMeasurement, GroupMeasurement};
 
 /// Signal types a rule can measure (plan 167 contract).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SignalType {
+pub(crate) enum SignalType {
     ErrorRate,
     P95Latency,
     P99Latency,
@@ -23,7 +23,7 @@ pub enum SignalType {
 
 impl SignalType {
     #[must_use]
-    pub fn parse(s: &str) -> Option<Self> {
+    pub(crate) fn parse(s: &str) -> Option<Self> {
         match s {
             "error_rate" => Some(Self::ErrorRate),
             "p95_latency" => Some(Self::P95Latency),
@@ -39,7 +39,7 @@ impl SignalType {
 /// Per-service aggregates over the rule window — the subset of
 /// `ServiceSummary` plus p99 that the span-signal types consume.
 #[derive(Debug, Clone, PartialEq)]
-pub struct ServiceWindowStats {
+pub(crate) struct ServiceWindowStats {
     pub service: String,
     pub span_count: u64,
     pub error_count: u64,
@@ -50,7 +50,7 @@ pub struct ServiceWindowStats {
 /// Rule scoping decision for one service, honoring `services` (empty = all)
 /// and `exclude_services` JSON lists.
 #[must_use]
-pub fn service_in_scope(rule: &AlertRuleRecord, service: &str) -> bool {
+pub(crate) fn service_in_scope(rule: &AlertRuleRecord, service: &str) -> bool {
     let include: Vec<String> = serde_json::from_str(&rule.services).unwrap_or_default();
     let exclude: Vec<String> = serde_json::from_str(&rule.exclude_services).unwrap_or_default();
     if exclude.iter().any(|s| s == service) {
@@ -62,7 +62,7 @@ pub fn service_in_scope(rule: &AlertRuleRecord, service: &str) -> bool {
 /// Whether the rule groups per service (`group_by = "service"`); otherwise
 /// scoped services aggregate into one ungrouped measurement.
 #[must_use]
-pub fn groups_by_service(rule: &AlertRuleRecord) -> bool {
+pub(crate) fn groups_by_service(rule: &AlertRuleRecord) -> bool {
     rule.group_by.as_deref() == Some("service")
 }
 
@@ -90,7 +90,7 @@ fn span_signal_value(signal: SignalType, stats: &ServiceWindowStats) -> Option<f
 /// per-service window stats. Throughput is normalized to spans **per minute**
 /// over the rule window so thresholds stay window-length independent.
 #[must_use]
-pub fn span_measurements(
+pub(crate) fn span_measurements(
     rule: &AlertRuleRecord,
     signal: SignalType,
     stats: &[ServiceWindowStats],
@@ -153,7 +153,11 @@ pub fn span_measurements(
 /// Wrap a scalar count (log_count / metric aggregate result) into the
 /// measurement shape. `None` count = no data in the window.
 #[must_use]
-pub fn scalar_measurement(group_key: &str, value: Option<f64>, samples: u64) -> GroupMeasurement {
+pub(crate) fn scalar_measurement(
+    group_key: &str,
+    value: Option<f64>,
+    samples: u64,
+) -> GroupMeasurement {
     GroupMeasurement {
         group_key: group_key.to_string(),
         measurement: AlertMeasurement {

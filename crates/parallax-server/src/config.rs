@@ -238,10 +238,7 @@ impl Config {
 }
 
 /// Env override (even empty/`off`) wins over the config key.
-pub(crate) fn resolve_api_token_from(
-    env: Option<String>,
-    config_token: &str,
-) -> Option<String> {
+pub(crate) fn resolve_api_token_from(env: Option<String>, config_token: &str) -> Option<String> {
     match env {
         Some(value) => {
             let trimmed = value.trim();

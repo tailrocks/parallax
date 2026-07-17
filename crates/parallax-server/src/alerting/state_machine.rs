@@ -7,7 +7,7 @@
 
 /// How a missing measurement is treated.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum NoDataBehavior {
+pub(crate) enum NoDataBehavior {
     /// Leave counters untouched; no transition.
     Skip,
     /// Treat as value `0.0` with a synthetic sample count of 1.
@@ -16,7 +16,7 @@ pub enum NoDataBehavior {
 
 /// Threshold comparator.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum AlertComparator {
+pub(crate) enum AlertComparator {
     Gt,
     Gte,
     Lt,
@@ -27,14 +27,14 @@ pub enum AlertComparator {
 
 /// Rule severity label (display/delivery only at this layer).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum AlertSeverity {
+pub(crate) enum AlertSeverity {
     Warning,
     Critical,
 }
 
 /// Static rule parameters that drive evaluation (no IDs/storage).
 #[derive(Debug, Clone, PartialEq)]
-pub struct RuleEvalConfig {
+pub(crate) struct RuleEvalConfig {
     pub comparator: AlertComparator,
     pub threshold: f64,
     pub threshold_upper: Option<f64>,
@@ -64,7 +64,7 @@ impl Default for RuleEvalConfig {
 
 /// Per-(rule, group) rolling evaluation state.
 #[derive(Debug, Clone, PartialEq, Default)]
-pub struct RuleEvalState {
+pub(crate) struct RuleEvalState {
     pub consecutive_breaches: u32,
     pub consecutive_healthy: u32,
     pub incident_open: bool,
@@ -76,7 +76,7 @@ pub struct RuleEvalState {
 
 /// One measurement window result.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct AlertMeasurement {
+pub(crate) struct AlertMeasurement {
     /// `None` = no data in window.
     pub value: Option<f64>,
     pub sample_count: u64,
@@ -84,7 +84,7 @@ pub struct AlertMeasurement {
 
 /// Incident-facing transition emitted by one evaluation tick.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum AlertTransition {
+pub(crate) enum AlertTransition {
     None,
     OpenIncident,
     ResolveIncident,
@@ -93,7 +93,7 @@ pub enum AlertTransition {
 
 /// Full outcome of one evaluation tick.
 #[derive(Debug, Clone, PartialEq)]
-pub struct EvaluationOutcome {
+pub(crate) struct EvaluationOutcome {
     pub state: RuleEvalState,
     pub transition: AlertTransition,
     /// Whether the measurement itself was a breach (after no-data handling).
@@ -104,7 +104,7 @@ pub struct EvaluationOutcome {
 
 /// Apply the comparator to a concrete value.
 #[must_use]
-pub fn value_breaches(config: &RuleEvalConfig, value: f64) -> bool {
+pub(super) fn value_breaches(config: &RuleEvalConfig, value: f64) -> bool {
     match config.comparator {
         AlertComparator::Gt => value > config.threshold,
         AlertComparator::Gte => value >= config.threshold,
@@ -123,7 +123,7 @@ pub fn value_breaches(config: &RuleEvalConfig, value: f64) -> bool {
 
 /// Evaluate one rule tick. Pure — no I/O.
 #[must_use]
-pub fn evaluate_rule(
+pub(crate) fn evaluate_rule(
     config: &RuleEvalConfig,
     prev: &RuleEvalState,
     measurement: AlertMeasurement,

@@ -112,7 +112,6 @@ fn context_cmd(command: ContextCommand) -> anyhow::Result<()> {
     }
 }
 
-
 async fn invocation(
     command: InvocationCommand,
     client: &impl Fn() -> anyhow::Result<Client>,
