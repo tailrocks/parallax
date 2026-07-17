@@ -64,6 +64,21 @@ evidence. Index status stays TODO.
   plan 164) — peer decides trait vs concrete-store access for the
   evaluator, verifies semantics (esp. claim cutoff arithmetic and prune
   SQL), and extends.
+- `crates/parallax-server/src/alerting/evaluator.rs` (`043ca4e`, helper
+  agent 2026-07-17) — Step 2 orchestration: `tick_once(store, source,
+  now_nanos, claim_interval_secs) → TickReport` doing CAS claim →
+  measurement via a new `MeasurementSource` trait (GreptimeDB impl still
+  peer-owned) → pure `evaluate_rule` → state upsert + bounded audit row →
+  incident open/resolve/renotify + per-destination outbox enqueue with
+  `unique_delivery_key` (renotify keys suffixed with the notify second so
+  repeats survive the UNIQUE dedupe). Groups with prior state but no fresh
+  measurement still tick (no-data path); config parse errors land as
+  `status='error'` audit rows without aborting the tick. Five tests
+  (lifecycle incl. renotify + resolve, idempotent re-tick, no_data skip,
+  bad comparator, disabled rule); crate clippy clean; `async-trait` added
+  to `parallax-server`. Peer wires the tokio interval loop + shutdown,
+  measurement queries per signal type, delivery worker I/O, and re-verifies
+  incident-id determinism and renotify-key policy.
 
 **Peer owns (verify/deepen/complete):**
 - [ ] Re-verify state machine + delivery helpers vs plan exhaustiveness;
