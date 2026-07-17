@@ -3,5 +3,5 @@ schema_version = 1
 [roots]
 "lib.rs" = [
     "use turso::pins::{EVIDENCE_PIN_MAX_BYTES, EVIDENCE_PIN_PROTECTION_CAP, EvidencePinProtection, EvidencePinRecord ,}",
-    "use turso::{ALERT_CHECKS_KEEP_PER_RULE, AlertCheckRecord, AlertDeliveryEventRecord, AlertDestinationRecord, AlertIncidentRecord, AlertRuleRecord, AlertRuleStateRecord, TursoMetadataStore ,}",
+    "use turso::{ALERT_CHECKS_KEEP_PER_RULE, AgentSessionImportAccept, AgentSessionImportError, AgentSessionImportRecord, AlertCheckRecord, AlertDeliveryEventRecord, AlertDestinationRecord, AlertIncidentRecord, AlertRuleRecord, AlertRuleStateRecord, CiAttemptAccept, CiAttemptDeliveryRecord, CiAttemptStoreError, CiBackfillState, DeployAccept, DeployDeliveryRecord, DeployStoreError, EvidenceClaimRow, FixerOutcomeStoreRecord, SentryAck, SentryAckError, TursoMetadataStore, payload_sha256_hex ,}",
 ]
