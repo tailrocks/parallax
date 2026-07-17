@@ -1,0 +1,104 @@
+name: Scheduled Measurement
+
+# Plan 103 Step 5: stable scheduled runs gather fuzz campaigns and benchmark
+# samples so variance can be modeled before any ratchet is set. Artifacts
+# only — no thresholds, no baseline auto-refresh.
+
+on:
+  schedule:
+    - cron: "17 3 * * *" # zizmor: ignore[cache-poisoning] measurement only, no publish authority
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scheduled-measurement
+  cancel-in-progress: false
+
+jobs:
+  fuzz-campaign:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Cache Cargo registry
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.cargo/registry/cache
+            ~/.cargo/registry/index
+            ~/.cargo/registry/src
+          key: cargo-registry-${{ runner.os }}-${{ runner.arch }}-fuzz-${{ hashFiles('fuzz/Cargo.lock', 'Cargo.lock') }}
+          restore-keys: cargo-registry-${{ runner.os }}-${{ runner.arch }}-
+      - name: Cache mise cargo tools
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ~/.local/share/mise/installs/cargo-*
+          key: mise-cargo-tools-${{ runner.os }}-${{ runner.arch }}-fuzz-${{ hashFiles('mise.toml') }}
+          restore-keys: |
+            mise-cargo-tools-${{ runner.os }}-${{ runner.arch }}-fuzz-
+      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
+        with:
+          install_args: "rust cargo:cargo-fuzz"
+          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+      - run: rustup toolchain install nightly --profile minimal
+      - run: cargo +nightly fuzz build
+      - name: Run five-minute campaigns per boundary
+        run: |
+          mkdir -p measurement/fuzz
+          for target in $(cargo +nightly fuzz list); do
+            cargo +nightly fuzz run "$target" -- -max_total_time=300 2>&1 | tail -20 \
+              | tee "measurement/fuzz/${target}.log"
+          done
+      - name: Collect crash artifacts if any
+        if: always()
+        run: |
+          if [ -d fuzz/artifacts ] && [ -n "$(find fuzz/artifacts -type f)" ]; then
+            cp -r fuzz/artifacts measurement/fuzz/artifacts
+          fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: fuzz-campaign-${{ github.run_id }}
+          path: measurement/fuzz
+          retention-days: 30
+
+  bench-samples:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Cache Cargo registry
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.cargo/registry/cache
+            ~/.cargo/registry/index
+            ~/.cargo/registry/src
+          key: cargo-registry-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: cargo-registry-${{ runner.os }}-${{ runner.arch }}-
+      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
+        with:
+          install_args: "rust"
+          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+      - name: Run criterion benches (three repeats for variance)
+        run: |
+          mkdir -p measurement/bench
+          for repeat in 1 2 3; do
+            {
+              cargo bench --locked -p parallax-ingest --bench normalize
+              cargo bench --locked -p parallax-spool --bench spool_io
+              cargo bench --locked -p parallax-greptime --bench arrow_decode
+            } 2>&1 | grep -E "time:" | tee -a "measurement/bench/repeat-${repeat}.txt" || true
+          done
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: bench-samples-${{ github.run_id }}
+          path: measurement/bench
+          retention-days: 90
