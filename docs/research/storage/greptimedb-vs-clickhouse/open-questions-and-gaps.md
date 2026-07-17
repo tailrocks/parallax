@@ -177,6 +177,12 @@ GT increase plan, adopt-native, FT/PREWHERE). **No pin bump. No stack flip.**
 Highest remaining still: mix shares, server 1M/5M, trial quotes, GB cold S3,
 RPO D2 cluster + D3 Turso product.
 
+### Run 600 (2026-07-18) — milestone
+
+Pins still hold. Laptop engine smoke still saturated.
+**Still open:** mix A1–A7, server 1M/5M, trial quotes, GB cold S3, D2/D3.
+**Do not declare done.**
+
 ### Run 580 (2026-07-18) — session milestone 558–580
 
 **Substantive:** ops burden note (gap #7 engine), D1 BACKUP/export re-smoke,
