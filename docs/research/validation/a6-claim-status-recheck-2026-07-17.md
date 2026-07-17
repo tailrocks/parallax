@@ -146,6 +146,14 @@ From [redaction.md claim table](../capture/redaction.md):
 | `agent_visible_mixed_pass` | **No** | Required for "agent-visible bundles are red-team tested for configured surfaces" |
 | Plan 111 "measured" | **Reconcile as** | = detector unit + public-safe canaries (**`synthetic_canary_pass` partial**), **not** full A6 mixed gate |
 
+### Pass 306 addendum (2026-07-18)
+
+| Check | Result |
+| --- | --- |
+| Public-safe canary unit test | **ok** — re-ran `cargo test -p parallax-redaction a6_public_safe` → `a6_public_safe_canaries_are_not_projected_raw_by_detectors` **passed** |
+| `agent_visible_mixed_pass` | **Still open** (no mixed agent-visible red-team ledger published) |
+| Claim split | **Unchanged** — synthetic canary partial ≠ mixed agent-visible gate |
+
 ### Allowed wording
 
 - "Parallax ships a default-deny Rust redaction engine and public-safe canary unit tests."

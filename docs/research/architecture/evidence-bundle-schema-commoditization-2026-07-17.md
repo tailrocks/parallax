@@ -94,6 +94,16 @@ OCSF GA still **`1.8.0`**; `/1.9.0/` still **404**. **Still not commoditized.**
 
 **Verdict unchanged:** still **not commoditized.** Kill "OTel commoditizes evidence-bundle schema" still **unfired**.
 
+**Pass 306 primary re-fetch (2026-07-18):**
+
+| Source | Finding |
+| --- | --- |
+| [semconv #1185](https://github.com/open-telemetry/semantic-conventions/issues/1185) | Still **open**; `updated_at` still **2025-10-24T14:40:05Z**; labels `cicd:phase-2`, `triage:accepted:ready-with-sig`. Title "Add incident attributes" — attributes only |
+| `model/` contents API | **90** top-level entries; name filter for incident/investigation/rca/evidence/bundle/postmortem/forensic/alert → **empty** |
+| [ocsf/ocsf-schema Latest](https://github.com/ocsf/ocsf-schema/releases/latest) | still **`1.8.0`** (2026-03-18) |
+
+**Still not commoditized.** Kill unfired.
+
 **Evidence class:** primary GitHub issue/tree + first-party release pages +
 vendor product docs (desk recheck). Not a measurement of A1 value.
 
