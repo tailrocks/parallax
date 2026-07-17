@@ -23,15 +23,15 @@ Both OSS-origin, self-hostable, OTLP-native, with a columnar/search backend. The
 
 ## Signal coverage
 
-| Signal | Elastic (shipped) | Parallax (planned) |
+| Signal | Elastic (shipped) | Parallax (pre-release; ✅🧪=code-shipped) |
 | --- | --- | --- |
-| Logs (search-grade) | ✅ **(the origin strength — full-text, analytics)** | ✅ OTLP logs (🏗) |
-| Metrics | ✅ | ✅ OTLP metrics (🏗) |
-| Traces / APM | ✅ (EDOT/OTLP) | ✅ OTLP traces (🏗) |
+| Logs (search-grade) | ✅ **(the origin strength — full-text, analytics)** | ✅🧪 OTLP logs (shipped, pre-release) |
+| Metrics | ✅ | ✅🧪 OTLP metrics (shipped, pre-release) |
+| Traces / APM | ✅ (EDOT/OTLP) | ✅🧪 OTLP traces (shipped, pre-release) |
 | Continuous profiling | ✅ | ❌ |
 | Synthetics | ✅ | ❌ |
 | SIEM / security | ✅ (unified obs + sec) | ❌ |
-| Errors / exceptions | 🟡 (queryable; no Sentry-grade issue lifecycle) | ✅ derived `error_event` + fingerprint (🏗) |
+| Errors / exceptions | 🟡 (queryable; no Sentry-grade issue lifecycle) | ✅🧪 derived `error_event` + fingerprint (shipped, pre-release) |
 | ES|QL / KQL query | ✅ | ❌ (SQL via GreptimeDB) |
 | Sentry envelope / DSN | ❌ | ✅ shipped |
 

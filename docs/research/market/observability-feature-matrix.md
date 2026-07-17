@@ -1,10 +1,11 @@
 # Observability Feature Matrix — Cross-Tool Comparison
 
-> **Superseded as the canonical comparison** by
-> [`competitors/README.md`](competitors/README.md) (wider, no-bias presence matrix).
-> This legacy cross-tool map (dated 2026-06-22, Parallax-wedge framing) is a
-> **source**; cells are being re-verified and migrated into `competitors/`. See
-> [PROGRESS.md](competitors/PROGRESS.md) for per-cell verification state.
+> **Historical source (not canonical).** Superseded by
+> [`competitors/README.md`](competitors/README.md) (wider, no-bias presence matrix)
+> and [code-reality-ledger.md](../code-reality-ledger.md) for Parallax cells.
+> Dated 2026-06-22; **many Parallax cells are stale** (e.g. MCP marked planned while
+> local-stdio MCP shipped; outcome loop marked ✅ while still unshipped). Do not
+> cite this matrix for present-tense product claims — use `competitors/` + ledger.
 
 Research date: 2026-06-22
 

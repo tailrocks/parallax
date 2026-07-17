@@ -16,12 +16,12 @@ These are not the same product. Datadog is a mature, closed, broad platform aime
 
 Datadog ingests and correlates essentially **every signal** an enterprise cares about, at maturity Parallax does not have:
 
-| Signal | Datadog (shipped) | Parallax (planned) |
+| Signal | Datadog (shipped) | Parallax (pre-release; ✅🧪=code-shipped) |
 | --- | --- | --- |
-| Traces / distributed tracing | ✅ full, 8 tracer languages + mobile + inferred spans | ✅ OTLP traces (🏗) |
-| Logs | ✅ full, 200+ parsers, pipeline processing | ✅ OTLP logs (🏗) |
-| Metrics | ✅ full, custom + 1000+ integrations | ✅ OTLP metrics (🏗) |
-| Errors / exceptions | ✅ Error Tracking — auto-grouping into issues, lifecycle, Git/IDE pivot | ✅ derived `error_event` + fingerprint (🏗) |
+| Traces / distributed tracing | ✅ full, 8 tracer languages + mobile + inferred spans | ✅🧪 OTLP traces (shipped, pre-release) |
+| Logs | ✅ full, 200+ parsers, pipeline processing | ✅🧪 OTLP logs (shipped, pre-release) |
+| Metrics | ✅ full, custom + 1000+ integrations | ✅🧪 OTLP metrics (shipped, pre-release) |
+| Errors / exceptions | ✅ Error Tracking — auto-grouping into issues, lifecycle, Git/IDE pivot | ✅🧪 derived `error_event` + fingerprint (shipped, pre-release) |
 | Continuous profiling | ✅ Continuous Profiler (wall/CPU/mem/lock/IO; Rust in beta) | ❌ |
 | RUM + session replay | ✅ RUM Measure/Investigate + Session Replay (web + mobile) | ❌ |
 | LLM / agent spans | ✅ Agent Observability — LLM tracing + evals + experiments + prompt tracking | ✅ (🏗) |
@@ -51,7 +51,7 @@ Honest framing: Datadog's storage is opaque but battle-tested at hyperscale (the
 ## Query & correlation
 
 - **Datadog:** unified pivoting across metrics↔traces↔logs↔RUM↔profiles↔infra↔network is the platform's core strength — click a trace, pivot to logs, profiles, the host, the deploy, the related synthetic test. Watchdog (anomaly/outlier/root-cause detection) and **Bits Investigation** auto-correlate across telemetry. This is genuinely best-in-class.
-- **Parallax:** correlation into a typed evidence graph + trace-to-log + run_id/invocation stitching + evidence pinning. The *design* (a bounded, queryable evidence bundle a coding agent can act on) is differentiated, but it is **planned/unproven** and narrower in cross-signal breadth than Datadog's shipped pivots.
+- **Parallax:** correlation into a typed evidence graph + trace-to-log + run_id/invocation stitching + evidence pinning. The *artifact* (bounded evidence bundle) **exists in code** but is **A1-unproven** for agent fix quality, and narrower in cross-signal breadth than Datadog's shipped pivots.
 
 **Verdict:** on cross-signal correlation as it exists today, **Datadog wins decisively.** Parallax's evidence-bundle abstraction is a different axis (agent-actionable, bounded, redacted) — not a like-for-like better correlation engine, and its value is unproven (A1 gate).
 

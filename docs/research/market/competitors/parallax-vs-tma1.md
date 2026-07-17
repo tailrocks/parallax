@@ -6,16 +6,19 @@
 > **Bottom line up front:** TMA1 is the **single closest architectural competitor
 > to Parallax** — a single Go binary that embeds GreptimeDB, ingests OTLP into
 > native tables, and serves a **read-only MCP "context bundle" to coding agents**.
-> On that specific design — embedded-GreptimeDB + single-binary + OTLP + read-only
-> MCP for agent loops — **TMA1 has shipped it (even at alpha), Parallax has not.**
-> Written plainly: TMA1 is ahead on the architecture-for-agent-loops bet. The
-> honest differentiator is product *intent* and *scope*: TMA1 is **local dev-machine
-> AI-coding-agent loop observability** (no production services, no Sentry, no
-> redaction gate, no metadata store, no fix-outcome loop). Parallax targets
-> **production-incident evidence** and the unproven bounded-redacted-bundle thesis.
-> Critical watch: **if TMA1 adds production-error derivation, Sentry ingest,
-> redaction, or an outcome loop, it is a direct collision.** As of 2026-07-17,
-> **that trigger has not fired.**
+> On **local agent-loop specialization and MCP tool breadth for that loop**, TMA1
+> remains ahead (even at alpha). **Parallax has also shipped** embedded-style
+> GreptimeDB supervision + Turso, OTLP gRPC/HTTP, Sentry-envelope ingest, derived
+> error events, local-stdio read-only MCP (`parallax-mcp`), and a code-level
+> bounded/redacted bundle assembler — see
+> [code-reality-ledger.md](../../code-reality-ledger.md). Remaining gaps are
+> **product maturity, local-agent polish, and unproven A1 bundle value**, not
+> "architecture only on paper." The honest differentiator is still product
+> *intent* and *scope*: TMA1 is **local dev-machine AI-coding-agent loop
+> observability**; Parallax targets **production-incident evidence** plus the
+> unproven portable redacted-bundle thesis. Critical watch: **if TMA1 adds
+> production-error derivation, Sentry ingest, redaction, or an outcome loop, it is
+> a direct collision.** As of 2026-07-17, **that trigger has not fired.**
 
 ## What each product is
 
@@ -35,16 +38,16 @@ Same shape (a typed object an agent reads); fundamentally different artifact. Do
 
 ## Signal coverage
 
-| Signal | TMA1 (shipped, alpha) | Parallax (planned) |
+| Signal | TMA1 (shipped, alpha) | Parallax (pre-release; ✅🧪=code-shipped) |
 | --- | --- | --- |
 | LLM / agent call traces (local) | ✅ core (records every LLM call) | ✅ (🏗) |
-| Production app traces (OTLP) | 🟡 (any OTel GenAI app can send; secondary) | ✅ OTLP traces (🏗) |
-| Production logs / metrics | ❌ (not a production-services backend) | ✅ OTLP logs/metrics (🏗) |
-| Errors / exceptions (production) | ❌ (no production error-event derivation) | ✅ derived `error_event` + fingerprint (🏗) |
+| Production app traces (OTLP) | 🟡 (any OTel GenAI app can send; secondary) | ✅🧪 OTLP traces (shipped, pre-release) |
+| Production logs / metrics | ❌ (not a production-services backend) | ✅🧪 OTLP logs/metrics (shipped, pre-release) |
+| Errors / exceptions (production) | ❌ (no production error-event derivation) | ✅🧪 derived `error_event` + fingerprint (shipped, pre-release) |
 | Anomaly detection | ✅ 6-rule (cost/sessions/build/anomaly) | 🟡 (🏗) |
 | Build / external-change / project state | ✅ (build sensor, external changes) | ✅ CI/deploy/change (🏗) |
 | Sentry envelope / DSN | ❌ | ✅ shipped |
-| Bounded/redacted/portable bundle | ❌ (live unversioned unredacted) | ✅ (🏗, A1) |
+| Bounded/redacted/portable bundle | ❌ (live unversioned unredacted) | 🟡🧪 code (A1 unproven) |
 
 **Verdict:** TMA1 is **narrow but deep on the local-agent-loop** (LLM calls + anomalies + build/changes), and ships that today. Parallax is **broader on production telemetry + error workflow** (error/Sentry path shipped; outcome loop unproven). They are scoped to different primary jobs; on raw coverage they barely overlap except at "agent traces."
 
@@ -89,7 +92,7 @@ Same shape (a typed object an agent reads); fundamentally different artifact. Do
 - **TMA1:** single Go binary (`CGO_ENABLED=0`), GreptimeDB child process, embedded JS dashboard, `~/.tma1/` data. **Local-only, single-user, no auth/multi-tenant.** Apache-2.0.
 - **Parallax:** single-binary Rust target, GreptimeDB + Turso, local-first + production tiers, air-gap-capable. Apache-2.0.
 
-**Verdict:** on **single-binary-local-first agent observability, TMA1 ships it; Parallax plans it.** On **production/multi-entity/multi-tenant scope, Parallax's design is broader** (TMA1 has none). TMA1 is local-only by intent; Parallax targets production — different deployment tiers.
+**Verdict:** on **local-agent-loop polish and MCP tool breadth for that loop, TMA1 still leads** (purpose-built alpha). Parallax **ships** supervised GreptimeDB + Turso, OTLP, Sentry envelope, UI/CLI/MCP, and production-oriented metadata — different maturity and scope, not "architecture planned-only." TMA1 is local-only by intent; Parallax targets production multi-entity — different deployment tiers.
 
 ## Operational footprint
 
@@ -119,17 +122,22 @@ Same shape (a typed object an agent reads); fundamentally different artifact. Do
 
 **Verdict:** **tied** — both Apache-2.0, fully open, no lock-in. No edge either way.
 
-## Pricing & economics
+## Pricing & economics (incl. hidden cost of "free")
 
-- **TMA1:** **free, Apache-2.0, no commercial product** (no pricing/cloud/SaaS).
-- **Parallax:** none public yet (pre-release).
+| | TMA1 | Parallax |
+| --- | --- | --- |
+| **Sticker price** | $0 (Apache-2.0, no commercial product) | **No public number** (pre-release); Apache-2.0 core |
+| **Hidden / total cost** | Operator time, GreptimeDB child process, alpha quality risk, no vendor support SLA | Same class of self-host ops (GreptimeDB + Turso + engine), plus incomplete maturity; no paid support yet |
+| **Contribute?** | ✅ open; small ecosystem (~100★) — patches welcome, few reviewers | ✅ open; also early ecosystem — contribution path real, throughput unproven |
+| **Lock-in** | Low (local, Apache, GreptimeDB native) | Low (OTLP + portable bundle design) |
+| **Ecosystem size** | Tiny; agent-hook niche | Tiny; production-incident niche |
 
-**Verdict:** both free/OSS. TMA1 has no monetization at all; Parallax plans open-core + managed cloud + outcome-priced fixer. Not a cost contest.
+**Verdict:** both free at the license layer. **"Free" is not zero-cost** — self-host ops, upgrade risk, and small ecosystems are real costs for both. Not a sticker-price contest; neither has a measured TCO study.
 
 ## Where TMA1 plainly wins (or matches)
 
-- **Shipped the embedded-GreptimeDB + single-binary + OTLP + read-only-MCP-for-agents architecture** Parallax is building (ahead on the architecture-for-agent-loops bet, even at alpha).
-- Read-only-safe MCP discipline (7 non-mutating tools) — the closest shipped thing to Parallax's safe-agent projection.
+- **Local agent-loop specialization** — records every LLM call + anomalies + build/external change sensors; MCP catalog (7 tools) is broader for that job than Parallax's current 2-tool local MCP.
+- Read-only-safe MCP discipline (7 non-mutating tools) — strong shipped agent-projection discipline; Parallax also ships read-only local MCP with a narrower tool surface.
 - Trivial local install + local dev-loop focus.
 - Apache-2.0, zero lock-in, zero cost.
 - Anomaly detection + build/external-change/project-state capture (loop-feedback signals).
@@ -139,12 +147,12 @@ Same shape (a typed object an agent reads); fundamentally different artifact. Do
 - **Production-incident scope** — TMA1 is dev-machine-local; Parallax targets production services. *(Real scope difference.)*
 - **Production error-event derivation + fingerprinting** — TMA1 has none. *(Real; Parallax shipped.)*
 - **Fix-outcome loop** — TMA1 has none. *(Real unoccupied cell; Parallax planned/unproven, A1.)*
-- **Bounded, versioned, redacted, portable bundle** — TMA1's bundle is live/unversioned/unredacted. *(Real artifact difference; Parallax planned/unproven, A1.)*
+- **Bounded, versioned, redacted, portable bundle** — TMA1's bundle is live/unversioned/unredacted. *(Real artifact difference; Parallax **code-shipped**, A1 **value unproven**.)*
 - **Sentry-envelope compatibility** — TMA1 has none. *(Real; Parallax shipped.)*
-- **Turso metadata split + durable-stream backpressure** — for production multi-entity state + replay. *(Design choice; unproven advantage.)*
-- **Rust vs Go** — Parallax's stated substrate. *(Minor; both compile to single binaries.)*
+- **Turso metadata split** — production multi-entity state. *(Design choice; scale advantage unproven.)*
+- **Rust vs Go** — different substrate. *(Minor; both compile to single binaries.)*
 
-> **Honest summary:** TMA1 is the reference competitor and #1 watch target. It **validates Parallax's core architecture** (embedded GreptimeDB + single binary + OTLP + read-only MCP works and ships). It also **narrows Parallax's wedge**: a read-only, local, agent-context projection already exists. Parallax's defensible delta is **production-incident focus** + **redaction-as-a-gate** + **fix-outcome loop** + **Sentry-envelope** (shipped) + **versioned/portable bundle** — residual planned/unproven (A1). If TMA1 extends to any of production-errors/Sentry/redaction/outcome, the collision is direct.
+> **Honest summary:** TMA1 is the reference competitor and #1 watch target. It **validates** the embedded-GreptimeDB + OTLP + read-only-MCP pattern in a shipping alpha. Parallax **also ships** that pattern plus production-oriented pieces (error derivation, Sentry envelope, Turso, UI/CLI, redacting bundle assembler). The remaining honest gap is **not "architecture only planned"** — it is **maturity, local-agent depth, and A1 (does the portable redacted bundle beat raw/TMA1 live context for fix quality?)**. If TMA1 extends to production-errors/Sentry/redaction/outcome, the collision is direct.
 
 ## Watch triggers (the point of tracking TMA1)
 

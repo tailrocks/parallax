@@ -31,15 +31,15 @@ Both touch "AI-driven investigation" and (now) "agent" framing, but Dynatrace is
 
 | Signal | Dynatrace (shipped) | Parallax (planned/shipped) |
 | --- | --- | --- |
-| Traces / APM | ✅ (OneAgent deep + OTLP) | ✅ OTLP traces (🏗) |
-| Logs | ✅ (Grail; K8s log module) | ✅ OTLP logs (🏗) |
-| Metrics | ✅ | ✅ OTLP metrics (🏗) |
+| Traces / APM | ✅ (OneAgent deep + OTLP) | ✅🧪 OTLP traces (shipped, pre-release) |
+| Logs | ✅ (Grail; K8s log module) | ✅🧪 OTLP logs (shipped, pre-release) |
+| Metrics | ✅ | ✅🧪 OTLP metrics (shipped, pre-release) |
 | Real-user / digital experience | ✅ (Real User + synthetics) | ❌ |
 | Continuous profiling | ✅ | ❌ |
 | Topology / Smartscape (live dep graph) | ✅ (the Davis substrate) | ❌ (🏗 evidence graph) |
 | Errors / exceptions | ✅ (OneAgent deep + Davis RCA) | ✅ derived `error_event` + fingerprint (🧪 shipped) |
 | Davis AI causal RCA | ✅ (distinctive) | 🟡 (🏗) |
-| LLM / agent obs (AI Observability) | ✅ (OTLP) | ✅ (🏗) |
+| LLM / agent obs (AI Observability) | ✅ (OTLP) | 🟡🧪 agent-session modules (partial) |
 | Sentry envelope / DSN | ❌ | ✅ shipped (sentry_http.rs) |
 
 **Verdict:** Dynatrace's coverage is comprehensive and all shipped. On coverage, **Dynatrace wins decisively.** Parallax ships Sentry-envelope ingest (Dynatrace has none) — a real Parallax-favorable cell.

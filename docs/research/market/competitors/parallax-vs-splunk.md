@@ -24,9 +24,9 @@ Both OTLP/OTel-native. Splunk Obs Cloud is a closed enterprise full-stack SaaS; 
 
 | Signal | Splunk Obs Cloud (shipped) | Parallax (planned/shipped) |
 | --- | --- | --- |
-| Traces / APM | ✅ (**NoSample™** 100% sampling) | ✅ OTLP traces (🏗) |
-| Logs | ✅ (Log Observer) | ✅ OTLP logs (🏗) |
-| Metrics | ✅ (Infrastructure Monitoring) | ✅ OTLP metrics (🏗) |
+| Traces / APM | ✅ (**NoSample™** 100% sampling) | ✅🧪 OTLP traces (shipped, pre-release) |
+| Logs | ✅ (Log Observer) | ✅🧪 OTLP logs (shipped, pre-release) |
+| Metrics | ✅ (Infrastructure Monitoring) | ✅🧪 OTLP metrics (shipped, pre-release) |
 | RUM | ✅ | ❌ |
 | Synthetics | ✅ | ❌ |
 | Errors / exceptions | 🟡 (queryable; no Sentry-grade issue lifecycle) | ✅ derived `error_event` + fingerprint (🧪 shipped) |

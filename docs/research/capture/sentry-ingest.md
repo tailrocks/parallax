@@ -35,6 +35,12 @@ This note consolidates the following previously-separate research files, each pr
 
 ## Sentry-Compatible Ingestion (Architecture and Design)
 
+> **Historical design body (2026-05-25).** The executive framing below still says
+> "future adapter / not V1." **That is superseded by shipped code and plan 118
+> DONE (2026-07-17).** Read the status banner at the top of this file and
+> [code-reality-ledger.md](../code-reality-ledger.md) for present tense.
+> Multi-SDK fixture/compatibility claims remain **not measured**.
+
 _Provenance: merged verbatim from `sentry-compatible-ingestion.md` (2026-05-29 restructure)._
 
 <!-- markdownlint-disable MD013 -->
@@ -43,20 +49,23 @@ Research date: 2026-05-25
 
 ### Executive Summary
 
-Parallax should keep the Sentry SDK ingestion surface as future migration
-compatibility, but it should not copy Sentry's internal architecture and should
-not make this V1 scope.
+**Superseded product status:** Sentry envelope ingest is **shipped** on the
+bounded path (HTTP envelope → parse → derive `error_event` → fingerprint/issue).
+It is not "future-only" and not excluded from V1. Residual risk is **public
+multi-SDK compatibility wording**, not path existence.
 
-The future adapter target is:
+Original design intent (still correct on boundary): keep the Sentry SDK
+ingestion surface as **migration compatibility**, do **not** copy Sentry's
+internal architecture (Relay, Kafka, Snuba, sessions, replay, profiling, billing).
+
+The adapter target (now implemented on the core path) is:
 
 > Accept Sentry envelopes for error events, normalize the event payload into a
 > Parallax-owned error model, compute deterministic grouping, and correlate the
 > event with OpenTelemetry traces/logs/metrics.
 
-This would give users the main migration benefit: existing Sentry SDKs could
-keep sending production error events with minimal application changes. It also
-avoids the main trap: reimplementing Relay, Kafka, Snuba, sessions, replay,
-profiling, billing quotas, and the full Sentry product.
+Users get the migration benefit of existing Sentry SDKs with minimal app
+changes, without reimplementing the full Sentry product.
 
 ### Recommendation
 

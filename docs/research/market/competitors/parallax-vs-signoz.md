@@ -71,9 +71,15 @@ uncertain). **No per-seat fees.** Verify pricing against live
 [signoz.io/pricing](https://signoz.io/pricing/) before quoting — vendor pages
 change.
 
-> Parallax pricing: **no public number** (pre-release). Closest proxy: self-hosted
-> compute cost (you run GreptimeDB+Turso on your own infra). A direct
-> Parallax-vs-SigNoz cost figure is **benchmark-dependent and unmeasured**.
+> **Economics (multi-angle):** SigNoz Community is **$0 software** with **non-zero
+> ops cost** (ClickHouse + collector + Postgres/SQLite; ~5-container local).
+> Teams Cloud trades money for reduced ops. Parallax: **no public number**
+> (pre-release); closest proxy = self-hosted GreptimeDB+Turso compute + eng time.
+> **Contribute:** SigNoz MIT core accepts OSS PRs; large community (30k★). Parallax
+> Apache-2.0 also accepts PRs; **tiny** ecosystem today. **Lock-in:** both self-host
+> OTLP-friendly; SigNoz ClickHouse stack vs Parallax GreptimeDB+Turso — migration
+> cost is real either way. A direct Parallax-vs-SigNoz TCO figure is
+> **benchmark-dependent and unmeasured**.
 
 ## Axis-by-axis comparison
 
@@ -84,15 +90,16 @@ change.
 | Logs | ✅ | ✅ (V1) | tie |
 | Traces / distributed tracing | ✅ mature | ✅ (V1) | **SigNoz** (depth, service-map) |
 | Metrics / dashboards | ✅ full | 🟡 partial / planned | **SigNoz** |
-| Errors / exceptions | ✅ OTel span-events (queryable, **no issue lifecycle**) | ✅ derived `error_event` + fingerprint (V1) | **SigNoz** on tooling maturity; **Parallax** on error-as-managed-event model (unproven value) |
+| Errors / exceptions | ✅ OTel span-events (queryable, **no issue lifecycle**) | ✅🧪 derived `error_event` + fingerprint (shipped, pre-release) | **SigNoz** on tooling maturity; **Parallax** on error-as-managed-event model (unproven value) |
 | Continuous profiling | 🟡 partial | ❌ | **SigNoz** |
 | RUM / session replay | ❌ | ❌ | tie (neither) |
-| LLM / agent spans | ✅ LLM observability | 🟡 planned | **SigNoz** (shipped) |
-| CI / test results | ❌ | ✅ planned (CI/test evidence capture) | **Parallax** (planned — unproven) |
+| LLM / agent spans | ✅ LLM observability | 🟡🧪 agent-session + Claude Code modules (partial) | **SigNoz** (shipped product depth) |
+| CI / test results | ❌ | 🟡🧪 test explorer + span-derived results (partial; plans 154/155) | **Parallax** (partial code; maturity unproven) |
 
 SigNoz is the broader, more mature signal platform today. Parallax's signal
-*model* differs (derived error events, CI/agent evidence) but most of that is
-not yet shipped or proven.
+*model* differs (derived error events, CI/agent evidence): error derivation and
+Sentry envelope are **shipped**; test surfaces are **partial**; platform maturity
+and A1 remain unproven.
 
 ### Ingestion & transport
 

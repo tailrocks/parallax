@@ -26,10 +26,10 @@ These overlap most directly on **error tracking + tracing**. Sentry is a broad p
 
 | Signal | Sentry (shipped, 2026) | Parallax (pre-release; many surfaces shipped) |
 | --- | --- | --- |
-| Errors / exceptions | ✅ best-in-class grouping + lifecycle + ownership | ✅ derived `error_event` + fingerprint (🏗) |
-| Tracing / distributed traces | ✅ | ✅ OTLP traces (🏗) |
-| Logs | ✅ | ✅ OTLP logs (🏗) |
-| Metrics | ✅ **Metrics (new 2026)** — via Sentry SDK, not OTLP | ✅ OTLP metrics (🏗) |
+| Errors / exceptions | ✅ best-in-class grouping + lifecycle + ownership | ✅🧪 derived `error_event` + fingerprint (shipped, pre-release) |
+| Tracing / distributed traces | ✅ | ✅🧪 OTLP traces (shipped, pre-release) |
+| Logs | ✅ | ✅🧪 OTLP logs (shipped, pre-release) |
+| Metrics | ✅ **Metrics (new 2026)** — via Sentry SDK, not OTLP | ✅🧪 OTLP metrics (shipped, pre-release) |
 | Continuous profiling | ✅ UI Profiling + Continuous Profiling | ❌ |
 | Session replay | ✅ | ❌ |
 | Cron / uptime monitoring | ✅ | ❌ (out of scope) |
@@ -165,7 +165,17 @@ Pay-as-you-go overage (Team, per error, descending tiers): 50k–100k **$0.00036
 
 **Parallax pricing:** none public yet (pre-release). Stated shape: Apache-2.0 open core + gated enterprise-ops + managed cloud + outcome-priced fixer.
 
-**Honest cost read:** Sentry's entry is cheap (free / $26) and the per-error unit is small, but volume at scale + profiling + replay + Seer add-ons compound (event-based metering across errors/logs/metrics/spans/replays/profile hours). Whether Parallax self-host is cheaper at a given workload is **benchmark-dependent and unmeasured** — do not assert a saving not measured.
+**Honest cost read (money + hidden axes):**
+
+| Cost axis | Sentry | Parallax |
+| --- | --- | --- |
+| Sticker entry | Free / $26 Team — low | No public product price; self-host compute |
+| Usage metering | Event-based (errors/logs/spans/replays/profile hours) + Seer seats | No SaaS meter by design; ops/hardware is the bill |
+| Self-host ops | **High** (~20–40 containers, heavy) — free license ≠ free ops | **Lower target**, pre-release — still real eng time |
+| Contribute features | FSL source-available; company roadmap controls | Apache-2.0 — external PR path exists; ecosystem small |
+| Closed/open tradeoff | Cannot fully fork commercial trajectory; Seer cloud-centric | Can fork/air-gap; no managed Seer-equivalent |
+
+Sentry's entry is cheap (free / $26) and the per-error unit is small, but volume at scale + profiling + replay + Seer add-ons compound. Whether Parallax self-host is cheaper at a given workload is **benchmark-dependent and unmeasured** — do not assert a saving not measured.
 
 ## Where Sentry plainly wins
 

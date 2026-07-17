@@ -15,11 +15,12 @@
 > credible alternative, identifies what each covers, and argues both FOR and AGAINST
 > building Parallax. The conclusion is not predetermined — the evidence leads.
 
-> **Status (2026-07-12): historical market recommendation, not an implementation
-> roadmap.** Current evidence-bundle reconciliation, conditional Sentry migration,
-> and fixer/outcome-loop work is owned only by plans 104, 118, and 123 in
-> [`plans/`](../../../plans/). Market gates remain research evidence; they do not
-> authorize product work from this file.
+> **Status (2026-07-12; Sentry note updated 2026-07-17): historical market
+> recommendation, not an implementation roadmap.** Sentry envelope path and plan
+> 118 are **DONE**; fixer/outcome-loop residual is plan 123. Canonical comparisons:
+> [`competitors/`](competitors/) + [code-reality-ledger.md](../code-reality-ledger.md).
+> Market gates remain research evidence; they do not authorize product work from
+> this file.
 
 ---
 

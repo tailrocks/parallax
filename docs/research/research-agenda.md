@@ -4,15 +4,17 @@
 
 Living backlog of research still needed to validate and extend the **shipped Parallax V1**, ranked
 cheapest-to-kill-first. This is no longer a pre-build gate or implementation backlog: V1 ships as a
-17-crate Rust workspace with CLI/server, OTLP and Sentry-envelope ingest, GraphQL, GreptimeDB +
-Turso, evidence/redaction/analysis, alerting and SSE, plus a 19-route UI. Unfinished engineering is
-owned only by active numbered files in [`plans/`](../../plans/). The full per-assumption proof-gate list
-(A1–A7 and the conformance ledgers) lives in
-[decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md); this
-file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed. Last
-updated 2026-07-17 after V1 shipment. A1 and A2 remain product/market validation risks, not blockers
-to code that already shipped. Autonomous-loop kernels remain PoCs; local-stdio MCP graduated
-(plan 112 DONE); fixer outcome work remains active in plan 123.
+17-crate Rust workspace with CLI/server, OTLP and Sentry-envelope ingest (plan 118 DONE), GraphQL
+(**80** queries / **15** mutations), GreptimeDB + Turso, evidence/redaction/analysis, alerting and
+SSE, TanStack Start UI, and local-stdio MCP (plan 112 DONE). **Present-tense code claims** live in
+[code-reality-ledger.md](code-reality-ledger.md) — use that before asserting capability here or in
+market notes. Unfinished engineering is owned only by active numbered files in
+[`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
+lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
+this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
+Last updated 2026-07-17 after V1 shipment + research code-reality audit. A1 and A2 remain
+product/market validation risks, not blockers to code that already shipped. Autonomous-loop kernels
+remain PoCs; fixer outcome work remains active in plan 123.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in

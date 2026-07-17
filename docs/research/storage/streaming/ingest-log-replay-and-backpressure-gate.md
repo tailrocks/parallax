@@ -227,8 +227,8 @@ shipped architecture:
   historical stream-layer evaluation behind this dormant protocol.
 - [Technical implementation concept](../../architecture/implementation-concept.md)
   preserves the historical candidate topology; it does not authorize it.
-- [Sentry-compatible ingestion](../../capture/sentry-ingest.md) records future
-  raw-envelope durability/replay requirements.
+- [Sentry-compatible ingestion](../../capture/sentry-ingest.md) — core envelope
+  path shipped; raw-envelope durability/replay requirements remain design notes.
 - [OpenTelemetry protocol and context layer](../../capture/otlp.md) records the
   current OTLP batch replay/backpressure contract.
 - [Storage benchmark prototype](../benchmark-plan.md) is separate:

@@ -23,9 +23,12 @@ evidence bundles to a separate coding agent that proposes the fix.
 
 ## Current Status
 
-This repository is in research and product-discovery mode. Expect fast
-iteration on `main`, plain Markdown notes, and frequent restructuring as the
-idea becomes sharper.
+V1 product code ships under [`crates/`](crates/) and [`ui/`](ui/) on `main`
+(local GreptimeDB + Turso profile). Research under
+[`docs/research/`](docs/research/) is the evidence and decision record; treat
+notes as theories until primary sources or the
+[code-reality ledger](docs/research/code-reality-ledger.md) support them.
+Expect iteration on `main` as open plans and validation gates close.
 
 ## Using It
 
@@ -49,6 +52,7 @@ The research record lives under [`docs/research/`](docs/research/) and is organi
 reach "what is Parallax, which storage engine, and why" in a few minutes:
 
 - **[Research index](docs/research/README.md)** — the navigable map (vision, decisions, architecture, capture, storage, validation, market, reference) with a "current answers" table.
+- **[Code-reality ledger](docs/research/code-reality-ledger.md)** — research claims vs shipped `crates/`/`ui/` status (use this before trusting older research prose).
 - **[Problem, audience, and product shape](docs/research/00-vision/problem-audience-product-shape.md)** — what Parallax solves, who it is for (developer on a dev machine first), and the shape: best of three worlds (OTel collect, Sentry organize, Grafana understand), agent-first, CLI + API + UI over one canonical API.
 - **[North star: the autonomous fix loop](docs/research/00-vision/north-star-autonomous-fix-loop.md)** — the named moonshot (earned autonomy, the impossible triangle) and how it coexists with the narrow wedge. Build-order note: the moonshot is the ceiling, not the schedule.
 - **[V1 scope](docs/research/architecture/v1-scope.md)** — the self-sufficient local-machine contract and shipped delivery inventory (install, engine supervision, ingest, run wrapper, CLI, retention, docs, exclusions, and acceptance scenarios).
@@ -89,20 +93,21 @@ Code `/loop` runbook.
 
 ## Working Direction
 
-The current recommended wedge is:
+What is already on the critical path (see
+[code-reality ledger](docs/research/code-reality-ledger.md) for status detail):
 
-1. Start OpenTelemetry-native: ingest OTLP traces, logs, and metrics from Rust
-   services and CLI apps, and derive Parallax-owned error events from exception
-   spans and ERROR/FATAL logs.
-2. Treat Sentry-compatible error ingestion as a future migration adapter, not
-   V1 scope.
-3. Store raw telemetry in GreptimeDB native observability tables and mutable
-   product metadata in Turso. `StorageAdapter` separates capabilities and test
-   fakes; it is not an engine-substitution promise. ClickHouse remains a
-   benchmark comparator only.
-4. Use a Rust message stream such as Apache Iggy only if replay, buffering, or
-   processor separation is worth the operational cost.
-5. Trace coding-agent sessions and CLI invocations as first-class execution
-   evidence.
-6. Produce evidence-backed context bundles for humans and coding agents.
-7. Keep the UI and deployment model much simpler than self-hosted Sentry.
+1. **OTLP-native ingest** of traces, logs, and metrics; derive Parallax-owned
+   error events from exception spans and ERROR/FATAL logs.
+2. **Sentry-envelope HTTP ingest is shipped** (bounded adapter; multi-SDK
+   compatibility ledger still unproven — not a deferred V1 exclusion).
+3. **GreptimeDB native OTLP tables + Turso metadata are mandatory.**
+   `StorageAdapter` is a capability/test boundary, not an engine-substitution
+   promise. ClickHouse is a research/benchmark comparator only.
+4. A durable message broker (e.g. Iggy) only if replay/backpressure measurement
+   justifies the ops cost — not a default product dependency.
+5. CLI invocations and coding-agent sessions as first-class execution evidence
+   (capture adapters still deepen under active plans).
+6. Bounded, redacted evidence bundles for humans and coding agents (bundle
+   **value** vs raw context remains the open A1 gate).
+7. Keep self-host ops much simpler than self-hosted Sentry; prove with
+   measurement, not slogans.

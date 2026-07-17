@@ -24,9 +24,9 @@ Both build a **relationship/evidence graph** over telemetry and pursue an **agen
 
 | Signal | Observe (shipped) | Parallax (planned/shipped) |
 | --- | --- | --- |
-| Logs | ✅ (data-lake columnar) | ✅ OTLP logs (🏗) |
-| Metrics | ✅ | ✅ OTLP metrics (🏗) |
-| Traces | ✅ (OTLP) | ✅ OTLP traces (🏗) |
+| Logs | ✅ (data-lake columnar) | ✅🧪 OTLP logs (shipped, pre-release) |
+| Metrics | ✅ | ✅🧪 OTLP metrics (shipped, pre-release) |
+| Traces | ✅ (OTLP) | ✅🧪 OTLP traces (shipped, pre-release) |
 | **O11y Knowledge Graph / relationship model** | ✅ **(distinctive)** | 🟡 evidence-graph (🏗) |
 | Errors / exceptions | 🟡 (queryable; no Sentry-grade lifecycle) | ✅ derived `error_event` + fingerprint (🧪 shipped) |
 | **AI SRE + o11y.ai Agents** | ✅ (agent overlap) | ✅ bounded bundle (🏗, A1) |

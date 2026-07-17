@@ -24,15 +24,15 @@ These overlap maximally on architecture — both Rust, single-binary, self-host,
 
 ## Signal coverage
 
-| Signal | OpenObserve (shipped) | Parallax (planned) |
+| Signal | OpenObserve (shipped) | Parallax (pre-release; ✅🧪=code-shipped) |
 | --- | --- | --- |
-| Traces | ✅ | ✅ OTLP traces (🏗) |
-| Logs | ✅ (strength — full-text, tantivy index) | ✅ OTLP logs (🏗) |
-| Metrics | ✅ | ✅ OTLP metrics (🏗) |
+| Traces | ✅ | ✅🧪 OTLP traces (shipped, pre-release) |
+| Logs | ✅ (strength — full-text, tantivy index) | ✅🧪 OTLP logs (shipped, pre-release) |
+| Metrics | ✅ | ✅🧪 OTLP metrics (shipped, pre-release) |
 | Frontend / RUM + session replay | ✅ | ❌ |
 | Data pipelines / VRL transform | ✅ | 🟡 (🏗) |
 | LLM observability | ✅ | ✅ (🏗) |
-| Errors / exceptions | 🟡 (queryable; no Sentry-grade issue lifecycle) | ✅ derived `error_event` + fingerprint (🏗) |
+| Errors / exceptions | 🟡 (queryable; no Sentry-grade issue lifecycle) | ✅🧪 derived `error_event` + fingerprint (shipped, pre-release) |
 | Dashboards / alerts | ✅ mature | 🟡 minimal (🏗) |
 
 **Verdict:** OpenObserve's coverage is broader and all shipped. On coverage, **OpenObserve wins decisively.** No native Sentry-grade error-issue lifecycle (same gap as Grafana/Honeycomb) — a cell Parallax's design targets.

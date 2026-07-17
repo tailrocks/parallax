@@ -602,9 +602,8 @@ The sequence was organized around this product question:
    mistakes without exploding storage cost?
 5. What redaction defaults are safe enough for self-hosted teams that still do
    not want secrets persisted forever?
-6. Later: which subset of the Sentry envelope spec is enough for migration?
-7. Later: how close must Sentry DSN/auth behavior be for existing SDKs to work
-   unchanged?
+6. **(Partial — core path shipped):** which multi-SDK envelope subset is enough for public "Sentry-compatible" wording? (ledger unproven)
+7. **(Partial):** how close must Sentry DSN/auth behavior be for existing SDKs unchanged?
 
 ## Historical Recommendation
 

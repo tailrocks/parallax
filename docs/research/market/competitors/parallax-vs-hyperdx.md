@@ -50,12 +50,12 @@ as "Datadog without the price tag." Now also distributed by ClickHouse Inc. as
 
 ### Signal coverage
 
-| Signal | HyperDX (shipped) | Parallax (planned) | Who |
+| Signal | HyperDX (shipped) | Parallax (pre-release; ✅🧪=code-shipped) | Who |
 |---|---|---|---|
-| Logs | ✅ Lucene search | ✅ OTLP logs (🏗) | **HyperDX** (search maturity) |
-| Traces | ✅ OTLP | ✅ OTLP traces (🏗) | **HyperDX** (maturity) |
-| Metrics | ✅ | ✅ OTLP metrics (🏗) | **HyperDX** |
-| Errors / exceptions | ✅ (errors tab) | ✅ derived `error_event` + fingerprint (🏗) | **HyperDX** (maturity) |
+| Logs | ✅ Lucene search | ✅🧪 OTLP logs (shipped, pre-release) | **HyperDX** (search maturity) |
+| Traces | ✅ OTLP | ✅🧪 OTLP traces (shipped, pre-release) | **HyperDX** (maturity) |
+| Metrics | ✅ | ✅🧪 OTLP metrics (shipped, pre-release) | **HyperDX** |
+| Errors / exceptions | ✅ (errors tab) | ✅🧪 derived `error_event` + fingerprint (shipped, pre-release) | **HyperDX** (maturity) |
 | **Session replay / RUM** | ✅ **core** | ❌ | **HyperDX** (Parallax has none) |
 | Profiling | ❌ | ❌ | tie (neither) |
 | LLM / agent spans | ❌ | 🟡 planned | **Parallax** (planned) |

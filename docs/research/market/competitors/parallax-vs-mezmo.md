@@ -25,12 +25,12 @@
 | Signal | Mezmo (shipped) | Parallax (planned/shipped) |
 | --- | --- | --- |
 | Telemetry pipeline (profile/transform/route in flight) | ✅ **(the core)** | ❌ (no pipeline layer) |
-| Log management (LogDNA) | ✅ (K8s-native, streaming) | ✅ OTLP logs (🏗) |
+| Log management (LogDNA) | ✅ (K8s-native, streaming) | ✅🧪 OTLP logs (shipped, pre-release) |
 | Cost/volume governance (drop/sample/optimize) | ✅ (70%-savings) | ❌ |
 | Mezmo Flow (auto-optimize) | ✅ | ❌ |
-| **Telemetry storage / backend** | 🟡 (LogDNA store; pipeline forwards) | ✅ GreptimeDB (🏗) |
+| **Telemetry storage / backend** | 🟡 (LogDNA store; pipeline forwards) | ✅🧪 GreptimeDB (shipped, pre-release) |
 | Error derivation / fingerprinting | ❌ | ✅ derived `error_event` (🧪 shipped) |
-| Evidence bundle / agent context | ❌ | ✅ (🏗, A1) |
+| Evidence bundle / agent context | ❌ | 🟡🧪 code (A1 unproven) |
 | Sentry envelope / DSN | ❌ | ✅ shipped |
 
 **Verdict:** **different layers.** Mezmo excels at *routing/optimizing/governing* telemetry in flight; Parallax excels (in design) at *deriving/serving* evidence from telemetry. Mezmo **does not derive errors or serve agent context** — exactly Parallax's layers.

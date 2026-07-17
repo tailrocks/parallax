@@ -26,6 +26,22 @@
 3. "Better" is always scoped to a named axis with evidence — never a vague verdict.
 4. Marketing language from any vendor is a lead, not a fact. Confirm against docs, source, changelogs, pricing pages, or measurement.
 5. When a claim cannot be proven, mark it **unproven** and say what would prove it. Never present an unproven claim as settled.
+6. **Parallax product cells must match [code-reality-ledger.md](../../code-reality-ledger.md).** Shipped code is ✅🧪, not 🏗 planned. Unproven product value stays unproven even when code exists.
+7. **Corrections welcome.** If a cell is wrong, open a PR with a dated primary source (docs, pricing page, GitHub release, crate path) that falsifies it. Prefer transparency over brand protection.
+
+### Economics & cost axes (required on every deep-dive)
+
+Every `parallax-vs-*.md` should cover **all** of the following, not only features:
+
+| Axis | What to record |
+| --- | --- |
+| **Public price** | Sticker tiers with date + URL, or **no public number** |
+| **Hidden / total cost** | Metering surprises, seat add-ons, AI credits, support floors; for OSS: **self-host TCO** (ops, HA, upgrades, on-call) |
+| **License & contribute** | Can outsiders contribute features? Fork? Air-gap? AGPL/FSL/ELv2/closed restrictions |
+| **Lock-in** | Proprietary formats, SaaS-only store, migration cost |
+| **Ecosystem size** | Integrations, community, hiring pool — small OSS can mean real opportunity cost |
+
+Open-source **access** can be free while **ops and time** are not. Closed SaaS **money** can buy zero-ops while **contribute-block and lock-in** are real costs. Write both sides.
 
 ### Real-numbers policy
 
@@ -138,7 +154,7 @@ Cost/performance cells are **⚪ benchmark-dependent** — not filled until meas
 
 1. **On breadth, maturity, scale, enterprise readiness, and shipped AI features, the incumbents (Datadog especially) are far ahead of pre-release Parallax.** That is the plain reality; hiding it would defeat the purpose.
 2. **Parallax's shipped-in-code (pre-release) surface is real but unproven:** OTLP ingest of all three signals into GreptimeDB native tables, Sentry-envelope ingest, derived error events + fingerprints, span-derived test results, and a bounded redacted evidence bundle (A1-unvalidated). **Planned-only:** remote MCP, AI root-cause, evals, SSO/RBAC, fix-outcome loop. **Shipped agent surface:** local-stdio MCP. The defensible axes today are openness/self-hostability/cost transparency/data ownership; the bundle/outcome edge is gated behind A1.
-3. **No product — open or closed — ships all of:** OTLP-native + (future) Sentry-envelope ingest + a portable, versioned, redacted evidence bundle + a read-only safe agent projection + a fix-outcome loop, from a telemetry store. That combination is Parallax's thesis, but "no one ships it" is not evidence it is valuable — that is exactly the A1 gate.
+3. **Combination claim (honest):** Parallax **ships code** for OTLP-native + Sentry-envelope ingest + a portable/versioned/redacted evidence-bundle assembler + local-stdio read-only MCP. **Nobody (including Parallax) has proven** that the bundle improves agent fix quality (A1), and the **fix-outcome loop is not shipped**. "Unique combination in code" ≠ "valuable product" — A1 remains the gate.
 4. **The cells most likely to be wrong are the Parallax column (self-assessed, bias-prone) and the AI-native column (fast-moving).** Both are flagged for re-verification first on every pass.
 5. **Parallax's agent-context thesis faces shipped pressure from *three layers* at once** — and must beat (or complement) all of them, not assume superiority:
    - **Telemetry-native-store layer:** [TMA1](parallax-vs-tma1.md) ships embedded-GreptimeDB + read-only MCP for coding agents (Parallax's own substrate, narrower scope).

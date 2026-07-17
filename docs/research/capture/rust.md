@@ -255,7 +255,7 @@ Rust app
   -> Sentry-like UI            (human: secondary)
 
 [optional, later] eBPF agent -> infra RED metrics, service maps, CPU profiles
-[future] Sentry-compatible panic/error layer -> same Parallax error_event model
+[shipped] Sentry-envelope path -> same Parallax error_event model (multi-SDK ledger unproven)
 ```
 
 The error path and the telemetry path share the ingest gateway and stream. eBPF,

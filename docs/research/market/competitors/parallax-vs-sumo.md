@@ -22,9 +22,9 @@ Both OTLP/OTel-capable. Sumo is a closed logs-first + SIEM SaaS; Parallax is an 
 
 | Signal | Sumo Logic (shipped) | Parallax (planned/shipped) |
 | --- | --- | --- |
-| Logs (analytics) | ✅ **(origin strength — logs-first intelligence)** | ✅ OTLP logs (🏗) |
-| Metrics | ✅ | ✅ OTLP metrics (🏗) |
-| Traces / APM | ✅ | ✅ OTLP traces (🏗) |
+| Logs (analytics) | ✅ **(origin strength — logs-first intelligence)** | ✅🧪 OTLP logs (shipped, pre-release) |
+| Metrics | ✅ | ✅🧪 OTLP metrics (shipped, pre-release) |
+| Traces / APM | ✅ | ✅🧪 OTLP traces (shipped, pre-release) |
 | RUM | ✅ | ❌ |
 | **Cloud SIEM / security** | ✅ (distinctive) | ❌ |
 | Errors / exceptions | 🟡 (log/metric-centric; no Sentry-grade lifecycle) | ✅ derived `error_event` + fingerprint (🧪 shipped) |

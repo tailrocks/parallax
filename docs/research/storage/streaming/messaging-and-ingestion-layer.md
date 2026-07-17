@@ -5,10 +5,12 @@
 Research date: 2026-05-25
 
 > **Historical research note, not an implementation plan (reconciled
-> 2026-07-12).** Parallax currently uses its bounded local raw-frame spool and
-> in-process worker; GreptimeDB + Turso remain mandatory. No external broker,
-> alternate telemetry database, or broker fallback is authorized. Current
-> ingest-health evidence is preserved in the
+> 2026-07-12; Sentry line corrected 2026-07-17).** Parallax currently uses its
+> bounded local raw-frame spool and in-process worker; GreptimeDB + Turso remain
+> mandatory. No external broker, alternate telemetry database, or broker
+> fallback is authorized. **Sentry envelope HTTP ingest is shipped** (not
+> "future after V1" — body text below may still say that; treat as historical).
+> Current ingest-health evidence is preserved in the
 > [Plan 113 validation](../../validation/2026-07-13-plan-113-ingest-health.md).
 > The candidate comparisons and dormant experiment protocol below become
 > executable only after the measured broker trigger in
@@ -414,7 +416,7 @@ Object storage belongs primarily behind the database/storage layer:
 ```text
 parallax-server
   - HTTP/gRPC OTLP endpoint
-  - future HTTP Sentry envelope endpoint after V1
+  - HTTP Sentry envelope endpoint (shipped on main; multi-SDK ledger unproven)
   - local WAL/outbox
   - in-process normalizer/grouping/storage writer
 greptimedb standalone

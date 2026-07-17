@@ -28,7 +28,7 @@ Both touch "evaluation" of AI behavior, but **Braintrust = LLM-app eval/experime
 | Datasets / prompt playground | ✅ | ❌ |
 | Production LLM tracing/monitoring | ✅ | ✅ (🏗) |
 | Cost tracking (integrated w/ experiments) | ✅ | ❌ |
-| Production app traces/logs/metrics (OTLP) | 🟡 (LLM-trace-centric) | ✅ OTLP-native (🏗) |
+| Production app traces/logs/metrics (OTLP) | 🟡 (LLM-trace-centric) | ✅🧪 OTLP-native (shipped, pre-release) |
 | Errors / exceptions (production backend) | ❌ | ✅ derived `error_event` + fingerprint (🧪 shipped) |
 | Sentry envelope / DSN | ❌ | ✅ shipped |
 

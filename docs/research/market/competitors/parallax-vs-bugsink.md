@@ -51,13 +51,13 @@ sharply on scope (Bugsink = error-only product; Parallax = full-signal + agent-c
 | --- | --- | --- |
 | Errors / exceptions | ✅ **(the entire product — Sentry-SDK-native issue lifecycle)** | ✅ derived `error_event` + fingerprint (🧪 shipped) |
 | Sentry event/envelope ingest | ✅ **full Sentry server** (grouping/lifecycle) | ✅ envelope ingest only (`sentry_http.rs`) |
-| Traces (OTLP) | ❌ | ✅ OTLP traces (🏗) |
-| Logs (OTLP) | ❌ | ✅ OTLP logs (🏗) |
-| Metrics (OTLP) | ❌ | ✅ OTLP metrics (🏗) |
+| Traces (OTLP) | ❌ | ✅🧪 OTLP traces (shipped, pre-release) |
+| Logs (OTLP) | ❌ | ✅🧪 OTLP logs (shipped, pre-release) |
+| Metrics (OTLP) | ❌ | ✅🧪 OTLP metrics (shipped, pre-release) |
 | Continuous profiling | ❌ | ❌ |
 | RUM / session replay | ❌ | ❌ |
 | LLM / agent spans | ❌ | 🟡🧪 (in code) |
-| Evidence bundle / agent context | ❌ | ✅ (🏗, A1) |
+| Evidence bundle / agent context | ❌ | 🟡🧪 code (A1 unproven) |
 
 **Verdict:** **Bugsink is error-only and deep; Parallax is multi-signal and
 incomplete (pre-release).** On the Sentry/error-tracking axis Bugsink is the more

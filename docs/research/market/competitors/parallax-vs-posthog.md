@@ -30,7 +30,7 @@ Both OSS, self-hostable, with an LLM/agent-obs surface. But the **core domains d
 | Feature flags / experiments | ✅ | ❌ |
 | Surveys / CDP | ✅ | ❌ |
 | **LLM / agent observability** | ✅ (newer — tracing/evals) | ✅ (🏗) |
-| Production app traces/logs/metrics (OTLP) | 🟡 (event-centric, not a prod-telemetry backend) | ✅ OTLP-native (🏗) |
+| Production app traces/logs/metrics (OTLP) | 🟡 (event-centric, not a prod-telemetry backend) | ✅🧪 OTLP-native (shipped, pre-release) |
 | Errors / exceptions (production backend) | 🟡 (frontend errors via replay; not prod error events) | ✅ derived `error_event` + fingerprint (🧪 shipped) |
 | Sentry envelope / DSN | ❌ | ✅ shipped |
 

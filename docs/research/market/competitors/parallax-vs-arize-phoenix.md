@@ -66,15 +66,15 @@ Sources: [arize.com/phoenix](https://arize.com/phoenix/), [Cekura pricing analys
 
 ### Signal coverage
 
-| Signal | Phoenix (shipped) | Parallax (planned) | Who |
+| Signal | Phoenix (shipped) | Parallax (pre-release; ✅🧪=code-shipped) | Who |
 |---|---|---|---|
 | LLM / model spans (prompt, completion, tokens, cost) | ✅ core | ✅ (🏗) | **Phoenix** |
 | Agent / tool / retrieval spans (multi-agent) | ✅ hierarchical, OpenInference | ✅ (🏗) | **Phoenix** |
 | Non-LLM spans (API, embeddings) | ✅ in same trace | ✅ (🏗) | **Phoenix** |
-| Production app traces (OTLP) | 🟡 receives OTLP traces (LLM-focused, not a general telemetry backend) | ✅ OTLP-native (🏗) | tie (different scope) |
-| Logs | 🟡 trace-scoped, not a log platform | ✅ OTLP logs (🏗) | **Parallax** (breadth) |
-| Metrics | ❌ not a metrics platform | ✅ OTLP metrics (🏗) | **Parallax** (breadth) |
-| Production errors / exceptions | 🟡 LLM-eval failures, not prod error events | ✅ derived `error_event` + fingerprint (🏗) | **Parallax** (design; unproven) |
+| Production app traces (OTLP) | 🟡 receives OTLP traces (LLM-focused, not a general telemetry backend) | ✅🧪 OTLP-native (shipped, pre-release) | tie (different scope) |
+| Logs | 🟡 trace-scoped, not a log platform | ✅🧪 OTLP logs (shipped, pre-release) | **Parallax** (breadth) |
+| Metrics | ❌ not a metrics platform | ✅🧪 OTLP metrics (shipped, pre-release) | **Parallax** (breadth) |
+| Production errors / exceptions | 🟡 LLM-eval failures, not prod error events | ✅🧪 derived `error_event` + fingerprint (shipped, pre-release) | **Parallax** (design; unproven) |
 | Eval scores / annotations | ✅ core (LLM-as-judge heritage) | ✅ planned (A1) | **Phoenix** |
 | Datasets / experiments | ✅ core | ❌ out of scope | **Phoenix** |
 

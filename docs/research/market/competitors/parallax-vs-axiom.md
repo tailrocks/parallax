@@ -31,9 +31,9 @@ Both OTLP/OTel-native. Axiom is a closed serverless log/event-analytics SaaS; Pa
 
 | Signal | Axiom (shipped) | Parallax (planned/shipped) |
 | --- | --- | --- |
-| Logs / events | ✅ **(the core — broad log/event analytics)** | ✅ OTLP logs (🏗) |
-| Traces | ✅ (OTLP) | ✅ OTLP traces (🏗) |
-| Metrics | ✅ **(generally available — full metrics, #LAUNCHED)** | ✅ OTLP metrics (🏗) |
+| Logs / events | ✅ **(the core — broad log/event analytics)** | ✅🧪 OTLP logs (shipped, pre-release) |
+| Traces | ✅ (OTLP) | ✅🧪 OTLP traces (shipped, pre-release) |
+| Metrics | ✅ **(generally available — full metrics, #LAUNCHED)** | ✅🧪 OTLP metrics (shipped, pre-release) |
 | 100%-data capture (no sampling) | ✅ (pitch) | 🟡 (samples by design) |
 | LLM / agent spans | ✅ **(AI Engineering — agent-workflow tracing + cost/latency)** | 🟡🧪 agent-session modules (CLI-invocation program in flight) |
 | Errors / exceptions | 🟡 (queryable events; no Sentry-grade lifecycle) | ✅ derived `error_event` + fingerprint (🧪 shipped) |

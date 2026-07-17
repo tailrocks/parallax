@@ -13,6 +13,18 @@ This directory is the research record behind Parallax. It is organized so a read
 > Remote MCP remains deferred until Plan 109 transport. Parallax is the **context engine, not the fixer**
 > — a separate coding agent consumes the bundle and proposes the fix.
 
+### Read this first (current vs historical)
+
+| Need | Go here |
+| --- | --- |
+| **What is shipped in code right now?** | **[code-reality-ledger.md](code-reality-ledger.md)** — claim → shipped / partial / PoC / planned / unproven gate, with crate paths |
+| **What is still open research?** | [research-agenda.md](research-agenda.md) |
+| **Decisions (ADR-style current truth)** | [decisions/](decisions/) |
+| **Unbiased competitor comparisons** | [market/competitors/](market/competitors/) (canonical); older `market/*-deep-research.md` and matrices are **sources**, not dual truth |
+| **How to correct a wrong cell** | PR with dated primary source or crate path that falsifies the claim; see [competitors/README.md](market/competitors/README.md) no-bias rules |
+
+Historical architecture/capture notes keep evidence under dated or **historical** banners. They do not override the ledger or `main` code.
+
 ## Current answers (the short version)
 
 | Question | Answer | Where |
@@ -22,7 +34,7 @@ This directory is the research record behind Parallax. It is organized so a read
 | What is the V1 storage design? | **Native-first on GreptimeDB.** The proxy forwards raw OTLP straight to GreptimeDB's native tables and tees in-process to derive issues into documented extension tables (`error_events`, `invocation_metric_points`, `metric_exemplars`); Turso holds metadata. Legacy `run_metric_points` is dropped at bootstrap (forward-only). Greenfield, no migration. | [decisions/native-otel-tables.md](decisions/native-otel-tables.md), [storage/native-otel-migration-plan.md](storage/native-otel-migration-plan.md) |
 | Why GreptimeDB? | Anchored evidence-bundle retrieval is interactive on it (≪300 ms); the team optimizes around the native OTLP model and it's the Rust, self-hosted substrate Parallax can build on. | [decisions/storage-engine.md](decisions/storage-engine.md) |
 | What's still open on storage? | Vendor confirmations for the native-table customizations (custom columns/indexes vs schema auto-widening, traces OTLP GA, etc.). | [storage/greptimedb-team-questions.md](storage/greptimedb-team-questions.md) |
-| How is it built? | **Shipped V1:** 17 Rust crates; OTLP gRPC/HTTP and Sentry-envelope ingest; GreptimeDB + Turso; 76 GraphQL queries and 14 mutations; CLI (serve/invocation/issue/trace/metrics/logs/traces/sql/doctor/prune/uninstall/context); workers, alerting, SSE, redaction, analysis, durable spool, evidence bundles; and a 19-route TanStack Start UI (16 feature modules); **local-stdio MCP** (`parallax-mcp`) graduated (plan 112 DONE). | [architecture/rust-workspace-map.md](architecture/rust-workspace-map.md), [architecture/v1-implementation-spec.md](architecture/v1-implementation-spec.md) |
+| How is it built? | **Shipped V1 (see [code-reality ledger](code-reality-ledger.md)):** 17 Rust crates; OTLP gRPC/HTTP and Sentry-envelope ingest (plan 118 DONE); GreptimeDB + Turso mandatory; **80** GraphQL queries and **15** mutations (`ui/graphql/schema.graphql`); CLI (serve/invocation/issue/trace/metrics/logs/traces/sql/doctor/prune/uninstall/context); workers, alerting, SSE, redaction, analysis, durable spool, evidence bundles; TanStack Start UI (~16 feature modules); **local-stdio MCP** (`parallax-mcp`, plan 112 DONE). Bundle **value** and multi-SDK Sentry wording remain unproven gates. | [architecture/rust-workspace-map.md](architecture/rust-workspace-map.md), [architecture/v1-implementation-spec.md](architecture/v1-implementation-spec.md), [code-reality-ledger.md](code-reality-ledger.md) |
 | What still needs research? | V1 engineering is no longer gated by research. Open validation remains bundle-vs-raw value (A1), user demand/monetization (A2), schema adoption, competitor/standards drift, and large-server storage measurements. Active implementation work is owned only by `plans/`. | [research-agenda.md](research-agenda.md) |
 
 ## Map
@@ -145,7 +157,11 @@ This directory is the research record behind Parallax. It is organized so a read
 
 - **Decisions** lead with the current answer; long re-verification history lives in clearly-labeled
   evidence/changelog sections, not the front door.
-- Storage engine choice stays **behind a `StorageAdapter`** — no engine magic in the schema or bundle
-  contract.
+- **Code claims** must match [code-reality-ledger.md](code-reality-ledger.md) (shipped ≠ planned;
+  unproven gates stay unproven).
+- Storage capability ports stay **behind `StorageAdapter`** for test fakes — that is **not** a
+  multi-engine product promise; GreptimeDB + Turso are mandatory.
+- Market comparisons stay **multi-angle** (capability + price/TCO or "no public number" +
+  license/contribute + hidden ops/lock-in/ecosystem) per [competitors/README.md](market/competitors/README.md).
 - Treat every note as a theory until current primary-source evidence supports it; mark
-  benchmark-dependent claims as unproven until measured.
+  benchmark-dependent claims as unproven until measured. **Corrections with evidence are welcome.**

@@ -75,7 +75,7 @@ This section locks the decisions required after the GO verdict in
 ### API Standard Decision
 
 Support **OpenTelemetry first**. Sentry-compatible envelope ingest is **shipped**
-(historical text said "future adapter"; plan 118 is residual migration only):
+(historical text said "future adapter"; plan **118 DONE** — multi-SDK ledger still unproven):
 
 | API surface | Decision | What Parallax supports | What Parallax stores |
 | --- | --- | --- | --- |

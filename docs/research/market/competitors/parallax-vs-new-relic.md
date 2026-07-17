@@ -63,12 +63,12 @@ Formula: data cost = (GB − 100) × per-GB rate; + user cost. Sources:
 
 ### Signal coverage
 
-| Signal | New Relic (shipped) | Parallax (planned) | Who |
+| Signal | New Relic (shipped) | Parallax (pre-release; ✅🧪=code-shipped) | Who |
 |---|---|---|---|
-| Traces / distributed tracing | ✅ mature (OTLP GA) | ✅ OTLP traces (🏗) | **New Relic** |
-| Logs | ✅ (OTLP GA) | ✅ OTLP logs (🏗) | **New Relic** |
-| Metrics | ✅ (OTLP GA, exp. histograms) | ✅ OTLP metrics (🏗) | **New Relic** |
-| Errors / exceptions | ✅ (error-rate, golden signals) | ✅ derived `error_event` + fingerprint (🏗) | **New Relic** (maturity; Parallax's error-as-event model unproven) |
+| Traces / distributed tracing | ✅ mature (OTLP GA) | ✅🧪 OTLP traces (shipped, pre-release) | **New Relic** |
+| Logs | ✅ (OTLP GA) | ✅🧪 OTLP logs (shipped, pre-release) | **New Relic** |
+| Metrics | ✅ (OTLP GA, exp. histograms) | ✅🧪 OTLP metrics (shipped, pre-release) | **New Relic** |
+| Errors / exceptions | ✅ (error-rate, golden signals) | ✅🧪 derived `error_event` + fingerprint (shipped, pre-release) | **New Relic** (maturity; Parallax's error-as-event model unproven) |
 | Continuous profiling | 🟡 (limited/profile features) | ❌ | **New Relic** |
 | RUM / browser / mobile | ✅ mature | ❌ | **New Relic** |
 | Synthetics | ✅ | ❌ | **New Relic** |

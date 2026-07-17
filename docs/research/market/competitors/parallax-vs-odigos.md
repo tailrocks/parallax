@@ -25,13 +25,13 @@
 | Signal | Odigos (shipped) | Parallax (planned/shipped) |
 | --- | --- | --- |
 | eBPF auto-instrumentation (no code) | ✅ **(the core — generates OTel)** | ❌ (relies on OTel SDKs) |
-| Traces generation | ✅ (→ any backend) | ✅ ingests OTLP traces (🏗) |
-| Metrics generation | ✅ (→ any backend) | ✅ ingests OTLP metrics (🏗) |
-| Logs generation | ✅ (→ any backend) | ✅ ingests OTLP logs (🏗) |
+| Traces generation | ✅ (→ any backend) | ✅🧪 ingests OTLP traces (shipped, pre-release) |
+| Metrics generation | ✅ (→ any backend) | ✅🧪 ingests OTLP metrics (shipped, pre-release) |
+| Logs generation | ✅ (→ any backend) | ✅🧪 ingests OTLP logs (shipped, pre-release) |
 | OBI protocol-level (HTTP/gRPC/Redis/DB) | ✅ | ❌ |
-| **Telemetry storage / backend** | ❌ (forwards, doesn't store) | ✅ GreptimeDB (🏗) |
+| **Telemetry storage / backend** | ❌ (forwards, doesn't store) | ✅🧪 GreptimeDB (shipped, pre-release) |
 | Error derivation / fingerprinting | ❌ | ✅ derived `error_event` (🧪 shipped) |
-| Evidence bundle / agent context | ❌ | ✅ (🏗, A1) |
+| Evidence bundle / agent context | ❌ | 🟡🧪 code (A1 unproven) |
 
 **Verdict:** these are **different layers.** Odigos excels at *generating* telemetry without code changes; Parallax excels (in design) at *deriving/serving* evidence from telemetry. **Odigos does not store, derive errors, or serve agent context** — exactly the layers Parallax occupies.
 

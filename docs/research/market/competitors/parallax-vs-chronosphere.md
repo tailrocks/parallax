@@ -24,9 +24,9 @@ Both touch a **cost** story, but Chronosphere is a closed metrics-scale/cost-con
 
 | Signal | Chronosphere (shipped) | Parallax (planned/shipped) |
 | --- | --- | --- |
-| Metrics (high-scale) | ✅ **(the core — M3/Cube, very large volume)** | ✅ OTLP metrics (🏗) |
-| Logs | ✅ (via Telemetry Pipeline + partnerships) | ✅ OTLP logs (🏗) |
-| Traces | ✅ (via pipeline) | ✅ OTLP traces (🏗) |
+| Metrics (high-scale) | ✅ **(the core — M3/Cube, very large volume)** | ✅🧪 OTLP metrics (shipped, pre-release) |
+| Logs | ✅ (via Telemetry Pipeline + partnerships) | ✅🧪 OTLP logs (shipped, pre-release) |
+| Traces | ✅ (via pipeline) | ✅🧪 OTLP traces (shipped, pre-release) |
 | **Data-volume / cost governance** | ✅ **(distinctive — Control Plane, Gartner #1)** | 🟡 (self-host = no per-event tax, by design) |
 | Errors / exceptions | 🟡 (metrics/alerting-centric; no Sentry-grade lifecycle) | ✅ derived `error_event` + fingerprint (🧪 shipped) |
 | Dashboards | ✅ (Prometheus/Grafana-adjacent) | 🟡 minimal (🏗) |

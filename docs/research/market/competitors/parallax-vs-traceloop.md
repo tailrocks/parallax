@@ -85,9 +85,9 @@ pure instrumentation/forwarding layer.
 | LLM auto-instrumentation (providers/frameworks/vector-DBs/**MCP**) | ✅ **(the core — generates OTel GenAI spans)** | ❌ (relies on OTel SDKs / OpenLLMetry) |
 | OTel GenAI semantic conventions | ✅ **(OpenLLMetry drove these into upstream OTel)** | 🟡 (🏗) |
 | Token / cost / prompt-completion capture | ✅ | ✅ (🏗, from spans) |
-| **Telemetry storage / backend** | ❌ (forwards OTLP) | ✅ GreptimeDB (🏗) |
+| **Telemetry storage / backend** | ❌ (forwards OTLP) | ✅🧪 GreptimeDB (shipped, pre-release) |
 | Error derivation / fingerprinting | ❌ | ✅ derived `error_event` (🧪 shipped) |
-| Evidence bundle / agent context | ❌ | ✅ (🏗, A1) |
+| Evidence bundle / agent context | ❌ | 🟡🧪 code (A1 unproven) |
 | Sentry envelope / DSN | ❌ | ✅ shipped |
 
 **Verdict:** **different layers.** OpenLLMetry excels at *generating* LLM

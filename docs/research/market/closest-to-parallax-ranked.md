@@ -181,13 +181,14 @@ try to out-feature its issue workflow.**
 
 ## What this means for Parallax
 
-1. **The architecture bet is no longer unique — TMA1 already ships it.** Embedded-GreptimeDB + single-binary +
-   OTLP + MCP-context-bundle exists. Parallax's defensible delta is **production-incident focus** (derived
-   `error_event` + fingerprinting from real services), the **Sentry-compat ingest path**, **redaction-as-a-gate**,
-   the **fix-outcome loop**, and **CI/deploy/agent-session capture** — none of which TMA1 has.
-2. **No competitor — open or incumbent — combines all of:** OTLP-native + (future) Sentry envelope ingest +
-   portable versioned **redacted** bundle + read-only safe agent projection + **fix-outcome loop** + Rust single
-   binary. That five-to-six-way combination remains the moat; every individual piece exists somewhere.
+1. **The architecture bet is no longer unique — TMA1 already ships a local agent-loop version.** Embedded-GreptimeDB +
+   single-binary + OTLP + MCP-context exists there. **Parallax also ships** GreptimeDB+Turso, OTLP, Sentry envelope,
+   error derivation, local MCP, and a redacting bundle assembler (see
+   [code-reality-ledger.md](../code-reality-ledger.md)). Remaining delta vs TMA1 is **production-incident depth**,
+   **redaction-as-gate**, **outcome loop (unshipped)**, and **A1 value proof** — not "architecture only planned."
+2. **Combination claim (2026-07-17):** Parallax **ships code** for OTLP-native + Sentry envelope + redacted portable
+   bundle assembler + local-stdio MCP. **No competitor ships that exact combo**, but several ship pieces. Code
+   existence ≠ A1 value. Outcome loop remains unshipped.
 3. **Borrow, explicitly:** Maple's local UX, Coroot's MCP OAuth+RBAC safety posture, Micromegas/smithclay's
    zero-copy ingest path, SigNoz's MCP tool depth + eval discipline.
 4. **The two cells everyone leaves empty** — a portable versioned evidence bundle as a typed artifact, and a

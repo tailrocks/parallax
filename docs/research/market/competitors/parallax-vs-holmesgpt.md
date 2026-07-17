@@ -29,9 +29,9 @@ Both Apache-2.0, agent-facing, in the "AI investigation" space. **HolmesGPT is t
 | Runbook execution | ✅ | ❌ |
 | MCP toolset (extensible data sources) | ✅ | ✅ planned (🏗) |
 | Incident grouping (Robusta) | ✅ | ❌ |
-| **Own telemetry store** | ❌ (queries yours) | ✅ GreptimeDB (🏗) |
+| **Own telemetry store** | ❌ (queries yours) | ✅🧪 GreptimeDB (shipped, pre-release) |
 | Error derivation / fingerprinting | ❌ (reads your signals) | ✅ derived `error_event` (🧪 shipped) |
-| Evidence bundle / bounded agent context | ❌ | ✅ (🏗, A1) |
+| Evidence bundle / bounded agent context | ❌ | 🟡🧪 code (A1 unproven) |
 | Sentry envelope / DSN | ❌ | ✅ shipped |
 
 **Verdict:** **different layers.** HolmesGPT excels at *investigating* telemetry you already have; Parallax excels (in design) at *owning, deriving, and bounding* telemetry into agent-safe evidence. HolmesGPT **has no store, no error-derivation, no bounded bundle** — exactly Parallax's layers.

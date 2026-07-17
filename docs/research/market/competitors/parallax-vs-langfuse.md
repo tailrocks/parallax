@@ -24,15 +24,15 @@ These overlap on **agent/LLM tracing and "context for agents,"** but were built 
 
 ## Signal coverage — Langfuse is the LLM-tracing specialist
 
-| Signal | Langfuse (shipped) | Parallax (planned) |
+| Signal | Langfuse (shipped) | Parallax (pre-release; ✅🧪=code-shipped) |
 | --- | --- | --- |
 | LLM / model spans (prompt, completion, tokens, cost) | ✅ core, first-class | ✅ (🏗) |
 | Agent / tool / retrieval spans | ✅ hierarchical, nested | ✅ (🏗) |
 | Non-LLM spans (API calls, embeddings, retrieval) | ✅ in same trace | ✅ (🏗) |
-| Production app traces (OTLP) | 🟡 receives OTLP traces (not a general telemetry backend) | ✅ OTLP-native (🏗) |
-| Logs | 🟡 (trace-scoped, not a log platform) | ✅ OTLP logs (🏗) |
-| Metrics | ❌ (not a metrics platform) | ✅ OTLP metrics (🏗) |
-| Errors / exceptions (production) | 🟡 (LLM-eval failures, not prod error events) | ✅ derived `error_event` + fingerprint (🏗) |
+| Production app traces (OTLP) | 🟡 receives OTLP traces (not a general telemetry backend) | ✅🧪 OTLP-native (shipped, pre-release) |
+| Logs | 🟡 (trace-scoped, not a log platform) | ✅🧪 OTLP logs (shipped, pre-release) |
+| Metrics | ❌ (not a metrics platform) | ✅🧪 OTLP metrics (shipped, pre-release) |
+| Errors / exceptions (production) | 🟡 (LLM-eval failures, not prod error events) | ✅🧪 derived `error_event` + fingerprint (shipped, pre-release) |
 | Eval scores / annotations | ✅ core (human + automated) | ✅ planned (A1 eval design) |
 | Prompt versions / datasets / experiments | ✅ core | ❌ (out of scope) |
 

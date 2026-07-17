@@ -77,13 +77,13 @@ self-host + Highlight Cloud.
 
 ### Signal coverage
 
-| Signal | Highlight (shipped) | Parallax (planned) | Who |
+| Signal | Highlight (shipped) | Parallax (pre-release; ✅🧪=code-shipped) | Who |
 |---|---|---|---|
 | Session replay / RUM | ✅ **best-in-class OSS** | ❌ | **Highlight** (Parallax has none) |
-| Errors / exceptions | ✅ error monitoring (incl. OTel) | ✅ derived `error_event` + fingerprint (🏗) | **Highlight** (maturity) |
-| Traces / distributed tracing | ✅ OTLP | ✅ OTLP traces (🏗) | tie |
-| Logs | ✅ console + OTLP logs | ✅ OTLP logs (🏗) | **Highlight** (maturity) |
-| Metrics / infra | ✅ infrastructure monitoring | ✅ OTLP metrics (🏗) | **Highlight** (maturity) |
+| Errors / exceptions | ✅ error monitoring (incl. OTel) | ✅🧪 derived `error_event` + fingerprint (shipped, pre-release) | **Highlight** (maturity) |
+| Traces / distributed tracing | ✅ OTLP | ✅🧪 OTLP traces (shipped, pre-release) | tie |
+| Logs | ✅ console + OTLP logs | ✅🧪 OTLP logs (shipped, pre-release) | **Highlight** (maturity) |
+| Metrics / infra | ✅ infrastructure monitoring | ✅🧪 OTLP metrics (shipped, pre-release) | **Highlight** (maturity) |
 | Frontend (browser) | ✅ core | ❌ | **Highlight** |
 | Profiling | ❌ | ❌ | tie (neither) |
 | LLM / agent spans | ❌ | 🟡 planned | **Parallax** (planned) |

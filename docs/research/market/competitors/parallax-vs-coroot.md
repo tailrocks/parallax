@@ -23,13 +23,13 @@ Both Apache-2.0 OSS, self-hostable, with an agent/MCP surface and AI RCA. The ov
 
 ## Signal coverage — and the critical eBPF-partial-spans gap
 
-| Signal | Coroot (shipped) | Parallax (planned) |
+| Signal | Coroot (shipped) | Parallax (pre-release; ✅🧪=code-shipped) |
 | --- | --- | --- |
-| Traces | 🟡 **eBPF partial/protocol-level spans** (HTTP/Postgres/MySQL/Redis/Mongo/Memcached) | ✅ OTLP traces (🏗) |
-| Logs | ✅ | ✅ OTLP logs (🏗) |
-| Metrics | ✅ (Prometheus primary) | ✅ OTLP metrics (🏗) |
+| Traces | 🟡 **eBPF partial/protocol-level spans** (HTTP/Postgres/MySQL/Redis/Mongo/Memcached) | ✅🧪 OTLP traces (shipped, pre-release) |
+| Logs | ✅ | ✅🧪 OTLP logs (shipped, pre-release) |
+| Metrics | ✅ (Prometheus primary) | ✅🧪 OTLP metrics (shipped, pre-release) |
 | Continuous profiling | ✅ eBPF | ❌ |
-| **App-level errors / exceptions / panics / stack traces** | ❌ **(eBPF spans are partial — no app error chains)** | ✅ derived `error_event` + fingerprint (🏗) |
+| **App-level errors / exceptions / panics / stack traces** | ❌ **(eBPF spans are partial — no app error chains)** | ✅🧪 derived `error_event` + fingerprint (shipped, pre-release) |
 | Service map / dependency graph | ✅ (instant, eBPF) | ❌ (🏗) |
 | SLO-based alerting | ✅ | 🟡 (🏗) |
 | Sentry envelope / DSN | ❌ | ✅ shipped |

@@ -21,12 +21,12 @@ Both single-binary-local-first, OTLP-native, Turso-metadata. The closest pair on
 
 ## Signal coverage
 
-| Signal | Maple (shipped) | Parallax (planned) |
+| Signal | Maple (shipped) | Parallax (pre-release; ✅🧪=code-shipped) |
 | --- | --- | --- |
-| Traces | ✅ (waterfall/flamegraph/flow, trace-log correlation) | ✅ OTLP traces (🏗) |
-| Logs | ✅ (full-text, severity, streaming) | ✅ OTLP logs (🏗) |
+| Traces | ✅ (waterfall/flamegraph/flow, trace-log correlation) | ✅🧪 OTLP traces (shipped, pre-release) |
+| Logs | ✅ (full-text, severity, streaming) | ✅🧪 OTLP logs (shipped, pre-release) |
 | Metrics / dashboards | ✅ (20+ chart types, drag-drop builder) | 🟡 minimal (🏗) |
-| Errors / exceptions | ✅ (smart grouping by type/message, trend, spam filtering) | ✅ derived `error_event` + fingerprint (🏗) |
+| Errors / exceptions | ✅ (smart grouping by type/message, trend, spam filtering) | ✅🧪 derived `error_event` + fingerprint (shipped, pre-release) |
 | Session replay (browser) | ✅ | ❌ |
 | Service catalog / dependency map | ✅ (latency, Apdex, dep edges, commit SHA) | ❌ (🏗) |
 | K8s monitoring | ✅ (Helm) | ❌ |

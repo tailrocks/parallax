@@ -36,13 +36,13 @@ Latest stable tags via the [github.com/grafana](https://github.com/grafana) rele
 
 ## Signal coverage — Grafana is the full OSS stack
 
-| Signal | Grafana Cloud (shipped) | Parallax (planned) |
+| Signal | Grafana Cloud (shipped) | Parallax (pre-release; ✅🧪=code-shipped) |
 | --- | --- | --- |
-| Traces / distributed tracing | ✅ Tempo (**GA v2.10.7**; v3 Kafka/vParquet5 path reviewed in-repo, not yet a GA tag) | ✅ OTLP traces (🏗) |
-| Logs | ✅ Loki | ✅ OTLP logs (🏗) |
-| Metrics | ✅ Mimir (Prometheus-compatible) | ✅ OTLP metrics (🏗) |
+| Traces / distributed tracing | ✅ Tempo (**GA v2.10.7**; v3 Kafka/vParquet5 path reviewed in-repo, not yet a GA tag) | ✅🧪 OTLP traces (shipped, pre-release) |
+| Logs | ✅ Loki | ✅🧪 OTLP logs (shipped, pre-release) |
+| Metrics | ✅ Mimir (Prometheus-compatible) | ✅🧪 OTLP metrics (shipped, pre-release) |
 | Continuous profiling | ✅ Pyroscope | ❌ |
-| Errors / exceptions | 🟡 (queryable span-events; **no native issue lifecycle**) | ✅ derived `error_event` + fingerprint (🏗) |
+| Errors / exceptions | 🟡 (queryable span-events; **no native issue lifecycle**) | ✅🧪 derived `error_event` + fingerprint (shipped, pre-release) |
 | Dashboards | ✅ Grafana — the market standard | ✅ minimal V1 (🏗) |
 | Alerts / SLOs | ✅ mature (Alertmanager, on-call, SLOs) | 🟡 minimal (🏗) |
 | Synthetics / RUM | ✅ Synthetics + Frontend (RUM) | ❌ |

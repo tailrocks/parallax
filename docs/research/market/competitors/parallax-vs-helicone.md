@@ -26,7 +26,7 @@ Both OSS, self-hostable, touching LLM/agent calls. But **Helicone is an LLM-call
 | LLM calls (prompt/completion/tokens/cost) | ✅ **(the core — via proxy)** | ✅ (🏗) |
 | LLM caching | ✅ (distinctive) | ❌ |
 | LLM cost analytics (300+ providers) | ✅ | ❌ |
-| Production app traces/logs/metrics (OTLP) | ❌ (LLM-call-only, not a prod backend) | ✅ OTLP-native (🏗) |
+| Production app traces/logs/metrics (OTLP) | ❌ (LLM-call-only, not a prod backend) | ✅🧪 OTLP-native (shipped, pre-release) |
 | Errors / exceptions (production backend) | ❌ | ✅ derived `error_event` + fingerprint (🧪 shipped) |
 | Sentry envelope / DSN | ❌ | ✅ shipped |
 

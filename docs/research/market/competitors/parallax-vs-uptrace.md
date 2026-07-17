@@ -22,9 +22,9 @@ Both OSS, OTLP-native, ClickHouse-adjacent, self-hostable. Uptrace is a tracing-
 
 | Signal | Uptrace (shipped) | Parallax (planned/shipped) |
 | --- | --- | --- |
-| Traces / distributed tracing | ✅ **(the core — flame graphs, span analysis)** | ✅ OTLP traces (🏗) |
-| Metrics | ✅ | ✅ OTLP metrics (🏗) |
-| Logs | ✅ | ✅ OTLP logs (🏗) |
+| Traces / distributed tracing | ✅ **(the core — flame graphs, span analysis)** | ✅🧪 OTLP traces (shipped, pre-release) |
+| Metrics | ✅ | ✅🧪 OTLP metrics (shipped, pre-release) |
+| Logs | ✅ | ✅🧪 OTLP logs (shipped, pre-release) |
 | Errors / exceptions | 🟡 (queryable; no Sentry-grade lifecycle) | ✅ derived `error_event` + fingerprint (🧪 shipped) |
 | Dashboards / alerting | ✅ | 🟡 minimal (🏗) |
 | Sentry envelope / DSN | ❌ | ✅ shipped |

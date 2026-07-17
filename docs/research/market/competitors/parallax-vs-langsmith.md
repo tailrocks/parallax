@@ -23,14 +23,14 @@ Both touch agent/LLM tracing, but LangSmith is a closed LLMOps platform tied to 
 
 ## Signal coverage
 
-| Signal | LangSmith (shipped) | Parallax (planned) |
+| Signal | LangSmith (shipped) | Parallax (pre-release; ✅🧪=code-shipped) |
 | --- | --- | --- |
 | LLM / model spans | ✅ core | ✅ (🏗) |
 | Agent spans (LangGraph nodes) | ✅ core (native LangGraph) | ✅ (🏗) |
 | Non-LLM / tool / retrieval spans | ✅ | ✅ (🏗) |
-| Production app traces (OTLP) | ✅ traces-only — dedicated OTLP endpoint (`/otel/v1/traces`, HTTP proto/JSON); **no OTLP metrics or logs** | ✅ OTLP-native (🏗) |
-| Logs / Metrics | ❌ (not a log/metrics platform) | ✅ OTLP logs/metrics (🏗) |
-| Errors / exceptions (production) | 🟡 (LLM-eval failures; not prod error events) | ✅ derived `error_event` (🏗) |
+| Production app traces (OTLP) | ✅ traces-only — dedicated OTLP endpoint (`/otel/v1/traces`, HTTP proto/JSON); **no OTLP metrics or logs** | ✅🧪 OTLP-native (shipped, pre-release) |
+| Logs / Metrics | ❌ (not a log/metrics platform) | ✅🧪 OTLP logs/metrics (shipped, pre-release) |
+| Errors / exceptions (production) | 🟡 (LLM-eval failures; not prod error events) | ✅🧪 derived `error_event` (shipped, pre-release) |
 | Eval scores / annotations | ✅ core (automated + human) | ✅ planned (A1) |
 | Prompt hub / datasets / experiments | ✅ core | ❌ (out of scope) |
 

@@ -165,11 +165,11 @@ No single protocol carries every feature. The playground emits **both**, always:
   comparison; the SDK/envelope path is primary because it unlocks the features
   above.)
 
-> **Parallax note (operator, 2026-06-23):** Parallax does not consume the Sentry
-> envelope yet, and that's fine — the *sample stack* must still run OTel **+**
-> Sentry because that is the industry norm. Parallax is judged on the OTLP path
-> today; the envelope path is the bar Parallax's future Sentry-compatibility
-> wedge must clear.
+> **Parallax note (updated 2026-07-17):** Parallax **ships** bounded Sentry
+> envelope HTTP ingest (plan 118 DONE). The *sample stack* should still run OTel
+> **+** Sentry because that is the industry norm and exercises both ingest lanes.
+> Multi-SDK compatibility wording remains ledger-gated; the playground is the
+> place to widen fixtures.
 
 **The non-negotiable engineering rule: OpenTelemetry owns the spans; Sentry rides
 along.** One OTel SDK per process is the single span source; the Sentry layer

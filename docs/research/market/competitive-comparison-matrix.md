@@ -1,11 +1,11 @@
 # Competitive Comparison Matrix — Parallax vs Alternatives
 
-> **Superseded as the canonical comparison.** The living, no-bias comparison now
-> lives in [`competitors/`](competitors/) — see its [README matrix](competitors/README.md),
-> [comparison set](competitors/comparison-set.md), and per-product deep-dives
-> (e.g. [parallax-vs-datadog.md](competitors/parallax-vs-datadog.md)). This legacy
-> note (and the wedge-axis framing) is a **source**, kept as a lead; verify before
-> trusting, and migrate still-true content into `competitors/`.
+> **Historical source (not canonical).** Living no-bias comparison:
+> [`competitors/`](competitors/) — [README matrix](competitors/README.md),
+> [comparison set](competitors/comparison-set.md), deep-dives. Parallax product
+> status: [code-reality-ledger.md](../code-reality-ledger.md). This 2026-05-31
+> wedge-axis matrix may overstate Parallax edges and understate competitor AI
+> surfaces that shipped in 2026 — verify before trusting.
 >
 > Research date: 2026-05-31
 > Quick-reference matrix for decision-making. Full analysis in

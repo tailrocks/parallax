@@ -42,12 +42,12 @@ Both ingest events/traces and value rich context, but Honeycomb is a human-explo
 
 ## Signal coverage
 
-| Signal | Honeycomb (shipped) | Parallax (planned) |
+| Signal | Honeycomb (shipped) | Parallax (pre-release; ✅🧪=code-shipped) |
 | --- | --- | --- |
-| Traces / wide events | ✅ core (high-cardinality events) | ✅ OTLP traces (🏗) |
-| Logs | 🟡 (as events, not a log platform) | ✅ OTLP logs (🏗) |
-| Metrics | 🟡 (derived from events; not a metrics platform) | ✅ OTLP metrics (🏗) |
-| Errors / exceptions | 🟡 (queryable; no issue lifecycle) | ✅ derived `error_event` + fingerprint (🏗) |
+| Traces / wide events | ✅ core (high-cardinality events) | ✅🧪 OTLP traces (shipped, pre-release) |
+| Logs | 🟡 (as events, not a log platform) | ✅🧪 OTLP logs (shipped, pre-release) |
+| Metrics | 🟡 (derived from events; not a metrics platform) | ✅🧪 OTLP metrics (shipped, pre-release) |
+| Errors / exceptions | 🟡 (queryable; no issue lifecycle) | ✅🧪 derived `error_event` + fingerprint (shipped, pre-release) |
 | Continuous profiling | ❌ (integrates with Profiling via OTLP? not core) | ❌ |
 | High-cardinality ad-hoc slicing | ✅ defining strength | 🟡 (via OTLP attributes, unproven UX) |
 
