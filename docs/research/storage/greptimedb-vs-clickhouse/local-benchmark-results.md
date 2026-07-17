@@ -7823,3 +7823,17 @@ GDPR path: non-append GT table or CH DELETE + force compact for physical purge.
 `ttl='5s'` table: insert hour-old + now rows (count=2); flush; sleep 6s; compact
 → **count=0**. TTL drop path still works (whole-window/SST removal after compact).
 No drift vs Run 187/144 mechanism.
+
+### Run 255 — 2026-07-17 — four-way metric-agg resample (N=50k m2m)
+
+`SELECT service, avg(val) FROM m2m GROUP BY service` (warm reps after first):
+
+| Build | ~median ms |
+| --- | ---: |
+| GT 1.1.3 | **~8–10** (first 61 cold) |
+| GT 1.2 nightly | **~7–8** |
+| CH 26.6 | **~2–3** |
+| CH head | **~3** |
+
+**CH ~3–4×** at this N; nightly slightly tighter than stable. No new mechanism.
+Server 5M still decides if gap widens.
