@@ -8247,3 +8247,8 @@ GT `date_bin('1 minute', ts)` avg: **73 ms** (includes cold-ish); CH
 
 ### Run 348 — 2026-07-17 — not done
 
+
+### Run 350 — 2026-07-17 — p99 by service
+
+GT `approx_percentile_cont(0.99) WITHIN GROUP (ORDER BY duration_ms)`: **93 ms**.
+CH `quantile(0.99)`: **34 ms**. Both complete; CH ~3× faster on this shape at 50k.
