@@ -125,6 +125,160 @@ impl TursoMetadataStore {
             .await?;
         Ok(())
     }
+
+    pub async fn test_case(&self, key: &str) -> anyhow::Result<Option<TestCaseRecord>> {
+        let conn = self.conn.lock().await;
+        let mut rows = conn
+            .query(
+                "SELECT case_key, identity_source, explicit_id, code_reference,
+                    suite_path, name, first_seen, last_seen
+             FROM test_cases WHERE case_key = ?1",
+                (key,),
+            )
+            .await?;
+        rows.next()
+            .await?
+            .map(|row| decode_test_case(&row))
+            .transpose()
+    }
+
+    pub async fn test_variant(&self, key: &str) -> anyhow::Result<Option<TestVariantRecord>> {
+        let conn = self.conn.lock().await;
+        let mut rows = conn
+            .query(
+                "SELECT variant_key, case_key, parameters, first_seen, last_seen
+             FROM test_variants WHERE variant_key = ?1",
+                (key,),
+            )
+            .await?;
+        rows.next()
+            .await?
+            .map(|row| decode_test_variant(&row))
+            .transpose()
+    }
+
+    pub async fn test_results_for_invocation(
+        &self,
+        invocation_id: &str,
+        limit: usize,
+    ) -> anyhow::Result<Vec<TestResultRecord>> {
+        let conn = self.conn.lock().await;
+        let mut rows = conn
+            .query(
+                "SELECT variant_key, invocation_id, attempt, status, trace_id, span_id,
+                    started_at, ended_at, service, service_version, vcs_head_revision,
+                    configuration, failure_fingerprint
+             FROM test_results WHERE invocation_id = ?1
+             ORDER BY started_at, variant_key, attempt LIMIT ?2",
+                (invocation_id, i64::try_from(limit).unwrap_or(i64::MAX)),
+            )
+            .await?;
+        let mut results = Vec::new();
+        while let Some(row) = rows.next().await? {
+            results.push(decode_test_result(&row)?);
+        }
+        Ok(results)
+    }
+
+    pub async fn test_flaky_state(
+        &self,
+        variant_key: &str,
+    ) -> anyhow::Result<Option<TestFlakyStateRecord>> {
+        let conn = self.conn.lock().await;
+        let mut rows = conn
+            .query(
+                "SELECT variant_key, state, evidence, updated_at
+             FROM test_flaky_states WHERE variant_key = ?1",
+                (variant_key,),
+            )
+            .await?;
+        rows.next()
+            .await?
+            .map(|row| decode_flaky_state(&row))
+            .transpose()
+    }
+}
+
+fn decode_test_case(row: &turso::Row) -> anyhow::Result<TestCaseRecord> {
+    Ok(TestCaseRecord {
+        key: text(row, 0).parse()?,
+        identity_source: parse_identity_source(&text(row, 1))?,
+        explicit_id: opt_text(row, 2),
+        code_reference: opt_text(row, 3),
+        suite_path: serde_json::from_str(&text(row, 4))?,
+        name: text(row, 5),
+        first_seen_nanos: millis_to_nanos(integer(row, 6)),
+        last_seen_nanos: millis_to_nanos(integer(row, 7)),
+    })
+}
+
+fn decode_test_variant(row: &turso::Row) -> anyhow::Result<TestVariantRecord> {
+    Ok(TestVariantRecord {
+        key: text(row, 0).parse()?,
+        case_key: text(row, 1).parse()?,
+        parameters: serde_json::from_str(&text(row, 2))?,
+        first_seen_nanos: millis_to_nanos(integer(row, 3)),
+        last_seen_nanos: millis_to_nanos(integer(row, 4)),
+    })
+}
+
+fn decode_test_result(row: &turso::Row) -> anyhow::Result<TestResultRecord> {
+    Ok(TestResultRecord {
+        key: parallax_model::TestResultKey {
+            variant_key: text(row, 0).parse()?,
+            invocation_id: text(row, 1),
+            attempt: parallax_model::TestAttempt::new(u32::try_from(integer(row, 2))?)?,
+        },
+        status: parse_test_status(&text(row, 3))?,
+        trace_id: text(row, 4).parse()?,
+        span_id: text(row, 5),
+        started_at_nanos: millis_to_nanos(integer(row, 6)),
+        ended_at_nanos: millis_to_nanos(integer(row, 7)),
+        service: text(row, 8),
+        service_version: opt_text(row, 9),
+        vcs_head_revision: opt_text(row, 10),
+        configuration: serde_json::from_str(&text(row, 11))?,
+        failure_fingerprint: opt_text(row, 12),
+    })
+}
+
+fn decode_flaky_state(row: &turso::Row) -> anyhow::Result<TestFlakyStateRecord> {
+    Ok(TestFlakyStateRecord {
+        variant_key: text(row, 0).parse()?,
+        state: parse_flaky_state(&text(row, 1))?,
+        evidence: serde_json::from_str(&text(row, 2))?,
+        updated_at_nanos: millis_to_nanos(integer(row, 3)),
+    })
+}
+
+fn parse_identity_source(value: &str) -> anyhow::Result<TestCaseIdentitySource> {
+    match value {
+        "explicit" => Ok(TestCaseIdentitySource::Explicit),
+        "code_reference" => Ok(TestCaseIdentitySource::CodeReference),
+        "name_path" => Ok(TestCaseIdentitySource::NamePath),
+        _ => anyhow::bail!("unknown test identity source"),
+    }
+}
+
+fn parse_test_status(value: &str) -> anyhow::Result<TestStatus> {
+    match value {
+        "passed" => Ok(TestStatus::Passed),
+        "failed" => Ok(TestStatus::Failed),
+        "broken" => Ok(TestStatus::Broken),
+        "skipped" => Ok(TestStatus::Skipped),
+        "unknown" => Ok(TestStatus::Unknown),
+        _ => anyhow::bail!("unknown test status"),
+    }
+}
+
+fn parse_flaky_state(value: &str) -> anyhow::Result<FlakyState> {
+    match value {
+        "healthy" => Ok(FlakyState::Healthy),
+        "flaky" => Ok(FlakyState::Flaky),
+        "fixed" => Ok(FlakyState::Fixed),
+        "broken" => Ok(FlakyState::Broken),
+        _ => anyhow::bail!("unknown flaky state"),
+    }
 }
 
 const fn identity_source(source: TestCaseIdentitySource) -> &'static str {

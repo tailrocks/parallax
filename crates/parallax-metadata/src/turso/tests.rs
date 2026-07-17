@@ -509,8 +509,7 @@ async fn test_reporting_schema_has_reference_and_mutable_state_tables() {
     }
 }
 
-#[tokio::test]
-async fn test_reporting_upserts_are_idempotent_and_reference_native_spans() {
+async fn seed_test_reporting(store: &MetadataStore) {
     use parallax_model::{
         FlakyEvidence, FlakyState, TestAttempt, TestCaseIdentitySource, TestCaseKey,
         TestCaseRecord, TestConfiguration, TestFlakyStateRecord, TestResultKey, TestResultRecord,
@@ -518,8 +517,6 @@ async fn test_reporting_upserts_are_idempotent_and_reference_native_spans() {
     };
     use std::str::FromStr;
 
-    let (_directory, path) = temp_db();
-    let store = MetadataStore::open(&path).await.expect("open");
     let case_key = TestCaseKey::from_str(&format!("tc1:{}", "a".repeat(64))).expect("case");
     let variant_key =
         TestVariantKey::from_str(&format!("tv1:{}", "b".repeat(64))).expect("variant");
@@ -578,6 +575,48 @@ async fn test_reporting_upserts_are_idempotent_and_reference_native_spans() {
         })
         .await
         .expect("flaky upsert");
+}
+
+#[tokio::test]
+async fn test_reporting_upserts_are_idempotent_and_reference_native_spans() {
+    use parallax_model::{FlakyState, TestStatus};
+
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(&path).await.expect("open");
+    seed_test_reporting(&store).await;
+
+    assert_eq!(
+        store
+            .test_case(&format!("tc1:{}", "a".repeat(64)))
+            .await
+            .expect("read case")
+            .expect("case")
+            .name,
+        "test"
+    );
+    assert!(
+        store
+            .test_variant(&format!("tv1:{}", "b".repeat(64)))
+            .await
+            .expect("read variant")
+            .is_some()
+    );
+    let results = store
+        .test_results_for_invocation("inv-test", 10)
+        .await
+        .expect("read results");
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].status, TestStatus::Failed);
+    assert_eq!(results[0].key.attempt.get(), 1);
+    assert_eq!(
+        store
+            .test_flaky_state(&format!("tv1:{}", "b".repeat(64)))
+            .await
+            .expect("read flaky")
+            .expect("flaky")
+            .state,
+        FlakyState::Flaky
+    );
 
     let conn = store.conn.lock().await;
     for table in [
