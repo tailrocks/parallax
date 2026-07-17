@@ -237,6 +237,7 @@ managed quotes remain):
 | still not done | **555** | top 5 open |
 | health+pins+adopt | **556** | all healthy |
 | still not done | **557** | top 5 open |
+| ops burden note + raft D2 re-fail | **558** | gap #7 engine layer; list rates hold |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
@@ -305,6 +306,7 @@ Highest remaining:
 - [`product-rpo-runbook.md`](product-rpo-runbook.md) — product RPO/RTO: D1 telemetry / D2 meta / D3 Turso, cadence, restore order (Run 222).
 - [`workload-mix-decision-input.md`](workload-mix-decision-input.md) — DQ5 flip-rule mix model: A1–A7 classes, rubric, how to measure (Run 223).
 - [`managed-cloud-vs-self-host.md`](managed-cloud-vs-self-host.md) — managed Cloud vs self-host cost/ops calculus (SharedMergeTree + GT managed).
+- [`ops-burden-and-upgrade-surface.md`](ops-burden-and-upgrade-surface.md) — self-host ops inventory: Keeper vs Metasrv, failure modes, upgrade pins (Run 558).
 
 **Per-signal, benchmarks, and public claims**
 - [`per-signal-verdict.md`](per-signal-verdict.md) — scenario matrix: metrics vs logs vs traces vs evidence-bundle correlation.

@@ -95,11 +95,14 @@ engine-internals blocker.
   158; low-card PK + append_mode, `greptimedb-implementation.md`) are sketched but not a complete
   production DDL set per engine.
 
-## 7. Operational-complexity full picture — partial
+## 7. Operational-complexity full picture — engine layer closed (Run 558); drills still owed
 
-We have storage cost; we don't have the full **ops burden** comparison: running ClickHouse (+ Keeper +
-manual resharding) vs GreptimeDB (+ metasrv + optional Kafka remote WAL) — upgrade story, on-call
-surface, failure modes. Relevant to the anti-complexity goal.
+**Engine-layer inventory (Run 558):** new note
+[`ops-burden-and-upgrade-surface.md`](ops-burden-and-upgrade-surface.md) — topology
+(standalone vs Keeper+replicas vs Metasrv+Kafka), live `NO_ZOOKEEPER` /
+`SharedMergeTree` absent / raft-engine `meta snapshot` still path-URL-broken,
+on-call failure classes, upgrade pin discipline, scorecard. **Not closed:**
+practiced multi-node D2 restore, FTE model, soak upgrades at retained TB.
 
 ## What is NOT a gap (settled, re-verified)
 

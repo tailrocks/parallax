@@ -4,8 +4,9 @@
 
 Status: **Run 175** framework; **Run 221 (2026-07-17)** — primary-source **quote
 packet** from Greptime + ClickHouse pricing pages / billing docs. **Run 405
-(2026-07-18)** — re-fetched same sources: **list rates hold** (no drift). Still
-**not** a signed commercial quote. Pins: GT `v1.1.3` / CH `26.6.1.1193`.
+(2026-07-18)** + **Run 558 (2026-07-18)** — re-fetched same sources: **list
+rates hold** (no drift). Still **not** a signed commercial quote. Pins: GT
+`v1.1.3` / CH `26.6.1.1193`.
 
 > **Product authority unchanged:** Parallax ships **self-hostable GreptimeDB +
 > Turso**. This note scores how *managed* offerings change the *comparison
@@ -128,13 +129,14 @@ Assume AWS us-east-1, 30-day month, CH rates above. Greptime cells use the
    evidence-bundle re-read-heavy SaaS; prefer same-region app + private link;
    GT managed egress not published here.
 
-### Still owed after Run 221 / 405
+### Still owed after Run 221 / 405 / 558
 
 - **Signed/trial quotes** for a fixed Parallax profile (ingest GB/day, retained
-  TB, QPS for Q1–Q6 mix) from both vendors. **Run 405 re-fetch:** public list
-  numbers unchanged (`$290` GT floor; CH Basic **$66.52** / Scale **$499.38** /
-  Enterprise **$2,669.40** examples; storage still **$25.30/TB-mo** in the docs
-  math). Sales/trial still required for apples-to-apples.
+  TB, QPS for Q1–Q6 mix) from both vendors. **Run 405 + Run 558 re-fetch:**
+  public list numbers unchanged (`$290` GT floor; CH Basic **$66.52** / Scale
+  **$499.38** / Enterprise **$2,669.40** examples; storage still
+  **$25.30/TB-mo** in the docs math). Sales/trial still required for
+  apples-to-apples.
 - Greptime **published or trial-metered $/TB and CU** (or fixed SKU dimensions).
 - Optional: free-tier / trial burn of a synthetic bundle on each cloud (product
   time, not engine-internals).
