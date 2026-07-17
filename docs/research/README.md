@@ -108,6 +108,15 @@ This directory is the research record behind Parallax. It is organized so a read
 > A4 lives in [capture/correlation.md](capture/correlation.md), A5 in [decisions/stack-decision.md](decisions/stack-decision.md), A6 in [capture/redaction.md](capture/redaction.md).
 
 ### `market/` — landscape and competitor watch
+- **[competitors/](market/competitors/)** — **the canonical, no-bias competitor
+  comparison.** Entry point: [competitors/README.md](market/competitors/README.md)
+  (wide feature-presence matrix across Parallax + the whole ecosystem), with one
+  deep-dive per product (`parallax-vs-<product>.md`, e.g.
+  [parallax-vs-datadog.md](market/competitors/parallax-vs-datadog.md)),
+  [comparison-set.md](market/competitors/comparison-set.md) (the roster), and
+  [PROGRESS.md](market/competitors/PROGRESS.md) (verification state / work queue).
+  Built and permanently re-verified per
+  [prompts/parallax-vs-competitors.md](../../prompts/parallax-vs-competitors.md).
 - [landscape.md](market/landscape.md) — market research.
 - [competitor-watch.md](market/competitor-watch.md) — consolidated watch: OpenObserve, SigNoz, Coroot, Bugsink, Rustrak, Traceway, GoSnag, Urgentry, Sentry/Seer/MCP, the MCP-power boundary, and the drift ledger.
 - [alternatives-deep-analysis.md](market/alternatives-deep-analysis.md) — balanced skeptical analysis: 60+ alternatives surveyed, arguments FOR and AGAINST Parallax, empirical gates, and kill criteria.

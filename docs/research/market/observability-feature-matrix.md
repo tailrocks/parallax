@@ -1,5 +1,11 @@
 # Observability Feature Matrix — Cross-Tool Comparison
 
+> **Superseded as the canonical comparison** by
+> [`competitors/README.md`](competitors/README.md) (wider, no-bias presence matrix).
+> This legacy cross-tool map (dated 2026-06-22, Parallax-wedge framing) is a
+> **source**; cells are being re-verified and migrated into `competitors/`. See
+> [PROGRESS.md](competitors/PROGRESS.md) for per-cell verification state.
+
 Research date: 2026-06-22
 
 This is the **feature-by-feature cross-tool map**: which capability each platform provides and

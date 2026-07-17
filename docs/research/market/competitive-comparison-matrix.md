@@ -1,5 +1,12 @@
 # Competitive Comparison Matrix — Parallax vs Alternatives
 
+> **Superseded as the canonical comparison.** The living, no-bias comparison now
+> lives in [`competitors/`](competitors/) — see its [README matrix](competitors/README.md),
+> [comparison set](competitors/comparison-set.md), and per-product deep-dives
+> (e.g. [parallax-vs-datadog.md](competitors/parallax-vs-datadog.md)). This legacy
+> note (and the wedge-axis framing) is a **source**, kept as a lead; verify before
+> trusting, and migrate still-true content into `competitors/`.
+>
 > Research date: 2026-05-31
 > Quick-reference matrix for decision-making. Full analysis in
 > [alternatives-deep-analysis.md](alternatives-deep-analysis.md).

@@ -1,5 +1,11 @@
 # Closeness to Parallax — Ranked Competitor Analysis
 
+> **Superseded as the canonical comparison** by [`competitors/`](competitors/) —
+> see the [overview matrix](competitors/README.md) and
+> [comparison set](competitors/comparison-set.md). This legacy ranked note
+> (2026-06-22) is a **source** (Parallax-closeness framing); re-verify per-product
+> facts in the matching `competitors/parallax-vs-<product>.md` deep-dive.
+
 Research date: 2026-06-22
 
 This note ranks every tool surfaced in the comparison set and discovery sweep by **how close it is
