@@ -78,8 +78,13 @@ statuses intentionally untouched:
   nearest-rank in-memory impl, GraphQL `traceDurationStats(p50Ms/p95Ms)`.
   104 tests green; peer wires `duration-filter.tsx` to it + live-verify.
 
-Still open (full plan scope): GraphQL `attributeFilters` argument + input
-type; facet-count queries; logs/invocations filter
+- GraphQL `attributeFilters` argument (`916efac`): `AttributeFilterInput
+  {key, op, value}` (operator tokens parsed, invalid rejected with a field
+  error) on `tracesPage` and `traceDurationStats`; e2e narrowing test
+  against the memory adapter. The UI where-clause path is now open
+  end-to-end for traces — peer sends the parsed clause from the route.
+
+Still open (full plan scope): facet-count queries; logs/invocations filter
 compilation (the compiler is span-table-only so far); live-engine narrowing
 + injection assertions; route wiring + URL schemas (Step 3); `F` keyboard
 shortcut; syntax-highlight overlay (editor currently plain input);
