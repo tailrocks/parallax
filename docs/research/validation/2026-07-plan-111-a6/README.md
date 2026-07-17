@@ -1,7 +1,10 @@
 # Plan 111 — Redaction pipeline and A6 gate
 
 **Status:** DONE (2026-07-17)
-**Claim level:** measured (public-safe canaries; offline multi-scanner optional)
+**Claim level:** **`synthetic_canary_pass` (partial)** — public-safe unit canaries +
+owned Rust engine. **Not** full research A6 `agent_visible_mixed_pass`. See
+[a6-claim-status-recheck-2026-07-17.md](../a6-claim-status-recheck-2026-07-17.md)
+(pass 120). Offline multi-scanner optional and not a runtime dep.
 
 ## Contract
 
