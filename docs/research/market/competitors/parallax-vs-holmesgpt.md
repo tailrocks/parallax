@@ -1,11 +1,11 @@
 # Parallax vs HolmesGPT
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 41**
-> version pin; **pass 95** Operator-mode; **pass 142** re-pin + GitHub MCP
-> write surface). Sources:
+> version pin; **pass 95** Operator-mode; **pass 142** + **pass 177** re-pin +
+> GitHub MCP write surface). Sources:
 > [HolmesGPT/holmesgpt (GitHub)](https://github.com/HolmesGPT/holmesgpt)
-> (**v0.36.0**, 2026-07-13; **2,873★**; Apache-2.0; last push 2026-07-16),
-> [holmesgpt.dev](https://holmesgpt.dev/), operator + GitHub MCP docs.
+> (**v0.36.0**, 2026-07-13; **2,874★** pass **177**; Apache-2.0; last push
+> 2026-07-16), [holmesgpt.dev](https://holmesgpt.dev/), operator + GitHub MCP docs.
 >
 > **Bottom line up front:** HolmesGPT is a **CNCF Sandbox, Apache-2.0 AI SRE agent** that
 > **investigates alerts by querying your existing telemetry stack** (Prometheus/Loki/Tempo/K8s)
@@ -20,7 +20,7 @@
 
 ## What each product is
 
-- **HolmesGPT** (`HolmesGPT/holmesgpt`, by Robusta.dev) — an **open-source (Apache-2.0) AI SRE agent**, **CNCF Sandbox** project. Latest **v0.36.0** (2026-07-13), **2,873★**, active (pushed 2026-07-16 — **pass 95:** pin **unchanged**). **Investigates alerts/tickets** (Alertmanager/Prometheus/Jira/PagerDuty), pulls evidence from **K8s/cloud/DBs/VMs** for RCA (often <30s claim), runs **Markdown runbooks**, groups alerts into incidents (via Robusta). **MCP toolset support**. CNCF stack: Prometheus/Alertmanager, OpenTelemetry, Grafana Mimir/Loki/Tempo, Kubernetes. Commercial **Robusta** optional. **No own telemetry store** — queries yours.
+- **HolmesGPT** (`HolmesGPT/holmesgpt`, by Robusta.dev) — an **open-source (Apache-2.0) AI SRE agent**, **CNCF Sandbox** project. Latest **v0.36.0** (2026-07-13), **2,874★**, active (pushed 2026-07-16 — **pass 177:** pin **unchanged** vs 142). **Investigates alerts/tickets** (Alertmanager/Prometheus/Jira/PagerDuty), pulls evidence from **K8s/cloud/DBs/VMs** for RCA (often <30s claim), runs **Markdown runbooks**, groups alerts into incidents (via Robusta). **MCP toolset support**. CNCF stack: Prometheus/Alertmanager, OpenTelemetry, Grafana Mimir/Loki/Tempo, Kubernetes. Commercial **Robusta** optional. **No own telemetry store** — queries yours.
   - **Pass 95 — Operator mode (README lead feature):** background 24/7 health checks; can message Slack with a fix; with **GitHub integration** can **open PRs** to fix findings ([operator docs](https://holmesgpt.dev/operator/)). This is **infra/SRE closed-loop pressure**, not a portable redacted multi-signal **evidence-bundle schema** and not Parallax's **outcome ledger** product. Still **no store**.
   - **Pass 142 — pin + write nuance:** release still **0.36.0** / **2,873★**. Operator docs still **alpha**, recommend GitHub MCP to **open PRs** (not market “auto-merge as product”). GitHub MCP docs: write permissions **optional**; `pull_requests` toolset (~10 tools) includes **PR ops, reviews, comments, merging** when write-enabled. So Holmes **can** merge if token+tools allow — unlike Datadog Bits (“never auto-merges”). **Does not** close the north-star gap of **app-code auto-merge + open portable outcome/recurrence corpus**; still no own store / redacted evidence-bundle contract.
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable **execution-context engine**: OTLP-native ingest of traces/logs/metrics + CLI/agent traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, serves bounded/redacted evidence bundles to humans and coding agents. GreptimeDB + Turso. **Pre-release.**
