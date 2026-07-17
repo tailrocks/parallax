@@ -388,3 +388,8 @@ Highest remaining (unchanged):
 
 Highest remaining: (1) mix shares (2) server 1M/5M (3) trial quotes (4) GB cold S3
 (5) cluster D2 + product D3. **Not done.**
+
+## Run 461 (2026-07-18) — still not done
+
+**Not done.** Pins: GT v1.1.3 / nightly 20260713 / CH 26.6.1.1193 / head 26.7.1.1097.
+Highest remaining: mix, server 1M/5M, quotes, GB cold, cluster D2/product D3.
