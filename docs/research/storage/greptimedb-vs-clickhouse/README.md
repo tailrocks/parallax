@@ -243,6 +243,7 @@ managed quotes remain):
 | still not done; GT increase plan | **561** | pins hold; top 5 product/server |
 | adopt-native + join prune | **562** | OTLP 400; identity k2; PK+bloom |
 | FT tokenbf + PREWHERE | **563** | msg0 0/7; error 7/7; svc 2/7 |
+| still not done | **564** | top 5 product/server open |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |

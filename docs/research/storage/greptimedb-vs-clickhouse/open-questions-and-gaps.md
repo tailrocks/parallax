@@ -170,6 +170,13 @@ engine direction flip.**
 
 **Do not declare comparison done.**
 
+### Run 564 (2026-07-18)
+
+Loop continues after Runs 558–563 (ops burden, D1 re-smoke, PromQL matrix,
+GT increase plan, adopt-native, FT/PREWHERE). **No pin bump. No stack flip.**
+Highest remaining still: mix shares, server 1M/5M, trial quotes, GB cold S3,
+RPO D2 cluster + D3 Turso product.
+
 | # | Gap | Status |
 | --- | --- | --- |
 | 1 | Workload mix **filled shares** | packet exists (223); product fill owed |
