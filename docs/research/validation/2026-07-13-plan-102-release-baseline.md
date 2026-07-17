@@ -191,3 +191,11 @@ Do **not** retire plan 102 until:
 
 No stable tag was cut. No tap write credential was restored. No older preview
 was treated as proof of the current byte-producing implementation.
+
+## Mach-O line-table structural fix (2026-07-17)
+
+See
+[`2026-07-17-plan-102-macho-line-tables.md`](2026-07-17-plan-102-macho-line-tables.md).
+Apple package legs now embed `__DWARF` from dsymutil into the executable before
+`verify_object`. Residual plan-102 work is the external four-target preview
+proof only.

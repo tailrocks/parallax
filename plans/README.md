@@ -164,7 +164,7 @@ Plan 116 DONE (2026-07-17): retention contract + deterministic prune CLI
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [102](102-deterministic-release-pipeline.md) | Prove the deterministic release pipeline externally | P1 | S–M | 094, 096, 101; Mach-O line-table embed + post-merge preview | BLOCKED — protections live; Apple Package fails `missing line tables` (see validation 2026-07-17) |
+| [102](102-deterministic-release-pipeline.md) | Prove the deterministic release pipeline externally | P1 | S–M | 094, 096, 101; post-fix four-target preview + release-verify | IN PROGRESS — Mach-O embed landed; external preview proof residual |
 
 ### Quality Tooling And Rust
 

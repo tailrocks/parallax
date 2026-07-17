@@ -4,6 +4,7 @@ use anyhow::{Context, Result, bail};
 use clap::ValueEnum;
 
 mod archive;
+mod macho_dwarf;
 mod verify;
 
 const TARGETS: [&str; 4] = [
@@ -138,6 +139,15 @@ fn validate_binary(binary: &Path, target: &str, version: &str) -> Result<()> {
         .len();
     if size > MAX_RELEASE_BINARY_BYTES {
         bail!("release binary exceeds 512 MiB");
+    }
+    if target.contains("apple-darwin") {
+        macho_dwarf::ensure_line_tables(binary)?;
+        let size = std::fs::metadata(binary)
+            .with_context(|| format!("read release binary metadata {}", binary.display()))?
+            .len();
+        if size > MAX_RELEASE_BINARY_BYTES {
+            bail!("release binary exceeds 512 MiB after DWARF embed");
+        }
     }
     let binary_bytes = std::fs::read(binary)
         .with_context(|| format!("read release binary {}", binary.display()))?;

@@ -49,8 +49,8 @@ fn recognizes_native_and_compressed_line_tables() -> Result<(), String> {
         "__debug_line",
         "__zdebug_line",
     ]
-    .map(is_line_table_section);
-    if actual != [true, true, true, true] || is_line_table_section(".debug_info") {
+    .map(is_line_table_section_name);
+    if actual != [true, true, true, true] || is_line_table_section_name(".debug_info") {
         return Err(format!(
             "line-table section recognition mismatch: {actual:?}"
         ));
@@ -103,7 +103,7 @@ fn object_verification_rejects_target_version_and_corrupt_line_tables()
         let object = object::File::parse(corrupt_debug.as_slice())?;
         object
             .sections()
-            .find(|section| section.name().is_ok_and(is_line_table_section))
+            .find(|section| section.name().is_ok_and(is_line_table_section_name))
             .and_then(|section| section.file_range())
             .ok_or("debug line section has no file range")?
     };

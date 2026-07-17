@@ -280,16 +280,28 @@ fn release_callers_use_one_packager_and_verified_sdk() -> Result<(), String> {
             && preview.find("Validate preview release identity")
                 < preview.find("\n  build-preview:")
             && stable.find("Validate stable release identity") < stable.find("\n  build:"),
-        callers
-            .iter()
-            .all(|source| source.contains("./.github/actions/setup-macos-sdk")),
+        // Apple release legs run on macOS runners (native ld/dsymutil/codesign);
+        // Linux legs keep zigbuild. Neither release workflow cross-builds Apple
+        // on Linux, so the macOS SDK action is not required on the package path.
+        callers.iter().all(|source| {
+            source.contains("macos-latest")
+                && source.contains("builder: cargo")
+                && source.contains("builder: zigbuild")
+                && source.contains("Build (Apple native)")
+                && source.contains("Build (Linux zigbuild)")
+                && !source.contains("./.github/actions/setup-macos-sdk")
+        }),
         callers
             .iter()
             .all(|source| !source.contains("tar -czf") && !source.contains("| tar")),
         rehearsal.contains("cargo xtask release-rehearse")
             && rehearsal.contains("--channel rehearsal")
+            && rehearsal.contains("*-apple-darwin")
+            && rehearsal.contains("cargo build --release")
+            && rehearsal.contains("cargo zigbuild")
             && !rehearsal.contains("tar -czf")
             && !rehearsal.contains("-czf"),
+        // SDK action remains available and digest-pinned for any future cross path.
         sdk.contains("key: macos-sdk-archive-${{ inputs.version }}-${{ inputs.sha256 }}")
             && sdk.contains("[[ \"$SDK_VERSION\" =~ ^[0-9]+\\.[0-9]+$ ]]")
             && sdk.contains("[[ \"$SDK_SHA256\" =~ ^[0-9a-f]{64}$ ]]")

@@ -17,10 +17,6 @@ command -v mise >/dev/null || {
 mise install
 
 target="${1:-$(mise exec -- rustc -vV | sed -n 's/^host: //p')}"
-zig_target="$target"
-case "$target" in
-  *-unknown-linux-gnu) zig_target="${target}.2.17" ;;
-esac
 base_version="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)"
 source_sha="$(git rev-parse HEAD)"
 short_sha="$(printf '%s' "$source_sha" | cut -c1-7)"
@@ -34,8 +30,22 @@ test -f ui/dist/client/_shell.html || {
   exit 1
 }
 
-echo "==> cargo zigbuild --release --features embed-ui,cross-release-vendored (${zig_target})"
-PARALLAX_VERSION_OVERRIDE="$version" mise exec -- cargo zigbuild --release --locked -p parallax-cli --features embed-ui,cross-release-vendored --target "$zig_target"
+case "$target" in
+  *-apple-darwin)
+    # Native Apple ld + dsymutil + codesign: release-package embeds __DWARF.
+    echo "==> cargo build --release --features embed-ui (${target})"
+    PARALLAX_VERSION_OVERRIDE="$version" mise exec -- cargo build --release --locked -p parallax-cli --features embed-ui --target "$target"
+    ;;
+  *-unknown-linux-gnu)
+    zig_target="${target}.2.17"
+    echo "==> cargo zigbuild --release --features embed-ui,cross-release-vendored (${zig_target})"
+    PARALLAX_VERSION_OVERRIDE="$version" mise exec -- cargo zigbuild --release --locked -p parallax-cli --features embed-ui,cross-release-vendored --target "$zig_target"
+    ;;
+  *)
+    echo "unsupported release target: ${target}" >&2
+    exit 1
+    ;;
+esac
 
 bin="target/${target}/release/parallax"
 test -x "$bin"

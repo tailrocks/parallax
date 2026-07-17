@@ -1,2 +1,23 @@
 [alias]
 xtask = "run --package parallax-xtask --"
+
+# Apple ld drops DWARF from the final executable (OSO debug map only). Reserve
+# load-command header space so release packaging can merge dsymutil's __DWARF
+# segment back into the binary. split-debuginfo=packed runs dsymutil while
+# object files still exist; Linux targets keep workspace split-debuginfo=off
+# so .debug_line stays embedded in the ELF.
+[target.aarch64-apple-darwin]
+rustflags = [
+    "-C",
+    "split-debuginfo=packed",
+    "-C",
+    "link-arg=-Wl,-headerpad,0x10000",
+]
+
+[target.x86_64-apple-darwin]
+rustflags = [
+    "-C",
+    "split-debuginfo=packed",
+    "-C",
+    "link-arg=-Wl,-headerpad,0x10000",
+]

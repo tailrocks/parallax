@@ -249,7 +249,7 @@ pub(super) fn verify_object(binary: &[u8], target: &str, version: &str) -> Resul
         .filter_map(|section| section.name().ok())
         .collect::<Vec<_>>();
     ensure!(
-        sections.iter().any(|name| is_line_table_section(name)),
+        sections.iter().any(|name| is_line_table_section_name(name)),
         "release binary is missing line tables"
     );
     ensure!(
@@ -267,7 +267,7 @@ pub(super) fn verify_object(binary: &[u8], target: &str, version: &str) -> Resul
     Ok(())
 }
 
-fn is_line_table_section(name: &str) -> bool {
+pub(super) fn is_line_table_section_name(name: &str) -> bool {
     matches!(
         name,
         ".debug_line" | ".zdebug_line" | "__debug_line" | "__zdebug_line"

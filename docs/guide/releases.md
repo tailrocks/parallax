@@ -14,7 +14,9 @@ scripts/release.sh
 ```
 
 Pass a supported target triple to rehearse a cross build. The script builds the
-embedded UI, uses Zig/cargo-zigbuild with the native-TLS vendored OpenSSL path,
+embedded UI; Apple targets use native `cargo build` (so `dsymutil`/`codesign`
+can embed real `__DWARF` line tables into the single executable), and Linux
+targets use Zig/cargo-zigbuild with the native-TLS vendored OpenSSL path. It
 packages the same binary twice, and fails unless both archive digests match. It
 writes the archive and bare-hash `.sha256` under `target/dist/` and never
 publishes. The script explicitly selects the non-publishable `rehearsal`

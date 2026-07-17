@@ -15,9 +15,8 @@
   preview run
 - **Category**: release / packaging / provenance
 - **Planned at**: `a1d8bf82`, revised 2026-07-15, blocked-update 2026-07-17
-- **Status**: BLOCKED — stable protections are configured, but the current
-  implementation cannot publish a four-target preview: Apple targets fail
-  Package with `release binary is missing line tables`
+- **Status**: IN PROGRESS — Mach-O line-table embed landed; external
+  four-target preview + release-verify still required before retirement
 
 ## Completed Contract
 
@@ -41,12 +40,13 @@ configuration evidence lives in
 1. ~~Operator enables stable readiness~~ **DONE 2026-07-17**:
    `STABLE_RELEASE_ENABLED=true`, reviewer-protected `stable-release`
    environment, active `refs/tags/v*` ruleset (`stable tag protection`).
-2. **Fix Mach-O release binaries so `verify_object` accepts them** — final
-   linked `aarch64-apple-darwin` / `x86_64-apple-darwin` executables must
-   retain line-table sections (or an equivalent in-binary surface the
-   existing verifier already accepts). Object files already emit
-   `__debug_line`; the link step drops them. Do not satisfy this with a
-   forbidden symbol companion or by treating `4e8edfa` as proof.
+2. ~~**Fix Mach-O release binaries so `verify_object` accepts them**~~
+   **DONE 2026-07-17** — post-link dSYM→`__DWARF` embed in
+   `release-package` (`macho_dwarf.rs`), Apple headerpad + packed dSYM via
+   `.cargo/config.toml`, Apple CI legs on `macos-latest`. Local proof:
+   `cargo test -p parallax-xtask --lib release::` (includes aarch64-apple
+   embed + `verify_object`). Evidence:
+   [`docs/research/validation/2026-07-17-plan-102-macho-line-tables.md`](../docs/research/validation/2026-07-17-plan-102-macho-line-tables.md).
 3. After that fix reaches `main` and CI is green, publish one complete
    four-target preview asset set from the current implementation SHA.
 4. Download that set and run `cargo xtask release-verify` with its exact source
@@ -56,6 +56,10 @@ configuration evidence lives in
    this plan and its index row.
 
 ## Fresh Blocker Evidence (2026-07-17)
+
+> **Update 2026-07-17 later**: Mach-O embed structural fix landed (see remaining work item 2). Protections remain OK; external four-target preview is now the residual blocker.
+
+## Fresh Blocker Evidence (2026-07-17) — pre-fix snapshot
 
 Protections (read-back OK):
 
