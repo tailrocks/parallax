@@ -6,6 +6,7 @@ import {
   IconArticleFilled,
   IconBug,
   IconBugFilled,
+  IconChartLine,
   IconClipboardList,
   IconClipboardListFilled,
   IconDatabase,
@@ -68,6 +69,14 @@ export const primaryNav: NavItem[] = [
     activeIcon: IconArticleFilled,
     iconClassName:
       "bg-orange-100 dark:bg-orange-950 rounded-xl p-0.5 corner-squircle text-orange-500 shadow-[inset_0_0_0_1px_rgba(249,115,22,0.14),0_2px_6px_-2px_rgba(249,115,22,0.25)] dark:shadow-(--custom-shadow)",
+  },
+  {
+    href: "/metrics",
+    label: "Metrics",
+    icon: IconChartLine,
+    activeIcon: IconChartLine,
+    iconClassName:
+      "bg-indigo-100 dark:bg-indigo-950 rounded-xl p-0.5 corner-squircle text-indigo-500 shadow-[inset_0_0_0_1px_rgba(99,102,241,0.14),0_2px_6px_-2px_rgba(99,102,241,0.25)] dark:shadow-(--custom-shadow)",
   },
   {
     href: "/services",

@@ -1,0 +1,301 @@
+import { createFileRoute } from "@tanstack/react-router"
+import { useMemo } from "react"
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
+import { IconChartLine } from "@tabler/icons-react"
+
+import { RangePicker } from "@/components/console/range-picker"
+import { PageHeader } from "@/components/page-header"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { gqlString, graphqlCached } from "@/lib/api"
+import {
+  inferMetricKind,
+  type MetricAggregation,
+  type MetricKind,
+} from "@/lib/metric-aggregation"
+import {
+  mergeRangeSearch,
+  rangeSearchSchema,
+  resolveRangeSearch,
+  type ResolvedRange,
+} from "@/lib/range"
+
+// Plan 168 metric detail view (preliminary). Runs on the existing GraphQL
+// primitives (metricSeries / histogramQuantile / metricLabels); the
+// metricCatalog/metricQuery single entry point, breakdown click-to-filter,
+// where-filter, incomplete-bucket dashed tail, and graduation buttons land
+// with the full plan.
+
+interface MetricDetailSearch {
+  range?: string | undefined
+  from?: string | undefined
+  to?: string | undefined
+  agg?: string | undefined
+  groupBy?: string | undefined
+  step?: string | undefined
+}
+
+function searchString(value: unknown) {
+  return typeof value === "string" && value ? value : undefined
+}
+
+const NO_GROUP = "__none__"
+const STEP_OPTIONS = ["30", "60", "300", "900"] as const
+
+// Aggregations the CURRENT backend accepts (metricSeries: avg|min|max|sum|
+// rate; histogramQuantile: p50/p95/p99). The full legality table in
+// lib/metric-aggregation.ts includes increase/last, which land with the
+// plan-168 metricQuery backend — until then this route offers the
+// intersection so every option works live.
+function supportedAggregations(kind: MetricKind): MetricAggregation[] {
+  switch (kind) {
+    case "sum":
+      return ["rate", "sum"]
+    case "histogram":
+    case "summary":
+      return ["p50", "p95", "p99"]
+    case "gauge":
+    case "unknown":
+      return ["avg", "min", "max"]
+  }
+}
+
+function resolveAggregation(
+  kind: MetricKind,
+  raw: string | undefined
+): MetricAggregation {
+  const legal = supportedAggregations(kind)
+  return legal.includes(raw as MetricAggregation)
+    ? (raw as MetricAggregation)
+    : legal[0]!
+}
+
+interface SeriesOut {
+  groupValue: string | null
+  points: Array<{ tsNanos: string; value: number }>
+}
+
+interface DetailData {
+  labels: string[]
+  series: SeriesOut[]
+  range: ResolvedRange
+}
+
+async function loadDetail(
+  metricName: string,
+  search: MetricDetailSearch
+): Promise<DetailData> {
+  const range = resolveRangeSearch(search)
+  const kind = inferMetricKind(metricName)
+  const agg = resolveAggregation(kind, search.agg)
+  const stepSeconds = Number(search.step ?? "60") || 60
+  const name = `"${gqlString(metricName)}"`
+  const window = `fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}"`
+  if ((kind === "histogram" || kind === "summary") && agg.startsWith("p")) {
+    const q = Number(agg.slice(1)) / 100
+    const data = await graphqlCached<{
+      metricLabels: string[]
+      histogramQuantile: Array<{ tsNanos: string; value: number }>
+    }>(`{
+      metricLabels(name: ${name})
+      histogramQuantile(name: ${name}, ${window}, q: ${q}, stepSeconds: ${stepSeconds}) { tsNanos value }
+    }`)
+    return {
+      labels: data.metricLabels,
+      series: [{ groupValue: null, points: data.histogramQuantile }],
+      range,
+    }
+  }
+  const groupBy = search.groupBy
+    ? `, groupBy: "${gqlString(search.groupBy)}"`
+    : ""
+  const data = await graphqlCached<{
+    metricLabels: string[]
+    metricSeries: SeriesOut[]
+  }>(`{
+    metricLabels(name: ${name})
+    metricSeries(name: ${name}, ${window}, agg: "${gqlString(agg)}", stepSeconds: ${stepSeconds}${groupBy}) {
+      groupValue
+      points { tsNanos value }
+    }
+  }`)
+  return { labels: data.metricLabels, series: data.metricSeries, range }
+}
+
+export const Route = createFileRoute("/metrics/$metricName")({
+  validateSearch: (search: Record<string, unknown>): MetricDetailSearch => ({
+    ...rangeSearchSchema.parse(search),
+    agg: searchString(search["agg"]),
+    groupBy: searchString(search["groupBy"]),
+    step: searchString(search["step"]),
+  }),
+  loaderDeps: ({ search }) => search,
+  loader: ({ params, deps }) => loadDetail(params.metricName, deps),
+  component: MetricDetailPage,
+})
+
+function MetricDetailPage() {
+  const { metricName } = Route.useParams()
+  const { labels, series, range } = Route.useLoaderData()
+  const search = Route.useSearch()
+  const navigate = Route.useNavigate()
+
+  const kind = inferMetricKind(metricName)
+  const legal = supportedAggregations(kind)
+  const agg = resolveAggregation(kind, search.agg)
+
+  const groups = useMemo(
+    () =>
+      series.map((entry, index) => entry.groupValue ?? `series-${index + 1}`),
+    [series]
+  )
+  const rows = useMemo(() => {
+    const byTime = new Map<string, Record<string, string | number>>()
+    series.forEach((entry, index) => {
+      const key = entry.groupValue ?? `series-${index + 1}`
+      for (const point of entry.points) {
+        const time = new Date(
+          Number(BigInt(point.tsNanos) / 1_000_000n)
+        ).toLocaleTimeString()
+        const row = byTime.get(point.tsNanos) ?? { time }
+        row[key] = point.value
+        byTime.set(point.tsNanos, row)
+      }
+    })
+    return Array.from(byTime.entries())
+      .sort(([a], [b]) => (BigInt(a) < BigInt(b) ? -1 : 1))
+      .map(([, row]) => row)
+  }, [series])
+
+  const config = Object.fromEntries(
+    groups.map((group, index) => [
+      group,
+      { label: group, color: `var(--chart-${(index % 5) + 1})` },
+    ])
+  ) satisfies ChartConfig
+
+  const setSearch = (patch: Partial<MetricDetailSearch>) =>
+    void navigate({ search: (prev) => ({ ...prev, ...patch }) })
+
+  return (
+    <div className="space-y-4 p-4">
+      <PageHeader
+        titleLeading={<IconChartLine className="size-5" />}
+        title={metricName}
+        description={
+          <span className="flex items-center gap-2">
+            <Badge variant="outline">{kind}</Badge>
+            <Badge variant="secondary">{agg}</Badge>
+          </span>
+        }
+        titleTrailing={
+          <RangePicker
+            value={range}
+            onChange={(next) =>
+              void navigate({
+                search: (prev) => mergeRangeSearch(prev, next),
+              })
+            }
+          />
+        }
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <Select
+          value={agg}
+          onValueChange={(next) =>
+            setSearch({ agg: next as MetricAggregation })
+          }
+        >
+          <SelectTrigger size="sm" className="w-32">
+            <SelectValue placeholder="Aggregation" />
+          </SelectTrigger>
+          <SelectContent>
+            {legal.map((option) => (
+              <SelectItem key={option} value={option}>
+                {option}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={search.groupBy ?? NO_GROUP}
+          onValueChange={(next) =>
+            setSearch({
+              groupBy: next == null || next === NO_GROUP ? undefined : next,
+            })
+          }
+        >
+          <SelectTrigger size="sm" className="w-44">
+            <SelectValue placeholder="Group by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={NO_GROUP}>No grouping</SelectItem>
+            {labels.map((label) => (
+              <SelectItem key={label} value={label}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={search.step ?? "60"}
+          onValueChange={(next) => setSearch({ step: next ?? undefined })}
+        >
+          <SelectTrigger size="sm" className="w-28">
+            <SelectValue placeholder="Step" />
+          </SelectTrigger>
+          <SelectContent>
+            {STEP_OPTIONS.map((option) => (
+              <SelectItem key={option} value={option}>
+                {option}s
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">
+            {agg} · {groups.length} series
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={config} className="h-[280px] w-full">
+            <LineChart data={rows} margin={{ left: 8, right: 8, top: 8 }}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="time"
+                tickLine={false}
+                axisLine={false}
+                minTickGap={32}
+              />
+              <YAxis tickLine={false} axisLine={false} width={48} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              {groups.map((group) => (
+                <Line
+                  key={group}
+                  dataKey={group}
+                  stroke={`var(--color-${group})`}
+                  dot={{ r: 2, strokeWidth: 0, fill: `var(--color-${group})` }}
+                />
+              ))}
+            </LineChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

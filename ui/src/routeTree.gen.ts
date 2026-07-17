@@ -15,12 +15,14 @@ import { Route as LogsRouteImport } from './routes/logs'
 import { Route as EcosystemRouteImport } from './routes/ecosystem'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TracesIndexRouteImport } from './routes/traces.index'
+import { Route as MetricsIndexRouteImport } from './routes/metrics.index'
 import { Route as IssuesIndexRouteImport } from './routes/issues.index'
 import { Route as InvocationsIndexRouteImport } from './routes/invocations.index'
 import { Route as InvestigationsIndexRouteImport } from './routes/investigations.index'
 import { Route as DashboardsIndexRouteImport } from './routes/dashboards.index'
 import { Route as TracesTraceIdRouteImport } from './routes/traces.$traceId'
 import { Route as ServicesServiceRouteImport } from './routes/services.$service'
+import { Route as MetricsMetricNameRouteImport } from './routes/metrics.$metricName'
 import { Route as IssuesFingerprintRouteImport } from './routes/issues.$fingerprint'
 import { Route as InvocationsInvocationIdRouteImport } from './routes/invocations.$invocationId'
 import { Route as InvestigationsInvestigationIdRouteImport } from './routes/investigations.$investigationId'
@@ -56,6 +58,11 @@ const TracesIndexRoute = TracesIndexRouteImport.update({
   path: '/traces/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MetricsIndexRoute = MetricsIndexRouteImport.update({
+  id: '/metrics/',
+  path: '/metrics/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IssuesIndexRoute = IssuesIndexRouteImport.update({
   id: '/issues/',
   path: '/issues/',
@@ -85,6 +92,11 @@ const ServicesServiceRoute = ServicesServiceRouteImport.update({
   id: '/$service',
   path: '/$service',
   getParentRoute: () => ServicesRoute,
+} as any)
+const MetricsMetricNameRoute = MetricsMetricNameRouteImport.update({
+  id: '/metrics/$metricName',
+  path: '/metrics/$metricName',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const IssuesFingerprintRoute = IssuesFingerprintRouteImport.update({
   id: '/issues/$fingerprint',
@@ -118,12 +130,14 @@ export interface FileRoutesByFullPath {
   '/investigations/$investigationId': typeof InvestigationsInvestigationIdRoute
   '/invocations/$invocationId': typeof InvocationsInvocationIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
+  '/metrics/$metricName': typeof MetricsMetricNameRoute
   '/services/$service': typeof ServicesServiceRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
   '/dashboards/': typeof DashboardsIndexRoute
   '/investigations/': typeof InvestigationsIndexRoute
   '/invocations/': typeof InvocationsIndexRoute
   '/issues/': typeof IssuesIndexRoute
+  '/metrics/': typeof MetricsIndexRoute
   '/traces/': typeof TracesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -136,12 +150,14 @@ export interface FileRoutesByTo {
   '/investigations/$investigationId': typeof InvestigationsInvestigationIdRoute
   '/invocations/$invocationId': typeof InvocationsInvocationIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
+  '/metrics/$metricName': typeof MetricsMetricNameRoute
   '/services/$service': typeof ServicesServiceRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
   '/dashboards': typeof DashboardsIndexRoute
   '/investigations': typeof InvestigationsIndexRoute
   '/invocations': typeof InvocationsIndexRoute
   '/issues': typeof IssuesIndexRoute
+  '/metrics': typeof MetricsIndexRoute
   '/traces': typeof TracesIndexRoute
 }
 export interface FileRoutesById {
@@ -155,12 +171,14 @@ export interface FileRoutesById {
   '/investigations/$investigationId': typeof InvestigationsInvestigationIdRoute
   '/invocations/$invocationId': typeof InvocationsInvocationIdRoute
   '/issues/$fingerprint': typeof IssuesFingerprintRoute
+  '/metrics/$metricName': typeof MetricsMetricNameRoute
   '/services/$service': typeof ServicesServiceRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
   '/dashboards/': typeof DashboardsIndexRoute
   '/investigations/': typeof InvestigationsIndexRoute
   '/invocations/': typeof InvocationsIndexRoute
   '/issues/': typeof IssuesIndexRoute
+  '/metrics/': typeof MetricsIndexRoute
   '/traces/': typeof TracesIndexRoute
 }
 export interface FileRouteTypes {
@@ -175,12 +193,14 @@ export interface FileRouteTypes {
     | '/investigations/$investigationId'
     | '/invocations/$invocationId'
     | '/issues/$fingerprint'
+    | '/metrics/$metricName'
     | '/services/$service'
     | '/traces/$traceId'
     | '/dashboards/'
     | '/investigations/'
     | '/invocations/'
     | '/issues/'
+    | '/metrics/'
     | '/traces/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -193,12 +213,14 @@ export interface FileRouteTypes {
     | '/investigations/$investigationId'
     | '/invocations/$invocationId'
     | '/issues/$fingerprint'
+    | '/metrics/$metricName'
     | '/services/$service'
     | '/traces/$traceId'
     | '/dashboards'
     | '/investigations'
     | '/invocations'
     | '/issues'
+    | '/metrics'
     | '/traces'
   id:
     | '__root__'
@@ -211,12 +233,14 @@ export interface FileRouteTypes {
     | '/investigations/$investigationId'
     | '/invocations/$invocationId'
     | '/issues/$fingerprint'
+    | '/metrics/$metricName'
     | '/services/$service'
     | '/traces/$traceId'
     | '/dashboards/'
     | '/investigations/'
     | '/invocations/'
     | '/issues/'
+    | '/metrics/'
     | '/traces/'
   fileRoutesById: FileRoutesById
 }
@@ -230,11 +254,13 @@ export interface RootRouteChildren {
   InvestigationsInvestigationIdRoute: typeof InvestigationsInvestigationIdRoute
   InvocationsInvocationIdRoute: typeof InvocationsInvocationIdRoute
   IssuesFingerprintRoute: typeof IssuesFingerprintRoute
+  MetricsMetricNameRoute: typeof MetricsMetricNameRoute
   TracesTraceIdRoute: typeof TracesTraceIdRoute
   DashboardsIndexRoute: typeof DashboardsIndexRoute
   InvestigationsIndexRoute: typeof InvestigationsIndexRoute
   InvocationsIndexRoute: typeof InvocationsIndexRoute
   IssuesIndexRoute: typeof IssuesIndexRoute
+  MetricsIndexRoute: typeof MetricsIndexRoute
   TracesIndexRoute: typeof TracesIndexRoute
 }
 
@@ -282,6 +308,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TracesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/metrics/': {
+      id: '/metrics/'
+      path: '/metrics'
+      fullPath: '/metrics/'
+      preLoaderRoute: typeof MetricsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/issues/': {
       id: '/issues/'
       path: '/issues'
@@ -323,6 +356,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/services/$service'
       preLoaderRoute: typeof ServicesServiceRouteImport
       parentRoute: typeof ServicesRoute
+    }
+    '/metrics/$metricName': {
+      id: '/metrics/$metricName'
+      path: '/metrics/$metricName'
+      fullPath: '/metrics/$metricName'
+      preLoaderRoute: typeof MetricsMetricNameRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/issues/$fingerprint': {
       id: '/issues/$fingerprint'
@@ -377,11 +417,13 @@ const rootRouteChildren: RootRouteChildren = {
   InvestigationsInvestigationIdRoute: InvestigationsInvestigationIdRoute,
   InvocationsInvocationIdRoute: InvocationsInvocationIdRoute,
   IssuesFingerprintRoute: IssuesFingerprintRoute,
+  MetricsMetricNameRoute: MetricsMetricNameRoute,
   TracesTraceIdRoute: TracesTraceIdRoute,
   DashboardsIndexRoute: DashboardsIndexRoute,
   InvestigationsIndexRoute: InvestigationsIndexRoute,
   InvocationsIndexRoute: InvocationsIndexRoute,
   IssuesIndexRoute: IssuesIndexRoute,
+  MetricsIndexRoute: MetricsIndexRoute,
   TracesIndexRoute: TracesIndexRoute,
 }
 export const routeTree = rootRouteImport
