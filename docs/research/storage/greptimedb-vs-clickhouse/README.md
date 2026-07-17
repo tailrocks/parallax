@@ -67,6 +67,7 @@ managed quotes remain):
 | Join pushdown | 193 | CH prunes; both interactive |
 | MinIO S3 object layout re-verify (pins bumped) | 220 | GT 3 / CH 22 objs @100k |
 | Managed cloud primary $ rates | 221 | CH transparent; GT $290 floor opaque |
+| Product RPO/RTO runbook (D1–D3) | 222 | `product-rpo-runbook.md` |
 
 ## Method
 
@@ -111,6 +112,7 @@ managed quotes remain):
 - [`storage-cost-and-tiering.md`](storage-cost-and-tiering.md) — CH performance/local-first vs GT S3-native/cost-first; hot/cold hybrid.
 - [`multi-tenancy-and-isolation.md`](multi-tenancy-and-isolation.md) — tenant isolation, RBAC, row policies, quotas, and proxy-owned auth.
 - [`backup-and-disaster-recovery.md`](backup-and-disaster-recovery.md) — engine backup/export/restore surfaces (GT COPY+cli meta/data vs CH BACKUP/RESTORE).
+- [`product-rpo-runbook.md`](product-rpo-runbook.md) — product RPO/RTO: D1 telemetry / D2 meta / D3 Turso, cadence, restore order (Run 222).
 - [`managed-cloud-vs-self-host.md`](managed-cloud-vs-self-host.md) — managed Cloud vs self-host cost/ops calculus (SharedMergeTree + GT managed).
 
 **Per-signal, benchmarks, and public claims**

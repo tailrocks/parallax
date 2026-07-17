@@ -128,7 +128,10 @@ Highest-value *remaining* items (not “done”):
    N=100k on current pins (GT 3 vs CH 22 objects); **GB–TB selective cold + GET
    parity for GT** still owed (server/MinIO large tier; `mc admin trace` broken on
    current MinIO — use CH `system.events`, need GT OpenDAL counters).
-5. **Product RPO runbook** — Turso + GT meta snapshot + object store (ops, not engine choice).
+5. **Product RPO runbook** — **Run 222** drafted
+   [`product-rpo-runbook.md`](product-rpo-runbook.md) (D1/D2/D3 domains, cadence,
+   restore order, default RPO/RTO). Remaining: customer-tier SLOs, automated job
+   manifests, live restore drill on throwaway stack.
 
 Do **not** burn passes re-confirming interactive 100k ties or small-N S3 object
 counts unless a pin bumps.

@@ -4,8 +4,9 @@
 
 Status: **Run 174 (2026-07-17)** — gap-ledger item #4 (engine-layer backup/DR was
 "not addressed"). Source + live Docker on pins **GT `v1.1.3`** /
-**CH `26.6.1.1193`**. This is the **engine** story; Parallax still needs a product
-runbook (who restores, RPO/RTO, secrets, Turso metadata separately).
+**CH `26.6.1.1193`**. This is the **engine** story. **Product RPO/RTO runbook
+(domains D1–D3, cadence, restore order):**
+[`product-rpo-runbook.md`](product-rpo-runbook.md) (Run 222).
 
 ## One-line comparison
 
@@ -94,8 +95,8 @@ layout) — they prove **both paths work end-to-end** on current pins.
    local/part-centric** deployments and BI-friendly point-in-time table copies. If
    Parallax ever exposed raw CH for internal analytics, that SQL surface is nicer.
 3. **Turso metadata** (issues, auth, config) is a **separate** backup domain — neither
-   engine’s telemetry backup covers it. Product RPO must list Turso + Greptime meta +
-   object store.
+   engine’s telemetry backup covers it. Product RPO lists Turso + Greptime meta +
+   object store — see [`product-rpo-runbook.md`](product-rpo-runbook.md).
 4. **JSON2 caveat:** empty/broken structured-JSON tables can break `COPY DATABASE`
    (Run 174); validate export after schema experiments.
 
