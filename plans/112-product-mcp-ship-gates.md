@@ -136,6 +136,9 @@ must not return in product output.
 - Two fresh transports over the same server state rediscover the identical
   terminal catalog, proving preliminary discovery has no prior-session or MCP
   session-ID dependency.
+- All spike test bodies now live in external child modules; production files
+  contain only `#[cfg(test)] mod tests;`, and both production/test files remain
+  below the active Rust structural ceilings.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded
