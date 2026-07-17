@@ -176,7 +176,7 @@ fn extract_embedded_hash(json: &str) -> anyhow::Result<String> {
 /// Reproduce bundle-v2's version-scoped hash over the emitted envelope: drop
 /// request/build fields from the envelope and its immutable v1 `data`, then
 /// hash canonical JSON with the `sha256-jcs:` prefix.
-fn recompute_canonical_hash(json: &str) -> anyhow::Result<String> {
+pub(crate) fn recompute_canonical_hash(json: &str) -> anyhow::Result<String> {
     let mut value: Value = serde_json::from_str(json)?;
     if let Value::Object(map) = &mut value {
         map.remove("canonical_hash");

@@ -66,6 +66,8 @@ must not return in product output.
   contain seeded or upstream-reflected evidence.
 - Bundle output fails closed unless the separately projected GraphQL canonical
   hash exactly matches the hash embedded in the bundle-v2 object.
+- The MCP tool path independently recomputes the canonical v2 hash as well;
+  matching but forged upstream embedded/projected hashes fail closed.
 - The standalone equivalence checker now recomputes bundle-v2's actual
   `sha256-jcs:` scope, including the nested `data` exclusions; fixtures prove
   excluded build/budget changes are stable while evidence changes are not.

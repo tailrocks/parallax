@@ -175,7 +175,12 @@ fn bundle_tool_result(bundle: gql::BundleProjection) -> Result<CallToolResult, M
         return Err(safe_internal_error("bundle_contract_mismatch"));
     }
     let embedded_hash = parsed.get("canonical_hash").and_then(Value::as_str);
-    if embedded_hash.is_none() || embedded_hash != Some(bundle.canonical_hash.as_str()) {
+    let recomputed_hash = crate::check::recompute_canonical_hash(&bundle.json)
+        .map_err(|_| safe_internal_error("bundle_hash_invalid"))?;
+    if embedded_hash.is_none()
+        || embedded_hash != Some(bundle.canonical_hash.as_str())
+        || embedded_hash != Some(recomputed_hash.as_str())
+    {
         return Err(safe_internal_error("bundle_hash_mismatch"));
     }
     let mut result = CallToolResult::structured(parsed);
@@ -234,6 +239,22 @@ mod tests {
             let mut info = rmcp::model::ClientInfo::default();
             info.protocol_version = self.0.clone();
             info
+        }
+    }
+
+    fn valid_bundle_projection() -> gql::BundleProjection {
+        let mut value = json!({
+            "schema_version": "bundle-v2",
+            "generator": "parallax/test",
+            "data": { "schema_version": "bundle-v1", "evidence": "bounded" },
+            "canonical_hash": null
+        });
+        let hash = crate::check::recompute_canonical_hash(&value.to_string()).expect("hash");
+        value["canonical_hash"] = json!(hash);
+        gql::BundleProjection {
+            json: value.to_string(),
+            markdown: "# Evidence".to_string(),
+            canonical_hash: hash,
         }
     }
 
@@ -357,13 +378,9 @@ mod tests {
 
     #[test]
     fn bundle_result_has_no_comparison_only_raw_metadata() {
-        let result = bundle_tool_result(gql::BundleProjection {
-            json: r#"{"schema_version":"bundle-v2","canonical_hash":"sha256-jcs:test"}"#
-                .to_string(),
-            markdown: "# Evidence".to_string(),
-            canonical_hash: "sha256-jcs:test".to_string(),
-        })
-        .expect("valid bundle result");
+        let projection = valid_bundle_projection();
+        let canonical_hash = projection.canonical_hash.clone();
+        let result = bundle_tool_result(projection).expect("valid bundle result");
         let encoded = serde_json::to_value(result).expect("serialize result");
 
         assert_eq!(encoded.get("_meta"), None);
@@ -371,7 +388,9 @@ mod tests {
             encoded.get("structuredContent"),
             Some(&json!({
                 "schema_version": "bundle-v2",
-                "canonical_hash": "sha256-jcs:test"
+                "generator": "parallax/test",
+                "data": { "schema_version": "bundle-v1", "evidence": "bounded" },
+                "canonical_hash": canonical_hash
             }))
         );
     }
@@ -405,18 +424,29 @@ mod tests {
 
     #[test]
     fn bundle_hash_mismatch_fails_closed() {
-        let error = bundle_tool_result(gql::BundleProjection {
-            json: r#"{"schema_version":"bundle-v2","canonical_hash":"sha256-jcs:embedded"}"#
-                .to_string(),
-            markdown: "# Evidence".to_string(),
-            canonical_hash: "sha256-jcs:projected".to_string(),
-        })
-        .expect_err("mismatched projection must fail");
+        let mut projection = valid_bundle_projection();
+        projection.canonical_hash = "sha256-jcs:projected".to_string();
+        let error = bundle_tool_result(projection).expect_err("mismatched projection must fail");
         let encoded = serde_json::to_string(&error).expect("serialize MCP error");
 
         assert!(encoded.contains("bundle_hash_mismatch"));
         assert!(!encoded.contains("embedded"));
         assert!(!encoded.contains("projected"));
+    }
+
+    #[test]
+    fn matching_forged_bundle_hashes_fail_closed() {
+        let forged = "sha256-jcs:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        let mut projection = valid_bundle_projection();
+        let mut value: Value = serde_json::from_str(&projection.json).expect("bundle JSON");
+        value["canonical_hash"] = json!(forged);
+        projection.json = value.to_string();
+        projection.canonical_hash = forged.to_string();
+
+        let error = bundle_tool_result(projection).expect_err("forged hash must fail");
+        let encoded = serde_json::to_string(&error).expect("serialize MCP error");
+        assert!(encoded.contains("bundle_hash_mismatch"));
+        assert!(!encoded.contains(forged));
     }
 
     #[test]
