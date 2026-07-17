@@ -12,8 +12,8 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 101 (SigNoz still **v0.133.0** / **30,261★**;
-README **Noz = Cloud only** reconfirmed). Pass 100 = A3. A1/A2/A4/A6 open.
+Last updated 2026-07-17 after pass 102 (OpenObserve still **v0.91.2** / **20,196★**;
+EE AI/SDR gate + 50 GB/day free still primary). Pass 101 = SigNoz. A1/A2/A4/A6 open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
