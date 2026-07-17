@@ -150,6 +150,11 @@ the helper objective; the peer executor owns the status transition.
   consumes the scan cap, unrelated files are never selected, and cap overflow
   fails closed. Wiring this estimate into the unified plan and replacing the
   unsynchronized legacy CLI truncation path remain peer work.
+- Core authorization now fails closed for destructive requests whose snapshot
+  declares `pins:none`; dry-run remains available. The concurrent CLI draft
+  currently bypasses `PrunePlan::authorize`, so peer verification must route
+  every execution through it and must not enable issue/invocation deletion
+  until Plan 106 supplies real reachability plus a stable protection generation.
 
 ## Historical Blocker Evidence (2026-07-14; superseded 2026-07-17)
 

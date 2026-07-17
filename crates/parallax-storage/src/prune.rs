@@ -201,6 +201,8 @@ pub enum PrunePlanError {
     UnsupportedContractVersion(u8),
     #[error("destructive prune execution requires explicit confirmation")]
     ConfirmationRequired,
+    #[error("destructive prune execution requires an available pin-protection snapshot")]
+    ProtectionUnavailable,
     #[error("failed to encode prune plan identity: {0}")]
     Identity(#[from] serde_json::Error),
 }
@@ -348,7 +350,12 @@ impl PrunePlan {
         self.validate_snapshot(current)?;
         match request.mode {
             PruneExecutionMode::DryRun => Ok(PruneAuthorization::DryRun),
-            PruneExecutionMode::Execute => Ok(PruneAuthorization::Execute),
+            PruneExecutionMode::Execute => {
+                if self.snapshot.protection_generation == "pins:none" {
+                    return Err(PrunePlanError::ProtectionUnavailable);
+                }
+                Ok(PruneAuthorization::Execute)
+            }
         }
     }
 

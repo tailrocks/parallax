@@ -139,6 +139,36 @@ fn persisted_plan_decoding_revalidates_version_identity_and_bounds() {
 }
 
 #[test]
+fn execution_fails_closed_when_pin_protection_is_unavailable() {
+    let unavailable = PruneSnapshot {
+        protection_generation: "pins:none".into(),
+        ..snapshot()
+    };
+    let plan = PrunePlan::build(
+        100,
+        unavailable.clone(),
+        vec![item(PruneStore::Turso, PruneClass::Issues, "issues")],
+        PrunePlanLimits::default(),
+    )
+    .expect("dry-run plan remains available");
+
+    assert_eq!(
+        plan.authorize(
+            &PruneExecutionRequest::dry_run(plan.plan_id().to_string()),
+            &unavailable
+        )
+        .expect("dry run remains safe"),
+        PruneAuthorization::DryRun
+    );
+    let execute = PruneExecutionRequest::execute(plan.plan_id().to_string(), true)
+        .expect("confirmed request");
+    assert!(matches!(
+        plan.authorize(&execute, &unavailable),
+        Err(PrunePlanError::ProtectionUnavailable)
+    ));
+}
+
+#[test]
 fn construction_fails_closed_when_item_cap_is_exceeded() {
     let result = PrunePlan::build(
         100,
