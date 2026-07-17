@@ -366,7 +366,7 @@ OTLP-ingested telemetry only.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [154](154-playground-capability-and-test-observability.md) | Live multi-backend fan-out acceptance residual | P1 | S | Playground acceptance + disposition | IN PROGRESS — plumbing green; Parallax exp-hist drop disposition code-confirmed; external disposition + acceptance wrappers residual |
+| 154 | Live multi-backend fan-out acceptance residual | P1 | S | Playground acceptance + disposition | DONE/retired (2026-07-17) — rust acceptance+test-verify green; W5 disposition rows; multi-backend plumbing ([evidence](../docs/research/validation/2026-07-17-plan-154-multi-backend/README.md)) |
 | 155 | Test reporting surface residual | P1 | XL | 149, 152, 153, 140 DONE; 121/124 DONE | DONE/retired (2026-07-17) — batched `testCase` detail, adapter export lifecycle, `/tests` Playwright gate ([evidence](../docs/research/validation/2026-07-plan-155-test-reporting/README.md)) |
 
 ### Triggered Or Residual Work

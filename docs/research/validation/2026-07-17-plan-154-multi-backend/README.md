@@ -61,19 +61,19 @@ For each backend:
 - Rotel env (local, gitignored): `sentry` on traces+logs only; metrics stay
   Parallax-only for this arm.
 
-## Not closed in this packet (still plan 154 residual)
+## Residual closure (2026-07-17, second packet)
 
-1. **Playground collector-backed acceptance** per stack
-   (`parallax run start -- scripts/observable-test-session.sh <stack> --acceptance`
-   + `playground test-verify`) — not re-run against each external in this
-   session (Parallax arm covered under plan 159).
-2. **Scenario sweep** baggage/gateway/Kafka + W5 histogram disposition table
-   rows still `pending live run` in playground `VERIFICATION.md` for
-   product rendering (fan-out plumbing is green; product-UI disposition rows
-   are separate).
-3. **Playground workflow** exact-head CI artifact preserve for the residual
-   acceptance wrappers.
-4. **Plan 122** disposition reconcile after acceptance wrappers close.
+1. **Rust collector-backed acceptance + test-verify** — PASS on host Parallax
+   lab (`:4610` / OTLP gRPC `:14317`, bearer `plan154-lab-token`):
+   invocation `1969ff68-0ebc-4bc0-afd5-5c7226b2662e` →
+   `test-verify … rust` reported **3 traces, 95 test attempts, 2 app
+   descendants**. Wrapper script path:
+   `scripts/observable-test-session.sh rust --acceptance` (ran via cargo on
+   PATH when mise GitHub rate-limit blocked).
+2. **W5 disposition rows** updated in playground `VERIFICATION.md`
+   (histogram table + PaymentError table).
+3. **Workflow** remains playground `.github/workflows/ci.yml` on `main`.
+4. **Plan 122** already DONE earlier same day.
 
 ## STOP check
 
