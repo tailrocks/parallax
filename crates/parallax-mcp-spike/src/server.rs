@@ -486,4 +486,34 @@ mod tests {
         );
         let _server_result = server_task.await.expect("join server");
     }
+
+    #[tokio::test]
+    async fn wire_initialization_negotiates_every_reviewed_protocol() {
+        for protocol_version in SUPPORTED_PROTOCOL_VERSIONS {
+            let (server_transport, client_transport) = tokio::io::duplex(4096);
+            let server = SpikeServer::new("http://127.0.0.1:4000".to_string()).expect("server");
+            let server_task = tokio::spawn(async move {
+                server.serve(server_transport).await?.waiting().await?;
+                anyhow::Ok(())
+            });
+            let client = VersionedClient(protocol_version.clone())
+                .serve(client_transport)
+                .await
+                .expect("reviewed protocol must initialize");
+
+            assert_eq!(
+                client
+                    .peer_info()
+                    .expect("server initialization info")
+                    .protocol_version,
+                *protocol_version
+            );
+
+            client.cancel().await.expect("cancel client");
+            server_task
+                .await
+                .expect("join server")
+                .expect("stop server");
+        }
+    }
 }

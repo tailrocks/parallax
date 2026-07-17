@@ -86,6 +86,9 @@ must not return in product output.
 - Initialization overrides the SDK's echo-any-known-version behavior: only the
   reviewed `2024-11-05` through `2025-11-25` revisions are accepted; future
   `2026-07-28` and unknown versions fail closed on the wire.
+- Wire fixtures negotiate every reviewed legacy revision and assert the server
+  returns that exact revision, while the future-version denial remains
+  protocol-level; claimed-client skew evidence remains unfinished.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded
