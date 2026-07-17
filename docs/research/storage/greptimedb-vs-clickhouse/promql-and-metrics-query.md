@@ -225,6 +225,23 @@ only on GA flag. Capability is no longer vapor for `rate`/`sum`/`avg by`, but a 
 that expects full Prometheus function coverage cannot treat CH TimeSeries as drop-in yet.
 Still comparator-only for Parallax stack policy.
 
+### Run 411 — `increase` not unblocked by aggregate-fn flag
+
+On head **26.7.1.1097**:
+
+- `allow_experimental_time_series_aggregate_functions=1` **does not** enable
+  `increase(…)` inside `prometheusQuery` — still Code 48
+  `Function increase is not implemented`.
+- Catalog shows a rich set of **grid helpers**
+  (`timeSeriesRateToGrid`, `timeSeriesInstantRateToGrid`, `timeSeriesDeltaToGrid`,
+  `timeSeriesResetsToGrid`, …) but **no** `timeSeriesIncreaseToGrid` and no PromQL
+  `increase` path.
+- Defaults remain: `allow_experimental_time_series_table=0`,
+  `allow_experimental_time_series_aggregate_functions=0`.
+
+**Workaround for CH lab/dashboards:** use `rate(x[w]) * window_seconds` (or SQL
+over samples/tags). GT keeps first-class `increase` / `prom_increase`.
+
 ## Run 403 mechanism takeaway (why Code 48 is not a death sentence)
 
 `TimeSeries` is closer to a **materialized-view-style multi-target router** than a
