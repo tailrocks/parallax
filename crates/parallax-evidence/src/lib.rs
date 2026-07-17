@@ -8,5 +8,6 @@ pub mod agent_session;
     reason = "bounded bundle estimates"
 )]
 pub mod bundle;
+pub mod envelope;
 pub mod gaps;
 pub mod story;
