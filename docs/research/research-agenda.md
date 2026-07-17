@@ -12,8 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 96 (Sentry OTLP still **open beta**; **no OTLP
-metrics**; self-host **26.7.0**). Pass 95 = HolmesGPT Operator. A1/A2/A4/A6 open.
+Last updated 2026-07-17 after pass 97 (GreptimeDB pins still **stable `v1.1.3`** /
+latest GitHub nightly tag **`v1.2.0-nightly-20260706`** — no newer nightly
+release tag). Pass 96 = Sentry OTLP. A1/A2/A4/A6 open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
@@ -52,7 +53,7 @@ producer rather than treat its construction as future work. Autonomous fixing re
 
 ## Standing watches (cheap, recurring)
 
-- **Engine releases** — re-pin + re-verify load-bearing claims on each new stable (GreptimeDB; ClickHouse feature line). Last: **2026-07-17 pass 60 + pass 90** — GreptimeDB stable **`v1.1.3`**, nightly **`v1.2.0-nightly-20260706`**; ClickHouse **feature** line still **`v26.6.1.1193-stable`** (2026-06-25). GitHub also shows newer **`v26.5.5.8-stable`** (2026-07-01) and LTS **`v25.8.28.1-lts`** — **not** the feature-line pin (policy: never LTS; prefer highest **feature** major.minor, not latest calendar patch on older line). Measurement still owed on the pins. **Traces docs GA (team Q#2):** still **experimental** on stable + Nightly (**pass 83**).
+- **Engine releases** — re-pin + re-verify load-bearing claims on each new stable (GreptimeDB; ClickHouse feature line). Last: **2026-07-17 pass 60 + pass 90 + pass 97** — GreptimeDB stable **`v1.1.3`** (still GitHub **Latest**); latest *named* nightly release tag still **`v1.2.0-nightly-20260706`** (no `nightly-2026071x` GitHub tag; some bench notes citing `20260713` are **container/local pins**, not a newer GitHub release). ClickHouse **feature** line still **`v26.6.1.1193-stable`** (2026-06-25). Newer **`v26.5.5.8-stable`** / LTS **`v25.8.28.1-lts`** are **not** the feature-line pin. Measurement still owed. **Traces docs GA (team Q#2):** still **experimental** (**pass 83**).
 - **Incumbent self-hosted AI** — **Rechecked 2026-07-17 pass 77:** Seer still
   **closed / unavailable** on self-hosted
   ([develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/)).
