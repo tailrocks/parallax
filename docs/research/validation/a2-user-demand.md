@@ -57,6 +57,14 @@
 >   ≤50 GB/day free self-host EE). Desk **cannot** substitute interviews.
 > - Ledger paths still **absent**; no `interview_id: A2-*` result rows.
 > - **Operator interview runbook still owed.**
+>
+> **Pass 253 recheck (2026-07-18):** gate **still OPEN / zero rows**.
+> - SO survey: **2025** still HTTP **200**; **2026** results still **404**
+>   ([survey.stackoverflow.co/2025](https://survey.stackoverflow.co/2025/),
+>   `/2026/` 404). Collection-open history (pass 160) ≠ results published.
+> - Ledger paths still **absent** (`a2-deployment-intent-results.md` not present).
+> - Desk triangle/OPW/wedge rechecks (passes 242–251) **cannot** close A2.
+> - **Operator interview runbook still owed.**
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
