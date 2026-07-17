@@ -27,8 +27,8 @@
   evaluation scores (human + automated/model-based), prompt management (versioned,
   linked to traces), datasets, experiments, analytics (latency / cost / token usage),
   and a prompt playground. Open-core: MIT self-host (free core) + Langfuse Cloud +
-  self-host Enterprise (RBAC/SCIM). **Latest: v3.221.1 (2026-07-17); 31,340★;
-  extremely fast cadence (pass 107).** v3.x self-hostable; **2025-06-04** open-sourced
+  self-host Enterprise (RBAC/SCIM). **Latest: v3.221.1 (2026-07-17); 31,341★
+  (pass 167); extremely fast cadence.** v3.x self-hostable; **2025-06-04** open-sourced
   remaining product features under MIT ([changelog](https://langfuse.com/changelog/2025-06-04-open-sourcing-langfuse)).
   **Pass 107 air-gap nuance:** README states self-hosted instances **default to
   reporting basic usage stats to a centralized PostHog** (not raw traces/prompts);

@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 166 (A6 **split holds**: public-safe canary
-test **ok**; scanners pins unchanged; **`agent_visible_mixed_pass` still open**).
-Pass 165 = auto-merge. A1/A2/A4 open; A6 open at mixed gate only.
+Last updated 2026-07-18 after pass 167 (Langfuse still **v3.221.1 / 31,341★**;
+MCP **read+write by default** — not Parallax-style RO evidence bundle; still
+LLMOps loop). Pass 166 = A6. A1/A2/A4 open; A6 open at mixed gate only.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
