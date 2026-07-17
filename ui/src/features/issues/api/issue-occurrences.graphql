@@ -1,0 +1,18 @@
+query IssueOccurrences(
+  $fingerprint: String!
+  $fromNanos: String!
+  $toNanos: String!
+) {
+  issue(fingerprint: $fingerprint) {
+    events(limit: 50, fromNanos: $fromNanos, toNanos: $toNanos) {
+      tsNanos
+      service
+      message
+      stacktrace
+      source
+      traceId
+      spanId
+      attributes
+    }
+  }
+}

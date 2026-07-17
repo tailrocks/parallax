@@ -1,0 +1,13 @@
+query IssueCorrelation($traceId: String!) {
+  trace(traceId: $traceId) {
+    spans {
+      resource
+      invocationId
+    }
+  }
+  logsByTrace(traceId: $traceId) {
+    tsNanos
+    severityText
+    body
+  }
+}

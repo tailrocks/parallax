@@ -1,0 +1,39 @@
+query IssuesList(
+  $service: String
+  $status: String
+  $query: String
+  $fromNanos: String
+  $toNanos: String
+  $sort: IssueSort
+  $limit: Int
+) {
+  issues(
+    service: $service
+    status: $status
+    query: $query
+    fromNanos: $fromNanos
+    toNanos: $toNanos
+    sort: $sort
+    limit: $limit
+  ) {
+    total
+    items {
+      fingerprint
+      title
+      errorType
+      culprit
+      service
+      status
+      firstSeenNanos
+      lastSeenNanos
+      eventCount
+      lastTraceId
+      tags
+      trend {
+        tsNanos
+        count
+      }
+    }
+  }
+  services
+}

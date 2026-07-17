@@ -1,0 +1,496 @@
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router"
+import { useVirtualizer } from "@tanstack/react-virtual"
+import { IconBug, IconTerminal2 } from "@tabler/icons-react"
+import { memo, useRef } from "react"
+
+import {
+  ClearFiltersButton,
+  FilterSelect,
+  SearchInput,
+  SortableHead,
+  Toolbar,
+} from "@/components/console/data-table"
+import { CopyButton } from "@/components/console/copy-button"
+import { EmptyState } from "@/components/console/empty-state"
+import { useDelayedLoading } from "@/components/console/hooks"
+import { RelativeTime } from "@/components/console/relative-time"
+import { TableSkeleton } from "@/components/console/skeletons"
+import { Badge } from "@/components/ui/badge"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  topTags,
+  trendEvents,
+  type IssueRow,
+  type IssuesData,
+} from "@/features/issues/model/issue-summary"
+import {
+  patchIssuesSearch,
+  type IssueSort,
+  type IssuesSearch,
+  type IssuesSearchPatch,
+} from "@/features/issues/model/issues-search"
+import { RangePicker } from "@/features/time-range"
+import { formatCount } from "@/lib/format"
+import {
+  rangeLinkSearch,
+  resolveRangeSearch,
+  updateRangeSearch,
+  type ResolvedRange,
+} from "@/lib/range"
+import { cn } from "@/lib/utils"
+import { PageHeader } from "@/shared/components/page-header"
+
+const VIRTUALIZE_THRESHOLD = 30
+const ISSUE_ROW_ESTIMATE = 72
+const ISSUE_COLUMN_COUNT = 8
+
+export const MiniSparkline = memo(function MiniSparkline({
+  data,
+  className,
+}: {
+  data: Array<{ value: number }>
+  className?: string
+}) {
+  if (data.length === 0) {
+    return <span className={cn("block h-9 w-full", className)} />
+  }
+  const values = data.map((point) => point.value)
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const span = max - min || 1
+  const width = 100
+  const height = 36
+  const pad = 2
+  const points = values
+    .map((value, index) => {
+      const x =
+        values.length === 1 ? width / 2 : (index / (values.length - 1)) * width
+      const y = height - pad - ((value - min) / span) * (height - pad * 2)
+      return `${x},${y}`
+    })
+    .join(" ")
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className={cn("h-9 w-full text-current", className)}
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <polyline
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        points={points}
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  )
+})
+
+export function IssuesPage({
+  data,
+  search,
+}: {
+  data: IssuesData
+  search: IssuesSearch
+}) {
+  const navigate = useNavigate({ from: "/issues/" })
+  const range = resolveRangeSearch(search)
+  const routerLoading = useRouterState({
+    select: (state) => state.status === "pending",
+  })
+  const loading = useDelayedLoading(routerLoading)
+
+  const setSearch = (patch: IssuesSearchPatch) =>
+    void navigate({ search: patchIssuesSearch(search, patch) })
+
+  return (
+    <IssuesContent
+      data={data}
+      search={search}
+      range={range}
+      loading={loading}
+      onSearch={setSearch}
+      onIssue={(fingerprint) =>
+        void navigate({
+          to: "/issues/$fingerprint",
+          params: { fingerprint },
+          search: rangeLinkSearch(range),
+        })
+      }
+    />
+  )
+}
+
+export function IssuesContent({
+  data,
+  search,
+  range,
+  loading,
+  onSearch,
+  onIssue,
+}: {
+  data: IssuesData
+  search: IssuesSearch
+  range: ResolvedRange
+  loading?: boolean
+  onSearch: (patch: IssuesSearchPatch) => void
+  onIssue: (fingerprint: string) => void
+}) {
+  const hasFilters = Boolean(search.q || search.service || search.status)
+  const sort = search.sort ?? "LAST_SEEN"
+
+  return (
+    <div className="space-y-4">
+      <PageHeader
+        icon={IconBug}
+        iconClassName="text-rose-500"
+        title="Issues"
+        description="Grouped errors by service, message, and culprit."
+        actions={
+          <RangePicker
+            value={range}
+            onChange={(next) => onSearch(updateRangeSearch(next))}
+          />
+        }
+      />
+
+      <Toolbar className="justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <SearchInput
+            value={search.q ?? ""}
+            onChange={(q) => onSearch({ q })}
+            placeholder="Search message/type"
+          />
+          <FilterSelect
+            {...(search.service ? { value: search.service } : {})}
+            onChange={(service) => onSearch({ service })}
+            placeholder="All services"
+            options={data.services.map((service) => ({
+              value: service,
+              label: service,
+            }))}
+          />
+          <FilterSelect
+            {...(search.status ? { value: search.status } : {})}
+            onChange={(status) =>
+              onSearch({
+                status:
+                  status === "open" || status === "resolved"
+                    ? status
+                    : undefined,
+              })
+            }
+            placeholder="Any status"
+            options={[
+              { value: "open", label: "Open" },
+              { value: "resolved", label: "Resolved" },
+            ]}
+          />
+          <FilterSelect
+            value={sort}
+            onChange={(next) => onSearch({ sort: next as IssueSort })}
+            placeholder="Sort"
+            options={[
+              { value: "LAST_SEEN", label: "Last seen" },
+              { value: "FIRST_SEEN", label: "First seen" },
+              { value: "EVENTS", label: "Events" },
+              { value: "TREND", label: "Trend" },
+            ]}
+          />
+          {hasFilters ? (
+            <ClearFiltersButton
+              onClick={() =>
+                onSearch({
+                  q: undefined,
+                  service: undefined,
+                  status: undefined,
+                })
+              }
+            />
+          ) : null}
+        </div>
+        <span className="text-xs text-muted-foreground">
+          {formatCount(data.issues.items.length)} of{" "}
+          {formatCount(data.issues.total)}
+        </span>
+      </Toolbar>
+
+      {loading ? (
+        <TableSkeleton rows={8} />
+      ) : data.issues.items.length === 0 ? (
+        <EmptyState
+          icon={IconTerminal2}
+          title={
+            hasFilters ? "No issues match filters" : "No issues ingested yet"
+          }
+          description={
+            hasFilters ? (
+              "Loosen query, service, status, or range."
+            ) : (
+              <span className="inline-flex items-center gap-2">
+                <code>OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4317</code>
+                <CopyButton value="OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4317" />
+              </span>
+            )
+          }
+        />
+      ) : (
+        <IssuesTable
+          items={data.issues.items}
+          range={range}
+          sort={sort}
+          onSearch={onSearch}
+          onIssue={onIssue}
+        />
+      )}
+    </div>
+  )
+}
+
+function IssuesTable({
+  items,
+  range,
+  sort,
+  onSearch,
+  onIssue,
+}: {
+  items: readonly IssueRow[]
+  range: ResolvedRange
+  sort: IssueSort
+  onSearch: (patch: IssuesSearchPatch) => void
+  onIssue: (fingerprint: string) => void
+}) {
+  const parentRef = useRef<HTMLDivElement | null>(null)
+  const virtualize = items.length > VIRTUALIZE_THRESHOLD
+  const virtualizer = useVirtualizer({
+    count: items.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => ISSUE_ROW_ESTIMATE,
+    overscan: 8,
+    enabled: virtualize,
+  })
+  const virtualItems = virtualize ? virtualizer.getVirtualItems() : null
+  const firstVirtual = virtualItems?.[0]
+  const lastVirtual = virtualItems?.at(-1)
+  const paddingTop = firstVirtual?.start ?? 0
+  const paddingBottom =
+    virtualize && lastVirtual
+      ? Math.max(0, virtualizer.getTotalSize() - lastVirtual.end)
+      : 0
+  const rows = virtualize
+    ? (virtualItems ?? []).map((item) => items[item.index]!).filter(Boolean)
+    : items
+
+  const header = (
+    <TableHeader
+      className={virtualize ? "sticky top-0 z-10 bg-card" : undefined}
+    >
+      <TableRow>
+        <TableHead>Issue</TableHead>
+        <TableHead className="w-36">Service</TableHead>
+        <TableHead className="w-24">Trend</TableHead>
+        <TableHead className="w-24 text-right">
+          <SortableHead
+            {...(sort === "EVENTS" ? { sort: "events:desc" } : {})}
+            sortKey="events"
+            onSort={() => onSearch({ sort: "EVENTS" })}
+          >
+            Events
+          </SortableHead>
+        </TableHead>
+        <TableHead className="w-28 text-right">Age</TableHead>
+        <TableHead className="w-32 text-right">
+          <SortableHead
+            {...(sort === "LAST_SEEN" ? { sort: "lastSeen:desc" } : {})}
+            sortKey="lastSeen"
+            onSort={() => onSearch({ sort: "LAST_SEEN" })}
+          >
+            Last seen
+          </SortableHead>
+        </TableHead>
+        <TableHead className="w-56">Tags</TableHead>
+        <TableHead className="w-24">Status</TableHead>
+      </TableRow>
+    </TableHeader>
+  )
+
+  const body = (
+    <TableBody>
+      {paddingTop > 0 ? (
+        <tr aria-hidden="true">
+          <td
+            colSpan={ISSUE_COLUMN_COUNT}
+            className="border-0 p-0"
+            style={{ height: paddingTop }}
+          />
+        </tr>
+      ) : null}
+      {rows.map((issue) => {
+        const recentOpen = issue.status === "open" && trendEvents(issue) > 0
+        const tags = topTags(issue.tags)
+        return (
+          <TableRow
+            key={issue.fingerprint}
+            className={cn(
+              "cursor-pointer",
+              recentOpen && "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]"
+            )}
+            onClick={() => onIssue(issue.fingerprint)}
+          >
+            <TableCell className="max-w-xl">
+              <div className="min-w-0 space-y-1">
+                <Link
+                  to="/issues/$fingerprint"
+                  params={{ fingerprint: issue.fingerprint }}
+                  search={rangeLinkSearch(range)}
+                  className="block truncate font-medium hover:underline"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  {issue.errorType || issue.title}
+                </Link>
+                <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                  <span className="min-w-0 truncate">{issue.title}</span>
+                  {issue.lastTraceId ? (
+                    <Link
+                      to="/traces/$traceId"
+                      params={{ traceId: issue.lastTraceId }}
+                      search={rangeLinkSearch(range)}
+                      aria-label={`trace ${issue.lastTraceId}`}
+                      className="shrink-0"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <Badge variant="secondary" className="font-mono">
+                        trace {issue.lastTraceId.slice(0, 8)}
+                      </Badge>
+                    </Link>
+                  ) : null}
+                </div>
+                {issue.culprit ? (
+                  <div className="truncate font-mono text-xs text-muted-foreground/70">
+                    {issue.culprit}
+                  </div>
+                ) : null}
+              </div>
+            </TableCell>
+            <TableCell>
+              <Link
+                to="/services/$service"
+                params={{ service: issue.service }}
+                search={rangeLinkSearch(range)}
+                className="inline-flex max-w-36"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <Badge variant="outline" className="truncate">
+                  {issue.service}
+                </Badge>
+              </Link>
+            </TableCell>
+            <TableCell>
+              <Link
+                to="/issues/$fingerprint"
+                params={{ fingerprint: issue.fingerprint }}
+                search={rangeLinkSearch(range)}
+                className="block text-rose-500"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <MiniSparkline
+                  data={issue.trend.map((point) => ({
+                    value: point.count,
+                  }))}
+                  className="h-9"
+                />
+              </Link>
+            </TableCell>
+            <TableCell className="text-right tabular-nums">
+              <Link
+                to="/issues/$fingerprint"
+                params={{ fingerprint: issue.fingerprint }}
+                search={rangeLinkSearch(range)}
+                className="hover:underline"
+                onClick={(event) => event.stopPropagation()}
+              >
+                {formatCount(issue.eventCount)}
+              </Link>
+            </TableCell>
+            <TableCell className="text-right text-muted-foreground">
+              <RelativeTime nanos={issue.firstSeenNanos} />
+            </TableCell>
+            <TableCell className="text-right text-muted-foreground">
+              <RelativeTime nanos={issue.lastSeenNanos} />
+            </TableCell>
+            <TableCell>
+              <div className="flex flex-wrap gap-1">
+                {tags.length === 0 ? (
+                  <span className="text-muted-foreground">-</span>
+                ) : (
+                  tags.map((tag) => (
+                    <Badge
+                      key={tag.label}
+                      variant="secondary"
+                      className="max-w-36 truncate font-mono"
+                    >
+                      {tag.label}
+                      {tag.rest > 0 ? (
+                        <span className="ml-1 text-muted-foreground">
+                          +{tag.rest}
+                        </span>
+                      ) : null}
+                    </Badge>
+                  ))
+                )}
+              </div>
+            </TableCell>
+            <TableCell>
+              <Badge variant={issue.status === "open" ? "rose" : "emerald"}>
+                {issue.status}
+              </Badge>
+            </TableCell>
+          </TableRow>
+        )
+      })}
+      {paddingBottom > 0 ? (
+        <tr aria-hidden="true">
+          <td
+            colSpan={ISSUE_COLUMN_COUNT}
+            className="border-0 p-0"
+            style={{ height: paddingBottom }}
+          />
+        </tr>
+      ) : null}
+    </TableBody>
+  )
+
+  if (!virtualize) {
+    return (
+      <div className="overflow-hidden rounded-lg border bg-card">
+        <Table>
+          {header}
+          {body}
+        </Table>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      ref={parentRef}
+      data-virtualized="issues"
+      className="relative max-h-[min(70vh,720px)] w-full overflow-auto rounded-lg border bg-card"
+    >
+      <Table>
+        {header}
+        {body}
+      </Table>
+    </div>
+  )
+}

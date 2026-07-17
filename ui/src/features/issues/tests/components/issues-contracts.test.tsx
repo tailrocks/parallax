@@ -5,9 +5,11 @@ import { defaultParseSearch } from "@tanstack/react-router"
 import { afterEach, describe, expect, it } from "vitest"
 
 import { customRange, resolvePreset } from "@/lib/range"
-import { IssuesContent } from "@/routes/issues.index"
-import type { IssuesData } from "@/routes/issues.index"
-import { IssueDetailContent } from "@/routes/issues.$fingerprint"
+import {
+  IssueDetailContent,
+  IssuesContent,
+  type IssuesData,
+} from "@/features/issues"
 import { renderTestRouter } from "@/test/router"
 
 afterEach(cleanup)

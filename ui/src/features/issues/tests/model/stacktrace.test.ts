@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 
-import { parseStacktrace, structuredFrameCount } from "@/lib/stacktrace"
+import {
+  parseStacktrace,
+  structuredFrameCount,
+} from "@/features/issues/model/stacktrace"
 
 describe("parseStacktrace", () => {
   it("parses Rust frames", () => {

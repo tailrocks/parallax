@@ -1,0 +1,34 @@
+query IssueDetail(
+  $fingerprint: String!
+  $fromNanos: String!
+  $toNanos: String!
+  $hours: Int!
+) {
+  issue(fingerprint: $fingerprint) {
+    fingerprint
+    title
+    errorType
+    culprit
+    service
+    status
+    firstSeenNanos
+    lastSeenNanos
+    eventCount
+    lastTraceId
+    tags
+    events(limit: 20, fromNanos: $fromNanos, toNanos: $toNanos) {
+      tsNanos
+      service
+      message
+      stacktrace
+      source
+      traceId
+      spanId
+      attributes
+    }
+  }
+  issueTrend(fingerprint: $fingerprint, hours: $hours) {
+    tsNanos
+    count
+  }
+}

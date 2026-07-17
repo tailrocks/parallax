@@ -1734,11 +1734,6 @@ ceiling = 10
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/stacktrace.test.ts"
-ceiling = 9
-
-[[limits]]
-metric = "typescript.assertions"
 scope = "ui/src/lib/__tests__/timeline-minimap.test.ts"
 ceiling = 10
 
@@ -1792,11 +1787,6 @@ ceiling = 2
 metric = "typescript.assertions"
 scope = "ui/src/routes/__tests__/-invocations.test.tsx"
 ceiling = 13
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-issues.test.tsx"
-ceiling = 15
 
 [[limits]]
 metric = "typescript.assertions"
@@ -1876,11 +1866,6 @@ ceiling = 188
 
 [[limits]]
 metric = "typescript.file-lines"
-scope = "ui/src/routes/__tests__/-issues.test.tsx"
-ceiling = 163
-
-[[limits]]
-metric = "typescript.file-lines"
 scope = "ui/src/routes/__tests__/-logs.test.tsx"
 ceiling = 320
 
@@ -1911,16 +1896,6 @@ ceiling = 542
 metric = "typescript.file-lines"
 scope = "ui/src/routes/invocations.index.tsx"
 ceiling = 369
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/issues.$fingerprint.tsx"
-ceiling = 731
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/issues.index.tsx"
-ceiling = 585
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -2077,11 +2052,6 @@ ceiling = 37
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/stacktrace.ts:51"
-ceiling = 26
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/lib/trace-tree.ts:222"
 ceiling = 49
 
@@ -2116,16 +2086,6 @@ ceiling = 42
 metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/routes/invocations.$invocationId.tsx:296"
 ceiling = 29
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/issues.$fingerprint.tsx:548"
-ceiling = 26
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/issues.index.tsx:253"
-ceiling = 17
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -2235,11 +2195,6 @@ ceiling = 16
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/lib/stacktrace.ts:51"
-ceiling = 14
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/lib/trace-tree.ts:222"
 ceiling = 20
 
@@ -2268,21 +2223,6 @@ ceiling = 24
 metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/routes/invocations.index.tsx:218"
 ceiling = 15
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/issues.$fingerprint.tsx:191"
-ceiling = 14
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/issues.$fingerprint.tsx:548"
-ceiling = 14
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/issues.index.tsx:379"
-ceiling = 13
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
@@ -2552,11 +2492,6 @@ ceiling = 108
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/lib/__tests__/stacktrace.test.ts:5"
-ceiling = 83
-
-[[limits]]
-metric = "typescript.function-lines"
 scope = "ui/src/lib/__tests__/trace-tree.test.ts:170"
 ceiling = 86
 
@@ -2588,11 +2523,6 @@ ceiling = 61
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/lib/stacktrace.ts:51"
-ceiling = 112
-
-[[limits]]
-metric = "typescript.function-lines"
 scope = "ui/src/lib/timeline-viewport.ts:107"
 ceiling = 64
 
@@ -2616,11 +2546,6 @@ metric = "typescript.function-lines"
 scope = "ui/src/platform/sse/tests/use-live-stream.test.tsx:77"
 ceiling = 146
 
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/__tests__/-issues.test.tsx:87"
-ceiling = 92
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2697,36 +2622,6 @@ ceiling = 63
 metric = "typescript.function-lines"
 scope = "ui/src/routes/invocations.index.tsx:218"
 ceiling = 171
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/issues.$fingerprint.tsx:191"
-ceiling = 233
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/issues.$fingerprint.tsx:479"
-ceiling = 68
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/issues.$fingerprint.tsx:707"
-ceiling = 63
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/issues.index.tsx:253"
-ceiling = 125
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/issues.index.tsx:379"
-ceiling = 237
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/issues.index.tsx:457"
-ceiling = 123
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -3059,6 +2954,151 @@ ceiling = 1
 [[limits]]
 metric = "typescript.suppressions"
 scope = "ui/src/features/services/api/services-list.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/issues/tests/components/issues-contracts.test.tsx"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/issues/tests/model/stacktrace.test.ts"
+ceiling = 9
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/tests/-issues-routes.test.tsx"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/issues/api/issue-detail.generated.ts"
+ceiling = 342
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/issues/api/issues-list.generated.ts"
+ceiling = 340
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx"
+ceiling = 632
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/issues/components/issues-page.tsx"
+ceiling = 481
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:439"
+ceiling = 26
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/issues/components/issues-page.tsx:134"
+ceiling = 17
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/issues/model/stacktrace.ts:51"
+ceiling = 26
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:439"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:84"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/issues/components/issues-page.tsx:260"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/issues/model/stacktrace.ts:51"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/issues/api/issues-api.ts:106"
+ceiling = 62
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:370"
+ceiling = 68
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:598"
+ceiling = 63
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:84"
+ceiling = 231
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/issues/components/issues-page.tsx:134"
+ceiling = 125
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/issues/components/issues-page.tsx:260"
+ceiling = 237
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/issues/components/issues-page.tsx:338"
+ceiling = 123
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/issues/model/stacktrace.ts:51"
+ceiling = 112
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/issues/tests/components/issues-contracts.test.tsx:89"
+ceiling = 92
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/issues/tests/model/stacktrace.test.ts:8"
+ceiling = 83
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/issues/api/issue-correlation.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/issues/api/issue-detail.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/issues/api/issue-occurrences.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/issues/api/issue-status.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/issues/api/issues-list.generated.ts"
 ceiling = 1
 
 [[ui.ownership]]
@@ -4220,13 +4260,6 @@ migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/stacktrace.test.ts"
-current_owner = "legacy-lib-tests"
-target_owner = "features/issues"
-migration_plan = "139"
-kind = "handwritten"
-
-[[ui.ownership]]
 path = "ui/src/lib/__tests__/timeline-minimap.test.ts"
 current_owner = "legacy-lib-tests"
 target_owner = "features/traces"
@@ -4388,13 +4421,6 @@ path = "ui/src/lib/rpc-trace.ts"
 current_owner = "legacy-lib"
 target_owner = "features/traces"
 migration_plan = "142"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/lib/stacktrace.ts"
-current_owner = "legacy-lib"
-target_owner = "features/issues"
-migration_plan = "139"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -4737,13 +4763,6 @@ migration_plan = "140"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/routes/__tests__/-issues.test.tsx"
-current_owner = "routes-tests"
-target_owner = "features/issues"
-migration_plan = "139"
-kind = "handwritten"
-
-[[ui.ownership]]
 path = "ui/src/routes/__tests__/-logs.test.tsx"
 current_owner = "routes-tests"
 target_owner = "features/logs"
@@ -4858,17 +4877,144 @@ migration_plan = "140"
 kind = "handwritten"
 
 [[ui.ownership]]
+path = "ui/src/features/issues/api/issue-correlation.generated.ts"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/issues/api/issue-detail.generated.ts"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/issues/api/issue-occurrences.generated.ts"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/issues/api/issue-status.generated.ts"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/issues/api/issues-list.generated.ts"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/issues/api/issues-api.ts"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/issues/api/issues-mapper.ts"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/issues/components/issue-detail-page.tsx"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/issues/components/issues-page.tsx"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/issues/index.ts"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "none"
+kind = "handwritten"
+facade = true
+
+[[ui.ownership]]
+path = "ui/src/features/issues/model/issue-detail.ts"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/issues/model/issue-summary.ts"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/issues/model/issues-error.ts"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/issues/model/issues-search.ts"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/issues/model/stacktrace.ts"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/issues/tests/components/issues-contracts.test.tsx"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/issues/tests/model/stacktrace.test.ts"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/tests/-issues-routes.test.tsx"
+current_owner = "routes-tests"
+target_owner = "routes-tests"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
 path = "ui/src/routes/issues.$fingerprint.tsx"
 current_owner = "routes"
 target_owner = "features/issues"
-migration_plan = "139"
+migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
 path = "ui/src/routes/issues.index.tsx"
 current_owner = "routes"
 target_owner = "features/issues"
-migration_plan = "139"
+migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]

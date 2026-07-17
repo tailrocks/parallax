@@ -2,10 +2,10 @@
   "schema_version": 1,
   "ratchets": {
     "fire_event_calls": 28,
-    "legacy_handoffs": 52,
+    "legacy_handoffs": 50,
     "raw_router_builders": 1,
-    "test_cases": 498,
-    "test_files": 99
+    "test_cases": 499,
+    "test_files": 100
   },
   "private_route_imports": [
     {
@@ -16,23 +16,6 @@
         "filterInvocationsByRange"
       ],
       "removal_plan": 140
-    },
-    {
-      "test_file": "ui/src/routes/__tests__/-issues.test.tsx",
-      "module": "@/routes/issues.$fingerprint",
-      "symbols": [
-        "IssueDetailContent"
-      ],
-      "removal_plan": 139
-    },
-    {
-      "test_file": "ui/src/routes/__tests__/-issues.test.tsx",
-      "module": "@/routes/issues.index",
-      "symbols": [
-        "IssuesContent",
-        "IssuesData"
-      ],
-      "removal_plan": 139
     },
     {
       "test_file": "ui/src/routes/__tests__/-logs.test.tsx",
@@ -704,10 +687,9 @@
       "surface": "features/issues",
       "risk": "Issue stack traces can lose frames across supported runtime formats",
       "scenario_owner": "features/issues",
-      "lane_owner": "vitest/unit",
-      "delivery_plan": 139,
+      "lane_owner": "vitest/model",
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/stacktrace.test.ts",
+      "test_file": "ui/src/features/issues/tests/model/stacktrace.test.ts",
       "test_ids": [
         "parses Rust frames",
         "parses compact Rust-style frames",
@@ -718,14 +700,7 @@
         "keeps garbage as raw passthrough"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/stacktrace.test.ts",
-        "destination_owner": "features/issues",
-        "removal_plan": 139,
-        "created": "2026-07-15",
-        "expires": "plan-139-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-028",
@@ -804,24 +779,16 @@
       "surface": "features/issues",
       "risk": "Issue list and detail links can lose filters, time ranges, or evidence targets",
       "scenario_owner": "features/issues",
-      "lane_owner": "vitest/route",
-      "delivery_plan": 139,
-      "layer": "route-contract",
-      "test_file": "ui/src/routes/__tests__/-issues.test.tsx",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/features/issues/tests/components/issues-contracts.test.tsx",
       "test_ids": [
         "renders trend and event cells as detail links",
         "preserves custom ranges in rendered drilldown links",
         "renders parsed stack frames and timestamped breadcrumbs"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/routes/__tests__/-issues.test.tsx",
-        "destination_owner": "features/issues",
-        "removal_plan": 139,
-        "created": "2026-07-15",
-        "expires": "plan-139-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-032",
@@ -2586,6 +2553,20 @@
       "lane_owner": "vitest/route",
       "layer": "route-contract",
       "test_file": "ui/src/routes/tests/-services-routes.test.tsx",
+      "test_ids": [
+        "exposes public search and loaders for thin route wiring"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-issues-route",
+      "surface": "features/issues",
+      "risk": "Issues route wiring can lose public search/loader facade contracts",
+      "scenario_owner": "features/issues",
+      "lane_owner": "vitest/route",
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/tests/-issues-routes.test.tsx",
       "test_ids": [
         "exposes public search and loaders for thin route wiring"
       ],
