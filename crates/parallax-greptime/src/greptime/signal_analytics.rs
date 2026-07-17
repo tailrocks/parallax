@@ -9,10 +9,17 @@ impl crate::adapter::LogAnalyticsStore for GreptimeStore {
         severity_min: Option<i32>,
         severity_max: Option<i32>,
         body_contains: Option<&str>,
+        attribute_filters: &[crate::adapter::AttributeFilter],
         limit: usize,
     ) -> StorageResult<Vec<LogRow>> {
-        let clauses =
-            log_filter_clauses(service, &range, severity_min, severity_max, body_contains);
+        let clauses = log_filter_clauses(
+            service,
+            &range,
+            severity_min,
+            severity_max,
+            body_contains,
+            attribute_filters,
+        );
         // Body tiebreak keeps equal-timestamp rows in a stable order across
         // refreshes (corpus id l-bodies: five rows share one nanosecond).
         self.select_logs(
@@ -222,11 +229,18 @@ impl crate::adapter::LogCountStore for GreptimeStore {
         severity_min: Option<i32>,
         severity_max: Option<i32>,
         body_contains: Option<&str>,
+        attribute_filters: &[crate::adapter::AttributeFilter],
         step_nanos: u128,
     ) -> StorageResult<Vec<SeriesPoint>> {
         let step_secs = (step_nanos / 1_000_000_000).max(1);
-        let clauses =
-            log_filter_clauses(service, &range, severity_min, severity_max, body_contains);
+        let clauses = log_filter_clauses(
+            service,
+            &range,
+            severity_min,
+            severity_max,
+            body_contains,
+            attribute_filters,
+        );
         let rows = self
             .sql_arrow_lenient(&format!(
                 r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "timestamp") AS BIGINT)

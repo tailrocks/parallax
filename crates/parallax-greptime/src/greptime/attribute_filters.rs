@@ -51,29 +51,90 @@ fn like_pattern(value: &str) -> String {
 
 const NO_MATCH: &str = "1 = 0";
 
+/// Table-specific expressions for one where-clause key.
+struct FilterExprs {
+    string: Option<String>,
+    numeric: Option<String>,
+    /// A numeric-only intrinsic (e.g. duration) rejects non-numeric literals.
+    numeric_only: bool,
+}
+
+fn span_filter_exprs(key: &str) -> FilterExprs {
+    FilterExprs {
+        string: string_expr(key),
+        numeric: numeric_expr(key),
+        numeric_only: is_numeric_intrinsic(key),
+    }
+}
+
+/// Log-table expressions (plan 164): intrinsics map to native log columns;
+/// other keys read the `log_attributes` JSON.
+fn log_filter_exprs(key: &str) -> FilterExprs {
+    let string = match key {
+        "service.name" | "service" => Some(log_service_name_expr()),
+        "severity" | "severity_text" => Some(r#""severity_text""#.to_string()),
+        "severity_number" => Some(r#"CAST("severity_number" AS STRING)"#.to_string()),
+        "body" => Some(r#""body""#.to_string()),
+        "trace_id" => Some(r#""trace_id""#.to_string()),
+        "span_id" => Some(r#""span_id""#.to_string()),
+        key => span_field_key_allowed(key).then(|| {
+            format!(
+                r#"json_get_string("log_attributes", '{}')"#,
+                semconv::resource_json_path(key)
+            )
+        }),
+    };
+    let numeric = match key {
+        "severity_number" => Some(r#""severity_number""#.to_string()),
+        "severity" | "severity_text" | "body" | "service" | "service.name" | "trace_id"
+        | "span_id" => None,
+        key => span_field_key_allowed(key).then(|| {
+            format!(
+                r#"CAST(json_get_string("log_attributes", '{}') AS DOUBLE)"#,
+                semconv::resource_json_path(key)
+            )
+        }),
+    };
+    FilterExprs {
+        string,
+        numeric,
+        numeric_only: false,
+    }
+}
+
 /// One filter → one SQL condition against the raw span scan. Absent values
 /// satisfy only the negative operators, matching `AttributeFilter::matches`.
 pub(super) fn span_attribute_filter_sql(filter: &AttributeFilter) -> String {
-    let key = filter.key.trim();
+    filter_condition(&span_filter_exprs(filter.key.trim()), filter)
+}
+
+/// One filter → one SQL condition against the raw log scan.
+pub(super) fn log_attribute_filter_sql(filter: &AttributeFilter) -> String {
+    filter_condition(&log_filter_exprs(filter.key.trim()), filter)
+}
+
+fn filter_condition(exprs: &FilterExprs, filter: &AttributeFilter) -> String {
     let value = filter.value.as_str();
+    let string_expr = || exprs.string.clone();
+    let numeric_expr = || exprs.numeric.clone();
     match filter.op {
-        AttributeFilterOp::Eq => match string_expr(key) {
+        AttributeFilterOp::Eq => match string_expr() {
             Some(expr) => format!("{expr} = '{}'", escape(value)),
             None => NO_MATCH.to_string(),
         },
-        AttributeFilterOp::Ne => match string_expr(key) {
+        AttributeFilterOp::Ne => match string_expr() {
             Some(expr) => {
                 format!("({expr} IS NULL OR {expr} != '{}')", escape(value))
             }
             None => NO_MATCH.to_string(),
         },
-        AttributeFilterOp::Contains => match string_expr(key) {
+        AttributeFilterOp::Contains => match string_expr() {
             Some(expr) => {
                 format!(r#"{expr} LIKE '%{}%' ESCAPE '\'"#, like_pattern(value))
             }
             None => NO_MATCH.to_string(),
         },
-        AttributeFilterOp::NotContains => match string_expr(key) {
+        AttributeFilterOp::NotContains => match string_expr() {
             Some(expr) => format!(
                 r#"({expr} IS NULL OR {expr} NOT LIKE '%{}%' ESCAPE '\')"#,
                 like_pattern(value)
@@ -98,14 +159,14 @@ pub(super) fn span_attribute_filter_sql(filter: &AttributeFilter) -> String {
                 if !number.is_finite() {
                     return NO_MATCH.to_string();
                 }
-                match numeric_expr(key) {
+                match numeric_expr() {
                     Some(expr) => format!("{expr} {op} {number}"),
                     None => NO_MATCH.to_string(),
                 }
-            } else if is_numeric_intrinsic(key) {
+            } else if exprs.numeric_only {
                 NO_MATCH.to_string()
             } else {
-                match string_expr(key) {
+                match string_expr() {
                     Some(expr) => format!("{expr} {op} '{}'", escape(value)),
                     None => NO_MATCH.to_string(),
                 }
@@ -124,6 +185,20 @@ pub(super) fn span_attribute_filters_sql(filters: &[AttributeFilter]) -> Option<
         filters
             .iter()
             .map(|filter| format!("({})", span_attribute_filter_sql(filter)))
+            .collect::<Vec<_>>()
+            .join(" AND "),
+    )
+}
+
+/// All filters ANDed against the same log row, or None when empty.
+pub(super) fn log_attribute_filters_sql(filters: &[AttributeFilter]) -> Option<String> {
+    if filters.is_empty() {
+        return None;
+    }
+    Some(
+        filters
+            .iter()
+            .map(|filter| format!("({})", log_attribute_filter_sql(filter)))
             .collect::<Vec<_>>()
             .join(" AND "),
     )
@@ -251,5 +326,44 @@ mod tests {
             r#"("service_name" = 'checkout') AND (CAST("span_attributes.http.request.method" AS STRING) = 'POST')"#
         );
         assert!(span_attribute_filters_sql(&[]).is_none());
+    }
+
+    #[test]
+    fn log_intrinsics_compile_to_log_columns() {
+        assert!(
+            log_attribute_filter_sql(&filter("service", AttributeFilterOp::Eq, "checkout"))
+                .contains(r#"COALESCE("service.name""#)
+        );
+        assert_eq!(
+            log_attribute_filter_sql(&filter("severity_number", AttributeFilterOp::Gte, "13")),
+            r#""severity_number" >= 13"#
+        );
+        assert_eq!(
+            log_attribute_filter_sql(&filter("body", AttributeFilterOp::Contains, "timeout")),
+            r#""body" LIKE '%timeout%' ESCAPE '\'"#
+        );
+    }
+
+    #[test]
+    fn log_attribute_keys_read_the_json_column_escaped() {
+        assert_eq!(
+            log_attribute_filter_sql(&filter("http.route", AttributeFilterOp::Eq, "x' OR 1=1--")),
+            r#"json_get_string("log_attributes", '$.\"http.route\"') = 'x'' OR 1=1--'"#
+        );
+        assert_eq!(
+            log_attribute_filter_sql(&filter("api_token", AttributeFilterOp::Eq, "v")),
+            "1 = 0"
+        );
+    }
+
+    #[test]
+    fn log_filters_join_with_and() {
+        let joined = log_attribute_filters_sql(&[
+            filter("severity_number", AttributeFilterOp::Gte, "13"),
+            filter("http.route", AttributeFilterOp::Ne, "/health"),
+        ])
+        .unwrap();
+        assert!(joined.starts_with(r#"("severity_number" >= 13) AND ("#));
+        assert!(log_attribute_filters_sql(&[]).is_none());
     }
 }

@@ -113,7 +113,7 @@ pub async fn assert_empty(
     );
     anyhow::ensure!(
         store
-            .logs_search(None, window.clone(), None, None, None, 10)
+            .logs_search(None, window.clone(), None, None, None, &[], 10)
             .await?
             .is_empty()
     );
@@ -151,6 +151,7 @@ pub async fn assert_seeded(
             Some(17),
             None,
             Some("unicode"),
+            &[],
             1,
         )
         .await?;
@@ -162,6 +163,7 @@ pub async fn assert_seeded(
             Some(17),
             None,
             Some("unicode"),
+            &[],
             1_000_000_000,
         )
         .await?;
@@ -217,7 +219,7 @@ pub async fn trace_search_scenario(store: &MemoryStore) -> anyhow::Result<()> {
 
 pub async fn log_count_series_scenario(store: &MemoryStore) -> anyhow::Result<()> {
     let total: f64 = store
-        .log_count_series(Some(SERVICE), range(), None, None, None, 1_000)
+        .log_count_series(Some(SERVICE), range(), None, None, None, &[], 1_000)
         .await?
         .iter()
         .map(|point| point.value)

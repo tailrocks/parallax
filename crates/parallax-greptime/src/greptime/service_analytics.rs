@@ -114,7 +114,7 @@ impl crate::adapter::ServiceAnalyticsStore for GreptimeStore {
                 .await?
             }
             SignalKind::Logs => {
-                let clauses = log_filter_clauses(service, &range, None, None, None);
+                let clauses = log_filter_clauses(service, &range, None, None, None, &[]);
                 self.sql_arrow_lenient(&format!(
                     r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "timestamp") AS BIGINT)
                               AS "bucket_ns", COUNT(*) AS "n"

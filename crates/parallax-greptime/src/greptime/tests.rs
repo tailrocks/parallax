@@ -77,7 +77,14 @@ fn body_search_escapes_sql_quotes_in_term() {
 
 #[test]
 fn log_filter_clauses_use_matches_term_and_service_coalesce() {
-    let clauses = log_filter_clauses(Some("checkout"), &(0..=1000), None, None, Some("error"));
+    let clauses = log_filter_clauses(
+        Some("checkout"),
+        &(0..=1000),
+        None,
+        None,
+        Some("error"),
+        &[],
+    );
     let joined = clauses.join(" AND ");
     assert!(joined.contains(r#"matches_term("body", 'error')"#));
     assert!(joined.contains(r#"COALESCE("service.name""#));

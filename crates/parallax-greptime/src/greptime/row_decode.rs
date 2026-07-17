@@ -155,6 +155,7 @@ pub(super) fn log_filter_clauses(
     severity_min: Option<i32>,
     severity_max: Option<i32>,
     body_contains: Option<&str>,
+    attribute_filters: &[crate::adapter::AttributeFilter],
 ) -> Vec<String> {
     let mut clauses = vec![format!(
         r#""timestamp" >= {} AND "timestamp" <= {}"#,
@@ -176,6 +177,9 @@ pub(super) fn log_filter_clauses(
     }
     if let Some(needle) = body_contains {
         push_body_search_clause(&mut clauses, needle);
+    }
+    if let Some(condition) = log_attribute_filters_sql(attribute_filters) {
+        clauses.push(condition);
     }
     clauses
 }

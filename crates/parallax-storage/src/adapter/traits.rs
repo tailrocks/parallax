@@ -337,6 +337,7 @@ pub trait LogAnalyticsStore: Send + Sync {
         severity_min: Option<i32>,
         severity_max: Option<i32>,
         body_contains: Option<&str>,
+        attribute_filters: &[AttributeFilter],
         limit: usize,
     ) -> StorageResult<Vec<LogRow>>;
 }
@@ -394,6 +395,7 @@ pub trait LogCountStore: Send + Sync {
         severity_min: Option<i32>,
         severity_max: Option<i32>,
         body_contains: Option<&str>,
+        attribute_filters: &[AttributeFilter],
         step_nanos: u128,
     ) -> StorageResult<Vec<SeriesPoint>>;
 }

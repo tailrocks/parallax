@@ -6,6 +6,7 @@ use parallax_storage::model;
 use crate::{ApiContext, MAX_ROWS, clamp_limit, field_err, nanos_string};
 
 use crate::resolvers::common::Point;
+use crate::resolvers::traces::AttributeFilterInput;
 
 pub(crate) struct LogRecord(pub(crate) model::LogRow);
 
@@ -85,9 +86,15 @@ pub(crate) async fn logs(
     severity_min: Option<i32>,
     severity_max: Option<i32>,
     query: Option<String>,
+    attribute_filters: Option<Vec<AttributeFilterInput>>,
     limit: Option<i32>,
 ) -> FieldResult<Vec<LogRecord>> {
     let trace_id = crate::validate_optional_trace_id(trace_id)?;
+    let attribute_filters = attribute_filters
+        .unwrap_or_default()
+        .into_iter()
+        .map(|filter| filter.into_adapter().map_err(field_err))
+        .collect::<FieldResult<Vec<_>>>()?;
     let from: u128 = match from_nanos {
         Some(s) => s.parse().map_err(|_| field_err("invalid fromNanos"))?,
         None => 0,
@@ -117,6 +124,7 @@ pub(crate) async fn logs(
                     severity_min,
                     severity_max,
                     query.as_deref(),
+                    &attribute_filters,
                     limit,
                 )
                 .await
@@ -135,6 +143,9 @@ pub(crate) async fn logs(
             && query
                 .as_deref()
                 .is_none_or(|needle| l.body.contains(needle))
+            && attribute_filters
+                .iter()
+                .all(|f| f.matches(log_filter_value(l, &f.key).as_deref()))
     });
     logs.sort_by_key(|l| std::cmp::Reverse(l.ts_nanos));
     logs.truncate(limit);
@@ -174,7 +185,7 @@ pub(crate) async fn logs_around(
         } else {
             context
                 .store
-                .logs_search(service.as_deref(), from..=to, None, None, None, limit)
+                .logs_search(service.as_deref(), from..=to, None, None, None, &[], limit)
                 .await
                 .map_err(crate::internal_field_err)?
         };
@@ -192,6 +203,7 @@ pub(crate) async fn log_count_series(
     severity_min: Option<i32>,
     severity_max: Option<i32>,
     query: Option<String>,
+    attribute_filters: Option<Vec<AttributeFilterInput>>,
     step_seconds: Option<i32>,
 ) -> FieldResult<Vec<Point>> {
     let from: u128 = from_nanos
@@ -208,6 +220,11 @@ pub(crate) async fn log_count_series(
             severity_min,
             severity_max,
             query.as_deref(),
+            &attribute_filters
+                .unwrap_or_default()
+                .into_iter()
+                .map(|filter| filter.into_adapter().map_err(field_err))
+                .collect::<FieldResult<Vec<_>>>()?,
             step,
         )
         .await
@@ -217,3 +234,22 @@ pub(crate) async fn log_count_series(
 
 #[cfg(test)]
 mod tests;
+
+/// Observed value for a where-clause key on one log row (anchored reads are
+/// filtered API-side); mirrors the adapters' log column mapping.
+fn log_filter_value(log: &model::LogRow, key: &str) -> Option<String> {
+    match key.trim() {
+        "service.name" | "service" => Some(log.service.clone()),
+        "severity" | "severity_text" => Some(log.severity_text.clone()),
+        "severity_number" => Some(log.severity_num.to_string()),
+        "body" => Some(log.body.clone()),
+        "trace_id" => Some(log.trace_id.clone()),
+        "span_id" => Some(log.span_id.clone()),
+        key => match log.attributes.get(key)? {
+            serde_json::Value::String(value) => Some(value.clone()),
+            serde_json::Value::Bool(value) => Some(value.to_string()),
+            serde_json::Value::Number(value) => Some(value.to_string()),
+            _ => None,
+        },
+    }
+}

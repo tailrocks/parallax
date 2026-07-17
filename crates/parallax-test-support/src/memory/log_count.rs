@@ -13,6 +13,7 @@ impl LogCountStore for MemoryStore {
         severity_min: Option<i32>,
         severity_max: Option<i32>,
         body_contains: Option<&str>,
+        attribute_filters: &[parallax_storage::adapter::AttributeFilter],
         step_nanos: u128,
     ) -> StorageResult<Vec<SeriesPoint>> {
         let step = step_nanos.max(1);
@@ -23,6 +24,11 @@ impl LogCountStore for MemoryStore {
                 && severity_min.is_none_or(|min| log.severity_num >= min)
                 && severity_max.is_none_or(|max| log.severity_num <= max)
                 && body_contains.is_none_or(|needle| log.body.contains(needle))
+                && attribute_filters.iter().all(|f| {
+                    f.matches(
+                        super::log_analytics::log_filter_observed_value(log, &f.key).as_deref(),
+                    )
+                })
         }) {
             *buckets.entry((log.ts_nanos / step) * step).or_default() += 1;
         }

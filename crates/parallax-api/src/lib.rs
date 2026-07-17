@@ -204,7 +204,7 @@ impl Query {
     /// first. `query` substring-matches the body; trace/run scoping
     /// composes with the other filters.
     #[expect(clippy::too_many_arguments, reason = "GraphQL log filters are the public query contract")]
-    async fn logs(context: &ApiContext, trace_id: Option<String>, invocation_id: Option<String>, service: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, severity_min: Option<i32>, severity_max: Option<i32>, query: Option<String>, limit: Option<i32>,) -> FieldResult<Vec<LogRecord>> { resolvers::logs::logs(context, trace_id, invocation_id, service, from_nanos, to_nanos, severity_min, severity_max, query, limit).await }
+    async fn logs(context: &ApiContext, trace_id: Option<String>, invocation_id: Option<String>, service: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, severity_min: Option<i32>, severity_max: Option<i32>, query: Option<String>, attribute_filters: Option<Vec<AttributeFilterInput>>, limit: Option<i32>,) -> FieldResult<Vec<LogRecord>> { resolvers::logs::logs(context, trace_id, invocation_id, service, from_nanos, to_nanos, severity_min, severity_max, query, attribute_filters, limit).await }
 
     /// Logs surrounding one anchor timestamp, ascending.
     async fn logs_around(context: &ApiContext, anchor_nanos: String, window_seconds: Option<i32>, service: Option<String>, trace_id: Option<String>, limit: Option<i32>,) -> FieldResult<Vec<LogRecord>> { resolvers::logs::logs_around(context, anchor_nanos, window_seconds, service, trace_id, limit).await }
@@ -217,7 +217,7 @@ impl Query {
     /// Log counts per time bucket under the same filters as `logs` — the
     /// Discover-style histogram above the log table.
     #[expect(clippy::too_many_arguments, reason = "GraphQL log filters are the public query contract")]
-    async fn log_count_series(context: &ApiContext, from_nanos: String, to_nanos: String, service: Option<String>, severity_min: Option<i32>, severity_max: Option<i32>, query: Option<String>, step_seconds: Option<i32>,) -> FieldResult<Vec<Point>> { resolvers::logs::log_count_series(context, from_nanos, to_nanos, service, severity_min, severity_max, query, step_seconds).await }
+    async fn log_count_series(context: &ApiContext, from_nanos: String, to_nanos: String, service: Option<String>, severity_min: Option<i32>, severity_max: Option<i32>, query: Option<String>, attribute_filters: Option<Vec<AttributeFilterInput>>, step_seconds: Option<i32>,) -> FieldResult<Vec<Point>> { resolvers::logs::log_count_series(context, from_nanos, to_nanos, service, severity_min, severity_max, query, attribute_filters, step_seconds).await }
 
     /// One CLI invocation by id (wrapper-registered or auto-registered external).
     async fn invocation(context: &ApiContext, invocation_id: String) -> FieldResult<Option<Invocation>> { resolvers::invocations::invocation(context, invocation_id).await }

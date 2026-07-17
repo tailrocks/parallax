@@ -110,11 +110,11 @@ async fn log_severity_max_bounds_search_and_count_series() {
     ]);
 
     let logs = store
-        .logs_search(None, 0..=100, Some(5), Some(8), None, 10)
+        .logs_search(None, 0..=100, Some(5), Some(8), None, &[], 10)
         .await
         .unwrap();
     let series = store
-        .log_count_series(None, 0..=100, Some(5), Some(8), None, 1)
+        .log_count_series(None, 0..=100, Some(5), Some(8), None, &[], 1)
         .await
         .unwrap();
 
