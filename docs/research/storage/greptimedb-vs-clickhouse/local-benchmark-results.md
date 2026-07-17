@@ -7089,3 +7089,8 @@ Evidence: scratch `run189-storage-sizes.txt`.
 No new containers. Updated `verdict-which-to-choose.md` to pins GT `v1.1.3` / CH `26.6.1.1193`
 and folded Runs 173–189 corrections (JSON2, append DELETE, managed-cloud framework, closed
 v1.1-GA wait with 5M dedup residual).
+
+### Run 191 — 2026-07-17 — visible-on-write 20/20 both engines
+
+Immediate select after insert always sees the row (GT+CH). Batch 1k visible without flush on GT.
+`write-path-and-ingestion.md`.

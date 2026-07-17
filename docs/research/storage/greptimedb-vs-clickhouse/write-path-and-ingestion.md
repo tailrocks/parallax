@@ -330,3 +330,10 @@ on both for the anchored hot path.
 **Adopt-native:** no drift vs Runs 120/152. Parallax proxy must forward **OTLP protobuf**
 (not JSON) to GreptimeDB. Jaeger read path remains zero-glue for traces UI. Metrics physical
 table auto-create still observed earlier this session (`greptime_physical_table` ENGINE=metric).
+
+## Run 191 (2026-07-17) — visible-on-write correctness (fair)
+
+N=20 single-row insert→select: **GT 20/20**, **CH 20/20** visible immediately (no flush).
+Select `execution_time_ms` p50: GT ~3 ms, CH ~2 ms. Batch insert 1000 rows then immediate
+`WHERE id BETWEEN` → **1000** on GT (memtable visible). Freshness remains a **tie**, not a
+decision axis (reconfirms Runs 116/166/178).
