@@ -43,10 +43,11 @@ impl adapter::ServiceAnalyticsStore for MemoryStore {
             .iter()
             .filter(|l| range.contains(&l.ts_nanos))
             .count() as u64;
+        // Contract parity with Greptime: only finite samples count.
         let metric_points = inner
             .metric_points
             .iter()
-            .filter(|p| range.contains(&p.ts_nanos))
+            .filter(|p| range.contains(&p.ts_nanos) && p.value.is_finite())
             .count() as u64
             + inner
                 .histograms
@@ -156,7 +157,9 @@ impl adapter::ServiceAnalyticsStore for MemoryStore {
             }
             SignalKind::MetricPoints => {
                 for point in inner.metric_points.iter().filter(|p| {
-                    range.contains(&p.ts_nanos) && service.is_none_or(|svc| p.service == svc)
+                    range.contains(&p.ts_nanos)
+                        && p.value.is_finite()
+                        && service.is_none_or(|svc| p.service == svc)
                 }) {
                     *buckets.entry((point.ts_nanos / step) * step).or_default() += 1;
                 }

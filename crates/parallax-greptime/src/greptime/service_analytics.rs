@@ -4,11 +4,20 @@ use super::*;
 impl crate::adapter::ServiceAnalyticsStore for GreptimeStore {
     async fn service_names(&self, range: RangeInclusive<u128>) -> StorageResult<Vec<String>> {
         let rows = self.sql_lenient(&Self::service_names_sql(&range)).await?;
-        Ok(rows
+        let mut names: BTreeSet<String> = rows
             .iter()
             .map(|r| str_at(r, 0))
             .filter(|s| !s.is_empty())
-            .collect())
+            .collect();
+        // Metric-only services (metric-summary contract): a service that
+        // emitted only metrics still enters bounded service discovery.
+        let window_step = range.end().saturating_sub(*range.start()).max(1);
+        for (_, svc, _) in self.metric_point_buckets(&range, None, window_step).await? {
+            if !svc.is_empty() {
+                names.insert(svc);
+            }
+        }
+        Ok(names.into_iter().collect())
     }
 
     async fn overview_totals(&self, range: RangeInclusive<u128>) -> StorageResult<OverviewTotals> {
@@ -73,11 +82,21 @@ impl crate::adapter::ServiceAnalyticsStore for GreptimeStore {
                 services.insert(svc);
             }
         }
+        // Windowed finite metric samples (+ one per histogram export) and
+        // metric-only services (metric-summary contract).
+        let window_step = range.end().saturating_sub(*range.start()).max(1);
+        let metric_buckets = self.metric_point_buckets(&range, None, window_step).await?;
+        let metric_point_count = metric_buckets.iter().map(|(_, _, n)| n).sum();
+        for (_, svc, _) in &metric_buckets {
+            if !svc.is_empty() {
+                services.insert(svc.clone());
+            }
+        }
         Ok(OverviewTotals {
             span_count,
             trace_count,
             log_count,
-            metric_point_count: 0,
+            metric_point_count,
             error_count,
             error_rate: if span_count == 0 {
                 0.0
@@ -142,7 +161,20 @@ impl crate::adapter::ServiceAnalyticsStore for GreptimeStore {
                 ))
                 .await?
             }
-            SignalKind::MetricPoints => Vec::new(),
+            SignalKind::MetricPoints => {
+                // Handled below: counts merge client-side across families.
+                let mut buckets: BTreeMap<u128, f64> = BTreeMap::new();
+                for (bucket, _, n) in self
+                    .metric_point_buckets(&range, service, step_nanos)
+                    .await?
+                {
+                    *buckets.entry(bucket).or_default() += n as f64;
+                }
+                return Ok(buckets
+                    .into_iter()
+                    .map(|(ts_nanos, value)| SeriesPoint { ts_nanos, value })
+                    .collect());
+            }
         };
         Ok(rows
             .iter()

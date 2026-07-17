@@ -223,6 +223,62 @@ impl GreptimeStore {
 }
 
 /// One classified native metric family for the explorer catalog.
+/// Per-bucket, per-service finite-sample counts across every native metric
+/// family (metric-summary contract: finite scalar samples; one count per
+/// histogram export via the `_count` stats table). One schema scan plus a
+/// chunked UNION ALL — bounded round trips, never per-metric fan-out.
+impl GreptimeStore {
+    pub(super) async fn metric_point_buckets(
+        &self,
+        range: &RangeInclusive<u128>,
+        service: Option<&str>,
+        step_nanos: u128,
+    ) -> StorageResult<Vec<(u128, String, u64)>> {
+        const FINITE: &str = r#""greptime_value" >= -1.7976931348623157e308
+                                AND "greptime_value" <= 1.7976931348623157e308"#;
+        const CHUNK: usize = 24;
+        let families = self.discover_metric_families().await?;
+        if families.is_empty() {
+            return Ok(Vec::new());
+        }
+        let step_secs = (step_nanos / 1_000_000_000).max(1);
+        let service_clause = service
+            .map(|svc| format!(r#" AND "service_name" = '{}'"#, escape(svc)))
+            .unwrap_or_default();
+        let from_ms = range.start() / 1_000_000;
+        let to_ms = range.end() / 1_000_000;
+        let arms: Vec<String> = families
+            .iter()
+            .map(|family| {
+                format!(
+                    r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "greptime_timestamp") AS BIGINT)
+                              AS "bucket_ms", CAST("service_name" AS STRING) AS "service",
+                              COUNT("greptime_value") AS "n"
+                       FROM "{}"
+                       WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}
+                         AND {FINITE}{service_clause}
+                       GROUP BY "bucket_ms", "service""#,
+                    escape_ident(&family.stats_table),
+                    sql_ts(from_ms),
+                    sql_ts(to_ms),
+                )
+            })
+            .collect();
+        let mut out = Vec::new();
+        for chunk in arms.chunks(CHUNK) {
+            let rows = self.sql_arrow_lenient(&chunk.join("\nUNION ALL\n")).await?;
+            out.extend(rows.iter().map(|row| {
+                (
+                    u128_at(row, 0) * 1_000_000,
+                    str_at(row, 1),
+                    u128_at(row, 2) as u64,
+                )
+            }));
+        }
+        Ok(out)
+    }
+}
+
 pub(super) struct MetricFamily {
     pub(super) display: String,
     pub(super) stats_table: String,
