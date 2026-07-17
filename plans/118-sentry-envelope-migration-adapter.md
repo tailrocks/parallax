@@ -31,6 +31,13 @@ the attack surface.
 
 ## Current Evidence
 
+- The operator unblock directive opened Sentry-compatible ingest. The
+  preliminary event-only subset, bounds, mapping, durable acknowledgement,
+  outcomes, raw-retention, and fixture gates are fixed in
+  [`sentry-envelope-adapter.md`](../docs/research/decisions/sentry-envelope-adapter.md).
+  The executor must verify and extend that shape with real current SDK fixtures;
+  no compatibility claim is proven yet. Plan status is intentionally unchanged
+  for the parallel verifier/executor handoff.
 - `docs/research/capture/sentry-ingest.md` records the envelope framing,
   Sentry-Rust event shapes, compatibility levels, and source-field constraints.
 - OTLP HTTP/gRPC is the shipped primary ingest contract.
