@@ -44,7 +44,7 @@ Legend for the **State** column:
 | **OpenObserve** | Rust single-binary, object-storage-native (Parquet/DataFusion); AI SRE + 140+ MCP. | AGPL-3.0 + commercial EE. | All signals. | [deep-dive](parallax-vs-openobserve.md) |
 | **Coroot** | eBPF zero-instrumentation obs + 2-stage AI RCA; safest MCP (OAuth+RBAC). | Apache-2.0 + commercial EE. | Traces/logs/profiles (eBPF). | [deep-dive](parallax-vs-coroot.md) |
 | **Highlight.io** | Session replay + error tracking + logs + traces; OTLP-native; Apache-2.0 OSS self-host. | Apache-2.0 (self-host) + Cloud. | Errors + RUM + logs. | [deep-dive](parallax-vs-highlight.md) |
-| **Uptrace** | OTLP on ClickHouse/Postgres; tracing-first. | Open core (BSL-adjacent). | Traces + metrics. | watch |
+| **Uptrace** | OTLP tracing-first APM on ClickHouse+Postgres; Bun-author lineage. | **AGPL** (Community free) + paid editions + Cloud. | Traces + metrics + logs. | [deep-dive](parallax-vs-uptrace.md) |
 | **HyperDX** | OTLP + multi-protocol on **ClickHouse**; full-stack incl. **session replay**; = ClickHouse Inc.'s **ClickStack**. | **MIT** + Cloud. | All signals + RUM/replay. | [deep-dive](parallax-vs-hyperdx.md) |
 | **Odigos** | eBPF auto-instrumentation to OTLP (collector/instrumentation layer, not a backend). | Apache-2.0. | Auto-instrumentation. | [deep-dive](parallax-vs-odigos.md) |
 | **Maple** | OTLP single-binary best local UX; Turso metadata sibling choice. | FSL-1.1 (TS/Bun). | All signals. | [deep-dive](parallax-vs-maple.md) |
