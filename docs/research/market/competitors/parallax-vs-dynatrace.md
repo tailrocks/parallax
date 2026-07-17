@@ -70,7 +70,7 @@ Both touch "AI-driven investigation" and (now) "agent" framing, but Dynatrace is
 - **Dynatrace:** OneAgent-captured errors + Davis RCA + the Problems app (managed incidents) + AI-assisted ticket creation. A real, mature incident workflow.
 - **Parallax:** derived `error_event` + fingerprint (**shipped**) + fix-outcome offline residual (**plan 123 DONE**; live value **unproven**).
 
-**Verdict:** on **shipped error/incident workflow + RCA, Dynatrace wins.** On the **fix-outcome loop**, Parallax targets an unoccupied cell (planned/unproven, A1).
+**Verdict:** on **shipped error/incident workflow + RCA, Dynatrace wins.** On the **fix-outcome loop**, Parallax targets an unoccupied cell (offline residual plan **123 DONE**; live value **unproven**).
 
 ## AI-native / agent-context story — the strategic overlap
 

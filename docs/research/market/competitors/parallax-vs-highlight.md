@@ -86,11 +86,11 @@ self-host + Highlight Cloud.
 | Metrics / infra | ✅ infrastructure monitoring | ✅🧪 OTLP metrics (shipped, pre-release) | **Highlight** (maturity) |
 | Frontend (browser) | ✅ core | ❌ | **Highlight** |
 | Profiling | ❌ | ❌ | tie (neither) |
-| LLM / agent spans | ❌ | 🟡 planned | **Parallax** (planned) |
+| LLM / agent spans | ❌ | 🟡🧪 agent-session modules (partial) | **Parallax** (partial) |
 
 **Verdict:** Highlight's coverage is frontend/RUM-led + full-stack, all shipped.
 **On session replay + RUM, Highlight wins by default** (Parallax has none). On
-backend production telemetry Parallax's *design* is comparable but unshipped.
+backend production telemetry Parallax **ships** OTLP logs/traces/metrics + error derivation (pre-release; A1 value unproven).
 
 ### Ingestion & transport
 
@@ -119,7 +119,7 @@ bounded bundle (**unproven**, A1).
 
 Highlight: error monitoring + grouping + lifecycle (resolve/regress/assign) — a
 real error-workflow product (frontend-anchored). Parallax: derived error events
-+ fingerprint + (planned) outcome loop. **Highlight wins on shipped error
++ fingerprint (**shipped**) + fix-outcome offline residual (plan **123 DONE**; live value unproven). **Highlight wins on shipped error
 workflow**; Parallax's outcome loop is the unproven differentiator.
 
 ### Dashboards & visualization

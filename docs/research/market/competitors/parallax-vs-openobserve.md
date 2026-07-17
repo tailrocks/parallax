@@ -154,7 +154,7 @@ OpenObserve pricing is **public** ([openobserve.ai/pricing](https://openobserve.
 ## Where Parallax honestly edges OpenObserve
 
 - **License permissiveness** — Apache-2.0 vs AGPL-3.0 (network-use copyleft). *(Real, narrow.)*
-- **Read-only, safe-by-default agent projection** — OpenObserve's MCP is Enterprise-gated + write/destructive; Parallax designs read-only+redacted. *(Real design contrast; Parallax planned.)*
+- **Read-only, safe-by-default agent projection** — OpenObserve's MCP is Enterprise-gated + write/destructive; Parallax designs read-only+redacted. *(Real design contrast; Parallax local-stdio MCP + bundle redaction **code-shipped**; A1 value unproven.)*
 - **Redaction as a free, first-class pre-exposure gate** — OpenObserve's Sensitive Data Redaction is Enterprise-gated. *(Real philosophical edge; Parallax A6 planned.)*
 - **Sentry-envelope compatibility** — OpenObserve has no Sentry-envelope path; Parallax ships envelope ingest to absorb Sentry's 30+ SDKs. *(Real; Parallax shipped; plan 118 DONE.)*
 - **Production error-issue workflow + fix-outcome loop** — OpenObserve has none. *(Real gap; Parallax error derivation **shipped**; fix-outcome offline residual plan 123 DONE; live value unproven.)*

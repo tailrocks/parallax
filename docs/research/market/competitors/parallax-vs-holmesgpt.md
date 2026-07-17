@@ -98,7 +98,7 @@ HolmesGPT **has no storage, no query engine, no error-derivation, no issue lifec
 
 - **Owns the telemetry** (store + error-derivation + fingerprint) — HolmesGPT has no store; it queries yours. *(Real layer difference.)*
 - **Bounded, redacted, agent-safe evidence bundle** — HolmesGPT investigates open-endedly over raw telemetry; Parallax produces a validated dossier. *(Thesis, unproven A1 — the crux.)*
-- **Fix-outcome loop** — HolmesGPT has no outcome ledger. *(Real unoccupied cell; Parallax planned/unproven, plan 123.)*
+- **Fix-outcome loop** — HolmesGPT has no outcome ledger. *(Real unoccupied cell; offline residual plan **123 DONE**; live value **unproven**.)*
 - **Sentry-envelope compatibility** — HolmesGPT has none; Parallax ships it. *(Real.)*
 
 > **Honest summary:** HolmesGPT is **strategically central** to Parallax — it is the **shipped, CNCF, Apache-2.0 realization of "an AI agent that investigates telemetry,"** which is exactly the role Parallax's "context engine, not the fixer" framing assigns to a *separate* agent. On shipped AI-investigation, HolmesGPT is far ahead. The two are **mostly complementary** (HolmesGPT queries; Parallax owns+derives+bundles) — HolmesGPT could query Parallax as a richer source. **The A1 crux is sharp and must be stated plainly: Parallax's value over HolmesGPT-over-raw-telemetry is unproven.** Parallax's defensible delta is owning the telemetry + error-derivation + bounded/redacted safety + outcome loop — but whether a bounded bundle beats HolmesGPT investigating raw telemetry for coding-agent fix outcomes is the open A1 question. Do not assume Parallax beats HolmesGPT; it must be measured.

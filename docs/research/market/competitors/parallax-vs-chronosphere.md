@@ -70,10 +70,10 @@ Both touch a **cost** story, but Chronosphere is a closed metrics-scale/cost-con
 
 ## AI-native / agent-context story
 
-- **Chronosphere's AI:** AI-assisted query/detection emerging; the **Control Plane** is the distinctive "intelligent" layer (cost/data-volume governance), not an agent-context projection. A human-platform + cost-governance tool.
+- **Chronosphere's AI (pass 46):** AI-assisted query/detection + **Control Plane** cost/data-volume governance (human platform). **Post-PANW:** press states **planned Cortex AgentiX × Chronosphere** integration for autonomous find/fix of security+IT issues — **announced intent, not verified GA product** (2026-07-17).
 - **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven).
 
-**Honest verdict:** Chronosphere's distinctiveness is **cost/data-volume control**, not agent-context. Parallax's bounded-agent-bundle claim is **unproven (A1)** — and Chronosphere doesn't occupy that cell. Different axes.
+**Honest verdict:** Proven Chronosphere edge remains **metrics scale + cost control**. **If AgentiX ships**, PANW/Chronosphere becomes another enterprise **autonomous remediation** surface (security+obs) — record as pressure on “context-engine-not-the-fixer,” not as Parallax uniqueness. Bundle value stays **A1-unproven**.
 
 ## Architecture & deployment
 
@@ -144,7 +144,7 @@ Primary source: [Chronosphere FAQs — “How Does Chronosphere’s Pricing Work
 - **A1 gate:** does a Parallax bounded bundle add value beyond Chronosphere's cost-controlled metrics + pipeline for coding-agent incident fixes? Unproven.
 - **GreptimeDB-vs-M3/Cube at metrics scale** — measured ingest/query/cost at very-high metric cardinality. Benchmark-dependent, unmeasured; the riskiest regime for Parallax.
 - **Chronosphere list rates** — **resolved as “no public number”** (quote-based retained-data + pipeline throughput). TCO vs Parallax self-host remains benchmark/quote-dependent.
-- **PANW integration drift** — watch whether Chronosphere gains a security/agent surface from Palo Alto AgentiX / Cortex that collides with Parallax’s agent-context thesis.
+- **PANW / Cortex AgentiX integration (pass 46 re-check):** acquisition press (2026-01-29) states **planned** integration of **Cortex® AgentiX™** with Chronosphere for AI agents that “find and fix security and IT issues automatically” ([PANW press](https://www.paloaltonetworks.com/company/press/2026/palo-alto-networks-completes-chronosphere-acquisition--unifying-observability-and-security-for-the-ai-era)). **Status: announced/planned — not verified as a shipped joint product surface.** Watch remains **OPEN / partially fired (intent)** until GA product docs prove agentic remediation over Chronosphere data. If shipped, this is another enterprise fixer surface (security+obs) pressuring “context-engine-not-the-fixer.”
 
 ## Sources (accessed 2026-07-17; pass 41 re-verify)
 

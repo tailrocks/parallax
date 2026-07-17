@@ -1,6 +1,6 @@
 # Parallax vs Coroot
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17**.
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 46: eBPF→app-errors watch **UNFIRED** — recent = profiles/Windows/CI; `fix panic` is internal merge panic, not product app-error events).
 > Sources: [coroot.com](https://coroot.com/) + [pricing](https://coroot.com/pricing) + [enterprise](https://coroot.com/enterprise) + [AI](https://docs.coroot.com/ai/) + [MCP](https://docs.coroot.com/mcp/overview/), [github.com/coroot/coroot](https://github.com/coroot/coroot), and the legacy [coroot-deep-research.md](../coroot-deep-research.md) (2026-06-22) as a lead.
 >
 > **Bottom line up front:** Coroot is the **nearest eBPF/RCA open-source competitor**
@@ -70,7 +70,7 @@ Both Apache-2.0 OSS, self-hostable, with an agent/MCP surface and AI RCA. The ov
 - **Coroot's AI (shipped, Enterprise/Cloud-gated):** 2-stage RCA (deterministic-ML-then-LLM), OpenAI-compatible/BYO key, "what broke, why, how to fix." **And the key one: the best MCP safety model in the field** — per-user **OAuth + RBAC projection**, ~18 tools, **only `resolve_alerts` mutates.** This is the closest shipped thing to Parallax's "read-only safe agent projection" thesis.
 - **Parallax's claim (code-shipped, A1 value unproven):** bounded, redacted, agent-safe evidence bundle served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) — **read-only by design**, redaction as a first-class gate.
 
-**Honest verdict:** On shipped AI (2-stage RCA) **Coroot leads.** On **safe-agent-projection — a recurring Parallax claim — Coroot already ships the best RBAC-scoped MCP in the market.** This is a direct, uncomfortable test of Parallax's wedge: the "safe agent surface" is NOT unoccupied; Coroot owns the best version of it. Parallax's narrowing differentiators: (a) **strictly read-only** (Coroot has one mutating tool), (b) **redaction-before-access as a gate** (Coroot's MCP doesn't redact), (c) **bounded/versioned bundle** (Coroot serves queries, not a bounded artifact), (d) **production-incident evidence** scope. Most planned/unproven (A1). Write it plainly: Parallax cannot claim "safe agent projection" as unique — Coroot ships the best one today.
+**Honest verdict:** On shipped AI (2-stage RCA) **Coroot leads.** On **safe-agent-projection — a recurring Parallax claim — Coroot already ships the best RBAC-scoped MCP in the market.** This is a direct, uncomfortable test of Parallax's wedge: the "safe agent surface" is NOT unoccupied; Coroot owns the best version of it. Parallax's narrowing differentiators: (a) **strictly read-only** (Coroot has one mutating tool), (b) **redaction-before-access as a gate** (Coroot's MCP doesn't redact), (c) **bounded/versioned bundle** (Coroot serves queries, not a bounded artifact), (d) **production-incident evidence** scope. Error/Sentry/MCP/bundle pieces are **code-shipped**; A1 **value** unproven. Write it plainly: Parallax cannot claim "safe agent projection" as unique — Coroot ships the best one today.
 
 ## Architecture & deployment
 
@@ -137,11 +137,11 @@ Sources: [coroot.com/pricing](https://coroot.com/pricing), [coroot.com/enterpris
 
 ## Where Parallax honestly edges Coroot
 
-- **App-level error events / panics / stack traces** — Coroot's eBPF spans are partial/protocol-level by design; Parallax's whole point is production error derivation. *(Real, sharp Coroot gap; Parallax planned.)*
+- **App-level error events / panics / stack traces** — Coroot's eBPF spans are partial/protocol-level by design; Parallax **ships** production error derivation (pre-release). *(Real, sharp Coroot gap; Parallax **shipped**.)*
 - **Sentry-envelope compatibility** — Coroot has none. *(Real; Parallax shipped.)*
-- **Strictly read-only + redaction-gated agent bundle** — Coroot's MCP has 1 mutating tool and no redaction gate. *(Real narrowing edge; Parallax planned/unproven, A1.)*
+- **Strictly read-only + redaction-gated agent bundle** — Coroot's MCP has 1 mutating tool and no redaction gate. *(Real narrowing edge; Parallax **code-shipped** MCP + bundle redaction; A1 value **unproven**.)*
 - **Single-binary local-first** — Coroot is multi-container. *(Real design edge.)*
-- **Fix-outcome loop + bounded/versioned bundle** — Coroot has neither. *(Thesis, unproven, A1.)*
+- **Fix-outcome loop + bounded/versioned bundle** — Coroot has neither. *(Bundle **code-shipped**; fix-outcome offline residual plan **123 DONE**; live value **unproven**, A1.)*
 
 > **Honest summary:** Coroot ships the best "safe agent" MCP (RBAC) and the best adoption-friction story (eBPF) — two axes adjacent to Parallax's thesis, both already occupied and mature. Parallax's defensible delta is **app-level error semantics** (Coroot's biggest structural gap — eBPF can't see app errors), **Sentry-envelope**, **single-binary**, **strict read-only + redaction**, and the **bounded+outcome bundle** — Sentry envelope shipped; bundle value/outcome unproven (A1). Do not claim "safe agent projection" as uniquely Parallax; Coroot ships the best one.
 

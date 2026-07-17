@@ -78,14 +78,14 @@ Same shape (a typed object an agent reads); fundamentally different artifact. Do
 - **TMA1:** **no production error-event derivation, no fingerprinting, no issue lifecycle, no fix-outcome loop.** Anomaly resolution is the closest (anomaly → resolved).
 - **Parallax:** derived `error_event` + fingerprint (**shipped**) + fix-outcome offline residual (**plan 123 DONE**; live value **unproven**).
 
-**Verdict:** on **production error workflow + outcome loop, Parallax targets cells TMA1 does not occupy** — but Parallax's are **planned/unproven.** This is a real Parallax-favorable axis (gated).
+**Verdict:** on **production error workflow + outcome loop, Parallax targets cells TMA1 does not occupy** — error derivation **shipped** (pre-release); fix-outcome offline residual **plan 123 DONE**; live product value **unproven.** Real Parallax-favorable axis (gated on value, not code existence).
 
 ## AI-native / agent-context story — the convergence point
 
 - **TMA1's position:** it is **literally a context engine for coding agents** — record the agent's LLM calls, detect anomalies, feed a bounded read-only view back into the next turn. This is the closest existing product to Parallax's "context engine, not the fixer" framing. **Read-only by design** (7 tools, none mutate), local, Apache-2.0.
 - **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for production incidents + fix-outcome loop.
 
-**Honest verdict:** TMA1 is **the closest shipped realization of "a read-only context projection for coding agents"** — and it is Apache-2.0, local-first, GreptimeDB-backed, exactly Parallax's substrate. On the *architecture-for-agent-loops*, **TMA1 is ahead (shipped, even alpha).** Parallax's differentiation is entirely: (a) **production-incident scope** (TMA1 is dev-machine-local), (b) **redaction gate** (TMA1's bundle is unredacted), (c) **versioned/portable bundle** (TMA1's is live/unversioned), (d) **fix-outcome loop**, (e) **Sentry-envelope compat** (shipped), (f) **Turso metadata** — residual planned/unproven. The honest, uncomfortable read: **a lot of "Parallax's wedge" is already shipped by TMA1 in narrower form.** Parallax's bet is that production-incident + redaction + outcome is a different, valuable job — unproven (A1).
+**Honest verdict:** TMA1 is **the closest shipped realization of "a read-only context projection for coding agents"** — and it is Apache-2.0, local-first, GreptimeDB-backed, exactly Parallax's substrate. On the *architecture-for-agent-loops*, **TMA1 is ahead (shipped, even alpha).** Parallax's differentiation is entirely: (a) **production-incident scope** (TMA1 is dev-machine-local), (b) **redaction gate** (TMA1's bundle is unredacted), (c) **versioned/portable bundle** (TMA1's is live/unversioned), (d) **fix-outcome loop** (offline residual plan **123 DONE**; live value unproven), (e) **Sentry-envelope compat** (shipped), (f) **Turso metadata** (shipped). Bundle/redaction **code-shipped**; A1 value **unproven.** The honest, uncomfortable read: **a lot of "Parallax's wedge" is already shipped by TMA1 in narrower form.** Parallax's bet is that production-incident + redaction + outcome is a different, valuable job — unproven (A1).
 
 ## Architecture & deployment
 
@@ -146,7 +146,7 @@ Same shape (a typed object an agent reads); fundamentally different artifact. Do
 
 - **Production-incident scope** — TMA1 is dev-machine-local; Parallax targets production services. *(Real scope difference.)*
 - **Production error-event derivation + fingerprinting** — TMA1 has none. *(Real; Parallax shipped.)*
-- **Fix-outcome loop** — TMA1 has none. *(Real unoccupied cell; Parallax planned/unproven, A1.)*
+- **Fix-outcome loop** — TMA1 has none. *(Real unoccupied cell; offline residual plan **123 DONE**; live value **unproven**.)*
 - **Bounded, versioned, redacted, portable bundle** — TMA1's bundle is live/unversioned/unredacted. *(Real artifact difference; Parallax **code-shipped**, A1 **value unproven**.)*
 - **Sentry-envelope compatibility** — TMA1 has none. *(Real; Parallax shipped.)*
 - **Turso metadata split** — production multi-entity state. *(Design choice; scale advantage unproven.)*

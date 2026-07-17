@@ -172,7 +172,7 @@ Billable units (Pro overage, per 2026 sources): **metrics ~$6.50 / 1,000 active 
 ## Where Parallax honestly edges Grafana
 
 - **Self-host simplicity** — single-binary vs Grafana's distributed Mimir+Loki+Tempo+Pyroscope+Grafana stack. *(Real operational wedge; Parallax pre-release.)*
-- **Native error-issue workflow** — Grafana has none; Parallax plans derived errors + fingerprint + outcome loop. *(Real Grafana gap; Parallax error derivation **shipped**; fix-outcome offline residual plan 123 DONE; live value unproven.)*
+- **Native error-issue workflow** — Grafana has none; Parallax **ships** derived errors + fingerprint; fix-outcome offline residual plan **123 DONE**. *(Real Grafana gap; Parallax error derivation **shipped**; fix-outcome offline residual plan 123 DONE; live value unproven.)*
 - **License permissiveness** — Apache-2.0 vs AGPLv3 (network-use copyleft). *(Narrow but real.)*
 - **Bounded, redacted, agent-safe evidence bundle + fix-outcome loop** — unoccupied cells. *(Thesis, **unproven** — A1 gate.)*
 

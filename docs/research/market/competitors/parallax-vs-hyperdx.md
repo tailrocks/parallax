@@ -77,13 +77,13 @@ as "Datadog without the price tag." Now also distributed by ClickHouse Inc. as
 | Errors / exceptions | ✅ (errors tab) | ✅🧪 derived `error_event` + fingerprint (shipped, pre-release) | **HyperDX** (maturity) |
 | **Session replay / RUM** | ✅ **core** | ❌ | **HyperDX** (Parallax has none) |
 | Profiling | ❌ | ❌ | tie (neither) |
-| LLM / agent spans | ❌ | 🟡 planned | **Parallax** (planned) |
+| LLM / agent spans | ❌ | 🟡🧪 agent-session modules (partial) | **Parallax** (partial) |
 | Multi-protocol ingest | ✅ (OTLP/syslog/ES/Loki/DD) | ✅ OTLP + shipped Sentry-envelope | **HyperDX** (breadth); Parallax (Sentry lane) |
 
 **Verdict:** HyperDX is a **broad full-stack platform incl. session replay**,
 all shipped. On breadth + replay, **HyperDX wins decisively** (Parallax has no
 replay/RUM). Parallax's signal *model* differs (derived errors, Sentry) but is
-narrower/unshipped-at-parity.
+narrower and pre-release (OTLP + errors **shipped**; not at HyperDX maturity).
 
 ### Ingestion & transport
 
@@ -119,7 +119,7 @@ bounded bundle (**unproven**, A1). **HyperDX wins** on shipped cross-signal UX.
 ### Error tracking & workflow
 
 HyperDX: errors tab (queryable, grouping-ish) — a real but not Sentry-grade issue
-lifecycle. Parallax: derived `error_event` + fingerprint + (planned) outcome
+lifecycle. Parallax: derived `error_event` + fingerprint (**shipped**) + fix-outcome offline residual (plan **123 DONE**; live value unproven
 loop. Roughly comparable on error-as-data; Parallax's outcome loop is the
 unproven differentiator.
 

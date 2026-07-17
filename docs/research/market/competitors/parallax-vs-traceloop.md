@@ -1,6 +1,6 @@
 # Parallax vs Traceloop (OpenLLMetry)
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 31;
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 46: **v0.62.1 / 7,306★** stable; watch triggers still UNFIRED under ServiceNow) (pass 31;
 > drift-verified 2026-07-17).
 > Sources: [traceloop/openllmetry (GitHub)](https://github.com/traceloop/openllmetry)
 > (7,307★ / 1,020 forks, Apache-2.0, Python, last push 2026-07-13 — active),

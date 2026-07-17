@@ -139,7 +139,7 @@ SigNoz offers three query interfaces: **Query Builder v5** (GUI, all signals),
 **raw ClickHouse SQL** (all signals, dashboards), **PromQL** (metrics-only).
 Cross-signal trace→log→metric drilldown is mature. **No evidence-pin / typed
 correlation artifact.** Parallax's bet is the typed evidence-graph + bundle with
-query manifest + raw refs — **designed, not shipped at parity**.
+query manifest + raw refs — **partially shipped** (bundle/query surfaces exist; depth not at SigNoz parity).
 
 ### Dashboards & visualization
 
@@ -265,7 +265,7 @@ self-hosted Parallax could undercut but that is unmeasured.
 5. **Pricing transparency** — public, usage-based, no per-seat.
 6. **Query flexibility** — Builder + SQL + PromQL.
 
-## Where Parallax intends an edge (scoped; mostly planned/unproven)
+## Where Parallax intends an edge (scoped; code-shipped pieces + unproven value gates)
 
 1. **Single-binary local-first** — the one *real today* architectural edge (GreptimeDB+Turso, no ~5-container stack).
 2. **Sentry-compatible ingest lane** — shipped; plan 118 DONE; multi-SDK compatibility ledger unproven.

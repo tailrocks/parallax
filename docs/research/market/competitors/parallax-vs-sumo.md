@@ -133,7 +133,7 @@ Primary: live [sumologic.com/pricing](https://www.sumologic.com/pricing) (access
 
 - **Openness / lock-in** — Apache-2.0 OTLP-native self-host vs closed SaaS. *(Real, decisive.)*
 - **Self-host / data sovereignty** — Parallax designed for it; Sumo is SaaS-only. *(Real.)*
-- **Full-signal-native + production error-workflow** — Sumo is logs-first; Parallax derives production error events + (planned) outcome loop. *(Real gap in Sumo; Parallax planned.)*
+- **Full-signal-native + production error-workflow** — Sumo is logs-first; Parallax **ships** production error derivation + fix-outcome offline residual (plan **123 DONE**; live value unproven). *(Real gap in Sumo; Parallax error path **shipped**.)*
 - **Sentry-envelope compatibility** — Sumo has none; Parallax ships it. *(Real.)*
 - **Bounded, redacted, agent-safe evidence bundle** — Sumo has none. *(Thesis, unproven, A1.)*
 

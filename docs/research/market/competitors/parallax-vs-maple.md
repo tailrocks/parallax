@@ -1,6 +1,6 @@
 # Parallax vs Maple
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17**.
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 46: Tinybird-decoupling watch **UNFIRED** — recent commits billing/UI/traces/API; hosted path still Tinybird-coupled per prior deep-dive).
 > Sources: [maple.dev](https://maple.dev/) + [pricing](https://maple.dev/pricing/) + [docs](https://maple.dev/docs), [github.com/MapleTechLabs/maple](https://github.com/MapleTechLabs/maple) (renamed from `Makisuo/maple`), and the legacy [maple-deep-research.md](../maple-deep-research.md) (2026-05-31) as a lead.
 >
 > **Bottom line up front:** Maple is the **local-experience benchmark** Parallax
@@ -62,7 +62,7 @@ Both single-binary-local-first, OTLP-native, Turso-metadata. The closest pair on
 - **Maple:** **smart grouping by type/message**, trend detection, trace linking, spam/env filtering — a real error-tracking surface (more than Grafana/Honeycomb/Coroot offer natively), though not Sentry-grade lifecycle.
 - **Parallax:** derived `error_event` + deterministic fingerprint (**shipped**) + fix-outcome offline residual (**plan 123 DONE**; live value **unproven**).
 
-**Verdict:** on **shipped error grouping, Maple is ahead of pre-release Parallax.** On the **fix-outcome loop**, Parallax targets an unoccupied cell (planned/unproven, A1). Scoped.
+**Verdict:** on **shipped error grouping, Maple is ahead of pre-release Parallax.** On the **fix-outcome loop**, Parallax targets an unoccupied cell (offline residual plan **123 DONE**; live value **unproven**). Scoped.
 
 ## AI-native / agent-context story
 
