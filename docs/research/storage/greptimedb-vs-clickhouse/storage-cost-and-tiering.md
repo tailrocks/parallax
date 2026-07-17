@@ -150,3 +150,13 @@ We have largely measured **speed**. To decide this, each storage benchmark must 
 **Architecture thesis unchanged:** GT is S3-native by config flip; CH OSS treats S3 as
 disk/policy tier. Full cold-S3 benchmark still server/MinIO harness (`bench/s3/`).
 `build_info` on live GT reports commit `63ef18a` / `1.1.3` (pin match).
+
+## Run 214 (2026-07-17) — object-store code ownership
+
+- **GT:** dedicated `object-store` crate + OpenDAL operators; storage type selected in
+  config (`S3`/local/…). SST write path goes through OpenDAL, not a bolted-on disk layer.
+- **CH:** `Disks` subsystem registers S3 disks (`registerDiskS3` family); MergeTree stores
+  parts on configured disks/policies — S3 is a **storage policy target**, not the primary
+  engine identity.
+
+Reinforces Run 161/209 thesis: GT S3-native vs CH S3-as-tier (OSS).

@@ -7190,3 +7190,7 @@ No third backend enters after re-pin cycle. GT product / CH comparator. `platfor
 ### Run 213 — 2026-07-17 — GT batch_size still 8192 default
 
 state.rs still omits with_batch_size. CH max_block_size 65409. `query-execution-engine.md`.
+
+### Run 214 — 2026-07-17 — OpenDAL vs DiskS3 code ownership
+
+Source map only. GT object-store/OpenDAL; CH Disks/S3 policy. `storage-cost-and-tiering.md`.
