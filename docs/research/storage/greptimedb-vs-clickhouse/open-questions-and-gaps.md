@@ -368,3 +368,8 @@ Comparison **not done**. Pins hold. Highest remaining still:
 
 After runs 423–448: PromQL partial surface mapped; load-bearing holds re-verified.
 **Not done.** Top five still product/server-gated.
+
+## Run 453 (2026-07-18) — still not done
+
+Pins hold. Laptop 423–452: PromQL surface, join/TTL/FT/projection, windows,
+percentiles, density. **Not done.** Top five: mix, server, quotes, GB cold, cluster RPO.
