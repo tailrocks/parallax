@@ -58,6 +58,15 @@
 | Code search `$id` host | Still **total_count 6** (in-tree only) |
 | External adoption | Still **zero** |
 
+### Pass 259 (2026-07-18) — adoption + Traceloop neighbor pin
+
+| Probe | Result |
+| --- | --- |
+| In-repo refs to `github.com/tailrocks/parallax/schema/evidence-bundle` | Still **schema files + PoC schema + MCP test + research notes** only — **no** external consumer ledger |
+| Adoption ledger files | Still **absent** |
+| Claim stack | Still **`schema_artifacts_shipped` + `schema_adoption_none` + `corpus_empty_public`** |
+| [traceloop/openllmetry](https://github.com/traceloop/openllmetry) | **7,307★**; latest **`0.62.1`** (2026-06-28) — GenAI OTel instrumentation peer; **not** Parallax evidence-bundle consumer |
+
 **A3 split holds:** schema **artifacts shipped**; **external adoption = zero** (moat unproven).
 
 **Implication:** `$id` is currently an **identifier**, not a **dereferenceable
