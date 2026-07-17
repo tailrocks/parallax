@@ -20,7 +20,7 @@
 
 These overlap on **full-stack OTLP telemetry + self-host OSS**. Grafana is the broad platform; Parallax is a narrow context engine. Compare axis-by-axis.
 
-## Current GA versions (pinned 2026-07-17)
+## Current GA versions (pinned 2026-07-17, pass 49)
 
 Latest stable tags via the [github.com/grafana](https://github.com/grafana) releases API:
 
@@ -29,16 +29,16 @@ Latest stable tags via the [github.com/grafana](https://github.com/grafana) rele
 | Grafana | **v13.1.0** | 2026-07-01 | the **v13** line (not 12.x) |
 | Mimir | **mimir-3.1.3** | 2026-07-16 | metrics, Prometheus-compatible |
 | Loki | **v3.7.3** | 2026-06-24 | logs |
-| Tempo | **v2.10.7** | 2026-06-12 | traces — **v3 (Kafka-log/vParquet5) is reviewed in-repo but NOT yet a GA tag** |
+| Tempo | **v3.0.2** | 2026-06-09 | traces — **v3 GA** (was wrongly listed as v2.10.7 through pass 48) |
 | Pyroscope | **v2.1.1** | 2026-07-10 | continuous profiling |
 
-> ⚠️ The signal/storage sections below reference **Tempo v3** features from the in-repo [architecture review](../../reference/grafana-tempo-v3-architecture-review.md) (2026-05-29). v3 is the **reviewed/next line, not the current GA release** (2.10.7 is). Do not read "Tempo v3" as the shipped product — it is forward-looking architecture.
+> **Pass 49 correction:** Tempo **v3.0.0** shipped **2026-05-28**; latest patch **v3.0.2** (2026-06-09). Prior deep-dive claimed “v3 not yet a GA tag / GA is 2.10.7” — **stale**. [v3.0.0 highlights](https://github.com/grafana/tempo/releases/tag/v3.0.0): new ingest/write architecture (legacy ingesters removed), **TraceQL metrics GA**, vParquet5, **trace redaction**, span profiling via otelpyroscope, migration tooling. Breaking 2.x→3.0 upgrade. In-repo [architecture review](../../reference/grafana-tempo-v3-architecture-review.md) (2026-05-29) now describes **shipped** architecture, not forward-looking only.
 
 ## Signal coverage — Grafana is the full OSS stack
 
 | Signal | Grafana Cloud (shipped) | Parallax (pre-release; ✅🧪=code-shipped) |
 | --- | --- | --- |
-| Traces / distributed tracing | ✅ Tempo (**GA v2.10.7**; v3 Kafka/vParquet5 path reviewed in-repo, not yet a GA tag) | ✅🧪 OTLP traces (shipped, pre-release) |
+| Traces / distributed tracing | ✅ Tempo (**GA v3.0.2** — Kafka-log write path, TraceQL metrics GA, vParquet5, trace redaction) | ✅🧪 OTLP traces (shipped, pre-release) |
 | Logs | ✅ Loki | ✅🧪 OTLP logs (shipped, pre-release) |
 | Metrics | ✅ Mimir (Prometheus-compatible) | ✅🧪 OTLP metrics (shipped, pre-release) |
 | Continuous profiling | ✅ Pyroscope | ❌ |
@@ -59,7 +59,7 @@ Latest stable tags via the [github.com/grafana](https://github.com/grafana) rele
 
 ## Storage architecture — same physics, different engines
 
-- **Grafana:** object-storage-native columnar across the stack — Tempo (`vParquet5`), Mimir (chunks/blocks on object store), Loki (chunks), Pyroscope (profiles on object store). The [in-repo Tempo v3 review](../../reference/grafana-tempo-v3-architecture-review.md) documents Tempo 3.0's Kafka-log write path, live-store, TraceQL Metrics GA, and retroactive redaction as a block-rewrite job. Battle-tested at hyperscale (Grafana Labs' own Cloud + many large self-host deployments).
+- **Grafana:** object-storage-native columnar across the stack — Tempo **v3 GA** (`vParquet5`, Kafka-log write path, live-store, TraceQL Metrics GA, trace redaction), Mimir (chunks/blocks on object store), Loki (chunks), Pyroscope (profiles on object store). Documented in [Tempo v3.0 release notes](https://grafana.com/docs/tempo/latest/release-notes/v3-0/) + in-repo [architecture review](../../reference/grafana-tempo-v3-architecture-review.md). Battle-tested at hyperscale (Grafana Labs' own Cloud + many large self-host deployments).
 - **Parallax:** GreptimeDB (native OTLP tables) + Turso, single-binary. Same physics (columnar on object store) as Tempo/Mimir, different engine. Parallax's storage perf vs the Grafana stack is **benchmark-dependent and unproven.**
 
 **Verdict:** on proven-at-scale + operational maturity, **Grafana wins conclusively.** Parallax's GreptimeDB-native design is newer and unproven. (The in-repo review explicitly treats Tempo as an *architectural reference to borrow from* — Kafka-WAL, Parquet, redaction-as-job — not a product Parallax must beat.)
@@ -87,10 +87,10 @@ Latest stable tags via the [github.com/grafana](https://github.com/grafana) rele
 
 ## AI-native / agent-context story
 
-- **Grafana's AI (pass 48):** app-observability insights, anomaly/forecasting, Sift, NL query, plus **Grafana Assistant** (copilot priced at **$20/active AI user** + token overage on Cloud Pro — live pricing page). Human-dashboard + assistive AI; **not** a portable redacted coding-agent evidence bundle.
+- **Grafana's AI (pass 48–49):** app-observability insights, anomaly/forecasting, Sift, NL query, plus **Grafana Assistant** (copilot; Pro includes **3 active AI users** / 40M tokens each + 25M service-account tokens; then **$20/active AI user** + **$2/1M tokens** — live [pricing](https://grafana.com/pricing/)). Docs: **Assistant Investigations** public preview **no charge** (billing for Assistant usage started 2026-01-01). Human-dashboard + assistive investigation AI; **not** a portable redacted coding-agent evidence bundle.
 - **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven gate).
 
-**Verdict:** Grafana ships more AI today (Assistant + insights/forecasting/NL). Parallax's differentiated agent-context claim is **unproven (A1).** Neither serves the exact "safe bounded context for autonomous coding agents" cell — Parallax's thesis.
+**Verdict:** Grafana ships more AI today (Assistant + Investigations preview + insights/forecasting/NL). Parallax's differentiated agent-context claim is **unproven (A1).** Neither serves the exact "safe bounded context for autonomous coding agents" cell — Parallax's thesis.
 
 ## Architecture & deployment model
 
@@ -191,13 +191,14 @@ Grafana Cloud pricing is **public** ([grafana.com/pricing](https://grafana.com/p
 
 - **A1 gate vs Grafana:** for a team on Grafana Cloud + Sentry, does a Parallax bundle measurably improve coding-agent fix outcomes for incidents? Unproven.
 - **Self-host cost/ops parity:** measured single-binary Parallax vs self-hosted Mimir+Loki+Tempo+Pyroscope (deploy complexity, RAM, ops). Benchmark-dependent, unmeasured.
-- ~~Grafana latest versions~~ → Grafana **v13.1.0** re-confirmed pass 48 (GitHub); component tags rate-limited this pass — table retained. Tempo v3 not GA.
+- ~~Grafana latest versions~~ → pass **49**: Grafana **v13.1.0**, Mimir **3.1.3**, Loki **3.7.3**, Tempo **v3.0.2 GA**, Pyroscope **v2.1.1** (GitHub releases API). Prior “Tempo v3 not GA” claim **corrected**.
 - ~~Grafana Cloud Pro $195~~ → **RESOLVED pass 48: from $19/mo + usage** on live page.
 
-## Sources (accessed 2026-07-17; pass 48)
+## Sources (accessed 2026-07-17; pass 49)
 
-- Live [grafana.com/pricing](https://grafana.com/pricing/).
+- Live [grafana.com/pricing](https://grafana.com/pricing/); [Assistant pricing docs](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/pricing/).
 - [Grafana Cloud docs](https://grafana.com/docs/grafana-cloud/).
+- [Tempo v3.0.0 release](https://github.com/grafana/tempo/releases/tag/v3.0.0); [v3.0.2](https://github.com/grafana/tempo/releases/tag/v3.0.2); [Tempo v3.0 release notes](https://grafana.com/docs/tempo/latest/release-notes/v3-0/).
 - In-repo: [grafana-tempo-v3-architecture-review.md](../../reference/grafana-tempo-v3-architecture-review.md).
 - Secondary pricing blogs demoted where they conflict with live $19 Pro base.
 - Parallax side: [decisions/storage-engine.md](../../decisions/storage-engine.md), [storage/greptimedb-vs-clickhouse/](../../storage/greptimedb-vs-clickhouse/), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).

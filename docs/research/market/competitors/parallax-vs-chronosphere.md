@@ -70,10 +70,10 @@ Both touch a **cost** story, but Chronosphere is a closed metrics-scale/cost-con
 
 ## AI-native / agent-context story
 
-- **Chronosphere's AI (pass 46):** AI-assisted query/detection + **Control Plane** cost/data-volume governance (human platform). **Post-PANW:** press states **planned Cortex AgentiX × Chronosphere** integration for autonomous find/fix of security+IT issues — **announced intent, not verified GA product** (2026-07-17).
+- **Chronosphere's AI (pass 46 + 49 re-check):** AI-assisted query/detection + **Control Plane** cost/data-volume governance (human platform). **Post-PANW:** [acquisition press (2026-01-29)](https://www.paloaltonetworks.com/company/press/2026/palo-alto-networks-completes-chronosphere-acquisition--unifying-observability-and-security-for-the-ai-era) states **“planned integration”** of **Cortex® AgentiX™** with Chronosphere for autonomous find/fix of security+IT issues. **Pass 49:** no Chronosphere product page / docs for a shipped AgentiX×Chronosphere GA surface (`chronosphere.io/platform/agentix` → 404); Cortex AgentiX itself ships on PANW Cortex (XSIAM/XDR/Cloud) with MCP — **integration with Chronosphere still planned, not verified GA** (2026-07-17).
 - **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven).
 
-**Honest verdict:** Proven Chronosphere edge remains **metrics scale + cost control**. **If AgentiX ships**, PANW/Chronosphere becomes another enterprise **autonomous remediation** surface (security+obs) — record as pressure on “context-engine-not-the-fixer,” not as Parallax uniqueness. Bundle value stays **A1-unproven**.
+**Honest verdict:** Proven Chronosphere edge remains **metrics scale + cost control**. **If AgentiX×Chronosphere ships**, PANW/Chronosphere becomes another enterprise **autonomous remediation** surface (security+obs) — record as pressure on “context-engine-not-the-fixer,” not as Parallax uniqueness. Bundle value stays **A1-unproven**.
 
 ## Architecture & deployment
 

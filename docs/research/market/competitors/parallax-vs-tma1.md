@@ -1,6 +1,6 @@
 # Parallax vs TMA1
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 44: **6th consecutive watch UNFIRED** — recent commits install/GreptimeDB/perf only; still alpha12/109★).
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 49: **7th consecutive watch UNFIRED** — still **v0.2.0-alpha12 / 109★**; recent commits install GreptimeDB probe/version + session-detail perf / launchd / codex hooks only).
 > Sources: [github.com/tma1-ai/tma1](https://github.com/tma1-ai/tma1), [tma1.ai](https://tma1.ai/), and the legacy [tma1-deep-research.md](../tma1-deep-research.md) (2026-06-22, a full source-code teardown) as the lead.
 >
 > **Bottom line up front:** TMA1 is the **single closest architectural competitor
@@ -168,7 +168,7 @@ Re-verify each pass. Direct collision if TMA1 adds any of:
 
 ## Open questions / what measurement would settle
 
-- ~~Exact latest TMA1 release~~ → **pinned v0.2.0-alpha12 (2026-07-17, GitHub API); 5 alpha bumps since alpha7 — fast cadence. Watch triggers still unfired: re-scanned 40 recent commits 2026-07-17 (**5th consecutive unfired scan**: passes 10/17/22/30/39) — all install-robustness / hook-plumbing / deps / perf (session-detail render) / fs-sensor (incl. a min-GreptimeDB bump v1.1.2→v1.1.3 today); NONE extend to prod-error-derivation / Sentry / redaction / outcome-loop / CI-deploy. TMA1 remains local-dev-agent-loop scoped; Parallax's prod-incident wedge intact.**
+- ~~Exact latest TMA1 release~~ → **pinned v0.2.0-alpha12 (2026-07-17, GitHub API); 109★.** Watch triggers **7th consecutive UNFIRED** (passes 10/17/22/30/39/44/**49**): 15 recent commits = GreptimeDB probe/version install, session-detail render perf, launchd ProcessType, codex hooks matcher — **zero** prod-error / Sentry / redaction / outcome / deploy hits. TMA1 remains local-dev-agent-loop scoped; Parallax's prod-incident wedge intact (**not** spun as TMA1 decline).
 - **A1 gate vs TMA1:** if a team already runs TMA1 for local agent loops, does Parallax's production-incident bundle add measurable value, or does TMA1's narrower scope suffice for their job? Unproven.
 - **TMA1 production extension** — track the watch triggers above each pass.
 

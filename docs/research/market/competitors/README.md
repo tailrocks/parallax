@@ -119,6 +119,8 @@ Cost/performance cells are **⚪ benchmark-dependent** — not filled until meas
 
 ### AI-native / agent-context story (Parallax's wedge — fastest-moving axis)
 
+Primary slice (OSS-adjacent peers + Datadog/Sentry):
+
 | Capability | Parallax | Datadog | Sentry | SigNoz | OpenObserve | Coroot | Langfuse |
 |---|---|---|---|---|---|---|---|
 | Context engine for autonomous agents (bounded, redacted bundle) | 🟡🧪 bundle+redaction in code (`parallax-evidence`), **A1-unproven** | ❌ (human dashboard + chat) | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -127,8 +129,17 @@ Cost/performance cells are **⚪ benchmark-dependent** — not filled until meas
 | AI pricing model | (self-hosted compute) | credit-metered ($500/500cr) | paid (Seer) | free (MCP) | Enterprise+BYO-key | Enterprise/Cloud | self-host or cloud |
 | LLM/agent trace evals + experiments | 🏗 planned | ✅ (Agent Observability) | ❌ | ❌ | 🟡 | ❌ | ✅ core |
 
-> **Honest read of this column:** on every *shipped* AI axis, Datadog, Sentry, SigNoz, Coroot, and Langfuse are ahead of pre-release Parallax. Parallax's only differentiated AI claim is the *bounded, redacted, agent-safe bundle* as a typed artifact — which is **code-shipped**, value **unproven (A1)** (does a bundle beat raw context for agent fix quality?).
-> Do not read a 🏗 cell or "✅🏗" legend mark as parity with a shipped competitor feature.
+Extended slice (pass **49** AI-column sweep — incumbents + layers; full depth in each deep-dive):
+
+| Capability | Honeycomb | New Relic | Dynatrace | Splunk | Observe | Grafana Cl. | Chronosphere | HolmesGPT | Causely | TMA1 | LangSmith | Axiom | Odigos |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Portable redacted versioned bundle | ❌ | ❌ | ❌ (live MCP ground) | ❌ | ❌ | ❌ | ❌ | ❌ (queries BYO) | ❌ | 🟡 live unredacted `perception.Bundle` | ❌ | ❌ | — |
+| Coding-agent MCP / access | 🟡 Canvas/MCP | ✅ Ground Truth + Preflight | ✅ Dynatrace MCP | 🟡 | ✅ MCP Cursor/Claude | 🟡 Assistant | 🏗 AgentiX **planned** (not GA) | ✅ MCP-extensible | ✅ 30+ tools MCP | ✅ read-only 7-tool | 🟡 | 🟡 | — (layer) |
+| Autonomous investigate / fix | ✅ Auto-investigations | 🟡 AIM + Preflight | ✅ Intelligence Agents | ✅ Agentic Obs | ✅ AI SRE agents | 🟡 Assistant Investigations (preview free) | 🏗 AgentiX planned | ✅ **is the fixer** | ✅ causal remediation | ❌ local-dev only | ✅ **Engine** (fix recs) | 🟡 AI Eng | 🟡 “Ask Production Anything” marketing; still instrumentation |
+| LLM / agent-obs product | ✅ Agent Obs + GenAI semconv | ✅ Preflight + Agent Platform | ✅ AI Observability | ✅ AI Agent Monitoring | 🟡 | 🟡 | 🟡 | — | — | ✅ LLM-call local | ✅ native LangChain | ✅ AI Engineering | — |
+| “Bounded agent context” language | ❌ | ❌ | ✅ **named** (Perform 2026) | ❌ | 🟡 Knowledge Graph | ❌ | ❌ | ❌ | 🟡 causal ground | 🟡 live bundle | ❌ | ❌ | — |
+
+> **Honest read:** on every *shipped* AI axis above, multiple competitors are ahead of pre-release Parallax. Parallax's only differentiated AI claim is the *portable, redacted, versioned production-incident bundle* as a typed artifact — **code-shipped**, value **unproven (A1)**. Do not read a 🏗 cell as parity with a shipped competitor feature. **Chronosphere×Cortex AgentiX remains planned/not GA** (pass 49 re-check of PANW press — “planned integration,” no product GA docs). **Odigos** AI-SRE marketing ≠ own store/backend.
 
 ### Architecture & deployment
 
@@ -171,6 +182,7 @@ Cost/performance cells are **⚪ benchmark-dependent** — not filled until meas
    - **Every full-stack incumbent re-checked shipped an LLM/agent-obs surface in 2026** — Datadog, New Relic, Axiom AI Engineering, Honeycomb Agent Observability, Splunk AI Agent Monitoring — mostly on **OTel GenAI semantic conventions**.
    - **Strongest collision (pass 38): [Dynatrace](parallax-vs-dynatrace.md) now explicitly ships and names "bounded agent context"** (Perform 2026: Dynatrace Intelligence + Smartscape + MCP Server + Intelligence Agents).
    Net: **"LLM/agent tracing," "autonomous investigation," "coding-agent observability," and even "bounded context for agents" are no longer Parallax-unique** — they ship at incumbents. Surviving differentiation narrows to the **portable, redacted, versioned production-incident bundle for a coding-agent fix loop** (A1) — value **unproven, not assumed**.
+7. **Pass 49 stack pin (Grafana/LGTM):** Tempo is **GA at v3.0.2** (Kafka-log write path, TraceQL metrics GA, vParquet5, trace redaction) — prior matrix/deep-dive “Tempo v3 not GA / still 2.10.7” was **stale and corrected**. Strengthens Grafana’s shipped-architecture lead; does not change Parallax’s self-host-simplicity wedge vs the full distributed LGTM stack.
 
 ## Full deep-dive roster (32 products + layers)
 
