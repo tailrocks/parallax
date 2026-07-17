@@ -34,6 +34,8 @@ pub struct ServerHandle {
     pub spool: Arc<Spool>,
     pub store: Arc<dyn TelemetryStore>,
     pub metadata: Arc<dyn MetadataStore>,
+    /// Ready-banner label for the alert evaluator (plan 167).
+    pub alerting_status: String,
     supervisor: Option<crate::greptime_supervisor::GreptimeSupervisor>,
     /// Listener/reaper tasks (aborted on shutdown).
     tasks: Vec<JoinHandle<()>>,
@@ -338,7 +340,7 @@ async fn start_assembled(
         RouterState {
             store: store.clone(),
             metadata: metadata.clone(),
-            alerts,
+            alerts: alerts.clone(),
             grpc_port: otlp_grpc_addr.port(),
             http_port: otlp_http_addr.port(),
             api_addr,
@@ -375,6 +377,14 @@ async fn start_assembled(
         }
     }));
 
+    let alerting_status = spawn_alerting_loops(
+        config,
+        &mut tasks,
+        store.clone(),
+        alerts.clone(),
+        api_addr,
+    );
+
     tracing::info!(%api_addr, %otlp_grpc_addr, %otlp_http_addr, "parallax listening");
     Ok(ServerHandle {
         api_addr,
@@ -383,11 +393,114 @@ async fn start_assembled(
         spool,
         store,
         metadata,
+        alerting_status,
         supervisor,
         tasks,
         worker_tasks,
         ingest_health: health,
     })
+}
+
+/// Spawn evaluator + delivery interval loops when alerting is enabled and a
+/// Turso handle is present. Returns the ready-banner status string.
+fn spawn_alerting_loops(
+    config: &Config,
+    tasks: &mut Vec<JoinHandle<()>>,
+    store: Arc<dyn TelemetryStore>,
+    alerts: Option<Arc<TursoMetadataStore>>,
+    api_addr: SocketAddr,
+) -> String {
+    if !config.alerting.enabled {
+        tracing::info!("alerting disabled by config");
+        return "off (config)".to_string();
+    }
+    let Some(alert_store) = alerts else {
+        tracing::info!("alerting skipped (no Turso handle)");
+        return "off (no metadata handle)".to_string();
+    };
+
+    let evaluate_secs = config.alerting.evaluate_interval_secs.max(5);
+    let deliver_secs = config.alerting.deliver_interval_secs.max(1);
+    let claim_secs = config.alerting.claim_interval_secs.max(5);
+    let base_url = format!("http://{api_addr}");
+
+    let eval_store = alert_store.clone();
+    let eval_source = crate::alerting::AdapterMeasurementSource::new(store);
+    tasks.push(tokio::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(evaluate_secs));
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+        loop {
+            interval.tick().await;
+            let now_nanos = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or(0);
+            match crate::alerting::tick_once(
+                eval_store.as_ref(),
+                &eval_source,
+                now_nanos,
+                u32::try_from(claim_secs).unwrap_or(u32::MAX),
+            )
+            .await
+            {
+                Ok(report) => {
+                    if report.rules_claimed > 0 || report.incidents_opened > 0 {
+                        tracing::debug!(
+                            claimed = report.rules_claimed,
+                            opened = report.incidents_opened,
+                            resolved = report.incidents_resolved,
+                            "alert evaluator tick"
+                        );
+                    }
+                }
+                Err(error) => tracing::warn!(%error, "alert evaluator tick failed"),
+            }
+        }
+    }));
+
+    let delivery_store = alert_store;
+    tasks.push(tokio::spawn(async move {
+        let client = reqwest::Client::new();
+        let claimer = format!("delivery-{}", std::process::id());
+        let mut interval = tokio::time::interval(Duration::from_secs(deliver_secs));
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+        loop {
+            interval.tick().await;
+            let now_nanos = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or(0);
+            match crate::alerting::deliver_due_once(
+                delivery_store.as_ref(),
+                &client,
+                &claimer,
+                &base_url,
+                now_nanos,
+                32,
+            )
+            .await
+            {
+                Ok(report) if report.claimed > 0 => {
+                    tracing::debug!(
+                        claimed = report.claimed,
+                        delivered = report.delivered,
+                        retried = report.retried,
+                        dead = report.dead_lettered,
+                        "alert delivery tick"
+                    );
+                }
+                Ok(_) => {}
+                Err(error) => tracing::warn!(%error, "alert delivery tick failed"),
+            }
+        }
+    }));
+
+    tracing::info!(
+        evaluate_secs,
+        deliver_secs,
+        "alert evaluator and delivery worker ready"
+    );
+    format!("on (eval {evaluate_secs}s / deliver {deliver_secs}s)")
 }
 
 /// The compile-time-embedded UI (release builds with `embed-ui`). Without

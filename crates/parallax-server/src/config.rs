@@ -13,6 +13,22 @@ pub struct Config {
     pub retention: RetentionConfig,
     pub limits: LimitsConfig,
     pub telemetry: TelemetryConfig,
+    pub alerting: AlertingConfig,
+}
+
+/// Alert evaluator + delivery worker (plan 167). Defaults keep alerting on
+/// with 60s evaluation / 10s delivery ticks.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct AlertingConfig {
+    /// When false, GraphQL CRUD still works but no background loops run.
+    pub enabled: bool,
+    /// Seconds between evaluator ticks (CAS claim + measure + state machine).
+    pub evaluate_interval_secs: u64,
+    /// Seconds between delivery-worker ticks (outbox claim + HTTP POST).
+    pub deliver_interval_secs: u64,
+    /// CAS claim interval written on rules (`last_scheduled_at` skip window).
+    pub claim_interval_secs: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -121,6 +137,17 @@ impl Default for LimitsConfig {
             graphql_max_complexity: 1_000,
             otlp_max_body_bytes: 16 * 1024 * 1024,
             ingest_queue_batches: 256,
+        }
+    }
+}
+
+impl Default for AlertingConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            evaluate_interval_secs: 60,
+            deliver_interval_secs: 10,
+            claim_interval_secs: 30,
         }
     }
 }
