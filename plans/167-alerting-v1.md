@@ -252,9 +252,13 @@ rendering.
 ### Step 5: Playground breach scenarios + live closure
 
 Add the three scenarios (flag-driven sustained failure/latency via the
-existing chaos flags). Live walk: create a High-error-rate rule scoped to
+existing chaos flags). *Preliminary (helper agent, 2026-07-17): the three
+scripts (`eee099a`) and the listener `scripts/webhook-listener.sh`
+(`2892fae`, smoke-tested; default port 9099) are on the playground's main —
+peer verifies against the evaluator.* Live walk: create a High-error-rate
+rule scoped to
 the breach service with a webhook destination pointed at a local listener
-(`scripts` helper printing received payloads); run `a-breach-error-rate`;
+(`scripts/webhook-listener.sh`); run `a-breach-error-rate`;
 watch the incident open in the UI (rule detail chart shows the breach),
 webhook received; run `a-recover`; incident resolves; resolved webhook
 received. Browser checklist walk over all alert pages; screenshots to
