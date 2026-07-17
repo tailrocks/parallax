@@ -340,6 +340,8 @@ managed quotes remain):
 | Flow export FT | **658** | r228; export OK; 0/7 |
 | still not done | **659** | top 5 product/server |
 | milestone 660 | **660** | NOT DONE |
+| join p_svc health | **661** | 1/1; p_svc; 200 |
+| still not done | **662** | top 5 product/server |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
