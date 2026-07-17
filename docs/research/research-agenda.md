@@ -12,8 +12,8 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 345 (A2 **0** rows; A4 **`not_measured`**;
-wedge/OTel re-poll if API recovered). Pass 344 = GO.
+Last updated 2026-07-18 after pass 346 (A1 **`not_measured`**; A6 canary **ok**;
+Seer closed; monetization pins hold). Pass 345 = A2/A4.
 A1/A2/A3/A4 open; A6 mixed open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,

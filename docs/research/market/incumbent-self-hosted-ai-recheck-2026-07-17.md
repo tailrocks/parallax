@@ -274,6 +274,11 @@ docs and release notes.
    backend and no Grafana Cloud stack.
 3. **UNFIRED:** portable versioned redacted investigation artifact.
 
+### Pass 346 (2026-07-18) — Seer docs primary
+
+develop.sentry.dev/self-hosted still lists Seer as **closed source**. **UNFIRED.**
+
+
 ---
 
 ## Adjacent: true offline AI investigation
