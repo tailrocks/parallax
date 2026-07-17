@@ -7114,3 +7114,8 @@ Comma self-join form still `project index out of bounds`. CH works. `trace-span-
 
 `CREATE TABLE … ENGINE=TimeSeries` works under experimental flag; `SELECT` → Code 48.
 GT PromQL ergonomics edge holds. `promql-and-metrics-query.md`.
+
+### Run 197 — 2026-07-17 — TWCS keeps multi-window SSTs (v1.1.3)
+
+Two far time windows → sst_num=2; compact does not collapse across windows. TWCS mechanism holds.
+`compaction-and-merge.md`.

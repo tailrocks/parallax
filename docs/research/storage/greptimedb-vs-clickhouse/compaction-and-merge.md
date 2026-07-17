@@ -90,3 +90,19 @@ upstream, so TWCS only ever sees flushed SSTs.
 - GreptimeDB TWCS: `src/mito2/src/compaction/{twcs.rs:37-107,window.rs}` (time-window picker, `trigger_file_num`, `DEFAULT_MAX_INPUT_FILE_NUM=32`, `LEVEL_COMPACTED=1`, append-mode dedup skip at `twcs.rs:94`).
 - ClickHouse merge: `src/Storages/MergeTree/MergeSelector/SimpleMergeSelector*` (write-amplification doc + `base` knob), `MergeTreeDataMergerMutator`, `max_bytes_to_merge_at_max_space_in_pool=150 GB` (`MergeTreeSettings.cpp:465`).
 - Ties to `local-benchmark-results.md` Runs 7/9.
+
+## Run 197 (2026-07-17) — TWCS multi-window SSTs on v1.1.3
+
+Source: `mito2/src/compaction/twcs.rs` — `TwcsPicker` groups files by max-timestamp
+**time window** and only picks inputs within the same window.
+
+Live (`twcs_t`, append_mode):
+
+| Step | `sst_num` |
+| --- | ---: |
+| Insert window A + window B (3e9 ms apart), flush | **2** |
+| Insert more into window A, flush | **3** |
+| `ADMIN compact_table` | still **3** (no cross-window merge) |
+
+Manifest shows three L0 files. **Confirms Run 144:** time-spanning tables keep ≥1 SST
+per window → TTL can drop whole expired windows; multi-window dedup/agg pays multi-SST cost.
