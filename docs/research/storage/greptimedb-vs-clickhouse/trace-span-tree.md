@@ -114,3 +114,33 @@ implementation strategies, and which one Parallax uses decides what matters:
 - Cross-refs: `read-path-indexing-and-execution.md` (anchored join/scan, PREWHERE),
   `per-signal-verdict.md` (Traces · `trace_id` point lookup row), `indexing-internals.md`
   (GreptimeDB inverted index vs ClickHouse sort-key locality), Run 2/6/16.
+
+## Run 195 (2026-07-17) — recursive CTE works on GreptimeDB v1.1.3 (**drift correction**)
+
+**Prior claim (Run 165 on v1.0.2):** GT table-self-join recursive CTE errored
+(`project index out of bounds`); CH `WITH RECURSIVE` worked. Proxy-lens: build trees
+app-side from flat keyed fetch.
+
+**Live re-verify on v1.1.3:**
+
+```sql
+WITH RECURSIVE tree AS (
+  SELECT span_id, parent_span_id, name, 0 AS depth
+  FROM tree_spans WHERE parent_span_id IS NULL AND trace_id='t1'
+  UNION ALL
+  SELECT s.span_id, s.parent_span_id, s.name, t.depth+1
+  FROM tree_spans s JOIN tree t ON s.parent_span_id = t.span_id
+  WHERE s.trace_id='t1'
+)
+SELECT * FROM tree ORDER BY depth, span_id;
+```
+
+| Engine | Result |
+| --- | --- |
+| **GT v1.1.3** | **Success** — 4 rows, depths 0/1/1/2, `execution_time_ms` ~12 |
+| **CH 26.6.1.1193** | Success — same 4-row tree |
+
+**Correction:** the recursive-CTE capability gap is **closed or largely closed on v1.1.3**
+for this join form. App-side tree build remains valid (and still preferred for
+pruned multi-signal bundles), but it is **no longer required by engine inability**.
+Re-check any verdict text that still says “GT cannot recursive CTE.”
