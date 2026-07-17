@@ -6853,3 +6853,13 @@ ceiling = 3
 metric = "rust.public-root-items"
 scope = ".claude/worktrees/metrics-where/crates/parallax-xtask/facade.toml"
 ceiling = 2
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-analysis/src/test_reporting/tests.rs"
+ceiling = 23
+
+[[product.anyhow_edges]]
+path = "crates/parallax-metadata/src/turso/test_reporting.rs"
+ceiling = 18
+reason = "private test-report persistence composition is converted at the typed metadata port"
