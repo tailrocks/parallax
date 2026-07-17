@@ -367,6 +367,9 @@ managed quotes remain):
 | still not done | **685** | top 5 product/server |
 | p_svc Jaeger DELETE | **686** | holds |
 | still not done | **687** | top 5 product/server |
+| four-way last_value | **688** | warm interactive |
+| still not done | **689** | top 5 product/server |
+| milestone 690 | **690** | NOT DONE |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
