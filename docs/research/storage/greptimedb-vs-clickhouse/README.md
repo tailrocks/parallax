@@ -224,6 +224,7 @@ managed quotes remain):
 | export+increase+TTL | **542** | export OK; increase no |
 | still not done | **543** | top 5 open |
 | join FT p_svc | **544** | all hold |
+| still not done | **545** | top 5 open |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
