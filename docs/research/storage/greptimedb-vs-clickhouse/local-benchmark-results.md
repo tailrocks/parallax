@@ -7503,3 +7503,31 @@ docker exec parallax-bench-greptimedb-1 curl -s 'http://localhost:4000/v1/sql?db
   "sql=CREATE TABLE spans_part (\"ts\" TIMESTAMP(3) TIME INDEX, \"trace_id\" STRING, \"span_id\" STRING, \"service\" STRING, \"duration_ms\" DOUBLE, \"status\" STRING, PRIMARY KEY (\"trace_id\")) PARTITION ON COLUMNS (\"trace_id\") (trace_id < 'm', trace_id >= 'm') WITH (append_mode='true')"
 # INSERT SELECT + flush + EXPLAIN ANALYZE WHERE trace_id=...
 ```
+
+### Run 228 — 2026-07-17 — Flow + CH MV continuous agg re-verify
+
+**Pass target.** Confirm continuous aggregation still works on pins (capability
+parity for recurring rollups; Run 188/149).
+
+**GT Flow (standalone v1.1.3):**
+
+1. `CREATE FLOW r228_flow SINK TO flow_sink AS SELECT fp, count(val) as n,
+   date_bin('1 minute', ts) as ts FROM flow_src GROUP BY …` → registered
+   (`SHOW FLOWS` lists `r228_flow`).
+2. Insert 3 rows (2× fp-a, 1× fp-b); after ~5–10 s sink shows
+   **fp-a n=2, fp-b n=1**; later fp-c n=1.
+3. `information_schema.flows` exposes flow_id, sink, source tables, last
+   execution time.
+
+**Latency note:** first read immediately after insert can be empty (async
+batching) — product UIs must not assume sync MV semantics.
+
+**CH MV (26.6.1.1193):**
+
+`CREATE MATERIALIZED VIEW flow_mv ENGINE=SummingMergeTree … AS SELECT fp,
+count() … GROUP BY fp` + insert → **fp-a 2, fp-b 1** immediately on SELECT
+aggregate.
+
+**Verdict.** **Capability parity holds** — both engines close recurring rollups.
+CH insert-triggered MV is snappier on this smoke; GT Flow works after short
+batch delay. Ad-hoc analytics gap (no Flow) unchanged.
