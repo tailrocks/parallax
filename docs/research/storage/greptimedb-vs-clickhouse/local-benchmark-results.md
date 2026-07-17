@@ -8293,3 +8293,6 @@ Nightly cold after idle can spike; warm path still interactive. Not done.
 
 Nightly still reports **1.2.0**. JSON2 path filter **43 ms** (coldish after
 idle). Path works on nightly too.
+
+### Run 362 — 2026-07-17 — not done
+
