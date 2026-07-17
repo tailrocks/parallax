@@ -45,6 +45,9 @@ must not return in product output.
   `outputSchema`; client discovery/conformance evidence remains unfinished.
 - Stdio startup requires an explicit `--allow-local-stdio` command-line trust
   decision; environment and repository files cannot supply that opt-in.
+- API origins are restricted to credential-free plaintext loopback HTTP;
+  arbitrary hosts, TLS, URL credentials, paths, queries, and fragments fail
+  closed until Plan 109 supplies the remote transport contract.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded

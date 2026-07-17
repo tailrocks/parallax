@@ -47,6 +47,8 @@ No CI wiring: needs a live server and seeded telemetry. Manual only.
 The stdio server fails closed unless `--allow-local-stdio` appears on the
 process command line; no environment variable or repository file can provide
 that trust decision.
+The API origin is restricted to credential-free plaintext loopback HTTP.
+Authenticated remote transport remains deferred to Plan 109.
 
 ## SDK / TLS
 
