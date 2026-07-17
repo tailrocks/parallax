@@ -3,8 +3,9 @@
 use super::*;
 use parallax_model::{
     AttemptRollup, FlakyState, TestCaseIdentitySource, TestCaseRecord, TestExplorerPage,
-    TestExplorerQuery, TestExplorerRow, TestExplorerSort, TestFlakyStateRecord, TestResultRecord,
-    TestStatus, TestVariantRecord,
+    TestExplorerQuery, TestExplorerRow, TestExplorerSort, TestFlakyCandidate,
+    TestFlakyCandidatePage, TestFlakyCursor, TestFlakyStateRecord, TestResultRecord,
+    TestResultWindow, TestStatus, TestVariantRecord,
 };
 
 impl TursoMetadataStore {
@@ -202,6 +203,102 @@ impl TursoMetadataStore {
             results.push(decode_test_result(&row)?);
         }
         Ok(results)
+    }
+
+    pub async fn test_flaky_candidates(
+        &self,
+        from_nanos: u128,
+        to_nanos: u128,
+        after: Option<&TestFlakyCursor>,
+        limit: usize,
+    ) -> anyhow::Result<TestFlakyCandidatePage> {
+        if limit == 0 {
+            return Ok(TestFlakyCandidatePage::default());
+        }
+        let fetch = limit.saturating_add(1);
+        let conn = self.conn.lock().await;
+        let mut rows = if let Some(cursor) = after {
+            conn.query(
+                "SELECT variant_key, MAX(ended_at) AS last_ended
+                 FROM test_results
+                 WHERE ended_at BETWEEN ?1 AND ?2
+                 GROUP BY variant_key
+                 HAVING MAX(ended_at) > ?3
+                    OR (MAX(ended_at) = ?3 AND variant_key > ?4)
+                 ORDER BY last_ended, variant_key
+                 LIMIT ?5",
+                (
+                    nanos_to_millis(from_nanos),
+                    nanos_to_millis(to_nanos),
+                    nanos_to_millis(cursor.last_ended_nanos),
+                    cursor.variant_key.as_str(),
+                    i64::try_from(fetch)?,
+                ),
+            )
+            .await?
+        } else {
+            conn.query(
+                "SELECT variant_key, MAX(ended_at) AS last_ended
+                 FROM test_results
+                 WHERE ended_at BETWEEN ?1 AND ?2
+                 GROUP BY variant_key
+                 ORDER BY last_ended, variant_key
+                 LIMIT ?3",
+                (
+                    nanos_to_millis(from_nanos),
+                    nanos_to_millis(to_nanos),
+                    i64::try_from(fetch)?,
+                ),
+            )
+            .await?
+        };
+        let mut items = Vec::new();
+        while let Some(row) = rows.next().await? {
+            items.push(TestFlakyCandidate {
+                variant_key: text(&row, 0).parse()?,
+                last_ended_nanos: millis_to_nanos(integer(&row, 1)),
+            });
+        }
+        let has_more = items.len() > limit;
+        items.truncate(limit);
+        Ok(TestFlakyCandidatePage { items, has_more })
+    }
+
+    pub async fn test_results_for_variant_window(
+        &self,
+        variant_key: &str,
+        from_nanos: u128,
+        to_nanos: u128,
+        limit: usize,
+    ) -> anyhow::Result<TestResultWindow> {
+        if limit == 0 {
+            return Ok(TestResultWindow::default());
+        }
+        let conn = self.conn.lock().await;
+        let mut rows = conn
+            .query(
+                "SELECT variant_key, invocation_id, attempt, status, trace_id, span_id,
+                        started_at, ended_at, service, service_version, vcs_head_revision,
+                        configuration, failure_fingerprint
+                 FROM test_results
+                 WHERE variant_key = ?1 AND ended_at BETWEEN ?2 AND ?3
+                 ORDER BY ended_at, invocation_id, attempt
+                 LIMIT ?4",
+                (
+                    variant_key,
+                    nanos_to_millis(from_nanos),
+                    nanos_to_millis(to_nanos),
+                    i64::try_from(limit.saturating_add(1))?,
+                ),
+            )
+            .await?;
+        let mut items = Vec::new();
+        while let Some(row) = rows.next().await? {
+            items.push(decode_test_result(&row)?);
+        }
+        let truncated = items.len() > limit;
+        items.truncate(limit);
+        Ok(TestResultWindow { items, truncated })
     }
 
     pub async fn test_results_for_invocation(

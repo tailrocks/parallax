@@ -205,6 +205,7 @@ CREATE TABLE IF NOT EXISTS test_results (
 );
 CREATE INDEX IF NOT EXISTS test_results_invocation ON test_results(invocation_id, started_at);
 CREATE INDEX IF NOT EXISTS test_results_fingerprint ON test_results(failure_fingerprint);
+CREATE INDEX IF NOT EXISTS test_results_flaky_scan ON test_results(ended_at, variant_key);
 CREATE TABLE IF NOT EXISTS test_flaky_states (
   variant_key TEXT PRIMARY KEY,
   state TEXT NOT NULL CHECK (state IN ('healthy', 'flaky', 'fixed', 'broken')),

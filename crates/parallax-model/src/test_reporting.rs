@@ -229,6 +229,30 @@ pub struct TestFlakyStateRecord {
     pub updated_at_nanos: u128,
 }
 
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub struct TestFlakyCursor {
+    pub last_ended_nanos: u128,
+    pub variant_key: TestVariantKey,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TestFlakyCandidate {
+    pub variant_key: TestVariantKey,
+    pub last_ended_nanos: u128,
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct TestFlakyCandidatePage {
+    pub items: Vec<TestFlakyCandidate>,
+    pub has_more: bool,
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct TestResultWindow {
+    pub items: Vec<TestResultRecord>,
+    pub truncated: bool,
+}
+
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct TestExplorerQuery {
     pub query: Option<String>,

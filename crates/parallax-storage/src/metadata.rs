@@ -3,8 +3,9 @@
 use async_trait::async_trait;
 use parallax_model::{
     Dashboard, Investigation, InvocationRecord, Issue, IssueQuery, IssueSortKey, SavedView,
-    TestCaseRecord, TestExplorerPage, TestExplorerQuery, TestExplorerSort, TestFlakyStateRecord,
-    TestResultRecord, TestVariantRecord, TrendPoint,
+    TestCaseRecord, TestExplorerPage, TestExplorerQuery, TestExplorerSort, TestFlakyCandidatePage,
+    TestFlakyCursor, TestFlakyStateRecord, TestResultRecord, TestResultWindow, TestVariantRecord,
+    TrendPoint,
 };
 use thiserror::Error;
 
@@ -81,6 +82,8 @@ pub const TEST_EXPLORER_MAX_LIMIT: usize = 200;
 pub const TEST_EXPLORER_MAX_OFFSET: usize = 10_000;
 pub const TEST_CASE_VARIANTS_MAX_LIMIT: usize = 100;
 pub const TEST_VARIANT_RESULTS_MAX_LIMIT: usize = 500;
+pub const TEST_FLAKY_CANDIDATE_MAX_LIMIT: usize = 200;
+pub const TEST_FLAKY_RESULT_MAX_LIMIT: usize = 500;
 
 #[async_trait]
 pub trait MetadataStore: Send + Sync {
@@ -149,6 +152,20 @@ pub trait MetadataStore: Send + Sync {
         variant_key: &str,
         limit: usize,
     ) -> MetadataResult<Vec<TestResultRecord>>;
+    async fn test_flaky_candidates(
+        &self,
+        from_nanos: u128,
+        to_nanos: u128,
+        after: Option<&TestFlakyCursor>,
+        limit: usize,
+    ) -> MetadataResult<TestFlakyCandidatePage>;
+    async fn test_results_for_variant_window(
+        &self,
+        variant_key: &str,
+        from_nanos: u128,
+        to_nanos: u128,
+        limit: usize,
+    ) -> MetadataResult<TestResultWindow>;
     async fn test_results_for_invocation(
         &self,
         invocation_id: &str,

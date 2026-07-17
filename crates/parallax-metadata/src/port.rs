@@ -2,11 +2,13 @@ use crate::TursoMetadataStore;
 use parallax_model::{
     Dashboard, Investigation, InvocationRecord, Issue, IssueOccurrence, IssueQuery, IssueSortKey,
     SavedView, TestCaseRecord, TestExplorerPage, TestExplorerQuery, TestExplorerSort,
-    TestFlakyStateRecord, TestResultRecord, TestVariantRecord, TrendPoint,
+    TestFlakyCandidatePage, TestFlakyCursor, TestFlakyStateRecord, TestResultRecord,
+    TestResultWindow, TestVariantKey, TestVariantRecord, TrendPoint,
 };
 use parallax_storage::metadata::{
     MetadataError, MetadataResult, TEST_CASE_VARIANTS_MAX_LIMIT, TEST_EXPLORER_MAX_LIMIT,
-    TEST_EXPLORER_MAX_OFFSET, TEST_VARIANT_RESULTS_MAX_LIMIT,
+    TEST_EXPLORER_MAX_OFFSET, TEST_FLAKY_CANDIDATE_MAX_LIMIT, TEST_FLAKY_RESULT_MAX_LIMIT,
+    TEST_VARIANT_RESULTS_MAX_LIMIT,
 };
 use parallax_storage::{
     MetadataPruneJournalStore, MetadataPruneStore, PruneItem, PruneJournal, PrunePlan,
@@ -262,11 +264,56 @@ impl parallax_storage::metadata::MetadataStore for TursoMetadataStore {
         variant_key: &str,
         limit: usize,
     ) -> MetadataResult<Vec<TestResultRecord>> {
-        parallax_model::TestVariantKey::from_str(variant_key)
+        TestVariantKey::from_str(variant_key)
             .map_err(|_| MetadataError::InvalidInput("invalid test variant key".into()))?;
         Self::test_results_for_variant(self, variant_key, limit.min(TEST_VARIANT_RESULTS_MAX_LIMIT))
             .await
             .map_err(MetadataError::internal)
+    }
+    async fn test_flaky_candidates(
+        &self,
+        from_nanos: u128,
+        to_nanos: u128,
+        after: Option<&TestFlakyCursor>,
+        limit: usize,
+    ) -> MetadataResult<TestFlakyCandidatePage> {
+        validate_test_window(from_nanos, to_nanos)?;
+        if after.is_some_and(|cursor| {
+            cursor.last_ended_nanos < from_nanos || cursor.last_ended_nanos > to_nanos
+        }) {
+            return Err(MetadataError::InvalidInput(
+                "test flaky cursor is outside the requested window".into(),
+            ));
+        }
+        Self::test_flaky_candidates(
+            self,
+            from_nanos,
+            to_nanos,
+            after,
+            limit.min(TEST_FLAKY_CANDIDATE_MAX_LIMIT),
+        )
+        .await
+        .map_err(MetadataError::internal)
+    }
+    async fn test_results_for_variant_window(
+        &self,
+        variant_key: &str,
+        from_nanos: u128,
+        to_nanos: u128,
+        limit: usize,
+    ) -> MetadataResult<TestResultWindow> {
+        TestVariantKey::from_str(variant_key)
+            .map_err(|_| MetadataError::InvalidInput("invalid test variant key".into()))?;
+        validate_test_window(from_nanos, to_nanos)?;
+        Self::test_results_for_variant_window(
+            self,
+            variant_key,
+            from_nanos,
+            to_nanos,
+            limit.min(TEST_FLAKY_RESULT_MAX_LIMIT),
+        )
+        .await
+        .map_err(MetadataError::internal)
     }
     async fn test_results_for_invocation(
         &self,
@@ -416,6 +463,15 @@ fn validate_test_explorer_query(query: &TestExplorerQuery) -> MetadataResult<()>
     {
         return Err(MetadataError::InvalidInput(
             "test configuration filter is invalid".into(),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_test_window(from_nanos: u128, to_nanos: u128) -> MetadataResult<()> {
+    if from_nanos > to_nanos {
+        return Err(MetadataError::InvalidInput(
+            "test result time range is reversed".into(),
         ));
     }
     Ok(())
