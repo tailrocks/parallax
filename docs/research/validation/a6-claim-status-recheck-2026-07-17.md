@@ -94,6 +94,14 @@ Still **offline validators only** — never runtime deps on the tiny tier.
 | `agent_visible_mixed_pass` | **Still open** |
 | Claim split | **Unchanged** — synthetic canary partial ≠ mixed agent-visible gate |
 
+### Pass 267 addendum (2026-07-18)
+
+| Check | Result |
+| --- | --- |
+| Public-safe canary unit test | **ok** — re-ran `cargo test -p parallax-redaction a6_public_safe` |
+| Multi-surface red-team ledger | **Still absent** |
+| `agent_visible_mixed_pass` | **Still open** |
+
 ## Claim levels applied
 
 From [redaction.md claim table](../capture/redaction.md):
