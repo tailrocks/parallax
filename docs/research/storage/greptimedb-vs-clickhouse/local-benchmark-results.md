@@ -7194,3 +7194,7 @@ state.rs still omits with_batch_size. CH max_block_size 65409. `query-execution-
 ### Run 214 — 2026-07-17 — OpenDAL vs DiskS3 code ownership
 
 Source map only. GT object-store/OpenDAL; CH Disks/S3 policy. `storage-cost-and-tiering.md`.
+
+### Run 215 — 2026-07-17 — public claims re-rate under v1.1.3
+
+Updated claim table with scale/shape qualifiers from re-pin cycle. `public-performance-claims.md`.

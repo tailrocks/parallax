@@ -123,3 +123,18 @@ Periodic re-check of all 9 claims against the current pins + a web re-sweep
 - [TimescaleDB vs ClickHouse vs MongoDB for observability (dev.to, independent)](https://dev.to/aws-builders/i-benchmarked-timescaledb-vs-clickhouse-vs-mongodb-for-observability-data-the-results-surprised-me-3d7d)
 - [Announcing GA of ClickHouse full-text search (text index GA in 26.2)](https://clickhouse.com/blog/full-text-search-ga-release)
 - [Full-text search with text indexes — ClickHouse docs](https://clickhouse.com/docs/engines/table-engines/mergetree-family/textindexes)
+
+## Run 215 (2026-07-17) — claim ratings still valid under v1.1.3 pins
+
+Re-checked claim categories against Runs 173–214 live work:
+
+| Claim class | Status after re-pin |
+| --- | --- |
+| CH faster analytical scans | **confirmed** (four-way 50k–100k) |
+| GT PromQL native advantage | **confirmed** (CH TimeSeries SELECT still broken) |
+| GT denser metrics/logs | **confirmed** shape-dependent (Run 189) |
+| GT last-value always faster | **workload-specific** — multi-M yes; 100k ~tie (Run 177) |
+| GT JSON always loses badly | **workload-specific** — default Jsonb yes; **JSON2 ~tie** (Run 173) |
+| Broad full-text CH 12× | **scale-shaped** — ~1.5× at 100k; ~12× at 5M canonical |
+
+No public claim newly falsified into “marketing only”; several need scale/shape qualifiers.
