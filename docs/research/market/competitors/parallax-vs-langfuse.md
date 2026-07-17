@@ -84,7 +84,7 @@ This is the axis that matters most for Parallax's thesis, so be most honest.
 
 ## Architecture & deployment model
 
-- **Langfuse:** self-host (Docker, MIT, free, unlimited) **or** Langfuse Cloud (managed, multi-region). Open-core with a self-host Enterprise license (~$500/mo: RBAC/SCIM/protected envs).
+- **Langfuse:** self-host (Docker/K8s, MIT, free, unlimited) **or** Langfuse Cloud (managed, multi-region). Open-core; self-host Enterprise is **custom-priced** (project RBAC/SCIM/audit/retention + ClickHouse commercial bundle) — **no public $** (pass 61).
 - **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0.
 
 **Verdict:** both are open + self-hostable. **Langfuse is shipped and mature today; Parallax is pre-release.** Parallax's single-binary local-first target is a simplicity edge (by design), unproven in production.
@@ -105,7 +105,7 @@ This is the axis that matters most for Parallax's thesis, so be most honest.
 
 ## Security
 
-- **Langfuse Cloud:** ISO 27001, SOC 2, GDPR; Enterprise adds RBAC/SCIM/data residency. **Self-host SSO is free under MIT** (SAML/OIDC/Google/GitHub/Azure AD/Okta, [docs](https://langfuse.com/self-hosting/security/authentication-and-sso)) since the 2025-06-04 open-sourcing — do **not** conflate this with the paid self-host Enterprise license, which gates **RBAC/SCIM/protected environments** (~$500/mo), not SSO.
+- **Langfuse Cloud:** ISO 27001, SOC 2, GDPR; Pro+ has SOC2/ISO reports + HIPAA path; Enterprise adds SCIM/audit/SLA. **Self-host OSS includes org RBAC + Enterprise SSO** ([pricing-self-host](https://langfuse.com/pricing-self-host)); paid self-host EE gates **project-level RBAC, data retention mgmt, audit logs, SCIM, server-side masking** (custom $).
 - **Parallax:** SSO/RBAC/audit planned, not shipped; redaction (A6) designed as first-class.
 
 **Verdict:** on **shipped security/compliance posture, Langfuse Cloud wins.** Parallax's redaction-before-agent-access is a narrower, unproven edge.
@@ -126,17 +126,20 @@ This is the axis that matters most for Parallax's thesis, so be most honest.
 
 ## Pricing & economics — real numbers
 
-Langfuse pricing is **public** ([langfuse.com/pricing](https://langfuse.com/pricing), accessed 2026-07-17):
+Langfuse pricing is **public** ([langfuse.com/pricing](https://langfuse.com/pricing) + [pricing-self-host](https://langfuse.com/pricing-self-host), **pass 61** 2026-07-17). **Pass-4 table was stale.**
 
 | Plan | Price | Notes |
 | --- | --- | --- |
-| **Self-hosted OSS** | **$0 / MIT** | all core features, unlimited usage/scale, self-host via Docker |
-| **Cloud Hobby** | **Free** | ~50k units/mo included, no credit card |
-| **Cloud Pro** | **$199/mo** | 100k units/mo included; +**$8 / 100k units**; 90-day access; unlimited members |
-| **Cloud Enterprise** | **$2,499/mo** | custom security/compliance (ISO27001/SOC2/GDPR), data residency |
-| **Self-host Enterprise license** | **~$500/mo** | RBAC/SCIM/protected envs on top of OSS (**SSO itself is free in OSS**) |
+| **Self-hosted OSS** | **$0 / MIT** | all core features, unlimited usage; org RBAC + Enterprise SSO free in OSS |
+| **Cloud Hobby** | **Free** | **50k units**/mo, **30-day** access, **2 users**, no credit card |
+| **Cloud Core** | **$29/mo** | **NEW vs pass 4** — 100k units included; +usage; **90-day** access; unlimited users |
+| **Cloud Pro** | **$199/mo** | 100k units included; **3-year** data access (not 90-day); SOC2/ISO/HIPAA path |
+| **Teams add-on** | **+$300/mo** on Pro | Enterprise SSO enforcement, fine-grained RBAC, Slack support |
+| **Cloud Enterprise** | **$2,499/mo** | Pro+Teams + audit logs, SCIM, SLA, dedicated engineer |
+| **Usage overage (paid Cloud)** | graduated | **$8 / $7 / $6.50 / $6** per 100k units by volume tier |
+| **Self-host Enterprise** | **custom (no public $)** | project RBAC, retention policies, audit logs, SCIM, server-side masking; bundled ClickHouse Cloud/BYOC/Private — **~$500/mo pass-4 figure retired** |
 
-A "unit" ≈ a traced event/observation. **Self-host OSS is free with no limits** — a very strong economic position.
+A billable unit = trace / observation / score. **Langfuse Assistant (in-app agent)** ships on **Cloud** plans (Hobby+); self-host matrix marks Assistant **unavailable** on OSS and EE (**Cloud-only AI teammate** — same class of gate as SigNoz Noz). **Self-host OSS is free with no unit limits** — very strong economics.
 
 **Parallax pricing:** none public yet (pre-release). Stated shape: Apache-2.0 open core + gated enterprise-ops + managed cloud + outcome-priced fixer.
 
@@ -171,6 +174,6 @@ A "unit" ≈ a traced event/observation. **Self-host OSS is free with no limits*
 - [Langfuse OTLP/OTel integration](https://langfuse.com/integrations/native/opentelemetry) (OTLP backend at `/api/public/otel`; OTEL-native **SDK v4**); [MCP tracing docs](https://langfuse.com/docs/observability/features/mcp-tracing).
 - [Langfuse changelog: open-sourced all remaining product features under MIT (2025-06-04)](https://langfuse.com/changelog/2025-06-04-open-sourcing-langfuse); [self-host SSO](https://langfuse.com/self-hosting/security/authentication-and-sso).
 - [GitHub releases — latest v3.221.1 (2026-07-17)](https://github.com/langfuse/langfuse/releases).
-- [Langfuse pricing](https://langfuse.com/pricing); [self-host pricing](https://langfuse.com/pricing-self-host).
+- [Langfuse pricing](https://langfuse.com/pricing) (**pass 61:** Hobby/Core $29/Pro $199/Enterprise $2499 + Teams $300; Assistant Cloud); [self-host pricing](https://langfuse.com/pricing-self-host) (EE **custom**, OSS free + org RBAC/SSO).
 - 2026 comparisons: [OpenObserve LLM obs tools](https://openobserve.ai/blog/llm-observability-tools/), [Firecrawl](https://www.firecrawl.dev/blog/best-llm-observability-tools), [MLflow top-5](https://mlflow.org/top-5-agent-observability-tools/).
 - Parallax side: [00-vision/ai-native-observability.md](../../00-vision/ai-native-observability.md), [reference/agent-observability-review.md](../../reference/agent-observability-review.md), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).

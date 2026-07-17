@@ -2,7 +2,7 @@
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17**.
 > Sources: live [braintrust.dev/pricing](https://www.braintrust.dev/pricing) (**pass 44
-> pricing RESOLVED**), [braintrust.dev](https://www.braintrust.dev/),
+> RESOLVED; pass 61 re-confirm**), [braintrust.dev](https://www.braintrust.dev/),
 > [playgrounds-vs-experiments](https://www.braintrust.dev/foundations/playgrounds-vs-experiments).
 >
 > **Bottom line up front:** Braintrust is the **eval-first LLM observability** platform
@@ -97,7 +97,7 @@ Both touch "evaluation" of AI behavior, but **Braintrust = LLM-app eval/experime
 | Plan | Price | Notes |
 | --- | --- | --- |
 | **Starter** | **$0/mo** | $10 credits + tok rates; **1 GB** processed then **$4/GB**; **10k scores** then **$2.50/1k**; **14-day** retention; unlimited users/projects/datasets/playgrounds/experiments |
-| **Pro** | **$249/mo** | $249 credits (was $100 on older secondary cites); **5 GB** processed then **$3/GB**; **50k scores** then **$1.50/1k**; **30-day** retention then **$0.50/GB/mo**; custom charts, environments, priority support, basic RBAC; Loop agent |
+| **Pro** | **$249/mo** | plan card shows **$100→$249 credits** marketing; Topics table **$249 credits/mo** then tok rates; **5 GB** processed then **$3/GB**; **50k scores** then **$1.50/1k**; **30-day** retention then **$0.50/GB/mo**; custom charts, environments, priority support, basic RBAC; Loop agent |
 | **Enterprise** | custom | |
 
 Source: live [braintrust.dev/pricing](https://www.braintrust.dev/pricing) (2026-07-17). Topics metering: **$0.06/mtok input, $0.40/mtok output** after included credits. Enterprise: custom retention/export, SAML SSO, on-prem or hosted, BAA/HIPAA path.

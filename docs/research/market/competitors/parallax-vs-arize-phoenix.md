@@ -47,17 +47,18 @@ Originated in notebook-based prompt experimentation + LLM-as-judge evals.
 | **Backing store** | **file-based SQLite (default)**, configurable via DB URL ([self-hosting/configuration](https://arize.com/docs/phoenix/self-hosting/configuration), 2026-07-17); **no native ClickHouse** (only in third-party Docker Compose guides). | pinned |
 | **Company** | Arize AI (commercial); Phoenix OSS + Phoenix Cloud + Arize AX (enterprise platform) | [arize.com/phoenix](https://arize.com/phoenix/) |
 
-### Pricing (re-cited 2026-07-17; verify live page)
+### Pricing (**pass 61** live [arize.com/pricing](https://arize.com/pricing) — prior Core $29/Pro $199 **stale/wrong**)
 
 | Tier | Price | Notes |
 |---|---|---|
-| **Self-host OSS (ELv2)** | **$0** | free, unlimited, no feature gates |
-| **Phoenix Cloud Free** | $0 | 2 instances, 50k observations, 30-day retention |
-| **Phoenix Cloud Core** | **$29/mo** | ~100k units |
-| **Phoenix Cloud Pro** | **$199/mo** | higher volume tiers |
-| **Arize AX (enterprise)** | from **$50/mo** (AX Pro) | span-count + data-volume pricing; the full Arize platform beyond Phoenix |
+| **Self-host Phoenix OSS (ELv2)** | **$0** | free, unlimited, local-first; move to AX when needed |
+| **Arize AX Free** | **$0** | 25k spans/mo, 1 GB ingest, 15-day retention, SaaS |
+| **Arize AX Pro** | **$50/mo** | 50k spans/mo, 10 GB, 30-day retention, SaaS |
+| **Arize AX Enterprise** | **custom** | custom volume/retention; SaaS **or self-hosted**; SSO/audit/HIPAA path |
 
-Sources: [arize.com/phoenix](https://arize.com/phoenix/), [Cekura pricing analysis](https://www.cekura.ai/blogs/arize-ai-pricing), [Laminar alternatives](https://laminar.sh/article/arize-phoenix-alternatives-2026).
+**Correction:** pass-7 “Phoenix Cloud Core $29 / Pro $199” matched **Langfuse** Cloud shape and is **not** on live Arize AX pricing (2026-07-17). Treat secondary Cekura/Laminar tier names as **stale** unless re-proven. AX Enterprise table also lists agent **Signal** (find failure modes / open PRs) and managed agents as Enterprise-only — another fixer surface, not Parallax-unique.
+
+Sources: live [arize.com/pricing](https://arize.com/pricing) (pass 61); [arize.com/phoenix](https://arize.com/phoenix/).
 
 > Parallax pricing: **no public number** (pre-release). Direct comparison
 > **benchmark-dependent, unmeasured**.
@@ -178,8 +179,8 @@ pipeline/processor (planned).
 
 ### Pricing & economics
 
-Phoenix self-host = **free, unlimited, ELv2**. Cloud Free→$29→$199; AX from
-$50/mo. **Hard to undercut on price for the LLM-tracing job.** Parallax cost
+Phoenix self-host = **free, unlimited, ELv2**. Managed path = **AX Free / AX Pro
+$50 / Enterprise custom** (pass 61). **Hard to undercut on price for the LLM-tracing job.** Parallax cost
 edge only applies to its *different* job (production telemetry evidence);
 **benchmark-dependent, unmeasured.**
 
@@ -214,5 +215,5 @@ edge only applies to its *different* job (production telemetry evidence);
 - [arize.com/docs/phoenix](https://arize.com/docs/phoenix) — OTLP-native ingest
 - [arize.com/docs/phoenix/self-hosting/license](https://arize.com/docs/phoenix/self-hosting/license) — **ELv2**
 - [arize.com/docs/ax/concepts/otel-openinference/overview](https://arize.com/docs/ax/concepts/otel-openinference/overview) — OpenTelemetry + OpenInference
-- [arize.com/phoenix](https://arize.com/phoenix/); [Phoenix Cloud pricing analyses](https://laminar.sh/article/arize-phoenix-alternatives-2026), [Arize AX pricing](https://www.cekura.ai/blogs/arize-ai-pricing)
+- [arize.com/phoenix](https://arize.com/phoenix/); live [arize.com/pricing](https://arize.com/pricing) (**pass 61** AX Free / Pro $50 / Enterprise); secondary analyses demoted (stale Core $29/Pro $199)
 - Parallax side: [00-vision/ai-native-observability.md](../../00-vision/ai-native-observability.md), [reference/agent-observability-review.md](../../reference/agent-observability-review.md), [validation/a1-bundle-value/](../../validation/a1-bundle-value/)
