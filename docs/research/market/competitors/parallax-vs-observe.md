@@ -1,21 +1,15 @@
 # Parallax vs Observe
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 41
-> pricing re-verify**). Sources: live [observeinc.com/pricing](https://www.observeinc.com/pricing)
-> (Logs **$0.49/GiB**, Traces **$0.59/GiB**, Metrics **$0.008/DPM**, retention **$0.01/GiB/mo**),
-> [observeinc.com](https://www.observeinc.com/) + [why-observe (Context Graph)](https://www.observeinc.com/why-observe),
-> [Snowflake acquisition press](https://www.snowflake.com/en/news/press-releases/snowflake-announces-intent-to-acquire-observe-to-deliver-ai-powered-observability-at-enterprise-scale/),
-> [AI SRE / o11y.ai PR](https://www.prnewswire.com/news-releases/observe-introduces-ai-sre-and-o11yai-agents-accelerating-developer-productivity-while-cutting-enterprise-observability-costs-302603717.html).
+> pricing; pass 47 AI SRE/MCP**). Sources: [pricing](https://www.observeinc.com/pricing),
+> [AI SRE](https://www.observeinc.com/product/ai-sre) (**MCP for Cursor/Claude**),
+> [why-observe](https://www.observeinc.com/why-observe), Snowflake acquisition press.
 >
-> **Bottom line up front:** Observe is a **data-/SQL-centric observability platform
-> built on a streaming data lake** (now **Snowflake-owned**, ~$1B, Jan 2026), with a
-> distinctive **O11y Knowledge Graph™** (relationship-aware model) and an **AI SRE +
-> o11y.ai Agents** surface. On **the relational/data-platform approach, the context
-> graph, AI SRE/agents, cost (60–70% cut claim), and scale, Observe is far ahead of
-> pre-release Parallax.** The **AI SRE / o11y.ai Agents are a direct overlap with
-> Parallax's agent thesis.** Parallax's honest edges are **open-source/self-host**
-> (Observe is closed SaaS, Snowflake-coupled), **Apache-2.0**, and the *unproven*
-> bounded redacted agent bundle (A1).
+> **Bottom line up front:** Observe (Snowflake-owned) ships **Knowledge Graph + AI SRE
+> + MCP Server for coding agents (Cursor/Claude/Augment)** — far ahead of pre-release
+> Parallax on graph+agent access. Parallax edges: open/self-host, Sentry-envelope, and
+> *unproven* portable redacted bundle (A1). **Do not claim coding-agent obs access as
+> unique — Observe MCP ships it.**
 
 ## What each product is
 
@@ -139,11 +133,11 @@ Observe pricing is **public** ([observeinc.com/pricing](https://www.observeinc.c
 
 ## Watch triggers (track each pass)
 
-1. **o11y.ai agents → bounded/redacted agent surface** — if Observe adds a safety-gated bounded agent artifact, direct collision with Parallax's bundle thesis. **High-priority watch.**
-2. **Snowflake integration depth** — does it widen the cost/scale lead or deepen lock-in further?
-3. **Knowledge Graph → portable/exportable** — if Observe's graph becomes exportable, it reduces the lock-in contrast.
+1. **Coding-agent MCP / portable bundle** — **pass 47 PARTIAL FIRE:** MCP Server for Cursor/Claude/Augment is **shipped**. Still **not** a portable redacted versioned dossier; residual Parallax claim = portable/redacted/A1, not “agents can query us.”
+2. **Snowflake integration depth** — cost/scale lead vs lock-in.
+3. **Knowledge Graph → portable/exportable** — would further shrink Parallax residual.
 
-**As of 2026-07-17:** o11y.ai agents are **productivity agents**, not a bounded-safety-gated projection. Trigger not yet fired — but Observe is the closest shipped realization of Parallax's graph+agent framing.
+**As of 2026-07-17 pass 47:** coding-agent MCP **shipped**; portable redacted bundle watch **not fired**.
 
 ## Open questions / what measurement would settle
 
@@ -155,5 +149,5 @@ Observe pricing is **public** ([observeinc.com/pricing](https://www.observeinc.c
 
 - [observeinc.com](https://www.observeinc.com/); [pricing](https://www.observeinc.com/pricing); [why-observe (Context Graph)](https://www.observeinc.com/why-observe).
 - [Snowflake acquisition press release](https://www.snowflake.com/en/news/press-releases/snowflake-announces-intent-to-acquire-observe-to-deliver-ai-powered-observability-at-enterprise-scale/).
-- [Observe AI SRE / o11y.ai Agents (PR Newswire)](https://www.prnewswire.com/news-releases/observe-introduces-ai-sre-and-o11yai-agents-accelerating-developer-productivity-while-cutting-enterprise-observability-costs-302603717.html).
+- [Observe AI SRE product (MCP for Cursor/Claude)](https://www.observeinc.com/product/ai-sre); [PR Newswire o11y.ai Agents](https://www.prnewswire.com/news-releases/observe-introduces-ai-sre-and-o11yai-agents-accelerating-developer-productivity-while-cutting-enterprise-observability-costs-302603717.html).
 - Parallax side: [decisions/storage-engine.md](../../decisions/storage-engine.md), [00-vision/ai-native-observability.md](../../00-vision/ai-native-observability.md), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).
