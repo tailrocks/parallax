@@ -43,7 +43,7 @@ Legend for the **State** column:
 | **SigNoz** | OTLP-native full obs on ClickHouse; most mature MCP. | MIT-Expat core + proprietary `ee/`. | All signals. | [deep-dive](parallax-vs-signoz.md) |
 | **OpenObserve** | Rust single-binary, object-storage-native (Parquet/DataFusion); AI SRE + 140+ MCP. | AGPL-3.0 + commercial EE. | All signals. | [deep-dive](parallax-vs-openobserve.md) |
 | **Coroot** | eBPF zero-instrumentation obs + 2-stage AI RCA; safest MCP (OAuth+RBAC). | Apache-2.0 + commercial EE. | Traces/logs/profiles (eBPF). | [deep-dive](parallax-vs-coroot.md) |
-| **Highlight.io** | Session replay + error tracking + logs + traces; OSS SaaS. | Apache-2.0 (self-host) + Cloud. | Errors + RUM + logs. | stub |
+| **Highlight.io** | Session replay + error tracking + logs + traces; OTLP-native; Apache-2.0 OSS self-host. | Apache-2.0 (self-host) + Cloud. | Errors + RUM + logs. | [deep-dive](parallax-vs-highlight.md) |
 | **Uptrace** | OTLP on ClickHouse/Postgres; tracing-first. | Open core (BSL-adjacent). | Traces + metrics. | watch |
 | **HyperDX** | OTLP on ClickHouse; single-pane logs/metrics/traces. | Apache-2.0 + Cloud. | All signals. | watch |
 | **Odigos** | eBPF auto-instrumentation to OTLP (collector, not a backend). | Apache-2.0. | Auto-instrumentation. | watch |
