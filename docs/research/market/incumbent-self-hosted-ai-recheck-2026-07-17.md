@@ -1,4 +1,4 @@
-# Incumbent self-hosted AI recheck (2026-07-17, pass 77)
+# Incumbent self-hosted AI recheck (2026-07-17, pass 77 + pass 126)
 
 <!-- markdownlint-disable MD013 -->
 
@@ -17,6 +17,17 @@ erode Parallax's air-gap / no-cloud-AI differentiator.
 | Sentry Seer on self-hosted | **Still unavailable** — closed-source AI/ML excluded from self-hosted | **No** (wedge holds) |
 | Grafana local-inference / fully offline Assistant | **Not found** as a shipping product | **No** for pure offline |
 | Grafana Assistant *UI* on self-managed OSS/Enterprise | **Shipped** (Grafana v13+, GrafanaCON 2026) via plugin → **Cloud backend** | **Partial pressure** — not air-gap; requires Cloud stack |
+
+### Pass 126 (2026-07-17) — Seer primary re-fetch
+
+Live [develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/)
+**Differences between self-hosted and SaaS** list still includes, verbatim:
+
+> Seer and other AI & ML features, as these are currently closed source.
+
+**No change** vs pass 77. Air-gap / self-host Seer wedge **still holds**.
+Grafana offline BYO-LLM path **not re-probed** this pass (prior partial-pressure
+claim retained).
 
 **Precise claim after this pass:**
 
