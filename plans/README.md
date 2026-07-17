@@ -302,7 +302,10 @@ the codified rules + checklist in `ui/AGENTS.md`
 URL round-trip, self-time, and the Flame tab
 ([evidence](../docs/research/validation/2026-07-wave2/163/README.md)).
 
-| [164](164-faceted-filters-and-query-bar.md) | Faceted filters with counts, p50/p95 duration presets, where-clause editor | P1 | L | 156, 162 | TODO |
+Plans 162–164 are DONE (2026-07-17). 164: faceted filters with counts,
+duration p50/p95 presets, where-clause editor on traces/logs/invocations
+([evidence](../docs/research/validation/2026-07-wave2/164/README.md)).
+
 | [165](165-logs-power-features.md) | Logs: brush-zoom histogram, pinned attribute columns, Drain pattern grouping | P2 | L | 162, 164 | TODO |
 | [166](166-service-map-v2.md) | Service map v2: ELK layout, focus/declutter, external db/queue/http nodes | P1 | L | 156, 157, 162 | TODO |
 | [167](167-alerting-v1.md) | Alerting v1: rules, evaluator, incidents, webhook/slack destinations | P1 | XL | 156, 162; soft 164 | TODO |
