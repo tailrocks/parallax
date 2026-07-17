@@ -4,8 +4,8 @@
 
 Status: created Run 171 — operator asked "what else have we missed?" This consolidates the scattered
 open questions + the dimensions the storage research has **not** covered, prioritized. The GreptimeDB-
-vs-ClickHouse *engine* comparison is exhaustive + re-verified (Runs 1–**189**). **Run 173 re-pinned**
-to GT `v1.1.3` / CH `26.6.1.1193`. Runs 173–189 re-verified live: JSON2, backup/DR, managed-cloud
+vs-ClickHouse *engine* comparison is exhaustive + re-verified (Runs 1–**200**). **Run 173 re-pinned**
+to GT `v1.1.3` / CH `26.6.1.1193`. Runs 173–200 re-verified live: JSON2, backup/DR, managed-cloud
 framework, last-value shape, concurrent ingest, quotas, native protocols, schema-on-write, PromQL
 tax scale-shape, full-text, projections, append DELETE ban, TTL, Flow/MV, storage density. The gaps
 below still need product input, server-tier scale, or $ quotes — not more engine smoke.
