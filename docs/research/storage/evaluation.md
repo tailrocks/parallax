@@ -52,21 +52,21 @@ But the skeptical view matters:
 
 ## Current Source Freshness Update
 
-As of 2026-05-25, the latest stable GreptimeDB release checked is
-[`v1.0.2`](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.0.2),
-published 2026-05-14. GitHub also lists
-`v1.1.0-nightly-20260525` as a pre-release, so benchmark and product claims
-should stay pinned to the stable line unless a nightly is explicitly under test.
-GreptimeDB's public docs describe it as an open-source observability database
-for metrics, logs, and traces, and the getting-started docs install `v1.0.2`;
-however, the trace read/write docs still say the trace section is experimental
-and may change. Therefore GA reduces the "unreleased database" risk, but it does
-not by itself prove trace maturity, production operations, retained cost, or
-Parallax bundle-query performance.
+**Re-pinned 2026-07-17 (pass 48, version only — no performance claims):** latest
+stable GreptimeDB is
+[`v1.1.3`](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.1.3)
+(2026-07-17). Nightly line is
+[`v1.2.0-nightly-20260706`](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.2.0-nightly-20260706).
+Historical 2026-05 checks cited `v1.0.2` / `v1.1.0-nightly-20260525` — those pins
+are **stale**. Benchmark and product claims should stay pinned to the current
+stable line unless a nightly is explicitly under test. Version currency does
+**not** by itself prove trace maturity, production operations, retained cost, or
+Parallax bundle-query performance (those remain measurement gates).
 
 Primary checks:
 
-- [GreptimeDB v1.0.2 release](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.0.2)
+- [GreptimeDB v1.1.3 release](https://github.com/GreptimeTeam/greptimedb/releases/tag/v1.1.3)
+- [GreptimeDB releases](https://github.com/GreptimeTeam/greptimedb/releases)
 - [GreptimeDB documentation home](https://docs.greptime.com/)
 - [GreptimeDB standalone install](https://docs.greptime.com/getting-started/installation/greptimedb-standalone/)
 - [GreptimeDB trace read/write docs](https://docs.greptime.com/user-guide/traces/read-write/)
@@ -122,7 +122,7 @@ engine candidates. Parallax should compare the databases underneath them.
 | Is it cheaper? | Plausible for long-retention observability because GreptimeDB is object-storage-oriented, but total cost depends on query load, cache, compaction, egress, operations, and enterprise needs. Not proven by public data alone. |
 | Is it better for metrics than ClickHouse? | Likely yes for Prometheus-compatible metrics workflows because GreptimeDB supports Prometheus remote write and PromQL. ClickHouse can store metrics, but it is less metrics-native in the core database. |
 | Is it better for logs and traces than ClickHouse? | Not clearly. ClickHouse is a proven fit for logs/traces analytics, and ClickStack proves ClickHouse can be packaged into a unified observability stack. GreptimeDB's advantage is more metrics-native architecture, not obvious superiority on every log/trace query. |
-| Is it mature enough? | Promising but young. GreptimeDB reached 1.0 GA and latest stable checked is `v1.0.2`, but trace docs remain experimental and ClickHouse has a much larger ecosystem and longer production history. |
+| Is it mature enough? | Promising but young. GreptimeDB is on the **v1.1.x** stable line (`v1.1.3` as of 2026-07-17); maturity claims for Parallax workloads still need measurement, and ClickHouse has a much larger ecosystem and longer production history. |
 | What did Parallax choose? | GreptimeDB is the mandatory telemetry engine. ClickHouse remains a performance comparator; A5 results refine risk and claims, not product stack selection (see [storage-engine.md](../decisions/storage-engine.md)). |
 
 ## GreptimeDB Strengths

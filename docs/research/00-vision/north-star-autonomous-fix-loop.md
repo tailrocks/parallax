@@ -62,18 +62,24 @@ Recorded as durable intent, condensed from the operator's own words:
    machine, scaling to big companies by topology, not rewrite. Full framing:
    [problem-audience-product-shape.md](problem-audience-product-shape.md).
 
-## 2. Why the summit is unclaimed (market evidence, June 2026)
+## 2. Why the summit is unclaimed (market evidence)
 
 Every serious incumbent now generates fixes. **None of them closes the loop for application
-code.** Checked 2026-06-11:
+code** (auto-detect → auto-PR → **auto-merge** with open outcome/recurrence records).
+
+**Rechecked 2026-07-17 (pass 48, primary product docs):** Bits Code still lands PRs for
+**human review/merge**; Seer still stops at PR/MR creation (or external coding-agent handoff).
+Earlier 2026-06-11 table retained; wording on Datadog updated to live blog language (the older
+"never merges or deploys without human intervention" quote is directionally consistent but the
+live Bits Code post emphasizes *engineers decide what to merge*).
 
 | Player | How far they go | The stated stopping point |
 | --- | --- | --- |
-| Sentry Seer | Root cause → solution → code changes → **opens PR** (auto-PR by actionability threshold); June 8, 2026 changelog frames new APIs for "self-healing workflows" | No auto-merge; human merges ([Seer docs](https://docs.sentry.io/product/ai-in-sentry/seer/), [changelog](https://sentry.io/changelog/)) |
-| Datadog Bits AI | Bits Code **GA** (fix generation everywhere a problem surfaces); Bits Remediation and Bits Infrastructure Operations in preview (DASH, June 9–10, 2026) | "Never merges or deploys without human intervention" ([Bits AI Dev](https://www.datadoghq.com/blog/bits-ai-dev-agent/), [DASH roundup](https://www.datadoghq.com/blog/dash-2026-new-feature-roundup-keynote/)) |
+| Sentry Seer | Root cause → solution → code changes → **opens PR** (auto-PR by actionability threshold); "self-healing workflow" APIs and external coding-agent handoff | No app-code auto-merge; human merges/reviews ([Seer docs](https://docs.sentry.io/product/ai-in-sentry/seer/) rechecked 2026-07-17) |
+| Datadog Bits AI | Bits Code **GA** (fix generation + CI iterate + open PR); Bits Remediation / infra ops for pre-approved actions | **Human review path:** "resulting pull request still goes through normal human review" / "engineers decide what to merge" ([Bits Code blog](https://www.datadoghq.com/blog/bits-ai-dev-agent/) rechecked 2026-07-17) |
 | GitLab Duo | "Ready-to-merge" AI fix MRs | Humans decide the merge ([GitLab blog](https://about.gitlab.com/blog/automate-remediation-with-ready-to-merge-ai-code-fixes/)) |
 | GitHub Copilot coding agent | Issue → draft PR via Agent Tasks | Normal review required; Actions gated ([docs](https://docs.github.com/en/copilot/concepts/about-copilot-coding-agent)) |
-| AI-SRE agents (Resolve.ai, NeuBird, Bits Infra Ops) | Closed-loop **execution exists only for pre-approved infra/runbook actions** (restarts, rollbacks, config) | Not application-code fixes |
+| AI-SRE agents (Resolve.ai, NeuBird, Bits Infra Ops, HolmesGPT, …) | Closed-loop **execution exists only for pre-approved infra/runbook actions** or investigation-without-own-store | Not application-code auto-merge + open outcome corpus |
 
 Two readings of this table:
 

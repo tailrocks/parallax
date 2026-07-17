@@ -12,6 +12,12 @@ Research date: 2026-05-25
 > `schema/evidence-bundle.v2.schema.json`. References to a current `v0` draft or
 > absent schema artifacts below describe the 2026-05 research state, not current
 > repository truth.
+>
+> **Schema-commoditization recheck (2026-07-17, pass 48):** no OTel (or peer)
+> portable investigation/evidence **bundle** standard has shipped; OTel #1185
+> remains open attribute-level work only. Profile-over-standards strategy
+> retained. Full primary-source packet:
+> [evidence-bundle-schema-commoditization-2026-07-17.md](evidence-bundle-schema-commoditization-2026-07-17.md).
 
 ## Purpose
 

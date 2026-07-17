@@ -66,7 +66,8 @@ Historical architecture/capture notes keep evidence under dated or **historical*
 - [rust-workspace-map.md](architecture/rust-workspace-map.md) — semantic Cargo workspace map: dependency tiers, crate ownership, reviewed facades, and machine-owned contracts.
 - [implementation-concept.md](architecture/implementation-concept.md) — opinionated end-to-end blueprint with named component choices, deployment profiles, data flow, rejected alternatives.
 - [overview.md](architecture/overview.md) — the OpenTelemetry-native self-hosted architecture; Sentry envelope ingest is now shipped (historical "future adapter" framing is superseded).
-- [evidence-bundle-schema.md](architecture/evidence-bundle-schema.md) — the `v0` portable evidence-bundle and open schema (the named moat artifact).
+- [evidence-bundle-schema.md](architecture/evidence-bundle-schema.md) — the portable evidence-bundle and open schema (the named moat artifact; implemented `bundle-v1` / `envelope-v2`).
+- [evidence-bundle-schema-commoditization-2026-07-17.md](architecture/evidence-bundle-schema-commoditization-2026-07-17.md) — pass-48 recheck: OTel/OCSF still do not commoditize the bundle artifact.
 - [api-concept.md](architecture/api-concept.md) — GraphQL-first query/exploration API, OTLP-first ingest, shipped Sentry envelope adapter, and strict API boundary.
 - [causal-reconstruction.md](architecture/causal-reconstruction.md) — evidence-graph, causal reconstruction, and agent-safety analysis.
 - [agent-trust-boundary-and-prompt-injection.md](architecture/agent-trust-boundary-and-prompt-injection.md) — prompt injection via attacker-controlled telemetry (inject-*in*, vs A6 redaction's leak-*out*): the threat and the trust-boundary design constraints it forces.
