@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import type { RuntimeDecoder } from "@/platform/external-values/runtime-decoder"
-import type { EventSourceLike } from "@/platform/sse/event-source"
+import type { EventSourceLike } from "@/platform/sse/event-source.client"
 import { createLiveStreamController } from "@/platform/sse/live-stream-controller"
 
 class FakeEventSource implements EventSourceLike {

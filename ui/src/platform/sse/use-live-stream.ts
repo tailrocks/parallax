@@ -4,7 +4,7 @@ import type { RuntimeDecoder } from "@/platform/external-values/runtime-decoder"
 import {
   browserEventSourceFactory,
   type EventSourceFactory,
-} from "@/platform/sse/event-source"
+} from "@/platform/sse/event-source.client"
 import {
   createLiveStreamController,
   type LiveStreamStatus,
