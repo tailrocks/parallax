@@ -163,3 +163,9 @@ both ~5 ms median at 100k — absolute gap needs larger N (Run 158/184); plan te
 At N=10k wall times ~2–3 ms with or without `optimize_use_projections` (overhead-dominated).
 **No drift** vs Run 185/232 projection mechanism.
 
+## Run 565 (2026-07-18) — p_svc still serves on 26.6
+
+`EXPLAIN SELECT service, count() FROM r432_proj GROUP BY service` →
+**`ReadFromMergeTree (p_svc)`** (not full table). Pins CH `26.6.1.1193`.
+No drift vs Run 432. **Not done.**
+
