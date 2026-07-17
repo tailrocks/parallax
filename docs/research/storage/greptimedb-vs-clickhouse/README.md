@@ -320,6 +320,8 @@ managed quotes remain):
 | last_value + join | **638** | warm OK; PK+bloom 1/1 |
 | still not done | **639** | top 5 product/server |
 | milestone 640 | **640** | healthy pins; NOT DONE |
+| export + increase | **641** | schema OK; Code 48 |
+| still not done | **642** | top 5 product/server |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
