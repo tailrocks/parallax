@@ -411,3 +411,8 @@ cluster D2 + product D3.
 ## Run 469 (2026-07-18) — still not done
 
 **Not done.** Highest remaining: mix, server 1M/5M, quotes, GB cold, cluster RPO.
+
+## Run 471 (2026-07-18) — still not done
+
+**Not done.** Highest remaining: (1) mix shares (2) server 1M/5M (3) trial quotes
+(4) GB cold S3 (5) cluster D2 + product D3.
