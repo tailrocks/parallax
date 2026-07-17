@@ -31,6 +31,40 @@ The independently actionable exemplar primary-key correction was split into
 
 ## Current Evidence
 
+### Upstream contribution packet (2026-07-17)
+
+The operator unblock directive converts the dependency wait into a fix-forward
+upstream contribution. A fresh read-only scan found no existing upstream issue
+or pull request and narrowed the first contribution to a plaintext feature
+split:
+
+- crates.io and upstream `main` (`86aaa15d0ebd152b46f4db581461c1e78968eb24`)
+  remain at `greptimedb-ingester 0.18.0`; its manifest unconditionally enables
+  tonic 0.14 `tls-ring`.
+- Tonic 0.14.6 `tls-native-roots` is not native TLS: it still enables
+  `tokio-rustls` and only changes root loading. Parallax must not use it.
+- The minimal upstream patch makes TLS opt-in, compiles tonic's transport,
+  codegen, gzip, and zstd surfaces without a TLS feature by default, and
+  cfg-gates `Certificate`, `Identity`, `ClientTlsConfig`, `ClientTlsOption`,
+  `ChannelManager::with_tls_config`, `Client::with_tls_and_urls`, and their
+  TLS-only errors/tests/docs. The existing `http://` lazy-channel path then
+  works without a behavioral rewrite.
+- Required upstream gates are `cargo check` and tests with
+  `--no-default-features`, plus a feature-graph assertion that rustls is
+  absent. If upstream retains TLS compatibility, test it in a separate opt-in
+  job; Parallax enables no TLS feature on the trusted local hop.
+- A true native-TLS connector is separate follow-up work because tonic exposes
+  no native-tls backend. It would use `native-tls` + `tokio-native-tls` through
+  `Endpoint::connect_with_connector_lazy`, with hostname/SNI, system roots,
+  client identity, custom CA, and platform CI coverage.
+- Required row semantics already exist upstream: nanosecond timestamp values
+  and JSON string values are supported by the row API.
+
+This packet is preliminary implementation guidance for the upstream executor;
+the executor must verify the current upstream head and extend the tests before
+submission. It does not satisfy Step 0 until a released dependency graph used
+by Parallax contains no active rustls backend.
+
 - 2026-07-17 recheck: `cargo search greptimedb-ingester --limit 5` still reports
   **0.18.0** as latest. Published crate still hard-enables tonic `tls-ring`
   (rustls path). Step 0 conditions fail; plan remains blocked pending upstream
