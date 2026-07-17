@@ -420,6 +420,8 @@ managed quotes remain):
 | last_value rate increase | **738** | warm; rate OK; Code 48 |
 | still not done | **739** | top 5 product/server |
 | milestone 740 | **740** | NOT DONE |
+| re-pin hold | **741** | pins healthy ~3h+ |
+| still not done | **742** | top 5 product/server |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
