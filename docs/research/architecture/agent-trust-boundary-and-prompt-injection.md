@@ -2,13 +2,26 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-05-29
+Research date: 2026-05-29 · **Threat recheck pass 55 (2026-07-17)**
 
 > **Status (2026-07-17): implemented bundle-boundary controls, continuing threat
 > model.** Evidence assembly now bounds, ranks, redacts, hashes, and reports gaps
 > before JSON/Markdown projection. This does not make attacker-controlled
 > telemetry trusted; the constraints and residual risks below continue to govern
 > every agent-facing surface.
+>
+> **Pass 55 primary recheck:** LogJack
+> ([arXiv:2604.15368](https://arxiv.org/abs/2604.15368), 2026-04) still live and
+> on-point; GrafanaGhost still documented at
+> [Noma Security](https://noma.security/blog/grafana-ghost/) (2026-04-07) as
+> observability-AI indirect injection + exfil. Additional 2026 paper
+> [arXiv:2605.17634](https://arxiv.org/abs/2605.17634) (2026-05) argues agents
+> may *always* fall for prompt injection under prevailing defenses — reinforces
+> **architecture-over-detectors** stance (not a Parallax-specific exploit). No
+> evidence this pass that model-side filters became a sufficient boundary.
+> **Traceway/Rustrak MCP pressure (passes 50–51):** more OSS agents will *read*
+> production telemetry; inject-via-logs risk rises with adoption, not only with
+> Parallax.
 
 ## Purpose
 
