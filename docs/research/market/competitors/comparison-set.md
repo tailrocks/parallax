@@ -55,6 +55,7 @@ Legend for the **State** column:
 | **Traceloop** (OpenLLMetry) | OSS Apache-2.0 OTel **LLM-instrumentation SDK** (auto-instrument providers/frameworks/vector-DBs/MCP → OTLP GenAI spans to any backend); drove GenAI semantic conventions into upstream OTel; **ServiceNow-acquired (~$60–80M) → AI Control Tower** (OSS project stays Apache-2.0, active v0.62.1). The LLM-instrumentation sibling of Odigos. | Apache-2.0 + Cloud (now ServiceNow). | LLM instrumentation layer (complementary). | [deep-dive](parallax-vs-traceloop.md) |
 | **Maple** | OTLP single-binary best local UX; Turso metadata sibling choice. | FSL-1.1 (TS/Bun). | All signals. | [deep-dive](parallax-vs-maple.md) |
 | **TMA1** | Nearest architectural mirror: Go single binary + embedded GreptimeDB + read-only MCP context-bundle for coding agents. | Apache-2.0. | AI-agent cost/sessions/traces. | [deep-dive](parallax-vs-tma1.md) |
+| **Traceway** | MIT OTel-native full-stack self-host (logs/traces/metrics/exceptions/RUM/AI traces); **agent-first CLI + skills + local/remote MCP** (mostly read-only). ClickHouse+Postgres or SQLite/DuckDB. **No Sentry; no portable redacted bundle.** ~1k★, backend v1.9.1. | MIT + self-host (+ cloud TBD). | All signals + agent investigation. | [deep-dive](parallax-vs-traceway.md) |
 
 Component-level (the "stack it yourself" pieces, referenced not deep-dived):
 
