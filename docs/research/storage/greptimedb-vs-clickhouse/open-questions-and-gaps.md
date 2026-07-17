@@ -316,3 +316,28 @@ last_value four-way, JSON type honesty (no SQL `JSONB`). **No stack direction fl
 Highest remaining unchanged: (1) workload mix shares (2) server 1M/5M (3) trial quotes
 (4) GB cold S3 (5) cluster D2 + product D3.
 
+## Run 433 (2026-07-18) — ranking after 423–432
+
+**Not done.** Pins still `v1.1.3` / `26.6.1.1193` / head `26.7.1.1097`.
+
+| Run | What closed / held |
+| --- | --- |
+| 423 | CH PromQL **partial surface map** (rate/agg/topk OK; increase + most `*_over_time` missing) |
+| 424 | Join prune: CH both sides; GT PK filter |
+| 425–429 | Four-way last_value / metric-agg warm interactive; cold first-hit artifact |
+| 426 | SQL type **JSONB unsupported**; default JSON works; JSON2 INSERT caveats |
+| 428 | FT tokenbf selective 0/7 vs broad 7/7 |
+| 430 | TTL expire both engines |
+| 432 | Projection p_svc on stable+head |
+
+**Still highest remaining:**
+
+1. Workload mix A1–A7 filled shares (product)
+2. Server 1M/5M four-way
+3. Vendor trial quotes
+4. GB–TB cold S3
+5. Cluster D2 meta + product-schema D3
+
+Laptop engine smoke remains **saturated** for direction; keep pin-watch +
+comparator completeness only unless pin bumps.
+
