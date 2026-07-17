@@ -177,9 +177,21 @@ Upgrade path in §Falsification unchanged: freeze → overlays → arms → publ
 | Comparative arms | **Still not run** |
 | Claim level | still **`not_measured`** |
 
+## Pass 304 addendum (2026-07-18)
+
+| Check | Result |
+| --- | --- |
+| Result-ledger instance | Still **absent** — only policy `a1-eval-result-ledger-and-model-refresh.md`; no `result-ledger.md` / JSONL / dated run_id dirs under `a1-bundle-value/` |
+| Golden fixture test | **ok** — re-ran `cargo test -p parallax-evidence bundle_v1_golden` → `bundle_v1_golden_fixture_is_stable` **passed** |
+| SWE-bench_Lite | HF dataset page HTTP **200**; API `lastModified` still **2025-04-29**, downloads ~**25,648** (liveness only — not a Phase-0 freeze pin) |
+| Comparative arms A/B/B′/C/D | **Still not run** |
+| Claim level | still **`not_measured`** |
+
+**Not A1:** golden schema stability + HF liveness + product producer. Kill "bundles do not beat raw" still **unfired** because **open ≠ failed**. Next real move remains operator-owned Phase-0: freeze → overlays → arms → publish ledger.
+
 ## Uncertainty
 
-- Pass 118 did **not** execute agent runs (token cost + harness ownership sit outside pure desk research; agenda still marks comparative runs owed). Pass 159/192/214/222/239/246/265/277/284/290/296/299 re-ran **only** the golden unit test, not arms.
+- Pass 118 did **not** execute agent runs (token cost + harness ownership sit outside pure desk research; agenda still marks comparative runs owed). Pass 159/192/214/222/239/246/265/277/284/290/296/299/304 re-ran **only** the golden unit test, not arms.
 - HF row counts / revision SHAs for Lite were not re-hashed this pass; source liveness only. Pinning remains in the freeze-check notes when Phase 0 starts.
 
 ## Parallax goal fit
