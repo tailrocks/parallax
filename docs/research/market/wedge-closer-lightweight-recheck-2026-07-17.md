@@ -81,6 +81,12 @@ Stars unchanged; **real release-line move** on backend only.
 | --- | --- | --- |
 | **Rustrak** | **64★**; **`@rustrak/server@0.9.2` + `@rustrak/mcp@0.2.13`** (2026-07-15); push 2026-07-17 | Still Sentry SDK + **MCP**; README **no** OTLP multi-signal / portable redacted bundle / outcome. Combo **not closed**. |
 
+**Pass 181 recheck (2026-07-18):** **TMA1** —
+
+| Product | Pin | Combo |
+| --- | --- | --- |
+| **TMA1** | **109★**; tag **`v0.2.0-alpha12`** still latest; push 2026-07-17 | **19th UNFIRED** — recent commits GreptimeDB **v1.1.3** min + session UI only. Local agent loop; **no** Sentry envelope / portable redacted prod evidence / fix-outcome collision. |
+
 **Pass 156 recheck (2026-07-18):** **Traceway-focused** wedge re-poll + Bugsink/Rustrak
 star-pin hygiene — combination **still not closed**.
 

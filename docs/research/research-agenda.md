@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 180 (Rustrak still **64★ / server 0.9.2 +
-MCP 0.2.13** Sentry+MCP — no OTLP multi-signal/bundle/outcome; combo **not
-closed**). Pass 179 = Bugsink. A1/A2/A4 open; A6 open at mixed gate only.
+Last updated 2026-07-18 after pass 181 (TMA1 still **v0.2.0-alpha12 / 109★** —
+**19th UNFIRED** prod-collision watch; GreptimeDB min v1.1.3 only). Pass 180 =
+Rustrak. A1/A2/A4 open; A6 open at mixed gate only.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
