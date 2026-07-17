@@ -65,6 +65,11 @@
 > - Ledger paths still **absent** (`a2-deployment-intent-results.md` not present).
 > - Desk triangle/OPW/wedge rechecks (passes 242–251) **cannot** close A2.
 > - **Operator interview runbook still owed.**
+>
+> **Pass 271 recheck (2026-07-18):** gate **still OPEN / zero rows**.
+> - SO **2025** still **200**; **2026** results still **404**.
+> - Ledger paths still **absent**; desk rechecks through pass **270** cannot close A2.
+> - **Operator interview runbook still owed.**
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
