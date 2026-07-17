@@ -162,6 +162,19 @@ Combo still **not closed** (no Sentry envelope + portable redacted bundle + outc
 
 Full wedge combination **still not closed**.
 
+**Pass 241 recheck (2026-07-18):** cohort stars + kill-adjacent watches —
+
+| Product | Stars (API) | Note |
+| --- | --- | --- |
+| Bugsink / Rustrak / TMA1 | **1,940** / **64** / **109** | error-only / Sentry+MCP / local agent |
+| Maple / Coroot / Holmes | **1,532** / **7,837** / **2,874** | Tinybird / eBPF RCA / no store |
+| Odigos / HyperDX / Langfuse / Phoenix | **3,668** / **9,680** / **31,341** / **10,600** | export / ClickStack / LLMOps / LLMOps |
+| Bits Code | primary docs | still **never auto-merges** |
+| Sentry OTLP metrics | primary docs | still **unsupported** |
+| Datadog OPW | primary docs | still **route-to-destinations** Worker |
+
+Full wedge combination **still not closed**.
+
 **Pass 156 recheck (2026-07-18):** **Traceway-focused** wedge re-poll + Bugsink/Rustrak
 star-pin hygiene — combination **still not closed**.
 

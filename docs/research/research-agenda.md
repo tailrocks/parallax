@@ -12,10 +12,10 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 240 (A4 **not_measured**; A6 canary **ok** /
-mixed open; Detect ledger **0**; `fixer_outcome` **3/3**; SigNoz
-**30,309★**/v0.133.0; O2 **20,198★**/v0.91.2 still mutating MCP). Pass 239 =
-A1/A2. A1/A2/A4 open; A6 open at mixed gate only.
+Last updated 2026-07-18 after pass 241 (wedge cohort stars **stable**; Bits still
+**never auto-merges**; Sentry still **no OTLP metrics**; Datadog OPW still
+**route-only** — combo **not closed**). Pass 240 = A4/A6/loop. A1/A2/A4 open; A6
+open at mixed gate only.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
