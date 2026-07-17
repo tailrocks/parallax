@@ -32,7 +32,7 @@ Legend for the **State** column:
 | **Sumo Logic** | Cloud log/SIEM/observability SaaS; Flex scan-pricing; Francisco Partners-owned. | Closed SaaS. | Logs + metrics + security. | [deep-dive](parallax-vs-sumo.md) |
 | **Chronosphere** | Scale metrics platform on M3/Cube; controlled-cost metrics + Telemetry Pipeline. | Closed SaaS. | Metrics (high scale). | [deep-dive](parallax-vs-chronosphere.md) |
 | **Observe** | Data-/SQL-centric observability on Snowflake (acquired ~$1B Jan 2026); O11y Knowledge Graph + AI SRE/o11y.ai agents. | Closed SaaS (Snowflake). | All signals (relational). | [deep-dive](parallax-vs-observe.md) |
-| **Axiom** | Serverless log/event analytics; 3-part usage pricing (ingest+query+storage); OTel-native. | Closed SaaS (OSS SDKs). | Logs + events. | [deep-dive](parallax-vs-axiom.md) |
+| **Axiom** | Serverless **full-stack** observability (logs/traces/**metrics GA**/events) **+ AI Engineering** (agent-workflow tracing, evals, cost/latency); OTel-native; **4-part usage pricing** ($25 platform + data-loading + query + storage + add-ons; perpetual 1 TB Always-Free; no egress/seat). | Closed SaaS (OSS SDKs). | Full signals + AI/agent (was logs+events). | [deep-dive](parallax-vs-axiom.md) |
 | **Mezmo** | Telemetry data pipeline + log analysis (ex-LogDNA); Mezmo Flow; route/optimize/govern in flight. | Closed SaaS. | Logs + pipelines (cost-governance layer). | [deep-dive](parallax-vs-mezmo.md) |
 
 > **Roster correction (pass 31):** the legacy "**Tracelo**" row was removed —
