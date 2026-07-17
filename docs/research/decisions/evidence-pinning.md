@@ -6,6 +6,13 @@
 - **Depends on:** plan 104 Option C, plan 116 lifecycle
 - **Implementation status (2026-07-17):** Shipped. Plans 104 and 116 are
   closed historical dependencies.
+- **Pass 79 recheck (2026-07-17):** Decision **GO still holds** against code:
+  `evidence_pins` Turso path + prune protection (`parallax-metadata` prune
+  excludes live pins; `source_state` / TTL do not delete pin rows). No primary
+  source found this pass that would force raw OTLP copy or disabling native
+  TTL. **Unproven residual:** large-pin economics, multi-operator `pinned_by`
+  (plan 109), and cold-read of *native* rows after TTL when only pin remains
+  (expected: pin is the surviving artifact).
 
 ## Decision (GO)
 
