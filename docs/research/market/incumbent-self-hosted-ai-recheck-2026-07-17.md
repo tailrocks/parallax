@@ -37,6 +37,15 @@ claim retained).
 | [develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/) | HTML still contains exact list item: **"Seer and other AI & ML features, as these are currently closed source."** — **UNFIRED** for self-host Seer GA |
 | [Grafana Assistant self-managed setup](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/get-started/self-managed/) (markdown-capable docs) | Still **hybrid**: "The Assistant UI runs in your self-managed Grafana deployment. **The backend, usage limits, and billing stay in the Grafana Cloud stack** you connect during setup." Prompts + query context **sent to Grafana Cloud**. Requires Grafana **13.0.0+** + Cloud stack admin. **No offline / BYO-LLM product path** documented. |
 
+### Pass 188 (2026-07-18) — dual re-fetch
+
+| Source | Finding |
+| --- | --- |
+| develop.sentry.dev/self-hosted | Still **"Seer and other AI & ML features, as these are currently closed source."** |
+| Grafana Assistant self-managed docs | Still **hybrid** Cloud backend/billing; prompts leave self-managed |
+
+**UNFIRED:** Seer self-host GA; Grafana offline/BYO-LLM Assistant.
+
 **Precise claim after this pass:**
 
 > No major incumbent ships **fully offline, open (or self-hostable without

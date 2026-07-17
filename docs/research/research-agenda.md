@@ -12,10 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 187 (engine pin API-only: GreptimeDB still
-**v1.1.3**; nightly **20260706**; CH feature **v26.6.1.1193**; traces still
-**experimental** — no size/cost bench). Pass 186 = loop stages. A1/A2/A4 open;
-A6 open at mixed gate only.
+Last updated 2026-07-18 after pass 188 (Seer still **self-host closed**; Grafana
+Assistant still **Cloud LLM backend** — air-gap incumbent watch **UNFIRED**).
+Pass 187 = engine pin. A1/A2/A4 open; A6 open at mixed gate only.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
@@ -58,7 +57,7 @@ producer rather than treat its construction as future work. Autonomous fixing re
   still **experimental** on docs v1.1
   ([Traces overview](https://docs.greptime.com/user-guide/traces/overview/)
   warning reconfirmed pass **187**).
-- **Incumbent self-hosted AI** — **Rechecked 2026-07-18 pass 158** (prior 77/126):
+- **Incumbent self-hosted AI** — **Rechecked 2026-07-18 pass 188** (prior 77/126/158):
   Seer still **closed / unavailable** on self-hosted
   ([develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/)
   still lists "Seer and other AI & ML features… closed source"). Grafana
