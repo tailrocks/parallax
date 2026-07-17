@@ -255,6 +255,11 @@ Full combination **still not closed**. Version pins **unchanged** vs pass
 
 **Evidence class:** GitHub API + GitLab API + raw README probes (desk). Not A1.
 
+**Pass 272 recheck (2026-07-18):** same three peers — pins **unchanged**
+(Bugsink **1,940★**/v2.4.0; Rustrak **64★**/0.9.2+mcp0.2.13; GlitchTip backend
+**v6.2.1**/354★). README probes still **no** OTLP multi-signal + portable
+redacted bundle + outcome. Combo **not closed**.
+
 **Pass 156 recheck (2026-07-18):** **Traceway-focused** wedge re-poll + Bugsink/Rustrak
 star-pin hygiene — combination **still not closed**.
 
