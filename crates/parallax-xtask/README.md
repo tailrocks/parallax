@@ -2,7 +2,7 @@
 schema_version = 1
 package = "parallax-xtask"
 class = "aux"
-dependencies = []
+dependencies = ["parallax-api"]
 facade_roots = ["lib.rs", "main.rs"]
 +++
 

@@ -3,7 +3,7 @@ schema_version = 1
 package = "parallax-metadata"
 class = "product"
 tier = 2
-dependencies = ["parallax-model", "parallax-semconv", "parallax-storage"]
+dependencies = ["parallax-evidence", "parallax-model", "parallax-semconv", "parallax-storage"]
 facade_roots = ["lib.rs"]
 +++
 

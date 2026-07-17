@@ -2,7 +2,7 @@
 schema_version = 1
 package = "parallax-mcp-spike"
 class = "proof"
-dependencies = []
+dependencies = ["parallax-evidence"]
 facade_roots = ["main.rs"]
 +++
 

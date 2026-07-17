@@ -4042,7 +4042,7 @@ ceiling = 16341
 [[limits]]
 metric = "agent-doc-bytes"
 scope = "ui/AGENTS.md"
-ceiling = 14461
+ceiling = 14426
 
 [[limits]]
 metric = "rust.assertions"
@@ -6474,10 +6474,6 @@ metric = "typescript.function-lines"
 scope = "ui/src/platform/sse/tests/use-live-stream.test.tsx:74"
 ceiling = 123
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/platform/sse/use-live-stream.ts:36"
-ceiling = 69
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -6699,3 +6695,28 @@ metric = "typescript.suppressions"
 scope = "ui/src/shared/format.ts"
 ceiling = 1
 
+
+[[exceptions]]
+rule = "arch.dependency.direction"
+scope = "parallax-metadata -> parallax-evidence (normal)"
+evidence = "crates/parallax-metadata/src/turso.rs sanitizes issue titles/culprits with parallax_evidence::sanitize_text before persistence (plan 111 A6 gate applied at write time)"
+owner = "storage"
+created = "2026-07-17"
+expires = "2026-09-30"
+removal_condition = "extract the pure redaction detector engine and source policy into a tier-1 crate both metadata and evidence consume"
+replacement = "sanitize at the storage port boundary through the extracted redaction crate"
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/sse/use-live-stream.ts:39"
+ceiling = 69
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-model/src/test_reporting/tests.rs"
+ceiling = 23
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/sse/use-live-stream.ts:39"
+ceiling = 69
