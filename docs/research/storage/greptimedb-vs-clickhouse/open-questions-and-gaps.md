@@ -407,3 +407,7 @@ percentiles, adopt-native, RPO export-v2. Top five still product/server.
 
 **Not done.** Pins hold. Highest remaining: mix, server 1M/5M, quotes, GB cold S3,
 cluster D2 + product D3.
+
+## Run 469 (2026-07-18) — still not done
+
+**Not done.** Highest remaining: mix, server 1M/5M, quotes, GB cold, cluster RPO.
