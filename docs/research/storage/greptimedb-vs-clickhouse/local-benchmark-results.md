@@ -7743,3 +7743,9 @@ the slow path.
 | CH head | 26.7.1.1097 | rolls |
 
 **No bump this pass.** Continue re-check each pass.
+
+### Run 245 — 2026-07-17 — full-text under concurrent insert
+
+GT `matches_term(message,'timeout')` on logs1m: idle **~5–6 ms**; during 30
+background inserts **~6–7 ms** (one cold 24 ms). **No blocking**; penalty ≤~1.3×
+typical. Aligns with Run 226/178 concurrent gate.
