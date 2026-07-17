@@ -121,7 +121,9 @@ Highest-value *remaining* items (not “done”):
 
 1. **Workload mix model** (product) — only input that re-weights DQ5 flip rule.
 2. **Server-tier 1M/5M four-way** on v1.1.3 + 26.6 — especially dedup-agg regression retest.
-3. **Managed $ quote packet** — GT managed vs CH Cloud for fixed volume/QPS.
+3. **Managed $ quotes** — Run 221 locked **primary list rates** (CH Cloud
+   calculator-transparent; GT from $290 opaque above floor). Still need
+   **vendor-sized trial quotes** for a fixed Parallax profile.
 4. **Cold S3 selective egress at GB scale** — Run 220 re-verified object layout at
    N=100k on current pins (GT 3 vs CH 22 objects); **GB–TB selective cold + GET
    parity for GT** still owed (server/MinIO large tier; `mc admin trace` broken on

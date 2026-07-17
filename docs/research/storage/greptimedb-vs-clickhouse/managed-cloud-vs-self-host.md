@@ -2,12 +2,13 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: **Run 175 (2026-07-17)** — gap-ledger item #5. Mechanism synthesis from
-public product docs + prior engine findings (`storage-cost-and-tiering.md`,
-Runs 155/161). **Not** a full TCO spreadsheet — list prices move; treat $ as
-order-of-magnitude. Pins context: GT `v1.1.3` / CH `26.6.1.1193` OSS compared to
-**ClickHouse Cloud** and **Greptime managed/Enterprise cloud** offerings as of
-research date.
+Status: **Run 175** framework; **Run 221 (2026-07-17)** — primary-source **quote
+packet** from Greptime + ClickHouse pricing pages / billing docs. Mechanism
+synthesis from public product docs + prior engine findings
+(`storage-cost-and-tiering.md`, Runs 155/161). **Not** a signed commercial quote
+— list prices move; re-check URLs before any budget decision. Pins context: GT
+`v1.1.3` / CH `26.6.1.1193` OSS compared to **ClickHouse Cloud** and **Greptime
+Enterprise Fully-Managed / BYOC** as of research date.
 
 > **Product authority unchanged:** Parallax ships **self-hostable GreptimeDB +
 > Turso**. This note scores how *managed* offerings change the *comparison
@@ -59,15 +60,90 @@ traditional stacks; entry managed pricing from **$290/month** (pricing page,
 
 | Component | Self-host GT | Self-host CH OSS | Greptime managed | ClickHouse Cloud |
 | --- | --- | --- | --- | --- |
-| **Storage $/GB** | S3 ~$0.023 × **1×** (+ egress/R2 games) | EBS/local or S3×**N** (or cold tier) | Bundled; still object-store class | Object storage + Cloud storage SKU (third-party guides cite ~$25–50/TB-mo class — **verify live quote**) |
-| **Compute for SLA** | Elastic / scale-to-low possible | Always-on hot tier for interactive | Vendor-sized | CU-hour model (guides cite ~$0.22–0.75/CU-hr; Dev tier entry ~$67/mo class — **verify live quote**) |
+| **Storage $/GB** | S3 ~$0.023 × **1×** (+ egress/R2 games) | EBS/local or S3×**N** (or cold tier) | Pay-for-stored; entry plan “unlimited storage, pay what you stored” (no public $/TB on page) | **$25.30 / TB-mo** compressed (AWS us-east-1; same SKU Scale + Enterprise, 2026-07) |
+| **Compute for SLA** | Elastic / scale-to-low possible | Always-on hot tier for interactive | Vendor-sized from **$290/mo** Fully-Managed floor | Metered unit-hr: Scale **$0.2985/unit-hr**, Enterprise **$0.3903/unit-hr** (us-east-1); Basic example floor **~$66.52/mo** @ 6h/day |
 | **Ops FTE** | metasrv + upgrades + backup runbook | Keeper + reshard + backup + upgrades | Near-zero engine ops | Near-zero engine ops |
-| **Backup** | COPY + meta snapshot + bucket versioning (Run 174) | BACKUP SQL or Cloud auto (Run 174) | Vendor | Cloud automatic (config.xml note) |
+| **Backup** | COPY + meta snapshot + bucket versioning (Run 174) | BACKUP SQL or Cloud auto (Run 174) | Vendor / Enterprise auto-backup | Counted **separately** toward storage; default 1 backup retained 1 day |
 | **HA storage multiplier** | **1×** shared | **N×** OSS | 1× design | **1×** shared (SharedMergeTree) |
 
 **Implication:** comparing **self-host GT vs self-host CH** still favors GT on deep
 $/GB. Comparing **managed CH Cloud vs managed GT** collapses the storage-multiplier
 gap; decision shifts to **query speed / ecosystem / price quote / lock-in**.
+
+## Run 221 — primary-source quote packet (2026-07-17)
+
+Sources (fetch date = research day):
+
+- Greptime: <https://greptime.com/pricing>
+- ClickHouse Cloud pricing page: <https://clickhouse.com/pricing> (us-east-1 calculator surface)
+- ClickHouse billing docs (worked examples): <https://clickhouse.com/docs/cloud/manage/billing/overview>
+
+### Published list numbers (verbatim class)
+
+| Offer | Public floor / rate | What is included (marketing/docs) | Gap |
+| --- | --- | --- | --- |
+| **Greptime Enterprise Fully-Managed** | **From $290 / month** | Guaranteed resources; “unlimited data storage and retention, pay for what you stored”; isolated resources; SQL + PromQL + OTel | **No public $/TB or CU-hr** — storage and overage are sales-configured |
+| **Greptime Enterprise BYOC** | **Custom pricing** | Deploy in customer cloud / AWS Marketplace; SLA + dedicated TAM | Contact-only |
+| **CH Cloud Basic** | **From $66.52 / mo** (docs example) | 1×8 GiB / 2 vCPU, 500 GB compressed + 500 GB backup, 10 GB public egress, 5 GB XR; active **6 h/day** in the $66.52 row | Not for hard multi-AZ SLA |
+| **CH Cloud Scale** | Storage **$25.30 / TB-mo**; compute **$0.2985 / unit-hr**; worked **from $499.38 / mo** | Unlimited storage SKU; 2+ AZ; auto vertical scale; private networking; 24h backups | Worked $499.38 = 2×8 GiB always-on + 1 TB + 1 backup + small egress |
+| **CH Cloud Enterprise** | Storage **$25.30 / TB-mo**; compute **$0.3903 / unit-hr**; worked from **~$2,669 / mo** | SSO, CMEK, HIPAA/PCI, named support, private regions | Worked example 2×32 GiB + 5 TB |
+| **CH Cloud egress** | Public internet **from $0.1152 / GB**; inter-region **from $0.0312 / GB** | Plus ClickPipes **$0.04 / GB** ingest + **$0.20 / hr** per pipe CU | Material if re-read-heavy |
+
+Compute metering (docs): per-minute, in **8 GiB RAM increments** (“units”). Storage =
+**compressed** table bytes on object store; **backups billed as storage too**.
+
+### Fixed-profile scenarios (planning envelopes, not invoices)
+
+Assume AWS us-east-1, 30-day month, CH rates above. Greptime cells use the
+**$290 floor** when size is unknown and flag “+ storage quote required”.
+
+| Profile | Retained compressed | Compute assumption | **CH Cloud (list math)** | **Greptime managed (list)** |
+| --- | --- | --- | --- | --- |
+| **A — Dev / spike** | 0.5 TB | 1 unit (8 GiB), **6 h/day** | Docs Basic-class: **~$66–186/mo** depending on active hours (storage alone 0.5×$25.30≈$12.65 if not in Basic bundle) | **≥$290/mo** floor; storage overage unknown publicly |
+| **B — Small always-on prod** | 1 TB + 1 backup | 2×8 GiB always-on (Scale) | Docs Example 1: **~$499/mo** (compute ~$437 + storage+backup ~$51 + egress ~$12) | **≥$290/mo** + pay-stored; **likely competitive or cheaper** if vendor sizes lean, **but unproven without quote** |
+| **C — Mid retention** | 10 TB + 1 backup | 2×16 GiB always-on (Scale) | Storage+backup ≈11×$25.30≈**$278**; compute 2×(16/8)×$0.2985×720≈**$860**; total **~$1.15–1.3k/mo** + egress | Still **contact**; $290 is not the bill at 10 TB |
+| **D — Large** | 20 TB + backup | 2×32 GiB (Enterprise-class) | Docs Enterprise-ish: storage ~$506–1k; compute multi-k; **$5k–10k/mo** class | Enterprise/BYOC custom |
+
+**Self-host GT envelope (same data, rough infra only — not ops FTE):** raw S3 at
+~$0.023/GB-mo → 1 TB ≈ **$23/mo** storage (1×), 10 TB ≈ **$230/mo**, 20 TB ≈
+**$460/mo**, plus always-on compute (2–3 modest VMs + optional Kafka) often
+**$100–400/mo** for small, **$500–2k+** for mid — so **self-host GT storage stays
+~order-of-magnitude below CH Cloud storage SKU** ($25.30/TB ≈ $0.025/GB is
+*similar to S3 list* before CH markup on backups/replicas of metadata), while
+**managed compute is where both clouds charge the real money**.
+
+### Comparison logic (honest)
+
+1. **CH Cloud is transparent and calculator-driven.** Storage + unit-hr + egress
+   are public; worked examples land **~$67 (Basic part-time) → ~$500 (Scale 1 TB)
+   → multi-k (Enterprise)**. Good for budget modeling without sales.
+2. **Greptime Fully-Managed is opaque above the $290 floor.** “Pay for what you
+   stored” without a published $/TB means **Run 221 cannot close an apples-to-apples
+   $ row** for profiles B–D without a vendor quote or trial invoice.
+3. **At profile B (1 TB always-on), CH Scale ~$500 is a concrete comparator**;
+   Greptime’s $290 floor *can* undercut it **if** the floor includes enough
+   compute for the workload — unknown until sized. Do **not** treat $290 as
+   “always cheaper than CH Cloud.”
+4. **Self-host GT still wins deep retention math** when ops FTE is accepted
+   (product default). Managed CH Cloud **closes OSS CH’s N×/cold-S3 tax** for $
+   (SharedMergeTree) — thesis from Run 175 **still holds** with fresher numbers.
+5. **Egress** on CH Cloud (from **$0.1152/GB** public) is the sleeper for
+   evidence-bundle re-read-heavy SaaS; prefer same-region app + private link;
+   GT managed egress not published here.
+
+### Still owed after Run 221
+
+- **Signed/trial quotes** for a fixed Parallax profile (ingest GB/day, retained
+  TB, QPS for Q1–Q6 mix) from both vendors.
+- Greptime **published or trial-metered $/TB and CU** (or fixed SKU dimensions).
+- Optional: free-tier / trial burn of a synthetic bundle on each cloud (product
+  time, not engine-internals).
+
+### Decision guidance update
+
+Highest-value commercial next step is **sales/trial quote with a one-page
+workload card** (not more laptop smoke). Engine stack policy remains self-host
+GreptimeDB + Turso for the product binary.
 
 ## What survives in each pairing
 
@@ -114,9 +190,10 @@ here):
 2. **Do re-score risk:** if Parallax SaaS ever standardizes on **ClickHouse Cloud**,
    several OSS-CH disadvantages in this study (S3 cold, N× HA, ops) **do not apply**
    to that deployment; reverse for Greptime managed.
-3. **Highest-value next measurement:** get **current** Cloud quotes (GT managed +
-   CH Cloud) for a fixed retained volume + QPS profile matching evidence-bundle
-   traffic; attach to this note. List prices in third-party blogs go stale fast.
+3. **Highest-value next measurement:** Run 221 attached **primary list rates +
+   scenario envelopes**. Still need **vendor-sized quotes** for GT (opaque above
+   $290) and a trial burn for a fixed evidence-bundle profile. List prices go
+   stale — re-fetch the three URLs above before budgeting.
 4. **Hybrid** (CH Cloud hot + GT cold) multiplies vendors — still Phase-2 only
    (`storage-cost-and-tiering.md`).
 

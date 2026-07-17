@@ -66,6 +66,7 @@ managed quotes remain):
 | Cardinality-insensitive ingest | 192 | flat |
 | Join pushdown | 193 | CH prunes; both interactive |
 | MinIO S3 object layout re-verify (pins bumped) | 220 | GT 3 / CH 22 objs @100k |
+| Managed cloud primary $ rates | 221 | CH transparent; GT $290 floor opaque |
 
 ## Method
 
