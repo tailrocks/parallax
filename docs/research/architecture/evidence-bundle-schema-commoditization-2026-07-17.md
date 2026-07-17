@@ -81,6 +81,10 @@ pressure, idle incident-attribute track).
 (`updated_at` **2025-10-24**); model/ incident-family dirs still **empty**;
 OCSF GA still **`1.8.0`**; `/1.9.0/` still **404**. **Still not commoditized.**
 
+**Pass 300 primary re-fetch (2026-07-18):** #1185 still **open/idle**
+(2025-10-24); model/ filter still **empty**; OCSF GA still **`1.8.0`**.
+**Still not commoditized.**
+
 **Evidence class:** primary GitHub issue/tree + first-party release pages +
 vendor product docs (desk recheck). Not a measurement of A1 value.
 
