@@ -31,6 +31,15 @@
 Index status stays TODO.
 
 **Already landed:**
+- `/metrics` + `/metrics/$metricName` routes + Metrics nav entry (`f402da7`,
+  UI gates green): browse list over `metricNames` with search + inferred-kind
+  filter; detail view with agg/groupBy/step selects **restricted to what the
+  current backend accepts** (`metricSeries` avg/min/max/sum/rate,
+  `histogramQuantile` p50/p95/p99 — see `supportedAggregations` in the route),
+  grouped line chart, URL-encoded state. Peer replaces the intersection list
+  with the full legality table once `metricQuery` lands, adds catalog
+  richness, breakdown click-to-filter, where-filter, dashed tail, and
+  graduation buttons, then browser-verifies against `m-labels`/`m-shapes`.
 - `docs/research/decisions/metric-summary-contract.md`: the operator-authorized
   Plan-105/168 Step-0 contract now records exact window/count semantics,
   non-finite and histogram treatment, trend bucket cap, fail-closed native-name

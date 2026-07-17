@@ -8,9 +8,9 @@ Approval: operator unblock directive dated 2026-07-17, executed through
 Plans 105 and 168
 
 Machine-enforced mirror:
-[`metric-summary-contract.toml`](metric-summary-contract.toml). Product policy
-rejects a missing record/fixture, unknown or missing fields, and any value that
-differs from this approved contract.
+[`metric-summary-contract.toml`](metric-summary-contract.toml). The fixture
+pins this record's SHA-256 and every approved decision field. Product policy
+rejects drift, missing artifacts, unknown/incomplete fields, or changed values.
 
 This record defines the bounded metric-summary semantics shared by the
 overview, metric explorer, dashboards, alerts, and CLI. It preserves

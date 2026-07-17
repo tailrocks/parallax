@@ -24,9 +24,9 @@
 
 ### Landed by Grok (preliminary) — peer verify/extend + full stack
 
-**Do not retire yet.** Pure evaluation + delivery helpers only. No Turso
-schema/CRUD, evaluator I/O loop, GraphQL, full UI pages, or live evidence.
-Index status stays TODO.
+**Do not retire yet.** Pure evaluation + delivery helpers plus Turso
+schema/CRUD only. No evaluator I/O loop, GraphQL, full UI pages, or live
+evidence. Index status stays TODO.
 
 **Already landed:**
 - `crates/parallax-server/src/alerting/mod.rs` + `state_machine.rs` —
@@ -47,13 +47,29 @@ Index status stays TODO.
   plan templates (high-error-rate / slow-p95 / slow-p99 / throughput-drop /
   log-error-burst) via `draftFromTemplate`. Vitest in
   `__tests__/alert-rule-form.test.ts`.
+- `crates/parallax-metadata/src/turso/alerts.rs` (`02d6dd2`, helper agent
+  2026-07-17) — Step 1 remainder: DDL for the six tables (alert_rules,
+  alert_rule_states, alert_incidents, alert_destinations,
+  alert_delivery_events, alert_checks) appended to the idempotent SCHEMA
+  block, plus inherent CRUD on `TursoMetadataStore`: rule upsert preserving
+  `created_at`, `alert_rule_claim` CAS via `last_scheduled_at`, state
+  upserts, `alert_incident_open` with an under-lock (rule, group, open)
+  dedupe guard, resolve/touch, destination CRUD, outbox enqueue idempotent
+  on the UNIQUE `delivery_key` with lease claim (`alert_deliveries_claim`),
+  `mark_delivered`/`mark_failed` (caller-supplied backoff, `dead` flag),
+  and audit inserts pruned to `ALERT_CHECKS_KEEP_PER_RULE` (500) per rule.
+  Records re-exported from the crate root. Nine in-module tests; crate
+  fmt/clippy/nextest green. NOT yet wired into the `MetadataStore` trait
+  in `parallax-storage` (that file was under concurrent peer edit for
+  plan 164) — peer decides trait vs concrete-store access for the
+  evaluator, verifies semantics (esp. claim cutoff arithmetic and prune
+  SQL), and extends.
 
 **Peer owns (verify/deepen/complete):**
 - [ ] Re-verify state machine + delivery helpers vs plan exhaustiveness;
   deepen payload schema docs if needed.
-- [ ] Step 1 remainder: Turso DDL + CRUD for rules/states/incidents/
-  destinations/delivery_events/alert_checks (peer may already have WIP
-  `turso/alerts.rs` — finish that, do not clobber).
+- [ ] Step 1 remainder landed at `02d6dd2` (`turso/alerts.rs`, see above):
+  verify/deepen it, decide trait wiring, do not clobber.
 - [ ] Steps 2–5: evaluator CAS loop, measurement queries, delivery worker
   (native-tls reqwest calling these pure helpers), GraphQL + UI pages,
   playground breach scenarios, ready-banner line, browser + webhook
