@@ -160,3 +160,8 @@ disk/policy tier. Full cold-S3 benchmark still server/MinIO harness (`bench/s3/`
   engine identity.
 
 Reinforces Run 161/209 thesis: GT S3-native vs CH S3-as-tier (OSS).
+
+
+## Instrumentation (Run 234)
+
+GreptimeDB exposes OpenDAL histograms on `/metrics` (`opendal_operation_bytes` labeled by `operation` + `scheme`). Use `scheme="s3"` count/sum deltas for cold-read request/egress parity against ClickHouse `system.events` (`S3GetObject`, `ReadBufferFromS3Bytes`). Prefer this over `mc admin trace` (unreliable on current MinIO — Run 220).

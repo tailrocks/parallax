@@ -7598,3 +7598,37 @@ Indexes: PrimaryKey service … Granules: 1/7
 `service` filter; 1/7 granules. GT has no equivalent second physical order
 (secondary indexes only). Product: if ad-hoc service filters dominate, CH
 projection edge matters; Parallax anchored path still key-on-trace_id first.
+
+### Run 234 — 2026-07-17 — GT OpenDAL request metrics surface (closes Run 220 gap)
+
+**Pass target.** Find a **GT-native** counter for object-store reads comparable to
+CH `system.events` `S3GetObject` (Run 220: `mc admin trace` empty).
+
+**Live scrape** `GET http://localhost:4000/metrics` on GT `v1.1.3` standalone
+(local `scheme="fs"`):
+
+| Series | Role |
+| --- | --- |
+| **`opendal_operation_bytes`** | Histogram of op size by `{operation, scheme, root}` — `read`/`write` |
+| **`opendal_operation_duration_seconds`** (if present) | Latency by operation |
+| `greptime_mito_read_sst_count` | SSTs touched per scan task |
+| `greptime_mito_cache_hit/miss{type="sst_meta\|page\|…"}` | Cache efficacy before storage I/O |
+
+Example (local FS this pass):
+
+```
+opendal_operation_bytes_count{operation="read",scheme="fs",root="/greptimedb_data"} 79
+opendal_operation_bytes_sum{…} 2775491
+```
+
+**Method for cold S3 GET parity (next large MinIO run):**
+
+1. Bring up `bench/s3` (pins v1.1.3/26.6).
+2. Snapshot before/after query:
+   - GT: `curl :4000/metrics` → delta `opendal_operation_bytes_count{operation="read",scheme="s3"}`
+     (and sum for egress bytes).
+   - CH: `system.events` `S3GetObject` / `ReadBufferFromS3Bytes`.
+3. Do **not** depend on `mc admin trace` (broken on current MinIO/mc in Run 220).
+
+**Verdict.** Instrumentation gap for GT is **closed at the metric name level**.
+Live S3 scheme deltas still owed on MinIO (this pass was local FS only).

@@ -79,6 +79,7 @@ managed quotes remain):
 | CH PREWHERE plan shape | 231 | 1/6 granules; ms ~tie @50k |
 | CH projection p_svc non-PK filter | 232 | ReadFromMergeTree(p_svc) 1/7 |
 | Gap ranking after 220–232 | 233 | server/quotes/mix still top |
+| GT OpenDAL /metrics for S3 reads | 234 | opendal_operation_bytes |
 
 ## Method
 
