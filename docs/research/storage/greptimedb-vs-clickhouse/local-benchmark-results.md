@@ -6900,3 +6900,15 @@ GT held in self-host comparisons. Managed GT preserves object-store design with 
 remains self-hostable GreptimeDB; SaaS operator may choose managed later. **$ quote packet still owed.**
 
 **Deliverable.** `managed-cloud-vs-self-host.md`; gap ledger #5 updated.
+
+### Run 176 — 2026-07-17 — fold JSON2 into four-way harness
+
+**Change.** `bench/four-way/gen.sh` creates `sj2 JSON2` and bulk-loads via batched VALUES
+string literals for N≤200k (~30s/100k). `bench.sh` adds row `dynamic-attr-json2(path)` alongside
+legacy `dynamic-attr-jsonb(json_get)`.
+
+**Live check (N=100k, after gen):** `sj2` count=100000; path GROUP BY returns 5×20k buckets in
+~5 ms (matches Run 173 JSON2 finding). Full matrix directions still hold on re-gen.
+
+**Reproduce.** `docker compose -f bench/compose.yml up -d && N=100000 bench/four-way/gen.sh &&
+REPS=6 bench/four-way/bench.sh` — look for `dynamic-attr-json2(path)`.

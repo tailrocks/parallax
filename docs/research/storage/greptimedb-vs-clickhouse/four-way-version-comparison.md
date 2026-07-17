@@ -215,7 +215,7 @@ cast in JSON GROUP BY (`Code 44` without it) where 26.5 allowed a lax no-cast ~1
 - **JSON Type v2 is real but opt-in as `JSON2`:** default `JSON` is still Jsonb + `json_get_int`
   (gap ~11× at 100k). Declaring `JSON2` / `JSON(format='structured')` and path-querying cuts GT's
   side ~7× and leaves ~1.8× vs CH at 100k — a **Tier-A schema** win, not an automatic upgrade.
-  Fold `JSON2` into the harness + re-measure at 1M when practical.
+  **Run 176 folded `JSON2` into the harness** (`sj2` + `dynamic-attr-json2(path)` row; bulk VALUES load for N≤200k). Re-measure at 1M when practical.
 - **5M dedup-agg regression** (Run 141/142 on pre-GA v1.1 nightly) is **not re-run here** (laptop
   policy); re-test on server against v1.1.3 before trusting metric-engine dedup at multi-M.
 - **Where ClickHouse genuinely leads** (re-confirmed on newest pins): in-DB cross-tier join,
