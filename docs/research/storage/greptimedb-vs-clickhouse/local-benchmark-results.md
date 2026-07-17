@@ -8319,3 +8319,6 @@ Third re-check on head this session; still NOT_IMPLEMENTED. Not done.
 ### Run 370 — 2026-07-17 — CH service filter
 
 `WHERE service='s0'` on logs1m: warm **~2–4 ms**. PK locality works.
+
+### Run 371 — 2026-07-17 — not done
+
