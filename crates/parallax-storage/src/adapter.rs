@@ -401,6 +401,23 @@ pub struct FieldValueCount {
     pub count: u64,
 }
 
+/// One bounded facet dimension with per-value DISTINCT-trace counts for the
+/// current filter window (plan 164 facet sidebar).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Facet {
+    pub dimension: String,
+    pub values: Vec<FieldValueCount>,
+}
+
+/// Bounded trace facet dimensions (plan 164): a fixed list, never derived
+/// from data, so facet queries stay cheap and the sidebar stays stable.
+/// Dimension names double as where-clause keys (see `AttributeFilter`).
+pub const TRACE_FACET_DIMENSIONS: &[&str] =
+    &["service", "status", "http.request.method", "error.type"];
+
+/// Values shown per facet dimension before the sidebar's "Show N more".
+pub const FACET_VALUES_CAP: usize = 24;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct FieldStats {
     pub key: String,

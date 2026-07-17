@@ -519,3 +519,71 @@ async fn traces_page_attribute_filters_narrow_and_reject_bad_operator() {
         "bad operator rejected: {json}"
     );
 }
+
+#[tokio::test]
+async fn trace_facets_count_distinct_traces_per_dimension_value() {
+    let store = Arc::new(MemoryStore::new());
+    let mut post_a = span(
+        "api",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "a",
+        10,
+        10_000_000,
+    );
+    post_a.attributes = serde_json::json!({ "http.request.method": "POST" });
+    // Second span of the same trace with the same method: still ONE trace.
+    let mut post_a2 = span(
+        "api",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "a2",
+        11,
+        1_000_000,
+    );
+    post_a2.parent_span_id = Some("a".into());
+    post_a2.attributes = serde_json::json!({ "http.request.method": "POST" });
+    let mut get_b = span(
+        "web",
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "b",
+        20,
+        20_000_000,
+    );
+    get_b.attributes = serde_json::json!({ "http.request.method": "GET" });
+    store.push_spans(vec![post_a, post_a2, get_b]);
+
+    let schema = build_schema();
+    let context = context_with_memory(store).await;
+    let request = juniper::http::GraphQLRequest::new(
+        r#"{ traceFacets { dimension values { value count } } }"#.into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, request).await;
+    let json = serde_json::to_value(response).unwrap();
+    let facets = json
+        .pointer("/data/traceFacets")
+        .and_then(|f| f.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let facet = |dimension: &str| {
+        facets
+            .iter()
+            .find(|f| f.pointer("/dimension").and_then(|d| d.as_str()) == Some(dimension))
+            .cloned()
+            .unwrap_or_else(|| panic!("missing facet {dimension}: {json}"))
+    };
+    assert_eq!(
+        facet("service").pointer("/values"),
+        Some(&serde_json::json!([
+            {"value": "api", "count": "1"},
+            {"value": "web", "count": "1"}
+        ]))
+    );
+    assert_eq!(
+        facet("http.request.method").pointer("/values"),
+        Some(&serde_json::json!([
+            {"value": "GET", "count": "1"},
+            {"value": "POST", "count": "1"}
+        ]))
+    );
+}

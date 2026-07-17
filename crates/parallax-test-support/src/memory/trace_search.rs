@@ -147,7 +147,7 @@ fn filter_matched_trace_ids<'a>(
 /// Observed value for a where-clause key on one span: intrinsics mirror the
 /// GreptimeDB compiler's column mapping; everything else reads the span
 /// attribute object.
-fn filter_observed_value(span: &SpanRow, key: &str) -> Option<String> {
+pub(super) fn filter_observed_value(span: &SpanRow, key: &str) -> Option<String> {
     match key.trim() {
         "service.name" | "service" => Some(span.service.clone()),
         "name" | "span.name" => Some(span.name.clone()),

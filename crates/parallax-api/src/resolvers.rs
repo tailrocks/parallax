@@ -63,6 +63,7 @@ pub(crate) use story::StoryBeat;
 pub(crate) use traces::AttributeFilterInput;
 pub(crate) use traces::CriticalPath;
 pub(crate) use traces::DurationStats;
+pub(crate) use traces::Facet;
 pub(crate) use traces::Trace;
 pub(crate) use traces::TraceDiff;
 pub(crate) use traces::TraceEventsOut;

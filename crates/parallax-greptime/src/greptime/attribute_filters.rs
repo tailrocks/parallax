@@ -31,7 +31,7 @@ fn is_numeric_intrinsic(key: &str) -> bool {
     matches!(key, "duration_ns" | "duration")
 }
 
-fn string_expr(key: &str) -> Option<String> {
+pub(super) fn string_expr(key: &str) -> Option<String> {
     if let Some(column) = intrinsic_column(key) {
         return Some(column.to_string());
     }

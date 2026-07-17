@@ -30,11 +30,11 @@ use std::{collections::HashMap, sync::Arc};
 
 use resolvers::{
     AgentSessionOut, AttributeCompareRow, AttributeFilterInput, BundleOut, CriticalPath, Dashboard,
-    DurationStats, EvidenceGap, FieldKey, FieldStats, Investigation, Invocation, Issue, IssueList,
-    IssueSort, LogRecord, MetricExemplar, ObservedInvocation, Overview, Point, ReleaseWindow,
-    RuntimeMetric, SavedView, Series, ServiceCatalogRow, ServiceMap, ServiceOverview,
-    ServiceSummary, SignalKind, SpanRed, SqlResultOut, StoryBeat, Trace, TraceDiff, TraceEventsOut,
-    TraceList, TraceSort, TraceSummary, TrendPoint,
+    DurationStats, EvidenceGap, Facet, FieldKey, FieldStats, Investigation, Invocation, Issue,
+    IssueList, IssueSort, LogRecord, MetricExemplar, ObservedInvocation, Overview, Point,
+    ReleaseWindow, RuntimeMetric, SavedView, Series, ServiceCatalogRow, ServiceMap,
+    ServiceOverview, ServiceSummary, SignalKind, SpanRed, SqlResultOut, StoryBeat, Trace,
+    TraceDiff, TraceEventsOut, TraceList, TraceSort, TraceSummary, TrendPoint,
 };
 
 mod memo;
@@ -276,6 +276,11 @@ impl Query {
     /// into themselves.
     #[expect(clippy::too_many_arguments, reason = "GraphQL trace filters are the public query contract")]
     async fn trace_duration_stats(context: &ApiContext, service: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, error_only: Option<bool>, query: Option<String>, attribute_filters: Option<Vec<AttributeFilterInput>>,) -> FieldResult<DurationStats> { resolvers::traces::trace_duration_stats(context, service, from_nanos, to_nanos, error_only, query, attribute_filters).await }
+
+    /// Bounded facet dimensions with per-value distinct-trace counts for
+    /// the facet sidebar (plan 164).
+    #[expect(clippy::too_many_arguments, reason = "GraphQL trace filters are the public query contract")]
+    async fn trace_facets(context: &ApiContext, service: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, error_only: Option<bool>, query: Option<String>, attribute_filters: Option<Vec<AttributeFilterInput>>,) -> FieldResult<Vec<Facet>> { resolvers::traces::trace_facets(context, service, from_nanos, to_nanos, error_only, query, attribute_filters).await }
 
     /// The bounded, redacted, hypothesis-ranked evidence bundle — the agent
     /// handoff artifact assembling trace + logs + metric windows together.

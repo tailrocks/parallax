@@ -42,6 +42,63 @@ impl adapter::TraceAnalyticsStore for MemoryStore {
         })
     }
 
+    async fn trace_facets(
+        &self,
+        query: &adapter::TraceQuery,
+    ) -> StorageResult<Vec<adapter::Facet>> {
+        // Same filtered trace set as search, paging removed; counts are
+        // DISTINCT traces per dimension value, empty values skipped.
+        let unbounded = adapter::TraceQuery {
+            limit: usize::MAX,
+            offset: 0,
+            ..query.clone()
+        };
+        let matching: HashSet<String> = trace_search::search(self, &unbounded)?
+            .items
+            .into_iter()
+            .map(|t| t.trace_id)
+            .collect();
+        let inner = self.lock();
+        let in_window = |ts: u128| {
+            query.from_nanos.is_none_or(|from| ts >= from)
+                && query.to_nanos.is_none_or(|to| ts <= to)
+        };
+        let mut facets = Vec::new();
+        for dimension in adapter::TRACE_FACET_DIMENSIONS {
+            let mut per_value: BTreeMap<String, HashSet<&str>> = BTreeMap::new();
+            for span in inner
+                .spans
+                .iter()
+                .filter(|s| in_window(s.ts_nanos) && matching.contains(&s.trace_id))
+            {
+                let Some(value) = trace_search::filter_observed_value(span, dimension) else {
+                    continue;
+                };
+                if value.is_empty() {
+                    continue;
+                }
+                per_value
+                    .entry(value)
+                    .or_default()
+                    .insert(span.trace_id.as_str());
+            }
+            let mut values: Vec<FieldValueCount> = per_value
+                .into_iter()
+                .map(|(value, traces)| FieldValueCount {
+                    value,
+                    count: traces.len() as u64,
+                })
+                .collect();
+            values.sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.value.cmp(&b.value)));
+            values.truncate(adapter::FACET_VALUES_CAP);
+            facets.push(adapter::Facet {
+                dimension: (*dimension).to_string(),
+                values,
+            });
+        }
+        Ok(facets)
+    }
+
     async fn attribute_compare(
         &self,
         selected: RangeInclusive<u128>,

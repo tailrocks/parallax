@@ -283,3 +283,44 @@ pub(crate) async fn trace_duration_stats(
         .map_err(crate::internal_field_err)?;
     Ok(DurationStats(stats))
 }
+
+/// Bounded facet dimensions with per-value DISTINCT-trace counts for the
+/// facet sidebar (plan 164).
+#[expect(clippy::too_many_arguments, reason = "public GraphQL filter contract")]
+pub(crate) async fn trace_facets(
+    context: &ApiContext,
+    service: Option<String>,
+    from_nanos: Option<String>,
+    to_nanos: Option<String>,
+    error_only: Option<bool>,
+    query: Option<String>,
+    attribute_filters: Option<Vec<AttributeFilterInput>>,
+) -> FieldResult<Vec<Facet>> {
+    let parse = |bound: Option<String>, label: &str| -> FieldResult<Option<u128>> {
+        bound
+            .map(|s| {
+                s.parse::<u128>()
+                    .map_err(|_| field_err(format!("invalid {label}")))
+            })
+            .transpose()
+    };
+    let trace_query = parallax_storage::adapter::TraceQuery {
+        service: service.filter(|s| !s.is_empty()),
+        from_nanos: parse(from_nanos, "fromNanos")?,
+        to_nanos: parse(to_nanos, "toNanos")?,
+        error_only: error_only.unwrap_or(false),
+        name_contains: query.filter(|q| !q.trim().is_empty()),
+        attribute_filters: attribute_filters
+            .unwrap_or_default()
+            .into_iter()
+            .map(|filter| filter.into_adapter().map_err(field_err))
+            .collect::<FieldResult<Vec<_>>>()?,
+        ..parallax_storage::adapter::TraceQuery::default()
+    };
+    let facets = context
+        .store
+        .trace_facets(&trace_query)
+        .await
+        .map_err(crate::internal_field_err)?;
+    Ok(facets.into_iter().map(Facet).collect())
+}

@@ -122,6 +122,54 @@ impl crate::adapter::TraceAnalyticsStore for GreptimeStore {
         })
     }
 
+    async fn trace_facets(
+        &self,
+        query: &crate::adapter::TraceQuery,
+    ) -> StorageResult<Vec<crate::adapter::Facet>> {
+        let Some((scan_where, participation)) = self.trace_scan_clauses(query).await? else {
+            return Ok(crate::adapter::TRACE_FACET_DIMENSIONS
+                .iter()
+                .map(|dimension| crate::adapter::Facet {
+                    dimension: (*dimension).to_string(),
+                    values: Vec::new(),
+                })
+                .collect());
+        };
+        let mut facets = Vec::new();
+        for dimension in crate::adapter::TRACE_FACET_DIMENSIONS {
+            let Some(expr) = string_expr(dimension) else {
+                continue;
+            };
+            let sql = format!(
+                r#"SELECT {expr} AS "value", COUNT(DISTINCT "trace_id") AS "n"
+                   FROM opentelemetry_traces
+                   WHERE {scan_where}{participation}
+                     AND {expr} IS NOT NULL AND {expr} != ''
+                   GROUP BY "value"
+                   ORDER BY "n" DESC, "value" ASC
+                   LIMIT {}"#,
+                crate::adapter::FACET_VALUES_CAP
+            );
+            let rows = self.sql_lenient(&sql).await?;
+            let values = rows
+                .iter()
+                .filter_map(|row| {
+                    let value = row.first()?.as_str()?.to_string();
+                    let count = row.get(1).and_then(|n| {
+                        n.as_u64()
+                            .or_else(|| n.as_str().and_then(|s| s.parse().ok()))
+                    })?;
+                    Some(FieldValueCount { value, count })
+                })
+                .collect();
+            facets.push(crate::adapter::Facet {
+                dimension: (*dimension).to_string(),
+                values,
+            });
+        }
+        Ok(facets)
+    }
+
     async fn attribute_compare(
         &self,
         selected: RangeInclusive<u128>,

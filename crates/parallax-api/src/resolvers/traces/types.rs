@@ -249,6 +249,24 @@ impl DurationStats {
     }
 }
 
+pub(crate) struct Facet(pub(crate) parallax_storage::adapter::Facet);
+
+#[graphql_object(context = ApiContext)]
+impl Facet {
+    /// Facet dimension name; doubles as the where-clause key.
+    fn dimension(&self) -> &str {
+        &self.0.dimension
+    }
+    fn values(&self) -> Vec<crate::resolvers::fields::FieldValueCount> {
+        self.0
+            .values
+            .iter()
+            .cloned()
+            .map(crate::resolvers::fields::FieldValueCount)
+            .collect()
+    }
+}
+
 pub(crate) struct CriticalHop(pub(crate) trace_analysis::CriticalHop);
 
 #[graphql_object(context = ApiContext)]

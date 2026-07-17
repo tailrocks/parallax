@@ -298,6 +298,10 @@ pub trait TraceAnalyticsStore: Send + Sync {
     /// (plan 164 preset chips). The query's own duration bounds are ignored
     /// so `> p50` / `> p95` presets never feed back into themselves.
     async fn trace_duration_stats(&self, query: &TraceQuery) -> StorageResult<DurationStats>;
+    /// Bounded facet dimensions (`TRACE_FACET_DIMENSIONS`) with per-value
+    /// DISTINCT-trace counts inside the query's window/participation
+    /// (plan 164 facet sidebar). Empty-valued rows are not counted.
+    async fn trace_facets(&self, query: &TraceQuery) -> StorageResult<Vec<Facet>>;
     /// Discover scalar span/resource attribute keys in a window. Resource
     /// attributes are exposed as `resource.<key>` so the API key is unambiguous.
     async fn span_field_keys(&self, range: RangeInclusive<u128>) -> StorageResult<Vec<FieldKey>>;
