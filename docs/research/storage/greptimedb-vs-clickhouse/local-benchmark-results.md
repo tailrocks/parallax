@@ -8486,3 +8486,12 @@ four-way rebuild — directional only.
 Function name note: GT uses **`approx_distinct`**, not `approx_count_distinct` /
 `hll_count(Utf8)` (binary sketch type). Capability parity holds (Run 169).
 
+### Run 450 — 2026-07-18 — `row_number()` top-3 per service on m2m
+
+| Build | Warm | Rows |
+| --- | --- | --- |
+| GT v1.1.3 | 63 cold / **21** / **22** ms | 120 (40×3) |
+| CH 26.6 | 16 / **5** / **5** ms | same shape |
+
+Capability parity for evidence-bundle window ranking (Run 156). CH ~4× at this N.
+
