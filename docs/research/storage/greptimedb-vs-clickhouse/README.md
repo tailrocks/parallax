@@ -305,6 +305,8 @@ managed quotes remain):
 | still not done | **623** | top 5 product/server |
 | export + projection | **624** | schema OK; p_svc serves |
 | still not done | **625** | top 5 product/server |
+| health + last_value | **626** | all 200; warm OK |
+| still not done | **627** | top 5 product/server |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
