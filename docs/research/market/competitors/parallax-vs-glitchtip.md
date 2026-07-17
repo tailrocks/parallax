@@ -1,16 +1,21 @@
 # Parallax vs GlitchTip
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 53**
-> first deep-dive; **pass 59** GitLab star pin). Sources: [glitchtip.com](https://glitchtip.com),
+> first deep-dive; **pass 59** GitLab star pin; **pass 93** re-verify). Sources:
+> [glitchtip.com](https://glitchtip.com),
 > [glitchtip.com/pricing](https://glitchtip.com/pricing) (FAQ + plan structure;
 > Angular SPA hard to scrape — tier dollars cross-checked against 2026 secondary
 > summaries and marked where primary HTML did not yield numbers),
 > [documentation/install](https://glitchtip.com/documentation/install),
 > [GitLab primary](https://gitlab.com/glitchtip/glitchtip) (**161★**, last_activity
-> 2026-07-06, forks 14 — GitLab API 2026-07-17),
+> 2026-07-06, forks 14 — GitLab API 2026-07-17; **pass 93:** still **161★**,
+> last_activity **2026-07-06**),
 > [GitHub mirror](https://github.com/burke-software/GlitchTip) (MIT, 159★, last
 > push 2026-02-10 — **stale mirror**; do not use mirror stars as activity),
 > [MCP docs](https://glitchtip.com/documentation/mcp/), Bugsink/Rustrak peers.
+> **Pass 93:** marketing still **Sentry-SDK error tracking** (performance/logs/uptime
+> productized); **no OTLP / portable evidence-bundle / fix-outcome** claim found
+> on homepage — wedge combination **still open**.
 >
 > **Bottom line up front:** GlitchTip is a **mature, MIT, Sentry-API-compatible
 > error-tracking product** (Django/Python) with hosted + free self-host, optional

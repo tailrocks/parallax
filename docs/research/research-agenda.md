@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 92 (CLI invocation id still **no OTel standard**;
-genai#51 idle since 2026-05-05; `cli.invocation.id` still justified). Pass 91 =
-Run 189 consume. A1/A2/A4/A6 open.
+Last updated 2026-07-17 after pass 93 (GlitchTip GitLab still **161★** /
+last_activity 2026-07-06; Sentry-compat error product; no OTLP/bundle/outcome —
+wedge open). Pass 92 = run-id. A1/A2/A4/A6 open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
