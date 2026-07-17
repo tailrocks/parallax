@@ -64,7 +64,7 @@ Prefer hard, current, sourced numbers: pricing tiers, ingest throughput, query l
 | **Maturity** | 🏗 pre-release | ✅ incumbent | ✅ incumbent | ✅ incumbent | ✅ mature | ✅ incumbent | ✅ mature | ✅ mature | ✅ mature | ✅ mature |
 | Deep-dive | — | [✅](parallax-vs-datadog.md) | [✅](parallax-vs-sentry.md) | [✅](parallax-vs-grafana.md) | [✅](parallax-vs-honeycomb.md) | [✅](parallax-vs-new-relic.md) | [✅](parallax-vs-signoz.md) | [✅](parallax-vs-openobserve.md) | [✅](parallax-vs-coroot.md) | [✅](parallax-vs-langfuse.md) |
 
-All identity cells except Datadog are **🟡 inherited** from legacy market notes (2026-05/06) — verify on each product's deep-dive pass.
+The identity cells above (category / license / store / self-host / maturity) are **stable structural facts, confirmed by each product's deep-dive (verified 2026-07-17)** — they are *not* aging numbers, so the "🟡 inherited" caveat does **not** apply to them. Drift-sensitive figures (version, stars, pricing) live in each `parallax-vs-<product>.md`, pinned there with a date; **those** are what re-verification targets each pass, not the structural identity row.
 
 ## Feature-presence matrix
 
