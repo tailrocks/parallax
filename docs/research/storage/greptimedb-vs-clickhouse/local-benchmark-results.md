@@ -8460,3 +8460,17 @@ broad-scan thesis (Run 157/184).
 
 Warm: interactive; CH ~2–3× at this N. Cold nightly first query not a regression.
 
+### Run 441 — 2026-07-18 — CH active-part density (dirty fixtures)
+
+| table | rows | disk | B/row |
+| --- | ---: | --- | ---: |
+| logs1m | 52000 | 1.15 MiB | 23.21 |
+| spans1m | 50000 | 497 KiB | 10.18 |
+| m2m | 50000 | 219 KiB | 4.48 |
+| r424_spans | 2000 | 20 KiB | 10.46 |
+| r424_logs | 2000 | 38 KiB | 19.62 |
+| r432_proj | 10000 | 168 KiB | 17.24 |
+
+GT counts: logs1m 50500, spans1m 50000, m2m 50020 (concurrent dirt). Not a clean
+four-way rebuild — directional only.
+
