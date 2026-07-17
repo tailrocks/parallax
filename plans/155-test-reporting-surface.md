@@ -26,6 +26,11 @@
 - Eight tests across the suites in
   `crates/parallax-model/src/test_reporting/`; strict crate Clippy passes.
   Persistence adapter/migration behavior still requires independent review.
+- Preliminary Turso schema and typed idempotent upserts now cover cases,
+  variants, result references, and flaky state. Result rows store native
+  trace/span identifiers, never copied raw telemetry. Schema inventory and
+  full four-record persistence fixtures pass; query/read APIs and independent
+  migration review remain.
 
 Design decisions D1–D9 (identity, native tables, status taxonomy, attempt
 chains, shared fingerprints, flaky SM, `/tests` surface, session semantics,
@@ -34,8 +39,9 @@ if needed; do not reopen.
 
 ## Residual only
 
-1. Turso migrations + metadata modules (`test_cases` / `test_variants` /
-   `test_results`).
+1. Finish Turso query/read modules and migration review for `test_cases` /
+   `test_variants` / `test_results` / `test_flaky_states` (schema + typed
+   upserts landed preliminarily).
 2. Ingest derivation: test root-span recognition, registry upsert, failed vs
    broken, fingerprint linkage (`parallax-analysis`).
 3. GraphQL `tests` namespace + clamped queries.
