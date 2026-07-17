@@ -182,3 +182,15 @@ Passes **220–267** on main. Laptop mechanism re-verify **saturated**. Still op
 5. RPO D2/D3 (225 D1 done)
 
 **Do not declare comparison done.**
+
+## Run 274 (2026-07-17)
+
+Harness improved (logs.trace_id indexed, Runs 271–273). **Still not done:**
+
+1. Workload mix shares (product)
+2. Server 1M/5M (`server-tier-runbook.md`)
+3. Vendor trial quotes
+4. GB cold S3 selective egress
+5. RPO D2/D3
+
+Loop continues.
