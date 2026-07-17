@@ -2,10 +2,10 @@
   "schema_version": 1,
   "ratchets": {
     "fire_event_calls": 28,
-    "legacy_handoffs": 50,
+    "legacy_handoffs": 49,
     "raw_router_builders": 1,
-    "test_cases": 499,
-    "test_files": 100
+    "test_cases": 500,
+    "test_files": 101
   },
   "private_route_imports": [
     {
@@ -16,18 +16,6 @@
         "filterInvocationsByRange"
       ],
       "removal_plan": 140
-    },
-    {
-      "test_file": "ui/src/routes/__tests__/-logs.test.tsx",
-      "module": "@/routes/logs",
-      "symbols": [
-        "ColumnMenu",
-        "SavedViewsMenu",
-        "contextWindow",
-        "parseSavedViewState",
-        "validateLogsSearch"
-      ],
-      "removal_plan": 141
     },
     {
       "test_file": "ui/src/routes/__tests__/-overview.test.tsx",
@@ -795,10 +783,9 @@
       "surface": "features/logs",
       "risk": "Log tables, context, saved views, live identity, and drilldowns can lose state",
       "scenario_owner": "features/logs",
-      "lane_owner": "vitest/route",
-      "delivery_plan": 141,
-      "layer": "route-contract",
-      "test_file": "ui/src/routes/__tests__/-logs.test.tsx",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/features/logs/tests/components/logs-contracts.test.tsx",
       "test_ids": [
         "computes bucket and drag windows",
         "round-trips optional column params",
@@ -817,14 +804,7 @@
         "renders saved views and dispatches select/delete/save actions"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/routes/__tests__/-logs.test.tsx",
-        "destination_owner": "features/logs",
-        "removal_plan": 141,
-        "created": "2026-07-15",
-        "expires": "plan-141-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-033",
@@ -2569,6 +2549,20 @@
       "test_file": "ui/src/routes/tests/-issues-routes.test.tsx",
       "test_ids": [
         "exposes public search and loaders for thin route wiring"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-logs-route",
+      "surface": "features/logs",
+      "risk": "Logs route wiring can lose public search/loader facade contracts",
+      "scenario_owner": "features/logs",
+      "lane_owner": "vitest/route",
+      "layer": "route-contract",
+      "test_file": "ui/src/routes/tests/-logs-routes.test.tsx",
+      "test_ids": [
+        "exposes public search and loader for thin route wiring"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"

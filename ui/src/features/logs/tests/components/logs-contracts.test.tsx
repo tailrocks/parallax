@@ -14,23 +14,21 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { useState } from "react"
 
 import {
+  ColumnMenu,
   LogsTable,
+  SavedViewsMenu,
+  contextWindow,
   parseLogColumns,
+  parseSavedViewState,
   serializeLogColumns,
   severityVariant,
-} from "@/components/logs-table"
-import type { LogDoc } from "@/components/logs-table"
+  validateLogsSearch,
+  type LogDoc,
+} from "@/features/logs"
 import { bucketWindow, dragWindow } from "@/components/console/use-chart-brush"
 import { formatDateTime } from "@/lib/format"
 import { customRange } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
-import {
-  ColumnMenu,
-  SavedViewsMenu,
-  contextWindow,
-  parseSavedViewState,
-  validateLogsSearch,
-} from "@/routes/logs"
 import { serializeWhereClause, whereClauseFromSearch } from "@/lib/where-clause"
 import { renderTestRouter } from "@/test/router"
 

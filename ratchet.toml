@@ -1790,11 +1790,6 @@ ceiling = 13
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-logs.test.tsx"
-ceiling = 43
-
-[[limits]]
-metric = "typescript.assertions"
 scope = "ui/src/routes/__tests__/-overview.test.tsx"
 ceiling = 23
 
@@ -1840,11 +1835,6 @@ ceiling = 672
 
 [[limits]]
 metric = "typescript.file-lines"
-scope = "ui/src/components/logs-table.tsx"
-ceiling = 507
-
-[[limits]]
-metric = "typescript.file-lines"
 scope = "ui/src/components/ui/chart.tsx"
 ceiling = 334
 
@@ -1863,11 +1853,6 @@ ceiling = 351
 metric = "typescript.file-lines"
 scope = "ui/src/routes/__tests__/-invocations.test.tsx"
 ceiling = 188
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/__tests__/-logs.test.tsx"
-ceiling = 320
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -1896,11 +1881,6 @@ ceiling = 542
 metric = "typescript.file-lines"
 scope = "ui/src/routes/invocations.index.tsx"
 ceiling = 369
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/logs.tsx"
-ceiling = 1010
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -1967,21 +1947,6 @@ ceiling = 32
 metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/components/console/where-clause-editor.tsx:47"
 ceiling = 24
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/logs-table.tsx:109"
-ceiling = 27
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/logs-table.tsx:148"
-ceiling = 23
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/logs-table.tsx:258"
-ceiling = 18
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -2089,16 +2054,6 @@ ceiling = 29
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/logs.tsx:170"
-ceiling = 26
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/logs.tsx:326"
-ceiling = 113
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/routes/traces.$traceId.tsx:1401"
 ceiling = 16
 
@@ -2146,16 +2101,6 @@ ceiling = 18
 metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/components/console/where-clause-editor.tsx:109"
 ceiling = 15
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/components/logs-table.tsx:109"
-ceiling = 15
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/components/logs-table.tsx:258"
-ceiling = 16
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
@@ -2223,21 +2168,6 @@ ceiling = 24
 metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/routes/invocations.index.tsx:218"
 ceiling = 15
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/logs.tsx:170"
-ceiling = 19
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/logs.tsx:241"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/routes/logs.tsx:326"
-ceiling = 38
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
@@ -2412,21 +2342,6 @@ ceiling = 164
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/components/logs-table.tsx:188"
-ceiling = 68
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/logs-table.tsx:258"
-ceiling = 273
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/logs-table.tsx:330"
-ceiling = 65
-
-[[limits]]
-metric = "typescript.function-lines"
 scope = "ui/src/components/parallax-shell.tsx:163"
 ceiling = 104
 
@@ -2549,11 +2464,6 @@ ceiling = 146
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/__tests__/-logs.test.tsx:170"
-ceiling = 72
-
-[[limits]]
-metric = "typescript.function-lines"
 scope = "ui/src/routes/__tests__/-overview.test.tsx:131"
 ceiling = 78
 
@@ -2622,21 +2532,6 @@ ceiling = 63
 metric = "typescript.function-lines"
 scope = "ui/src/routes/invocations.index.tsx:218"
 ceiling = 171
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/logs.tsx:326"
-ceiling = 536
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/logs.tsx:867"
-ceiling = 88
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/logs.tsx:998"
-ceiling = 61
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -3100,6 +2995,111 @@ ceiling = 1
 metric = "typescript.suppressions"
 scope = "ui/src/features/issues/api/issues-list.generated.ts"
 ceiling = 1
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/logs/tests/components/logs-contracts.test.tsx"
+ceiling = 43
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/tests/-logs-routes.test.tsx"
+ceiling = 2
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/logs/components/logs-page.tsx"
+ceiling = 931
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/logs/components/logs-table.tsx"
+ceiling = 507
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/logs/components/logs-page.tsx:216"
+ceiling = 113
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/logs/components/logs-table.tsx:109"
+ceiling = 27
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/logs/components/logs-table.tsx:148"
+ceiling = 23
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/logs/components/logs-table.tsx:258"
+ceiling = 18
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/logs/model/logs-search.ts:35"
+ceiling = 26
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/logs/components/logs-page.tsx:216"
+ceiling = 38
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/logs/components/logs-table.tsx:109"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/logs/components/logs-table.tsx:258"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/logs/model/logs-search.ts:35"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/logs/model/logs-search.ts:80"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/components/logs-page.tsx:216"
+ceiling = 540
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/components/logs-page.tsx:761"
+ceiling = 88
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/components/logs-page.tsx:892"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/components/logs-table.tsx:188"
+ceiling = 68
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/components/logs-table.tsx:258"
+ceiling = 273
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/components/logs-table.tsx:330"
+ceiling = 65
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/tests/components/logs-contracts.test.tsx:168"
+ceiling = 72
 
 [[ui.ownership]]
 path = "ui/src/features/investigations/api/investigation-api.ts"
@@ -3609,13 +3609,6 @@ kind = "handwritten"
 
 [[ui.ownership]]
 path = "ui/src/components/live-stream-panel.tsx"
-current_owner = "legacy-components"
-target_owner = "features/logs"
-migration_plan = "141"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/logs-table.tsx"
 current_owner = "legacy-components"
 target_owner = "features/logs"
 migration_plan = "141"
@@ -4763,13 +4756,6 @@ migration_plan = "140"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/routes/__tests__/-logs.test.tsx"
-current_owner = "routes-tests"
-target_owner = "features/logs"
-migration_plan = "141"
-kind = "handwritten"
-
-[[ui.ownership]]
 path = "ui/src/routes/__tests__/-overview.test.tsx"
 current_owner = "routes-tests"
 target_owner = "features/overview"
@@ -5018,10 +5004,67 @@ migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
+path = "ui/src/features/logs/components/logs-page.tsx"
+current_owner = "features/logs"
+target_owner = "features/logs"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/logs/components/logs-table.tsx"
+current_owner = "features/logs"
+target_owner = "features/logs"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/logs/index.ts"
+current_owner = "features/logs"
+target_owner = "features/logs"
+migration_plan = "none"
+kind = "handwritten"
+facade = true
+
+[[ui.ownership]]
+path = "ui/src/features/logs/model/logs-error.ts"
+current_owner = "features/logs"
+target_owner = "features/logs"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/logs/model/logs-range.ts"
+current_owner = "features/logs"
+target_owner = "features/logs"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/logs/model/logs-search.ts"
+current_owner = "features/logs"
+target_owner = "features/logs"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/logs/tests/components/logs-contracts.test.tsx"
+current_owner = "features/logs"
+target_owner = "features/logs"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/tests/-logs-routes.test.tsx"
+current_owner = "routes-tests"
+target_owner = "routes-tests"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
 path = "ui/src/routes/logs.tsx"
 current_owner = "routes"
 target_owner = "features/logs"
-migration_plan = "141"
+migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
