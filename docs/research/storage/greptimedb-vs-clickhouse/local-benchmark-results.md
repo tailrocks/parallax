@@ -6912,3 +6912,56 @@ legacy `dynamic-attr-jsonb(json_get)`.
 
 **Reproduce.** `docker compose -f bench/compose.yml up -d && N=100000 bench/four-way/gen.sh &&
 REPS=6 bench/four-way/bench.sh` — look for `dynamic-attr-json2(path)`.
+
+### Run 177 — 2026-07-17 — last-value shape re-verify + append-vs-dedup on v1.1.3 pins
+
+**Pass target.** After Run 173's harness last-value row looked CH-faster at 100k, isolate whether
+that **falsifies** Run 109 (GT last-value win) or is fixed-overhead / bad shape. Also re-check
+append vs dedup metric-agg on flushed v1.1.3.
+
+**Pins (no bump).** GT `v1.1.3` / `v1.2.0-nightly-20260713`; CH `26.6.1.1193` / head `26.7.1.1097`.
+
+**Environment.** `bench/compose.yml` four builds; N=100000; warm **median of 8**;
+GT `execution_time_ms`; CH `--time`×1000; `docker exec`.
+
+**Dataset additions (beyond four-way gen)**
+
+| Table | Engine | Shape |
+| --- | --- | --- |
+| `m2m` | harness default | 40×1000 = 40k series, ~2.5 pts (dedup mito) |
+| `m2m_long` | GT mito PK(service); CH MergeTree ORDER BY (service,ts) | **40 series × 2500 pts** |
+| `m2m_ap` | GT mito `append_mode=true`, same insert as m2m | append twin |
+
+**Results (median ms)**
+
+| Query | GT-stable | GT-nightly | CH-stable | CH-head |
+| --- | ---: | ---: | ---: | ---: |
+| last-value harness m2m | **5** | 22 (noisy) | **6** | 5 |
+| last-value LONG m2m_long | **8** | 5 | **5** | 5 |
+| metric-agg DEDUP m2m | **10** | 10 | 6 | 4 |
+| metric-agg APPEND m2m_ap | **7** | 8 | — | — |
+
+Correctness long last-value: GT and CH both return `s0→60 … s12→72`.
+
+**Verdict**
+
+1. **Last-value at N=100k is a ~tie** on both short and long series — does **not** confirm GT win
+   and does **not** establish a CH win. Run 109/141 multi-M GT last-value win remains the
+   scale-shaped claim; 100k is fixed-overhead-dominated.
+2. **Harness m2m last-value row is a weak isolator** (~2.5 pts/series) — prefer `m2m_long`-style
+   for mechanism tests; keep harness row as smoke only.
+3. **Append ~1.4× faster than dedup** for flushed metric avg on v1.1.3 at 100k (direction of
+   Run 142; 5M magnitude still server-owed).
+4. **Native metrics:** empty OTLP metrics POST auto-created `greptime_physical_table`
+   `ENGINE=metric` — adopt-native still live.
+
+**Evidence file:** plan scratch `run177-last-value-dedup.txt`.
+
+**Reproduce**
+```bash
+docker compose -f bench/compose.yml up -d
+N=100000 bench/four-way/gen.sh
+# then create m2m_long / m2m_ap as in this entry; time last_value vs argMax medians of 8
+```
+
+**Note updated:** `query-execution-engine.md` (Run 177 section).

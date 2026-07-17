@@ -38,7 +38,7 @@ magnitude still = 1M matrix (historical pins) until a server-tier re-run on the 
 | metric-agg-flat | 8 | 8 | 3 | 3 | CH ~2.7× |
 | metric-bucketed-line | 11 | 10 | 4 | 5 | CH ~2.5× |
 | counter-rate-panel | 12 | 11 | 6 | 6 | CH ~2× |
-| last-value | 6 | 6 | 3 | 3 | CH ~2× *at 100k only* (Run 109 GT wins at 1M/5M — fixed-overhead flip) |
+| last-value (harness m2m, short series) | 5–6 | 5–22 | 3–6 | 3–5 | **~tie at 100k** (Run 177 re-verify; GT multi-M win is scale-shaped — see query-execution-engine) |
 | latency-p99 | 6 | 7 | 4 | 4 | CH ~1.5× |
 | fulltext-selective | 5 | 5 | 3 | 2 | ~tie/CH |
 | fulltext-broad | 7 | 8 | 5 | 5 | CH ~1.4× |

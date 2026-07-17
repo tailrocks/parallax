@@ -148,10 +148,50 @@ either way, so the gap is real but not user-perceptible on single-user dashboard
 
 **The full metric-panel picture (Runs 96/105/109/113) confirms the trend:** counter-rate panel
 **~1.6×** (Run 113, CH 12 / GT 19 ms — smallest, most per-row compute), bucketed line **~2×**, flat
-avg-by-service **~3×** (Run 96), and **last-value GreptimeDB *wins* ~2.4×** (Run 109 — time-sorted
+avg-by-service **~3×** (Run 96), and **last-value GreptimeDB *wins* ~2.4× at multi-M scale** (Run 109 — time-sorted
 layout beats `argMax`). Only the wide PromQL range is slow on GT (~5.6× its own SQL, Run 105 — use
 SQL/Flow). Net: across real metric dashboards GreptimeDB ranges from winning to ~3× behind, **all
 interactive** — the scan-throughput edge only dominates flat full-table aggregation.
+
+### Run 177 (2026-07-17) — last-value + append-vs-dedup on pins GT `v1.1.3` / CH `26.6.1.1193`
+
+**Re-pin:** still latest (GT `v1.1.3`, nightly `v1.2.0-nightly-20260713`, CH `26.6.1.1193`, head
+`26.7.1.1097`). N=100k, warm median of 8, four builds where noted.
+
+| Case | Shape | GT-stable | CH-stable | Verdict at this tier |
+| --- | --- | ---: | ---: | --- |
+| last-value harness `m2m` | 40k series × ~2.5 pts | **5 ms** | **6 ms** | **~tie** |
+| last-value `m2m_long` | **40 series × 2500 pts** (isolates long tail) | **8 ms** | **5 ms** | CH ~1.6× / ~tie — **GT win does NOT reproduce at 100k** |
+| metric-agg DEDUP `m2m` | default mito dedup, flushed | **10 ms** | 6 ms | CH ~1.7× |
+| metric-agg APPEND `m2m_ap` | same rows, `append_mode=true` | **7 ms** | — | append **~1.4× faster than dedup** on GT (Run 142 direction; tiny vs ~8× at 5M) |
+
+**Correctness:** long-series last-value rows match (`s0=60` … `s12=72` both engines).
+
+**Mechanism correction (load-bearing):** the Run-109 "GT wins last-value because time-sorted
+layout" claim is **scale-and-shape dependent**, not universal:
+
+1. **Harness `m2m` is a bad isolator** — `service%40 × instance%1000` → 40k series and only
+   ~2.5 points each at N=100k, so there is almost no "tail of a long series" for mito2's
+   time-ordered layout to exploit; `last_value` and CH `argMax` both look like small hash
+   aggregates (tie).
+2. **Long-series shape at 100k still ~tie** — even with 2500 pts/series, absolute times are
+   fixed-overhead-dominated (~5–8 ms). The multi-M GT win (Run 109/141 last-value ~10 ms GT /
+   ~20 ms CH at 5M) remains the scale where the mechanism shows; **do not cite 100k as a GT
+   last-value victory or defeat**.
+3. **`last_value` is DataFusion UDAF** (`first_last::last_value_udaf`, wrapped in
+   `src/common/function/src/aggrs/aggr_wrapper*`) plus optional time-series selector cache
+   (`mito2` config: "Cache size for time series selector (e.g. `last_value()`)"). Dedup path
+   is mito2 `read/dedup.rs` (`LastNonNull` strategy) — still paid on default metric tables.
+
+**Append vs dedup (v1.1.3 stable, flushed):** append **7 ms** vs dedup **10 ms** on identical
+100k-row metric shape — confirms blueprint: use `append_mode` for scrape-unique (series,ts);
+keep dedup for upsert-like low-card keys. The 5M dedup-agg regression (Run 141/142 on pre-GA
+v1.1 nightly) is **still owed on server** against v1.1.3.
+
+**Native metrics smoke:** empty OTLP metrics POST → HTTP 200 and auto-created
+`greptime_physical_table` (`ENGINE=metric`, `physical_metric_table=true`,
+`greptime_timestamp` / `greptime_value`) — adopt-native metric physical table still works on
+v1.1.3. PromQL `/v1/prometheus/api/v1/query` → 200.
 
 ## Axis consequence
 
