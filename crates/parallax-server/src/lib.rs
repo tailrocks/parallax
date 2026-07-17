@@ -54,8 +54,8 @@ mod test_flakiness;
 mod worker;
 
 pub use config::{
-    AlertingConfig, Config, GithubDeployConfig, LimitsConfig, RetentionConfig, SentryConfig,
-    ServerConfig, StorageConfig, TelemetryConfig,
+    AlertingConfig, Config, GithubActionsConfig, GithubDeployConfig, LimitsConfig, RetentionConfig,
+    SentryConfig, ServerConfig, StorageConfig, TelemetryConfig,
 };
 pub use errors::{
     ConfigError, ConfigErrorKind, ConfigResult, ServerError, ServerErrorKind, ServerResult,

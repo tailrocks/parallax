@@ -285,8 +285,10 @@ fn build_api_router(
         ))
         .merge(crate::github_webhook::router(
             crate::github_webhook::GithubWebhookState {
-                config: config.github_deploy.clone(),
-                secret: config.resolved_github_webhook_secret(),
+                deploy_config: config.github_deploy.clone(),
+                deploy_secret: config.resolved_github_webhook_secret(),
+                actions_config: config.github_actions.clone(),
+                actions_secret: config.resolved_github_actions_webhook_secret(),
                 metadata: alerts,
             },
         ));

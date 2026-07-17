@@ -3749,7 +3749,7 @@ migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/platform/sse/event-source.ts"
+path = "ui/src/platform/sse/event-source.client.ts"
 current_owner = "platform/sse"
 target_owner = "platform/sse"
 migration_plan = "none"
@@ -4191,7 +4191,7 @@ ceiling = 28
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-server/src/config/tests.rs"
-ceiling = 15
+ceiling = 16
 
 [[limits]]
 metric = "rust.assertions"
@@ -4336,7 +4336,7 @@ ceiling = 536
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-metadata/src/turso.rs"
-ceiling = 626
+ceiling = 651
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4371,7 +4371,7 @@ ceiling = 635
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/src/serve.rs"
-ceiling = 565
+ceiling = 567
 
 [[limits]]
 metric = "rust.file-lines"
@@ -6672,7 +6672,7 @@ ceiling = 1135
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/examples/browser_full_stack_serve.rs"
-ceiling = 673
+ceiling = 714
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
@@ -6937,12 +6937,12 @@ ceiling = 13
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-evidence/src/github_actions.rs"
-ceiling = 16
+ceiling = 20
 
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-server/src/github_webhook.rs"
-ceiling = 9
+ceiling = 14
 
 [[limits]]
 metric = "rust.file-lines"
@@ -7275,7 +7275,7 @@ ceiling = 12
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-server/examples/browser_full_stack_serve.rs::handle_control"
-ceiling = 120
+ceiling = 161
 
 [[limits]]
 metric = "rust.inline-test-modules"
@@ -7288,3 +7288,28 @@ current_owner = "shared"
 target_owner = "shared"
 migration_plan = "none"
 kind = "handwritten"
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-metadata/src/turso/ci.rs"
+ceiling = 7
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-metadata/src/turso/ci.rs"
+ceiling = 1
+
+[[product.anyhow_edges]]
+path = "crates/parallax-metadata/src/turso/ci.rs"
+ceiling = 8
+reason = "private CI-evidence persistence composition is converted at the typed metadata port"
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-server/src/github_webhook.rs"
+ceiling = 427
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/src/github_webhook.rs::webhook"
+ceiling = 122

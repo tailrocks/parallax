@@ -11,8 +11,8 @@
 - **Risk**: HIGH
 - **Depends on**: 099, 104, 111 (done); 121 residual
 - **Category**: future CI evidence / flaky tests
-- **Status**: IN PROGRESS — pure GHA normalizer + flaky multi-attempt gate landed
-- **Blocker**: none for starting read-only GHA collect design + fixtures.
+- **Status**: IN PROGRESS — webhook + Turso + doctor inventory landed
+- **Blocker**: none for residual REST backfill / bundle claim rows.
   Provider = GitHub Actions on tailrocks repos (unblock 2026-07-17).
 
 ## Residual only (after 121 durable path patterns)
@@ -24,9 +24,14 @@
    canonical ordering, and fail-closed conflicting outcomes per attempt ID.
    Turso attempt-identity + delivery ledgers are landed as the shared durable
    boundary for future webhook and REST backfill ingestion.
-3. Signature-verified workflow-job webhook + bounded REST backfill cursor;
-   wire the landed Turso ledgers; doctor CLI.
-4. Bundle correlation without root-cause overclaim; dated coverage rows.
+   Independently configured `workflow_job` HTTP ingest verifies GitHub HMAC
+   before parsing and persists through that boundary; redelivery/collision
+   behavior is covered end-to-end.
+3. ~~Signature-verified workflow-job webhook + Turso wiring~~ landed
+   (`POST /webhooks/github` + `ci_attempts` / `ci_attempt_deliveries`).
+4. ~~`doctor` CI evidence inventory~~ landed (secret presence + delivery/attempt
+   counts). Still open: bounded REST backfill cursor.
+5. Bundle correlation without root-cause overclaim; dated coverage rows.
 
 ## Done Criteria
 

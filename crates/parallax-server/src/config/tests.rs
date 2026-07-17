@@ -73,6 +73,7 @@ fn plan_115_example_config_loads_and_validates() {
     assert!(is_loopback_bind(&config.server.bind));
     assert!(!config.sentry.enabled);
     assert!(!config.github_deploy.enabled);
+    assert!(!config.github_actions.enabled);
     assert_eq!(config.server.api_port, 4000);
     assert_eq!(config.server.otlp_grpc_port, 4317);
 }

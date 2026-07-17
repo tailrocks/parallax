@@ -12,9 +12,10 @@
 - **Depends on**: Qualifying stable release cycle + expired legacy segments
 - **Category**: ingest / compatibility retirement
 - **Status**: BLOCKED
-- **Blocker**: Only published tag is rolling `preview`. No qualifying stable
-  release cycle for raw-frame writer + full compatibility window (recheck
-  2026-07-17T13:06Z UTC).
+- **Blocker**: Only published tag is rolling `preview`
+  (`0.1.0-preview.1295+e37a65d`, prerelease, 2026-06-15). No qualifying
+  stable release cycle for raw-frame writer + full compatibility window
+  (recheck 2026-07-17T14:40Z UTC; sole tag still `preview`).
 
 ## Residual only (after trigger)
 

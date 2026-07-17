@@ -265,14 +265,37 @@ pub(crate) async fn doctor() -> anyhow::Result<()> {
     );
     if meta.exists() {
         match TursoMetadataStore::open(&meta).await {
-            Ok(store) => match store.count_deploy_deliveries().await {
-                Ok(count) => println!("  deploy-context deliveries: {count}"),
-                Err(err) => println!("  deploy-context deliveries: unavailable ({err})"),
-            },
+            Ok(store) => {
+                match store.count_deploy_deliveries().await {
+                    Ok(count) => println!("  deploy-context deliveries: {count}"),
+                    Err(err) => println!("  deploy-context deliveries: unavailable ({err})"),
+                }
+                // Plan 124 CI attempt evidence inventory (read-only counts).
+                let actions_secret = config.resolved_github_actions_webhook_secret();
+                println!(
+                    "  ci-evidence webhook: {}",
+                    if actions_secret.is_some() {
+                        "secret configured (workflow_job on POST /webhooks/github)"
+                    } else if webhook_secret.is_some() {
+                        "deploy secret present; set [github_actions] or PARALLAX_GITHUB_ACTIONS_WEBHOOK_SECRET"
+                    } else {
+                        "disabled (set PARALLAX_GITHUB_ACTIONS_WEBHOOK_SECRET or [github_actions].webhook_secret)"
+                    }
+                );
+                match store.count_ci_attempt_deliveries().await {
+                    Ok(count) => println!("  ci-evidence deliveries: {count}"),
+                    Err(err) => println!("  ci-evidence deliveries: unavailable ({err})"),
+                }
+                match store.count_ci_attempts().await {
+                    Ok(count) => println!("  ci-evidence attempts: {count}"),
+                    Err(err) => println!("  ci-evidence attempts: unavailable ({err})"),
+                }
+            }
             Err(err) => println!("  deploy-context deliveries: open failed ({err})"),
         }
     } else {
         println!("  deploy-context deliveries: no meta.db yet");
+        println!("  ci-evidence deliveries: no meta.db yet");
     }
 
     Ok(())

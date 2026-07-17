@@ -10,22 +10,26 @@ use axum::extract::{DefaultBodyLimit, State};
 use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use axum::routing::post;
+use parallax_evidence::github_actions::{attempt_identity, normalize_workflow_job};
 use parallax_evidence::github_deploy::{
     DeployState, EdgeStrength, normalize_deploy_webhook, verify_signature_256,
 };
 use parallax_metadata::{
-    DeployAccept, DeployDeliveryRecord, DeployStoreError, TursoMetadataStore, payload_sha256_hex,
+    CiAttemptAccept, CiAttemptDeliveryRecord, CiAttemptStoreError, DeployAccept,
+    DeployDeliveryRecord, DeployStoreError, TursoMetadataStore, payload_sha256_hex,
 };
 use std::sync::Arc;
 
-use crate::config::GithubDeployConfig;
+use crate::config::{GithubActionsConfig, GithubDeployConfig};
 
 const MAX_WEBHOOK_BODY: usize = 256 * 1024;
 
 #[derive(Clone)]
 pub(crate) struct GithubWebhookState {
-    pub config: GithubDeployConfig,
-    pub secret: Option<String>,
+    pub deploy_config: GithubDeployConfig,
+    pub deploy_secret: Option<String>,
+    pub actions_config: GithubActionsConfig,
+    pub actions_secret: Option<String>,
     pub metadata: Option<Arc<TursoMetadataStore>>,
 }
 
@@ -41,10 +45,30 @@ async fn webhook(
     headers: HeaderMap,
     body: Bytes,
 ) -> Response {
-    if !state.config.enabled {
-        return (StatusCode::NOT_FOUND, "github deploy webhook disabled").into_response();
+    let event_name = headers
+        .get("x-github-event")
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or("");
+    let (enabled, secret) = match event_name {
+        "deployment" | "deployment_status" => {
+            (state.deploy_config.enabled, state.deploy_secret.as_deref())
+        }
+        "workflow_job" => (
+            state.actions_config.enabled,
+            state.actions_secret.as_deref(),
+        ),
+        _ => (
+            state.deploy_config.enabled || state.actions_config.enabled,
+            state
+                .deploy_secret
+                .as_deref()
+                .or(state.actions_secret.as_deref()),
+        ),
+    };
+    if !enabled {
+        return (StatusCode::NOT_FOUND, "github webhook adapter disabled").into_response();
     }
-    let Some(secret) = state.secret.as_deref() else {
+    let Some(secret) = secret else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
             "github webhook secret not configured",
@@ -69,11 +93,10 @@ async fn webhook(
             .into_response();
     };
 
-    let event_name = headers
-        .get("x-github-event")
-        .and_then(|value| value.to_str().ok())
-        .unwrap_or("");
-    if !matches!(event_name, "deployment" | "deployment_status") {
+    if !matches!(
+        event_name,
+        "deployment" | "deployment_status" | "workflow_job"
+    ) {
         // Accept but ignore unsupported events so GitHub does not retry.
         return (StatusCode::ACCEPTED, "event ignored").into_response();
     }
@@ -90,14 +113,23 @@ async fn webhook(
         Ok(value) => value,
         Err(_) => return (StatusCode::BAD_REQUEST, "malformed json body").into_response(),
     };
+    if event_name == "workflow_job" {
+        return accept_workflow_job(metadata, delivery_id, &body, &body_json).await;
+    }
+    accept_deploy(metadata, event_name, delivery_id, &body, &body_json).await
+}
+
+async fn accept_deploy(
+    metadata: &TursoMetadataStore,
+    event_name: &str,
+    delivery_id: &str,
+    body: &[u8],
+    body_json: &serde_json::Value,
+) -> Response {
     let Some(normalized) = normalize_deploy_webhook(event_name, &body_json) else {
         return (StatusCode::BAD_REQUEST, "unsupported deploy payload").into_response();
     };
 
-    let received_at_nanos = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0);
     let record = DeployDeliveryRecord {
         delivery_id: delivery_id.to_string(),
         provider: normalized.provider,
@@ -113,7 +145,7 @@ async fn webhook(
         edge_strength: edge_label(normalized.edge_strength).to_string(),
         lossiness: normalized.lossiness,
         payload_hash: payload_sha256_hex(&body),
-        received_at_nanos,
+        received_at_nanos: now_nanos(),
     };
 
     match metadata.accept_deploy_delivery(&record).await {
@@ -135,6 +167,57 @@ async fn webhook(
                 .into_response()
         }
     }
+}
+
+async fn accept_workflow_job(
+    metadata: &TursoMetadataStore,
+    delivery_id: &str,
+    body: &[u8],
+    body_json: &serde_json::Value,
+) -> Response {
+    let Some(normalized) = normalize_workflow_job("workflow_job", body_json) else {
+        return (StatusCode::BAD_REQUEST, "unsupported workflow-job payload").into_response();
+    };
+    let record = CiAttemptDeliveryRecord {
+        delivery_id: delivery_id.to_string(),
+        attempt_id: attempt_identity(&normalized),
+        provider: normalized.provider,
+        repo_full_name: normalized.repo_full_name,
+        workflow_run_id: normalized.workflow_run_id,
+        job_id: normalized.job_id,
+        attempt: normalized.attempt,
+        conclusion: normalized.conclusion,
+        name: normalized.name,
+        lossiness: normalized.lossiness,
+        payload_hash: payload_sha256_hex(body),
+        received_at_nanos: now_nanos(),
+    };
+    match metadata.accept_ci_attempt_delivery(&record).await {
+        Ok(CiAttemptAccept::Inserted | CiAttemptAccept::Duplicate) => (
+            StatusCode::OK,
+            [(header::CONTENT_TYPE, "application/json")],
+            r#"{"ok":true}"#,
+        )
+            .into_response(),
+        Err(CiAttemptStoreError::Collision(_)) => {
+            (StatusCode::CONFLICT, "CI attempt evidence collision").into_response()
+        }
+        Err(CiAttemptStoreError::Internal(error)) => {
+            tracing::warn!(error = %error, "CI attempt delivery write failed");
+            (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "CI attempt store unavailable",
+            )
+                .into_response()
+        }
+    }
+}
+
+fn now_nanos() -> u128 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_nanos())
+        .unwrap_or(0)
 }
 
 const fn state_label(state: DeployState) -> &'static str {
@@ -184,11 +267,17 @@ mod tests {
         out
     }
 
+    fn empty_actions() -> GithubActionsConfig {
+        GithubActionsConfig::default()
+    }
+
     #[tokio::test]
     async fn disabled_route_is_not_found() {
         let router = router(GithubWebhookState {
-            config: GithubDeployConfig::default(),
-            secret: Some("s".into()),
+            deploy_config: GithubDeployConfig::default(),
+            deploy_secret: Some("s".into()),
+            actions_config: empty_actions(),
+            actions_secret: None,
             metadata: None,
         });
         let response = router
@@ -207,11 +296,13 @@ mod tests {
     #[tokio::test]
     async fn rejects_bad_signature() {
         let router = router(GithubWebhookState {
-            config: GithubDeployConfig {
+            deploy_config: GithubDeployConfig {
                 enabled: true,
                 webhook_secret: "secret".into(),
             },
-            secret: Some("secret".into()),
+            deploy_secret: Some("secret".into()),
+            actions_config: empty_actions(),
+            actions_secret: None,
             metadata: None,
         });
         let response = router
@@ -251,11 +342,13 @@ mod tests {
         }"#;
         let signature = sign(secret.as_bytes(), body);
         let state = GithubWebhookState {
-            config: GithubDeployConfig {
+            deploy_config: GithubDeployConfig {
                 enabled: true,
                 webhook_secret: secret.into(),
             },
-            secret: Some(secret.into()),
+            deploy_secret: Some(secret.into()),
+            actions_config: empty_actions(),
+            actions_secret: None,
             metadata: Some(metadata.clone()),
         };
         let router = router(state.clone());
@@ -286,5 +379,85 @@ mod tests {
         );
         assert_eq!(stored.actor_login.as_deref(), Some("octocat"));
         assert_eq!(stored.edge_strength, "strong");
+    }
+
+    #[tokio::test]
+    async fn accepts_signed_workflow_job_idempotently_and_rejects_collision() {
+        let directory = tempfile::tempdir().expect("tempdir");
+        let metadata = Arc::new(
+            TursoMetadataStore::open(directory.path().join("meta.db"))
+                .await
+                .expect("metadata"),
+        );
+        let secret = "actions-secret";
+        let body = br#"{
+          "action": "completed",
+          "repository": {"full_name": "tailrocks/parallax"},
+          "workflow_job": {
+            "id": 99,
+            "run_id": 1001,
+            "run_attempt": 2,
+            "name": "test",
+            "conclusion": "failure",
+            "html_url": "https://github.com/tailrocks/parallax/actions/runs/1001/job/99"
+          }
+        }"#;
+        let state = GithubWebhookState {
+            deploy_config: GithubDeployConfig::default(),
+            deploy_secret: None,
+            actions_config: GithubActionsConfig {
+                enabled: true,
+                webhook_secret: secret.into(),
+            },
+            actions_secret: Some(secret.into()),
+            metadata: Some(metadata.clone()),
+        };
+        let request = |body: &'static [u8]| {
+            Request::builder()
+                .method("POST")
+                .uri("/webhooks/github")
+                .header("x-hub-signature-256", sign(secret.as_bytes(), body))
+                .header("x-github-event", "workflow_job")
+                .header("x-github-delivery", "workflow-delivery-1")
+                .body(Body::from(body))
+                .expect("request")
+        };
+        let app = router(state);
+        assert_eq!(
+            app.clone()
+                .oneshot(request(body))
+                .await
+                .expect("first")
+                .status(),
+            StatusCode::OK
+        );
+        assert_eq!(
+            app.clone()
+                .oneshot(request(body))
+                .await
+                .expect("duplicate")
+                .status(),
+            StatusCode::OK
+        );
+        assert_eq!(metadata.count_ci_attempts().await.expect("attempts"), 1);
+        assert_eq!(
+            metadata
+                .count_ci_attempt_deliveries()
+                .await
+                .expect("deliveries"),
+            1
+        );
+
+        let collision = br#"{
+          "repository": {"full_name": "tailrocks/parallax"},
+          "workflow_job": {"id":99,"run_id":1001,"run_attempt":2,"conclusion":"success"}
+        }"#;
+        assert_eq!(
+            app.oneshot(request(collision))
+                .await
+                .expect("collision")
+                .status(),
+            StatusCode::CONFLICT
+        );
     }
 }

@@ -18,6 +18,8 @@ pub struct Config {
     pub sentry: SentryConfig,
     /// GitHub deploy/change webhook adapter (plan 121). Disabled by default.
     pub github_deploy: GithubDeployConfig,
+    /// GitHub Actions workflow-job evidence adapter (plan 124). Disabled by default.
+    pub github_actions: GithubActionsConfig,
 }
 
 /// Local project/public-key mapping for `POST /api/<project_id>/envelope/`.
@@ -54,6 +56,17 @@ pub struct GithubDeployConfig {
     pub enabled: bool,
     /// HMAC secret for `X-Hub-Signature-256`. Prefer env
     /// `PARALLAX_GITHUB_WEBHOOK_SECRET`. Empty = fail closed when enabled.
+    pub webhook_secret: String,
+}
+
+/// GitHub Actions `workflow_job` webhook receiver (plan 124).
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct GithubActionsConfig {
+    /// When false, workflow-job events return 404.
+    pub enabled: bool,
+    /// HMAC secret for `X-Hub-Signature-256`. Prefer env
+    /// `PARALLAX_GITHUB_ACTIONS_WEBHOOK_SECRET`.
     pub webhook_secret: String,
 }
 
@@ -280,6 +293,20 @@ impl Config {
             .map(str::to_string)
             .or_else(|| {
                 let trimmed = self.github_deploy.webhook_secret.trim();
+                (!trimmed.is_empty()).then(|| trimmed.to_string())
+            })
+    }
+
+    /// Resolve the Actions webhook secret without coupling it to deploy capture.
+    #[must_use]
+    pub fn resolved_github_actions_webhook_secret(&self) -> Option<String> {
+        let env = std::env::var("PARALLAX_GITHUB_ACTIONS_WEBHOOK_SECRET").ok();
+        env.as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string)
+            .or_else(|| {
+                let trimmed = self.github_actions.webhook_secret.trim();
                 (!trimmed.is_empty()).then(|| trimmed.to_string())
             })
     }

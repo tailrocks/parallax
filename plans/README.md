@@ -159,7 +159,7 @@ Plan 116 DONE (2026-07-17): retention contract + deterministic prune CLI
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | P2 | M | upstream `greptimedb-ingester` native-TLS/plaintext feature fix | BLOCKED — crates.io still 0.18.0; upstream PR #58 OPEN not merged (recheck 2026-07-17T13:06Z); HTTP SQL path remains |
+| [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | P2 | M | upstream `greptimedb-ingester` native-TLS/plaintext feature fix | BLOCKED — crates.io still 0.18.0; upstream PR #58 OPEN not merged (recheck 2026-07-17T14:40Z); HTTP SQL path remains |
 
 ### Foundation And Delivery
 
@@ -375,14 +375,14 @@ external facts still BLOCKED where noted. Plan 102 and plan 109 retired
 |------|------------|--------------------|--------|
 | [110](110-server-profile-ingest-concurrency.md) | 115 + saturation packet | Measured single-worker bottleneck on supported profile | BLOCKED on 115 profile + measurements |
 | [112](112-product-mcp-ship-gates.md) | 099, 104, 111 | Live client discovery/retention + spike graduation (registration fixtures + OTel span verify landed) | IN PROGRESS — local-stdio GO; residual graduation |
-| [114](114-retire-legacy-spool-reader.md) | Stable raw-frame release cycle + expired legacy segments | Remove NDJSON reader after cycle | BLOCKED — only rolling `preview` tag (recheck 2026-07-17T13:06Z) |
+| [114](114-retire-legacy-spool-reader.md) | Stable raw-frame release cycle + expired legacy segments | Remove NDJSON reader after cycle | BLOCKED — only rolling `preview` tag (recheck 2026-07-17T14:40Z) |
 | [115](115-v2-server-profile.md) | Auth contract + release pipeline (102/109 DONE) | Rehearsals + load packet (ADR + example config landed) | IN PROGRESS — example-config.toml validates |
 | [118](118-sentry-envelope-migration-adapter.md) | 093, 099, 104, 111, 116 | Cross-source identity, bundle/redaction, live gates (SDK fixture landed) | IN PROGRESS — parser + HTTP + ledger + Python SDK fixture |
 | [120](120-agent-session-capture-adapters.md) | 099, 104, 111, 119 | Storage/API/UI, consent CLI, loss ledger (success fixture landed) | IN PROGRESS — normalizer + success-path fixture |
 | [121](121-deploy-and-change-context-collectors.md) | 099, 104, 111, 116 | Backfill, claim ledger (HTTP + doctor inventory landed) | IN PROGRESS — webhook + Turso + doctor deploy-context |
 | 122 | 105, 151 | Disposition table + retained scenarios | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-122-playground-disposition/README.md) |
 | [123](123-fixer-outcome-loop.md) | 120, 121 residual | Offline outcome harness; fixer separate from core | BLOCKED on 120/121 storage/projection residuals |
-| [124](124-ci-and-flaky-test-evidence-collector.md) | 121 durable path (landed) | GHA webhook/backfill wiring (normalizer + stable Turso attempt/delivery ledgers landed) | IN PROGRESS |
+| [124](124-ci-and-flaky-test-evidence-collector.md) | 121 durable path (landed) | GHA webhook+Turso+doctor inventory landed; residual REST backfill + claim rows | IN PROGRESS |
 
 ## Dependency Order
 
