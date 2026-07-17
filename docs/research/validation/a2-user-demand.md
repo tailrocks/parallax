@@ -33,6 +33,12 @@
 >   result stats while linking `/2025`.
 > - Desk monetization / wedge rechecks (passes 154–159) **still cannot** close A2.
 > - **Next real move remains operator execution of the interview runbook.**
+>
+> **Pass 193 recheck (2026-07-18):** gate **still OPEN / zero rows**.
+> - Ledger paths still **absent**.
+> - SO **2025** still **200**; **2026** results still **404**.
+> - Desk rechecks through pass **192** **cannot** close A2.
+> - **Operator interview runbook still owed.**
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
