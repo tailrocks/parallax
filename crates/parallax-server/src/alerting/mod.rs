@@ -5,7 +5,10 @@
 //! loops, GraphQL, UI, and playground breach scenarios. Do not treat as Done.
 
 mod delivery;
+mod delivery_worker;
 mod evaluator;
+
+pub use delivery_worker::{DELIVERY_LEASE_SECS, DeliveryReport, deliver_due_once};
 mod state_machine;
 
 pub use evaluator::{GroupMeasurement, MeasurementSource, TickReport, eval_config, tick_once};
