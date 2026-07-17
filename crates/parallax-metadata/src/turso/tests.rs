@@ -649,6 +649,10 @@ async fn test_reporting_upserts_are_idempotent_and_reference_native_spans() {
 }
 
 #[tokio::test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "fixture seeds multiple cases/variants/results for isolation + batch detail clamps"
+)]
 async fn test_case_variants_and_variant_history_are_bounded_and_isolated() {
     use parallax_model::{
         TestAttempt, TestCaseIdentitySource, TestCaseKey, TestCaseRecord, TestConfiguration,
