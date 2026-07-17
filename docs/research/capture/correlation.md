@@ -21,6 +21,10 @@
 >   `real_pilot` multi-service messiness audit and must not be counted as A4
 >   pass.
 >
+> **Pass 121 (2026-07-17):** re-verified — run tree still **absent**;
+> derive/fingerprint + GraphQL join surfaces still **≠** A4 pass. Full note:
+> [a4-claim-status-recheck-2026-07-17.md](../validation/a4-claim-status-recheck-2026-07-17.md).
+>
 > **Falsify `not_measured`:** land a dated `real_pilot` run with per-anchor
 > ledger + false-strong-edge sample + aggregate rates vs gate thresholds.
 

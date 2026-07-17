@@ -12,10 +12,10 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 120 (A6 **split:** partial
-**`synthetic_canary_pass`** via plan 111 unit canaries; full
-**`agent_visible_mixed_pass`** still open). Pass 119 = OpenObserve **$0.50/GB**.
-A1/A2/A4 open; A6 open at mixed-agent gate only.
+Last updated 2026-07-17 after pass 121 (A4 product reliability still
+**`not_measured`**: no `correlation-reliability-runs/` real_pilot ledger;
+GraphQL joins + derive ≠ gate). Pass 120 = A6 synthetic partial. A1/A2/A4 open;
+A6 open at mixed-agent gate only.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
