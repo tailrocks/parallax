@@ -71,8 +71,15 @@ statuses intentionally untouched:
   pass `Vec::new()` until the GraphQL argument lands. Clippy clean; 103
   tests green across the four crates.
 
+- Backend `traceDurationStats` (`d071943`): `DurationStats` type + trait
+  method (duration bounds ignored so presets don't feed back), GreptimeDB
+  impl over the traces_search representative set (shared
+  `trace_scan_clauses` helper, `approx_percentile_cont`), exact
+  nearest-rank in-memory impl, GraphQL `traceDurationStats(p50Ms/p95Ms)`.
+  104 tests green; peer wires `duration-filter.tsx` to it + live-verify.
+
 Still open (full plan scope): GraphQL `attributeFilters` argument + input
-type; facet-count queries and `durationStats`; logs/invocations filter
+type; facet-count queries; logs/invocations filter
 compilation (the compiler is span-table-only so far); live-engine narrowing
 + injection assertions; route wiring + URL schemas (Step 3); `F` keyboard
 shortcut; syntax-highlight overlay (editor currently plain input);
