@@ -178,6 +178,12 @@ complete and self-sufficient):
 - Playground (direct on its main): scenarios `a-breach-error-rate` (sustained >20%
   error rate on one service for ≥3 min), `a-breach-p95` (sustained slow
   handler), `a-recover` (breach then recovery) + matrix rows.
+  *Preliminary (helper agent, 2026-07-17): the three scripts landed on the
+  playground's main at `eee099a` (paymentFailure-flag breach with restore on
+  exit, `?slow=` p95 breach, healthy-traffic recovery; `BREACH_SECONDS`/
+  `RECOVER_SECONDS` knobs, default 200s). Catalog rows for `run.sh` sit in
+  the playground working tree; peer verifies live against the evaluator and
+  adds any missing rows.*
 - Ready-banner line + config knobs (`[alerting] enabled`, intervals) in
   `parallax-server` config with sane defaults.
 
