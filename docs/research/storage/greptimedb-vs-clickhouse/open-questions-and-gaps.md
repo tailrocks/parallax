@@ -163,6 +163,27 @@ engine direction flip.**
 
 Do not re-smoke interactive 50k ties without pin bump or new mechanism.
 
+## Run 408 (2026-07-18) — ranking after 403–407
+
+**Not done.** Laptop engine comparison still saturated; this cycle closed
+**false negatives** and one RPO nuance:
+
+| Run | Finding | Direction impact |
+| --- | --- | --- |
+| 403 | CH TimeSeries SQL INSERT + `prometheusQuery*` **work**; outer SELECT Code 48 is facade | Corrects “unusable” misread; maturity still experimental |
+| 404 | `rate`/`sum`/`avg by` **match GT**; **`increase` missing** 26.6+26.7 | Completeness gap remains |
+| 405 | Standalone **cannot** `meta snapshot save` (raft-engine); export-v2 schema OK; managed $ **no list drift** | D2 = cluster-only CLI; tiny-tier = FS copy |
+| 406–407 | adopt-native no drift; OTEL tables **on-ingest only** | Product path confirmed |
+
+**Still highest remaining (execute / product):**
+
+1. Workload mix A1–A7 **filled shares** (`workload-mix-decision-input.md`)
+2. Server 1M/5M four-way (`server-tier-runbook.md`)
+3. Vendor **trial** quotes (list rates held Run 405; still sales-blocked)
+4. GB–TB cold S3 selective egress
+5. RPO **cluster** D2 + Turso D3 drills
+6. Optional: CH PromQL more fns / volume (comparator watch)
+
 ## Run 258 (2026-07-17) — still not done
 
 Highest remaining after 220–257:
