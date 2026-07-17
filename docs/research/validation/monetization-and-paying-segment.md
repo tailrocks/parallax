@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-05-29
+Research date: 2026-05-29 · **Desk recheck 2026-07-17 (pass 54)**
 
 ## Purpose
 
@@ -71,6 +71,23 @@ SaaS; Elastic Cloud Hosted is FedRAMP High; AWS European Sovereign Cloud went GA
 durable self-host core as the **true air-gap / classified / sovereignty-hardliner** plus the
 "keep raw telemetry in-house" geo-fencers. Real and defensible, but small and not growing at the
 commodity end.
+
+### Pass 54 desk recheck (2026-07-17) — what still holds / what moved
+
+| Claim from this note | Recheck | Evidence class |
+| --- | --- | --- |
+| Open self-host OSS core is structurally non-paying; survivors use cloud + EE gates | **Holds** | Concurrent market pins (pass 41–48): OpenObserve Enterprise free ≤50GB/day then gate; SigNoz Cloud + EE; Grafana Cloud Pro usage; Bugsink free self-host + paid Hosted | primary pricing pages in competitor deep-dives |
+| Hard-boundary air-gap still lacks Seer-class self-hosted AI | **Holds** | [Sentry self-hosted develop docs](https://develop.sentry.dev/self-hosted/) still list **"Seer and other AI & ML features… currently closed source"** among unavailable items (fetched 2026-07-17) | primary docs |
+| Datadog FedRAMP High squeezes mid-tier "regulated" | **Holds** | Pass 42 competitor note: FedRAMP High on US1-FED (2026-05-06) | prior primary; not re-fetched this pass |
+| Paying segment exists but niche | **Unchanged theory** | No new primary isolation of air-gap ACV this pass; **A2 interviews still open** | desk only |
+
+**Falsify pass-54 holds:** Sentry ships self-hosted Seer/open AI stack; or Grafana/SigNoz/OpenObserve
+ship **open portable redacted evidence bundles + outcome records** free in core (would also fire
+agenda #3/#4). **Does not falsify:** more SaaS FedRAMP/IL5 — already priced into the squeeze.
+
+**Implication:** monetization shape (Apache core + EE ops + managed cloud + outcome-priced fixer)
+**still the least-bad desk design**. Empirical A2 (20 interviews) remains the only way to size the
+hard-boundary buyer; desk rechecks cannot close A2.
 
 ## 2. Monetization shape (the survivors' playbook, applied)
 
