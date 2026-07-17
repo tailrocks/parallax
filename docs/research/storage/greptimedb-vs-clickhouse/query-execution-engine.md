@@ -277,3 +277,13 @@ Need filter: 1** with both predicates moved into prewhere. Settings:
 
 **No drift:** late materialization remains a CH native path. GT counterpart is the
 partial `prefilter.rs` framework (Run 201).
+
+## Run 213 (2026-07-17) — batch size still DF default 8192 (v1.1.3)
+
+`query_engine/state.rs` builds `SessionConfig::new().with_create_default_catalog_and_schema(false)`
+and optionally `with_target_partitions` — **still no `with_batch_size`**. DataFusion default
+**8192** holds. Live CH: `max_block_size=65409` (~8×).
+
+**No drift from Runs 123–125:** raising batch size is still a latent lever; prior experiments
+showed it is **not** the sole agg-gap closer (JIT/SIMD dominate). Parity #2 remains engineering
+(DataFusion), not missing code path.

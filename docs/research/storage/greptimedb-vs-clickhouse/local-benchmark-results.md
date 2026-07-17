@@ -7186,3 +7186,7 @@ Scratch `run211-four-way.txt`.
 ### Run 212 — 2026-07-17 — alternatives shortlist reaffirm
 
 No third backend enters after re-pin cycle. GT product / CH comparator. `platform-fit-and-alternatives.md`.
+
+### Run 213 — 2026-07-17 — GT batch_size still 8192 default
+
+state.rs still omits with_batch_size. CH max_block_size 65409. `query-execution-engine.md`.
