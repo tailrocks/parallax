@@ -186,6 +186,43 @@ ships portable redacted evidence bundles + outcome records; or public Cloud rate
 collapse so that managed cloud is no longer a viable peer revenue motion (unlikely
 from this re-fetch).
 
+### Pass 131 (2026-07-17) — Datadog Bits / AI Credits pricing (fixer reference)
+
+Live primary: [datadoghq.com/pricing/?product=ai-credits](https://www.datadoghq.com/pricing/?product=ai-credits#products)
+(fetched 2026-07-17).
+
+| Meter | Primary signal |
+| --- | --- |
+| **AI Credits (bundle)** | Starting **$500 / 500 credits / month** (annual billing note on page) |
+| **On-demand** | **$1.30 per credit** |
+| **Bits Investigate** (autonomous investigation) | Est. **~6.5 credits** per use (page table; “average… may vary”) |
+| **Bits Chat** message | ~**0.5** credits |
+| **Bits Code** fix | ~**5** credits |
+| **Bits Agent Builder** run | ~**3** credits |
+| **Rollover** | Unused credits **do not** roll over (reset monthly) |
+
+**Implied investigation unit cost (order-of-magnitude, not a quote):**
+
+- Annual bundle: ~6.5 × ($500/500) ≈ **~$6.50 / investigation** average
+- On-demand: ~6.5 × $1.30 ≈ **~$8.45 / investigation** average
+
+**Stale claim correction:** older monetization prose used **~$25–30 per conclusive
+investigation** (secondary teardowns / prior Bits packaging). **Do not treat that
+as current primary.** Live packaging is **shared AI Credits** across Bits Chat /
+Investigation / Code / Agent Builder — closer to a **compute/work unit** than a
+binary “conclusive-only” SKU. Secondary blogs still cite “$500 for 20 investigations”
+(~$25) as narrative; that may describe older or marketing math, not the credit table
+above.
+
+**Parity for Parallax fixer design:** outcome- or work-unit metering remains a
+valid reference class vs Sentry Seer **per-contributor** seats. Prefer **primary
+credit math** when comparing unit economics; keep inconclusive-not-billed as a
+*product design option*, not a Datadog primary fact unless re-verified in Bits
+billing docs.
+
+**Falsify:** Datadog publishes a different exclusive per-investigation SKU that
+replaces AI Credits for Bits Investigation only.
+
 ## 2. Monetization shape (the survivors' playbook, applied)
 
 1. **License: Apache-2.0 for the core, kept consistent — RESOLVED (operator, 2026-05-29).** The
@@ -213,9 +250,12 @@ from this re-fetch).
    revenue and rising**; SigNoz/OpenObserve are usage-metered, cloud-first). For the hard-boundary
    buyers who *can't* use cloud, sell **enterprise self-managed + BYOC license + support** as the
    high-ACV tail.
-5. **Fixer = premium add-on, priced per successful outcome** (Datadog Bits model: ~$25–30 per
-   *conclusive* investigation, inconclusive not billed). Outcome pricing **de-risks an unproven
-   autonomous fixer** and converts better early than a flat seat fee; graduate to per-contributor flat
+5. **Fixer = premium add-on, priced per successful outcome** (or credit-metered
+   investigation work — see **pass 131** Datadog AI Credits primary). Historical
+   desk cited ~$25–30 per *conclusive* Bits investigation; **live primary is now
+   credit-based**, not a pure per-investigation SKU. Outcome/credit pricing still
+   **de-risks an unproven autonomous fixer** better than a flat seat fee early;
+   graduate to per-contributor flat
    (Sentry Seer $40/active-contributor/mo) once accuracy is trusted. Note this lives in the **separate
    fixer component** ([../decisions/fixer-boundary.md](../decisions/fixer-boundary.md)), not Parallax core.
 6. **Conversion triggers to design for:** scale/ops burden → push to cloud; compliance → the gated tier;
@@ -250,7 +290,7 @@ from this re-fetch).
 - Market sizing: observability split (Mordor): <https://www.mordorintelligence.com/industry-reports/observability-market> · sovereign-cloud IaaS $80B (Gartner): <https://www.gartner.com/en/newsroom/press-releases/2026-02-09-gartner-says-worldwide-sovereign-cloud-iaas-spending-will-total-us-dollars-80-billion-in-2026> · open-source preference (Grafana survey): <https://grafana.com/press/2026/03/18/grafana-labs-4th-annual-observability-survey-reveals-a-field-at-a-crossroads-ai-economics-complexity-and-the-enduring-power-of-open-source/>
 - The squeeze: Datadog FedRAMP High (2026-05-27): <https://www.globenewswire.com/news-release/2026/05/27/3302010/0/en/datadog-and-carahsoft-announce-datadog-s-achievement-of-fedramp-high-certification-for-its-observability-and-security-platform.html> · Grafana Federal Cloud (FedRAMP High/IL5 SaaS): <https://grafana.com/products/fedramp-federal-cloud/> · AWS European Sovereign Cloud GA: <https://www.datadoghq.com/about/latest-news/press-releases/eu-region-germany/>
 - Monetization playbook: Grafana AGPLv3 (no fork): <https://grafana.com/blog/grafana-loki-tempo-relicensing-to-agplv3/> · Elastic Cloud ~49% (Q2 FY26): <https://www.businesswire.com/news/home/20251119331264/en/Elastic-Reports-Second-Quarter-Fiscal-2026-Financial-Results> · SigNoz `ee/` gating + cloud pivot: <https://signoz.io/pricing/> · OpenObserve enterprise set + 50 GB/day free: <https://openobserve.ai/pricing/> · SSO tax: <https://sso.tax/> · relicensing forks (OpenTofu/Valkey/OpenSearch): <https://opentofu.org/blog/opentofu-announces-fork-of-terraform/> · <https://www.infoq.com/news/2025/05/redis-agpl-license/>
-- Fixer pricing: Sentry Seer ($40/active-contributor): <https://sentry.io/product/seer/> · Datadog Bits AI SRE (per-investigation): <https://www.datadoghq.com/product/ai/bits-ai-sre/>
+- Fixer pricing: Sentry Seer ($40/active-contributor): <https://sentry.io/product/seer/> · Datadog **AI Credits** (pass 131 primary): <https://www.datadoghq.com/pricing/?product=ai-credits#products> · Bits product: <https://www.datadoghq.com/product/ai/bits-ai-sre/>
 
 > Unconfirmed / flagged: the compliance-only segment $ size is estimated, not isolated by any source;
 > Grafana's cloud-vs-self-managed split and OSS→paid conversion rates are not published; several
