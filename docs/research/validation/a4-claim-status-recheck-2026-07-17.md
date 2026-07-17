@@ -1,9 +1,9 @@
-# A4 claim status recheck — product code vs real_pilot ledger (pass 121)
+# A4 claim status recheck — product code vs real_pilot ledger (pass 121 + pass 161)
 
 <!-- markdownlint-disable MD013 -->
 
-**Research date:** 2026-07-17  
-**Pass:** 121 (deep-research-parallax indefinite program)  
+**Research date:** 2026-07-17 (pass 121); **pass 161 recheck 2026-07-18**  
+**Pass:** 121 + **161** (deep-research-parallax indefinite program)  
 **Claim under test:** "Deterministic cross-signal correlation is reliable in real, messy telemetry" (assumption A4).  
 **Verdict this pass:** product reliability claim remains **`not_measured`**. Query/assembly surfaces and fixture-level derivation exist; **no** `real_pilot` row-level ledger.
 
@@ -19,8 +19,8 @@ trees; pass 121 re-verifies against current code/docs so A4 is not silently
 | --- | --- | --- |
 | Gate design + thresholds | **Present** | [capture/correlation.md](../capture/correlation.md) — rates, false-strong-edge audit, claim levels |
 | Ledger *policy* | **Present** | Same note (manifest / per-anchor / repair rows) |
-| Ledger *instance* | **Absent** | No `docs/research/correlation-reliability-runs/<run_id>/` (rechecked 2026-07-17) |
-| Product correlation *surfaces* | **Shipped** | GraphQL: `tracesByInvocation`, `logsByTrace`, `logsByInvocation`, `linkedTraces`, `story`, `evidenceGaps`, `bundle` (per correlation.md implementation banner) |
+| Ledger *instance* | **Absent** | No `docs/research/correlation-reliability-runs/<run_id>/` (rechecked 2026-07-17; **pass 161:** directory still **missing**) |
+| Product correlation *surfaces* | **Shipped** | GraphQL: `tracesByInvocation`, `logsByTrace`, `logsByInvocation`, `linkedTraces`, `story`, `evidenceGaps`, `bundle` (per correlation.md implementation banner; **pass 161 code pin:** resolvers/tests still reference `tracesByInvocation`, `logsByTrace`, `logsByInvocation`, `evidenceGaps` in `parallax-api` / `parallax-server` / CLI) |
 | Error derivation / fingerprint | **Shipped (code)** | `parallax-analysis` derive + Sentry/OTLP fingerprint paths; unit tests (cross-source same fingerprint function) |
 | Bundle `missing_evidence` | **Shipped (code)** | Product honesty feature — **not** scored A4 audit rows |
 | Controlled stack demos | **Exist** | `docs/research/validation/2026-07-unified-cli-observability/` — controlled end-to-end, **not** multi-service messiness `real_pilot` |
@@ -56,9 +56,21 @@ From correlation.md:
 
 **What would falsify product bet:** strong edges rare / false-strong high on real pilot → product becomes best-effort context + instrumentation coaching, not "evidence-backed reconstruction."
 
+## Pass 161 addendum (2026-07-18)
+
+| Check | Result |
+| --- | --- |
+| `correlation-reliability-runs/` | **Still absent** |
+| Formal results file | **None** found under `docs/research/` |
+| Product join surfaces in code | **Still present** (resolver/CLI/test references) |
+| Controlled CLI demo tree | **Still exists** (`2026-07-unified-cli-observability/`) — not `real_pilot` |
+| Claim level | still **`not_measured`** for real messy telemetry |
+
+Upgrade path in §Falsification unchanged. GraphQL existence ≠ A4 gate.
+
 ## Uncertainty
 
-- Did not re-query live GraphQL schema introspection this pass; surface list taken from research implementation banner + analysis crate layout.
+- Did not re-query live GraphQL schema introspection this pass; surface list taken from research implementation banner + **static code references** (pass 161).
 - Unified-CLI corpus may include useful *synthetic* rates if re-scored under A4 row schema — still would not promote past `synthetic_only` without `real_pilot`.
 
 ## Parallax goal fit
@@ -67,4 +79,4 @@ Agent bundles depend on **deterministic** edges being common enough to be useful
 
 ## Sources checked
 
-- Repo: `docs/research/capture/correlation.md` (pass 62 banner + claim table); absence of `correlation-reliability-runs/`; `crates/parallax-analysis` derive/fingerprint; unified-CLI validation tree.
+- Repo: `docs/research/capture/correlation.md` (pass 62 banner + claim table); absence of `correlation-reliability-runs/`; `crates/parallax-analysis` derive/fingerprint; unified-CLI validation tree; pass 161 GraphQL identifier grep in crates.
