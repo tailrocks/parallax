@@ -47,6 +47,12 @@
   results, and idempotently persists case/variant/result records after native
   trace and issue recording. A worker integration fixture proves a parented
   failed test references the same stored production issue fingerprint.
+- A variant-scoped metadata explorer now selects the latest eligible invocation,
+  rolls up every attempt without latest-wins masking (`flaky_pass`), joins
+  strict case/variant/result/flaky records, and exposes bound-parameter filters
+  with hard page/offset clamps through the query-neutral port. Owner,
+  mute/known, resolution, and session-lifecycle filters remain unavailable
+  until their schema-owning residuals land.
 
 Design decisions D1–D9 (identity, native tables, status taxonomy, attempt
 chains, shared fingerprints, flaky SM, `/tests` surface, session semantics,
