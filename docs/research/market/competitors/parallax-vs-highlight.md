@@ -4,9 +4,18 @@
 > ahead is written. Where Parallax's edge is only *planned* or *unproven*, that
 > is stated, not hidden.
 >
-> Research date: **2026-07-17**. Version, license, OTLP, and pricing re-checked
-> against live primary sources this pass. No legacy deep-research note exists
-> for Highlight — this is the first canonical comparison.
+> Research date: **2026-07-17** (trajectory resolved pass 33). Version, license,
+> OTLP, pricing, and **company status** re-checked against live primary sources
+> this pass. No legacy deep-research note exists for Highlight — this is the
+> first canonical comparison.
+>
+> **🛑 HEADLINE (pass 33): Highlight.io was acquired by LaunchDarkly and its
+> standalone SaaS shut down on 2026-02-28.** The OSS repo (`highlight/highlight`,
+> Apache-2.0 self-host code) remains public but **unmaintained** — last release
+> `docker-v0.5.6` (2025-08-08), last commit 2026-04-16 (LaunchDarkly-migration /
+> workspace-allowlist work, not product features). Highlight is therefore **no
+> longer an actively-shipping competitor**; its capabilities are described below
+> as the **historical/reference** state of the wound-down product.
 
 ## TL;DR verdict (scoped per axis)
 
@@ -18,11 +27,16 @@
   **Parallax is backend/incident-centric** (production errors → evidence for
   coding agents). Different centers of gravity; narrow overlap on errors + OTLP
   + OSS-self-host.
-- **⚠️ Trajectory flag:** Highlight's **last GitHub release is `docker-v0.5.6`
-  (2025-08-08)** — ~11 months old. Highlight underwent a **2024 restructure/
-  layoffs** and narrowed focus. Verify current (2026) development cadence +
-  company status before treating it as an actively-shipping competitor. This is
-  an honest uncertainty, written plainly.
+- **🛑 Trajectory RESOLVED (pass 33):** Highlight.io **was acquired by
+  LaunchDarkly**; the **standalone Highlight service shut down 2026-02-28** and is
+  being folded into **LaunchDarkly Observability** ("Guarded Releases"). The OSS
+  repo stays public (Apache-2.0 self-host code) but is **unmaintained** (no
+  release since 2025-08-08; last commit 2026-04-16 = migration/allowlist work).
+  Highlight is **no longer an actively-shipping competitor** — treat the
+  capability comparison below as the **historical reference** state. Net effect on
+  the field: the **OSS session-replay champion is vacated** (no active successor
+  at Highlight's maturity); Parallax does **not** "win" this — the field thinned,
+  it did not tilt toward Parallax.
 - **Parallax's differentiated edges are all unproven (A1 gate):** backend
   production-incident evidence bundle + fix-outcome loop + redaction; single-
   binary local-first; GreptimeDB.
@@ -38,15 +52,16 @@ self-host + Highlight Cloud.
 | | Highlight.io | Source |
 |---|---|---|
 | **Repo** | `highlight/highlight`, **9,331 stars** (GitHub API, 2026-07-17) | [github.com/highlight/highlight](https://github.com/highlight/highlight) |
-| **Latest release** | **`docker-v0.5.6`** (2025-08-08) — ⚠️ ~11 months old; **verify current cadence** | GitHub releases |
-| **License** | **Apache-2.0** (self-host) | repo + docs |
+| **Latest release** | **`docker-v0.5.6`** (2025-08-08) — **no release since; repo unmaintained** | GitHub releases |
+| **Last commit** | **2026-04-16** — LaunchDarkly-migration / workspace-allowlist work, not product features | GitHub API |
+| **License** | **Apache-2.0** (self-host code; GitHub reports `NOASSERTION` due to mixed licensing) | repo + docs |
 | **Language** | TypeScript (frontend/SDKs) + Go (backend); ClickHouse store | [clickhouse.com/blog/overview-of-highlightio](https://clickhouse.com/blog/overview-of-highlightio) |
 | **Telemetry store** | **ClickHouse** | ClickHouse blog |
 | **OTLP ingest** | ✅ **OTLP-native** — OTLP endpoints for traces + logs; native OTel error monitoring via SDKs; OpenTelemetry persistent session mapping | [OneUptime OTLP guide](https://oneuptime.com/blog/post/2026-02-06-otel-highlight-io-otlp-endpoints/view), [docs](https://www.highlight.io/docs/getting-started/native-opentelemetry/error-monitoring) |
-| **Session replay** | ✅ **core, best-in-class OSS** | [highlight.io/session-replay](https://highlight.io/session-replay) |
-| **Self-host** | ✅ Apache-2.0, Docker | repo |
-| **Pricing** | free tier (incl. session replay + errors); **paid from ~$150/mo** | [europeanpurpose review](https://europeanpurpose.com/tool/highlight-io) |
-| **Company status** | ⚠️ **2024 restructure/layoffs**; last formal release 2025-08 — **verify 2026 trajectory** | public reporting (re-verify) |
+| **Session replay** | ✅ **core, best-in-class OSS** *(historical)* | [highlight.io/session-replay](https://highlight.io/session-replay) |
+| **Self-host** | ✅ Apache-2.0, Docker *(code remains; unmaintained)* | repo |
+| **Pricing** | **standalone SaaS shut down 2026-02-28**; free tier + paid ~$150/mo were the *historical* tiers | [europeanpurpose review](https://europeanpurpose.com/tool/highlight-io) |
+| **Company status** | 🛑 **Acquired by LaunchDarkly**; standalone service **shut down 2026-02-28** → LaunchDarkly Observability | [LaunchDarkly blog](https://launchdarkly.com/blog/welcome-highlight-to-launchdarkly/), [Bugsink](https://www.bugsink.com/a-self-hosted-alternative-to-highlight-io/) |
 
 ### Pricing (re-cited; verify live page)
 
@@ -160,15 +175,29 @@ immature vs Datadog/Sentry); verify Highlight's current compliance certs.
 Highlight: free tier + paid from ~$150/mo; self-host free (Apache). Parallax:
 **no public number**. Direct comparison **benchmark-dependent, unmeasured.**
 
-## ⚠️ Trajectory / company-status flag (no-bias honesty)
+## 🛑 Trajectory / company-status — RESOLVED (pass 33, 2026-07-17)
 
-Highlight's **last GitHub release is `docker-v0.5.6` (2025-08-08)** — ~11 months
-stale as of 2026-07-17. Highlight underwent a **2024 company restructure /
-layoffs** and narrowed product focus. **This is a material uncertainty:** before
-relying on Highlight as an actively-shipping competitor, **verify its 2026
-development cadence and company status** (is it maintained? growing? wind-down?).
-A stalled open-source project is a different competitive threat than an active
-one. Re-check the repo commit activity + company blog each pass.
+The pass-14 "verify alive" flag is now **answered: Highlight.io is wound down.**
+
+- **Acquired by LaunchDarkly** ("Welcome Highlight to LaunchDarkly"; "future of
+  Guarded Releases"). Standalone Highlight SaaS **shut down 2026-02-28**; users
+  migrated into **LaunchDarkly Observability**.
+- **OSS repo unmaintained:** last release `docker-v0.5.6` (2025-08-08); last
+  commit 2026-04-16 = LaunchDarkly-migration + workspace-allowlist plumbing, not
+  product features. Docs site frozen ("no longer being actively updated").
+- **License:** self-host code remains Apache-2.0 (GitHub reports `NOASSERTION`
+  from mixed licensing) — so a fork/self-host is still *possible*, but no one is
+  building it.
+
+**No-bias strategic read:** this is **not a Parallax win.** Highlight's shipped
+capabilities (session replay, OTLP-native error workflow, replay↔trace
+correlation, Apache-2.0 ClickHouse stack) were genuinely strong and the code
+remains. The effect is field-level: the **active OSS session-replay / RUM
+competitor at this maturity is vacated** — the next-best active OSS replay options
+are weaker/narrower (PostHog replay, HyperDX replay). Parallax still has no
+session replay and gains nothing shipped from Highlight's exit; the bar for
+"best OSS replay" simply drops. Re-evaluate only if LaunchDarkly re-open-sources
+an actively-maintained Highlight fork.
 
 ## Where Highlight plainly wins (no bias)
 
@@ -193,15 +222,21 @@ one. Re-check the repo commit activity + company blog each pass.
 
 ## Watch triggers — re-evaluate Highlight if it:
 
-- **Resumes active releases** (current 2025-08 stale release is a trajectory red flag — confirm alive).
-- Adds **AI autofix→PR** or a **bounded agent-context artifact**.
-- Adds **LLM/agent observability** (it currently has none).
+- **LaunchDarkly re-open-sources an actively-maintained Highlight fork** (the only path back to "active competitor" status). Current state: wound down.
+- Adds **AI autofix→PR** or a **bounded agent-context artifact** (in the LaunchDarkly Observability product, not Highlight).
+- Adds **LLM/agent observability**.
 - Adds a **fix-outcome loop**.
+
+> All Highlight watch triggers are **dormant** while the standalone product is
+> shut down; re-scan LaunchDarkly Observability's roadmap instead.
 
 ## Sources (checked 2026-07-17)
 
-- [github.com/highlight/highlight](https://github.com/highlight/highlight) — **9,331★** (API); latest release `docker-v0.5.6` (2025-08-08); Apache-2.0.
-- [highlight.io](https://highlight.io/); [session replay](https://highlight.io/session-replay).
+- [github.com/highlight/highlight](https://github.com/highlight/highlight) — **9,331★** (API); latest release `docker-v0.5.6` (2025-08-08); last commit 2026-04-16 (LD migration); license `NOASSERTION` (mixed, self-host code Apache-2.0).
+- [highlight.io](https://www.highlight.io/); [session replay](https://highlight.io/session-replay).
+- **[LaunchDarkly: Welcome Highlight to LaunchDarkly](https://launchdarkly.com/blog/welcome-highlight-to-launchdarkly/)** — acquisition + "Guarded Releases".
+- **[Bugsink: self-hosted alternative to Highlight.io](https://www.bugsink.com/a-self-hosted-alternative-to-highlight-io/)** — confirms standalone service **shut down 2026-02-28**, folded into LaunchDarkly Observability.
+- [Highlight docs welcome](https://www.highlight.io/docs/general/welcome) — "Highlight has been acquired by LaunchDarkly!"; docs no longer actively updated.
 - [docs: native OTel error monitoring](https://www.highlight.io/docs/getting-started/native-opentelemetry/error-monitoring); [session replay overview](https://www.highlight.io/docs/general/product-features/session-replay/overview).
 - [OneUptime — OTLP endpoints to Highlight (2026-02)](https://oneuptime.com/blog/post/2026-02-06-otel-highlight-io-otlp-endpoints/view); [ClickHouse — overview of highlight.io](https://clickhouse.com/blog/overview-of-highlightio).
 - [europeanpurpose — pricing review 2026 (~$150/mo)](https://europeanpurpose.com/tool/highlight-io); [Better Stack vs Highlight 2026](https://betterstack.com/community/comparisons/better-stack-vs-highlight-io/).

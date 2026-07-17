@@ -47,7 +47,7 @@ Legend for the **State** column:
 | **SigNoz** | OTLP-native full obs on ClickHouse; most mature MCP. | MIT-Expat core + proprietary `ee/`. | All signals. | [deep-dive](parallax-vs-signoz.md) |
 | **OpenObserve** | Rust single-binary, object-storage-native (Parquet/DataFusion); AI SRE + 140+ MCP. | AGPL-3.0 + commercial EE. | All signals. | [deep-dive](parallax-vs-openobserve.md) |
 | **Coroot** | eBPF zero-instrumentation obs + 2-stage AI RCA; safest MCP (OAuth+RBAC). | Apache-2.0 + commercial EE. | Traces/logs/profiles (eBPF). | [deep-dive](parallax-vs-coroot.md) |
-| **Highlight.io** | Session replay + error tracking + logs + traces; OTLP-native; Apache-2.0 OSS self-host. | Apache-2.0 (self-host) + Cloud. | Errors + RUM + logs. | [deep-dive](parallax-vs-highlight.md) |
+| **Highlight.io** | Session replay + error tracking + logs + traces; OTLP-native; Apache-2.0 OSS self-host. **🛑 Wound down (pass 33): acquired by LaunchDarkly; standalone SaaS shut down 2026-02-28; OSS repo unmaintained (no release since 2025-08).** Historical/reference only. | Apache-2.0 (self-host) + Cloud. | Errors + RUM + logs. | [deep-dive](parallax-vs-highlight.md) |
 | **Uptrace** | OTLP tracing-first APM on ClickHouse+Postgres; Bun-author lineage. | **AGPL** (Community free) + paid editions + Cloud. | Traces + metrics + logs. | [deep-dive](parallax-vs-uptrace.md) |
 | **HyperDX** | OTLP + multi-protocol on **ClickHouse**; full-stack incl. **session replay**; = ClickHouse Inc.'s **ClickStack**. | **MIT** + Cloud. | All signals + RUM/replay. | [deep-dive](parallax-vs-hyperdx.md) |
 | **Odigos** | eBPF auto-instrumentation to OTLP (collector/instrumentation layer, not a backend). | Apache-2.0. | Auto-instrumentation. | [deep-dive](parallax-vs-odigos.md) |
