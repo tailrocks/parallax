@@ -348,3 +348,14 @@ decision axis (reconfirms Runs 116/166/178).
 **Adopt-native decision reaffirmed:** logs → adopt GT pipeline (then add indexes); CH requires
 external collector + pre-modelled schema. `information_schema.pipelines` may be absent in
 standalone SQL catalog (table-not-found); pipeline endpoint still works.
+
+## Run 242 (2026-07-17) — adopt-native live checklist (no drift)
+
+| Signal | Live check this cycle | Decision |
+| --- | --- | --- |
+| Metrics / PromQL | `/v1/prometheus/api/v1/query` HTTP 200; SQL+PromQL on user table (Run 241) | **ADOPT** native metric path + PromQL |
+| Logs | `greptime_identity` schema-on-write adds columns (Run 237) | **ADOPT** then add `trace_id` index / FULLTEXT as blueprint |
+| Traces / Jaeger | `/v1/jaeger/api/services` HTTP 200 (Run 224) | **ADOPT** `greptime_trace_v1` + partition-by-trace_id native model |
+| CH TimeSeries | CREATE OK; SELECT Code 48 on 26.7 head (Run 236) | **Do not** plan product SELECT on CH TimeSeries |
+
+Raw custom tables for OTLP signals remain forbidden without the native-table decision research packet.

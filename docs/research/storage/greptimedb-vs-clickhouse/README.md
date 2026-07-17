@@ -86,6 +86,7 @@ managed quotes remain):
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
 | Server-tier runbook (1M/5M/GB) | 240 | `server-tier-runbook.md` |
+| PromQL vs SQL tax small | 241 | ~1.5×; path OK |
 
 ## Method
 
