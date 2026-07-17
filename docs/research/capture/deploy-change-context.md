@@ -8,6 +8,10 @@
 > Broader entity coverage (push/release/PR file lists, check_run, workflow_run)
 > has **no active plan owner**. Causal claim ledgers may remain `not_measured`
 > until measured rows land — that is measurement status, not missing ingest.
+>
+> **Pass 76:** GitHub REST latest version **`2026-03-10`** (docs.github.com API
+> versions page). Shipped code/fixtures still pin **`2022-11-28`** — supported
+> but not latest; upgrade on next expansion. Causal linkage-only rule holds.
 
 > **Implementation ownership (2026-07-17):** this file retains the provider,
 > edge-strength, privacy, claim-level, and measurement contracts. It is not an

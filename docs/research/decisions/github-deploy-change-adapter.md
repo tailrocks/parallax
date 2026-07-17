@@ -15,7 +15,7 @@ Parallax's first deploy/change provider is **GitHub** (read-only).
 | Field | Contract |
 | --- | --- |
 | Provider | GitHub |
-| REST API version header | `2022-11-28` (fixtures also record `X-GitHub-Api-Version` when present) |
+| REST API version header | Shipped/fixtures: **`2022-11-28`**. **Pass 76 (2026-07-17):** GitHub docs list latest REST API version **`2026-03-10`**; both `2026-03-10` and `2022-11-28` still appear in supported lists. Prefer upgrading fixture pin to `2026-03-10` on next expand; do not claim only 2022-11-28 is current. |
 | Webhooks (shipped accept set) | `deployment`, `deployment_status` (deploy path); CI path also accepts `workflow_job` (plan 124 DONE) on the same `POST /webhooks/github` router |
 | Later entities | `push`/`create` release markers, PR/file list, `check_run`, `workflow_run`, PR reviews (not handlers today) |
 | Auth | Webhook HMAC `X-Hub-Signature-256` (`sha256=<hex>`); API backfill uses least-privilege token later |
