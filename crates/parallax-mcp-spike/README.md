@@ -49,6 +49,8 @@ process command line; no environment variable or repository file can provide
 that trust decision.
 The API origin is restricted to credential-free plaintext loopback HTTP.
 Authenticated remote transport remains deferred to Plan 109.
+HTTP redirects are disabled so loopback cannot bounce a request to a remote
+origin; connects time out after 5 seconds and calls after 30 seconds.
 
 ## SDK / TLS
 

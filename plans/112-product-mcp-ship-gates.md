@@ -57,6 +57,8 @@ must not return in product output.
   chunked responses cannot bypass the bound or partially append overflow bytes.
 - Server discovery explicitly pins stable MCP `2025-11-25` rather than the
   SDK's moving `LATEST` constant; client skew fixtures remain unfinished.
+- The GraphQL client denies redirects (preventing loopback-to-remote escape)
+  and enforces 5-second connect plus 30-second total request deadlines.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded

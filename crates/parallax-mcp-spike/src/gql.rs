@@ -1,6 +1,7 @@
 //! Thin GraphQL client against a running Parallax API.
 //!
 use serde_json::Value;
+use std::time::Duration;
 
 /// MCP returns both structured JSON and compatibility text, so use a tighter
 /// canonical bundle budget than the HTTP API's 10,000-token default.
@@ -14,11 +15,15 @@ pub(crate) struct GraphqlClient {
 }
 
 impl GraphqlClient {
-    pub(crate) fn new(base_url: String) -> Self {
-        Self {
+    pub(crate) fn new(base_url: String) -> anyhow::Result<Self> {
+        Ok(Self {
             base_url: base_url.trim_end_matches('/').to_string(),
-            http: reqwest::Client::new(),
-        }
+            http: reqwest::Client::builder()
+                .connect_timeout(Duration::from_secs(5))
+                .timeout(Duration::from_secs(30))
+                .redirect(reqwest::redirect::Policy::none())
+                .build()?,
+        })
     }
 
     pub(crate) async fn graphql(&self, query: &str, variables: Value) -> anyhow::Result<Value> {

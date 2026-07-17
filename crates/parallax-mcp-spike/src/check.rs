@@ -15,7 +15,7 @@ pub(crate) struct CheckArgs {
 }
 
 pub(crate) async fn run(args: CheckArgs) -> anyhow::Result<()> {
-    let client = GraphqlClient::new(args.base_url.clone());
+    let client = GraphqlClient::new(args.base_url.clone())?;
     let mut cases: Vec<Case> = Vec::new();
 
     if let Some(fp) = &args.fingerprint {

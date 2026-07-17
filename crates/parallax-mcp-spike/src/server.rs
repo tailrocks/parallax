@@ -47,11 +47,11 @@ pub(crate) struct SpikeServer {
 }
 
 impl SpikeServer {
-    pub(crate) fn new(base_url: String) -> Self {
-        Self {
-            client: GraphqlClient::new(base_url),
+    pub(crate) fn new(base_url: String) -> anyhow::Result<Self> {
+        Ok(Self {
+            client: GraphqlClient::new(base_url)?,
             tool_router: Self::tool_router(),
-        }
+        })
     }
 }
 
@@ -132,7 +132,7 @@ impl ServerHandler for SpikeServer {
 
 /// Run the stdio MCP server until the client disconnects.
 pub(crate) async fn run_stdio(base_url: String) -> anyhow::Result<()> {
-    let server = SpikeServer::new(base_url);
+    let server = SpikeServer::new(base_url)?;
     let service = server.serve(stdio()).await?;
     service.waiting().await?;
     Ok(())
@@ -144,7 +144,9 @@ mod tests {
 
     #[test]
     fn advertises_tools_without_unapproved_capabilities() {
-        let info = SpikeServer::new("http://127.0.0.1:4000".to_string()).get_info();
+        let info = SpikeServer::new("http://127.0.0.1:4000".to_string())
+            .expect("server")
+            .get_info();
         assert_eq!(info.protocol_version, ProtocolVersion::V_2025_11_25);
         let capabilities = serde_json::to_value(info.capabilities).expect("serialize capabilities");
 
@@ -170,7 +172,7 @@ mod tests {
 
     #[test]
     fn tool_catalog_is_exact_and_inputs_are_closed() {
-        let server = SpikeServer::new("http://127.0.0.1:4000".to_string());
+        let server = SpikeServer::new("http://127.0.0.1:4000".to_string()).expect("server");
         let tools = server.tool_router.list_all();
         let names = tools
             .iter()
@@ -256,7 +258,7 @@ mod tests {
 
     #[test]
     fn issue_context_advertises_the_canonical_bundle_v2_schema() {
-        let server = SpikeServer::new("http://127.0.0.1:4000".to_string());
+        let server = SpikeServer::new("http://127.0.0.1:4000".to_string()).expect("server");
         let tools = server.tool_router.list_all();
         let tool = tools
             .iter()
