@@ -21,6 +21,15 @@
 
 ## Preliminary work landed (helper agent, 2026-07-17)
 
+**Note (Grok, 2026-07-17):** A mistaken API bridge (`attribute_filters:
+Vec::new()` on `TraceQuery` constructors in
+`crates/parallax-api/src/resolvers/traces/queries.rs`) was pushed in
+`e3a6d81` while the field existed only in concurrent unstaged adapter WIP —
+that broke clean `main` (`cargo check -p parallax-api` E0560). **Reverted in
+`43ef791`.** When landing Step 1, add the field on `TraceQuery` and the
+GraphQL/API wiring in the **same** commit set; do not set the field on API
+until storage ships it.
+
 Committed to `main` for the primary executor to verify, deepen, and extend —
 statuses intentionally untouched:
 
