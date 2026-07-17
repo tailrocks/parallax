@@ -8154,3 +8154,6 @@ Inserted 20 rows without flush; `count(*)=20`. Freshness 20/20 style gate holds
 
 GT public tables **28**; CH active parts **49**. Stack still researchable.
 Not done.
+
+### Run 324 — 2026-07-17 — not done
+
