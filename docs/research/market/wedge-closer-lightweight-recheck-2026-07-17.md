@@ -201,6 +201,16 @@ Full combination **still not closed**.
 
 Full combination **still not closed**.
 
+**Pass 270 recheck (2026-07-18):** **TMA1** only —
+
+| Field | Value |
+| --- | --- |
+| Pin | still **109★** / **`v0.2.0-alpha12`**; push still **2026-07-17** |
+| Trigger scan | last **25** commit messages: **no** sentry/redact/envelope/outcome/fingerprint/pii/scrub/evidence hits |
+| Verdict | **24th UNFIRED** prod-collision |
+
+Combo **still not closed**.
+
 **Pass 258 recheck (2026-07-18):** **Maple + Uptrace** —
 
 | Product | Pin | Watch |
