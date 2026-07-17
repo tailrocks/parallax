@@ -444,3 +444,16 @@ cluster D2 + product D3.
 ## Run 485 (2026-07-18) — still not done
 
 **Not done.** Highest remaining: mix, server 1M/5M, quotes, GB cold, cluster RPO.
+
+## Run 487 (2026-07-18) — still not done after 423–486
+
+**Not done.** Pins hold. Highest remaining:
+
+1. Workload mix A1–A7 filled shares (product)
+2. Server 1M/5M four-way
+3. Vendor trial quotes
+4. GB–TB cold S3
+5. Cluster D2 + product D3
+
+Laptop cycle mapped CH PromQL partial surface and re-verified load-bearing holds.
+No stack direction flip.

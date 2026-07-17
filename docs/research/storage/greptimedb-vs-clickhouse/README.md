@@ -166,6 +166,7 @@ managed quotes remain):
 | TTL empty hold | **484** | 0 rows both; ttl=1s |
 | still not done | **485** | top 5 open |
 | health+pins+adopt | **486** | all healthy; Prom/Jaeger 200 |
+| still not done | **487** | top 5 open |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
