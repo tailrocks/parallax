@@ -6,6 +6,29 @@ use serde_json::Value;
 use std::net::IpAddr;
 use std::time::Duration;
 
+#[derive(Debug)]
+pub(crate) enum FetchError {
+    NotFound(&'static str),
+    Other(anyhow::Error),
+}
+
+impl std::fmt::Display for FetchError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NotFound(kind) => write!(formatter, "{kind} not found"),
+            Self::Other(error) => error.fmt(formatter),
+        }
+    }
+}
+
+impl std::error::Error for FetchError {}
+
+impl From<anyhow::Error> for FetchError {
+    fn from(error: anyhow::Error) -> Self {
+        Self::Other(error)
+    }
+}
+
 /// MCP returns both structured JSON and compatibility text, so use a tighter
 /// canonical bundle budget than the HTTP API's 10,000-token default.
 pub(crate) const MCP_BUNDLE_MAX_TOKENS: u32 = 4_000;
@@ -154,7 +177,7 @@ pub(crate) async fn fetch_bundle(
     client: &GraphqlClient,
     fingerprint: Option<&str>,
     invocation_id: Option<&str>,
-) -> anyhow::Result<BundleProjection> {
+) -> Result<BundleProjection, FetchError> {
     let (query, variables) = match (fingerprint, invocation_id) {
         (Some(fingerprint), None) => (
             "query Bundle($anchor: String!, $maxTokens: Int!) { bundle(fingerprint: $anchor, maxTokens: $maxTokens) { json markdown canonicalHash } }",
@@ -164,11 +187,15 @@ pub(crate) async fn fetch_bundle(
             "query Bundle($anchor: String!, $maxTokens: Int!) { bundle(invocationId: $anchor, maxTokens: $maxTokens) { json markdown canonicalHash } }",
             serde_json::json!({ "anchor": invocation_id, "maxTokens": MCP_BUNDLE_MAX_TOKENS }),
         ),
-        _ => anyhow::bail!("fetch_bundle requires exactly one of fingerprint or invocation_id"),
+        _ => {
+            return Err(FetchError::Other(anyhow::anyhow!(
+                "fetch_bundle requires exactly one of fingerprint or invocation_id"
+            )));
+        }
     };
     let response = client.graphql(query, variables).await?;
     let Some(bundle) = response.pointer("/data/bundle").filter(|v| !v.is_null()) else {
-        anyhow::bail!("bundle not found for the given anchor");
+        return Err(FetchError::NotFound("bundle"));
     };
     Ok(BundleProjection {
         json: required_string(bundle, "json")?,
@@ -189,7 +216,7 @@ fn required_string(object: &Value, field: &str) -> anyhow::Result<String> {
 pub(crate) async fn fetch_agent_session(
     client: &GraphqlClient,
     invocation_id: &str,
-) -> anyhow::Result<AgentSessionProjection> {
+) -> Result<AgentSessionProjection, FetchError> {
     let response = client
         .graphql(
             AGENT_SESSION_QUERY,
@@ -200,7 +227,7 @@ pub(crate) async fn fetch_agent_session(
         .pointer("/data/agentSession")
         .filter(|v| !v.is_null())
     else {
-        anyhow::bail!("no agent session detected for invocation {invocation_id}");
+        return Err(FetchError::NotFound("agent_session"));
     };
     Ok(serde_json::from_value(session.clone())?)
 }

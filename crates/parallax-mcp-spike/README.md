@@ -32,6 +32,8 @@ Both tools advertise MCP annotations as read-only, non-destructive, idempotent,
 and closed-world.
 Anchor schemas and runtime validation require 1–256 UTF-8 bytes; invalid-input
 errors never echo the supplied anchor.
+Missing bundles and sessions return stable MCP resource-not-found errors;
+transport and malformed-response failures remain secret-free internal errors.
 
 ## Usage
 

@@ -81,7 +81,7 @@ impl SpikeServer {
         validate_anchor(&args.fingerprint)?;
         let bundle = gql::fetch_bundle(&self.client, Some(&args.fingerprint), None)
             .await
-            .map_err(|_| safe_internal_error("bundle_unavailable"))?;
+            .map_err(|error| map_fetch_error(error, "bundle_unavailable"))?;
         bundle_tool_result(bundle)
     }
 
@@ -104,7 +104,7 @@ impl SpikeServer {
         validate_anchor(&args.invocation_id)?;
         let session = gql::fetch_agent_session(&self.client, &args.invocation_id)
             .await
-            .map_err(|_| safe_internal_error("agent_session_unavailable"))?;
+            .map_err(|error| map_fetch_error(error, "agent_session_unavailable"))?;
         // Mirror CLI JSON shape: compact re-serialize of the GraphQL object.
         let body = serde_json::to_string(&session)
             .map_err(|_| safe_internal_error("agent_session_invalid"))?;
@@ -122,6 +122,16 @@ fn safe_internal_error(code: &'static str) -> McpError {
         "Parallax could not produce a safe MCP result",
         Some(json!({ "code": code })),
     )
+}
+
+fn map_fetch_error(error: gql::FetchError, unavailable_code: &'static str) -> McpError {
+    match error {
+        gql::FetchError::NotFound(kind) => McpError::resource_not_found(
+            "Parallax evidence was not found",
+            Some(json!({ "code": format!("{kind}_not_found") })),
+        ),
+        gql::FetchError::Other(_) => safe_internal_error(unavailable_code),
+    }
 }
 
 fn validate_anchor(anchor: &str) -> Result<(), McpError> {
@@ -298,6 +308,16 @@ mod tests {
             assert!(!encoded.contains("seeded-secret"));
             assert!(encoded.contains("Parallax could not produce a safe MCP result"));
         }
+    }
+
+    #[test]
+    fn missing_evidence_maps_to_resource_not_found_without_echoing_anchor() {
+        let error = map_fetch_error(gql::FetchError::NotFound("bundle"), "bundle_unavailable");
+        let encoded = serde_json::to_string(&error).expect("serialize error");
+
+        assert_eq!(error.code, rmcp::model::ErrorCode::RESOURCE_NOT_FOUND);
+        assert!(encoded.contains("bundle_not_found"));
+        assert!(!encoded.contains("seeded-secret-anchor"));
     }
 
     #[test]

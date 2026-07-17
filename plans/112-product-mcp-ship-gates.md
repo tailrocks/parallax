@@ -81,6 +81,8 @@ must not return in product output.
   Claude registration/discovery fixtures remain unfinished.
 - The wire fixture also invokes representative forbidden shell and management
   names and requires protocol-level `tool not found` failures.
+- Missing bundles/sessions now map to stable MCP resource-not-found codes,
+  distinct from secret-free internal transport/parse failures.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded
