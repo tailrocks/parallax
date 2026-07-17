@@ -18,7 +18,7 @@ members = [
     "crates/parallax-mcp-spike",
     "crates/parallax-xtask",
 ]
-exclude = ["poc/evidence-loop", "poc/read-transport-bench"]
+exclude = ["poc/evidence-loop", "poc/read-transport-bench", "fuzz"]
 
 [profile.release]
 # Shipped binaries retain source-line tables for panic/backtrace fidelity.

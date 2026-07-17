@@ -13,6 +13,24 @@ in normal `cargo nextest` CI — bounded, seeded, shrinkable), and removal rule
 | JSON attribute path shape | backslash-escaped member quotes silently match nothing on the live engine (defect fixed 2026-07-17) | arbitrary quote-free keys | path is exactly one plainly quoted member (`$."…"`) | same |
 | Where-clause literal balance | a hostile filter value terminating a SQL literal (injection) | arbitrary keys/values/operators across the span, log, and metric compile arms | single-quote count in every compiled condition is even | `parallax-greptime/src/greptime/attribute_filters.rs` |
 
+## Fuzz boundaries (plan 103, Step 3 — first slice)
+
+`fuzz/` (cargo-fuzz, nightly, excluded from the workspace) with four
+boundaries, each smoke-run 20k executions clean on 2026-07-17:
+
+| Target | Boundary | Oracle |
+|---|---|---|
+| `otlp_metrics_normalize` | OTLP metrics protobuf decode + normalization | no panic/unbounded loop for arbitrary bytes |
+| `otlp_traces_normalize` | OTLP traces protobuf decode + normalization | same |
+| `redaction_text` | redaction text projection | no panic; `sanitize_text` idempotent |
+| `bundle_envelope_json` | evidence bundle JSON parse + canonicalization | no panic; `canonical_json` is a fixpoint |
+
+Run: `cargo +nightly fuzz run <target>` from the repo root. Minimized crash
+corpora will be committed under `fuzz/corpus/<target>/` when found.
+Remaining Step-3 boundaries (Arrow response decode, spool framing/recovery)
+need small pub entry points first. Target/workflow drift validation and the
+scheduled CI lane are still open.
+
 Deferred (blocked on their owners): UI search round-trips, runtime decoder
 accept/reject domains, Query-key identity, SSE ordering (plans 133/147/148);
 fuzz targets and performance baselines follow as separate plan-103 steps.

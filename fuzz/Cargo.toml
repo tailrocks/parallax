@@ -1,0 +1,56 @@
+[package]
+name = "parallax-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+license = "Apache-2.0"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+prost = "0.14"
+serde_json = "1"
+
+[dependencies.parallax-evidence]
+path = "../crates/parallax-evidence"
+
+[dependencies.parallax-ingest]
+path = "../crates/parallax-ingest"
+
+[dependencies.parallax-proto]
+path = "../crates/parallax-proto"
+
+[dependencies.parallax-semconv]
+path = "../crates/parallax-semconv"
+
+[[bin]]
+name = "otlp_metrics_normalize"
+path = "fuzz_targets/otlp_metrics_normalize.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "otlp_traces_normalize"
+path = "fuzz_targets/otlp_traces_normalize.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "redaction_text"
+path = "fuzz_targets/redaction_text.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "bundle_envelope_json"
+path = "fuzz_targets/bundle_envelope_json.rs"
+test = false
+doc = false
+bench = false
+
+[workspace]
