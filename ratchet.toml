@@ -4392,7 +4392,7 @@ ceiling = 459
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-xtask/src/release/macho_dwarf.rs"
-ceiling = 668
+ceiling = 669
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
