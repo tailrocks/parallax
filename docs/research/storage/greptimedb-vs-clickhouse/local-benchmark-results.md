@@ -7940,3 +7940,8 @@ in harness.
 | **cross-tier-join** | **20** | **15** | **8** | **4** |
 
 Directions hold; join remains interactive all builds after harness fix.
+
+### Run 275 — 2026-07-17 — PREWHERE + bloom idx_trace
+
+`PREWHERE trace_id='t0'` on logs1m: Skip `idx_trace` **Granules 1/6**. PREWHERE
+composes with secondary bloom (same as PK projections).
