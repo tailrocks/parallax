@@ -13,10 +13,11 @@
 - **Depends on**: 099, 104, 111, 119
 - **Category**: future capture / agent security / interoperability
 - **Planned at**: `eefa4617`, 2026-07-12
-- **Status**: OPENED (unblock 2026-07-17) — first adapter = Claude Code
-- **Blocker**: none for scope. Residual before code: exact Claude Code version
-  range, capture surface (hooks vs export), consent contract, sanitized real
-  fixtures. Deps 099/104/111/119 complete.
+- **Status**: IN PROGRESS — Claude Code stream-json/hook normalizer slice
+  landed 2026-07-17
+- **Blocker**: none for pure normalizer. Residual: logged-in success-path
+  stream-json fixtures, hook Pre/PostToolUse real payloads, storage/API/UI
+  projection, consent CLI import command, overhead/loss ledger.
 
 ## Why
 
@@ -77,14 +78,31 @@ Out of scope:
 - Cross-adapter conformance for equivalent actions plus explicit lossiness deltas.
 - Performance/allocation/overhead measurements and bounded UI/API query tests.
 
+## Current Evidence (2026-07-17)
+
+- Decision:
+  [`docs/research/decisions/claude-code-session-adapter.md`](../docs/research/decisions/claude-code-session-adapter.md)
+  — tool Claude Code, version floor `2.1.150`–`2.1.212`, first surface
+  stream-json, secondary hook stdin, explicit consent, no checkout auto-enable.
+- Pure normalizer: `crates/parallax-evidence/src/claude_code.rs`
+  (`normalize_stream_json`, `normalize_hook_event`).
+- Live local probe without login produced a real `type=result` auth-error row
+  (Claude Code `2.1.212`); fixture asserts session_id/success/lossiness and
+  that raw result body never enters the normalized JSON.
+- Hand-crafted multi-event stream + PreToolUse hook fixtures prove path leaf
+  only for cwd, prompt/tool body redaction, and token usage mapping.
+
 ## Done Criteria
 
-- [ ] Operator-approved tool/version/surface and consent contract is recorded.
-- [ ] Every claim maps to a real sanitized fixture and exact adapter version.
-- [ ] Unknown/sensitive fields fail closed; raw sessions are not agent-visible.
+- [x] (2026-07-17) Operator-approved tool/version/surface and consent contract
+  is recorded in the decision doc.
+- [ ] Every claim maps to a real sanitized fixture and exact adapter version
+  (success-path still needs logged-in Claude Code).
+- [x] (partial) Unknown/sensitive fields fail closed in the pure normalizer;
+  raw sessions are not stored on the normalized struct.
 - [ ] Normalized IDs, ordering, duplicates, restart, and trace correlation are deterministic.
 - [ ] Capture overhead/lossiness stay within predeclared measured bounds.
-- [ ] No checkout can auto-enable capture or broaden credentials/permissions.
+- [x] (2026-07-17) Pure module has no checkout auto-enable path.
 - [ ] Each supported adapter passes conformance, redaction, storage, API, and UI gates.
 
 ## STOP Conditions

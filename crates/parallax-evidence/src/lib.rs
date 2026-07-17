@@ -2,6 +2,8 @@
 #![cfg_attr(test, allow(clippy::float_cmp, reason = "exact fixture arithmetic"))]
 
 pub mod agent_session;
+/// Claude Code stream-json / hook normalizer (plan 120).
+pub mod claude_code;
 #[expect(
     clippy::cast_precision_loss,
     clippy::too_many_lines,
