@@ -1,9 +1,9 @@
-# Loop-stage claim status recheck (agenda #6, pass 154)
+# Loop-stage claim status recheck (agenda #6, pass 154 + pass 186)
 
 <!-- markdownlint-disable MD013 -->
 
-**Research date:** 2026-07-17  
-**Pass:** 154  
+**Research date:** 2026-07-17 (pass 154); **pass 186 recheck 2026-07-18**  
+**Pass:** 154 + **186**  
 **Claim under test:** Detect/Dispatch/Validate/Learn stage designs hold under
 replayed telemetry (research-agenda item **#6**).  
 **Verdict:** **Split** — offline kernels + plan 123 offline residual **exist**;
@@ -23,11 +23,19 @@ Detect precision/recall or dispatch idempotency on real telemetry.
 | Loop design | **Present** | [architecture/autonomous-fix-loop.md](../architecture/autonomous-fix-loop.md) |
 | PoC 20 kernels | **Present** | `poc/evidence-loop/` — fixtures only |
 | Claim map | **Present** | [poc-evidence-loop-coverage.md](../architecture/poc-evidence-loop-coverage.md) — every product claim still `not_measured` |
-| Detect trigger ledger | **Absent** | No `detect-trigger-ledger` / dated precision-recall rows under `docs/research/` |
+| Detect trigger ledger | **Absent** | No `detect-trigger-ledger` / dated precision-recall rows under `docs/research/` (**pass 186** reconfirm) |
 | Plan 123 offline residual | **DONE (offline only)** | [2026-07-plan-123-fixer-offline/README.md](2026-07-plan-123-fixer-offline/README.md) — `fixer_outcome` SM + Turso append-only |
-| Product `fixer_outcome` tests | **Pass (unit)** | `cargo test -p parallax-evidence --lib fixer_outcome --locked` → **3 ok** (2026-07-17): PR≠success; review+no-recurrence required; multi-arm failures preserved |
+| Product `fixer_outcome` tests | **Pass (unit)** | `cargo test -p parallax-evidence fixer_outcome` → **3 ok** (pass **186**): PR≠success; review+no-recurrence required; multi-arm failures preserved |
 | Live replay harness | **Open** | No dated product run over recorded multi-service telemetry for Detect/Dispatch |
 | Draft-PR adapter | **Deferred** | Explicit STOP in plan 123 — not core |
+
+### Pass 186 addendum
+
+| Check | Result |
+| --- | --- |
+| Detect trigger ledger files | **Still absent** |
+| `fixer_outcome` unit tests | **3/3 pass** |
+| Live replay / stage product claims | Still **`not_measured`** |
 
 ## Allowed vs forbidden wording
 
@@ -51,10 +59,10 @@ Detect precision/recall or dispatch idempotency on real telemetry.
 
 ## Parallax goal fit
 
-North-star loop is design pressure, not V1 product. Pass 154 keeps **offline
+North-star loop is design pressure, not V1 product. Pass 154/186 keep **offline
 machinery** distinct from **gate pass** — same discipline as A1/A4/A6.
 
 ## Sources checked
 
-- Repo: plan 123 README; `poc/evidence-loop`; `parallax-evidence::fixer_outcome` tests (ran).  
+- Repo: plan 123 README; `poc/evidence-loop`; `parallax-evidence::fixer_outcome` tests (ran pass 154 + **186**).  
 - Design: autonomous-fix-loop.md gate table; poc-evidence-loop-coverage.md.  
