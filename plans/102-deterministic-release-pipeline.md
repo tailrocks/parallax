@@ -69,6 +69,13 @@ build proceeds past SSE import protection and stops on the concurrently moving
 ecosystem worker path, so do not dispatch the replacement until that independent
 move leaves `bun run build` green.
 
+> **Update 2026-07-17 evening**: Main-branch CI is thrashing under concurrent
+> agent pushes (many `cancelled` CI + Preview runs). Latest successful CI
+> observed earlier today: `29574469014` @ `ed72a6fe`. Current head
+> `66ae7938` has CI + Preview enqueued; **do not** claim four-target
+> `release-verify` until a full green `Publish Homebrew Preview` matrix for a
+> post-Mach-O SHA finishes and assets are downloaded and verified.
+
 ## Fresh Blocker Evidence (2026-07-17) — pre-fix snapshot
 
 Protections (read-back OK):
