@@ -485,3 +485,40 @@ async fn legacy_runs_table_is_dropped_forward_only() {
     let row = rows.next().await.expect("next").expect("row");
     assert_eq!(integer(&row, 0), 0, "legacy runs table must be dropped");
 }
+
+#[tokio::test]
+async fn legacy_issues_table_gains_nullable_resolution_time() {
+    let (_directory, path) = temp_db();
+    {
+        let database = turso::Builder::new_local(path.to_str().expect("utf8 path"))
+            .build()
+            .await
+            .expect("open raw db");
+        let connection = database.connect().expect("connect raw db");
+        connection
+            .execute(
+                "CREATE TABLE issues (
+                   fingerprint TEXT PRIMARY KEY, title TEXT NOT NULL,
+                   error_type TEXT NOT NULL, culprit TEXT, service TEXT NOT NULL,
+                   status TEXT NOT NULL DEFAULT 'open', first_seen INTEGER NOT NULL,
+                   last_seen INTEGER NOT NULL, event_count INTEGER NOT NULL DEFAULT 0,
+                   last_trace_id TEXT, tags TEXT NOT NULL DEFAULT '{}'
+                 )",
+                (),
+            )
+            .await
+            .expect("create legacy issues table");
+    }
+
+    let store = MetadataStore::open(&path).await.expect("migrate metadata");
+    let conn = store.conn.lock().await;
+    let mut columns = conn
+        .query("PRAGMA table_info(issues)", ())
+        .await
+        .expect("read columns");
+    let mut resolved_at = false;
+    while let Some(row) = columns.next().await.expect("column row") {
+        resolved_at |= text(&row, 1) == "resolved_at";
+    }
+    assert!(resolved_at, "bootstrap must add issue resolution time");
+}

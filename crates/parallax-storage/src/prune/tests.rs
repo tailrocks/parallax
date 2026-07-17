@@ -178,7 +178,8 @@ fn execution_guard_rejects_changed_configuration_protection_or_catalog() {
         PrunePlanLimits::default(),
     )
     .expect("valid plan");
-    assert!(plan.validate_snapshot(&snapshot()).is_ok());
+    plan.validate_snapshot(&snapshot())
+        .expect("matching snapshot validates");
 
     for (field, changed) in [
         (

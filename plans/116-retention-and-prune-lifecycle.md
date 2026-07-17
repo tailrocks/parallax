@@ -103,6 +103,12 @@ the helper objective; the peer executor owns the status transition.
   temp-Turso test covers eligible-at-boundary, active, and recent terminal
   rows. Peer must add pin exclusions and the remaining metadata classes before
   claiming complete store discovery.
+- Issue lifecycle discovery now uses a persisted `issues.resolved_at` timestamp,
+  added forward-only at bootstrap for existing Turso databases. Resolving sets
+  the timestamp, reopening clears it, and one bounded aggregate reports
+  inclusive-cutoff eligible rows plus typed unresolved/not-expired exclusions.
+  This remains read-only candidate discovery: no issue or cascade deletion is
+  authorized by this slice, and pin protection still must land before execution.
 
 ## Historical Blocker Evidence (2026-07-14; superseded 2026-07-17)
 

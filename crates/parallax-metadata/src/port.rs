@@ -8,6 +8,12 @@ use parallax_storage::{MetadataPruneStore, PruneItem};
 
 #[async_trait::async_trait]
 impl MetadataPruneStore for TursoMetadataStore {
+    async fn issue_prune_item(&self, cutoff_nanos: u128) -> MetadataResult<PruneItem> {
+        Self::issue_prune_item(self, cutoff_nanos)
+            .await
+            .map_err(MetadataError::internal)
+    }
+
     async fn invocation_prune_item(&self, cutoff_nanos: u128) -> MetadataResult<PruneItem> {
         Self::invocation_prune_item(self, cutoff_nanos)
             .await
@@ -61,8 +67,13 @@ impl parallax_storage::metadata::MetadataStore for TursoMetadataStore {
             .await
             .map_err(MetadataError::internal)
     }
-    async fn set_issue_status(&self, id: &str, status: &str) -> MetadataResult<()> {
-        Self::set_issue_status(self, id, status)
+    async fn set_issue_status(
+        &self,
+        id: &str,
+        status: &str,
+        changed_at_nanos: u128,
+    ) -> MetadataResult<()> {
+        Self::set_issue_status(self, id, status, changed_at_nanos)
             .await
             .map_err(MetadataError::internal)
     }

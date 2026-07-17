@@ -100,7 +100,12 @@ pub trait MetadataStore: Send + Sync {
         limit: usize,
         offset: usize,
     ) -> MetadataResult<(Vec<Issue>, usize)>;
-    async fn set_issue_status(&self, fingerprint: &str, status: &str) -> MetadataResult<()>;
+    async fn set_issue_status(
+        &self,
+        fingerprint: &str,
+        status: &str,
+        changed_at_nanos: u128,
+    ) -> MetadataResult<()>;
     async fn start_invocation(
         &self,
         invocation_id: &str,

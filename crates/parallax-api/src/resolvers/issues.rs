@@ -406,9 +406,13 @@ pub(crate) async fn issue_set_status(
     if !matches!(status.as_str(), "open" | "resolved") {
         return Err(field_err("status must be open or resolved"));
     }
+    let changed_at_nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(internal_field_err)?
+        .as_nanos();
     context
         .metadata
-        .set_issue_status(&fingerprint, &status)
+        .set_issue_status(&fingerprint, &status, changed_at_nanos)
         .await
         .map_err(internal_field_err)?;
     context

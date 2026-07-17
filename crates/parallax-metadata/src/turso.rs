@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS issues (
   culprit       TEXT,
   service       TEXT NOT NULL,
   status        TEXT NOT NULL DEFAULT 'open',
+  resolved_at   INTEGER,
   first_seen    INTEGER NOT NULL,
   last_seen     INTEGER NOT NULL,
   event_count   INTEGER NOT NULL DEFAULT 0,
@@ -516,13 +517,21 @@ impl TursoMetadataStore {
         Ok((page, total))
     }
 
-    pub async fn set_issue_status(&self, fingerprint: &str, status: &str) -> anyhow::Result<()> {
+    pub async fn set_issue_status(
+        &self,
+        fingerprint: &str,
+        status: &str,
+        changed_at_nanos: u128,
+    ) -> anyhow::Result<()> {
         self.conn
             .lock()
             .await
             .execute(
-                "UPDATE issues SET status = ?2 WHERE fingerprint = ?1",
-                (fingerprint, status),
+                "UPDATE issues
+                 SET status = ?2,
+                     resolved_at = CASE WHEN ?2 = 'resolved' THEN ?3 ELSE NULL END
+                 WHERE fingerprint = ?1",
+                (fingerprint, status, nanos_to_millis(changed_at_nanos)),
             )
             .await?;
         Ok(())
