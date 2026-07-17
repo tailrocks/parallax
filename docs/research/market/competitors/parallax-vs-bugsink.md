@@ -2,11 +2,13 @@
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 40
 > deep-dive; **pass 41 pricing RESOLVED** against live [bugsink.com](https://www.bugsink.com/);
-> **pass 88 wedge pin** 2026-07-17).
-> Sources: [github.com/bugsink/bugsink](https://github.com/bugsink/bugsink) (1,940★,
-> open-core w/ `ee/`, Python/Django, last push 2026-07-17 — active; latest
-> **v2.4.0**, 2026-07-10), [bugsink.com](https://www.bugsink.com/) (pricing +
-> error-tracking / built-to-self-host / Sentry-SDK-compatible).
+> **pass 88** + **pass 125** + **pass 179** wedge pin).
+> Sources: [github.com/bugsink/bugsink](https://github.com/bugsink/bugsink) (**1,940★**
+> pass **179**, open-core w/ `ee/`, Python/Django, last push 2026-07-17 — active;
+> latest still **v2.4.0**, 2026-07-10), [bugsink.com](https://www.bugsink.com/) (pricing
+> + error-tracking / built-to-self-host / Sentry-SDK-compatible). **Pass 179 README
+> probe:** still **Sentry-SDK compatible**; **no** OTLP multi-signal / portable
+> redacted evidence-bundle / outcome language — combo cell **error-only**.
 >
 > **Bottom line up front:** Bugsink is a **focused, self-hosted, Sentry-SDK-
 > compatible error-tracking server** (Python/Django). It is the cleanest "just run

@@ -69,6 +69,12 @@ a live deploy test of each product.
 
 Stars unchanged; **real release-line move** on backend only.
 
+**Pass 179 recheck (2026-07-18):** **Bugsink** hygiene —
+
+| Product | Pin | Combo |
+| --- | --- | --- |
+| **Bugsink** | **1,940★**; **v2.4.0** (2026-07-10); push 2026-07-17 | Still **Sentry-SDK error-only** (README); **no** OTLP multi-signal / portable redacted bundle / outcome. Combo **not closed**. |
+
 **Pass 156 recheck (2026-07-18):** **Traceway-focused** wedge re-poll + Bugsink/Rustrak
 star-pin hygiene — combination **still not closed**.
 
