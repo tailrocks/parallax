@@ -5,8 +5,11 @@
 > stated, not hidden.
 >
 > Research date: **2026-07-17**. Version, license, OTLP, and pricing re-checked
-> against live primary sources this pass. No legacy deep-research note exists
-> for Phoenix — this is the first canonical comparison.
+> against live primary sources this pass. **Pass 108 pin:** GitHub
+> **arize-phoenix-v18.1.0** (2026-07-17), **10,600★**; LICENSE still **ELv2**;
+> ships **`@arizeai/phoenix-mcp`** (README MCP badge + package — agent surface
+> over Phoenix, not portable prod-incident evidence bundle). No legacy deep-
+> research note exists for Phoenix — this is the first canonical comparison.
 
 ## TL;DR verdict (scoped per axis)
 
