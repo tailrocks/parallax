@@ -52,6 +52,18 @@ green). Peer: verify the record against the directive, then execute Steps
 3-5 (versioned migration design, single source of truth, equivalence proofs)
 — none of that implementation exists yet.
 
+Step-3 preliminary implementation landed at `5dc9144`
+(`crates/parallax-evidence/src/envelope.rs`): `EnvelopeV2` wrapping the
+untouched v1 dossier ({kind,id} anchor, ISO-8601 UTC `generated_at`,
+payload-derived deterministic `bundle_id`, version-scoped canonical hash
+over JCS-style canonical JSON), deterministic fail-closed
+`envelope_from_v1`, and a version-dispatching `parse_bundle_json` with a
+permanent v1 read window and unknown-version rejection. Nine tests; crate
+fmt/clippy/nextest green. Caveat recorded in the module: number
+canonicalization uses serde_json's shortest form — peer verifies the RFC
+8785 §3.2.2.3 number edge cases, then owns Steps 4-5 (projections, single
+source of truth, equivalence/property proofs).
+
 ### Step-3 preliminary core also landed (same helper agent)
 
 `crates/parallax-evidence/src/bundle/v2.rs`: `EnvelopeV2` (CloudEvents-profile
