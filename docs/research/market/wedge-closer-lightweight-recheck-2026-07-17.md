@@ -296,6 +296,8 @@ Full combination **still not closed**.
 
 **Pass 332 recheck (2026-07-18):** Traceway **1,024★**; TMA1 **alpha12** → **33rd UNFIRED**; combo **not closed**.
 
+**Pass 337 recheck (2026-07-18):** Traceway **1,024★**; TMA1 **alpha12** → **34th UNFIRED**; Bugsink **v2.4.0**; combo **not closed**.
+
 **Pass 258 recheck (2026-07-18):** **Maple + Uptrace** —
 
 | Product | Pin | Watch |
