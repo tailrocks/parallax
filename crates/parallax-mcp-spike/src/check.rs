@@ -21,7 +21,7 @@ pub(crate) async fn run(args: CheckArgs) -> anyhow::Result<()> {
 
     if let Some(fp) = &args.fingerprint {
         cases.push(Case {
-            label: format!("issue fingerprint={fp}"),
+            label: "issue bundle",
             kind: CaseKind::IssueBundle {
                 fingerprint: fp.clone(),
             },
@@ -29,7 +29,7 @@ pub(crate) async fn run(args: CheckArgs) -> anyhow::Result<()> {
     }
     if let Some(rid) = &args.invocation_id {
         cases.push(Case {
-            label: format!("invocation bundle invocation_id={rid}"),
+            label: "invocation bundle",
             kind: CaseKind::RunBundle {
                 invocation_id: rid.clone(),
             },
@@ -63,7 +63,7 @@ pub(crate) async fn run(args: CheckArgs) -> anyhow::Result<()> {
 }
 
 struct Case {
-    label: String,
+    label: &'static str,
     kind: CaseKind,
 }
 
@@ -157,8 +157,7 @@ fn run_cli_json(bin: &str, args: &[&str]) -> anyhow::Result<String> {
         .map_err(|e| anyhow::anyhow!("failed to spawn `{bin}`: {e}"))?;
     if !output.status.success() {
         anyhow::bail!(
-            "`{bin} {}` failed ({}); stderr omitted because it may contain sensitive evidence",
-            args.join(" "),
+            "Parallax CLI equivalence command failed ({}); arguments and stderr omitted because they may contain sensitive evidence",
             output.status
         );
     }

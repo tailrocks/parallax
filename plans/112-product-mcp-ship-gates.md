@@ -60,6 +60,8 @@ must not return in product output.
 - Equivalence subprocess failures omit potentially sensitive CLI stderr, and
   invalid UTF-8 stdout now fails exact comparison instead of being lossily
   rewritten.
+- Checker status and subprocess errors no longer render issue fingerprints,
+  invocation IDs, or the argument vector containing them.
 - Bundle output fails closed unless the separately projected GraphQL canonical
   hash exactly matches the hash embedded in the bundle-v2 object.
 - All GraphQL responses stream through a hard 1 MiB ceiling before JSON parse;
