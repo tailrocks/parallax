@@ -106,8 +106,13 @@ whether OR-within-dimension needs a backend argument.
   `1 = 0` gating); in-memory parity; GraphQL `attributeFilters` on `logs`
   and `logCountSeries`; anchored reads filtered API-side. 109 tests green.
 
+- Backend `logFacets` (`a8aa075`): `LOG_FACET_DIMENSIONS` (service,
+  severity, http.request.method, error.type), per-value log-row counts
+  under the exact `logs_search` filter set, GreptimeDB + memory impls,
+  GraphQL `logFacets`. 109 tests green.
+
 Still open (full plan scope): live facet verification against `f-attrs`
-(70/20/10) + the facet-window cap decision; `logFacets`/invocations facets
+(70/20/10) + the facet-window cap decision; invocation facets
 and invocation filter compilation; live-engine narrowing
 + injection assertions; logs/invocations route wiring (Step 3 remainder);
 `F` keyboard
