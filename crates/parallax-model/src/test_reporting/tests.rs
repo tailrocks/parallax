@@ -250,6 +250,26 @@ fn flaky_state_requires_evidence_and_recovers_at_policy_threshold() {
         ),
         FlakyState::Broken
     );
+    assert_eq!(
+        FlakyState::Broken.transition(
+            FlakyEvidence {
+                consecutive_passes: 29,
+                ..FlakyEvidence::default()
+            },
+            policy,
+        ),
+        FlakyState::Broken
+    );
+    assert_eq!(
+        FlakyState::Broken.transition(
+            FlakyEvidence {
+                consecutive_passes: 30,
+                ..FlakyEvidence::default()
+            },
+            policy,
+        ),
+        FlakyState::Fixed
+    );
 }
 
 #[test]

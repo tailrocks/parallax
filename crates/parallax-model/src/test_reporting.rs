@@ -290,7 +290,9 @@ impl FlakyState {
         {
             return Self::Flaky;
         }
-        if self == Self::Flaky && evidence.consecutive_passes >= policy.recovery_passes.get() {
+        if matches!(self, Self::Flaky | Self::Broken)
+            && evidence.consecutive_passes >= policy.recovery_passes.get()
+        {
             return Self::Fixed;
         }
         self

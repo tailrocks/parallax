@@ -78,6 +78,10 @@
   recovery streaks, consistent-failure precedence, missing revisions, and
   malformed duplicate attempts deterministically. Scheduling, bounded Turso
   scans, and state upserts remain for the owning job integration.
+- The state machine now lets both `Flaky` and consistently-failing `Broken`
+  variants recover to `Fixed` only after the configured clean-pass threshold;
+  the prior permanent-`Broken` behavior would have made scheduled evaluation
+  preserve stale failure state forever.
 
 Design decisions D1–D9 (identity, native tables, status taxonomy, attempt
 chains, shared fingerprints, flaky SM, `/tests` surface, session semantics,
