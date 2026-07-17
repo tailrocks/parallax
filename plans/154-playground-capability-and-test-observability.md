@@ -38,8 +38,11 @@ Evidence bundle under
    (`parallax run start -- scripts/observable-test-session.sh <stack>
    --acceptance` + `test-verify`) against the fan-out path (Parallax arm was
    plan 159).
-2. Record W5 histogram / db-semconv / cross-language error **product
-   disposition** rows in playground `VERIFICATION.md`.
+2. W5 / disposition rows in playground `VERIFICATION.md`:
+   - ~~Parallax exponential-histogram drop~~ code-confirmed 2026-07-17
+     (`parallax-ingest` normalize `_ => {}` arm).
+   - Still open: Maple/SigNoz/OpenObserve/Sentry histogram live disposition;
+     cross-language `PaymentError` product grouping rows; db-semconv rows.
 3. Push playground workflow at same head; preserve SHA + artifacts for the
    acceptance residual.
 4. Reconcile plan 122 disposition; retire when acceptance + disposition +

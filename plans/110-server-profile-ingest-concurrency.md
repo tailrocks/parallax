@@ -12,9 +12,11 @@
 - **Depends on**: 115 + reproducible saturation packet (099, 113 vocabulary)
 - **Category**: V2 / ingest / performance
 - **Status**: BLOCKED
-- **Blocker**: No supported server profile (plan 115) with measured single-worker
-  bottleneck evidence. Plan 113 measurement vocabulary exists but is not trigger
-  evidence.
+- **Blocker**: Plan 115 live lab packet
+  ([live-rehearsal-2026-07-17.md](../docs/research/validation/2026-07-plan-115-v2-server-profile/live-rehearsal-2026-07-17.md))
+  records GraphQL micro-RPS and invocation wall times only — **not** a
+  single-worker stage-isolation saturation packet. Plan 113 vocabulary exists
+  but is not trigger evidence.
 
 ## Residual only (after trigger)
 
