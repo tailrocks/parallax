@@ -68,6 +68,13 @@ and the production build. Vite emitted the real ELK worker chunk
 (`ecosystem-layout.worker-*.js`, 1.43 MB), closing the worker-bundling check.
 Peer still owns live corpus/browser proof and may deepen the control layout.
 
+External-scenario prerequisite landed in both repositories: `a36b774` adds
+`server.address` to the canonical semconv contract and regenerates Parallax;
+playground `e665914` regenerates its Rust/Java/TypeScript/wire artifacts. The
+`eco-external` shape itself is deferred only until the peer's concurrent
+Plan-165 edits leave the shared playground shape/dispatcher/matrix files;
+do not add a literal attribute or overwrite that work.
+
 ## Why this matters
 
 The ecosystem page answers "who calls whom", but only for instrumented
