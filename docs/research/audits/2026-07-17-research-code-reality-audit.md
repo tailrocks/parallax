@@ -18,7 +18,7 @@ claims; improve navigation; keep market comparisons multi-angle and non-biased
 | UI | ~16 feature modules under `ui/src/features/` | "19-route" prose was approximate |
 | Local MCP | `parallax-mcp` plan 112 DONE | Legacy matrices still "MCP planned" |
 | Evidence bundle + redaction | `parallax-evidence` + `parallax-redaction` | Code shipped; **A1 value unproven** — keep gate language |
-| Fixer outcome loop | plan 123 only | Correctly unshipped |
+| Fixer outcome loop | offline SM + Turso outcomes **shipped** (plan 123 DONE); draft-PR deferred; live value **unproven** | Was stale “active plan 123” with dead plan path — fixed to validation evidence |
 | Autonomous loop | `poc/evidence-loop` | Correctly PoC-only |
 
 ## Fixed this pass
@@ -82,3 +82,13 @@ Juniper `impl Query` / `impl Mutation` field methods — same total).
 - Present-tense product surfaces hold **76/14** after structural pass `2426cce8`.
 - Thesis plan **118 DONE** ownership fixed earlier.
 - Ledger + this audit document the count method so 80/15 thrash does not recur.
+
+## Re-verification (goal re-entry, same day)
+
+Full plan verification re-run against live `main`:
+
+- Ledger path gate: all cited non-glob paths exist; GraphQL **76/14** (description-skipping method).
+- Product-level “future Sentry / not V1” greps: clean.
+- Competitor OTLP/`error_event` 🏗 greps: clean.
+- Canonical competitors multi-angle (SigNoz OSS, Sentry closed SaaS, TMA1 peer, Datadog SaaS): price/TCO/contribute/lock-in + A1 unproven retained.
+- **Gap closed:** dead `plans/123-fixer-outcome-loop.md` ownership on ledger, agenda, fixer-boundary, problem-audience — plan **123 DONE** offline residual; point at validation evidence.

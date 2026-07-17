@@ -228,8 +228,9 @@ instrumentation gap-closing mechanic that makes `missing_evidence` a load-bearin
 Operator statement #5 (2026-06-11) adds the build-order ruling: goals 1 and 2 (local visibility,
 then the same tool on a server) are the co-equal top priorities with local slightly first;
 **autonomous fixing is demoted to a future nice-to-have** — schemas stayed versioned while goals 1
-and 2 landed; remaining outcome-loop product work is now plan 123. See
-[architecture/v1-build-plan.md](../architecture/v1-build-plan.md).
+and 2 landed; plan **123 offline residual is DONE** (append-only outcomes + offline SM; draft-PR
+deferred; live value unproven) — [validation](../validation/2026-07-plan-123-fixer-offline/README.md).
+See [architecture/v1-build-plan.md](../architecture/v1-build-plan.md).
 
 Operator statement #4 (2026-06-11) adds: the **one-binary-plus-profile** deployment model
 (`--profile local|cloud`, cloud-adapted defaults) replacing the assemble-a-Sentry-Grafana-Loki

@@ -71,7 +71,7 @@ not override code.
 | Bundle-path redaction policy | **shipped** (code) / **A6 residual** | `crates/parallax-redaction/` (`REDACTION_POLICY_V1` = `redaction-lite-v3`); applied in evidence projection | Not full A6 canary program completion |
 | Story / gaps / agent session projections | **shipped** | `parallax-evidence` story/gaps/agent_session; GraphQL `story`, `evidenceGaps`, `agentSession` | Claude Code adapter **shipped** (plan **120 DONE** — [evidence](validation/2026-07-plan-120-claude-code/README.md)). Broader multi-tool adapters are design-only (no active plan owner) |
 | Test reporting / flakiness analysis | **partial** | `parallax-analysis` test_*; GraphQL `testCases`/`testCase`; UI tests routes; [plans/154…](../../plans/154-playground-capability-and-test-observability.md), [155…](../../plans/155-test-reporting-surface.md) | Derivation + explorer exist; product surface still plan-owned |
-| Fixer / outcome loop | **planned** + **unproven** | [plans/123-fixer-outcome-loop.md](../../plans/123-fixer-outcome-loop.md); [decisions/fixer-boundary.md](decisions/fixer-boundary.md) | Context engine ≠ fixer; no measured outcome ledger |
+| Fixer / outcome loop | **partial** (offline residual **DONE**) / **unproven** product value | `crates/parallax-evidence/src/fixer_outcome.rs`; Turso `fixer_outcomes`; [validation/2026-07-plan-123-fixer-offline](validation/2026-07-plan-123-fixer-offline/README.md); design [decisions/fixer-boundary.md](decisions/fixer-boundary.md) | Plan **123 DONE** offline SM + append-only outcomes. Draft-PR adapter deferred; no measured live outcome ledger; context engine ≠ fixer |
 | Autonomous fix-loop kernels | **PoC-only** | `poc/evidence-loop/`; [architecture/poc-evidence-loop-coverage.md](architecture/poc-evidence-loop-coverage.md) | Executable kernels ≠ product gate pass |
 
 ---
@@ -127,3 +127,4 @@ not override code.
 | Date | Change |
 | --- | --- |
 | 2026-07-17 | Initial ledger from workspace + schema + plans inventory (research code-reality audit). |
+| 2026-07-17 | Re-verify: plan **123 DONE** offline — fixer row → partial + validation path (dead `plans/123-*` link removed). |

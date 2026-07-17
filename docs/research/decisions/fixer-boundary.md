@@ -2,11 +2,13 @@
 
 > Parallax core must not become the fixer: it is the context engine that stores, redacts, groups, correlates, and serves evidence, while a separate fixer component consumes evidence bundles, drives a coding agent, drafts a patch or pull request, and writes session/outcome evidence back with measured adapter provenance. The first product contract is an evidence-bundle and append-only outcome-record contract, not "agent opens PR" — PR creation is now a platform commodity (Sentry Seer, GitHub Copilot cloud agent and Agent Tasks, OpenHands), so the defensible wedge is portable evidence, redaction reports, validation logs, and outcome feedback that improves future evidence selection. The boundary and schema are designed, but the outcome loop is currently **not measured**: there are no dated result rows linking evidence bundle -> fixer run -> agent session -> patch/PR -> CI -> review/merge/revert/recurrence. Autonomy is gated by level (L0 observe through L5 auto_merge/deploy), with L5 out of scope for the MVP and L3 draft-PR creation the first goal that must be earned; opened PRs and provider-task completion are never fix success by themselves. Until the gates pass and the result rows exist, the honest claim is design, not capability, and the fixer stays an offline eval harness while Parallax exposes read-only bundles through CLI/API/MCP.
 
-> **Implementation ownership (2026-07-12):** this file is the durable boundary,
-> claim-level, schema, and measurement-protocol record. It is not an executable
-> queue. [Plan 123](../../../plans/123-fixer-outcome-loop.md) exclusively owns any unfinished
-> fixer/outcome-loop implementation and instantiation of the retained result
-> protocol. No fixer implementation may start from the historical ordering below.
+> **Implementation ownership (updated 2026-07-17):** this file is the durable
+> boundary, claim-level, schema, and measurement-protocol record. It is not an
+> executable queue. Plan **123 offline residual is DONE** — see
+> [validation/2026-07-plan-123-fixer-offline](../validation/2026-07-plan-123-fixer-offline/README.md)
+> (`fixer_outcome` SM + Turso append-only outcomes). Draft-PR adapter remains
+> deferred; live measured outcome rows remain **unproven**. No active
+> `plans/123-*` file — further work needs a new numbered plan.
 
 This decision record consolidates the following previously-separate research files, each preserved in full below:
 

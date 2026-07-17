@@ -27,7 +27,7 @@ Closeness is measured against Parallax's V1 product shape (per the vision/overvi
    then **fingerprints**.
 5. **Portable, auditable, redacted, versioned evidence/context bundles** as the output artifact.
 6. **Read-only agent surface**: CLI + HTTP + local-stdio MCP shipped (`parallax-mcp`, plan 112 DONE); remote deferred.
-7. **Fix-outcome loop** (accepted/rejected/reverted/recurred) — the data moat (plan 123; unproven).
+7. **Fix-outcome loop** (accepted/rejected/reverted/recurred) — offline residual plan **123 DONE**; live product value unproven.
 8. Captures more than app telemetry: **deploys, CI runs, agent/CLI sessions, repo intent** → a bounded
    failure dossier a coding agent can safely act on (partially shipped; residual plans 120/121/124).
 
