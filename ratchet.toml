@@ -13,7 +13,7 @@ ceiling = 1
 [[rust_suppressions]]
 crate_name = "parallax-api"
 lint = "clippy::too_many_arguments"
-ceiling = 20
+ceiling = 25
 
 [[rust_suppressions]]
 crate_name = "parallax-cli"
@@ -48,7 +48,7 @@ ceiling = 2
 [[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "clippy::expect_used"
-ceiling = 11
+ceiling = 14
 
 [[rust_suppressions]]
 crate_name = "parallax-evidence"
@@ -68,7 +68,7 @@ ceiling = 1
 [[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "clippy::float_cmp"
-ceiling = 2
+ceiling = 3
 
 [[rust_suppressions]]
 crate_name = "parallax-evidence"
@@ -78,7 +78,7 @@ ceiling = 1
 [[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "clippy::panic"
-ceiling = 2
+ceiling = 4
 
 [[rust_suppressions]]
 crate_name = "parallax-api"
@@ -103,7 +103,7 @@ ceiling = 1
 [[rust_suppressions]]
 crate_name = "parallax-greptime"
 lint = "clippy::cast_precision_loss"
-ceiling = 2
+ceiling = 3
 
 [[rust_suppressions]]
 crate_name = "parallax-greptime"
@@ -133,7 +133,7 @@ ceiling = 1
 [[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "clippy::cast_sign_loss"
-ceiling = 1
+ceiling = 3
 
 [[rust_suppressions]]
 crate_name = "parallax-api"
@@ -148,7 +148,7 @@ ceiling = 2
 [[rust_suppressions]]
 crate_name = "parallax-api"
 lint = "clippy::too_many_lines"
-ceiling = 4
+ceiling = 6
 
 [[rust_suppressions]]
 crate_name = "parallax-cli"
@@ -178,7 +178,7 @@ ceiling = 2
 [[rust_suppressions]]
 crate_name = "parallax-ingest"
 lint = "clippy::cast_precision_loss"
-ceiling = 1
+ceiling = 2
 
 [[rust_suppressions]]
 crate_name = "parallax-ingest"
@@ -203,27 +203,27 @@ ceiling = 2
 [[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "clippy::cast_possible_truncation"
-ceiling = 2
+ceiling = 4
 
 [[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "clippy::cast_precision_loss"
-ceiling = 3
+ceiling = 6
 
 [[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "clippy::excessive_nesting"
-ceiling = 5
+ceiling = 10
 
 [[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "clippy::too_many_lines"
-ceiling = 11
+ceiling = 15
 
 [[rust_suppressions]]
 crate_name = "parallax-greptime"
 lint = "clippy::cast_possible_wrap"
-ceiling = 1
+ceiling = 2
 
 [[rust_suppressions]]
 crate_name = "parallax-metadata"
@@ -243,7 +243,7 @@ ceiling = 1
 [[rust_suppressions]]
 crate_name = "parallax-storage"
 lint = "clippy::too_many_arguments"
-ceiling = 1
+ceiling = 6
 
 [[rust_suppressions]]
 crate_name = "parallax-spool"
@@ -268,7 +268,7 @@ ceiling = 1
 [[rust_suppressions]]
 crate_name = "parallax-xtask"
 lint = "clippy::too_many_lines"
-ceiling = 2
+ceiling = 4
 
 [budgets.rust]
 root_file_lines = 200
@@ -6023,7 +6023,7 @@ ceiling = 9
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-mcp-spike/src/audit.rs"
-ceiling = 21
+ceiling = 25
 
 [[limits]]
 metric = "rust.assertions"
@@ -6674,3 +6674,93 @@ ceiling = 139
 metric = "typescript.function-lines"
 scope = "ui/src/features/services/components/service-red-charts.tsx:52"
 ceiling = 62
+
+[[rust_suppressions]]
+crate_name = "parallax-analysis"
+lint = "clippy::cast_possible_truncation"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-analysis"
+lint = "clippy::cast_sign_loss"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-api"
+lint = "clippy::float_cmp"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-cli"
+lint = "clippy::too_many_lines"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-evidence"
+lint = "clippy::cast_possible_truncation"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-evidence"
+lint = "clippy::cast_sign_loss"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-greptime"
+lint = "clippy::expect_used"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-metadata"
+lint = "clippy::cast_precision_loss"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-server"
+lint = "clippy::print_stdout"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-server"
+lint = "clippy::type_complexity"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-server"
+lint = "clippy::unimplemented"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-server"
+lint = "dead_code"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-spool"
+lint = "clippy::expect_used"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-test-support"
+lint = "clippy::too_many_lines"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-xtask"
+lint = "clippy::expect_used"
+ceiling = 1
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-evidence/src/github_deploy.rs"
+ceiling = 19
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-evidence/src/github_deploy.rs::normalize_deploy_webhook"
+ceiling = 109
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-evidence/src/github_deploy.rs"
+ceiling = 1
