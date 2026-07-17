@@ -47,6 +47,17 @@ import {
   parseSortParam,
 } from "@/components/console/data-table"
 import { EmptyState } from "@/components/console/empty-state"
+import { DurationFilter } from "@/components/console/duration-filter"
+import { FacetSidebar, type Facet } from "@/components/console/facet-sidebar"
+import {
+  WhereClauseChips,
+  WhereClauseEditor,
+} from "@/components/console/where-clause-editor"
+import {
+  serializeWhereClause,
+  whereClauseFromSearch,
+  type WhereFilter,
+} from "@/lib/where-clause"
 import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
 import { useDelayedLoading } from "@/components/console/hooks"
 import { RangePicker } from "@/components/console/range-picker"
@@ -77,12 +88,18 @@ interface TracePage {
   items: TraceSummary[]
 }
 
+interface TraceFacet {
+  dimension: string
+  values: Array<{ value: string; count: string }>
+}
+
 export interface TracesSearch {
   q?: string | undefined
   service?: string | undefined
   errors?: boolean | undefined
   minMs?: number | undefined
   maxMs?: number | undefined
+  where?: string | undefined
   sort?: TraceSort | undefined
   page?: number | undefined
   range?: string | undefined
@@ -105,6 +122,7 @@ const traceSearchSchema = z.object({
   errors: z.unknown().optional(),
   minMs: z.unknown().optional(),
   maxMs: z.unknown().optional(),
+  where: z.unknown().optional(),
   sort: z.unknown().optional(),
   page: z.unknown().optional(),
   range: z.unknown().optional(),
@@ -133,6 +151,7 @@ export function validateTracesSearch(
     errors: parsed.errors === "1" || parsed.errors === true ? true : undefined,
     minMs: positiveNumber(parsed.minMs),
     maxMs: positiveNumber(parsed.maxMs),
+    where: stringValue(parsed.where),
     sort: SORTS.includes(parsed.sort as TraceSort)
       ? (parsed.sort as TraceSort)
       : undefined,
@@ -152,6 +171,7 @@ const FILTER_KEYS = new Set<keyof TracesSearch>([
   "errors",
   "minMs",
   "maxMs",
+  "where",
   "range",
   "from",
   "to",
@@ -209,16 +229,41 @@ export function paramToTraceSort(
   return undefined
 }
 
-function graphQlTraceArgs(search: TracesSearch, range: ResolvedRange): string {
-  const page = search.page ?? 1
+function graphQlAttributeFilters(search: TracesSearch): string | null {
+  const filters = whereClauseFromSearch(search.where)
+  if (filters.length === 0) return null
+  const items = filters
+    .map(
+      (filter) =>
+        `{key: "${gqlString(filter.key)}", op: "${gqlString(filter.op)}", value: "${gqlString(filter.value)}"}`
+    )
+    .join(", ")
+  return `attributeFilters: [${items}]`
+}
+
+/** Base filter args shared by tracesPage, traceFacets, and traceDurationStats. */
+function graphQlTraceBaseArgs(
+  search: TracesSearch,
+  range: ResolvedRange
+): string {
   return [
     search.service ? `service: "${gqlString(search.service)}"` : null,
     `fromNanos: "${range.fromNanos}"`,
     `toNanos: "${range.toNanos}"`,
-    search.minMs ? `minDurationMs: ${search.minMs}` : null,
-    search.maxMs ? `maxDurationMs: ${search.maxMs}` : null,
     search.errors ? "errorOnly: true" : null,
     search.q ? `query: "${gqlString(search.q)}"` : null,
+    graphQlAttributeFilters(search),
+  ]
+    .filter(Boolean)
+    .join(", ")
+}
+
+function graphQlTraceArgs(search: TracesSearch, range: ResolvedRange): string {
+  const page = search.page ?? 1
+  return [
+    graphQlTraceBaseArgs(search, range),
+    search.minMs ? `minDurationMs: ${search.minMs}` : null,
+    search.maxMs ? `maxDurationMs: ${search.maxMs}` : null,
     search.sort ? `sort: ${search.sort}` : null,
     `limit: ${PAGE_SIZE}`,
     `offset: ${(page - 1) * PAGE_SIZE}`,
@@ -271,15 +316,20 @@ export const Route = createFileRoute("/traces/")({
         services: data.services,
         tracesPage: { total: "0", items: [] },
         attributeCompare: [],
+        traceFacets: [],
+        traceDurationStats: { p50Ms: null, p95Ms: null },
       }))
     }
     const range = resolveRangeSearch(deps)
     const args = graphQlTraceArgs(deps, range)
+    const baseArgs = graphQlTraceBaseArgs(deps, range)
     const compareArgs = graphQlAttributeCompareArgs(deps, range)
     return graphqlCached<{
       services: string[]
       tracesPage: TracePage
       attributeCompare: AttributeCompareRow[]
+      traceFacets: TraceFacet[]
+      traceDurationStats: { p50Ms: number | null; p95Ms: number | null }
     }>(`
       {
         services
@@ -292,6 +342,11 @@ export const Route = createFileRoute("/traces/")({
         attributeCompare(${compareArgs}) {
           key value selectedCount selectedTotal baselineCount baselineTotal score
         }
+        traceFacets(${baseArgs}) {
+          dimension
+          values { value count }
+        }
+        traceDurationStats(${baseArgs}) { p50Ms p95Ms }
       }
     `)
   },
@@ -312,7 +367,13 @@ function statusError(statusCode: string): boolean {
 }
 
 function TracesPage() {
-  const { services, tracesPage, attributeCompare } = Route.useLoaderData()
+  const {
+    services,
+    tracesPage,
+    attributeCompare,
+    traceFacets,
+    traceDurationStats,
+  } = Route.useLoaderData()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const router = useRouter()
@@ -334,8 +395,51 @@ function TracesPage() {
     search.errors ||
     search.minMs ||
     search.maxMs ||
+    search.where ||
     search.live
   )
+  const whereFilters = useMemo(
+    () => whereClauseFromSearch(search.where),
+    [search.where]
+  )
+  const applyWhereFilters = (filters: WhereFilter[]) =>
+    update({ where: serializeWhereClause(filters) || undefined })
+  // Facet check state derives from the where-clause: a value is selected when
+  // an `=` filter for its dimension/value exists. Toggling adds/removes that
+  // filter (AND semantics — one value per dimension narrows, per backend).
+  const facetSelections = useMemo(() => {
+    const selections: Record<string, string[]> = {}
+    for (const filter of whereFilters) {
+      if (filter.op !== "=") continue
+      selections[filter.key] = [...(selections[filter.key] ?? []), filter.value]
+    }
+    return selections
+  }, [whereFilters])
+  const toggleFacet = (dimension: string, value: string) => {
+    const existing = whereFilters.findIndex(
+      (filter) =>
+        filter.key === dimension && filter.op === "=" && filter.value === value
+    )
+    const next =
+      existing >= 0
+        ? whereFilters.filter((_, index) => index !== existing)
+        : [...whereFilters, { key: dimension, op: "=" as const, value }]
+    applyWhereFilters(next)
+  }
+  const facets: Facet[] = traceFacets.map((facet) => ({
+    dimension: facet.dimension,
+    label: facet.dimension,
+    values: facet.values.map((entry) => ({
+      value: entry.value,
+      count: Number(entry.count),
+    })),
+    serviceDots: facet.dimension === "service",
+    searchable: true,
+  }))
+  const facetValueSuggestions = (key: string) =>
+    traceFacets
+      .find((facet) => facet.dimension === key)
+      ?.values.map((entry) => entry.value) ?? []
   const durationValues = tracesPage.items.map((trace) =>
     Number(trace.durationNs)
   )
@@ -471,31 +575,26 @@ function TracesPage() {
             placeholder="All services"
             {...(search.service ? { value: search.service } : {})}
           />
-          <Input
-            value={search.minMs?.toString() ?? ""}
-            inputMode="numeric"
-            onChange={(event) =>
+          <DurationFilter
+            range={{
+              ...(search.minMs === undefined ? {} : { minMs: search.minMs }),
+              ...(search.maxMs === undefined ? {} : { maxMs: search.maxMs }),
+            }}
+            {...(traceDurationStats.p50Ms != null &&
+            traceDurationStats.p95Ms != null
+              ? {
+                  stats: {
+                    p50Ms: traceDurationStats.p50Ms,
+                    p95Ms: traceDurationStats.p95Ms,
+                  },
+                }
+              : {})}
+            onChange={(next) =>
               update({
-                minMs: event.target.value
-                  ? Number(event.target.value)
-                  : undefined,
+                minMs: next.minMs ?? undefined,
+                maxMs: next.maxMs ?? undefined,
               })
             }
-            placeholder="Min ms"
-            className="h-8 w-24"
-          />
-          <Input
-            value={search.maxMs?.toString() ?? ""}
-            inputMode="numeric"
-            onChange={(event) =>
-              update({
-                maxMs: event.target.value
-                  ? Number(event.target.value)
-                  : undefined,
-              })
-            }
-            placeholder="Max ms"
-            className="h-8 w-24"
           />
           <ToggleChip
             active={Boolean(search.errors)}
@@ -545,120 +644,149 @@ function TracesPage() {
           </div>
         </div>
 
-        {showSkeleton ? (
-          <TableSkeleton rows={PAGE_SIZE} />
-        ) : live ? (
-          <TraceTable
-            rows={spans.map((span) => ({
-              traceId: span.traceId,
-              rootName: span.name,
-              service: span.service,
-              startNanos: span.tsNanos,
-              durationNs: span.durationNs,
-              spanCount: 1,
-              hasError: statusError(span.statusCode),
-            }))}
-            durationValues={liveDurationValues}
-            range={range}
-            sort={undefined}
-            onSort={() => undefined}
-            onOpen={(traceId) =>
-              void navigate({
-                to: "/traces/$traceId",
-                params: { traceId },
-                search: traceDetailSearch(range),
-              })
-            }
-          />
-        ) : tracesPage.items.length > 0 ? (
-          <>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Attribute compare</CardTitle>
-                <CardDescription>
-                  Selected window vs previous window
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <AttributeComparePanel rows={attributeCompare} />
-              </CardContent>
-            </Card>
-            <TraceTable
-              rows={tracesPage.items}
-              durationValues={durationValues}
-              range={range}
-              sort={sortParam}
-              onSort={setSortParam}
-              onOpen={(traceId) =>
-                void navigate({
-                  to: "/traces/$traceId",
-                  params: { traceId },
-                  search: traceDetailSearch(range),
-                })
+        {!live ? (
+          <div className="space-y-2">
+            <WhereClauseEditor
+              filters={whereFilters}
+              onApply={applyWhereFilters}
+              keySuggestions={facets.map((facet) => facet.dimension)}
+              valueSuggestionsFor={facetValueSuggestions}
+            />
+            <WhereClauseChips
+              filters={whereFilters}
+              onRemove={(index) =>
+                applyWhereFilters(whereFilters.filter((_, i) => i !== index))
               }
             />
-            <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-              <span className="text-sm text-muted-foreground tabular-nums">
-                Showing {pageStart}-{pageEnd} of {formatCount(total)}
-              </span>
-              <div className="flex items-center gap-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={page <= 1 || pending}
-                  onClick={() => update({ page: page - 1 })}
-                >
-                  Previous
-                </Button>
-                {pages.map((item, index) =>
-                  item === "..." ? (
-                    <span
-                      key={`ellipsis-${index}`}
-                      className="px-2 text-sm text-muted-foreground"
-                    >
-                      ...
-                    </span>
-                  ) : (
+          </div>
+        ) : null}
+
+        <div className="flex items-start gap-4">
+          {!live && facets.length > 0 ? (
+            <FacetSidebar
+              facets={facets}
+              selections={facetSelections}
+              onToggle={toggleFacet}
+              onClear={() => update({ where: undefined })}
+            />
+          ) : null}
+          <div className="flex min-w-0 flex-1 flex-col gap-4">
+            {showSkeleton ? (
+              <TableSkeleton rows={PAGE_SIZE} />
+            ) : live ? (
+              <TraceTable
+                rows={spans.map((span) => ({
+                  traceId: span.traceId,
+                  rootName: span.name,
+                  service: span.service,
+                  startNanos: span.tsNanos,
+                  durationNs: span.durationNs,
+                  spanCount: 1,
+                  hasError: statusError(span.statusCode),
+                }))}
+                durationValues={liveDurationValues}
+                range={range}
+                sort={undefined}
+                onSort={() => undefined}
+                onOpen={(traceId) =>
+                  void navigate({
+                    to: "/traces/$traceId",
+                    params: { traceId },
+                    search: traceDetailSearch(range),
+                  })
+                }
+              />
+            ) : tracesPage.items.length > 0 ? (
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Attribute compare</CardTitle>
+                    <CardDescription>
+                      Selected window vs previous window
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <AttributeComparePanel rows={attributeCompare} />
+                  </CardContent>
+                </Card>
+                <TraceTable
+                  rows={tracesPage.items}
+                  durationValues={durationValues}
+                  range={range}
+                  sort={sortParam}
+                  onSort={setSortParam}
+                  onOpen={(traceId) =>
+                    void navigate({
+                      to: "/traces/$traceId",
+                      params: { traceId },
+                      search: traceDetailSearch(range),
+                    })
+                  }
+                />
+                <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+                  <span className="text-sm text-muted-foreground tabular-nums">
+                    Showing {pageStart}-{pageEnd} of {formatCount(total)}
+                  </span>
+                  <div className="flex items-center gap-1">
                     <Button
-                      key={item}
                       type="button"
-                      variant={item === page ? "secondary" : "ghost"}
+                      variant="outline"
                       size="sm"
-                      disabled={pending}
-                      onClick={() => update({ page: item })}
+                      disabled={page <= 1 || pending}
+                      onClick={() => update({ page: page - 1 })}
                     >
-                      {item}
+                      Previous
                     </Button>
+                    {pages.map((item, index) =>
+                      item === "..." ? (
+                        <span
+                          key={`ellipsis-${index}`}
+                          className="px-2 text-sm text-muted-foreground"
+                        >
+                          ...
+                        </span>
+                      ) : (
+                        <Button
+                          key={item}
+                          type="button"
+                          variant={item === page ? "secondary" : "ghost"}
+                          size="sm"
+                          disabled={pending}
+                          onClick={() => update({ page: item })}
+                        >
+                          {item}
+                        </Button>
+                      )
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={page >= totalPages || pending}
+                      onClick={() => update({ page: page + 1 })}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <EmptyState
+                icon={IconAffiliateFilled}
+                title={hasFilters ? "No matching traces" : "No traces yet"}
+                description={
+                  hasFilters ? (
+                    "Try a different search or clear filters."
+                  ) : (
+                    <span className="font-mono text-xs">
+                      OTLP/gRPC: localhost:4317 · OTLP/HTTP: localhost:4318
+                    </span>
                   )
-                )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={page >= totalPages || pending}
-                  onClick={() => update({ page: page + 1 })}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          </>
-        ) : (
-          <EmptyState
-            icon={IconAffiliateFilled}
-            title={hasFilters ? "No matching traces" : "No traces yet"}
-            description={
-              hasFilters ? (
-                "Try a different search or clear filters."
-              ) : (
-                <span className="font-mono text-xs">
-                  OTLP/gRPC: localhost:4317 · OTLP/HTTP: localhost:4318
-                </span>
-              )
-            }
-          />
-        )}
+                }
+              />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )
