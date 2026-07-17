@@ -20,6 +20,7 @@ import { Route as IssuesIndexRouteImport } from './routes/issues.index'
 import { Route as InvocationsIndexRouteImport } from './routes/invocations.index'
 import { Route as InvestigationsIndexRouteImport } from './routes/investigations.index'
 import { Route as DashboardsIndexRouteImport } from './routes/dashboards.index'
+import { Route as AlertsIndexRouteImport } from './routes/alerts.index'
 import { Route as TracesTraceIdRouteImport } from './routes/traces.$traceId'
 import { Route as ServicesServiceRouteImport } from './routes/services.$service'
 import { Route as MetricsMetricNameRouteImport } from './routes/metrics.$metricName'
@@ -83,6 +84,11 @@ const DashboardsIndexRoute = DashboardsIndexRouteImport.update({
   path: '/dashboards/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AlertsIndexRoute = AlertsIndexRouteImport.update({
+  id: '/alerts/',
+  path: '/alerts/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TracesTraceIdRoute = TracesTraceIdRouteImport.update({
   id: '/traces/$traceId',
   path: '/traces/$traceId',
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/metrics/$metricName': typeof MetricsMetricNameRoute
   '/services/$service': typeof ServicesServiceRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
+  '/alerts/': typeof AlertsIndexRoute
   '/dashboards/': typeof DashboardsIndexRoute
   '/investigations/': typeof InvestigationsIndexRoute
   '/invocations/': typeof InvocationsIndexRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByTo {
   '/metrics/$metricName': typeof MetricsMetricNameRoute
   '/services/$service': typeof ServicesServiceRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
+  '/alerts': typeof AlertsIndexRoute
   '/dashboards': typeof DashboardsIndexRoute
   '/investigations': typeof InvestigationsIndexRoute
   '/invocations': typeof InvocationsIndexRoute
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   '/metrics/$metricName': typeof MetricsMetricNameRoute
   '/services/$service': typeof ServicesServiceRoute
   '/traces/$traceId': typeof TracesTraceIdRoute
+  '/alerts/': typeof AlertsIndexRoute
   '/dashboards/': typeof DashboardsIndexRoute
   '/investigations/': typeof InvestigationsIndexRoute
   '/invocations/': typeof InvocationsIndexRoute
@@ -196,6 +205,7 @@ export interface FileRouteTypes {
     | '/metrics/$metricName'
     | '/services/$service'
     | '/traces/$traceId'
+    | '/alerts/'
     | '/dashboards/'
     | '/investigations/'
     | '/invocations/'
@@ -216,6 +226,7 @@ export interface FileRouteTypes {
     | '/metrics/$metricName'
     | '/services/$service'
     | '/traces/$traceId'
+    | '/alerts'
     | '/dashboards'
     | '/investigations'
     | '/invocations'
@@ -236,6 +247,7 @@ export interface FileRouteTypes {
     | '/metrics/$metricName'
     | '/services/$service'
     | '/traces/$traceId'
+    | '/alerts/'
     | '/dashboards/'
     | '/investigations/'
     | '/invocations/'
@@ -256,6 +268,7 @@ export interface RootRouteChildren {
   IssuesFingerprintRoute: typeof IssuesFingerprintRoute
   MetricsMetricNameRoute: typeof MetricsMetricNameRoute
   TracesTraceIdRoute: typeof TracesTraceIdRoute
+  AlertsIndexRoute: typeof AlertsIndexRoute
   DashboardsIndexRoute: typeof DashboardsIndexRoute
   InvestigationsIndexRoute: typeof InvestigationsIndexRoute
   InvocationsIndexRoute: typeof InvocationsIndexRoute
@@ -343,6 +356,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/alerts/': {
+      id: '/alerts/'
+      path: '/alerts'
+      fullPath: '/alerts/'
+      preLoaderRoute: typeof AlertsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/traces/$traceId': {
       id: '/traces/$traceId'
       path: '/traces/$traceId'
@@ -419,6 +439,7 @@ const rootRouteChildren: RootRouteChildren = {
   IssuesFingerprintRoute: IssuesFingerprintRoute,
   MetricsMetricNameRoute: MetricsMetricNameRoute,
   TracesTraceIdRoute: TracesTraceIdRoute,
+  AlertsIndexRoute: AlertsIndexRoute,
   DashboardsIndexRoute: DashboardsIndexRoute,
   InvestigationsIndexRoute: InvestigationsIndexRoute,
   InvocationsIndexRoute: InvocationsIndexRoute,

@@ -4,6 +4,8 @@ import {
   IconAffiliateFilled,
   IconArticle,
   IconArticleFilled,
+  IconBell,
+  IconBellFilled,
   IconBug,
   IconBugFilled,
   IconChartLine,
@@ -96,6 +98,14 @@ export const workspaceNav: NavItem[] = [
     activeIcon: IconTerminal2,
     iconClassName:
       "bg-violet-100 dark:bg-violet-950 rounded-xl p-0.5 corner-squircle text-violet-500 shadow-[inset_0_0_0_1px_rgba(139,92,246,0.14),0_2px_6px_-2px_rgba(139,92,246,0.25)] dark:shadow-(--custom-shadow)",
+  },
+  {
+    href: "/alerts",
+    label: "Alerts",
+    icon: IconBell,
+    activeIcon: IconBellFilled,
+    iconClassName:
+      "bg-amber-100 dark:bg-amber-950 rounded-xl p-0.5 corner-squircle text-amber-500 shadow-[inset_0_0_0_1px_rgba(245,158,11,0.14),0_2px_6px_-2px_rgba(245,158,11,0.25)] dark:shadow-(--custom-shadow)",
   },
   {
     href: "/dashboards",
