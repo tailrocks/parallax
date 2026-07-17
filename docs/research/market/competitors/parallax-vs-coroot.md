@@ -1,12 +1,17 @@
 # Parallax vs Coroot
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 59:
-> eBPF→app-errors **UNFIRED**; **pass 103** MCP/AI primary re-verify — still
-> **v1.23.3 / 7,837★**, last push 2026-07-02). Sources: [coroot.com](https://coroot.com/)
-> + [pricing](https://coroot.com/pricing) + [enterprise](https://coroot.com/enterprise)
-> + [AI](https://docs.coroot.com/ai/) + [MCP](https://docs.coroot.com/mcp/overview/),
-> [github.com/coroot/coroot](https://github.com/coroot/coroot), and the legacy
-> [coroot-deep-research.md](../coroot-deep-research.md) (2026-06-22) as a lead.
+> eBPF→app-errors **UNFIRED**; **pass 103** + **pass 144** MCP/AI re-verify —
+> still **v1.23.3 / 7,837★**, last push **2026-07-02**). Sources:
+> [coroot.com](https://coroot.com/), [MCP overview](https://docs.coroot.com/mcp/overview/),
+> [github.com/coroot/coroot](https://github.com/coroot/coroot), legacy
+> [coroot-deep-research.md](../coroot-deep-research.md).
+>
+> **Pass 144:** MCP docs still OAuth 2.0 per-user RBAC; tool table still has one
+> clear Community mutator **`resolve_alerts`**; EE **`investigate_anomaly`** still
+> 2-stage deterministic+LLM RCA. **No** portable redacted evidence-bundle product
+> claim. eBPF→app-level error/stack capture **still not** claimed as full app
+> exception lifecycle (watch UNFIRED).
 >
 > **Bottom line up front:** Coroot is the **nearest eBPF/RCA open-source competitor**
 > and ships the **best MCP safety model in the field** (per-user OAuth + RBAC, one
