@@ -28,7 +28,7 @@ Legend for the **State** column:
 | **New Relic** | Full-platform SaaS; entity-centric; AI (NRAI + **AI Coding Obs** for Claude Code/Cursor/Copilot/Windsurf/Q); OTLP-native. | Closed SaaS (no self-host). | All signals. | [deep-dive](parallax-vs-new-relic.md) |
 | **Dynatrace** | AI-driven (Davis) full-stack; deep auto-instrumentation via OneAgent. | Closed SaaS. | All signals + topology. | stub |
 | **Splunk Observability Cloud** | Observability on top of Splunk (post-Cisco); OTel-native metrics/traces + logs. | Closed SaaS. | Logs + metrics + traces. | stub |
-| **Elastic Observability** | ES/Kibana stack (search + observability + security); ES|QL. | Elastic License v2 (source-available). | Logs + metrics + traces + security. | stub |
+| **Elastic Observability** | ES/Kibana stack (search + observability + security); ES|QL. | Elastic License v2 (source-available). | Logs + metrics + traces + security. | [deep-dive](parallax-vs-elastic.md) |
 | **Sumo Logic** | Cloud log/SIEM/observability SaaS. | Closed SaaS. | Logs + metrics + security. | stub |
 | **Chronosphere** | Scale metrics platform on M3/Cube; controlled-cost metrics. | Closed SaaS. | Metrics (high scale). | stub |
 | **Observe** | Data-/SQL-centric observability on Snowflake; relationship graph. | Closed SaaS. | All signals (relational). | stub |
