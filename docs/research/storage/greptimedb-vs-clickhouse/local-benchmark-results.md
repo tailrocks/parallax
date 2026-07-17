@@ -7866,3 +7866,8 @@ Live CH 26.6 settings: `async_insert=1`, `wait_for_async_insert=1`,
 `fsync_metadata=1`. GT exposes flush latency histograms
 (`greptime_datanode_handle_region_request_elapsed{Flush}`). Aligns with Run 199
 WAL/fsync framing; no new product path.
+
+### Run 265 — 2026-07-17 — count-distinct parity @~50k
+
+`count(DISTINCT trace_id)` on spans1m → **50043** both engines (exact match).
+Warm: GT **~10 ms**, CH **~7–8 ms**. Capability parity holds (Run 169).
