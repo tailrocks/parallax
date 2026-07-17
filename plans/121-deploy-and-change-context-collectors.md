@@ -13,9 +13,10 @@
 - **Depends on**: 099, 104, 109, 111, 116
 - **Category**: future provider integration / causal evidence / security
 - **Planned at**: `eefa4617`, 2026-07-12
-- **Status**: BLOCKED
-- **Blocker**: Provider ingestion is not in the open product scope; the operator
-  has not selected the first provider, auth/deployment profile, or evidence claim.
+- **Status**: OPENED (unblock 2026-07-17) — provider = GitHub
+- **Blocker**: none for scope. Residual before code: exact GitHub
+  deployments/changes API + webhook surface, least-privilege permissions,
+  claim wording, sanitized fixtures. Deps 099/104/109-minimal/111/116 complete.
 
 ## Why
 

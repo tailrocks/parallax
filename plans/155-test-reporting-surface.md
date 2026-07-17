@@ -20,7 +20,9 @@
   (deploy/change joins), 124 (CI-provider enrichment), 140 (Runs feature)
 - **Category**: product capability / ingest derivation / UI surface
 - **Planned at**: `8f24808`, 2026-07-14
-- **Status**: BLOCKED — Plans 149, 152, and 153 are not complete
+- **Status**: TODO — hard deps 149/152/153/140 DONE (2026-07-17); soft 121/124
+  still open. Ready to start domain model + OTLP test derivation once claimed;
+  XL surface — do not half-land UI.
 
 ## Contract reconciliation (2026-07-17)
 

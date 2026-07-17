@@ -158,12 +158,38 @@ impl SpikeServer {
         &self,
         Parameters(args): Parameters<IssueContextArgs>,
     ) -> Result<CallToolResult, McpError> {
-        require_evidence_read(&self.authorization)?;
-        validate_anchor(&args.fingerprint)?;
-        let bundle = gql::fetch_bundle(&self.client, Some(&args.fingerprint), None)
-            .await
-            .map_err(|error| map_fetch_error(error, "bundle_unavailable"))?;
-        bundle_tool_result(bundle)
+        let guard = crate::audit::ToolCallGuard::start(
+            crate::audit::AuditTool::IssueContext,
+            self.authorization.principal,
+            self.authorization.scopes,
+        );
+        if let Err(error) = require_evidence_read(&self.authorization) {
+            guard.finish_err(&crate::audit::error_code(&error));
+            return Err(error);
+        }
+        if let Err(error) = validate_anchor(&args.fingerprint) {
+            guard.finish_err(&crate::audit::error_code(&error));
+            return Err(error);
+        }
+        let bundle = match gql::fetch_bundle(&self.client, Some(&args.fingerprint), None).await {
+            Ok(bundle) => bundle,
+            Err(error) => {
+                let mapped = map_fetch_error(error, "bundle_unavailable");
+                guard.finish_err(&crate::audit::error_code(&mapped));
+                return Err(mapped);
+            }
+        };
+        match bundle_tool_result(bundle) {
+            Ok(result) => {
+                let bytes = serde_json::to_vec(&result).map(|v| v.len()).unwrap_or(0);
+                guard.finish_ok(bytes);
+                Ok(result)
+            }
+            Err(error) => {
+                guard.finish_err(&crate::audit::error_code(&error));
+                Err(error)
+            }
+        }
     }
 
     #[tool(
@@ -182,20 +208,50 @@ impl SpikeServer {
         &self,
         Parameters(args): Parameters<AgentSessionArgs>,
     ) -> Result<CallToolResult, McpError> {
-        require_evidence_read(&self.authorization)?;
-        validate_anchor(&args.invocation_id)?;
-        let session = gql::fetch_agent_session(&self.client, &args.invocation_id)
-            .await
-            .map_err(|error| map_fetch_error(error, "agent_session_unavailable"))?;
+        let guard = crate::audit::ToolCallGuard::start(
+            crate::audit::AuditTool::AgentSessionShow,
+            self.authorization.principal,
+            self.authorization.scopes,
+        );
+        if let Err(error) = require_evidence_read(&self.authorization) {
+            guard.finish_err(&crate::audit::error_code(&error));
+            return Err(error);
+        }
+        if let Err(error) = validate_anchor(&args.invocation_id) {
+            guard.finish_err(&crate::audit::error_code(&error));
+            return Err(error);
+        }
+        let session = match gql::fetch_agent_session(&self.client, &args.invocation_id).await {
+            Ok(session) => session,
+            Err(error) => {
+                let mapped = map_fetch_error(error, "agent_session_unavailable");
+                guard.finish_err(&crate::audit::error_code(&mapped));
+                return Err(mapped);
+            }
+        };
         // Mirror CLI JSON shape: compact re-serialize of the GraphQL object.
-        let body = serde_json::to_string(&session)
-            .map_err(|_| safe_internal_error("agent_session_invalid"))?;
-        ensure_already_redacted(&[&body], "agent_session_redaction_mismatch")?;
-        let structured = serde_json::to_value(session)
-            .map_err(|_| safe_internal_error("agent_session_invalid"))?;
+        let Ok(body) = serde_json::to_string(&session) else {
+            let error = safe_internal_error("agent_session_invalid");
+            guard.finish_err(&crate::audit::error_code(&error));
+            return Err(error);
+        };
+        if let Err(error) = ensure_already_redacted(&[&body], "agent_session_redaction_mismatch") {
+            guard.finish_err(&crate::audit::error_code(&error));
+            return Err(error);
+        }
+        let Ok(structured) = serde_json::to_value(session) else {
+            let error = safe_internal_error("agent_session_invalid");
+            guard.finish_err(&crate::audit::error_code(&error));
+            return Err(error);
+        };
         let mut result = CallToolResult::structured(structured);
         result.content = vec![ContentBlock::text(body)];
-        ensure_result_budget(&result)?;
+        if let Err(error) = ensure_result_budget(&result) {
+            guard.finish_err(&crate::audit::error_code(&error));
+            return Err(error);
+        }
+        let bytes = serde_json::to_vec(&result).map(|v| v.len()).unwrap_or(0);
+        guard.finish_ok(bytes);
         Ok(result)
     }
 }

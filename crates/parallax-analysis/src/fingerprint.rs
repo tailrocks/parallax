@@ -146,3 +146,34 @@ pub fn fingerprint_with_operation(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod property_tests {
+    //! Plan-103: fingerprint determinism and normalization stability.
+    use super::*;
+    use proptest::prelude::*;
+
+    proptest! {
+        /// Same inputs always yield the same 16-hex fingerprint (pure hash).
+        #[test]
+        fn fingerprint_is_deterministic(
+            error_type in ".{0,64}",
+            message in ".{0,256}",
+            stack in prop::option::of(".{0,512}")
+        ) {
+            let a = fingerprint(&error_type, &message, stack.as_deref());
+            let b = fingerprint(&error_type, &message, stack.as_deref());
+            prop_assert_eq!(&a, &b);
+            prop_assert_eq!(a.len(), 16);
+            prop_assert!(a.chars().all(|c| c.is_ascii_hexdigit()));
+        }
+
+        /// Message normalization is a fixpoint after the first pass.
+        #[test]
+        fn normalize_message_is_idempotent(message in ".{0,512}") {
+            let once = normalize_message(&message);
+            let twice = normalize_message(&once);
+            prop_assert_eq!(once, twice);
+        }
+    }
+}

@@ -243,4 +243,21 @@ mod tests {
         assert!(!out.contains("s3cr3t"), "{out}");
         assert!(out.contains("[REDACTED:dsn_userinfo]"), "{out}");
     }
+
+    mod property_tests {
+        //! Plan-103: redaction idempotence (docs/research/testing/property-invariants.md).
+        use super::*;
+        use proptest::prelude::*;
+
+        proptest! {
+            /// `sanitize_text` is a fixpoint: re-running never rewrites output.
+            #[test]
+            fn sanitize_text_is_idempotent(input in ".*") {
+                prop_assume!(input.len() <= 4_096);
+                let once = sanitize_text(&input);
+                let twice = sanitize_text(&once);
+                prop_assert_eq!(once, twice);
+            }
+        }
+    }
 }

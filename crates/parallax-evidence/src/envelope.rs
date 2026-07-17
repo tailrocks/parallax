@@ -421,4 +421,47 @@ mod tests {
         let value = json!({ "b": 1, "a": { "d": [2, 3], "c": "x" } });
         assert_eq!(canonical_json(&value), r#"{"a":{"c":"x","d":[2,3]},"b":1}"#);
     }
+
+    mod property_tests {
+        //! Plan-103: canonical JSON is a fixpoint; version-scoped hashes are stable.
+        use super::*;
+        use proptest::collection::{btree_map, vec};
+        use proptest::prelude::*;
+
+        fn arb_leaf() -> impl Strategy<Value = serde_json::Value> {
+            prop_oneof![
+                Just(serde_json::Value::Null),
+                any::<bool>().prop_map(serde_json::Value::Bool),
+                (-1_000_000i64..1_000_000i64).prop_map(|n| json!(n)),
+                ".*".prop_map(serde_json::Value::String),
+            ]
+        }
+
+        fn arb_json(depth: u32) -> BoxedStrategy<serde_json::Value> {
+            if depth == 0 {
+                return arb_leaf().boxed();
+            }
+            prop_oneof![
+                arb_leaf(),
+                vec(arb_json(depth - 1), 0..4).prop_map(serde_json::Value::Array),
+                btree_map(".{0,12}", arb_json(depth - 1), 0..4)
+                    .prop_map(|map| { serde_json::Value::Object(map.into_iter().collect()) }),
+            ]
+            .boxed()
+        }
+
+        proptest! {
+            /// Re-canonicalizing the parse of `canonical_json` yields the same bytes.
+            #[test]
+            fn canonical_json_is_a_fixpoint(value in arb_json(3)) {
+                let once = canonical_json(&value);
+                let parsed: serde_json::Value =
+                    serde_json::from_str(&once).expect("canonical JSON must re-parse");
+                prop_assert_eq!(canonical_json(&parsed), once.clone());
+                let hash_a = version_scoped_hash("bundle-v2", &once);
+                let hash_b = version_scoped_hash("bundle-v2", &canonical_json(&parsed));
+                prop_assert_eq!(hash_a, hash_b);
+            }
+        }
+    }
 }

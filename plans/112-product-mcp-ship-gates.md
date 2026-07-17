@@ -15,7 +15,8 @@
 - **Planned at**: `eefa4617`, 2026-07-12
 - **Status**: IN PROGRESS — local-stdio product GO (unblock 2026-07-17); ship gates incomplete
 - **Blocker**: none for local scope. Residual gates: claimed-client fixtures,
-  resources/oversized summary path, audit/OTel, spike graduation/quarantine.
+  resources/oversized summary path, OTel span (audit rows landed), spike
+  graduation/quarantine.
 
 ## Current Evidence
 

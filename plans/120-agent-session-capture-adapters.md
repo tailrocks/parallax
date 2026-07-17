@@ -13,10 +13,10 @@
 - **Depends on**: 099, 104, 111, 119
 - **Category**: future capture / agent security / interoperability
 - **Planned at**: `eefa4617`, 2026-07-12
-- **Status**: BLOCKED
-- **Blocker**: The operator has not opened broad product support for
-  Claude/Codex/Amp/OpenCode session adapters or selected the first supported
-  tool, version, capture surface, and consent contract.
+- **Status**: OPENED (unblock 2026-07-17) — first adapter = Claude Code
+- **Blocker**: none for scope. Residual before code: exact Claude Code version
+  range, capture surface (hooks vs export), consent contract, sanitized real
+  fixtures. Deps 099/104/111/119 complete.
 
 ## Why
 

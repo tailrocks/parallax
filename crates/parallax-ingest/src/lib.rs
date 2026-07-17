@@ -19,11 +19,13 @@ use parallax_semconv as semconv;
 
 mod logs;
 mod metrics;
+pub mod sentry_envelope;
 mod traces;
 mod values;
 
 pub use logs::{normalize_logs, promote_log_identity_attributes};
 pub use metrics::{NormalizedMetrics, normalize_metrics};
+pub use sentry_envelope::{EnvelopeOutcome, RejectReason, UnsupportedItem, parse_envelope};
 pub use traces::normalize_traces;
 
 use values::{any_value_to_json, attr_str, attributes_to_json, hex};

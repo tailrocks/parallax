@@ -63,7 +63,7 @@ Notes from local client docs:
 | --- | --- |
 | Live Codex/Claude discovery + invocation fixtures | unfinished |
 | Oversized → bounded summary + approved resource refs | fail-closed only |
-| Per-call audit row + OTel span | unfinished |
+| Per-call audit row + OTel span | **audit row landed 2026-07-17** (`parallax-mcp-spike/src/audit.rs`): secret-free in-process rows (tool/principal/scopes/status/result_bytes/duration); no anchors/evidence; 1024-row cap; wired on both tools. OTel span still unfinished (spike still installs no tracing subscriber by design). |
 | Client retention matrix (memory / attachments) | documented residual only |
 | Graduate spike → product binary / package | not started |
 | Remote transport | blocked on deliberate 109 integration into MCP |

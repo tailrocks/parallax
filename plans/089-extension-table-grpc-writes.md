@@ -74,6 +74,9 @@ by Parallax contains no active rustls backend.
   **0.18.0** as latest. Published crate still hard-enables tonic `tls-ring`
   (rustls path). Step 0 conditions fail; plan remains blocked pending upstream
   native-TLS/plaintext feature. No product-code change.
+- 2026-07-17 later recheck: crates.io still **0.18.0**. Upstream PR
+  [greptimedb-ingester-rust#58](https://github.com/GreptimeTeam/greptimedb-ingester-rust/pull/58)
+  remains **OPEN** (title check green; not merged). Step 0 still fails.
 
 
 - `crates/parallax-storage/src/greptime.rs` builds SQL `INSERT ... VALUES`

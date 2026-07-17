@@ -14,10 +14,10 @@
 - **Depends on**: 093, 099, 104, 111, 116
 - **Category**: future compatibility / ingest / security
 - **Planned at**: `eefa4617`, 2026-07-12
-- **Status**: BLOCKED
-- **Blocker**: The operator has not opened Sentry-compatible ingest, and no
-  current adoption evidence establishes it as the next highest-value migration
-  path after the OTLP-first local loop.
+- **Status**: IN PROGRESS — framing parser slice landed 2026-07-17
+- **Blocker**: none for pure parser. Residual: real SDK fixtures, HTTP endpoint,
+  project/DSN mapping, spool durable ack, normalize→ErrorEventRow, redaction/
+  bundle gates.
 
 ## Why
 
@@ -36,8 +36,15 @@ the attack surface.
   outcomes, raw-retention, and fixture gates are fixed in
   [`sentry-envelope-adapter.md`](../docs/research/decisions/sentry-envelope-adapter.md).
   The executor must verify and extend that shape with real current SDK fixtures;
-  no compatibility claim is proven yet. Plan status is intentionally unchanged
-  for the parallel verifier/executor handoff.
+  no compatibility claim is proven yet.
+- **2026-07-17 parser slice**: pure framing parser in
+  `crates/parallax-ingest/src/sentry_envelope.rs` with contract limits
+  (1 MiB envelope, 8 KiB headers, 16 items, 768 KiB event, one event item).
+  Unit tests cover accept+unsupported side item, duplicate event reject,
+  no-event reject, premature EOF, trailing garbage, implicit length, size
+  ceiling, dashed event-id normalize. Hand-crafted protocol fixtures only —
+  **not** a compatibility claim. Real sanitized `sentry` Rust SDK fixtures
+  remain the gate before HTTP/normalize work.
 - `docs/research/capture/sentry-ingest.md` records the envelope framing,
   Sentry-Rust event shapes, compatibility levels, and source-field constraints.
 - OTLP HTTP/gRPC is the shipped primary ingest contract.

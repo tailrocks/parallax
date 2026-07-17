@@ -12,6 +12,9 @@ in normal `cargo nextest` CI — bounded, seeded, shrinkable), and removal rule
 | Canonical metric identity | drifting name normalization breaks the ingest-persisted `canonical_name` contract | arbitrary ≤64-char names | idempotent; output charset `[A-Za-z0-9_]` | `parallax-semconv/src/lib.rs` |
 | JSON attribute path shape | backslash-escaped member quotes silently match nothing on the live engine (defect fixed 2026-07-17) | arbitrary quote-free keys | path is exactly one plainly quoted member (`$."…"`) | same |
 | Where-clause literal balance | a hostile filter value terminating a SQL literal (injection) | arbitrary keys/values/operators across the span, log, and metric compile arms | single-quote count in every compiled condition is even | `parallax-greptime/src/greptime/attribute_filters.rs` |
+| Redaction text idempotence | re-sanitizing already-redacted text mutates storage titles/messages | arbitrary ≤4 KiB UTF-8 strings | `sanitize_text` is a fixpoint (`f(f(x)) = f(x)`) | `parallax-evidence/src/redaction_policy.rs` property_tests |
+| Canonical JSON + version-scoped hash stability | non-deterministic key order or non-fixpoint canonicalization breaks bundle-v2 hashes | arbitrary JSON trees depth ≤3, ≤4 children | `canonical_json` re-parse is a fixpoint; version-scoped hash stable | `parallax-evidence/src/envelope.rs` property_tests |
+| Fingerprint determinism | non-pure fingerprinting splits one defect class across issues | arbitrary type/message/stack strings | same inputs → identical 16-hex fingerprint; `normalize_message` fixpoint | `parallax-analysis/src/fingerprint.rs` property_tests |
 
 ## Fuzz boundaries (plan 103, Step 3 — first slice)
 

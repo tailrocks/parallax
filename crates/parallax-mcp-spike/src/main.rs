@@ -3,6 +3,7 @@
 //! Not a product surface. See crate README and
 //! `docs/research/validation/2026-07-11-mcp-spike-projection-equivalence.md`.
 
+mod audit;
 mod check;
 mod gql;
 mod server;

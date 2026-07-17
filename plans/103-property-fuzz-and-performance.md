@@ -119,9 +119,12 @@ spike produces useful stable signal.
 - [x] (first slice, 2026-07-17) Rust invariants named and covered: counter
   reset clamping, histogram avg shape, canonical metric identity, JSON
   attribute path shape, where-clause literal balance — see
-  docs/research/testing/property-invariants.md. Remaining Rust invariants
-  (normalization determinism, redaction idempotence, bundle hash stability,
-  trace trees, serialization, retry no-replay) still open.
+  docs/research/testing/property-invariants.md.
+- [x] (2026-07-17 later) Redaction idempotence (`sanitize_text` fixpoint),
+  bundle canonical-JSON fixpoint + version-scoped hash stability, fingerprint
+  determinism + `normalize_message` fixpoint. Remaining Rust invariants still
+  open: OTLP normalization determinism, trace trees, serialization contracts,
+  retry no-replay.
 - [ ] UI search, runtime decoder, Query identity, live ordering, and state
   invariants have bounded generated coverage.
 - [x] (2026-07-17) Six fuzz boundaries landed (`fuzz/`, nightly cargo-fuzz,
