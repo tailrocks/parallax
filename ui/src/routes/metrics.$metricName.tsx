@@ -1,7 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { Link, createFileRoute } from "@tanstack/react-router"
 import { useMemo } from "react"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
-import { IconChartLine } from "@tabler/icons-react"
+import { IconBellPlus, IconChartLine } from "@tabler/icons-react"
+
+import { Button } from "@/components/ui/button"
 
 import { RangePicker } from "@/components/console/range-picker"
 import { PageHeader } from "@/components/page-header"
@@ -22,7 +24,9 @@ import {
 } from "@/components/ui/select"
 import { gqlString, graphqlCached } from "@/lib/api"
 import {
+  coerceAggregation,
   inferMetricKind,
+  legalAggregations,
   type MetricAggregation,
   type MetricKind,
 } from "@/lib/metric-aggregation"
@@ -56,32 +60,32 @@ function searchString(value: unknown) {
 const NO_GROUP = "__none__"
 const STEP_OPTIONS = ["30", "60", "300", "900"] as const
 
-// Aggregations the CURRENT backend accepts (metricSeries: avg|min|max|sum|
-// rate; histogramQuantile: p50/p95/p99). The full legality table in
-// lib/metric-aggregation.ts includes increase/last, which land with the
-// plan-168 metricQuery backend — until then this route offers the
-// intersection so every option works live.
-function supportedAggregations(kind: MetricKind): MetricAggregation[] {
+// Full contract legality table (lib/metric-aggregation.ts): the plan-168
+// metricQuery backend accepts gauge avg|min|max|last, sum sum|rate|increase,
+// histogram p50|p95|p99|avg. Backend kinds are gauge|sum|histogram; summary
+// maps to histogram semantics and unknown to gauge.
+function backendKind(kind: MetricKind): "gauge" | "sum" | "histogram" {
   switch (kind) {
     case "sum":
-      return ["rate", "sum"]
+      return "sum"
     case "histogram":
     case "summary":
-      return ["p50", "p95", "p99"]
+      return "histogram"
     case "gauge":
     case "unknown":
-      return ["avg", "min", "max"]
+      return "gauge"
   }
+}
+
+function supportedAggregations(kind: MetricKind): MetricAggregation[] {
+  return [...legalAggregations(backendKind(kind))]
 }
 
 function resolveAggregation(
   kind: MetricKind,
   raw: string | undefined
 ): MetricAggregation {
-  const legal = supportedAggregations(kind)
-  return legal.includes(raw as MetricAggregation)
-    ? (raw as MetricAggregation)
-    : legal[0]!
+  return coerceAggregation(backendKind(kind), raw) ?? "avg"
 }
 
 interface SeriesOut {
@@ -118,7 +122,7 @@ async function loadDetail(
       }
     }>(`{
       metricLabels(name: ${name})
-      metricQuery(name: ${name}, kind: "${gqlString(kind)}", agg: "${gqlString(agg)}", ${window}, stepSeconds: ${stepSeconds}${groupBy}) {
+      metricQuery(name: ${name}, kind: "${gqlString(backendKind(kind))}", agg: "${gqlString(agg)}", ${window}, stepSeconds: ${stepSeconds}${groupBy}) {
         kind
         effectiveStepSeconds
         series { groupValue points { tsNanos value } }
@@ -192,14 +196,22 @@ function MetricDetailPage() {
     const byTime = new Map<string, Record<string, string | number>>()
     series.forEach((entry, index) => {
       const key = entry.groupValue ?? `series-${index + 1}`
-      for (const point of entry.points) {
+      // The newest bucket is usually incomplete: render its segment as a
+      // dashed continuation series instead of a confident solid drop.
+      const tailStart = Math.max(entry.points.length - 2, 0)
+      entry.points.forEach((point, pointIndex) => {
         const time = new Date(
           Number(BigInt(point.tsNanos) / 1_000_000n)
         ).toLocaleTimeString()
         const row = byTime.get(point.tsNanos) ?? { time }
-        row[key] = point.value
+        if (pointIndex < entry.points.length - 1) {
+          row[key] = point.value
+        }
+        if (pointIndex >= tailStart && entry.points.length > 1) {
+          row[`${key}__tail`] = point.value
+        }
         byTime.set(point.tsNanos, row)
-      }
+      })
     })
     return Array.from(byTime.entries())
       .sort(([a], [b]) => (BigInt(a) < BigInt(b) ? -1 : 1))
@@ -291,6 +303,23 @@ function MetricDetailPage() {
             ))}
           </SelectContent>
         </Select>
+        <Button
+          size="sm"
+          variant="outline"
+          render={
+            <Link
+              to="/alerts"
+              search={{
+                signal_type: "metric",
+                metric_name: metricName,
+                metric_aggregation: agg,
+              }}
+            />
+          }
+        >
+          <IconBellPlus data-icon="inline-start" />
+          Create alert
+        </Button>
       </div>
       <Card>
         <CardHeader>
@@ -316,6 +345,16 @@ function MetricDetailPage() {
                   dataKey={group}
                   stroke={`var(--color-${group})`}
                   dot={{ r: 2, strokeWidth: 0, fill: `var(--color-${group})` }}
+                />
+              ))}
+              {groups.map((group) => (
+                <Line
+                  key={`${group}__tail`}
+                  dataKey={`${group}__tail`}
+                  stroke={`var(--color-${group})`}
+                  strokeDasharray="4 4"
+                  dot={false}
+                  legendType="none"
                 />
               ))}
             </LineChart>

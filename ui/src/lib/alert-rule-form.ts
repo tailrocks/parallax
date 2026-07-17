@@ -181,6 +181,30 @@ export const ALERT_RULE_TEMPLATES: readonly AlertRuleTemplate[] = [
 ] as const
 
 /** Apply a template into a named draft. */
+/** Draft for a metric-explorer graduation handoff (plan 168 → 167):
+ * signal_type=metric with the explored metric/aggregation pre-filled. */
+export function metricGraduationDraft(
+  name: string,
+  metricName: string,
+  metricAggregation: string
+): AlertRuleDraft {
+  return {
+    name,
+    enabled: true,
+    signalType: "metric",
+    comparator: "gt",
+    threshold: 0,
+    windowMinutes: 5,
+    minimumSampleCount: 1,
+    consecutiveBreachesRequired: 2,
+    consecutiveHealthyRequired: 2,
+    severity: "warning",
+    renotifyIntervalMinutes: 30,
+    metricName,
+    metricAggregation,
+  }
+}
+
 export function draftFromTemplate(
   templateId: string,
   name: string

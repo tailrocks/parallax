@@ -57,6 +57,7 @@ import { gqlString, graphql } from "@/lib/api"
 import {
   ALERT_RULE_TEMPLATES,
   draftFromTemplate,
+  metricGraduationDraft,
   validateAlertRuleDraft,
 } from "@/lib/alert-rule-form"
 import type {
@@ -83,7 +84,22 @@ interface LoaderData {
   alertDestinations: AlertDestinationRow[]
 }
 
+interface AlertsSearch {
+  signal_type?: string | undefined
+  metric_name?: string | undefined
+  metric_aggregation?: string | undefined
+}
+
+function searchString(value: unknown) {
+  return typeof value === "string" && value ? value : undefined
+}
+
 export const Route = createFileRoute("/alerts/")({
+  validateSearch: (search: Record<string, unknown>): AlertsSearch => ({
+    signal_type: searchString(search["signal_type"]),
+    metric_name: searchString(search["metric_name"]),
+    metric_aggregation: searchString(search["metric_aggregation"]),
+  }),
   loader: () => graphql<LoaderData>(ALERTS_INDEX_QUERY),
   component: AlertsPage,
 })
@@ -99,6 +115,14 @@ function SeverityBadge({ severity }: { severity: string }) {
 function AlertsPage() {
   const { alertRules, alertIncidents, alertDestinations } =
     Route.useLoaderData()
+  const search = Route.useSearch()
+  const graduation =
+    search.signal_type === "metric" && search.metric_name
+      ? {
+          metricName: search.metric_name,
+          metricAggregation: search.metric_aggregation ?? "avg",
+        }
+      : null
   const router = useRouter()
   const [actionError, setActionError] = useState<string | null>(null)
 
@@ -126,6 +150,7 @@ function AlertsPage() {
         actions={
           <NewRuleDialog
             destinations={alertDestinations}
+            graduation={graduation}
             onSaved={() => void router.invalidate()}
           />
         }
@@ -379,12 +404,15 @@ function DeleteButton({
 
 function NewRuleDialog({
   destinations,
+  graduation,
   onSaved,
 }: {
   destinations: AlertDestinationRow[]
+  graduation?: { metricName: string; metricAggregation: string } | null
   onSaved: () => void
 }) {
-  const [open, setOpen] = useState(false)
+  // A metric-explorer graduation handoff opens the dialog pre-filled.
+  const [open, setOpen] = useState(Boolean(graduation))
   const [name, setName] = useState("")
   const [templateId, setTemplateId] = useState(
     ALERT_RULE_TEMPLATES[0]?.id ?? "high-error-rate"
@@ -397,7 +425,13 @@ function NewRuleDialog({
 
   async function create() {
     setError(null)
-    const draft = draftFromTemplate(templateId, name)
+    const draft = graduation
+      ? metricGraduationDraft(
+          name,
+          graduation.metricName,
+          graduation.metricAggregation
+        )
+      : draftFromTemplate(templateId, name)
     if (!draft) {
       setError("unknown template")
       return
@@ -455,26 +489,36 @@ function NewRuleDialog({
               placeholder="Checkout error rate"
             />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Template</Label>
-            <Select
-              value={templateId}
-              onValueChange={(value) => {
-                if (value) setTemplateId(value)
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ALERT_RULE_TEMPLATES.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {graduation ? (
+            <div className="flex flex-col gap-1.5">
+              <Label>Metric</Label>
+              <p className="text-sm text-muted-foreground">
+                <span className="font-mono">{graduation.metricName}</span> ·{" "}
+                {graduation.metricAggregation}
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              <Label>Template</Label>
+              <Select
+                value={templateId}
+                onValueChange={(value) => {
+                  if (value) setTemplateId(value)
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ALERT_RULE_TEMPLATES.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="alert-rule-threshold">
               Threshold{" "}
