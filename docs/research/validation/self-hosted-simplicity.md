@@ -35,6 +35,12 @@
 > **not** a clean-Ubuntu-LTS VM scorecard under this gate’s
 > `self-hosted-simplicity-runs/<run_id>/` contract (still **absent**).
 >
+> **Pass 260 (2026-07-18) — Sentry baseline re-verify only:** latest
+> `getsentry/self-hosted` still **`26.7.0`** (2026-07-16). Tagged compose
+> top-level `services:` still **exactly 64**. Seer still **closed source** on
+> self-hosted. SigNoz still **`v0.133.0`**. **No** Parallax clean-VM scorecard —
+> gate remains **`not_measured`**.
+>
 > **Claim level unchanged: `not_measured`** for kill-criterion-6 wording
 > (“simpler than self-hosted Sentry” / “simple to self-host”). Allowed: product
 > can serve; formal simplicity gate ledger still empty.

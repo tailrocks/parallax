@@ -69,6 +69,16 @@ claim retained).
 **UNFIRED:** Seer self-host GA; Grafana offline/BYO-LLM Assistant; Bits app-code
 auto-merge commodity.
 
+### Pass 260 (2026-07-18) — Seer + Sentry self-host version pin
+
+| Source | Finding |
+| --- | --- |
+| [getsentry/self-hosted](https://github.com/getsentry/self-hosted/releases/latest) | Latest still **`26.7.0`** (published **2026-07-16**). Compose top-level `services:` count still **64** (same method as pass 70/87). |
+| [develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/) | Still lists **"Seer and other AI & ML features, as these are currently closed source."** — **UNFIRED** |
+| SigNoz (adjacent pin) | **`v0.133.0`** still latest; **~30,316★** (small star drift vs pass 242 ~30,309) |
+
+**UNFIRED:** Seer self-host GA; Grafana offline/BYO-LLM Assistant; Bits auto-merge.
+
 **Precise claim after this pass:**
 
 > No major incumbent ships **fully offline, open (or self-hostable without
