@@ -30,3 +30,6 @@ export {
   CHARTS,
 } from "@/features/dashboards/model/widget"
 export type { Widget } from "@/features/dashboards/model/widget"
+
+export { loadDashboardNavigation } from "@/features/dashboards/api/dashboard-api"
+export type { DashboardNavigationItem } from "@/features/dashboards/api/dashboard-api"

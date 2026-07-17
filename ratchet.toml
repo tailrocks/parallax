@@ -1341,7 +1341,7 @@ ceiling = 418
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/components/__tests__/shell.test.tsx"
+scope = "ui/src/layout/tests/application-shell.test.tsx"
 ceiling = 13
 
 [[limits]]
@@ -1396,7 +1396,7 @@ ceiling = 10
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/command-palette.test.tsx"
+scope = "ui/src/layout/tests/command-palette-composition.test.tsx"
 ceiling = 11
 
 [[limits]]
@@ -1541,7 +1541,7 @@ ceiling = 35
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/quick-jump.test.ts"
+scope = "ui/src/features/quick-navigation/tests/quick-jump.test.ts"
 ceiling = 6
 
 [[limits]]
@@ -1606,7 +1606,7 @@ ceiling = 11
 
 [[limits]]
 metric = "typescript.file-lines"
-scope = "ui/src/components/console/command-palette.tsx"
+scope = "ui/src/layout/command-palette.tsx"
 ceiling = 370
 
 [[limits]]
@@ -1806,7 +1806,7 @@ ceiling = 78
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/components/console/command-palette.tsx:114"
+scope = "ui/src/layout/command-palette.tsx:114"
 ceiling = 280
 
 [[limits]]
@@ -1833,16 +1833,6 @@ ceiling = 87
 metric = "typescript.function-lines"
 scope = "ui/src/components/console/where-clause-editor.tsx:18"
 ceiling = 164
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/parallax-shell.tsx:163"
-ceiling = 104
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/parallax-shell.tsx:62"
-ceiling = 61
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2786,24 +2776,10 @@ migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/__tests__/shell.test.tsx"
-current_owner = "layout-tests"
-target_owner = "layout/tests"
-migration_plan = "143"
-kind = "handwritten"
-
-[[ui.ownership]]
 path = "ui/src/components/console/__tests__/agent-session.test.tsx"
 current_owner = "legacy-console-tests"
 target_owner = "features/runs"
 migration_plan = "140"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/__tests__/command-palette.test.tsx"
-current_owner = "legacy-console-tests"
-target_owner = "features/quick-navigation"
-migration_plan = "143"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -2874,13 +2850,6 @@ path = "ui/src/components/console/chip.tsx"
 current_owner = "legacy-console"
 target_owner = "shared/components/chip"
 migration_plan = "100"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/console/command-palette.tsx"
-current_owner = "legacy-console"
-target_owner = "features/quick-navigation"
-migration_plan = "143"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -3014,41 +2983,6 @@ path = "ui/src/components/live-stream-panel.tsx"
 current_owner = "legacy-components"
 target_owner = "features/logs"
 migration_plan = "141"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/nav-icon.tsx"
-current_owner = "layout"
-target_owner = "layout"
-migration_plan = "143"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/nav.ts"
-current_owner = "layout"
-target_owner = "layout"
-migration_plan = "143"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/parallax-shell.tsx"
-current_owner = "layout"
-target_owner = "layout"
-migration_plan = "143"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/route-fallbacks.tsx"
-current_owner = "layout"
-target_owner = "layout"
-migration_plan = "143"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/components/theme-switcher.tsx"
-current_owner = "layout"
-target_owner = "layout"
-migration_plan = "143"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -3636,13 +3570,6 @@ migration_plan = "149"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/quick-jump.test.ts"
-current_owner = "legacy-lib-tests"
-target_owner = "features/app-status"
-migration_plan = "143"
-kind = "handwritten"
-
-[[ui.ownership]]
 path = "ui/src/features/traces/tests/model/rpc-streams.test.ts"
 current_owner = "legacy-lib-tests"
 target_owner = "features/traces"
@@ -3787,13 +3714,6 @@ path = "ui/src/lib/metric-aggregation.ts"
 current_owner = "legacy-lib"
 target_owner = "features/runtime-metrics"
 migration_plan = "149"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/lib/quick-jump.ts"
-current_owner = "legacy-lib"
-target_owner = "features/app-status"
-migration_plan = "143"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -4121,7 +4041,7 @@ kind = "generated"
 path = "ui/src/router.tsx"
 current_owner = "app"
 target_owner = "app"
-migration_plan = "143"
+migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -5974,4 +5894,128 @@ ceiling = 86
 metric = "typescript.function-lines"
 scope = "ui/src/features/traces/tests/model/trace-tree.test.ts:34"
 ceiling = 235
+
+[[ui.ownership]]
+path = "ui/src/app/create-router.tsx"
+current_owner = "app"
+target_owner = "app"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/layout/index.ts"
+current_owner = "layout"
+target_owner = "layout"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/layout/app-shell.tsx"
+current_owner = "layout"
+target_owner = "layout"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/layout/command-palette.tsx"
+current_owner = "layout"
+target_owner = "layout"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/layout/nav-icon.tsx"
+current_owner = "layout"
+target_owner = "layout"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/layout/route-boundaries.tsx"
+current_owner = "layout"
+target_owner = "layout"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/layout/theme-switcher.tsx"
+current_owner = "layout"
+target_owner = "layout"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/layout/tests/application-shell.test.tsx"
+current_owner = "layout"
+target_owner = "layout"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/layout/tests/command-palette-composition.test.tsx"
+current_owner = "layout"
+target_owner = "layout"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/shared/navigation.ts"
+current_owner = "shared"
+target_owner = "shared"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/app-status/index.ts"
+current_owner = "features/app-status"
+target_owner = "features/app-status"
+migration_plan = "none"
+kind = "handwritten"
+facade = true
+
+[[ui.ownership]]
+path = "ui/src/features/app-status/api/load-app-status.ts"
+current_owner = "features/app-status"
+target_owner = "features/app-status"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/app-status/model/app-status.ts"
+current_owner = "features/app-status"
+target_owner = "features/app-status"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/quick-navigation/index.ts"
+current_owner = "features/quick-navigation"
+target_owner = "features/quick-navigation"
+migration_plan = "none"
+kind = "handwritten"
+facade = true
+
+[[ui.ownership]]
+path = "ui/src/features/quick-navigation/model/quick-jump.ts"
+current_owner = "features/quick-navigation"
+target_owner = "features/quick-navigation"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/quick-navigation/tests/quick-jump.test.ts"
+current_owner = "features/quick-navigation"
+target_owner = "features/quick-navigation"
+migration_plan = "none"
+kind = "handwritten"
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/layout/app-shell.tsx:154"
+ceiling = 94
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/layout/app-shell.tsx:61"
+ceiling = 61
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { guessId } from "@/lib/quick-jump"
+import { guessId } from "@/features/quick-navigation/model/quick-jump"
 
 describe("guessId", () => {
   it("routes 32-hex OTel trace ids directly to traces", () => {

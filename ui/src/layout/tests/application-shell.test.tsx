@@ -4,9 +4,9 @@ import { cleanup, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { nav } from "@/components/nav"
-import { ParallaxShell } from "@/components/parallax-shell"
-import { RouteErrorPanel } from "@/components/route-fallbacks"
+import { nav } from "@/shared/navigation"
+import { ParallaxShell } from "@/layout/app-shell"
+import { RouteErrorPanel } from "@/layout/route-boundaries"
 import { graphql } from "@/lib/api"
 import { renderTestRouter } from "@/test/router"
 

@@ -1,6 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router"
 
-import { navItem } from "@/components/nav"
+import { navItem } from "@/shared/navigation"
 import {
   InvestigationDetailPage,
   loadInvestigationDetail,

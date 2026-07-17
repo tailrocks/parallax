@@ -15,7 +15,7 @@ import {
   PillMeter,
   StatCard,
 } from "@/components/console/stat-card"
-import { navItem } from "@/components/nav"
+import { navItem } from "@/shared/navigation"
 import { buttonVariants } from "@/components/ui/button"
 import { ServiceIdentityCard } from "@/features/services/components/service-identity-card"
 import {

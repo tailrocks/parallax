@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event"
 import { useState } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { CommandPalette } from "@/components/console/command-palette"
+import { CommandPalette } from "@/layout/command-palette"
 import { graphql } from "@/lib/api"
 import { renderTestRouter } from "@/test/router"
 

@@ -37,7 +37,7 @@ import {
   thinTicks,
 } from "@/components/console/trend"
 import { PageHeader } from "@/shared/components/page-header"
-import { navItem } from "@/components/nav"
+import { navItem } from "@/shared/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"

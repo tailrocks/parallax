@@ -190,6 +190,8 @@ Plan 129 DONE (2026-07-17): macOS forced-Bun Vitest dual-run + matrix ownership
 Plans 152 and 153 establish GraphQL and non-GraphQL runtime boundaries after the
 layer graph. Plan 149 DONE (2026-07-17): route-less capability facades
 Plan 134 DONE (2026-07-17): investigations feature facade
+Plan 142 DONE (see table)
+Plan 143 DONE (2026-07-17): app/layout/shell facades
 Plan 142 DONE (2026-07-17): traces feature facade
 
 (runtime-metrics, story, time-range, page-header). Plans 134-142 and 150 are split by product owner for parallel work.
@@ -208,7 +210,7 @@ work.
 | 140 | Move runs/invocations, sessions, and live observation into one feature | P1 | L | 100, 129, 132, 134, 141, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-140-invocations/README.md) |
 | 142 | Move trace search, analysis, and inspection into one feature | P1 | XL | 100, 129, 132, 134, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-142-traces/README.md) |
 | 150 | Move overview into one bounded feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-150-overview/README.md) |
-| [143](143-app-layout-shell-migration.md) | Move app, layout, and shell behind explicit boundaries | P1 | XL | 134, 135, 136, 137, 138, 139, 140, 141, 142, 145, 146, 149, 150, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| 143 | Move app, layout, and shell behind explicit boundaries | P1 | XL | 134, 135, 136, 137, 138, 139, 140, 141, 142, 145, 146, 149, 150, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-143-app-layout-shell/README.md) |
 | [151](151-ui-architecture-final-closure.md) | Verify and close the final UI architecture | P1 | L | 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 149, 150, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 
 ### UI State, Performance, And Product Gaps

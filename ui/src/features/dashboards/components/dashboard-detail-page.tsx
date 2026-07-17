@@ -23,7 +23,7 @@ import {
 import { EmptyState } from "@/components/console/empty-state"
 import { RangePicker } from "@/features/time-range"
 import { ChartLegend } from "@/components/console/trend"
-import { navItem } from "@/components/nav"
+import { navItem } from "@/shared/navigation"
 import { PageHeader } from "@/shared/components/page-header"
 import {
   AlertDialog,

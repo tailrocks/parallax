@@ -10,8 +10,8 @@ import {
 } from "@tabler/icons-react"
 import { useEffect, useMemo, useState } from "react"
 
-import { NavIcon } from "@/components/nav-icon"
-import { nav } from "@/components/nav"
+import { NavIcon } from "@/layout/nav-icon"
+import { nav } from "@/shared/navigation"
 import {
   CommandDialog,
   CommandEmpty,
@@ -23,8 +23,8 @@ import {
 } from "@/components/ui/command"
 import { formatRelative } from "@/lib/format"
 import { graphql } from "@/lib/api"
-import { guessId } from "@/lib/quick-jump"
-import type { IdGuess } from "@/lib/quick-jump"
+import { guessId } from "@/features/quick-navigation"
+import type { IdGuess } from "@/features/quick-navigation"
 
 type StaticRoute =
   | "/"

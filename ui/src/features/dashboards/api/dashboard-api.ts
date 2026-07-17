@@ -37,6 +37,7 @@ import {
 } from "@/platform/graphql/client"
 import { GraphqlBoundaryError } from "@/platform/graphql/error"
 import type { TypedDocumentNode } from "@/platform/graphql/typed-document"
+import { graphql } from "@/lib/api"
 
 function brandDocument<TResult, TVariables>(
   document: unknown
@@ -153,4 +154,30 @@ export async function deleteDashboard(id: string): Promise<void> {
   } catch (error) {
     mapBoundary(error, "delete")
   }
+}
+
+/** Minimal raw dashboard id/name list for shell navigation (Plan 143). */
+export type DashboardNavigationItem = {
+  id: string
+  name: string
+}
+
+export async function loadDashboardNavigation({
+  signal,
+}: {
+  signal?: AbortSignal
+} = {}): Promise<DashboardNavigationItem[]> {
+  const options = signal ? { signal } : {}
+  const data = await graphql<{ dashboards: DashboardNavigationItem[] }>(
+    `
+      {
+        dashboards {
+          id
+          name
+        }
+      }
+    `,
+    options
+  )
+  return data.dashboards
 }

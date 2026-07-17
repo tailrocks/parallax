@@ -2,11 +2,11 @@ import { Link, useRouterState } from "@tanstack/react-router"
 import { IconSearch } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 
-import { CommandPalette } from "@/components/console/command-palette"
-import { NavIcon } from "@/components/nav-icon"
-import type { NavItem } from "@/components/nav"
-import { primaryNav, workspaceNav } from "@/components/nav"
-import { ThemeSwitcher } from "@/components/theme-switcher"
+import { CommandPalette } from "@/layout/command-palette"
+import { NavIcon } from "@/layout/nav-icon"
+import type { NavItem } from "@/shared/navigation"
+import { primaryNav, workspaceNav } from "@/shared/navigation"
+import { ThemeSwitcher } from "@/layout/theme-switcher"
 import { Button } from "@/components/ui/button"
 import { Kbd } from "@/components/ui/kbd"
 import {
@@ -27,7 +27,11 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { graphql } from "@/lib/api"
+import { loadAppStatus } from "@/features/app-status"
+import {
+  loadDashboardNavigation,
+  type DashboardNavigationItem,
+} from "@/features/dashboards"
 import { cn } from "@/lib/utils"
 
 function isActive(pathname: string, href: string) {
@@ -54,17 +58,12 @@ function BrandMark() {
   )
 }
 
-interface DashboardNavItem {
-  id: string
-  name: string
-}
-
 function NavGroup({
   items,
   dashboards = [],
 }: {
   items: readonly NavItem[]
-  dashboards?: DashboardNavItem[]
+  dashboards?: DashboardNavigationItem[]
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
 
@@ -123,22 +122,14 @@ function NavGroup({
 
 function StatusPill() {
   const [online, setOnline] = useState<boolean | null>(null)
+  const [endpoint, setEndpoint] = useState("127.0.0.1:4000")
 
   useEffect(() => {
     const controller = new AbortController()
-
-    fetch("/graphql", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ query: "{ health }" }),
-      signal: controller.signal,
+    void loadAppStatus(controller.signal).then((status) => {
+      setOnline(status.healthy)
+      setEndpoint(status.endpointLabel)
     })
-      .then((response) => response.json())
-      .then((body: { data?: { health?: unknown } }) => {
-        setOnline(body.data?.health === "ok" || body.data?.health === true)
-      })
-      .catch(() => setOnline(false))
-
     return () => controller.abort()
   }, [])
 
@@ -155,14 +146,14 @@ function StatusPill() {
       <span className="font-medium text-foreground">
         {healthy ? "Local" : "Offline"}
       </span>
-      <span className="font-mono">127.0.0.1:4000</span>
+      <span className="font-mono">{endpoint}</span>
     </div>
   )
 }
 
 export function ParallaxShell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const [dashboards, setDashboards] = useState<DashboardNavItem[]>([])
+  const [dashboards, setDashboards] = useState<DashboardNavigationItem[]>([])
   const [dashboardNavError, setDashboardNavError] = useState<string | null>(
     null
   )
@@ -175,18 +166,8 @@ export function ParallaxShell({ children }: { children: React.ReactNode }) {
     }
     const controller = new AbortController()
     setDashboardNavError(null)
-    void graphql<{ dashboards: DashboardNavItem[] }>(
-      `
-        {
-          dashboards {
-            id
-            name
-          }
-        }
-      `,
-      { signal: controller.signal }
-    )
-      .then((data) => setDashboards(data.dashboards))
+    void loadDashboardNavigation({ signal: controller.signal })
+      .then((items) => setDashboards(items))
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === "AbortError") {
           return

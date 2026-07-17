@@ -7,12 +7,12 @@ import {
 import { ThemeProvider } from "next-themes"
 
 import appCss from "../styles.css?url"
-import { ParallaxShell } from "@/components/parallax-shell"
 import {
+  ParallaxShell,
   RouteErrorPanel,
   RouteNotFoundPanel,
   RoutePendingPanel,
-} from "@/components/route-fallbacks"
+} from "@/layout"
 
 export const Route = createRootRoute({
   head: () => ({
