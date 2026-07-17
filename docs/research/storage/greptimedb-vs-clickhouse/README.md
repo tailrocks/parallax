@@ -123,6 +123,7 @@ managed quotes remain):
 | CH density snapshot | **441** | logs 23B/row; m2m 4.5 |
 | health + spans match | **442** | 4167 both engines |
 | still not done | **443** | top 5 open |
+| anchored N=2k prune | **444** | GT 3–5ms / CH 2–4ms |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
