@@ -452,7 +452,8 @@ async fn metric_query_enforces_typed_aggregation_legality() {
     assert!(
         error_messages(&json)
             .iter()
-            .any(|message| message.contains("illegal for kind 'sum'") && message.contains("sum|rate")),
+            .any(|message| message.contains("illegal for kind 'sum'")
+                && message.contains("sum|rate")),
         "illegal agg names the legal set: {json}"
     );
 

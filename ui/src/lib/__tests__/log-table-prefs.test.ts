@@ -15,10 +15,9 @@ import {
 
 describe("pinned columns URL codec", () => {
   it("decodes CSV and drops empties/dupes", () => {
-    expect(decodePinnedColumns("http.route, service.name, http.route")).toEqual([
-      "http.route",
-      "service.name",
-    ])
+    expect(decodePinnedColumns("http.route, service.name, http.route")).toEqual(
+      ["http.route", "service.name"]
+    )
     expect(decodePinnedColumns("  ,  ")).toEqual([])
     expect(decodePinnedColumns(null)).toEqual([])
   })

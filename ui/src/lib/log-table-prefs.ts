@@ -20,9 +20,7 @@ export const DEFAULT_LOG_DENSITY: LogRowDensity = "comfortable"
  * Decode `?columns=` CSV of attribute keys into a stable unique list.
  * Empty / missing → []. Whitespace trimmed; empty segments dropped.
  */
-export function decodePinnedColumns(
-  raw: string | null | undefined
-): string[] {
+export function decodePinnedColumns(raw: string | null | undefined): string[] {
   if (!raw) return []
   const seen = new Set<string>()
   const out: string[] = []
@@ -62,9 +60,7 @@ export function togglePinnedColumn(
 }
 
 /** Parse density from storage/string; invalid → default. */
-export function parseLogDensity(
-  raw: string | null | undefined
-): LogRowDensity {
+export function parseLogDensity(raw: string | null | undefined): LogRowDensity {
   if (raw === "compact" || raw === "comfortable") return raw
   return DEFAULT_LOG_DENSITY
 }

@@ -80,7 +80,7 @@ the helper objective; the peer executor owns the status transition.
 ### Preliminary deterministic plan core (helper, 2026-07-17) — peer verify/extend
 
 - `parallax_storage::prune` defines the query-neutral Step-2 contract:
-  canonical store/class ordering across every approved lifecycle class, typed
+  canonical store/class ordering across every current lifecycle class, typed
   row/object/byte estimates, typed active/unresolved/pinned/not-expired
   exclusions, bounded warnings, and string-encoded nanosecond cutoffs for safe
   machine output.

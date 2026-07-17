@@ -12,10 +12,16 @@ describe("bodyMatchesTemplate", () => {
 
   it("matches parameter churn on the same skeleton", () => {
     expect(
-      bodyMatchesTemplate("checkout authorize user=u-111 duration=12ms", template)
+      bodyMatchesTemplate(
+        "checkout authorize user=u-111 duration=12ms",
+        template
+      )
     ).toBe(true)
     expect(
-      bodyMatchesTemplate("checkout authorize user=u-999 duration=1ms", template)
+      bodyMatchesTemplate(
+        "checkout authorize user=u-999 duration=1ms",
+        template
+      )
     ).toBe(true)
   })
 
@@ -27,7 +33,10 @@ describe("bodyMatchesTemplate", () => {
 
   it("requires full-line alignment", () => {
     expect(
-      bodyMatchesTemplate("prefix checkout authorize user=x duration=1", template)
+      bodyMatchesTemplate(
+        "prefix checkout authorize user=x duration=1",
+        template
+      )
     ).toBe(false)
   })
 })

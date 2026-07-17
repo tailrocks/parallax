@@ -17,6 +17,7 @@ pub(super) fn invalid(error: impl std::fmt::Display) -> FieldError {
 }
 
 pub(super) fn internal(error: impl Error + 'static) -> FieldError {
+    eprintln!("internal graphql error: {error}");
     let error: &dyn Error = &error;
     let (message, code) = if let Some(storage) = error.downcast_ref::<StorageError>() {
         match storage.kind() {

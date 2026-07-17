@@ -156,7 +156,8 @@ impl MetricStore for GreptimeStore {
             if !service.is_empty() && !entry.services.contains(&service) {
                 entry.services.push(service);
             }
-            entry.last_datapoint_nanos = entry.last_datapoint_nanos.max(u128_at(row, 2) * 1_000_000);
+            entry.last_datapoint_nanos =
+                entry.last_datapoint_nanos.max(u128_at(row, 2) * 1_000_000);
             entry.point_count += u128_at(row, 3) as u64;
         }
         let mut out: Vec<MetricCatalogEntry> = by_name

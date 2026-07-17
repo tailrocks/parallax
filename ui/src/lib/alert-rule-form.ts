@@ -49,7 +49,9 @@ export interface AlertRuleValidation {
 }
 
 /** Validate a draft before create/update mutation. */
-export function validateAlertRuleDraft(draft: AlertRuleDraft): AlertRuleValidation {
+export function validateAlertRuleDraft(
+  draft: AlertRuleDraft
+): AlertRuleValidation {
   const errors: string[] = []
   if (!draft.name.trim()) {
     errors.push("name is required")
@@ -72,7 +74,10 @@ export function validateAlertRuleDraft(draft: AlertRuleDraft): AlertRuleValidati
   const needsUpper =
     draft.comparator === "between" || draft.comparator === "not_between"
   if (needsUpper) {
-    if (draft.thresholdUpper == null || !Number.isFinite(draft.thresholdUpper)) {
+    if (
+      draft.thresholdUpper == null ||
+      !Number.isFinite(draft.thresholdUpper)
+    ) {
       errors.push("thresholdUpper is required for between/not_between")
     } else if (draft.thresholdUpper < draft.threshold) {
       errors.push("thresholdUpper must be >= threshold")

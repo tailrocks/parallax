@@ -155,9 +155,7 @@ impl GreptimeStore {
     /// convention, else Gauge. `stats_table` is the physical table window
     /// stats read from (`_count` sibling for histograms so one export counts
     /// once).
-    pub(super) async fn discover_metric_families(
-        &self,
-    ) -> anyhow::Result<Vec<MetricFamily>> {
+    pub(super) async fn discover_metric_families(&self) -> anyhow::Result<Vec<MetricFamily>> {
         const RESERVED: &[&str] = &[
             "opentelemetry_traces",
             "opentelemetry_traces_services",

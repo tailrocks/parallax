@@ -212,11 +212,15 @@ impl GreptimeStore {
             db_system.clone(),
         ])
         .unwrap_or_else(null_string);
-        let queue_name = coalesce(vec![
-            attr(semconv::MESSAGING_DESTINATION_NAME),
-            messaging_system.clone(),
-        ])
-        .unwrap_or_else(null_string);
+        // Queue node identity is system-qualified: a topic named like an
+        // instrumented service (`orders`) must not collide with its node.
+        let queue_name = match (attr(semconv::MESSAGING_DESTINATION_NAME), &messaging_system) {
+            (Some(destination), Some(system)) => {
+                format!("CONCAT({system}, '/', COALESCE({destination}, {system}))")
+            }
+            (None, Some(system)) => system.clone(),
+            _ => null_string(),
+        };
         let db_system = db_system.unwrap_or_else(null_string);
         let messaging_system = messaging_system.unwrap_or_else(null_string);
         let server_address = server_address.unwrap_or_else(null_string);
@@ -259,8 +263,16 @@ impl GreptimeStore {
                GROUP BY "source", "kind", "system", "name"
                ORDER BY "call_count" DESC
                LIMIT {edge_cap}"#,
-            from = sql_ts(*range.start()),
-            to = sql_ts(*range.end()),
+            // JOIN-ON timestamp comparisons cannot infer Int64 literals on
+            // the live planner (flat WHERE can): cast explicitly.
+            from = format!(
+                "arrow_cast({}, 'Timestamp(Nanosecond, None)')",
+                sql_ts(*range.start())
+            ),
+            to = format!(
+                "arrow_cast({}, 'Timestamp(Nanosecond, None)')",
+                sql_ts(*range.end())
+            ),
         ))
     }
 
