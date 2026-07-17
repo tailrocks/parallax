@@ -201,6 +201,7 @@ managed quotes remain):
 | still not done | **519** | top 5 open |
 | topk OK increase no | **520** | partial PromQL stable |
 | still not done | **521** | top 5 open |
+| export+append+PK | **522** | holds |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
