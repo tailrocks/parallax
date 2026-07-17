@@ -8272,3 +8272,6 @@ CH `quantile(0.99)`: **34 ms**. Both complete; CH ~3× faster on this shape at 5
 | CH head | 10 |
 
 Nightly cold after idle can spike; warm path still interactive. Not done.
+
+### Run 355 — 2026-07-17 — not done
+
