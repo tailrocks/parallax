@@ -124,8 +124,15 @@ spike produces useful stable signal.
   trace trees, serialization, retry no-replay) still open.
 - [ ] UI search, runtime decoder, Query identity, live ordering, and state
   invariants have bounded generated coverage.
-- [ ] Four initial fuzz boundaries have maintained minimized corpora.
-- [ ] Declared fuzz/benchmark targets and workflows cannot drift silently.
+- [x] (2026-07-17) Six fuzz boundaries landed (`fuzz/`, nightly cargo-fuzz,
+  workspace-excluded): OTLP metrics/traces normalize, redaction idempotence,
+  bundle canonical-JSON fixpoint, spool framing, Arrow IPC decode. Two real
+  unbounded-allocation defects found and fixed (spool frame skip, Arrow
+  first-message metadata prefix). Corpora are seeded by smoke runs; minimized
+  crash corpora will be committed as found.
+- [x] (partial, 2026-07-17) Fuzz target/manifest drift gate in
+  `parallax-xtask/tests/fuzz_target_drift.rs`; workflow-side drift check
+  lands with the CI fuzz lane (Step 5, open).
 - [ ] Representative hot paths have reproducible time/allocation baselines.
 - [ ] PR checks compile/smoke; scheduled runners perform stable measurement.
 - [ ] Ratchets use measured variance and fail without auto-refreshing baselines.
