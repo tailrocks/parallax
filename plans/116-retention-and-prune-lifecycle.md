@@ -130,6 +130,11 @@ the helper objective; the peer executor owns the status transition.
   lifecycle classes behind one bounded deterministic facade with one shared
   cutoff. Focused coverage pins complete class membership and ordering. Pin
   reachability and journal-backed execution remain deliberately unwired.
+- Restart-safe journal recovery now has a validated persisted-plan seam:
+  `PrunePlan::decode` rejects unknown contract versions, unknown fields,
+  identity-changing mutations, and plans outside current safety bounds before
+  reconstructing the private immutable plan. The Turso journal tables and
+  transitions still need peer implementation/verification.
 
 ## Historical Blocker Evidence (2026-07-14; superseded 2026-07-17)
 

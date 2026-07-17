@@ -89,6 +89,56 @@ fn equivalent_annotation_sets_have_one_canonical_identity() {
 }
 
 #[test]
+fn persisted_plan_decoding_revalidates_version_identity_and_bounds() {
+    let plan = PrunePlan::build(
+        100,
+        snapshot(),
+        vec![item(PruneStore::Turso, PruneClass::Issues, "issues")],
+        PrunePlanLimits::default(),
+    )
+    .expect("valid plan");
+    let encoded = serde_json::to_string(&plan).expect("encode plan");
+    assert_eq!(
+        PrunePlan::decode(&encoded, PrunePlanLimits::default()).expect("decode plan"),
+        plan
+    );
+
+    let mut tampered: serde_json::Value = serde_json::from_str(&encoded).expect("parse plan");
+    tampered["items"][0]["estimate"]["rows"] = serde_json::json!(99);
+    assert!(matches!(
+        PrunePlan::decode(
+            &serde_json::to_string(&tampered).expect("encode tampered plan"),
+            PrunePlanLimits::default()
+        ),
+        Err(PrunePlanError::PlanIntegrityMismatch)
+    ));
+
+    tampered = serde_json::from_str(&encoded).expect("parse plan");
+    tampered["contract_version"] = serde_json::json!(2);
+    assert!(matches!(
+        PrunePlan::decode(
+            &serde_json::to_string(&tampered).expect("encode future plan"),
+            PrunePlanLimits::default()
+        ),
+        Err(PrunePlanError::UnsupportedContractVersion(2))
+    ));
+
+    assert!(matches!(
+        PrunePlan::decode(
+            &encoded,
+            PrunePlanLimits {
+                max_items: 0,
+                ..PrunePlanLimits::default()
+            }
+        ),
+        Err(PrunePlanError::TooManyItems {
+            actual: 1,
+            limit: 0
+        })
+    ));
+}
+
+#[test]
 fn construction_fails_closed_when_item_cap_is_exceeded() {
     let result = PrunePlan::build(
         100,

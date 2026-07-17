@@ -110,6 +110,17 @@ pub struct PrunePlan {
     items: Vec<PruneItem>,
 }
 
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct PrunePlanWire {
+    contract_version: u8,
+    plan_id: String,
+    #[serde(with = "u128_string")]
+    cutoff_nanos: u128,
+    snapshot: PruneSnapshot,
+    items: Vec<PruneItem>,
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum PruneExecutionMode {
@@ -181,6 +192,8 @@ pub enum PrunePlanError {
     PlanIdentityMismatch,
     #[error("prune plan contents do not match its identity")]
     PlanIntegrityMismatch,
+    #[error("unsupported prune contract version {0}")]
+    UnsupportedContractVersion(u8),
     #[error("destructive prune execution requires explicit confirmation")]
     ConfirmationRequired,
     #[error("failed to encode prune plan identity: {0}")]
@@ -188,6 +201,22 @@ pub enum PrunePlanError {
 }
 
 impl PrunePlan {
+    /// Decode persisted machine output only after rebuilding its canonical
+    /// identity and reapplying the caller's current safety bounds.
+    pub fn decode(encoded: &str, limits: PrunePlanLimits) -> Result<Self, PrunePlanError> {
+        let wire: PrunePlanWire = serde_json::from_str(encoded)?;
+        if wire.contract_version != 1 {
+            return Err(PrunePlanError::UnsupportedContractVersion(
+                wire.contract_version,
+            ));
+        }
+        let plan = Self::build(wire.cutoff_nanos, wire.snapshot, wire.items, limits)?;
+        if plan.plan_id != wire.plan_id {
+            return Err(PrunePlanError::PlanIntegrityMismatch);
+        }
+        Ok(plan)
+    }
+
     pub fn build(
         cutoff_nanos: u128,
         snapshot: PruneSnapshot,
