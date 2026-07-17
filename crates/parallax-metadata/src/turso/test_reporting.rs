@@ -209,77 +209,65 @@ impl TursoMetadataStore {
         if limit == 0 {
             return Ok(TestExplorerPage::default());
         }
-        let mut clauses = Vec::new();
-        let mut params = Vec::new();
-        let bind = |params: &mut Vec<Value>, value: Value| {
-            params.push(value);
-            format!("?{}", params.len())
-        };
-        if let Some(service) = &filter.service {
-            let p = bind(&mut params, Value::Text(service.clone()));
-            clauses.push(format!("lr.service = {p}"));
+        let (sql, params) = build_test_explorer_sql(filter, sort, limit, offset)?;
+        let conn = self.conn.lock().await;
+        let mut rows = conn.query(&sql, params).await?;
+        let mut items = Vec::new();
+        while let Some(row) = rows.next().await? {
+            items.push(decode_test_explorer_row(&row)?);
         }
-        if let Some(version) = &filter.service_version {
-            let p = bind(&mut params, Value::Text(version.clone()));
-            clauses.push(format!("lr.service_version = {p}"));
-        }
-        if let Some(from) = filter.from_nanos {
-            let p = bind(&mut params, Value::Integer(nanos_to_millis(from)));
-            clauses.push(format!("ag.last_ended >= {p}"));
-        }
-        if let Some(to) = filter.to_nanos {
-            let p = bind(&mut params, Value::Integer(nanos_to_millis(to)));
-            clauses.push(format!("ag.last_ended <= {p}"));
-        }
-        if let Some(configuration) = &filter.configuration {
-            let key = bind(&mut params, Value::Text(configuration.key.clone()));
-            let value = bind(&mut params, Value::Text(configuration.value.clone()));
-            clauses.push(format!(
-                "EXISTS (SELECT 1 FROM json_each(json_extract(lr.configuration, '$.dimensions')) cfg \
-                 WHERE cfg.key = {key} AND cfg.value = {value})"
-            ));
-        }
-        let eligible_where = if clauses.is_empty() {
-            String::new()
-        } else {
-            format!(" WHERE {}", clauses.join(" AND "))
-        };
-        let mut final_clauses = vec!["e.variant_rank = 1".to_string()];
-        if let Some(status) = filter.status {
-            let p = bind(&mut params, Value::Text(attempt_rollup(status).to_string()));
-            final_clauses.push(format!("e.rollup = {p}"));
-        }
-        if let Some(state) = filter.flaky_state {
-            let p = bind(&mut params, Value::Text(flaky_state(state).to_string()));
-            final_clauses.push(format!("fs.state = {p}"));
-        }
-        if let Some(suite) = &filter.suite {
-            let p = bind(&mut params, Value::Text(suite.clone()));
-            final_clauses.push(format!(
-                "EXISTS (SELECT 1 FROM json_each(tc.suite_path) suite WHERE suite.value = {p})"
-            ));
-        }
-        if let Some(query) = &filter.query {
-            let escaped = query
-                .replace('\\', "\\\\")
-                .replace('%', "\\%")
-                .replace('_', "\\_");
-            let p = bind(&mut params, Value::Text(format!("%{escaped}%")));
-            final_clauses.push(format!(
-                "(tc.name LIKE {p} ESCAPE '\\' OR tc.code_reference LIKE {p} ESCAPE '\\' \
-                 OR tc.explicit_id LIKE {p} ESCAPE '\\' OR tc.case_key LIKE {p} ESCAPE '\\' \
-                 OR tv.variant_key LIKE {p} ESCAPE '\\')"
-            ));
-        }
-        let order = match sort {
-            TestExplorerSort::LastSeen => "e.last_ended DESC, tc.case_key, tv.variant_key",
-            TestExplorerSort::Name => "tc.name COLLATE NOCASE, tc.case_key, tv.variant_key",
-        };
-        let fetch = limit.saturating_add(1);
-        let limit_bind = bind(&mut params, Value::Integer(i64::try_from(fetch)?));
-        let offset_bind = bind(&mut params, Value::Integer(i64::try_from(offset)?));
-        let sql = format!(
-            "WITH attempt_groups AS (
+        let has_more = items.len() > limit;
+        items.truncate(limit);
+        Ok(TestExplorerPage { items, has_more })
+    }
+}
+
+fn bind_param(params: &mut Vec<Value>, value: Value) -> String {
+    params.push(value);
+    format!("?{}", params.len())
+}
+
+fn build_test_explorer_sql(
+    filter: &TestExplorerQuery,
+    sort: TestExplorerSort,
+    limit: usize,
+    offset: usize,
+) -> anyhow::Result<(String, Vec<Value>)> {
+    let mut params = Vec::new();
+    let eligible_where = explorer_eligible_where(filter, &mut params);
+    let final_where = explorer_final_where(filter, &mut params);
+    let order = match sort {
+        TestExplorerSort::LastSeen => "e.last_ended DESC, tc.case_key, tv.variant_key",
+        TestExplorerSort::Name => "tc.name COLLATE NOCASE, tc.case_key, tv.variant_key",
+    };
+    let fetch = limit.saturating_add(1);
+    let limit_bind = bind_param(&mut params, Value::Integer(i64::try_from(fetch)?));
+    let offset_bind = bind_param(&mut params, Value::Integer(i64::try_from(offset)?));
+    let cte = TEST_EXPLORER_CTE.replace("{eligible_where}", &eligible_where);
+    let sql = format!(
+        "{cte}
+         SELECT e.invocation_id, e.rollup, e.attempt_count,
+                tc.case_key, tc.identity_source, tc.explicit_id, tc.code_reference,
+                tc.suite_path, tc.name, tc.first_seen, tc.last_seen,
+                tv.variant_key, tv.case_key, tv.parameters, tv.first_seen, tv.last_seen,
+                lr.variant_key, lr.invocation_id, lr.attempt, lr.status, lr.trace_id, lr.span_id,
+                lr.started_at, lr.ended_at, lr.service, lr.service_version,
+                lr.vcs_head_revision, lr.configuration, lr.failure_fingerprint,
+                fs.variant_key, fs.state, fs.evidence, fs.updated_at
+         FROM eligible e
+         JOIN test_results lr ON lr.variant_key = e.variant_key
+           AND lr.invocation_id = e.invocation_id AND lr.attempt = e.last_attempt
+         JOIN test_variants tv ON tv.variant_key = e.variant_key
+         JOIN test_cases tc ON tc.case_key = tv.case_key
+         LEFT JOIN test_flaky_states fs ON fs.variant_key = tv.variant_key
+         WHERE {final_where}
+         ORDER BY {order}
+         LIMIT {limit_bind} OFFSET {offset_bind}"
+    );
+    Ok((sql, params))
+}
+
+const TEST_EXPLORER_CTE: &str = "WITH attempt_groups AS (
                SELECT r.variant_key, r.invocation_id,
                       MIN(r.started_at) AS first_started, MAX(r.ended_at) AS last_ended,
                       COUNT(*) AS attempt_count, MAX(r.attempt) AS last_attempt,
@@ -306,34 +294,70 @@ impl TursoMetadataStore {
                JOIN test_results lr ON lr.variant_key = ag.variant_key
                  AND lr.invocation_id = ag.invocation_id AND lr.attempt = ag.last_attempt
                {eligible_where}
-             )
-             SELECT e.invocation_id, e.rollup, e.attempt_count,
-                    tc.case_key, tc.identity_source, tc.explicit_id, tc.code_reference,
-                    tc.suite_path, tc.name, tc.first_seen, tc.last_seen,
-                    tv.variant_key, tv.case_key, tv.parameters, tv.first_seen, tv.last_seen,
-                    lr.variant_key, lr.invocation_id, lr.attempt, lr.status, lr.trace_id, lr.span_id,
-                    lr.started_at, lr.ended_at, lr.service, lr.service_version,
-                    lr.vcs_head_revision, lr.configuration, lr.failure_fingerprint,
-                    fs.variant_key, fs.state, fs.evidence, fs.updated_at
-             FROM eligible e
-             JOIN test_results lr ON lr.variant_key = e.variant_key
-               AND lr.invocation_id = e.invocation_id AND lr.attempt = e.last_attempt
-             JOIN test_variants tv ON tv.variant_key = e.variant_key
-             JOIN test_cases tc ON tc.case_key = tv.case_key
-             LEFT JOIN test_flaky_states fs ON fs.variant_key = tv.variant_key
-             WHERE {} ORDER BY {order} LIMIT {limit_bind} OFFSET {offset_bind}",
-            final_clauses.join(" AND ")
-        );
-        let conn = self.conn.lock().await;
-        let mut rows = conn.query(&sql, params).await?;
-        let mut items = Vec::new();
-        while let Some(row) = rows.next().await? {
-            items.push(decode_test_explorer_row(&row)?);
-        }
-        let has_more = items.len() > limit;
-        items.truncate(limit);
-        Ok(TestExplorerPage { items, has_more })
+             )";
+
+fn explorer_eligible_where(filter: &TestExplorerQuery, params: &mut Vec<Value>) -> String {
+    let mut clauses = Vec::new();
+    if let Some(service) = &filter.service {
+        let p = bind_param(params, Value::Text(service.clone()));
+        clauses.push(format!("lr.service = {p}"));
     }
+    if let Some(version) = &filter.service_version {
+        let p = bind_param(params, Value::Text(version.clone()));
+        clauses.push(format!("lr.service_version = {p}"));
+    }
+    if let Some(from) = filter.from_nanos {
+        let p = bind_param(params, Value::Integer(nanos_to_millis(from)));
+        clauses.push(format!("ag.last_ended >= {p}"));
+    }
+    if let Some(to) = filter.to_nanos {
+        let p = bind_param(params, Value::Integer(nanos_to_millis(to)));
+        clauses.push(format!("ag.last_ended <= {p}"));
+    }
+    if let Some(configuration) = &filter.configuration {
+        let key = bind_param(params, Value::Text(configuration.key.clone()));
+        let value = bind_param(params, Value::Text(configuration.value.clone()));
+        clauses.push(format!(
+            "EXISTS (SELECT 1 FROM json_each(json_extract(lr.configuration, '$.dimensions')) cfg \
+             WHERE cfg.key = {key} AND cfg.value = {value})"
+        ));
+    }
+    if clauses.is_empty() {
+        String::new()
+    } else {
+        format!(" WHERE {}", clauses.join(" AND "))
+    }
+}
+
+fn explorer_final_where(filter: &TestExplorerQuery, params: &mut Vec<Value>) -> String {
+    let mut clauses = vec!["e.variant_rank = 1".to_string()];
+    if let Some(status) = filter.status {
+        let p = bind_param(params, Value::Text(attempt_rollup(status).to_string()));
+        clauses.push(format!("e.rollup = {p}"));
+    }
+    if let Some(state) = filter.flaky_state {
+        let p = bind_param(params, Value::Text(flaky_state(state).to_string()));
+        clauses.push(format!("fs.state = {p}"));
+    }
+    if let Some(suite) = &filter.suite {
+        let p = bind_param(params, Value::Text(suite.clone()));
+        clauses.push(format!(
+            "EXISTS (SELECT 1 FROM json_each(tc.suite_path) suite WHERE suite.value = {p})"
+        ));
+    }
+    if let Some(query) = &filter.query {
+        let escaped = query
+            .replace('\\', "\\\\")
+            .replace('%', "\\%")
+            .replace('_', "\\_");
+        let p = bind_param(params, Value::Text(format!("%{escaped}%")));
+        clauses.push(format!(
+            "(tc.name LIKE {p} ESCAPE '\\' OR tc.code_reference LIKE {p} ESCAPE '\\' \
+             OR tc.explicit_id LIKE {p} ESCAPE '\\' OR tc.case_key LIKE {p} ESCAPE '\\' \
+             OR tv.variant_key LIKE {p} ESCAPE '\\')"
+        ));
+    }
+    clauses.join(" AND ")
 }
 
 fn decode_test_explorer_row(row: &turso::Row) -> anyhow::Result<TestExplorerRow> {
