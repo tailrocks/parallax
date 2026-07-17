@@ -90,6 +90,17 @@ evidence. Index status stays TODO.
   config-without-url dead-letter, slack text payload). Peer wires the
   tokio interval loops + graceful shutdown in serve.rs, ready-banner line,
   config knobs, and the live end-to-end webhook evidence.
+- `crates/parallax-server/src/alerting/measurement.rs` (`be62e9f`, helper
+  agent 2026-07-17) — pure measurement math: `SignalType::parse`,
+  `service_in_scope` (include/exclude JSON lists, exclude wins),
+  `groups_by_service`, `span_measurements` (error_rate fraction with
+  zero-span no-data, throughput normalized to spans/minute, p95/p99 with
+  worst-service max when ungrouped), `scalar_measurement` for
+  log_count/metric. Nine tests. Peer implements the adapter-trait-backed
+  `MeasurementSource` I/O shim on top (service_summaries / span_red_series
+  / log_count_series / metric_series) plus the live-engine tick test, and
+  re-verifies the ungrouped worst-service percentile policy against the
+  plan's ROOT-span RED convention decision.
 
 **Peer owns (verify/deepen/complete):**
 - [ ] Re-verify state machine + delivery helpers vs plan exhaustiveness;
