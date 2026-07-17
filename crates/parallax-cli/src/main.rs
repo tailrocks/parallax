@@ -56,6 +56,21 @@ pub(crate) enum Command {
         #[command(subcommand)]
         command: TraceCommand,
     },
+    /// Invocation-scoped metric snapshot (canonical names, finite samples).
+    Metrics {
+        /// Invocation id whose metric points to summarize (required).
+        #[arg(long)]
+        invocation: Option<String>,
+        /// Retired alias: invocations replaced runs. Always rejected.
+        #[arg(long, hide = true)]
+        run: Option<String>,
+        /// Time window, e.g. 15m, 2h, 7d (default 24h).
+        #[arg(long, default_value = "24h")]
+        since: String,
+        /// Emit machine-readable JSON (includes the effective window).
+        #[arg(long)]
+        json: bool,
+    },
     /// Browse logs — the same filters as the UI's Logs page.
     Logs {
         /// Trace id to scope to.

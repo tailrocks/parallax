@@ -17,6 +17,22 @@ pub(crate) async fn execute(cli: Cli, runtime: runtime::Runtime) -> anyhow::Resu
                 commands::trace_inspect(&client()?, &trace_id).await
             }
         },
+        Command::Metrics {
+            invocation,
+            run,
+            since,
+            json,
+        } => {
+            if run.is_some() {
+                anyhow::bail!(
+                    "--run is retired: CLI runs became invocations — use --invocation <id>"
+                );
+            }
+            let Some(invocation) = invocation else {
+                anyhow::bail!("--invocation <id> is required (see `parallax invocation list`)");
+            };
+            commands::metrics_invocation(&client()?, &invocation, &since, json).await
+        }
         Command::Logs {
             trace,
             invocation,

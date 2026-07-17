@@ -6,6 +6,7 @@ mod invocations;
 mod issues;
 mod live;
 mod logs;
+mod metrics;
 mod output;
 mod sql;
 mod traces;
@@ -15,6 +16,7 @@ pub(crate) use invocations::*;
 pub(crate) use issues::*;
 pub(crate) use live::*;
 pub(crate) use logs::*;
+pub(crate) use metrics::*;
 pub(crate) use sql::*;
 pub(crate) use traces::*;
 
