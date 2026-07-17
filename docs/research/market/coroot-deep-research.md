@@ -1,5 +1,13 @@
 # Coroot Deep Research
 
+> **Superseded as the canonical comparison** by
+> [`competitors/parallax-vs-coroot.md`](competitors/parallax-vs-coroot.md)
+> (no-bias deep-dive, verified 2026-07-17: Enterprise $1/CPU-core/mo no-ingest;
+> best shipped MCP RBAC safety; eBPF partial-spans = no app errors = Parallax's
+> sharpest edge). This legacy note (2026-06-22) is a **source** — components,
+> MCP-safety model, eBPF-partial-spans finding remain useful; re-verify version +
+> MCP tool count in the canonical deep-dive.
+
 Research date: 2026-06-22
 
 Coroot was previously tracked only in the `competitor-watch.md` "Coroot MCP and AI RCA Recheck"
