@@ -189,11 +189,10 @@ fn check_axe_dependency(root: &Path, findings: &mut Vec<Finding>) -> Result<()> 
         .chain(
             package
                 .get("dependencies")
-                .and_then(serde_json::Value::as_object)
-                .into_iter(),
+                .and_then(serde_json::Value::as_object),
         );
     let version = deps
-        .flat_map(|map| map.get("@axe-core/playwright"))
+        .filter_map(|map| map.get("@axe-core/playwright"))
         .find_map(serde_json::Value::as_str)
         .unwrap_or_default();
     if version.is_empty() || version.starts_with('^') || version.starts_with('~') {

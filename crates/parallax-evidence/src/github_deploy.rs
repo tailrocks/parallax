@@ -64,11 +64,7 @@ pub fn parse_rest_deployments_page(repo_full_name: &str, body: &Value) -> RestDe
     let items = body
         .as_array()
         .cloned()
-        .or_else(|| {
-            body.get("deployments")
-                .and_then(Value::as_array)
-                .cloned()
-        })
+        .or_else(|| body.get("deployments").and_then(Value::as_array).cloned())
         .unwrap_or_default();
     let truncated = items.len() > REST_DEPLOYMENTS_PAGE_CAP;
     let mut page = RestDeploymentsPage {

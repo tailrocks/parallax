@@ -22,15 +22,11 @@ fn test_config(data_dir: &std::path::Path) -> Config {
 }
 
 fn fixture_envelope() -> Vec<u8> {
-    std::fs::read(
-        "crates/parallax-ingest/tests/fixtures/sentry/python-sdk-2.48-event.envelope",
-    )
-    .or_else(|_| {
-        std::fs::read(
-            "../parallax-ingest/tests/fixtures/sentry/python-sdk-2.48-event.envelope",
-        )
-    })
-    .expect("python sdk fixture")
+    std::fs::read("crates/parallax-ingest/tests/fixtures/sentry/python-sdk-2.48-event.envelope")
+        .or_else(|_| {
+            std::fs::read("../parallax-ingest/tests/fixtures/sentry/python-sdk-2.48-event.envelope")
+        })
+        .expect("python sdk fixture")
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -40,10 +36,7 @@ async fn sentry_envelope_accepts_and_projects_issue() {
         .await
         .expect("server starts");
     let client = reqwest::Client::new();
-    let url = format!(
-        "http://{}/api/1/envelope/",
-        handle.api_addr
-    );
+    let url = format!("http://{}/api/1/envelope/", handle.api_addr);
     let body = fixture_envelope();
     let response = client
         .post(&url)
@@ -56,7 +49,12 @@ async fn sentry_envelope_accepts_and_projects_issue() {
         .send()
         .await
         .expect("post envelope");
-    assert_eq!(response.status(), reqwest::StatusCode::OK, "body={}", response.text().await.unwrap_or_default());
+    assert_eq!(
+        response.status(),
+        reqwest::StatusCode::OK,
+        "body={}",
+        response.text().await.unwrap_or_default()
+    );
 
     // Exact redelivery → 200 without replaying completed effects.
     let again = client
@@ -75,13 +73,13 @@ async fn sentry_envelope_accepts_and_projects_issue() {
     // Wait for worker to project the issue.
     let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
     loop {
-        let issues = handle
-            .metadata
-            .issues(10)
-            .await
-            .expect("list issues");
+        let issues = handle.metadata.issues(10).await.expect("list issues");
         if !issues.is_empty() {
-            assert_eq!(issues.len(), 1, "exact redelivery must not invent a second issue");
+            assert_eq!(
+                issues.len(),
+                1,
+                "exact redelivery must not invent a second issue"
+            );
             break;
         }
         assert!(

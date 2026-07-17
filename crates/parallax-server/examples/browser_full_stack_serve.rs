@@ -15,6 +15,10 @@
 
 #![expect(clippy::expect_used, reason = "harness exits on setup failure")]
 #![expect(
+    clippy::excessive_nesting,
+    reason = "self-contained full-stack fixture server"
+)]
+#![expect(
     clippy::print_stdout,
     reason = "progress narration for long-running serve"
 )]
@@ -723,8 +727,11 @@ async fn wait_visibility(base_url: &str, ids: &RealStackIds, deadline: Duration)
             issue = Some(found.clone());
         }
 
-        if saw_trace && saw_service && issue.is_some() {
-            return Ok(issue.expect("issue"));
+        if saw_trace
+            && saw_service
+            && let Some(found) = issue
+        {
+            return Ok(found);
         }
         tokio::time::sleep(Duration::from_millis(250)).await;
     }

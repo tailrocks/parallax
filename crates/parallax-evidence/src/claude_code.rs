@@ -613,16 +613,29 @@ mod tests {
     /// Predeclared capture bounds (plan 120 loss ledger).
     #[test]
     fn loss_ledger_bounds_are_enforced_by_normalizer() {
-        assert!(MAX_LINE_BYTES <= 256 * 1024);
-        assert!(MAX_EVENTS <= 10_000);
+        const {
+            assert!(MAX_LINE_BYTES <= 256 * 1024);
+            assert!(MAX_EVENTS <= 10_000);
+        }
+        let oversized_line = format!(
+            r#"{{"type":"user","message":"{}"}}"#,
+            "y".repeat(MAX_LINE_BYTES + 1)
+        );
         let over = format!(
-            "{}\n{}",
+            "{}\n{oversized_line}",
             r#"{"type":"system","subtype":"init","session_id":"s"}"#,
-            format!(r#"{{"type":"user","message":"{}"}}"#, "y".repeat(MAX_LINE_BYTES + 1))
         );
         let session = normalize_stream_json(&over);
         assert!(session.skipped_oversized_lines >= 1);
-        assert!(session.lossiness.iter().any(|flag| flag.contains("oversized") || flag.contains("redacted") || !flag.is_empty() || session.skipped_oversized_lines > 0));
+        assert!(
+            session
+                .lossiness
+                .iter()
+                .any(|flag| flag.contains("oversized")
+                    || flag.contains("redacted")
+                    || !flag.is_empty()
+                    || session.skipped_oversized_lines > 0)
+        );
     }
 
     #[test]

@@ -131,10 +131,7 @@ async fn mark_fail(
     error: &str,
     reset_at_nanos: Option<u128>,
 ) {
-    if let Err(store_error) = metadata
-        .fail_ci_backfill(repo, error, reset_at_nanos)
-        .await
-    {
+    if let Err(store_error) = metadata.fail_ci_backfill(repo, error, reset_at_nanos).await {
         tracing::warn!(%repo, %store_error, "ci backfill fail_ci_backfill write failed");
     }
 }
@@ -232,6 +229,7 @@ async fn accept_page(
     }
 }
 
+#[expect(clippy::too_many_lines, reason = "one sequential REST backfill pass")]
 async fn backfill_repo(
     metadata: &TursoMetadataStore,
     http: &dyn JobsHttp,
@@ -271,7 +269,13 @@ async fn backfill_repo(
         return Ok(report);
     }
     if runs.rate_limit_remaining == Some(0) {
-        mark_fail(metadata, repo, "rate limited", runs.rate_limit_reset_at_nanos).await;
+        mark_fail(
+            metadata,
+            repo,
+            "rate limited",
+            runs.rate_limit_reset_at_nanos,
+        )
+        .await;
         report.rate_limited = true;
         return Ok(report);
     }
@@ -311,7 +315,13 @@ async fn backfill_repo(
             )
             .await;
             if jobs.rate_limit_remaining == Some(0) {
-                mark_fail(metadata, repo, "rate limited", jobs.rate_limit_reset_at_nanos).await;
+                mark_fail(
+                    metadata,
+                    repo,
+                    "rate limited",
+                    jobs.rate_limit_reset_at_nanos,
+                )
+                .await;
                 accept.report.rate_limited = true;
                 break;
             }
@@ -324,7 +334,13 @@ async fn backfill_repo(
     };
     if advanced
         && let Err(error) = metadata
-            .advance_ci_backfill(repo, advance_ts, advance_run, runs.etag.as_deref(), now_nanos)
+            .advance_ci_backfill(
+                repo,
+                advance_ts,
+                advance_run,
+                runs.etag.as_deref(),
+                now_nanos,
+            )
             .await
     {
         tracing::warn!(%repo, %error, "ci backfill cursor advance failed");

@@ -179,6 +179,10 @@ fn check_matrix(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
     Ok(())
 }
 
+#[expect(
+    clippy::excessive_nesting,
+    reason = "one linear per-spec forbidden-pattern scan"
+)]
 fn check_specs(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
     for required in [
         "ui/tests/e2e/full-stack/telemetry-discovery.spec.ts",
