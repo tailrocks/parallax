@@ -209,6 +209,7 @@ managed quotes remain):
 | still not done | **527** | top 5 open |
 | re-pin + healthy | **528** | v1.1.3; 2h+ up |
 | still not done | **529** | top 5 open |
+| adopt-native smoke | **530** | Jaeger/Prom/identity OK |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
