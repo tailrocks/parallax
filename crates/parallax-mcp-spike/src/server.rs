@@ -14,6 +14,8 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use std::sync::Arc;
 
+const MCP_RESULT_MAX_BYTES: usize = 128 * 1024;
+
 fn evidence_bundle_output_schema() -> Arc<JsonObject> {
     let schema = serde_json::from_str(include_str!(
         "../../../schema/evidence-bundle.v2.schema.json"
@@ -86,6 +88,7 @@ impl SpikeServer {
         // Mirror CLI JSON shape: compact re-serialize of the GraphQL object.
         let body = serde_json::to_string(&session)
             .map_err(|_| safe_internal_error("agent_session_invalid"))?;
+        ensure_result_budget(&[body.len(), body.len()])?;
         let mut result = CallToolResult::structured(session);
         result.content = vec![ContentBlock::text(body)];
         Ok(result)
@@ -99,10 +102,21 @@ fn safe_internal_error(code: &'static str) -> McpError {
     )
 }
 
+fn ensure_result_budget(part_lengths: &[usize]) -> Result<(), McpError> {
+    let total = part_lengths
+        .iter()
+        .fold(0usize, |total, length| total.saturating_add(*length));
+    if total > MCP_RESULT_MAX_BYTES {
+        return Err(safe_internal_error("result_too_large"));
+    }
+    Ok(())
+}
+
 fn bundle_tool_result(bundle: gql::BundleProjection) -> Result<CallToolResult, McpError> {
     // Parse exactly once for structuredContent. Keep the raw string for
     // comparison outside this function (check subcommand); do not re-serialize
     // the parsed value when comparing hashes.
+    ensure_result_budget(&[bundle.json.len(), bundle.markdown.len()])?;
     let parsed: Value =
         serde_json::from_str(&bundle.json).map_err(|_| safe_internal_error("bundle_invalid"))?;
     if parsed.get("schema_version").and_then(Value::as_str) != Some("bundle-v2") {
@@ -254,6 +268,19 @@ mod tests {
         assert!(encoded.contains("bundle_hash_mismatch"));
         assert!(!encoded.contains("embedded"));
         assert!(!encoded.contains("projected"));
+    }
+
+    #[test]
+    fn combined_result_budget_rejects_overflow_without_arithmetic_wrap() {
+        assert!(ensure_result_budget(&[MCP_RESULT_MAX_BYTES]).is_ok());
+        let error =
+            ensure_result_budget(&[MCP_RESULT_MAX_BYTES, 1]).expect_err("over budget must fail");
+        assert!(
+            serde_json::to_string(&error)
+                .expect("serialize error")
+                .contains("result_too_large")
+        );
+        assert!(ensure_result_budget(&[usize::MAX, usize::MAX]).is_err());
     }
 
     #[test]

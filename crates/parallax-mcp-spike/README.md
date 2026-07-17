@@ -70,6 +70,8 @@ Bundle assembly is explicitly capped at 4,000 tokens for MCP because each call
 returns both the canonical structured object and compatibility text.
 The adapter streams GraphQL responses through a hard 1 MiB pre-parse ceiling,
 including chunked responses and agent-session projections.
+Final structured content plus compatibility text has a combined 128 KiB
+ceiling. Oversized results fail closed until resource-reference delivery lands.
 The issue-context tool advertises the checked-in bundle-v2 JSON Schema as its
 MCP `outputSchema`.
 

@@ -59,6 +59,9 @@ must not return in product output.
   SDK's moving `LATEST` constant; client skew fixtures remain unfinished.
 - The GraphQL client denies redirects (preventing loopback-to-remote escape)
   and enforces 5-second connect plus 30-second total request deadlines.
+- Final structured content plus compatibility text is capped at 128 KiB with
+  saturating accounting. Oversized results currently fail closed; the required
+  bounded-summary plus approved-resource-reference path remains unfinished.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded
