@@ -30,10 +30,22 @@ work; the follow-up consolidation deleted it and ported its stale-permalink
 case into this broader engine so divergent threshold/focus semantics cannot
 reach graph wiring.
 
-The peer executor owns review/deepening, graph and URL wiring, ELK layout,
+The peer executor owns review/deepening, graph and URL wiring, ELK verification,
 external-node backend work, full gates, and browser evidence. Confirm the
 threshold semantics against final preset labels before wiring; do not treat
 this helper slice as closure evidence.
+
+ELK foundation also landed preliminarily: `elkjs@0.11.1` via Bun
+(`f4aeea0`) and `ui/src/lib/ecosystem-layout.ts` plus its Vite worker
+(`0ad35fd`). It provides stable topology keys, a bounded 32-entry promise
+cache, deterministic sorted `layered`/RIGHT ELK input, browser-worker error
+fallback, and a deterministic Kahn-layer fallback for Bun/Vitest/SSR. Six
+focused tests, targeted lint, and format pass. Context7 was attempted first
+but its monthly quota was exhausted; elkjs's shipped declarations/README were
+used. The peer must still wire the graph, run full typecheck/build after its
+concurrent metrics route regenerates route types, confirm the worker chunk,
+measure fallback layout below the plan's 100ms STOP threshold, and capture
+browser evidence.
 
 ## Why this matters
 
