@@ -140,9 +140,21 @@ whether OR-within-dimension needs a backend argument.
   (`42473b6`) — pick one source of truth — and browser-verifies against
   `j-parallel`.
 
+- Live-engine assertion suite (`f3b5170`, ignore-gated m9 acceptance):
+  `crates/parallax-server/tests/m9_attribute_filters_greptime.rs` seeds a
+  7/2/1 GET/POST/DELETE corpus over OTLP into a managed engine and asserts
+  filter narrowing, the `x' OR 1=1--` zero-row injection proof,
+  trace/log facet counts, and duration stats. Compiles clean; NOT yet
+  executed — the managed engine's fixed ports (24000-24003) were held by
+  the concurrent `/tmp/parallax-qa` stack. Run once that stack is free:
+  `cargo nextest run -p parallax-server --test
+  m9_attribute_filters_greptime --run-ignored only`. (Note: `f3b5170`
+  also carries the primary executor's staged plan-168 metrics slice —
+  shared-index sweep; verified green post-hoc, 124 tests + strict clippy.)
+
 Still open (full plan scope): live facet verification against `f-attrs`
-(70/20/10) + the facet-window cap decision; live-engine narrowing
-+ injection assertions; logs route wiring (in the primary executor's
+(70/20/10) + the facet-window cap decision; executing the m9 live suite;
+logs route wiring (in the primary executor's
 working tree at time of writing) + invocations route wiring;
 `F` keyboard
 shortcut; syntax-highlight overlay (editor currently plain input);
