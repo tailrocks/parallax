@@ -1,5 +1,13 @@
 # Gonzo Deep Research
 
+> **Canonical comparison:** Gonzo is an in-memory live log-tail **TUI / triage
+> tool** (OTLP-logs receiver + optional AI), not a telemetry backend — tracked
+> as a **reference / adjacent tool**, so it has no `parallax-vs-gonzo.md`
+> deep-dive. See the canonical roster at
+> [competitors/comparison-set.md](competitors/comparison-set.md) and the overview
+> at [competitors/README.md](competitors/README.md). This legacy note is kept as
+> a sourced lead on the category boundary.
+
 Research date: 2026-06-22
 
 Gonzo was previously a single shallow entry (#17) in
