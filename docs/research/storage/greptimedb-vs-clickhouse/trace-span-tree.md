@@ -140,7 +140,8 @@ SELECT * FROM tree ORDER BY depth, span_id;
 | **GT v1.1.3** | **Success** — 4 rows, depths 0/1/1/2, `execution_time_ms` ~12 |
 | **CH 26.6.1.1193** | Success — same 4-row tree |
 
-**Correction:** the recursive-CTE capability gap is **closed or largely closed on v1.1.3**
-for this join form. App-side tree build remains valid (and still preferred for
-pruned multi-signal bundles), but it is **no longer required by engine inability**.
-Re-check any verdict text that still says “GT cannot recursive CTE.”
+**Correction:** the recursive-CTE gap is **narrowed on v1.1.3**: the
+`JOIN tree t ON s.parent_span_id = t.span_id` form **works**. The older comma
+self-join form (`FROM tree_spans AS s, tree WHERE …`) still errors
+(`project index 0 out of bounds`, same class as Run 165). Use explicit `JOIN`
+syntax. App-side tree build remains valid for multi-signal bundles.

@@ -7107,5 +7107,5 @@ GT join 10 ms vs plain 5 ms; CH join 3 ms with Granules 1/12. Direction holds; a
 
 ### Run 195 — 2026-07-17 — recursive CTE span tree works on GT v1.1.3 (**drift**)
 
-Previously broken (Run 165 on v1.0.2); now returns correct 4-row depth tree (~12 ms).
-CH still works. App-side tree optional, not required. `trace-span-tree.md`.
+Previously broken (Run 165 on v1.0.2); **JOIN form** now returns correct 4-row depth tree (~12 ms).
+Comma self-join form still `project index out of bounds`. CH works. `trace-span-tree.md`.
