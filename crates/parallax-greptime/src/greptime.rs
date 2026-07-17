@@ -5,7 +5,7 @@ use crate::adapter::{
     ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow,
     FIELD_KEYS_CAP, FIELD_TOP_VALUES_CAP, FieldKey, FieldSource, FieldStats, FieldValueCount,
     MAX_ROWS, MetricAnalyticsStore, MetricStore, OverviewTotals, ReleaseWindow,
-    RuntimeMetricSeries, SERVICE_MAP_TRACE_CAP, ServiceCatalogRow, ServiceEdge, ServiceSummary,
+    RuntimeMetricSeries, ServiceCatalogRow, ServiceEdge, ServiceSummary,
     SignalKind, SpanRed, StorageError, StorageResult, attribute_compare_key_allowed,
     attribute_compare_score, attribute_compare_value_allowed, field_key_identifier_like,
     field_key_namespace, field_value_display, metric_group_label_allowed, runtime_metric_family,

@@ -134,7 +134,11 @@ impl GreptimeStore {
         )
     }
 
-    pub(super) fn service_map_edges_sql(id_list: &str, range: &RangeInclusive<u128>) -> String {
+    /// Cross-service parent/child edges over the whole window: sampling the
+    /// N most-recent traces (the previous shape) silently dropped edges from
+    /// quieter services once chatty single-span traces filled the sample
+    /// (corpus id eco-full: the CLI edge vanished behind health checks).
+    pub(super) fn service_map_edges_sql(range: &RangeInclusive<u128>, edge_cap: usize) -> String {
         format!(
             r#"SELECT "parent"."service_name" AS "source",
                       "child"."service_name" AS "target",
@@ -147,12 +151,15 @@ impl GreptimeStore {
                JOIN opentelemetry_traces AS "parent"
                  ON "child"."trace_id" = "parent"."trace_id"
                 AND "child"."parent_span_id" = "parent"."span_id"
-               WHERE "child"."trace_id" IN ({id_list})
-                 AND "child"."timestamp" >= {}
-                 AND "child"."timestamp" <= {}
+               WHERE "child"."timestamp" >= {} AND "child"."timestamp" <= {}
+                 AND "parent"."timestamp" >= {} AND "parent"."timestamp" <= {}
                  AND "child"."span_kind" = 'SPAN_KIND_SERVER'
                  AND "child"."service_name" != "parent"."service_name"
-               GROUP BY "parent"."service_name", "child"."service_name""#,
+               GROUP BY "parent"."service_name", "child"."service_name"
+               ORDER BY "call_count" DESC
+               LIMIT {edge_cap}"#,
+            sql_ts(*range.start()),
+            sql_ts(*range.end()),
             sql_ts(*range.start()),
             sql_ts(*range.end()),
         )

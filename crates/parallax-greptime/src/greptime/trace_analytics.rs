@@ -361,39 +361,10 @@ impl crate::adapter::TraceAnalyticsStore for GreptimeStore {
     async fn service_map(
         &self,
         range: RangeInclusive<u128>,
-        max_traces: usize,
+        _max_traces: usize,
     ) -> StorageResult<Vec<ServiceEdge>> {
-        let trace_limit = max_traces.min(SERVICE_MAP_TRACE_CAP);
-        if trace_limit == 0 {
-            return Ok(Vec::new());
-        }
-        let trace_rows = self
-            .sql_lenient(&format!(
-                r#"SELECT "trace_id", MAX("timestamp") AS "last_seen"
-                   FROM opentelemetry_traces
-                   WHERE "timestamp" >= {} AND "timestamp" <= {}
-                   GROUP BY "trace_id"
-                   ORDER BY "last_seen" DESC, "trace_id" ASC
-                   LIMIT {trace_limit}"#,
-                sql_ts(*range.start()),
-                sql_ts(*range.end())
-            ))
-            .await?;
-        let trace_ids: Vec<String> = trace_rows
-            .iter()
-            .map(|row| str_at(row, 0))
-            .filter(|trace_id| !trace_id.is_empty())
-            .collect();
-        if trace_ids.is_empty() {
-            return Ok(Vec::new());
-        }
-        let id_list = trace_ids
-            .iter()
-            .map(|trace_id| format!("'{}'", escape(trace_id)))
-            .collect::<Vec<_>>()
-            .join(",");
         let rows = self
-            .sql_arrow_lenient(&Self::service_map_edges_sql(&id_list, &range))
+            .sql_arrow_lenient(&Self::service_map_edges_sql(&range, MAX_ROWS))
             .await?;
         Ok(rows
             .iter()

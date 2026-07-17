@@ -62,3 +62,26 @@ describe("EcosystemGraph", () => {
     expect(edgeLink?.href).toContain("service=A")
   })
 })
+
+it("D-014 eco-full: a 9-node column grows the canvas instead of overlapping cards", async () => {
+  const nodes = Array.from({ length: 9 }, (_, i) => ({
+    name: `svc-${i}`,
+    kind: "service" as const,
+    lastSeenNanos: "0",
+    spanCount: "1",
+    errorCount: "0",
+    p95Ms: null,
+  }))
+  renderTestRouter(
+    <EcosystemGraph nodes={nodes} edges={[]} range={customRange("0", "200")} />,
+    { targetPaths: ["/services/$service", "/traces"] }
+  )
+  const cards = await screen.findAllByText(/svc-/)
+  expect(cards.length).toBe(9)
+  const container = document.querySelector('[style*="min-height"]')
+  const minHeight = Number.parseInt(
+    (container as HTMLElement).style.minHeight,
+    10
+  )
+  expect(minHeight).toBeGreaterThanOrEqual(9 * 80)
+})

@@ -9,9 +9,12 @@ import { rangeLinkSearch } from "@/lib/range"
 import { cn } from "@/lib/utils"
 
 const WIDTH = 960
-const HEIGHT = 420
+const MIN_HEIGHT = 420
 const NODE_WIDTH = 150
 const NODE_HEIGHT = 58
+/** Vertical room per node in a column; columns larger than the minimum
+ * canvas grow the canvas instead of overlapping cards (corpus id eco-full). */
+const ROW_SPACING = NODE_HEIGHT + 22
 
 interface PositionedNode extends ServiceMapNode {
   x: number
@@ -31,7 +34,7 @@ function edgeRate(edge: ServiceMapEdge): number {
 function layoutNodes(
   nodes: ServiceMapNode[],
   edges: ServiceMapEdge[]
-): PositionedNode[] {
+): { positioned: PositionedNode[]; height: number } {
   const names = new Set(nodes.map((node) => node.name))
   for (const edge of edges) {
     names.add(edge.source)
@@ -53,7 +56,9 @@ function layoutNodes(
     groups.set(level, [...(groups.get(level) ?? []), name])
   }
   const byName = new Map(nodes.map((node) => [node.name, node]))
-  return [...groups.entries()]
+  const maxColumn = Math.max(0, ...[...groups.values()].map((g) => g.length))
+  const height = Math.max(MIN_HEIGHT, (maxColumn + 1) * ROW_SPACING)
+  const positioned = [...groups.entries()]
     .flatMap(([level, groupNames]) => {
       const sorted = groupNames.sort()
       const x =
@@ -61,7 +66,7 @@ function layoutNodes(
           ? WIDTH / 2
           : 80 + (level * (WIDTH - 160)) / Math.max(1, maxDepth)
       return sorted.map((name, index) => {
-        const y = ((index + 1) * HEIGHT) / (sorted.length + 1)
+        const y = ((index + 1) * height) / (sorted.length + 1)
         return {
           name,
           kind: "service" as const,
@@ -76,6 +81,7 @@ function layoutNodes(
       })
     })
     .sort((a, b) => a.name.localeCompare(b.name))
+  return { positioned, height }
 }
 
 function EdgePath({
@@ -117,7 +123,7 @@ export function EcosystemGraph({
   edges: ServiceMapEdge[]
   range: ResolvedRange
 }) {
-  const positioned = layoutNodes(nodes, edges)
+  const { positioned, height } = layoutNodes(nodes, edges)
   const byName = new Map(positioned.map((node) => [node.name, node]))
   const renderedEdges = edges
     .map((edge) => ({
@@ -161,9 +167,12 @@ export function EcosystemGraph({
           <Badge variant="secondary">trace-path</Badge>
         </span>
       </div>
-      <div className="relative min-h-[28rem] overflow-hidden rounded-lg border bg-background">
+      <div
+        className="relative overflow-hidden rounded-lg border bg-background"
+        style={{ minHeight: height }}
+      >
         <svg
-          viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+          viewBox={`0 0 ${WIDTH} ${height}`}
           className="absolute inset-0 size-full text-muted-foreground"
           role="img"
           aria-label="service dependency graph"
@@ -199,7 +208,7 @@ export function EcosystemGraph({
           )
           const style = {
             left: `${((node.x - NODE_WIDTH / 2) / WIDTH) * 100}%`,
-            top: `${((node.y - NODE_HEIGHT / 2) / HEIGHT) * 100}%`,
+            top: `${((node.y - NODE_HEIGHT / 2) / height) * 100}%`,
             width: NODE_WIDTH,
             minHeight: NODE_HEIGHT,
           }
@@ -250,7 +259,7 @@ export function EcosystemGraph({
 
         {renderedEdges.map(({ edge, source, target }) => {
           const x = ((source.x + target.x) / 2 / WIDTH) * 100
-          const y = ((source.y + target.y) / 2 / HEIGHT) * 100
+          const y = ((source.y + target.y) / 2 / height) * 100
           return (
             <Link
               key={`${edge.source}-${edge.target}-label`}

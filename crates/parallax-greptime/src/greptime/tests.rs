@@ -214,9 +214,13 @@ fn golden_histogram_quantile_bucket_sql_groups_by_window() {
 
 #[test]
 fn golden_service_map_edges_sql_uses_approx_percentile() {
-    let sql = GreptimeStore::service_map_edges_sql("'t1','t2'", &(0..=999));
+    let sql = GreptimeStore::service_map_edges_sql(&(0..=999), 500);
     assert!(sql.contains("approx_percentile_cont"));
     assert!(sql.contains("GROUP BY"));
+    // Whole-window self-join: no most-recent-trace sampling (it silently
+    // dropped quiet services' edges behind chatty health-check traces).
+    assert!(!sql.contains("IN ("));
+    assert!(sql.contains("LIMIT 500"));
 }
 
 #[test]
