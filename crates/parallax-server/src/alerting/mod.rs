@@ -7,6 +7,12 @@
 mod delivery;
 mod delivery_worker;
 mod evaluator;
+mod measurement;
+
+pub use measurement::{
+    ServiceWindowStats, SignalType, groups_by_service, scalar_measurement, service_in_scope,
+    span_measurements,
+};
 
 pub use delivery_worker::{DELIVERY_LEASE_SECS, DeliveryReport, deliver_due_once};
 mod state_machine;
