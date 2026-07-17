@@ -12,9 +12,10 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 89 (Rustrak still **@rustrak/server@0.9.2** +
-**@rustrak/mcp@0.2.13** / 64★; SQLite default; no OTLP/bundle/outcome). Pass 88 =
-Bugsink. A1/A2/A4/A6 open.
+Last updated 2026-07-17 after pass 90 (ClickHouse feature line still
+**`v26.6.1.1193-stable`** as highest non-LTS; newer **`v26.5.5.8-stable`** is
+older feature line patches — do not treat as "latest feature"). Pass 89 = Rustrak.
+A1/A2/A4/A6 open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
@@ -53,7 +54,7 @@ producer rather than treat its construction as future work. Autonomous fixing re
 
 ## Standing watches (cheap, recurring)
 
-- **Engine releases** — re-pin + re-verify load-bearing claims on each new stable (GreptimeDB; ClickHouse feature line). Last: **2026-07-17 pass 60** — GreptimeDB stable **`v1.1.3`**, nightly **`v1.2.0-nightly-20260706`**; ClickHouse feature line **`v26.6.1.1193-stable`** (not LTS). Measurement still owed on the new pins. **Traces docs GA (team Q#2):** still **experimental** on stable + Nightly (**pass 83**); not closed by engine GA.
+- **Engine releases** — re-pin + re-verify load-bearing claims on each new stable (GreptimeDB; ClickHouse feature line). Last: **2026-07-17 pass 60 + pass 90** — GreptimeDB stable **`v1.1.3`**, nightly **`v1.2.0-nightly-20260706`**; ClickHouse **feature** line still **`v26.6.1.1193-stable`** (2026-06-25). GitHub also shows newer **`v26.5.5.8-stable`** (2026-07-01) and LTS **`v25.8.28.1-lts`** — **not** the feature-line pin (policy: never LTS; prefer highest **feature** major.minor, not latest calendar patch on older line). Measurement still owed on the pins. **Traces docs GA (team Q#2):** still **experimental** on stable + Nightly (**pass 83**).
 - **Incumbent self-hosted AI** — **Rechecked 2026-07-17 pass 77:** Seer still
   **closed / unavailable** on self-hosted
   ([develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/)).
