@@ -8178,3 +8178,6 @@ Not done.
 `floor(duration_ms/50) GROUP BY` on spans1m: GT **35 ms**; CH floor buckets
 **13 ms**. Interactive both. GT `width_bucket` not available (code 3000); use
 `floor`/`case`.
+
+### Run 330 — 2026-07-17 — not done
+
