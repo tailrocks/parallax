@@ -163,3 +163,11 @@ enforce row/column grants and quotas without waiting for Enterprise GreptimeDB o
 ## Run 262 re-verify (2026-07-17)
 
 `CREATE QUOTA` still works on CH 26.6; GT still rejects the keyword (Code 1001). No drift from Run 179.
+
+## Run 446 (2026-07-18) — ACCESS surface re-check
+
+`SHOW ACCESS` on CH 26.6.1 still lists: default user, `readonly` profile, default
+QUOTA keyed by user_name (TRACKING ONLY), full GRANT surface including ROW POLICY
+and QUOTA admin. **No drift** vs Run 172/179: CH OSS has stronger SQL guardrails
+than GT; product tenants still proxy-owned for GT.
+
