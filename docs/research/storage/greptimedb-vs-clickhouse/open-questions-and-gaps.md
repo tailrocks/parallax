@@ -226,3 +226,7 @@ GetObject). Packets exist for mix/RPO/server/managed. **Execute next:**
 5. Turso dump + meta snapshot drill
 
 Not done.
+
+## Run 349 — still not done (2026-07-17)
+
+Through 348. Execute: mix fill, server runbook, quotes, GB cold, RPO D2/D3.
