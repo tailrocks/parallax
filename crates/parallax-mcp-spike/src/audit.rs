@@ -60,11 +60,13 @@ pub(crate) fn record(row: AuditRow) {
 
 /// Snapshot of recorded rows (tests / doctor only).
 #[must_use]
+#[cfg(test)]
 pub(crate) fn snapshot() -> Vec<AuditRow> {
     audit_log().lock().map(|g| g.clone()).unwrap_or_default()
 }
 
 /// Clear the in-process log (tests).
+#[cfg(test)]
 pub(crate) fn clear() {
     if let Ok(mut guard) = audit_log().lock() {
         guard.clear();
@@ -77,16 +79,28 @@ pub(crate) struct ToolCallGuard {
     principal: &'static str,
     scopes: Vec<&'static str>,
     started: Instant,
+    span: tracing::Span,
 }
 
 impl ToolCallGuard {
     #[must_use]
     pub(crate) fn start(tool: AuditTool, principal: &'static str, scopes: &[&'static str]) -> Self {
+        let scope_names = scopes.join(",");
         Self {
             tool,
             principal,
             scopes: scopes.to_vec(),
             started: Instant::now(),
+            span: tracing::info_span!(
+                target: "parallax.mcp.audit",
+                "mcp.tool_call",
+                tool = tool.as_str(),
+                principal,
+                scopes = scope_names,
+                status = tracing::field::Empty,
+                result_bytes = tracing::field::Empty,
+                duration_ms = tracing::field::Empty,
+            ),
         }
     }
 
@@ -100,6 +114,9 @@ impl ToolCallGuard {
 
     fn finish(self, status: &str, result_bytes: usize) {
         let duration_ms = u64::try_from(self.started.elapsed().as_millis()).unwrap_or(u64::MAX);
+        self.span.record("status", status);
+        self.span.record("result_bytes", result_bytes);
+        self.span.record("duration_ms", duration_ms);
         record(AuditRow {
             tool: self.tool.as_str(),
             principal: self.principal,
@@ -126,22 +143,67 @@ pub(crate) fn error_code(error: &rmcp::ErrorData) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Mutex;
+    use std::fmt;
+    use std::sync::{Arc, Mutex};
+    use tracing::field::{Field, Visit};
+    use tracing::span::{Attributes, Record};
+    use tracing::{Id, Subscriber};
+    use tracing_subscriber::layer::{Context, SubscriberExt};
+    use tracing_subscriber::registry::LookupSpan;
+    use tracing_subscriber::{Layer, Registry};
 
     /// Global audit log is process-wide; serialize tests that assert exact length.
     static TEST_LOCK: Mutex<()> = Mutex::new(());
+
+    #[derive(Clone, Default)]
+    struct CaptureLayer(Arc<Mutex<Vec<String>>>);
+
+    struct FieldVisitor<'a>(&'a Mutex<Vec<String>>);
+
+    impl Visit for FieldVisitor<'_> {
+        fn record_debug(&mut self, field: &Field, value: &dyn fmt::Debug) {
+            self.0
+                .lock()
+                .expect("span capture lock")
+                .push(format!("{}={value:?}", field.name()));
+        }
+    }
+
+    impl<S> Layer<S> for CaptureLayer
+    where
+        S: Subscriber + for<'lookup> LookupSpan<'lookup>,
+    {
+        fn on_new_span(&self, attrs: &Attributes<'_>, _id: &Id, _ctx: Context<'_, S>) {
+            assert_eq!(attrs.metadata().name(), "mcp.tool_call");
+            attrs.record(&mut FieldVisitor(&self.0));
+        }
+
+        fn on_record(&self, _span: &Id, values: &Record<'_>, _ctx: Context<'_, S>) {
+            values.record(&mut FieldVisitor(&self.0));
+        }
+    }
+
+    fn captured_span(run: impl FnOnce()) -> String {
+        let capture = CaptureLayer::default();
+        let fields = Arc::clone(&capture.0);
+        let subscriber = Registry::default().with(capture);
+        tracing::subscriber::with_default(subscriber, run);
+        fields.lock().expect("span capture lock").join("\n")
+    }
 
     #[test]
     fn audit_rows_never_embed_anchors_or_evidence() {
         let _lock = TEST_LOCK.lock().expect("audit test lock");
         clear();
-        let guard = ToolCallGuard::start(
-            AuditTool::IssueContext,
-            "local-operator",
-            &["evidence:read"],
-        );
-        // Deliberately pass a secret-shaped byte count only — no fingerprint.
-        guard.finish_ok(42);
+        let fields = captured_span(|| {
+            let guard = ToolCallGuard::start(
+                AuditTool::IssueContext,
+                "local-operator",
+                &["evidence:read"],
+            );
+            // Deliberately pass a secret-shaped byte count only — no fingerprint.
+            guard.finish_ok(42);
+        });
         let rows = snapshot();
         assert_eq!(rows.len(), 1);
         let row = &rows[0];
@@ -157,22 +219,33 @@ mod tests {
                 && !rendered.contains("sk_live"),
             "audit debug form leaked secret-shaped text: {rendered}"
         );
+        assert!(fields.contains("tool=\"parallax_issue_context\""));
+        assert!(fields.contains("principal=\"local-operator\""));
+        assert!(fields.contains("scopes=\"evidence:read\""));
+        assert!(fields.contains("status=\"ok\""));
+        assert!(fields.contains("result_bytes=42"));
+        assert!(fields.contains("duration_ms="));
+        assert!(!fields.contains("ghp_") && !fields.contains("sk_live"));
     }
 
     #[test]
     fn error_path_records_stable_code_without_payload() {
         let _lock = TEST_LOCK.lock().expect("audit test lock");
         clear();
-        let guard = ToolCallGuard::start(
-            AuditTool::AgentSessionShow,
-            "local-operator",
-            &["evidence:read"],
-        );
-        guard.finish_err("invalid_anchor");
+        let fields = captured_span(|| {
+            let guard = ToolCallGuard::start(
+                AuditTool::AgentSessionShow,
+                "local-operator",
+                &["evidence:read"],
+            );
+            guard.finish_err("invalid_anchor");
+        });
         let rows = snapshot();
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].status, "invalid_anchor");
         assert_eq!(rows[0].result_bytes, 0);
         assert_eq!(rows[0].tool, "parallax_agent_session_show");
+        assert!(fields.contains("status=\"invalid_anchor\""));
+        assert!(fields.contains("result_bytes=0"));
     }
 }

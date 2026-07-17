@@ -15,7 +15,7 @@
 - **Planned at**: `eefa4617`, 2026-07-12
 - **Status**: IN PROGRESS — local-stdio product GO (unblock 2026-07-17); ship gates incomplete
 - **Blocker**: none for local scope. Residual gates: claimed-client fixtures,
-  resources/oversized summary path, OTel span (audit rows landed), spike
+  resources/oversized summary path, independent OTel-span verification, spike
   graduation/quarantine.
 
 ## Current Evidence
@@ -77,6 +77,13 @@ Evidence packet: [`docs/research/validation/2026-07-plan-112-product-mcp/README.
   contain seeded or upstream-reflected evidence.
 - The spike installs no tracing subscriber; environment log directives cannot
   activate dependency-level MCP protocol/result logging of anchors or evidence.
+- Each finished tool call now also emits one parent-subscriber-compatible
+  `parallax.mcp.audit` span with fixed tool/principal/scopes/status/result-size/
+  duration fields. Success and error fixtures capture the span, require stable
+  fields, and reject seeded secret shapes. The spike still installs no runtime
+  subscriber or exporter and adds no TLS surface. Full crate tests (33) and
+  spike-only strict Clippy pass; the next executor must independently verify
+  exporter integration before treating the OTel gate as terminal.
 - Canonical evidence redaction now strips C0/C1 terminal controls (including
   ANSI ESC, NUL, and DEL) while preserving tab/newline/CR and records the
   removal count, preventing control injection across structured/text clients.
