@@ -13,6 +13,14 @@
 > | Rustrak | `@rustrak/server@0.2.5` | **`@rustrak/server@0.9.2`** (2026-07-15) | + mutating MCP |
 > | Traceway | `backend/v1.7.27` | **`backend/v1.9.1`** (2026-07-15) | OTel + agent MCP pressure |
 >
+> **Pass 87 (2026-07-17) — Sentry baseline re-verify only:** latest
+> `getsentry/self-hosted` release still **`26.7.0`** (published 2026-07-16).
+> Tagged `docker-compose.yml` top-level `services:` count still **exactly 64**
+> (same method as pass 70). [develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/)
+> still excludes **Seer and other AI & ML features** as **closed source** on
+> self-hosted (aligns pass 77). **No** Parallax VM scorecard this pass —
+> gate status remains **`not_measured`**.
+>
 > **Claim level unchanged: `not_measured`.** No fresh-VM Parallax scorecard artifacts. May body inventory below is **historical** until rewritten to these pins.
 
 This note consolidates the following previously-separate research files, each preserved in full below:
