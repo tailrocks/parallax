@@ -1,9 +1,9 @@
 use crate::TursoMetadataStore;
 use parallax_model::{
     Dashboard, Investigation, InvocationRecord, Issue, IssueOccurrence, IssueQuery, IssueSortKey,
-    SavedView, TestCaseRecord, TestExplorerPage, TestExplorerQuery, TestExplorerSort,
-    TestFlakyCandidatePage, TestFlakyCursor, TestFlakyStateRecord, TestResultRecord,
-    TestResultWindow, TestVariantKey, TestVariantRecord, TrendPoint,
+    SavedView, TestCaseDetailBundle, TestCaseRecord, TestExplorerPage, TestExplorerQuery,
+    TestExplorerSort, TestFlakyCandidatePage, TestFlakyCursor, TestFlakyStateRecord,
+    TestResultRecord, TestResultWindow, TestVariantKey, TestVariantRecord, TrendPoint,
 };
 use parallax_storage::metadata::{
     MetadataError, MetadataResult, TEST_CASE_VARIANTS_MAX_LIMIT, TEST_EXPLORER_MAX_LIMIT,
@@ -258,6 +258,23 @@ impl parallax_storage::metadata::MetadataStore for TursoMetadataStore {
         Self::test_variants_for_case(self, case_key, limit.min(TEST_CASE_VARIANTS_MAX_LIMIT))
             .await
             .map_err(MetadataError::internal)
+    }
+    async fn test_case_detail(
+        &self,
+        case_key: &str,
+        variant_limit: usize,
+        result_limit: usize,
+    ) -> MetadataResult<Option<TestCaseDetailBundle>> {
+        parallax_model::TestCaseKey::from_str(case_key)
+            .map_err(|_| MetadataError::InvalidInput("invalid test case key".into()))?;
+        Self::test_case_detail(
+            self,
+            case_key,
+            variant_limit.min(TEST_CASE_VARIANTS_MAX_LIMIT),
+            result_limit.min(TEST_VARIANT_RESULTS_MAX_LIMIT),
+        )
+        .await
+        .map_err(MetadataError::internal)
     }
     async fn test_results_for_variant(
         &self,

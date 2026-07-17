@@ -737,6 +737,22 @@ async fn test_case_variants_and_variant_history_are_bounded_and_isolated() {
     assert_eq!(history[0].key.attempt.get(), 2);
     assert_eq!(history[1].key.invocation_id, "inv-new");
     assert_eq!(history[2].key.invocation_id, "inv-old");
+
+    let detail = port
+        .test_case_detail(case_key.as_str(), 10, 2)
+        .await
+        .expect("detail")
+        .expect("case present");
+    assert_eq!(detail.case.key, case_key);
+    let newer = detail
+        .variants
+        .iter()
+        .find(|row| row.variant.key == newer_variant)
+        .expect("newer variant in batch");
+    // result_limit=2 clamps newest-first history in the batched path.
+    assert_eq!(newer.history.len(), 2);
+    assert_eq!(newer.history[0].key.attempt.get(), 2);
+    assert_eq!(newer.history[1].key.invocation_id, "inv-new");
     assert_eq!(
         port.test_results_for_variant(newer_variant.as_str(), 1)
             .await

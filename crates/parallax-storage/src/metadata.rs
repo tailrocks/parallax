@@ -3,9 +3,9 @@
 use async_trait::async_trait;
 use parallax_model::{
     Dashboard, Investigation, InvocationRecord, Issue, IssueQuery, IssueSortKey, SavedView,
-    TestCaseRecord, TestExplorerPage, TestExplorerQuery, TestExplorerSort, TestFlakyCandidatePage,
-    TestFlakyCursor, TestFlakyStateRecord, TestResultRecord, TestResultWindow, TestVariantRecord,
-    TrendPoint,
+    TestCaseDetailBundle, TestCaseRecord, TestExplorerPage, TestExplorerQuery, TestExplorerSort,
+    TestFlakyCandidatePage, TestFlakyCursor, TestFlakyStateRecord, TestResultRecord,
+    TestResultWindow, TestVariantRecord, TrendPoint,
 };
 use thiserror::Error;
 
@@ -147,6 +147,14 @@ pub trait MetadataStore: Send + Sync {
         case_key: &str,
         limit: usize,
     ) -> MetadataResult<Vec<TestVariantRecord>>;
+    /// Batched case detail: case + variants + per-variant history + flaky in a
+    /// small fixed query set (not one history/flaky round-trip per variant).
+    async fn test_case_detail(
+        &self,
+        case_key: &str,
+        variant_limit: usize,
+        result_limit: usize,
+    ) -> MetadataResult<Option<TestCaseDetailBundle>>;
     async fn test_results_for_variant(
         &self,
         variant_key: &str,

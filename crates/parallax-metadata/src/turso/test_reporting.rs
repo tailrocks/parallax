@@ -181,6 +181,93 @@ impl TursoMetadataStore {
         Ok(variants)
     }
 
+    /// Case + variants + histories + flaky states with a fixed query set.
+    ///
+    /// Query budget: 1 case + 1 variants + 1 results (case join) + 1 flaky (case join).
+    /// Per-variant history clamp is applied in process after a single newest-first scan.
+    pub async fn test_case_detail(
+        &self,
+        case_key: &str,
+        variant_limit: usize,
+        result_limit: usize,
+    ) -> anyhow::Result<Option<parallax_model::TestCaseDetailBundle>> {
+        use parallax_model::{TestCaseDetailBundle, TestCaseVariantDetail};
+        use std::collections::BTreeMap;
+
+        let Some(case) = self.test_case(case_key).await? else {
+            return Ok(None);
+        };
+        let variants = self.test_variants_for_case(case_key, variant_limit).await?;
+        if variants.is_empty() {
+            return Ok(Some(TestCaseDetailBundle {
+                case,
+                variants: Vec::new(),
+            }));
+        }
+
+        // Cap the joined scan: result_limit per variant (bounded by detail maxes).
+        let fetch_cap = result_limit
+            .saturating_mul(variants.len().max(1))
+            .min(10_000);
+        let limit_param = i64::try_from(fetch_cap).unwrap_or(i64::MAX);
+
+        let conn = self.conn.lock().await;
+        let mut result_rows = conn
+            .query(
+                "SELECT r.variant_key, r.invocation_id, r.attempt, r.status, r.trace_id, r.span_id,
+                        r.started_at, r.ended_at, r.service, r.service_version, r.vcs_head_revision,
+                        r.configuration, r.failure_fingerprint
+                 FROM test_results r
+                 INNER JOIN test_variants v ON v.variant_key = r.variant_key
+                 WHERE v.case_key = ?1
+                 ORDER BY r.started_at DESC, r.invocation_id, r.attempt DESC
+                 LIMIT ?2",
+                (case_key, limit_param),
+            )
+            .await?;
+        let mut histories: BTreeMap<String, Vec<TestResultRecord>> = BTreeMap::new();
+        while let Some(row) = result_rows.next().await? {
+            let record = decode_test_result(&row)?;
+            let key = record.key.variant_key.as_str().to_string();
+            let entry = histories.entry(key).or_default();
+            if entry.len() < result_limit {
+                entry.push(record);
+            }
+        }
+
+        let mut flaky_rows = conn
+            .query(
+                "SELECT fs.variant_key, fs.state, fs.evidence, fs.updated_at
+                 FROM test_flaky_states fs
+                 INNER JOIN test_variants v ON v.variant_key = fs.variant_key
+                 WHERE v.case_key = ?1",
+                (case_key,),
+            )
+            .await?;
+        let mut flaky_by_key: BTreeMap<String, TestFlakyStateRecord> = BTreeMap::new();
+        while let Some(row) = flaky_rows.next().await? {
+            let record = decode_flaky_state(&row)?;
+            flaky_by_key.insert(record.variant_key.as_str().to_string(), record);
+        }
+        drop(conn);
+
+        let details = variants
+            .into_iter()
+            .map(|variant| {
+                let key = variant.key.as_str().to_string();
+                TestCaseVariantDetail {
+                    history: histories.remove(&key).unwrap_or_default(),
+                    flaky: flaky_by_key.remove(&key),
+                    variant,
+                }
+            })
+            .collect();
+        Ok(Some(TestCaseDetailBundle {
+            case,
+            variants: details,
+        }))
+    }
+
     pub async fn test_results_for_variant(
         &self,
         variant_key: &str,

@@ -430,43 +430,29 @@ pub(crate) async fn test_case(
     let case_key =
         model::TestCaseKey::from_str(&case_key).map_err(|_| field_err("invalid test case key"))?;
     let case_key = case_key.as_str();
-    let Some(case) = context
+    let variant_limit =
+        clamp_limit(variant_limit, TEST_DETAIL_VARIANT_LIMIT).min(TEST_DETAIL_VARIANT_LIMIT);
+    let result_limit =
+        clamp_limit(result_limit, TEST_DETAIL_HISTORY_LIMIT).min(TEST_DETAIL_HISTORY_LIMIT);
+    let Some(bundle) = context
         .metadata
-        .test_case(case_key)
+        .test_case_detail(case_key, variant_limit, result_limit)
         .await
         .map_err(map_metadata_err)?
     else {
         return Ok(None);
     };
-    let variants = context
-        .metadata
-        .test_variants_for_case(
-            case_key,
-            clamp_limit(variant_limit, TEST_DETAIL_VARIANT_LIMIT).min(TEST_DETAIL_VARIANT_LIMIT),
-        )
-        .await
-        .map_err(map_metadata_err)?;
-    let result_limit =
-        clamp_limit(result_limit, TEST_DETAIL_HISTORY_LIMIT).min(TEST_DETAIL_HISTORY_LIMIT);
-    let mut details = Vec::with_capacity(variants.len());
-    for variant in variants {
-        let (results, flaky) = tokio::try_join!(
-            context
-                .metadata
-                .test_results_for_variant(variant.key.as_str(), result_limit),
-            context.metadata.test_flaky_state(variant.key.as_str()),
-        )
-        .map_err(map_metadata_err)?;
-        let results = results.into_iter().map(TestResult).collect();
-        let flaky = flaky.map(TestFlaky);
-        details.push(TestVariantDetail {
-            variant,
-            results,
-            flaky,
-        });
-    }
+    let details = bundle
+        .variants
+        .into_iter()
+        .map(|detail| TestVariantDetail {
+            variant: detail.variant,
+            results: detail.history.into_iter().map(TestResult).collect(),
+            flaky: detail.flaky.map(TestFlaky),
+        })
+        .collect();
     Ok(Some(TestCaseDetail {
-        case,
+        case: bundle.case,
         variants: details,
     }))
 }

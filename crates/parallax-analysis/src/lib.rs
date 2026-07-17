@@ -5,6 +5,7 @@ pub mod fingerprint;
 pub mod junit_reconcile;
 pub mod log_patterns;
 pub mod nextest_adapter;
+pub mod test_adapter_export;
 pub mod semconv;
 pub mod sentry;
 pub mod span_events;

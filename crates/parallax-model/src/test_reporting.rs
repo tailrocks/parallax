@@ -296,6 +296,21 @@ pub struct TestExplorerPage {
     pub has_more: bool,
 }
 
+/// One variant on a case-detail page with bounded history and optional flaky state.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TestCaseVariantDetail {
+    pub variant: TestVariantRecord,
+    pub history: Vec<TestResultRecord>,
+    pub flaky: Option<TestFlakyStateRecord>,
+}
+
+/// Batched case detail: one case + clamped variants/histories/flaky states.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TestCaseDetailBundle {
+    pub case: TestCaseRecord,
+    pub variants: Vec<TestCaseVariantDetail>,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct FlakyPolicy {
     pub transition_threshold: NonZeroU32,
