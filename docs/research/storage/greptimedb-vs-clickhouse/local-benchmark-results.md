@@ -8225,3 +8225,8 @@ GT warm **~7–10 ms**; CH **~3–4 ms**. Interactive both (trace-explorer shape
 
 ### Run 342 — 2026-07-17 — not done
 
+
+### Run 343 — 2026-07-17 — full-text broad 'timeout'
+
+GT warm **~9–10 ms**; CH **~5–6 ms**. Interactive; CH slight lead on broad term
+(scan-bound shape).
