@@ -928,7 +928,7 @@ ceiling = 5
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-server/src/worker/tests.rs"
-ceiling = 34
+ceiling = 40
 
 [[limits]]
 metric = "rust.assertions"
@@ -6672,7 +6672,7 @@ ceiling = 1135
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/examples/browser_full_stack_serve.rs"
-ceiling = 659
+ceiling = 673
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
@@ -7275,7 +7275,7 @@ ceiling = 12
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-server/examples/browser_full_stack_serve.rs::handle_control"
-ceiling = 105
+ceiling = 120
 
 [[limits]]
 metric = "rust.inline-test-modules"

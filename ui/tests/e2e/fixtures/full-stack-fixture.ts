@@ -145,6 +145,18 @@ export async function seedLiveLogBurst(
   }
 }
 
+/** One OTLP export containing two identical log rows (plan 147 identity merge). */
+export async function seedLiveLogDuplicatePair(
+  body?: string
+): Promise<{ body: string; ts_nanos: string }> {
+  const response = (await controlRequest({
+    op: "seed-live-log-duplicate-pair",
+    body,
+  })) as { ok?: boolean; body?: string; ts_nanos?: string; error?: string }
+  expect(response.ok, response.error ?? "seed-live-log-duplicate-pair failed").toBe(true)
+  return { body: response.body ?? "", ts_nanos: response.ts_nanos ?? "" }
+}
+
 export async function seedLiveSpan(options?: {
   spanName?: string
   spanId?: string

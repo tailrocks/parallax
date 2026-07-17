@@ -258,6 +258,55 @@ async fn record_errors_counts_one_occurrence_after_dedup() {
 }
 
 #[tokio::test]
+async fn otlp_and_sentry_echo_share_one_occurrence() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let store = Arc::new(MemoryStore::new());
+    let metadata = Arc::new(
+        MetadataStore::open(tmp.path().join("meta.db"))
+            .await
+            .expect("metadata"),
+    );
+    let worker = Worker::new(store.clone(), metadata.clone(), crate::live::channels());
+
+    let mut request = trace_request_with_run_and_error();
+    request.resource_spans[0].scope_spans[0].spans[0].events[0]
+        .attributes
+        .retain(|attribute| attribute.key != "exception.stacktrace");
+    let otlp = derive::derive_from_traces(&request)
+        .into_iter()
+        .find(|event| event.source == ErrorSource::SpanException)
+        .expect("OTLP exception");
+    let sentry = parallax_analysis::sentry::derive_from_sentry_event(&json!({
+        "event_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "timestamp": 0.000000042,
+        "exception": {"values": [{"type": "test::Boom", "value": "boom"}]},
+        "contexts": {"trace": {
+            "trace_id": "01010101010101010101010101010101",
+            "span_id": "0202020202020202"
+        }},
+        "tags": {"service": "checkout"}
+    }))
+    .expect("Sentry exception");
+
+    assert_eq!(sentry.fingerprint, otlp.fingerprint);
+    assert_eq!(occurrence_id(&sentry), occurrence_id(&otlp));
+    worker
+        .record_errors(vec![sentry, otlp])
+        .await
+        .expect("record cross-source echoes");
+
+    let issues = metadata.issues(10).await.expect("issues");
+    assert_eq!(issues.len(), 1);
+    assert_eq!(issues[0].event_count, 1);
+    let events = store
+        .error_events_by_fingerprint(&issues[0].fingerprint, 0..=u128::MAX, 10)
+        .await
+        .expect("error events");
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].source, ErrorSource::SpanException);
+}
+
+#[tokio::test]
 async fn process_is_reentrant_after_failure_shape() {
     let tmp = tempfile::tempdir().expect("tempdir");
     let store = Arc::new(MemoryStore::new());

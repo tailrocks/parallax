@@ -449,6 +449,21 @@ async fn handle_control(stream: TcpStream, state: ControlState) -> Result<()> {
                 "ts_nanos": base_ts.to_string(),
             })
         }
+        "seed-live-log-duplicate-pair" => {
+            // Two identical (body, ts) rows in one export — merge must keep one.
+            let body = request
+                .body
+                .unwrap_or_else(|| format!("pw-live-dup-{}", state.ids.dataset_id));
+            let ts = parse_ts_or_now(request.ts_nanos.as_deref(), state.ids.start_nanos);
+            let req = live_followup_logs(&state.ids, &[(body.as_str(), ts), (body.as_str(), ts)]);
+            post_proto(
+                &reqwest::Client::new(),
+                &format!("{}/v1/logs", state.otlp_http),
+                req.encode_to_vec(),
+            )
+            .await?;
+            json!({ "ok": true, "body": body, "ts_nanos": ts.to_string(), "count": 2 })
+        }
         "seed-live-span" => {
             let name = request
                 .span_name

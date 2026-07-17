@@ -1,6 +1,8 @@
 # Parallax vs Splunk Observability Cloud
 
-> An unbiased, one-to-one comparison. Research date: **2026-07-17**.
+> An unbiased, one-to-one comparison. Research date: **2026-07-17** (AI surface
+> re-verified **pass 36** against the [AI Agent Monitoring](https://www.splunk.com/en_us/blog/observability/monitor-llm-and-agent-performance-with-ai-agent-monitoring-in-splunk-observability-cloud.html)
+> + [Cisco Live Agentic Observability](https://www.splunk.com/en_us/blog/observability/splunk-observability-at-cisco-live.html) blogs).
 > Sources: [Splunk Observability Cloud](https://www.splunk.com/en_us/products/observability-cloud.html), [OTel-native blog](https://www.splunk.com/en_us/blog/devops/unlock-the-power-of-observability-with-opentelemetry-logs-data-model.html), [cubeapm 2026 pricing](https://cubeapm.com/blog/splunk-observability-cloud-pricing-and-review/), [BITSIO 2026 guide](https://www.bitsioinc.com/blog-post/splunk-observability-cloud-2026-guide).
 >
 > **Bottom line up front:** Splunk Observability Cloud (now **Cisco**-owned) is a
@@ -64,10 +66,15 @@ Both OTLP/OTel-native. Splunk Obs Cloud is a closed enterprise full-stack SaaS; 
 
 ## AI-native / agent-context story
 
-- **Splunk's AI:** Splunk AI (anomaly detection, alerting, assistant features); Cisco AI strategy. A human-AIOps assistive layer; **not a bounded, read-only, redacted agent-context projection.**
+- **Splunk's AI (pass-36 re-verify):** far beyond the pass-17 "Splunk AI = anomaly/alerting/assistant" read. Splunk/Cisco shipped a dedicated **AI/agent surface** in 2026:
+  - **AI Agent Monitoring** — monitor LLM + agent **performance, quality, security, and cost**; built on **OpenTelemetry + Cisco AGNTCY** (no vendor lock-in); Q1-2026 update added deeper AI insights.
+  - **Agentic Observability** (Cisco Live 2026) — AI that **detects, investigates, summarizes, and recommends actions** with end-to-end AI-workload visibility = a **shipped autonomous investigator / RCA** surface.
+  - **Cisco AI Defense integration** — compliance with AI standards + threat detection for AI apps.
+  - **AI Agent Governance + Federated Analytics** — managing autonomous agent behavior at scale.
+  - Still **not** a bounded, read-only, redacted, *portable* agent-context projection.
 - **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (planned, A1).
 
-**Honest verdict:** Splunk ships more AI today than Parallax. On shipped AI, **Splunk leads.** Parallax's differentiated agent-context claim is **unproven (A1).**
+**Honest verdict (pass-36, no-bias):** Splunk now **ships agent-obs (AI Agent Monitoring) AND autonomous investigation (Agentic Observability)** — two cells Parallax aspired to are occupied by Splunk. This is the **4th shipped autonomous investigator** in the set (after HolmesGPT, Causely, Honeycomb Auto-investigations) — Parallax's "context-engine, *not* the fixer" thesis now faces four shipped "fixers." Parallax's remaining wedge narrows to the bounded/redacted/portable production-incident bundle + outcome loop (A1 unproven).
 
 ## Architecture & deployment
 
@@ -156,4 +163,5 @@ Cisco-era enterprise contracts skew expensive (Splunk's historical reputation). 
 - [Splunk Observability Cloud](https://www.splunk.com/en_us/products/observability-cloud.html); [observability explainer](https://www.splunk.com/en_us/products/observability-explainer.html).
 - [OTel-native / OTel Logs Data Model blog](https://www.splunk.com/en_us/blog/devops/unlock-the-power-of-observability-with-opentelemetry-logs-data-model.html).
 - [cubeapm 2026 pricing](https://cubeapm.com/blog/splunk-observability-cloud-pricing-and-review/); [BITSIO 2026 guide](https://www.bitsioinc.com/blog-post/splunk-observability-cloud-2026-guide).
+- **Pass-36 AI sources:** [Monitor LLM/Agent performance with AI Agent Monitoring](https://www.splunk.com/en_us/blog/observability/monitor-llm-and-agent-performance-with-ai-agent-monitoring-in-splunk-observability-cloud.html) (OTel + Cisco AGNTCY); [Splunk at Cisco Live: Agentic Observability](https://www.splunk.com/en_us/blog/observability/splunk-observability-at-cisco-live.html); [Q1-2026 observability update (Cisco AI Defense)](https://www.splunk.com/en_us/blog/observability/splunk-observability-ai-agent-monitoring-innovations.html); [Cisco/Splunk federated analytics + AI agent governance (TFiR)](https://tfir.io/cisco-splunk-federated-analytics-ai-agent-governance/).
 - Parallax side: [decisions/storage-engine.md](../../decisions/storage-engine.md), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).

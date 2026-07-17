@@ -5,7 +5,12 @@ export interface LiveLogIdentity {
   readonly tsNanos: string
   readonly body: string
   readonly service?: string | null | undefined
+  /** Preferred severity label (LogDoc.severityText). */
+  readonly severityText?: string | null | undefined
+  /** Legacy alias accepted for fixtures; prefer severityText. */
   readonly severity?: string | null | undefined
+  readonly spanId?: string | null | undefined
+  readonly traceId?: string | null | undefined
 }
 
 export interface MergeLiveLogsResult<T extends LiveLogIdentity> {
@@ -15,9 +20,22 @@ export interface MergeLiveLogsResult<T extends LiveLogIdentity> {
 }
 
 function logIdentityKey(row: LiveLogIdentity): string {
-  // Collision-resistant domain key: timestamp + body + service + severity.
-  // Concat without template intermediates for the hot path.
-  return row.tsNanos + "\0" + row.body + "\0" + (row.service ?? "") + "\0" + (row.severity ?? "")
+  // Collision-resistant domain key: timestamp + body + service + severity +
+  // optional span/trace when the wire contract provides them.
+  const severity = row.severityText ?? row.severity ?? ""
+  return (
+    row.tsNanos +
+    "\0" +
+    row.body +
+    "\0" +
+    (row.service ?? "") +
+    "\0" +
+    severity +
+    "\0" +
+    (row.spanId ?? "") +
+    "\0" +
+    (row.traceId ?? "")
+  )
 }
 
 function compareNanosNewestFirst(a: string, b: string): number {
