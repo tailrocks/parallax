@@ -7164,3 +7164,7 @@ EXPLAIN shows Prewhere info for dual-predicate filter. Default settings confirme
 
 CH plain shows dups until FINAL (with merges stopped); GT last_value returns latest.
 `dedup-and-update-semantics.md`.
+
+### Run 208 — 2026-07-17 — CH LowCardinality mid-card density
+
+1k distinct / 100k rows: LC 24.8 KiB vs plain 26.1 KiB. Graceful. `metric-cardinality.md`.

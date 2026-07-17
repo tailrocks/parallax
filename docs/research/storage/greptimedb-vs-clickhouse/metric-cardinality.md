@@ -261,3 +261,15 @@ N=100k `INSERT…SELECT` / `numbers()`, append_mode mito, median of 3 trials
 cardinality for this synthetic path. CH also flat here at 100k (real CH cliff is more about
 `LowCardinality` overflow on storage/query, Run 76–79). Caveat: synthetic `INSERT…SELECT` is
 not native OTLP bulk; still the relative GT cardinality story holds.
+
+## Run 208 (2026-07-17) — CH LowCardinality mid-card storage (26.6)
+
+N=100k rows, **1000** distinct `s` values:
+
+| Table | `bytes_on_disk` |
+| --- | ---: |
+| plain `String` | 26.14 KiB |
+| `LowCardinality(String)` | 24.79 KiB (~**0.95×**) |
+
+Graceful LC benefit at mid-card (not the all-unique blow-up regime of Run 76–79).
+Mechanism still: LC dictionary helps moderate cardinality; collapses at near-unique.
