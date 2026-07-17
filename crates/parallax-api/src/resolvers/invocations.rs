@@ -165,6 +165,19 @@ fn invocation_stats_from_spans(
 /// outcome attribute is recorded at span completion, so its presence means
 /// the command finished.
 fn command_completion(spans: &[model::SpanRow]) -> Option<(u128, String)> {
+    // A daemon's lifecycle is not command-derived: its capsule children
+    // complete root command spans while the daemon keeps running, so any
+    // daemon-mode signal disables the derivation (wrapper registration or
+    // staleness closes daemons).
+    let daemon = spans.iter().any(|span| {
+        span.attributes
+            .get(parallax_analysis::semconv::APP_MODE)
+            .and_then(|value| value.as_str())
+            == Some("daemon")
+    });
+    if daemon {
+        return None;
+    }
     spans
         .iter()
         .filter(|span| {
@@ -172,6 +185,16 @@ fn command_completion(spans: &[model::SpanRow]) -> Option<(u128, String)> {
                 && span.parent_span_id.as_deref().is_none_or(str::is_empty)
         })
         .filter_map(|span| {
+            // A capsule child is wrapped INSIDE another invocation; its
+            // completion never closes the surrounding invocation.
+            if span
+                .attributes
+                .get(parallax_analysis::semconv::APP_MODE)
+                .and_then(|value| value.as_str())
+                == Some("capsule")
+            {
+                return None;
+            }
             let outcome = span
                 .attributes
                 .get(parallax_analysis::semconv::OUTCOME)

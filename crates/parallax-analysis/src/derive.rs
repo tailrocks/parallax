@@ -236,7 +236,20 @@ pub fn derive_from_logs(rows: &[LogRow]) -> Vec<ErrorEventRow> {
 #[must_use]
 pub fn issue_title(error_type: &str, message: &str) -> String {
     let clean = crate::fingerprint::strip_ansi(message);
-    let head = clean.lines().next().unwrap_or("").trim();
+    let mut head = clean.lines().next().unwrap_or("").trim();
+    // Emitters often put the error type into the status message too
+    // (mark_span_error stores the reason in both places): collapse leading
+    // repeats so titles never read "x: x" or worse.
+    let prefix = format!("{error_type}:");
+    loop {
+        let stripped = head
+            .strip_prefix(&prefix)
+            .or_else(|| head.strip_prefix(error_type).filter(|_| head == error_type));
+        match stripped {
+            Some(rest) => head = rest.trim(),
+            None => break,
+        }
+    }
     if head.is_empty() {
         error_type.to_string()
     } else {

@@ -1,0 +1,1 @@
+browser console during the plan-159 walk (all pages incl. preserved navigations): no messages

@@ -190,3 +190,42 @@ async fn external_invocation_derives_completion_from_root_command_span() {
         (now + 5_000_000_000).to_string()
     );
 }
+
+#[tokio::test]
+async fn daemon_invocation_never_derives_completion_from_child_capsules() {
+    // Plan 159 live finding: the daemon's capsule child completes a root
+    // cli.command span under the same invocation id while the daemon is
+    // still alive — that must not flip the daemon to finished.
+    let store = Arc::new(MemoryStore::new());
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let mut cycle = span("playground-cli", "t-cycle", "cyc", now, 1_000_000);
+    cycle.name = "background.cycle".into();
+    cycle.invocation_id = Some("daemon-run".into());
+    cycle.attributes = serde_json::json!({ "app.mode": "daemon" });
+    let mut child = span("playground-cli", "t-child", "chld", now, 2_000_000);
+    child.name = "cli.command".into();
+    child.invocation_id = Some("daemon-run".into());
+    child.attributes = serde_json::json!({ "app.mode": "capsule", "outcome": "success" });
+    store.push_spans(vec![cycle, child]);
+    let context = context_with_memory(store).await;
+    context
+        .metadata
+        .ensure_invocation("daemon-run", now)
+        .await
+        .unwrap();
+    let schema = build_schema();
+    let q = juniper::http::GraphQLRequest::new(
+        r#"{ invocation(invocationId: "daemon-run") { status outcome endedAtNanos } }"#.into(),
+        None,
+        None,
+    );
+    let json = serde_json::to_value(execute(&schema, &context, q).await).unwrap();
+    assert!(error_messages(&json).is_empty(), "{json}");
+    let inv = json.pointer("/data/invocation").unwrap();
+    assert_eq!(inv["status"], "running");
+    assert_eq!(inv["outcome"], serde_json::Value::Null);
+    assert_eq!(inv["endedAtNanos"], serde_json::Value::Null);
+}

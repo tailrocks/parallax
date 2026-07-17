@@ -138,6 +138,9 @@ impl TursoMetadataStore {
                         first_seen, last_seen, event_count, last_trace_id)
                      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6, 1, ?7)
                      ON CONFLICT(fingerprint) DO UPDATE SET
+                       title = excluded.title,
+                       error_type = excluded.error_type,
+                       culprit = COALESCE(excluded.culprit, culprit),
                        first_seen = MIN(first_seen, excluded.first_seen),
                        last_seen = MAX(last_seen, excluded.last_seen),
                        event_count = event_count + 1,

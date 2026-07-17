@@ -99,7 +99,7 @@ export function InvocationErrorsTab({
                   search={rangeLinkSearch(range)}
                   className="min-w-0 truncate font-medium hover:underline"
                 >
-                  {issue.errorType ? `${issue.errorType}: ` : ""}
+                  {/* issue.title already leads with the error type. */}
                   {issue.title}
                 </Link>
                 <span className="flex items-center gap-2 text-xs text-muted-foreground">

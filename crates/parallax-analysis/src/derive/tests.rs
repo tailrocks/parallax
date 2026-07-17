@@ -190,3 +190,19 @@ fn structured_failure_has_one_identity_across_all_sources() {
     )]);
     assert_ne!(different_frame[0].fingerprint, all[0].fingerprint);
 }
+
+#[test]
+fn issue_title_collapses_repeated_error_type_prefixes() {
+    // Plan 159 finding: mark_span_error stores the reason as both the
+    // error type and the status message, producing "x: x(: x)" titles.
+    assert_eq!(issue_title("action_failure", "action_failure"), "action_failure");
+    assert_eq!(
+        issue_title("action_failure", "action_failure: action_failure"),
+        "action_failure"
+    );
+    assert_eq!(
+        issue_title("redis::Timeout", "redis::Timeout: connect timed out"),
+        "redis::Timeout: connect timed out"
+    );
+    assert_eq!(issue_title("E", "boom"), "E: boom");
+}
