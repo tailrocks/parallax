@@ -177,6 +177,14 @@ GT increase plan, adopt-native, FT/PREWHERE). **No pin bump. No stack flip.**
 Highest remaining still: mix shares, server 1M/5M, trial quotes, GB cold S3,
 RPO D2 cluster + D3 Turso product.
 
+### Run 580 (2026-07-18) — session milestone 558–580
+
+**Substantive:** ops burden note (gap #7 engine), D1 BACKUP/export re-smoke,
+PromQL matrix + range-offset Code 43, TimeSeries **not in CH Cloud**,
+adopt-native/join/FT/projection/DELETE/Flow/TTL holds. **Pins unchanged.**
+**Still open (product/server):** A1–A7 mix, 1M/5M four-way, trial quotes,
+GB cold S3, cluster D2 + Turso D3. **Do not declare done.**
+
 | # | Gap | Status |
 | --- | --- | --- |
 | 1 | Workload mix **filled shares** | packet exists (223); product fill owed |
