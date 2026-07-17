@@ -125,3 +125,15 @@ shipped* feature — it **defuses** the agg-gap as a blocker rather than differe
 - GreptimeDB Flow: `src/flow/src/{lib.rs,adapter.rs (StreamingEngine),batching_mode.rs}`; DDL `src/sql/src/parsers/create_parser.rs:277-320,1496-1526` (`CREATE FLOW … SINK TO … EXPIRE AFTER … EVAL INTERVAL`); RFCs `2024-01-17-dataflow-framework`, `2025-09-08-laminar-flow`, `2026-03-16-flow-inc-query`.
 - ClickHouse: MV + `AggregatingMergeTree`/`SummingMergeTree` (`clickhouse-internals.md`, `clickhouse-implementation.md`); refreshable MV.
 - Live: `local-benchmark-results.md` Run 43 (rollup ~5–6× read speedup both; Flow forward-only auto-pop + manual sink backfill; finalized vs `-State` read model), Run 70 (correctness reproduced minute+svc; **rollup freshness: CH MV synchronous-on-insert vs GT Flow flush/interval-batched**). Cross-ref `dedup-and-update-semantics.md` (the dedup wrinkle in the correctness check).
+
+## Run 188 (2026-07-17) — FLOW + CH MV live on v1.1.3 / 26.6
+
+| Engine | Construct | Live |
+| --- | --- | --- |
+| GT | `CREATE FLOW f_run188 SINK TO flow_out AS SELECT date_bin(...), count…` | DDL OK; after inserts, sink rows appear (api/web counts). Catalog: `information_schema.flows`. |
+| GT | `CREATE FLOW … EVAL INTERVAL '1s' AS …` | DDL OK; insert `svcX` → sink row within ~1–4 s. |
+| CH | `CREATE MATERIALIZED VIEW … TO AggregatingMergeTree` + `countState`/`countMerge` | Immediate correct rollup: api=2, web=1. |
+
+**No drift** from Run 149/160: both engines can maintain continuous rollups. GT Flow is
+async/streaming (short lag); CH insert-triggered MV is immediate on same session. Prefer
+Flow/MV for recurring panels; ad-hoc aggs still pay the scan/agg engine gap.

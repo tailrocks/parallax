@@ -7071,3 +7071,9 @@ GDPR path. Note: `deletes-and-mutations.md`, `greptimedb-implementation.md`.
 
 GT `ttl='1s'` + compact → rows gone. CH `TTL … + 1 SECOND` + OPTIMIZE FINAL → expired row gone.
 No drift. `retention-and-ttl.md`.
+
+### Run 188 — 2026-07-17 — CREATE FLOW + CH MV live
+
+GT Flow (streaming + EVAL INTERVAL) populates sink tables; CH AggregatingMergeTree MV
+immediate. Continuous-agg capability parity holds on current pins.
+`rollup-and-continuous-aggregation.md`.
