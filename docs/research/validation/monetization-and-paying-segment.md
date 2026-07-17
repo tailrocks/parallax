@@ -289,6 +289,16 @@ Live primary re-fetch of Grafana / SigNoz / OpenObserve pricing + SigNoz Noz doc
 
 **Falsify:** same as pass 242/301. **Does not close A2** — interviews still operator-owned.
 
+### Pass 320 (2026-07-18) — triangle primary re-scrape
+
+| Vendor | Pin | vs prior |
+| --- | --- | --- |
+| **Grafana Cloud** | Pro **from $19/mo + usage**; Enterprise **$25,000/yr** commit present | **Holds** |
+| **SigNoz** | Teams **$49/mo** + **$0.30/GB** class; Enterprise **$4000** class | **Holds** |
+| **OpenObserve** | **$0.50/GB** ingest; self-host EE free ≤**50 GB/day**; **AI SRE** on EE list | **Holds** |
+
+**Desk playbook holds.** A2 interviews still operator-owned / **0** rows.
+
 ### Pass 131 (2026-07-17) — Datadog Bits / AI Credits pricing (fixer reference)
 
 Live primary: [datadoghq.com/pricing/?product=ai-credits](https://www.datadoghq.com/pricing/?product=ai-credits#products)
