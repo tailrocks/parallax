@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Research date: 2026-05-31
+Research date: 2026-05-31 · **Desk recheck 2026-07-17 (pass 140)**
 
 > This document answers a direct operator question: **in what specific future
 > scenarios is Parallax profitable, what questions must be answered to get there,
@@ -12,6 +12,11 @@ Research date: 2026-05-31
 > [monetization segment](monetization-and-paying-segment.md), and
 > [skeptical reassessment](../decisions/skeptical-reassessment-2026-05-31.md)
 > with a sharper business-only lens.
+>
+> **Pass 140:** Fixer price row corrected against monetization passes **131–132**.
+> Do **not** use ~$25–30/investigation as current Datadog primary — that was
+> secondary/stale. Live primaries: Seer **$40/active contributor**; Datadog
+> **AI Credits** (~$6.50–$8.45/Investigate avg).
 
 ---
 
@@ -37,7 +42,7 @@ playbook.
 | Self-hosted OSS | Free | Cost-driven self-hosters, hobbyists, evaluators |
 | Parallax Cloud | ~$0.30-0.50/GB ingest, per-seat optional | Teams that want the product without the ops |
 | Enterprise self-managed | ~$25-150K/yr ACV | Air-gapped, classified, sovereign, regulated |
-| Fixer add-on | ~$25-30/investigation or ~$40/contributor/mo | Teams that want autonomous fix workflow |
+| Fixer add-on | **Seat path** ~**$40/contributor/mo** (Seer primary, pass 132) **or work-unit path** ~**$6.50–$8.45**/Investigate avg via credits (Datadog AI Credits primary, pass 131 — **not** the stale ~$25–30/investigation figure) | Teams that want autonomous fix workflow |
 
 **Conditions required for this to work:**
 
@@ -102,9 +107,10 @@ model.
 3. **The fixer is better than what teams already get from Sentry Seer, Datadog
    Bits, or just pointing Claude at their repo.** This is a high bar — Sentry
    Seer already does issue-to-PR workflow for hosted Sentry users.
-4. **Teams are willing to pay per-fix or per-contributor for autonomous
-   debugging.** This is proven at the enterprise level (Datadog, Sentry) but
-   unproven for smaller teams.
+4. **Teams are willing to pay per-work-unit (credits/outcome) or per-contributor
+   for autonomous debugging.** Incumbents prove **both** patterns at enterprise
+   scale (Seer seats; Datadog AI Credits — pass 131–132); unproven for smaller
+   teams on Parallax specifically (A2).
 
 **Estimated revenue ceiling:** $2-10M ARR as an add-on, if the fixer is
 genuinely good. This is a premium feature, not a standalone business.
