@@ -2,10 +2,11 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Status: Run 172 (2026-06-02). Gap-ledger item #4. Source-read at current pins:
-GreptimeDB `v1.0.2` (`0ef54511f710f0ef2c05941c8c600bb4c1fd46c8`) and ClickHouse
-`v26.5.1.882-stable` (`5b96a8d8a5e2f4800b43a780911a39dc5a666e1c`). Context7 docs
-checked first per repo rule; source is the ground truth.
+Status: Run 172 (auth/isolation) + **Run 179 (2026-07-17) rate-limit / quota /
+ingestion-protection surface** on pins GreptimeDB **`v1.1.3`** /
+ClickHouse **`v26.6.1.1193`**. Auth source originally read at `v1.0.2` /
+`26.5.1.882` (Run 172); rate-limit findings re-checked against `v1.1.3` source
+tree + live Docker.
 
 ## Verdict
 
@@ -34,8 +35,54 @@ should stay behind Parallax unless using Enterprise RBAC/ACL or an equivalent cu
 | Scope of built-in privileges | Global read/write mode (`rw`, `ro`, `wo`) checked by request class. | Global, database, table, and column-level grants. |
 | Row-level tenant filter | No source-confirmed OSS row policy. Must enforce in Parallax query builder or physically separate tenants. | `CREATE ROW POLICY ... USING condition ... TO role/user`; planner retrieves SELECT row-policy filters and applies them to table reads. |
 | Write constraints | Global write allow/deny only in OSS default checker. | Row-policy enum has write-side placeholders, but source says only SELECT filter is currently supported; write tenant checks still belong in Parallax. |
-| Quotas / rate guardrails | Request memory limiter exists, but no per-tenant quota entity comparable to ClickHouse. | Quotas are first-class access entities, keyed by user/client key/IP/query hash; overuse throws `QUOTA_EXCEEDED`. |
-| Parallax shape | Proxy-enforced auth; optional per-tenant schema/catalog/table for blast-radius reduction. | Proxy-enforced auth plus engine-side fallback policies/quotas for internal/analyst SQL users. |
+| Quotas / rate guardrails | **Process/resource limits** (write-bytes, inflight, concurrent queries, body size, query memory pool) — not per-tenant SQL quotas. `StatusCode::RateLimited` → HTTP 429. | First-class **`CREATE QUOTA`** access entities + session **settings** (`max_execution_time`, `max_result_rows`, …). |
+| Parallax shape | Proxy-enforced auth **and** ingest rate limits; optional per-tenant schema/catalog/table for blast-radius reduction. | Proxy-enforced auth plus engine-side fallback policies/quotas for internal/analyst SQL users. |
+
+## Run 179 — rate limiting, quotas, and ingestion protection
+
+Gap ledger residual: “Rate-limiting / quotas / ingestion protection — the proxy’s protective
+layer.” Engine capabilities (what Parallax can lean on vs must own):
+
+### ClickHouse — query quotas + settings (live-proven)
+
+| Mechanism | Live result (26.6.1.1193) |
+| --- | --- |
+| `SETTINGS max_execution_time=1` on `sleep(2)` | **`TIMEOUT_EXCEEDED` (Code 159)** after ~1 s |
+| `SETTINGS max_result_rows=5, result_overflow_mode='throw'` | **`TOO_MANY_ROWS_OR_BYTES` (Code 396)** |
+| `CREATE QUOTA … MAX queries = N TO user` | DDL accepted; stock image also has unlimited `default` quota entity (`system.quotas`). Enforcement is real in Access stack (`EnabledQuota` throws when max exceeded — Run 172 source). Per-second burst from multiquery/`docker exec` is a weak micro-test (connection/session accounting). |
+| Settings profiles / `max_concurrent_queries_for_user` | Present in `system.settings` (default 0 = unlimited) |
+
+**Implication:** ClickHouse can enforce **query-time and analyst-path** budgets in-engine.
+Ingest protection for OTLP still belongs at the collector/proxy (async_insert + app limits).
+
+### GreptimeDB — resource/admission limits, not per-tenant quotas
+
+Source + config (`v1.1.3` / `config/frontend.example.toml`, `standalone.example.toml`,
+`datanode.example.toml`):
+
+| Knob | Role |
+| --- | --- |
+| `max_in_flight_write_bytes` + `write_bytes_exhausted_policy` | Global write body memory budget; wait/fail when exhausted (`frontend.rs`, `ServerMemoryLimiter`) |
+| `http.body_limit` (default 64MB) | Per-request body cap |
+| `max_inflight_requests` (Prom remote-write batch path) | Backpressure before accept |
+| `max_concurrent_queries` (datanode/standalone, default 0=unlimited) | Concurrent query permits + timeout |
+| `query.memory_pool_size` | Agg/sort/join pool; `ResourceExhausted` when full |
+| `ThrottleableRuntime` / `RuntimeRateLimiter` | Internal runtime token bucket (`common/runtime/runtime_throttleable.rs`) |
+| `StatusCode::RateLimited` | Mapped to HTTP **429** / MySQL concurrent-trx / PG resource errors |
+
+**No OSS `CREATE QUOTA` / per-tenant query budget SQL.** Multi-tenant fair-share and
+per-project ingest QPS must live in **Parallax’s proxy** (or Enterprise if it adds
+tenant quotas — not verified OSS).
+
+### Parallax product implication
+
+1. **Ingest protection (OTLP/metrics firehose):** own in proxy — batching, per-tenant token
+   buckets, backpressure — both engines only offer coarse global write budgets (GT) or
+   insert settings (CH), not product-tenant fairness.
+2. **Query abuse (analyst/SQL/API):** CH can attach quotas/settings profiles for defense in
+   depth; GT needs proxy timeouts/concurrency + optional `max_concurrent_queries` /
+   memory_pool sizing.
+3. Reinforces Run 172: **do not expose GT OSS as a multi-tenant user-facing SQL surface.**
 
 ## GreptimeDB source read
 

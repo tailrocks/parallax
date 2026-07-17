@@ -62,7 +62,11 @@ sub-study's scope, but they are "not addressed"):
   (`backup-and-disaster-recovery.md`): GT = `COPY`/cli data export + `meta snapshot` (+ S3-native
   data plane); CH = first-class `BACKUP`/`RESTORE` SQL (File/Disk/S3/Azure), live restore count
   match. Remaining: product runbook (Turso + Greptime meta + object store RPO/RTO), not engine choice.
-- **Rate-limiting / quotas / ingestion protection** — the proxy's protective layer.
+- **Rate-limiting / quotas / ingestion protection** — **engine layer answered Run 179**
+  (`multi-tenancy-and-isolation.md`): CH has SQL quotas + settings limits (live
+  `max_execution_time` / `max_result_rows`); GT has process/resource admission
+  (`max_in_flight_write_bytes`, concurrent queries, body limit, RateLimited→429) but **no
+  per-tenant SQL quota**. Product-tenant fair-share + OTLP QPS remain **proxy-owned**.
 
 ## 5. Managed-cloud vs self-host — framework answered (Run 175); live $ quotes still owed
 

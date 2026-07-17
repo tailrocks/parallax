@@ -6986,3 +6986,25 @@ Counts grew (GT 140k, CH 134k). Freshness 10/10 insert→SELECT visible both sid
 Evidence: scratch `run178-concurrent-ingest-query.txt`. Updated `write-path-and-ingestion.md`.
 
 **Reproduce.** Create `cq_spans` as above; time idle query; start insert loop; retime; stop.
+
+### Run 179 — 2026-07-17 — rate-limit / quota / ingest-protection engine surface
+
+**Pass target.** Close gap-ledger residual on rate-limiting (engine vs proxy ownership).
+
+**Pins.** GT `v1.1.3` source + live; CH `26.6.1.1193` live.
+
+**Live CH**
+
+| Setting | Result |
+| --- | --- |
+| `SELECT sleep(2) SETTINGS max_execution_time=1` | Code **159 TIMEOUT_EXCEEDED** |
+| `SELECT number FROM numbers(100) SETTINGS max_result_rows=5, result_overflow_mode='throw'` | Code **396 TOO_MANY_ROWS_OR_BYTES** |
+| `CREATE QUOTA … MAX queries=2 TO default` | DDL ok; Access stack present (`system.quotas`) |
+
+**GT source/config (no live trip of 429 this pass)** — admission knobs: `max_in_flight_write_bytes`,
+`write_bytes_exhausted_policy`, `http.body_limit`, `max_inflight_requests`,
+`max_concurrent_queries`, `query.memory_pool_size`, `StatusCode::RateLimited`→HTTP 429,
+`ThrottleableRuntime`. **No per-tenant SQL quota entity.**
+
+**Verdict.** CH wins engine-native query budgets; GT wins only coarse process limits. Parallax
+proxy owns tenant fair-share + OTLP QPS either way. Note: `multi-tenancy-and-isolation.md` Run 179.
