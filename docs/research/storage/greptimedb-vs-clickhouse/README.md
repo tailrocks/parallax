@@ -121,6 +121,7 @@ managed quotes remain):
 | PromQL gaps still open | **439** | increase/min_over_time Code 48 |
 | still not done | **440** | top 5 open |
 | CH density snapshot | **441** | logs 23B/row; m2m 4.5 |
+| health + spans match | **442** | 4167 both engines |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
