@@ -697,4 +697,7 @@ Anything less makes A2 too easy to pass through optimism and too hard to audit
 later.**Pass 329 recheck (2026-07-18):** gate **still OPEN / zero rows**.
 > Monetization triangle re-scrape holds; desk ≠ interviews.
 >
+> **Pass 336 recheck (2026-07-18):** gate **still OPEN / zero rows**.
+> Triangle holds; interviews still operator-owned.
+>
 > 
