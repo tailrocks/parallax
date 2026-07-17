@@ -7995,3 +7995,8 @@ Run 181).
 After ~30+ min container uptime, `SHOW FLOWS` still lists `r228_flow` /
 `r228_flow2`; `flow_sink` count remains **3**. Flow definitions persist in
 standalone process.
+
+### Run 289 — 2026-07-17 — comparison still not done
+
+After Runs 220–288 the engine-smoke + small MinIO + harness fix work is deep.
+**Do not stop.** Highest remaining value is off-laptop / product-input.
