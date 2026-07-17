@@ -1,6 +1,7 @@
 //! Projection-equivalence proof: MCP tool path ↔ CLI ↔ plain HTTP GraphQL.
 
 use crate::gql::{self, GraphqlClient};
+use anyhow::Context;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::process::Command;
@@ -156,13 +157,12 @@ fn run_cli_json(bin: &str, args: &[&str]) -> anyhow::Result<String> {
         .map_err(|e| anyhow::anyhow!("failed to spawn `{bin}`: {e}"))?;
     if !output.status.success() {
         anyhow::bail!(
-            "`{bin} {}` failed ({}):\n{}",
+            "`{bin} {}` failed ({}); stderr omitted because it may contain sensitive evidence",
             args.join(" "),
-            output.status,
-            String::from_utf8_lossy(&output.stderr)
+            output.status
         );
     }
-    Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+    String::from_utf8(output.stdout).context("Parallax CLI emitted non-UTF-8 JSON")
 }
 
 fn extract_embedded_hash(json: &str) -> anyhow::Result<String> {

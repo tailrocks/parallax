@@ -57,6 +57,9 @@ must not return in product output.
 - Projection-equivalence mismatch diagnostics no longer print evidence
   previews (or byte-slice UTF-8); they expose only lengths, first differing
   byte, and SHA-256 digests.
+- Equivalence subprocess failures omit potentially sensitive CLI stderr, and
+  invalid UTF-8 stdout now fails exact comparison instead of being lossily
+  rewritten.
 - Bundle output fails closed unless the separately projected GraphQL canonical
   hash exactly matches the hash embedded in the bundle-v2 object.
 - All GraphQL responses stream through a hard 1 MiB ceiling before JSON parse;
