@@ -320,6 +320,11 @@ docs and release notes.
 
 **UNFIRED:** offline Assistant; Sentry OTLP metrics.
 
+### Pass 377 (2026-07-18) — Assistant
+
+Assistant still hybrid **Cloud stack**. Offline **UNFIRED.**
+
+
 ### Pass 376 (2026-07-18) — Seer + Bits + Sentry OTLP
 
 Seer closed; Bits never auto-merges; Sentry still no OTLP metrics. **UNFIRED.**
