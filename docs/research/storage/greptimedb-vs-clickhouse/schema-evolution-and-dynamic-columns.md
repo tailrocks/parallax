@@ -174,3 +174,18 @@ reinforces, not flips, the standing verdict.
   `greptimedb-implementation.md` / `clickhouse-implementation.md` (the `attributes
   JSON` choice), `local-benchmark-results.md` (Run 18; Run 61 — dynamic-attr path query
   ~13× + GROUP BY `Dynamic`-cast wrinkle).
+
+## Run 182 (2026-07-17) — greptime_identity schema-on-write re-verify (v1.1.3)
+
+Live against `greptime/greptimedb:v1.1.3` + CH `26.6.1.1193` (no drift from Run 110/151):
+
+1. `POST /v1/events/logs?table=run182_logs&pipeline_name=greptime_identity` with
+   `{msg,level,service,latency_ms}` → HTTP **200**, table auto-created.
+2. Second POST adds **`trace_id` + `user_id`** → auto-added as `String` FIELD columns;
+   first row reads **NULL** for them (no rewrite).
+3. ClickHouse `INSERT … (…, user_id)` into pre-declared table → **Code 16
+   `NO_SUCH_COLUMN_IN_TABLE`**.
+
+**Adopt-native-logs:** still prefer GT pipeline for drifting log attributes; promote hot
+keys / use JSON2 for true bag-of-attrs analytics (Run 173). CH needs proxy-managed ALTER
+or a JSON column.

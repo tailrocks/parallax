@@ -7020,3 +7020,8 @@ quota produced live **Code 201 QUOTA_EXCEEDED** — quota enforcement confirmed.
 
 Protocol smoke: health/PromQL/Jaeger **200**; OTLP traces **protobuf-only** (JSON → 400 with
 explicit error). Adopt-native trio holds. `write-path-and-ingestion.md`.
+
+### Run 182 — 2026-07-17 — greptime_identity schema-on-write (v1.1.3)
+
+Pipeline auto-creates table; new JSON keys become STRING columns (NULL-backfill). CH rejects
+unknown columns (Code 16). No drift. `schema-evolution-and-dynamic-columns.md`.
