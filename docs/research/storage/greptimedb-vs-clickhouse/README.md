@@ -310,6 +310,8 @@ managed quotes remain):
 | FT PREWHERE join | **628** | granules hold |
 | still not done | **629** | top 5 product/server |
 | milestone 630 | **630** | pins; NOT DONE |
+| adopt + DELETE | **631** | identity; Jaeger; 1004 |
+| still not done | **632** | top 5 product/server |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
