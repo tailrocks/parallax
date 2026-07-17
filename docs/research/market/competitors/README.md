@@ -140,6 +140,11 @@ Cost/performance cells are **⚪ benchmark-dependent** — not filled until meas
 2. **Parallax's shipped-in-code (pre-release) surface is real but unproven:** OTLP ingest of all three signals into GreptimeDB native tables, Sentry-envelope ingest, derived error events + fingerprints, span-derived test results, and a bounded redacted evidence bundle (A1-unvalidated). **Planned-only:** MCP agent surface (spike crate), AI root-cause, evals, SSO/RBAC, fix-outcome loop. The defensible axes today are openness/self-hostability/cost transparency/data ownership; the bundle/outcome edge is gated behind A1.
 3. **No product — open or closed — ships all of:** OTLP-native + (future) Sentry-envelope ingest + a portable, versioned, redacted evidence bundle + a read-only safe agent projection + a fix-outcome loop, from a telemetry store. That combination is Parallax's thesis, but "no one ships it" is not evidence it is valuable — that is exactly the A1 gate.
 4. **The cells most likely to be wrong are the Parallax column (self-assessed, bias-prone) and the AI-native column (fast-moving).** Both are flagged for re-verification first on every pass.
+5. **Parallax's agent-context thesis faces shipped pressure from *three* layers at once** — and must beat (or complement) all of them, not assume superiority:
+   - **Telemetry-native-store layer:** [TMA1](parallax-vs-tma1.md) ships embedded-GreptimeDB + read-only MCP for coding agents (Parallax's own substrate, narrower scope).
+   - **Reasoning/BYO-telemetry layer:** [Causely](parallax-vs-causely.md) ships causal-MCP grounding over *your* telemetry (no rip-and-replace) — the strongest shipped "agent-context layer."
+   - **The fixer-agent itself:** [HolmesGPT](parallax-vs-holmesgpt.md) (CNCF, Apache) *is* the "separate agent that investigates telemetry" Parallax's "context engine, not the fixer" framing names — it could query Parallax as a richer source.
+   The **A1 gate is the single crux against all three**: does a Parallax bounded/redacted bundle beat TMA1's live bundle, Causely's causal-MCP-over-your-telemetry, and HolmesGPT-investigating-raw-telemetry for coding-agent fix outcomes? **Unproven.** Honest framing: Parallax may be *complementary* to these (own+derive+bundle feeds them) rather than superior — and that is a defensible position only if the bundle measurably helps (A1).
 
 ## Full deep-dive roster (30 products + layers)
 
@@ -162,4 +167,4 @@ lives in [`comparison-set.md`](comparison-set.md). Every product with a
 
 ## Sources
 
-Every deep-dive carries its own dated source list. The matrix above inherits from the legacy market notes (dated 2026-05/06) and the verified Datadog deep-dive (2026-07-17). Re-verify before trusting any 🟡 cell; see [`PROGRESS.md`](PROGRESS.md) for the per-cell queue.
+Every deep-dive (all **30** products + layers, verified **2026-07-17**) carries its own dated primary-source list. The matrix above is backed by those deep-dives — **no cell relies on un-reverified legacy 2026-05/06 notes**; the legacy market notes are sources/leads only, with superseded-pointers into this folder. Drift-sensitive figures (version, stars, pricing) are pinned *per deep-dive* with a date; **those** are what re-verification targets each pass (products release; numbers age). See [`PROGRESS.md`](PROGRESS.md) for the per-product verification state, open questions, and the next-gap queue.
