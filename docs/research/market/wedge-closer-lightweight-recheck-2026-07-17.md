@@ -182,6 +182,16 @@ Full wedge combination **still not closed**.
 | **HyperDX** | [hyperdxio/hyperdx](https://github.com/hyperdxio/hyperdx) **9,681★** (+1 vs pass 241 **9,680**); latest **`@hyperdx/app@2.30.1`** (2026-07-13); push 2026-07-17 | ClickStack / ClickHouse unified session+logs+metrics+traces+errors; **no** portable redacted evidence bundle + outcome in README probe. Combo **not closed**. |
 | **Langfuse** | [langfuse/langfuse](https://github.com/langfuse/langfuse) **31,341★** (stable); **`v3.221.1`** (2026-07-17) | LLMOps self-host real; README still default **PostHog usage telemetry** on self-host (opt-out `TELEMETRY_ENABLED=false`). **Not** production multi-signal evidence-bundle product. Combo **not closed**. |
 
+**Pass 255 recheck (2026-07-18):** **Phoenix + Coroot + HolmesGPT** —
+
+| Product | Pin | Note |
+| --- | --- | --- |
+| **Phoenix** | [Arize-ai/phoenix](https://github.com/Arize-ai/phoenix) **10,600★**; **`arize-phoenix-v18.1.0`** (2026-07-17) | LLMOps eval/trace; **not** prod multi-signal evidence-bundle + Sentry envelope + outcome. Combo **not closed**. |
+| **Coroot** | [coroot/coroot](https://github.com/coroot/coroot) **7,837★**; **`v1.23.3`** (2026-07-02) | eBPF RCA + MCP; AI RCA EE/Cloud-metered (pass 103). **No** portable redacted prod evidence bundle. Combo **not closed**. |
+| **HolmesGPT** | [HolmesGPT/holmesgpt](https://github.com/HolmesGPT/holmesgpt) **2,874★**; **`0.36.0`** (2026-07-13) | Investigation agent **over external stores** (no own telemetry store). Not a wedge-closer alone. |
+
+Full combination **still not closed**.
+
 **Pass 249 recheck (2026-07-18):** **Traceway** + Sentry OTLP metrics kill —
 
 | Field | Value |
