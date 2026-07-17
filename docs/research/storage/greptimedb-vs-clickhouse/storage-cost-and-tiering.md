@@ -164,4 +164,4 @@ Reinforces Run 161/209 thesis: GT S3-native vs CH S3-as-tier (OSS).
 
 ## Instrumentation (Run 234)
 
-GreptimeDB exposes OpenDAL histograms on `/metrics` (`opendal_operation_bytes` labeled by `operation` + `scheme`). Use `scheme="s3"` count/sum deltas for cold-read request/egress parity against ClickHouse `system.events` (`S3GetObject`, `ReadBufferFromS3Bytes`). Prefer this over `mc admin trace` (unreliable on current MinIO — Run 220).
+GreptimeDB exposes OpenDAL histograms on `/metrics` (`opendal_operation_bytes` labeled by `operation` + `scheme`). Use `scheme="s3"` count/sum deltas for cold-read request/egress parity against ClickHouse `system.events` (`S3GetObject`, `ReadBufferFromS3Bytes`). Prefer this over `mc admin trace` (unreliable on current MinIO — Run 220). **Run 235 live:** cold anchored N=20k → GT `opendal_http_*GetObject` **+5** (~1.48 MiB) vs CH `S3GetObject` **+3** after cache wipe; object-count still favors GT inventory, per-query GET can favor CH at small N.

@@ -7632,3 +7632,41 @@ opendal_operation_bytes_sum{…} 2775491
 
 **Verdict.** Instrumentation gap for GT is **closed at the metric name level**.
 Live S3 scheme deltas still owed on MinIO (this pass was local FS only).
+
+### Run 235 — 2026-07-17 — live S3 cold GET deltas (OpenDAL HTTP vs CH events)
+
+**Pass target.** Apply Run 234 instrumentation on MinIO stack; measure cold
+anchored GetObject counts both sides.
+
+**Env.** `bench/s3` pins v1.1.3 / 26.6.1.1193; N=**20,000** spans identical CSV;
+GT `PRIMARY KEY(trace_id)`; CH `ORDER BY (trace_id,ts)` + `storage_policy=s3only`.
+
+**Cold method (GT):** `rm -rf /greptimedb_data/cache/*` then `docker restart
+pbench-gt-s3` (container restart alone is **not** enough — local FS cache under
+`/greptimedb_data/cache` survives restart).
+
+**Cold method (CH):** `SYSTEM DROP FILESYSTEM CACHE; DROP MARK CACHE; DROP
+UNCOMPRESSED CACHE`.
+
+**Anchored** `WHERE trace_id=?` (1 row):
+
+| Engine | Counter | Δ |
+| --- | --- | ---: |
+| **GT** | `opendal_http_request_duration_seconds_count{…service_operation="GetObject"}` | **+5** |
+| **GT** | `opendal_http_response_bytes_sum{…GetObject}` | **~1.48 MiB** |
+| **GT** | `opendal_operation_bytes_count{scheme="s3",operation="read"}` | **+5** |
+| **CH** | `system.events` `S3GetObject` | **+3** (this N=20k; Run 220 @100k was +4) |
+
+**Verdict.**
+
+1. **Apples-to-apples request counters now exist** for both engines on object store.
+2. At 20k single-SST, GT issued **5** GetObjects vs CH **3** — GT not automatically
+   fewer GETs per anchored query at this tiny size (manifests + parquet ranges +
+   index). **Object-count advantage (3 vs 22 objects @100k) is still the bill
+   driver for LIST/ops inventory;** per-query GET can favor CH when Wide parts +
+   marks are already hot-layout efficient (re-affirms Run 14/55 shape split).
+3. Use **`opendal_http_*{service_operation="GetObject"}`** for S3 GETs, not only
+   generic `opendal_operation_bytes` (which also counts local `scheme=fs` cache).
+
+**Reproduce.** `bench/s3/run-s3-stack.sh up` → load → wipe GT cache → restart →
+delta `/metrics` GetObject counts vs CH `system.events`.
