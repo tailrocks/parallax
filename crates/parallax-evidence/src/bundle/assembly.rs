@@ -225,9 +225,12 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
         }
     }
 
+    let issue = primary_issue
+        .as_ref()
+        .map(|issue| issue_summary(issue, &mut redaction));
     let hypotheses = rank_hypotheses(
-        primary_issue.as_ref(),
-        &inputs.events,
+        issue.as_ref(),
+        latest_event.as_ref(),
         trace.as_ref(),
         &anchor,
     );
@@ -236,9 +239,7 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
         schema_version: SCHEMA_VERSION,
         generator: concat!("parallax/", env!("CARGO_PKG_VERSION")),
         anchor,
-        issue: primary_issue
-            .as_ref()
-            .map(|issue| issue_summary(issue, &mut redaction)),
+        issue,
         invocation: invocation_section,
         latest_event,
         trace,

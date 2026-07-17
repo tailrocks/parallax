@@ -26,6 +26,8 @@
   payload_hash)` returns `200` without re-spool; collision → `409`.
 - Derived OTLP and Sentry echoes share stable issue/occurrence identity by
   `(trace, span, fingerprint)`; native OTLP evidence wins stored-row dedup.
+- Canonical bundle ranking consumes only redacted issue/event projections;
+  Sentry-origin secret canaries cannot re-enter JSON or Markdown hypotheses.
 
 ## Residual only
 
@@ -33,7 +35,9 @@
    (`tests/fixtures/sentry/python-sdk-2.48-event.envelope` + unit accept).
 2. ~~Idempotent event-id collision handling~~ landed.
 3. ~~Cross-source OTLP+Sentry stable issue/occurrence identity~~ landed.
-4. Full fail-closed redaction + canonical bundle projection for Sentry path.
+4. ~~Full fail-closed redaction + canonical bundle projection for Sentry path~~
+   landed for event/issue/ranking JSON + Markdown surfaces; broader shared
+   bundle fields remain owned by the canonical redaction contract.
 5. Real Greptime+Turso, retention/doctor, API gates end-to-end for Sentry.
 6. Transactions/attachments/other languages stay unsupported until measured.
 

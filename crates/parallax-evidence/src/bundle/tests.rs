@@ -431,6 +431,80 @@ fn a6_json_and_markdown_projections_share_redacted_bundle() {
 }
 
 #[test]
+fn sentry_event_cannot_bypass_canonical_bundle_redaction() {
+    let event = parallax_analysis::sentry::derive_from_sentry_event(&serde_json::json!({
+        "event_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "timestamp": 1.0,
+        "exception": {"values": [{
+            "type": "Timeout api_key=type-canary-secret",
+            "value": "connection timeout password=message-canary-secret",
+            "stacktrace": {"frames": [{
+                "function": "token=stack-canary-secret",
+                "filename": "src/main.rs",
+                "lineno": 7
+            }]}
+        }]},
+        "contexts": {"trace": {
+            "trace_id": "01010101010101010101010101010101",
+            "span_id": "0202020202020202"
+        }},
+        "tags": {
+            "service": "checkout api_key=service-canary-secret",
+            "environment": "api_key=attribute-canary-secret"
+        }
+    }))
+    .expect("Sentry event");
+    let issue = Issue {
+        fingerprint: event.fingerprint.clone(),
+        title: format!("{}: {}", event.error_type, event.message),
+        error_type: event.error_type.clone(),
+        culprit: event.stacktrace.clone(),
+        service: event.service.clone(),
+        status: "open".into(),
+        first_seen_nanos: event.ts_nanos,
+        last_seen_nanos: event.ts_nanos,
+        event_count: 1,
+        last_trace_id: Some(event.trace_id.clone()),
+        tags: "{}".into(),
+    };
+    let bundle = assemble(
+        BundleInputs {
+            anchor: BundleAnchor::Issue(Box::new(issue)),
+            events: vec![event],
+            trace_spans: Vec::new(),
+            trace_logs: Vec::new(),
+            metric_windows: Vec::new(),
+        },
+        8_000,
+    );
+
+    assert_eq!(
+        bundle
+            .latest_event
+            .as_ref()
+            .map(|event| event.source.as_str()),
+        Some("sentry_envelope")
+    );
+    assert!(bundle.canonical_hash.is_some());
+    assert!(!bundle.redaction.redacted_counts.is_empty());
+    assert!(bundle.bounded.estimated_tokens <= bundle.bounded.max_tokens);
+    let json = serde_json::to_string(&bundle).expect("JSON");
+    let markdown = to_markdown(&bundle);
+    for surface in [&json, &markdown] {
+        for canary in [
+            "type-canary-secret",
+            "message-canary-secret",
+            "stack-canary-secret",
+            "service-canary-secret",
+            "attribute-canary-secret",
+        ] {
+            assert!(!surface.contains(canary), "leaked {canary}: {surface}");
+        }
+        assert!(!surface.contains("sentry.tags"));
+    }
+}
+
+#[test]
 fn minimal_all_none_bundle_conforms_to_bundle_v1_schema() {
     let bundle = Bundle {
         schema_version: SCHEMA_VERSION,

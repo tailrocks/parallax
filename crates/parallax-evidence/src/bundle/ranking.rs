@@ -1,20 +1,18 @@
 use super::*;
 
 pub(super) fn rank_hypotheses(
-    primary_issue: Option<&Issue>,
-    events: &[ErrorEventRow],
+    primary_issue: Option<&IssueSummary>,
+    latest_event: Option<&EventDetail>,
     trace: Option<&TraceSection>,
     anchor: &Anchor,
 ) -> Vec<Hypothesis> {
     let mut hypotheses = Vec::new();
-    let message = events
-        .first()
-        .map(|e| e.message.to_lowercase())
+    let message = latest_event
+        .map(|event| event.message.to_lowercase())
         .unwrap_or_default();
     let anchor_evidence = format!("{} {}", anchor.kind, anchor.id);
     let error_type = primary_issue
-        .map(|i| i.error_type.as_str())
-        .or_else(|| events.first().map(|e| e.error_type.as_str()))
+        .map(|issue| issue.error_type.as_str())
         .unwrap_or("The error");
 
     if [
