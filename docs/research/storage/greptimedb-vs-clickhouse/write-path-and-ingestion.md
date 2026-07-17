@@ -413,3 +413,8 @@ forbidden. CH four-way still shows only hand `otel_logs` MergeTree + experimenta
 
 **ADOPT native** GT still; join-pushdown thesis still holds. **Not done.**
 
+## Run 582 (2026-07-18) — identity infers Boolean
+
+`greptime_identity` on `run582_id`: JSON `extra:true` → column **`extra` Boolean**
++ `msg` String + timestamp. last_value warm GT ~**5 ms**. **Not done.**
+
