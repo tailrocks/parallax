@@ -1,4 +1,3 @@
-
 use super::*;
 use rmcp::{
     ClientHandler,
@@ -13,6 +12,14 @@ impl ClientHandler for VersionedClient {
         info.protocol_version = self.0.clone();
         info
     }
+}
+
+fn test_server() -> SpikeServer {
+    SpikeServer::new(
+        "http://127.0.0.1:4000".to_string(),
+        LocalAuthorization::from_explicit_cli_trust(),
+    )
+    .expect("server")
 }
 
 fn valid_bundle_projection() -> gql::BundleProjection {
@@ -62,7 +69,7 @@ fn valid_bundle_projection() -> gql::BundleProjection {
 
 async fn assert_protocol_rejected(protocol_version: ProtocolVersion) {
     let (server_transport, client_transport) = tokio::io::duplex(4096);
-    let server = SpikeServer::new("http://127.0.0.1:4000".to_string()).expect("server");
+    let server = test_server();
     let server_task = tokio::spawn(async move { server.serve(server_transport).await });
     let error = VersionedClient(protocol_version)
         .serve(client_transport)
@@ -80,7 +87,7 @@ async fn assert_protocol_rejected(protocol_version: ProtocolVersion) {
 
 async fn assert_protocol_negotiates(protocol_version: ProtocolVersion) {
     let (server_transport, client_transport) = tokio::io::duplex(4096);
-    let server = SpikeServer::new("http://127.0.0.1:4000".to_string()).expect("server");
+    let server = test_server();
     let server_task = tokio::spawn(async move {
         server.serve(server_transport).await?.waiting().await?;
         anyhow::Ok(())
@@ -143,9 +150,7 @@ fn assert_method_not_found(error: &rmcp::ServiceError) {
 
 #[test]
 fn advertises_tools_without_unapproved_capabilities() {
-    let info = SpikeServer::new("http://127.0.0.1:4000".to_string())
-        .expect("server")
-        .get_info();
+    let info = test_server().get_info();
     assert_eq!(info.protocol_version, ProtocolVersion::V_2025_11_25);
     let capabilities = serde_json::to_value(info.capabilities).expect("serialize capabilities");
 
@@ -170,8 +175,26 @@ fn advertises_tools_without_unapproved_capabilities() {
 }
 
 #[test]
+fn local_authorization_is_server_assigned_and_default_deny() {
+    let trusted = LocalAuthorization::from_explicit_cli_trust();
+    assert_eq!(trusted.principal, "local-operator");
+    assert_eq!(trusted.scopes, [EVIDENCE_READ_SCOPE]);
+    require_evidence_read(&trusted).expect("explicit local trust");
+
+    let denied = LocalAuthorization {
+        principal: "local-operator",
+        scopes: &[],
+    };
+    let error = require_evidence_read(&denied).expect_err("missing scope must deny");
+    assert_eq!(error.code, rmcp::model::ErrorCode::INVALID_REQUEST);
+    let encoded = serde_json::to_string(&error).expect("serialize error");
+    assert!(encoded.contains("authorization_denied"));
+    assert!(!encoded.contains("evidence:read"));
+}
+
+#[test]
 fn tool_catalog_is_exact_and_inputs_are_closed() {
-    let server = SpikeServer::new("http://127.0.0.1:4000".to_string()).expect("server");
+    let server = test_server();
     let tools = server.tool_router.list_all();
     let names = tools
         .iter()
@@ -382,7 +405,7 @@ fn anchor_validation_is_bounded_and_does_not_echo_input() {
 
 #[test]
 fn issue_context_advertises_the_canonical_bundle_v2_schema() {
-    let server = SpikeServer::new("http://127.0.0.1:4000".to_string()).expect("server");
+    let server = test_server();
     let tools = server.tool_router.list_all();
     let tool = tools
         .iter()
@@ -412,7 +435,7 @@ fn malformed_output_schema_falls_back_to_deny_all() {
 
 #[test]
 fn agent_session_advertises_a_closed_output_schema() {
-    let server = SpikeServer::new("http://127.0.0.1:4000".to_string()).expect("server");
+    let server = test_server();
     let tools = server.tool_router.list_all();
     let tool = tools
         .iter()
@@ -428,7 +451,7 @@ fn agent_session_advertises_a_closed_output_schema() {
 #[tokio::test]
 async fn wire_initialization_and_tools_list_match_the_locked_catalog() {
     let (server_transport, client_transport) = tokio::io::duplex(64 * 1024);
-    let server = SpikeServer::new("http://127.0.0.1:4000".to_string()).expect("server");
+    let server = test_server();
     let server_task = tokio::spawn(async move {
         server.serve(server_transport).await?.waiting().await?;
         anyhow::Ok(())
@@ -517,7 +540,7 @@ async fn wire_initialization_negotiates_every_reviewed_protocol() {
 
 #[tokio::test]
 async fn wire_discovery_does_not_depend_on_prior_session_state() {
-    let server = SpikeServer::new("http://127.0.0.1:4000".to_string()).expect("server");
+    let server = test_server();
     let first = discover_tools_on_fresh_transport(server.clone()).await;
     let second = discover_tools_on_fresh_transport(server).await;
 

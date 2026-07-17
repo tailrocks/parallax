@@ -16,6 +16,8 @@ use std::sync::{Arc, LazyLock};
 
 const MCP_RESULT_MAX_BYTES: usize = 128 * 1024;
 const MCP_ANCHOR_MAX_BYTES: usize = 256;
+const EVIDENCE_READ_SCOPE: &str = "evidence:read";
+const LOCAL_OPERATOR_SCOPES: &[&str] = &[EVIDENCE_READ_SCOPE];
 const SUPPORTED_PROTOCOL_VERSIONS: &[ProtocolVersion] = &[
     ProtocolVersion::V_2024_11_05,
     ProtocolVersion::V_2025_03_26,
@@ -91,9 +93,36 @@ pub(crate) struct AgentSessionArgs {
     pub invocation_id: String,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct LocalAuthorization {
+    principal: &'static str,
+    scopes: &'static [&'static str],
+}
+
+impl LocalAuthorization {
+    fn from_explicit_cli_trust() -> Self {
+        Self {
+            principal: "local-operator",
+            scopes: LOCAL_OPERATOR_SCOPES,
+        }
+    }
+}
+
+fn require_evidence_read(authorization: &LocalAuthorization) -> Result<(), McpError> {
+    if authorization.principal != "local-operator" || authorization.scopes != LOCAL_OPERATOR_SCOPES
+    {
+        return Err(McpError::invalid_request(
+            "local MCP authorization denied",
+            Some(json!({ "code": "authorization_denied" })),
+        ));
+    }
+    Ok(())
+}
+
 #[derive(Clone)]
 pub(crate) struct SpikeServer {
     client: GraphqlClient,
+    authorization: LocalAuthorization,
     #[allow(
         dead_code,
         reason = "tool_handler macro reads the generated router field"
@@ -102,9 +131,10 @@ pub(crate) struct SpikeServer {
 }
 
 impl SpikeServer {
-    pub(crate) fn new(base_url: String) -> anyhow::Result<Self> {
+    fn new(base_url: String, authorization: LocalAuthorization) -> anyhow::Result<Self> {
         Ok(Self {
             client: GraphqlClient::new(base_url)?,
+            authorization,
             tool_router: Self::tool_router(),
         })
     }
@@ -128,6 +158,7 @@ impl SpikeServer {
         &self,
         Parameters(args): Parameters<IssueContextArgs>,
     ) -> Result<CallToolResult, McpError> {
+        require_evidence_read(&self.authorization)?;
         validate_anchor(&args.fingerprint)?;
         let bundle = gql::fetch_bundle(&self.client, Some(&args.fingerprint), None)
             .await
@@ -151,6 +182,7 @@ impl SpikeServer {
         &self,
         Parameters(args): Parameters<AgentSessionArgs>,
     ) -> Result<CallToolResult, McpError> {
+        require_evidence_read(&self.authorization)?;
         validate_anchor(&args.invocation_id)?;
         let session = gql::fetch_agent_session(&self.client, &args.invocation_id)
             .await
@@ -275,7 +307,7 @@ impl ServerHandler for SpikeServer {
 
 /// Run the stdio MCP server until the client disconnects.
 pub(crate) async fn run_stdio(base_url: String) -> anyhow::Result<()> {
-    let server = SpikeServer::new(base_url)?;
+    let server = SpikeServer::new(base_url, LocalAuthorization::from_explicit_cli_trust())?;
     let service = server.serve(stdio()).await?;
     service.waiting().await?;
     Ok(())

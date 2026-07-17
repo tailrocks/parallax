@@ -55,6 +55,9 @@ Evidence packet: [`docs/research/validation/2026-07-plan-112-product-mcp/README.
   locks its canonical identifier and closed-object policy.
 - Stdio startup requires an explicit `--allow-local-stdio` command-line trust
   decision; environment and repository files cannot supply that opt-in.
+- The explicit trust path constructs a private server-assigned
+  `local-operator` context carrying exactly `evidence:read`; both tools check
+  it, missing scope denies, and no client input can assert or elevate scopes.
 - API origins are restricted to credential-free plaintext loopback HTTP;
   arbitrary hosts, TLS, URL credentials, paths, queries, and fragments fail
   closed until Plan 109 supplies the remote transport contract.
