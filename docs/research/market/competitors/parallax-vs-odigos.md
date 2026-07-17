@@ -98,6 +98,8 @@ Live [odigos.io/pricing](https://odigos.io/pricing) (2026-07-17) + product copy:
 - **Enterprise GA list pricing** becomes public per-unit.
 - eBPF path captures **app-level exceptions/panics/stacks** (not only protocol/library-level) at parity with SDK error events.
 
+**Pass 57 re-check:** site still “works with the backend you already use”; ClickHouse/ClickStack blogs are **destination** integrations, not Odigos-as-store. **Own-store / agent-context bundle watch UNFIRED.** Still **v1.31.2 / 3,668★**. Marketing “Ask Production Anything” + profiles-in-Odigos remain **instrumentation/control-plane** framing unless a durable backend product ships.
+
 ## Open questions / what would matter
 
 - **Odigos → Parallax integration** — eBPF-generated OTel → Parallax OTLP ingest (likely yes). Worth a PoC.
@@ -105,9 +107,9 @@ Live [odigos.io/pricing](https://odigos.io/pricing) (2026-07-17) + product copy:
 - **Parallax eBPF gap** — integrate Odigos vs build; decision still open.
 - **“Ask Production Anything” product surface** — marketing AI SRE claims need a live product-surface re-check each pass (UI/agent vs pure instrumentation).
 
-## Sources (accessed 2026-07-17; pass 46)
+## Sources (accessed 2026-07-17; pass 46 + 57)
 
 - [odigos.io/pricing](https://odigos.io/pricing); [odigos.io](https://odigos.io/) (Ask Production Anything positioning).
-- [github.com/odigos-io/odigos](https://github.com/odigos-io/odigos) — **v1.31.2** (2026-07-09), **3,668★**, Apache-2.0.
-- [docs.odigos.io](https://docs.odigos.io/); eBPF / GenAI blogs on odigos.io/blog.
+- [github.com/odigos-io/odigos](https://github.com/odigos-io/odigos) — **v1.31.2**, **3,668★**, Apache-2.0.
+- [docs.odigos.io](https://docs.odigos.io/); ClickHouse/Odigos destination blogs (complementary backends).
 - Sibling: [parallax-vs-coroot.md](parallax-vs-coroot.md), [parallax-vs-traceloop.md](parallax-vs-traceloop.md) (LLM instrumentation layer).

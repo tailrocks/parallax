@@ -16,7 +16,7 @@
 
 ## What each product is
 
-- **PostHog** — the leading **open-source product-analytics platform**: product analytics (funnels, retention, paths), **session replay**, **feature flags**, A/B **experiments**, surveys, customer data platform, and (newer) **LLM observability** (tracing/evals for LLM apps). Self-hostable OSS **or** PostHog Cloud. Large OSS community (**~36k★**, 2026-07-17). **License (pass 41 RESOLVED against live GitHub LICENSE):** **MIT Expat for core** + **proprietary `ee/`** (paid features); GitHub reports `NOASSERTION` (mixed). **Not** a BSL/competitive-use core license — pass-22 claim of “moved from MIT to own competitive-use terms” was **wrong**. Pure-FOSS path = [`posthog-foss`](https://github.com/PostHog/posthog-foss) (strips `ee/`). **Generous usage-based pricing** (Product Analytics: 1M events/mo free, ~$0.00005/event).
+- **PostHog** — the leading **open-source product-analytics platform**: product analytics (funnels, retention, paths), **session replay**, **feature flags**, A/B **experiments**, surveys, CDP, and **LLM observability**. Self-host OSS **or** Cloud. **~36,091★** (2026-07-17). **License:** **MIT Expat core** + **proprietary `ee/`** ([`ee/LICENSE`](https://github.com/PostHog/posthog/blob/master/ee/LICENSE) — production use requires PostHog Enterprise subscription / seats; dev/test free). Pure-FOSS strip = [`posthog-foss`](https://github.com/PostHog/posthog-foss). **Generous usage pricing** (e.g. Product Analytics 1M events/mo free tier, usage-based after).
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable **execution-context engine**: OTLP-native ingest of traces/logs/metrics + CLI/agent traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, serves bounded/redacted evidence bundles to humans and coding agents. GreptimeDB + Turso. **Pre-release.**
 
 Both OSS, self-hostable, with an LLM/agent-obs surface. But the **core domains differ**: PostHog = product/user-behavior analytics (frontend/product-team); Parallax = production-incident evidence (backend/SRE/coding-agent). The comparison is mostly "different jobs," with overlap at LLM-obs + OSS-self-host.
@@ -136,7 +136,8 @@ Sources: [schematic](https://schematichq.com/blog/posthog-pricing), [checkthat.a
 ## Open questions / what measurement would settle
 
 - **A1 gate:** for LLM/agent observability specifically, does a Parallax bundle add value beyond PostHog's LLM-obs (or Langfuse/Phoenix)? Unproven.
-- **PostHog exact license (2026)** — **RESOLVED pass 41: MIT Expat core + proprietary `ee/`** (not competitive-use). Remaining: which features are EE-only.
+- ~~PostHog exact license~~ → **RESOLVED pass 41: MIT Expat core + proprietary `ee/`**.
+- ~~Which features are EE-only~~ → **pass 57 map (repo + Cloud):** proprietary `ee/` top-level dirs include **`hogai`** (AI assistant / MCP tooling), **`billing`**, **`session_recordings`**, **`surveys`**, **`clickhouse`** (EE ClickHouse paths), **`vercel`**, **`support_sidebar_max`**, **`admin`**, plus EE `api`/`models`/`migrations`. Cloud **Enterprise add-on** (commonly cited **~$2,000/mo** + usage on live pricing/secondary 2026 teardowns) gates compliance/support/RBAC/activity logs — **not identical** to `ee/` file map (some product surface ships in main tree but Cloud-gated). Self-hosters wanting zero proprietary code use **posthog-foss**.
 - **PostHog → production-backend expansion** — if PostHog adds production-error/OTLP-backend semantics, the domain gap narrows. Track.
 
 ## Sources (accessed 2026-07-17)

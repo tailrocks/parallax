@@ -95,7 +95,7 @@ shipped** — not read-only. Parallax’s bundle claim is different and unproven
 
 ## Watch
 
-- GitHub mirror staleness vs GitLab cadence.
+- GitHub mirror **still stale** (last push **2026-02-10**); product site/docs active 2026-07. GitLab primary org `glitchtip/*` — public API star/activity pins flaky this pass; re-check when GH mirror moves or GitLab API free.
 - ~~MCP tool mutability~~ → **RESOLVED pass 54: `update_issue` mutates** (resolve/unresolve/ignore).
 - OTLP expansion (unlikely; would change layer).
 
