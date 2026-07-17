@@ -10,6 +10,7 @@ OpenCode) so a piece of work runs the same way every time.
 | --- | --- |
 | `deep-research-parallax.md` | Deep, critical research brief that validates, re-verifies, and extends the Parallax direction indefinitely; every prior finding is treated as a hypothesis until current evidence supports it. |
 | `greptimedb-vs-clickhouse-internals.md` | Never-ending `/goal` or Claude Code `/loop` brief for the under-the-hood GreptimeDB vs ClickHouse comparison: read the source, explain which design decisions make each fast or slow per signal, re-verify every claim against the live Docker stack with production-realistic, no-tricks, reproducible benchmarks, check each system's native out-of-the-box metrics/logs/traces structure (adopt-native vs custom), decide which to build Parallax on, and (when one wins but lacks features) map what the winner must implement to close the gap. Writes to `docs/research/storage/greptimedb-vs-clickhouse/`. |
+| `parallax-vs-competitors.md` | Never-ending `/goal` brief that builds and maintains one canonical, **unbiased** competitor comparison under `docs/research/market/competitors/`: a wide feature-presence matrix across the whole ecosystem (Parallax + Datadog, Sentry, Grafana, Honeycomb, New Relic, Dynatrace, SigNoz, OpenObserve, Coroot, the LLM-agent observability tools, and every other relevant open- and closed-source product), plus deep one-to-one `parallax-vs-<product>.md` comparisons with real, sourced numbers where they exist and explicit "no public number" markers where they do not. Every prior finding is a hypothesis to re-verify; Parallax's own losses are written plainly. |
 
 ## Current preferred mode
 
@@ -254,6 +255,38 @@ Do not declare the comparison done.
 
 Note `/loop` runs auto-expire after about 7 days and stop when the session closes
 (they resume with `--resume` while unexpired); relaunch for a longer program.
+
+### Running the Parallax vs competitors comparison
+
+`parallax-vs-competitors.md` is an indefinite, never-converging brief. Run it
+with `/goal` (preferred) so it keeps working pass after pass:
+
+```text
+/goal Follow prompts/parallax-vs-competitors.md as the active never-ending
+comparison brief. Keep building and re-verifying the unbiased competitor
+comparison under docs/research/market/competitors/ until I explicitly stop or
+replace this program. Each pass: re-read the prompt and the current competitors/
+state; pick the weakest, stalest, least-sourced, or most strategically important
+gap (a missing parallax-vs-<product>.md deep-dive, an unproven overview-matrix
+cell, or an aging number); re-research it from current primary sources with the
+no-bias rules enforced — Parallax's own losses are written plainly; use real
+sourced numbers where they exist and mark "no public number" where they do not;
+refresh the matching legacy market note and leave a pointer into competitors/;
+commit and push; then continue to the next highest-value gap. Do not declare the
+comparison done; do not favor Parallax.
+```
+
+The same intent works with Claude Code `/loop` for scheduled repetition inside an
+open session (`/loop prompts/parallax-vs-competitors.md`, or the explicit
+never-stop wording above). Do not wrap `/goal` inside `/loop` — pick one runner.
+
+Unlike the storage benchmark, this loop watches external reality (competitor
+pricing, releases, feature sets) that moves on a weeks-to-quarters horizon, so
+prefer a moderate fixed interval (`15m`–`30m`) or self-paced `/goal`; the cadence
+re-fires passes, it does not make data fresher. Re-verify public pricing and
+feature claims roughly every 1–2 weeks or whenever a compared product ships a
+release. `/loop` runs auto-expire after about 7 days; relaunch for a longer
+program.
 
 ## Output
 
