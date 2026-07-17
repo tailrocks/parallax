@@ -10,4 +10,5 @@ pub mod agent_session;
 pub mod bundle;
 pub mod envelope;
 pub mod gaps;
+pub mod redaction_policy;
 pub mod story;

@@ -23,6 +23,17 @@ red-team ledger, but explicitly records that no qualifying run exists and the
 claim remains `not_measured`. Projection-only fixes also leave raw issue titles
 in Turso metadata, so secrets can persist at rest even when bundles mask them.
 
+### Preliminary typed source policy (helper, 2026-07-17)
+
+`parallax_evidence::redaction_policy` now defines the versioned
+`evidence-source-v1` decision seam. Every currently projected hostile text
+field routes to `RedactText`, structural identifiers route to
+`AllowStructural`, and `Unknown` defaults to `Drop`; focused tests pin those
+decisions. This is not wired into immutable bundle-v1 assembly and proves no A6
+claim. Peer must reconcile the bundle-version migration, expand the complete
+source inventory, implement typed traversal/detector failure behavior, and run
+the public-safe corpus before treating this seam as production enforcement.
+
 ## Scope
 
 In scope:
