@@ -5,7 +5,10 @@
 > stated, not hidden.
 >
 > Research date: **2026-07-17**. Refreshed from current primary sources this
-> pass; version/license/pricing drift re-checked. Legacy source:
+> pass; version/license/pricing drift re-checked. **Pass 101 pin:** GitHub
+> **v0.133.0** (2026-07-15), **30,261★**, last push 2026-07-17; README still:
+> **“[Noz](https://signoz.io/docs/ai/noz/) is available only on SigNoz Cloud”**
+> (MCP self-host path separate). Legacy source:
 > [`../signoz-deep-research.md`](../signoz-deep-research.md) (2026-06-22) — kept
 > as a lead, corrected here where the market moved.
 
