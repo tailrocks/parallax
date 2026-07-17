@@ -12,9 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 282 (Traceway still **1,024★**/v1.9.1; TMA1
-**25th UNFIRED** — combo **not closed**). Pass 281 = monetization triangle.
-A1/A2/A3/A4 open; A6 mixed open.
+Last updated 2026-07-18 after pass 283 (Seer still **closed**; Bits still **never
+auto-merges**; Sentry still **no OTLP metrics**; self-host **26.7.0** — kills
+**UNFIRED**). Pass 282 = Traceway/TMA1. A1/A2/A3/A4 open; A6 mixed open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
@@ -58,18 +58,19 @@ producer rather than treat its construction as future work. Autonomous fixing re
   still **experimental** on docs v1.1
   ([Traces overview](https://docs.greptime.com/user-guide/traces/overview/)
   warning reconfirmed pass **266**).
-- **Incumbent self-hosted AI** — **Rechecked 2026-07-18 pass 260** (prior 77/126/158/188/210/238/245):
+- **Incumbent self-hosted AI** — **Rechecked 2026-07-18 pass 283** (prior 77/126/158/188/210/238/245/260/274):
   Seer still **closed / unavailable** on self-hosted
   ([develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/)
   still lists "Seer and other AI & ML features… closed source"). Self-host release
-  still **`26.7.0`** / **64** Compose services. Grafana
-  Assistant **UI** on self-managed still requires **Cloud LLM backend**
-  ([self-managed setup](https://grafana.com/docs/grafana-cloud/machine-learning/assistant/get-started/self-managed/)).
+  still **`26.7.0`**. Grafana
+  Assistant **UI** on self-managed still requires **Cloud LLM backend**.
   Bits Code still **never auto-merges** PRs/MRs
   ([Bits Code docs](https://docs.datadoghq.com/bits_ai/bits_ai_dev_agent/)).
+  Sentry still **no OTLP metrics**
+  ([OTLP docs](https://docs.sentry.io/concepts/otlp/)).
   Full note:
   [market/incumbent-self-hosted-ai-recheck-2026-07-17.md](market/incumbent-self-hosted-ai-recheck-2026-07-17.md).
-  **UNFIRED:** Seer self-host GA; Grafana offline/BYO-LLM Assistant; Bits auto-merge.
+  **UNFIRED:** Seer self-host GA; Grafana offline/BYO-LLM Assistant; Bits auto-merge; Sentry OTLP metrics.
 - **OTel** — any move from per-signal semantics toward incident/investigation/RCA **artifacts**. Last deep recheck: **2026-07-18 pass 268** ([commoditization note](architecture/evidence-bundle-schema-commoditization-2026-07-17.md)): #1185 attribute issue still open/idle (`updated_at` 2025-10-24); no bundle schema; OCSF GA still 1.8.0 (`1.9.0-dev` only).
 - **Run-id / invocation-id standardization (active participation, not just a watch)** — no OTel standard for a CLI invocation's cross-trace correlation id (rechecked **2026-07-18 pass 278**; prior 53/92/127/163/207/252). Parallax ships **`cli.invocation.id`** (+ `session.id`). GenAI session push [semantic-conventions-genai#51](https://github.com/open-telemetry/semantic-conventions-genai/issues/51) still **open/idle** (`updated_at` 2026-05-05). CLI model still process attrs only (`spans.yaml`); semconv code search `cli.invocation` **0**. Full table: [capture/run-id-standardization.md](capture/run-id-standardization.md).
 - **Coding-agent capability** — as models improve, the "raw context is enough" threat (item 1) grows; A1 must re-run across model generations.

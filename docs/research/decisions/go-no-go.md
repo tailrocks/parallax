@@ -148,6 +148,11 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > | Sentry OTLP metrics GA | Pass **269** — still unsupported | **No** |
 > | TMA1 prod-incident collision | Pass **270** — **24th UNFIRED** | **No** |
 >
+> **Pass 283 (2026-07-18) — GO reaffirm (incumbent kills).** Seer closed; Bits
+> never auto-merges; Sentry no OTLP metrics; self-host still 26.7.0. Related
+> kills **unfired**. Pass 281 desk triangle holds; pass 282 TMA1 **25th
+> UNFIRED**. **Still GO (narrow product).**
+>
 > **Narrow product identity holds.** Research program continues.
 
 ## Verdict
