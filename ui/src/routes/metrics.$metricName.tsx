@@ -1,7 +1,11 @@
 import { Link, createFileRoute } from "@tanstack/react-router"
 import { useMemo } from "react"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
-import { IconBellPlus, IconChartLine } from "@tabler/icons-react"
+import {
+  IconBellPlus,
+  IconChartLine,
+  IconLayoutDashboard,
+} from "@tabler/icons-react"
 
 import { Button } from "@/components/ui/button"
 
@@ -339,6 +343,23 @@ function MetricDetailPage() {
           keySuggestions={labels}
           className="min-w-64 flex-1"
         />
+        <Button
+          size="sm"
+          variant="outline"
+          render={
+            <Link
+              to="/dashboards"
+              search={{
+                widget_metric: metricName,
+                widget_agg: agg,
+                widget_group_by: search.groupBy,
+              }}
+            />
+          }
+        >
+          <IconLayoutDashboard data-icon="inline-start" />
+          Add to dashboard
+        </Button>
         <Button
           size="sm"
           variant="outline"

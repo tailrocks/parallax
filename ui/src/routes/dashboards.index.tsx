@@ -52,6 +52,9 @@ export interface DashboardSearch {
   range?: string | undefined
   from?: string | undefined
   to?: string | undefined
+  widget_metric?: string | undefined
+  widget_agg?: string | undefined
+  widget_group_by?: string | undefined
 }
 
 export interface Widget {
@@ -75,6 +78,9 @@ export const Route = createFileRoute("/dashboards/")({
     range: searchString(search["range"]),
     from: searchString(search["from"]),
     to: searchString(search["to"]),
+    widget_metric: searchString(search["widget_metric"]),
+    widget_agg: searchString(search["widget_agg"]),
+    widget_group_by: searchString(search["widget_group_by"]),
   }),
   loader: () =>
     graphqlCached<{ dashboards: Dashboard[]; metricNames: string[] }>(`
@@ -313,6 +319,17 @@ function DashboardsPage() {
   const search = Route.useSearch()
   const router = useRouter()
   const detailSearch = dashboardRangeSearch(search)
+  // Metric-explorer graduation (plan 168): pre-fill and open the create
+  // dialog with the explored query as the first widget.
+  const graduationWidget: Widget | null = search.widget_metric
+    ? {
+        ...emptyWidget(),
+        metric: search.widget_metric,
+        agg: search.widget_agg ?? "avg",
+        groupBy: search.widget_group_by,
+        title: `${search.widget_metric} (${search.widget_agg ?? "avg"})`,
+      }
+    : null
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
   async function remove(id: string) {
@@ -335,6 +352,7 @@ function DashboardsPage() {
         actions={
           <DashboardCreateDialog
             metricNames={metricNames}
+            initialWidget={graduationWidget}
             detailSearch={detailSearch}
             onCreated={(dashboardId, createdSearch) =>
               router.navigate({
@@ -371,18 +389,22 @@ function DashboardsPage() {
 export function DashboardCreateDialog({
   metricNames,
   detailSearch,
+  initialWidget = null,
   onCreated,
 }: {
   metricNames: string[]
+  initialWidget?: Widget | null
   detailSearch: ReturnType<typeof dashboardRangeSearch>
   onCreated: (
     dashboardId: string,
     search: ReturnType<typeof dashboardRangeSearch>
   ) => void | Promise<void>
 }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(Boolean(initialWidget))
   const [name, setName] = useState("")
-  const [widgets, setWidgets] = useState<Widget[]>([emptyWidget()])
+  const [widgets, setWidgets] = useState<Widget[]>([
+    initialWidget ?? emptyWidget(),
+  ])
   const [error, setError] = useState<string | null>(null)
 
   async function create() {
