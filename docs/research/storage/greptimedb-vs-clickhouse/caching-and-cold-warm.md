@@ -208,3 +208,14 @@ result cache. Write cache can background-download for object-store mode.
 
 Modest warm-up on local SSD; the large cold-S3 penalty story remains about **object-store path**
 (Runs 14/15/55), not this local smoke.
+
+## Cold object-store request measurement (Runs 220, 234–235)
+
+To force true-cold on GreptimeDB(S3): delete `/greptimedb_data/cache/*` then restart the process/container (restart alone leaves the local cache warm).
+
+| Side | Counter |
+| --- | --- |
+| GT | `/metrics` → `opendal_http_*{scheme="s3",service_operation="GetObject"}` count/sum |
+| CH | `system.events` → `S3GetObject`, `ReadBufferFromS3Bytes` |
+
+Small-N live (20k, Run 235): GT **+5** GetObject / ~1.48 MiB vs CH **+3** GetObject. Object *inventory* still favors GT (fewer objects); per-query GET can favor CH. Scale to GB for egress-dollar magnitude.

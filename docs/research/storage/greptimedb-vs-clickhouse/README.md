@@ -83,6 +83,7 @@ managed quotes remain):
 | Live S3 cold GetObject deltas | 235 | GT +5 vs CH +3 @20k |
 | CH head TimeSeries SELECT | 236 | still Code 48 |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
+| Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 
 ## Method
 
