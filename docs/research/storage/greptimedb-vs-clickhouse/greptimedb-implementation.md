@@ -375,3 +375,13 @@ inverted-index lookups + object-store-native vs MergeTree `ORDER BY` + skip inde
 (`DELETE is not allowed under append mode`). Event/log/span tables that use append for
 ingest speed need a separate redact path for GDPR; do not plan in-place DELETE on those
 tables. See `deletes-and-mutations.md` Run 186.
+
+## Run 218 (2026-07-17) — implementation note pin + caveats
+
+Pinned comparison surface for this design note: **v1.1.3** (session re-pin cycle).
+See Runs 173–217 for live re-verifies. Key product caveats from re-pin:
+
+- Prefer **JSON2** for dynamic attrs (not default JSON).
+- **append_mode forbids DELETE** — GDPR path separate for event tables.
+- OTLP traces: **protobuf only**.
+- Continuous agg: Flow works (async lag ok).

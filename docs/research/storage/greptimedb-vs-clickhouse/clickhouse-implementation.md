@@ -252,3 +252,13 @@ accepted. **One real defect caught:** the `text` index `tokenizer = 'default'` i
 reserved-keyword columns + the metric-table PK) — ClickHouse's DDL was nearly correct as
 written. S3-disk tiering (the `<storage_configuration>` + `TTL … TO VOLUME`) still needs a
 MinIO-backed run — routed to `benchmarking-the-differences.md`.
+
+## Run 218 (2026-07-17) — implementation note pin + caveats
+
+Pinned comparison surface for this design note: **26.6.1.1193** (session re-pin cycle).
+See Runs 173–217 for live re-verifies. Key product caveats from re-pin:
+
+- Prefer **JSON2** for dynamic attrs (not default JSON).
+- **append_mode forbids DELETE** — GDPR path separate for event tables.
+- OTLP traces: **protobuf only**.
+- Continuous agg: Flow works (async lag ok).

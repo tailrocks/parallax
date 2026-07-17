@@ -7207,3 +7207,7 @@ No full re-scrape; qualifiers for JSON2 default and OTel-Arrow experimental stil
 ### Run 217 — 2026-07-17 — compact native smoke
 
 GT protocols 200; CH flags: experimental TimeSeries off, JSON on, PREWHERE on. No drift.
+
+### Run 218 — 2026-07-17 — implementation design pin annotations
+
+GT/CH implementation notes annotated with current pins + JSON2/DELETE/OTLP caveats.
