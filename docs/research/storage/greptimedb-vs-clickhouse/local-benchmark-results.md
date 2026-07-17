@@ -8109,3 +8109,17 @@ SHOW CREATE still has FULLTEXT + INVERTED on trace_id after gen.sh fix (271).
 ### Run 314 — 2026-07-17 — not done
 
 Still open.
+
+### Run 315 — 2026-07-17 — CH density after re-gen N=50k
+
+| Table | CH active bytes |
+| --- | ---: |
+| spans1m | **497 KiB** |
+| logs1m | **779 KiB** |
+| m2m | **219 KiB** |
+| errs | **288 KiB** |
+
+GT total `ssts_storage` sum across all tables **~5.5 MiB** (includes indexes +
+experiment tables). CH logs grew vs earlier run with bloom on message+trace.
+Shape still product-relevant; multi-table GT sum not per-table comparable without
+region map this pass.
