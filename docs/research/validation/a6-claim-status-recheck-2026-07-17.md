@@ -154,6 +154,14 @@ From [redaction.md claim table](../capture/redaction.md):
 | `agent_visible_mixed_pass` | **Still open** (no mixed agent-visible red-team ledger published) |
 | Claim split | **Unchanged** — synthetic canary partial ≠ mixed agent-visible gate |
 
+### Pass 315 addendum (2026-07-18)
+
+| Check | Result |
+| --- | --- |
+| Public-safe canary unit test | **ok** (re-ran `a6_public_safe`) |
+| `agent_visible_mixed_pass` | **Still open** |
+| Claim split | synthetic canary partial ≠ mixed agent-visible gate |
+
 ### Allowed wording
 
 - "Parallax ships a default-deny Rust redaction engine and public-safe canary unit tests."

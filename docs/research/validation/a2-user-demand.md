@@ -97,7 +97,11 @@
 > substitute interviews. Operator interview runbook still owed.
 >
 > 
-This note consolidates the following previously-separate research files, each preserved in full below:
+This note consolidates the following previously-separate research files, each preserved**Pass 315 recheck (2026-07-18):** gate **still OPEN / zero rows**.
+> No `docs/research/a2-deployment-intent-results.md`; no `interview_id: A2-*` result
+> rows. Desk cannot substitute. Operator interview runbook still owed.
+>
+>  in full below:
 
 - `user-interview-and-deployment-intent-gate.md`
 - `a2-interview-evidence-ledger.md`
