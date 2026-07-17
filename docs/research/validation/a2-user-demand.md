@@ -694,4 +694,7 @@ The A2 run is a research instrument, not a set of sales calls. The public repo
 should eventually contain redacted rows, aggregate counts, score distributions,
 commitment outcomes, contradictions, and the explicit pass/continue/kill call.
 Anything less makes A2 too easy to pass through optimism and too hard to audit
-later.
+later.**Pass 329 recheck (2026-07-18):** gate **still OPEN / zero rows**.
+> Monetization triangle re-scrape holds; desk ≠ interviews.
+>
+> 
