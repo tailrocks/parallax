@@ -360,8 +360,7 @@ pub(crate) async fn log_patterns(
         Some(s) => s.parse().map_err(|_| field_err("invalid toNanos"))?,
         None => u128::MAX,
     };
-    let sample_limit = clamp_limit(limit, LOG_PATTERNS_SAMPLE_LIMIT as i32);
-    let sample_limit = sample_limit.min(LOG_PATTERNS_SAMPLE_LIMIT);
+    let sample_limit = clamp_limit(limit, LOG_PATTERNS_SAMPLE_LIMIT).min(LOG_PATTERNS_SAMPLE_LIMIT);
     let logs = context
         .store
         .logs_search(

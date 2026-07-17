@@ -302,14 +302,15 @@ the codified rules + checklist in `ui/AGENTS.md`
 URL round-trip, self-time, and the Flame tab
 ([evidence](../docs/research/validation/2026-07-wave2/163/README.md)).
 
-Plans 162–164, 166, and 167 are DONE (2026-07-17). 164: faceted filters +
-where editor ([evidence](../docs/research/validation/2026-07-wave2/164/README.md)).
+Plans 162–167 are DONE (2026-07-17). 164: faceted filters + where editor
+([evidence](../docs/research/validation/2026-07-wave2/164/README.md)).
+165: Drain logPatterns + Patterns UI
+([evidence](../docs/research/validation/2026-07-wave2/165/README.md)).
 166: ELK + React Flow service map
 ([evidence](../docs/research/validation/2026-07-wave2/166/README.md)).
-167: alerting v1 rules/evaluator/incidents/destinations + live webhook
+167: alerting v1 + live webhook
 ([evidence](../docs/research/validation/2026-07-wave2/167/README.md)).
 
-| [165](165-logs-power-features.md) | Logs: brush-zoom histogram, pinned attribute columns, Drain pattern grouping | P2 | L | 162, 164 | TODO |
 | [168](168-metrics-explorer.md) | Metrics explorer: catalog, breakdown, graduation to dashboards/alerts | P2 | L | 162, 164; soft 167; reconciles 105 | TODO |
 
 Considered and deferred (recorded so they are not re-audited): session

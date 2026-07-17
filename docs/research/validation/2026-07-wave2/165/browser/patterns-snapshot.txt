@@ -1,0 +1,1 @@
+agent-browser: URL patterns=true shows Template/Count table (2026-07-17)

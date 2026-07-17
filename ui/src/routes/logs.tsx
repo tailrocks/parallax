@@ -106,6 +106,7 @@ interface LogsData {
   logs: LogDoc[]
   logCountSeries: SeriesPoint[]
   logFacets: LogFacet[]
+  logPatterns: LogPatternRow[]
   savedViews: SavedView[]
 }
 
@@ -115,6 +116,12 @@ export interface SavedView {
   page: string
   state: string
   updatedAtNanos: string
+}
+
+interface LogPatternRow {
+  template: string
+  count: string
+  severityMixJson: string
 }
 
 interface LogsSearch {
@@ -127,6 +134,8 @@ interface LogsSearch {
   to?: string | undefined
   live?: boolean | undefined
   cols?: string | undefined
+  /** Plan 165: show Drain pattern clusters instead of raw rows. */
+  patterns?: boolean | undefined
   anchor?: string | undefined
 }
 
@@ -157,6 +166,7 @@ const logsSearchSchema = z.object({
   to: z.unknown().optional(),
   live: z.unknown().optional(),
   cols: z.unknown().optional(),
+  patterns: z.unknown().optional(),
   anchor: z.unknown().optional(),
 })
 
@@ -181,6 +191,12 @@ export function validateLogsSearch(
     to: typeof parsed.to === "string" ? parsed.to : undefined,
     live: parsed.live === "1" || parsed.live === true,
     cols: typeof parsed.cols === "string" ? parsed.cols : undefined,
+    patterns:
+      parsed.patterns === true ||
+      parsed.patterns === "1" ||
+      parsed.patterns === "true"
+        ? true
+        : undefined,
     anchor:
       typeof parsed.anchor === "string" && /^\d+$/.test(parsed.anchor)
         ? parsed.anchor
@@ -234,6 +250,7 @@ function serializeLogsSearch(search: LogsSearch) {
   if (search.range) params.set("range", search.range)
   if (search.from) params.set("from", search.from)
   if (search.to) params.set("to", search.to)
+  if (search.patterns) params.set("patterns", "1")
   if (search.live) params.set("live", "1")
   if (search.cols) params.set("cols", search.cols)
   if (search.anchor) params.set("anchor", search.anchor)
@@ -267,7 +284,11 @@ export async function loadLogs(search: LogsSearch): Promise<LogsData> {
   if (search.live) {
     return graphqlCached<LogsData>(
       `{ services savedViews(page: "/logs") { id name page state updatedAtNanos } logs(limit: 0) { ${LOG_FIELDS} } logCountSeries(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", stepSeconds: ${stepSeconds}) { tsNanos value } logFacets(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") { dimension values { value count } } }`
-    ).then((data) => ({ ...data, logFacets: data.logFacets ?? [] }))
+    ).then((data) => ({
+      ...data,
+      logFacets: data.logFacets ?? [],
+      logPatterns: data.logPatterns ?? [],
+    }))
   }
   const logsQuery = search.anchor
     ? `logs: logsAround(anchorNanos: "${search.anchor}", windowSeconds: 30, ${search.service ? `service: "${gqlString(search.service)}", ` : ""}limit: ${PAGE_SIZE}) { ${LOG_FIELDS} }`
@@ -288,13 +309,21 @@ export async function loadLogs(search: LogsSearch): Promise<LogsData> {
     `toNanos: "${range.toNanos}"`,
     ...filters,
   ].join(", ")
+  const patternsField = search.patterns
+    ? `logPatterns(${facetArgs}, limit: 10000) { template count severityMixJson }`
+    : ""
   return graphqlCached<LogsData>(`{
     services
     savedViews(page: "/logs") { id name page state updatedAtNanos }
     ${logsQuery}
     logCountSeries(${seriesArgs}) { tsNanos value }
     logFacets(${facetArgs}) { dimension values { value count } }
-  }`).then((data) => ({ ...data, logFacets: data.logFacets ?? [] }))
+    ${patternsField}
+  }`).then((data) => ({
+    ...data,
+    logFacets: data.logFacets ?? [],
+    logPatterns: data.logPatterns ?? [],
+  }))
 }
 
 function LogsPage() {
@@ -609,6 +638,16 @@ function LogsPage() {
           columns={columns}
           onChange={(next) => update({ cols: serializeLogColumns(next) })}
         />
+        <Button
+          type="button"
+          variant={search.patterns ? "secondary" : "outline"}
+          size="sm"
+          onClick={() =>
+            update({ patterns: search.patterns ? undefined : true })
+          }
+        >
+          Patterns
+        </Button>
         <SavedViewsMenu
           views={savedViews}
           onSelect={selectSavedView}
@@ -716,6 +755,47 @@ function LogsPage() {
         <div className="min-w-0 flex-1">
           {delayedLoading ? (
             <TableSkeleton rows={8} />
+          ) : search.patterns ? (
+            (data.logPatterns ?? []).length === 0 ? (
+              <EmptyState
+                title="No patterns in this window"
+                description="Widen the range or clear filters, then re-run Patterns."
+                icon={IconArticleFilled}
+                className="rounded-xl border border-dashed"
+              />
+            ) : (
+              <div className="content-enter overflow-hidden rounded-xl border border-border/70">
+                <table className="w-full text-sm">
+                  <thead className="border-b border-border/70 bg-muted/30 text-left text-xs text-muted-foreground">
+                    <tr>
+                      <th className="px-3 py-2 font-medium">Template</th>
+                      <th className="px-3 py-2 font-medium tabular-nums">
+                        Count
+                      </th>
+                      <th className="px-3 py-2 font-medium">Severity mix</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(data.logPatterns ?? []).map((pattern) => (
+                      <tr
+                        key={pattern.template}
+                        className="border-b border-border/40 last:border-0"
+                      >
+                        <td className="px-3 py-2 font-mono text-xs break-all">
+                          {pattern.template}
+                        </td>
+                        <td className="px-3 py-2 tabular-nums">
+                          {formatCount(Number(pattern.count))}
+                        </td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground">
+                          {pattern.severityMixJson}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
           ) : logs.length === 0 ? (
             <EmptyState
               title={

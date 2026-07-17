@@ -251,3 +251,70 @@ async fn logs_attribute_filters_narrow_rows_series_and_facets() {
         ]))
     );
 }
+
+#[tokio::test]
+async fn log_patterns_clusters_similar_bodies() {
+    let store = Arc::new(MemoryStore::new());
+    let rows = (0..5)
+        .map(|i| {
+            let mut row = log_row(
+                "api",
+                "cccccccccccccccccccccccccccccccc",
+                3_000 + i,
+                &format!("user {i} checked out order {i}"),
+            );
+            row.severity_text = "INFO".into();
+            row
+        })
+        .chain(std::iter::once({
+            let mut row = log_row(
+                "api",
+                "dddddddddddddddddddddddddddddddd",
+                4_000,
+                "connection refused by peer",
+            );
+            row.severity_text = "ERROR".into();
+            row
+        }))
+        .collect();
+    store.push_logs(rows);
+
+    let schema = build_schema();
+    let context = context_with_memory(store).await;
+    let request = juniper::http::GraphQLRequest::new(
+        r#"
+        {
+          logPatterns(fromNanos: "0", toNanos: "10000", limit: 100) {
+            template
+            count
+            severityMixJson
+          }
+        }
+        "#
+        .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, request).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(
+        error_messages(&json).is_empty(),
+        "logPatterns: {json}"
+    );
+    let patterns = json
+        .pointer("/data/logPatterns")
+        .and_then(|v| v.as_array())
+        .unwrap_or_else(|| panic!("missing patterns: {json}"));
+    assert!(
+        patterns.len() >= 2,
+        "expected checkout cluster + error line: {json}"
+    );
+    let top_count: u64 = patterns[0]["count"]
+        .as_str()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0);
+    assert!(
+        top_count >= 5,
+        "spiking template should rank first with count>=5: {json}"
+    );
+}

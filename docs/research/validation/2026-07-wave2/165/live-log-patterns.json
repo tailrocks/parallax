@@ -1,0 +1,1 @@
+{"data":{"logPatterns":[{"template":"Provider flagd transitioned from state <*> to state <*>","count":"9"},{"template":"facet corpus request <*>","count":"5"},{"template":"Initializing event stream observer","count":"3"},{"template":"Provider did not reconnect successfully within <*>s. Emitting ERROR event...","count":"3"}]}}
