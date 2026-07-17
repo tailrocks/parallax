@@ -164,10 +164,10 @@ engine direction flip.**
 
 Do not re-smoke interactive 50k ties without pin bump or new mechanism.
 
-## Run 408 (2026-07-18) — ranking after 403–407
+## Run 408 / 416 (2026-07-18) — ranking after 403–415
 
 **Not done.** Laptop engine comparison still saturated; this cycle closed
-**false negatives** and one RPO nuance:
+**false negatives**, RPO nuances, and re-verified load-bearing holds:
 
 | Run | Finding | Direction impact |
 | --- | --- | --- |
@@ -175,6 +175,8 @@ Do not re-smoke interactive 50k ties without pin bump or new mechanism.
 | 404 | `rate`/`sum`/`avg by` **match GT**; **`increase` missing** 26.6+26.7 | Completeness gap remains |
 | 405 | Standalone **cannot** `meta snapshot save` (raft-engine); export-v2 schema OK; managed $ **no list drift** | D2 = cluster-only CLI; tiny-tier = FS copy |
 | 406–407 | adopt-native no drift; OTEL tables **on-ingest only** | Product path confirmed |
+| 409 | D3 SQLite dump/restore **ROW_MATCH** (stand-in schema) | Pattern OK; product DDL still owed |
+| 410–415 | Pins hold; PREWHERE 1/6; last_value/argMax; freshness; append DELETE; Flow/MV | **No direction drift** |
 
 **Still highest remaining (execute / product):**
 
@@ -182,8 +184,10 @@ Do not re-smoke interactive 50k ties without pin bump or new mechanism.
 2. Server 1M/5M four-way (`server-tier-runbook.md`)
 3. Vendor **trial** quotes (list rates held Run 405; still sales-blocked)
 4. GB–TB cold S3 selective egress
-5. RPO **cluster** D2 + Turso D3 drills
-6. Optional: CH PromQL more fns / volume (comparator watch)
+5. RPO **cluster** D2 (etcd/RDS) + product-schema D3
+6. Optional: CH PromQL volume + more fns (comparator watch)
+
+**Do not** burn more interactive 50k ties without pin bump.
 
 ## Run 258 (2026-07-17) — still not done
 
