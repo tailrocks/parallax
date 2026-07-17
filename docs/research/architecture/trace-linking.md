@@ -4,11 +4,11 @@ Research date: 2026-06-12 (operator question: "can one span reference a
 separate operation's trace, open it, and investigate the correlation —
 does OpenTelemetry support that?").
 
-> **Status (2026-07-12): implemented mechanism record, not an active plan.**
-> Typed links, reverse linked-trace lookup, and UI navigation shipped. Numbered
-> plan 120 in [`plans/`](../../../plans/) exclusively owns any remaining
-> integration/SDK guidance and validation. Do not execute follow-up work from
-> this note.
+> **Status (2026-07-17): implemented mechanism record, not an active plan.**
+> Typed links, reverse linked-trace lookup, and UI navigation shipped. Plan 120
+> (Claude Code capture) is **DONE/deleted**. Remaining multi-tool
+> integration/SDK guidance is design-only unless a new numbered plan opens. Do
+> not execute follow-up work from this note alone.
 
 ## Answer: yes — span links, first-class in OTel
 
@@ -60,9 +60,9 @@ navigated to the source trace.
 
 - **Reverse direction:** shipped through the typed linked-trace query and UI;
   further indexing is evidence-triggered storage tuning, not an open item here.
-- **Integration/SDK guidance:** plan 120 owns documentation and real-emitter
-  verification for starting a separate trace and linking it to the spawning
-  span.
+- **Integration/SDK guidance:** plan 120 closed Claude Code capture; further
+  documentation and real-emitter verification for starting a separate trace and
+  linking it is design-only unless a new numbered plan opens.
 
 ## Sources
 

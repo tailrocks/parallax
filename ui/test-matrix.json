@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 560,
-    "test_files": 138
+    "test_cases": 568,
+    "test_files": 142
   },
   "private_route_imports": [],
   "entries": [
@@ -2711,6 +2711,66 @@
         "differs when operation name or variables change",
         "canonical variable encoding is order-stable for object keys",
         "keys by exact query string"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-103-logs-search-props",
+      "surface": "features/logs",
+      "risk": "URL search acceptance/serialization can drift or crash on hostile params",
+      "scenario_owner": "features/logs",
+      "lane_owner": "vitest/unit",
+      "layer": "model",
+      "test_file": "ui/src/features/logs/tests/model/logs-search.property.test.ts",
+      "test_ids": [
+        "serialize\u2192parse round-trips every accepted search",
+        "never throws and is idempotent on arbitrary junk records"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-103-merge-live-logs-props",
+      "surface": "features/logs",
+      "risk": "Live merge can break dedup, contract order, or capacity under generated batches",
+      "scenario_owner": "features/logs",
+      "lane_owner": "vitest/unit",
+      "layer": "model",
+      "test_file": "ui/src/features/logs/tests/model/merge-live-logs.property.test.ts",
+      "test_ids": [
+        "keeps newest-first order, uniqueness, and the capacity bound",
+        "is a no-op for an empty incoming batch"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-103-where-clause-props",
+      "surface": "shared/where-clause",
+      "risk": "Where-clause grammar can lose round-trip fidelity or throw on hostile input",
+      "scenario_owner": "shared/where-clause",
+      "lane_owner": "vitest/unit",
+      "layer": "model",
+      "test_file": "ui/src/shared/tests/where-clause.property.test.ts",
+      "test_ids": [
+        "serialize\u2192parse round-trips arbitrary filter lists",
+        "parses arbitrary input totally \u2014 a typed result, never a throw"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-103-query-keys-props",
+      "surface": "features/investigations",
+      "risk": "Query key factories can lose determinism or hierarchical prefixes",
+      "scenario_owner": "features/investigations",
+      "lane_owner": "vitest/unit",
+      "layer": "model",
+      "test_file": "ui/src/features/investigations/tests/queries/keys.property.test.ts",
+      "test_ids": [
+        "is deterministic and prefix-hierarchical for arbitrary ids",
+        "distinct ids never collide"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"

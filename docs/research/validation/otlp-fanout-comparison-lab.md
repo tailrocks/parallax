@@ -456,7 +456,7 @@ is a Tinybird/compose-build concern, not used here), so no Maple header is neede
 > **Scored comparison harness was not authorized** (operator, 2026-06-23) — no automated
 > per-backend extraction / scoring rubric / pinned-id diffing as part of this
 > protocol. Comparison is **manual** (open the UIs). Candidate quantitative
-> dimensions remain design evidence for plan 122 and are distinct from otlp.md's
+> dimensions remain design evidence (plan 122 closed; no exclusive owner) and are distinct from otlp.md's
 > L4 conformance gate.
 
 ## Sentry OTLP — how it actually works (verified 2026-06-22)
@@ -535,9 +535,10 @@ The dated design separated a host-bridge smoke, the core SigNoz/OpenObserve lab,
 the full Sentry lab, and a server-sized sustained run. The host-bridge assertion
 is the protocol's fragile-hop check. The full Sentry lab was completed on
 2026-06-23 with v26.6.0 through `sentry/setup.sh`, `sentry/onboard.sh`, and
-`sentry/verify.sh`. Any unexecuted core/server rerun or compare-mode product gap
-belongs only to plan 122. The scored fixture/diff harness remains outside the
-manual protocol by operator decision.
+`sentry/verify.sh`. Any unexecuted core/server rerun or compare-mode product gap is **design-only
+or plan 154** (playground multi-backend residual) — **not** plan 122 (DONE/deleted).
+The scored fixture/diff harness remains outside the manual protocol by operator
+decision.
 
 ## Sources
 

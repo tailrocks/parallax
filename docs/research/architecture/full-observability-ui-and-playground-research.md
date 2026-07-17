@@ -1278,7 +1278,7 @@ must explain these execution shapes, each with at least one playground scenario:
 
 ### Historical Playground Scenario Option Catalog
 
-These are design inputs for plan 122, not executable tasks in this file:
+These are design inputs (plan 122 closed), not executable tasks in this file:
 
 | ID | Scenario | Proves |
 | --- | --- | --- |

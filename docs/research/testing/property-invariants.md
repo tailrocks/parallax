@@ -37,7 +37,18 @@ corpora will be committed under `fuzz/corpus/<target>/` when found.
 All five planned boundaries are landed. Target/workflow drift validation and the
 scheduled CI lane are still open.
 
-Deferred (blocked on their owners): UI search round-trips, runtime decoder
+## UI property suites (plan 103, Step 2 — landed 2026-07-17 after 133/147/148 closed)
+
+fast-check + vitest, seeded/shrinkable, in normal CI:
+
+| Invariant | Defect class | Suite |
+|---|---|---|
+| Logs URL search round-trip + total/idempotent validation | saved views and permalinks silently drop or mutate state | `features/logs/tests/model/logs-search.property.test.ts` |
+| Live merge dedup/contract-order/capacity | live prepend can duplicate rows, reorder segments, or grow unbounded | `features/logs/tests/model/merge-live-logs.property.test.ts` |
+| Where-clause serialize→parse fidelity, total parse | filters drift between editor, URL, and SQL compiler | `shared/tests/where-clause.property.test.ts` |
+| Query-key determinism + hierarchical prefixes | cache invalidation misses or cross-key collisions | `features/investigations/tests/queries/keys.property.test.ts` |
+
+Previously deferred (blocked on their owners): UI search round-trips, runtime decoder
 accept/reject domains, Query-key identity, SSE ordering (plans 133/147/148);
 fuzz targets and performance baselines follow as separate plan-103 steps.
 

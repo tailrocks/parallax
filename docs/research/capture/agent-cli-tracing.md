@@ -4,12 +4,13 @@
 
 > Parallax should be an evidence engine for software execution — services, CI runs, CLI tools, and coding agents — not only an observability backend for services, and coding-agent sessions plus CLI invocations are first-class execution evidence. OpenTelemetry GenAI, MCP, CLI, process, and CI/CD semantic conventions (catalog `1.41.0`, still development-stage for GenAI/MCP/CLI) are ingestion vocabulary that must be mapped into stable Parallax `agent_session`, `agent_action`, `cli_invocation`, and `ci_run` rows with recorded `semconv_version`, lossiness reports, and state verification — never stored as the durable product schema. Agent-session tracing across real tools (Codex CLI `0.133.0`, Claude Code `2.1.150`, Amp `0.0.1779639467-g6d0650`, OpenCode `1.15.10`) is viable only as a lossy, redacted, normalized execution audit via per-tool adapters (native OTel, hooks, streaming/run JSON, export/plugin, server/API, ACP), not as complete reasoning capture, and the agent-session ledger status is **not measured** (initial level `not_measured`). CLI tracing is default-on only for structural capture; redacted output excerpts require a separate canary-plus-overhead proof gate, raw args/env/stdout/stderr/config are opt-in raw refs only, and the CLI trace safety ledger status is likewise **not measured**. The decided posture is conservative wording with default-deny redaction and explicit claim levels; the open gates are the dated four-arm measurement runs that move both ledgers above `not_measured` (at minimum two agents through non-brittle surfaces, zero seeded canary leaks across canonical JSON/Markdown/CLI/HTTP/MCP projections, state-verification rows before any "validated/changed/deployed/fixed" wording, and positive audit-value lift).
 
-> **Implementation ownership (2026-07-12):** this file preserves trace models,
+> **Implementation ownership (2026-07-17):** this file preserves trace models,
 > adapter evidence, safety defaults, claim levels, and measurement protocols. It
-> is not an executable adapter queue. Plan 120 in
-> [`plans/`](../../../plans/) exclusively owns unfinished agent/CLI tracing
-> implementation and real protocol runs. Historical build order below records
-> rationale only.
+> is not an executable adapter queue. **Plan 120 is DONE/deleted** (Claude Code
+> session capture) — evidence:
+> [validation/2026-07-plan-120-claude-code/README.md](../validation/2026-07-plan-120-claude-code/README.md).
+> No exclusive active plan owner for remaining multi-tool measurement; open a
+> new numbered plan only if needed. Historical build order below is rationale.
 
 > **Current implementation (2026-07-17):** `parallax-evidence` normalizes
 > Claude Code NDJSON/hooks and projects `AgentSession`/`AgentStep` evidence.
@@ -17,8 +18,9 @@
 > CLI invocation, app mode, session, UI navigation/action, background jobs, and
 > GenAI agent/conversation/token conventions. Generation uses
 > `cargo xtask semconv generate` from `telemetry/semconv/contract.yaml` against
-> OTel schema 1.40.0; Weaver is not used. Plan 120 owns remaining tool coverage
-> and measurement, so broad cross-tool claims remain `not_measured`.
+> OTel schema 1.40.0; Weaver is not used. Plan 120 closed Claude Code capture;
+> broad cross-tool claims remain `not_measured` (measurement gate, not an open
+> plan backlog in this file).
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
@@ -1176,7 +1178,7 @@ report before tool adapters, then preferred Claude Code's native OTel surface,
 Codex structured hooks/JSONL, Amp plugin/streaming events, and OpenCode
 export/plugin surfaces. A four-tool value evaluation preceded any general
 agent-session-tracing claim. This is design rationale, not an implementation
-order; plan 120 owns the current executable decomposition.
+order; plan 120 closed Claude Code capture (DONE) — further multi-tool work needs a new plan.
 
 ### Product Decision
 

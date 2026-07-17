@@ -16,6 +16,7 @@ mod ci;
 mod claims;
 mod connection;
 mod deploy;
+mod fixer_outcomes;
 mod invocations;
 mod occurrences;
 mod prune;
@@ -35,6 +36,7 @@ pub use alerts::{
 pub use ci::{CiAttemptAccept, CiAttemptDeliveryRecord, CiAttemptStoreError, CiBackfillState};
 pub use claims::EvidenceClaimRow;
 pub use deploy::{DeployAccept, DeployDeliveryRecord, DeployStoreError, payload_sha256_hex};
+pub use fixer_outcomes::FixerOutcomeStoreRecord;
 pub use sentry_ack::{SentryAck, SentryAckError};
 pub(crate) mod pins;
 use row::*;
@@ -327,6 +329,20 @@ CREATE TABLE IF NOT EXISTS agent_session_imports (
 );
 CREATE INDEX IF NOT EXISTS agent_session_imports_session
   ON agent_session_imports(session_id, imported_at);
+CREATE TABLE IF NOT EXISTS fixer_outcomes (
+  request_id          TEXT NOT NULL,
+  phase               TEXT NOT NULL,
+  terminal            TEXT,
+  draft_pr_opened     INTEGER NOT NULL,
+  human_review_ok     INTEGER NOT NULL,
+  runtime_recurrence  INTEGER NOT NULL,
+  immutable_hash      TEXT NOT NULL,
+  canonical_json      TEXT NOT NULL,
+  recorded_at         INTEGER NOT NULL,
+  PRIMARY KEY (request_id, immutable_hash)
+);
+CREATE INDEX IF NOT EXISTS fixer_outcomes_time
+  ON fixer_outcomes(request_id, recorded_at);
 CREATE TABLE IF NOT EXISTS sentry_event_acks (
   project_id   TEXT NOT NULL,
   event_id     TEXT NOT NULL,

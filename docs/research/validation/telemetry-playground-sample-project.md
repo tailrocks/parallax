@@ -49,7 +49,7 @@ async-profiler, `profile-lifecycle=trace`) — JVM-only by necessity:
 `sentry-rust` has no profiling and OTLP profiles have no Rust impl.
 
 The 2026-06-23 snapshot recorded these **host-/SaaS-gated or hard-version
-conditions**. They are evidence for plan 122, not deferred work owned here:
+conditions**. They are historical evidence (plan 122 closed), not deferred work owned here:
 
 - A full cross-language **live** trace through the running lab, and the
   Sentry-envelope rendering scenarios (A15/A16 issue lifecycle, A17 flamegraph
@@ -77,7 +77,8 @@ feature-complete telemetry and we can compare how each renders it.
 > Deep-review status: all version/API claims below were verified against live
 > 2026 sources; corrections from that review are folded in. Historical gaps and
 > non-stable upstream signals are labeled only to explain the dated snapshot;
-> they do not create implementation work outside plan 122.
+> they do not create an implementation queue here. Residual playground work is
+> active plan **154** / test surface **155**, or design-only.
 
 ## 1. Why this exists
 
@@ -543,12 +544,14 @@ That is enough to decide what features to build into Parallax.
 A scored harness was not authorized. Its candidate dimensions
 (preserved/renamed/dropped/mangled fields, per-backend read APIs, pinned IDs, and
 recorded `semconv_version`) remain design evidence only and are distinct from
-`otlp.md`'s L4 conformance gate. Reopening that scope belongs to plan 122.
+`otlp.md`'s L4 conformance gate. Reopening that scope requires **active plan 154**
+or a new numbered plan — not plan 122 (DONE/deleted).
 
 ## 13. Historical candidate extensions
 
 The 2026 research recorded these possible enrichment surfaces. None is an
-authorized queue; plan 122 must explicitly retain or reject any implementation:
+authorized queue; any implementation requires **active plan 154/155** or a new
+numbered plan (plan 122 is closed and cannot retain/reject work):
 
 - **OTel Profiling signal** (4th OTLP signal, alpha) + Collector pprof receiver —
   profiles correlated to traces; de-Sentry-izes profiling (A17).

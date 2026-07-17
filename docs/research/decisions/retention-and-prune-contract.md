@@ -35,7 +35,7 @@ disk recovery. This follows the current GreptimeDB
 
 | Data class | Owner | Default lifecycle | Normal-prune eligibility | Protection/cascade |
 | --- | --- | --- | --- | --- |
-| Raw traces | GreptimeDB native `opentelemetry_traces` plus native helper tables | Configured `traces_ttl`, default `7d` | TTL-expired rows; explicit bounded deletion only when the plan names the native identity/time predicate | Native TTL remains uniform; Plan 106 must materialize bounded pin-owned evidence before raw expiry |
+| Raw traces | GreptimeDB native `opentelemetry_traces` plus native helper tables | Configured `traces_ttl`, default `7d` | TTL-expired rows; explicit bounded deletion only when the product names the native identity/time predicate | Native TTL remains uniform; pin materialization (plan 106 closed) must land bounded pin-owned evidence before raw expiry |
 | Raw logs | GreptimeDB native `opentelemetry_logs` | Configured `logs_ttl`, default `7d` | Same as traces | Same materialization rule; no per-row TTL exemption |
 | Raw metrics | GreptimeDB native per-metric tables | Configured `metrics_ttl`, default `14d` | TTL-expired samples; never a custom raw table | Same materialization rule; catalog reconciliation covers existing tables and ingest hints cover new tables |
 | Derived error events | GreptimeDB `error_events` extension | Configured `error_events_ttl`, default `30d` | TTL-expired rows | Pin owner materializes needed evidence; this table never owns mutable issue state |

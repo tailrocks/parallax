@@ -10,6 +10,7 @@ pub mod agent_session;
 pub mod bundle;
 /// Claude Code stream-json / hook normalizer (plan 120).
 pub mod claude_code;
+pub mod fixer_outcome;
 pub mod envelope;
 pub mod gaps;
 /// GitHub Actions CI evidence normalizer (plan 124).
