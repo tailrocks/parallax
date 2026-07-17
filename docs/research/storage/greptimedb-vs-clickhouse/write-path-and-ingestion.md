@@ -390,3 +390,15 @@ forbidden. CH four-way still shows only hand `otel_logs` MergeTree + experimenta
 ## Run 286 — OTLP endpoint presence
 
 `POST /v1/otlp/v1/logs` returns HTTP 400 on empty JSON (endpoint live; protobuf body required for success per Run 181).
+
+## Run 434 (2026-07-18) — adopt-native smoke (no drift)
+
+| Check | Result |
+| --- | --- |
+| GT + nightly Jaeger `/v1/jaeger/api/services` | HTTP **200** |
+| `greptime_identity` → `r434_id` | cols `greptime_timestamp, code, level, msg, service, trace_id` (schema-on-write) |
+| OTLP JSON empty body | HTTP **400** protobuf-only |
+| CH `system.table_engines` OTEL | **0** engines |
+
+**ADOPT native** on GT unchanged; CH remains collector + custom schema.
+
