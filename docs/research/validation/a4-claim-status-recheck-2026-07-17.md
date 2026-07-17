@@ -68,9 +68,18 @@ From correlation.md:
 
 Upgrade path in §Falsification unchanged. GraphQL existence ≠ A4 gate.
 
+## Pass 194 addendum (2026-07-18)
+
+| Check | Result |
+| --- | --- |
+| `correlation-reliability-runs/` | **Still absent** |
+| Formal results file | **None** |
+| GraphQL join identifiers in crates | **Still present** (`tracesByInvocation`, `logsByTrace`, `evidenceGaps`, …) |
+| Claim level | still **`not_measured`** for real messy telemetry |
+
 ## Uncertainty
 
-- Did not re-query live GraphQL schema introspection this pass; surface list taken from research implementation banner + **static code references** (pass 161).
+- Did not re-query live GraphQL schema introspection this pass; surface list taken from research implementation banner + **static code references** (pass 161/194).
 - Unified-CLI corpus may include useful *synthetic* rates if re-scored under A4 row schema — still would not promote past `synthetic_only` without `real_pilot`.
 
 ## Parallax goal fit
