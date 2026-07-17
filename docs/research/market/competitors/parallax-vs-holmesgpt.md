@@ -1,7 +1,8 @@
 # Parallax vs HolmesGPT
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 41
-> version pin**). Sources: [HolmesGPT/holmesgpt (GitHub)](https://github.com/HolmesGPT/holmesgpt)
+> version pin; **pass 95** Operator-mode recheck). Sources:
+> [HolmesGPT/holmesgpt (GitHub)](https://github.com/HolmesGPT/holmesgpt)
 > (**v0.36.0**, 2026-07-13; **2,873★**; Apache-2.0; last push 2026-07-16 — active),
 > [holmesgpt.dev docs](https://holmesgpt.dev/), [CNCF project page](https://www.cncf.io/projects/holmesgpt/),
 > [CNCF blog Apr 2026](https://www.cncf.io/blog/2026/04/21/auto-diagnosing-kubernetes-alerts-with-holmesgpt-and-cncf-tools/),
@@ -20,7 +21,8 @@
 
 ## What each product is
 
-- **HolmesGPT** (`HolmesGPT/holmesgpt`, by Robusta.dev) — an **open-source (Apache-2.0) AI SRE agent**, **CNCF Sandbox** project. Latest **v0.36.0** (2026-07-13), **2,873★**, active (pushed 2026-07-16). **Investigates alerts/tickets** (Alertmanager/Prometheus/Jira/PagerDuty), pulls evidence from **K8s/cloud/DBs/VMs** for RCA (often <30s claim), runs **Markdown runbooks**, groups alerts into incidents (via Robusta). **MCP toolset support**. CNCF stack: Prometheus/Alertmanager, OpenTelemetry, Grafana Mimir/Loki/Tempo, Kubernetes. Commercial **Robusta** optional. **No own telemetry store** — queries yours.
+- **HolmesGPT** (`HolmesGPT/holmesgpt`, by Robusta.dev) — an **open-source (Apache-2.0) AI SRE agent**, **CNCF Sandbox** project. Latest **v0.36.0** (2026-07-13), **2,873★**, active (pushed 2026-07-16 — **pass 95:** pin **unchanged**). **Investigates alerts/tickets** (Alertmanager/Prometheus/Jira/PagerDuty), pulls evidence from **K8s/cloud/DBs/VMs** for RCA (often <30s claim), runs **Markdown runbooks**, groups alerts into incidents (via Robusta). **MCP toolset support**. CNCF stack: Prometheus/Alertmanager, OpenTelemetry, Grafana Mimir/Loki/Tempo, Kubernetes. Commercial **Robusta** optional. **No own telemetry store** — queries yours.
+  - **Pass 95 — Operator mode (README lead feature):** background 24/7 health checks; can message Slack with a fix; with **GitHub integration** can **open PRs** to fix findings ([operator docs](https://holmesgpt.dev/operator/)). This is **infra/SRE closed-loop pressure**, not a portable redacted multi-signal **evidence-bundle schema** and not Parallax's **outcome ledger** product. Still **no store**.
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable **execution-context engine**: OTLP-native ingest of traces/logs/metrics + CLI/agent traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, serves bounded/redacted evidence bundles to humans and coding agents. GreptimeDB + Turso. **Pre-release.**
 
 Both Apache-2.0, agent-facing, in the "AI investigation" space. **HolmesGPT is the investigation agent (no store); Parallax is the telemetry+context-engine (own store).** Parallax's own framing ("context engine, not the fixer") literally describes the HolmesGPT relationship — HolmesGPT is the fixer/investigator Parallax feeds.
@@ -98,21 +100,22 @@ HolmesGPT **has no storage, no query engine, no error-derivation, no issue lifec
 
 - **Owns the telemetry** (store + error-derivation + fingerprint) — HolmesGPT has no store; it queries yours. *(Real layer difference.)*
 - **Bounded, redacted, agent-safe evidence bundle** — HolmesGPT investigates open-endedly over raw telemetry; Parallax produces a validated dossier. *(Thesis, unproven A1 — the crux.)*
-- **Fix-outcome loop** — HolmesGPT has no outcome ledger. *(Real unoccupied cell; offline residual plan **123 DONE**; live value **unproven**.)*
-- **Sentry-envelope compatibility** — HolmesGPT has none; Parallax ships it. *(Real.)*
+- **Fix-outcome loop (Parallax-shaped)** — HolmesGPT has **no portable outcome ledger / recurrence verdict product** over app errors. **Pass 95 nuance:** Operator mode + GitHub PR is a **real SRE automation path** (detect→investigate→propose PR); do **not** pretend HolmesGPT is fix-loop-free. Difference = **layer + artifact**: HolmesGPT automates over **your existing stack APIs**, not a versioned redacted multi-signal **bundle + outcome record**. Parallax offline residual plan **123 DONE**; live value **unproven**.
+- **Sentry-envelope compatibility** — HolmesGPT has a **Sentry MCP toolset** (query issues as a consumer); Parallax **ingests** Sentry envelopes as a store path. Different sides of Sentry.
 
-> **Honest summary:** HolmesGPT is **strategically central** to Parallax — it is the **shipped, CNCF, Apache-2.0 realization of "an AI agent that investigates telemetry,"** which is exactly the role Parallax's "context engine, not the fixer" framing assigns to a *separate* agent. On shipped AI-investigation, HolmesGPT is far ahead. The two are **mostly complementary** (HolmesGPT queries; Parallax owns+derives+bundles) — HolmesGPT could query Parallax as a richer source. **The A1 crux is sharp and must be stated plainly: Parallax's value over HolmesGPT-over-raw-telemetry is unproven.** Parallax's defensible delta is owning the telemetry + error-derivation + bounded/redacted safety + outcome loop — but whether a bounded bundle beats HolmesGPT investigating raw telemetry for coding-agent fix outcomes is the open A1 question. Do not assume Parallax beats HolmesGPT; it must be measured.
+> **Honest summary:** HolmesGPT is **strategically central** to Parallax — it is the **shipped, CNCF, Apache-2.0 realization of "an AI agent that investigates telemetry,"** which is exactly the role Parallax's "context engine, not the fixer" framing assigns to a *separate* agent. On shipped AI-investigation, HolmesGPT is far ahead. **Operator mode (pass 95)** adds continuous detection + optional PR open — **A1 pressure rises** (raw-context agents get better automation). The two are **mostly complementary** (HolmesGPT queries; Parallax owns+derives+bundles) — HolmesGPT could query Parallax as a richer source. **The A1 crux is sharp and must be stated plainly: Parallax's value over HolmesGPT-over-raw-telemetry is unproven.** Do not assume Parallax beats HolmesGPT; it must be measured.
 
 ## Watch triggers / open questions
 
 - **A1 gate vs HolmesGPT (the crux):** does a Parallax bounded bundle beat HolmesGPT-investigating-raw-telemetry for coding-agent fix outcomes? **Unproven — the central validation question.** Braintrust-class eval tooling could measure it.
+- **Operator mode + app-code auto-merge:** if HolmesGPT (or peers) ship **default auto-merge of application-code PRs** from production failures with portable outcome records, north-star closed-loop claim tightens (today README emphasizes open PR / Slack fix messaging, not unattended app merge).
 - **HolmesGPT → Parallax integration** — could HolmesGPT query Parallax's store/bundles as a richer, pre-redacted source? (Likely yes via MCP/OTLP.) Worth a PoC — and it may be the *natural* deployment (Parallax feeds HolmesGPT).
 - **Robusta commercial trajectory** — track whether Robusta adds owned-telemetry/bundle features (would narrow the layer distinction).
 
 ## Sources (accessed 2026-07-17)
 
-- [HolmesGPT/holmesgpt (GitHub)](https://github.com/HolmesGPT/holmesgpt) — **v0.36.0** (2026-07-13), **2,873★**, Apache-2.0, last push 2026-07-16 (pass 41 pin).
-- [holmesgpt.dev](https://holmesgpt.dev/); [CNCF project page](https://www.cncf.io/projects/holmesgpt/).
+- [HolmesGPT/holmesgpt (GitHub)](https://github.com/HolmesGPT/holmesgpt) — **v0.36.0** (2026-07-13), **2,873★**, Apache-2.0, last push 2026-07-16 (**pass 95:** pin reconfirmed).
+- README **Operator mode** lead feature + [holmesgpt.dev/operator](https://holmesgpt.dev/operator/); [holmesgpt.dev](https://holmesgpt.dev/); [CNCF project page](https://www.cncf.io/projects/holmesgpt/).
 - [CNCF blog: Auto-diagnosing K8s alerts with HolmesGPT (Apr 2026)](https://www.cncf.io/blog/2026/04/21/auto-diagnosing-kubernetes-alerts-with-holmesgpt-and-cncf-tools/); [Robusta.dev](https://robusta.dev/).
 - Parallax side: [00-vision/north-star-autonomous-fix-loop.md](../../00-vision/north-star-autonomous-fix-loop.md), [reference/agent-observability-review.md](../../reference/agent-observability-review.md), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).
 - Sibling (different-layer peers): [parallax-vs-causely.md](parallax-vs-causely.md) (causal-MCP layer), [parallax-vs-odigos.md](parallax-vs-odigos.md) (instrumentation), [parallax-vs-mezmo.md](parallax-vs-mezmo.md) (pipeline).

@@ -12,10 +12,9 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-17 after pass 94 (monetization: OpenObserve EE free ≤**50
-GB/day** + AI/SDR gated; SigNoz Noz still **Cloud**; Seer still self-host-excluded
-— survivor cloud/EE pattern **holds**; A2 interviews still open). Pass 93 =
-GlitchTip. A1/A2/A4/A6 open.
+Last updated 2026-07-17 after pass 95 (HolmesGPT still **v0.36.0** / 2,873★;
+**Operator mode** + GitHub PR path raises A1 pressure; still no own store /
+portable bundle). Pass 94 = monetization. A1/A2/A4/A6 open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
