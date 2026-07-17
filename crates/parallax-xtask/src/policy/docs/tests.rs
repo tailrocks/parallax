@@ -10,8 +10,15 @@ fn parses_structured_front_matter_and_rejects_touch_only_docs() {
 
 #[test]
 fn evidence_bundle_decision_gate_fails_closed() {
-    let draft = include_str!("../../../../../docs/research/decisions/evidence-bundle-contract.md");
-    approved_evidence_bundle_decision(draft).expect_err("draft decision rejected");
+    let record = include_str!("../../../../../docs/research/decisions/evidence-bundle-contract.md");
+    approved_evidence_bundle_decision(record).expect("approved Option C record accepted");
+    let unapproved = record.replace(
+        "status = \"approved\"",
+        "status = \"pending-operator-approval\"",
+    );
+    approved_evidence_bundle_decision(&unapproved).expect_err("unapproved status rejected");
+    let unresolved = record.replace("alexey@chainargos.com", "UNRESOLVED");
+    approved_evidence_bundle_decision(&unresolved).expect_err("unresolved approver rejected");
 
     let approved = r#"+++
 status = "approved"

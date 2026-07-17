@@ -35,6 +35,23 @@ Fresh audit on 2026-07-15 at `691cf17`: the decision record still has
 message in the active plan program selects A, B, C, or a replacement. The
 fail-closed decision gate and Step-2 STOP condition therefore remain active.
 
+## Preliminary Step-2 execution landed (helper agent, 2026-07-17) — peer verify + continue
+
+The operator's unblock directive (2026-07-17, `plans/README.md`) approved
+**Option C** (approver alexey@chainargos.com). The decision record
+`docs/research/decisions/evidence-bundle-contract.md` is now filled: status
+approved, all seven front-matter fields resolved, every "Required field
+decisions" item answered (envelope model, `bundle-v2` version string, `{kind,
+id}` anchor, ISO-8601 envelope timestamps over the untouched v1 payload, v1
+redaction report retained, RFC 8785 version-scoped hash, permanent v1 read
+window, fail-closed deterministic conversion, unknown-version rejection),
+plus rejected alternatives and the accepted hybrid-permanence risk. The
+xtask gate test now asserts the real record passes and that unapproved/
+unresolved mutations still fail closed (77 xtask tests, strict clippy, fmt
+green). Peer: verify the record against the directive, then execute Steps
+3-5 (versioned migration design, single source of truth, equivalence proofs)
+— none of that implementation exists yet.
+
 ## Why
 
 The research model and shipped `bundle-v1` schema describe materially different
