@@ -2,12 +2,8 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useMemo, useState } from "react"
 import { IconChartLine } from "@tabler/icons-react"
 
-import {
-  FilterSelect,
-  SearchInput,
-  Toolbar,
-} from "@/components/console/data-table"
-import { EmptyState } from "@/components/console/empty-state"
+import { FilterSelect, SearchInput, Toolbar } from "@/shared/console/data-table"
+import { EmptyState } from "@/shared/console/empty-state"
 import { PageHeader } from "@/shared/components/page-header"
 import { MetricsTable } from "./-metrics-table"
 import { graphqlCached } from "@/lib/api"

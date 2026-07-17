@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router"
 
-import { RelativeTime } from "@/components/console/relative-time"
+import { RelativeTime } from "@/shared/console/relative-time"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,

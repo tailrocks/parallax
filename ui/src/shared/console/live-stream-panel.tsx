@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { IconBroadcast } from "@tabler/icons-react"
 
-import { Chip } from "@/components/console/chip"
+import { Chip } from "@/shared/console/chip"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 

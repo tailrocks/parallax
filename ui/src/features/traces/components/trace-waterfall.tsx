@@ -29,7 +29,7 @@ import {
   timelineReducer,
 } from "@/lib/timeline-viewport"
 import type { TimelineViewport } from "@/lib/timeline-viewport"
-import { useTimelineInteractions } from "@/hooks/use-timeline-interactions"
+import { useTimelineInteractions } from "@/shared/hooks/use-timeline-interactions"
 import type {
   OrderedTraceSpan,
   TraceTreeSpan,

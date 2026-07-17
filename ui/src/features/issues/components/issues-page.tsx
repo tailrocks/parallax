@@ -9,12 +9,12 @@ import {
   SearchInput,
   SortableHead,
   Toolbar,
-} from "@/components/console/data-table"
-import { CopyButton } from "@/components/console/copy-button"
-import { EmptyState } from "@/components/console/empty-state"
-import { useDelayedLoading } from "@/components/console/hooks"
-import { RelativeTime } from "@/components/console/relative-time"
-import { TableSkeleton } from "@/components/console/skeletons"
+} from "@/shared/console/data-table"
+import { CopyButton } from "@/shared/console/copy-button"
+import { EmptyState } from "@/shared/console/empty-state"
+import { useDelayedLoading } from "@/shared/console/hooks"
+import { RelativeTime } from "@/shared/console/relative-time"
+import { TableSkeleton } from "@/shared/console/skeletons"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,

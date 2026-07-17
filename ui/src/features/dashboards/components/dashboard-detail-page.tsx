@@ -20,9 +20,9 @@ import {
   YAxis,
 } from "recharts"
 
-import { EmptyState } from "@/components/console/empty-state"
+import { EmptyState } from "@/shared/console/empty-state"
 import { RangePicker } from "@/features/time-range"
-import { ChartLegend } from "@/components/console/trend"
+import { ChartLegend } from "@/shared/console/trend"
 import { navItem } from "@/shared/navigation"
 import { PageHeader } from "@/shared/components/page-header"
 import {

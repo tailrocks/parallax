@@ -64,3 +64,5 @@ and active implementation plans remain plain Markdown.
 Update this file only when top-level ownership changes. Update the workspace map
 when crate ownership or tiers change, and the research index when research
 navigation changes.
+
+Live UI ownership (2026-07-17): `app/`, `layout/`, `features/*`, `domain/`, `platform/`, `shared/` (incl. `console/`, `hooks/`), thin `routes/`, generator islands `components/ui/**` + `lib/utils.ts`. Residual handwritten `lib/*` helpers remain until feature/platform owners claim them. See `ui/AGENTS.md`.

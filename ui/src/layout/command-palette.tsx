@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router"
-import { ServiceDot } from "@/components/console/service-dot"
+import { ServiceDot } from "@/shared/console/service-dot"
 import {
   IconAffiliate,
   IconBug,

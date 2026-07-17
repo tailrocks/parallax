@@ -7,8 +7,8 @@ import {
   TopMovers,
   computeMovers,
   moverSentence,
-} from "@/components/console/top-movers"
-import type { ServiceMoverInput } from "@/components/console/top-movers"
+} from "@/shared/console/top-movers"
+import type { ServiceMoverInput } from "@/shared/console/top-movers"
 import { renderTestRouter } from "@/test/router"
 import type { ResolvedRange } from "@/lib/range"
 

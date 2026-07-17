@@ -4,7 +4,7 @@ import {
   facetSelectionsFromParam,
   facetSelectionsToParam,
   toggleFacetValue,
-} from "@/components/console/facet-sidebar"
+} from "@/shared/console/facet-sidebar"
 
 describe("facet selections URL codec", () => {
   it("empty selections encode to undefined", () => {

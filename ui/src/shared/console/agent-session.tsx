@@ -8,8 +8,8 @@ import {
   IconTool,
 } from "@tabler/icons-react"
 
-import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
-import { RelativeTime } from "@/components/console/relative-time"
+import { HeatCell, buildHeatScale } from "@/shared/console/heat-cell"
+import { RelativeTime } from "@/shared/console/relative-time"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCount, formatDurationNs } from "@/lib/format"

@@ -12,9 +12,9 @@ import { useEffect, useMemo, useState } from "react"
 import { z } from "zod"
 
 import { AttributeComparePanel } from "@/features/traces/components/trace-attribute-compare"
-import { ServiceDot } from "@/components/console/service-dot"
+import { ServiceDot } from "@/shared/console/service-dot"
 import { PageHeader } from "@/shared/components/page-header"
-import { useLiveStream } from "@/hooks/use-live-stream"
+import { useLiveStream } from "@/shared/hooks/use-live-stream"
 import { FieldExplorer } from "@/features/traces/components/trace-field-explorer"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -42,24 +42,24 @@ import {
   ToggleChip,
   pageWindow,
   parseSortParam,
-} from "@/components/console/data-table"
-import { EmptyState } from "@/components/console/empty-state"
-import { DurationFilter } from "@/components/console/duration-filter"
-import { FacetSidebar, type Facet } from "@/components/console/facet-sidebar"
+} from "@/shared/console/data-table"
+import { EmptyState } from "@/shared/console/empty-state"
+import { DurationFilter } from "@/shared/console/duration-filter"
+import { FacetSidebar, type Facet } from "@/shared/console/facet-sidebar"
 import {
   WhereClauseChips,
   WhereClauseEditor,
-} from "@/components/console/where-clause-editor"
+} from "@/shared/console/where-clause-editor"
 import {
   serializeWhereClause,
   whereClauseFromSearch,
   type WhereFilter,
 } from "@/lib/where-clause"
-import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
-import { useDelayedLoading } from "@/components/console/hooks"
+import { HeatCell, buildHeatScale } from "@/shared/console/heat-cell"
+import { useDelayedLoading } from "@/shared/console/hooks"
 import { RangePicker } from "@/features/time-range"
-import { RelativeTime } from "@/components/console/relative-time"
-import { TableSkeleton } from "@/components/console/skeletons"
+import { RelativeTime } from "@/shared/console/relative-time"
+import { TableSkeleton } from "@/shared/console/skeletons"
 import { formatCount, formatDurationNs, formatTimeInRange } from "@/lib/format"
 import { gqlString, graphqlCached } from "@/lib/api"
 import type { AttributeCompareRow, LiveSpan, TraceSummary } from "@/lib/api"

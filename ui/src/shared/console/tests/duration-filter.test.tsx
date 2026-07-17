@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { durationSummary } from "@/components/console/duration-filter"
+import { durationSummary } from "@/shared/console/duration-filter"
 
 describe("durationSummary", () => {
   it("empty range yields no summary chip", () => {

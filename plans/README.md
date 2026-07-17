@@ -211,7 +211,7 @@ work.
 | 142 | Move trace search, analysis, and inspection into one feature | P1 | XL | 100, 129, 132, 134, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-142-traces/README.md) |
 | 150 | Move overview into one bounded feature | P1 | L | 100, 129, 132, 144, 145, 146, 149, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-150-overview/README.md) |
 | 143 | Move app, layout, and shell behind explicit boundaries | P1 | XL | 134, 135, 136, 137, 138, 139, 140, 141, 142, 145, 146, 149, 150, 152, 153 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-143-app-layout-shell/README.md) |
-| [151](151-ui-architecture-final-closure.md) | Verify and close the final UI architecture | P1 | L | 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 149, 150, 152, 153 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
+| [151](151-ui-architecture-final-closure.md) | Verify and close the final UI architecture | P1 | L | 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 149, 150, 152, 153 | IN PROGRESS — shared console/hooks moved; `lib/*` residual + 145/146 remain ([evidence](../docs/research/validation/2026-07-plan-151-ui-architecture-closure/README.md)) |
 
 ### UI State, Performance, And Product Gaps
 

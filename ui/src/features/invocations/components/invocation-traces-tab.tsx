@@ -2,9 +2,9 @@ import { useMemo } from "react"
 import { Link } from "@tanstack/react-router"
 import { IconActivity, IconArrowUpRight } from "@tabler/icons-react"
 
-import { EmptyState } from "@/components/console/empty-state"
-import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
-import { RelativeTime } from "@/components/console/relative-time"
+import { EmptyState } from "@/shared/console/empty-state"
+import { HeatCell, buildHeatScale } from "@/shared/console/heat-cell"
+import { RelativeTime } from "@/shared/console/relative-time"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,

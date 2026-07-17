@@ -1,6 +1,6 @@
 import { IconCheck, IconCopy } from "@tabler/icons-react"
 
-import { useCopied } from "@/components/console/use-copied"
+import { useCopied } from "@/shared/console/use-copied"
 import { Button } from "@/components/ui/button"
 
 export function CopyButton({ value }: { value: string }) {

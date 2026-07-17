@@ -1,4 +1,4 @@
-import { RelativeTime } from "@/components/console/relative-time"
+import { RelativeTime } from "@/shared/console/relative-time"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { ServiceCatalogRow } from "@/features/services/model/service-summary"
 import { formatCount } from "@/lib/format"

@@ -2,8 +2,8 @@ import { Link, useRouter } from "@tanstack/react-router"
 import { useState } from "react"
 import { IconClipboardList, IconPlus, IconTrash } from "@tabler/icons-react"
 
-import { EmptyState } from "@/components/console/empty-state"
-import { RelativeTime } from "@/components/console/relative-time"
+import { EmptyState } from "@/shared/console/empty-state"
+import { RelativeTime } from "@/shared/console/relative-time"
 import { PageHeader } from "@/shared/components/page-header"
 import {
   AlertDialog,

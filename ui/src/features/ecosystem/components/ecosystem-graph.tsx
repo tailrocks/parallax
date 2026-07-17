@@ -11,7 +11,7 @@ import {
 import type { Edge, Node, NodeProps } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
 
-import { ServiceDot } from "@/components/console/service-dot"
+import { ServiceDot } from "@/shared/console/service-dot"
 import { Badge } from "@/components/ui/badge"
 import type {
   ServiceMapEdge,

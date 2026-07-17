@@ -8,8 +8,8 @@ import {
   IconWebhook,
 } from "@tabler/icons-react"
 
-import { EmptyState } from "@/components/console/empty-state"
-import { RelativeTime } from "@/components/console/relative-time"
+import { EmptyState } from "@/shared/console/empty-state"
+import { RelativeTime } from "@/shared/console/relative-time"
 import { PageHeader } from "@/shared/components/page-header"
 import {
   AlertDialog,

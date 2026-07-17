@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router"
 
-import { CopyButton } from "@/components/console/copy-button"
-import { RelativeTime } from "@/components/console/relative-time"
-import { ServiceDot } from "@/components/console/service-dot"
+import { CopyButton } from "@/shared/console/copy-button"
+import { RelativeTime } from "@/shared/console/relative-time"
+import { ServiceDot } from "@/shared/console/service-dot"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,

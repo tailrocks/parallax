@@ -8,7 +8,7 @@ import {
 } from "@tabler/icons-react"
 import { useEffect, useMemo, useState } from "react"
 
-import { CopyButton } from "@/components/console/copy-button"
+import { CopyButton } from "@/shared/console/copy-button"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"

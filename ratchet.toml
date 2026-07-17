@@ -1391,7 +1391,7 @@ ceiling = 5
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/agent-session.test.tsx"
+scope = "ui/src/shared/console/tests/agent-session.test.tsx"
 ceiling = 10
 
 [[limits]]
@@ -1401,7 +1401,7 @@ ceiling = 11
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/duration-filter.test.tsx"
+scope = "ui/src/shared/console/tests/duration-filter.test.tsx"
 ceiling = 6
 
 [[limits]]
@@ -1411,27 +1411,27 @@ ceiling = 9
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/facet-sidebar.test.tsx"
+scope = "ui/src/shared/console/tests/facet-sidebar.test.tsx"
 ceiling = 14
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/heat-cell.test.tsx"
+scope = "ui/src/shared/console/tests/heat-cell.test.tsx"
 ceiling = 12
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/kit.test.tsx"
+scope = "ui/src/shared/console/tests/kit.test.tsx"
 ceiling = 19
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/top-movers.test.tsx"
+scope = "ui/src/shared/console/tests/top-movers.test.tsx"
 ceiling = 8
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/use-chart-brush.test.tsx"
+scope = "ui/src/shared/console/tests/use-chart-brush.test.tsx"
 ceiling = 4
 
 [[limits]]
@@ -1441,7 +1441,7 @@ ceiling = 25
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/components/console/__tests__/where-clause-editor.test.tsx"
+scope = "ui/src/shared/console/tests/where-clause-editor.test.tsx"
 ceiling = 11
 
 [[limits]]
@@ -1456,7 +1456,7 @@ ceiling = 5
 
 [[limits]]
 metric = "typescript.assertions"
-scope = "ui/src/hooks/__tests__/use-timeline-interactions.test.tsx"
+scope = "ui/src/shared/hooks/tests/use-timeline-interactions.test.tsx"
 ceiling = 15
 
 [[limits]]
@@ -1651,22 +1651,22 @@ ceiling = 876
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/console/facet-sidebar.tsx:29"
+scope = "ui/src/shared/console/facet-sidebar.tsx:29"
 ceiling = 16
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/console/top-movers.tsx:85"
+scope = "ui/src/shared/console/top-movers.tsx:85"
 ceiling = 30
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/console/where-clause-editor.tsx:109"
+scope = "ui/src/shared/console/where-clause-editor.tsx:109"
 ceiling = 32
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/console/where-clause-editor.tsx:47"
+scope = "ui/src/shared/console/where-clause-editor.tsx:47"
 ceiling = 24
 
 [[limits]]
@@ -1741,7 +1741,7 @@ ceiling = 42
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/components/console/where-clause-editor.tsx:109"
+scope = "ui/src/shared/console/where-clause-editor.tsx:109"
 ceiling = 15
 
 [[limits]]
@@ -1786,22 +1786,22 @@ ceiling = 15
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/components/console/__tests__/kit.test.tsx:21"
+scope = "ui/src/shared/console/tests/kit.test.tsx:21"
 ceiling = 71
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/components/console/__tests__/use-chart-brush.test.tsx:15"
+scope = "ui/src/shared/console/tests/use-chart-brush.test.tsx:15"
 ceiling = 62
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/components/console/__tests__/where-clause-editor.test.tsx:18"
+scope = "ui/src/shared/console/tests/where-clause-editor.test.tsx:18"
 ceiling = 92
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/components/console/agent-session.tsx:76"
+scope = "ui/src/shared/console/agent-session.tsx:76"
 ceiling = 78
 
 [[limits]]
@@ -1811,27 +1811,27 @@ ceiling = 280
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/components/console/duration-filter.tsx:45"
+scope = "ui/src/shared/console/duration-filter.tsx:45"
 ceiling = 126
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/components/console/facet-sidebar.tsx:29"
+scope = "ui/src/shared/console/facet-sidebar.tsx:29"
 ceiling = 108
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/components/console/top-movers.tsx:85"
+scope = "ui/src/shared/console/top-movers.tsx:85"
 ceiling = 77
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/components/console/use-chart-brush.ts:54"
+scope = "ui/src/shared/console/use-chart-brush.ts:54"
 ceiling = 87
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/components/console/where-clause-editor.tsx:18"
+scope = "ui/src/shared/console/where-clause-editor.tsx:18"
 ceiling = 164
 
 [[limits]]
@@ -1861,12 +1861,12 @@ ceiling = 95
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/hooks/__tests__/use-timeline-interactions.test.tsx:59"
+scope = "ui/src/shared/hooks/tests/use-timeline-interactions.test.tsx:59"
 ceiling = 102
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/hooks/use-timeline-interactions.ts:71"
+scope = "ui/src/shared/hooks/use-timeline-interactions.ts:71"
 ceiling = 176
 
 [[limits]]
@@ -2776,49 +2776,49 @@ migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/__tests__/agent-session.test.tsx"
+path = "ui/src/shared/console/tests/agent-session.test.tsx"
 current_owner = "legacy-console-tests"
 target_owner = "features/runs"
 migration_plan = "140"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/__tests__/duration-filter.test.tsx"
+path = "ui/src/shared/console/tests/duration-filter.test.tsx"
 current_owner = "legacy-console-tests"
 target_owner = "features/traces"
 migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/__tests__/facet-sidebar.test.tsx"
+path = "ui/src/shared/console/tests/facet-sidebar.test.tsx"
 current_owner = "legacy-console-tests"
 target_owner = "features/traces"
 migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/__tests__/heat-cell.test.tsx"
+path = "ui/src/shared/console/tests/heat-cell.test.tsx"
 current_owner = "legacy-console-tests"
 target_owner = "shared/tests"
 migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/__tests__/kit.test.tsx"
+path = "ui/src/shared/console/tests/kit.test.tsx"
 current_owner = "legacy-console-tests"
 target_owner = "shared/tests"
 migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/__tests__/top-movers.test.tsx"
+path = "ui/src/shared/console/tests/top-movers.test.tsx"
 current_owner = "legacy-console-tests"
 target_owner = "features/overview"
 migration_plan = "150"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/__tests__/use-chart-brush.test.tsx"
+path = "ui/src/shared/console/tests/use-chart-brush.test.tsx"
 current_owner = "legacy-console-tests"
 target_owner = "shared/tests"
 migration_plan = "100"
@@ -2832,112 +2832,112 @@ migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/__tests__/where-clause-editor.test.tsx"
+path = "ui/src/shared/console/tests/where-clause-editor.test.tsx"
 current_owner = "legacy-console-tests"
 target_owner = "features/traces"
 migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/agent-session.tsx"
+path = "ui/src/shared/console/agent-session.tsx"
 current_owner = "legacy-console"
 target_owner = "features/runs"
 migration_plan = "140"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/chip.tsx"
+path = "ui/src/shared/console/chip.tsx"
 current_owner = "legacy-console"
 target_owner = "shared/components/chip"
 migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/copy-button.tsx"
+path = "ui/src/shared/console/copy-button.tsx"
 current_owner = "legacy-console"
 target_owner = "shared/components/copy-button"
 migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/data-table.tsx"
+path = "ui/src/shared/console/data-table.tsx"
 current_owner = "legacy-console"
 target_owner = "shared/components/data-table"
 migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/duration-filter.tsx"
+path = "ui/src/shared/console/duration-filter.tsx"
 current_owner = "legacy-console"
 target_owner = "features/traces"
 migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/empty-state.tsx"
+path = "ui/src/shared/console/empty-state.tsx"
 current_owner = "legacy-console"
 target_owner = "shared/components/empty-state"
 migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/facet-sidebar.tsx"
+path = "ui/src/shared/console/facet-sidebar.tsx"
 current_owner = "legacy-console"
 target_owner = "features/traces"
 migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/heat-cell.tsx"
+path = "ui/src/shared/console/heat-cell.tsx"
 current_owner = "legacy-console"
 target_owner = "shared/components/heat-cell"
 migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/hooks.ts"
+path = "ui/src/shared/console/hooks.ts"
 current_owner = "legacy-console"
 target_owner = "shared/hooks"
 migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/relative-time.tsx"
+path = "ui/src/shared/console/relative-time.tsx"
 current_owner = "legacy-console"
 target_owner = "shared/components/relative-time"
 migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/scroll-fade.tsx"
+path = "ui/src/shared/console/scroll-fade.tsx"
 current_owner = "legacy-console"
 target_owner = "shared/components/scroll-fade"
 migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/service-dot.tsx"
+path = "ui/src/shared/console/service-dot.tsx"
 current_owner = "legacy-console"
 target_owner = "shared/components/service-dot"
 migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/skeletons.tsx"
+path = "ui/src/shared/console/skeletons.tsx"
 current_owner = "legacy-console"
 target_owner = "shared/components/skeletons"
 migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/stat-card.tsx"
+path = "ui/src/shared/console/stat-card.tsx"
 current_owner = "legacy-console"
 target_owner = "shared/components/stat-card"
 migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/top-movers.tsx"
+path = "ui/src/shared/console/top-movers.tsx"
 current_owner = "legacy-console"
 target_owner = "features/overview"
 migration_plan = "150"
@@ -2951,35 +2951,35 @@ migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/trend.tsx"
+path = "ui/src/shared/console/trend.tsx"
 current_owner = "legacy-console"
 target_owner = "shared/components/trend"
 migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/use-chart-brush.ts"
+path = "ui/src/shared/console/use-chart-brush.ts"
 current_owner = "legacy-console"
 target_owner = "shared/hooks/use-chart-brush"
 migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/use-copied.ts"
+path = "ui/src/shared/console/use-copied.ts"
 current_owner = "legacy-console"
 target_owner = "shared/hooks/use-copied"
 migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/console/where-clause-editor.tsx"
+path = "ui/src/shared/console/where-clause-editor.tsx"
 current_owner = "legacy-console"
 target_owner = "features/traces"
 migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/components/live-stream-panel.tsx"
+path = "ui/src/shared/console/live-stream-panel.tsx"
 current_owner = "legacy-components"
 target_owner = "features/logs"
 migration_plan = "141"
@@ -3451,28 +3451,28 @@ migration_plan = "149"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/hooks/__tests__/use-timeline-interactions.test.tsx"
+path = "ui/src/shared/hooks/tests/use-timeline-interactions.test.tsx"
 current_owner = "legacy-hooks-tests"
 target_owner = "features/traces"
 migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/hooks/use-live-stream.ts"
+path = "ui/src/shared/hooks/use-live-stream.ts"
 current_owner = "compatibility-reexport"
 target_owner = "platform/sse"
 migration_plan = "151"
 kind = "compatibility-reexport"
 
 [[ui.ownership]]
-path = "ui/src/hooks/use-mobile.ts"
+path = "ui/src/shared/hooks/use-mobile.ts"
 current_owner = "compatibility-reexport"
 target_owner = "platform/browser"
 migration_plan = "143"
 kind = "compatibility-reexport"
 
 [[ui.ownership]]
-path = "ui/src/hooks/use-timeline-interactions.ts"
+path = "ui/src/shared/hooks/use-timeline-interactions.ts"
 current_owner = "legacy-hooks"
 target_owner = "features/traces"
 migration_plan = "142"

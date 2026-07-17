@@ -9,11 +9,7 @@ import {
   YAxis,
 } from "recharts"
 
-import {
-  ChartLegend,
-  makeEdgeTick,
-  thinTicks,
-} from "@/components/console/trend"
+import { ChartLegend, makeEdgeTick, thinTicks } from "@/shared/console/trend"
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"

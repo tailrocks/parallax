@@ -3,8 +3,8 @@
 import { cleanup, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
-import { AgentSessionCard } from "@/components/console/agent-session"
-import type { AgentSessionData } from "@/components/console/agent-session"
+import { AgentSessionCard } from "@/shared/console/agent-session"
+import type { AgentSessionData } from "@/shared/console/agent-session"
 import { renderTestRouter } from "@/test/router"
 
 afterEach(cleanup)

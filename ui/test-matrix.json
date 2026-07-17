@@ -2,7 +2,7 @@
   "schema_version": 1,
   "ratchets": {
     "fire_event_calls": 28,
-    "legacy_handoffs": 26,
+    "legacy_handoffs": 17,
     "raw_router_builders": 1,
     "test_cases": 503,
     "test_files": 104
@@ -42,26 +42,18 @@
     },
     {
       "id": "vitest-003",
-      "surface": "features/runs",
+      "surface": "shared/console",
       "risk": "Agent session summaries can misclassify run state and break trace navigation",
-      "scenario_owner": "features/runs",
+      "scenario_owner": "shared/console",
       "lane_owner": "vitest/component",
-      "delivery_plan": 140,
       "layer": "component",
-      "test_file": "ui/src/components/console/__tests__/agent-session.test.tsx",
+      "test_file": "ui/src/shared/console/tests/agent-session.test.tsx",
       "test_ids": [
         "renders step timeline with trace links and token totals",
         "hides token totals when both totals are zero"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/__tests__/agent-session.test.tsx",
-        "destination_owner": "features/runs",
-        "removal_plan": 140,
-        "created": "2026-07-15",
-        "expires": "plan-140-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-004",
@@ -162,9 +154,8 @@
       "risk": "Percentile heat cells can misbucket empty, tied, non-finite, or boundary values",
       "scenario_owner": "shared/visualization",
       "lane_owner": "vitest/unit",
-      "delivery_plan": 149,
       "layer": "model",
-      "test_file": "ui/src/components/console/__tests__/heat-cell.test.tsx",
+      "test_file": "ui/src/shared/console/tests/heat-cell.test.tsx",
       "test_ids": [
         "handles empty and single-value scales",
         "filters non-finite values",
@@ -173,14 +164,7 @@
         "preserves exact bucket boundaries"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/__tests__/heat-cell.test.tsx",
-        "destination_owner": "shared/visualization",
-        "removal_plan": 149,
-        "created": "2026-07-15",
-        "expires": "plan-149-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-011",
@@ -188,9 +172,8 @@
       "risk": "Shared console primitives can format telemetry and copy actions inconsistently",
       "scenario_owner": "shared/console",
       "lane_owner": "vitest/component",
-      "delivery_plan": 149,
       "layer": "component",
-      "test_file": "ui/src/components/console/__tests__/kit.test.tsx",
+      "test_file": "ui/src/shared/console/tests/kit.test.tsx",
       "test_ids": [
         "sorts rows nulls-last and cycles sort params",
         "creates pagination windows",
@@ -200,14 +183,7 @@
         "shares one relative-time ticker across mounted instances"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/__tests__/kit.test.tsx",
-        "destination_owner": "shared/console",
-        "removal_plan": 149,
-        "created": "2026-07-15",
-        "expires": "plan-149-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-012",
@@ -254,13 +230,12 @@
     },
     {
       "id": "vitest-015",
-      "surface": "features/overview",
+      "surface": "shared/console",
       "risk": "Overview mover ranking can violate thresholds, caps, empty states, or range links",
-      "scenario_owner": "features/overview",
+      "scenario_owner": "shared/console",
       "lane_owner": "vitest/component",
-      "delivery_plan": 150,
       "layer": "component",
-      "test_file": "ui/src/components/console/__tests__/top-movers.test.tsx",
+      "test_file": "ui/src/shared/console/tests/top-movers.test.tsx",
       "test_ids": [
         "applies threshold edges and ranking",
         "caps movers at six",
@@ -269,14 +244,7 @@
         "renders the empty state"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/__tests__/top-movers.test.tsx",
-        "destination_owner": "features/overview",
-        "removal_plan": 150,
-        "created": "2026-07-15",
-        "expires": "plan-150-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-016",
@@ -284,9 +252,8 @@
       "risk": "Chart brush gestures can select incorrect forward or reversed time buckets",
       "scenario_owner": "shared/charts",
       "lane_owner": "vitest/component",
-      "delivery_plan": 149,
       "layer": "component",
-      "test_file": "ui/src/components/console/__tests__/use-chart-brush.test.tsx",
+      "test_file": "ui/src/shared/console/tests/use-chart-brush.test.tsx",
       "test_ids": [
         "clicks a single bucket window",
         "drags forward and exposes the reference range",
@@ -294,14 +261,7 @@
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented",
-      "fire_event_reason": "Raw chart-brush pointer phase and coordinate primitives are not modeled by user-event",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/__tests__/use-chart-brush.test.tsx",
-        "destination_owner": "shared/charts",
-        "removal_plan": 149,
-        "created": "2026-07-15",
-        "expires": "plan-149-completion"
-      }
+      "fire_event_reason": "Raw chart-brush pointer phase and coordinate primitives are not modeled by user-event"
     },
     {
       "id": "vitest-017",
@@ -900,13 +860,12 @@
     },
     {
       "id": "vitest-w2-9466",
-      "surface": "features/traces",
+      "surface": "shared/console",
       "risk": "wave-2 duration filter regression",
-      "scenario_owner": "features/traces",
+      "scenario_owner": "shared/console",
       "lane_owner": "vitest/component",
-      "delivery_plan": 163,
       "layer": "component",
-      "test_file": "ui/src/components/console/__tests__/duration-filter.test.tsx",
+      "test_file": "ui/src/shared/console/tests/duration-filter.test.tsx",
       "test_ids": [
         "empty range yields no summary chip",
         "max-only renders an upper bound",
@@ -915,24 +874,16 @@
         "sub-millisecond values fall through to microseconds"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/__tests__/duration-filter.test.tsx",
-        "destination_owner": "features/traces",
-        "removal_plan": 163,
-        "created": "2026-07-15",
-        "expires": "plan-163-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-w2-8441",
-      "surface": "features/traces",
+      "surface": "shared/console",
       "risk": "wave-2 facet sidebar regression",
-      "scenario_owner": "features/traces",
+      "scenario_owner": "shared/console",
       "lane_owner": "vitest/component",
-      "delivery_plan": 163,
       "layer": "component",
-      "test_file": "ui/src/components/console/__tests__/facet-sidebar.test.tsx",
+      "test_file": "ui/src/shared/console/tests/facet-sidebar.test.tsx",
       "test_ids": [
         "adds a value to an empty dimension",
         "does not mutate the input",
@@ -945,14 +896,7 @@
         "round-trips values with commas, colons, and unicode"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/__tests__/facet-sidebar.test.tsx",
-        "destination_owner": "features/traces",
-        "removal_plan": 163,
-        "created": "2026-07-15",
-        "expires": "plan-163-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-w2-1942",
@@ -973,13 +917,12 @@
     },
     {
       "id": "vitest-w2-7356",
-      "surface": "features/traces",
+      "surface": "shared/console",
       "risk": "wave-2 where clause editor regression",
-      "scenario_owner": "features/traces",
+      "scenario_owner": "shared/console",
       "lane_owner": "vitest/component",
-      "delivery_plan": 163,
       "layer": "component",
-      "test_file": "ui/src/components/console/__tests__/where-clause-editor.test.tsx",
+      "test_file": "ui/src/shared/console/tests/where-clause-editor.test.tsx",
       "test_ids": [
         "applies a valid clause with meta+Enter",
         "opens key autocomplete while typing and accepts with Enter",
@@ -991,24 +934,16 @@
         "suggests top values for the active key"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/components/console/__tests__/where-clause-editor.test.tsx",
-        "destination_owner": "features/traces",
-        "removal_plan": 163,
-        "created": "2026-07-15",
-        "expires": "plan-163-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-w2-5918",
-      "surface": "features/traces",
+      "surface": "shared/console",
       "risk": "wave-2 use timeline interactions regression",
-      "scenario_owner": "features/traces",
+      "scenario_owner": "shared/console",
       "lane_owner": "vitest/model",
-      "delivery_plan": 163,
       "layer": "model",
-      "test_file": "ui/src/hooks/__tests__/use-timeline-interactions.test.tsx",
+      "test_file": "ui/src/shared/hooks/tests/use-timeline-interactions.test.tsx",
       "test_ids": [
         "commits a marquee drag as ZOOM_TO_RANGE with px\u2192ms payload",
         "ctrl-wheel zooms anchored at the cursor",
@@ -1019,13 +954,6 @@
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/hooks/__tests__/use-timeline-interactions.test.tsx",
-        "destination_owner": "features/traces",
-        "removal_plan": 163,
-        "created": "2026-07-15",
-        "expires": "plan-163-completion"
-      },
       "fire_event_reason": "Gesture-grammar tests dispatch raw pointer/wheel sequences (pointer capture, passive:false wheel) below userEvent's abstraction"
     },
     {

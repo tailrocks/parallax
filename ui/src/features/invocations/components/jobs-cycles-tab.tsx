@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router"
 import { IconArrowUpRight, IconRepeat } from "@tabler/icons-react"
 
-import { EmptyState } from "@/components/console/empty-state"
-import { RelativeTime } from "@/components/console/relative-time"
+import { EmptyState } from "@/shared/console/empty-state"
+import { RelativeTime } from "@/shared/console/relative-time"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {

@@ -8,13 +8,9 @@ import {
   IconServer,
 } from "@tabler/icons-react"
 
-import { EmptyState } from "@/components/console/empty-state"
-import { RelativeTime } from "@/components/console/relative-time"
-import {
-  CardSparkline,
-  PillMeter,
-  StatCard,
-} from "@/components/console/stat-card"
+import { EmptyState } from "@/shared/console/empty-state"
+import { RelativeTime } from "@/shared/console/relative-time"
+import { CardSparkline, PillMeter, StatCard } from "@/shared/console/stat-card"
 import { navItem } from "@/shared/navigation"
 import { buttonVariants } from "@/components/ui/button"
 import { ServiceIdentityCard } from "@/features/services/components/service-identity-card"

@@ -25,7 +25,7 @@ import {
   validateLogsSearch,
   type LogDoc,
 } from "@/features/logs"
-import { bucketWindow, dragWindow } from "@/components/console/use-chart-brush"
+import { bucketWindow, dragWindow } from "@/shared/console/use-chart-brush"
 import { formatDateTime } from "@/lib/format"
 import { customRange } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"

@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  buildHeatScale,
-  percentileBucket,
-} from "@/components/console/heat-cell"
+import { buildHeatScale, percentileBucket } from "@/shared/console/heat-cell"
 
 function bucket(value: number, values: number[]) {
   return percentileBucket(value, buildHeatScale(values))

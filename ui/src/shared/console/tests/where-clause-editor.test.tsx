@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   WhereClauseChips,
   WhereClauseEditor,
-} from "@/components/console/where-clause-editor"
+} from "@/shared/console/where-clause-editor"
 import type { WhereFilter } from "@/lib/where-clause"
 
 afterEach(() => {

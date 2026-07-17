@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { useRef } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { useTimelineInteractions } from "@/hooks/use-timeline-interactions"
+import { useTimelineInteractions } from "@/shared/hooks/use-timeline-interactions"
 import {
   ZOOM_FACTOR,
   type TimelineAction,

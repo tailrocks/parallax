@@ -10,9 +10,9 @@ import {
   IconUsers,
 } from "@tabler/icons-react"
 
-import { CopyButton } from "@/components/console/copy-button"
-import type { AgentSessionData } from "@/components/console/agent-session"
-import { EmptyState } from "@/components/console/empty-state"
+import { CopyButton } from "@/shared/console/copy-button"
+import type { AgentSessionData } from "@/shared/console/agent-session"
+import { EmptyState } from "@/shared/console/empty-state"
 import { InvocationErrorsTab } from "@/features/invocations/components/invocation-errors-tab"
 import type { InvocationIssue } from "@/features/invocations/components/invocation-errors-tab"
 import {
@@ -24,7 +24,7 @@ import { JobsCyclesTab } from "@/features/invocations/components/jobs-cycles-tab
 import { SessionsTab } from "@/features/invocations/components/sessions-tab"
 import type { JourneyError } from "@/features/invocations/components/session-journey"
 import { PinButton } from "@/features/investigations"
-import { StatCard } from "@/components/console/stat-card"
+import { StatCard } from "@/shared/console/stat-card"
 import { StoryTimeline } from "@/features/story"
 import { useLiveStream } from "@/platform/sse/use-live-stream"
 import { LogsTable } from "@/features/logs"

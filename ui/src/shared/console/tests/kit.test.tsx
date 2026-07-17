@@ -7,10 +7,10 @@ import {
   cycleSortParam,
   pageWindow,
   sortRows,
-} from "@/components/console/data-table"
-import { RelativeTime } from "@/components/console/relative-time"
+} from "@/shared/console/data-table"
+import { RelativeTime } from "@/shared/console/relative-time"
 import { SpanKindChip, spanKindMeta } from "@/features/traces"
-import { StatCard } from "@/components/console/stat-card"
+import { StatCard } from "@/shared/console/stat-card"
 import { resolveRangeSearch } from "@/lib/range"
 
 afterEach(() => {

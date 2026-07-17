@@ -4,7 +4,7 @@ import { IconChevronDown, IconChevronRight, IconX } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { ServiceDot } from "@/components/console/service-dot"
+import { ServiceDot } from "@/shared/console/service-dot"
 import { cn } from "@/lib/utils"
 
 /** Plan 164 facet model: one bounded dimension with per-value counts.

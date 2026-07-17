@@ -1,6 +1,6 @@
 import { IconAlertTriangle, IconCode, IconGitBranch } from "@tabler/icons-react"
 
-import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
+import { HeatCell, buildHeatScale } from "@/shared/console/heat-cell"
 import { Badge } from "@/components/ui/badge"
 import { formatDurationNs } from "@/lib/format"
 import type {

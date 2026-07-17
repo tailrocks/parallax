@@ -3,7 +3,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { useChartBrush } from "@/components/console/use-chart-brush"
+import { useChartBrush } from "@/shared/console/use-chart-brush"
 
 const points = [0, 30, 60, 90, 120, 150].map((seconds, index) => ({
   tsNanos: `${seconds * 1_000_000_000}`,

@@ -21,15 +21,15 @@ import {
   YAxis,
 } from "recharts"
 
-import { EmptyState } from "@/components/console/empty-state"
-import { FacetSidebar, type Facet } from "@/components/console/facet-sidebar"
-import { useDelayedLoading } from "@/components/console/hooks"
-import { TableSkeleton } from "@/components/console/skeletons"
-import { useChartBrush } from "@/components/console/use-chart-brush"
+import { EmptyState } from "@/shared/console/empty-state"
+import { FacetSidebar, type Facet } from "@/shared/console/facet-sidebar"
+import { useDelayedLoading } from "@/shared/console/hooks"
+import { TableSkeleton } from "@/shared/console/skeletons"
+import { useChartBrush } from "@/shared/console/use-chart-brush"
 import {
   WhereClauseChips,
   WhereClauseEditor,
-} from "@/components/console/where-clause-editor"
+} from "@/shared/console/where-clause-editor"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {

@@ -3,14 +3,10 @@ import { useNavigate, useRouter } from "@tanstack/react-router"
 import { IconRefresh, IconTerminal2 } from "@tabler/icons-react"
 import { z } from "zod"
 
-import { CopyButton } from "@/components/console/copy-button"
-import { EmptyState } from "@/components/console/empty-state"
-import { FacetSidebar, type Facet } from "@/components/console/facet-sidebar"
-import {
-  FilterSelect,
-  SearchInput,
-  Toolbar,
-} from "@/components/console/data-table"
+import { CopyButton } from "@/shared/console/copy-button"
+import { EmptyState } from "@/shared/console/empty-state"
+import { FacetSidebar, type Facet } from "@/shared/console/facet-sidebar"
+import { FilterSelect, SearchInput, Toolbar } from "@/shared/console/data-table"
 import { InvocationsTable } from "@/features/invocations/components/invocations-table"
 import { RangePicker } from "@/features/time-range"
 import { PageHeader } from "@/shared/components/page-header"

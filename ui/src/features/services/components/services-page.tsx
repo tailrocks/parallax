@@ -7,11 +7,11 @@ import {
 import { IconServer, IconTerminal2 } from "@tabler/icons-react"
 import { useMemo } from "react"
 
-import { EmptyState } from "@/components/console/empty-state"
-import { buildHeatScale } from "@/components/console/heat-cell"
-import { useDelayedLoading } from "@/components/console/hooks"
-import { TableSkeleton } from "@/components/console/skeletons"
-import { SearchInput, Toolbar } from "@/components/console/data-table"
+import { EmptyState } from "@/shared/console/empty-state"
+import { buildHeatScale } from "@/shared/console/heat-cell"
+import { useDelayedLoading } from "@/shared/console/hooks"
+import { TableSkeleton } from "@/shared/console/skeletons"
+import { SearchInput, Toolbar } from "@/shared/console/data-table"
 import { ServicesTable } from "@/features/services/components/services-table"
 import { RangePicker } from "@/features/time-range"
 import {

@@ -1,4 +1,4 @@
-import { sortRows } from "@/components/console/data-table"
+import { sortRows } from "@/shared/console/data-table"
 
 export interface ServiceSummary {
   readonly name: string

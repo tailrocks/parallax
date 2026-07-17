@@ -231,3 +231,25 @@ major upgrades. The root [`AGENTS.md`](../AGENTS.md) and the
     cd ui && bun run test:browser:list
     cd ui && bun run test:browser
     ```
+
+## Final placement (plan 151 live tree, 2026-07-17)
+
+| Path | Owner |
+|------|-------|
+| `src/app/` | Router composition entry (`create-router`) |
+| `src/layout/` | Product shell, palette, theme, route boundaries |
+| `src/routes/` | Thin file-route adapters (`Route` only) |
+| `src/features/<name>/` | Product features with explicit `index.ts` facades |
+| `src/domain/` | Framework-neutral product concepts |
+| `src/platform/` | GraphQL/SSE/browser technical adapters |
+| `src/shared/` | Product-neutral UI kit (`console/`, `hooks/`, `navigation`, page-header) |
+| `src/components/ui/` | shadcn generator island only |
+| `src/lib/utils.ts` | shadcn `cn` island |
+| `src/lib/*` (other) | Residual technical helpers — move into platform/domain/feature owners; do not add new product logic here |
+| `src/routeTree.gen.ts` | TanStack generated tree |
+| `src/styles.css` | Global tokens |
+
+**Import directions:** app → layout/features/shared; layout → features/domain/shared; features → features(facade)/domain/platform/shared; platform → domain/shared; domain → shared; shared → shared only. Routes import feature facades + shared/domain only (root may import layout).
+
+**Verify:** `cargo xtask policy --only ui.architecture`, `ui.tests`, `ui.ratchets`; `cd ui && bun run check && bun run lint && bun run typecheck && bun run --bun test:ci`.
+

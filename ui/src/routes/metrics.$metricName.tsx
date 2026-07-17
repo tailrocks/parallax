@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { WhereClauseEditor } from "@/components/console/where-clause-editor"
+import { WhereClauseEditor } from "@/shared/console/where-clause-editor"
 import { gqlString, graphqlCached } from "@/lib/api"
 import {
   coerceAggregation,

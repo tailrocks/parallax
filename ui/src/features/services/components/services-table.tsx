@@ -1,10 +1,10 @@
 import { Link } from "@tanstack/react-router"
 
-import { HeatCell } from "@/components/console/heat-cell"
-import type { HeatScale } from "@/components/console/heat-cell"
-import { ServiceDot } from "@/components/console/service-dot"
-import { RelativeTime } from "@/components/console/relative-time"
-import { SortableHead } from "@/components/console/data-table"
+import { HeatCell } from "@/shared/console/heat-cell"
+import type { HeatScale } from "@/shared/console/heat-cell"
+import { ServiceDot } from "@/shared/console/service-dot"
+import { RelativeTime } from "@/shared/console/relative-time"
+import { SortableHead } from "@/shared/console/data-table"
 import {
   Table,
   TableBody,

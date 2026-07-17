@@ -18,24 +18,16 @@ import {
   YAxis,
 } from "recharts"
 
-import { CopyButton } from "@/components/console/copy-button"
-import { EmptyState } from "@/components/console/empty-state"
-import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
+import { CopyButton } from "@/shared/console/copy-button"
+import { EmptyState } from "@/shared/console/empty-state"
+import { HeatCell, buildHeatScale } from "@/shared/console/heat-cell"
 import { RangePicker } from "@/features/time-range"
-import { RelativeTime } from "@/components/console/relative-time"
-import { ScrollFade } from "@/components/console/scroll-fade"
-import {
-  StatCard,
-  CardSparkline,
-  PillMeter,
-} from "@/components/console/stat-card"
-import { TopMovers } from "@/components/console/top-movers"
-import type { ServiceMoverInput } from "@/components/console/top-movers"
-import {
-  ChartLegend,
-  makeEdgeTick,
-  thinTicks,
-} from "@/components/console/trend"
+import { RelativeTime } from "@/shared/console/relative-time"
+import { ScrollFade } from "@/shared/console/scroll-fade"
+import { StatCard, CardSparkline, PillMeter } from "@/shared/console/stat-card"
+import { TopMovers } from "@/shared/console/top-movers"
+import type { ServiceMoverInput } from "@/shared/console/top-movers"
+import { ChartLegend, makeEdgeTick, thinTicks } from "@/shared/console/trend"
 import { PageHeader } from "@/shared/components/page-header"
 import { navItem } from "@/shared/navigation"
 import { Badge } from "@/components/ui/badge"
@@ -65,7 +57,7 @@ import {
 } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
-import { useChartBrush } from "@/components/console/use-chart-brush"
+import { useChartBrush } from "@/shared/console/use-chart-brush"
 import {
   mergeSignalSeries,
   sampleLatencyData,

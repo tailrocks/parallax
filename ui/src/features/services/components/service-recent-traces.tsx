@@ -2,9 +2,9 @@ import { Link } from "@tanstack/react-router"
 import { IconAffiliate } from "@tabler/icons-react"
 import { useMemo } from "react"
 
-import { EmptyState } from "@/components/console/empty-state"
-import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
-import { RelativeTime } from "@/components/console/relative-time"
+import { EmptyState } from "@/shared/console/empty-state"
+import { HeatCell, buildHeatScale } from "@/shared/console/heat-cell"
+import { RelativeTime } from "@/shared/console/relative-time"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
