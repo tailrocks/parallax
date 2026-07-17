@@ -98,9 +98,17 @@ presets from `traceDurationStats` (replacing the bare min/max inputs).
 Facet multi-select currently means AND (backend semantics) — peer decides
 whether OR-within-dimension needs a backend argument.
 
+- Backend logs `attributeFilters` (`ca79e2c`): `logs_search` and
+  `log_count_series` take structured filters (histogram reflects the
+  active query); the compiler gained a log-table expression map
+  (COALESCEd service, severity_text/number, body, `log_attributes` via
+  `json_get_string`, shared `filter_condition` core, same escaping and
+  `1 = 0` gating); in-memory parity; GraphQL `attributeFilters` on `logs`
+  and `logCountSeries`; anchored reads filtered API-side. 109 tests green.
+
 Still open (full plan scope): live facet verification against `f-attrs`
-(70/20/10) + the facet-window cap decision; logs/invocations facets +
-filter compilation (the compiler is span-table-only so far); live-engine narrowing
+(70/20/10) + the facet-window cap decision; `logFacets`/invocations facets
+and invocation filter compilation; live-engine narrowing
 + injection assertions; logs/invocations route wiring (Step 3 remainder);
 `F` keyboard
 shortcut; syntax-highlight overlay (editor currently plain input);
