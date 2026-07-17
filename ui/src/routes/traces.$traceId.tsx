@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import type { FormEvent, ReactNode } from "react"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import {
@@ -73,6 +73,12 @@ import type {
   TraceSummary,
 } from "@/lib/api"
 import { formatDateTime, formatDurationNs } from "@/lib/format"
+import {
+  attributeKeysForColorBy,
+  decodeColorBy,
+  encodeColorBy,
+} from "@/lib/color-by"
+import type { ColorByStrategy } from "@/lib/color-by"
 import { buildGraphqlOperations } from "@/lib/graphql-trace"
 import type { GraphqlOperation, GraphqlTraceSpan } from "@/lib/graphql-trace"
 import {
@@ -86,7 +92,7 @@ import type {
   RpcStreamInfo,
   RpcTraceSpan,
 } from "@/lib/rpc-trace"
-import { computeWindow, detectSkew } from "@/lib/trace-tree"
+import { computeSelfTimes, computeWindow, detectSkew } from "@/lib/trace-tree"
 import type { SkewReport } from "@/lib/trace-tree"
 import { rangeLinkSearch, resolveRangeSearch } from "@/lib/range"
 import { cn } from "@/lib/utils"
@@ -119,6 +125,11 @@ interface TraceDetailSearch {
   range?: string | undefined
   from?: string | undefined
   to?: string | undefined
+  /** Zoomed viewport (trace-relative ms) — URL round-trippable. */
+  vs?: number | undefined
+  ve?: number | undefined
+  /** Color-by strategy, encoded per lib/color-by. */
+  color?: string | undefined
 }
 
 type TraceRangeSearch = ReturnType<typeof rangeLinkSearch>
@@ -140,6 +151,25 @@ function isTraceViewMode(value: unknown): value is TraceDisplayMode {
   )
 }
 
+function parseAttributeMap(json: string): Record<string, string> {
+  try {
+    const parsed: unknown = JSON.parse(json)
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {}
+    }
+    const map: Record<string, string> = {}
+    for (const [key, value] of Object.entries(parsed)) {
+      if (typeof value === "string") map[key] = value
+      else if (typeof value === "number" || typeof value === "boolean") {
+        map[key] = String(value)
+      }
+    }
+    return map
+  } catch {
+    return {}
+  }
+}
+
 function searchString(value: unknown) {
   if (typeof value === "string") return value
   if (typeof value === "number" && Number.isFinite(value)) return String(value)
@@ -155,7 +185,15 @@ export function validateTraceDetailSearch(
     range: searchString(search["range"]),
     from: searchString(search["from"]),
     to: searchString(search["to"]),
+    vs: searchNumber(search["vs"]),
+    ve: searchNumber(search["ve"]),
+    color: searchString(search["color"]),
   }
+}
+
+function searchNumber(value: unknown) {
+  const parsed = typeof value === "number" ? value : Number(searchString(value))
+  return Number.isFinite(parsed) ? parsed : undefined
 }
 
 export interface SpanEvent {
@@ -268,6 +306,40 @@ function TracePage() {
   const activeTab: TraceDetailTab =
     search.tab === "story" ? "story" : "waterfall"
   const waterfallView: TraceDisplayMode = search.view ?? "tree"
+  const colorBy = useMemo(() => decodeColorBy(search.color), [search.color])
+  const initialViewport = useMemo(
+    () =>
+      search.vs !== undefined && search.ve !== undefined
+        ? { startMs: search.vs, endMs: search.ve }
+        : undefined,
+    [search.vs, search.ve]
+  )
+  const onViewportChange = useCallback(
+    (viewport: { startMs: number; endMs: number } | null) => {
+      void navigate({
+        replace: true,
+        search: (current) => ({
+          ...current,
+          vs: viewport ? Number(viewport.startMs.toFixed(3)) : undefined,
+          ve: viewport ? Number(viewport.endMs.toFixed(3)) : undefined,
+        }),
+      })
+    },
+    [navigate]
+  )
+  const onColorBy = useCallback(
+    (strategy: ColorByStrategy) => {
+      void navigate({
+        replace: true,
+        search: (current) => ({
+          ...current,
+          color:
+            strategy.kind === "service" ? undefined : encodeColorBy(strategy),
+        }),
+      })
+    },
+    [navigate]
+  )
   const detailRangeSearch = rangeLinkSearch(resolveRangeSearch(search))
   const [selectedId, setSelectedId] = useState<string | null>(WHOLE_TRACE_ID)
   const [criticalEnabled, setCriticalEnabled] = useState(false)
@@ -301,6 +373,26 @@ function TracePage() {
     [linkedTraces]
   )
   const spans = trace?.spans ?? EMPTY_TRACE_SPANS
+  const waterfallSpans = useMemo(
+    () =>
+      spans.map((span) => ({
+        ...span,
+        attributeMap: parseAttributeMap(span.attributes),
+      })),
+    [spans]
+  )
+  const colorByKeys = useMemo(
+    () =>
+      attributeKeysForColorBy(
+        waterfallSpans.map((span) => ({
+          service: span.service,
+          kind: span.kind,
+          statusCode: span.statusCode,
+          attributes: span.attributeMap,
+        }))
+      ),
+    [waterfallSpans]
+  )
   const graphqlOperations = useMemo(
     () => buildGraphqlOperations(spans),
     [spans]
@@ -523,10 +615,17 @@ function TracePage() {
               <Card>
                 <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <CardTitle className="text-sm">Waterfall</CardTitle>
-                  <TraceViewModeToggle
-                    value={waterfallView}
-                    onChange={setWaterfallView}
-                  />
+                  <div className="flex items-center gap-2">
+                    <ColorByPicker
+                      value={colorBy}
+                      keys={colorByKeys}
+                      onChange={onColorBy}
+                    />
+                    <TraceViewModeToggle
+                      value={waterfallView}
+                      onChange={setWaterfallView}
+                    />
+                  </div>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
                   {criticalEnabled ? (
@@ -545,11 +644,14 @@ function TracePage() {
                     />
                   ) : (
                     <TraceWaterfall
-                      spans={spans}
+                      spans={waterfallSpans}
                       selectedId={selectedId}
                       onSelect={setSelectedId}
                       highlightIds={criticalIds}
                       mode={waterfallView}
+                      colorBy={colorBy}
+                      initialViewport={initialViewport}
+                      onViewportChange={onViewportChange}
                     />
                   )}
                 </CardContent>
@@ -710,6 +812,39 @@ export function TraceRpcSection({ streams }: { streams: RpcStreamInfo[] }) {
         <RpcStreamCard streams={streams} />
       </CardContent>
     </Card>
+  )
+}
+
+export function ColorByPicker({
+  value,
+  keys,
+  onChange,
+}: {
+  value: ColorByStrategy
+  keys: string[]
+  onChange: (strategy: ColorByStrategy) => void
+}) {
+  return (
+    <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      Color by
+      <select
+        id="trace-color-by"
+        name="trace-color-by"
+        aria-label="Color spans by"
+        className="rounded-md border border-border/70 bg-background px-1.5 py-1 text-xs"
+        value={encodeColorBy(value)}
+        onChange={(event) => onChange(decodeColorBy(event.target.value))}
+      >
+        <option value="service">service</option>
+        <option value="kind">span kind</option>
+        <option value="status">status</option>
+        {keys.map((key) => (
+          <option key={key} value={`attr:${key}`}>
+            {key}
+          </option>
+        ))}
+      </select>
+    </label>
   )
 }
 
@@ -1270,6 +1405,8 @@ function TraceInspector({
   logs: TraceLog[]
   onSelectSpan: (spanId: string) => void
 }) {
+  // Self time = duration minus the union of child intervals (plan 163).
+  const selfTimes = useMemo(() => computeSelfTimes(spans), [spans])
   if (!selectedSpan) {
     return (
       <Card className="h-fit xl:sticky xl:top-4">
@@ -1372,6 +1509,12 @@ function TraceInspector({
             ],
             ["kind", selectedSpan.kind.replace("SPAN_KIND_", "")],
             ["duration", formatDurationNs(selectedSpan.durationNs)],
+            [
+              "self time",
+              formatDurationNs(
+                (selfTimes.get(selectedSpan.spanId) ?? 0n).toString()
+              ),
+            ],
             ["start", formatDateTime(selectedSpan.tsNanos)],
             ["span id", selectedSpan.spanId],
             ["parent id", selectedSpan.parentSpanId ?? "-"],

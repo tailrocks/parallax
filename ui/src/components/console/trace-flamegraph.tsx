@@ -98,7 +98,7 @@ export function TraceFlamegraph({
                 height: LANE_HEIGHT_PX - 2,
                 left: `${offsetPct}%`,
                 top,
-                width: `max(2px, ${widthPct}%)`,
+                width: `${Math.max(widthPct, 0.2)}%`,
               }}
               title={`${span.name} · ${span.service} · ${formatDurationNs(span.durationNs)}`}
               aria-label={`${span.name}, ${span.service}, ${formatDurationNs(span.durationNs)}`}

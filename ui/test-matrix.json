@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "ratchets": {
-    "fire_event_calls": 7,
-    "legacy_handoffs": 44,
+    "fire_event_calls": 28,
+    "legacy_handoffs": 62,
     "raw_router_builders": 1,
-    "test_cases": 216,
-    "test_files": 48
+    "test_cases": 391,
+    "test_files": 66
   },
   "private_route_imports": [
     {
@@ -19,6 +19,14 @@
         "serializeWidgets"
       ],
       "removal_plan": 137
+    },
+    {
+      "test_file": "ui/src/routes/__tests__/-ecosystem-focus.test.ts",
+      "module": "@/routes/ecosystem",
+      "symbols": [
+        "validateEcosystemSearch"
+      ],
+      "removal_plan": 166
     },
     {
       "test_file": "ui/src/routes/__tests__/-invocations.test.tsx",
@@ -285,6 +293,7 @@
       "test_file": "ui/src/components/console/__tests__/ecosystem-graph.test.tsx",
       "test_ids": [
         "D-014 eco-full: a 9-node column grows the canvas instead of overlapping cards",
+        "dims outside-focus nodes and reports hidden topology",
         "renders trace-path graph nodes and edge links"
       ],
       "required_environment": "jsdom-or-bun",
@@ -1346,6 +1355,560 @@
         "removal_plan": 140,
         "created": "2026-07-15",
         "expires": "plan-140-completion"
+      }
+    },
+    {
+      "id": "vitest-w2-9466",
+      "surface": "features/traces",
+      "risk": "wave-2 duration filter regression",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 163,
+      "layer": "component",
+      "test_file": "ui/src/components/console/__tests__/duration-filter.test.tsx",
+      "test_ids": [
+        "empty range yields no summary chip",
+        "max-only renders an upper bound",
+        "min and max render a range",
+        "min-only renders a lower bound",
+        "sub-millisecond values fall through to microseconds"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/__tests__/duration-filter.test.tsx",
+        "destination_owner": "features/traces",
+        "removal_plan": 163,
+        "created": "2026-07-15",
+        "expires": "plan-163-completion"
+      }
+    },
+    {
+      "id": "vitest-w2-8441",
+      "surface": "features/traces",
+      "risk": "wave-2 facet sidebar regression",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 163,
+      "layer": "component",
+      "test_file": "ui/src/components/console/__tests__/facet-sidebar.test.tsx",
+      "test_ids": [
+        "adds a value to an empty dimension",
+        "does not mutate the input",
+        "empty selections encode to undefined",
+        "encodes deterministically (sorted) for stable permalinks",
+        "ignores malformed parts and duplicate values",
+        "keeps other selections intact (OR within, AND across)",
+        "removes a selected value and drops the empty dimension",
+        "round-trips multi-facet selections",
+        "round-trips values with commas, colons, and unicode"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/__tests__/facet-sidebar.test.tsx",
+        "destination_owner": "features/traces",
+        "removal_plan": 163,
+        "created": "2026-07-15",
+        "expires": "plan-163-completion"
+      }
+    },
+    {
+      "id": "vitest-w2-1942",
+      "surface": "features/traces",
+      "risk": "wave-2 trace flamegraph regression",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 163,
+      "layer": "component",
+      "test_file": "ui/src/components/console/__tests__/trace-flamegraph.test.tsx",
+      "test_ids": [
+        "explains an empty trace",
+        "focuses a subtree on shift-click and can restore the whole trace",
+        "renders accessible span controls and selects one"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/__tests__/trace-flamegraph.test.tsx",
+        "destination_owner": "features/traces",
+        "removal_plan": 163,
+        "created": "2026-07-15",
+        "expires": "plan-163-completion"
+      },
+      "fire_event_reason": "PointerEvent shift-click focus is not expressible through userEvent's pointer API in jsdom"
+    },
+    {
+      "id": "vitest-w2-7356",
+      "surface": "features/traces",
+      "risk": "wave-2 where clause editor regression",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/component",
+      "delivery_plan": 163,
+      "layer": "component",
+      "test_file": "ui/src/components/console/__tests__/where-clause-editor.test.tsx",
+      "test_ids": [
+        "applies a valid clause with meta+Enter",
+        "opens key autocomplete while typing and accepts with Enter",
+        "renders nothing when empty",
+        "renders one removable chip per filter",
+        "shows a positioned parse error and never applies invalid input",
+        "shows the serialized applied filters",
+        "suggests operators after a key",
+        "suggests top values for the active key"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/components/console/__tests__/where-clause-editor.test.tsx",
+        "destination_owner": "features/traces",
+        "removal_plan": 163,
+        "created": "2026-07-15",
+        "expires": "plan-163-completion"
+      }
+    },
+    {
+      "id": "vitest-w2-5918",
+      "surface": "features/traces",
+      "risk": "wave-2 use timeline interactions regression",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 163,
+      "layer": "model",
+      "test_file": "ui/src/hooks/__tests__/use-timeline-interactions.test.tsx",
+      "test_ids": [
+        "commits a marquee drag as ZOOM_TO_RANGE with px→ms payload",
+        "ctrl-wheel zooms anchored at the cursor",
+        "keeps pointer travel under 4px a click, not a zoom",
+        "keyboard: +/- zoom around the viewport center, 0 fits",
+        "shift-drag pans with relative deltas (content-drag direction)",
+        "shift-wheel and horizontal wheel pan; plain wheel stays native"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/hooks/__tests__/use-timeline-interactions.test.tsx",
+        "destination_owner": "features/traces",
+        "removal_plan": 163,
+        "created": "2026-07-15",
+        "expires": "plan-163-completion"
+      },
+      "fire_event_reason": "Gesture-grammar tests dispatch raw pointer/wheel sequences (pointer capture, passive:false wheel) below userEvent's abstraction"
+    },
+    {
+      "id": "vitest-w2-7147",
+      "surface": "shared/console",
+      "risk": "wave-2 alert rule form regression",
+      "scenario_owner": "shared/console",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 167,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/alert-rule-form.test.ts",
+      "test_ids": [
+        "accepts a well-formed high-error-rate draft",
+        "builds a named draft from a template",
+        "exposes the five plan-167 presets",
+        "flags error_rate thresholds outside [0,1]",
+        "requires metricName for metric signal",
+        "requires name and positive window",
+        "requires thresholdUpper for between and enforces order",
+        "returns null for unknown template ids"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/alert-rule-form.test.ts",
+        "destination_owner": "shared/console",
+        "removal_plan": 167,
+        "created": "2026-07-15",
+        "expires": "plan-167-completion"
+      }
+    },
+    {
+      "id": "vitest-w2-4896",
+      "surface": "features/traces",
+      "risk": "wave-2 color by regression",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 163,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/color-by.test.ts",
+      "test_ids": [
+        "attribute mode colors values deterministically, missing neutral",
+        "falls back to service for missing or unrecognized values",
+        "labels missing attribute values and caps the list",
+        "lists distinct labels in first-seen order",
+        "returns sorted unique keys across all spans",
+        "round-trips every strategy through encode/decode",
+        "service mode uses the plan-162 deterministic service color",
+        "span-kind mode maps the five OTLP kinds and defaults unknown",
+        "status mode: error red, ok info, unset neutral"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/color-by.test.ts",
+        "destination_owner": "features/traces",
+        "removal_plan": 163,
+        "created": "2026-07-15",
+        "expires": "plan-163-completion"
+      }
+    },
+    {
+      "id": "vitest-w2-9955",
+      "surface": "shared/ui",
+      "risk": "wave-2 colors regression",
+      "scenario_owner": "shared/ui",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 162,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/colors.test.ts",
+      "test_ids": [
+        "distinguishes the playground service set",
+        "falls back to golden-angle for unknown series",
+        "is deterministic: same name, same color, case/space-insensitive",
+        "keeps 32 series pairwise distinguishable",
+        "maps severities, status classes, and percentiles",
+        "normalizes aliases onto the six tokens",
+        "resolves ramp tokens to theme variables",
+        "snaps hues to 15-degree slots so neighbors stay readable"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/colors.test.ts",
+        "destination_owner": "shared/ui",
+        "removal_plan": 162,
+        "created": "2026-07-15",
+        "expires": "plan-162-completion"
+      }
+    },
+    {
+      "id": "vitest-w2-1954",
+      "surface": "features/ecosystem",
+      "risk": "wave-2 ecosystem layout regression",
+      "scenario_owner": "features/ecosystem",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 166,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/ecosystem-layout.test.ts",
+      "test_ids": [
+        "changes with topology",
+        "handles an empty graph",
+        "is deterministic across fallback runs and input order",
+        "is stable across input order and metric changes",
+        "lays a directed chain from left to right",
+        "memoizes identical topology"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/ecosystem-layout.test.ts",
+        "destination_owner": "features/ecosystem",
+        "removal_plan": 166,
+        "created": "2026-07-15",
+        "expires": "plan-166-completion"
+      }
+    },
+    {
+      "id": "vitest-w2-7323",
+      "surface": "features/ecosystem",
+      "risk": "wave-2 ecosystem topology regression",
+      "scenario_owner": "features/ecosystem",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 166,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/ecosystem-topology.test.ts",
+      "test_ids": [
+        "1% preset hides the low-rate CLI edge",
+        "5% keeps edges at exactly the threshold, hides below",
+        "all preset hides nothing",
+        "computes error rate from counts",
+        "dim mode keeps full graph and tags outside",
+        "expands 1-hop undirected neighborhood",
+        "falls back to legacy db.system and server.address name",
+        "hide mode drops outside nodes and edges",
+        "includes only the focus at 0 hops",
+        "null focus keeps everything in-focus",
+        "prefers db.system.name ladder for database nodes",
+        "reaches kafka at 2 hops from checkout",
+        "resolves bare server.address as external HTTP",
+        "resolves messaging as queue",
+        "returns null without external attributes",
+        "scales width with log2(callCount)",
+        "stale focus keeps the graph visible"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/ecosystem-topology.test.ts",
+        "destination_owner": "features/ecosystem",
+        "removal_plan": 166,
+        "created": "2026-07-15",
+        "expires": "plan-166-completion"
+      }
+    },
+    {
+      "id": "vitest-w2-1288",
+      "surface": "features/logs",
+      "risk": "wave-2 log histogram brush regression",
+      "scenario_owner": "features/logs",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 165,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/log-histogram-brush.test.ts",
+      "test_ids": [
+        "builds ~targetCount buckets covering the window",
+        "clamps out-of-range pixels",
+        "normalizes inverted brushes",
+        "point brush selects the containing bucket",
+        "returns empty for non-positive windows",
+        "returns null for empty buckets or miss",
+        "round-trips at the domain ends",
+        "snaps a drag range to inclusive bucket edges"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/log-histogram-brush.test.ts",
+        "destination_owner": "features/logs",
+        "removal_plan": 165,
+        "created": "2026-07-15",
+        "expires": "plan-165-completion"
+      }
+    },
+    {
+      "id": "vitest-w2-3461",
+      "surface": "features/logs",
+      "risk": "wave-2 log table prefs regression",
+      "scenario_owner": "features/logs",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 165,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/log-table-prefs.test.ts",
+      "test_ids": [
+        "decodes CSV and drops empties/dupes",
+        "maps density to class names",
+        "parses and encodes wrap",
+        "parses density with default",
+        "pin/unpin/toggle",
+        "round-trips encode/decode"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/log-table-prefs.test.ts",
+        "destination_owner": "features/logs",
+        "removal_plan": 165,
+        "created": "2026-07-15",
+        "expires": "plan-165-completion"
+      }
+    },
+    {
+      "id": "vitest-w2-9888",
+      "surface": "features/dashboards",
+      "risk": "wave-2 metric aggregation regression",
+      "scenario_owner": "features/dashboards",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 168,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/metric-aggregation.test.ts",
+      "test_ids": [
+        "alert graduation carries signal_type=metric",
+        "clamps resets to zero (m-shapes counter reset)",
+        "coerces illegal agg from a stale URL",
+        "dashboard graduation sets widget=metric",
+        "defaults to the first legal aggregation",
+        "keeps legal values and replaces stale ones",
+        "maps common type and name shapes",
+        "rejects illegal combinations",
+        "returns null without a metric name",
+        "round-trips through URLSearchParams",
+        "types sum/gauge/histogram aggregations"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/metric-aggregation.test.ts",
+        "destination_owner": "features/dashboards",
+        "removal_plan": 168,
+        "created": "2026-07-15",
+        "expires": "plan-168-completion"
+      }
+    },
+    {
+      "id": "vitest-w2-8456",
+      "surface": "features/traces",
+      "risk": "wave-2 timeline minimap regression",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 163,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/timeline-minimap.test.ts",
+      "test_ids": [
+        "classifies interior pan and outside recenter",
+        "degrades safely for a zero-width minimap",
+        "handles reversed viewport coordinates",
+        "moves the captured viewport center to the click",
+        "pans by full-trace minimap scale",
+        "prioritizes edge resize zones",
+        "resizes either viewport edge"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/timeline-minimap.test.ts",
+        "destination_owner": "features/traces",
+        "removal_plan": 163,
+        "created": "2026-07-15",
+        "expires": "plan-163-completion"
+      }
+    },
+    {
+      "id": "vitest-w2-2286",
+      "surface": "features/traces",
+      "risk": "wave-2 timeline viewport regression",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 163,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/timeline-viewport.test.ts",
+      "test_ids": [
+        "adopts the marquee range regardless of drag direction",
+        "caps the window at the trace duration",
+        "clamps a full-trace span to the [-50, 150] envelope",
+        "clamps at the trace end",
+        "clamps at the trace start",
+        "converts px deltas at the current zoom",
+        "degrades safely at zero width",
+        "enforces the minimum visible window",
+        "expands a sub-minimum marquee around its center",
+        "fits short traces entirely",
+        "fits the whole trace",
+        "gates the name label at 56px and the duration label at 140px",
+        "gives zero-duration spans the minimum window",
+        "gives zero-duration traces the minimum visible window",
+        "ignores non-positive or non-finite factors",
+        "keeps the ms under the cursor fixed (anchor invariance)",
+        "keeps zero-duration spans as zero-width rects for CSS min-width",
+        "maps container offsets onto the visible window",
+        "maps ms onto viewport percent",
+        "opens traces longer than 10s zoomed to the first 10s",
+        "pads the span by 10% on each side",
+        "positions an in-view span",
+        "sets search text",
+        "shifts a negative start to zero without resizing",
+        "shifts a window that runs past the trace end back inside",
+        "shifts padding that would cross the trace start (width preserved)",
+        "shifts the window preserving its width",
+        "skips spans fully outside the viewport",
+        "stops zooming in at the minimum window",
+        "stops zooming out at the trace bounds",
+        "toggles collapse on and off without mutating prior state"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/timeline-viewport.test.ts",
+        "destination_owner": "features/traces",
+        "removal_plan": 163,
+        "created": "2026-07-15",
+        "expires": "plan-163-completion"
+      }
+    },
+    {
+      "id": "vitest-w2-7567",
+      "surface": "features/traces",
+      "risk": "wave-2 trace tree flame regression",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 163,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/trace-tree-flame.test.ts",
+      "test_ids": [
+        "clips children that spill past the parent window",
+        "equals the full duration for leaf spans",
+        "handles empty input",
+        "merges overlapping children before subtracting",
+        "never goes negative when children fully cover the parent",
+        "only subtracts direct children, not grandchildren",
+        "packs multiroot traces at depth 0",
+        "positions rows relative to the trace window",
+        "shares a lane between non-overlapping siblings",
+        "stacks overlapping siblings into separate lanes",
+        "subtracts sequential children"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/trace-tree-flame.test.ts",
+        "destination_owner": "features/traces",
+        "removal_plan": 163,
+        "created": "2026-07-15",
+        "expires": "plan-163-completion"
+      }
+    },
+    {
+      "id": "vitest-w2-3877",
+      "surface": "features/traces",
+      "risk": "wave-2 where clause regression",
+      "scenario_owner": "features/traces",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 163,
+      "layer": "model",
+      "test_file": "ui/src/lib/__tests__/where-clause.test.ts",
+      "test_ids": [
+        "AND chain with mixed operators",
+        "CONTAINS and NOT CONTAINS",
+        "NOT without CONTAINS rejected",
+        "OR rejected — grammar is AND-only",
+        "bare literal value",
+        "bare-safe values stay unquoted",
+        "case-insensitive keywords",
+        "empty input parses to no filters",
+        "escaped quotes and backslashes",
+        "missing operator reports position",
+        "missing value after operator",
+        "single equality",
+        "single-quoted strings",
+        "spaces and specials quoted",
+        "trailing AND rejected",
+        "undefined and invalid inputs yield empty list",
+        "unterminated string reports position",
+        "valid clause parses",
+        "values with spaces and unicode"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/lib/__tests__/where-clause.test.ts",
+        "destination_owner": "features/traces",
+        "removal_plan": 163,
+        "created": "2026-07-15",
+        "expires": "plan-163-completion"
+      }
+    },
+    {
+      "id": "vitest-w2-8871",
+      "surface": "features/ecosystem",
+      "risk": "wave-2  ecosystem focus regression",
+      "scenario_owner": "features/ecosystem",
+      "lane_owner": "vitest/model",
+      "delivery_plan": 166,
+      "layer": "model",
+      "test_file": "ui/src/routes/__tests__/-ecosystem-focus.test.ts",
+      "test_ids": [
+        "canonicalizes defaults and rejects invalid values",
+        "preserves valid focus controls"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "legacy_handoff": {
+        "current_path": "ui/src/routes/__tests__/-ecosystem-focus.test.ts",
+        "destination_owner": "features/ecosystem",
+        "removal_plan": 166,
+        "created": "2026-07-15",
+        "expires": "plan-166-completion"
       }
     }
   ]

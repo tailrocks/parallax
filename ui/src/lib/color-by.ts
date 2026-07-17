@@ -57,12 +57,14 @@ export interface ColorableSpan {
 /** Neutral color for spans the strategy cannot classify. */
 export const COLOR_BY_UNKNOWN = "var(--muted-foreground)"
 
+// Matches the waterfall's kind chip hues (span-kind.tsx): the generic
+// --chart-1..5 tokens are grayscale in this theme and would erase the axis.
 const SPAN_KIND_COLORS: Record<string, string> = {
-  SPAN_KIND_SERVER: "var(--chart-1)",
-  SPAN_KIND_CLIENT: "var(--chart-2)",
-  SPAN_KIND_INTERNAL: "var(--chart-3)",
-  SPAN_KIND_PRODUCER: "var(--chart-4)",
-  SPAN_KIND_CONSUMER: "var(--chart-5)",
+  SPAN_KIND_SERVER: "oklch(0.65 0.13 235)",
+  SPAN_KIND_CLIENT: "oklch(0.6 0.16 260)",
+  SPAN_KIND_INTERNAL: "oklch(0.6 0.17 295)",
+  SPAN_KIND_PRODUCER: "oklch(0.75 0.15 80)",
+  SPAN_KIND_CONSUMER: "oklch(0.68 0.14 160)",
 }
 
 const STATUS_COLORS: Record<string, string> = {
