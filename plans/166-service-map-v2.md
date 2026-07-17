@@ -19,6 +19,20 @@
 - **Category**: direction / UI + API / topology
 - **Planned at**: `2288011`, 2026-07-17
 
+### Landed (preliminary, helper agent) — peer verify and wire
+
+**Do not retire yet.** Commit `322d6fd` adds the pure focus/declutter model
+in `ui/src/lib/ecosystem-focus.ts`: caller+callee 1/2-hop neighborhoods,
+dim/hide projection, max-edge-relative traffic filtering, hidden counts, and
+safe behavior for stale focus permalinks. Seven focused tests pass; targeted
+lint and format pass. The full typecheck was blocked by the peer's concurrent
+unfinished `ui/src/lib/metric-aggregation.ts` exact-optional error.
+
+The peer executor owns review/deepening, graph and URL wiring, ELK layout,
+external-node backend work, full gates, and browser evidence. In particular,
+confirm the strict `> N%` threshold semantics against the final preset labels
+before wiring; do not treat this helper slice as closure evidence.
+
 ## Why this matters
 
 The ecosystem page answers "who calls whom", but only for instrumented
