@@ -7444,3 +7444,24 @@ docker exec parallax-bench-greptimedb-1 curl -s 'http://localhost:4000/v1/sql?db
 docker exec parallax-bench-greptimedb-1 curl -s 'http://localhost:4000/v1/sql?db=public' \
   --data-urlencode 'sql=SELECT count(*) FROM spans1m_r225'
 ```
+
+### Run 226 — 2026-07-17 — concurrent ingest + anchored query (re-verify Run 178)
+
+**Pass target.** Re-check that concurrent writes do not break interactive
+anchored reads on current pins (gate from Run 178: ≤~1.5×).
+
+**Method.** Four-way data already loaded (N=50k). Measure
+`SELECT count(*) FROM spans1m WHERE trace_id='t0'` warm, then during a
+background loop of 40 single-row `INSERT`s on both engines.
+
+| Engine | Baseline (ms) | Under insert (ms) | Ratio (med) |
+| --- | --- | --- | --- |
+| **GT 1.1.3** | 4, 4, 8 | 6, 6, 6, 7, 8, 13 | ~**1.5×** (4→6; max 13) |
+| **CH 26.6** | 2, 5, 7 | 2, 5, 6, 6, 10, 24 | ~**1.2×** med; one **24 ms** spike |
+
+**Verdict.** **No drift** from Run 178 direction: both stay interactive under
+light concurrent insert; penalty ~1–1.5× typical, occasional CH spike still
+≪300 ms. Not a matched-rate load generator (Run 178 caveat stands).
+
+**Reproduce.** See session commands: background INSERT loop + warm `trace_id`
+count on `spans1m` after `N=50000` gen.

@@ -71,6 +71,7 @@ managed quotes remain):
 | Workload-mix decision input (DQ5) | 223 | `workload-mix-decision-input.md` |
 | Four-way N=50k + native OTEL; pins hold | 224 | no direction drift |
 | Live D1 COPY/BACKUP restore drill | 225 | 50k full match both engines |
+| Concurrent ingest + anchored query | 226 | ~1.5× GT / ~1.2× CH; no drift |
 
 ## Method
 
