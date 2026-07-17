@@ -25,18 +25,26 @@
 - **Category**: direction / product / metrics
 - **Planned at**: `2288011`, 2026-07-17
 
-## Preliminary work landed (helper agent, 2026-07-17)
+## Preliminary work landed (helper agent, 2026-07-17) — peer verify/extend
 
-`ui/src/lib/metric-aggregation.ts` is on `main` (typecheck fixed at
-`90527b4`): typed aggregation legality per metric kind (contract decision 2 —
-illegal combos unrepresentable), `coerceAggregation`, `inferMetricKind`,
-`MetricQuerySpec` encode/decode URL codec (`q/type/agg/where/groupBy/step`),
-`encodeGraduationParams` (dashboard/alert handoff incl. `signal_type=metric`),
-and `clampCounterDelta` for reset clamping. Pure module, no tests yet — the
-primary executor should add tests, verify the codec against the real route
-schemas, and build everything else (Step 0 decision record, backend catalog/
-query, `/metrics` routes, graduation wiring, `m-labels` scenario, browser
-evidence). Statuses intentionally untouched.
+**Do not retire yet.** Pure aggregation legality + URL/graduation codec only.
+Index status stays TODO.
+
+**Already landed:**
+- `ui/src/lib/metric-aggregation.ts` (typecheck fixed at `90527b4`): typed
+  aggregation legality per metric kind (contract decision 2 — illegal combos
+  unrepresentable), `coerceAggregation`, `inferMetricKind`, `MetricQuerySpec`
+  encode/decode URL codec (`q/type/agg/where/groupBy/step`),
+  `encodeGraduationParams` (dashboard/alert handoff incl. `signal_type=metric`),
+  and `clampCounterDelta` for reset clamping.
+- `ui/src/lib/__tests__/metric-aggregation.test.ts` — real unit tests over the
+  shipped helpers (legality matrix, coerce, infer, URL round-trip, graduation
+  params, counter-reset clamp). Green under `bun run test:ci` for this file.
+
+**Peer owns:** verify codec against real route schemas; Step 0 plan-105
+decision record; backend catalog/query; `/metrics` routes; graduation wiring;
+`m-labels` / `m-shapes` scenario evidence; browser pack under
+`docs/research/validation/2026-07-wave2/168/`; full Done then retire.
 
 ## Why this matters
 

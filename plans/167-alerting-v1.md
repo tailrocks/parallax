@@ -22,6 +22,32 @@
 - **Category**: direction / product / alerting
 - **Planned at**: `2288011`, 2026-07-17
 
+### Landed by Grok (preliminary) — peer verify/extend + full stack
+
+**Do not retire yet.** Pure evaluation state machine only. No Turso schema,
+evaluator loop, delivery, GraphQL, UI, or playground scenarios. Index status
+stays TODO.
+
+**Already landed:**
+- `crates/parallax-server/src/alerting/mod.rs` + `state_machine.rs` —
+  pure `(rule, prev_state, measurement, now) → (next_state, transition)`:
+  comparators gt/gte/lt/lte/between/not_between, consecutive-breach and
+  consecutive-healthy hysteresis, min sample count gate, no_data skip vs
+  zero, renotify interval, flapping never double-opens while open.
+  Unit tests embedded in the module (breach open, healthy resolve, flap,
+  min samples, no_data, between, renotify). Wired as private `mod alerting`
+  in `parallax-server` (not yet public API surface).
+
+**Peer owns (verify/deepen/complete):**
+- [ ] Re-verify state machine vs plan exhaustiveness; expand tests if gaps.
+- [ ] Step 1 remainder: Turso DDL + CRUD for rules/states/incidents/
+  destinations/delivery_events/alert_checks.
+- [ ] Steps 2–5: evaluator CAS loop, measurement queries, delivery worker
+  (native-tls reqwest), GraphQL + UI pages, playground breach scenarios,
+  ready-banner line, browser + webhook evidence under
+  `docs/research/validation/2026-07-wave2/167/`.
+- [ ] Full Done criteria; then retire.
+
 ## Why this matters
 
 Parallax can show an incident but cannot *tell anyone about it* — there is

@@ -125,6 +125,10 @@ pub fn tokenize(body: &str) -> Vec<String> {
 
 /// Token-level similarity = matching positions / max length (Drain-style).
 #[must_use]
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "token counts for similarity are small (log line lengths)"
+)]
 pub fn token_similarity(a: &[String], b: &[String]) -> f64 {
     if a.is_empty() && b.is_empty() {
         return 1.0;
@@ -222,18 +226,7 @@ pub fn cluster_logs(lines: &[LogLineInput<'_>], config: DrainConfig) -> Vec<LogP
         }
         let path = tree_path(&tokens, depth);
 
-        let mut best: Option<(usize, f64)> = None;
-        if let Some(leaf) = leaves.get(&path) {
-            for &idx in leaf {
-                let sim = token_similarity(&tokens, &clusters[idx].tokens);
-                if sim >= threshold {
-                    match best {
-                        Some((_, best_sim)) if sim <= best_sim => {}
-                        _ => best = Some((idx, sim)),
-                    }
-                }
-            }
-        }
+        let best = find_best_cluster(&tokens, leaves.get(&path), &clusters, threshold);
 
         if let Some((idx, _)) = best {
             let cluster = &mut clusters[idx];
@@ -251,25 +244,8 @@ pub fn cluster_logs(lines: &[LogLineInput<'_>], config: DrainConfig) -> Vec<LogP
             }
             touch_lru(&mut lru, idx);
         } else {
-            // Evict oldest clusters until under capacity (count live only).
-            let live = clusters.iter().filter(|c| c.count > 0).count();
-            if live >= max_clusters {
-                while clusters.iter().filter(|c| c.count > 0).count() >= max_clusters {
-                    let Some(victim) = lru.pop_front() else {
-                        break;
-                    };
-                    if let Some(c) = clusters.get_mut(victim) {
-                        if c.count == 0 {
-                            continue;
-                        }
-                        let victim_path = tree_path(&c.tokens, depth);
-                        if let Some(ids) = leaves.get_mut(&victim_path) {
-                            ids.retain(|&i| i != victim);
-                        }
-                        c.tokens.clear();
-                        c.count = 0;
-                    }
-                }
+            if live_cluster_count(&clusters) >= max_clusters {
+                evict_to_cap(&mut clusters, &mut leaves, &mut lru, depth, max_clusters);
             }
 
             let mut severity_counts = HashMap::new();
@@ -319,6 +295,58 @@ fn touch_lru(lru: &mut VecDeque<usize>, idx: usize) {
         lru.remove(pos);
     }
     lru.push_back(idx);
+}
+
+fn live_cluster_count(clusters: &[Cluster]) -> usize {
+    clusters.iter().filter(|c| c.count > 0).count()
+}
+
+fn find_best_cluster(
+    tokens: &[String],
+    leaf: Option<&Vec<usize>>,
+    clusters: &[Cluster],
+    threshold: f64,
+) -> Option<(usize, f64)> {
+    let leaf = leaf?;
+    let mut best: Option<(usize, f64)> = None;
+    for &idx in leaf {
+        let sim = token_similarity(tokens, &clusters[idx].tokens);
+        if sim < threshold {
+            continue;
+        }
+        match best {
+            Some((_, best_sim)) if sim <= best_sim => {}
+            _ => best = Some((idx, sim)),
+        }
+    }
+    best
+}
+
+/// Evict least-recently-used live clusters until under `max_clusters`.
+fn evict_to_cap(
+    clusters: &mut [Cluster],
+    leaves: &mut HashMap<String, Vec<usize>>,
+    lru: &mut VecDeque<usize>,
+    depth: usize,
+    max_clusters: usize,
+) {
+    while live_cluster_count(clusters) >= max_clusters {
+        let Some(victim) = lru.pop_front() else {
+            break;
+        };
+        let Some(c) = clusters.get_mut(victim) else {
+            continue;
+        };
+        if c.count == 0 {
+            continue;
+        }
+        let victim_path = tree_path(&c.tokens, depth);
+        if let Some(ids) = leaves.get_mut(&victim_path) {
+            ids.retain(|&i| i != victim);
+        }
+        c.tokens.clear();
+        c.count = 0;
+    }
 }
 
 #[cfg(test)]

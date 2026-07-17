@@ -19,6 +19,35 @@
 - **Category**: direction / UI + analysis / logs
 - **Planned at**: `2288011`, 2026-07-17
 
+### Landed by Grok (preliminary) — peer verify/extend + browser evidence
+
+**Do not retire yet.** Pure layers only; peer must wire GraphQL/UI/playground
+and complete Done criteria. Index status stays TODO (do not flip to DONE).
+
+**Already landed (code present on `main`; may share the concurrent plan-162
+closure commit — treat as preliminary handoff):**
+- `crates/parallax-analysis/src/log_patterns.rs` — Drain-style clustering:
+  mask UUID/IP/hex≥8/email/numbers → `<*>`, tokenize, fixed-depth prefix
+  tree, similarity threshold (default 0.4), LRU cluster cap (default 512),
+  severity mix + sample log id + first/last nanos, stable rank by count then
+  template. Unit tests: masking, template stability under parameter churn,
+  non-merge of distinct templates, spike ranks first, LRU bound, 10k-line
+  completion under 2s with ~12 templates.
+- `ui/src/lib/log-histogram-brush.ts` — pure brush helpers: snap to bucket
+  edges, px↔time scale, uniform bucket builder (`DEFAULT_HISTOGRAM_BUCKETS=
+  150`). Vitest coverage in `__tests__/log-histogram-brush.test.ts`.
+
+**Peer owns (verify/deepen/complete):**
+- [ ] Clippy/format polish on Drain if needed; deepen masking if PII edge
+  cases remain; live 10k timing on real log bodies.
+- [ ] Step 2: GraphQL `logPatterns` + sampling via existing log query +
+  live-engine cluster test (spiking template first).
+- [ ] Step 3: histogram brush overlay on logs route → URL range; pinned
+  columns (`?columns=`); density/wrap + localStorage.
+- [ ] Step 4: Patterns toggle + expand-to-samples; playground `l-patterns`;
+  browser evidence → `docs/research/validation/2026-07-wave2/165/`.
+- [ ] Full plan Done criteria; then retire file + index row.
+
 ## Why this matters
 
 Parallax logs already beat the reference on live tail, but reading a burst
