@@ -218,6 +218,15 @@ Combo **still not closed**.
 (2026-07-09). Export-only eBPF auto-instrumentation; own-store collision
 **UNFIRED**. Combo **not closed**.
 
+**Pass 282 recheck (2026-07-18):** **Traceway + TMA1** dual —
+
+| Product | Pin | Combo |
+| --- | --- | --- |
+| **Traceway** | still **1,024★** / **`backend/v1.9.1` + `cli/v1.9.1`**; push 2026-07-17; README **0** sentry/envelope/bundle/outcome/redact hits | **not closed** |
+| **TMA1** | still **109★** / **`v0.2.0-alpha12`**; last 20 commits **no** collision keywords | **25th UNFIRED** prod-collision |
+
+Full combination **still not closed**.
+
 **Pass 258 recheck (2026-07-18):** **Maple + Uptrace** —
 
 | Product | Pin | Watch |
