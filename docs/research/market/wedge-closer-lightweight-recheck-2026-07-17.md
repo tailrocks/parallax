@@ -276,6 +276,17 @@ Full combination **still not closed**.
 
 Full combination **still not closed**.
 
+**Pass 317 recheck (2026-07-18):** **Traceway + TMA1 + Bugsink** —
+
+| Product | Pin | Combo |
+| --- | --- | --- |
+| **Traceway** | still **1,024★**; latest still **`backend/v1.9.1` + `cli/v1.9.1`** (2026-07-15) | combo **not closed** |
+| **TMA1** | still **109★** / **`v0.2.0-alpha12`** | **30th UNFIRED** prod-incident collision |
+| **Bugsink** | still **1,940★** / **v2.4.0** | error-only **not closed** |
+
+Full combination **still not closed**.
+
+
 
 **Pass 258 recheck (2026-07-18):** **Maple + Uptrace** —
 
