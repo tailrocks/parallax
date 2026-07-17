@@ -13,7 +13,12 @@
 - **Depends on**: upstream `greptimedb-ingester` native-TLS/plaintext feature fix
 - **Category**: storage / ingest performance
 - **Planned at**: `e3e7997`, re-based from historical plan 089 on 2026-07-12
-- **Status**: BLOCKED
+- **Status**: BLOCKED on upstream release — contribution submitted
+  (2026-07-17): [greptimedb-ingester-rust#58](https://github.com/GreptimeTeam/greptimedb-ingester-rust/pull/58)
+  makes rustls-backed TLS an opt-in `tls-ring` feature; the plaintext build
+  was verified rustls-free (`cargo tree -i rustls` matches nothing) with all
+  tests green on both feature states. Step 0 still waits for a released
+  crate version carrying the split (or maintainer-preferred variant).
 - **Blocker**: Published `greptimedb-ingester` versions through 0.18.0
   hard-enable tonic `tls-ring`; no native-TLS/plaintext feature split exists.
 
