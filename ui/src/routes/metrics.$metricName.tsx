@@ -46,6 +46,7 @@ interface MetricDetailSearch {
   agg?: string | undefined
   groupBy?: string | undefined
   step?: string | undefined
+  kind?: string | undefined
 }
 
 function searchString(value: unknown) {
@@ -99,11 +100,38 @@ async function loadDetail(
   search: MetricDetailSearch
 ): Promise<DetailData> {
   const range = resolveRangeSearch(search)
-  const kind = inferMetricKind(metricName)
+  const kind = (search.kind as MetricKind) || inferMetricKind(metricName)
   const agg = resolveAggregation(kind, search.agg)
   const stepSeconds = Number(search.step ?? "60") || 60
   const name = `"${gqlString(metricName)}"`
   const window = `fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}"`
+  const groupBy = search.groupBy
+    ? `, groupBy: "${gqlString(search.groupBy)}"`
+    : ""
+  try {
+    const data = await graphqlCached<{
+      metricLabels: string[]
+      metricQuery: {
+        kind: string
+        effectiveStepSeconds: number
+        series: SeriesOut[]
+      }
+    }>(`{
+      metricLabels(name: ${name})
+      metricQuery(name: ${name}, kind: "${gqlString(kind)}", agg: "${gqlString(agg)}", ${window}, stepSeconds: ${stepSeconds}${groupBy}) {
+        kind
+        effectiveStepSeconds
+        series { groupValue points { tsNanos value } }
+      }
+    }`)
+    return {
+      labels: data.metricLabels,
+      series: data.metricQuery.series,
+      range,
+    }
+  } catch {
+    // Fall back to legacy metricSeries / histogramQuantile paths.
+  }
   if ((kind === "histogram" || kind === "summary") && agg.startsWith("p")) {
     const q = Number(agg.slice(1)) / 100
     const data = await graphqlCached<{
@@ -119,9 +147,6 @@ async function loadDetail(
       range,
     }
   }
-  const groupBy = search.groupBy
-    ? `, groupBy: "${gqlString(search.groupBy)}"`
-    : ""
   const data = await graphqlCached<{
     metricLabels: string[]
     metricSeries: SeriesOut[]
@@ -141,6 +166,7 @@ export const Route = createFileRoute("/metrics/$metricName")({
     agg: searchString(search["agg"]),
     groupBy: searchString(search["groupBy"]),
     step: searchString(search["step"]),
+    kind: searchString(search["kind"]),
   }),
   loaderDeps: ({ search }) => search,
   loader: ({ params, deps }) => loadDetail(params.metricName, deps),
@@ -153,7 +179,7 @@ function MetricDetailPage() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
 
-  const kind = inferMetricKind(metricName)
+  const kind = (search.kind as MetricKind) || inferMetricKind(metricName)
   const legal = supportedAggregations(kind)
   const agg = resolveAggregation(kind, search.agg)
 

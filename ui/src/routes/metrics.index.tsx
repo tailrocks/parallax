@@ -21,10 +21,13 @@ import {
 import { graphqlCached } from "@/lib/api"
 import { inferMetricKind, type MetricKind } from "@/lib/metric-aggregation"
 
-// Plan 168 metrics explorer browse surface (preliminary). Catalog richness
-// (kind from storage, unit, emitting services, freshness) arrives with the
-// metricCatalog backend; until then the browse list runs on metricNames and
-// infers kind from the name best-effort.
+// Plan 168 metrics explorer browse surface — metricCatalog for kind-aware
+// listing (falls back to metricNames + name inference if catalog empty).
+
+interface CatalogRow {
+  name: string
+  kind: string
+}
 
 interface MetricsSearch {
   q?: string | undefined
@@ -48,26 +51,43 @@ export const Route = createFileRoute("/metrics/")({
     q: searchString(search["q"]),
     kind: searchString(search["kind"]),
   }),
-  loader: () =>
-    graphqlCached<{ metricNames: string[] }>(`{ metricNames }`).then(
-      (data) => data.metricNames
-    ),
+  loader: async () => {
+    const now = Date.now() * 1_000_000
+    const from = now - 7 * 24 * 60 * 60 * 1_000_000_000
+    try {
+      const data = await graphqlCached<{
+        metricCatalog: CatalogRow[]
+      }>(
+        `{ metricCatalog(fromNanos: "${from}", toNanos: "${now}", limit: 500) { name kind } }`
+      )
+      if (data.metricCatalog.length > 0) return data.metricCatalog
+    } catch {
+      // fall through
+    }
+    const names = await graphqlCached<{ metricNames: string[] }>(
+      `{ metricNames }`
+    ).then((d) => d.metricNames)
+    return names.map((name) => ({ name, kind: inferMetricKind(name) }))
+  },
   component: MetricsPage,
 })
 
 function MetricsPage() {
-  const names = Route.useLoaderData()
+  const catalog = Route.useLoaderData()
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const [text, setText] = useState(search.q ?? "")
 
   const rows = useMemo(() => {
     const needle = text.toLowerCase()
-    return names
-      .map((name) => ({ name, kind: inferMetricKind(name) }))
+    return catalog
+      .map((row) => ({
+        name: row.name,
+        kind: (row.kind as MetricKind) || inferMetricKind(row.name),
+      }))
       .filter((row) => !needle || row.name.toLowerCase().includes(needle))
       .filter((row) => !search.kind || row.kind === search.kind)
-  }, [names, search.kind, text])
+  }, [catalog, search.kind, text])
 
   return (
     <div className="space-y-4 p-4">
@@ -96,7 +116,7 @@ function MetricsPage() {
           placeholder="Kind"
         />
         <span className="ml-auto text-xs text-muted-foreground tabular-nums">
-          {rows.length} of {names.length} metrics
+          {rows.length} of {catalog.length} metrics
         </span>
       </Toolbar>
       {rows.length === 0 ? (
@@ -120,6 +140,7 @@ function MetricsPage() {
                   <Link
                     to="/metrics/$metricName"
                     params={{ metricName: row.name }}
+                    search={{ kind: row.kind }}
                     className="hover:underline"
                   >
                     {row.name}

@@ -1,0 +1,1 @@
+metrics UI wired to metricCatalog + metricQuery (2026-07-17)

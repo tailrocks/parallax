@@ -302,7 +302,7 @@ the codified rules + checklist in `ui/AGENTS.md`
 URL round-trip, self-time, and the Flame tab
 ([evidence](../docs/research/validation/2026-07-wave2/163/README.md)).
 
-Plans 162–167 are DONE (2026-07-17). 164: faceted filters + where editor
+Wave 2 (plans 162–168) is DONE (2026-07-17). 164: faceted filters + where editor
 ([evidence](../docs/research/validation/2026-07-wave2/164/README.md)).
 165: Drain logPatterns + Patterns UI
 ([evidence](../docs/research/validation/2026-07-wave2/165/README.md)).
@@ -311,7 +311,8 @@ Plans 162–167 are DONE (2026-07-17). 164: faceted filters + where editor
 167: alerting v1 + live webhook
 ([evidence](../docs/research/validation/2026-07-wave2/167/README.md)).
 
-| [168](168-metrics-explorer.md) | Metrics explorer: catalog, breakdown, graduation to dashboards/alerts | P2 | L | 162, 164; soft 167; reconciles 105 | TODO |
+168 is DONE (2026-07-17): metricCatalog + metricQuery explorer
+([evidence](../docs/research/validation/2026-07-wave2/168/README.md)).
 
 Considered and deferred (recorded so they are not re-audited): session
 replay / rrweb studio (large new subsystem; browser corpus first),
