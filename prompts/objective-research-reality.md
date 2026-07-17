@@ -10,11 +10,75 @@ stale “planned” language for shipped code, or one-sided verdicts is not
 acceptable. Every pass re-grounds claims in primary evidence: code paths,
 schemas, active `plans/`, validation ledgers, and dated public sources.
 
+## Equal-skepticism grilling (core method)
+
+Objectivity does **not** mean soft praise for everyone. It means applying the
+**same skeptical grilling** to Parallax, to every competitor, and to industry
+defaults — same questions, same evidence bar, same refusal of marketing.
+
+If we only grill Parallax, the record becomes anti-Parallax theater. If we only
+grill competitors, the record becomes marketing. **Grill everyone with the same
+instrument**, then compare results axis-by-axis. That is how an accurate picture
+of this project and the market emerges.
+
+### Same grill for every product
+
+For **each** product under review (Parallax included), stress-test at least these
+angles. Do not skip hard questions for favorites or soft questions for rivals.
+
+1. **Shipped vs claimed** — What is on the wire / in the repo / in the running
+   product *today*? What is roadmap, beta, enterprise-only, or press copy?
+2. **Evidence quality** — Primary source (docs, pricing page, release, source
+   code, measurement) with date? Or inherited rumor? Mark **unverified** when
+   sources are thin.
+3. **Failure modes** — What breaks at scale, at day-2 ops, at empty-state, when
+   the agent is wrong, when the bill spikes, when the maintainer leaves?
+4. **Economics** — Sticker price **and** hidden cost (metering, seats, AI
+   credits, support floors; for OSS: ops time, HA, upgrades, small ecosystem).
+   Free license ≠ free TCO. Paid ≠ free of lock-in.
+5. **Openness** — Can outsiders contribute a feature? Fork and air-gap? Or is
+   the core closed / source-available with contribute-block? Ecosystem size:
+   real integration depth or lonely repo?
+6. **Lock-in and exit** — Proprietary store/query/SDK? Migration cost if the
+   buyer leaves?
+7. **Falsifiers** — What evidence would prove this product *worse* on this axis
+   than the record currently says? Write it; do not protect the narrative.
+8. **Alternate angles** — Grill from more than one vantage: engineer adopting
+   today; SRE running production; buyer looking at TCO; agent consuming context;
+   air-gap / sovereignty constraint. Same product, different angles — still
+   equal treatment across products.
+
+### Grilling procedure (per pass)
+
+1. Pick **one comparison set** for the pass (e.g. Parallax + one peer, or one
+   matrix row across several products).
+2. Run the **same grill questions** on every member of that set before writing
+   a verdict.
+3. Record answers in a **symmetric** structure (same headings / same cells for
+   each product). Asymmetry in structure is a bias signal.
+4. Only then write scoped “who wins on axis X” with evidence. If evidence is
+   missing for one side, the cell is **unverified**, not a free win for the
+   other side.
+5. Prefer steelmanning: state the strongest honest case *for* each product on
+   that axis before the strongest case against. Then conclude with evidence.
+
+### Anti-patterns (grilling fails when)
+
+- Grilling Parallax harder than Datadog/Sentry/SigNoz (or the reverse).
+- Accepting vendor “AI RCA” marketing while demanding crate-path proof for
+  Parallax (or the reverse: crate path counts as “unique moat” without A1).
+- Using different status language per product for the same reality (e.g. peer
+  “ships MCP” vs Parallax “planned MCP” when both have a read-only stdio
+  surface — check code and docs symmetrically).
+- Comparing Parallax **design** to a competitor’s **GA product** without labeling
+  the maturity gap.
+- Softening a competitor’s lock-in or a Parallax pre-release gap “to be nice.”
+
 ## Relationship to other research programs
 
 | Program | Owns |
 | --- | --- |
-| This prompt | Code-reality alignment of `docs/research/` and root product claims; objectivity discipline; multi-angle economics and openness axes; navigation (current vs historical); invitation to correct with evidence |
+| This prompt | Code-reality alignment of `docs/research/` and root product claims; **equal-skepticism grilling** of Parallax and peers; multi-angle economics and openness; navigation (current vs historical); invitation to correct with evidence |
 | `prompts/parallax-vs-competitors.md` | Canonical competitor roster, matrix, and deep-dives under `docs/research/market/competitors/` — **follow its no-bias rules** when touching market files |
 | `prompts/deep-research-parallax.md` | Broad strategic and technical research program (GO/NO-GO, architecture, ecosystem) |
 | `prompts/greptimedb-vs-clickhouse-internals.md` | Storage engine white-box comparison and four-build benchmarks |
@@ -30,8 +94,9 @@ as silent product fallbacks.
    what exists on `main` under `crates/`, `ui/`, `schema/`, `plans/`, or
    validation evidence — or be explicitly **planned**, **partial**, **PoC-only**,
    or **unproven gate**.
-2. **Objectivity over brand.** Compare industry reality and Parallax reality on
-   named axes with evidence. Incumbents may win most shipped axes; write that
+2. **Objectivity over brand via equal grilling.** Compare industry reality and
+   Parallax reality on named axes with evidence **after** grilling every side
+   with the same questions. Incumbents may win most shipped axes; write that
    plainly. Unproven product value stays unproven even when code exists.
 3. **Multi-angle economics and openness.** Free license ≠ free TCO. Paid SaaS ≠
    free of lock-in. For Parallax and peers, cover:
@@ -154,18 +219,24 @@ Before any change: **read the existing record first.**
      surfaces the ledger already classifies;
    - missing multi-angle economics (price, TCO, contribute, lock-in, ecosystem)
      on a canonical deep-dive;
+   - **asymmetric skepticism** (one product grilled, another accepted at face
+     value) on a matrix row or deep-dive;
    - navigation that confuses historical design with current truth.
-4. Fix or banner: correct present-tense claims; banner historical bodies;
+4. When the gap is a comparison: **grill the full set** with the same questions
+   (see Equal-skepticism grilling), then update the symmetric cells. When the
+   gap is Parallax-only code reality: grill Parallax the same way you would
+   grill a peer (shipped vs claimed, falsifiers, economics, openness).
+5. Fix or banner: correct present-tense claims; banner historical bodies;
    demote dual-maintained legacy matrices to dated sources with pointers.
-5. Re-run residual checks for high-risk freestyle on the surfaces you touched
+6. Re-run residual checks for high-risk freestyle on the surfaces you touched
    (at least: future-adapter language for shipped Sentry; product-fallback
    engines; planned/designed/unshipped for ledger-shipped surfaces on
    `competitors/parallax-vs-*.md` and `competitors/README.md`).
-6. Write or append a short dated note under `docs/research/audits/` when the
+7. Write or append a short dated note under `docs/research/audits/` when the
    pass materially changes authority (what verified, fixed, deferred).
-7. Commit and push durable Markdown updates with DCO signoff and agent
+8. Commit and push durable Markdown updates with DCO signoff and agent
    attribution trailers per repo rules.
-8. Continue to the next gap. Do not declare the research program complete
+9. Continue to the next gap. Do not declare the research program complete
    unless the operator explicitly stops or replaces this goal.
 
 Depth over speed. One falsified stale claim with crate paths and sources beats
@@ -180,10 +251,12 @@ a cosmetic pass over dozens of files.
 - Dual-maintain numbers in legacy market notes and `competitors/` — canonical
   is `competitors/`.
 - Soften competitor wins to protect Parallax’s narrative.
+- Grill only Parallax (or only competitors) and call the result “objective.”
+- Use a harsher evidence bar for one product than for another on the same axis.
 
 ## Prompt maintenance rule
 
 This prompt is living operator intent. When the operator tightens objectivity
-rules, adds economic axes, renames authority files, changes status vocabulary,
-or redefines what “current truth” means, update this file in the same change.
-Do not keep critical direction only in chat.
+rules, adds or changes the equal-grilling angles, renames authority files,
+changes status vocabulary, or redefines what “current truth” means, update this
+file in the same change. Do not keep critical direction only in chat.

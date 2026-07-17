@@ -111,6 +111,12 @@ Every claim carries a source link and a research date. Re-verify on each pass.
   docs, source, changelogs, pricing pages, or reproducible measurement.
 - When a claim cannot be proven, mark it unproven and say what measurement
   would prove it. Never present an unproven claim as settled.
+- **Equal-skepticism grilling:** apply the **same** hard questions to Parallax
+  and every peer (shipped vs claimed, evidence quality, failure modes,
+  economics, openness, lock-in, falsifiers). Do not grill only one side.
+  Symmetric structure before scoped verdicts. Full method:
+  [`prompts/objective-research-reality.md`](objective-research-reality.md)
+  (Equal-skepticism grilling).
 
 ## Real numbers
 
