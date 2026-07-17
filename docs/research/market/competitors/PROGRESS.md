@@ -74,7 +74,8 @@
 | 49b | 2026-07-17 | **Lightweight wedge-closer recheck:** Bugsink/Rustrak/Traceway/GoSnag/Urgentry; combination not closed. | `98a1c29f` |
 | 50 | 2026-07-17 | **Traceway deep-dive** ([parallax-vs-traceway.md](parallax-vs-traceway.md)): MIT OTel multi-signal APM (**1,024★ / v1.9.1**); agent skills/CLI/MCP; no Sentry envelope; Cloud **no public $/unit**. Concurrent Traceway writes merged (`2d7019fa` + `2be38f57`). | `2be38f57` |
 | 51 | 2026-07-17 | **Rustrak deep-dive** ([parallax-vs-rustrak.md](parallax-vs-rustrak.md)): Rust Sentry-compat + **GPL-3.0** + mutating MCP (18 tools); error-only; no OTLP/bundle/outcome. | `d0b72292` |
-| 53 | 2026-07-17 | **GlitchTip deep-dive** ([parallax-vs-glitchtip.md](parallax-vs-glitchtip.md)): MIT Sentry-API error tracker; Hosted Free **1k events/mo**; paid tiers ~$15/$50/$250 (secondary); self-host free + donation/support; **MCP docs**; GH mirror stale. Completes small Sentry-alt deep-dives (Bugsink/Rustrak/GlitchTip). | `f6ed9a81` |
+| 53 | 2026-07-17 | **GlitchTip deep-dive** ([parallax-vs-glitchtip.md](parallax-vs-glitchtip.md)): MIT Sentry-API error tracker; Hosted Free **1k events/mo**; paid tiers ~$15/$50/$250 (secondary); self-host free + donation/support; **MCP docs**; GH mirror stale. Completes small Sentry-alt deep-dives (Bugsink/Rustrak/GlitchTip). | `67a356da` |
+| 54 | 2026-07-17 | **Desk-pending multi-resolve:** (1) **Traceway Cloud pricing RESOLVED** live tracewayapp.com/cloud — Free / **$12.99** / **$24.99** / **$499.99** + $0.25–$0.20/GB overage (was “no public $/unit”). (2) **Rustrak MCP inventory CORRECTED** source-count **56 tools** (not 18) with many mutating issue/team/storage/token ops. (3) **GlitchTip MCP RESOLVED** — **17 tools** incl. mutating `update_issue`; OAuth/token HTTP MCP. (4) **TMA1 watch 8th UNFIRED** (alpha12/109★). Fast-movers stable (SigNoz v0.133.0, Langfuse v3.221.0, O2 v0.91.2, Coroot v1.23.3, Odigos v1.31.2, Sentry self-host 26.7.0). Sentry OTLP still open-beta traces+logs only (no metrics nav). |  |
 
 ## Deep-dive status (per product)
 
@@ -89,7 +90,7 @@
 | OpenObserve | [parallax-vs-openobserve.md](parallax-vs-openobserve.md) | ✅ pass 48 (pricing) | 2026-07-17 | **pass 48 Cloud units:** **$0.50/GB ingest + $0.01/GB query**; AI free preview; self-host Enterprise free ≤50GB/day. v0.91.2. Open: A1-vs-AI-SRE; GreptimeDB-vs-Parquet bench; read-only MCP mode |
 | Coroot | [parallax-vs-coroot.md](parallax-vs-coroot.md) | ✅ pass 46 (eBPF watch) | 2026-07-17 | **v1.23.3 + 7,837★**; MCP OAuth+RBAC (1 mutating tool). **eBPF→app-errors UNFIRED pass 46** (recent profiles/Windows/CI; internal `fix panic` ≠ product app-error events). Open: A1-vs-Coroot-RCA |
 | Maple | [parallax-vs-maple.md](parallax-vs-maple.md) | ✅ pass 46 (Tinybird watch) | 2026-07-17 | **v0.0.12 + 1,532★**; **Tinybird-decoupling watch UNFIRED pass 46** (recent = billing/UI/traces/API; hosted still Tinybird-coupled). Open: A1; GreptimeDB-vs-chDB bench |
-| TMA1 | [parallax-vs-tma1.md](parallax-vs-tma1.md) | ✅ pass 49 (watch 7th) | 2026-07-17 | **v0.2.0-alpha12 + 109★**; GreptimeDB floor v1.1.3. **WATCH 7th consecutive UNFIRED** (passes 10/17/22/30/39/44/49): recent = GreptimeDB install probe/version + session-detail perf / launchd / codex hooks — **zero** prod-error/Sentry/redaction/outcome/deploy. Still local-dev scoped. Open: A1-vs-TMA1 |
+| TMA1 | [parallax-vs-tma1.md](parallax-vs-tma1.md) | ✅ pass 54 (watch 8th) | 2026-07-17 | **v0.2.0-alpha12 + 109★**; GreptimeDB floor v1.1.3. **WATCH 8th UNFIRED** (10/17/22/30/39/44/49/54): install/perf only. Open: A1-vs-TMA1 |
 | Highlight.io | [parallax-vs-highlight.md](parallax-vs-highlight.md) | 🛑 pass 33 (wound down) | 2026-07-17 | **9,331★ + Apache-2.0 + OTLP-native + ClickHouse** (historical); **🛑 TRAJECTORY RESOLVED pass 33: acquired by LaunchDarkly; standalone SaaS shut down 2026-02-28 → LaunchDarkly Observability; OSS repo unmaintained (no release since docker-v0.5.6 2025-08-08; last commit 2026-04-16 = LD-migration/allowlist work, not features; license NOASSERTION/mixed)**. No longer an active competitor — historical/reference only. Net field effect: active OSS session-replay champion vacated (NOT a Parallax win — Parallax has no replay; the bar drops, it doesn't tilt). Re-scan only if LD re-open-sources an active Highlight fork |
 | Langfuse | [parallax-vs-langfuse.md](parallax-vs-langfuse.md) | ✅ pass 44 (version pin) | 2026-07-17 | **latest pinned pass 44: v3.221.0 (2026-07-17)** (was v3.220.0); **31,336★**; backing store Postgres+ClickHouse+Redis+S3+worker. Open: A1-vs-Langfuse; production-error extension risk |
 | Arize Phoenix | [parallax-vs-arize-phoenix.md](parallax-vs-arize-phoenix.md) | ✅ pass 7 | 2026-07-17 | **latest pinned: arize-phoenix-v18.1.0 (2026-07-17)**; license corrected Apache→**ELv2**; **backing store pinned pass 15: file-based SQLite default, no native ClickHouse**; A1-vs-Phoenix measurement; watch triggers in [parallax-vs-arize-phoenix.md](parallax-vs-arize-phoenix.md) |
@@ -112,9 +113,9 @@
 | Traceloop (OpenLLMetry) | [parallax-vs-traceloop.md](parallax-vs-traceloop.md) | ✅ pass 46 (drift) | 2026-07-17 | **v0.62.1 + 7,306★** stable; Apache-2.0; ServiceNow/AI Control Tower. **WATCH UNFIRED pass 46** (no storage/license drift). Open: GenAI→Parallax LLM-derive mapping; OpenLLMetry-vs-OpenInference |
 | Bugsink | [parallax-vs-bugsink.md](parallax-vs-bugsink.md) | ✅ pass 41 (pricing) | 2026-07-17 | **pass 40 deep-dive + pass 41 pricing RESOLVED:** Hosted free 15K / €16 (75K) / €50 (600K) / €158 (3M) / €568 (15M) / €1,288 (50M); self-host **free**; Premium Support €15/user/mo; **1,940★ / v2.4.0**. On self-hosted Sentry-replacement, Bugsink is a **fuller product** than Parallax (issue lifecycle vs envelope ingest). Watch: OTLP / agent-context expansion. Open: A1-vs-Bugsink; core/`ee/` SPDX text |
 | HolmesGPT | [parallax-vs-holmesgpt.md](parallax-vs-holmesgpt.md) | ✅ pass 41 (version pin) | 2026-07-17 | **CNCF Sandbox AI SRE (fixer agent)** — **v0.36.0 + 2,873★** pinned pass 41; Apache-2.0; no own store. Strategically central A1 crux: does bounded bundle beat HolmesGPT-over-raw-telemetry? **Unproven (needs eval program)**. Complementary integration (HolmesGPT → Parallax source) still open PoC |
-| Traceway | [parallax-vs-traceway.md](parallax-vs-traceway.md) | ✅ pass 50 (first deep-dive) | 2026-07-17 | **MIT OTel-native self-host + agent CLI/skills/MCP (local+remote).** backend/cli **v1.9.1**, **1,024★**. Storage CH+PG or SQLite/DuckDB. **No Sentry; no portable redacted bundle; no outcome.** Watch: Sentry / export schema / outcomes. Open: cloud pricing; A1-vs-Traceway-MCP |
-| Rustrak | [parallax-vs-rustrak.md](parallax-vs-rustrak.md) | ✅ pass 51 (new) | 2026-07-17 | **GPL-3.0** Rust Sentry-compat + **mutating MCP** (server **0.9.2**, mcp **0.2.13**, 64★). Error-only Postgres. **No OTLP/bundle/outcome.** Watch: OTLP expansion. Open: MCP tool inventory recount |
-| GlitchTip | [parallax-vs-glitchtip.md](parallax-vs-glitchtip.md) | ✅ pass 53 (new) | 2026-07-17 | **MIT** Sentry-API error tracker; Free **1k events/mo**; paid ~$15/100k–$250/3M (secondary); self-host free; MCP docs; GH mirror 159★ stale (GitLab primary). Open: live SPA tier re-scrape; MCP mutability |
+| Traceway | [parallax-vs-traceway.md](parallax-vs-traceway.md) | ✅ pass 54 (Cloud $) | 2026-07-17 | **MIT** OTel APM + agent skills/CLI/MCP; **1,024★ / v1.9.1**. **Cloud RESOLVED:** Free / **$12.99** / **$24.99** / **$499.99** + $0.25–$0.20/GB. No Sentry/bundle/outcome. Open: A1-vs-Traceway; Sentry-envelope watch |
+| Rustrak | [parallax-vs-rustrak.md](parallax-vs-rustrak.md) | ✅ pass 54 (MCP count) | 2026-07-17 | **GPL-3.0** + **56 MCP tools** (source-counted; was wrongly “18”); many mutating. server 0.9.2 / mcp 0.2.13; 64★. Error-only. Open: OTLP expansion watch |
+| GlitchTip | [parallax-vs-glitchtip.md](parallax-vs-glitchtip.md) | ✅ pass 54 (MCP) | 2026-07-17 | **MIT**; Free 1k / $15/$50/$250 tiers; **MCP 17 tools** incl. mutating `update_issue` (OAuth/token). GH mirror stale. Open: GitLab cadence pin |
 
 ## Overview-matrix cells (from `README.md`)
 
@@ -136,16 +137,15 @@
 
 ## Next highest-value gaps (ranked)
 
-1. **Desk-researchable pricing — CLEARED through pass 48.** Residual by design: Chronosphere **no public number**; Sumo **no static $/TB**; Odigos Enterprise **no public $/unit**.
-2. **A1 measurements (NOT desk — blocked on eval program)** — vs HolmesGPT / Causely / TMA1 / Dynatrace MCP / Honeycomb / Splunk / Observe o11y.ai / LangSmith Engine / (future) Chronosphere+AgentiX.
-3. **Benchmark-dependent cells** — GreptimeDB vs ClickHouse/M3/ES; NoSample storage; self-host ops TCO; Tempo v3 vs GreptimeDB.
-4. **Drift watches (active)** — TMA1 (**7× UNFIRED**); **Chronosphere/PANW AgentiX (still planned, not GA — pass 49)**; **Observe MCP coding-agents PARTIAL FIRE**; Dynatrace MCP; Sumo Dojo; Coroot eBPF (UNFIRED); Maple Tinybird (UNFIRED); Traceloop (UNFIRED); Helicone Mintlify sunset; Odigos own-store; Sentry OTLP-metrics GA.
-5. ~~Overview-matrix AI-native column sweep~~ → **DONE pass 49** (extended matrix + Odigos/AgentiX honesty). Re-fire when a watch fires.
-6. ~~**Traceway deep-dive**~~ → **DONE pass 50**. Residual: Cloud $/unit.
-6b. ~~**Rustrak deep-dive**~~ → **DONE pass 51**. Residual: OTLP expansion watch.
-6c. ~~**GlitchTip deep-dive**~~ → **DONE pass 53**. Residual: GoSnag/Urgentry only (low priority).
-7. **Parallax-column refresh** — keep planned/shipped + A1 honesty.
-8. **A1 eval program** remains the blocking gate for all “bundle beats X” claims.
+1. **Desk-researchable public pricing — CLEARED through pass 54** (Traceway Cloud tiers resolved). Residual **by design**: Chronosphere **no public number**; Sumo **no static $/TB**; Odigos Enterprise **no public $/unit**.
+2. **A1 measurements (NOT desk — blocked on eval program)** — vs HolmesGPT / Causely / TMA1 / Dynatrace MCP / Honeycomb / Splunk / Observe / LangSmith Engine / Traceway skills / (future) AgentiX.
+3. **Benchmark-dependent cells** — GreptimeDB vs ClickHouse/M3/ES; NoSample; self-host ops TCO; Tempo v3 vs GreptimeDB.
+4. **Drift watches (active)** — TMA1 (**8× UNFIRED**); AgentiX planned; Observe MCP partial fire; Coroot eBPF UNFIRED; Maple Tinybird UNFIRED; Traceloop UNFIRED; Helicone Mintlify; Odigos own-store; Sentry OTLP-metrics GA (still open-beta traces+logs only pass 54).
+5. ~~Traceway Cloud $/unit~~ → **DONE pass 54**.
+6. ~~Rustrak MCP inventory~~ → **DONE pass 54 (56 tools)**.
+7. ~~GlitchTip MCP mutability~~ → **DONE pass 54 (mutating update_issue)**.
+8. **GoSnag / Urgentry** — lowest priority residual Sentry-alts.
+9. **A1 eval program** — blocking gate for all “bundle beats X” claims.
 
 ## Bias audit (this pass)
 
@@ -195,3 +195,4 @@
 - ✅ Pass 50 Traceway — **hard no-bias test on agent-native self-host OTel**: written plainly that Traceway ships the multi-signal + skills/CLI/MCP combination and that the field no longer lacks this product shape. Parallax edges scoped tightly (Sentry envelope + portable redacted bundle + outcome); A1 unproven. Cloud rates left **no public number** rather than invented.
 - ✅ Pass 51 Rustrak — recorded **GPL-3.0** + **mutating MCP** honestly (kills “Rust Sentry+MCP unique”); scoped as error-only, not multi-signal threat.
 - ✅ Pass 53 GlitchTip — fuller Sentry-alt than Parallax envelope path; paid tiers secondary-confirmed not invented as exact primary HTML scrape; GH mirror staleness recorded.
+- ✅ Pass 54 multi-resolve — **corrections that cut against Parallax-favorability:** (a) Traceway Cloud is **public and cheap** ($12.99/$24.99 tiers) — prior “no public number” understated Traceway; (b) Rustrak MCP **56 tools not 18** with large mutating surface — understated competitor agent-admin power; (c) GlitchTip MCP **mutates issues** (not read-only). TMA1 8th UNFIRED not spun as competitor failure.

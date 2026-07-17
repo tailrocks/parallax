@@ -56,20 +56,28 @@ Sentry-server substitute. Parallax **consumes** envelopes into a broader engine.
 | --- | --- | --- |
 | Self-host | Free MIT; optional donation $5/user; support $15/user | Free Apache (pre-release) |
 | Hosted Free | **1,000 events/mo** forever | n/a |
-| Hosted paid | Event tiers (~$15/100k, $50/500k, $250/3M — **secondary-confirmed 2026**; live SPA) | n/a |
+| Hosted paid | **Small $15/mo (100k events)** / **Medium $50 (500k)** / **Large $250 (3M)** — Free **1k** forever (pricing FAQ + 2026 re-statements of live page; SPA still hard to scrape machine-side) | n/a |
 | Throttle | FAQ: after quota, throttle 10% → block at 2× | n/a |
+| Events unit | Issues + uptime checks + perf transactions + release file MB | n/a |
 
-**No public number:** exact live SPA tier matrix not machine-extracted this pass;
-use pricing page for purchase decisions.
+Large plan: development support prioritization + BAA on request (pricing FAQ).
+HIPAA hosting add-on available for Large (pricing page).
 
-## AI / agent
+## AI / agent (**pass 54** — live [MCP docs](https://glitchtip.com/documentation/mcp/))
 
-- **GlitchTip:** official **MCP documentation** — agent can talk to the error
-  tracker (scope: issue/product ops; not multi-signal RCA bundle).
-- **Parallax:** read-only local MCP + portable bundle thesis (A1).
+- **GlitchTip MCP:** built-in Streamable HTTP endpoint (`GLITCHTIP_ENABLE_MCP=True`,
+  `/mcp`); OAuth 2.0 dynamic client registration **or** API token.
+- **17 tools** documented:
+  - Orgs/projects: `list_organizations`, `list_projects`
+  - Issues: list/get/event tools + **`update_issue` (resolve / unresolve / ignore)** ← **mutating**
+  - Performance (DuckDB-gated spans): transaction groups, N+1 detect, trends
+  - Alerts/monitors, logs
+- **Not** a portable redacted multi-signal evidence bundle.
+- **Parallax:** local-stdio **read-only** MCP + portable bundle thesis (A1).
 
 **Verdict:** GlitchTip wins “agent manages my error tracker” for pure Sentry-alt
-users (alongside Rustrak). Parallax’s bundle claim is different and unproven.
+users (alongside Rustrak’s larger write surface). **Mutating `update_issue` is
+shipped** — not read-only. Parallax’s bundle claim is different and unproven.
 
 ## Where GlitchTip wins
 
@@ -88,13 +96,14 @@ users (alongside Rustrak). Parallax’s bundle claim is different and unproven.
 ## Watch
 
 - GitHub mirror staleness vs GitLab cadence.
-- MCP tool mutability (read-only vs write).
+- ~~MCP tool mutability~~ → **RESOLVED pass 54: `update_issue` mutates** (resolve/unresolve/ignore).
 - OTLP expansion (unlikely; would change layer).
 
-## Sources (2026-07-17)
+## Sources (2026-07-17; pass 54)
 
-- [glitchtip.com/pricing](https://glitchtip.com/pricing) FAQ (1k free events; event definition).
-- [glitchtip.com/documentation/install](https://glitchtip.com/documentation/install) (donation $5/user; resource notes).
-- Blog 2026-03 support $15/user; secondary 2026 tier restatements ($15/$50/$250).
+- [glitchtip.com/pricing](https://glitchtip.com/pricing) FAQ (1k free events; event definition; Medium/Large support tiers).
+- [glitchtip.com/documentation/mcp](https://glitchtip.com/documentation/mcp/) (**17 tools**, OAuth/token, mutating update_issue).
+- [glitchtip.com/documentation/install](https://glitchtip.com/documentation/install) (donation $5/user).
+- Blog 2026-03 support $15/user; 2026 secondary re-statements of $15/$50/$250 tiers.
 - GitHub mirror `burke-software/GlitchTip` (MIT, 159★).
 - Peers: [parallax-vs-bugsink.md](parallax-vs-bugsink.md), [parallax-vs-rustrak.md](parallax-vs-rustrak.md), [parallax-vs-sentry.md](parallax-vs-sentry.md).

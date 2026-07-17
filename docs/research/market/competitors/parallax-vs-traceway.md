@@ -33,8 +33,8 @@
   skills; **agent-first CLI** (JSON when piped, stable exit codes, mostly
   read-only; archive exceptions needs `--yes`); site also markets **MCP Server**.
   **1,024★**, latest **backend/v1.9.1 + cli/v1.9.1** (2026-07-15); last push
-  2026-07-17. Cloud: [cloud.tracewayapp.com](https://cloud.tracewayapp.com)
-  ("start free" marketing; **no public $/unit verified this pass**).
+  2026-07-17. Cloud: live [tracewayapp.com/cloud](https://tracewayapp.com/cloud)
+  pricing (**pass 54 RESOLVED** — was wrongly “no public $/unit”).
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable
   **execution-context engine**: OTLP-native ingest (gRPC+HTTP) of
   traces/logs/metrics, Sentry-envelope ingest, derives owned `error_event`s +
@@ -143,19 +143,26 @@ from the **embedded GreptimeDB MCP** angle.
 single-binary GreptimeDB story is real in code but pre-release; Traceway's
 embedded SQLite/DuckDB is a strong local-dev competitor to Maple/TMA1-class UX.
 
-## Pricing & economics
+## Pricing & economics (**pass 54** — live [tracewayapp.com/cloud](https://tracewayapp.com/cloud))
 
 | Mode | Traceway | Parallax |
 | --- | --- | --- |
-| Self-host | **Free** (MIT, full feature claim — no open-core gate in README) | Free (Apache-2.0, pre-release) |
-| Cloud | Exists (`cloud.tracewayapp.com`); marketing "start free" / "fixed cloud tiers" | n/a yet |
-| Public Cloud $/unit | **no public number verified** this pass (JS-heavy site; pricing URL 404/empty crawl) | n/a |
+| Self-host | **Free** (MIT, full feature claim — no open-core gate) | Free (Apache-2.0, pre-release) |
+| Cloud Starter | **Free**: 10k exceptions + **1 GB** ingest/mo; 3 projects/3 members; 7-day retention | n/a |
+| Cloud Pro | **$12.99/mo**: 100k exceptions + **50 GB**; overage **$0.25/GB**; 30-day retention | n/a |
+| Cloud Premium | **$24.99/mo**: 1M exceptions + **150 GB**; $0.25/GB beyond; 90-day retention | n/a |
+| Cloud Enterprise | **$499.99/mo**: 200M exceptions + **2 TB**; overage **$0.20/GB**; custom retention | n/a |
+| Enterprise+ | Custom managed self-host (data stays in your cloud) | n/a |
+
+**No per-host / per-seat** fees (vendor FAQ). HTTP requests and background task
+runs **not** metered. Metrics retention: 1-min for 30d, 1-hour rollups 1yr;
+profiling 30d (FAQ). **No-bias:** Cloud is **public and cheap** at hobby/small-
+team scale vs many incumbents — favors Traceway transparency (prior “no public
+$/unit” was a research miss, not a competitor gap).
 
 **Hidden cost:** Traceway self-host TCO = ops for ClickHouse+Postgres (or accept
 embedded store limits). Parallax = GreptimeDB+Turso ops (unproven). License:
-Traceway **MIT** is more permissive than Parallax Apache-2.0 only on patent/
-contribution style differences — both OSI-open; MIT is a **real Traceway
-marketing edge** vs AGPL peers (OpenObserve/Uptrace).
+Traceway **MIT** is a **real marketing edge** vs AGPL peers (OpenObserve/Uptrace).
 
 ## Openness & lock-in
 

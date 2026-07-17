@@ -121,3 +121,16 @@ is adopted now:
 
 Removal rule for this record: revisit whenever one of the above gains a
 named defect class with evidence; otherwise it stands.
+
+## Fail-closed performance ratchets (plan 103, Step 5 — adopted 2026-07-17)
+
+Three independent scheduled ubuntu jobs (29582532812, 29589577179,
+29592948190; nine criterion repeats per bench) modeled variance: CV ≤2.6%
+for the four stable benches; allocation profile identical (7,011
+allocations / 1,022,357 bytes per call) across all three. Ceilings live in
+`docs/research/testing/bench-baselines.toml` (~1.35× max observed mid);
+`scripts/ci/check-bench-baselines.sh` fails the scheduled job on any
+breach and never rewrites a baseline — validated green against run #3's
+real artifacts. The original `spool_line_count` was excluded: its 20-24%
+CV was a bench design flaw (counting a growing file), replaced by
+`spool_line_count_1k`, which gains its ceiling after three post-fix jobs.

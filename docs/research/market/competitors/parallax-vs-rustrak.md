@@ -68,14 +68,21 @@ for the data plane.
 
 ## Agent surface (important contrast)
 
-### Rustrak MCP (`@rustrak/mcp` v0.2.13)
+### Rustrak MCP (`@rustrak/mcp` v0.2.13) — **pass 54 inventory**
 
 - npm package; README: gives AI assistants **"full control"** of the instance.
-- Tool modules: alerts, events, health, **issues** (resolve, unresolve, mute,
-  delete, bulk status, comments, bookmarks, subscriptions, feedback, …), logs,
-  projects, sessions, storage, team, tokens, transactions.
-- Marketed **18 tools** (pass-49 README claim); issue tools alone include
-  **multiple mutating operations** (resolve, delete, mute, bulk, notes).
+- **Source recount (2026-07-17 GitHub `packages/mcp/src/tools/*.ts`):** **56
+  registered tools** across 11 modules — **not 18** (pass 49/51 marketing /
+  wedge-closer figure was **wrong/understated**).
+  - **issues (22):** list/get + **mutating** resolve/unresolve/mute/delete/
+    update_status/assign/bulk_update/bulk_delete/comment/bookmark/subscribe/
+    mark_seen + reports + `record_deploy`
+  - **team (9):** members + **mutating** role/invite/remove + project members
+  - **storage (6):** summary + **mutating** cleanup/GC (`execute_storage_cleanup`,
+    `gc_storage_source_maps`)
+  - **tokens (4):** list/get + **mutating** create/revoke
+  - **transactions (4), projects (3 incl. create), alerts (3), events (2),
+    health/logs/sessions (1 each)**
 - Clients: Claude Desktop, Cursor, Continue — env `RUSTRAK_API_URL` +
   `RUSTRAK_API_TOKEN`.
 
@@ -84,10 +91,11 @@ for the data plane.
 - Local-stdio **read-only** (plan 112 DONE); remote deferred.
 - Bundle projection + evidence tools, not issue-state admin as the center.
 
-**Honest verdict:** Rustrak is **ahead on "agent manages my error tracker"**
-(write-capable MCP). Parallax is **stricter on agent safety** (read-only first)
-and aims at **different payload** (evidence bundle). **Mutating MCP is not a
-Parallax goal to copy** — it is a safety warning (see agent trust boundary).
+**Honest verdict:** Rustrak is **far ahead on "agent manages my error tracker"**
+(write-capable MCP with **dozens** of mutating admin tools — stronger write
+surface than previously recorded). Parallax is **stricter on agent safety**
+(read-only first) and aims at **different payload** (evidence bundle).
+**Mutating MCP is not a Parallax goal to copy** — it is a safety warning.
 
 ## License / economics (no-bias)
 
