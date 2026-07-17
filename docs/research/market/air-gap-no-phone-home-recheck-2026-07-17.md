@@ -113,6 +113,17 @@ Air-gap combination claim **holds**. OPW ≠ Bits store; BYOC ≠ offline agent-
 
 Air-gap combination claim **holds**. OPW ≠ Bits store; Assistant ≠ offline BYO-LLM; Seer self-host **UNFIRED**.
 
+### Pass 314 (2026-07-18) — OPW + Seer + Assistant
+
+| Source | Finding |
+| --- | --- |
+| Observability Pipelines | still process **within your own infrastructure**, then **route** to **destinations**; Worker install surface — **not** self-hosted Bits store |
+| develop.sentry.dev/self-hosted | still Seer **closed source** exclusion |
+| Grafana Assistant self-managed | still hybrid **Grafana Cloud stack** backend/billing |
+
+Air-gap combination claim **holds**.
+
+
 Air-gap combination claim (open core + portable redacted evidence + no closed
 cloud AI) **still holds** as a *combination* (A1 still unproven).
 

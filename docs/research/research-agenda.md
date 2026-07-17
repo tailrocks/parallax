@@ -12,8 +12,8 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 313 (A1 still **`not_measured`**; golden
-**ok**; no result ledger). Pass 312 = engine pin. A1/A2/A3/A4 open; A6 mixed open.
+Last updated 2026-07-18 after pass 314 (air-gap holds: OPW route-only; Seer
+closed; Assistant hybrid). Pass 313 = A1. A1/A2/A3/A4 open; A6 mixed open.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
@@ -45,7 +45,7 @@ producer rather than treat its construction as future work. Autonomous fixing re
    GB–TB): characterize the mandatory engine and identify fix-forward work; this no longer reopens the
    committed GreptimeDB + Turso stack. → item 5. (Query mix already resolved: anchored.)
 5. **Air-gapped agent-evidence: Parallax vs incumbents** — confirm the differentiator stays unique.
-   **Rechecked 2026-07-18 pass 303** (prior 56/151/158/178/220/251/261/279/291): Seer self-host-excluded; Datadog OPW =
+   **Rechecked 2026-07-18 pass 314** (prior 56/151/158/178/220/251/261/279/291/303): Seer self-host-excluded; Datadog OPW =
    still **route-to-destinations**; **BYOC Logs** hub live hybrid (not offline agent-evidence);
    Grafana Assistant Cloud LLM; OSS peers can air-gap but lack portable redacted bundle+outcome. Note:
    [market/air-gap-no-phone-home-recheck-2026-07-17.md](market/air-gap-no-phone-home-recheck-2026-07-17.md).
