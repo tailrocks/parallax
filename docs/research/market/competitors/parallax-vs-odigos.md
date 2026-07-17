@@ -1,11 +1,11 @@
 # Parallax vs Odigos
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 46**
-> pricing + marketing; **pass 113** pin recheck; **pass 139** + **pass 175**
-> re-pin). Sources: [odigos.io/pricing](https://odigos.io/pricing) +
+> pricing + marketing; **pass 113** pin recheck; **pass 139** + **pass 175** +
+> **pass 203** re-pin). Sources: [odigos.io/pricing](https://odigos.io/pricing) +
 > [odigos.io](https://odigos.io/), [docs](https://docs.odigos.io/), GitHub
 > `odigos-io/odigos` (**v1.31.2** still latest 2026-07-09, **3,668★**, Apache-2.0,
-> push 2026-07-17). **Own-store watch still UNFIRED** (pass **175**) — README still
+> push 2026-07-17). **Own-store watch still UNFIRED** (pass **203**) — README still
 > vendor-agnostic export / OTLP destinations
 > ([backends overview](https://docs.odigos.io/backends-overview)); not a
 > Greptime/ClickHouse product store or evidence-bundle engine.
