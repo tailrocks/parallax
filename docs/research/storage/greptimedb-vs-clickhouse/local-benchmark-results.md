@@ -7149,3 +7149,8 @@ penalty remains separate. `caching-and-cold-warm.md`.
 
 GT cluster_info/region_peers live; metasrv region migration still in source. CH single-shard
 cluster view. `distributed-and-scaling.md`.
+
+### Run 205 — 2026-07-17 — per-signal matrix pin + correction refresh
+
+Updated `per-signal-verdict.md` pins and folded Runs 173–204 corrections (JSON2, PromQL tax,
+recursive CTE, append DELETE, density). No new containers.
