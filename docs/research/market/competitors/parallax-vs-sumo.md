@@ -1,7 +1,9 @@
 # Parallax vs Sumo Logic
 
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 41
-> Flex pricing + Dojo AI RESOLVED**). Sources: live [sumologic.com/pricing](https://www.sumologic.com/pricing),
+> Flex pricing + Dojo AI RESOLVED**; **pass 65 live re-confirm** — Flex still **no
+> static $/TB**; Dojo AI still on pricing page; Dojo→portable-bundle **UNFIRED**).
+> Sources: live [sumologic.com/pricing](https://www.sumologic.com/pricing),
 > [Cloud Flex Credit overview](https://www.sumologic.com/pricing/cloud-flex-credit),
 > [OTel guide](https://www.sumologic.com/guides/opentelemetry),
 > [CNCF OTel-bet blog](https://cncf.io/blog/2022/12/13/why-sumo-logic-is-betting-its-future-on-opentelemetry/).
@@ -144,7 +146,7 @@ Primary: live [sumologic.com/pricing](https://www.sumologic.com/pricing) (access
 - **A1 gate:** does a Parallax bundle add value beyond Sumo's logs/SIEM + Dojo AI for coding-agent incident fixes? Unproven.
 - **Sumo list $/TB scanned** — **resolved as no static public number**; estimator/quote only. Capacity matrix + Flex model verified.
 - **Francisco Partners strategy** — track product direction/cadence under private ownership.
-- **Dojo AI → bounded agent artifact** — if Sumo ships a portable redacted coding-agent bundle, collision with Parallax wedge. **Pass 58: UNFIRED** (Dojo remains assistive multi-agent on Sumo SaaS, not a portable redacted dossier).
+- **Dojo AI → bounded agent artifact** — if Sumo ships a portable redacted coding-agent bundle, collision with Parallax wedge. **Pass 58 + 65: UNFIRED** (Dojo remains assistive multi-agent on Sumo SaaS; Flex still **no static $/TB** on live estimator).
 
 ## Sources (accessed 2026-07-17; pass 41 re-verify)
 

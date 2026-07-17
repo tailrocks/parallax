@@ -91,12 +91,14 @@
 
 | 64 | 2026-07-17 | **Elastic Serverless rates + Agent Builder $ + multi-reconfirm:** (1) **Elastic** live serverless-observability: Complete ingest **$0.09/GB** (logs/traces) / **$0.023/GB** TSDS metrics; retain **$0.019/$0.005**; Logs Essentials as low as **$0.07/$0.017**; **Agent Builder** 10k free then **$0.025/exec**; Workflows **$0.0108/exec**; Managed LLM **$4.50/$21 per M tok**; ES pin **v9.4.3**. (2) **Datadog Bits** re-confirm list: **$500/500 annual**, **$600/500 monthly**, **$1.30/cr** OD. (3) **HyperDX** Free 3GB / Starter **$20+$0.40/GB** hold (**9,680★**). (4) **LangSmith** LCU **$1.50** / LSU **$1.00** / Plus **$39** / Engine hold. (5) **Causely** **$2,000/mo** + 30-day trial hold. (6) **Traceway** Free/$12.99/$24.99/$499.99 hold. (7) **TMA1 15th UNFIRED** (109★). Also fix gaps list for pass 63 Axiom/Coroot. | `9ec3a9fc` |
 
+| 65 | 2026-07-17 | **PostHog free-tier expansion + Mezmo no public $/GB + Dynatrace log-rate fix + multi-watch:** (1) **PostHog** live pricing: free **Error Tracking 100K** + **Logs 50 GB** + **AI Observability 100K** + **PostHog AI 500 cr** + analytics 1M / replay 5K / flags 1M; Error after free **$0.00037/exc**; Logs **$0.25→$0.15/GB**; **~36,093★** — domain gap vs Parallax **narrows** (errors/logs/AI free) but still not OTLP/Sentry peer. (2) **Mezmo** live pricing: **no public $/GB** (platform/AI SRE packaging); AI RCA included + MCP RBAC; **AURA** Apache-2.0 **~223★**; historical 2025 **$0.20/GB** demoted to dated proxy only. (3) **Dynatrace** live re-confirm Full-Stack **$0.01/GiB-hr**; **logs corrected** to **$0.20/GiB ingest** + retain/query split (was stale $0.40–0.60). (4) **Sentry** OTLP still open beta **no metrics**; self-host **26.7.0**. (5) **Sumo** Flex still **no static $/TB**; Dojo→bundle **UNFIRED**. (6) **TMA1 watch 16th UNFIRED** (alpha12/109★; sentry/redact/outcome commit search 0). Fast-movers: SigNoz **30,257★/v0.133.0**, Langfuse **v3.221.1**, Phoenix **v18.1.0**, O2 **v0.91.2**, Coroot **v1.23.3**. | `_pending_` |
+
 ## Deep-dive status (per product)
 
 | Product | Deep-dive file | State | Last verified | Next gap |
 | --- | --- | --- | --- | --- |
 | Datadog | [parallax-vs-datadog.md](parallax-vs-datadog.md) | ✅ pass 64 (Bits $) | 2026-07-17 | Bits **$500/500 annual**, **$600/500 monthly**, **$1.30/cr** OD. No self-host backend; FedRAMP High. Open: A1-vs-Bits; cost bench |
-| Sentry | [parallax-vs-sentry.md](parallax-vs-sentry.md) | ✅ pass 63 (OTLP) | 2026-07-17 | Self-host **26.7.0**. OTLP **open beta; no metrics** (pass 63). Open: OTLP-metrics GA; A1-vs-Seer |
+| Sentry | [parallax-vs-sentry.md](parallax-vs-sentry.md) | ✅ pass 65 (OTLP) | 2026-07-17 | Self-host **26.7.0**. OTLP **open beta; no metrics** (pass 65). Open: OTLP-metrics GA; A1-vs-Seer |
 | Grafana Cloud/LGTM | [parallax-vs-grafana.md](parallax-vs-grafana.md) | ✅ pass 62 (pricing reconfirm) | 2026-07-17 | Pro **$19**; logs/traces/profiles **$0.05+$0.40+$0.10/GB**; Assistant **$20/AI user**. Pins: Grafana **13.1.0**, Mimir **3.1.3**, Loki **3.7.3**, Tempo **3.0.2**, Pyroscope **2.1.1**. Open: A1; self-host TCO |
 | Honeycomb | [parallax-vs-honeycomb.md](parallax-vs-honeycomb.md) | ✅ pass 62 (pricing reconfirm) | 2026-07-17 | Free 20M+$100M DP; Pro **$150/50M**; Agent Timeline **Pro+**; MCP+Canvas on Free. Open: A1-vs-Auto-investigations; high-card GreptimeDB bench |
 | New Relic | [parallax-vs-new-relic.md](parallax-vs-new-relic.md) | ✅ pass 62 (seat $) | 2026-07-17 | Data **$0.40/$0.60/GB** holds. **Full Pro $349 annual / $418.80 monthly** (was wrongly ~$49). Core **$49**. Preflight free beyond ingest. Open: A1; CCU quote; SaaS-only |
@@ -104,26 +106,26 @@
 | OpenObserve | [parallax-vs-openobserve.md](parallax-vs-openobserve.md) | ✅ pass 63 (pricing) | 2026-07-17 | Cloud **$0.50/$0.01** GB; EE free ≤50GB/day; AI preview 20 credits. MCP EE write-heavy. Open: A1; GreptimeDB-vs-Parquet |
 | Coroot | [parallax-vs-coroot.md](parallax-vs-coroot.md) | ✅ pass 63 (Standard $) | 2026-07-17 | **Standard $1/CPU-core** (AI RCA+SSO/RBAC); Premium custom; OSS community free. **eBPF→app-errors UNFIRED**. Open: A1-vs-Coroot-RCA |
 | Maple | [parallax-vs-maple.md](parallax-vs-maple.md) | ✅ pass 59 (Tinybird watch) | 2026-07-17 | **v0.0.12 + 1,532★**. **Tinybird-decoupling UNFIRED pass 59** (recent = Clerk/rerender perf; Tinybird still in repo). Open: A1; GreptimeDB-vs-chDB |
-| TMA1 | [parallax-vs-tma1.md](parallax-vs-tma1.md) | ✅ pass 64 (watch 15th) | 2026-07-17 | **v0.2.0-alpha12 + 109★**. **WATCH 15th UNFIRED**. Open: A1-vs-TMA1 |
+| TMA1 | [parallax-vs-tma1.md](parallax-vs-tma1.md) | ✅ pass 65 (watch 16th) | 2026-07-17 | **v0.2.0-alpha12 + 109★**. **WATCH 16th UNFIRED** (install/GreptimeDB/perf only; sentry/redact/outcome commit hits 0). Open: A1-vs-TMA1 |
 | Highlight.io | [parallax-vs-highlight.md](parallax-vs-highlight.md) | 🛑 pass 33 (wound down) | 2026-07-17 | **9,331★ + Apache-2.0 + OTLP-native + ClickHouse** (historical); **🛑 TRAJECTORY RESOLVED pass 33: acquired by LaunchDarkly; standalone SaaS shut down 2026-02-28 → LaunchDarkly Observability; OSS repo unmaintained (no release since docker-v0.5.6 2025-08-08; last commit 2026-04-16 = LD-migration/allowlist work, not features; license NOASSERTION/mixed)**. No longer an active competitor — historical/reference only. Net field effect: active OSS session-replay champion vacated (NOT a Parallax win — Parallax has no replay; the bar drops, it doesn't tilt). Re-scan only if LD re-open-sources an active Highlight fork |
 | Langfuse | [parallax-vs-langfuse.md](parallax-vs-langfuse.md) | ✅ pass 61 (pricing) | 2026-07-17 | **v3.221.1 + 31,338★**. Cloud Hobby/Core **$29**/Pro **$199**/Ent **$2,499**; EE self-host **custom**. Assistant **Cloud-only**. Open: A1; prod-error watch |
 | Arize Phoenix | [parallax-vs-arize-phoenix.md](parallax-vs-arize-phoenix.md) | ✅ pass 61 (AX $) | 2026-07-17 | **v18.1.0 + 10,599★** ELv2. **AX Free / Pro $50 / Ent custom** (Core $29/Pro $199 retired). Open: A1-vs-Phoenix; Signal Enterprise watch |
 | LangSmith | [parallax-vs-langsmith.md](parallax-vs-langsmith.md) | ✅ pass 64 (LCU reconfirm) | 2026-07-17 | LCU **$1.50** / LSU **$1.00**; Plus **$39**; Engine ships. Open: A1-vs-Engine |
 | Elastic Observability | [parallax-vs-elastic.md](parallax-vs-elastic.md) | ✅ pass 64 (Serverless $) | 2026-07-17 | ES **v9.4.3**. Serverless Complete **$0.09/$0.019** (+ TSDS **$0.023/$0.005**). **Agent Builder $0.025/exec** after 10k free. Open: GreptimeDB-vs-ES bench; A1 |
-| Dynatrace | [parallax-vs-dynatrace.md](parallax-vs-dynatrace.md) | ✅ pass 38 (watch FIRED) | 2026-07-17 | **Pass-16 WATCH TRIGGER FIRED: "agent control plane → real bounded agent surface" shipped** at Perform 2026 (2026-03-04): Dynatrace Intelligence + new Smartscape (real-time dep graph "source of truth for AI") + Intelligence Agents (auto-remediate/prevent/optimize) + Dynatrace Assist + **Dynatrace MCP Server** (delivers "observability truth" to agents). Dynatrace explicitly claims **"bounded agent context"** — direct, named collision with Parallax's "bounded context for agents" thesis, on a far more mature substrate (Davis causal RCA + Smartscape + Grail). **No-bias nuance:** mechanisms differ (Dynatrace = live proprietary SaaS topology-grounding via MCP for enterprise ops agents; Parallax = portable redacted versioned bundle for coding-agent fix loop) — overlapping intent, not literal parity. Parallax surviving edges = open/self-host/cost + portable+redacted+versioned bundle + Sentry + outcome loop (all A1-unproven, now under direct enterprise pressure). **Pass-39 pricing RESOLVED (no-bias correction): official rate-card = Full-Stack $0.01/GiB-hr memory-metered (NOT pass-16's wrong "$0.08/host-hr"; 8GiB≈$58/mo, Davis bundled), Infra $0.04/host-hr flat, Mainframe $0.10/MSU-hr, K8s $1.40/pod-mo, Grail log $0.40-0.60/GB.** Open (NOT desk-research): A1-vs-Dynatrace-MCP-grounding measurement |
+| Dynatrace | [parallax-vs-dynatrace.md](parallax-vs-dynatrace.md) | ✅ pass 65 (pricing reconfirm) | 2026-07-17 | Agent control plane **FIRED** (pass 38). **Pass 65 live:** Full-Stack **$0.01/GiB-hr**; Infra **$0.04/host-hr**; K8s **$1.40/pod-mo**; **logs $0.20/GiB ingest** + retain/query (pay-per-query or bundled) — prior **$0.40–0.60/GB** demoted stale. Open: A1-vs-Dynatrace-MCP (not desk) |
 | Splunk Observability Cloud | [parallax-vs-splunk.md](parallax-vs-splunk.md) | ✅ pass 36 (AI surface) | 2026-07-17 | **Pass-36 AI re-verify (material): Splunk shipped AI Agent Monitoring** (LLM/agent performance+quality+security+cost; OTel + Cisco AGNTCY, no lock-in) **+ Agentic Observability** (autonomous detect/investigate/recommend, Cisco Live 2026) **+ Cisco AI Defense** (compliance+threat) **+ AI Agent Governance/Federated Analytics**. Pass-17 "Splunk AI = anomaly/alerting/assistant" is **STALE**. Splunk now ships agent-obs + autonomous investigation = **4th shipped autonomous investigator** (HolmesGPT/Causely/Honeycomb/Splunk) pressuring "context-engine-not-the-fixer" thesis. **Pass-40 pricing RESOLVED** ([splunk.com](https://www.splunk.com/en_us/products/pricing/observability.html)): Infra $15 / IM+APM $60 / Suite $75 per host/mo + Free 15 hosts (pass-17 third-party confirmed); **no public number** for à-la-carte credits/standalone-Log-Observer/overage (sales-quote). Open (NOT desk-research): NoSample storage-cost vs GreptimeDB (benchmark); A1-vs-Splunk-Agentic-Obs |
 | Chronosphere | [parallax-vs-chronosphere.md](parallax-vs-chronosphere.md) | ✅ pass 59 (AgentiX) | 2026-07-17 | **no public $/unit**. PANW-owned. **AgentiX×Chronosphere still PLANNED (pass 59):** PANW Q2 FY26 “integration plans” language; no Chronosphere product-docs GA. Open: GreptimeDB-vs-M3; A1 |
-| Sumo Logic | [parallax-vs-sumo.md](parallax-vs-sumo.md) | ✅ pass 58 (Dojo watch) | 2026-07-17 | Flex $0 ingest + scan credits; **no static $/TB**. **Dojo AI shipped**; **Dojo→portable bundle UNFIRED**. Open: A1; Francisco Partners |
+| Sumo Logic | [parallax-vs-sumo.md](parallax-vs-sumo.md) | ✅ pass 65 (Flex reconfirm) | 2026-07-17 | Flex $0 ingest + scan credits; **no static $/TB** (pass 65). **Dojo AI** on page; **Dojo→portable bundle UNFIRED**. Open: A1; Francisco Partners |
 | Observe | [parallax-vs-observe.md](parallax-vs-observe.md) | ✅ pass 63 (pricing) | 2026-07-17 | Logs **$0.49**/GiB; metrics **$0.008**/DPM; traces **$0.59** last-card caveat. MCP partial fire. Open: A1; traces-card re-scrape |
 | Axiom | [parallax-vs-axiom.md](parallax-vs-axiom.md) | ✅ pass 63 (MCP free) | 2026-07-17 | 4-part $ holds. **MCP+SRE+Metrics skills included free**. AI Engineering ships. Open: A1; self-host TCO bench |
 | HyperDX | [parallax-vs-hyperdx.md](parallax-vs-hyperdx.md) | ✅ pass 64 (pricing) | 2026-07-17 | Free 3GB / Starter **$20+$0.40/GB** + **$0.40/100 DPM**; **9,680★ MIT**. Open: A1; GreptimeDB-vs-CH |
 | Odigos | [parallax-vs-odigos.md](parallax-vs-odigos.md) | ✅ pass 57 (own-store) | 2026-07-17 | **v1.31.2 / 3,668★**; Enterprise **no public $/unit**. **Own-store UNFIRED** (still destination-to-existing-backends). Open: OBI fidelity; integrate-vs-build eBPF |
 | Uptrace | [parallax-vs-uptrace.md](parallax-vs-uptrace.md) | ✅ pass 63 (pricing) | 2026-07-17 | Cloud **50 GB free** then ~$0.075→$0.016/GB; metrics **$0.025/1M DP**. AGPL free. Open: A1; CH bench |
-| PostHog | [parallax-vs-posthog.md](parallax-vs-posthog.md) | ✅ pass 57 (EE map) | 2026-07-17 | MIT core + proprietary `ee/` (**hogai**, billing, session_recordings, surveys, …). **~36,091★**. EE ≠ all Cloud Enterprise gates. Open: production-backend expansion; A1-vs-LLM-obs |
+| PostHog | [parallax-vs-posthog.md](parallax-vs-posthog.md) | ✅ pass 65 (free tiers) | 2026-07-17 | MIT core + proprietary `ee/`. **~36,093★**. Free: **Error Tracking 100K** / **Logs 50 GB** / **AI Obs 100K** / **PostHog AI 500 cr** + analytics 1M. Error **$0.00037/exc**; Logs **$0.25→$0.15/GB**. Domain gap **narrowed** (still no OTLP backend/Sentry). Open: OTLP/Sentry watch; A1 |
 | Helicone | [parallax-vs-helicone.md](parallax-vs-helicone.md) | 🛑 pass 58 (Mintlify) | 2026-07-17 | Mintlify acq → maintenance; **5,957★**; release **2025-08-21**; push 2026-07-05. **Sunset/re-invest UNFIRED**. Not a Parallax win |
 | Braintrust | [parallax-vs-braintrust.md](parallax-vs-braintrust.md) | ✅ pass 61 (re-confirm) | 2026-07-17 | Starter free / Pro **$249** + overages hold; Loop agent. Complementary A1 tooling |
 | Causely | [parallax-vs-causely.md](parallax-vs-causely.md) | ✅ pass 64 ($ reconfirm) | 2026-07-17 | Pro **$2,000/mo ≤500 services**; Ent custom; 30-day trial. A1-vs-Causely blocked. Watches UNFIRED |
-| Mezmo | [parallax-vs-mezmo.md](parallax-vs-mezmo.md) | ✅ pass 42 (pricing confirm) | 2026-07-17 | **pass 42 RESOLVED:** contract pricing **$0.20/GB ingest + $0.20/GB retain/mo** (vendor newsroom 2025-05-14; G2/cubeapm 2026 still cite). Different-layer pipeline (complementary). Open: Parallax pipeline-gap decision (integrate Mezmo/Vector/FluentBit or build) |
+| Mezmo | [parallax-vs-mezmo.md](parallax-vs-mezmo.md) | ✅ pass 65 (live pricing) | 2026-07-17 | Live page: **no public $/GB** (platform/AI SRE packaging). AI RCA included + MCP RBAC. **AURA** Apache-2.0 **~223★**. Historical 2025 **$0.20/GB** = dated proxy only. Open: unit-rate republish watch; pipeline-gap decision; A1-vs-AURA |
 | Traceloop (OpenLLMetry) | [parallax-vs-traceloop.md](parallax-vs-traceloop.md) | ✅ pass 46 (drift) | 2026-07-17 | **v0.62.1 + 7,306★** stable; Apache-2.0; ServiceNow/AI Control Tower. **WATCH UNFIRED pass 46** (no storage/license drift). Open: GenAI→Parallax LLM-derive mapping; OpenLLMetry-vs-OpenInference |
 | Bugsink | [parallax-vs-bugsink.md](parallax-vs-bugsink.md) | ✅ pass 59 (OTLP watch) | 2026-07-17 | PolyForm Shield core; **1,940★ / v2.4.0**. **OTLP expansion UNFIRED** (code search 0). Open: A1-vs-Bugsink |
 | HolmesGPT | [parallax-vs-holmesgpt.md](parallax-vs-holmesgpt.md) | ✅ pass 59 (re-pin) | 2026-07-17 | **v0.36.0 + 2,873★** stable; Apache-2.0; no own store. A1 crux unproven. Complementary PoC open |
@@ -135,8 +137,8 @@
 
 1. Parallax-column — re-checked pass 15 + code-reality audit; keep planned/shipped split honest. (✅ ongoing)
 2. **AI-native/agent-context — pass 49 extended matrix** (incumbents + layers). Re-scan quarterly or on watch fire. (✅ pass 49; 🔴 still fast-moving)
-3. Pricing — desk-public units largely ✅ through pass 48; residual **no public number** by design (Chronosphere, Sumo $/TB, Odigos Enterprise).
-4. OTLP-native — largely ✅ per deep-dive; Sentry still open-beta no metrics.
+3. Pricing — desk-public units largely ✅ through pass 65; residual **no public number** by design (Chronosphere, Sumo $/TB, Odigos Enterprise, **Mezmo live $/GB**).
+4. OTLP-native — largely ✅ per deep-dive; Sentry still open-beta no metrics (pass 65).
 
 ## Open uncertainties / questions
 
@@ -146,16 +148,17 @@
 - ~~Braintrust Pro pricing~~ → **resolved pass 44**.
 - ~~Sentry self-host latest~~ → **resolved pass 44** (`26.7.0`).
 - **Chronosphere list rates**: **no public number** (pass 41); quote-based only.
-- **Sumo static $/TB scanned**: **no static public number** (pass 41); Flex estimator only.
+- **Sumo static $/TB scanned**: **no static public number** (pass 41 + 65); Flex estimator only.
+- **Mezmo live unit rates**: **no public number** on [mezmo.com/pricing](https://www.mezmo.com/pricing) (pass 65); 2025 **$0.20/GB** historical only.
 - **Parallax-column honesty**: fix-outcome loop + redacted-bundle A1 value remain *unproven*; local-stdio MCP graduated. Keep planned/shipped split explicit. Code-audit: `✅🧪` marks code-backed. Planned-only stay `🏗`: remote MCP, AI RCA, evals, SSO/RBAC, fix-outcome loop.
 
 ## Next highest-value gaps (ranked)
 
-1. **Desk-researchable public pricing — CLEARED through pass 54** (Traceway Cloud tiers resolved). Residual **by design**: Chronosphere **no public number**; Sumo **no static $/TB**; Odigos Enterprise **no public $/unit**.
-2. **A1 measurements (NOT desk — blocked on eval program)** — vs HolmesGPT / Causely / TMA1 / Dynatrace MCP / Honeycomb / Splunk / Observe / LangSmith Engine / Traceway skills / (future) AgentiX.
+1. **Desk-researchable public pricing — CLEARED through pass 65** for products that publish units. Residual **by design**: Chronosphere **no public number**; Sumo **no static $/TB**; Odigos Enterprise **no public $/unit**; Mezmo live **no public $/GB**.
+2. **A1 measurements (NOT desk — blocked on eval program)** — vs HolmesGPT / Causely / TMA1 / Dynatrace MCP / Honeycomb / Splunk / Observe / LangSmith Engine / Traceway skills / Mezmo AURA / (future) AgentiX.
 3. **Benchmark-dependent cells** — GreptimeDB vs ClickHouse/M3/ES; NoSample; self-host ops TCO; Tempo v3 vs GreptimeDB.
-4. **Drift watches (active)** — TMA1 (**15× UNFIRED**); AgentiX×Chronosphere **still planned** (pass 59); Observe MCP partial + Snowflake closed; Coroot eBPF UNFIRED; Maple Tinybird UNFIRED; Traceloop stable; Helicone sunset/re-invest UNFIRED; Odigos own-store UNFIRED; Sentry OTLP-metrics UNFIRED (pass 63); Bugsink/Rustrak OTLP UNFIRED; Sumo Dojo→bundle UNFIRED.
-5. ~~Datadog Bits public credit rates~~ → **re-confirmed pass 58**.
+4. **Drift watches (active)** — TMA1 (**16× UNFIRED**); AgentiX×Chronosphere **still planned** (pass 59); Observe MCP partial + Snowflake closed; Coroot eBPF UNFIRED; Maple Tinybird UNFIRED; Traceloop stable; Helicone sunset/re-invest UNFIRED; Odigos own-store UNFIRED; Sentry OTLP-metrics UNFIRED (pass 65); Bugsink/Rustrak OTLP UNFIRED; Sumo Dojo→bundle UNFIRED; PostHog OTLP/Sentry UNFIRED; Mezmo unit-rate republish.
+5. ~~Datadog Bits public credit rates~~ → **re-confirmed pass 58/64**.
 6. ~~Observe Snowflake close~~ → **DONE pass 58 (closed 2026-02-02)**.
 7. ~~GlitchTip GitLab star pin~~ → **DONE pass 59 (161★)**.
 8. ~~SigNoz Noz self-host uncertainty~~ → **DONE pass 60 (Cloud only)**.
@@ -167,7 +170,10 @@
 14. ~~Coroot $1/core = Enterprise-only~~ → **DONE pass 63 (Standard)**.
 15. ~~Elastic Serverless unit rates + Agent Builder~~ → **DONE pass 64**.
 16. ~~Datadog Bits $ / HyperDX / LangSmith / Causely reconfirm~~ → **DONE pass 64**.
-17. **Benchmarks** still open (not desk).
+17. ~~PostHog free-tier surface (errors/logs/AI)~~ → **DONE pass 65**.
+18. ~~Mezmo live $0.20/GB still list?~~ → **DONE pass 65 (no — no public unit on page)**.
+19. ~~Dynatrace Grail log $0.40–0.60~~ → **DONE pass 65 (corrected to $0.20/GiB ingest + retain/query)**.
+20. **Benchmarks** still open (not desk).
 
 ## Bias audit (this pass)
 

@@ -160,18 +160,22 @@ under direct pressure from a shipped enterprise competitor claiming the same
 
 ## Pricing & economics — real numbers
 
-Dynatrace pricing is **public** ([dynatrace.com/pricing](https://www.dynatrace.com/pricing/) + [rate-card](https://www.dynatrace.com/pricing/rate-card/), accessed 2026-07-17; **pricing corrected pass 39** — pass-16's "$0.08/host-hr Full-Stack" was a third-party error; the official rate-card is **memory-metered**, not flat per host):
+Dynatrace pricing is **public** ([dynatrace.com/pricing](https://www.dynatrace.com/pricing/) + [rate-card](https://www.dynatrace.com/pricing/rate-card/), accessed 2026-07-17; **pricing corrected pass 39** — pass-16's "$0.08/host-hr Full-Stack" was a third-party error; the official rate-card is **memory-metered**, not flat per host; **pass 65 live re-confirm** holds host/telemetry rates; **log Grail rates corrected** — see table):
 
 | Component | Price | Notes |
 | --- | --- | --- |
-| **Full-Stack Monitoring** | **$0.01 / memory-GiB-hour** | **memory-metered** (8 GiB host ≈ **$58/mo**; 32 GiB ≈ $233/mo) — Davis AI **included free** |
-| **Infrastructure Monitoring** | **$0.04 / host-hr** flat | any host size (~$29/mo) |
-| Mainframe Monitoring | $0.10 / MSU-hour | |
-| Kubernetes/App Observability | **$1.40 / pod-mo** | |
-| Grail log overage | **$0.40–$0.60 / GB** | beyond 100 GB/mo free |
-| User seats | **$49–$349 / user-mo** | plan-dependent |
+| **Full-Stack Monitoring** | **$0.01 / memory-GiB-hour** | **memory-metered** (8 GiB host ≈ **$58/mo**); Davis AI **included**; OTel metrics/traces included |
+| **Infrastructure Monitoring** | **$0.04 / host-hr** flat | ~$29/mo |
+| **Foundation & Discovery** | **$0.01 / host-hr** | ~$7/mo basic host health |
+| **Kubernetes Platform Monitoring** | **$1.40 / pod-mo** | free when host already Full-Stack |
+| **Logs — Pay-per-Query** | Ingest **$0.20/GiB** · Retain **$0.0007/GiB-day** · Query **$0.0035/GiB-scanned** | live pricing pass 65 |
+| **Logs — Bundled Queries** | Ingest **$0.20/GiB** · Retain+queries **$0.02/GiB-day** | min 10–35 days queries included |
+| **Telemetry Metrics** | Ingest **$0.15 / 100k DP** · Retain **$0.0007/GiB-day** · Query **$0** | 15 mo @ 1-min included |
+| **Telemetry Traces/Events** | Ingest **$0.20/GiB** · Retain **$0.0007/GiB-day** · Query **$0.0035/GiB-scanned** | 10-day traces included on Full-Stack |
+| **RUM** | **$2.25 / 1k sessions** (replay **$4.50 / 1k**) | |
+| Mainframe | $0.10 / MSU-hour | |
 
-> ⚠️ **Correction (no-bias, cuts against Parallax's "cost" framing):** Full-Stack is **$0.01/GiB-hr memory-metered**, NOT "$0.08/host-hr" (the pass-16 third-party figure was wrong on both unit and magnitude). The memory-metering means **small hosts are cheaper than pass-16 implied** (~$58/mo for 8 GiB, Davis AI bundled) — Dynatrace is still enterprise-expensive in aggregate, but the per-host floor is lower than the earlier wrong number suggested. Annual-contract (DPS) pricing differs from on-demand hourly.
+> ⚠️ **Correction (no-bias):** Full-Stack is **$0.01/GiB-hr memory-metered**, NOT pass-16's wrong "$0.08/host-hr". **Pass 65 log correction:** prior deep-dive "Grail log $0.40–0.60/GB" is **stale vs live page** — public Log Analytics is **$0.20/GiB ingest** + separate retain/query (pay-per-query or bundled). Dynatrace remains enterprise-expensive in aggregate (DPS contracts); public unit rates are more transparent and lower-floor than older third-party summaries.
 
 **Real-world contracts (third-party):** SMB avg **~$100–182K/yr**; enterprise avg **~$1.05M/yr** ([Spendhound](https://www.spendhound.com/marketplace/dynatrace-pricing), [Vendr](https://www.vendr.com/marketplace/dynatrace) avg ~$170K/yr, [CheckThat.ai](https://checkthat.ai/brands/dynatrace/pricing)). **Dynatrace is enterprise-expensive at aggregate scale** — but the corrected per-host floor (~$58/mo 8GiB, Davis bundled) is more competitive than pass-16 stated.
 
@@ -200,17 +204,17 @@ Dynatrace pricing is **public** ([dynatrace.com/pricing](https://www.dynatrace.c
 
 ## Watch triggers (the point of tracking Dynatrace)
 
-1. **"Agent control plane" → real bounded agent-context surface** — if Dynatrace ships a bounded/read-only agent projection (not just Davis-for-humans), it's a direct collision with Parallax's thesis. **Highest-priority watch.**
-2. **Davis-as-agent-context** — does Dynatrace expose Davis causal-RCA to agents programmatically/safely?
-3. **Cost** — track whether Dynatrace adds a cheaper/self-host tier (unlikely).
+1. **"Agent control plane" → real bounded agent-context surface** — **FIRED pass 38** (Perform 2026): Dynatrace Intelligence + Smartscape + Intelligence Agents + **MCP Server**. Residual watch: portable redacted coding-agent dossier (not live SaaS MCP).
+2. **Davis-as-agent-context** — MCP exposes observability truth to agents (**shipped**); A1 vs Davis still unmeasured.
+3. **Cost / self-host tier** — still SaaS-first; no Apache self-host backend. UNFIRED for self-host product.
 
-**As of 2026-07-17:** the "agent control plane" is **positioning**, not a shipped bounded agent-context surface. Davis remains human-AIOps. Trigger not yet fired — but the announced direction is the most serious strategic threat to Parallax's agent framing from an incumbent.
+**As of 2026-07-17 (pass 65):** trigger 1 remains **FIRED**. Live pricing re-confirm holds Full-Stack **$0.01/GiB-hr**; logs **$0.20/GiB ingest** (not $0.40–0.60).
 
 ## Open questions / what measurement would settle
 
-- **A1 gate vs Davis:** does a Parallax bounded bundle beat Davis-causal-RCA-as-context for coding-agent fix outcomes? Unproven — and Davis's deterministic causation is a high bar.
-- **Dynatrace "agent control plane" substance** — is it a real bounded agent surface or marketing? Track Perform 2026 follow-through.
-- **Dynatrace exact current pricing** — **RESOLVED pass 39** (official [rate-card](https://www.dynatrace.com/pricing/rate-card/)): Full-Stack **$0.01/GiB-hr memory-metered** (not the pass-16 third-party "$0.08/host-hr" — corrected; 8 GiB ≈ $58/mo, Davis bundled), Infrastructure $0.04/host-hr flat, Mainframe $0.10/MSU-hr, K8s $1.40/pod-mo, Grail log $0.40-0.60/GB. Still-open (NOT desk-research): A1-vs-Dynatrace-MCP-grounding measurement.
+- **A1 gate vs Davis/MCP grounding:** does a Parallax portable redacted bundle beat Dynatrace MCP-grounded agents for coding-agent fix outcomes? Unproven (not desk-research).
+- ~~Dynatrace "agent control plane" substance~~ → **FIRED pass 38** (shipped MCP + Intelligence Agents).
+- ~~Dynatrace exact current pricing~~ → **RESOLVED pass 39 + pass 65 re-confirm:** Full-Stack **$0.01/GiB-hr**, Infra **$0.04/host-hr**, K8s **$1.40/pod-mo**, logs **$0.20/GiB ingest** + retain/query split (live page).
 
 ## Sources (accessed 2026-07-17; agent-control-plane watch resolved pass 38)
 
