@@ -262,6 +262,7 @@ managed quotes remain):
 | re-pin milestone | **580** | pins hold; healthy ~3h+; NOT DONE |
 | still not done | **581** | top 5 product/server |
 | identity + last_value | **582** | bool auto-col; GT~5ms |
+| still not done | **583** | top 5 product/server |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
