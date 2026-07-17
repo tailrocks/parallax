@@ -7956,3 +7956,8 @@ Span-tree still preferred **app-side** (proxy lens, Run 165/195). Not a product 
 
 Docker Hub still lists **v1.1.3** as latest v1.1.x stable family. Four-way
 containers healthy ~27 min uptime. No bump.
+
+### Run 279 — 2026-07-17 — metric-agg under concurrent insert
+
+GT `avg(val) GROUP BY service` during inserts: warm **~8–9 ms** (same as idle
+**~8–10 ms** after first). Scan/agg absorbs light contention (Run 53/226).
