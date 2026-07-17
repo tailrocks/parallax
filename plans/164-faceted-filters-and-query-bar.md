@@ -42,7 +42,10 @@ statuses intentionally untouched:
   `FacetSection` (collapsible, count-annotated `tabular-nums`, inline search,
   `maxVisible` + "Show N more", ServiceDot swatches) plus pure helpers
   `facetSelectionsToParam`/`FromParam`/`toggleFacetValue` (`dim:value` CSV
-  URL codec). No tests yet — peer should add codec + component tests.
+  URL codec). Codec/toggle tests landed (`fc006e9`,
+  `console/__tests__/facet-sidebar.test.tsx`); duration summary tests at
+  `626dea0`; editor autocomplete/apply/error tests at `7da35f6`
+  (`console/__tests__/where-clause-editor.test.tsx`).
 - `ui/src/components/console/duration-filter.tsx`: preset chips
   (`> p50`/`> p95` from injected `DurationStats`, `> 1s`), debounced (400ms)
   min/max ms inputs, collapsed summary chip with inline clear.
