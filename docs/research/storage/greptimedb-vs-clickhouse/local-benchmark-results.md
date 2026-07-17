@@ -7119,3 +7119,8 @@ GT PromQL ergonomics edge holds. `promql-and-metrics-query.md`.
 
 Two far time windows → sst_num=2; compact does not collapse across windows. TWCS mechanism holds.
 `compaction-and-merge.md`.
+
+### Run 198 — 2026-07-17 — CH merge vs GT same-window compact
+
+CH 20 inserts → 5 parts → OPTIMIZE FINAL → 1. GT 5 same-window flushes → sst_num=2 after compact.
+`compaction-and-merge.md`.

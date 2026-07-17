@@ -106,3 +106,17 @@ Live (`twcs_t`, append_mode):
 
 Manifest shows three L0 files. **Confirms Run 144:** time-spanning tables keep ≥1 SST
 per window → TTL can drop whole expired windows; multi-window dedup/agg pays multi-SST cost.
+
+## Run 198 (2026-07-17) — CH size-tiered merge vs GT same-window SST
+
+| Engine | Procedure | Parts/SSTs |
+| --- | --- | --- |
+| CH 26.6 | 20× insert 1k rows | **5** active parts (background merge already folded some) |
+| CH | `OPTIMIZE FINAL` | **1** part / 20k rows |
+| GT v1.1.3 | 5× flush same time window | **sst_num=2** / 5k rows |
+| GT | `ADMIN compact_table` | still **2** (may need more files/trigger to collapse) |
+
+**Mechanism:** CH background merges aggressively reduce part count toward 1; GT TWCS is
+window-oriented and may leave multiple SSTs even in-window until picker thresholds met
+(`TwcsPicker` in `compaction/twcs.rs`). Both eventually reorganize; CH feels more
+“optimize to one part” by default.
