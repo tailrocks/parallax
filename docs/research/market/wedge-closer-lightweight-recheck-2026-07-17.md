@@ -175,6 +175,13 @@ Full wedge combination **still not closed**.
 
 Full wedge combination **still not closed**.
 
+**Pass 254 recheck (2026-07-18):** **HyperDX + Langfuse** neighbor pins —
+
+| Product | Pin | Combo / note |
+| --- | --- | --- |
+| **HyperDX** | [hyperdxio/hyperdx](https://github.com/hyperdxio/hyperdx) **9,681★** (+1 vs pass 241 **9,680**); latest **`@hyperdx/app@2.30.1`** (2026-07-13); push 2026-07-17 | ClickStack / ClickHouse unified session+logs+metrics+traces+errors; **no** portable redacted evidence bundle + outcome in README probe. Combo **not closed**. |
+| **Langfuse** | [langfuse/langfuse](https://github.com/langfuse/langfuse) **31,341★** (stable); **`v3.221.1`** (2026-07-17) | LLMOps self-host real; README still default **PostHog usage telemetry** on self-host (opt-out `TELEMETRY_ENABLED=false`). **Not** production multi-signal evidence-bundle product. Combo **not closed**. |
+
 **Pass 249 recheck (2026-07-18):** **Traceway** + Sentry OTLP metrics kill —
 
 | Field | Value |
