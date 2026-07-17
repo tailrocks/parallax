@@ -4,16 +4,13 @@
 > is written. Where Parallax's edge is only *planned* or *unproven*, that is
 > stated, not hidden.
 >
-> Research date: **2026-07-17**. Refreshed from current primary sources this
-> pass; version/license/pricing drift re-checked. **Pass 101 pin:** GitHub
-> **v0.133.0** (2026-07-15), **30,261★**, last push 2026-07-17; README still:
-> **“[Noz](https://signoz.io/docs/ai/noz/) is available only on SigNoz Cloud”**
-> (MCP self-host path separate). **Pass 117 pricing re-fetch:** live
-> [signoz.io/pricing](https://signoz.io/pricing/) still **Teams $49/mo** +
-> **$0.30/GB** logs/traces + **$0.10/M** metric samples; Enterprise **~$4k/mo**
-> floor class; Community self-host **$0**. Legacy source:
-> [`../signoz-deep-research.md`](../signoz-deep-research.md) (2026-06-22) — kept
-> as a lead, corrected here where the market moved.
+> Research date: **2026-07-17**. **Pass 101 + 117 + 153:** GitHub still
+> **v0.133.0** (2026-07-15), **30,283★**, push 2026-07-17. **Noz** docs still
+> tagged **`SigNoz Cloud`** only
+> ([signoz.io/docs/ai/noz](https://signoz.io/docs/ai/noz/) pass **153** live
+> fetch); page still distinguishes **Noz (in-UI Cloud)** vs **MCP Server**
+> (external agents / self-host path). Pricing last deep-fetched pass **117**
+> ($49 + $0.30/GB). Legacy: [`../signoz-deep-research.md`](../signoz-deep-research.md).
 
 ## TL;DR verdict (scoped per axis)
 
