@@ -382,6 +382,25 @@ function TracesPage() {
   })
   const showSkeleton = useDelayedLoading(pending)
   const [lookup, setLookup] = useState("")
+  // Plan 164: `F` focuses the where-clause editor (remount via key bump).
+  const [whereFocusKey, setWhereFocusKey] = useState(0)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "f" && event.key !== "F") return
+      if (event.metaKey || event.ctrlKey || event.altKey) return
+      const target = event.target
+      if (
+        target instanceof HTMLElement &&
+        target.closest("input, textarea, select, [contenteditable]")
+      ) {
+        return
+      }
+      event.preventDefault()
+      setWhereFocusKey((current) => current + 1)
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [])
   const [spans, setSpans] = useState<SpanDoc[]>([])
   const live = search.live === true
   const page = search.page ?? 1
@@ -647,6 +666,8 @@ function TracesPage() {
         {!live ? (
           <div className="space-y-2">
             <WhereClauseEditor
+              key={whereFocusKey}
+              autoFocus={whereFocusKey > 0}
               filters={whereFilters}
               onApply={applyWhereFilters}
               keySuggestions={facets.map((facet) => facet.dimension)}
