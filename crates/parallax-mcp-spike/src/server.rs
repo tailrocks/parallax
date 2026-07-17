@@ -649,6 +649,7 @@ mod tests {
                 .collect::<Vec<_>>(),
             ["parallax_agent_session_show", "parallax_issue_context"]
         );
+        assert_eq!(listed.next_cursor, None);
         let prompts = client
             .peer()
             .list_prompts(None)

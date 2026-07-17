@@ -54,8 +54,9 @@ The stdio server fails closed unless `--allow-local-stdio` appears on the
 process command line; no environment variable or repository file can provide
 that trust decision.
 Unit coverage includes wire-level MCP initialization and `tools/list` over an
-in-memory stdio-equivalent duplex transport. Live Codex/Claude fixtures remain
-manual and unfinished.
+in-memory stdio-equivalent duplex transport; the exact tool catalog is terminal
+with no pagination cursor. Live Codex/Claude fixtures remain manual and
+unfinished.
 Wire fixtures require empty, terminal prompt/resource/template catalogs and
 method-level denial for prompt/resource reads; those capabilities remain
 disabled.

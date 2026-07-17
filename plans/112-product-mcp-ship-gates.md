@@ -111,8 +111,9 @@ must not return in product output.
   advertises its generated MCP `outputSchema`; arbitrary GraphQL fields cannot
   pass through to clients.
 - An in-memory stdio-equivalent wire fixture now proves MCP initialization,
-  stable protocol negotiation, and the exact `tools/list` catalog. Codex and
-  Claude registration/discovery fixtures remain unfinished.
+  stable protocol negotiation, and the exact terminal `tools/list` catalog
+  with no next cursor. Codex and Claude registration/discovery fixtures remain
+  unfinished.
 - The wire fixture also invokes representative forbidden shell and management
   names and requires protocol-level `tool not found` failures.
 - Wire-level prompt/resource/template catalogs must remain empty with no next
