@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from "react"
 import { z } from "zod"
 
 import { AttributeComparePanel } from "@/components/console/attribute-compare"
+import { ServiceDot } from "@/components/console/service-dot"
 import { PageHeader } from "@/components/page-header"
 import { useLiveStream } from "@/hooks/use-live-stream"
 import { FieldExplorer } from "@/components/console/field-explorer"
@@ -721,7 +722,12 @@ export function TraceTable({
                   {trace.hasError ? <Badge variant="rose">errors</Badge> : null}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Badge variant="outline">{trace.service || "unknown"}</Badge>
+                  <span className="inline-flex items-center gap-1.5">
+                    <ServiceDot name={trace.service || "unknown"} />
+                    <Badge variant="outline">
+                      {trace.service || "unknown"}
+                    </Badge>
+                  </span>
                   <span className="font-mono">
                     {trace.traceId.slice(0, 16)}
                   </span>

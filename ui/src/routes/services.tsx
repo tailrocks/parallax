@@ -11,6 +11,7 @@ import { useMemo } from "react"
 import { z } from "zod"
 
 import { EmptyState } from "@/components/console/empty-state"
+import { ServiceDot } from "@/components/console/service-dot"
 import { HeatCell, buildHeatScale } from "@/components/console/heat-cell"
 import { useDelayedLoading } from "@/components/console/hooks"
 import { RangePicker } from "@/components/console/range-picker"
@@ -232,17 +233,6 @@ function patchSearch(current: ServicesSearch, patch: ServicesSearchPatch) {
   return next
 }
 
-function ServiceDot({ errored }: { errored: boolean }) {
-  return (
-    <span
-      className={cn(
-        "size-2 rounded-full",
-        errored ? "bg-rose-500" : "bg-emerald-500"
-      )}
-    />
-  )
-}
-
 function ServicesPage() {
   const data = Route.useLoaderData()
   const search = Route.useSearch()
@@ -439,7 +429,7 @@ export function ServicesIndexContent({
                         search={rangeLinkSearch(range)}
                         className="flex min-w-0 items-center gap-2 font-medium"
                       >
-                        <ServiceDot errored={errors > 0} />
+                        <ServiceDot name={row.name} />
                         <span className="truncate">{row.name}</span>
                       </Link>
                     </TableCell>

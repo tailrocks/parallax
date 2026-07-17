@@ -87,6 +87,50 @@
     0px 2px 4px 0px rgba(139, 92, 246, 0.12);
 }
 
+:root {
+  /* Three-axis semantic color system (plan 162). Axis 1: the severity ramp.
+   * Used ONLY for log severity and error/incident state, always paired with
+   * the literal severity word. Conventional gray→blue→green→amber→red→deep
+   * red so operators read it without a legend. */
+  --severity-trace: oklch(0.65 0.01 260);
+  --severity-debug: oklch(0.62 0.12 250);
+  --severity-info: oklch(0.62 0.14 155);
+  --severity-warn: oklch(0.75 0.15 80);
+  --severity-error: oklch(0.6 0.21 25);
+  --severity-fatal: oklch(0.45 0.19 20);
+  /* Axis 3: percentile/RED chart tokens — constant across every latency
+   * chart so p95 is always the same amber, everywhere. Throughput takes a
+   * cyan clearly distinct from the p95 amber. */
+  --chart-p50: oklch(0.62 0.15 245);
+  --chart-p95: oklch(0.75 0.15 80);
+  --chart-p99: oklch(0.62 0.2 40);
+  --chart-error: oklch(0.6 0.21 25);
+  --chart-throughput: oklch(0.7 0.12 200);
+  /* Hairline: 1px normally, half-pixel on high-dpi displays. */
+  --border-hairline: 1px;
+}
+
+@media (min-resolution: 192dpi) {
+  :root {
+    --border-hairline: 0.5px;
+  }
+}
+
+.dark {
+  /* Severity ramp, dark: slightly brighter to hold contrast on dark cards. */
+  --severity-trace: oklch(0.72 0.01 260);
+  --severity-debug: oklch(0.7 0.12 250);
+  --severity-info: oklch(0.72 0.14 155);
+  --severity-warn: oklch(0.8 0.15 80);
+  --severity-error: oklch(0.68 0.2 25);
+  --severity-fatal: oklch(0.55 0.2 20);
+  --chart-p50: oklch(0.7 0.15 245);
+  --chart-p95: oklch(0.8 0.15 80);
+  --chart-p99: oklch(0.7 0.2 40);
+  --chart-error: oklch(0.68 0.2 25);
+  --chart-throughput: oklch(0.76 0.12 200);
+}
+
 .dark {
   --background: oklch(0.17 0 0);
   --foreground: oklch(0.985 0 0);
@@ -171,6 +215,17 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  --color-severity-trace: var(--severity-trace);
+  --color-severity-debug: var(--severity-debug);
+  --color-severity-info: var(--severity-info);
+  --color-severity-warn: var(--severity-warn);
+  --color-severity-error: var(--severity-error);
+  --color-severity-fatal: var(--severity-fatal);
+  --color-chart-p50: var(--chart-p50);
+  --color-chart-p95: var(--chart-p95);
+  --color-chart-p99: var(--chart-p99);
+  --color-chart-error: var(--chart-error);
+  --color-chart-throughput: var(--chart-throughput);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -211,6 +266,33 @@
   100% {
     background-position: -200% center;
   }
+}
+
+/* Plan 162 craft utilities.
+ * content-enter: opacity-only fade for content replacing a skeleton — never
+ * translate data the user is about to read. Respects reduced-motion. */
+.content-enter {
+  animation: content-enter 150ms ease-out both;
+}
+
+@keyframes content-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content-enter {
+    animation: none;
+  }
+}
+
+/* Numbers that stack in tables/stats always use tabular figures. */
+.tabular-stack {
+  font-variant-numeric: tabular-nums;
 }
 
 @layer base {

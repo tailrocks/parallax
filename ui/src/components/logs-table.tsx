@@ -5,6 +5,7 @@ import { useVirtualizer } from "@tanstack/react-virtual"
 
 import { Chip } from "@/components/console/chip"
 import { CopyButton } from "@/components/console/copy-button"
+import { ServiceDot } from "@/components/console/service-dot"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { severityColor, severityToken } from "@/lib/colors"
 import {
   formatDateTime,
   formatLogBodyPreview,
@@ -31,7 +33,6 @@ import {
 } from "@/lib/format"
 import { rangeLinkSearch, resolvePreset } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
-import { cn } from "@/lib/utils"
 
 /** One log row, with every field the doc viewer needs. Shared by the Logs page
  * and the run detail page so both render logs identically. */
@@ -147,17 +148,25 @@ function rawDocument(log: LogDoc) {
 function SeverityBadge({ log }: { log: LogDoc }) {
   const fatal =
     log.severityNum >= 21 || severityLabel(log).toUpperCase() === "FATAL"
+  // Severity ramp token (plan 162): dot + WORD, never color alone.
+  const token =
+    severityToken(severityLabel(log)) ??
+    (log.severityNum >= 21
+      ? "fatal"
+      : log.severityNum >= 17
+        ? "error"
+        : log.severityNum >= 13
+          ? "warn"
+          : log.severityNum >= 9
+            ? "info"
+            : log.severityNum >= 5
+              ? "debug"
+              : "trace")
   return (
     <span className="inline-flex items-center gap-1.5">
       <span
-        className={cn(
-          "size-1.5 rounded-full",
-          log.severityNum >= 17
-            ? "bg-rose-500"
-            : log.severityNum >= 13
-              ? "bg-amber-500"
-              : "bg-muted-foreground/40"
-        )}
+        className="size-1.5 rounded-full"
+        style={{ backgroundColor: severityColor(token) }}
       />
       <Badge
         variant={severityVariant(log.severityNum)}
@@ -339,7 +348,10 @@ export function LogsTable({
         </TableCell>
         {visible.has("service") ? (
           <TableCell className="max-w-36 truncate text-muted-foreground">
-            {log.service}
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              <ServiceDot name={log.service} />
+              <span className="truncate">{log.service}</span>
+            </span>
           </TableCell>
         ) : null}
         {visible.has("event") ? (

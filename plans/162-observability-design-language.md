@@ -27,6 +27,37 @@
   Execution Preflight). Every feature is verified in the browser against
   the playground before the next step.
 
+### Landed by Grok (preliminary) — peer verify/extend + browser evidence
+
+**Do not retire yet.** Step 1 foundation + partial step 2/4 landed for speed;
+Claude/peer owns depth, chart percentile sweep, empty-state copy, full
+ServiceDot surfaces (ecosystem graph), and browser evidence under
+`docs/research/validation/2026-07-wave2/162/`.
+
+**Already landed:**
+- Tokens: `--severity-*`, `--chart-p50/p95/p99/error/throughput`,
+  `--border-hairline` (+ dark) in `ui/src/styles.css`; theme bridge
+  `--color-severity-*` / `--color-chart-p*`.
+- Pure lib: `ui/src/lib/colors.ts` + unit tests (determinism, golden-angle 32,
+  series semantic mapping).
+- `ServiceDot` component; wired on services list (replaces state-colored
+  local dot — identity only), logs table service col, invocations table,
+  traces list service badge.
+- Logs severity badge: ramp token + word (no hardcoded rose/amber dots).
+- Utilities: `.content-enter`, `.tabular-stack`.
+- `ui/AGENTS.md`: three-axis rules, tabular-nums, motion, empty-state voice,
+  six-item browser checklist.
+
+**Needs verify / deepen:**
+- [ ] Full `bun run typecheck/lint/check/test:ci/build`.
+- [ ] Percentile tokens on every latency chart (index trends, metric-strip,
+  services detail).
+- [ ] Ecosystem graph + command palette ServiceDot; remaining severity chips.
+- [ ] Empty-state copy sweep; content-enter on table refresh.
+- [ ] Browser evidence pack (same-service-same-color ≥4 pages, numerals,
+  severity pairing) → `docs/research/validation/2026-07-wave2/162/`.
+- [ ] Index status + retire only after Done criteria.
+
 ## Why this matters
 
 Parallax's UI grew page-by-page; color, density, motion, and empty-state

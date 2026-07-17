@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router"
 
 import { CopyButton } from "@/components/console/copy-button"
 import { RelativeTime } from "@/components/console/relative-time"
+import { ServiceDot } from "@/components/console/service-dot"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,
@@ -121,7 +122,14 @@ function InvocationTableRow({
         className="max-w-40 truncate text-xs text-muted-foreground"
         title={row.service ?? undefined}
       >
-        {row.service ?? "-"}
+        {row.service ? (
+          <span className="inline-flex min-w-0 items-center gap-1.5">
+            <ServiceDot name={row.service} />
+            <span className="truncate">{row.service}</span>
+          </span>
+        ) : (
+          "-"
+        )}
       </TableCell>
       <TableCell>
         <InvocationStatusBadge status={status} exitCode={row.exitCode} />
