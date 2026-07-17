@@ -581,20 +581,12 @@ metric = "rust.assertions"
 scope = "crates/parallax-xtask/src/semconv/tests.rs"
 ceiling = 7
 
-[[limits]]
-metric = "agent-doc-bytes"
-scope = "AGENTS.md"
-ceiling = 16135
 
 [[limits]]
 metric = "agent-doc-bytes"
 scope = "prompts/AGENTS.md"
 ceiling = 1600
 
-[[limits]]
-metric = "agent-doc-bytes"
-scope = "ui/AGENTS.md"
-ceiling = 6165
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
@@ -639,17 +631,17 @@ ceiling = 25
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-api/src/resolvers/issues.rs::bundle"
-ceiling = 142
+ceiling = 163
 
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-api/src/resolvers/issues.rs::bundle_metric_windows"
-ceiling = 111
+ceiling = 114
 
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-evidence/src/bundle/assembly.rs::assemble"
-ceiling = 219
+ceiling = 242
 
 [[limits]]
 metric = "rust.function-lines"
@@ -659,7 +651,7 @@ ceiling = 111
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-evidence/src/bundle/redaction.rs::redaction_rules"
-ceiling = 114
+ceiling = 116
 
 [[limits]]
 metric = "rust.function-lines"
@@ -709,7 +701,7 @@ ceiling = 466
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-server/tests/m2_bundle.rs::bundle_is_bounded_redacted_and_hypothesis_ranked"
-ceiling = 280
+ceiling = 296
 
 [[limits]]
 metric = "rust.function-lines"
@@ -796,25 +788,13 @@ metric = "rust.public-root-items"
 scope = "crates/parallax-proto/facade.toml"
 ceiling = 8
 
-[[limits]]
-metric = "rust.public-root-items"
-scope = "crates/parallax-semconv/facade.toml"
-ceiling = 147
 
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-server/facade.toml"
 ceiling = 5
 
-[[limits]]
-metric = "rust.public-root-items"
-scope = "crates/parallax-storage/facade.toml"
-ceiling = 4
 
-[[limits]]
-metric = "rust.public-root-items"
-scope = "crates/parallax-greptime/facade.toml"
-ceiling = 1
 
 [[limits]]
 metric = "rust.public-root-items"
@@ -826,10 +806,6 @@ metric = "rust.public-root-items"
 scope = "crates/parallax-spool/facade.toml"
 ceiling = 1
 
-[[limits]]
-metric = "rust.public-root-items"
-scope = "crates/parallax-test-support/facade.toml"
-ceiling = 2
 
 [[limits]]
 metric = "rust.public-root-items"
@@ -846,20 +822,8 @@ metric = "rust.assertions"
 scope = "crates/parallax-api/src/resolvers/investigations/tests.rs"
 ceiling = 15
 
-[[limits]]
-metric = "rust.assertions"
-scope = "crates/parallax-api/src/resolvers/logs/tests.rs"
-ceiling = 9
 
-[[limits]]
-metric = "rust.assertions"
-scope = "crates/parallax-api/src/resolvers/metrics/tests.rs"
-ceiling = 16
 
-[[limits]]
-metric = "rust.assertions"
-scope = "crates/parallax-api/src/resolvers/services/tests.rs"
-ceiling = 28
 
 [[limits]]
 metric = "rust.assertions"
@@ -876,10 +840,6 @@ metric = "rust.assertions"
 scope = "crates/parallax-api/src/resolvers/traces/tests.rs"
 ceiling = 42
 
-[[limits]]
-metric = "rust.assertions"
-scope = "crates/parallax-api/src/tests.rs"
-ceiling = 2
 
 [[limits]]
 metric = "rust.assertions"
@@ -901,10 +861,6 @@ metric = "rust.assertions"
 scope = "crates/parallax-evidence/src/agent_session/tests.rs"
 ceiling = 8
 
-[[limits]]
-metric = "rust.assertions"
-scope = "crates/parallax-evidence/src/bundle/tests.rs"
-ceiling = 56
 
 [[limits]]
 metric = "rust.assertions"
@@ -946,10 +902,6 @@ metric = "rust.assertions"
 scope = "crates/parallax-analysis/src/trace_analysis/tests.rs"
 ceiling = 31
 
-[[limits]]
-metric = "rust.assertions"
-scope = "crates/parallax-server/src/config/tests.rs"
-ceiling = 2
 
 [[limits]]
 metric = "rust.assertions"
@@ -986,10 +938,6 @@ metric = "rust.assertions"
 scope = "crates/parallax-greptime/src/arrow_sql/tests.rs"
 ceiling = 22
 
-[[limits]]
-metric = "rust.assertions"
-scope = "crates/parallax-greptime/src/greptime/tests.rs"
-ceiling = 69
 
 [[limits]]
 metric = "rust.assertions"
@@ -1001,15 +949,7 @@ metric = "rust.assertions"
 scope = "crates/parallax-test-support/src/memory/tests/traces_services.rs"
 ceiling = 58
 
-[[limits]]
-metric = "rust.assertions"
-scope = "crates/parallax-metadata/src/turso/tests.rs"
-ceiling = 46
 
-[[limits]]
-metric = "rust.assertions"
-scope = "crates/parallax-spool/src/spool/tests.rs"
-ceiling = 20
 
 [[limits]]
 metric = "rust.assertions"
@@ -1194,12 +1134,8 @@ ceiling = 105
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-test-support/src/memory/tests/fields_metrics.rs::metric_labels_values_and_runtime_snapshot_derive_from_points"
-ceiling = 110
+ceiling = 112
 
-[[limits]]
-metric = "rust.assertions"
-scope = "crates/parallax-api/src/resolvers/invocations/tests.rs"
-ceiling = 16
 
 [[limits]]
 metric = "rust.assertions"
@@ -1216,15 +1152,7 @@ metric = "rust.assertions"
 scope = "crates/parallax-storage/src/projections/tests.rs"
 ceiling = 33
 
-[[limits]]
-metric = "rust.file-lines"
-scope = "crates/parallax-api/src/resolvers/issues.rs"
-ceiling = 402
 
-[[limits]]
-metric = "rust.file-lines"
-scope = "crates/parallax-greptime/src/greptime/invocation_store.rs"
-ceiling = 445
 
 [[limits]]
 metric = "rust.function-lines"
@@ -1256,10 +1184,6 @@ metric = "rust.test-wall-clocks"
 scope = "crates/parallax-server/tests/m8_invocation_contract_greptime.rs"
 ceiling = 1
 
-[[limits]]
-metric = "rust.file-lines"
-scope = "crates/parallax-api/src/resolvers/invocations.rs"
-ceiling = 420
 
 [[limits]]
 metric = "rust.test-wall-clocks"
@@ -1269,67 +1193,39 @@ ceiling = 2
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-metadata/src/turso.rs::upsert_issue_occurrences"
-ceiling = 103
+ceiling = 110
 
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-analysis/src/log_patterns/tests.rs"
 ceiling = 25
 
-[[limits]]
-metric = "rust.assertions"
-scope = "crates/parallax-greptime/src/greptime/attribute_filters.rs"
-ceiling = 13
 
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-server/src/alerting/state_machine.rs"
 ceiling = 41
 
-[[limits]]
-metric = "rust.file-lines"
-scope = "crates/parallax-greptime/src/greptime/trace_analytics.rs"
-ceiling = 495
 
-[[limits]]
-metric = "rust.file-lines"
-scope = "crates/parallax-storage/src/adapter.rs"
-ceiling = 475
 
-[[limits]]
-metric = "rust.function-cognitive-complexity"
-scope = "crates/parallax-greptime/src/greptime/attribute_filters.rs::span_attribute_filter_sql"
-ceiling = 25
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
 scope = "crates/parallax-server/src/alerting/state_machine.rs::evaluate_rule"
 ceiling = 25
 
-[[limits]]
-metric = "rust.inline-test-modules"
-scope = "crates/parallax-greptime/src/greptime/attribute_filters.rs"
-ceiling = 1
 
 [[limits]]
 metric = "rust.inline-test-modules"
 scope = "crates/parallax-server/src/alerting/state_machine.rs"
 ceiling = 1
 
-[[limits]]
-metric = "rust.mod-rs"
-scope = "crates/parallax-server/src/alerting/mod.rs"
-ceiling = 1
 
 [[limits]]
 metric = "rust.test-wall-clocks"
 scope = "crates/parallax-analysis/src/log_patterns/tests.rs"
 ceiling = 1
 
-[[limits]]
-metric = "rust.file-lines"
-scope = "crates/parallax-test-support/src/memory/trace_analytics.rs"
-ceiling = 418
 
 # ---------------------------------------------------------------------------
 
@@ -2134,40 +2030,20 @@ metric = "typescript.file-lines"
 scope = "ui/src/features/services/api/service-detail.generated.ts"
 ceiling = 1064
 
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/services/components/service-detail-page.tsx:71"
-ceiling = 17
 
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/services/components/service-detail-page.tsx:71"
-ceiling = 13
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/features/services/model/service-summary.ts:47"
 ceiling = 13
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/services/components/service-detail-page.tsx:71"
-ceiling = 134
 
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/features/services/components/service-recent-traces.tsx:22"
 ceiling = 69
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/services/components/service-red-charts.tsx:119"
-ceiling = 139
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/services/components/service-red-charts.tsx:56"
-ceiling = 62
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2479,10 +2355,6 @@ metric = "typescript.file-lines"
 scope = "ui/src/features/invocations/components/invocation-hub-page.tsx"
 ceiling = 543
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/invocations/components/invocations-page.tsx"
-ceiling = 373
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -2514,10 +2386,6 @@ metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:297"
 ceiling = 24
 
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/invocations/components/invocations-page.tsx:224"
-ceiling = 15
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
@@ -2569,10 +2437,6 @@ metric = "typescript.function-lines"
 scope = "ui/src/features/invocations/components/invocation-traces-tab.tsx:51"
 ceiling = 85
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/invocations-page.tsx:224"
-ceiling = 171
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2634,35 +2498,11 @@ metric = "typescript.assertions"
 scope = "ui/src/routes/tests/-overview-routes.test.tsx"
 ceiling = 2
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/overview/components/overview-page.tsx"
-ceiling = 915
 
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/overview/components/overview-page.tsx:619"
-ceiling = 16
 
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/overview/components/overview-page.tsx:619"
-ceiling = 14
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/overview/components/overview-page.tsx:278"
-ceiling = 186
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/overview/components/overview-page.tsx:470"
-ceiling = 142
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/overview/components/overview-page.tsx:619"
-ceiling = 169
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -6019,3 +5859,818 @@ metric = "typescript.function-lines"
 scope = "ui/src/layout/app-shell.tsx:61"
 ceiling = 61
 
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/invocations/components/invocations-page.tsx"
+ceiling = 369
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/overview/components/overview-page.tsx"
+ceiling = 907
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/overview/components/overview-page.tsx:611"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/services/components/service-detail-page.tsx:67"
+ceiling = 17
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/invocations/components/invocations-page.tsx:220"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/overview/components/overview-page.tsx:611"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/services/components/service-detail-page.tsx:67"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocations-page.tsx:220"
+ceiling = 171
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/overview/components/overview-page.tsx:270"
+ceiling = 186
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/overview/components/overview-page.tsx:462"
+ceiling = 142
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/overview/components/overview-page.tsx:611"
+ceiling = 169
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/components/service-detail-page.tsx:67"
+ceiling = 134
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/components/service-red-charts.tsx:115"
+ceiling = 139
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/components/service-red-charts.tsx:52"
+ceiling = 62
+
+[[limits]]
+metric = "agent-doc-bytes"
+scope = "AGENTS.md"
+ceiling = 16341
+
+[[limits]]
+metric = "agent-doc-bytes"
+scope = "ui/AGENTS.md"
+ceiling = 14461
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-analysis/src/sentry.rs"
+ceiling = 18
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-api/src/resolvers/alerts/tests.rs"
+ceiling = 31
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-api/src/resolvers/invocations/tests.rs"
+ceiling = 20
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-api/src/resolvers/logs/tests.rs"
+ceiling = 15
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-api/src/resolvers/metrics/tests.rs"
+ceiling = 61
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-api/src/resolvers/services/tests.rs"
+ceiling = 39
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-api/src/tests.rs"
+ceiling = 10
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-cli/src/client.rs"
+ceiling = 9
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-evidence/src/bundle/redaction.rs"
+ceiling = 4
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-evidence/src/bundle/tests.rs"
+ceiling = 85
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-evidence/src/claude_code.rs"
+ceiling = 29
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-evidence/src/envelope.rs"
+ceiling = 27
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-evidence/src/redaction_policy.rs"
+ceiling = 11
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-greptime/src/greptime/attribute_filters.rs"
+ceiling = 20
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-greptime/src/greptime/tests.rs"
+ceiling = 89
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-ingest/src/sentry_envelope.rs"
+ceiling = 9
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-mcp-spike/src/audit.rs"
+ceiling = 21
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-mcp-spike/src/check/tests.rs"
+ceiling = 7
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-mcp-spike/src/gql/tests.rs"
+ceiling = 8
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-mcp-spike/src/server/tests.rs"
+ceiling = 62
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-mcp-spike/src/tests.rs"
+ceiling = 4
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-metadata/src/turso/alerts.rs"
+ceiling = 49
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-metadata/src/turso/pins.rs"
+ceiling = 11
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-metadata/src/turso/prune/journal.rs"
+ceiling = 15
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-metadata/src/turso/prune/tests.rs"
+ceiling = 74
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-metadata/src/turso/tests.rs"
+ceiling = 51
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/src/alerting/delivery.rs"
+ceiling = 30
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/src/alerting/delivery_worker.rs"
+ceiling = 18
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/src/alerting/evaluator.rs"
+ceiling = 29
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/src/alerting/measurement.rs"
+ceiling = 28
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/src/alerting/measurement_source.rs"
+ceiling = 28
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/src/config/tests.rs"
+ceiling = 9
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/src/sentry_http.rs"
+ceiling = 2
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/src/serve/http.rs"
+ceiling = 10
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/tests/m109_api_auth.rs"
+ceiling = 8
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/tests/m10_metric_summaries_greptime.rs"
+ceiling = 12
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/tests/m9_attribute_filters_greptime.rs"
+ceiling = 10
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-spool/src/spool/tests.rs"
+ceiling = 21
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-storage/src/prune/tests.rs"
+ceiling = 35
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-test-support/src/browser/datasets.rs"
+ceiling = 8
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-test-support/src/browser/seed.rs"
+ceiling = 4
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-xtask/src/browser_contracts.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-xtask/src/browser_foundation.rs"
+ceiling = 7
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-xtask/src/policy/product/decision_contracts/retention/tests.rs"
+ceiling = 8
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-xtask/src/policy/product/decision_contracts/tests.rs"
+ceiling = 5
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-xtask/src/policy/ui_architecture.rs"
+ceiling = 3
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-xtask/src/release/macho_dwarf.rs"
+ceiling = 2
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-xtask/src/ui_graphql.rs"
+ceiling = 5
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-xtask/tests/fuzz_target_drift.rs"
+ceiling = 2
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-api/src/resolvers/alerts.rs"
+ceiling = 579
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-api/src/resolvers/invocations.rs"
+ceiling = 444
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-api/src/resolvers/issues.rs"
+ceiling = 451
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-api/src/resolvers/metrics.rs"
+ceiling = 511
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-api/src/resolvers/metrics/tests.rs"
+ceiling = 712
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-api/src/resolvers/services/types.rs"
+ceiling = 401
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-cli/src/client.rs"
+ceiling = 450
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-cli/src/doctor.rs"
+ceiling = 483
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-evidence/src/claude_code.rs"
+ceiling = 439
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-greptime/src/greptime/invocation_store.rs"
+ceiling = 492
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-greptime/src/greptime/trace_analytics.rs"
+ceiling = 536
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-metadata/src/turso.rs"
+ceiling = 567
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-metadata/src/turso/alerts.rs"
+ceiling = 1252
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-metadata/src/turso/prune.rs"
+ceiling = 423
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-metadata/src/turso/prune/journal.rs"
+ceiling = 488
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-semconv/src/lib.rs"
+ceiling = 225
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-server/src/alerting/evaluator.rs"
+ceiling = 560
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-server/src/alerting/measurement_source.rs"
+ceiling = 635
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-server/src/serve.rs"
+ceiling = 507
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-server/src/worker.rs"
+ceiling = 402
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-storage/src/adapter.rs"
+ceiling = 508
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-storage/src/prune.rs"
+ceiling = 420
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-test-support/src/memory/trace_analytics.rs"
+ceiling = 513
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-xtask/src/policy/product.rs"
+ceiling = 402
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-xtask/src/policy/ui_architecture.rs"
+ceiling = 405
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-xtask/src/policy/ui_tests.rs"
+ceiling = 452
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-xtask/src/release/macho_dwarf.rs"
+ceiling = 668
+
+[[limits]]
+metric = "rust.function-cognitive-complexity"
+scope = "crates/parallax-cli/src/doctor.rs::prune"
+ceiling = 25
+
+[[limits]]
+metric = "rust.function-cognitive-complexity"
+scope = "crates/parallax-greptime/src/greptime/attribute_filters.rs::filter_condition"
+ceiling = 25
+
+[[limits]]
+metric = "rust.function-cognitive-complexity"
+scope = "crates/parallax-ingest/src/sentry_envelope.rs::parse_envelope"
+ceiling = 25
+
+[[limits]]
+metric = "rust.function-cognitive-complexity"
+scope = "crates/parallax-server/src/alerting/evaluator.rs::tick_once"
+ceiling = 25
+
+[[limits]]
+metric = "rust.function-cognitive-complexity"
+scope = "crates/parallax-xtask/src/policy.rs::run"
+ceiling = 25
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-api/src/resolvers/alerts.rs::validated_rule"
+ceiling = 124
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-api/src/resolvers/metrics.rs::metric_query"
+ceiling = 128
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-api/src/resolvers/metrics/tests.rs::metric_catalog_classifies_kinds_and_counts_finite_window_samples"
+ceiling = 127
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-api/src/resolvers/services/queries.rs::service_map"
+ceiling = 109
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-api/src/resolvers/services/tests.rs::service_map_derives_external_dependency_nodes_from_generic_attributes"
+ceiling = 118
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-cli/src/doctor.rs::prune"
+ceiling = 195
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-greptime/src/greptime/query_sql.rs::external_dependency_edges_sql"
+ceiling = 110
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-ingest/src/sentry_envelope.rs::parse_envelope"
+ceiling = 119
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/examples/browser_contracts_serve.rs::main"
+ceiling = 142
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/src/alerting/evaluator.rs::tick_once"
+ceiling = 210
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/src/sentry_http.rs::envelope"
+ceiling = 105
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/src/serve.rs::spawn_alerting_loops"
+ceiling = 105
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/src/serve.rs::start_assembled"
+ceiling = 106
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/tests/m10_metric_summaries_greptime.rs::metric_summaries_conform_on_live_engine"
+ceiling = 165
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-server/tests/m9_attribute_filters_greptime.rs::attribute_filters_narrow_and_count_on_live_engine"
+ceiling = 164
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-xtask/src/policy/product/decision_contracts/retention/tests.rs::every_contract_field_fails_closed_when_changed"
+ceiling = 119
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-xtask/src/policy/ui_graphql_contract.rs::check_workspace"
+ceiling = 146
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-analysis/src/fingerprint.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-analysis/src/sentry.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-cli/src/client.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-evidence/src/bundle/redaction.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-evidence/src/claude_code.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-evidence/src/envelope.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-evidence/src/redaction_policy.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-greptime/src/greptime/attribute_filters.rs"
+ceiling = 2
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-ingest/src/sentry_envelope.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-mcp-spike/src/audit.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-metadata/src/turso/alerts.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-metadata/src/turso/pins.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-metadata/src/turso/prune/journal.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-semconv/src/lib.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-server/src/alerting/delivery.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-server/src/alerting/delivery_worker.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-server/src/alerting/evaluator.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-server/src/alerting/measurement.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-server/src/alerting/measurement_source.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-server/src/sentry_http.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-server/src/serve/http.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-storage/src/adapter_math.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-test-support/src/browser/datasets.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-test-support/src/browser/seed.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-xtask/src/browser_contracts.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-xtask/src/browser_foundation.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-xtask/src/policy/ui_architecture.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-xtask/src/release/macho_dwarf.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-xtask/src/ui_graphql.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = "crates/parallax-greptime/facade.toml"
+ceiling = 2
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = "crates/parallax-semconv/facade.toml"
+ceiling = 148
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = "crates/parallax-storage/facade.toml"
+ceiling = 6
+
+[[limits]]
+metric = "rust.public-root-items"
+scope = "crates/parallax-test-support/facade.toml"
+ceiling = 3
+
+[[limits]]
+metric = "rust.test-sleeps"
+scope = "crates/parallax-server/tests/m10_metric_summaries_greptime.rs"
+ceiling = 2
+
+[[limits]]
+metric = "rust.test-sleeps"
+scope = "crates/parallax-server/tests/m9_attribute_filters_greptime.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.test-wall-clocks"
+scope = "crates/parallax-server/tests/m10_metric_summaries_greptime.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.test-wall-clocks"
+scope = "crates/parallax-server/tests/m9_attribute_filters_greptime.rs"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/overview/components/overview-page.tsx:611"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/services/components/service-detail-page.tsx:67"
+ceiling = 17
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/invocations/components/invocations-page.tsx:220"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/overview/components/overview-page.tsx:611"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/services/components/service-detail-page.tsx:67"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocations-page.tsx:220"
+ceiling = 171
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/overview/components/overview-page.tsx:270"
+ceiling = 186
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/overview/components/overview-page.tsx:462"
+ceiling = 142
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/overview/components/overview-page.tsx:611"
+ceiling = 169
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/components/service-detail-page.tsx:67"
+ceiling = 134
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/components/service-red-charts.tsx:115"
+ceiling = 139
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/components/service-red-charts.tsx:52"
+ceiling = 62
