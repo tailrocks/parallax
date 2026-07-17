@@ -640,6 +640,110 @@ async fn test_reporting_upserts_are_idempotent_and_reference_native_spans() {
 }
 
 #[tokio::test]
+async fn test_case_variants_and_variant_history_are_bounded_and_isolated() {
+    use parallax_model::{
+        TestAttempt, TestCaseIdentitySource, TestCaseKey, TestCaseRecord, TestConfiguration,
+        TestResultKey, TestResultRecord, TestStatus, TestVariantKey, TestVariantRecord, TraceId,
+    };
+    use parallax_storage::metadata::{MetadataErrorKind, MetadataStore as MetadataStorePort};
+    use std::str::FromStr;
+
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(&path).await.expect("open");
+    let port: &dyn MetadataStorePort = &store;
+    seed_test_reporting(port).await;
+
+    let case_key = TestCaseKey::from_str(&format!("tc1:{}", "a".repeat(64))).expect("case");
+    let other_case = TestCaseKey::from_str(&format!("tc1:{}", "c".repeat(64))).expect("case");
+    let newer_variant =
+        TestVariantKey::from_str(&format!("tv1:{}", "d".repeat(64))).expect("variant");
+    let other_variant =
+        TestVariantKey::from_str(&format!("tv1:{}", "e".repeat(64))).expect("variant");
+
+    port.upsert_test_case(&TestCaseRecord {
+        key: other_case.clone(),
+        identity_source: TestCaseIdentitySource::NamePath,
+        explicit_id: None,
+        code_reference: None,
+        suite_path: vec!["other".into()],
+        name: "other".into(),
+        first_seen_nanos: 1_000_000,
+        last_seen_nanos: 8_000_000,
+    })
+    .await
+    .expect("other case");
+    for (key, parent, last_seen) in [
+        (newer_variant.clone(), case_key.clone(), 9_000_000),
+        (other_variant.clone(), other_case, 8_000_000),
+    ] {
+        port.upsert_test_variant(&TestVariantRecord {
+            key,
+            case_key: parent,
+            parameters: Vec::new(),
+            first_seen_nanos: 1_000_000,
+            last_seen_nanos: last_seen,
+        })
+        .await
+        .expect("variant");
+    }
+
+    for (invocation, attempt, status, started) in [
+        ("inv-old", 1, TestStatus::Failed, 4_000_000),
+        ("inv-new", 1, TestStatus::Failed, 6_000_000),
+        ("inv-new", 2, TestStatus::Passed, 7_000_000),
+    ] {
+        port.upsert_test_result(&TestResultRecord {
+            key: TestResultKey {
+                variant_key: newer_variant.clone(),
+                invocation_id: invocation.into(),
+                attempt: TestAttempt::new(attempt).expect("attempt"),
+            },
+            status,
+            trace_id: TraceId::from_str("abababababababababababababababab").expect("trace"),
+            span_id: "cdcdcdcdcdcdcdcd".into(),
+            started_at_nanos: started,
+            ended_at_nanos: started + 1_000_000,
+            service: "checkout".into(),
+            service_version: None,
+            vcs_head_revision: None,
+            configuration: TestConfiguration::default(),
+            failure_fingerprint: None,
+        })
+        .await
+        .expect("result");
+    }
+
+    let variants = port
+        .test_variants_for_case(case_key.as_str(), 1)
+        .await
+        .expect("case variants");
+    assert_eq!(variants.len(), 1);
+    assert_eq!(variants[0].key, newer_variant);
+
+    let history = port
+        .test_results_for_variant(newer_variant.as_str(), 10)
+        .await
+        .expect("history");
+    assert_eq!(history.len(), 3);
+    assert_eq!(history[0].key.attempt.get(), 2);
+    assert_eq!(history[1].key.invocation_id, "inv-new");
+    assert_eq!(history[2].key.invocation_id, "inv-old");
+    assert_eq!(
+        port.test_results_for_variant(newer_variant.as_str(), 1)
+            .await
+            .expect("bounded history")
+            .len(),
+        1
+    );
+
+    let invalid = port
+        .test_variants_for_case("not-a-versioned-key", 10)
+        .await
+        .expect_err("invalid case key");
+    assert_eq!(invalid.kind(), MetadataErrorKind::InvalidInput);
+}
+
+#[tokio::test]
 async fn test_explorer_rolls_up_attempts_and_filters_through_port() {
     use parallax_model::{
         AttemptRollup, TestAttempt, TestConfiguration, TestConfigurationFilter, TestExplorerQuery,

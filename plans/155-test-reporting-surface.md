@@ -58,6 +58,12 @@
   native trace/span/fingerprint/invocation references with resolver and port
   clamps. Honest `testCase` detail/history still requires the bounded
   case-detail metadata read; no explorer-substring substitute was used.
+- The query-neutral metadata port now exposes bounded case-to-variant (100)
+  and variant-to-result-history (500) reads with strict versioned-key
+  validation and deterministic newest-first history. A Turso fixture proves
+  case isolation, attempt-chain preservation, ordering, and caller limits;
+  the GraphQL `testCase` composition and broader independent verification
+  remain for the owning agent.
 
 Design decisions D1–D9 (identity, native tables, status taxonomy, attempt
 chains, shared fingerprints, flaky SM, `/tests` surface, session semantics,
@@ -69,7 +75,7 @@ if needed; do not reopen.
 1. ~~Explorer/filter + Turso schema~~ — landed (metadata explorer + fixtures).
 2. ~~Ingest derivation~~ — landed (`parallax-analysis` + worker persist).
 3. ~~GraphQL explorer~~ — `testCases` + SDL export landed; residual:
-   bounded `testCase` detail/history read (not explorer-substring),
+   compose the landed bounded detail/history reads into `testCase`,
    attempt-chain history, mute/known/owner fields when schema exists.
 4. UI `features/tests`: list + detail + live session tree (after architecture
    owners; React Flow not required here).
