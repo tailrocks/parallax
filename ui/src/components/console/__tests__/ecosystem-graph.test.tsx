@@ -61,6 +61,26 @@ describe("EcosystemGraph", () => {
     expect(edgeLink?.href).toContain("/traces")
     expect(edgeLink?.href).toContain("service=A")
   })
+
+  it("dims outside-focus nodes and reports hidden topology", async () => {
+    renderTestRouter(
+      <EcosystemGraph
+        nodes={nodes}
+        edges={edges}
+        range={customRange("0", "200")}
+        dimmedNodeIds={new Set(["B"])}
+        hiddenNodeCount={1}
+        hiddenEdgeCount={2}
+      />,
+      { targetPaths: ["/services/$service", "/traces"] }
+    )
+
+    const dimmed = (await screen.findByText("B")).closest("a")
+    expect(dimmed?.className).toContain("opacity-30")
+    expect(
+      screen.getByText("hidden").closest('[data-slot="badge"]')?.textContent
+    ).toBe("3 hidden")
+  })
 })
 
 it("D-014 eco-full: a 9-node column grows the canvas instead of overlapping cards", async () => {

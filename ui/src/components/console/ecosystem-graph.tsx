@@ -91,10 +91,12 @@ function EdgePath({
   edge,
   source,
   target,
+  dimmed,
 }: {
   edge: ServiceMapEdge
   source: PositionedNode
   target: PositionedNode
+  dimmed: boolean
 }) {
   const startX = source.x + NODE_WIDTH / 2
   const endX = target.x - NODE_WIDTH / 2
@@ -106,7 +108,8 @@ function EdgePath({
       d={path}
       className={cn(
         "fill-none stroke-muted-foreground/50",
-        hasError && "stroke-rose-500/80"
+        hasError && "stroke-rose-500/80",
+        dimmed && "opacity-20"
       )}
       strokeWidth={Math.max(
         1.5,
@@ -121,10 +124,16 @@ export function EcosystemGraph({
   nodes,
   edges,
   range,
+  dimmedNodeIds = new Set<string>(),
+  hiddenNodeCount = 0,
+  hiddenEdgeCount = 0,
 }: {
   nodes: ServiceMapNode[]
   edges: ServiceMapEdge[]
   range: ResolvedRange
+  dimmedNodeIds?: ReadonlySet<string>
+  hiddenNodeCount?: number
+  hiddenEdgeCount?: number
 }) {
   const layout = useEcosystemLayout(nodes, edges)
   const positioned = positionedNodes(nodes, layout)
@@ -162,6 +171,11 @@ export function EcosystemGraph({
         <span className="text-sm text-muted-foreground">
           {formatCount(positioned.length)} services ·{" "}
           {formatCount(edges.length)} edges
+          {hiddenNodeCount + hiddenEdgeCount > 0 ? (
+            <Badge variant="secondary" className="ml-2">
+              {formatCount(hiddenNodeCount + hiddenEdgeCount)} hidden
+            </Badge>
+          ) : null}
         </span>
         <span className="flex items-center gap-2 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1">
@@ -202,6 +216,9 @@ export function EcosystemGraph({
               edge={edge}
               source={source}
               target={target}
+              dimmed={
+                dimmedNodeIds.has(edge.source) || dimmedNodeIds.has(edge.target)
+              }
             />
           ))}
         </svg>
@@ -210,7 +227,8 @@ export function EcosystemGraph({
           const errors = count(node.errorCount)
           const className = cn(
             "absolute flex flex-col gap-1 rounded-lg border bg-card px-3 py-2 text-sm shadow-sm hover:bg-muted/50",
-            errors > 0 && "border-rose-500/50"
+            errors > 0 && "border-rose-500/50",
+            dimmedNodeIds.has(node.name) && "opacity-30"
           )
           const style = {
             left: `${((node.x - NODE_WIDTH / 2) / width) * 100}%`,
