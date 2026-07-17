@@ -181,6 +181,20 @@ O2 gates AI SRE / SDR — keep that differentiator open for adoption (A1 corpus
 precondition). Cloud usage + EE ops/compliance remains the least-bad desk shape.
 **A2 interviews still open** (no ACV isolation this pass).
 
+### Pass 216 (2026-07-18) — triangle primary re-scrape (no interviews)
+
+Live HTML scrape of the three public pricing surfaces (order-of-magnitude; not
+quotes). **Desk playbook holds**; no material price-shape flip.
+
+| Vendor | Primary signal (pass 216) | vs prior pin |
+| --- | --- | --- |
+| **Grafana Cloud** | Free tier; **Pro ~$19/mo + usage** (includes e.g. **10k active series** class messaging); Advanced/enterprise **~$25k/yr spend commit** class still visible | **Holds** pass 106 |
+| **SigNoz Cloud** | Teams still **$49/mo** (struck **$199** promo framing) + **~$0.30/GB** logs/traces class; Enterprise **~$4000** class | **Holds** pass 117 |
+| **OpenObserve** | Cloud ingest **$0.50/GB** + query **$0.01/GB**; Self-Host Enterprise free ≤**50 GB/day** still present | **Holds** pass 94/119 |
+
+**Still cannot close A2:** zero interview rows (pass 214). Pricing survivors still
+point to **usage cloud + EE gates**, not pure free OSS self-host as paying product.
+
 **Falsify:** OpenObserve moves AI SRE + SDR into free unlimited OSS core *and*
 ships portable redacted evidence bundles + outcome records; or public Cloud rates
 collapse so that managed cloud is no longer a viable peer revenue motion (unlikely
