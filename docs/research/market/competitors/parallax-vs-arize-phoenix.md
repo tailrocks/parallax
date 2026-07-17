@@ -4,12 +4,13 @@
 > is written. Where Parallax's edge is only *planned* or *unproven*, that is
 > stated, not hidden.
 >
-> Research date: **2026-07-17**. **Pass 108 + pass 146 pin:** GitHub
-> **arize-phoenix-v18.1.0** (2026-07-17), **10,600★**; LICENSE still **ELv2**
-> (SPDX NOASSERTION / non-Apache). **`@arizeai/phoenix-mcp` npm still shipping**
-> (**4.2.0** on registry 2026-07-17 — agent surface over Phoenix traces/evals,
-> **not** portable production-incident evidence bundle). Same job as Langfuse
-> (LLMOps/dev loop); complementary pressure only. A1 still unproven.
+> Research date: **2026-07-17**. **Pass 108 + pass 146 + pass 168 pin:** GitHub
+> **arize-phoenix-v18.1.0** (2026-07-17), **10,600★** (unchanged pass **168**);
+> LICENSE still **ELv2** (SPDX NOASSERTION / non-Apache).
+> **`@arizeai/phoenix-mcp@4.2.0`** still shipping; MCP includes **mutating**
+> prompt tools (`upsert-prompt`, tags) — agent surface over Phoenix
+> traces/evals, **not** RO portable production-incident evidence bundle. Same
+> job as Langfuse (LLMOps/dev loop); complementary pressure only. A1 unproven.
 
 ## TL;DR verdict (scoped per axis)
 
