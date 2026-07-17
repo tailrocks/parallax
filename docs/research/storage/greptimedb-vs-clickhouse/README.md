@@ -69,6 +69,7 @@ managed quotes remain):
 | Managed cloud primary $ rates | 221 | CH transparent; GT $290 floor opaque |
 | Product RPO/RTO runbook (D1–D3) | 222 | `product-rpo-runbook.md` |
 | Workload-mix decision input (DQ5) | 223 | `workload-mix-decision-input.md` |
+| Four-way N=50k + native OTEL; pins hold | 224 | no direction drift |
 
 ## Method
 

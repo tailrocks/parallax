@@ -7353,3 +7353,51 @@ bench/s3/run-s3-stack.sh down
 **Caveat.** N=100k single-node laptop; synthetic 1-span-per-trace_id (sipHash
 unique). Object-count mechanism holds; cold multi-GB selective egress still
 server-tier.
+
+### Run 224 — 2026-07-17 — four-way re-pin smoke N=50k + native OTEL suite
+
+**Pass target.** Re-check whether pins moved; re-run laptop floor four-way; re-verify
+native PromQL / Jaeger / identity-pipeline adopt-native surfaces.
+
+**Pins.** GH releases 2026-07-17: GT stable still **`v1.1.3`** (published same day);
+newer feature CH still **`v26.6.1.1193-stable`** (26.5.5.8 is older line patch).
+Live: GT `1.1.3` / nightly `1.2.0` / CH `26.6.1.1193` / head `26.7.1.1097` — **no bump**.
+
+**Four-way (N=50k, REPS=6 median ms)** — selected:
+
+| Query | GT-s | GT-n | CH-s | CH-h |
+| --- | ---: | ---: | ---: | ---: |
+| anchored | 4 | 4 | 3 | 2 |
+| metric-agg-flat | 11 | 8 | 5 | 4 |
+| counter-rate | 34 | 12 | 6 | 6 |
+| jsonb | 33 | 30 | 4 | 6 |
+| json2 | 6 | 5 | 4 | 4 |
+| cross-tier-join | 17 | 14 | 4 | 5 |
+
+**No direction drift** vs Runs 173/184/211. JSON2 closes most dynamic-attr gap;
+default Jsonb still multi-×. All interactive ≪300 ms.
+
+**Native OOB (GT stable):**
+
+| Surface | Result |
+| --- | --- |
+| PromQL `/v1/prometheus/api/v1/query?query=up` | **HTTP 200** `status=success` |
+| Jaeger `/v1/jaeger/api/services` | **HTTP 200** |
+| `greptime_identity` POST JSON log → `run224_id` | **HTTP 200**, `affectedrows=1`, count=1 |
+| CH `allow_experimental_time_series_table` | **0** (off); JSON type **1** (on) |
+
+**Adopt-native decision:** unchanged — adopt GT native logs/metrics/traces tables +
+identity pipeline; add keys/indexes as blueprint; do not invent custom raw-signal tables.
+
+**Reproduce.**
+
+```bash
+cd bench && docker compose -f compose.yml up -d
+N=50000 bash four-way/gen.sh && REPS=6 bash four-way/bench.sh
+docker exec parallax-bench-greptimedb-1 curl -s 'http://localhost:4000/v1/prometheus/api/v1/query?query=up'
+docker exec parallax-bench-greptimedb-1 curl -s -X POST \
+  'http://localhost:4000/v1/events/logs?db=public&table=run224_id&pipeline_name=greptime_identity' \
+  -H 'Content-Type: application/json' -d '[{"msg":"run224","level":"info","service":"bench"}]'
+```
+
+Caveat: N=50k laptop; server 1M/5M still owed.

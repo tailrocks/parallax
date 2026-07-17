@@ -17,6 +17,26 @@ Status: created 2026-05-25 (Run 131); **re-pinned Run 173 (2026-07-17)**. The op
 **Do not pin bare `v1.1.0`:** GitHub marks it prerelease; it carries a critical JSON upgrade bug.
 Use ≥`v1.1.1` (current stable = `v1.1.3`).
 
+## Run 224 — N=50,000 re-pin smoke (2026-07-17, REPS=6)
+
+Pins **unchanged** (GT `v1.1.3` still latest stable on GH 2026-07-17; CH feature line
+still `26.6.1.1193`; head `26.7.1.1097`; nightly still reports `1.2.0`). Directions hold;
+all ≪300 ms. JSON2 ~tie with CH; default Jsonb still ~5–8×.
+
+| Query | GT 1.1.3 | GT 1.2-n | CH 26.6 | CH head | Faster |
+| --- | ---: | ---: | ---: | ---: | --- |
+| anchored-lookup | 4 | 4 | 3 | 2 | ~tie |
+| metric-agg-flat | 11 | 8 | 5 | 4 | CH ~2× |
+| counter-rate-panel | 34 | 12 | 6 | 6 | CH / nightly |
+| last-value | 6 | 7 | 4 | 3 | ~tie |
+| fulltext-selective | 4 | 3 | 3 | 2 | ~tie |
+| fulltext-broad | 10 | 7 | 4 | 7 | CH slight |
+| dynamic-attr-jsonb | 33 | 30 | 4 | 6 | CH ~5–8× |
+| dynamic-attr-json2 | 6 | 5 | 4 | 4 | ~tie |
+| cross-tier-join | 17 | 14 | 4 | 5 | CH ~3–4× |
+
+Full raw matrix: session `/tmp/bench224.txt` + `local-benchmark-results.md` Run 224.
+
 ## Run 211 — N=50,000 floor smoke (2026-07-17, REPS=4)
 
 Minimum meaningful tier. Directions hold; all ≪300 ms. JSON2 ~tie with CH.
