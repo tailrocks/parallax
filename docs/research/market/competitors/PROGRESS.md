@@ -18,13 +18,14 @@
 | --- | --- | --- | --- |
 | 1 | 2026-07-17 | Bootstrap: `README.md` matrix, `comparison-set.md`, `PROGRESS.md`; first no-bias deep-dive **Datadog** (pricing + OTLP + AI/Agent Observability verified against live `datadoghq.com/pricing` + docs). Inherited matrix cells marked 🟡. Legacy matrix/feature-matrix notes left as sources with pointers. | _pending_ |
 | 2 | 2026-07-17 | **SigNoz** deep-dive ([parallax-vs-signoz.md](parallax-vs-signoz.md)): version drift re-verified (v0.132.2, ClickHouse 25.12.5), "open investigation format" confirmed still no published schema, pricing re-cited. Legacy signoz-deep-research.md left as lead w/ pointer. | _pending_ |
+| 3 | 2026-07-17 | **Sentry** deep-dive ([parallax-vs-sentry.md](parallax-vs-sentry.md)): pricing re-verified against live sentry.io/pricing (Dev free / Team $26 / Business $80 / Enterprise custom; per-error overage tiers); OTLP confirmed GA traces+logs but **no OTLP metrics**; Seer confirmed **$40/active contributor/mo unlimited** (BusinessWire 2026-01 + sentry.io/product/seer); self-host pinned to 25.x (Relay→Kafka→Snuba→ClickHouse). Operator directive folded in: "always compare to latest versions" (now a prompt section). | _pending_ |
 
 ## Deep-dive status (per product)
 
 | Product | Deep-dive file | State | Last verified | Next gap |
 | --- | --- | --- | --- | --- |
 | Datadog | [parallax-vs-datadog.md](parallax-vs-datadog.md) | ✅ pass 1 | 2026-07-17 | self-host/agentless reality; gov/FedRAMP posture; exact 2026 OTLP-in-Agent GA scope |
-| Sentry | — | 🔴 missing (legacy [sentry-deep-research.md](../sentry-deep-research.md)) | 2026-06 (legacy) | write `parallax-vs-sentry.md`; recheck OTLP GA + Seer pricing |
+| Sentry | [parallax-vs-sentry.md](parallax-vs-sentry.md) | ✅ pass 3 | 2026-07-17 | track OTLP-metrics GA; A1-vs-Seer measurement; self-host cost/ops benchmark |
 | Grafana Cloud/LGTM | — | 🔴 missing | n/a | write deep-dive; Tempo v3 + Pyroscope + Mimir cost model |
 | Honeycomb | — | 🔴 missing | n/a | write deep-dive; high-cardinality model + pricing |
 | New Relic | — | 🔴 missing | n/a | write deep-dive; entity model + NRAI + pricing |
@@ -59,15 +60,16 @@ are 🟡 inherited** (sources dated 2026-05/06). Priority for re-verification:
 
 ## Next highest-value gaps (ranked)
 
-1. **Sentry deep-dive** — closest error-workflow incumbent, explicit "simpler than self-hosted Sentry" target, legacy note aging; high strategic value. Recheck OTLP GA (was beta HTTP-only) + Seer autofix pricing.
-2. **Langfuse deep-dive** — AI/agent-observability wedge; OSS self-host; directly pressures Parallax's agent-context thesis. Missing entirely.
-3. **Grafana Cloud/LGTM deep-dive** — largest OSS-origin managed stack; Tempo v3 + Pyroscope + Mimir cost model unverified.
-4. **Honeycomb deep-dive** — defines the high-cardinality event axis; Bubbleuppy AI unverified.
-5. **SigNoz cell re-verification** — exact current star count + MCP server version (v0.5.1 last confirmed 2026-06-17); trace/metric throughput (no current public number). Watch triggers in [parallax-vs-signoz.md](parallax-vs-signoz.md).
+1. **Langfuse deep-dive** — AI/agent-observability wedge; OSS self-host; directly pressures Parallax's agent-context thesis. Missing entirely.
+2. **Grafana Cloud/LGTM deep-dive** — largest OSS-origin managed stack; Tempo v3 + Pyroscope + Mimir cost model unverified.
+3. **Honeycomb deep-dive** — defines the high-cardinality event axis; Bubbleuppy AI unverified.
+4. **SigNoz cell re-verification** — exact current star count + MCP server version (v0.5.1 last confirmed 2026-06-17); trace/metric throughput (no current public number). Watch triggers in [parallax-vs-signoz.md](parallax-vs-signoz.md).
+5. **Sentry drift watch** — OTLP-metrics GA (absent today); A1-vs-Seer measurement; self-host cost/ops benchmark vs Parallax single binary.
 
 ## Bias audit (this pass)
 
 - ✅ Datadog deep-dive defaults to "Datadog may be better"; written that Parallax is behind on breadth/maturity/scale/enterprise/AI, with evidence.
 - ✅ Parallax's only edges (open-source/self-host, cost predictability, data ownership, bundle thesis) are scoped to named axes; bundle thesis flagged unproven (A1 gate).
 - ⚠️ The inherited overview matrix is Parallax-framed from legacy notes (columns = "Parallax's wedge"). Acceptable as bootstrap; must re-verify cells product-by-product and reframe verdicts as no-bias in later passes.
+- ✅ Sentry deep-dive (pass 3) defaults to "Sentry may be better"; written plainly that Sentry wins on error-workflow/SDKs/maturity/AI(Seer)/profiling/replay/compliance, and Parallax's edges (OTLP-native incl. metrics, single-binary self-host simplicity, Apache vs FSL, bundle/outcome) are scoped + the bundle/outcome thesis flagged unproven (A1).
 - ✅ SigNoz deep-dive (pass 2) defaults to "SigNoz may be better"; written plainly that SigNoz wins on maturity/breadth/MCP/scale/pricing-transparency, and that Parallax's bundle/outcome/Sentry edges are planned or unproven (A1 gate), not parity.

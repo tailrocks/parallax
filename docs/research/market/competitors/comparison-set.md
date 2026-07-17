@@ -22,7 +22,7 @@ Legend for the **State** column:
 | Product | What it is | License / model | Primary signal focus | State |
 | --- | --- | --- | --- | --- |
 | **Datadog** | Full-stack SaaS observability + security; broadest commercial surface (infra, APM, logs, RUM, profiling, LLM/agent obs, CI/test, incident, security). | Closed SaaS; OSS agent, proprietary backend. | All signals. | [deep-dive](parallax-vs-datadog.md) |
-| **Sentry** | Error tracking + performance + profiling + (beta) OTLP; best-in-class issue lifecycle + AI autofix (Seer). | Source-available FSL (→Apache/MIT @2yr). | Errors + perf; traces/logs (OTLP beta). | stub (legacy [sentry-deep-research.md](../sentry-deep-research.md)) |
+| **Sentry** | Error tracking + tracing + logs + metrics + profiling + replay + Seer AI; OTLP traces+logs (no OTLP metrics); best-in-class issue lifecycle. | Source-available FSL (→Apache/MIT @2yr). | Errors + perf + replay. | [deep-dive](parallax-vs-sentry.md) |
 | **Grafana Cloud / LGTM** | Managed stack on Prometheus/Mimir, Loki, Tempo, Pyroscope, Grafana; OTLP-native. | Mixed OSS + Cloud SaaS (Grafana Labs). | Metrics + logs + traces + profiles. | stub |
 | **Honeycomb** | High-cardinality event-pipeline observability; exploratory query; Bubbleuppy AI. | Closed SaaS (source-available pieces). | Events / traces (high cardinality). | stub |
 | **New Relic** | Full-platform SaaS; entity-centric; AI (NRAI). | Closed SaaS. | All signals. | stub |

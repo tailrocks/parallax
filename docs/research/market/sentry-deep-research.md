@@ -1,5 +1,12 @@
 # Sentry Deep Research
 
+> **Superseded as the canonical comparison** by
+> [`competitors/parallax-vs-sentry.md`](competitors/parallax-vs-sentry.md)
+> (no-bias deep-dive, verified 2026-07-17). This legacy note (2026-06-22) is a
+> **source**; OTLP was then "beta HTTP-only" — it has since gone GA for traces+logs
+> (still no OTLP metrics), and Seer is now $40/active contributor/mo. Re-verify
+> specifics in the canonical deep-dive before trusting.
+
 Research date: 2026-06-22
 
 Sentry is the **incumbent error-tracking + issue-workflow product** that Parallax plans to
