@@ -360,6 +360,20 @@ standalone SQL catalog (table-not-found); pipeline endpoint still works.
 
 Raw custom tables for OTLP signals remain forbidden without the native-table decision research packet.
 
+## Run 406 (2026-07-18) — adopt-native re-verify on pins (no drift)
+
+Pins: GT `v1.1.3` + nightly `1.2.0` (`v1.2.0-nightly-20260713`); CH `26.6.1.1193` / head `26.7.1.1097`.
+
+| Check | Result |
+| --- | --- |
+| GT + nightly `/health` | HTTP 200 |
+| GT + nightly `/v1/jaeger/api/services` | HTTP 200 envelope (`data:null` empty cluster) |
+| OTLP `/v1/otlp/v1/{logs,traces,metrics}` empty JSON | HTTP **400** “Unsupported content type `application/json`. OTLP endpoint only support…” — **protobuf-only** (Run 181 holds) |
+| `greptime_identity` POST 2 JSON logs → `r406_id` | Auto columns: `greptime_timestamp` TIME INDEX + `level,msg,service,trace_id` String + second-row `latency_ms` Int64 (**schema-on-write**) |
+| CH native OTLP engine | **none** — only `TimeSeries` experimental; hand `otel_logs` MergeTree (`ORDER BY (ServiceName, Timestamp)`) remains the ClickStack-style custom shape |
+
+**Adopt-native decision unchanged:** product writes GT native OTLP tables + identity pipeline; never invent raw custom OTEL tables on GT. CH stays comparator (collector + custom schema).
+
 ## Run 286 — OTLP endpoint presence
 
 `POST /v1/otlp/v1/logs` returns HTTP 400 on empty JSON (endpoint live; protobuf body required for success per Run 181).
