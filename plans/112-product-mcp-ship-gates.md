@@ -39,6 +39,8 @@ must not return in product output.
 - Bundle calls explicitly request a 4,000-token canonical budget rather than
   inheriting the HTTP API's 10,000-token default; full oversized-summary and
   resource-reference behavior remains unfinished.
+- Issue-context discovery advertises the checked-in bundle-v2 schema as the MCP
+  `outputSchema`; client discovery/conformance evidence remains unfinished.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded

@@ -59,6 +59,8 @@ Tool results expose bounded text plus `structuredContent`; comparison-only raw
 canonical JSON metadata was removed before product graduation.
 Bundle assembly is explicitly capped at 4,000 tokens for MCP because each call
 returns both the canonical structured object and compatibility text.
+The issue-context tool advertises the checked-in bundle-v2 JSON Schema as its
+MCP `outputSchema`.
 
 ## Source map
 

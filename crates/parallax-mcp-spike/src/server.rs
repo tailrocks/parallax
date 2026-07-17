@@ -4,12 +4,21 @@ use crate::gql::{self, GraphqlClient};
 use rmcp::{
     ErrorData as McpError, ServerHandler, ServiceExt,
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
-    model::{CallToolResult, ContentBlock, ServerCapabilities, ServerInfo},
+    model::{CallToolResult, ContentBlock, JsonObject, ServerCapabilities, ServerInfo},
     schemars, tool, tool_handler, tool_router,
     transport::stdio,
 };
 use serde::Deserialize;
 use serde_json::{Value, json};
+use std::sync::Arc;
+
+fn evidence_bundle_output_schema() -> Arc<JsonObject> {
+    let schema = serde_json::from_str(include_str!(
+        "../../../schema/evidence-bundle.v2.schema.json"
+    ))
+    .unwrap_or_default();
+    Arc::new(schema)
+}
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub(crate) struct IssueContextArgs {
@@ -24,12 +33,12 @@ pub(crate) struct AgentSessionArgs {
 }
 
 #[derive(Clone)]
-#[expect(
-    dead_code,
-    reason = "tool_handler macro reads the generated router field"
-)]
 pub(crate) struct SpikeServer {
     client: GraphqlClient,
+    #[allow(
+        dead_code,
+        reason = "tool_handler macro reads the generated router field"
+    )]
     tool_router: ToolRouter<Self>,
 }
 
@@ -46,7 +55,8 @@ impl SpikeServer {
 impl SpikeServer {
     #[tool(
         name = "parallax_issue_context",
-        description = "Canonical evidence bundle for an issue fingerprint. Returns bounded Markdown in text content and the parsed canonical JSON in structuredContent (already redacted by the Parallax API)."
+        description = "Canonical evidence bundle for an issue fingerprint. Returns bounded Markdown in text content and the parsed canonical JSON in structuredContent (already redacted by the Parallax API).",
+        output_schema = evidence_bundle_output_schema()
     )]
     async fn parallax_issue_context(
         &self,
@@ -150,5 +160,22 @@ mod tests {
             encoded.get("structuredContent"),
             Some(&json!({"schema_version": "bundle-v2"}))
         );
+    }
+
+    #[test]
+    fn issue_context_advertises_the_canonical_bundle_v2_schema() {
+        let server = SpikeServer::new("http://127.0.0.1:4000".to_string());
+        let tools = server.tool_router.list_all();
+        let tool = tools
+            .iter()
+            .find(|tool| tool.name == "parallax_issue_context")
+            .expect("issue context tool");
+        let schema = tool.output_schema.as_ref().expect("output schema");
+
+        assert_eq!(
+            schema.get("$id").and_then(Value::as_str),
+            Some("https://github.com/tailrocks/parallax/schema/evidence-bundle.v2.schema.json")
+        );
+        assert_eq!(schema.get("type").and_then(Value::as_str), Some("object"));
     }
 }
