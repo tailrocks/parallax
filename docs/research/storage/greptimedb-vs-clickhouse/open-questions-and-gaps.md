@@ -112,6 +112,10 @@ implementation; this ledger does not authorize it.
 
 ## Next engine-loop targets (after Run 219, 2026-07-17)
 
+**Pass 110 research consume (desk, no new bench):** this section is the correct
+boundary for the indefinite research brief — **do not** re-run local four-way
+smoke as if it closed agenda item 5. Server-tier + workload-mix remain **unproven**.
+
 Engine-smoke re-verify cycle after v1.1.3 re-pin is **saturated** for laptop scale.
 Highest-value *remaining* items (not “done”):
 
