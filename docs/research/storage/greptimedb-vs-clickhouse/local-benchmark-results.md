@@ -8041,3 +8041,7 @@ Four-way still healthy; GT 1.1.3 / CH 26.6. Loop continues without declaring don
 
 `count(DISTINCT service)` on m2m = **40** both engines (matches gen 40 services).
 Baseline for metric-agg scale notes.
+
+### Run 299 — 2026-07-17 — health still OK; not done
+
+GT health endpoint live after long session. Comparison still open.
