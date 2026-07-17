@@ -20,6 +20,46 @@ fn issue_occurrence<'a>(
 }
 
 #[tokio::test]
+async fn saved_state_discovery_discloses_policy_retention_with_zero_eligibility() {
+    let directory = tempfile::tempdir().expect("temporary directory");
+    let store = TursoMetadataStore::open(directory.path().join("metadata.db"))
+        .await
+        .expect("open metadata");
+    store
+        .dashboard_save("dashboard", "Dashboard", "{}", 1)
+        .await
+        .expect("save dashboard");
+    store
+        .investigation_save("investigation", "Investigation", "{}", 1)
+        .await
+        .expect("save investigation");
+    store
+        .saved_view_save("view", "View", "logs", "{}", 1)
+        .await
+        .expect("save view");
+
+    let items = store
+        .retained_saved_state_prune_items(99)
+        .await
+        .expect("discover protected saved state");
+
+    assert_eq!(items.len(), 3);
+    assert_eq!(items[0].class, PruneClass::Dashboards);
+    assert_eq!(items[1].class, PruneClass::Investigations);
+    assert_eq!(items[2].class, PruneClass::SavedViews);
+    for item in items {
+        assert_eq!(item.estimate.rows, Some(0));
+        assert_eq!(item.cutoff_nanos, 99);
+        assert_eq!(item.exclusions.len(), 1);
+        assert_eq!(
+            item.exclusions[0].kind,
+            PruneExclusionKind::RetainedByPolicy
+        );
+        assert_eq!(item.exclusions[0].count, 1);
+    }
+}
+
+#[tokio::test]
 async fn issue_discovery_uses_persisted_resolution_time_and_preserves_open_issues() {
     let directory = tempfile::tempdir().expect("temporary directory");
     let store = TursoMetadataStore::open(directory.path().join("metadata.db"))

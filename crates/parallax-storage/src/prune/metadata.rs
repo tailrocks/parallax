@@ -17,4 +17,11 @@ pub trait MetadataPruneStore: Send + Sync {
         &self,
         cutoff_nanos: u128,
     ) -> MetadataResult<Vec<PruneItem>>;
+
+    /// Bounded zero-eligibility items for user-owned saved state which normal
+    /// prune must disclose but never select.
+    async fn retained_saved_state_prune_items(
+        &self,
+        cutoff_nanos: u128,
+    ) -> MetadataResult<Vec<PruneItem>>;
 }

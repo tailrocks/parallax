@@ -114,6 +114,14 @@ the helper objective; the peer executor owns the status transition.
   that execution is owner-cascade-only; unresolved/recent owners contribute no
   dependent candidates. Standalone occurrence-ledger compaction remains the
   existing ingest-maintenance concern and is not broadened by prune planning.
+- Normal-prune discovery now emits zero-eligibility items for dashboards,
+  investigations, and saved views instead of silently omitting user-owned
+  state. Their bounded counts use a typed `retained_by_policy` exclusion;
+  explicit user deletion remains the only deletion path.
+  Focused metadata and prune-core tests pass. The combined strict Clippy gate
+  was temporarily obstructed by a peer's uncommitted metrics-explorer helper
+  (`adapter_math::increase_from_buckets`); peer verification must rerun it once
+  that concurrent slice is integrated.
 
 ## Historical Blocker Evidence (2026-07-14; superseded 2026-07-17)
 

@@ -55,6 +55,7 @@ pub enum PruneExclusionKind {
     Unresolved,
     Pinned,
     NotExpired,
+    RetainedByPolicy,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]

@@ -6,6 +6,38 @@ use parallax_storage::{
 };
 
 impl TursoMetadataStore {
+    pub async fn retained_saved_state_prune_items(
+        &self,
+        cutoff_nanos: u128,
+    ) -> anyhow::Result<Vec<PruneItem>> {
+        let conn = self.conn.lock().await;
+        let mut rows = conn
+            .query(
+                "SELECT
+                   (SELECT COUNT(*) FROM dashboards),
+                   (SELECT COUNT(*) FROM investigations),
+                   (SELECT COUNT(*) FROM saved_views)",
+                (),
+            )
+            .await?;
+        let row = rows
+            .next()
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("saved-state prune aggregate returned no row"))?;
+        Ok([
+            (PruneClass::Dashboards, "dashboards", integer(&row, 0)),
+            (
+                PruneClass::Investigations,
+                "investigations",
+                integer(&row, 1),
+            ),
+            (PruneClass::SavedViews, "saved_views", integer(&row, 2)),
+        ]
+        .into_iter()
+        .map(|(class, target, count)| retained_by_policy_item(class, target, cutoff_nanos, count))
+        .collect())
+    }
+
     pub async fn issue_dependent_prune_items(
         &self,
         cutoff_nanos: u128,
@@ -159,6 +191,34 @@ fn issue_dependent_item(
         },
         exclusions: Vec::new(),
         warnings: vec!["deleted only through the eligible issue owner cascade".to_string()],
+    }
+}
+
+fn retained_by_policy_item(
+    class: PruneClass,
+    target: &str,
+    cutoff_nanos: u128,
+    count: i64,
+) -> PruneItem {
+    let count = u64::try_from(count).unwrap_or(0);
+    PruneItem {
+        store: PruneStore::Turso,
+        class,
+        target: target.to_string(),
+        cutoff_nanos,
+        estimate: PruneEstimate {
+            rows: Some(0),
+            objects: None,
+            bytes: None,
+        },
+        exclusions: (count > 0)
+            .then_some(PruneExclusion {
+                kind: PruneExclusionKind::RetainedByPolicy,
+                count,
+            })
+            .into_iter()
+            .collect(),
+        warnings: vec!["normal prune never selects user-owned saved state".to_string()],
     }
 }
 
