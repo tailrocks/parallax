@@ -129,9 +129,9 @@ describe("dashboard contracts", () => {
     const { loadWidgetSeries } =
       await import("@/routes/dashboards.$dashboardId")
     const fetch = vi.fn(async (_query: string) => ({
-      w0: [{ groupValue: null, points: [{ tsNanos: "1", value: 1 }] }],
-      w1: [{ groupValue: null, points: [{ tsNanos: "1", value: 2 }] }],
-      w2: [{ groupValue: null, points: [{ tsNanos: "1", value: 3 }] }],
+      series_0: [{ groupValue: null, points: [{ tsNanos: "1", value: 1 }] }],
+      series_1: [{ groupValue: null, points: [{ tsNanos: "1", value: 2 }] }],
+      series_2: [{ groupValue: null, points: [{ tsNanos: "1", value: 3 }] }],
     }))
     const widgets = [
       { metric: "a", agg: "avg", chart: "line", title: "A" },
@@ -145,10 +145,9 @@ describe("dashboard contracts", () => {
     )
     expect(fetch).toHaveBeenCalledTimes(1)
     const doc = String(fetch.mock.calls[0]?.[0] ?? "")
-    expect(doc).toContain("w0:")
-    expect(doc).toContain("w1:")
-    expect(doc).toContain("w2:")
-    expect(doc).toContain('name: "a"')
+    expect(doc).toContain("series_0:")
+    expect(doc).toContain("query DashboardWidgetSeries")
+    expect(doc).not.toContain('name: "a"')
     expect(series).toHaveLength(3)
     expect(series[1]?.[0]?.points[0]?.value).toBe(2)
   })

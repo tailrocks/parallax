@@ -7,8 +7,10 @@ pub(in crate::policy) fn check_workspace(root: &Path) -> Result<Vec<Finding>> {
     let provider = TypeScriptProvider::new(&ui.join("tsconfig.json"));
     let mut files = Vec::new();
     collect_source_files(&ui.join("src"), &mut files)?;
-    if ui.join("tests").is_dir() {
-        collect_source_files(&ui.join("tests"), &mut files)?;
+    // Harness unit tests only — Playwright e2e fixtures import Node builtins
+    // (fs/net/path) that the browser-conditioned Oxc resolver correctly rejects.
+    if ui.join("tests/harness").is_dir() {
+        collect_source_files(&ui.join("tests/harness"), &mut files)?;
     }
     let config = ui.join("vite.config.ts");
     if config.is_file() {

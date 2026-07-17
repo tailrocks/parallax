@@ -1,4 +1,4 @@
-import { Link, createFileRoute } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
 import { useMemo, useState } from "react"
 import { IconChartLine } from "@tabler/icons-react"
 
@@ -8,17 +8,8 @@ import {
   Toolbar,
 } from "@/components/console/data-table"
 import { EmptyState } from "@/components/console/empty-state"
-import { RelativeTime } from "@/components/console/relative-time"
 import { PageHeader } from "@/components/page-header"
-import { Badge } from "@/components/ui/badge"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { MetricsTable } from "./-metrics-table"
 import { graphqlCached } from "@/lib/api"
 import { inferMetricKind, type MetricKind } from "@/lib/metric-aggregation"
 
@@ -84,7 +75,6 @@ function MetricsPage() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const [text, setText] = useState(search.q ?? "")
-
   const rows = useMemo(() => {
     const needle = text.toLowerCase()
     return catalog
@@ -92,15 +82,17 @@ function MetricsPage() {
         ...row,
         kind: (row.kind as MetricKind) || inferMetricKind(row.name),
       }))
-      .filter((row) => !needle || row.name.toLowerCase().includes(needle))
-      .filter((row) => !search.kind || row.kind === search.kind)
+      .filter(
+        (row) =>
+          (!needle || row.name.toLowerCase().includes(needle)) &&
+          (!search.kind || row.kind === search.kind)
+      )
   }, [catalog, search.kind, text])
-
   return (
     <div className="space-y-4 p-4">
       <PageHeader
         title="Metrics"
-        description="Browse every metric the store has seen, then explore one in detail."
+        description="Browse metrics, then open one."
       />
       <Toolbar>
         <SearchInput
@@ -112,7 +104,7 @@ function MetricsPage() {
               replace: true,
             })
           }}
-          placeholder="Search metrics"
+          placeholder="Search"
         />
         <FilterSelect
           {...(search.kind ? { value: search.kind } : {})}
@@ -130,56 +122,10 @@ function MetricsPage() {
         <EmptyState
           icon={IconChartLine}
           title="No metrics match"
-          description="Adjust the search or kind filter, or send some metrics."
+          description="Adjust filters or send metrics."
         />
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead className="w-32">Kind</TableHead>
-              <TableHead className="w-24">Unit</TableHead>
-              <TableHead>Services</TableHead>
-              <TableHead className="w-28 text-right">Datapoints</TableHead>
-              <TableHead className="w-36">Last seen</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((row) => (
-              <TableRow key={row.name}>
-                <TableCell className="font-mono text-xs">
-                  <Link
-                    to="/metrics/$metricName"
-                    params={{ metricName: row.name }}
-                    search={{ kind: row.kind }}
-                    className="hover:underline"
-                  >
-                    {row.name}
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">{row.kind}</Badge>
-                </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                  {row.unit ?? "—"}
-                </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                  {row.services?.join(", ") ?? "—"}
-                </TableCell>
-                <TableCell className="text-right text-xs tabular-nums">
-                  {row.pointCount ?? "—"}
-                </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                  {row.lastDatapointNanos ? (
-                    <RelativeTime nanos={row.lastDatapointNanos} />
-                  ) : (
-                    "—"
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <MetricsTable rows={rows} />
       )}
     </div>
   )

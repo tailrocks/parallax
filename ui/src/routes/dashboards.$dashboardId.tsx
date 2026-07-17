@@ -50,6 +50,8 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
+import { loadWidgetSeries as loadWidgetSeriesDecoded } from "@/features/dashboards/api/widget-series-api"
+import type { WidgetSeries } from "@/features/dashboards/api/widget-series-schema"
 import { gqlString, graphql, graphqlCached } from "@/lib/api"
 import { formatCount, formatTimeInRange } from "@/lib/format"
 import {
@@ -67,15 +69,7 @@ import {
 } from "./dashboards.index"
 import type { Widget } from "./dashboards.index"
 
-interface SeriesPoint {
-  tsNanos: string
-  value: number
-}
-
-interface Series {
-  groupValue: string | null
-  points: SeriesPoint[]
-}
+type Series = WidgetSeries
 
 interface WidgetData {
   widget: Widget
@@ -84,42 +78,20 @@ interface WidgetData {
 }
 
 const MAX_GROUPS = 5
-/** Stay well under GraphQL complexity limit (~1000); 24 aliases per document. */
-const WIDGET_CHUNK = 24
 
-function metricSeriesAlias(
-  widget: Widget,
-  range: ResolvedRange,
-  alias: string
-): string {
-  return `${alias}: metricSeries(name: "${gqlString(widget.metric)}",
-               fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}",
-               agg: "${gqlString(widget.agg)}"${
-                 widget.groupBy
-                   ? `, groupBy: "${gqlString(widget.groupBy)}"`
-                   : ""
-               }) { groupValue points { tsNanos value } }`
-}
-
-/** One (or chunked) aliased GraphQL document(s) for all widget series. */
+/** Plan 152 dynamic dashboard series adapter (AST + alias-aware decode). */
 export async function loadWidgetSeries(
   widgets: Widget[],
   range: ResolvedRange,
-  fetch: typeof graphqlCached = graphqlCached
+  fetch?: (
+    query: string,
+    init?: { signal?: AbortSignal }
+  ) => Promise<Record<string, unknown>>
 ): Promise<Series[][]> {
-  if (widgets.length === 0) return []
-  const results: Series[][] = Array.from({ length: widgets.length })
-  for (let offset = 0; offset < widgets.length; offset += WIDGET_CHUNK) {
-    const chunk = widgets.slice(offset, offset + WIDGET_CHUNK)
-    const doc = `{ ${chunk
-      .map((widget, i) => metricSeriesAlias(widget, range, `w${offset + i}`))
-      .join("\n")} }`
-    const body = await fetch<Record<string, Series[]>>(doc)
-    for (let i = 0; i < chunk.length; i += 1) {
-      results[offset + i] = body[`w${offset + i}`] ?? []
-    }
+  if (fetch) {
+    return loadWidgetSeriesDecoded(widgets, range, fetch)
   }
-  return results
+  return loadWidgetSeriesDecoded(widgets, range)
 }
 
 export const Route = createFileRoute("/dashboards/$dashboardId")({

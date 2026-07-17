@@ -5,7 +5,8 @@
   "packageManager": "bun@1.3.14",
   "trustedDependencies": [],
   "overrides": {
-    "undici": "7.28.0"
+    "undici": "7.28.0",
+    "graphql": "16.14.2"
   },
   "scripts": {
     "dev": "bunx --bun --no-install vite dev --port 3000",
@@ -22,12 +23,14 @@
     "format": "bun ./node_modules/oxfmt/bin/oxfmt --write \"**/*.{ts,tsx}\" \"!src/routeTree.gen.ts\"",
     "format:list": "bun ./node_modules/oxfmt/bin/oxfmt --list-different \"**/*.{ts,tsx}\" \"!src/routeTree.gen.ts\"",
     "check": "bun ./node_modules/oxfmt/bin/oxfmt --check \"**/*.{ts,tsx}\" \"!src/routeTree.gen.ts\"",
-    "typecheck": "bun ./node_modules/typescript/bin/tsc --noEmit"
+    "typecheck": "bun ./node_modules/typescript/bin/tsc --noEmit",
+    "graphql:generate": "bunx --bun --no-install graphql-codegen --config codegen.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
     "@fontsource-variable/geist-mono": "^5.2.8",
     "@fontsource-variable/inter": "^5.2.8",
+    "@graphql-typed-document-node/core": "3.2.0",
     "@tabler/icons-react": "^3.44.0",
     "@tailwindcss/vite": "^4.3.2",
     "@tanstack/react-router": "^1.170.18",
@@ -39,6 +42,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "elkjs": "^0.11.1",
+    "graphql": "16.14.2",
     "motion": "^12.42.2",
     "next-themes": "^0.4.6",
     "react": "^19.2.7",
@@ -53,6 +57,12 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@graphql-codegen/add": "6.0.0",
+    "@graphql-codegen/cli": "7.2.0",
+    "@graphql-codegen/near-operation-file-preset": "5.2.1",
+    "@graphql-codegen/typed-document-node": "7.1.0",
+    "@graphql-codegen/typescript": "6.1.0",
+    "@graphql-codegen/typescript-operations": "6.1.0",
     "@playwright/test": "1.61.1",
     "@tanstack/devtools-vite": "^0.7.2",
     "@testing-library/dom": "^10.4.1",
@@ -61,6 +71,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
+    "graphql-codegen-typescript-validation-schema": "0.19.0",
     "jsdom": "^28.1.0",
     "oxfmt": "0.58.0",
     "oxlint": "1.73.0",

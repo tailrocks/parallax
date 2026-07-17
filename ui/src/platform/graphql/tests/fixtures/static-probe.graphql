@@ -1,0 +1,36 @@
+# Plan 152 test-only static pipeline probe.
+# Exercises non-null and nullable output, required and optional variables,
+# list/object nesting, and every built-in scalar category present on Query.
+query GraphqlContractStaticProbe(
+  $fromNanos: String!
+  $toNanos: String!
+  $fingerprint: String!
+  $service: String
+  $limit: Int
+) {
+  health
+  version
+  otlpGrpcPort
+  otlpHttpPort
+  overview(fromNanos: $fromNanos, toNanos: $toNanos) {
+    spanCount
+    errorRate
+    activeServices
+  }
+  issue(fingerprint: $fingerprint) {
+    fingerprint
+    title
+    eventCount
+  }
+  metricNames(prefix: $service)
+  signalCountSeries(
+    kind: LOGS
+    service: $service
+    fromNanos: $fromNanos
+    toNanos: $toNanos
+    stepSeconds: $limit
+  ) {
+    tsNanos
+    value
+  }
+}

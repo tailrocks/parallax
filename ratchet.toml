@@ -1758,7 +1758,7 @@ ceiling = 35
 [[limits]]
 metric = "typescript.assertions"
 scope = "ui/src/routes/__tests__/-dashboards.test.tsx"
-ceiling = 15
+ceiling = 14
 
 [[limits]]
 metric = "typescript.assertions"
@@ -1858,7 +1858,7 @@ ceiling = 351
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/routes/__tests__/-dashboards.test.tsx"
-ceiling = 177
+ceiling = 176
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -1893,7 +1893,7 @@ ceiling = 642
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/routes/dashboards.$dashboardId.tsx"
-ceiling = 492
+ceiling = 466
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -1950,10 +1950,6 @@ metric = "typescript.file-lines"
 scope = "ui/src/routes/metrics.$metricName.tsx"
 ceiling = 419
 
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/metrics.index.tsx"
-ceiling = 172
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -2155,10 +2151,6 @@ metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/lib/where-clause.ts:77"
 ceiling = 42
 
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/routes/dashboards.$dashboardId.tsx:189"
-ceiling = 22
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -2743,7 +2735,7 @@ ceiling = 146
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/routes/__tests__/-dashboards.test.tsx:54"
-ceiling = 143
+ceiling = 142
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2805,15 +2797,7 @@ metric = "typescript.function-lines"
 scope = "ui/src/routes/alerts.index.tsx:580"
 ceiling = 88
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/dashboards.$dashboardId.tsx:216"
-ceiling = 180
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/dashboards.$dashboardId.tsx:397"
-ceiling = 117
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -2950,10 +2934,6 @@ metric = "typescript.function-lines"
 scope = "ui/src/routes/metrics.$metricName.tsx:202"
 ceiling = 238
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/metrics.index.tsx:82"
-ceiling = 101
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -3045,6 +3025,178 @@ ceiling = 1
 # migration_plan = plan that moves or hardens the file; kind classifies origin.
 # ---------------------------------------------------------------------------
 
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/sse/live-stream-controller.ts:37"
+ceiling = 112
+
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/sse/use-live-stream.ts:109"
+ceiling = 62
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/sse/use-live-stream.ts:39"
+ceiling = 69
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/dashboards.$dashboardId.tsx:188"
+ceiling = 180
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/dashboards.$dashboardId.tsx:369"
+ceiling = 117
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/dashboards/api/widget-series-operation.ts:52"
+ceiling = 103
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/dashboards/api/widget-series-operation.ts:69"
+ceiling = 67
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/graphql/tests/client.test.ts:35"
+ceiling = 186
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/platform/graphql/generated/schema-types.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/platform/graphql/tests/fixtures/static-probe.generated.ts"
+ceiling = 1
+
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/dashboards/tests/api/widget-series-contract.test.ts"
+ceiling = 26
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/external-values/tests/boundary-diagnostic.test.ts"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/external-values/tests/decode-json-text.test.ts"
+ceiling = 9
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/graphql/tests/client.test.ts"
+ceiling = 21
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/graphql/tests/generation-contract.test.ts"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/graphql/tests/variables.test.ts"
+ceiling = 6
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/sse/tests/live-stream-controller.test.ts"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/storage/tests/browser-storage-client.test.ts"
+ceiling = 6
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/storage/tests/versioned-storage-codec.test.ts"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/url/tests/decode-search-value.test.ts"
+ceiling = 2
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/visibility/tests/use-page-visible.test.tsx"
+ceiling = 3
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/platform/graphql/generated/schema-types.generated.ts"
+ceiling = 1427
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/dashboards/api/widget-series-api.ts:83"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/dashboards/api/widget-series-operation.ts:191"
+ceiling = 32
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/platform/external-values/boundary-error.ts:32"
+ceiling = 31
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/platform/graphql/client.ts:200"
+ceiling = 20
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/platform/graphql/variables.ts:17"
+ceiling = 21
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/routes/dashboards.$dashboardId.tsx:161"
+ceiling = 22
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/dashboards/api/widget-series-api.ts:83"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/dashboards/api/widget-series-operation.ts:191"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/platform/graphql/variables.ts:17"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/sse/tests/live-stream-controller.test.ts:45"
+ceiling = 69
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/external-values/tests/decode-json-text.test.ts:29"
+ceiling = 63
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/storage/versioned-storage-codec.ts:32"
+ceiling = 63
 [[ui.ownership]]
 path = "ui/scripts/runtime-probe.ts"
 current_owner = "tooling"
@@ -4312,6 +4464,230 @@ target_owner = "platform/sse"
 migration_plan = "153"
 kind = "handwritten"
 
+
+[[ui.ownership]]
+path = "ui/src/features/dashboards/api/widget-series-api.ts"
+current_owner = "feature/dashboards"
+target_owner = "feature/dashboards"
+migration_plan = "152"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/dashboards/api/widget-series-operation.ts"
+current_owner = "feature/dashboards"
+target_owner = "feature/dashboards"
+migration_plan = "152"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/dashboards/api/widget-series-schema.ts"
+current_owner = "feature/dashboards"
+target_owner = "feature/dashboards"
+migration_plan = "152"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/dashboards/tests/api/widget-series-contract.test.ts"
+current_owner = "feature/dashboards"
+target_owner = "feature/dashboards"
+migration_plan = "152"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/external-values/boundary-diagnostic.ts"
+current_owner = "platform/external-values"
+target_owner = "platform/external-values"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/external-values/boundary-error.ts"
+current_owner = "platform/external-values"
+target_owner = "platform/external-values"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/external-values/decode-json-text.ts"
+current_owner = "platform/external-values"
+target_owner = "platform/external-values"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/external-values/runtime-decoder.ts"
+current_owner = "platform/external-values"
+target_owner = "platform/external-values"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/external-values/tests/boundary-diagnostic.test.ts"
+current_owner = "platform/external-values"
+target_owner = "platform/external-values"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/external-values/tests/decode-json-text.test.ts"
+current_owner = "platform/external-values"
+target_owner = "platform/external-values"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/graphql/client.ts"
+current_owner = "platform/graphql"
+target_owner = "platform/graphql"
+migration_plan = "152"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/graphql/error.ts"
+current_owner = "platform/graphql"
+target_owner = "platform/graphql"
+migration_plan = "152"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/graphql/generated/schema-types.generated.ts"
+current_owner = "platform/graphql"
+target_owner = "platform/graphql"
+migration_plan = "152"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/platform/graphql/tests/client.test.ts"
+current_owner = "platform/graphql"
+target_owner = "platform/graphql"
+migration_plan = "152"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/graphql/tests/fixtures/static-probe.generated.ts"
+current_owner = "platform/graphql"
+target_owner = "platform/graphql"
+migration_plan = "152"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/platform/graphql/tests/generation-contract.test.ts"
+current_owner = "platform/graphql"
+target_owner = "platform/graphql"
+migration_plan = "152"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/graphql/tests/variables.test.ts"
+current_owner = "platform/graphql"
+target_owner = "platform/graphql"
+migration_plan = "152"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/graphql/variables.ts"
+current_owner = "platform/graphql"
+target_owner = "platform/graphql"
+migration_plan = "152"
+kind = "handwritten"
+
+
+[[ui.ownership]]
+path = "ui/src/platform/graphql/typed-document.ts"
+current_owner = "platform/graphql"
+target_owner = "platform/graphql"
+migration_plan = "152"
+kind = "handwritten"
+[[ui.ownership]]
+path = "ui/src/platform/sse/event-source.client.ts"
+current_owner = "platform/sse"
+target_owner = "platform/sse"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/sse/live-stream-controller.ts"
+current_owner = "platform/sse"
+target_owner = "platform/sse"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/sse/tests/live-stream-controller.test.ts"
+current_owner = "platform/sse"
+target_owner = "platform/sse"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/storage/browser-storage.client.ts"
+current_owner = "platform/storage"
+target_owner = "platform/storage"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/storage/browser-storage.ts"
+current_owner = "platform/storage"
+target_owner = "platform/storage"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/storage/tests/browser-storage-client.test.ts"
+current_owner = "platform/storage"
+target_owner = "platform/storage"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/storage/tests/versioned-storage-codec.test.ts"
+current_owner = "platform/storage"
+target_owner = "platform/storage"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/storage/versioned-storage-codec.ts"
+current_owner = "platform/storage"
+target_owner = "platform/storage"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/url/decode-search-value.ts"
+current_owner = "platform/url"
+target_owner = "platform/url"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/url/tests/decode-search-value.test.ts"
+current_owner = "platform/url"
+target_owner = "platform/url"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/visibility/page-visibility.client.ts"
+current_owner = "platform/visibility"
+target_owner = "platform/visibility"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/visibility/tests/use-page-visible.test.tsx"
+current_owner = "platform/visibility"
+target_owner = "platform/visibility"
+migration_plan = "153"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/visibility/use-page-visible.ts"
+current_owner = "platform/visibility"
+target_owner = "platform/visibility"
+migration_plan = "153"
+kind = "handwritten"
 [[ui.ownership]]
 path = "ui/src/routeTree.gen.ts"
 current_owner = "generated"
@@ -4522,6 +4898,13 @@ target_owner = "features/runtime-metrics"
 migration_plan = "149"
 kind = "handwritten"
 
+
+[[ui.ownership]]
+path = "ui/src/routes/-metrics-table.tsx"
+current_owner = "routes/metrics"
+target_owner = "feature/metrics"
+migration_plan = "150"
+kind = "handwritten"
 [[ui.ownership]]
 path = "ui/src/routes/metrics.index.tsx"
 current_owner = "routes"

@@ -169,8 +169,8 @@ major upgrades. The root [`AGENTS.md`](../AGENTS.md) and the
     | runtime-metrics, story, time-range, page-header | route-less | 149 |
     | overview | `/` | 150 |
     | app, layout, app-status, quick-navigation | shell/root | 143 |
-    | platform/graphql | transport | 152 hardens |
-    | platform/sse, platform/browser | live/visibility | 153 hardens |
+    | platform/graphql | client + transport + codegen | 152 foundation |
+    | platform/sse, platform/visibility, platform/storage, platform/url, platform/external-values | live/visibility/storage/search/decode | 153 foundation |
 
 29. **Placement decision** for a new file:
     1. shadcn primitive? → `components/ui` via CLI only.

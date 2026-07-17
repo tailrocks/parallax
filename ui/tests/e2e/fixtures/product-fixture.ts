@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test"
-import { createConnection } from "node:net"
-import { readFileSync } from "node:fs"
-import { join } from "node:path"
+import { readFileSync } from "fs"
+import { createConnection } from "net"
+import { join } from "path"
 
 export type ProductDatasetId = "shell-empty" | "investigations-pilot"
 
@@ -56,14 +56,14 @@ function controlHostPort(): { host: string; port: number } {
 async function controlRequest(body: Record<string, unknown>): Promise<unknown> {
   const { host, port } = controlHostPort()
   const payload = `${JSON.stringify(body)}\n`
-  return await new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const socket = createConnection({ host, port }, () => {
       socket.write(payload)
     })
     let data = ""
     socket.setEncoding("utf8")
-    socket.on("data", (chunk) => {
-      data += chunk
+    socket.on("data", (chunk: string | Buffer) => {
+      data += typeof chunk === "string" ? chunk : chunk.toString("utf8")
     })
     socket.on("end", () => {
       try {
