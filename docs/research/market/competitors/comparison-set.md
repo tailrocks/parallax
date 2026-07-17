@@ -24,7 +24,7 @@ Legend for the **State** column:
 | **Datadog** | Full-stack SaaS observability + security; broadest commercial surface (infra, APM, logs, RUM, profiling, LLM/agent obs, CI/test, incident, security). | Closed SaaS; OSS agent, proprietary backend. | All signals. | [deep-dive](parallax-vs-datadog.md) |
 | **Sentry** | Error tracking + tracing + logs + metrics + profiling + replay + Seer AI; OTLP traces+logs (no OTLP metrics); best-in-class issue lifecycle. | Source-available FSL (→Apache/MIT @2yr). | Errors + perf + replay. | [deep-dive](parallax-vs-sentry.md) |
 | **Grafana Cloud / LGTM** | Managed stack on Prometheus/Mimir, Loki, Tempo, Pyroscope, Grafana; OTLP-native. | Mixed OSS + Cloud SaaS (Grafana Labs). | Metrics + logs + traces + profiles. | [deep-dive](parallax-vs-grafana.md) |
-| **Honeycomb** | High-cardinality event-pipeline observability; exploratory query; Bubbleuppy AI. | Closed SaaS (source-available pieces). | Events / traces (high cardinality). | stub |
+| **Honeycomb** | High-cardinality event-pipeline observability; exploratory query; Query Assistant/Canvas AI + MCP. | Closed SaaS (Refinery OSS). | Events / traces (high cardinality). | [deep-dive](parallax-vs-honeycomb.md) |
 | **New Relic** | Full-platform SaaS; entity-centric; AI (NRAI). | Closed SaaS. | All signals. | stub |
 | **Dynatrace** | AI-driven (Davis) full-stack; deep auto-instrumentation via OneAgent. | Closed SaaS. | All signals + topology. | stub |
 | **Splunk Observability Cloud** | Observability on top of Splunk (post-Cisco); OTel-native metrics/traces + logs. | Closed SaaS. | Logs + metrics + traces. | stub |
