@@ -266,7 +266,10 @@ pub(crate) async fn run_stdio(base_url: String) -> anyhow::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rmcp::{ClientHandler, model::CallToolRequestParams};
+    use rmcp::{
+        ClientHandler,
+        model::{CallToolRequestParams, ReadResourceRequestParams},
+    };
 
     struct VersionedClient(ProtocolVersion);
 
@@ -646,6 +649,39 @@ mod tests {
                 .collect::<Vec<_>>(),
             ["parallax_agent_session_show", "parallax_issue_context"]
         );
+        assert!(
+            client
+                .peer()
+                .list_prompts(None)
+                .await
+                .expect("prompts/list response")
+                .prompts
+                .is_empty()
+        );
+        assert!(
+            client
+                .peer()
+                .list_resources(None)
+                .await
+                .expect("resources/list response")
+                .resources
+                .is_empty()
+        );
+        assert!(
+            client
+                .peer()
+                .list_resource_templates(None)
+                .await
+                .expect("resources/templates/list response")
+                .resource_templates
+                .is_empty()
+        );
+        let resource_error = client
+            .peer()
+            .read_resource(ReadResourceRequestParams::new("parallax://forbidden"))
+            .await
+            .expect_err("resource reads must remain unavailable");
+        assert!(resource_error.to_string().contains("method not found"));
         for denied in ["run_shell", "dashboard_create"] {
             let error = client
                 .call_tool(CallToolRequestParams::new(denied))

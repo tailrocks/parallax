@@ -56,6 +56,8 @@ that trust decision.
 Unit coverage includes wire-level MCP initialization and `tools/list` over an
 in-memory stdio-equivalent duplex transport. Live Codex/Claude fixtures remain
 manual and unfinished.
+Wire fixtures require empty prompt/resource/template catalogs and method-level
+denial for resource reads; resource capabilities remain disabled.
 The API origin is restricted to credential-free plaintext HTTP on literal
 loopback IPs; hostnames are rejected so DNS/hosts configuration cannot escape
 the local boundary.
