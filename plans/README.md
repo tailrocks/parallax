@@ -230,7 +230,7 @@ Plan 148 DONE (2026-07-17): production bundle budgets + two clean builds + `@bun
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [103](103-property-fuzz-and-performance.md) | Residual Rust/UI property, fuzz, and performance gates | P2 | S | scheduled-measurement samples (ratchets) | BLOCKED — UI/Rust properties landed; fail-closed ratchets need measured variance (no invent) |
+| [103](103-property-fuzz-and-performance.md) | Residual Rust/UI property, fuzz, and performance gates | P2 | S | ≥3 scheduled-measurement jobs (ratchets) | BLOCKED — fuzz defects fixed + 1 durable sample committed; fail-closed ratchets wait multi-run variance (no invent) |
 
 ### Evidence Contracts And Closure
 
@@ -362,7 +362,7 @@ CI-provider API collection; 155 consumes OTLP-ingested telemetry only.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [154](154-playground-capability-and-test-observability.md) | Live multi-backend fan-out acceptance residual | P1 | M | Self-hosted Maple/SigNoz/OpenObserve/Sentry (Parallax arm → plan 159 DONE) | BLOCKED — multi-backend arm only; one self-hosted external at a time on 16 GB host |
+| [154](154-playground-capability-and-test-observability.md) | Live multi-backend fan-out acceptance residual | P1 | S–M | Sentry finish + playground acceptance | IN PROGRESS — OO/Maple/SigNoz live PASS 2026-07-17; Sentry setup + acceptance residual |
 | [155](155-test-reporting-surface.md) | Test reporting surface residual | P1 | XL | 149, 152, 153, 140 DONE; soft 121/124 | IN PROGRESS — flaky scan job loop landed; residual UI/mute/JUnit adapters/e2e |
 
 ### Triggered Or Residual Work

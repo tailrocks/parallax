@@ -56,13 +56,17 @@ on a stable runner). First local run, 2026-07-17, Apple Silicon dev host,
 | `arrow_decode_10k_rows_zstd` | parallax-greptime | ~980 µs |
 
 First CI validation (2026-07-17): manual dispatch run 29582532812 completed
-green on ubuntu, uploading `fuzz-campaign-*` (five-minute campaign per
-boundary, no crashes) and `bench-samples-*` (three criterion repeats)
-artifacts.
+on ubuntu, uploading `fuzz-campaign-*` (five-minute campaign per boundary)
+and `bench-samples-*` (three criterion repeats) artifacts. **Corrected:**
+two fuzz boundaries asserted (`redaction_text`, `bundle_envelope_json`);
+defects fixed same day (control-strip order; number fixpoint loop). Durable
+sample + within-run variance table:
+[`measurement/2026-07-17-run-29582532812/`](measurement/2026-07-17-run-29582532812/README.md).
 
 Run: `cargo bench -p <crate> --bench <name>`. Ratchets are NOT set — the
-plan forbids thresholds before variance is measured on a stable scheduled
-runner; these numbers are the reference points for that work.
+plan forbids thresholds before **multi-run** variance is measured on a stable
+scheduled runner (n≥3 independent jobs); one-job within-run span is reference
+only.
 
 ## Allocation instrumentation (plan 103, Step 4)
 
