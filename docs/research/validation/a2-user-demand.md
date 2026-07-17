@@ -11,6 +11,15 @@
 >   still returns HTTP 200; **2026 survey URL 404** this pass — keep 2025 as
 >   current public SO survey cite until 2026 lands; still **not** an A2 pass signal.
 > - **Next real move is operator execution of the runbook**, not more desk theory.
+>
+> **Pass 128 recheck (2026-07-17):** gate **still OPEN / zero rows**.
+> - Ledger paths still **absent** (`a2-deployment-intent-results.md` not present under
+>   `docs/research/` or `docs/research/validation/`).
+> - SO survey: **2025** still **200**, **2026** still **404** (same as pass 66).
+> - Monetization desk triangle (Grafana / SigNoz / OpenObserve, passes 106–119)
+>   and wedge pressure (Traceway, passes 122–125) **still cannot** close A2.
+> - Empirical A1/A4/A6 gates remaining open does **not** block starting interviews
+>   (protocol allows demo of shipped V1); interviews remain **operator-owned**.
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
