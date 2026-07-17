@@ -53,6 +53,10 @@ promises cannot overwrite newer topology, and the existing links/edge labels/
 9-node no-overlap behavior remain intact. The combined graph/layout/topology
 suite passes 25 tests and targeted lint passes. Full typecheck was blocked by
 the peer's concurrent unfinished Plan-163 trace variables, not this slice.
+Fallback timing on the operator's arm64 host (2026-07-17): 1,000 layouts of a
+50-node/100-edge synthetic topology completed in 40.27ms total (0.0403ms
+mean), far below the plan's 100ms sync-fallback STOP threshold. Peer still
+verifies the real corpus and browser worker path.
 
 ## Why this matters
 
