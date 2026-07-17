@@ -8516,3 +8516,16 @@ shape: GT per-percentile vs CH shared sketch). Blueprint: Flow-sketch for multi-
 
 Warm shape holds vs Run 425. Cold first-hit on nightly again.
 
+## Run 563 (2026-07-18) — FT tokenbf + PREWHERE re-verify (no drift)
+
+Pins: GT `v1.1.3` / CH `26.6.1.1193`. Table `logs1m` (tokenbf `idx_msg` on `message`).
+
+| Query | Plan | Count |
+| --- | --- | --- |
+| `hasToken(message,'msg0')` selective | tokenbf **Granules 0/7**, Ranges 0 | **0** |
+| `hasToken(message,'error')` broad | tokenbf **Granules 7/7**, Ranges 2 | **7443** |
+| `PREWHERE service='s0'` | PrimaryKey **Granules 2/7** | (plan only) |
+
+Thesis holds: selective full-text prunes; broad term does not. PREWHERE service still prunes.
+**Not done.**
+
