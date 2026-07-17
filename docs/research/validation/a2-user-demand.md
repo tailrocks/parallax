@@ -45,6 +45,10 @@
 >
 > **Pass 222 recheck (2026-07-18):** gate **still OPEN / zero rows**; ledger
 > files still **absent**; operator interviews still owed.
+>
+> **Pass 239 recheck (2026-07-18):** gate **still OPEN / zero rows**; ledger
+> paths still **absent**; desk monetization/wedge rechecks **cannot** close A2;
+> **operator interview runbook still owed**.
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
