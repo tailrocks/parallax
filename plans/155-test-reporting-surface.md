@@ -240,6 +240,23 @@ Out of scope (recorded triggers):
 
 ## Steps
 
+### Preliminary domain-model slice (Codex, 2026-07-17)
+
+`parallax-model` now owns validated versioned case/variant keys, nonzero attempt
+ordinals, the exact `(test_variant_key, cli.invocation.id, attempt)` result
+identity, configuration dimensions outside identity, complete attempt chains,
+named rollups, and the pure healthy/flaky/fixed/broken transition boundary.
+Fail/broken followed by pass rolls up as `FlakyPass`; duplicate attempts and
+mixed invocation/variant chains fail closed; consistent failure takes
+precedence over flaky evidence; recovery requires the explicit policy
+threshold. Five model suites and strict crate Clippy pass.
+
+This is preliminary, not completion. Key derivation/domain-separated hashing,
+identity fallback selection, failed-versus-broken analysis, persistent Turso
+records, ingest derivation, GraphQL, UI, and live playground proof remain for
+the next executor to implement and independently verify. Plan status is
+intentionally unchanged.
+
 1. Write the domain contract first: identity derivation (D1), status
    taxonomy mapping (D3), attempt semantics (D4), flaky signals/states (D6)
    as a spec section in this plan's implementation commit; add semconv
