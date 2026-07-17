@@ -246,6 +246,7 @@ managed quotes remain):
 | still not done | **564** | top 5 product/server open |
 | CH projection p_svc | **565** | ReadFromMergeTree(p_svc) holds |
 | append DELETE + freshness | **566** | 1004; 1→2; CH lw OK |
+| still not done | **567** | top 5 product/server |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
