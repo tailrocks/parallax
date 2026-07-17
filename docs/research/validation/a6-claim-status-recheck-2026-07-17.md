@@ -84,6 +84,16 @@ Still **offline validators only** — never runtime deps on the tiny tier.
 | Multi-surface red-team ledger | **Still absent** |
 | `agent_visible_mixed_pass` | **Still open** |
 
+### Pass 247 addendum (2026-07-18)
+
+| Check | Result |
+| --- | --- |
+| Public-safe canary unit test | **ok** — re-ran `cargo test -p parallax-redaction a6_public_safe` → `a6_public_safe_canaries_are_not_projected_raw_by_detectors` **passed** |
+| Related evidence path | `cargo test -p parallax-evidence redaction` → `sentry_event_cannot_bypass_canonical_bundle_redaction` **passed** |
+| Multi-surface red-team ledger | **Still absent** |
+| `agent_visible_mixed_pass` | **Still open** |
+| Claim split | **Unchanged** — synthetic canary partial ≠ mixed agent-visible gate |
+
 ## Claim levels applied
 
 From [redaction.md claim table](../capture/redaction.md):

@@ -77,6 +77,11 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > ledger. Kill "bundles do not beat raw" **unfired** until measured. **Still
 > GO (narrow product).**
 >
+> **Pass 247 (2026-07-18) — GO reaffirm (A4/A6 hygiene).** A4 still
+> **`not_measured`** (no reliability-runs ledger). A6 split holds (canary ok;
+> mixed open). Related kills **unfired** (open ≠ failed). **Still GO (narrow
+> product).**
+>
 > **Narrow product identity holds.** Research program continues.
 
 ## Verdict
