@@ -36,6 +36,9 @@ must not return in product output.
   prompts, resources, tasks, and other unapproved capabilities remain absent.
 - GraphQL anchors use variables rather than copied partial string escaping,
   removing the control-character/injection class at this adapter boundary.
+- Bundle calls explicitly request a 4,000-token canonical budget rather than
+  inheriting the HTTP API's 10,000-token default; full oversized-summary and
+  resource-reference behavior remains unfinished.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded

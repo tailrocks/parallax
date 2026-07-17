@@ -2,6 +2,10 @@
 //!
 use serde_json::Value;
 
+/// MCP returns both structured JSON and compatibility text, so use a tighter
+/// canonical bundle budget than the HTTP API's 10,000-token default.
+pub(crate) const MCP_BUNDLE_MAX_TOKENS: u32 = 4_000;
+
 #[derive(Clone)]
 pub(crate) struct GraphqlClient {
     base_url: String,
@@ -67,12 +71,12 @@ pub(crate) async fn fetch_bundle(
 ) -> anyhow::Result<BundleProjection> {
     let (query, variables) = match (fingerprint, invocation_id) {
         (Some(fingerprint), None) => (
-            "query Bundle($anchor: String!) { bundle(fingerprint: $anchor) { json markdown canonicalHash } }",
-            serde_json::json!({ "anchor": fingerprint }),
+            "query Bundle($anchor: String!, $maxTokens: Int!) { bundle(fingerprint: $anchor, maxTokens: $maxTokens) { json markdown canonicalHash } }",
+            serde_json::json!({ "anchor": fingerprint, "maxTokens": MCP_BUNDLE_MAX_TOKENS }),
         ),
         (None, Some(invocation_id)) => (
-            "query Bundle($anchor: String!) { bundle(invocationId: $anchor) { json markdown canonicalHash } }",
-            serde_json::json!({ "anchor": invocation_id }),
+            "query Bundle($anchor: String!, $maxTokens: Int!) { bundle(invocationId: $anchor, maxTokens: $maxTokens) { json markdown canonicalHash } }",
+            serde_json::json!({ "anchor": invocation_id, "maxTokens": MCP_BUNDLE_MAX_TOKENS }),
         ),
         _ => anyhow::bail!("fetch_bundle requires exactly one of fingerprint or invocation_id"),
     };

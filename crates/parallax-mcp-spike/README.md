@@ -57,6 +57,8 @@ uses the workspace `reqwest` with `native-tls-vendored`.
 Isolated proof of read-only MCP projection equivalence; never product packaging.
 Tool results expose bounded text plus `structuredContent`; comparison-only raw
 canonical JSON metadata was removed before product graduation.
+Bundle assembly is explicitly capped at 4,000 tokens for MCP because each call
+returns both the canonical structured object and compatibility text.
 
 ## Source map
 
