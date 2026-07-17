@@ -172,3 +172,24 @@ export function formatDelta(current: number, previous: number): Delta {
   if (Math.abs(pct) < 0.05) return { dir: "flat", pct: 0 }
   return { dir: pct > 0 ? "up" : "down", pct: Math.abs(pct) }
 }
+
+/** Longest log body shown inline in the table; the doc sheet has the rest. */
+export const LOG_BODY_PREVIEW_MAX = 512
+
+const ANSI_ESCAPE_PATTERN = new RegExp(`\\u001b\\[[0-9;]*[A-Za-z]`, "g")
+
+/** Terminal escape sequences never render as styling here — strip them. */
+export function stripAnsi(value: string): string {
+  return value.replace(ANSI_ESCAPE_PATTERN, "")
+}
+
+/** Table-cell body: ANSI stripped, capped with an explicit size hint so a
+ * 32 KiB body cannot dominate the DOM (corpus id l-bodies). */
+export function formatLogBodyPreview(
+  body: string,
+  max = LOG_BODY_PREVIEW_MAX
+): string {
+  const clean = stripAnsi(body)
+  if (clean.length <= max) return clean
+  return `${clean.slice(0, max)}… (${new Intl.NumberFormat().format(clean.length)} chars)`
+}

@@ -14,7 +14,7 @@ impl crate::adapter::LogStore for GreptimeStore {
                     wire_attr_ident(semconv::CLI_INVOCATION_ID),
                     escape(invocation_id)
                 ),
-                r#" ORDER BY "timestamp" DESC"#,
+                r#" ORDER BY "timestamp" DESC, "body" ASC"#,
                 &format!(" LIMIT {limit}"),
             )
             .await?;
@@ -25,7 +25,7 @@ impl crate::adapter::LogStore for GreptimeStore {
     async fn logs_by_trace(&self, trace_id: &str) -> StorageResult<Vec<LogRow>> {
         self.select_logs(
             &format!(r#""trace_id" = '{}'"#, escape(trace_id)),
-            r#" ORDER BY "timestamp" ASC"#,
+            r#" ORDER BY "timestamp" ASC, "body" ASC"#,
             "",
         )
         .await

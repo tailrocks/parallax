@@ -23,7 +23,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { formatDateTime, formatTimeInRange } from "@/lib/format"
+import {
+  formatDateTime,
+  formatLogBodyPreview,
+  formatTimeInRange,
+  stripAnsi,
+} from "@/lib/format"
 import { rangeLinkSearch, resolvePreset } from "@/lib/range"
 import type { ResolvedRange } from "@/lib/range"
 import { cn } from "@/lib/utils"
@@ -105,7 +110,7 @@ function docFields(log: LogDoc): Array<[string, string]> {
     ["@timestamp", formatDateTime(log.tsNanos)],
     ["severity", `${severityLabel(log)} (${log.severityNum})`],
     ["service.name", log.service],
-    ["body", log.body],
+    ["body", stripAnsi(log.body)],
   ]
   if (log.eventName) rows.splice(2, 0, ["event.name", log.eventName])
   const observed = observedSkewField(log)
@@ -343,7 +348,7 @@ export function LogsTable({
           </TableCell>
         ) : null}
         <TableCell className="max-w-xl truncate font-mono text-xs">
-          {log.body}
+          {formatLogBodyPreview(log.body)}
         </TableCell>
         {visible.has("trace") ? (
           <TableCell>

@@ -5,9 +5,11 @@ import {
   formatCount,
   formatDelta,
   formatDurationNs,
+  formatLogBodyPreview,
   formatRelative,
   formatTimeShort,
   formatTimeInRange,
+  stripAnsi,
 } from "@/lib/format"
 
 describe("formatters", () => {
@@ -75,5 +77,25 @@ describe("formatters", () => {
     const second = formatTimeShort("2000000000", options)
     expect(first).toBe(second)
     expect(first).toBe("00:02")
+  })
+})
+
+describe("log body preview (plan 160, corpus l-bodies)", () => {
+  it("D-008: strips ANSI escapes instead of rendering raw bytes", () => {
+    expect(stripAnsi("\u001b[31merror\u001b[0m with \u001b[1mANSI\u001b[0m")).toBe(
+      "error with ANSI"
+    )
+  })
+
+  it("D-009: caps oversized bodies with an explicit size hint", () => {
+    const body = `oversized body: ${"x".repeat(40_000)}`
+    const preview = formatLogBodyPreview(body)
+    expect(preview.length).toBeLessThan(600)
+    expect(preview).toContain("\u2026")
+    expect(preview).toContain("chars")
+  })
+
+  it("leaves short clean bodies untouched", () => {
+    expect(formatLogBodyPreview("hello")).toBe("hello")
   })
 })

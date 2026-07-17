@@ -13,9 +13,11 @@ impl crate::adapter::LogAnalyticsStore for GreptimeStore {
     ) -> StorageResult<Vec<LogRow>> {
         let clauses =
             log_filter_clauses(service, &range, severity_min, severity_max, body_contains);
+        // Body tiebreak keeps equal-timestamp rows in a stable order across
+        // refreshes (corpus id l-bodies: five rows share one nanosecond).
         self.select_logs(
             &clauses.join(" AND "),
-            r#" ORDER BY "timestamp" DESC"#,
+            r#" ORDER BY "timestamp" DESC, "body" ASC"#,
             &format!(" LIMIT {limit}"),
         )
         .await

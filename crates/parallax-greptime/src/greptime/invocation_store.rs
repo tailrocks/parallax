@@ -225,7 +225,7 @@ impl crate::adapter::InvocationStore for GreptimeStore {
         let rows = match self
             .select_logs(
                 &clauses.join(" AND "),
-                r#" ORDER BY "timestamp" ASC"#,
+                r#" ORDER BY "timestamp" ASC, "body" ASC"#,
                 &format!(" LIMIT {MAX_ROWS}"),
             )
             .await
@@ -397,7 +397,7 @@ impl GreptimeStore {
         match self
             .select_logs(
                 &where_clause,
-                r#" ORDER BY "timestamp" ASC"#,
+                r#" ORDER BY "timestamp" ASC, "body" ASC"#,
                 &format!(" LIMIT {MAX_ROWS}"),
             )
             .await
