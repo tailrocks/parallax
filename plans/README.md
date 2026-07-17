@@ -377,7 +377,7 @@ external facts still BLOCKED where noted. Plan 102 and plan 109 retired
 | 112 | 099, 104, 111 | Local-stdio product MCP ship gates | DONE (2026-07-17) — graduated `parallax-mcp`; live Codex/Claude discovery; [evidence](../docs/research/validation/2026-07-plan-112-product-mcp/README.md) |
 | [114](114-retire-legacy-spool-reader.md) | Stable raw-frame release cycle + expired legacy segments | Remove NDJSON reader after cycle | BLOCKED — only rolling `preview` tag (recheck 2026-07-17T14:40Z) |
 | [115](115-v2-server-profile.md) | Auth contract + release pipeline (102/109 DONE) | Rehearsals + load packet (ADR + example config landed) | IN PROGRESS — example-config.toml validates |
-| [118](118-sentry-envelope-migration-adapter.md) | 093, 099, 104, 111, 116 | Cross-source identity, bundle/redaction, live gates (SDK fixture landed) | IN PROGRESS — parser + HTTP + ledger + Python SDK fixture |
+| [118](118-sentry-envelope-migration-adapter.md) | 093, 099, 104, 111, 116 | Live Greptime+Turso, retention/doctor/API gates | IN PROGRESS — parser + HTTP + ledger + SDK fixture + cross-source identity + canonical redaction landed |
 | [120](120-agent-session-capture-adapters.md) | 099, 104, 111, 119 | Storage/API/UI, consent CLI, loss ledger (success fixture landed) | IN PROGRESS — normalizer + success-path fixture |
 | [121](121-deploy-and-change-context-collectors.md) | 099, 104, 111, 116 | Backfill, claim ledger (HTTP + doctor inventory landed) | IN PROGRESS — webhook + Turso + doctor deploy-context |
 | 122 | 105, 151 | Disposition table + retained scenarios | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-122-playground-disposition/README.md) |
