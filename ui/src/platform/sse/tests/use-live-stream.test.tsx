@@ -3,6 +3,7 @@
 import { act, cleanup, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import type { RuntimeDecoder } from "@/platform/external-values/runtime-decoder"
 import { useLiveStream } from "@/platform/sse/use-live-stream"
 import type { LiveStreamStatus } from "@/platform/sse/use-live-stream"
 
@@ -42,18 +43,27 @@ class MockEventSource {
   }
 }
 
+const stringArrayDecoder: RuntimeDecoder<string[]> = {
+  safeParse(input) {
+    return Array.isArray(input) && input.every((item) => typeof item === "string")
+      ? { success: true, data: input as string[] }
+      : { success: false, error: "bad" }
+  },
+}
+
 function StatusHarness({
   url,
-  parse,
+  decoder,
   onBatch,
   flushMs,
 }: {
   url: string | null
-  parse: (data: string) => string[]
+  decoder: RuntimeDecoder<string[]>
   onBatch: (items: string[]) => void
   flushMs?: number
 }) {
-  const options = flushMs === undefined ? { url, parse, onBatch } : { url, parse, onBatch, flushMs }
+  const options =
+    flushMs === undefined ? { url, decoder, onBatch } : { url, decoder, onBatch, flushMs }
   const status: LiveStreamStatus = useLiveStream(options)
   return <output data-testid="status">{status}</output>
 }
@@ -74,9 +84,15 @@ afterEach(() => {
 describe("useLiveStream", () => {
   it("buffers frames and flushes after flushMs via onBatch", () => {
     const onBatch = vi.fn()
-    const parse = (data: string) => JSON.parse(data) as string[]
 
-    render(<StatusHarness url="/v1/logs/stream" parse={parse} onBatch={onBatch} flushMs={250} />)
+    render(
+      <StatusHarness
+        url="/v1/logs/stream"
+        decoder={stringArrayDecoder}
+        onBatch={onBatch}
+        flushMs={250}
+      />
+    )
 
     const source = MockEventSource.instances[0]
     expect(source).toBeDefined()
@@ -93,14 +109,17 @@ describe("useLiveStream", () => {
     expect(onBatch).toHaveBeenCalledWith(["a", "b", "c"])
   })
 
-  it("skips malformed frames when parse throws without killing the stream", () => {
+  it("skips malformed frames when decoder rejects without killing the stream", () => {
     const onBatch = vi.fn()
-    const parse = (data: string) => {
-      if (data === "bad") throw new Error("malformed")
-      return JSON.parse(data) as string[]
-    }
 
-    render(<StatusHarness url="/v1/logs/stream" parse={parse} onBatch={onBatch} flushMs={250} />)
+    render(
+      <StatusHarness
+        url="/v1/logs/stream"
+        decoder={stringArrayDecoder}
+        onBatch={onBatch}
+        flushMs={250}
+      />
+    )
 
     const source = MockEventSource.instances[0]!
     act(() => {
@@ -116,17 +135,24 @@ describe("useLiveStream", () => {
     expect(source.closed).toBe(false)
   })
 
-  it("maps onerror to error and subsequent onopen to open", () => {
+  it("maps onerror after open to reconnecting, then open again", () => {
     const onBatch = vi.fn()
-    render(<StatusHarness url="/v1/logs/stream" parse={() => []} onBatch={onBatch} />)
+    render(
+      <StatusHarness url="/v1/logs/stream" decoder={stringArrayDecoder} onBatch={onBatch} />
+    )
 
     expect(screen.getByTestId("status").textContent).toBe("connecting")
 
     const source = MockEventSource.instances[0]!
     act(() => {
+      source.emitOpen()
+    })
+    expect(screen.getByTestId("status").textContent).toBe("open")
+
+    act(() => {
       source.emitError()
     })
-    expect(screen.getByTestId("status").textContent).toBe("error")
+    expect(screen.getByTestId("status").textContent).toBe("reconnecting")
 
     act(() => {
       source.emitOpen()
@@ -134,12 +160,29 @@ describe("useLiveStream", () => {
     expect(screen.getByTestId("status").textContent).toBe("open")
   })
 
+  it("maps onerror during connecting to error", () => {
+    const onBatch = vi.fn()
+    render(
+      <StatusHarness url="/v1/logs/stream" decoder={stringArrayDecoder} onBatch={onBatch} />
+    )
+    const source = MockEventSource.instances[0]!
+    act(() => {
+      source.emitError()
+    })
+    expect(screen.getByTestId("status").textContent).toBe("error")
+  })
+
   it("closes the source and clears the interval on unmount", () => {
     const clearIntervalSpy = vi.spyOn(globalThis, "clearInterval")
     const onBatch = vi.fn()
 
     const { unmount } = render(
-      <StatusHarness url="/v1/logs/stream" parse={() => ["x"]} onBatch={onBatch} flushMs={250} />
+      <StatusHarness
+        url="/v1/logs/stream"
+        decoder={stringArrayDecoder}
+        onBatch={onBatch}
+        flushMs={250}
+      />
     )
 
     const source = MockEventSource.instances[0]!
@@ -160,7 +203,7 @@ describe("useLiveStream", () => {
 
   it("stays idle and constructs no EventSource when url is null", () => {
     const onBatch = vi.fn()
-    render(<StatusHarness url={null} parse={() => []} onBatch={onBatch} />)
+    render(<StatusHarness url={null} decoder={stringArrayDecoder} onBatch={onBatch} />)
 
     expect(screen.getByTestId("status").textContent).toBe("idle")
     expect(MockEventSource.constructedUrls).toEqual([])
@@ -175,7 +218,9 @@ describe("useLiveStream", () => {
     })
 
     const onBatch = vi.fn()
-    render(<StatusHarness url="/v1/logs/stream" parse={() => []} onBatch={onBatch} />)
+    render(
+      <StatusHarness url="/v1/logs/stream" decoder={stringArrayDecoder} onBatch={onBatch} />
+    )
     expect(MockEventSource.instances).toHaveLength(1)
     const first = MockEventSource.instances[0]!
 

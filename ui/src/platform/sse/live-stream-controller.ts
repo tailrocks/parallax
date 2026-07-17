@@ -1,4 +1,4 @@
-// Plan 153 — SSE lifecycle controller (one source, timer, generation, buffer).
+// Plan 153/147 — SSE lifecycle controller (one source, timer, generation, buffer).
 
 import { decodeJsonText } from "@/platform/external-values/decode-json-text"
 import type { RuntimeDecoder } from "@/platform/external-values/runtime-decoder"
@@ -10,8 +10,13 @@ import {
   type EventSourceLike,
 } from "@/platform/sse/event-source.client"
 import { createBoundedFrameBuffer } from "@/platform/sse/bounded-frame-buffer"
+import {
+  initialStreamStatus,
+  reduceStreamStatus,
+  type LiveStreamStatus,
+} from "@/platform/sse/stream-state"
 
-export type LiveStreamStatus = "idle" | "connecting" | "open" | "error"
+export type { LiveStreamStatus }
 
 /** Default arrival buffer cap (plan 147) — not the feature visible cap. */
 export const DEFAULT_MAX_BUFFERED_ITEMS = 2_000
@@ -33,12 +38,14 @@ export interface LiveStreamController {
   readonly dispose: () => void
   readonly setUrl: (url: string | null) => void
   readonly setVisible: (visible: boolean) => void
+  readonly status: () => LiveStreamStatus
 }
 
 /**
  * Owns one EventSource, one flush timer, one generation, and one buffer.
  * Null URL, hidden document, abort, URL change, or disposal closes everything
- * and prevents late delivery. Native EventSource reconnect is preserved.
+ * and prevents late delivery. Native EventSource reconnect is preserved;
+ * transport errors after open surface as `reconnecting`.
  */
 export function createLiveStreamController<T>(
   options: LiveStreamControllerOptions<T>
@@ -55,9 +62,15 @@ export function createLiveStreamController<T>(
   let source: EventSourceLike | null = null
   let timer: ReturnType<typeof setInterval> | null = null
   let disposed = false
+  let status: LiveStreamStatus = initialStreamStatus()
 
-  const setStatus = (status: LiveStreamStatus) => {
-    options.onStatus?.(status)
+  const setStatus = (next: LiveStreamStatus) => {
+    status = next
+    options.onStatus?.(next)
+  }
+
+  const applyEvent = (event: Parameters<typeof reduceStreamStatus>[1]) => {
+    setStatus(reduceStreamStatus(status, event))
   }
 
   const clearTimer = () => {
@@ -89,20 +102,20 @@ export function createLiveStreamController<T>(
     invalidate()
     const activeUrl = visible ? url : null
     if (!activeUrl || options.signal?.aborted) {
-      setStatus("idle")
+      applyEvent({ type: "stop" })
       return
     }
     const gen = generation
-    setStatus("connecting")
+    applyEvent({ type: "start" })
     const next = factory(activeUrl)
     source = next
     next.onopen = () => {
       if (gen !== generation || disposed) return
-      setStatus("open")
+      applyEvent({ type: "opened" })
     }
     next.onerror = () => {
       if (gen !== generation || disposed) return
-      setStatus("error")
+      applyEvent({ type: "transport-error" })
     }
     next.onmessage = (event: MessageEvent) => {
       if (gen !== generation || disposed) return
@@ -127,7 +140,7 @@ export function createLiveStreamController<T>(
   const onAbort = () => {
     if (disposed) return
     invalidate()
-    setStatus("idle")
+    applyEvent({ type: "stop" })
     reportBoundaryError(boundaryError("sse.live-stream", "cancelled", null))
   }
 
@@ -140,7 +153,7 @@ export function createLiveStreamController<T>(
       disposed = true
       options.signal?.removeEventListener("abort", onAbort)
       invalidate()
-      setStatus("idle")
+      applyEvent({ type: "stop" })
     },
     setUrl(next) {
       if (disposed || next === url) return
@@ -152,5 +165,6 @@ export function createLiveStreamController<T>(
       visible = next
       reconnect()
     },
+    status: () => status,
   }
 }

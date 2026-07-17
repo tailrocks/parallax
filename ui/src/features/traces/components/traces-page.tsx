@@ -11,7 +11,8 @@ import { z } from "zod"
 import { AttributeComparePanel } from "@/features/traces/components/trace-attribute-compare"
 import { ServiceDot } from "@/shared/console/service-dot"
 import { PageHeader } from "@/shared/components/page-header"
-import { useLiveStream } from "@/shared/hooks/use-live-stream"
+import { useLiveStream } from "@/platform/sse/use-live-stream"
+import { spanStreamBatchDecoder } from "@/features/traces/api/span-stream-schema"
 import { FieldExplorer } from "@/features/traces/components/trace-field-explorer"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -430,10 +431,7 @@ export function TracesPage({ data, search }: { data: TracesLoaderData; search: T
 
   const streamStatus = useLiveStream<SpanDoc>({
     url: streamUrl,
-    parse: (data) => {
-      const batch: unknown = JSON.parse(data)
-      return Array.isArray(batch) ? (batch as SpanDoc[]) : []
-    },
+    decoder: spanStreamBatchDecoder,
     onBatch: (incoming) => {
       setSpans((current) => mergeLiveSpans(current, incoming, 100).items as SpanDoc[])
     },
@@ -579,7 +577,7 @@ export function TracesPage({ data, search }: { data: TracesLoaderData; search: T
                   <span className="size-1.5 rounded-full bg-current motion-safe:animate-pulse" />
                   Live
                 </Badge>
-              ) : streamStatus === "error" ? (
+              ) : streamStatus === "reconnecting" || streamStatus === "error" ? (
                 <Badge variant="amber">reconnecting…</Badge>
               ) : (
                 <Badge variant="secondary">connecting…</Badge>

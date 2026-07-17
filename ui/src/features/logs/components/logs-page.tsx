@@ -56,6 +56,7 @@ import {
 } from "@/features/logs/components/logs-table"
 import type { LogDoc, OptionalLogColumn } from "@/features/logs/components/logs-table"
 import { contextWindow, stepSecondsForRange } from "@/features/logs/model/logs-range"
+import { logStreamBatchDecoder } from "@/features/logs/api/log-stream-schema"
 import { mergeLiveLogs } from "@/features/logs/model/merge-live-logs"
 import {
   parseSavedViewState,
@@ -251,9 +252,12 @@ export function LogsPage({ data, search }: { data: LogsData; search: LogsSearch 
 
   const streamStatus = useLiveStream<LogDoc>({
     url: streamUrl,
-    parse: (frame) => {
-      const batch: unknown = JSON.parse(frame)
-      return Array.isArray(batch) ? assignLogKeys(batch as LogDoc[]) : []
+    decoder: {
+      safeParse(input) {
+        const decoded = logStreamBatchDecoder.safeParse(input)
+        if (!decoded.success) return decoded
+        return { success: true, data: assignLogKeys(decoded.data) }
+      },
     },
     onBatch: (incoming) => {
       setLogs((current) => mergeLiveLogs(current, incoming, PAGE_SIZE).items as LogDoc[])
@@ -645,7 +649,7 @@ export function LogsPage({ data, search }: { data: LogsData; search: LogsSearch 
                       <span className="size-2 animate-pulse rounded-full bg-emerald-500" />
                       <Badge variant="emerald">Live</Badge>
                     </>
-                  ) : streamStatus === "error" ? (
+                  ) : streamStatus === "reconnecting" || streamStatus === "error" ? (
                     <Badge variant="amber">reconnecting…</Badge>
                   ) : (
                     <Badge variant="secondary">connecting…</Badge>

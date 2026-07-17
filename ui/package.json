@@ -14,6 +14,7 @@
     "preview": "bunx --bun --no-install vite preview",
     "test": "bunx --bun --no-install vitest run",
     "test:ci": "bunx --bun --no-install vitest run",
+    "perf:live": "bunx --bun --no-install vitest run src/features/logs/tests/model/merge-live-logs.perf.test.ts src/features/traces/tests/model/merge-live-spans.test.ts src/platform/sse",
     "test:browser:list": "bunx --bun --no-install playwright test --list",
     "test:browser:foundation": "PARALLAX_BROWSER_MODE=foundation bunx --bun --no-install playwright test --project=foundation-chromium",
     "test:browser": "bunx --bun --no-install playwright test --project=contracts-chromium",

@@ -320,14 +320,16 @@
       "test_file": "ui/src/platform/sse/tests/use-live-stream.test.tsx",
       "test_ids": [
         "buffers frames and flushes after flushMs via onBatch",
-        "skips malformed frames when parse throws without killing the stream",
-        "maps onerror to error and subsequent onopen to open",
+        "skips malformed frames when decoder rejects without killing the stream",
+        "maps onerror after open to reconnecting, then open again",
+        "maps onerror during connecting to error",
         "closes the source and clears the interval on unmount",
         "stays idle and constructs no EventSource when url is null",
         "closes the stream while the tab is hidden and reconnects on visible"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented"
+      "status": "implemented",
+      "delivery_plan": 147
     },
     {
       "id": "vitest-020",

@@ -27,7 +27,9 @@ import { StatCard } from "@/shared/console/stat-card"
 import { StoryTimeline } from "@/features/story"
 import { useLiveStream } from "@/platform/sse/use-live-stream"
 import { LogsTable, LOG_FIELDS, type LogDoc } from "@/features/logs"
+import { logStreamBatchDecoder } from "@/features/logs/api/log-stream-schema"
 import { mergeLiveLogs } from "@/features/logs/model/merge-live-logs"
+import { spanStreamBatchDecoder } from "@/features/traces/api/span-stream-schema"
 import { mergeLiveSpans } from "@/features/traces/model/merge-live-spans"
 import { MetricStrip } from "@/features/runtime-metrics"
 import { navItem } from "@/shared/navigation"
@@ -204,19 +206,13 @@ export function InvocationHubPage({
 
   const logStatus = useLiveStream<LogDoc>({
     url: live ? `/v1/logs/stream?invocation_id=${encodeURIComponent(invocationId)}` : null,
-    parse: (payload) => {
-      const batch: unknown = JSON.parse(payload)
-      return Array.isArray(batch) ? (batch as LogDoc[]) : []
-    },
+    decoder: logStreamBatchDecoder,
     onBatch: (incoming) =>
       setLiveLogs((current) => mergeLiveLogs(current, incoming, 300).items as LogDoc[]),
   })
   const spanStatus = useLiveStream<LiveSpan>({
     url: live ? `/v1/traces/stream?invocation_id=${encodeURIComponent(invocationId)}` : null,
-    parse: (payload) => {
-      const batch: unknown = JSON.parse(payload)
-      return Array.isArray(batch) ? (batch as LiveSpan[]) : []
-    },
+    decoder: spanStreamBatchDecoder,
     onBatch: (incoming) =>
       setLiveSpans((current) => mergeLiveSpans(current, incoming, 300).items as LiveSpan[]),
   })
@@ -241,7 +237,12 @@ export function InvocationHubPage({
       record={record}
       data={data}
       live={live}
-      streamActive={logStatus === "open" || spanStatus === "open"}
+      streamActive={
+        logStatus === "open" ||
+        logStatus === "reconnecting" ||
+        spanStatus === "open" ||
+        spanStatus === "reconnecting"
+      }
       liveLogs={liveLogs}
       liveSpans={liveSpans}
       activeTab={search.tab ?? "overview"}
