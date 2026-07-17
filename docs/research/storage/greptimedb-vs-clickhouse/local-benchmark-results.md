@@ -8261,3 +8261,14 @@ CH `quantile(0.99)`: **34 ms**. Both complete; CH ~3× faster on this shape at 5
 
 ### Run 353 — 2026-07-17 — not done
 
+
+### Run 354 — 2026-07-17 — four-way anchored after idle
+
+| Build | ms |
+| --- | ---: |
+| GT stable | 26 (then warm lower) |
+| GT nightly | 239 cold → **6** warm |
+| CH stable | 9 |
+| CH head | 10 |
+
+Nightly cold after idle can spike; warm path still interactive. Not done.
