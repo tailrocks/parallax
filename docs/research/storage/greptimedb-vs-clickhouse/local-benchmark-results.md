@@ -7173,3 +7173,7 @@ CH plain shows dups until FINAL (with merges stopped); GT last_value returns lat
 
 GT example.toml S3 storage; CH storage_configuration s3 disks. Live both local-only.
 `storage-cost-and-tiering.md`.
+
+### Run 210 — 2026-07-17 — re-pin check
+
+Still GT v1.1.3 / CH 26.6.1.1193 latest stables. No pin bump.
