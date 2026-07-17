@@ -8076,3 +8076,7 @@ Still researching. Open: mix, server, quotes, GB cold, RPO D2/D3.
 
 `max(counter)-min(counter) GROUP BY service` on m2m: GT **20 ms**; CH **19 ms**.
 Near-tie on this small shape.
+
+### Run 306 — 2026-07-17 — not done
+
+Comparison remains open.
