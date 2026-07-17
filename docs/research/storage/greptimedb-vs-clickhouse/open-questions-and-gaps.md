@@ -158,3 +158,15 @@ engine direction flip.**
 | 7 | CH TimeSeries SELECT | still Code 48 (236); watch head |
 
 Do not re-smoke interactive 50k ties without pin bump or new mechanism.
+
+## Run 258 (2026-07-17) — still not done
+
+Highest remaining after 220–257:
+
+1. Product fills workload-mix shares (packet 223)
+2. Server N=1M/5M (runbook 240)
+3. Vendor trial quotes (list 221)
+4. GB–TB cold S3 selective (method 235/238)
+5. RPO D2/D3 (D1=225)
+
+Engine smoke on laptop remains saturated. **Comparison not declared done.**
