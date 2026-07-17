@@ -12,10 +12,10 @@ market notes. Unfinished engineering is owned only by active numbered files in
 [`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
-Last updated 2026-07-18 after pass 234 (Uptrace still quiet **4,242★** since
-2026-06; Traceloop **7,307★**; Odigos **v1.31.2** vendor-agnostic destinations —
-own-store **UNFIRED**). Pass 233 = empirical gates. A1/A2/A4 open; A6 open at
-mixed gate only.
+Last updated 2026-07-18 after pass 235 (Phoenix-mcp **4.2.0**; Coroot still
+**resolve_alerts**; Maple **TINYBIRD_*** still in README; stars **10,600** /
+**1,532**). Pass 234 = Uptrace/Traceloop/Odigos. A1/A2/A4 open; A6 open at mixed
+gate only.
 
 **Shipment note:** local visibility and the server product are implemented, including the human UI,
 alerting, live streaming, and bounded evidence production. The historical build sequence remains in
