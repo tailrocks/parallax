@@ -76,6 +76,7 @@ managed quotes remain):
 | Flow + CH MV continuous agg | 228 | parity; Flow async lag |
 | Freshness + append_mode DELETE | 229 | no drift |
 | TWCS multi-window SST prune | 230 | files 2→1 on time filter |
+| CH PREWHERE plan shape | 231 | 1/6 granules; ms ~tie @50k |
 
 ## Method
 

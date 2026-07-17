@@ -7562,3 +7562,19 @@ day partition (mechanism for whole-partition drop).
 
 **Verdict.** **No drift:** TWCS multi-window SSTs survive compact; time prune
 halves file_ranges. Whole-SST TTL drop story still rests on this layout.
+
+### Run 231 — 2026-07-17 — CH PREWHERE plan shape re-verify
+
+**Pass target.** Confirm PREWHERE still moves filters into MergeTree read
+(Run 206) on 26.6.1.1193.
+
+**Setup.** `logs1m` N=50k, `service='s0'` (present; ~4167/service class).
+
+| Form | Plan shape | Granules | Median ~ms (5 reps) |
+| --- | --- | ---: | ---: |
+| `WHERE service='s0'` | `Filter` over `ReadFromMergeTree` | **1/6** | ~3 |
+| `PREWHERE service='s0'` | filter inside `ReadFromMergeTree` (no separate Filter) | **1/6** | ~3–4 |
+
+**Verdict.** PREWHERE plan shape **confirmed**; both PK-prune equally at this
+selectivity. Latency floor too small to show PREWHERE win at 50k — value is
+column read reduction on wide rows at larger N (mechanism still valid).
