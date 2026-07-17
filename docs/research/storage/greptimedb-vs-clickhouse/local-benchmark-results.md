@@ -7720,3 +7720,15 @@ PromQL `avg by (host) (prom_r241)`.
 **Ratio ~1.4–1.5×** PromQL over SQL (mixed metrics — wall vs engine ms). Direction
 matches Run 183 (~1.5–2× at 100k). PromQL path still **HTTP 200 success** with
 results. Not a fixed 5.6× tax.
+
+### Run 243 — 2026-07-17 — JSON2 vs Jsonb vs CH dynamic-attr (N=50k)
+
+| Path | Median ms (5 warm) |
+| --- | ---: |
+| GT Jsonb `json_get_string(attributes,'region')` | **~18** |
+| GT JSON2 `attributes.region` | **~3** |
+| CH `attributes.region::String` | **~2** |
+
+**JSON2 closes ~6× of the Jsonb gap** → near-tie with CH at 50k. **No drift**
+from Runs 173/176. Product: prefer JSON2 for dynamic attrs; default Jsonb is
+the slow path.
