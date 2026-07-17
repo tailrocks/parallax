@@ -537,7 +537,7 @@ ceiling = 676
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/lib/api.ts"
-ceiling = 379
+ceiling = 380
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -2336,7 +2336,7 @@ ceiling = 13
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/routes/__tests__/-invocations.test.tsx"
-ceiling = 187
+ceiling = 188
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -2346,7 +2346,7 @@ ceiling = 530
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/routes/invocations.index.tsx"
-ceiling = 302
+ceiling = 303
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -2490,5 +2490,5 @@ ceiling = 63
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/invocations.index.tsx:195"
+scope = "ui/src/routes/invocations.index.tsx:196"
 ceiling = 125
