@@ -33,6 +33,8 @@ pub(crate) enum Command {
     Test,
     /// Install and run every required Bun UI gate.
     Ui,
+    /// Serve the built UI for Playwright foundation smoke (plan 132).
+    BrowserFoundationServe,
     /// Run the distinct Rust doctest integration partition.
     Integration,
     /// Validate repository documentation.

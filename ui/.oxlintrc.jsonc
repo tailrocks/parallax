@@ -78,6 +78,9 @@
   "ignorePatterns": [
     "coverage/**",
     "dist/**",
+    "blob-report/**",
+    "playwright-report/**",
+    "test-results/**",
     "src/routeTree.gen.ts"
   ],
   "options": {
@@ -128,6 +131,15 @@
       ],
       "rules": {
         "typescript/only-throw-error": "off"
+      }
+    },
+    {
+      "files": ["tests/e2e/**"],
+      "rules": {
+        "react/rules-of-hooks": "off",
+        "vitest/expect-expect": "off",
+        "vitest/valid-expect": "off",
+        "vitest/no-standalone-expect": "off"
       }
     }
   ]

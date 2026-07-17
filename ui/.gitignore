@@ -13,3 +13,9 @@ todos.json
 
 # typescript
 *.tsbuildinfo
+
+# Playwright foundation (plan 132)
+/playwright-report/
+/blob-report/
+/test-results/
+/playwright/.cache/

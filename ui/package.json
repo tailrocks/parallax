@@ -13,6 +13,8 @@
     "preview": "bunx --bun --no-install vite preview",
     "test": "bunx --bun --no-install vitest run",
     "test:ci": "bunx --bun --no-install vitest run",
+    "test:browser:list": "bunx --bun --no-install playwright test --list",
+    "test:browser:foundation": "bunx --bun --no-install playwright test --project=foundation-chromium",
     "lint": "bun run lint:native && bun run lint:type-aware",
     "lint:native": "bun ./node_modules/oxlint/bin/oxlint --deny-warnings --report-unused-disable-directives .",
     "lint:type-aware": "bun ./node_modules/oxlint/bin/oxlint --type-aware --deny-warnings --report-unused-disable-directives .",
@@ -50,6 +52,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "1.61.1",
     "@tanstack/devtools-vite": "^0.7.2",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.2",
