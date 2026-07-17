@@ -49,6 +49,7 @@ Legend for the **State** column:
 | **Coroot** | eBPF zero-instrumentation obs + 2-stage AI RCA; safest MCP (OAuth+RBAC). | Apache-2.0 + commercial EE. | Traces/logs/profiles (eBPF). | [deep-dive](parallax-vs-coroot.md) |
 | **Highlight.io** | Session replay + error tracking + logs + traces; OTLP-native; Apache-2.0 OSS self-host. **🛑 Wound down (pass 33): acquired by LaunchDarkly; standalone SaaS shut down 2026-02-28; OSS repo unmaintained (no release since 2025-08).** Historical/reference only. | Apache-2.0 (self-host) + Cloud. | Errors + RUM + logs. | [deep-dive](parallax-vs-highlight.md) |
 | **Rustrak** | Rust **Sentry-SDK-compatible** error tracker + **mutating MCP** (18 tools); **GPL-3.0**; **64★**; server 0.9.2 / mcp 0.2.13. Error-only (no OTLP). | **GPL-3.0** + self-host. | Errors + agent MCP. | [deep-dive](parallax-vs-rustrak.md) |
+| **GlitchTip** | **MIT** Django Sentry-API-compatible error tracking (+ uptime/perf as hosted “events”); self-host free; Hosted Free **1k events/mo**; paid ~$15/100k–$250/3M (secondary-confirmed 2026); **MCP docs**. GitLab-primary; GH mirror 159★ stale. | MIT + Cloud. | Errors (+ light APM events). | [deep-dive](parallax-vs-glitchtip.md) |
 | **Bugsink** | Focused **self-hosted Sentry-SDK-compatible error-tracking server** (Python/Django; full issue lifecycle); **1,940★, v2.4.0**; Hosted public EUR event tiers (free 15K → €1,288/50M); self-host free. Error-only (no OTLP). Cleanest "run your own Sentry." | Open-core (`ee/` + BSD-3 `sentry/`; `NOASSERTION`) + Cloud. | Errors only (Sentry-alternative). | [deep-dive](parallax-vs-bugsink.md) |
 | **Uptrace** | OTLP tracing-first APM on ClickHouse+Postgres; Bun-author lineage. | **AGPL** (Community free) + paid editions + Cloud. | Traces + metrics + logs. | [deep-dive](parallax-vs-uptrace.md) |
 | **HyperDX** | OTLP + multi-protocol on **ClickHouse**; full-stack incl. **session replay**; = ClickHouse Inc.'s **ClickStack**. Cloud: Free 3GB / Starter **$20 + $0.40/GB**. | **MIT** + Cloud + Managed ClickStack. | All signals + RUM/replay. | [deep-dive](parallax-vs-hyperdx.md) |
@@ -86,7 +87,6 @@ These sit *on top of* your telemetry (metrics/logs/traces/K8s) as reasoning/grou
 
 | Product | Note | State |
 | --- | --- | --- |
-| **GlitchTip** | Django Sentry-compat; GitLab-primary; GitHub mirror ~159★. Classic error product. | watch (low priority) |
 | **GoSnag / Urgentry** | Tiny Sentry-compat self-hosts; low stars / quiet cadence. | watch (low priority) |
 
 ## Maintenance notes

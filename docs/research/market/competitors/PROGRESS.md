@@ -74,6 +74,7 @@
 | 49b | 2026-07-17 | **Lightweight wedge-closer recheck:** Bugsink/Rustrak/Traceway/GoSnag/Urgentry; combination not closed. | `98a1c29f` |
 | 50 | 2026-07-17 | **Traceway deep-dive** ([parallax-vs-traceway.md](parallax-vs-traceway.md)): MIT OTel multi-signal APM (**1,024★ / v1.9.1**); agent skills/CLI/MCP; no Sentry envelope; Cloud **no public $/unit**. Concurrent Traceway writes merged (`2d7019fa` + `2be38f57`). | `2be38f57` |
 | 51 | 2026-07-17 | **Rustrak deep-dive** ([parallax-vs-rustrak.md](parallax-vs-rustrak.md)): Rust Sentry-compat + **GPL-3.0** + mutating MCP (18 tools); error-only; no OTLP/bundle/outcome. | `d0b72292` |
+| 53 | 2026-07-17 | **GlitchTip deep-dive** ([parallax-vs-glitchtip.md](parallax-vs-glitchtip.md)): MIT Sentry-API error tracker; Hosted Free **1k events/mo**; paid tiers ~$15/$50/$250 (secondary); self-host free + donation/support; **MCP docs**; GH mirror stale. Completes small Sentry-alt deep-dives (Bugsink/Rustrak/GlitchTip). | `f6ed9a81` |
 
 ## Deep-dive status (per product)
 
@@ -113,6 +114,7 @@
 | HolmesGPT | [parallax-vs-holmesgpt.md](parallax-vs-holmesgpt.md) | ✅ pass 41 (version pin) | 2026-07-17 | **CNCF Sandbox AI SRE (fixer agent)** — **v0.36.0 + 2,873★** pinned pass 41; Apache-2.0; no own store. Strategically central A1 crux: does bounded bundle beat HolmesGPT-over-raw-telemetry? **Unproven (needs eval program)**. Complementary integration (HolmesGPT → Parallax source) still open PoC |
 | Traceway | [parallax-vs-traceway.md](parallax-vs-traceway.md) | ✅ pass 50 (first deep-dive) | 2026-07-17 | **MIT OTel-native self-host + agent CLI/skills/MCP (local+remote).** backend/cli **v1.9.1**, **1,024★**. Storage CH+PG or SQLite/DuckDB. **No Sentry; no portable redacted bundle; no outcome.** Watch: Sentry / export schema / outcomes. Open: cloud pricing; A1-vs-Traceway-MCP |
 | Rustrak | [parallax-vs-rustrak.md](parallax-vs-rustrak.md) | ✅ pass 51 (new) | 2026-07-17 | **GPL-3.0** Rust Sentry-compat + **mutating MCP** (server **0.9.2**, mcp **0.2.13**, 64★). Error-only Postgres. **No OTLP/bundle/outcome.** Watch: OTLP expansion. Open: MCP tool inventory recount |
+| GlitchTip | [parallax-vs-glitchtip.md](parallax-vs-glitchtip.md) | ✅ pass 53 (new) | 2026-07-17 | **MIT** Sentry-API error tracker; Free **1k events/mo**; paid ~$15/100k–$250/3M (secondary); self-host free; MCP docs; GH mirror 159★ stale (GitLab primary). Open: live SPA tier re-scrape; MCP mutability |
 
 ## Overview-matrix cells (from `README.md`)
 
@@ -140,7 +142,8 @@
 4. **Drift watches (active)** — TMA1 (**7× UNFIRED**); **Chronosphere/PANW AgentiX (still planned, not GA — pass 49)**; **Observe MCP coding-agents PARTIAL FIRE**; Dynatrace MCP; Sumo Dojo; Coroot eBPF (UNFIRED); Maple Tinybird (UNFIRED); Traceloop (UNFIRED); Helicone Mintlify sunset; Odigos own-store; Sentry OTLP-metrics GA.
 5. ~~Overview-matrix AI-native column sweep~~ → **DONE pass 49** (extended matrix + Odigos/AgentiX honesty). Re-fire when a watch fires.
 6. ~~**Traceway deep-dive**~~ → **DONE pass 50**. Residual: Cloud $/unit.
-6b. ~~**Rustrak deep-dive**~~ → **DONE pass 51**. Residual: OTLP expansion watch; GlitchTip low priority.
+6b. ~~**Rustrak deep-dive**~~ → **DONE pass 51**. Residual: OTLP expansion watch.
+6c. ~~**GlitchTip deep-dive**~~ → **DONE pass 53**. Residual: GoSnag/Urgentry only (low priority).
 7. **Parallax-column refresh** — keep planned/shipped + A1 honesty.
 8. **A1 eval program** remains the blocking gate for all “bundle beats X” claims.
 
@@ -191,3 +194,4 @@
 - ✅ Pass 49 Tempo v3 GA — corrected a **pro-Parallax understatement of Grafana maturity** (claiming Tempo v3 “not GA” when v3.0.2 has been GA since 2026-06). Recorded TraceQL metrics GA + redaction as **shipped Grafana strength**. AgentiX left planned (did not invent GA). TMA1 7th UNFIRED not spun as competitor failure. AI matrix expansion **increases** visible competitor coverage rather than shrinking the field.
 - ✅ Pass 50 Traceway — **hard no-bias test on agent-native self-host OTel**: written plainly that Traceway ships the multi-signal + skills/CLI/MCP combination and that the field no longer lacks this product shape. Parallax edges scoped tightly (Sentry envelope + portable redacted bundle + outcome); A1 unproven. Cloud rates left **no public number** rather than invented.
 - ✅ Pass 51 Rustrak — recorded **GPL-3.0** + **mutating MCP** honestly (kills “Rust Sentry+MCP unique”); scoped as error-only, not multi-signal threat.
+- ✅ Pass 53 GlitchTip — fuller Sentry-alt than Parallax envelope path; paid tiers secondary-confirmed not invented as exact primary HTML scrape; GH mirror staleness recorded.
