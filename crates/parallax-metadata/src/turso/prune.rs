@@ -245,7 +245,7 @@ impl TursoMetadataStore {
     /// and occurrences. Unresolved and not-yet-expired issues are preserved.
     /// Returns rows deleted from `issues` only (dependents deleted by cascade
     /// or explicit cleanup are not double-counted).
-    pub(crate) async fn execute_issue_prune(&self, cutoff_nanos: u128) -> anyhow::Result<u64> {
+    async fn execute_issue_prune(&self, cutoff_nanos: u128) -> anyhow::Result<u64> {
         let cutoff_millis = nanos_to_millis(cutoff_nanos);
         let mut conn = self.conn.lock().await;
         let tx = conn.transaction().await?;
@@ -275,12 +275,12 @@ impl TursoMetadataStore {
             )
             .await?;
         tx.commit().await?;
-        Ok(u64::try_from(deleted).unwrap_or(0))
+        Ok(deleted)
     }
 
     /// Delete finished invocations at/under the cutoff. Active/unfinished rows
     /// are preserved.
-    pub(crate) async fn execute_invocation_prune(&self, cutoff_nanos: u128) -> anyhow::Result<u64> {
+    async fn execute_invocation_prune(&self, cutoff_nanos: u128) -> anyhow::Result<u64> {
         let cutoff_millis = nanos_to_millis(cutoff_nanos);
         let deleted = self
             .conn
@@ -292,7 +292,7 @@ impl TursoMetadataStore {
                 [Value::Integer(cutoff_millis)],
             )
             .await?;
-        Ok(u64::try_from(deleted).unwrap_or(0))
+        Ok(deleted)
     }
 
     /// Execute one planned metadata class. Classes retained by policy delete

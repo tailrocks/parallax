@@ -169,15 +169,31 @@ impl GreptimeStore {
     }
 
     /// Apply configured retention TTLs via `ALTER TABLE … SET 'ttl'`.
-    /// Per-metric native tables are excluded (TTL rides creation hints only).
+    /// Fixed product tables always; existing native per-metric tables are
+    /// enumerated through the bounded catalog so config changes reach them
+    /// after creation (plan 116 Step 4).
     async fn reconcile_ttls(&self, metrics_ttl: &str, error_events_ttl: &str) {
-        let targets = [
+        let mut targets: Vec<(String, &str)> = [
             ("opentelemetry_traces", self.traces_ttl.as_str()),
             ("opentelemetry_logs", self.logs_ttl.as_str()),
             ("error_events", error_events_ttl),
             ("invocation_metric_points", metrics_ttl),
             (METRIC_EXEMPLARS_TABLE, metrics_ttl),
-        ];
+        ]
+        .into_iter()
+        .map(|(table, ttl)| (table.to_string(), ttl))
+        .collect();
+        if let Ok(families) = self.discover_metric_families().await {
+            for family in families {
+                // Histogram families store samples in the `_count` table used as
+                // stats_table; also touch sibling `_bucket` / `_sum` when named.
+                targets.push((family.stats_table.clone(), metrics_ttl));
+                if let Some(base) = family.stats_table.strip_suffix("_count") {
+                    targets.push((format!("{base}_bucket"), metrics_ttl));
+                    targets.push((format!("{base}_sum"), metrics_ttl));
+                }
+            }
+        }
         for (table, ttl) in targets {
             let sql = format!("ALTER TABLE {table} SET 'ttl' = '{}'", escape(ttl));
             if let Err(error) = self.sql(&sql).await {

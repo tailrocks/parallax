@@ -31,6 +31,8 @@ parallax-semconv = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true }
 parallax-server = { workspace = true }
+parallax-metadata = { workspace = true }
+parallax-storage = { workspace = true }
 parallax-model = { workspace = true }
 opentelemetry = { workspace = true }
 opentelemetry-otlp = { workspace = true }

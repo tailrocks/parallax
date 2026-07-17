@@ -326,10 +326,7 @@ async fn execute_issue_prune_cascades_and_preserves_unresolved() {
         .await
         .expect("resolve eligible");
 
-    let before = store
-        .issue_prune_item(20_000_000)
-        .await
-        .expect("discover");
+    let before = store.issue_prune_item(20_000_000).await.expect("discover");
     assert_eq!(before.estimate.rows, Some(1));
 
     let deleted = store
@@ -350,5 +347,8 @@ async fn execute_issue_prune_cascades_and_preserves_unresolved() {
             .iter()
             .any(|e| e.kind == PruneExclusionKind::Unresolved && e.count >= 1)
     );
-    assert_eq!(store.execute_issue_prune(20_000_000).await.expect("repeat"), 0);
+    assert_eq!(
+        store.execute_issue_prune(20_000_000).await.expect("repeat"),
+        0
+    );
 }

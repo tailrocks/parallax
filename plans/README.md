@@ -148,6 +148,10 @@ reproducible evidence, and work continues elsewhere.
 
 ### Storage
 
+Plan 116 DONE (2026-07-17): retention contract + deterministic prune CLI
+([evidence](../docs/research/validation/2026-07-plan-116-retention-prune/README.md)).
+
+
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | P2 | M | upstream `greptimedb-ingester` native-TLS/plaintext feature fix | TODO — rescoped (unblock directive 2026-07-17): contribute the native-TLS/plaintext feature upstream to `greptimedb-ingester` (fix-forward policy); HTTP row path stays until the upstream release lands |
@@ -224,7 +228,6 @@ work.
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | [111](111-redaction-pipeline-and-a6-gate.md) | Build the source-aware fail-closed runtime redactor and prove the A6 gate | P1 | L | 099, 101, 104 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
-| [116](116-retention-and-prune-lifecycle.md) | Reconcile data retention and make `prune` truthfully reclaim eligible data | P1 | L | 093, 097, 099; 105 soft | TODO — contract decision delegated: adopt the plan's proposed lifecycle contract, write `docs/research/decisions/retention-and-prune-contract.md` approved by the operator 2026-07-17 (unblock directive) |
 | [106](106-evidence-pinning-ttl-spike.md) | Design and live-test evidence pinning beyond telemetry TTL | P2 | M | 092, 104, 116 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 | [107](107-program-closure-audits.md) | Run independent source audits and verify the mechanical closure commit | P1 | M | Every other actionable indexed plan; all blockers freshly rechecked | TODO — runs last, after every other actionable plan (unblock directive 2026-07-17) |
 

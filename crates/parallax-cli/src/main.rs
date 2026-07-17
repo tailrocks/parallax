@@ -125,8 +125,23 @@ pub(crate) enum Command {
     },
     /// Diagnose the local install (server, engine, spool, sizes).
     Doctor,
-    /// Reclaim spool space now (telemetry TTLs are engine-managed).
-    Prune,
+    /// Plan and reclaim eligible lifecycle data (default: dry-run).
+    ///
+    /// Dry-run prints a deterministic plan (Turso classes + spool). Destructive
+    /// execution requires `--execute` and interactive confirmation, or
+    /// `--execute --yes` for non-interactive use. Telemetry raw signals remain
+    /// engine-TTL managed; this command reports that honestly.
+    Prune {
+        /// Apply the plan (default is dry-run only).
+        #[arg(long)]
+        execute: bool,
+        /// Skip the interactive confirmation when combined with `--execute`.
+        #[arg(long)]
+        yes: bool,
+        /// Emit the plan (and execution report) as JSON.
+        #[arg(long)]
+        json: bool,
+    },
     /// Remove the Parallax data directory.
     Uninstall {
         /// Actually delete the data directory.

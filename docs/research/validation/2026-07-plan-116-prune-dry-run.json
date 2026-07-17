@@ -1,0 +1,267 @@
+{
+  "contract_version": 1,
+  "plan_id": "a0c230a52c9332fe3fa5590a31ca6a98fa8fc3d40f83fb2437fefd71688e16cb",
+  "cutoff_nanos": "1781683296217877000",
+  "snapshot": {
+    "config_generation": "retention:7d:7d:14d",
+    "protection_generation": "pins:none",
+    "catalog_fingerprint": "metadata+spool"
+  },
+  "items": [
+    {
+      "store": "turso",
+      "class": "issues",
+      "target": "issues",
+      "cutoff_nanos": "1781683296217877000",
+      "estimate": {
+        "rows": 0,
+        "objects": null,
+        "bytes": null
+      },
+      "exclusions": [
+        {
+          "kind": "unresolved",
+          "count": 55
+        }
+      ],
+      "warnings": []
+    },
+    {
+      "store": "turso",
+      "class": "issue-buckets",
+      "target": "issue_buckets",
+      "cutoff_nanos": "1781683296217877000",
+      "estimate": {
+        "rows": 0,
+        "objects": null,
+        "bytes": null
+      },
+      "exclusions": [],
+      "warnings": [
+        "deleted only through the eligible issue owner cascade"
+      ]
+    },
+    {
+      "store": "turso",
+      "class": "issue-occurrences",
+      "target": "issue_occurrences",
+      "cutoff_nanos": "1781683296217877000",
+      "estimate": {
+        "rows": 0,
+        "objects": null,
+        "bytes": null
+      },
+      "exclusions": [],
+      "warnings": [
+        "deleted only through the eligible issue owner cascade"
+      ]
+    },
+    {
+      "store": "turso",
+      "class": "invocations",
+      "target": "invocations",
+      "cutoff_nanos": "1781683296217877000",
+      "estimate": {
+        "rows": 0,
+        "objects": null,
+        "bytes": null
+      },
+      "exclusions": [
+        {
+          "kind": "active",
+          "count": 132
+        },
+        {
+          "kind": "not_expired",
+          "count": 2
+        }
+      ],
+      "warnings": []
+    },
+    {
+      "store": "turso",
+      "class": "dashboards",
+      "target": "dashboards",
+      "cutoff_nanos": "1781683296217877000",
+      "estimate": {
+        "rows": 0,
+        "objects": null,
+        "bytes": null
+      },
+      "exclusions": [
+        {
+          "kind": "retained_by_policy",
+          "count": 1
+        }
+      ],
+      "warnings": [
+        "normal prune never selects user-owned saved state"
+      ]
+    },
+    {
+      "store": "turso",
+      "class": "investigations",
+      "target": "investigations",
+      "cutoff_nanos": "1781683296217877000",
+      "estimate": {
+        "rows": 0,
+        "objects": null,
+        "bytes": null
+      },
+      "exclusions": [],
+      "warnings": [
+        "normal prune never selects user-owned saved state"
+      ]
+    },
+    {
+      "store": "turso",
+      "class": "saved-views",
+      "target": "saved_views",
+      "cutoff_nanos": "1781683296217877000",
+      "estimate": {
+        "rows": 0,
+        "objects": null,
+        "bytes": null
+      },
+      "exclusions": [],
+      "warnings": [
+        "normal prune never selects user-owned saved state"
+      ]
+    },
+    {
+      "store": "turso",
+      "class": "alert-rules",
+      "target": "alert_rules",
+      "cutoff_nanos": "1781683296217877000",
+      "estimate": {
+        "rows": 0,
+        "objects": null,
+        "bytes": null
+      },
+      "exclusions": [
+        {
+          "kind": "retained_by_policy",
+          "count": 1
+        }
+      ],
+      "warnings": [
+        "normal prune never selects alert-owned state"
+      ]
+    },
+    {
+      "store": "turso",
+      "class": "alert-rule-states",
+      "target": "alert_rule_states",
+      "cutoff_nanos": "1781683296217877000",
+      "estimate": {
+        "rows": 0,
+        "objects": null,
+        "bytes": null
+      },
+      "exclusions": [
+        {
+          "kind": "retained_by_policy",
+          "count": 1
+        }
+      ],
+      "warnings": [
+        "normal prune never selects alert-owned state"
+      ]
+    },
+    {
+      "store": "turso",
+      "class": "alert-incidents",
+      "target": "alert_incidents",
+      "cutoff_nanos": "1781683296217877000",
+      "estimate": {
+        "rows": 0,
+        "objects": null,
+        "bytes": null
+      },
+      "exclusions": [
+        {
+          "kind": "retained_by_policy",
+          "count": 1
+        }
+      ],
+      "warnings": [
+        "normal prune never selects alert-owned state"
+      ]
+    },
+    {
+      "store": "turso",
+      "class": "alert-destinations",
+      "target": "alert_destinations",
+      "cutoff_nanos": "1781683296217877000",
+      "estimate": {
+        "rows": 0,
+        "objects": null,
+        "bytes": null
+      },
+      "exclusions": [
+        {
+          "kind": "retained_by_policy",
+          "count": 1
+        }
+      ],
+      "warnings": [
+        "normal prune never selects alert-owned state"
+      ]
+    },
+    {
+      "store": "turso",
+      "class": "alert-delivery-events",
+      "target": "alert_delivery_events",
+      "cutoff_nanos": "1781683296217877000",
+      "estimate": {
+        "rows": 0,
+        "objects": null,
+        "bytes": null
+      },
+      "exclusions": [
+        {
+          "kind": "retained_by_policy",
+          "count": 1
+        }
+      ],
+      "warnings": [
+        "normal prune never selects alert-owned state"
+      ]
+    },
+    {
+      "store": "turso",
+      "class": "alert-checks",
+      "target": "alert_checks",
+      "cutoff_nanos": "1781683296217877000",
+      "estimate": {
+        "rows": 0,
+        "objects": null,
+        "bytes": null
+      },
+      "exclusions": [
+        {
+          "kind": "retained_by_policy",
+          "count": 18
+        }
+      ],
+      "warnings": [
+        "normal prune never selects alert-owned state"
+      ]
+    },
+    {
+      "store": "local_disk",
+      "class": "spool",
+      "target": "spool",
+      "cutoff_nanos": "1781683296217877000",
+      "estimate": {
+        "rows": null,
+        "objects": 0,
+        "bytes": 0
+      },
+      "exclusions": [],
+      "warnings": [
+        "truncates active segments and removes rotated spool files"
+      ]
+    }
+  ]
+}

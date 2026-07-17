@@ -4,14 +4,20 @@
 )]
 
 //! Self-sufficiency commands: `doctor` (diagnose the local install),
-//! `prune` (reclaim spool space now), `uninstall --purge` (remove the data
+//! `prune` (lifecycle plan + reclaim), `uninstall --purge` (remove the data
 //! directory). These inspect the local installation directly — they are
 //! install tooling, not telemetry queries, so the API boundary does not
 //! apply to them.
 
 use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
 
+use parallax_metadata::TursoMetadataStore;
 use parallax_server::Config;
+use parallax_storage::{
+    MetadataPruneStore, PruneClass, PruneEstimate, PruneExecutionRequest, PruneItem,
+    PruneJournalStepState, PrunePlan, PrunePlanLimits, PruneSnapshot, PruneStepStart, PruneStore,
+};
 
 const SPOOL_SIGNALS: [(&str, &str); 3] = [
     ("traces", "traces.pspl"),
@@ -247,13 +253,233 @@ pub(crate) async fn doctor() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Truncate the ingest spool (telemetry TTLs are enforced by the engine).
-pub(crate) fn prune() -> anyhow::Result<()> {
-    let dir = data_dir().join("spool");
-    let reclaimed = prune_dir(&dir)?;
-    println!("pruned spool: reclaimed {}", human(reclaimed));
-    println!("telemetry retention is TTL-managed by the engine (see config [retention])");
+/// Contract grace for resolved issues / terminal invocations (30 days).
+const PRUNE_GRACE_NANOS: u128 = 30 * 24 * 60 * 60 * 1_000_000_000;
+
+/// Deterministic lifecycle prune plan (dry-run default) with optional execute.
+pub(crate) async fn prune(execute: bool, yes: bool, json: bool) -> anyhow::Result<()> {
+    let config = load_config();
+    let dir = config.data_dir();
+    let meta_path = dir.join("meta.db");
+    let now_nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    let cutoff_nanos = now_nanos.saturating_sub(PRUNE_GRACE_NANOS);
+
+    let mut items: Vec<PruneItem> = Vec::new();
+    if meta_path.exists() {
+        let store = TursoMetadataStore::open(&meta_path).await?;
+        items.extend(store.metadata_prune_items(cutoff_nanos).await?);
+    } else {
+        eprintln!(
+            "warning: no Turso metadata at {} — planning spool only",
+            meta_path.display()
+        );
+    }
+
+    let spool_dir = dir.join("spool");
+    let spool_bytes = spool_dir_bytes(&spool_dir);
+    items.push(PruneItem {
+        store: PruneStore::LocalDisk,
+        class: PruneClass::Spool,
+        target: "spool".to_string(),
+        cutoff_nanos,
+        estimate: PruneEstimate {
+            rows: None,
+            // Plan contract requires a row or object estimate on every item.
+            objects: Some(if spool_bytes > 0 { 1 } else { 0 }),
+            bytes: Some(spool_bytes),
+        },
+        exclusions: Vec::new(),
+        warnings: vec!["truncates active segments and removes rotated spool files".to_string()],
+    });
+
+    let snapshot = PruneSnapshot {
+        config_generation: format!(
+            "retention:{}:{}:{}",
+            config.retention.traces_ttl,
+            config.retention.logs_ttl,
+            config.retention.metrics_ttl
+        ),
+        // Plan 106 pin store not yet product-wired; empty generation means
+        // no pin exclusions are claimed.
+        protection_generation: "pins:none".to_string(),
+        catalog_fingerprint: "metadata+spool".to_string(),
+    };
+    let plan = PrunePlan::build(
+        cutoff_nanos,
+        snapshot.clone(),
+        items,
+        PrunePlanLimits::default(),
+    )?;
+
+    if json {
+        println!("{}", serde_json::to_string_pretty(&plan)?);
+    } else {
+        print_plan_human(&plan);
+    }
+
+    if !execute {
+        if !json {
+            println!();
+            println!("dry-run only — re-run with --execute (and --yes for non-interactive) to apply");
+            println!("raw telemetry remains engine-TTL managed (see config [retention])");
+        }
+        return Ok(());
+    }
+
+    if !yes {
+        println!();
+        println!(
+            "This permanently deletes eligible Turso lifecycle rows and truncates the spool."
+        );
+        println!("Re-run with --execute --yes to confirm.");
+        return Ok(());
+    }
+
+    // Journal + execute Turso steps; spool is local-disk.
+    let mut report = serde_json::Map::new();
+    report.insert(
+        "plan_id".into(),
+        serde_json::Value::String(plan.plan_id().to_string()),
+    );
+    let mut deleted = serde_json::Map::new();
+
+    if meta_path.exists() {
+        let store = TursoMetadataStore::open(&meta_path).await?;
+        let request = PruneExecutionRequest::execute(plan.plan_id().to_string(), true)?;
+        let authorization = plan.authorize(&request, &snapshot)?;
+        let journal = store
+            .create_prune_journal(&plan, now_nanos, PrunePlanLimits::default())
+            .await?;
+        for step in &journal.steps {
+            if step.item.store != PruneStore::Turso {
+                continue;
+            }
+            match store
+                .begin_prune_step(plan.plan_id(), step.step_index, now_nanos)
+                .await?
+            {
+                PruneStepStart::AlreadyComplete => continue,
+                PruneStepStart::Execute => {}
+            }
+            match store.execute_prune_item(&step.item, &authorization).await {
+                Ok(rows) => {
+                    deleted.insert(
+                        step.item.target.clone(),
+                        serde_json::Value::from(rows),
+                    );
+                    store
+                        .complete_prune_step(plan.plan_id(), step.step_index, now_nanos)
+                        .await?;
+                }
+                Err(error) => {
+                    let message = error.to_string();
+                    let _unused = store
+                        .record_prune_step_failure(
+                            plan.plan_id(),
+                            step.step_index,
+                            &message,
+                            now_nanos,
+                        )
+                        .await;
+                    anyhow::bail!(
+                        "prune step {} ({}) failed: {message}",
+                        step.step_index,
+                        step.item.target
+                    );
+                }
+            }
+        }
+        // Spool is not journaled in Turso; execute after metadata succeeds.
+        let reclaimed = prune_dir(&spool_dir)?;
+        deleted.insert("spool_bytes".into(), serde_json::Value::from(reclaimed));
+        // Mark any spool step complete if present.
+        if let Some(step) = journal
+            .steps
+            .iter()
+            .find(|s| s.item.class == PruneClass::Spool)
+        {
+            if step.state != PruneJournalStepState::Complete {
+                if let Ok(PruneStepStart::Execute) = store
+                    .begin_prune_step(plan.plan_id(), step.step_index, now_nanos)
+                    .await
+                {
+                    let _unused = store
+                        .complete_prune_step(plan.plan_id(), step.step_index, now_nanos)
+                        .await;
+                }
+            }
+        }
+    } else {
+        let reclaimed = prune_dir(&spool_dir)?;
+        deleted.insert("spool_bytes".into(), serde_json::Value::from(reclaimed));
+    }
+
+    report.insert("deleted".into(), serde_json::Value::Object(deleted));
+    report.insert(
+        "status".into(),
+        serde_json::Value::String("complete".into()),
+    );
+    report.insert(
+        "physical_bytes_note".into(),
+        serde_json::Value::String(
+            "GreptimeDB TTL/compaction is asynchronous; logical deletions reported above".into(),
+        ),
+    );
+
+    if json {
+        println!("{}", serde_json::to_string_pretty(&report)?);
+    } else {
+        println!();
+        println!("prune complete");
+        if let Some(map) = report.get("deleted").and_then(|v| v.as_object()) {
+            for (k, v) in map {
+                println!("  {k}: {v}");
+            }
+        }
+        println!("raw telemetry remains engine-TTL managed (physical reclaim via compaction)");
+    }
     Ok(())
+}
+
+fn spool_dir_bytes(dir: &Path) -> u64 {
+    if !dir.exists() {
+        return 0;
+    }
+    dir_size(dir)
+}
+
+fn print_plan_human(plan: &PrunePlan) {
+    println!("prune plan {}", plan.plan_id());
+    println!("  cutoff_nanos: {}", plan.cutoff_nanos());
+    println!("  items: {}", plan.items().len());
+    for item in plan.items() {
+        let rows = item
+            .estimate
+            .rows
+            .map(|n| n.to_string())
+            .unwrap_or_else(|| "-".into());
+        let bytes = item
+            .estimate
+            .bytes
+            .map(human)
+            .unwrap_or_else(|| "-".into());
+        println!(
+            "  - {:?} / {}  rows≈{rows}  bytes≈{bytes}",
+            item.store, item.target
+        );
+        for exclusion in &item.exclusions {
+            println!(
+                "      exclude {:?}: {}",
+                exclusion.kind, exclusion.count
+            );
+        }
+        for warning in &item.warnings {
+            println!("      warn: {warning}");
+        }
+    }
 }
 
 fn prune_dir(dir: &Path) -> anyhow::Result<u64> {
