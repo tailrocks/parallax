@@ -36,7 +36,7 @@
 | Maple | — | 🟡 inherited | 2026-06 (legacy) | write `parallax-vs-maple.md`; Tinybird coupling + local UX |
 | TMA1 | — | 🟡 inherited | 2026-06 (legacy) | write `parallax-vs-tma1.md`; bundle artifact drift check |
 | Highlight.io | — | 🔴 missing | n/a | write deep-dive; closest SaaS session-replay+errors peer |
-| Langfuse | [parallax-vs-langfuse.md](parallax-vs-langfuse.md) | ✅ pass 4 | 2026-07-17 | pin exact release tag + self-host backing store; A1-vs-Langfuse measurement; Langfuse changelog (production-error extension risk) |
+| Langfuse | [parallax-vs-langfuse.md](parallax-vs-langfuse.md) | ✅ pass 4 | 2026-07-17 | **latest pinned: v3.219.0 (2026-07-17)** + SDK-v4 OTLP-native/MCP-tracing + self-host-SSO-free added pass 4b; open: self-host backing store (Postgres/ClickHouse); A1-vs-Langfuse measurement; Langfuse changelog (production-error extension risk) |
 | Arize Phoenix | — | 🔴 missing | n/a | write deep-dive (AI wedge); OSS evals |
 | LangSmith | — | 🔴 missing | n/a | write deep-dive (AI wedge) |
 | Dynatrace / Splunk Obs / Elastic Obs / Sumo / Chronosphere / Observe / Axiom | — | 🔴 missing | n/a | tier 2: one per later pass |

@@ -17,7 +17,7 @@
 
 ## What each product is
 
-- **Langfuse** — open-source (**MIT core**) LLM engineering platform: tracing (LLM + non-LLM spans, hierarchical, multi-turn), evaluation scores (human + automated/model-based), prompt management (versioned, linked to traces), datasets, experiments, analytics (latency / cost / token usage), and a prompt playground. Open-core: MIT self-host (free, all core features, unlimited scale) + Langfuse Cloud + a self-host Enterprise license (RBAC/SCIM). Large OSS community (~28k+ GitHub stars per legacy note; verify exact current count). v3.x generation (the post-rewrite, self-hostable line; **exact latest release tag not pinned this pass — pin from [github.com/langfuse/langfuse](https://github.com/langfuse/langfuse) releases next**).
+- **Langfuse** — open-source (**MIT core**) LLM engineering platform: tracing (LLM + non-LLM spans, hierarchical, multi-turn), evaluation scores (human + automated/model-based), prompt management (versioned, linked to traces), datasets, experiments, analytics (latency / cost / token usage), and a prompt playground. Open-core: MIT self-host (free, all core features, unlimited scale) + Langfuse Cloud + a self-host Enterprise license (RBAC/SCIM). Large OSS community (~28k+ GitHub stars per legacy note; verify exact current count). **Latest release: v3.219.0 (2026-07-17, [github.com/langfuse/langfuse/releases](https://github.com/langfuse/langfuse/releases)); extremely fast cadence (~1–2 releases/day — v3.218.0 and v3.217.0 both shipped 2026-07-16).** v3.x = the post-rewrite, self-hostable line; **on 2025-06-04 Langfuse open-sourced all remaining product features under MIT** ([changelog](https://langfuse.com/changelog/2025-06-04-open-sourcing-langfuse)), so self-host ≥3.65 has no feature gating on core.
 - **Parallax** — open-source (Apache-2.0), Rust-first, self-hostable **execution-context engine**: OTLP-native ingest of traces/logs/metrics + CLI/coding-agent execution traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, serves **bounded, redacted, schema-valid evidence bundles** to humans and coding agents. GreptimeDB + Turso. **Pre-release.**
 
 These overlap on **agent/LLM tracing and "context for agents,"** but were built for different primary jobs. Compare axis-by-axis.
@@ -41,7 +41,7 @@ These overlap on **agent/LLM tracing and "context for agents,"** but were built 
 ## Ingestion & transport
 
 - **OTLP:** Langfuse **operates as an OpenTelemetry backend** — it receives traces on the `/api/public/otel` OTLP endpoint ([docs](https://langfuse.com/integrations/native/opentelemetry)). Plus its own SDKs (Python, JS/TS, etc.) and native framework integrations (LangChain, OpenAI, etc.). So Langfuse is **OTLP-receivable for traces** — but it is **not a general OTLP telemetry store** (no OTLP metrics, no OTLP logs-as-a-log-platform); it consumes OTLP traces into its LLM-trace model. Parallax is OTLP-native across traces/logs/metrics into GreptimeDB native tables.
-- **SDKs / integrations:** Langfuse ships many LLM-framework integrations (LangChain, OpenAI/Anthropic/Bedrock, LiteLLM, etc.) + OTel + HTTP API. Parallax relies on OTel SDKs + CLI/agent tracing.
+- **SDKs / integrations:** Langfuse ships many LLM-framework integrations (LangChain, OpenAI/Anthropic/Bedrock, LiteLLM, etc.) + OTel + HTTP API. Notably the **OTEL-native Langfuse SDK v4** is a thin layer over the official OpenTelemetry client and emits traces via **OTLP natively** ([docs](https://langfuse.com/integrations/native/opentelemetry)), and **MCP tracing** links MCP client + server traces end-to-end via W3C trace-context propagation ([docs](https://langfuse.com/docs/observability/features/mcp-tracing)). This is a direct, shipped overlap with Parallax's OTLP-native + agent-trace wedge. Parallax relies on OTel SDKs + CLI/agent tracing.
 
 **Verdict:** on **LLM-framework integration breadth, Langfuse wins.** On **general OTLP-native telemetry storage, Parallax's design is broader.** Scoped, not head-to-head.
 
@@ -105,7 +105,7 @@ This is the axis that matters most for Parallax's thesis, so be most honest.
 
 ## Security
 
-- **Langfuse Cloud:** ISO 27001, SOC 2, GDPR; Enterprise adds RBAC/SCIM/data residency. Self-host = your own posture (OSS, no built-in enterprise RBAC without the Enterprise license).
+- **Langfuse Cloud:** ISO 27001, SOC 2, GDPR; Enterprise adds RBAC/SCIM/data residency. **Self-host SSO is free under MIT** (SAML/OIDC/Google/GitHub/Azure AD/Okta, [docs](https://langfuse.com/self-hosting/security/authentication-and-sso)) since the 2025-06-04 open-sourcing — do **not** conflate this with the paid self-host Enterprise license, which gates **RBAC/SCIM/protected environments** (~$500/mo), not SSO.
 - **Parallax:** SSO/RBAC/audit planned, not shipped; redaction (A6) designed as first-class.
 
 **Verdict:** on **shipped security/compliance posture, Langfuse Cloud wins.** Parallax's redaction-before-agent-access is a narrower, unproven edge.
@@ -134,7 +134,7 @@ Langfuse pricing is **public** ([langfuse.com/pricing](https://langfuse.com/pric
 | **Cloud Hobby** | **Free** | ~50k units/mo included, no credit card |
 | **Cloud Pro** | **$199/mo** | 100k units/mo included; +**$8 / 100k units**; 90-day access; unlimited members |
 | **Cloud Enterprise** | **$2,499/mo** | custom security/compliance (ISO27001/SOC2/GDPR), data residency |
-| **Self-host Enterprise license** | **~$500/mo** | RBAC/SCIM/protected envs on top of OSS |
+| **Self-host Enterprise license** | **~$500/mo** | RBAC/SCIM/protected envs on top of OSS (**SSO itself is free in OSS**) |
 
 A "unit" ≈ a traced event/observation. **Self-host OSS is free with no limits** — a very strong economic position.
 
@@ -168,7 +168,9 @@ A "unit" ≈ a traced event/observation. **Self-host OSS is free with no limits*
 ## Sources (accessed 2026-07-17)
 
 - [Langfuse docs home](https://langfuse.com/docs); [observability overview](https://langfuse.com/docs/observability/overview).
-- [Langfuse OTLP/OTel integration](https://langfuse.com/integrations/native/opentelemetry) (OTLP backend at `/api/public/otel`).
+- [Langfuse OTLP/OTel integration](https://langfuse.com/integrations/native/opentelemetry) (OTLP backend at `/api/public/otel`; OTEL-native **SDK v4**); [MCP tracing docs](https://langfuse.com/docs/observability/features/mcp-tracing).
+- [Langfuse changelog: open-sourced all remaining product features under MIT (2025-06-04)](https://langfuse.com/changelog/2025-06-04-open-sourcing-langfuse); [self-host SSO](https://langfuse.com/self-hosting/security/authentication-and-sso).
+- [GitHub releases — latest v3.219.0 (2026-07-17)](https://github.com/langfuse/langfuse/releases).
 - [Langfuse pricing](https://langfuse.com/pricing); [self-host pricing](https://langfuse.com/pricing-self-host).
 - 2026 comparisons: [OpenObserve LLM obs tools](https://openobserve.ai/blog/llm-observability-tools/), [Firecrawl](https://www.firecrawl.dev/blog/best-llm-observability-tools), [MLflow top-5](https://mlflow.org/top-5-agent-observability-tools/).
 - Parallax side: [00-vision/ai-native-observability.md](../../00-vision/ai-native-observability.md), [reference/agent-observability-review.md](../../reference/agent-observability-review.md), [validation/a1-bundle-value/](../../validation/a1-bundle-value/).
