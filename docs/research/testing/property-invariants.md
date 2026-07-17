@@ -53,3 +53,17 @@ on a stable runner). First local run, 2026-07-17, Apple Silicon dev host,
 Run: `cargo bench -p <crate> --bench <name>`. Ratchets are NOT set — the
 plan forbids thresholds before variance is measured on a stable scheduled
 runner; these numbers are the reference points for that work.
+
+## Allocation instrumentation (plan 103, Step 4)
+
+`bench-alloc/` (standalone, workspace-excluded so its counting allocator
+never weakens the product crates' `forbid(unsafe_code)`) measures the
+ingest hot path. First observation, 2026-07-17, Apple Silicon dev host:
+
+- `normalize_metrics` over a 1k-point gauge batch: ~7,011 allocations/call,
+  ~1.02 MB/call (≈7 allocations per point, dominated by per-point attribute
+  JSON conversion) — the reference point for zero-copy follow-ups; optimize
+  only when evidence warrants (plan rule).
+
+Run: `cd bench-alloc && cargo run --release`. The scheduled-measurement
+workflow records it nightly beside the criterion samples.

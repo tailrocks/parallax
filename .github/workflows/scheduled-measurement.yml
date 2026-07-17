@@ -96,6 +96,9 @@ jobs:
               cargo bench --locked -p parallax-greptime --bench arrow_decode
             } 2>&1 | grep -E "time:" | tee -a "measurement/bench/repeat-${repeat}.txt" || true
           done
+      - name: Allocation profile (plan 103 zero-copy instrumentation)
+        run: |
+          (cd bench-alloc && cargo run --release) | tee measurement/bench/allocation-profile.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:

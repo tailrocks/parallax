@@ -135,8 +135,8 @@ spike produces useful stable signal.
   lands with the CI fuzz lane (Step 5, open).
 - [x] (first measurement, 2026-07-17) Criterion benches for normalization,
   spool IO, and Arrow decode with first observations recorded in
-  docs/research/testing/property-invariants.md; allocation instrumentation
-  and stable-runner variance modeling still open.
+  docs/research/testing/property-invariants.md; stable-runner variance modeling still open;
+  allocation instrumentation landed via `bench-alloc/` (see the invariant doc).
 - [x] (2026-07-17) PR lane `fuzz-bench` builds every fuzz target, smokes each
   boundary, and compiles the benches (required via ci-required); nightly
   `scheduled-measurement.yml` runs five-minute campaigns per boundary and
