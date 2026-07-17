@@ -16,6 +16,19 @@
 - **Blocker**: The operator must confirm whether non-default OpenObserve/Sentry
   credentials ever entered Git history and authorize any rotation/history rewrite.
 
+## Preliminary execution landed (helper agent, 2026-07-17) — peer verify + retire
+
+The operator's unblock directive (2026-07-17, `plans/README.md`) decided: NO
+history rewrite; run the scan, rotate anything found, record evidence. The
+scan and the secret-free record are done:
+[docs/research/security/credential-history-scan-2026-07-17.md](../docs/research/security/credential-history-scan-2026-07-17.md)
+— gitleaks 8.30.1 over 1,329 commits (5 findings: 4 intentional test
+canaries/doc prose, 1 lab-internal ingest-only Sentry DSN on a non-routable
+lab TLD; no real exposure) plus a clean current-tree scan at `b680fd8`.
+Peer: verify the classification, confirm no rotation is actionable (the
+self-hosted lab instance is down; DSN regeneration applies only if the
+compose stack is revived), then retire this plan per the lifecycle.
+
 ## Current Evidence
 
 The working-tree lab configuration was replaced by a safe
