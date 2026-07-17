@@ -258,3 +258,10 @@ decided less by "who compresses spans 1.3× better" and more by:
 compare only after flush settles. Nightly flushed `sj2` data_length ~6.7 KB class.
 
 At 100k absolute sizes are small; use **ratios** for cost thesis, server tier for $/GB.
+
+## Measuring GT table size (Run 248 / 264)
+
+Use `information_schema.ssts_storage` (`file_path`, `file_size`) grouped by region
+path prefix. Map `region_id` from `information_schema.region_peers` via
+`region_id >> 32` matching the path segment under `data/greptime/public/<id>/`.
+CH remains `system.parts` `bytes_on_disk` for active parts.
