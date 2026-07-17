@@ -125,6 +125,20 @@ Stars unchanged; **real release-line move** on backend only.
 | **TMA1** | **109★** / **`v0.2.0-alpha12`** | **21st UNFIRED** prod-collision (no Sentry/redact/outcome) |
 | **Maple** | **1,532★** / **v0.0.12** | Tinybird-decoupling **UNFIRED** |
 
+**Pass 223 recheck (2026-07-18):** cohort star hygiene (versions unchanged) —
+
+| Product | Stars | Note |
+| --- | --- | --- |
+| Bugsink | **1,940** / v2.4.0 | error-only |
+| Rustrak | **64** | Sentry+MCP |
+| Coroot | **7,837** / v1.23.3 | eBPF RCA |
+| Maple | **1,532** / v0.0.12 | Tinybird still |
+| TMA1 | **109** / alpha12 | **22nd UNFIRED** collision |
+| Odigos | **3,668** / v1.31.2 | export-only |
+| HolmesGPT | **2,874** / v0.36.0 | no own store |
+
+Full wedge combination **still not closed**.
+
 **Pass 156 recheck (2026-07-18):** **Traceway-focused** wedge re-poll + Bugsink/Rustrak
 star-pin hygiene — combination **still not closed**.
 
