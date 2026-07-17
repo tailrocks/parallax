@@ -23,7 +23,27 @@ export class ShellScreen {
     return this.#page.getByRole("link", { name: label })
   }
 
+  themeButton(label: "System" | "Light" | "Dark") {
+    return this.#page.getByRole("button", { name: label })
+  }
+
+  notFoundTitle() {
+    return this.#page.getByText("Nothing is mounted here")
+  }
+
+  apiErrorTitle() {
+    return this.#page.getByText("Parallax API did not answer")
+  }
+
+  retryRoute() {
+    return this.#page.getByRole("button", { name: "Retry route" })
+  }
+
   async openRoot() {
     await this.#page.goto("/")
+  }
+
+  async documentThemeClass(): Promise<string> {
+    return this.#page.evaluate(() => document.documentElement.className)
   }
 }

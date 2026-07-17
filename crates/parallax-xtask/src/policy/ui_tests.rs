@@ -290,6 +290,33 @@ fn validate_entry(
             ),
         ));
     }
+
+    let is_browser = entry.lane_owner.starts_with("playwright/");
+    if is_browser {
+        validate_browser_entry(root, entry, findings);
+    } else {
+        validate_vitest_entry(root, entry, findings);
+    }
+
+    validate_fire_event_reason(root, entry, findings);
+    validate_raw_router_reason(root, entry, findings);
+    // Reserved browser inventory rows may share a future file path; only
+    // implemented evidence contributes to the represented-id set.
+    if entry.status == "implemented" {
+        let target = represented.entry(entry.test_file.clone()).or_default();
+        for test_id in &entry.test_ids {
+            if !target.insert(test_id.clone()) {
+                findings.push(finding(
+                    "ui.tests.ids",
+                    &format!("duplicate test ID `{test_id}` in `{}`", entry.test_file),
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn validate_vitest_entry(root: &Path, entry: &Entry, findings: &mut Vec<Finding>) {
     if !matches!(
         entry.layer.as_str(),
         "model" | "component" | "route-contract" | "platform-contract"
@@ -342,18 +369,54 @@ fn validate_entry(
             ),
         ));
     }
-    validate_fire_event_reason(root, entry, findings);
-    validate_raw_router_reason(root, entry, findings);
-    let target = represented.entry(entry.test_file.clone()).or_default();
-    for test_id in &entry.test_ids {
-        if !target.insert(test_id.clone()) {
-            findings.push(finding(
-                "ui.tests.ids",
-                &format!("duplicate test ID `{test_id}` in `{}`", entry.test_file),
-            ));
-        }
+}
+
+fn validate_browser_entry(root: &Path, entry: &Entry, findings: &mut Vec<Finding>) {
+    let valid_lane = matches!(
+        entry.lane_owner.as_str(),
+        "playwright/contracts" | "playwright/foundation" | "playwright/full-stack" | "playwright/breadth"
+    );
+    let valid_status = matches!(entry.status.as_str(), "implemented" | "reserved");
+    if entry.layer != "browser-contract"
+        || !valid_lane
+        || !valid_status
+        || entry.risk.trim().is_empty()
+        || entry.required_environment.trim().is_empty()
+        || entry.test_ids.is_empty()
+        || !entry.test_file.contains("ui/tests/e2e/")
+    {
+        findings.push(finding(
+            "ui.tests.contract",
+            &format!("browser entry `{}` has an invalid required field", entry.id),
+        ));
     }
-    Ok(())
+    if entry.legacy_handoff.is_some() {
+        findings.push(finding(
+            "ui.tests.handoff",
+            &format!(
+                "browser entry `{}` must not use vitest legacy handoff fields",
+                entry.id
+            ),
+        ));
+    }
+    if entry.status == "implemented" && !root.join(&entry.test_file).is_file() {
+        findings.push(finding(
+            "ui.tests.file",
+            &format!(
+                "implemented browser entry `{}` does not resolve to evidence",
+                entry.id
+            ),
+        ));
+    }
+    if entry.status == "reserved" && entry.delivery_plan.is_none() {
+        findings.push(finding(
+            "ui.tests.contract",
+            &format!(
+                "reserved browser entry `{}` requires a delivery_plan owner",
+                entry.id
+            ),
+        ));
+    }
 }
 
 fn validate_raw_router_reason(root: &Path, entry: &Entry, findings: &mut Vec<Finding>) {

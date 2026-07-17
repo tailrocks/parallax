@@ -36,7 +36,7 @@ fn check_package(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
         ),
         (
             "test:browser:foundation",
-            "bunx --bun --no-install playwright test --project=foundation-chromium",
+            "PARALLAX_BROWSER_MODE=foundation bunx --bun --no-install playwright test --project=foundation-chromium",
         ),
     ] {
         let value = scripts
@@ -108,6 +108,7 @@ fn check_config(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
         "screenshot: \"only-on-failure\"",
         "video: \"retain-on-failure\"",
         "trace: \"on-first-retry\"",
+        "name: \"contracts-chromium\"",
     ] {
         if !source.contains(needle) {
             findings.push(error(

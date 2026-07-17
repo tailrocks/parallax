@@ -200,3 +200,34 @@ major upgrades. The root [`AGENTS.md`](../AGENTS.md) and the
     cargo xtask policy --only ui.tests
     cd ui && bun run check && bun run lint && bun run typecheck && bun run --bun test:ci && bun run build
     ```
+
+33. **Playwright product contracts (plan 144):** fixture-backed Chromium contracts
+    are a required CI gate. Extend them as follows — never invent a second
+    runner, Node process, happy-path `page.route()` stub, or product memory mode.
+
+    | Kind | Path |
+    |------|------|
+    | Dataset IDs / manifests | `ui/tests/e2e/datasets/` (feature plans) + Rust `parallax_test_support::browser` |
+    | Screens (shared locators only) | `ui/tests/e2e/screens/<surface>-screen.ts` |
+    | Contract specs | `ui/tests/e2e/contracts/<surface>.spec.ts` |
+    | Product fixture | `ui/tests/e2e/fixtures/product-fixture.ts` + `productTest` in `fixtures/test.ts` |
+    | Matrix rows | `ui/test-matrix.json` with `lane_owner: playwright/contracts`, stable `id`, `scenario_owner`, temporary `delivery_plan`, `dataset_id`, `state_class` |
+    | Template | `ui/tests/e2e/contracts/_template.spec.ts` (policy-checked, not counted) |
+
+    Rules:
+    - Seed/reset through the control plane (`resetDataset`) before navigation;
+      assert mutations via UI **and** `snapshot()` postconditions.
+    - Semantic locators only (role/name/label/placeholder/text). No CSS/XPath,
+      `waitForTimeout`, `test.only`/`skip`/`fix`, or happy-path interception.
+    - Diagnostics (console errors/warnings, page errors, external network,
+      dialogs, downloads) fail the owning test automatically.
+    - Commands every feature plan runs:
+
+    ```bash
+    cargo xtask policy --only ui.browser-contracts
+    cd ui && bun ci
+    cd ui && bunx --bun --no-install playwright install --with-deps chromium
+    cd ui && bun run build
+    cd ui && bun run test:browser:list
+    cd ui && bun run test:browser
+    ```

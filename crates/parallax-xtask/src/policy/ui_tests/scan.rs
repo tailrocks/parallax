@@ -134,10 +134,13 @@ pub(super) fn discover_tests(workspace: &Path) -> Result<BTreeMap<String, BTreeS
     let mut files = Vec::new();
     collect_files(&workspace.join("ui/src"), &mut files)?;
     collect_files(&workspace.join("ui/tests/harness"), &mut files)?;
+    collect_files(&workspace.join("ui/tests/e2e"), &mut files)?;
     let mut tests = BTreeMap::new();
     for path in files {
         let name = path.to_string_lossy();
-        if !(name.ends_with(".test.ts") || name.ends_with(".test.tsx")) {
+        let is_unit = name.ends_with(".test.ts") || name.ends_with(".test.tsx");
+        let is_browser = name.ends_with(".spec.ts") || name.ends_with(".spec.tsx");
+        if !is_unit && !is_browser {
             continue;
         }
         let source = fs::read_to_string(&path)?;

@@ -1,4 +1,5 @@
 mod architecture;
+mod browser_contracts;
 mod browser_foundation;
 mod config;
 mod docs;
@@ -36,10 +37,11 @@ pub(crate) fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()>
                 | "ui.architecture"
                 | "ui.ratchets"
                 | "ui.browser-foundation"
+                | "ui.browser-contracts"
         )
     {
         bail!(
-            "unknown policy family `{rule}`; available: architecture, product, structural, typescript, ui.architecture, ui.browser-foundation, ui.ratchets, ui.tests"
+            "unknown policy family `{rule}`; available: architecture, product, structural, typescript, ui.architecture, ui.browser-contracts, ui.browser-foundation, ui.ratchets, ui.tests"
         );
     }
     let ratchet = config::Ratchet::load(&root.join("ratchet.toml"))?;
@@ -67,6 +69,9 @@ pub(crate) fn run(root: &Path, only: Option<&str>, output: Output) -> Result<()>
     }
     if only.is_none() || only == Some("ui.browser-foundation") {
         findings.extend(browser_foundation::check_workspace(root)?);
+    }
+    if only.is_none() || only == Some("ui.browser-contracts") {
+        findings.extend(browser_contracts::check_workspace(root)?);
     }
     if only.is_none() {
         findings.extend(docs::check_workspace(root, &ratchet)?);

@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 64,
     "raw_router_builders": 1,
-    "test_cases": 425,
-    "test_files": 72
+    "test_cases": 433,
+    "test_files": 75
   },
   "private_route_imports": [
     {
@@ -2039,6 +2039,346 @@
         "created": "2026-07-15",
         "expires": "plan-167-completion"
       }
+    },
+    {
+      "id": "pw-foundation-shell",
+      "surface": "layout/shell",
+      "risk": "Foundation smoke must prove Chromium + Bun can load the shell brand and primary nav",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "playwright/foundation",
+      "delivery_plan": 132,
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/smoke/foundation.spec.ts",
+      "test_ids": [
+        "root shell exposes brand and primary navigation @pw-foundation-shell"
+      ],
+      "required_environment": "chromium-foundation",
+      "status": "implemented",
+      "dataset_id": "foundation-default",
+      "state_class": "smoke"
+    },
+    {
+      "id": "pw-shell-root-nav",
+      "surface": "layout/shell",
+      "risk": "Root shell may fail to mount brand or primary navigation against the public GraphQL surface",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "playwright/contracts",
+      "delivery_plan": 144,
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
+      "test_ids": [
+        "root readiness and primary navigation @pw-shell-root-nav"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "implemented",
+      "dataset_id": "shell-empty",
+      "state_class": "ready"
+    },
+    {
+      "id": "pw-shell-workspace-deeplink",
+      "surface": "layout/shell",
+      "risk": "Workspace navigation or deep-link refresh can lose route context",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "playwright/contracts",
+      "delivery_plan": 144,
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
+      "test_ids": [
+        "workspace navigation and deep-link refresh @pw-shell-workspace-deeplink"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "implemented",
+      "dataset_id": "shell-empty",
+      "state_class": "navigation"
+    },
+    {
+      "id": "pw-shell-not-found",
+      "surface": "layout/shell",
+      "risk": "Invalid routes may not surface the product not-found panel",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "playwright/contracts",
+      "delivery_plan": 144,
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
+      "test_ids": [
+        "invalid route shows not-found surface @pw-shell-not-found"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "implemented",
+      "dataset_id": "shell-empty",
+      "state_class": "not-found"
+    },
+    {
+      "id": "pw-shell-theme",
+      "surface": "layout/shell",
+      "risk": "Theme selection may fail to persist across reload",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "playwright/contracts",
+      "delivery_plan": 144,
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
+      "test_ids": [
+        "theme choice persists across reload @pw-shell-theme"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "implemented",
+      "dataset_id": "shell-empty",
+      "state_class": "theme"
+    },
+    {
+      "id": "pw-shell-api-failure",
+      "surface": "layout/shell",
+      "risk": "Recoverable GraphQL failure may not present a retryable error panel",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "playwright/contracts",
+      "delivery_plan": 144,
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
+      "test_ids": [
+        "recoverable API failure surfaces error panel @pw-shell-api-failure"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "implemented",
+      "dataset_id": "shell-empty",
+      "state_class": "recoverable-error"
+    },
+    {
+      "id": "pw-investigations-list-detail",
+      "surface": "features/investigations",
+      "risk": "Seeded investigation list/detail may not load pins and notes from fixture state",
+      "scenario_owner": "features/investigations",
+      "lane_owner": "playwright/contracts",
+      "delivery_plan": 144,
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/investigations.spec.ts",
+      "test_ids": [
+        "lists seeded investigation and opens detail @pw-investigations-list-detail"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "implemented",
+      "dataset_id": "investigations-pilot",
+      "state_class": "seeded-list-detail"
+    },
+    {
+      "id": "pw-investigations-crud-pilot",
+      "surface": "features/investigations",
+      "risk": "Investigation create/edit/delete may not persist through the public GraphQL surface",
+      "scenario_owner": "features/investigations",
+      "lane_owner": "playwright/contracts",
+      "delivery_plan": 144,
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/investigations.spec.ts",
+      "test_ids": [
+        "create edit delete pin note and persist @pw-investigations-crud-pilot"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "implemented",
+      "dataset_id": "investigations-pilot",
+      "state_class": "mutation"
+    },
+    {
+      "id": "pw-reserved-investigations-contracts",
+      "surface": "features/investigations",
+      "risk": "Remaining investigations browser contracts beyond the plan 144 pilot",
+      "scenario_owner": "features/investigations",
+      "lane_owner": "playwright/contracts",
+      "delivery_plan": 134,
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/investigations.spec.ts",
+      "test_ids": [
+        "reserved @investigations browser contracts"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "reserved",
+      "dataset_id": "investigations-default",
+      "state_class": "inventory"
+    },
+    {
+      "id": "pw-reserved-sql-contracts",
+      "surface": "features/sql",
+      "risk": "SQL safe execution, result states, history, snippet CRUD, schema browser",
+      "scenario_owner": "features/sql",
+      "lane_owner": "playwright/contracts",
+      "delivery_plan": 135,
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/sql.spec.ts",
+      "test_ids": [
+        "reserved @sql browser contracts"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "reserved",
+      "dataset_id": "sql-default",
+      "state_class": "inventory"
+    },
+    {
+      "id": "pw-reserved-ecosystem-contracts",
+      "surface": "features/ecosystem",
+      "risk": "Ecosystem topology, empty/error state, trace/service navigation",
+      "scenario_owner": "features/ecosystem",
+      "lane_owner": "playwright/contracts",
+      "delivery_plan": 136,
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/ecosystem.spec.ts",
+      "test_ids": [
+        "reserved @ecosystem browser contracts"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "reserved",
+      "dataset_id": "ecosystem-default",
+      "state_class": "inventory"
+    },
+    {
+      "id": "pw-reserved-dashboards-contracts",
+      "surface": "features/dashboards",
+      "risk": "Dashboard list/detail/widget CRUD and chart states",
+      "scenario_owner": "features/dashboards",
+      "lane_owner": "playwright/contracts",
+      "delivery_plan": 137,
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/dashboards.spec.ts",
+      "test_ids": [
+        "reserved @dashboards browser contracts"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "reserved",
+      "dataset_id": "dashboards-default",
+      "state_class": "inventory"
+    },
+    {
+      "id": "pw-reserved-services-contracts",
+      "surface": "features/services",
+      "risk": "Services list/detail, filtering, RED/infra absence, exemplars",
+      "scenario_owner": "features/services",
+      "lane_owner": "playwright/contracts",
+      "delivery_plan": 138,
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/services.spec.ts",
+      "test_ids": [
+        "reserved @services browser contracts"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "reserved",
+      "dataset_id": "services-default",
+      "state_class": "inventory"
+    },
+    {
+      "id": "pw-reserved-issues-contracts",
+      "surface": "features/issues",
+      "risk": "Issues list/detail, search/filter/status mutation, context links",
+      "scenario_owner": "features/issues",
+      "lane_owner": "playwright/contracts",
+      "delivery_plan": 139,
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/issues.spec.ts",
+      "test_ids": [
+        "reserved @issues browser contracts"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "reserved",
+      "dataset_id": "issues-default",
+      "state_class": "inventory"
+    },
+    {
+      "id": "pw-reserved-runs-contracts",
+      "surface": "features/runs",
+      "risk": "Runs list/detail, session state, runtime snapshot, bundle download",
+      "scenario_owner": "features/runs",
+      "lane_owner": "playwright/contracts",
+      "delivery_plan": 140,
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/runs.spec.ts",
+      "test_ids": [
+        "reserved @runs browser contracts"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "reserved",
+      "dataset_id": "runs-default",
+      "state_class": "inventory"
+    },
+    {
+      "id": "pw-reserved-logs-contracts",
+      "surface": "features/logs",
+      "risk": "Logs search/filter/context/saved views/live/reconnect",
+      "scenario_owner": "features/logs",
+      "lane_owner": "playwright/contracts",
+      "delivery_plan": 141,
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/logs.spec.ts",
+      "test_ids": [
+        "reserved @logs browser contracts"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "reserved",
+      "dataset_id": "logs-default",
+      "state_class": "inventory"
+    },
+    {
+      "id": "pw-reserved-traces-contracts",
+      "surface": "features/traces",
+      "risk": "Traces list/detail/compare, waterfall, GraphQL/RPC/story links",
+      "scenario_owner": "features/traces",
+      "lane_owner": "playwright/contracts",
+      "delivery_plan": 142,
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/traces.spec.ts",
+      "test_ids": [
+        "reserved @traces browser contracts"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "reserved",
+      "dataset_id": "traces-default",
+      "state_class": "inventory"
+    },
+    {
+      "id": "pw-reserved-shell-contracts",
+      "surface": "layout/shell",
+      "risk": "Remaining shell theme/route-failure contracts beyond plan 144 pilot",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "playwright/contracts",
+      "delivery_plan": 143,
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
+      "test_ids": [
+        "reserved @shell browser contracts"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "reserved",
+      "dataset_id": "shell-default",
+      "state_class": "inventory"
+    },
+    {
+      "id": "pw-reserved-overview-contracts",
+      "surface": "features/overview",
+      "risk": "Overview range, trends, movers, onboarding and recent-entity links",
+      "scenario_owner": "features/overview",
+      "lane_owner": "playwright/contracts",
+      "delivery_plan": 150,
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/overview.spec.ts",
+      "test_ids": [
+        "reserved @overview browser contracts"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "reserved",
+      "dataset_id": "overview-default",
+      "state_class": "inventory"
     }
+  ],
+  "browser_contract_paths": [
+    "ui/**",
+    "ui/package.json",
+    "ui/bun.lock",
+    "ui/playwright.config.ts",
+    "ui/test-matrix.json",
+    "ui/tests/e2e/**",
+    "crates/parallax-server/**",
+    "crates/parallax-api/**",
+    "crates/parallax-test-support/**",
+    "crates/parallax-metadata/**",
+    "crates/parallax-xtask/**",
+    "Cargo.toml",
+    "Cargo.lock",
+    "mise.toml",
+    ".github/workflows/ci.yml"
   ]
 }
