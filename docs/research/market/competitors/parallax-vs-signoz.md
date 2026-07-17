@@ -34,9 +34,9 @@ monitoring, LLM observability.
 
 | | SigNoz | Source |
 |---|---|---|
-| **Latest version** | **v0.132.2** (~2026-07-08–10); v0.131.0 (2026-07-01) bumped **ClickHouse → 25.12.5** to stay on a supported release | [signoz.io/changelog](https://signoz.io/changelog/), [github.com/SigNoz/signoz/releases](https://github.com/SigNoz/signoz/releases) |
-| **Cadence** | Very fast: ~3 minor releases in ~3 weeks (v0.130→v0.132); still **pre-1.0** | changelog |
-| **Stars** | **~27k+** (June 2026 aggregator snapshot; re-verify exact current count) | [github.com/SigNoz/signoz](https://github.com/SigNoz/signoz) |
+| **Latest version** | **v0.133.0** (2026-07-15); v0.131.0 (2026-07-01) bumped **ClickHouse → 25.12.5** to stay on a supported release | [github.com/SigNoz/signoz/releases](https://github.com/SigNoz/signoz/releases), [signoz.io/changelog](https://signoz.io/changelog/) |
+| **Cadence** | Very fast: ~4 minor releases in ~4 weeks (v0.130→v0.133 as of 2026-07-17); still **pre-1.0** | changelog |
+| **Stars** | **30,144** (GitHub API, 2026-07-17 — up from ~27.4k in June 2026) | [github.com/SigNoz/signoz](https://github.com/SigNoz/signoz) |
 | **License** | Core platform **MIT-Expat**; `ee/` + `cmd/enterprise/` proprietary; **`signoz-mcp-server` Apache-2.0** (separate repo) | LICENSE, ee/LICENSE, maintainer [discussion #4231](https://github.com/SigNoz/signoz/discussions/4231) |
 | **Languages** | TypeScript ~53% (React UI), Go ~37% (backend), Python ~5% | GitHub |
 | **Telemetry store** | **ClickHouse** + ClickHouse Keeper (ZooKeeper still the shipped reality — Keeper *supported* but charts/compose not switched: issues signoz#7002, charts#610) | docs + issues |
@@ -163,7 +163,7 @@ architecturally, early in productization.
 
 | Capability | SigNoz | Parallax |
 |---|---|---|
-| Official MCP server | ✅ **Apache-2.0, both hosted + self-hosted**, v0.5.1 (2026-06-17; re-verify newer), stdio + HTTP(OAuth) | 🟡 planned, read-only after safety gates |
+| Official MCP server | ✅ **Apache-2.0, both hosted + self-hosted**, **v0.8.0** (2026-07-15), stdio + HTTP(OAuth) | 🟡 planned, read-only after safety gates |
 | MCP tool surface | **~38 tools (25 read + 13 write/destructive)** — can mutate/delete alerts, dashboards, views, channels | read-only bounded projection (intended) |
 | Skills marketplace | ✅ `agent-skills` repo — 12 skills, incl. read-only `signoz-investigating-alerts` RCA skill **with eval cases** | ❌ |
 | AI root-cause | ✅ MCP RCA skill (3-tier, mandated cite-every-claim) | 🟡 planned |
@@ -252,7 +252,7 @@ self-hosted Parallax could undercut but that is unmeasured.
 
 ## Where SigNoz plainly wins (no bias)
 
-1. **Maturity + community** — ~27k+ stars, years of shipping, fast cadence.
+1. **Maturity + community** — **30k+ stars**, years of shipping, fast cadence.
 2. **Breadth** — unified mature dashboards/alerting/SLO/service-map/exceptions/LLM obs.
 3. **Agent/MCP maturity** — hosted+self-hosted MCP, skills marketplace, evals; the strongest in OSS.
 4. **Proven storage scale** — ClickHouse is battle-tested; GreptimeDB is not, head-to-head.
@@ -284,7 +284,8 @@ self-hosted Parallax could undercut but that is unmeasured.
 
 - [github.com/SigNoz/signoz](https://github.com/SigNoz/signoz) — README, LICENSE, releases, architecture
 - [github.com/SigNoz/signoz LICENSE](https://github.com/SigNoz/signoz/blob/main/LICENSE), [ee/LICENSE](https://github.com/SigNoz/signoz/blob/develop/ee/LICENSE), [discussion #4231](https://github.com/SigNoz/signoz/discussions/4231) (license split)
-- [signoz.io/changelog](https://signoz.io/changelog/) — v0.132.2 (~2026-07-08–10), v0.131.0 (2026-07-01, ClickHouse 25.12.5)
+- [github.com/SigNoz/signoz/releases](https://github.com/SigNoz/signoz/releases) — latest **v0.133.0** (2026-07-15); v0.131.0 (2026-07-01, ClickHouse 25.12.5); **30,144 stars** (GitHub API, 2026-07-17)
+- [github.com/SigNoz/signoz-mcp-server/releases](https://github.com/SigNoz/signoz-mcp-server/releases) — MCP server latest **v0.8.0** (2026-07-15)
 - [github.com/SigNoz/signoz/releases](https://github.com/SigNoz/signoz/releases)
 - [signoz.io/docs/architecture](https://signoz.io/docs/architecture/), [install/self-host](https://signoz.io/docs/install/self-host/)
 - [signoz.io/blog/oss-improvements](https://signoz.io/blog/oss-improvements/) (SQLite→Postgres metadata)
