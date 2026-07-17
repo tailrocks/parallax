@@ -103,6 +103,16 @@ hybrid story (pass 261) unchanged. Air-gap combination claim **holds**.
 
 Air-gap combination claim **holds**. OPW ≠ Bits store; BYOC ≠ offline agent-evidence; Assistant ≠ offline BYO-LLM.
 
+### Pass 303 (2026-07-18) — OPW + Assistant + Seer (GO composite)
+
+| Source | Finding |
+| --- | --- |
+| [Observability Pipelines](https://docs.datadoghq.com/observability_pipelines/) | still: process **within your own infrastructure**, then **route** to **destinations**. Worker = pipeline surface — **not** self-hosted Bits/APM store |
+| [Grafana Assistant self-managed](https://grafana.com/docs/grafana/latest/administration/assistant/) | still hybrid: Assistant **backend, usage limits, and billing stay in the Grafana Cloud stack** |
+| [develop.sentry.dev/self-hosted](https://develop.sentry.dev/self-hosted/) | still Seer/AI closed-source exclusion |
+
+Air-gap combination claim **holds**. OPW ≠ Bits store; Assistant ≠ offline BYO-LLM; Seer self-host **UNFIRED**.
+
 Air-gap combination claim (open core + portable redacted evidence + no closed
 cloud AI) **still holds** as a *combination* (A1 still unproven).
 

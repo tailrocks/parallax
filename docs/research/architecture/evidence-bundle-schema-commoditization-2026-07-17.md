@@ -85,6 +85,15 @@ OCSF GA still **`1.8.0`**; `/1.9.0/` still **404**. **Still not commoditized.**
 (2025-10-24); model/ filter still **empty**; OCSF GA still **`1.8.0`**.
 **Still not commoditized.**
 
+**Pass 303 primary re-fetch (2026-07-18):**
+
+| Source | Finding |
+| --- | --- |
+| [semconv #1185](https://github.com/open-telemetry/semantic-conventions/issues/1185) | Still **open**; labels still `cicd:phase-2`, `triage:accepted:ready-with-sig`; `updated_at` still **2025-10-24T14:40:05Z** (~9 months idle). Title still "Add incident attributes" — **attributes**, not a portable evidence bundle |
+| [ocsf/ocsf-schema Latest](https://github.com/ocsf/ocsf-schema/releases/latest) | still **`1.8.0`** (published **2026-03-18**) |
+
+**Verdict unchanged:** still **not commoditized.** Kill "OTel commoditizes evidence-bundle schema" still **unfired**.
+
 **Evidence class:** primary GitHub issue/tree + first-party release pages +
 vendor product docs (desk recheck). Not a measurement of A1 value.
 

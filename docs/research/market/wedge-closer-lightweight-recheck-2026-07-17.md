@@ -257,6 +257,15 @@ Combo **still not closed**.
 
 Full combination **still not closed**.
 
+**Pass 303 recheck (2026-07-18):** **Traceway + TMA1** (GO composite primaries) —
+
+| Product | Pin | Combo |
+| --- | --- | --- |
+| **Traceway** | [tracewayapp/traceway](https://github.com/tracewayapp/traceway) still **1,024★**; latest releases still **`backend/v1.9.1` + `cli/v1.9.1`** (2026-07-15); `pushed_at` **2026-07-17** | Still OTLP multi-signal + agent CLI/MCP; prior README probe: **no** Sentry envelope / portable redacted evidence / fix-outcome — combo **not closed** |
+| **TMA1** | [tma1-ai/tma1](https://github.com/tma1-ai/tma1) still **109★**; latest release still **`v0.2.0-alpha12`** (2026-07-17); README still local-first LLM/agent loop (Claude Code / Codex / Copilot hooks + GreptimeDB) | **28th UNFIRED** prod-incident collision (no Sentry envelope / portable redacted prod evidence / fix-outcome) |
+
+Full combination **still not closed**.
+
 **Pass 258 recheck (2026-07-18):** **Maple + Uptrace** —
 
 | Product | Pin | Watch |
