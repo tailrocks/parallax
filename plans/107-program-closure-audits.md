@@ -16,8 +16,8 @@
 - **Planned at**: `a1d8bf82`, revised 2026-07-12
 - **Status**: IN PROGRESS (2026-07-17) — every other actionable plan retired;
   remaining indexed plans 089/114 are minimal BLOCKED files with fresh
-  2026-07-17T16:40Z trigger rechecks; `closure-final --dry-run` fixtures pass;
-  freezing C0 next (claimed by Claude Code executor)
+  2026-07-17T17:18Z trigger rechecks; `closure-final --dry-run` fixtures pass;
+  freezing C0 after blocker recheck commit
 
 ## Current Evidence
 

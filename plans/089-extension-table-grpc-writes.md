@@ -16,8 +16,10 @@
 - **Blocker**: Published `greptimedb-ingester` ≤0.18.0 hard-enables tonic
   `tls-ring` (rustls). Contribution
   [greptimedb-ingester-rust#58](https://github.com/GreptimeTeam/greptimedb-ingester-rust/pull/58)
-  is OPEN, not merged (recheck 2026-07-17T16:40Z). crates.io still 0.18.0;
-  latest GitHub release tag remains `v0.18.0` (2026-05-13). PR head still `refs/pull/58/head`.
+  is OPEN, not merged (recheck 2026-07-17T17:18Z). crates.io still 0.18.0
+  (updated 2026-05-13); latest GitHub release tag remains `v0.18.0`. HTML
+  state label `pullOpened`; title "feat: make rustls-backed TLS an opt-in
+  feature"; head branch `donbeave:feat/opt-in-tls-feature`.
 
 ## Residual only
 
