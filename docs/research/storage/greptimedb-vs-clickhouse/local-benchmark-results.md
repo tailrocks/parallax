@@ -8400,3 +8400,6 @@ Third re-check on head this session; still NOT_IMPLEMENTED. Not done.
 
 Session research loop marks Run **400**. Laptop work saturated; five execute
 gaps remain. Operator must stop or replace goal explicitly. **Not done.**
+
+### Run 401 — 2026-07-17 — not done
+
