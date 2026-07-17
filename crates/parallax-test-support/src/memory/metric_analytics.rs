@@ -1,6 +1,29 @@
 //! In-memory metric analytics capability.
 
 use super::*;
+use parallax_storage::adapter::AttributeFilter;
+
+/// Evaluate plan-168 where filters against one exported point/histogram row.
+/// `service`/`service.name` reads the row's service; other keys read the
+/// attribute object (absent values satisfy only negative operators).
+pub(super) fn metric_row_matches(
+    filters: &[AttributeFilter],
+    service: &str,
+    attributes: &serde_json::Value,
+) -> bool {
+    filters.iter().all(|filter| {
+        let key = filter.key.trim();
+        let observed: Option<String> = if key == "service" || key == "service.name" {
+            Some(service.to_string())
+        } else {
+            attributes.get(key).map(|value| match value {
+                serde_json::Value::String(s) => s.clone(),
+                other => other.to_string(),
+            })
+        };
+        filter.matches(observed.as_deref())
+    })
+}
 
 #[async_trait::async_trait]
 impl MetricAnalyticsStore for MemoryStore {
@@ -9,6 +32,7 @@ impl MetricAnalyticsStore for MemoryStore {
         name: &str,
         service: Option<&str>,
         invocation_id: Option<&str>,
+        attribute_filters: &[AttributeFilter],
         range: RangeInclusive<u128>,
         step_nanos: u128,
         agg: MetricAgg,
@@ -19,6 +43,7 @@ impl MetricAnalyticsStore for MemoryStore {
             p.name == name
                 && service.is_none_or(|svc| p.service == svc)
                 && invocation_id.is_none_or(|id| p.invocation_id.as_deref() == Some(id))
+                && metric_row_matches(attribute_filters, &p.service, &p.attributes)
                 && range.contains(&p.ts_nanos)
         }) {
             buckets
@@ -57,6 +82,7 @@ impl MetricAnalyticsStore for MemoryStore {
         &self,
         name: &str,
         service: Option<&str>,
+        attribute_filters: &[AttributeFilter],
         range: RangeInclusive<u128>,
         step_nanos: u128,
         q: f64,
@@ -67,6 +93,7 @@ impl MetricAnalyticsStore for MemoryStore {
         for row in self.lock().histograms.iter().filter(|h| {
             h.name == name
                 && service.is_none_or(|svc| h.service == svc)
+                && metric_row_matches(attribute_filters, &h.service, &h.attributes)
                 && range.contains(&h.ts_nanos)
         }) {
             let window = (row.ts_nanos / step) * step;
@@ -90,6 +117,7 @@ impl MetricAnalyticsStore for MemoryStore {
         &self,
         name: &str,
         service: Option<&str>,
+        attribute_filters: &[AttributeFilter],
         range: RangeInclusive<u128>,
         step_nanos: u128,
     ) -> StorageResult<Vec<SeriesPoint>> {
@@ -100,6 +128,7 @@ impl MetricAnalyticsStore for MemoryStore {
         for row in self.lock().histograms.iter().filter(|h| {
             h.name == name
                 && service.is_none_or(|svc| h.service == svc)
+                && metric_row_matches(attribute_filters, &h.service, &h.attributes)
                 && range.contains(&h.ts_nanos)
         }) {
             let window = (row.ts_nanos / step) * step;

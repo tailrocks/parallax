@@ -14,6 +14,7 @@ use crate::{
 };
 
 use crate::resolvers::common::Point;
+use crate::resolvers::traces::AttributeFilterInput;
 use parallax_storage::adapter::RuntimeMetricSeries as StorageRuntimeMetricSeries;
 use parallax_storage::model::{MetricAgg, SeriesPoint};
 
@@ -133,10 +134,16 @@ pub(crate) async fn metric_query(
     from_nanos: String,
     to_nanos: String,
     service: Option<String>,
+    attribute_filters: Option<Vec<AttributeFilterInput>>,
     group_by: Option<String>,
     step_seconds: Option<i32>,
 ) -> FieldResult<MetricQueryOut> {
     validate_metric_name(&name)?;
+    let filters = attribute_filters
+        .unwrap_or_default()
+        .into_iter()
+        .map(|filter| filter.into_adapter().map_err(field_err))
+        .collect::<Result<Vec<_>, _>>()?;
     let kind = model::MetricKind::parse(&kind)
         .ok_or_else(|| field_err("kind must be gauge|sum|histogram"))?;
     let (from, to) = parse_range(&from_nanos, &to_nanos)?;
@@ -160,7 +167,7 @@ pub(crate) async fn metric_query(
             let points = if agg == "avg" {
                 context
                     .store
-                    .histogram_avg(&name, service.as_deref(), from..=to, step_ns)
+                    .histogram_avg(&name, service.as_deref(), &filters, from..=to, step_ns)
                     .await
                     .map_err(crate::internal_field_err)?
             } else {
@@ -171,7 +178,7 @@ pub(crate) async fn metric_query(
                 };
                 context
                     .store
-                    .histogram_quantile(&name, service.as_deref(), from..=to, step_ns, q)
+                    .histogram_quantile(&name, service.as_deref(), &filters, from..=to, step_ns, q)
                     .await
                     .map_err(crate::internal_field_err)?
             };
@@ -189,6 +196,7 @@ pub(crate) async fn metric_query(
                     .metric_series_grouped(
                         &name,
                         service.as_deref(),
+                        &filters,
                         &group_by,
                         from..=to,
                         step_ns,
@@ -207,7 +215,15 @@ pub(crate) async fn metric_query(
                     group_value: None,
                     points: context
                         .store
-                        .metric_series(&name, service.as_deref(), None, from..=to, step_ns, agg)
+                        .metric_series(
+                            &name,
+                            service.as_deref(),
+                            None,
+                            &filters,
+                            from..=to,
+                            step_ns,
+                            agg,
+                        )
                         .await
                         .map_err(crate::internal_field_err)?,
                 }]
@@ -376,6 +392,7 @@ pub(crate) async fn metric_series(
             .metric_series_grouped(
                 &name,
                 service.as_deref(),
+                &[],
                 &group_by,
                 from..=to,
                 step_nanos(step_seconds),
@@ -397,6 +414,7 @@ pub(crate) async fn metric_series(
                 &name,
                 service.as_deref(),
                 invocation_id.as_deref(),
+                &[],
                 from..=to,
                 step_nanos(step_seconds),
                 agg,
@@ -426,6 +444,7 @@ pub(crate) async fn histogram_quantile(
         .histogram_quantile(
             &name,
             service.as_deref(),
+            &[],
             from..=to,
             step_nanos(step_seconds),
             q,

@@ -1,6 +1,8 @@
 //! In-memory runtime metrics capability.
 
+use super::metric_analytics::metric_row_matches;
 use super::*;
+use parallax_storage::adapter::AttributeFilter;
 
 #[async_trait::async_trait]
 impl adapter::RuntimeMetricStore for MemoryStore {
@@ -8,6 +10,7 @@ impl adapter::RuntimeMetricStore for MemoryStore {
         &self,
         name: &str,
         service: Option<&str>,
+        attribute_filters: &[AttributeFilter],
         group_by: &str,
         range: RangeInclusive<u128>,
         step_nanos: u128,
@@ -29,6 +32,7 @@ impl adapter::RuntimeMetricStore for MemoryStore {
         for point in self.lock().metric_points.iter().filter(|p| {
             p.name == name
                 && service.is_none_or(|svc| p.service == svc)
+                && metric_row_matches(attribute_filters, &p.service, &p.attributes)
                 && range.contains(&p.ts_nanos)
         }) {
             buckets
@@ -88,6 +92,7 @@ impl adapter::RuntimeMetricStore for MemoryStore {
                     &metric,
                     service,
                     invocation_id,
+                    &[],
                     range.clone(),
                     step_nanos,
                     MetricAgg::Avg,

@@ -1,4 +1,5 @@
 use super::*;
+use crate::adapter::AttributeFilter;
 
 #[async_trait::async_trait]
 impl MetricAnalyticsStore for GreptimeStore {
@@ -7,6 +8,7 @@ impl MetricAnalyticsStore for GreptimeStore {
         name: &str,
         service: Option<&str>,
         invocation_id: Option<&str>,
+        attribute_filters: &[AttributeFilter],
         range: RangeInclusive<u128>,
         step_nanos: u128,
         agg: MetricAgg,
@@ -15,6 +17,11 @@ impl MetricAnalyticsStore for GreptimeStore {
         // Run-scoped reads hit the `invocation_metric_points` extension table (ns time
         // index, `value` column); aggregate reads hit the per-metric native
         // table (ms `greptime_timestamp`, `greptime_value`, `service_name` tag).
+        if invocation_id.is_some() && !attribute_filters.is_empty() {
+            return Err(StorageError::query(anyhow::anyhow!(
+                "attribute filters are not supported for invocation-scoped metric reads"
+            )));
+        }
         let rows = if let Some(invocation_id) = invocation_id {
             let service_clause = service
                 .map(|svc| format!(r#" AND "service" = '{}'"#, escape(svc)))
@@ -37,9 +44,12 @@ impl MetricAnalyticsStore for GreptimeStore {
             let Some(table) = self.metric_table_for_name(name, None).await? else {
                 return Ok(Vec::new());
             };
-            let service_clause = service
+            let mut service_clause = service
                 .map(|svc| format!(r#" AND "service_name" = '{}'"#, escape(svc)))
                 .unwrap_or_default();
+            if let Some(filters) = metric_attribute_filters_sql(attribute_filters) {
+                service_clause.push_str(&format!(" AND {filters}"));
+            }
             let agg_expr = metric_agg_expr(agg, "greptime_value", "greptime_timestamp");
             self.sql_arrow_lenient(&format!(
                 r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "greptime_timestamp") AS BIGINT)
@@ -78,12 +88,13 @@ impl MetricAnalyticsStore for GreptimeStore {
         &self,
         name: &str,
         service: Option<&str>,
+        attribute_filters: &[AttributeFilter],
         range: RangeInclusive<u128>,
         step_nanos: u128,
         q: f64,
     ) -> StorageResult<Vec<SeriesPoint>> {
         let series = self
-            .histogram_quantiles(name, service, range, step_nanos, &[q])
+            .histogram_quantiles(name, service, attribute_filters, range, step_nanos, &[q])
             .await?;
         Ok(series.into_iter().next().unwrap_or_default())
     }
@@ -92,6 +103,7 @@ impl MetricAnalyticsStore for GreptimeStore {
         &self,
         name: &str,
         service: Option<&str>,
+        attribute_filters: &[AttributeFilter],
         range: RangeInclusive<u128>,
         step_nanos: u128,
         quantiles: &[f64],
@@ -103,9 +115,12 @@ impl MetricAnalyticsStore for GreptimeStore {
             return Ok(vec![Vec::new(); quantiles.len()]);
         };
         // Server-side date_bin + MAX per (window, le) = latest cumulative (plan 085).
-        let service_clause = service
+        let mut service_clause = service
             .map(|svc| format!(r#" AND "service_name" = '{}'"#, escape(svc)))
             .unwrap_or_default();
+        if let Some(filters) = metric_attribute_filters_sql(attribute_filters) {
+            service_clause.push_str(&format!(" AND {filters}"));
+        }
         let step_secs = (step_nanos / 1_000_000_000).max(1);
         let rows = self
             .sql_arrow_lenient(&Self::histogram_quantile_bucket_sql(
@@ -145,15 +160,19 @@ impl MetricAnalyticsStore for GreptimeStore {
         &self,
         name: &str,
         service: Option<&str>,
+        attribute_filters: &[AttributeFilter],
         range: RangeInclusive<u128>,
         step_nanos: u128,
     ) -> StorageResult<Vec<SeriesPoint>> {
         // Latest cumulative `_sum`/`_count` per bucket (MAX merge, plan 085
         // shape), Δsum/Δcount computed client-side with reset clamping.
         let step_secs = (step_nanos / 1_000_000_000).max(1);
-        let service_clause = service
+        let mut service_clause = service
             .map(|svc| format!(r#" AND "service_name" = '{}'"#, escape(svc)))
             .unwrap_or_default();
+        if let Some(filters) = metric_attribute_filters_sql(attribute_filters) {
+            service_clause.push_str(&format!(" AND {filters}"));
+        }
         let mut stat_series: Vec<Vec<SeriesPoint>> = Vec::with_capacity(2);
         for suffix in ["_sum", "_count"] {
             let Some(table) = self.metric_table_for_name(name, Some(suffix)).await? else {

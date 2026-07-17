@@ -1,4 +1,5 @@
 use super::*;
+use crate::adapter::AttributeFilter;
 
 #[async_trait::async_trait]
 impl crate::adapter::LogAnalyticsStore for GreptimeStore {
@@ -9,7 +10,7 @@ impl crate::adapter::LogAnalyticsStore for GreptimeStore {
         severity_min: Option<i32>,
         severity_max: Option<i32>,
         body_contains: Option<&str>,
-        attribute_filters: &[crate::adapter::AttributeFilter],
+        attribute_filters: &[AttributeFilter],
         limit: usize,
     ) -> StorageResult<Vec<LogRow>> {
         let clauses = log_filter_clauses(
@@ -38,7 +39,7 @@ impl crate::adapter::LogAnalyticsStore for GreptimeStore {
         severity_min: Option<i32>,
         severity_max: Option<i32>,
         body_contains: Option<&str>,
-        attribute_filters: &[crate::adapter::AttributeFilter],
+        attribute_filters: &[AttributeFilter],
     ) -> StorageResult<Vec<crate::adapter::Facet>> {
         let clauses = log_filter_clauses(
             service,
@@ -90,6 +91,7 @@ impl crate::adapter::RuntimeMetricStore for GreptimeStore {
         &self,
         name: &str,
         service: Option<&str>,
+        attribute_filters: &[AttributeFilter],
         group_by: &str,
         range: RangeInclusive<u128>,
         step_nanos: u128,
@@ -108,9 +110,12 @@ impl crate::adapter::RuntimeMetricStore for GreptimeStore {
         }
         let step_secs = (step_nanos / 1_000_000_000).max(1);
         let agg_expr = metric_agg_expr(agg, "greptime_value", "greptime_timestamp");
-        let service_clause = service
+        let mut service_clause = service
             .map(|svc| format!(r#" AND "service_name" = '{}'"#, escape(svc)))
             .unwrap_or_default();
+        if let Some(filters) = metric_attribute_filters_sql(attribute_filters) {
+            service_clause.push_str(&format!(" AND {filters}"));
+        }
         // native: metric-engine tags are real columns (resource attrs promoted
         // to tags); group on the quoted tag column, missing → "(none)".
         let group_col = format!(r#""{}""#, escape_ident(group_by));
@@ -176,6 +181,7 @@ impl crate::adapter::RuntimeMetricStore for GreptimeStore {
                             &metric,
                             service,
                             invocation_id,
+                            &[],
                             range,
                             step_nanos,
                             MetricAgg::Avg,
@@ -278,7 +284,7 @@ impl crate::adapter::LogCountStore for GreptimeStore {
         severity_min: Option<i32>,
         severity_max: Option<i32>,
         body_contains: Option<&str>,
-        attribute_filters: &[crate::adapter::AttributeFilter],
+        attribute_filters: &[AttributeFilter],
         step_nanos: u128,
     ) -> StorageResult<Vec<SeriesPoint>> {
         let step_secs = (step_nanos / 1_000_000_000).max(1);

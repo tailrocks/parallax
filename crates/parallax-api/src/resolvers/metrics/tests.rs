@@ -586,3 +586,71 @@ async fn metric_query_supports_last_and_increase_aggregations() {
     assert_eq!(points.len(), 1, "single bucket: {json}");
     assert_eq!(points[0].get("value").unwrap().as_f64().unwrap(), 7.0);
 }
+
+#[tokio::test]
+async fn metric_query_applies_attribute_where_filters() {
+    let store = Arc::new(MemoryStore::new());
+    store
+        .ingest_metrics(
+            vec![
+                MetricPointRow {
+                    ts_nanos: 1_000_000_000,
+                    service: "checkout".into(),
+                    name: "shapes.region.load".into(),
+                    value: 6.0,
+                    is_monotonic: false,
+                    invocation_id: None,
+                    attributes: serde_json::json!({"region": "eu"}),
+                },
+                MetricPointRow {
+                    ts_nanos: 2_000_000_000,
+                    service: "checkout".into(),
+                    name: "shapes.region.load".into(),
+                    value: 1.0,
+                    is_monotonic: false,
+                    invocation_id: None,
+                    attributes: serde_json::json!({"region": "ap"}),
+                },
+            ],
+            Vec::new(),
+            Vec::new(),
+            Default::default(),
+        )
+        .await
+        .unwrap();
+    let schema = build_schema();
+    let context = context_with_memory(store).await;
+
+    let filtered = juniper::http::GraphQLRequest::new(
+        r#"{ metricQuery(name: "shapes.region.load", kind: "gauge", agg: "max", fromNanos: "0", toNanos: "60000000000", stepSeconds: 60, attributeFilters: [{key: "region", op: "=", value: "ap"}]) {
+            series { points { value } }
+        } }"#
+            .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, filtered).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(error_messages(&json).is_empty(), "filtered legal: {json}");
+    let points = json
+        .pointer("/data/metricQuery/series/0/points")
+        .and_then(|v| v.as_array())
+        .unwrap();
+    assert_eq!(points.len(), 1, "one bucket: {json}");
+    assert_eq!(points[0].get("value").unwrap().as_f64().unwrap(), 1.0);
+
+    let rejected = juniper::http::GraphQLRequest::new(
+        r#"{ metricQuery(name: "shapes.region.load", kind: "gauge", agg: "max", fromNanos: "0", toNanos: "60000000000", attributeFilters: [{key: "region", op: "~", value: "ap"}]) { kind } }"#
+            .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, rejected).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(
+        error_messages(&json)
+            .iter()
+            .any(|message| message.contains("invalid attribute filter operator")),
+        "bad operator rejected: {json}"
+    );
+}

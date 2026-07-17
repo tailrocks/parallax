@@ -268,6 +268,7 @@ impl ServiceOverview {
                     name,
                     Some(&self.service),
                     None,
+                    &[],
                     self.from..=self.to,
                     self.step,
                     MetricAgg::Avg,
@@ -296,6 +297,7 @@ impl ServiceOverview {
                         .histogram_quantiles(
                             name,
                             Some(&self.service),
+                            &[],
                             self.from..=self.to,
                             self.step,
                             &quantiles,

@@ -149,20 +149,25 @@ pub trait MetricAnalyticsStore: Send + Sync {
     /// Aggregated series for a point metric, bucketed by `step_nanos`.
     /// `invocation_id` scopes to points whose resource carried `cli.invocation.id`
     /// (run-anchored cross-analytics: CPU/memory beside a run's traces).
+    /// `attribute_filters` narrow on metric label values (plan 168 where).
+    #[expect(clippy::too_many_arguments, reason = "stable metric read contract")]
     async fn metric_series(
         &self,
         name: &str,
         service: Option<&str>,
         invocation_id: Option<&str>,
+        attribute_filters: &[AttributeFilter],
         range: RangeInclusive<u128>,
         step_nanos: u128,
         agg: MetricAgg,
     ) -> StorageResult<Vec<SeriesPoint>>;
     /// Approximate quantile series from a histogram metric's buckets.
+    #[expect(clippy::too_many_arguments, reason = "stable metric read contract")]
     async fn histogram_quantile(
         &self,
         name: &str,
         service: Option<&str>,
+        attribute_filters: &[AttributeFilter],
         range: RangeInclusive<u128>,
         step_nanos: u128,
         q: f64,
@@ -170,10 +175,12 @@ pub trait MetricAnalyticsStore: Send + Sync {
     /// Multiple histogram quantiles from one logical scan. The default loops
     /// [`Self::histogram_quantile`]; Greptime overrides it with one
     /// multi-quantile SQL query. Return order matches `quantiles`.
+    #[expect(clippy::too_many_arguments, reason = "stable metric read contract")]
     async fn histogram_quantiles(
         &self,
         name: &str,
         service: Option<&str>,
+        attribute_filters: &[AttributeFilter],
         range: RangeInclusive<u128>,
         step_nanos: u128,
         quantiles: &[f64],
@@ -181,8 +188,15 @@ pub trait MetricAnalyticsStore: Send + Sync {
         let mut out = Vec::with_capacity(quantiles.len());
         for q in quantiles {
             out.push(
-                self.histogram_quantile(name, service, range.clone(), step_nanos, *q)
-                    .await?,
+                self.histogram_quantile(
+                    name,
+                    service,
+                    attribute_filters,
+                    range.clone(),
+                    step_nanos,
+                    *q,
+                )
+                .await?,
             );
         }
         Ok(out)
@@ -193,6 +207,7 @@ pub trait MetricAnalyticsStore: Send + Sync {
         &self,
         name: &str,
         service: Option<&str>,
+        attribute_filters: &[AttributeFilter],
         range: RangeInclusive<u128>,
         step_nanos: u128,
     ) -> StorageResult<Vec<SeriesPoint>>;
@@ -391,10 +406,12 @@ pub trait LogAnalyticsStore: Send + Sync {
 pub trait RuntimeMetricStore: Send + Sync {
     /// Aggregated series split by one attribute key's value (spec §8
     /// `metricSeries(groupBy:)`); rows missing the key group under "(none)".
+    #[expect(clippy::too_many_arguments, reason = "stable metric read contract")]
     async fn metric_series_grouped(
         &self,
         name: &str,
         service: Option<&str>,
+        attribute_filters: &[AttributeFilter],
         group_by: &str,
         range: RangeInclusive<u128>,
         step_nanos: u128,

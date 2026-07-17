@@ -363,6 +363,7 @@ async fn metric_labels_values_and_runtime_snapshot_derive_from_points() {
         .metric_series_grouped(
             "process.cpu.utilization",
             Some("checkout"),
+            &[],
             "trace_id",
             0..=3_000_000_000,
             1_000_000_000,

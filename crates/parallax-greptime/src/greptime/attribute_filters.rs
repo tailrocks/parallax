@@ -190,6 +190,40 @@ pub(super) fn span_attribute_filters_sql(filters: &[AttributeFilter]) -> Option<
     )
 }
 
+/// Native per-metric-table expressions (plan 168): metric labels are
+/// promoted tag columns; `service`/`service.name` maps to `service_name`.
+/// Keys are vetted by `metric_group_label_allowed` before quoting.
+fn metric_filter_exprs(key: &str) -> FilterExprs {
+    let column = match key {
+        "service.name" | "service" => Some(r#""service_name""#.to_string()),
+        key => metric_group_label_allowed(key).then(|| format!(r#""{}""#, escape_ident(key))),
+    };
+    FilterExprs {
+        string: column.as_ref().map(|c| format!("CAST({c} AS STRING)")),
+        numeric: column.map(|c| format!("CAST({c} AS DOUBLE)")),
+        numeric_only: false,
+    }
+}
+
+/// One filter -> one SQL condition against a native per-metric table.
+pub(super) fn metric_attribute_filter_sql(filter: &AttributeFilter) -> String {
+    filter_condition(&metric_filter_exprs(filter.key.trim()), filter)
+}
+
+/// All filters ANDed against the same metric row, or None when empty.
+pub(super) fn metric_attribute_filters_sql(filters: &[AttributeFilter]) -> Option<String> {
+    if filters.is_empty() {
+        return None;
+    }
+    Some(
+        filters
+            .iter()
+            .map(|filter| format!("({})", metric_attribute_filter_sql(filter)))
+            .collect::<Vec<_>>()
+            .join(" AND "),
+    )
+}
+
 /// Log-table string expression for a facet dimension / where-clause key.
 pub(super) fn log_string_expr(key: &str) -> Option<String> {
     log_filter_exprs(key).string

@@ -276,7 +276,7 @@ where
     ) -> anyhow::Result<(Option<f64>, u64)> {
         let points = self
             .store
-            .metric_series(name, service, None, range, step_nanos, agg)
+            .metric_series(name, service, None, &[], range, step_nanos, agg)
             .await?;
         let values: Vec<f64> = points.iter().map(|p| p.value).collect();
         Ok((combine(agg, &values), points.len() as u64))

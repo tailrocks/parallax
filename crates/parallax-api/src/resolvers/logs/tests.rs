@@ -297,10 +297,7 @@ async fn log_patterns_clusters_similar_bodies() {
     );
     let response = execute(&schema, &context, request).await;
     let json = serde_json::to_value(response).unwrap();
-    assert!(
-        error_messages(&json).is_empty(),
-        "logPatterns: {json}"
-    );
+    assert!(error_messages(&json).is_empty(), "logPatterns: {json}");
     let patterns = json
         .pointer("/data/logPatterns")
         .and_then(|v| v.as_array())
