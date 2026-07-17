@@ -441,8 +441,8 @@ export function OverviewContent({
 }
 
 const signalConfig = {
-  spans: { label: "Spans", color: "var(--chart-2)" },
-  errors: { label: "Errors", color: "var(--destructive)" },
+  spans: { label: "Spans", color: "var(--chart-throughput)" },
+  errors: { label: "Errors", color: "var(--chart-error)" },
 } satisfies ChartConfig
 
 function SignalTrendCard({
@@ -504,7 +504,7 @@ function SignalTrendCard({
                 )
               }
               items={[
-                { key: "spans", label: "Spans", color: "var(--chart-2)" },
+                { key: "spans", label: "Spans", color: "var(--chart-throughput)" },
                 {
                   key: "errors",
                   label: "Errors",
@@ -585,9 +585,9 @@ function SignalTrendCard({
 }
 
 const latencyConfig = {
-  p50Band: { label: "p50", color: "var(--chart-2)" },
-  p95Band: { label: "p95", color: "var(--chart-4)" },
-  p99Band: { label: "p99", color: "var(--chart-5)" },
+  p50Band: { label: "p50", color: "var(--chart-p50)" },
+  p95Band: { label: "p95", color: "var(--chart-p95)" },
+  p99Band: { label: "p99", color: "var(--chart-p99)" },
 } satisfies ChartConfig
 
 function LatencyTrendCard({
@@ -645,9 +645,9 @@ function LatencyTrendCard({
                 )
               }
               items={[
-                { key: "p50", label: "p50", color: "var(--chart-2)" },
-                { key: "p95", label: "p95", color: "var(--chart-4)" },
-                { key: "p99", label: "p99", color: "var(--chart-5)" },
+                { key: "p50", label: "p50", color: "var(--chart-p50)" },
+                { key: "p95", label: "p95", color: "var(--chart-p95)" },
+                { key: "p99", label: "p99", color: "var(--chart-p99)" },
               ]}
             />
             {range.key === "custom" ? (

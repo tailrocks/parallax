@@ -133,11 +133,11 @@ type MetricChartPoint = {
 }
 
 const chartConfig = {
-  requests: { label: "Requests", color: "var(--chart-1)" },
-  errors: { label: "Errors", color: "var(--chart-5)" },
-  p50Band: { label: "p50", color: "var(--chart-2)" },
-  p95Band: { label: "p95", color: "var(--chart-3)" },
-  p99Band: { label: "p99", color: "var(--chart-5)" },
+  requests: { label: "Requests", color: "var(--chart-throughput)" },
+  errors: { label: "Errors", color: "var(--chart-error)" },
+  p50Band: { label: "p50", color: "var(--chart-p50)" },
+  p95Band: { label: "p95", color: "var(--chart-p95)" },
+  p99Band: { label: "p99", color: "var(--chart-p99)" },
   cpu: { label: "CPU", color: "var(--chart-1)" },
   memory: { label: "Memory", color: "var(--chart-2)" },
   exemplar: { label: "Exemplar", color: "var(--chart-4)" },
