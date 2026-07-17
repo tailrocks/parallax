@@ -1,8 +1,11 @@
+use proptest::prelude::*;
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::{Value, json};
+use std::str::FromStr;
 
 use parallax_model::{
-    ErrorEventRow, HistogramRow, LogRow, MetricExemplarRow, MetricPointRow, SpanRow,
+    ErrorEventRow, FlakyEvidence, FlakyState, HistogramRow, LogRow, MetricExemplarRow,
+    MetricPointRow, SpanRow, TestFlakyStateRecord, TestVariantKey,
 };
 
 fn round_trip<T: Serialize + DeserializeOwned>(expected: Value) -> anyhow::Result<()> {
@@ -48,4 +51,47 @@ fn normalized_telemetry_serde_shapes_are_stable() -> anyhow::Result<()> {
         "trace_id": "trace", "span_id": "span", "attributes": {}
     }))?;
     Ok(())
+}
+
+// Plan 103 residual: serialization compatibility — JSON fixpoint for flaky
+// state records (versioned keys + evidence flags) under arbitrary booleans.
+proptest! {
+    #![proptest_config(proptest::test_runner::Config::with_cases(64))]
+    #[test]
+    fn flaky_state_record_json_is_a_fixpoint(
+        same_commit in any::<bool>(),
+        intra in any::<bool>(),
+        transitions in 0_u32..8,
+        passes in 0_u32..8,
+        consistent in any::<bool>(),
+        state_ix in 0_u8..4,
+        updated in 0_u128..1_000_000_000_000,
+    ) {
+        let variant = TestVariantKey::from_str(&format!("tv1:{}", "a".repeat(64)))
+            .expect("variant");
+        let state = match state_ix {
+            0 => FlakyState::Healthy,
+            1 => FlakyState::Flaky,
+            2 => FlakyState::Fixed,
+            _ => FlakyState::Broken,
+        };
+        let record = TestFlakyStateRecord {
+            variant_key: variant,
+            state,
+            evidence: FlakyEvidence {
+                same_commit_divergence: same_commit,
+                intra_invocation_mix: intra,
+                window_transition_count: transitions,
+                consecutive_passes: passes,
+                consistently_failing: consistent,
+            },
+            updated_at_nanos: updated,
+        };
+        let once = serde_json::to_value(&record).expect("serialize");
+        let decoded: TestFlakyStateRecord =
+            serde_json::from_value(once.clone()).expect("deserialize");
+        let twice = serde_json::to_value(&decoded).expect("re-serialize");
+        prop_assert_eq!(once, twice);
+        prop_assert_eq!(decoded, record);
+    }
 }

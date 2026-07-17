@@ -11,7 +11,7 @@
 - **Risk**: HIGH
 - **Depends on**: 099, 104, 111 (done); 121 residual
 - **Category**: future CI evidence / flaky tests
-- **Status**: TODO — unblocked after plan 121 Turso durable webhook path
+- **Status**: IN PROGRESS — pure GHA normalizer + flaky multi-attempt gate landed
 - **Blocker**: none for starting read-only GHA collect design + fixtures.
   Provider = GitHub Actions on tailrocks repos (unblock 2026-07-17).
 
@@ -19,8 +19,8 @@
 
 1. Record exact APIs/events/report formats, repos, permissions, retention,
    output budgets, claim wording.
-2. Normalized run/job/check/test-attempt IDs; flaky requires multi-attempt
-   evidence (not any retry).
+2. ~~Normalized job/attempt IDs + flaky multi-attempt gate~~ landed
+   (`parallax-evidence::github_actions`).
 3. Signature-verified webhook + idempotent backfill; Turso state; doctor CLI.
 4. Bundle correlation without root-cause overclaim; dated coverage rows.
 

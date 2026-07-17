@@ -12,6 +12,8 @@ pub mod bundle;
 pub mod claude_code;
 pub mod envelope;
 pub mod gaps;
+/// GitHub Actions CI evidence normalizer (plan 124).
+pub mod github_actions;
 /// GitHub deploy/change webhook verify + normalize (plan 121).
 pub mod github_deploy;
 pub mod redaction_policy;

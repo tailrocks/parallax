@@ -250,6 +250,31 @@ pub(crate) async fn doctor() -> anyhow::Result<()> {
             human(log.metadata().map_or(0, |m| m.len()))
         );
     }
+
+    // Deploy/change context adapter (plan 121 residual doctor surface).
+    // Provider text is untrusted evidence; this only reports configuration and
+    // durable delivery inventory, never causal claims.
+    let webhook_secret = config.resolved_github_webhook_secret();
+    println!(
+        "  deploy-context webhook: {}",
+        if webhook_secret.is_some() {
+            "secret configured (POST /webhooks/github)"
+        } else {
+            "disabled (set PARALLAX_GITHUB_WEBHOOK_SECRET or [github_deploy].webhook_secret)"
+        }
+    );
+    if meta.exists() {
+        match TursoMetadataStore::open(&meta).await {
+            Ok(store) => match store.count_deploy_deliveries().await {
+                Ok(count) => println!("  deploy-context deliveries: {count}"),
+                Err(err) => println!("  deploy-context deliveries: unavailable ({err})"),
+            },
+            Err(err) => println!("  deploy-context deliveries: open failed ({err})"),
+        }
+    } else {
+        println!("  deploy-context deliveries: no meta.db yet");
+    }
+
     Ok(())
 }
 

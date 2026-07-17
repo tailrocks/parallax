@@ -3371,6 +3371,7 @@ name = "parallax-model"
 version = "0.1.0-dev"
 dependencies = [
  "anyhow",
+ "proptest",
  "serde",
  "serde_json",
  "sha2",

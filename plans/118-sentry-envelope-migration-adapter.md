@@ -27,7 +27,8 @@
 
 ## Residual only
 
-1. Real sanitized `sentry` 0.48.x SDK envelope fixtures (compatibility claim).
+1. ~~Real sanitized `sentry` Python SDK 2.48 envelope fixture~~ landed
+   (`tests/fixtures/sentry/python-sdk-2.48-event.envelope` + unit accept).
 2. ~~Idempotent event-id collision handling~~ landed.
 3. Cross-source OTLP+Sentry stable issue/occurrence identity.
 4. Full fail-closed redaction + canonical bundle projection for Sentry path.

@@ -332,8 +332,8 @@ fn bounded_summary_result(
             "mimeType": "application/json",
         })).collect::<Vec<_>>(),
     });
-    let text = serde_json::to_string(&structured)
-        .map_err(|_| safe_internal_error("summary_invalid"))?;
+    let text =
+        serde_json::to_string(&structured).map_err(|_| safe_internal_error("summary_invalid"))?;
     ensure_already_redacted(&[&text], "summary_redaction_mismatch")?;
     let mut result = CallToolResult::structured(structured);
     result.content = vec![ContentBlock::text(text)];

@@ -424,6 +424,28 @@ short
     }
 
     #[test]
+    fn accepts_sanitized_python_sdk_2_48_fixture() {
+        let path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/sentry/python-sdk-2.48-event.envelope"
+        );
+        let bytes = std::fs::read(path).expect("fixture");
+        match parse_envelope(&bytes) {
+            EnvelopeOutcome::Accepted {
+                event_id,
+                event_json,
+                unsupported_items,
+            } => {
+                assert_eq!(event_id, "a1b2c3d4e5f64789a1b2c3d4e5f64789");
+                assert_eq!(event_json["message"], "sanitized fixture error");
+                assert_eq!(event_json["platform"], "python");
+                assert!(unsupported_items.is_empty());
+            }
+            other => panic!("expected accept of SDK fixture, got {other:?}"),
+        }
+    }
+
+    #[test]
     fn rejects_envelope_over_contract_limit() {
         let mut huge = vec![b'x'; MAX_ENVELOPE_BYTES + 1];
         huge[0] = b'{';

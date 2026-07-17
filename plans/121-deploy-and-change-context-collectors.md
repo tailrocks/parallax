@@ -31,8 +31,8 @@
 
 1. ~~HTTP webhook + delivery-id idempotency~~ landed.
 2. API backfill/reconciliation under rate limits.
-3. Bundle projection + `doctor deploy-context`; claim ledger rows before any
-   product claim advances.
+3. ~~`doctor` deploy-context inventory~~ landed (secret presence + delivery count);
+   still open: bundle projection + claim ledger rows before product claims.
 4. No causal wording from adjacency alone.
 
 ## Done Criteria

@@ -41,6 +41,26 @@ const config = defineConfig({
       "/graphql": "http://127.0.0.1:4000",
     },
   },
+  // Plan 148 — production build contract (TanStack Start / Vite / Rolldown).
+  // No direct Oxc minifier packages. Client embed must not ship source maps.
+  build: {
+    sourcemap: false,
+    reportCompressedSize: true,
+    chunkSizeWarningLimit: 150,
+    rolldownOptions: {
+      output: {
+        // Keep heavy visualization stacks out of the shared vendor bucket when
+        // the bundler can split them; route modules remain framework-owned.
+        manualChunks(id: string) {
+          if (!id.includes("node_modules")) return
+          if (id.includes("@xyflow") || id.includes("elkjs")) return "graph-layout"
+          if (id.includes("recharts")) return "charts"
+          if (id.includes("@tanstack/react-virtual")) return "virtualizer"
+          return
+        },
+      },
+    },
+  },
 })
 
 export default config

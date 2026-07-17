@@ -1,0 +1,4 @@
+{"type":"system","subtype":"init","session_id":"sess-success-001","model":"claude-opus-4","cwd":"/tmp/demo","version":"2.1.150"}
+{"type":"assistant","message":{"content":[{"type":"text","text":"Running tests"}],"usage":{"input_tokens":120,"output_tokens":40}}}
+{"type":"user","message":{"content":[{"type":"text","text":"ok proceed"}]}}
+{"type":"result","subtype":"success","is_error":false,"duration_ms":1500,"total_cost_usd":0.012,"result":"done"}

@@ -145,6 +145,19 @@ impl TursoMetadataStore {
             .map(|row| decode_deploy_delivery(&row))
             .transpose()
     }
+
+    /// Inventory for `parallax doctor` deploy-context (plan 121 residual).
+    pub async fn count_deploy_deliveries(&self) -> anyhow::Result<u64> {
+        let conn = self.conn.lock().await;
+        let mut rows = conn
+            .query("SELECT COUNT(*) FROM deploy_deliveries", ())
+            .await?;
+        let row = rows
+            .next()
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("missing count row"))?;
+        Ok(u64::try_from(integer(&row, 0)).unwrap_or(0))
+    }
 }
 
 fn decode_deploy_delivery(row: &turso::Row) -> anyhow::Result<DeployDeliveryRecord> {

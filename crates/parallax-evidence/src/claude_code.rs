@@ -491,4 +491,26 @@ mod tests {
         assert_eq!(session.skipped_oversized_lines, 1);
         assert!(session.actions.is_empty());
     }
+
+    #[test]
+    fn success_path_fixture_normalizes_session_end() {
+        // Sanitized success stream-json fixture (version floor 2.1.150).
+        let path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/claude_code/success-stream-json.ndjson"
+        );
+        let ndjson = std::fs::read_to_string(path).expect("fixture");
+        let session = normalize_stream_json(&ndjson);
+        assert_eq!(session.session_id.as_deref(), Some("sess-success-001"));
+        assert_eq!(session.model.as_deref(), Some("claude-opus-4"));
+        assert_eq!(session.success, Some(true));
+        assert_eq!(session.duration_ms, Some(1500));
+        assert!(
+            session
+                .actions
+                .iter()
+                .any(|a| a.kind == ActionKind::SessionEnd)
+        );
+        assert_eq!(session.source_version.as_deref(), Some("2.1.150"));
+    }
 }

@@ -21,7 +21,7 @@
 - **Depends on**: 095, 101, 129, 133, 140, 141, 142, 145, 151
 - **Category**: performance / correctness / live data
 - **Planned at**: `e3e7997`, revised 2026-07-12
-- **Status**: BLOCKED — upstream cache, feature, browser, and final UI plans are incomplete
+- **Status**: IN PROGRESS — decoder cutover + reconnect status + merge perf landed; residual @live e2e
 
 ## Contract reconciliation (2026-07-17)
 

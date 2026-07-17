@@ -27,11 +27,12 @@
 
 ## Residual only
 
-1. **Rust properties still open**: serialization compatibility contracts;
-   plan-099 late-retry no-replay properties.
-2. **UI properties** (blocked until 133/147/148 owners exist): route-search
-   round trips; GraphQL/SSE runtime decoders; Query-key identity; live
-   ordering/dedup; feature state machines.
+1. ~~**Rust serialization fixpoint**~~: flaky-state record JSON fixpoint proptest
+   landed (`parallax-model` serde_contract). Still open: plan-099 late-retry
+   no-replay properties.
+2. **UI properties** (partial 147 owners): live merge/identity/decoder tests
+   landed with 147; still open: route-search round trips; Query-key identity;
+   feature state machines (waits remaining 147/148).
 3. **Ratchets**: adopt relative/allocation fail-closed thresholds only after
    enough scheduled-measurement samples model variance; no auto-refresh.
 4. Optional: commit minimized crash corpora as fuzz finds them.

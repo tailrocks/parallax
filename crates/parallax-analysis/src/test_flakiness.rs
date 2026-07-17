@@ -172,6 +172,10 @@ fn map_chain_error(error: AttemptChainError) -> FlakyEvaluationError {
     }
 }
 
+pub mod scan;
+
+pub use scan::{FlakyStateUpdate, default_flaky_policy, propose_flaky_state_update};
+
 #[cfg(test)]
 #[path = "test_flakiness/tests.rs"]
 mod tests;

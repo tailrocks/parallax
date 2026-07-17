@@ -219,14 +219,14 @@ work.
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | 133 | Replace the UI TTL cache with feature-owned TanStack Query | P1 | L | 095, 101, 128, 129, 132, 144, 145, 151 | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-133-tanstack-query/README.md) |
-| [147](147-ui-live-data-performance.md) | Make live telemetry updates typed, bounded, and identity-stable | P1 | L | 095, 101, 129, 133, 140, 141, 142, 145, 151 | IN PROGRESS — buffer+merge landed ([evidence](../docs/research/validation/2026-07-plan-147-live-data/README.md)); residual @live/perf |
-| [148](148-ui-bundle-performance.md) | Enforce route-owned production chunks and deterministic bundle budgets | P1 | L | 095, 100, 101, 105, 132, 133, 144, 146, 147, 151 | TODO — waits on 133/147 |
+| [147](147-ui-live-data-performance.md) | Make live telemetry updates typed, bounded, and identity-stable | P1 | L | 095, 101, 129, 133, 140, 141, 142, 145, 151 | IN PROGRESS — decoder cutover + reconnect + merge perf ([evidence](../docs/research/validation/2026-07-plan-147-live-data/README.md)); residual @live e2e |
+| [148](148-ui-bundle-performance.md) | Enforce route-owned production chunks and deterministic bundle budgets | P1 | L | 095, 100, 101, 105, 132, 133, 144, 146, 147, 151 | IN PROGRESS — build contract + `bundle:analyze`; residual ratchets/@bundle |
 
 ### Dependencies, Tests, And Performance
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [103](103-property-fuzz-and-performance.md) | Residual Rust/UI property, fuzz, and performance gates | P2 | M | 133, 147, 148 (UI); scheduled samples (ratchets) | IN PROGRESS — Rust properties/fuzz/benches/CI lanes landed; residual trace-tree/serialization/retry properties, UI properties, variance ratchets |
+| [103](103-property-fuzz-and-performance.md) | Residual Rust/UI property, fuzz, and performance gates | P2 | M | 133, 147, 148 (UI); scheduled samples (ratchets) | IN PROGRESS — serialization fixpoint proptest landed; residual retry no-replay, UI properties, variance ratchets |
 
 ### Evidence Contracts And Closure
 
@@ -359,7 +359,7 @@ CI-provider API collection; 155 consumes OTLP-ingested telemetry only.
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | [154](154-playground-capability-and-test-observability.md) | Live multi-backend fan-out acceptance residual | P1 | M | Self-hosted Maple/SigNoz/OpenObserve/Sentry (Parallax arm → plan 159 DONE) | BLOCKED — multi-backend arm only; one self-hosted external at a time on 16 GB host |
-| [155](155-test-reporting-surface.md) | Test reporting surface residual | P1 | XL | 149, 152, 153, 140 DONE; soft 121/124 | IN PROGRESS — explorer+testCases GraphQL landed; residual UI/flaky job/adapters/e2e |
+| [155](155-test-reporting-surface.md) | Test reporting surface residual | P1 | XL | 149, 152, 153, 140 DONE; soft 121/124 | IN PROGRESS — flaky scan port + pure state update landed; residual UI/scheduler loop/adapters/e2e |
 
 ### Triggered Or Residual Work
 
@@ -373,12 +373,12 @@ external facts still BLOCKED where noted. Plan 102 and plan 109 retired
 | [112](112-product-mcp-ship-gates.md) | 099, 104, 111 | Claimed-client fixtures, OTel export verify, spike graduation (oversized summary landed) | IN PROGRESS — local-stdio GO; residual ship gates |
 | [114](114-retire-legacy-spool-reader.md) | Stable raw-frame release cycle + expired legacy segments | Remove NDJSON reader after cycle | BLOCKED — only rolling `preview` tag (recheck 2026-07-17T13:06Z) |
 | [115](115-v2-server-profile.md) | Auth contract + release pipeline (102/109 DONE) | Validated config + rehearsals + load packet (ADR landed) | IN PROGRESS — ADR in decisions/v2-server-profile.md |
-| [118](118-sentry-envelope-migration-adapter.md) | 093, 099, 104, 111, 116 | Real SDK fixtures, cross-source identity, bundle/redaction, live gates | IN PROGRESS — parser + HTTP + event-id ledger landed |
-| [120](120-agent-session-capture-adapters.md) | 099, 104, 111, 119 | Success-path fixtures, storage/API/UI, consent CLI, loss ledger | IN PROGRESS — Claude Code pure normalizer landed |
-| [121](121-deploy-and-change-context-collectors.md) | 099, 104, 111, 116 | Backfill, doctor, claim ledger (HTTP + delivery idempotency landed) | IN PROGRESS — webhook + Turso durable path landed |
-| [122](122-playground-residual-program.md) | 105, 151 (111/119 DONE) | Disposition table + retained scenarios only | BLOCKED on 105 + 151 |
-| [123](123-fixer-outcome-loop.md) | 120, 121 residual | Offline outcome harness; fixer separate from core | BLOCKED on 120/121 |
-| [124](124-ci-and-flaky-test-evidence-collector.md) | 121 durable path (landed) | GHA read-only collect + flaky multi-attempt evidence | TODO — unblocked |
+| [118](118-sentry-envelope-migration-adapter.md) | 093, 099, 104, 111, 116 | Cross-source identity, bundle/redaction, live gates (SDK fixture landed) | IN PROGRESS — parser + HTTP + ledger + Python SDK fixture |
+| [120](120-agent-session-capture-adapters.md) | 099, 104, 111, 119 | Storage/API/UI, consent CLI, loss ledger (success fixture landed) | IN PROGRESS — normalizer + success-path fixture |
+| [121](121-deploy-and-change-context-collectors.md) | 099, 104, 111, 116 | Backfill, claim ledger (HTTP + doctor inventory landed) | IN PROGRESS — webhook + Turso + doctor deploy-context |
+| 122 | 105, 151 | Disposition table + retained scenarios | DONE (2026-07-17) — [evidence](../docs/research/validation/2026-07-plan-122-playground-disposition/README.md) |
+| [123](123-fixer-outcome-loop.md) | 120, 121 residual | Offline outcome harness; fixer separate from core | BLOCKED on 120/121 storage/projection residuals |
+| [124](124-ci-and-flaky-test-evidence-collector.md) | 121 durable path (landed) | GHA webhook/Turso (pure normalizer + multi-attempt gate landed) | IN PROGRESS |
 
 ## Dependency Order
 

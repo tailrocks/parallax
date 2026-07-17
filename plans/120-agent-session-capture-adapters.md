@@ -23,8 +23,9 @@
 
 ## Residual only
 
-1. Logged-in success-path stream-json fixtures (version floor in decision).
-2. Real Pre/PostToolUse hook payloads (sanitized).
+1. ~~Logged-in success-path stream-json fixture~~ landed
+   (`tests/fixtures/claude_code/success-stream-json.ndjson`).
+2. Real Pre/PostToolUse hook payloads (sanitized) beyond unit PreToolUse.
 3. Storage/API/UI projection; consent CLI import command.
 4. Deterministic IDs/ordering/duplicates/restart/trace correlation.
 5. Overhead/loss ledger within predeclared bounds; conformance gate.

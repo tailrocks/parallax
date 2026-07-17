@@ -13,7 +13,7 @@ ceiling = 1
 [[rust_suppressions]]
 crate_name = "parallax-api"
 lint = "clippy::too_many_arguments"
-ceiling = 25
+ceiling = 27
 
 [[rust_suppressions]]
 crate_name = "parallax-cli"
@@ -4090,7 +4090,7 @@ ceiling = 85
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-evidence/src/claude_code.rs"
-ceiling = 29
+ceiling = 35
 
 [[limits]]
 metric = "rust.assertions"
@@ -4111,7 +4111,7 @@ ceiling = 89
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-ingest/src/sentry_envelope.rs"
-ceiling = 9
+ceiling = 13
 
 [[limits]]
 metric = "rust.assertions"
@@ -4131,7 +4131,7 @@ ceiling = 8
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-mcp-spike/src/server/tests.rs"
-ceiling = 62
+ceiling = 65
 
 [[limits]]
 metric = "rust.assertions"
@@ -4161,7 +4161,7 @@ ceiling = 74
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-metadata/src/turso/tests.rs"
-ceiling = 81
+ceiling = 103
 
 [[limits]]
 metric = "rust.assertions"
@@ -4316,12 +4316,12 @@ ceiling = 450
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-cli/src/doctor.rs"
-ceiling = 483
+ceiling = 503
 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-evidence/src/claude_code.rs"
-ceiling = 444
+ceiling = 464
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4336,7 +4336,7 @@ ceiling = 536
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-metadata/src/turso.rs"
-ceiling = 595
+ceiling = 626
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4371,7 +4371,7 @@ ceiling = 635
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/src/serve.rs"
-ceiling = 512
+ceiling = 521
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4488,10 +4488,6 @@ metric = "rust.function-lines"
 scope = "crates/parallax-server/src/alerting/evaluator.rs::tick_once"
 ceiling = 210
 
-[[limits]]
-metric = "rust.function-lines"
-scope = "crates/parallax-server/src/sentry_http.rs::envelope"
-ceiling = 110
 
 [[limits]]
 metric = "rust.function-lines"
@@ -5284,7 +5280,7 @@ ceiling = 8
 [[limits]]
 metric = "typescript.assertions"
 scope = "ui/src/platform/sse/tests/use-live-stream.test.tsx"
-ceiling = 21
+ceiling = 23
 
 [[limits]]
 metric = "typescript.assertions"
@@ -5434,7 +5430,7 @@ ceiling = 440
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/features/invocations/components/invocation-hub-page.tsx"
-ceiling = 485
+ceiling = 488
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -5464,7 +5460,7 @@ ceiling = 457
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/features/logs/components/logs-page.tsx"
-ceiling = 837
+ceiling = 842
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -5504,7 +5500,7 @@ ceiling = 602
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/features/traces/components/traces-page.tsx"
-ceiling = 783
+ceiling = 782
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -5581,10 +5577,6 @@ metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/features/ecosystem/model/service-map-layout-engine.ts:92"
 ceiling = 36
 
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:271"
-ceiling = 29
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -5631,10 +5623,6 @@ metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/features/issues/model/stacktrace.ts:51"
 ceiling = 26
 
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/logs/components/logs-page.tsx:190"
-ceiling = 113
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -5706,10 +5694,6 @@ metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/features/traces/components/trace-waterfall.tsx:302"
 ceiling = 24
 
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/traces/components/traces-page.tsx:323"
-ceiling = 69
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -5741,10 +5725,6 @@ metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/platform/external-values/boundary-error.ts:32"
 ceiling = 31
 
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/platform/graphql/client.ts:189"
-ceiling = 20
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -5826,10 +5806,6 @@ metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/features/ecosystem/model/service-map-layout-engine.ts:92"
 ceiling = 19
 
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:271"
-ceiling = 24
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
@@ -5876,10 +5852,6 @@ metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/features/issues/model/stacktrace.ts:51"
 ceiling = 14
 
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/logs/components/logs-page.tsx:190"
-ceiling = 38
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
@@ -5941,10 +5913,6 @@ metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/features/traces/components/trace-waterfall.tsx:302"
 ceiling = 18
 
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/traces/components/traces-page.tsx:323"
-ceiling = 34
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
@@ -6086,10 +6054,6 @@ metric = "typescript.function-lines"
 scope = "ui/src/features/investigations/components/investigation-detail-page.tsx:57"
 ceiling = 193
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/investigations/components/investigations-page.tsx:45"
-ceiling = 141
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -6101,15 +6065,7 @@ metric = "typescript.function-lines"
 scope = "ui/src/features/invocations/components/invocation-errors-tab.tsx:34"
 ceiling = 85
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:186"
-ceiling = 84
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:271"
-ceiling = 197
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -6201,15 +6157,7 @@ metric = "typescript.function-lines"
 scope = "ui/src/features/issues/tests/model/stacktrace.test.ts:5"
 ceiling = 79
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/logs/components/logs-page.tsx:190"
-ceiling = 497
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/logs/components/logs-page.tsx:692"
-ceiling = 74
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -6356,15 +6304,7 @@ metric = "typescript.function-lines"
 scope = "ui/src/features/traces/components/trace-waterfall.tsx:86"
 ceiling = 540
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/components/traces-page.tsx:323"
-ceiling = 416
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/components/traces-page.tsx:740"
-ceiling = 78
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -6431,25 +6371,13 @@ metric = "typescript.function-lines"
 scope = "ui/src/layout/command-palette.tsx:114"
 ceiling = 272
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/platform/graphql/tests/client.test.ts:35"
-ceiling = 184
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/platform/sse/live-stream-controller.ts:37"
-ceiling = 112
 
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/platform/sse/tests/live-stream-controller.test.ts:43"
 ceiling = 69
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/platform/sse/tests/use-live-stream.test.tsx:74"
-ceiling = 123
 
 
 [[limits]]
@@ -6674,20 +6602,12 @@ ceiling = 1
 
 
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/platform/sse/use-live-stream.ts:39"
-ceiling = 69
 
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-model/src/test_reporting/tests.rs"
-ceiling = 27
+ceiling = 29
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/platform/sse/use-live-stream.ts:39"
-ceiling = 69
 
 [[limits]]
 metric = "rust.assertions"
@@ -6747,7 +6667,7 @@ ceiling = 1
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-metadata/src/turso/tests.rs"
-ceiling = 921
+ceiling = 1135
 
 [[limits]]
 metric = "rust.file-lines"
@@ -6867,9 +6787,329 @@ reason = "private test-report persistence composition is converted at the typed 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-metadata/src/turso/test_reporting.rs"
-ceiling = 490
+ceiling = 629
 
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-metadata/src/turso/tests.rs::test_explorer_filters_latest_variant_invocation_and_rollups"
-ceiling = 186
+ceiling = 190
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/logs/tests/api/log-stream-schema.test.ts"
+ceiling = 9
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/logs/tests/model/merge-live-logs.perf.test.ts"
+ceiling = 6
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/logs/tests/model/merge-live-logs.test.ts"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/api/span-stream-schema.test.ts"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/model/merge-live-spans.test.ts"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/sse/tests/bounded-frame-buffer.test.ts"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/sse/tests/stream-state.test.ts"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:274"
+ceiling = 29
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/logs/components/logs-page.tsx:192"
+ceiling = 120
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/components/traces-page.tsx:325"
+ceiling = 73
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/platform/graphql/client.ts:161"
+ceiling = 20
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:274"
+ceiling = 24
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/logs/api/log-stream-schema.ts:27"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/logs/components/logs-page.tsx:192"
+ceiling = 39
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/traces/components/traces-page.tsx:325"
+ceiling = 35
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/investigations/components/investigations-page.tsx:47"
+ceiling = 143
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:190"
+ceiling = 83
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:274"
+ceiling = 197
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/components/logs-page.tsx:192"
+ceiling = 500
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/components/logs-page.tsx:697"
+ceiling = 74
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/traces-page.tsx:325"
+ceiling = 413
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/traces-page.tsx:739"
+ceiling = 78
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/graphql/tests/client.test.ts:37"
+ceiling = 182
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/sse/live-stream-controller.ts:50"
+ceiling = 121
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/sse/tests/use-live-stream.test.tsx:84"
+ceiling = 158
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-analysis/src/nextest_adapter.rs"
+ceiling = 11
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-analysis/src/test_flakiness/tests.rs"
+ceiling = 17
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-api/src/resolvers/tests/tests.rs"
+ceiling = 13
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-evidence/src/github_actions.rs"
+ceiling = 16
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/src/github_webhook.rs"
+ceiling = 9
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-ingest/src/sentry_envelope.rs"
+ceiling = 416
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-metadata/src/port.rs"
+ceiling = 465
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-analysis/src/test_flakiness.rs::evaluate_flaky_evidence"
+ceiling = 115
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-cli/src/doctor.rs::doctor"
+ceiling = 114
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-metadata/src/turso/tests.rs::test_case_variants_and_variant_history_are_bounded_and_isolated"
+ceiling = 103
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-analysis/src/nextest_adapter.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-evidence/src/github_actions.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-server/src/github_webhook.rs"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/logs/tests/api/log-stream-schema.test.ts"
+ceiling = 9
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/logs/tests/model/merge-live-logs.perf.test.ts"
+ceiling = 6
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/logs/tests/model/merge-live-logs.test.ts"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/api/span-stream-schema.test.ts"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/model/merge-live-spans.test.ts"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/sse/tests/bounded-frame-buffer.test.ts"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/sse/tests/stream-state.test.ts"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:274"
+ceiling = 29
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/logs/components/logs-page.tsx:192"
+ceiling = 120
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/components/traces-page.tsx:325"
+ceiling = 73
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/platform/graphql/client.ts:161"
+ceiling = 20
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:274"
+ceiling = 24
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/logs/api/log-stream-schema.ts:27"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/logs/components/logs-page.tsx:192"
+ceiling = 39
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/traces/components/traces-page.tsx:325"
+ceiling = 35
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/investigations/components/investigations-page.tsx:47"
+ceiling = 143
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:190"
+ceiling = 83
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:274"
+ceiling = 197
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/components/logs-page.tsx:192"
+ceiling = 500
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/components/logs-page.tsx:697"
+ceiling = 74
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/traces-page.tsx:325"
+ceiling = 413
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/traces-page.tsx:739"
+ceiling = 78
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/graphql/tests/client.test.ts:37"
+ceiling = 182
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/sse/live-stream-controller.ts:50"
+ceiling = 121
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/sse/tests/use-live-stream.test.tsx:84"
+ceiling = 158
+
+[[rust_suppressions]]
+crate_name = "parallax-metadata"
+lint = "clippy::too_many_lines"
+ceiling = 1
