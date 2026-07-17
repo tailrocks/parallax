@@ -112,7 +112,8 @@ Historical architecture/capture notes keep evidence under dated or **historical*
 ### `validation/` — the A1–A7 assumption gates and their ledgers
 - [a1-bundle-value/](validation/a1-bundle-value/) — A1: does a Parallax bundle beat raw context for agent fix quality? (eval design, seed corpus, Phase-0 runbook, ledgers, AgentRx trajectory-IR source check).
 - [a2-user-demand.md](validation/a2-user-demand.md) — A2: user-interview and deployment-intent gate + evidence ledger.
-- [a3-schema-corpus.md](validation/a3-schema-corpus.md) — A3: schema-adoption and corpus-moat gate + ledger.
+- [a3-schema-corpus.md](validation/a3-schema-corpus.md) — A3: schema-adoption and corpus-moat gate + ledger (**artifacts shipped**; adoption empty — pass 60).
+- [a3-schema-claim-recheck-2026-07-17.md](validation/a3-schema-claim-recheck-2026-07-17.md) — pass-60 correction of stale `schema_draft` claim.
 - [a7-scope.md](validation/a7-scope.md) — A7: scope-discipline ledger keeping the tiny tier buildable.
 - [self-hosted-simplicity.md](validation/self-hosted-simplicity.md) — operational proof that the tiny tier is simpler than self-hosted Sentry (gate + baseline inventory + ledger).
 - [business-model.md](validation/business-model.md) — business-model/economics analysis + validation ledger.
@@ -135,6 +136,8 @@ Historical architecture/capture notes keep evidence under dated or **historical*
 - [landscape.md](market/landscape.md) — market research.
 - [competitor-watch.md](market/competitor-watch.md) — consolidated watch: OpenObserve, SigNoz, Coroot, Bugsink, Rustrak, Traceway, GoSnag, Urgentry, Sentry/Seer/MCP, the MCP-power boundary, and the drift ledger.
 - [wedge-closer-lightweight-recheck-2026-07-17.md](market/wedge-closer-lightweight-recheck-2026-07-17.md) — pass-49 pin of lightweight Sentry-compat + Traceway agent-first pressure; full combination still open.
+- [air-gap-no-phone-home-recheck-2026-07-17.md](market/air-gap-no-phone-home-recheck-2026-07-17.md) — pass-56 air-gap differentiator recheck.
+- [oss-agent-surface-gating-2026-07-17.md](market/oss-agent-surface-gating-2026-07-17.md) — pass-59 SigNoz Noz Cloud-only / OpenObserve SDR Enterprise.
 - [alternatives-deep-analysis.md](market/alternatives-deep-analysis.md) — balanced skeptical analysis: 60+ alternatives surveyed, arguments FOR and AGAINST Parallax, empirical gates, and kill criteria.
 - [competitive-comparison-matrix.md](market/competitive-comparison-matrix.md) — quick-reference matrix of all competitors against Parallax's 8 wedge dimensions.
 - [agent-debugging-competitor-drift-2026-06-02.md](market/agent-debugging-competitor-drift-2026-06-02.md) — focused recheck of Syncause, AgentRx, Notrix Trax, AgentReplay, and OpenTelemetry MCP/replay/crash semantic-convention drift.
