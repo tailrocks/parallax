@@ -214,6 +214,123 @@ function nsToMs(value: bigint): number {
   return Number(value) / 1_000_000
 }
 
+/** Per-span self time (plan 163): duration minus the union of child
+ * intervals, children clipped to the parent's own window and overlapping
+ * children merged before subtracting (parallel children never subtract
+ * twice). Keyed by spanId, in nanoseconds. */
+export function computeSelfTimes(
+  spans: readonly TraceTreeSpan[]
+): Map<string, bigint> {
+  const times = buildTimesMap(spans)
+  const byId = new Map(spans.map((span) => [span.spanId, span]))
+  const children = new Map<string, TraceTreeSpan[]>()
+  for (const span of spans) {
+    if (!span.parentSpanId || !byId.has(span.parentSpanId)) continue
+    const list = children.get(span.parentSpanId) ?? []
+    list.push(span)
+    children.set(span.parentSpanId, list)
+  }
+
+  const selfTimes = new Map<string, bigint>()
+  for (const span of spans) {
+    const own = times.get(span.spanId)
+    if (!own) continue
+    const intervals: Array<{ start: bigint; end: bigint }> = []
+    for (const child of children.get(span.spanId) ?? []) {
+      const t = times.get(child.spanId)
+      if (!t) continue
+      const start = t.start > own.start ? t.start : own.start
+      const end = t.end < own.end ? t.end : own.end
+      if (end > start) intervals.push({ start, end })
+    }
+    intervals.sort((a, b) =>
+      a.start < b.start ? -1 : a.start > b.start ? 1 : 0
+    )
+
+    let covered = 0n
+    let cursorStart: bigint | null = null
+    let cursorEnd = 0n
+    for (const interval of intervals) {
+      if (cursorStart === null || interval.start > cursorEnd) {
+        if (cursorStart !== null) covered += cursorEnd - cursorStart
+        cursorStart = interval.start
+        cursorEnd = interval.end
+      } else if (interval.end > cursorEnd) {
+        cursorEnd = interval.end
+      }
+    }
+    if (cursorStart !== null) covered += cursorEnd - cursorStart
+
+    const self = own.duration - covered
+    selfTimes.set(span.spanId, self > 0n ? self : 0n)
+  }
+  return selfTimes
+}
+
+export interface FlameLaneRow<T extends TraceTreeSpan> {
+  span: T
+  depth: number
+  /** Lane index within this depth (0-based). */
+  lane: number
+  offsetPct: number
+  widthPct: number
+}
+
+export interface FlameLayout<T extends TraceTreeSpan> {
+  rows: Array<FlameLaneRow<T>>
+  /** Lanes used at each depth; y offset for depth d = sum of counts above. */
+  laneCounts: number[]
+}
+
+/** Icicle lane packing (plan 163): per depth, spans sorted by start take the
+ * first lane whose previous occupant ended at or before their start —
+ * siblings that don't overlap in time share a lane; overlapping ones stack. */
+export function packFlameLanes<T extends TraceTreeSpan>(
+  spans: readonly T[]
+): FlameLayout<T> {
+  const times = buildTimesMap(spans)
+  const window = computeWindow(spans, times)
+  const ordered = orderSpans(spans, times)
+
+  const byDepth = new Map<number, Array<{ span: T; depth: number }>>()
+  let maxDepth = -1
+  for (const row of ordered) {
+    const list = byDepth.get(row.depth) ?? []
+    list.push(row)
+    byDepth.set(row.depth, list)
+    if (row.depth > maxDepth) maxDepth = row.depth
+  }
+
+  const rows: Array<FlameLaneRow<T>> = []
+  const laneCounts: number[] = []
+  for (let depth = 0; depth <= maxDepth; depth += 1) {
+    const laneEnds: bigint[] = []
+    const atDepth = (byDepth.get(depth) ?? [])
+      .slice()
+      .sort((a, b) => compareByStartWithTimes(times, a.span, b.span))
+    for (const { span } of atDepth) {
+      const t = times.get(span.spanId)
+      if (!t) continue
+      let lane = laneEnds.findIndex((end) => end <= t.start)
+      if (lane === -1) {
+        lane = laneEnds.length
+        laneEnds.push(t.end)
+      } else {
+        laneEnds[lane] = t.end
+      }
+      rows.push({
+        span,
+        depth,
+        lane,
+        ...positionPct(t.start, t.duration, window),
+      })
+    }
+    laneCounts.push(laneEnds.length)
+  }
+
+  return { rows, laneCounts }
+}
+
 export function detectSkew<T extends ServiceTraceSpan>(
   spans: readonly T[]
 ): SkewReport {
