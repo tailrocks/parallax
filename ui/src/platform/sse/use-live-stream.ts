@@ -1,10 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 
 import type { RuntimeDecoder } from "@/platform/external-values/runtime-decoder"
-import {
-  browserEventSourceFactory,
-  type EventSourceFactory,
-} from "@/platform/sse/event-source"
+import { browserEventSourceFactory, type EventSourceFactory } from "@/platform/sse/event-source"
 import {
   createLiveStreamController,
   type LiveStreamStatus,
