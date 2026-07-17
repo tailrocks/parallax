@@ -164,11 +164,7 @@ describe("graphql trace builder", () => {
       ),
     ])
 
-    expect(operations[0]!.roots.map((node) => node.path)).toEqual([
-      "a",
-      "c",
-      "b",
-    ])
+    expect(operations[0]!.roots.map((node) => node.path)).toEqual(["a", "c", "b"])
   })
 })
 
@@ -202,8 +198,6 @@ describe("D-006 single-span operations (plan 160, corpus p-graphql-err)", () => 
     expect(operations).toHaveLength(1)
     expect(operations[0]!.operationName).toBe("Storefront")
     expect(operations[0]!.fieldErrors).toBe(1)
-    expect(operations[0]!.roots.map((root) => root.fieldName)).toEqual([
-      "Query.catalogProducts",
-    ])
+    expect(operations[0]!.roots.map((root) => root.fieldName)).toEqual(["Query.catalogProducts"])
   })
 })

@@ -7,17 +7,14 @@ import {
   parseLayout,
   toWidgetData,
 } from "@/features/dashboards"
-import { resolveRangeSearch, rangeSearchSchema } from "@/lib/range"
+import { resolveRangeSearch, rangeSearchSchema } from "@/domain/time-range/range"
 
 export const Route = createFileRoute("/dashboards/$dashboardId")({
-  validateSearch: (search: Record<string, unknown>) =>
-    rangeSearchSchema.parse(search),
+  validateSearch: (search: Record<string, unknown>) => rangeSearchSchema.parse(search),
   loaderDeps: ({ search }) => search,
   loader: async ({ params, deps }) => {
     const range = resolveRangeSearch(deps)
-    const { dashboard, metricNames } = await loadDashboardDetail(
-      params.dashboardId
-    )
+    const { dashboard, metricNames } = await loadDashboardDetail(params.dashboardId)
     if (!dashboard) throw notFound()
     const widgets = parseLayout(dashboard.layout)
     const seriesList = await loadWidgetSeries(widgets, range)

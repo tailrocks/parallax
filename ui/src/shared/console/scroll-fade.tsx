@@ -1,9 +1,6 @@
 import { cn } from "@/lib/utils"
 
-export function ScrollFade({
-  className,
-  children,
-}: React.ComponentProps<"div">) {
+export function ScrollFade({ className, children }: React.ComponentProps<"div">) {
   return (
     <div className={cn("relative overflow-hidden", className)}>
       <div className="overflow-auto">{children}</div>

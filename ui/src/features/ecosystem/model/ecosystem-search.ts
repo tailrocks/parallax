@@ -1,8 +1,5 @@
-import type {
-  FocusMode,
-  TrafficPreset,
-} from "@/features/ecosystem/model/ecosystem-topology"
-import { rangeSearchSchema } from "@/lib/range"
+import type { FocusMode, TrafficPreset } from "@/features/ecosystem/model/ecosystem-topology"
+import { rangeSearchSchema } from "@/domain/time-range/range"
 
 export type EcosystemSearch = {
   range?: string | undefined
@@ -16,9 +13,7 @@ export type EcosystemSearch = {
 
 const TRAFFIC_VALUES = new Set<TrafficPreset>(["all", "0.1%", "1%", "5%"])
 
-export function validateEcosystemSearch(
-  search: Record<string, unknown>
-): EcosystemSearch {
+export function validateEcosystemSearch(search: Record<string, unknown>): EcosystemSearch {
   const parsed = rangeSearchSchema.parse(search)
   const hops = Number(search["hops"])
   const minTraffic = search["minTraffic"]

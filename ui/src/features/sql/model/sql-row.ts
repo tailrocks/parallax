@@ -29,9 +29,7 @@ export type SchemaColumn = {
  * falsey first-three cells; truthy non-strings still pass (presentation may
  * coerce). Returns null when the row should be skipped.
  */
-export function parseSchemaRow(
-  row: string
-): { table: string; column: SchemaColumn } | null {
+export function parseSchemaRow(row: string): { table: string; column: SchemaColumn } | null {
   try {
     const cells: unknown = JSON.parse(row)
     if (!Array.isArray(cells)) return null
@@ -46,9 +44,7 @@ export function parseSchemaRow(
   }
 }
 
-export function groupSchemaRows(
-  rows: readonly string[]
-): Map<string, SchemaColumn[]> {
+export function groupSchemaRows(rows: readonly string[]): Map<string, SchemaColumn[]> {
   const grouped = new Map<string, SchemaColumn[]>()
   for (const row of rows) {
     const parsed = parseSchemaRow(row)

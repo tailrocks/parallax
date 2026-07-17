@@ -4,7 +4,7 @@ import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it } from "vitest"
 
-import type { SpanLink } from "@/lib/api"
+import type { SpanLink } from "@/features/traces/model/wire"
 import type { RpcStreamInfo } from "@/features/traces/model/rpc-streams"
 import {
   InspectorEventList,
@@ -51,16 +51,10 @@ const stream: RpcStreamInfo = {
 describe("trace RPC inspector helpers", () => {
   it("caps inspector events and expands on demand", async () => {
     const user = userEvent.setup()
-    render(
-      <InspectorEventList
-        events={Array.from({ length: 60 }, (_, index) => event(index))}
-      />
-    )
+    render(<InspectorEventList events={Array.from({ length: 60 }, (_, index) => event(index))} />)
 
     expect(screen.getAllByTestId("inspector-event")).toHaveLength(25)
-    await user.click(
-      screen.getByRole("button", { name: /show all 60 events/i })
-    )
+    await user.click(screen.getByRole("button", { name: /show all 60 events/i }))
     expect(screen.getAllByTestId("inspector-event")).toHaveLength(60)
   })
 
@@ -81,9 +75,7 @@ describe("trace RPC inspector helpers", () => {
   })
 
   it("surfaces deadline and cancel grpc status labels", () => {
-    const { rerender } = render(
-      <TraceErrorCallout statusMessage="" grpcStatusCode="4" />
-    )
+    const { rerender } = render(<TraceErrorCallout statusMessage="" grpcStatusCode="4" />)
     expect(screen.getByText("DEADLINE_EXCEEDED (gRPC 4)")).toBeTruthy()
 
     rerender(<TraceErrorCallout statusMessage="" grpcStatusCode="1" />)

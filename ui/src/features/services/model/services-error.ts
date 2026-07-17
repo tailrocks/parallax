@@ -1,8 +1,4 @@
-export type ServicesErrorCode =
-  | "transport"
-  | "invalid-response"
-  | "load"
-  | "not-found"
+export type ServicesErrorCode = "transport" | "invalid-response" | "load" | "not-found"
 
 export class ServicesError extends Error {
   readonly code: ServicesErrorCode

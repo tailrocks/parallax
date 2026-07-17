@@ -1,11 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import {
-  EcosystemPage,
-  loadServiceMap,
-  validateEcosystemSearch,
-} from "@/features/ecosystem"
-import { resolveRangeSearch } from "@/lib/range"
+import { EcosystemPage, loadServiceMap, validateEcosystemSearch } from "@/features/ecosystem"
+import { resolveRangeSearch } from "@/domain/time-range/range"
 
 export const Route = createFileRoute("/ecosystem")({
   validateSearch: validateEcosystemSearch,

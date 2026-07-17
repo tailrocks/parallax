@@ -9,7 +9,6 @@ import {
   IconTerminal2,
   IconUsers,
 } from "@tabler/icons-react"
-
 import { CopyButton } from "@/shared/console/copy-button"
 import type { AgentSessionData } from "@/shared/console/agent-session"
 import { EmptyState } from "@/shared/console/empty-state"
@@ -27,8 +26,7 @@ import { PinButton } from "@/features/investigations"
 import { StatCard } from "@/shared/console/stat-card"
 import { StoryTimeline } from "@/features/story"
 import { useLiveStream } from "@/platform/sse/use-live-stream"
-import { LogsTable } from "@/features/logs"
-import type { LogDoc } from "@/features/logs"
+import { LogsTable, LOG_FIELDS, type LogDoc } from "@/features/logs"
 import { MetricStrip } from "@/features/runtime-metrics"
 import { navItem } from "@/shared/navigation"
 import { PageHeader } from "@/shared/components/page-header"
@@ -36,37 +34,29 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { gqlString, graphql, graphqlCached, LOG_FIELDS } from "@/lib/api"
+import { gqlString, graphql, graphqlCached } from "@/platform/graphql/transport"
 import type {
   BackgroundCycle,
   Conversation,
   Job,
-  LiveSpan,
   ScreenVisit,
   Session,
-  StoryBeat,
-  TraceSummary,
   UiAction,
-} from "@/lib/api"
-import { formatCount, formatDurationNs } from "@/lib/format"
+} from "@/features/invocations/model/wire"
+import type { LiveSpan, TraceSummary } from "@/features/traces"
+import type { StoryBeat } from "@/domain/story/story-beat"
+import { formatCount, formatDurationNs } from "@/shared/format"
 import {
   appModeLabel,
   invocationDurationNs,
   invocationStatus,
-} from "@/lib/invocation"
-import { rangeSearchSchema, resolveRangeSearch } from "@/lib/range"
-import { usePageVisible } from "@/lib/use-visible"
+} from "@/features/invocations/model/invocation"
+import { rangeSearchSchema, resolveRangeSearch } from "@/domain/time-range/range"
+import { usePageVisible } from "@/platform/visibility/use-page-visible"
 import { cn } from "@/lib/utils"
 import { z } from "zod"
 
-const TABS = [
-  "overview",
-  "traces",
-  "logs",
-  "errors",
-  "sessions",
-  "jobs",
-] as const
+const TABS = ["overview", "traces", "logs", "errors", "sessions", "jobs"] as const
 type HubTab = (typeof TABS)[number]
 
 interface InvocationRecordData {
@@ -81,9 +71,7 @@ interface InvocationRecordData {
   errorCount: number
   traceCount: number
   sessionCount: number
-  issues: Array<
-    InvocationIssue & { lastSeenNanos: string; lastTraceId: string | null }
-  >
+  issues: Array<InvocationIssue & { lastSeenNanos: string; lastTraceId: string | null }>
   errorEvents: Array<{
     tsNanos: string
     title: string
@@ -119,10 +107,7 @@ const RECORD_QUERY = (escaped: string) =>
        errorEvents { tsNanos title fingerprint traceId }
      } }`
 
-export async function loadInvocationHub(
-  invocationId: string,
-  nowMs = Date.now()
-) {
+export async function loadInvocationHub(invocationId: string, nowMs = Date.now()) {
   const escaped = gqlString(invocationId)
   const { invocation } = await graphqlCached<{
     invocation: InvocationRecordData | null
@@ -212,36 +197,26 @@ export function InvocationHubPage({
   const pageVisible = usePageVisible()
   const [liveLogs, setLiveLogs] = useState<LogDoc[]>([])
   const [liveSpans, setLiveSpans] = useState<LiveSpan[]>([])
-  const [polledRecord, setPolledRecord] = useState<InvocationRecordData | null>(
-    null
-  )
+  const [polledRecord, setPolledRecord] = useState<InvocationRecordData | null>(null)
   const record = polledRecord ?? data.record
 
   const logStatus = useLiveStream<LogDoc>({
-    url: live
-      ? `/v1/logs/stream?invocation_id=${encodeURIComponent(invocationId)}`
-      : null,
+    url: live ? `/v1/logs/stream?invocation_id=${encodeURIComponent(invocationId)}` : null,
     parse: (payload) => {
       const batch: unknown = JSON.parse(payload)
       return Array.isArray(batch) ? (batch as LogDoc[]) : []
     },
     onBatch: (incoming) =>
-      setLiveLogs((current) =>
-        [...incoming.reverse(), ...current].slice(0, 300)
-      ),
+      setLiveLogs((current) => [...incoming.reverse(), ...current].slice(0, 300)),
   })
   const spanStatus = useLiveStream<LiveSpan>({
-    url: live
-      ? `/v1/traces/stream?invocation_id=${encodeURIComponent(invocationId)}`
-      : null,
+    url: live ? `/v1/traces/stream?invocation_id=${encodeURIComponent(invocationId)}` : null,
     parse: (payload) => {
       const batch: unknown = JSON.parse(payload)
       return Array.isArray(batch) ? (batch as LiveSpan[]) : []
     },
     onBatch: (incoming) =>
-      setLiveSpans((current) =>
-        [...incoming.reverse(), ...current].slice(0, 300)
-      ),
+      setLiveSpans((current) => [...incoming.reverse(), ...current].slice(0, 300)),
   })
 
   useEffect(() => {
@@ -253,7 +228,6 @@ export function InvocationHubPage({
         .then((next) => {
           if (next.invocation) setPolledRecord(next.invocation)
         })
-        // Live polling tolerates transient API failures; next tick retries.
         .catch(() => {})
     }, 10_000)
     return () => clearInterval(timer)
@@ -321,9 +295,7 @@ export function InvocationHubContent({
   const range = resolveRangeSearch(search)
   const back = navItem("/invocations")
   const empty =
-    !record &&
-    data.tracesByInvocation.length === 0 &&
-    data.logsByInvocation.length === 0
+    !record && data.tracesByInvocation.length === 0 && data.logsByInvocation.length === 0
   const logs = useMemo(
     () =>
       [...(live ? liveLogs : []), ...data.logsByInvocation]
@@ -331,17 +303,12 @@ export function InvocationHubContent({
         .slice(0, 500),
     [data.logsByInvocation, liveLogs, live]
   )
-  // Per-occurrence events with intact nanosecond timestamps: journey beats
-  // place each occurrence at its exact time (an issue's ms-truncated
-  // last-seen mis-attributed between-screen errors to the previous screen).
-  const journeyErrors: JourneyError[] = (record?.errorEvents ?? []).map(
-    (event) => ({
-      tsNanos: event.tsNanos,
-      title: event.title,
-      fingerprint: event.fingerprint,
-      traceId: event.traceId ?? null,
-    })
-  )
+  const journeyErrors: JourneyError[] = (record?.errorEvents ?? []).map((event) => ({
+    tsNanos: event.tsNanos,
+    title: event.title,
+    fingerprint: event.fingerprint,
+    traceId: event.traceId ?? null,
+  }))
 
   if (empty) {
     return (
@@ -387,11 +354,7 @@ export function InvocationHubContent({
         actions={
           <>
             <PinButton kind="run" label={invocationId} />
-            <Button
-              size="sm"
-              variant={live ? "secondary" : "outline"}
-              onClick={onLive}
-            >
+            <Button size="sm" variant={live ? "secondary" : "outline"} onClick={onLive}>
               {live ? <IconPlayerPause /> : <IconPlayerPlay />}
               {live ? "Live" : "Go live"}
               {live && streamActive ? (
@@ -419,9 +382,7 @@ export function InvocationHubContent({
             <MetricStrip
               title="Process metrics"
               invocationId={invocationId}
-              fromNanos={(
-                BigInt(record.startedAtNanos) - 30_000_000_000n
-              ).toString()}
+              fromNanos={(BigInt(record.startedAtNanos) - 30_000_000_000n).toString()}
               toNanos={(
                 (record.endedAtNanos
                   ? BigInt(record.endedAtNanos)
@@ -524,9 +485,7 @@ function HubStats({
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
       <StatCard
         label="Status"
-        value={
-          <InvocationStatusBadge status={status} exitCode={record.exitCode} />
-        }
+        value={<InvocationStatusBadge status={status} exitCode={record.exitCode} />}
       />
       <StatCard
         icon={IconAlertTriangleFilled}
@@ -534,36 +493,18 @@ function HubStats({
         label="Errors"
         value={
           <span
-            className={cn(
-              record.errorCount > 0
-                ? "text-rose-600 dark:text-rose-400"
-                : undefined
-            )}
+            className={cn(record.errorCount > 0 ? "text-rose-600 dark:text-rose-400" : undefined)}
           >
             {formatCount(record.errorCount)}
           </span>
         }
       />
-      <StatCard
-        icon={IconActivity}
-        label="Traces"
-        value={formatCount(record.traceCount)}
-      />
-      <StatCard
-        icon={IconUsers}
-        label="Sessions"
-        value={formatCount(record.sessionCount)}
-      />
+      <StatCard icon={IconActivity} label="Traces" value={formatCount(record.traceCount)} />
+      <StatCard icon={IconUsers} label="Sessions" value={formatCount(record.sessionCount)} />
       <StatCard
         icon={IconClock}
         label="Duration"
-        value={
-          status === "running"
-            ? "..."
-            : duration
-              ? formatDurationNs(duration)
-              : "-"
-        }
+        value={status === "running" ? "..." : duration ? formatDurationNs(duration) : "-"}
       />
     </div>
   )

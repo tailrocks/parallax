@@ -10,8 +10,7 @@ import { renderTestRouter } from "@/test/router"
 afterEach(cleanup)
 
 function textContentIs(text: string) {
-  return (_content: string, element: Element | null) =>
-    element?.textContent === text
+  return (_content: string, element: Element | null) => element?.textContent === text
 }
 
 const session: AgentSessionData = {
@@ -68,21 +67,15 @@ describe("AgentSessionCard", () => {
 
     expect(await screen.findByText("Agent session")).toBeTruthy()
     expect(screen.getAllByTestId("agent-step")).toHaveLength(3)
-    expect(screen.getByText("inspect_repo").closest("a")?.href).toContain(
-      "/traces/trace-agent"
-    )
-    expect(screen.getByText("false").closest("li")?.className).toContain(
-      "border-rose"
-    )
+    expect(screen.getByText("inspect_repo").closest("a")?.href).toContain("/traces/trace-agent")
+    expect(screen.getByText("false").closest("li")?.className).toContain("border-rose")
     expect(screen.getByText(textContentIs("12 in"))).toBeTruthy()
     expect(screen.getByText(textContentIs("5 out"))).toBeTruthy()
   })
 
   it("hides token totals when both totals are zero", async () => {
     renderTestRouter(
-      <AgentSessionCard
-        session={{ ...session, totalInputTokens: "0", totalOutputTokens: "0" }}
-      />,
+      <AgentSessionCard session={{ ...session, totalInputTokens: "0", totalOutputTokens: "0" }} />,
       { targetPaths: ["/traces/$traceId"] }
     )
 

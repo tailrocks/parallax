@@ -17,8 +17,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { Conversation, ScreenVisit, Session, UiAction } from "@/lib/api"
-import { formatCount, formatDurationNs } from "@/lib/format"
+import type {
+  Conversation,
+  ScreenVisit,
+  Session,
+  UiAction,
+} from "@/features/invocations/model/wire"
+import { formatCount, formatDurationNs } from "@/shared/format"
 import { cn } from "@/lib/utils"
 
 import { ScreenVisitLane } from "./screen-visit-lane"
@@ -42,9 +47,7 @@ export function SessionsTab({
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const selected =
-    sessions.find((session) => session.sessionId === selectedId) ??
-    sessions[0] ??
-    null
+    sessions.find((session) => session.sessionId === selectedId) ?? sessions[0] ?? null
 
   if (
     sessions.length === 0 &&
@@ -62,10 +65,7 @@ export function SessionsTab({
   }
 
   const selectedVisits = selected
-    ? visits.filter(
-        (visit) =>
-          visit.sessionId == null || visit.sessionId === selected.sessionId
-      )
+    ? visits.filter((visit) => visit.sessionId == null || visit.sessionId === selected.sessionId)
     : visits
 
   return (
@@ -81,19 +81,11 @@ export function SessionsTab({
                 <li key={session.sessionId}>
                   <Button
                     size="sm"
-                    variant={
-                      selected?.sessionId === session.sessionId
-                        ? "secondary"
-                        : "outline"
-                    }
+                    variant={selected?.sessionId === session.sessionId ? "secondary" : "outline"}
                     onClick={() => setSelectedId(session.sessionId)}
                   >
-                    <code className="max-w-36 truncate text-xs">
-                      {session.sessionId}
-                    </code>
-                    {session.endNanos == null ? (
-                      <Badge variant="blue">open</Badge>
-                    ) : null}
+                    <code className="max-w-36 truncate text-xs">{session.sessionId}</code>
+                    {session.endNanos == null ? <Badge variant="blue">open</Badge> : null}
                     {session.previousSessionId ? (
                       <span
                         className="text-xs text-muted-foreground"
@@ -132,21 +124,13 @@ export function SessionsTab({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <SessionJourney
-              session={selected}
-              visits={visits}
-              actions={actions}
-              errors={errors}
-            />
+            <SessionJourney session={selected} visits={visits} actions={actions} errors={errors} />
           </CardContent>
         </Card>
       ) : null}
 
       {conversations.length > 0 ? (
-        <ConversationsPanel
-          conversations={conversations}
-          agentSession={agentSession}
-        />
+        <ConversationsPanel conversations={conversations} agentSession={agentSession} />
       ) : null}
     </div>
   )
@@ -174,10 +158,7 @@ export function UiActionsCard({ actions }: { actions: UiAction[] }) {
               {actions.map((action) => (
                 <TableRow
                   key={`${action.traceId}-${action.startNanos}`}
-                  className={cn(
-                    action.hasError &&
-                      "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]"
-                  )}
+                  className={cn(action.hasError && "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]")}
                 >
                   <TableCell>
                     <Link
@@ -194,11 +175,7 @@ export function UiActionsCard({ actions }: { actions: UiAction[] }) {
                   </TableCell>
                   <TableCell>
                     {action.outcome ? (
-                      <Badge
-                        variant={
-                          action.outcome === "success" ? "emerald" : "rose"
-                        }
-                      >
+                      <Badge variant={action.outcome === "success" ? "emerald" : "rose"}>
                         {action.outcome}
                       </Badge>
                     ) : (
@@ -251,13 +228,9 @@ export function ConversationsPanel({
               {conversations.map((conversation) => (
                 <TableRow key={conversation.conversationId}>
                   <TableCell>
-                    <code className="max-w-44 truncate text-xs">
-                      {conversation.conversationId}
-                    </code>
+                    <code className="max-w-44 truncate text-xs">{conversation.conversationId}</code>
                   </TableCell>
-                  <TableCell className="text-xs">
-                    {conversation.agentName ?? "-"}
-                  </TableCell>
+                  <TableCell className="text-xs">{conversation.agentName ?? "-"}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {conversation.providerName ?? "-"}
                   </TableCell>
@@ -265,9 +238,7 @@ export function ConversationsPanel({
                     {formatCount(conversation.spanCount)}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {conversation.inputTokens != null
-                      ? formatCount(conversation.inputTokens)
-                      : "-"}
+                    {conversation.inputTokens != null ? formatCount(conversation.inputTokens) : "-"}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {conversation.outputTokens != null
@@ -290,7 +261,5 @@ export function ConversationsPanel({
 
 export function sessionDurationLabel(session: Session): string {
   if (session.endNanos == null) return "open"
-  return formatDurationNs(
-    (BigInt(session.endNanos) - BigInt(session.startNanos)).toString()
-  )
+  return formatDurationNs((BigInt(session.endNanos) - BigInt(session.startNanos)).toString())
 }

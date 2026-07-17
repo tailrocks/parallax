@@ -13,7 +13,7 @@ import {
   serviceHref,
   type ServicesData,
 } from "@/features/services/model/service-summary"
-import { customRange, resolvePreset } from "@/lib/range"
+import { customRange, resolvePreset } from "@/domain/time-range/range"
 import { renderTestRouter } from "@/test/router"
 
 afterEach(cleanup)
@@ -129,12 +129,7 @@ describe("Services feature", () => {
 
   it("renders index rows with detail links", async () => {
     renderWithRouter(
-      <ServicesIndexContent
-        data={servicesFixture}
-        search={{}}
-        range={range}
-        onSearch={() => {}}
-      />
+      <ServicesIndexContent data={servicesFixture} search={{}} range={range} onSearch={() => {}} />
     )
 
     expect(await screen.findByText("api gateway")).toBeTruthy()
@@ -142,13 +137,11 @@ describe("Services feature", () => {
     expect(screen.getByText("v1")).toBeTruthy()
     expect(screen.getByText("rust")).toBeTruthy()
     expect(screen.getByText("prod")).toBeTruthy()
-    expect(
-      screen.getByRole("link", { name: /api gateway/i }).getAttribute("href")
-    ).toBe("/services/api%20gateway?range=24h")
+    expect(screen.getByRole("link", { name: /api gateway/i }).getAttribute("href")).toBe(
+      "/services/api%20gateway?range=24h"
+    )
 
-    const spansHref = screen
-      .getByRole("link", { name: "20" })
-      .getAttribute("href")
+    const spansHref = screen.getByRole("link", { name: "20" }).getAttribute("href")
     const spansUrl = new URL(spansHref!, "http://example.test")
     expect(spansUrl.pathname).toBe("/traces")
     expect(spansUrl.searchParams.get("service")).toBe("api gateway")
@@ -159,12 +152,7 @@ describe("Services feature", () => {
 
   it("preserves custom ranges in index drilldown links", async () => {
     renderWithRouter(
-      <ServicesIndexContent
-        data={servicesFixture}
-        search={{}}
-        range={custom}
-        onSearch={() => {}}
-      />
+      <ServicesIndexContent data={servicesFixture} search={{}} range={custom} onSearch={() => {}} />
     )
 
     expect(await screen.findByText("api gateway")).toBeTruthy()
@@ -213,9 +201,7 @@ describe("Service detail feature", () => {
     expect(screen.getByText("p95 latency")).toBeTruthy()
     expect(screen.queryByText("Runtime metrics")).toBeNull()
     expect(
-      screen.getByText(
-        "No trace exemplar attached; showing traces near this timestamp"
-      )
+      screen.getByText("No trace exemplar attached; showing traces near this timestamp")
     ).toBeTruthy()
     const tracesUrl = new URL(
       screen.getByRole("link", { name: /traces/i }).getAttribute("href")!,
@@ -240,11 +226,9 @@ describe("Service detail feature", () => {
     expect(issuesUrl.pathname).toBe("/issues")
     expect(issuesUrl.searchParams.get("service")).toBe("api gateway")
     expect(issuesUrl.searchParams.get("range")).toBe("24h")
-    expect(
-      screen
-        .getByRole("link", { name: /post \/checkout/i })
-        .getAttribute("href")
-    ).toBe("/traces/trace-a?range=24h")
+    expect(screen.getByRole("link", { name: /post \/checkout/i }).getAttribute("href")).toBe(
+      "/traces/trace-a?range=24h"
+    )
   })
 
   it("preserves custom ranges in detail drilldown links", async () => {
@@ -265,9 +249,7 @@ describe("Service detail feature", () => {
       [/issues/i, "/issues"],
       [/post \/checkout/i, "/traces/trace-a"],
     ] as const) {
-      const { search, url } = parseHref(
-        screen.getByRole("link", { name }).getAttribute("href")!
-      )
+      const { search, url } = parseHref(screen.getByRole("link", { name }).getAttribute("href")!)
       expect(url.pathname).toBe(pathname)
       expect(search).toMatchObject({
         range: "custom",
@@ -311,8 +293,8 @@ describe("Service detail feature", () => {
 
     expect(await screen.findByText("Trace exemplar")).toBeTruthy()
     expect(screen.getByText("span-exemplar")).toBeTruthy()
-    expect(
-      screen.getByRole("link", { name: /open trace/i }).getAttribute("href")
-    ).toBe("/traces/trace-exemplar?range=24h")
+    expect(screen.getByRole("link", { name: /open trace/i }).getAttribute("href")).toBe(
+      "/traces/trace-exemplar?range=24h"
+    )
   })
 })

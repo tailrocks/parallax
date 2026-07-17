@@ -28,35 +28,25 @@ test.describe("shell product contracts", () => {
     await shell.openRoot()
     await shell.navItem("Investigations").click()
     await expect(page).toHaveURL(/\/investigations\/?/)
-    await expect(
-      page.getByRole("heading", { name: "Investigations", exact: true })
-    ).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Investigations", exact: true })).toBeVisible()
 
     await page.reload()
     await expect(page).toHaveURL(/\/investigations\/?/)
-    await expect(
-      page.getByRole("heading", { name: "Investigations", exact: true })
-    ).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Investigations", exact: true })).toBeVisible()
 
     await page.goto("/sql")
     await expect(page).toHaveURL(/\/sql\/?/)
     await expect(shell.navItem("SQL")).toBeVisible()
   })
 
-  test("invalid route shows not-found surface @pw-shell-not-found", async ({
-    page,
-  }) => {
+  test("invalid route shows not-found surface @pw-shell-not-found", async ({ page }) => {
     const shell = new ShellScreen(page)
     await page.goto("/this-route-does-not-exist")
     await expect(shell.notFoundTitle()).toBeVisible()
-    await expect(
-      page.getByText("Pick a Parallax surface from the navigation.")
-    ).toBeVisible()
+    await expect(page.getByText("Pick a Parallax surface from the navigation.")).toBeVisible()
   })
 
-  test("theme choice persists across reload @pw-shell-theme", async ({
-    page,
-  }) => {
+  test("theme choice persists across reload @pw-shell-theme", async ({ page }) => {
     const shell = new ShellScreen(page)
     await shell.openRoot()
     await shell.themeButton("Light").click()

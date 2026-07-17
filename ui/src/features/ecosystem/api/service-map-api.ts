@@ -8,10 +8,7 @@ import {
   type ServiceMapQueryVariables,
 } from "@/features/ecosystem/api/service-map.generated"
 import { EcosystemError } from "@/features/ecosystem/model/ecosystem-error"
-import {
-  mapServiceMap,
-  type ServiceMap,
-} from "@/features/ecosystem/model/service-map"
+import { mapServiceMap, type ServiceMap } from "@/features/ecosystem/model/service-map"
 import {
   executeCachedGraphqlOperation,
   type OperationResultSchema,
@@ -41,10 +38,7 @@ function mapBoundary(error: unknown): never {
       error.message
     )
   }
-  throw new EcosystemError(
-    "load",
-    error instanceof Error ? error.message : String(error)
-  )
+  throw new EcosystemError("load", error instanceof Error ? error.message : String(error))
 }
 
 export async function loadServiceMap(input: {
@@ -53,14 +47,15 @@ export async function loadServiceMap(input: {
   readonly maxTraces?: number
 }): Promise<ServiceMap> {
   try {
-    const data = await executeCachedGraphqlOperation<
-      ServiceMapQuery,
-      ServiceMapQueryVariables
-    >(brandDocument(ServiceMapDocument), brandSchema(ServiceMapQuerySchema), {
-      fromNanos: input.fromNanos,
-      toNanos: input.toNanos,
-      maxTraces: input.maxTraces ?? 100,
-    })
+    const data = await executeCachedGraphqlOperation<ServiceMapQuery, ServiceMapQueryVariables>(
+      brandDocument(ServiceMapDocument),
+      brandSchema(ServiceMapQuerySchema),
+      {
+        fromNanos: input.fromNanos,
+        toNanos: input.toNanos,
+        maxTraces: input.maxTraces ?? 100,
+      }
+    )
     return mapServiceMap(data.serviceMap)
   } catch (error) {
     mapBoundary(error)

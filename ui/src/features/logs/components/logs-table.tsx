@@ -24,15 +24,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { severityColor, severityToken } from "@/lib/colors"
-import {
-  formatDateTime,
-  formatLogBodyPreview,
-  formatTimeInRange,
-  stripAnsi,
-} from "@/lib/format"
-import { rangeLinkSearch, resolvePreset } from "@/lib/range"
-import type { ResolvedRange } from "@/lib/range"
+import { severityColor, severityToken } from "@/shared/colors"
+import { formatDateTime, formatLogBodyPreview, formatTimeInRange, stripAnsi } from "@/shared/format"
+import { rangeLinkSearch, resolvePreset } from "@/domain/time-range/range"
+import type { ResolvedRange } from "@/domain/time-range/range"
 
 /** One log row, with every field the doc viewer needs. Shared by the Logs page
  * and the run detail page so both render logs identically. */
@@ -53,18 +48,11 @@ export interface LogDoc {
   resource: string
 }
 
-export const OPTIONAL_LOG_COLUMNS = [
-  "service",
-  "event",
-  "trace",
-  "scope",
-] as const
+export const OPTIONAL_LOG_COLUMNS = ["service", "event", "trace", "scope"] as const
 export type OptionalLogColumn = (typeof OPTIONAL_LOG_COLUMNS)[number]
 const LOG_VIRTUALIZATION_THRESHOLD = 100
 
-export function parseLogColumns(
-  value: string | undefined
-): OptionalLogColumn[] {
+export function parseLogColumns(value: string | undefined): OptionalLogColumn[] {
   if (!value) return ["service", "trace"]
   const requested = value
     .split(",")
@@ -79,9 +67,7 @@ export function serializeLogColumns(columns: readonly OptionalLogColumn[]) {
   return columns.length > 0 ? columns.join(",") : undefined
 }
 
-export function severityVariant(
-  num: number
-): "rose" | "amber" | "secondary" | "outline" {
+export function severityVariant(num: number): "rose" | "amber" | "secondary" | "outline" {
   if (num >= 17) return "rose"
   if (num >= 13) return "amber"
   if (num >= 9) return "secondary"
@@ -128,10 +114,7 @@ function docFields(log: LogDoc): Array<[string, string]> {
       const parsed: unknown = JSON.parse(json)
       if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
         for (const [key, value] of Object.entries(parsed)) {
-          rows.push([
-            `${prefix}${key}`,
-            typeof value === "string" ? value : JSON.stringify(value),
-          ])
+          rows.push([`${prefix}${key}`, typeof value === "string" ? value : JSON.stringify(value)])
         }
       }
     } catch {
@@ -146,8 +129,7 @@ function rawDocument(log: LogDoc) {
 }
 
 function SeverityBadge({ log }: { log: LogDoc }) {
-  const fatal =
-    log.severityNum >= 21 || severityLabel(log).toUpperCase() === "FATAL"
+  const fatal = log.severityNum >= 21 || severityLabel(log).toUpperCase() === "FATAL"
   // Severity ramp token (plan 162): dot + WORD, never color alone.
   const token =
     severityToken(severityLabel(log)) ??
@@ -164,14 +146,8 @@ function SeverityBadge({ log }: { log: LogDoc }) {
               : "trace")
   return (
     <span className="inline-flex items-center gap-1.5">
-      <span
-        className="size-1.5 rounded-full"
-        style={{ backgroundColor: severityColor(token) }}
-      />
-      <Badge
-        variant={severityVariant(log.severityNum)}
-        className={fatal ? "font-bold" : undefined}
-      >
+      <span className="size-1.5 rounded-full" style={{ backgroundColor: severityColor(token) }} />
+      <Badge variant={severityVariant(log.severityNum)} className={fatal ? "font-bold" : undefined}>
         {severityLabel(log)}
       </Badge>
     </span>
@@ -180,8 +156,7 @@ function SeverityBadge({ log }: { log: LogDoc }) {
 
 function logKey(log: LogDoc) {
   return (
-    log._key ??
-    `${log.tsNanos}-${log.spanId || "no-span"}-${log.traceId || "no-trace"}-${log.body}`
+    log._key ?? `${log.tsNanos}-${log.spanId || "no-span"}-${log.traceId || "no-trace"}-${log.body}`
   )
 }
 
@@ -207,9 +182,7 @@ function VirtualizedLogTable({
   const firstVirtual = virtualItems[0]
   const lastVirtual = virtualItems.at(-1)
   const paddingTop = firstVirtual?.start ?? 0
-  const paddingBottom = lastVirtual
-    ? Math.max(0, virtualizer.getTotalSize() - lastVirtual.end)
-    : 0
+  const paddingBottom = lastVirtual ? Math.max(0, virtualizer.getTotalSize() - lastVirtual.end) : 0
 
   return (
     <div
@@ -228,11 +201,7 @@ function VirtualizedLogTable({
         <TableBody>
           {paddingTop > 0 ? (
             <tr aria-hidden="true">
-              <td
-                colSpan={columnCount}
-                className="border-0 p-0"
-                style={{ height: paddingTop }}
-              />
+              <td colSpan={columnCount} className="border-0 p-0" style={{ height: paddingTop }} />
             </tr>
           ) : null}
           {virtualItems.map((virtualItem) => {
@@ -285,9 +254,7 @@ export function LogsTable({
     const needle = fieldSearch.trim().toLowerCase()
     if (!needle) return all
     return all.filter(
-      ([key, value]) =>
-        key.toLowerCase().includes(needle) ||
-        value.toLowerCase().includes(needle)
+      ([key, value]) => key.toLowerCase().includes(needle) || value.toLowerCase().includes(needle)
     )
   }, [selected, fieldSearch])
 
@@ -295,19 +262,11 @@ export function LogsTable({
     <TableRow>
       <TableHead className="w-36">Time</TableHead>
       <TableHead className="w-28">Severity</TableHead>
-      {visible.has("service") ? (
-        <TableHead className="w-36">Service</TableHead>
-      ) : null}
-      {visible.has("event") ? (
-        <TableHead className="w-40">Event</TableHead>
-      ) : null}
+      {visible.has("service") ? <TableHead className="w-36">Service</TableHead> : null}
+      {visible.has("event") ? <TableHead className="w-40">Event</TableHead> : null}
       <TableHead>Body</TableHead>
-      {visible.has("trace") ? (
-        <TableHead className="w-28">Trace</TableHead>
-      ) : null}
-      {visible.has("scope") ? (
-        <TableHead className="w-36">Scope</TableHead>
-      ) : null}
+      {visible.has("trace") ? <TableHead className="w-28">Trace</TableHead> : null}
+      {visible.has("scope") ? <TableHead className="w-36">Scope</TableHead> : null}
     </TableRow>
   )
   const header = <TableHeader>{headerRows}</TableHeader>
@@ -317,10 +276,7 @@ export function LogsTable({
     setFieldSearch("")
   }
 
-  function handleRowKeyDown(
-    event: KeyboardEvent<HTMLTableRowElement>,
-    log: LogDoc
-  ) {
+  function handleRowKeyDown(event: KeyboardEvent<HTMLTableRowElement>, log: LogDoc) {
     if (event.target !== event.currentTarget) return
     if (event.key !== "Enter" && event.key !== " ") return
     event.preventDefault()
@@ -425,9 +381,7 @@ export function LogsTable({
               {selected ? <CopyButton value={rawDocument(selected)} /> : null}
             </SheetTitle>
             <SheetDescription>
-              {selected
-                ? `${selected.service} · ${formatDateTime(selected.tsNanos)}`
-                : ""}
+              {selected ? `${selected.service} · ${formatDateTime(selected.tsNanos)}` : ""}
             </SheetDescription>
           </SheetHeader>
           {selected ? (

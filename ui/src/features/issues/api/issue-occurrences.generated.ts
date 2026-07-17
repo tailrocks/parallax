@@ -183,10 +183,7 @@ export const IssueOccurrencesDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<
-  IssueOccurrencesQuery,
-  IssueOccurrencesQueryVariables
->
+} as unknown as DocumentNode<IssueOccurrencesQuery, IssueOccurrencesQueryVariables>
 
 type Properties<T> = {
   [K in keyof T]: z.ZodType<T[K], T[K] | undefined>
@@ -194,12 +191,9 @@ type Properties<T> = {
 
 type definedNonNullAny = {}
 
-export const isDefinedNonNullAny = (v: any): v is definedNonNullAny =>
-  v !== undefined && v !== null
+export const isDefinedNonNullAny = (v: any): v is definedNonNullAny => v !== undefined && v !== null
 
-export const definedNonNullAnySchema = z
-  .any()
-  .refine((v) => isDefinedNonNullAny(v))
+export const definedNonNullAnySchema = z.any().refine((v) => isDefinedNonNullAny(v))
 
 export const TraceSortSchema: z.ZodType<
   "DURATION_ASC" | "DURATION_DESC" | "SPAN_COUNT_DESC" | "START_DESC",
@@ -216,55 +210,51 @@ export const IssueSortSchema: z.ZodType<
   "EVENTS" | "FIRST_SEEN" | "LAST_SEEN" | "TREND"
 > = z.enum(["EVENTS", "FIRST_SEEN", "LAST_SEEN", "TREND"])
 
-export const AttributeFilterInputSchema: z.ZodObject<
-  Properties<AttributeFilterInput>
-> = z.object({
+export const AttributeFilterInputSchema: z.ZodObject<Properties<AttributeFilterInput>> = z.object({
   key: z.string(),
   op: z.string(),
   value: z.string(),
 })
 
-export const AlertRuleInputSchema: z.ZodObject<Properties<AlertRuleInput>> =
-  z.object({
-    attributeFilters: z.string().nullable(),
-    comparator: z.string(),
-    consecutiveBreachesRequired: z.number().nullable(),
-    consecutiveHealthyRequired: z.number().nullable(),
-    destinationIds: z.array(z.string()).nullable(),
-    enabled: z.boolean().nullable(),
-    excludeServices: z.array(z.string()).nullable(),
-    groupBy: z.string().nullable(),
-    id: z.string().nullable(),
-    metricAggregation: z.string().nullable(),
-    metricName: z.string().nullable(),
-    minimumSampleCount: z.number().nullable(),
-    name: z.string(),
-    noDataBehavior: z.string().nullable(),
-    renotifyIntervalMinutes: z.number().nullable(),
-    services: z.array(z.string()).nullable(),
-    severity: z.string(),
-    signalType: z.string(),
-    threshold: z.number(),
-    thresholdUpper: z.number().nullable(),
-    windowMinutes: z.number(),
-  })
+export const AlertRuleInputSchema: z.ZodObject<Properties<AlertRuleInput>> = z.object({
+  attributeFilters: z.string().nullable(),
+  comparator: z.string(),
+  consecutiveBreachesRequired: z.number().nullable(),
+  consecutiveHealthyRequired: z.number().nullable(),
+  destinationIds: z.array(z.string()).nullable(),
+  enabled: z.boolean().nullable(),
+  excludeServices: z.array(z.string()).nullable(),
+  groupBy: z.string().nullable(),
+  id: z.string().nullable(),
+  metricAggregation: z.string().nullable(),
+  metricName: z.string().nullable(),
+  minimumSampleCount: z.number().nullable(),
+  name: z.string(),
+  noDataBehavior: z.string().nullable(),
+  renotifyIntervalMinutes: z.number().nullable(),
+  services: z.array(z.string()).nullable(),
+  severity: z.string(),
+  signalType: z.string(),
+  threshold: z.number(),
+  thresholdUpper: z.number().nullable(),
+  windowMinutes: z.number(),
+})
 
-export const IssueOccurrencesQuerySchema: z.ZodType<IssueOccurrencesQuery> =
-  z.object({
-    issue: z
-      .object({
-        events: z.array(
-          z.object({
-            tsNanos: z.string(),
-            service: z.string(),
-            message: z.string(),
-            stacktrace: z.string().nullable(),
-            source: z.string(),
-            traceId: z.string(),
-            spanId: z.string(),
-            attributes: z.string(),
-          })
-        ),
-      })
-      .nullable(),
-  })
+export const IssueOccurrencesQuerySchema: z.ZodType<IssueOccurrencesQuery> = z.object({
+  issue: z
+    .object({
+      events: z.array(
+        z.object({
+          tsNanos: z.string(),
+          service: z.string(),
+          message: z.string(),
+          stacktrace: z.string().nullable(),
+          source: z.string(),
+          traceId: z.string(),
+          spanId: z.string(),
+          attributes: z.string(),
+        })
+      ),
+    })
+    .nullable(),
+})

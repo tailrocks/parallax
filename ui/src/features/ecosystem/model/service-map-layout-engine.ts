@@ -1,9 +1,6 @@
 import type { ElkNode } from "elkjs/lib/elk-api"
 
-import type {
-  ServiceMapEdge,
-  ServiceMapNode,
-} from "@/features/ecosystem/model/service-map"
+import type { ServiceMapEdge, ServiceMapNode } from "@/features/ecosystem/model/service-map"
 
 export const ECOSYSTEM_NODE_WIDTH = 150
 export const ECOSYSTEM_NODE_HEIGHT = 58
@@ -29,9 +26,7 @@ export type EcosystemLayoutResponse =
   | { ok: true; layout: EcosystemLayout }
   | { ok: false; error: string }
 
-function sortedRequest(
-  request: EcosystemLayoutRequest
-): EcosystemLayoutRequest {
+function sortedRequest(request: EcosystemLayoutRequest): EcosystemLayoutRequest {
   return {
     nodes: [...request.nodes].sort((a, b) => a.name.localeCompare(b.name)),
     edges: [...request.edges].sort((a, b) => {
@@ -77,9 +72,7 @@ function elkGraph(request: EcosystemLayoutRequest): ElkNode {
 }
 
 /** Direct ELK execution used by the worker and by tests/SSR fallback. */
-export async function runElkLayout(
-  request: EcosystemLayoutRequest
-): Promise<EcosystemLayout> {
+export async function runElkLayout(request: EcosystemLayoutRequest): Promise<EcosystemLayout> {
   const { default: ELK } = await import("elkjs/lib/elk.bundled.js")
   const elk = new ELK()
   const graph = await elk.layout(elkGraph(request))
@@ -96,9 +89,7 @@ export async function runElkLayout(
 /** Deterministic synchronous fallback for Bun/Vitest/SSR and worker startup
  * failure. Kahn layers preserve graph direction; cycles settle into the last
  * layer instead of causing unbounded relaxation. */
-export function fallbackEcosystemLayout(
-  request: EcosystemLayoutRequest
-): EcosystemLayout {
+export function fallbackEcosystemLayout(request: EcosystemLayoutRequest): EcosystemLayout {
   const sorted = sortedRequest(request)
   const names = sorted.nodes.map((node) => node.name)
   const known = new Set(names)
@@ -116,10 +107,7 @@ export function fallbackEcosystemLayout(
     const name = queue.shift()!
     visited.add(name)
     for (const target of outgoing.get(name) ?? []) {
-      depth.set(
-        target,
-        Math.max(depth.get(target) ?? 0, (depth.get(name) ?? 0) + 1)
-      )
+      depth.set(target, Math.max(depth.get(target) ?? 0, (depth.get(name) ?? 0) + 1))
       const remaining = (incoming.get(target) ?? 0) - 1
       incoming.set(target, remaining)
       if (remaining === 0) queue.push(target)
@@ -148,16 +136,10 @@ export function fallbackEcosystemLayout(
     )
     .sort((a, b) => a.id.localeCompare(b.id))
   const maxDepth = Math.max(0, ...groups.keys())
-  const maxRows = Math.max(
-    1,
-    ...[...groups.values()].map((group) => group.length)
-  )
+  const maxRows = Math.max(1, ...[...groups.values()].map((group) => group.length))
   return {
     positions,
     width: names.length === 0 ? 0 : 40 + maxDepth * xGap + ECOSYSTEM_NODE_WIDTH,
-    height:
-      names.length === 0
-        ? 0
-        : 40 + (maxRows - 1) * yGap + ECOSYSTEM_NODE_HEIGHT,
+    height: names.length === 0 ? 0 : 40 + (maxRows - 1) * yGap + ECOSYSTEM_NODE_HEIGHT,
   }
 }

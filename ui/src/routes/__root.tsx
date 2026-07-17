@@ -1,18 +1,8 @@
-import {
-  HeadContent,
-  Outlet,
-  Scripts,
-  createRootRoute,
-} from "@tanstack/react-router"
+import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router"
 import { ThemeProvider } from "next-themes"
 
 import appCss from "../styles.css?url"
-import {
-  ParallaxShell,
-  RouteErrorPanel,
-  RouteNotFoundPanel,
-  RoutePendingPanel,
-} from "@/layout"
+import { ParallaxShell, RouteErrorPanel, RouteNotFoundPanel, RoutePendingPanel } from "@/layout"
 
 export const Route = createRootRoute({
   head: () => ({
@@ -44,12 +34,7 @@ export const Route = createRootRoute({
 function RootOutlet() {
   return (
     <RootDocument>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="dark"
-        enableSystem
-        disableTransitionOnChange
-      >
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
         <ParallaxShell>
           <Outlet />
         </ParallaxShell>

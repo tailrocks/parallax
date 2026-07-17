@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge"
-import type { InvocationStatus } from "@/lib/invocation"
+import type { InvocationStatus } from "@/features/invocations/model/invocation"
 
 export function InvocationStatusBadge({
   status,

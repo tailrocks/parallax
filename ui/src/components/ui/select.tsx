@@ -4,12 +4,7 @@ import * as React from "react"
 import { Select as SelectPrimitive } from "@base-ui/react/select"
 
 import { cn } from "@/lib/utils"
-import {
-  IconSelector,
-  IconCheck,
-  IconChevronUp,
-  IconChevronDown,
-} from "@tabler/icons-react"
+import { IconSelector, IconCheck, IconChevronUp, IconChevronDown } from "@tabler/icons-react"
 
 function collectSelectItemLabels(
   children: React.ReactNode,
@@ -91,9 +86,7 @@ function SelectTrigger({
     >
       {children}
       <SelectPrimitive.Icon
-        render={
-          <IconSelector className="pointer-events-none size-4 text-muted-foreground" />
-        }
+        render={<IconSelector className="pointer-events-none size-4 text-muted-foreground" />}
       />
     </SelectPrimitive.Trigger>
   )
@@ -141,10 +134,7 @@ function SelectContent({
   )
 }
 
-function SelectLabel({
-  className,
-  ...props
-}: SelectPrimitive.GroupLabel.Props) {
+function SelectLabel({ className, ...props }: SelectPrimitive.GroupLabel.Props) {
   return (
     <SelectPrimitive.GroupLabel
       data-slot="select-label"
@@ -154,17 +144,10 @@ function SelectLabel({
   )
 }
 
-function SelectItem({
-  className,
-  children,
-  label,
-  ...props
-}: SelectPrimitive.Item.Props) {
+function SelectItem({ className, children, label, ...props }: SelectPrimitive.Item.Props) {
   const derivedLabel =
     label ??
-    (typeof children === "string" || typeof children === "number"
-      ? String(children)
-      : undefined)
+    (typeof children === "string" || typeof children === "number" ? String(children) : undefined)
 
   return (
     <SelectPrimitive.Item
@@ -190,10 +173,7 @@ function SelectItem({
   )
 }
 
-function SelectSeparator({
-  className,
-  ...props
-}: SelectPrimitive.Separator.Props) {
+function SelectSeparator({ className, ...props }: SelectPrimitive.Separator.Props) {
   return (
     <SelectPrimitive.Separator
       data-slot="select-separator"

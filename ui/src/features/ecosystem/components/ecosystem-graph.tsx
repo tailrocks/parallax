@@ -1,22 +1,13 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { IconTerminal2, IconWorld } from "@tabler/icons-react"
-import {
-  Background,
-  Handle,
-  MarkerType,
-  Position,
-  ReactFlow,
-} from "@xyflow/react"
+import { Background, Handle, MarkerType, Position, ReactFlow } from "@xyflow/react"
 import type { Edge, Node, NodeProps } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
 
 import { ServiceDot } from "@/shared/console/service-dot"
 import { Badge } from "@/components/ui/badge"
-import type {
-  ServiceMapEdge,
-  ServiceMapNode,
-} from "@/features/ecosystem/model/service-map"
+import type { ServiceMapEdge, ServiceMapNode } from "@/features/ecosystem/model/service-map"
 import {
   ECOSYSTEM_NODE_HEIGHT,
   ECOSYSTEM_NODE_WIDTH,
@@ -25,9 +16,9 @@ import {
   layoutEcosystem,
 } from "@/features/ecosystem/model/service-map-layout"
 import type { EcosystemLayout } from "@/features/ecosystem/model/service-map-layout"
-import { formatCount, formatDurationNs, formatPercent } from "@/lib/format"
-import type { ResolvedRange } from "@/lib/range"
-import { rangeLinkSearch } from "@/lib/range"
+import { formatCount, formatDurationNs, formatPercent } from "@/shared/format"
+import { rangeLinkSearch } from "@/domain/time-range/range"
+import type { ResolvedRange } from "@/domain/time-range/range"
 import { cn } from "@/lib/utils"
 
 const MIN_HEIGHT = 420
@@ -46,20 +37,14 @@ function edgeRate(edge: ServiceMapEdge): number {
 
 /** Async ELK layout with the deterministic fallback rendered immediately;
  * stale worker results never overwrite a newer topology. */
-function useEcosystemLayout(
-  nodes: ServiceMapNode[],
-  edges: ServiceMapEdge[]
-): EcosystemLayout {
+function useEcosystemLayout(nodes: ServiceMapNode[], edges: ServiceMapEdge[]): EcosystemLayout {
   const key = ecosystemTopologyKey({ nodes, edges })
   const [resolved, setResolved] = useState<{
     key: string
     layout: EcosystemLayout
   }>(() => ({ key, layout: fallbackEcosystemLayout({ nodes, edges }) }))
   const layout = useMemo(
-    () =>
-      resolved.key === key
-        ? resolved.layout
-        : fallbackEcosystemLayout({ nodes, edges }),
+    () => (resolved.key === key ? resolved.layout : fallbackEcosystemLayout({ nodes, edges })),
     [edges, key, nodes, resolved]
   )
   useEffect(() => {
@@ -104,9 +89,7 @@ function ServiceGraphNode({ data }: NodeProps<Node<ServiceNodeData>>) {
       </span>
       <span className="text-xs text-muted-foreground tabular-nums">
         {formatCount(count(node.spanCount))} spans
-        {node.p95Ms != null
-          ? ` · p95 ${formatDurationNs(node.p95Ms * 1_000_000)}`
-          : ""}
+        {node.p95Ms != null ? ` · p95 ${formatDurationNs(node.p95Ms * 1_000_000)}` : ""}
       </span>
     </>
   )
@@ -172,8 +155,7 @@ export function EcosystemGraph({
   })
 
   const flowEdges: Edge[] = edges.map((edge) => {
-    const dimmed =
-      dimmedNodeIds.has(edge.source) || dimmedNodeIds.has(edge.target)
+    const dimmed = dimmedNodeIds.has(edge.source) || dimmedNodeIds.has(edge.target)
     const hasError = count(edge.errorCount) > 0
     return {
       id: `${edge.source}->${edge.target}`,
@@ -207,8 +189,7 @@ export function EcosystemGraph({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm text-muted-foreground">
-          {formatCount(nodes.length)} services · {formatCount(edges.length)}{" "}
-          edges
+          {formatCount(nodes.length)} services · {formatCount(edges.length)} edges
           {hiddenNodeCount + hiddenEdgeCount > 0 ? (
             <Badge variant="secondary" className="ml-2">
               {formatCount(hiddenNodeCount + hiddenEdgeCount)} hidden

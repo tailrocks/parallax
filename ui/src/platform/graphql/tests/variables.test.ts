@@ -18,18 +18,12 @@ describe("encodeGraphqlVariables", () => {
   })
 
   it("rejects undefined root", () => {
-    expect(() => encodeGraphqlVariables(undefined)).toThrow(
-      GraphqlBoundaryError
-    )
+    expect(() => encodeGraphqlVariables(undefined)).toThrow(GraphqlBoundaryError)
   })
 
   it("rejects non-finite numbers", () => {
-    expect(() => encodeGraphqlVariables({ n: Number.NaN })).toThrow(
-      GraphqlBoundaryError
-    )
-    expect(() => encodeGraphqlVariables({ n: Infinity })).toThrow(
-      GraphqlBoundaryError
-    )
+    expect(() => encodeGraphqlVariables({ n: Number.NaN })).toThrow(GraphqlBoundaryError)
+    expect(() => encodeGraphqlVariables({ n: Infinity })).toThrow(GraphqlBoundaryError)
   })
 
   it("rejects cycles", () => {

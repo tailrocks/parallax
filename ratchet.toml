@@ -1235,1280 +1235,6 @@ ceiling = 1
 
 # Plan 100 refreshed TypeScript over-budget ceilings (shrink-only)
 
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/layout/tests/application-shell.test.tsx"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/domain/runtime-metrics/tests/runtime-metric.test.ts"
-ceiling = 5
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/domain/story/tests/story-beat.test.ts"
-ceiling = 5
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/runtime-metrics/tests/api/runtime-metrics-api.test.ts"
-ceiling = 9
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/runtime-metrics/tests/components/metric-strip.test.tsx"
-ceiling = 5
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/runtime-metrics/tests/components/runtime-snapshot-card.test.tsx"
-ceiling = 8
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/runtime-metrics/tests/integration/use-runtime-metrics.test.tsx"
-ceiling = 6
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/story/tests/components/story-timeline.test.tsx"
-ceiling = 6
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/time-range/tests/components/range-picker.test.tsx"
-ceiling = 3
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/shared/tests/components/page-header.test.tsx"
-ceiling = 5
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/shared/console/tests/agent-session.test.tsx"
-ceiling = 10
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/layout/tests/command-palette-composition.test.tsx"
-ceiling = 11
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/shared/console/tests/duration-filter.test.tsx"
-ceiling = 6
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/ecosystem/tests/components/ecosystem-graph.test.tsx"
-ceiling = 9
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/shared/console/tests/facet-sidebar.test.tsx"
-ceiling = 14
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/shared/console/tests/heat-cell.test.tsx"
-ceiling = 12
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/shared/console/tests/kit.test.tsx"
-ceiling = 19
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/shared/console/tests/top-movers.test.tsx"
-ceiling = 8
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/shared/console/tests/use-chart-brush.test.tsx"
-ceiling = 4
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/traces/tests/components/trace-waterfall.test.tsx"
-ceiling = 25
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/shared/console/tests/where-clause-editor.test.tsx"
-ceiling = 11
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/components/ui/__tests__/primitives.test.tsx"
-ceiling = 5
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/domain/time-range/tests/range.test.ts"
-ceiling = 5
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/shared/hooks/tests/use-timeline-interactions.test.tsx"
-ceiling = 15
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/-invocation.test.ts"
-ceiling = 20
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/alert-incident-timeline.test.ts"
-ceiling = 9
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/alert-rule-form.test.ts"
-ceiling = 19
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/color-by.test.ts"
-ceiling = 17
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/colors.test.ts"
-ceiling = 18
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/ecosystem/tests/model/service-map-layout.test.ts"
-ceiling = 11
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/ecosystem/tests/model/ecosystem-topology.test.ts"
-ceiling = 38
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/ecosystem/tests/model/ecosystem-url.test.ts"
-ceiling = 22
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/format.test.ts"
-ceiling = 22
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/traces/tests/model/graphql-operations.test.ts"
-ceiling = 15
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/invocation-facets.test.ts"
-ceiling = 5
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/log-histogram-brush.test.ts"
-ceiling = 17
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/log-pattern-match.test.ts"
-ceiling = 10
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/log-patterns-url.test.ts"
-ceiling = 19
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/log-table-prefs.test.ts"
-ceiling = 21
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/metric-aggregation.test.ts"
-ceiling = 35
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/quick-navigation/tests/quick-jump.test.ts"
-ceiling = 6
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/traces/tests/model/rpc-streams.test.ts"
-ceiling = 10
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/timeline-minimap.test.ts"
-ceiling = 10
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/timeline-viewport.test.ts"
-ceiling = 47
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/traces/tests/model/trace-tree-flame.test.ts"
-ceiling = 23
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/traces/tests/model/trace-tree.test.ts"
-ceiling = 33
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/lib/__tests__/where-clause.test.ts"
-ceiling = 27
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/platform/browser/tests/use-page-visible.test.tsx"
-ceiling = 3
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/platform/graphql/tests/transport.test.ts"
-ceiling = 12
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/platform/sse/tests/use-live-stream.test.tsx"
-ceiling = 21
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/__tests__/-alerts.test.tsx"
-ceiling = 35
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/ecosystem/tests/model/ecosystem-search.test.ts"
-ceiling = 2
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/traces/tests/model/traces-search.test.tsx"
-ceiling = 11
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/layout/command-palette.tsx"
-ceiling = 370
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/traces/components/trace-waterfall.tsx"
-ceiling = 675
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/components/ui/chart.tsx"
-ceiling = 334
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/components/ui/sidebar.tsx"
-ceiling = 676
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/traces/model/trace-tree.ts"
-ceiling = 351
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/alerts.index.tsx"
-ceiling = 642
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/routes/metrics.$metricName.tsx"
-ceiling = 419
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/traces/components/trace-detail-page.tsx"
-ceiling = 1598
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/traces/components/traces-page.tsx"
-ceiling = 876
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/shared/console/facet-sidebar.tsx:29"
-ceiling = 16
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/shared/console/top-movers.tsx:85"
-ceiling = 30
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/shared/console/where-clause-editor.tsx:109"
-ceiling = 32
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/shared/console/where-clause-editor.tsx:47"
-ceiling = 24
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/ui/chart.tsx:149"
-ceiling = 16
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/ui/chart.tsx:202"
-ceiling = 36
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/components/ui/chart.tsx:330"
-ceiling = 22
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/alert-incident-timeline.ts:56"
-ceiling = 36
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/alert-rule-form.ts:52"
-ceiling = 25
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/color-by.ts:118"
-ceiling = 19
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/colors.ts:103"
-ceiling = 19
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/invocation.ts:36"
-ceiling = 18
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/invocation.ts:83"
-ceiling = 20
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/log-histogram-brush.ts:29"
-ceiling = 16
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/metric-aggregation.ts:83"
-ceiling = 37
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/where-clause.ts:153"
-ceiling = 18
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/where-clause.ts:181"
-ceiling = 47
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/lib/where-clause.ts:77"
-ceiling = 42
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/shared/console/where-clause-editor.tsx:109"
-ceiling = 15
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/components/ui/chart.tsx:202"
-ceiling = 18
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/lib/alert-incident-timeline.ts:56"
-ceiling = 19
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/lib/alert-rule-form.ts:52"
-ceiling = 17
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/lib/colors.ts:103"
-ceiling = 15
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/lib/metric-aggregation.ts:142"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/lib/metric-aggregation.ts:83"
-ceiling = 16
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/lib/where-clause.ts:181"
-ceiling = 21
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/lib/where-clause.ts:77"
-ceiling = 15
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/shared/console/tests/kit.test.tsx:21"
-ceiling = 71
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/shared/console/tests/use-chart-brush.test.tsx:15"
-ceiling = 62
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/shared/console/tests/where-clause-editor.test.tsx:18"
-ceiling = 92
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/shared/console/agent-session.tsx:76"
-ceiling = 78
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/layout/command-palette.tsx:114"
-ceiling = 280
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/shared/console/duration-filter.tsx:45"
-ceiling = 126
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/shared/console/facet-sidebar.tsx:29"
-ceiling = 108
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/shared/console/top-movers.tsx:85"
-ceiling = 77
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/shared/console/use-chart-brush.ts:54"
-ceiling = 87
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/shared/console/where-clause-editor.tsx:18"
-ceiling = 164
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/ui/calendar.tsx:15"
-ceiling = 163
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/ui/chart.tsx:119"
-ceiling = 153
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/ui/chart.tsx:202"
-ceiling = 66
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/ui/sidebar.tsx:153"
-ceiling = 101
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/components/ui/sidebar.tsx:57"
-ceiling = 95
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/shared/hooks/tests/use-timeline-interactions.test.tsx:59"
-ceiling = 102
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/shared/hooks/use-timeline-interactions.ts:71"
-ceiling = 176
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/__tests__/alert-incident-timeline.test.ts:8"
-ceiling = 71
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/__tests__/format.test.ts:15"
-ceiling = 67
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/__tests__/where-clause.test.ts:11"
-ceiling = 126
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/alert-incident-timeline.ts:56"
-ceiling = 76
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/timeline-viewport.ts:107"
-ceiling = 64
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/where-clause.ts:181"
-ceiling = 80
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/lib/where-clause.ts:77"
-ceiling = 75
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/platform/sse/tests/use-live-stream.test.tsx:77"
-ceiling = 146
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/alerts.index.tsx:115"
-ceiling = 243
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/alerts.index.tsx:405"
-ceiling = 174
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/alerts.index.tsx:580"
-ceiling = 88
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/metrics.$metricName.tsx:113"
-ceiling = 74
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/metrics.$metricName.tsx:202"
-ceiling = 238
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/lib/format.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/platform/graphql/transport.ts"
-ceiling = 1
-
-# # Plan 100: UI ownership ledger (machine-checked by ui.architecture)
-# path = live file; current_owner = present role; target_owner = final home;
-# migration_plan = plan that moves or hardens the file; kind classifies origin.
-# ---------------------------------------------------------------------------
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/platform/sse/live-stream-controller.ts:37"
-ceiling = 112
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/platform/sse/use-live-stream.ts:109"
-ceiling = 62
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/platform/sse/use-live-stream.ts:39"
-ceiling = 69
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/dashboards/api/widget-series-operation.ts:52"
-ceiling = 103
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/dashboards/api/widget-series-operation.ts:69"
-ceiling = 67
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/platform/graphql/tests/client.test.ts:35"
-ceiling = 186
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/platform/graphql/generated/schema-types.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/platform/graphql/tests/fixtures/static-probe.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/dashboards/tests/api/widget-series-contract.test.ts"
-ceiling = 26
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/platform/external-values/tests/boundary-diagnostic.test.ts"
-ceiling = 4
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/platform/external-values/tests/decode-json-text.test.ts"
-ceiling = 9
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/platform/graphql/tests/client.test.ts"
-ceiling = 21
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/platform/graphql/tests/generation-contract.test.ts"
-ceiling = 7
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/platform/graphql/tests/variables.test.ts"
-ceiling = 6
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/platform/sse/tests/live-stream-controller.test.ts"
-ceiling = 8
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/platform/storage/tests/browser-storage-client.test.ts"
-ceiling = 6
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/platform/storage/tests/versioned-storage-codec.test.ts"
-ceiling = 8
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/platform/url/tests/decode-search-value.test.ts"
-ceiling = 2
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/platform/visibility/tests/use-page-visible.test.tsx"
-ceiling = 3
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/platform/graphql/generated/schema-types.generated.ts"
-ceiling = 1427
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/dashboards/api/widget-series-api.ts:83"
-ceiling = 19
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/dashboards/api/widget-series-operation.ts:191"
-ceiling = 32
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/platform/external-values/boundary-error.ts:32"
-ceiling = 31
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/platform/graphql/client.ts:200"
-ceiling = 20
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/platform/graphql/variables.ts:17"
-ceiling = 21
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/dashboards/api/widget-series-api.ts:83"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/dashboards/api/widget-series-operation.ts:191"
-ceiling = 16
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/platform/graphql/variables.ts:17"
-ceiling = 15
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/platform/sse/tests/live-stream-controller.test.ts:45"
-ceiling = 69
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/platform/external-values/tests/decode-json-text.test.ts:29"
-ceiling = 63
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/platform/storage/versioned-storage-codec.ts:32"
-ceiling = 63
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/time-range/components/range-picker.tsx:19"
-ceiling = 80
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/runtime-metrics/api/runtime-metrics.generated.ts"
-ceiling = 433
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/runtime-metrics/api/runtime-metrics.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/services/tests/components/services-contracts.test.tsx"
-ceiling = 44
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/tests/-services-routes.test.tsx"
-ceiling = 4
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/services/api/service-detail.generated.ts"
-ceiling = 1064
-
-
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/services/model/service-summary.ts:47"
-ceiling = 13
-
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/services/components/service-recent-traces.tsx:22"
-ceiling = 69
-
-
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/services/components/services-page.tsx:77"
-ceiling = 85
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/services/components/services-table.tsx:27"
-ceiling = 165
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/services/components/services-table.tsx:95"
-ceiling = 92
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/services/tests/components/services-contracts.test.tsx:124"
-ceiling = 69
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/services/tests/components/services-contracts.test.tsx:194"
-ceiling = 125
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/services/api/service-detail.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/services/api/services-list.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/issues/tests/components/issues-contracts.test.tsx"
-ceiling = 15
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/issues/tests/model/stacktrace.test.ts"
-ceiling = 9
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/tests/-issues-routes.test.tsx"
-ceiling = 4
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/issues/api/issue-detail.generated.ts"
-ceiling = 342
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/issues/api/issues-list.generated.ts"
-ceiling = 340
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/issues/components/issue-detail-page.tsx"
-ceiling = 632
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/issues/components/issues-page.tsx"
-ceiling = 481
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/issues/components/issue-detail-page.tsx:439"
-ceiling = 26
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/issues/components/issues-page.tsx:134"
-ceiling = 17
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/issues/model/stacktrace.ts:51"
-ceiling = 26
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/issues/components/issue-detail-page.tsx:439"
-ceiling = 14
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/issues/components/issue-detail-page.tsx:84"
-ceiling = 14
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/issues/components/issues-page.tsx:260"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/issues/model/stacktrace.ts:51"
-ceiling = 14
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/issues/api/issues-api.ts:106"
-ceiling = 62
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/issues/components/issue-detail-page.tsx:370"
-ceiling = 68
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/issues/components/issue-detail-page.tsx:598"
-ceiling = 63
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/issues/components/issue-detail-page.tsx:84"
-ceiling = 231
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/issues/components/issues-page.tsx:134"
-ceiling = 125
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/issues/components/issues-page.tsx:260"
-ceiling = 237
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/issues/components/issues-page.tsx:338"
-ceiling = 123
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/issues/model/stacktrace.ts:51"
-ceiling = 112
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/issues/tests/components/issues-contracts.test.tsx:89"
-ceiling = 92
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/issues/tests/model/stacktrace.test.ts:8"
-ceiling = 83
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/issues/api/issue-correlation.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/issues/api/issue-detail.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/issues/api/issue-occurrences.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/issues/api/issue-status.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/issues/api/issues-list.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/logs/tests/components/logs-contracts.test.tsx"
-ceiling = 43
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/tests/-logs-routes.test.tsx"
-ceiling = 2
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/logs/components/logs-page.tsx"
-ceiling = 931
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/logs/components/logs-table.tsx"
-ceiling = 507
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/logs/components/logs-page.tsx:216"
-ceiling = 113
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/logs/components/logs-table.tsx:109"
-ceiling = 27
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/logs/components/logs-table.tsx:148"
-ceiling = 23
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/logs/components/logs-table.tsx:258"
-ceiling = 18
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/logs/model/logs-search.ts:35"
-ceiling = 26
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/logs/components/logs-page.tsx:216"
-ceiling = 38
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/logs/components/logs-table.tsx:109"
-ceiling = 15
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/logs/components/logs-table.tsx:258"
-ceiling = 16
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/logs/model/logs-search.ts:35"
-ceiling = 19
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/logs/model/logs-search.ts:80"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/logs/components/logs-page.tsx:216"
-ceiling = 540
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/logs/components/logs-page.tsx:761"
-ceiling = 88
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/logs/components/logs-page.tsx:892"
-ceiling = 61
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/logs/components/logs-table.tsx:188"
-ceiling = 68
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/logs/components/logs-table.tsx:258"
-ceiling = 273
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/logs/components/logs-table.tsx:330"
-ceiling = 65
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/logs/tests/components/logs-contracts.test.tsx:168"
-ceiling = 72
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/invocations/tests/components/invocations-contracts.test.tsx"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/invocations/tests/components/session-journey.test.tsx"
-ceiling = 7
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/invocations/tests/components/tabs.test.tsx"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/tests/-invocations-routes.test.tsx"
-ceiling = 4
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/invocations/components/invocation-hub-page.tsx"
-ceiling = 543
-
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:297"
-ceiling = 29
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/invocations/components/invocations-table.tsx:68"
-ceiling = 16
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/invocations/components/session-journey.tsx:177"
-ceiling = 28
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/invocations/components/session-journey.tsx:47"
-ceiling = 22
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/invocations/components/sessions-tab.tsx:28"
-ceiling = 19
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:297"
-ceiling = 24
-
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/invocations/components/invocations-table.tsx:68"
-ceiling = 15
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/invocations/components/session-journey.tsx:177"
-ceiling = 17
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/invocations/components/session-journey.tsx:47"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/invocations/components/sessions-tab.tsx:28"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/invocation-errors-tab.tsx:34"
-ceiling = 85
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:122"
-ceiling = 61
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:201"
-ceiling = 95
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:297"
-ceiling = 210
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:508"
-ceiling = 63
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/invocation-traces-tab.tsx:51"
-ceiling = 85
-
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/invocations-table.tsx:68"
-ceiling = 103
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/jobs-cycles-tab.tsx:114"
-ceiling = 87
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/jobs-cycles-tab.tsx:133"
-ceiling = 61
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/jobs-cycles-tab.tsx:44"
-ceiling = 69
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/session-journey.tsx:177"
-ceiling = 113
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/session-journey.tsx:47"
-ceiling = 66
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/sessions-tab.tsx:155"
-ceiling = 68
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/sessions-tab.tsx:224"
-ceiling = 66
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/sessions-tab.tsx:28"
-ceiling = 126
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/tests/components/tabs.test.tsx:75"
-ceiling = 73
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/overview/tests/components/overview-contracts.test.tsx"
-ceiling = 23
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/tests/-overview-routes.test.tsx"
-ceiling = 2
-
-
-
-
-
-
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/overview/tests/components/overview-contracts.test.tsx:135"
-ceiling = 78
-
 [[ui.ownership]]
 path = "ui/src/features/investigations/api/investigation-api.ts"
 current_owner = "features/investigations"
@@ -3291,10 +2017,10 @@ migration_plan = "149"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/shared/hooks/tests/use-timeline-interactions.test.tsx"
-current_owner = "legacy-hooks-tests"
+path = "ui/src/features/traces/tests/hooks/use-timeline-interactions.test.tsx"
+current_owner = "features/traces"
 target_owner = "features/traces"
-migration_plan = "142"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -3312,52 +2038,52 @@ migration_plan = "143"
 kind = "compatibility-reexport"
 
 [[ui.ownership]]
-path = "ui/src/shared/hooks/use-timeline-interactions.ts"
-current_owner = "legacy-hooks"
+path = "ui/src/features/traces/hooks/use-timeline-interactions.ts"
+current_owner = "features/traces"
 target_owner = "features/traces"
-migration_plan = "142"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/-invocation.test.ts"
-current_owner = "legacy-lib-tests"
-target_owner = "features/runs"
-migration_plan = "140"
+path = "ui/src/features/invocations/tests/model/invocation.test.ts"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/alert-incident-timeline.test.ts"
-current_owner = "legacy-lib-tests"
+path = "ui/src/features/alerts/tests/model/alert-incident-timeline.test.ts"
+current_owner = "features/alerts"
 target_owner = "features/alerts"
-migration_plan = "alerts"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/alert-rule-form.test.ts"
-current_owner = "legacy-lib-tests"
+path = "ui/src/features/alerts/tests/model/alert-rule-form.test.ts"
+current_owner = "features/alerts"
 target_owner = "features/alerts"
-migration_plan = "alerts"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/color-by.test.ts"
-current_owner = "legacy-lib-tests"
-target_owner = "shared/lib/color-by"
-migration_plan = "100"
+path = "ui/src/shared/tests/color-by.test.ts"
+current_owner = "shared"
+target_owner = "shared"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/colors.test.ts"
-current_owner = "legacy-lib-tests"
-target_owner = "shared/lib/colors"
-migration_plan = "100"
+path = "ui/src/shared/tests/colors.test.ts"
+current_owner = "shared"
+target_owner = "shared"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/format.test.ts"
-current_owner = "legacy-lib-tests"
-target_owner = "shared/lib/format"
-migration_plan = "100"
+path = "ui/src/shared/tests/format.test.ts"
+current_owner = "shared"
+target_owner = "shared"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -3368,45 +2094,45 @@ migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/invocation-facets.test.ts"
-current_owner = "legacy-lib-tests"
-target_owner = "features/runs"
-migration_plan = "140"
+path = "ui/src/features/invocations/tests/model/invocation-facets.test.ts"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/log-histogram-brush.test.ts"
-current_owner = "legacy-lib-tests"
+path = "ui/src/features/logs/tests/model/log-histogram-brush.test.ts"
+current_owner = "features/logs"
 target_owner = "features/logs"
-migration_plan = "141"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/log-pattern-match.test.ts"
-current_owner = "legacy-lib-tests"
+path = "ui/src/features/logs/tests/model/log-pattern-match.test.ts"
+current_owner = "features/logs"
 target_owner = "features/logs"
-migration_plan = "141"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/log-patterns-url.test.ts"
-current_owner = "legacy-lib-tests"
+path = "ui/src/features/logs/tests/model/log-patterns-url.test.ts"
+current_owner = "features/logs"
 target_owner = "features/logs"
-migration_plan = "141"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/log-table-prefs.test.ts"
-current_owner = "legacy-lib-tests"
+path = "ui/src/features/logs/tests/model/log-table-prefs.test.ts"
+current_owner = "features/logs"
 target_owner = "features/logs"
-migration_plan = "141"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/metric-aggregation.test.ts"
-current_owner = "legacy-lib-tests"
+path = "ui/src/features/runtime-metrics/tests/model/metric-aggregation.test.ts"
+current_owner = "features/runtime-metrics"
 target_owner = "features/runtime-metrics"
-migration_plan = "149"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -3417,17 +2143,17 @@ migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/timeline-minimap.test.ts"
-current_owner = "legacy-lib-tests"
+path = "ui/src/features/traces/tests/model/timeline-minimap.test.ts"
+current_owner = "features/traces"
 target_owner = "features/traces"
-migration_plan = "142"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/timeline-viewport.test.ts"
-current_owner = "legacy-lib-tests"
+path = "ui/src/features/traces/tests/model/timeline-viewport.test.ts"
+current_owner = "features/traces"
 target_owner = "features/traces"
-migration_plan = "142"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -3445,59 +2171,52 @@ migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/__tests__/where-clause.test.ts"
-current_owner = "legacy-lib-tests"
-target_owner = "features/traces"
-migration_plan = "142"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/lib/alert-incident-timeline.ts"
-current_owner = "legacy-lib"
-target_owner = "features/alerts"
-migration_plan = "alerts"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/lib/alert-rule-form.ts"
-current_owner = "legacy-lib"
-target_owner = "features/alerts"
-migration_plan = "alerts"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/lib/alerts-gql.ts"
-current_owner = "legacy-lib"
-target_owner = "features/alerts"
-migration_plan = "alerts"
-kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/lib/api.ts"
-current_owner = "compatibility-reexport"
-target_owner = "platform/graphql+feature-dtos"
+path = "ui/src/shared/tests/where-clause.test.ts"
+current_owner = "shared"
+target_owner = "shared"
 migration_plan = "151"
-kind = "compatibility-reexport"
-
-[[ui.ownership]]
-path = "ui/src/lib/color-by.ts"
-current_owner = "legacy-lib"
-target_owner = "shared/lib/color-by"
-migration_plan = "100"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/colors.ts"
-current_owner = "legacy-lib"
-target_owner = "shared/lib/colors"
-migration_plan = "100"
+path = "ui/src/features/alerts/model/alert-incident-timeline.ts"
+current_owner = "features/alerts"
+target_owner = "features/alerts"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/format.ts"
-current_owner = "legacy-lib"
-target_owner = "shared/lib/format"
-migration_plan = "100"
+path = "ui/src/features/alerts/model/alert-rule-form.ts"
+current_owner = "features/alerts"
+target_owner = "features/alerts"
+migration_plan = "151"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/alerts/api/alerts-gql.ts"
+current_owner = "features/alerts"
+target_owner = "features/alerts"
+migration_plan = "151"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/shared/color-by.ts"
+current_owner = "shared"
+target_owner = "shared"
+migration_plan = "151"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/shared/colors.ts"
+current_owner = "shared"
+target_owner = "shared"
+migration_plan = "151"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/shared/format.ts"
+current_owner = "shared"
+target_owner = "shared"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -3508,60 +2227,53 @@ migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/invocation-facets.ts"
-current_owner = "legacy-lib"
-target_owner = "features/runs"
-migration_plan = "140"
+path = "ui/src/features/invocations/model/invocation-facets.ts"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/invocation.ts"
-current_owner = "legacy-lib"
-target_owner = "features/runs"
-migration_plan = "140"
+path = "ui/src/features/invocations/model/invocation.ts"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/log-histogram-brush.ts"
-current_owner = "legacy-lib"
+path = "ui/src/features/logs/model/log-histogram-brush.ts"
+current_owner = "features/logs"
 target_owner = "features/logs"
-migration_plan = "141"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/log-pattern-match.ts"
-current_owner = "legacy-lib"
+path = "ui/src/features/logs/model/log-pattern-match.ts"
+current_owner = "features/logs"
 target_owner = "features/logs"
-migration_plan = "141"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/log-patterns-url.ts"
-current_owner = "legacy-lib"
+path = "ui/src/features/logs/model/log-patterns-url.ts"
+current_owner = "features/logs"
 target_owner = "features/logs"
-migration_plan = "141"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/log-table-prefs.ts"
-current_owner = "legacy-lib"
+path = "ui/src/features/logs/model/log-table-prefs.ts"
+current_owner = "features/logs"
 target_owner = "features/logs"
-migration_plan = "141"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/metric-aggregation.ts"
-current_owner = "legacy-lib"
+path = "ui/src/features/runtime-metrics/model/metric-aggregation.ts"
+current_owner = "features/runtime-metrics"
 target_owner = "features/runtime-metrics"
-migration_plan = "149"
+migration_plan = "151"
 kind = "handwritten"
-
-[[ui.ownership]]
-path = "ui/src/lib/range.ts"
-current_owner = "compatibility-reexport"
-target_owner = "domain/time-range"
-migration_plan = "149"
-kind = "compatibility-reexport"
 
 [[ui.ownership]]
 path = "ui/src/features/traces/model/rpc-streams.ts"
@@ -3571,17 +2283,17 @@ migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/timeline-minimap.ts"
-current_owner = "legacy-lib"
+path = "ui/src/features/traces/model/timeline-minimap.ts"
+current_owner = "features/traces"
 target_owner = "features/traces"
-migration_plan = "142"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/timeline-viewport.ts"
-current_owner = "legacy-lib"
+path = "ui/src/features/traces/model/timeline-viewport.ts"
+current_owner = "features/traces"
 target_owner = "features/traces"
-migration_plan = "142"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -3592,13 +2304,6 @@ migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/use-visible.ts"
-current_owner = "compatibility-reexport"
-target_owner = "platform/browser"
-migration_plan = "151"
-kind = "compatibility-reexport"
-
-[[ui.ownership]]
 path = "ui/src/lib/utils.ts"
 current_owner = "shadcn"
 target_owner = "shadcn"
@@ -3606,10 +2311,10 @@ migration_plan = "none"
 kind = "shadcn"
 
 [[ui.ownership]]
-path = "ui/src/lib/where-clause.ts"
-current_owner = "legacy-lib"
-target_owner = "features/traces"
-migration_plan = "142"
+path = "ui/src/shared/where-clause.ts"
+current_owner = "shared"
+target_owner = "shared"
+migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
@@ -4588,51 +3293,6 @@ target_owner = "test-support"
 migration_plan = "129"
 kind = "test-support"
 
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/investigations/tests/model/investigation-state.test.ts"
-ceiling = 8
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/investigations/components/investigation-detail-page.tsx:62"
-ceiling = 209
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/investigations/components/investigations-page.tsx:45"
-ceiling = 151
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/investigations/components/pin-button.tsx:33"
-ceiling = 169
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/investigations/api/investigation-delete.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/investigations/api/investigation-detail.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/investigations/api/investigation-pin-options.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/investigations/api/investigation-save.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/investigations/api/investigations-list.generated.ts"
-ceiling = 1
-
 [[ui.ownership]]
 path = "ui/src/features/sql/api/sql-api.ts"
 current_owner = "features/sql"
@@ -4851,91 +3511,6 @@ target_owner = "features/sql"
 migration_plan = "none"
 kind = "handwritten"
 
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/sql/api/sql-execute.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/sql/api/sql-schema.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/sql/api/sql-snippet-delete.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/sql/api/sql-snippet-save.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/sql/api/sql-snippets-list.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/sql/tests/api/sql-history-repository.test.ts"
-ceiling = 7
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/sql/tests/components/snippets-menu.test.tsx"
-ceiling = 3
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/sql/tests/components/sql-results-table.test.tsx"
-ceiling = 3
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/sql/tests/model/sql-cell-target.test.ts"
-ceiling = 7
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/sql/tests/model/sql-history.test.ts"
-ceiling = 8
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/sql/tests/model/sql-result.test.ts"
-ceiling = 7
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/tests/-sql-route.test.tsx"
-ceiling = 3
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/sql/model/sql-cell-target.ts:21"
-ceiling = 17
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/sql/components/snippets-menu.tsx:15"
-ceiling = 62
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/sql/components/sql-editor.tsx:18"
-ceiling = 83
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/sql/components/sql-page.tsx:13"
-ceiling = 69
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/sql/hooks/use-sql-workspace.ts:47"
-ceiling = 133
-
 [[ui.ownership]]
 path = "ui/src/features/ecosystem/api/service-map-api.ts"
 current_owner = "features/ecosystem"
@@ -5063,37 +3638,12 @@ target_owner = "features/ecosystem"
 migration_plan = "none"
 kind = "handwritten"
 
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/ecosystem/api/service-map.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/ecosystem/model/ecosystem-topology.ts:78"
-ceiling = 17
-
 [[ui.ownership]]
-path = "ui/src/lib/overview-chart-helpers.ts"
-current_owner = "legacy-lib"
+path = "ui/src/features/overview/model/overview-chart-helpers.ts"
+current_owner = "features/overview"
 target_owner = "features/overview"
-migration_plan = "150"
+migration_plan = "151"
 kind = "handwritten"
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/ecosystem/components/ecosystem-controls.tsx:11"
-ceiling = 79
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/ecosystem/components/ecosystem-graph.tsx:137"
-ceiling = 120
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/ecosystem/components/ecosystem-page.tsx:17"
-ceiling = 73
 
 [[ui.ownership]]
 path = "ui/src/features/dashboards/api/dashboard-api.ts"
@@ -5187,26 +3737,6 @@ target_owner = "features/dashboards"
 migration_plan = "none"
 kind = "handwritten"
 
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/dashboards/api/dashboard-delete.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/dashboards/api/dashboard-detail.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/dashboards/api/dashboard-save.generated.ts"
-ceiling = 1
-
-[[limits]]
-metric = "typescript.suppressions"
-scope = "ui/src/features/dashboards/api/dashboards-list.generated.ts"
-ceiling = 1
-
 [[ui.ownership]]
 path = "ui/src/features/ecosystem/model/service-map-layout-engine.ts"
 current_owner = "features/ecosystem"
@@ -5235,82 +3765,12 @@ target_owner = "platform/visibility"
 migration_plan = "none"
 kind = "handwritten"
 
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/dashboards/components/dashboards-page.tsx:63"
-ceiling = 182
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/dashboards/model/widget-data.ts:45"
-ceiling = 22
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/dashboards/components/dashboard-detail-page.tsx:64"
-ceiling = 191
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/dashboards/components/dashboard-detail-page.tsx:256"
-ceiling = 117
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/dashboards/components/dashboards-page.tsx:246"
-ceiling = 77
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/dashboards/components/dashboards-page.tsx:324"
-ceiling = 91
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/dashboards/components/dashboards-page.tsx:416"
-ceiling = 65
-
 [[ui.ownership]]
 path = "ui/src/features/dashboards/tests/components/dashboard-contracts.test.tsx"
 current_owner = "features/dashboards"
 target_owner = "features/dashboards"
 migration_plan = "none"
 kind = "handwritten"
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/dashboards/components/dashboard-detail-page.tsx"
-ceiling = 361
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/dashboards/components/dashboards-page.tsx"
-ceiling = 464
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/dashboards/tests/components/dashboard-contracts.test.tsx:67"
-ceiling = 135
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/dashboards/tests/components/dashboard-contracts.test.tsx"
-ceiling = 14
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/ecosystem/model/service-map-layout-engine.ts:99"
-ceiling = 36
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/ecosystem/model/service-map-layout-engine.ts:99"
-ceiling = 19
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/ecosystem/model/service-map-layout-engine.ts:99"
-ceiling = 65
 
 [[ui.ownership]]
 path = "ui/src/features/traces/index.ts"
@@ -5460,281 +3920,6 @@ target_owner = "routes-tests"
 migration_plan = "none"
 kind = "handwritten"
 
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/traces/tests/components/trace-attribute-compare.test.tsx"
-ceiling = 7
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/traces/tests/components/trace-evidence-gaps.test.tsx"
-ceiling = 5
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/traces/tests/components/trace-field-explorer.test.tsx"
-ceiling = 8
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/traces/tests/components/trace-flamegraph.test.tsx"
-ceiling = 5
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/traces/tests/components/trace-graphql-operations.test.tsx"
-ceiling = 8
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/traces/tests/components/trace-graphql-section.test.tsx"
-ceiling = 3
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/traces/tests/components/trace-links.test.tsx"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/traces/tests/components/trace-rpc-section.test.tsx"
-ceiling = 9
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/traces/tests/components/trace-rpc-streams.test.tsx"
-ceiling = 6
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/features/traces/tests/components/trace-view-modes.test.tsx"
-ceiling = 9
-
-[[limits]]
-metric = "typescript.assertions"
-scope = "ui/src/routes/tests/-traces-routes.test.tsx"
-ceiling = 5
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/traces/components/trace-field-explorer.tsx"
-ceiling = 397
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/traces/components/trace-detail-page.tsx:1416"
-ceiling = 16
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/traces/components/trace-detail-page.tsx:163"
-ceiling = 17
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/traces/components/trace-detail-page.tsx:303"
-ceiling = 33
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/traces/components/trace-field-explorer.tsx:166"
-ceiling = 18
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/traces/components/trace-waterfall.tsx:334"
-ceiling = 24
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/traces/components/traces-page.tsx:371"
-ceiling = 69
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/traces/model/graphql-operations.ts:146"
-ceiling = 19
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/traces/model/graphql-operations.ts:226"
-ceiling = 28
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/traces/model/trace-tree.ts:222"
-ceiling = 49
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/traces/model/trace-tree.ts:289"
-ceiling = 16
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/traces/model/trace-tree.ts:335"
-ceiling = 24
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/traces/components/trace-detail-page.tsx:1416"
-ceiling = 16
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/traces/components/trace-detail-page.tsx:303"
-ceiling = 30
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/traces/components/trace-waterfall.tsx:334"
-ceiling = 18
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/traces/components/traces-page.tsx:371"
-ceiling = 34
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/traces/model/graphql-operations.ts:226"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/traces/model/trace-tree.ts:222"
-ceiling = 20
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/traces/model/trace-tree.ts:335"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/components/trace-attribute-compare.tsx:50"
-ceiling = 61
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/components/trace-detail-page.tsx:1157"
-ceiling = 90
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/components/trace-detail-page.tsx:1248"
-ceiling = 68
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/components/trace-detail-page.tsx:1416"
-ceiling = 212
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/components/trace-detail-page.tsx:303"
-ceiling = 503
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/components/trace-field-explorer.tsx:166"
-ceiling = 248
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/components/trace-field-explorer.tsx:91"
-ceiling = 74
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/components/trace-flamegraph.tsx:31"
-ceiling = 89
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/components/trace-rpc-streams.tsx:102"
-ceiling = 70
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/components/trace-rpc-streams.tsx:107"
-ceiling = 62
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/components/trace-waterfall.tsx:334"
-ceiling = 106
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/components/trace-waterfall.tsx:99"
-ceiling = 600
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/components/traces-page.tsx:371"
-ceiling = 452
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/components/traces-page.tsx:824"
-ceiling = 89
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/model/graphql-operations.ts:146"
-ceiling = 152
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/model/graphql-operations.ts:226"
-ceiling = 61
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/model/trace-tree.ts:335"
-ceiling = 61
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/tests/components/trace-links.test.tsx:48"
-ceiling = 68
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/tests/components/trace-links.test.tsx:49"
-ceiling = 66
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/tests/components/trace-view-modes.test.tsx:15"
-ceiling = 61
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/tests/components/trace-waterfall.test.tsx:107"
-ceiling = 82
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/tests/model/graphql-operations.test.ts:24"
-ceiling = 150
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/tests/model/rpc-streams.test.ts:48"
-ceiling = 108
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/tests/model/trace-tree.test.ts:170"
-ceiling = 86
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/traces/tests/model/trace-tree.test.ts:34"
-ceiling = 235
-
 [[ui.ownership]]
 path = "ui/src/app/create-router.tsx"
 current_owner = "app"
@@ -5848,87 +4033,6 @@ current_owner = "features/quick-navigation"
 target_owner = "features/quick-navigation"
 migration_plan = "none"
 kind = "handwritten"
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/layout/app-shell.tsx:154"
-ceiling = 94
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/layout/app-shell.tsx:61"
-ceiling = 61
-
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/invocations/components/invocations-page.tsx"
-ceiling = 369
-
-[[limits]]
-metric = "typescript.file-lines"
-scope = "ui/src/features/overview/components/overview-page.tsx"
-ceiling = 907
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/overview/components/overview-page.tsx:611"
-ceiling = 16
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/services/components/service-detail-page.tsx:67"
-ceiling = 17
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/invocations/components/invocations-page.tsx:220"
-ceiling = 15
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/overview/components/overview-page.tsx:611"
-ceiling = 14
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/services/components/service-detail-page.tsx:67"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/invocations-page.tsx:220"
-ceiling = 171
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/overview/components/overview-page.tsx:270"
-ceiling = 186
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/overview/components/overview-page.tsx:462"
-ceiling = 142
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/overview/components/overview-page.tsx:611"
-ceiling = 169
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/services/components/service-detail-page.tsx:67"
-ceiling = 134
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/services/components/service-red-charts.tsx:115"
-ceiling = 139
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/services/components/service-red-charts.tsx:52"
-ceiling = 62
 
 [[limits]]
 metric = "agent-doc-bytes"
@@ -6615,66 +4719,6 @@ metric = "rust.test-wall-clocks"
 scope = "crates/parallax-server/tests/m9_attribute_filters_greptime.rs"
 ceiling = 1
 
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/overview/components/overview-page.tsx:611"
-ceiling = 16
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/services/components/service-detail-page.tsx:67"
-ceiling = 17
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/invocations/components/invocations-page.tsx:220"
-ceiling = 15
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/overview/components/overview-page.tsx:611"
-ceiling = 14
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/services/components/service-detail-page.tsx:67"
-ceiling = 13
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/invocations/components/invocations-page.tsx:220"
-ceiling = 171
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/overview/components/overview-page.tsx:270"
-ceiling = 186
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/overview/components/overview-page.tsx:462"
-ceiling = 142
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/overview/components/overview-page.tsx:611"
-ceiling = 169
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/services/components/service-detail-page.tsx:67"
-ceiling = 134
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/services/components/service-red-charts.tsx:115"
-ceiling = 139
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/services/components/service-red-charts.tsx:52"
-ceiling = 62
-
 [[rust_suppressions]]
 crate_name = "parallax-analysis"
 lint = "clippy::cast_possible_truncation"
@@ -6809,3 +4853,1849 @@ reason = "private evaluation tick composition reports through the typed outcome 
 path = "crates/parallax-server/src/alerting/measurement_source.rs"
 ceiling = 15
 reason = "private measurement adapter composition is converted at the typed source trait"
+
+[[ui.ownership]]
+path = "ui/src/features/alerts/index.ts"
+current_owner = "features/alerts"
+target_owner = "features/alerts"
+migration_plan = "151"
+kind = "handwritten"
+facade = true
+
+[[ui.ownership]]
+path = "ui/src/features/logs/model/wire.ts"
+current_owner = "features/logs"
+target_owner = "features/logs"
+migration_plan = "151"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/logs/api/gql.ts"
+current_owner = "features/logs"
+target_owner = "features/logs"
+migration_plan = "151"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/traces/model/wire.ts"
+current_owner = "features/traces"
+target_owner = "features/traces"
+migration_plan = "151"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/invocations/model/wire.ts"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "151"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/invocations/api/gql.ts"
+current_owner = "features/invocations"
+target_owner = "features/invocations"
+migration_plan = "151"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/issues/model/issue-wire.ts"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "151"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/services/model/service-catalog-row.ts"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "151"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/domain/range.ts"
+current_owner = "domain/time-range"
+target_owner = "domain/time-range"
+migration_plan = "151"
+kind = "handwritten"
+
+[[ui.layer_exceptions]]
+source = "ui/src/layout/command-palette.tsx"
+target = "ui/src/platform/graphql/transport.ts"
+rule = "typescript.layer"
+owner = "layout"
+removal_plan = "151"
+reason = "command palette still uses raw GraphQL until a search capability owns the adapter"
+
+[[ui.layer_exceptions]]
+source = "ui/src/routes/metrics.index.tsx"
+target = "ui/src/platform/graphql/transport.ts"
+rule = "typescript.layer"
+owner = "routes/metrics"
+removal_plan = "151"
+reason = "metrics routes still load via raw transport until metrics feature facade owns loaders"
+
+[[ui.layer_exceptions]]
+source = "ui/src/routes/metrics.$metricName.tsx"
+target = "ui/src/platform/graphql/transport.ts"
+rule = "typescript.layer"
+owner = "routes/metrics"
+removal_plan = "151"
+reason = "metrics detail still loads via raw transport until metrics feature facade owns loaders"
+
+[[ui.layer_exceptions]]
+source = "ui/src/routes/alerts.index.tsx"
+target = "ui/src/platform/graphql/transport.ts"
+rule = "typescript.layer"
+owner = "features/alerts"
+removal_plan = "151"
+reason = "alerts index still embeds loaders; thin route adapter pending full alerts page move"
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/components/ui/__tests__/primitives.test.tsx"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/domain/runtime-metrics/tests/runtime-metric.test.ts"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/domain/story/tests/story-beat.test.ts"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/domain/time-range/tests/range.test.ts"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/alerts/tests/model/alert-incident-timeline.test.ts"
+ceiling = 9
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/alerts/tests/model/alert-rule-form.test.ts"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/dashboards/tests/api/widget-series-contract.test.ts"
+ceiling = 26
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/dashboards/tests/components/dashboard-contracts.test.tsx"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/ecosystem/tests/components/ecosystem-graph.test.tsx"
+ceiling = 9
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/ecosystem/tests/model/ecosystem-search.test.ts"
+ceiling = 2
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/ecosystem/tests/model/ecosystem-topology.test.ts"
+ceiling = 38
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/ecosystem/tests/model/ecosystem-url.test.ts"
+ceiling = 22
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/ecosystem/tests/model/service-map-layout.test.ts"
+ceiling = 11
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/investigations/tests/model/investigation-state.test.ts"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/invocations/tests/components/invocations-contracts.test.tsx"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/invocations/tests/components/session-journey.test.tsx"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/invocations/tests/components/tabs.test.tsx"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/invocations/tests/model/invocation-facets.test.ts"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/invocations/tests/model/invocation.test.ts"
+ceiling = 20
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/issues/tests/components/issues-contracts.test.tsx"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/issues/tests/model/stacktrace.test.ts"
+ceiling = 9
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/logs/tests/components/logs-contracts.test.tsx"
+ceiling = 43
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/logs/tests/model/log-histogram-brush.test.ts"
+ceiling = 17
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/logs/tests/model/log-pattern-match.test.ts"
+ceiling = 10
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/logs/tests/model/log-patterns-url.test.ts"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/logs/tests/model/log-table-prefs.test.ts"
+ceiling = 21
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/overview/tests/components/overview-contracts.test.tsx"
+ceiling = 23
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/quick-navigation/tests/quick-jump.test.ts"
+ceiling = 6
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/runtime-metrics/tests/api/runtime-metrics-api.test.ts"
+ceiling = 9
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/runtime-metrics/tests/components/metric-strip.test.tsx"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/runtime-metrics/tests/components/runtime-snapshot-card.test.tsx"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/runtime-metrics/tests/integration/use-runtime-metrics.test.tsx"
+ceiling = 6
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/runtime-metrics/tests/model/metric-aggregation.test.ts"
+ceiling = 35
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/services/tests/components/services-contracts.test.tsx"
+ceiling = 44
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/sql/tests/api/sql-history-repository.test.ts"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/sql/tests/components/snippets-menu.test.tsx"
+ceiling = 3
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/sql/tests/components/sql-results-table.test.tsx"
+ceiling = 3
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/sql/tests/model/sql-cell-target.test.ts"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/sql/tests/model/sql-history.test.ts"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/sql/tests/model/sql-result.test.ts"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/story/tests/components/story-timeline.test.tsx"
+ceiling = 6
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/time-range/tests/components/range-picker.test.tsx"
+ceiling = 3
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-attribute-compare.test.tsx"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-evidence-gaps.test.tsx"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-field-explorer.test.tsx"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-flamegraph.test.tsx"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-graphql-operations.test.tsx"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-graphql-section.test.tsx"
+ceiling = 3
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-links.test.tsx"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-rpc-section.test.tsx"
+ceiling = 9
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-rpc-streams.test.tsx"
+ceiling = 6
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-view-modes.test.tsx"
+ceiling = 9
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/components/trace-waterfall.test.tsx"
+ceiling = 25
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/hooks/use-timeline-interactions.test.tsx"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/model/graphql-operations.test.ts"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/model/rpc-streams.test.ts"
+ceiling = 10
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/model/timeline-minimap.test.ts"
+ceiling = 10
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/model/timeline-viewport.test.ts"
+ceiling = 47
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/model/trace-tree-flame.test.ts"
+ceiling = 23
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/model/trace-tree.test.ts"
+ceiling = 33
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/traces/tests/model/traces-search.test.tsx"
+ceiling = 11
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/layout/tests/application-shell.test.tsx"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/layout/tests/command-palette-composition.test.tsx"
+ceiling = 11
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/browser/tests/use-page-visible.test.tsx"
+ceiling = 3
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/external-values/tests/boundary-diagnostic.test.ts"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/external-values/tests/decode-json-text.test.ts"
+ceiling = 9
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/graphql/tests/client.test.ts"
+ceiling = 21
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/graphql/tests/generation-contract.test.ts"
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/graphql/tests/transport.test.ts"
+ceiling = 12
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/graphql/tests/variables.test.ts"
+ceiling = 6
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/sse/tests/live-stream-controller.test.ts"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/sse/tests/use-live-stream.test.tsx"
+ceiling = 21
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/storage/tests/browser-storage-client.test.ts"
+ceiling = 6
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/storage/tests/versioned-storage-codec.test.ts"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/url/tests/decode-search-value.test.ts"
+ceiling = 2
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/platform/visibility/tests/use-page-visible.test.tsx"
+ceiling = 3
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/__tests__/-alerts.test.tsx"
+ceiling = 35
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/tests/-invocations-routes.test.tsx"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/tests/-issues-routes.test.tsx"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/tests/-logs-routes.test.tsx"
+ceiling = 2
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/tests/-overview-routes.test.tsx"
+ceiling = 2
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/tests/-services-routes.test.tsx"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/tests/-sql-route.test.tsx"
+ceiling = 3
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/routes/tests/-traces-routes.test.tsx"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/shared/console/tests/agent-session.test.tsx"
+ceiling = 10
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/shared/console/tests/duration-filter.test.tsx"
+ceiling = 6
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/shared/console/tests/facet-sidebar.test.tsx"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/shared/console/tests/heat-cell.test.tsx"
+ceiling = 12
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/shared/console/tests/kit.test.tsx"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/shared/console/tests/top-movers.test.tsx"
+ceiling = 8
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/shared/console/tests/use-chart-brush.test.tsx"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/shared/console/tests/where-clause-editor.test.tsx"
+ceiling = 11
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/shared/tests/color-by.test.ts"
+ceiling = 17
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/shared/tests/colors.test.ts"
+ceiling = 18
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/shared/tests/components/page-header.test.tsx"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/shared/tests/format.test.ts"
+ceiling = 22
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/shared/tests/where-clause.test.ts"
+ceiling = 27
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/components/ui/chart.tsx"
+ceiling = 302
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/components/ui/sidebar.tsx"
+ceiling = 644
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/dashboards/components/dashboard-detail-page.tsx"
+ceiling = 332
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/dashboards/components/dashboards-page.tsx"
+ceiling = 440
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx"
+ceiling = 485
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/invocations/components/invocations-page.tsx"
+ceiling = 338
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/issues/api/issue-detail.generated.ts"
+ceiling = 336
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/issues/api/issues-list.generated.ts"
+ceiling = 334
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx"
+ceiling = 543
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/issues/components/issues-page.tsx"
+ceiling = 457
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/logs/components/logs-page.tsx"
+ceiling = 837
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/logs/components/logs-table.tsx"
+ceiling = 461
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/overview/components/overview-page.tsx"
+ceiling = 838
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/runtime-metrics/api/runtime-metrics.generated.ts"
+ceiling = 423
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/services/api/service-detail.generated.ts"
+ceiling = 1056
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx"
+ceiling = 1411
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/traces/components/trace-field-explorer.tsx"
+ceiling = 370
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/traces/components/trace-waterfall.tsx"
+ceiling = 602
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/traces/components/traces-page.tsx"
+ceiling = 783
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/features/traces/model/trace-tree.ts"
+ceiling = 327
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/layout/command-palette.tsx"
+ceiling = 362
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/platform/graphql/generated/schema-types.generated.ts"
+ceiling = 1414
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/alerts.index.tsx"
+ceiling = 579
+
+[[limits]]
+metric = "typescript.file-lines"
+scope = "ui/src/routes/metrics.$metricName.tsx"
+ceiling = 394
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/components/ui/chart.tsx:138"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/components/ui/chart.tsx:179"
+ceiling = 36
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/components/ui/chart.tsx:307"
+ceiling = 22
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/alerts/model/alert-incident-timeline.ts:56"
+ceiling = 36
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/alerts/model/alert-rule-form.ts:46"
+ceiling = 25
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/dashboards/api/widget-series-api.ts:83"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/dashboards/api/widget-series-operation.ts:191"
+ceiling = 32
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/dashboards/model/widget-data.ts:41"
+ceiling = 22
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/ecosystem/model/ecosystem-topology.ts:70"
+ceiling = 17
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/ecosystem/model/service-map-layout-engine.ts:92"
+ceiling = 36
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:271"
+ceiling = 29
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/invocations/components/invocations-table.tsx:68"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/invocations/components/session-journey.tsx:171"
+ceiling = 28
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/invocations/components/session-journey.tsx:47"
+ceiling = 22
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/invocations/components/sessions-tab.tsx:33"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/invocations/model/invocation.ts:36"
+ceiling = 18
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/invocations/model/invocation.ts:79"
+ceiling = 20
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:378"
+ceiling = 26
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/issues/components/issues-page.tsx:127"
+ceiling = 17
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/issues/model/stacktrace.ts:51"
+ceiling = 26
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/logs/components/logs-page.tsx:190"
+ceiling = 113
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/logs/components/logs-table.tsx:131"
+ceiling = 23
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/logs/components/logs-table.tsx:227"
+ceiling = 18
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/logs/components/logs-table.tsx:95"
+ceiling = 27
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/logs/model/log-histogram-brush.ts:29"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/logs/model/logs-search.ts:35"
+ceiling = 26
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/overview/components/overview-page.tsx:576"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/runtime-metrics/model/metric-aggregation.ts:73"
+ceiling = 37
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/services/components/service-detail-page.tsx:67"
+ceiling = 17
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/sql/model/sql-cell-target.ts:18"
+ceiling = 17
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx:1263"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx:136"
+ceiling = 17
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx:268"
+ceiling = 33
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/components/trace-field-explorer.tsx:165"
+ceiling = 18
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/components/trace-waterfall.tsx:302"
+ceiling = 24
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/components/traces-page.tsx:323"
+ceiling = 69
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/model/graphql-operations.ts:139"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/model/graphql-operations.ts:206"
+ceiling = 28
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/model/trace-tree.ts:211"
+ceiling = 49
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/model/trace-tree.ts:274"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/features/traces/model/trace-tree.ts:318"
+ceiling = 24
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/platform/external-values/boundary-error.ts:32"
+ceiling = 31
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/platform/graphql/client.ts:189"
+ceiling = 20
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/platform/graphql/variables.ts:17"
+ceiling = 21
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/shared/color-by.ts:113"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/shared/colors.ts:89"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/shared/console/facet-sidebar.tsx:29"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/shared/console/top-movers.tsx:94"
+ceiling = 30
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/shared/console/where-clause-editor.tsx:109"
+ceiling = 32
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/shared/console/where-clause-editor.tsx:47"
+ceiling = 24
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/shared/where-clause.ts:144"
+ceiling = 18
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/shared/where-clause.ts:172"
+ceiling = 47
+
+[[limits]]
+metric = "typescript.function-cognitive-complexity"
+scope = "ui/src/shared/where-clause.ts:68"
+ceiling = 42
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/components/ui/chart.tsx:179"
+ceiling = 18
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/alerts/model/alert-incident-timeline.ts:56"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/alerts/model/alert-rule-form.ts:46"
+ceiling = 17
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/dashboards/api/widget-series-api.ts:83"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/dashboards/api/widget-series-operation.ts:191"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/ecosystem/model/service-map-layout-engine.ts:92"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:271"
+ceiling = 24
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/invocations/components/invocations-page.tsx:207"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/invocations/components/invocations-table.tsx:68"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/invocations/components/session-journey.tsx:171"
+ceiling = 17
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/invocations/components/session-journey.tsx:47"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/invocations/components/sessions-tab.tsx:33"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:378"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:70"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/issues/components/issues-page.tsx:244"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/issues/model/stacktrace.ts:51"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/logs/components/logs-page.tsx:190"
+ceiling = 38
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/logs/components/logs-table.tsx:227"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/logs/components/logs-table.tsx:95"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/logs/model/logs-search.ts:35"
+ceiling = 19
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/logs/model/logs-search.ts:66"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/overview/components/overview-page.tsx:576"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/runtime-metrics/model/metric-aggregation.ts:130"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/runtime-metrics/model/metric-aggregation.ts:73"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/services/components/service-detail-page.tsx:67"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/services/model/service-summary.ts:47"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx:1263"
+ceiling = 16
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx:268"
+ceiling = 30
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/traces/components/trace-waterfall.tsx:302"
+ceiling = 18
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/traces/components/traces-page.tsx:323"
+ceiling = 34
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/traces/model/graphql-operations.ts:206"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/traces/model/trace-tree.ts:211"
+ceiling = 20
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/features/traces/model/trace-tree.ts:318"
+ceiling = 13
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/platform/graphql/variables.ts:17"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/shared/colors.ts:89"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/shared/console/where-clause-editor.tsx:109"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/shared/where-clause.ts:172"
+ceiling = 21
+
+[[limits]]
+metric = "typescript.function-cyclomatic-complexity"
+scope = "ui/src/shared/where-clause.ts:68"
+ceiling = 15
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/ui/calendar.tsx:11"
+ceiling = 131
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/ui/chart.tsx:111"
+ceiling = 138
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/ui/chart.tsx:179"
+ceiling = 66
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/ui/sidebar.tsx:146"
+ceiling = 101
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/components/ui/sidebar.tsx:53"
+ceiling = 92
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/alerts/model/alert-incident-timeline.ts:56"
+ceiling = 74
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/alerts/tests/model/alert-incident-timeline.test.ts:8"
+ceiling = 69
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/dashboards/api/widget-series-operation.ts:52"
+ceiling = 103
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/dashboards/api/widget-series-operation.ts:69"
+ceiling = 67
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/dashboards/components/dashboard-detail-page.tsx:239"
+ceiling = 105
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/dashboards/components/dashboard-detail-page.tsx:53"
+ceiling = 185
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/dashboards/components/dashboards-page.tsx:236"
+ceiling = 71
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/dashboards/components/dashboards-page.tsx:308"
+ceiling = 85
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/dashboards/components/dashboards-page.tsx:394"
+ceiling = 63
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/dashboards/components/dashboards-page.tsx:60"
+ceiling = 175
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/dashboards/tests/components/dashboard-contracts.test.tsx:67"
+ceiling = 133
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/ecosystem/components/ecosystem-controls.tsx:11"
+ceiling = 72
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/ecosystem/components/ecosystem-graph.tsx:120"
+ceiling = 118
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/ecosystem/components/ecosystem-page.tsx:17"
+ceiling = 70
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/investigations/components/investigation-detail-page.tsx:57"
+ceiling = 193
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/investigations/components/investigations-page.tsx:45"
+ceiling = 141
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/investigations/components/pin-button.tsx:33"
+ceiling = 150
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocation-errors-tab.tsx:34"
+ceiling = 85
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:186"
+ceiling = 84
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocation-hub-page.tsx:271"
+ceiling = 197
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocation-traces-tab.tsx:48"
+ceiling = 76
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocations-page.tsx:207"
+ceiling = 152
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/invocations-table.tsx:68"
+ceiling = 89
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/jobs-cycles-tab.tsx:107"
+ceiling = 77
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/jobs-cycles-tab.tsx:38"
+ceiling = 68
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/session-journey.tsx:171"
+ceiling = 102
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/session-journey.tsx:47"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/sessions-tab.tsx:139"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/components/sessions-tab.tsx:33"
+ceiling = 105
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/invocations/tests/components/tabs.test.tsx:71"
+ceiling = 73
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:510"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:70"
+ceiling = 199
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/issues/components/issues-page.tsx:127"
+ceiling = 116
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/issues/components/issues-page.tsx:244"
+ceiling = 229
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/issues/components/issues-page.tsx:318"
+ceiling = 119
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/issues/model/stacktrace.ts:51"
+ceiling = 110
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/issues/tests/components/issues-contracts.test.tsx:85"
+ceiling = 72
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/issues/tests/model/stacktrace.test.ts:5"
+ceiling = 79
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/components/logs-page.tsx:190"
+ceiling = 497
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/components/logs-page.tsx:692"
+ceiling = 74
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/components/logs-table.tsx:163"
+ceiling = 62
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/components/logs-table.tsx:227"
+ceiling = 258
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/components/logs-table.tsx:286"
+ceiling = 65
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/logs/tests/components/logs-contracts.test.tsx:147"
+ceiling = 65
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/overview/components/overview-page.tsx:249"
+ceiling = 179
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/overview/components/overview-page.tsx:434"
+ceiling = 135
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/overview/components/overview-page.tsx:576"
+ceiling = 158
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/overview/tests/components/overview-contracts.test.tsx:123"
+ceiling = 64
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/components/service-detail-page.tsx:67"
+ceiling = 128
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/components/service-recent-traces.tsx:22"
+ceiling = 66
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/components/service-red-charts.tsx:94"
+ceiling = 133
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/components/services-page.tsx:66"
+ceiling = 77
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/components/services-table.tsx:27"
+ceiling = 160
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/components/services-table.tsx:94"
+ceiling = 88
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/services/tests/components/services-contracts.test.tsx:182"
+ceiling = 119
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/sql/components/sql-editor.tsx:18"
+ceiling = 79
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/sql/components/sql-page.tsx:13"
+ceiling = 67
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/sql/hooks/use-sql-workspace.ts:44"
+ceiling = 122
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/time-range/components/range-picker.tsx:15"
+ceiling = 78
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx:1040"
+ceiling = 67
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx:1108"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx:1263"
+ceiling = 186
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-detail-page.tsx:268"
+ceiling = 442
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-field-explorer.tsx:165"
+ceiling = 221
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-field-explorer.tsx:90"
+ceiling = 74
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-flamegraph.tsx:28"
+ceiling = 86
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-rpc-streams.tsx:92"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-waterfall.tsx:302"
+ceiling = 92
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/trace-waterfall.tsx:86"
+ceiling = 540
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/traces-page.tsx:323"
+ceiling = 416
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/components/traces-page.tsx:740"
+ceiling = 78
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/hooks/use-timeline-interactions.ts:71"
+ceiling = 166
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/model/graphql-operations.ts:139"
+ceiling = 135
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/tests/components/trace-links.test.tsx:46"
+ceiling = 68
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/tests/components/trace-links.test.tsx:47"
+ceiling = 66
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/tests/components/trace-waterfall.test.tsx:90"
+ceiling = 70
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/tests/hooks/use-timeline-interactions.test.tsx:59"
+ceiling = 100
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/tests/model/graphql-operations.test.ts:24"
+ceiling = 146
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/tests/model/rpc-streams.test.ts:45"
+ceiling = 105
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/tests/model/trace-tree.test.ts:158"
+ceiling = 67
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/traces/tests/model/trace-tree.test.ts:34"
+ceiling = 204
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/layout/app-shell.tsx:144"
+ceiling = 88
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/layout/app-shell.tsx:58"
+ceiling = 61
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/layout/command-palette.tsx:114"
+ceiling = 272
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/graphql/tests/client.test.ts:35"
+ceiling = 184
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/sse/live-stream-controller.ts:37"
+ceiling = 112
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/sse/tests/live-stream-controller.test.ts:43"
+ceiling = 69
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/sse/tests/use-live-stream.test.tsx:74"
+ceiling = 123
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/platform/sse/use-live-stream.ts:36"
+ceiling = 69
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/alerts.index.tsx:357"
+ceiling = 163
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/alerts.index.tsx:521"
+ceiling = 84
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/alerts.index.tsx:99"
+ceiling = 221
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/metrics.$metricName.tsx:106"
+ceiling = 69
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/routes/metrics.$metricName.tsx:190"
+ceiling = 225
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/shared/console/agent-session.tsx:76"
+ceiling = 70
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/shared/console/duration-filter.tsx:41"
+ceiling = 124
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/shared/console/facet-sidebar.tsx:29"
+ceiling = 104
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/shared/console/tests/kit.test.tsx:17"
+ceiling = 66
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/shared/console/tests/where-clause-editor.test.tsx:15"
+ceiling = 67
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/shared/console/top-movers.tsx:94"
+ceiling = 77
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/shared/console/use-chart-brush.ts:49"
+ceiling = 87
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/shared/console/where-clause-editor.tsx:18"
+ceiling = 162
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/shared/tests/format.test.ts:15"
+ceiling = 67
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/shared/tests/where-clause.test.ts:11"
+ceiling = 122
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/shared/where-clause.ts:172"
+ceiling = 77
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/shared/where-clause.ts:68"
+ceiling = 75
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/dashboards/api/dashboard-delete.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/dashboards/api/dashboard-detail.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/dashboards/api/dashboard-save.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/dashboards/api/dashboards-list.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/ecosystem/api/service-map.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/investigations/api/investigation-delete.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/investigations/api/investigation-detail.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/investigations/api/investigation-pin-options.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/investigations/api/investigation-save.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/investigations/api/investigations-list.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/issues/api/issue-correlation.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/issues/api/issue-detail.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/issues/api/issue-occurrences.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/issues/api/issue-status.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/issues/api/issues-list.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/runtime-metrics/api/runtime-metrics.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/services/api/service-detail.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/services/api/services-list.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/sql/api/sql-execute.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/sql/api/sql-schema.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/sql/api/sql-snippet-delete.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/sql/api/sql-snippet-save.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/features/sql/api/sql-snippets-list.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/platform/graphql/generated/schema-types.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/platform/graphql/tests/fixtures/static-probe.generated.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/platform/graphql/transport.ts"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.suppressions"
+scope = "ui/src/shared/format.ts"
+ceiling = 1
+

@@ -9,13 +9,7 @@
  * layout, backend external-node derivation, browser evidence.
  */
 
-export type TopologyNodeKind =
-  | "service"
-  | "cli"
-  | "browser"
-  | "database"
-  | "queue"
-  | "external"
+export type TopologyNodeKind = "service" | "cli" | "browser" | "database" | "queue" | "external"
 
 export interface TopologyNode {
   id: string
@@ -55,9 +49,7 @@ export interface FocusResult<N extends TopologyNode, E extends TopologyEdge> {
 }
 
 /** Build undirected adjacency for hop expansion. */
-export function buildAdjacency(
-  edges: readonly TopologyEdge[]
-): Map<string, Set<string>> {
+export function buildAdjacency(edges: readonly TopologyEdge[]): Map<string, Set<string>> {
   const adj = new Map<string, Set<string>>()
   const add = (a: string, b: string) => {
     let set = adj.get(a)
@@ -118,14 +110,8 @@ export function applyFocus<N extends TopologyNode, E extends TopologyEdge>(
       outside: new Set(),
     }
   }
-  const inFocus = neighborhoodIds(
-    options.focus,
-    Math.max(0, options.hops),
-    edges
-  )
-  const outside = new Set(
-    nodes.map((n) => n.id).filter((id) => !inFocus.has(id))
-  )
+  const inFocus = neighborhoodIds(options.focus, Math.max(0, options.hops), edges)
+  const outside = new Set(nodes.map((n) => n.id).filter((id) => !inFocus.has(id)))
   if (options.mode === "dim") {
     return {
       nodes: [...nodes],
@@ -218,16 +204,10 @@ export interface ExternalNodeIdentity {
  * Returns null when no external-node attributes are present.
  * Ladder: db.* → messaging.* → server.address.
  */
-export function resolveExternalNode(
-  attrs: ExternalSpanAttrs
-): ExternalNodeIdentity | null {
+export function resolveExternalNode(attrs: ExternalSpanAttrs): ExternalNodeIdentity | null {
   const dbSystem = attrs["db.system.name"] ?? attrs["db.system"]
   if (dbSystem) {
-    const name =
-      attrs["db.namespace"] ??
-      attrs["db.name"] ??
-      attrs["server.address"] ??
-      dbSystem
+    const name = attrs["db.namespace"] ?? attrs["db.name"] ?? attrs["server.address"] ?? dbSystem
     return { kind: "database", name, system: dbSystem }
   }
   const messaging = attrs["messaging.system"]
@@ -243,19 +223,13 @@ export function resolveExternalNode(
 }
 
 /** Edge error rate in [0, 1]; 0 when no calls. */
-export function edgeErrorRate(
-  edge: Pick<TopologyEdge, "callCount" | "errorCount">
-): number {
+export function edgeErrorRate(edge: Pick<TopologyEdge, "callCount" | "errorCount">): number {
   if (edge.callCount <= 0) return 0
   return (edge.errorCount ?? 0) / edge.callCount
 }
 
 /** log2-scaled edge width in [minW, maxW] from callCount. */
-export function edgeWidthFromCalls(
-  callCount: number,
-  minW = 1,
-  maxW = 8
-): number {
+export function edgeWidthFromCalls(callCount: number, minW = 1, maxW = 8): number {
   if (callCount <= 0) return minW
   const t = Math.log2(callCount + 1) / Math.log2(1_000 + 1)
   return minW + (maxW - minW) * Math.min(1, Math.max(0, t))

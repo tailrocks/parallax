@@ -38,8 +38,7 @@ const buttonVariants = cva(
         icon: "size-8",
         "icon-xs":
           "size-6 rounded-full in-data-[slot=button-group]:rounded-full [&_svg:not([class*='size-'])]:size-3",
-        "icon-sm":
-          "size-8 rounded-full in-data-[slot=button-group]:rounded-full",
+        "icon-sm": "size-8 rounded-full in-data-[slot=button-group]:rounded-full",
         "icon-lg": "size-10",
       },
     },
@@ -69,11 +68,7 @@ function Button({
       {...props}
     >
       {React.Children.map(children, (child) =>
-        typeof child === "string" || typeof child === "number" ? (
-          <span>{child}</span>
-        ) : (
-          child
-        )
+        typeof child === "string" || typeof child === "number" ? <span>{child}</span> : child
       )}
     </ButtonPrimitive>
   )

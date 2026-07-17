@@ -3,10 +3,7 @@
 import { decodeJsonText } from "@/platform/external-values/decode-json-text"
 import { boundaryError } from "@/platform/external-values/boundary-error"
 import { reportBoundaryError } from "@/platform/external-values/boundary-diagnostic"
-import type {
-  BoundaryResult,
-  RuntimeDecoder,
-} from "@/platform/external-values/runtime-decoder"
+import type { BoundaryResult, RuntimeDecoder } from "@/platform/external-values/runtime-decoder"
 import {
   readBrowserStorage,
   writeBrowserStorage,
@@ -57,15 +54,10 @@ export function readVersionedStorage<T>(
   if (!envelope.ok) return envelope
   if (envelope.value.v !== codec.version) {
     // Unsupported version: do not delete or rewrite; surface schema-rejected.
-    const error = boundaryError(
-      BOUNDARY_ID,
-      "schema-rejected",
-      envelope.value.v,
-      {
-        version: envelope.value.v,
-        expected: codec.version,
-      }
-    )
+    const error = boundaryError(BOUNDARY_ID, "schema-rejected", envelope.value.v, {
+      version: envelope.value.v,
+      expected: codec.version,
+    })
     reportBoundaryError(error)
     return { ok: false, error }
   }
@@ -73,20 +65,12 @@ export function readVersionedStorage<T>(
   try {
     decoded = codec.decoder.safeParse(envelope.value.data)
   } catch {
-    const error = boundaryError(
-      BOUNDARY_ID,
-      "schema-rejected",
-      envelope.value.data
-    )
+    const error = boundaryError(BOUNDARY_ID, "schema-rejected", envelope.value.data)
     reportBoundaryError(error)
     return { ok: false, error }
   }
   if (!decoded.success) {
-    const error = boundaryError(
-      BOUNDARY_ID,
-      "schema-rejected",
-      envelope.value.data
-    )
+    const error = boundaryError(BOUNDARY_ID, "schema-rejected", envelope.value.data)
     reportBoundaryError(error)
     return { ok: false, error }
   }

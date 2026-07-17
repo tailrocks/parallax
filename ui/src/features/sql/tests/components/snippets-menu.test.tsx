@@ -23,12 +23,7 @@ describe("SnippetsMenu", () => {
     const onDelete = vi.fn()
     const onSave = vi.fn()
     renderTestRouter(
-      <SnippetsMenu
-        snippets={[snippet]}
-        onSelect={onSelect}
-        onDelete={onDelete}
-        onSave={onSave}
-      />
+      <SnippetsMenu snippets={[snippet]} onSelect={onSelect} onDelete={onDelete} onSave={onSave} />
     )
 
     await user.click(await screen.findByText("Snippets"))

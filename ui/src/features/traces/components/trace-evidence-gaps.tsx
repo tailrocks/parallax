@@ -2,7 +2,7 @@ import { IconAlertTriangle } from "@tabler/icons-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import type { EvidenceGap } from "@/lib/api"
+import type { EvidenceGap } from "@/features/traces/model/wire"
 
 export function EvidenceGapsCard({ gaps }: { gaps: EvidenceGap[] }) {
   if (gaps.length === 0) return null
@@ -24,9 +24,7 @@ export function EvidenceGapsCard({ gaps }: { gaps: EvidenceGap[] }) {
             >
               <span className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline">{gap.kind}</Badge>
-                <span className="font-mono text-xs text-muted-foreground">
-                  {gap.subject}
-                </span>
+                <span className="font-mono text-xs text-muted-foreground">{gap.subject}</span>
               </span>
               <span className="text-muted-foreground">{gap.detail}</span>
             </li>

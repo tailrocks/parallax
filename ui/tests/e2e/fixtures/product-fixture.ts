@@ -40,9 +40,7 @@ export function readRuntimeManifest(): RuntimeManifest {
   const raw = readFileSync(runtimeManifestPath(), "utf8")
   const parsed = JSON.parse(raw) as RuntimeManifest
   if (parsed.schema_version !== 1) {
-    throw new Error(
-      `unsupported runtime manifest schema ${String(parsed.schema_version)}`
-    )
+    throw new Error(`unsupported runtime manifest schema ${String(parsed.schema_version)}`)
   }
   return parsed
 }

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 
 import { IssuesPage, loadIssues, validateIssuesSearch } from "@/features/issues"
-import { resolveRangeSearch } from "@/lib/range"
+import { resolveRangeSearch } from "@/domain/time-range/range"
 
 export const Route = createFileRoute("/issues/")({
   validateSearch: validateIssuesSearch,

@@ -4,11 +4,8 @@ import { screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
 import { EcosystemGraph } from "@/features/ecosystem/components/ecosystem-graph"
-import type {
-  ServiceMapEdge,
-  ServiceMapNode,
-} from "@/features/ecosystem/model/service-map"
-import { customRange } from "@/lib/range"
+import type { ServiceMapEdge, ServiceMapNode } from "@/features/ecosystem/model/service-map"
+import { customRange } from "@/domain/time-range/range"
 import { renderTestRouter } from "@/test/router"
 
 const nodes: ServiceMapNode[] = [
@@ -44,11 +41,7 @@ const edges: ServiceMapEdge[] = [
 describe("EcosystemGraph", () => {
   it("renders trace-path graph nodes and edge links", async () => {
     renderTestRouter(
-      <EcosystemGraph
-        nodes={nodes}
-        edges={edges}
-        range={customRange("0", "200")}
-      />,
+      <EcosystemGraph nodes={nodes} edges={edges} range={customRange("0", "200")} />,
       { targetPaths: ["/services/$service", "/traces"] }
     )
 
@@ -78,9 +71,7 @@ describe("EcosystemGraph", () => {
 
     const dimmed = (await screen.findByText("B")).closest("a")
     expect(dimmed?.className).toContain("opacity-30")
-    expect(
-      screen.getByText("hidden").closest('[data-slot="badge"]')?.textContent
-    ).toBe("3 hidden")
+    expect(screen.getByText("hidden").closest('[data-slot="badge"]')?.textContent).toBe("3 hidden")
   })
 })
 
@@ -93,15 +84,12 @@ it("D-014 eco-full: a 9-node column grows the canvas instead of overlapping card
     errorCount: "0",
     p95Ms: null,
   }))
-  renderTestRouter(
-    <EcosystemGraph nodes={nodes} edges={[]} range={customRange("0", "200")} />,
-    { targetPaths: ["/services/$service", "/traces"] }
-  )
+  renderTestRouter(<EcosystemGraph nodes={nodes} edges={[]} range={customRange("0", "200")} />, {
+    targetPaths: ["/services/$service", "/traces"],
+  })
   const cards = await screen.findAllByText(/svc-/)
   expect(cards.length).toBe(9)
-  const container = document.querySelector(
-    '[aria-label="service dependency graph"]'
-  )
+  const container = document.querySelector('[aria-label="service dependency graph"]')
   const height = Number.parseInt((container as HTMLElement).style.height, 10)
   expect(height).toBeGreaterThanOrEqual(420)
 })

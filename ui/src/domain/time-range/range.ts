@@ -28,10 +28,7 @@ function msToNanos(ms: number) {
   return (BigInt(ms) * 1_000_000n).toString()
 }
 
-export function resolvePreset(
-  key = DEFAULT_RANGE_KEY,
-  now = Date.now()
-): ResolvedRange {
+export function resolvePreset(key = DEFAULT_RANGE_KEY, now = Date.now()): ResolvedRange {
   const preset =
     RANGE_PRESETS.find((candidate) => candidate.key === key) ??
     RANGE_PRESETS.find((candidate) => candidate.key === DEFAULT_RANGE_KEY)!

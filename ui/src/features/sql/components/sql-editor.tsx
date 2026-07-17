@@ -85,14 +85,10 @@ export function SqlEditor({
             <HistoryMenu history={history} onSelect={onStatementChange} />
           ) : null}
           {elapsedMs != null ? (
-            <span className="text-xs text-muted-foreground">
-              {elapsedMs.toFixed(0)} ms
-            </span>
+            <span className="text-xs text-muted-foreground">{elapsedMs.toFixed(0)} ms</span>
           ) : null}
         </div>
-        {snippetError ? (
-          <p className="text-sm text-destructive">{snippetError}</p>
-        ) : null}
+        {snippetError ? <p className="text-sm text-destructive">{snippetError}</p> : null}
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
       </CardContent>
     </Card>
@@ -102,16 +98,11 @@ export function SqlEditor({
 function ExamplesMenu({ onSelect }: { onSelect: (sql: string) => void }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="outline" />}>
-        Examples
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger render={<Button variant="outline" />}>Examples</DropdownMenuTrigger>
       <DropdownMenuContent>
         <DropdownMenuGroup>
           {SQL_EXAMPLES.map((example) => (
-            <DropdownMenuItem
-              key={example.label}
-              onClick={() => onSelect(example.sql)}
-            >
+            <DropdownMenuItem key={example.label} onClick={() => onSelect(example.sql)}>
               {example.label}
             </DropdownMenuItem>
           ))}

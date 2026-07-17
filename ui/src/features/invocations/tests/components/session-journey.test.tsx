@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { buildJourney } from "@/features/invocations/components/session-journey"
-import type { ScreenVisit, Session, UiAction } from "@/lib/api"
+import type { ScreenVisit, Session, UiAction } from "@/features/invocations/model/wire"
 
 const session: Session = {
   sessionId: "s1",

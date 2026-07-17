@@ -1,13 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import {
-  InvestigationsPage,
-  loadInvestigationsList,
-} from "@/features/investigations"
+import { InvestigationsPage, loadInvestigationsList } from "@/features/investigations"
 
 export const Route = createFileRoute("/investigations/")({
-  loader: () =>
-    loadInvestigationsList().then((investigations) => ({ investigations })),
+  loader: () => loadInvestigationsList().then((investigations) => ({ investigations })),
   component: InvestigationsRoute,
 })
 

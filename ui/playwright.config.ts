@@ -2,8 +2,7 @@ import { defineConfig, type PlaywrightTestConfig } from "@playwright/test"
 
 const env = process.env
 const isCi = env["CI"] === "true" || env["CI"] === "1"
-const browserMode =
-  env["PARALLAX_BROWSER_MODE"] === "foundation" ? "foundation" : "contracts"
+const browserMode = env["PARALLAX_BROWSER_MODE"] === "foundation" ? "foundation" : "contracts"
 const foundationPort = env["PARALLAX_BROWSER_FOUNDATION_PORT"] ?? "4173"
 const contractsPort = env["PARALLAX_BROWSER_CONTRACTS_PORT"] ?? "4174"
 const port = browserMode === "foundation" ? foundationPort : contractsPort
@@ -32,10 +31,7 @@ const config: PlaywrightTestConfig = {
         ["blob", { outputDir: "blob-report" }],
         ["junit", { outputFile: "test-results/junit.xml" }],
       ]
-    : [
-        ["line"],
-        ["html", { open: "never", outputFolder: "playwright-report" }],
-      ],
+    : [["line"], ["html", { open: "never", outputFolder: "playwright-report" }]],
   use: {
     baseURL,
     locale: "en-US",

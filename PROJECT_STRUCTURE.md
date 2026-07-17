@@ -65,4 +65,4 @@ Update this file only when top-level ownership changes. Update the workspace map
 when crate ownership or tiers change, and the research index when research
 navigation changes.
 
-Live UI ownership (2026-07-17): `app/`, `layout/`, `features/*`, `domain/`, `platform/`, `shared/` (incl. `console/`, `hooks/`), thin `routes/`, generator islands `components/ui/**` + `lib/utils.ts`. Residual handwritten `lib/*` helpers remain until feature/platform owners claim them. See `ui/AGENTS.md`.
+Live UI ownership (2026-07-17): `app/`, `layout/`, `features/*`, `domain/`, `platform/`, `shared/` (incl. `console/`, `hooks/`), thin `routes/`, generator islands `components/ui/**` + `lib/utils.ts`. Handwritten `lib/*` residual claimed into shared/features/domain (only `lib/utils.ts` remains as shadcn island). See `ui/AGENTS.md`.

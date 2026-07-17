@@ -16,12 +16,10 @@ describe("SQL result helpers", () => {
       to: "/traces/$traceId",
       params: { traceId: "trace-a" },
     })
-    expect(targetForCell("span_id", "span-a", { trace_id: "trace-a" })).toEqual(
-      {
-        to: "/traces/$traceId",
-        params: { traceId: "trace-a" },
-      }
-    )
+    expect(targetForCell("span_id", "span-a", { trace_id: "trace-a" })).toEqual({
+      to: "/traces/$traceId",
+      params: { traceId: "trace-a" },
+    })
     expect(targetForCell('"cli.invocation.id"', "run-a", {})).toEqual({
       to: "/invocations/$invocationId",
       params: { invocationId: "run-a" },

@@ -245,7 +245,8 @@ major upgrades. The root [`AGENTS.md`](../AGENTS.md) and the
 | `src/shared/` | Product-neutral UI kit (`console/`, `hooks/`, `navigation`, page-header) |
 | `src/components/ui/` | shadcn generator island only |
 | `src/lib/utils.ts` | shadcn `cn` island |
-| `src/lib/*` (other) | Residual technical helpers — move into platform/domain/feature owners; do not add new product logic here |
+| `src/shared/{format,colors,color-by,where-clause}.ts` | Product-neutral helpers (plan 151) |
+| 
 | `src/routeTree.gen.ts` | TanStack generated tree |
 | `src/styles.css` | Global tokens |
 

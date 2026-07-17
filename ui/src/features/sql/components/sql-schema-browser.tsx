@@ -45,9 +45,7 @@ export function SqlSchemaBrowser({
                           onClick={() => onInsertIdentifier(column.name)}
                         >
                           {column.name}{" "}
-                          <span className="opacity-60">
-                            {column.dataType.toLowerCase()}
-                          </span>
+                          <span className="opacity-60">{column.dataType.toLowerCase()}</span>
                         </button>
                       </li>
                     ))}

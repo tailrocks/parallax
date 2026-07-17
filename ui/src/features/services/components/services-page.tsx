@@ -1,9 +1,4 @@
-import {
-  Outlet,
-  useLocation,
-  useNavigate,
-  useRouterState,
-} from "@tanstack/react-router"
+import { Outlet, useLocation, useNavigate, useRouterState } from "@tanstack/react-router"
 import { IconServer, IconTerminal2 } from "@tabler/icons-react"
 import { useMemo } from "react"
 
@@ -25,12 +20,12 @@ import {
   type ServicesSearch,
   type ServicesSearchPatch,
 } from "@/features/services/model/services-search"
-import { formatCount } from "@/lib/format"
+import { formatCount } from "@/shared/format"
 import {
   resolveRangeSearch,
   updateRangeSearch,
   type ResolvedRange,
-} from "@/lib/range"
+} from "@/domain/time-range/range"
 import { PageHeader } from "@/shared/components/page-header"
 
 export function ServicesRouteShell({
@@ -46,13 +41,7 @@ export function ServicesRouteShell({
   return <ServicesPage data={data} search={search} />
 }
 
-export function ServicesPage({
-  data,
-  search,
-}: {
-  data: ServicesData
-  search: ServicesSearch
-}) {
+export function ServicesPage({ data, search }: { data: ServicesData; search: ServicesSearch }) {
   const navigate = useNavigate({ from: "/services" })
   const range = resolveRangeSearch(search)
   const routerLoading = useRouterState({
@@ -90,12 +79,7 @@ export function ServicesIndexContent({
   const query = search.q?.toLowerCase() ?? ""
   const catalogRows = servicesWithCatalog(data)
   const filtered = catalogRows.filter((row) =>
-    [
-      row.name,
-      row.serviceVersion,
-      row.telemetrySdkLanguage,
-      row.deploymentEnvironment,
-    ]
+    [row.name, row.serviceVersion, row.telemetrySdkLanguage, row.deploymentEnvironment]
       .filter((value): value is string => Boolean(value))
       .some((value) => value.toLowerCase().includes(query))
   )
@@ -115,10 +99,7 @@ export function ServicesIndexContent({
         title="Services"
         description="Health index across services emitting telemetry."
         actions={
-          <RangePicker
-            value={range}
-            onChange={(next) => onSearch(updateRangeSearch(next))}
-          />
+          <RangePicker value={range} onChange={(next) => onSearch(updateRangeSearch(next))} />
         }
       />
 
@@ -141,8 +122,8 @@ export function ServicesIndexContent({
           title="No services yet"
           description={
             <span>
-              Point OTLP at <code>http://127.0.0.1:4317</code>; services appear
-              after spans, logs, or metrics arrive.
+              Point OTLP at <code>http://127.0.0.1:4317</code>; services appear after spans, logs,
+              or metrics arrive.
             </span>
           }
         />

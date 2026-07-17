@@ -13,17 +13,15 @@ describe("primitive recipes", () => {
   it("keeps the reference button shape", () => {
     render(<Button>Save</Button>)
 
-    expect(screen.getByRole("button", { name: "Save" }).className).toContain(
-      "rounded-full"
-    )
+    expect(screen.getByRole("button", { name: "Save" }).className).toContain("rounded-full")
   })
 
   it("keeps badge hue variants", () => {
     render(<Badge variant="rose">error</Badge>)
 
-    expect(
-      screen.getByText("error").closest("[data-slot=badge]")?.className
-    ).toContain("shadow-[var(--custom-shadow-rose)]")
+    expect(screen.getByText("error").closest("[data-slot=badge]")?.className).toContain(
+      "shadow-[var(--custom-shadow-rose)]"
+    )
   })
 
   it("keeps card, empty, and kbd squircle recipes", () => {

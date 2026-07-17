@@ -12,31 +12,16 @@ import {
   IconX,
 } from "@tabler/icons-react"
 import { useEffect, useMemo, useRef, useState } from "react"
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ReferenceArea,
-  XAxis,
-  YAxis,
-} from "recharts"
-
+import { Bar, BarChart, CartesianGrid, ReferenceArea, XAxis, YAxis } from "recharts"
 import { EmptyState } from "@/shared/console/empty-state"
 import { FacetSidebar, type Facet } from "@/shared/console/facet-sidebar"
 import { useDelayedLoading } from "@/shared/console/hooks"
 import { TableSkeleton } from "@/shared/console/skeletons"
 import { useChartBrush } from "@/shared/console/use-chart-brush"
-import {
-  WhereClauseChips,
-  WhereClauseEditor,
-} from "@/shared/console/where-clause-editor"
+import { WhereClauseChips, WhereClauseEditor } from "@/shared/console/where-clause-editor"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
 import {
   Dialog,
@@ -69,29 +54,22 @@ import {
   parseLogColumns,
   serializeLogColumns,
 } from "@/features/logs/components/logs-table"
-import type {
-  LogDoc,
-  OptionalLogColumn,
-} from "@/features/logs/components/logs-table"
-import {
-  contextWindow,
-  stepSecondsForRange,
-} from "@/features/logs/model/logs-range"
+import type { LogDoc, OptionalLogColumn } from "@/features/logs/components/logs-table"
+import { contextWindow, stepSecondsForRange } from "@/features/logs/model/logs-range"
 import {
   parseSavedViewState,
   serializeLogsSearch,
   type LogsSearch,
 } from "@/features/logs/model/logs-search"
 import { RangePicker } from "@/features/time-range"
-import { gqlString, graphql, graphqlCached, LOG_FIELDS } from "@/lib/api"
-import { formatCount, formatDateTime, formatTimeInRange } from "@/lib/format"
-import { resolveRangeSearch, updateRangeSearch } from "@/lib/range"
-import type { ResolvedRange } from "@/lib/range"
+import { gqlString, graphql, graphqlCached, LOG_FIELDS } from "../api/gql"
+import { formatCount, formatDateTime, formatTimeInRange } from "@/shared/format"
+import { resolveRangeSearch, updateRangeSearch, type ResolvedRange } from "@/domain/range"
 import {
   serializeWhereClause,
   whereClauseFromSearch,
   type WhereFilter,
-} from "@/lib/where-clause"
+} from "@/shared/where-clause"
 import { useLiveStream } from "@/platform/sse/use-live-stream"
 import { PageHeader } from "@/shared/components/page-header"
 
@@ -140,9 +118,7 @@ const SEVERITIES = [
 let logKeySequence = 0
 
 function assignLogKeys(logs: LogDoc[]): LogDoc[] {
-  return logs.map((log) =>
-    log._key ? log : { ...log, _key: `log-${logKeySequence++}` }
-  )
+  return logs.map((log) => (log._key ? log : { ...log, _key: `log-${logKeySequence++}` }))
 }
 
 function logAttributeFilters(where: string | undefined): string | null {
@@ -158,9 +134,7 @@ function logAttributeFilters(where: string | undefined): string | null {
 }
 
 export async function loadLogs(search: LogsSearch): Promise<LogsData> {
-  const range = search.anchor
-    ? contextWindow(search.anchor)
-    : resolveRangeSearch(search)
+  const range = search.anchor ? contextWindow(search.anchor) : resolveRangeSearch(search)
   const stepSeconds = stepSecondsForRange(range)
   const filters = [
     search.service ? `service: "${gqlString(search.service)}"` : "",
@@ -213,21 +187,13 @@ export async function loadLogs(search: LogsSearch): Promise<LogsData> {
   }))
 }
 
-export function LogsPage({
-  data,
-  search,
-}: {
-  data: LogsData
-  search: LogsSearch
-}) {
+export function LogsPage({ data, search }: { data: LogsData; search: LogsSearch }) {
   const navigate = useNavigate({ from: "/logs" })
   const routerLoading = useRouterState({
     select: (state) => state.status === "pending",
   })
   const delayedLoading = useDelayedLoading(routerLoading)
-  const range = search.anchor
-    ? contextWindow(search.anchor)
-    : resolveRangeSearch(search)
+  const range = search.anchor ? contextWindow(search.anchor) : resolveRangeSearch(search)
   const stepSeconds = stepSecondsForRange(range)
   const keyedDataLogs = useMemo(() => assignLogKeys(data.logs), [data.logs])
   const [logs, setLogs] = useState<LogDoc[]>(keyedDataLogs)
@@ -243,7 +209,6 @@ export function LogsPage({
   const logsGeneration = useRef(0)
   const live = search.live === true
   const columns = parseLogColumns(search.cols)
-  // Plan 164: `F` focuses the where-clause editor.
   const [whereFocusKey, setWhereFocusKey] = useState(0)
 
   useEffect(() => {
@@ -290,9 +255,7 @@ export function LogsPage({
       return Array.isArray(batch) ? assignLogKeys(batch as LogDoc[]) : []
     },
     onBatch: (incoming) => {
-      setLogs((current) =>
-        [...incoming.reverse(), ...current].slice(0, PAGE_SIZE)
-      )
+      setLogs((current) => [...incoming.reverse(), ...current].slice(0, PAGE_SIZE))
     },
   })
 
@@ -313,7 +276,6 @@ export function LogsPage({
       sev: undefined,
     })
   }
-
   const selectSavedView = (view: SavedView) => {
     setViewError(null)
     try {
@@ -363,10 +325,7 @@ export function LogsPage({
     update(updateRangeSearch(next))
   }
 
-  const whereFilters = useMemo(
-    () => whereClauseFromSearch(search.where),
-    [search.where]
-  )
+  const whereFilters = useMemo(() => whereClauseFromSearch(search.where), [search.where])
   const applyWhereFilters = (filters: WhereFilter[]) =>
     update({ where: serializeWhereClause(filters) || undefined })
   const facetSelections = useMemo(() => {
@@ -379,8 +338,7 @@ export function LogsPage({
   }, [whereFilters])
   const toggleFacet = (dimension: string, value: string) => {
     const existing = whereFilters.findIndex(
-      (filter) =>
-        filter.key === dimension && filter.op === "=" && filter.value === value
+      (filter) => filter.key === dimension && filter.op === "=" && filter.value === value
     )
     const next =
       existing >= 0
@@ -424,7 +382,6 @@ export function LogsPage({
       const more = await graphql<{ logs: LogDoc[] }>(`{ logs(${args}) {
         ${LOG_FIELDS}
       } }`)
-      // Window/filters changed while in flight — drop the stale page.
       if (logsGeneration.current !== generation) return
       setLogs((current) => [...current, ...assignLogKeys(more.logs)])
       if (more.logs.length < PAGE_SIZE) setExhausted(true)
@@ -490,10 +447,7 @@ export function LogsPage({
           </SelectTrigger>
           <SelectContent>
             {SEVERITIES.map((severity) => (
-              <SelectItem
-                key={severity.value ?? 0}
-                value={String(severity.value ?? 0)}
-              >
+              <SelectItem key={severity.value ?? 0} value={String(severity.value ?? 0)}>
                 {severity.label}
               </SelectItem>
             ))}
@@ -533,9 +487,7 @@ export function LogsPage({
           type="button"
           variant={search.patterns ? "secondary" : "outline"}
           size="sm"
-          onClick={() =>
-            update({ patterns: search.patterns ? undefined : true })
-          }
+          onClick={() => update({ patterns: search.patterns ? undefined : true })}
         >
           Patterns
         </Button>
@@ -548,12 +500,7 @@ export function LogsPage({
             setSaveOpen(true)
           }}
         />
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => update({})}
-        >
+        <Button type="button" variant="outline" size="sm" onClick={() => update({})}>
           <IconRefresh />
           Refresh
         </Button>
@@ -561,14 +508,10 @@ export function LogsPage({
 
       <WhereClauseChips
         filters={whereFilters}
-        onRemove={(index) =>
-          applyWhereFilters(whereFilters.filter((_, i) => i !== index))
-        }
+        onRemove={(index) => applyWhereFilters(whereFilters.filter((_, i) => i !== index))}
       />
 
-      {viewError ? (
-        <p className="text-sm text-destructive">{viewError}</p>
-      ) : null}
+      {viewError ? <p className="text-sm text-destructive">{viewError}</p> : null}
 
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
         <DialogContent>
@@ -582,11 +525,7 @@ export function LogsPage({
             autoFocus
           />
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setSaveOpen(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => setSaveOpen(false)}>
               Cancel
             </Button>
             <Button
@@ -624,12 +563,8 @@ export function LogsPage({
         range={range}
         series={data.logCountSeries}
         stepSeconds={stepSeconds}
-        onWindow={(fromNanos, toNanos) =>
-          update({ range: "custom", from: fromNanos, to: toNanos })
-        }
-        onReset={() =>
-          update({ from: undefined, to: undefined, range: undefined })
-        }
+        onWindow={(fromNanos, toNanos) => update({ range: "custom", from: fromNanos, to: toNanos })}
+        onReset={() => update({ from: undefined, to: undefined, range: undefined })}
         customWindow={Boolean(customWindow)}
         total={total}
       />
@@ -660,9 +595,7 @@ export function LogsPage({
                   <thead className="border-b border-border/70 bg-muted/30 text-left text-xs text-muted-foreground">
                     <tr>
                       <th className="px-3 py-2 font-medium">Template</th>
-                      <th className="px-3 py-2 font-medium tabular-nums">
-                        Count
-                      </th>
+                      <th className="px-3 py-2 font-medium tabular-nums">Count</th>
                       <th className="px-3 py-2 font-medium">Severity mix</th>
                     </tr>
                   </thead>
@@ -731,9 +664,7 @@ export function LogsPage({
               {!live && !search.anchor && !exhausted ? (
                 <div className="flex flex-col gap-2 border-t border-border/70 p-2">
                   {olderError ? (
-                    <p className="px-2 text-sm text-destructive">
-                      {olderError}
-                    </p>
+                    <p className="px-2 text-sm text-destructive">{olderError}</p>
                   ) : null}
                   <Button
                     type="button"
@@ -813,26 +744,12 @@ function HistogramCard({
         ) : null}
       </div>
       <ChartContainer config={histogramConfig} className="h-[180px] w-full">
-        <BarChart
-          data={chartData}
-          margin={{ left: 8, right: 8, top: 4 }}
-          {...brush.chartHandlers}
-        >
+        <BarChart data={chartData} margin={{ left: 8, right: 8, top: 4 }} {...brush.chartHandlers}>
           <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey="time"
-            tickLine={false}
-            axisLine={false}
-            minTickGap={48}
-          />
+          <XAxis dataKey="time" tickLine={false} axisLine={false} minTickGap={48} />
           <YAxis tickLine={false} axisLine={false} width={48} />
           <ChartTooltip content={<ChartTooltipContent />} />
-          <Bar
-            dataKey="value"
-            fill="var(--color-value)"
-            radius={2}
-            opacity={live ? 0.35 : 1}
-          />
+          <Bar dataKey="value" fill="var(--color-value)" radius={2} opacity={live ? 0.35 : 1} />
           {brush.referenceRange ? (
             <ReferenceArea
               x1={brush.referenceRange.x1}
@@ -862,9 +779,7 @@ export function ColumnMenu({
   }
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        render={<Button type="button" variant="outline" size="sm" />}
-      >
+      <DropdownMenuTrigger render={<Button type="button" variant="outline" size="sm" />}>
         <IconColumns />
         Columns
       </DropdownMenuTrigger>
@@ -902,9 +817,7 @@ export function SavedViewsMenu({
 }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        render={<Button type="button" variant="outline" size="sm" />}
-      >
+      <DropdownMenuTrigger render={<Button type="button" variant="outline" size="sm" />}>
         <IconBookmark />
         Views
       </DropdownMenuTrigger>
@@ -951,14 +864,8 @@ export function SavedViewsMenu({
   )
 }
 
-export {
-  contextWindow,
-  stepSecondsForRange,
-} from "@/features/logs/model/logs-range"
-export {
-  parseSavedViewState,
-  validateLogsSearch,
-} from "@/features/logs/model/logs-search"
+export { contextWindow, stepSecondsForRange } from "@/features/logs/model/logs-range"
+export { parseSavedViewState, validateLogsSearch } from "@/features/logs/model/logs-search"
 export type { LogsSearch } from "@/features/logs/model/logs-search"
 export {
   LogsTable,
@@ -966,7 +873,4 @@ export {
   parseLogColumns,
   serializeLogColumns,
 } from "@/features/logs/components/logs-table"
-export type {
-  LogDoc,
-  OptionalLogColumn,
-} from "@/features/logs/components/logs-table"
+export type { LogDoc, OptionalLogColumn } from "@/features/logs/components/logs-table"

@@ -36,10 +36,7 @@ export function SnippetsMenu({
             <DropdownMenuItem disabled>No snippets</DropdownMenuItem>
           ) : (
             snippets.map((snippet) => (
-              <DropdownMenuItem
-                key={snippet.id}
-                onClick={() => onSelect(snippet)}
-              >
+              <DropdownMenuItem key={snippet.id} onClick={() => onSelect(snippet)}>
                 <IconBookmark />
                 <span className="truncate">{snippet.name}</span>
               </DropdownMenuItem>

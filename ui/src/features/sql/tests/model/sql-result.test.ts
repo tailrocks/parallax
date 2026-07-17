@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  groupSchemaRows,
-  parseResultRow,
-  parseSchemaRow,
-} from "@/features/sql/model/sql-row"
+import { groupSchemaRows, parseResultRow, parseSchemaRow } from "@/features/sql/model/sql-row"
 
 describe("sql row parse", () => {
   it("maps malformed and non-array rows to empty cells", () => {

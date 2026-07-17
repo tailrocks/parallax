@@ -64,9 +64,7 @@ describe("loadWidgetSeries", () => {
   it("preserves result order for multi-chunk loads", async () => {
     const widgets = Array.from({ length: 25 }, (_, i) => widget(`m${i}`, i))
     const fetch = vi.fn(async (query: string) => {
-      const aliases = [...query.matchAll(/series_(\d+)\s*:/g)].map(
-        (match) => `series_${match[1]}`
-      )
+      const aliases = [...query.matchAll(/series_(\d+)\s*:/g)].map((match) => `series_${match[1]}`)
       const data: Record<string, unknown> = {}
       for (const alias of aliases) {
         data[alias] = [
@@ -91,9 +89,9 @@ describe("loadWidgetSeries", () => {
       series_0: [],
       extra: [],
     }))
-    await expect(
-      loadWidgetSeries([widget("cpu")], range, fetch)
-    ).rejects.toBeInstanceOf(GraphqlBoundaryError)
+    await expect(loadWidgetSeries([widget("cpu")], range, fetch)).rejects.toBeInstanceOf(
+      GraphqlBoundaryError
+    )
   })
 
   it("rejects malformed series values without leaking payload", async () => {

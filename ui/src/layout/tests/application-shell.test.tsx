@@ -7,10 +7,10 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { nav } from "@/shared/navigation"
 import { ParallaxShell } from "@/layout/app-shell"
 import { RouteErrorPanel } from "@/layout/route-boundaries"
-import { graphql } from "@/lib/api"
+import { graphql } from "@/platform/graphql/transport"
 import { renderTestRouter } from "@/test/router"
 
-vi.mock("@/lib/api", () => ({
+vi.mock("@/platform/graphql/transport", () => ({
   graphql: vi.fn().mockImplementation(async (query: string) => {
     if (query.includes("{ services }")) return { services: [] }
     if (query.includes("tracesPage")) {
@@ -56,9 +56,7 @@ describe("shell integration", () => {
   })
 
   it("surfaces dashboard navigation load failures", async () => {
-    vi.mocked(graphql).mockRejectedValueOnce(
-      new Error("dashboard query failed")
-    )
+    vi.mocked(graphql).mockRejectedValueOnce(new Error("dashboard query failed"))
 
     renderWithRouter(
       <ParallaxShell>
@@ -87,9 +85,7 @@ describe("shell integration", () => {
     expect(sidebar.getAttribute("data-state")).toBe("collapsed")
 
     await user.keyboard("{Meta>}k{/Meta}")
-    expect(
-      (await screen.findAllByPlaceholderText(/search pages/i)).length
-    ).toBeGreaterThan(0)
+    expect((await screen.findAllByPlaceholderText(/search pages/i)).length).toBeGreaterThan(0)
     expect(sidebar.getAttribute("data-state")).toBe("collapsed")
   })
 })

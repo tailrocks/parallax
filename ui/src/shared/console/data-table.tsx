@@ -1,9 +1,4 @@
-import {
-  IconChevronDown,
-  IconChevronUp,
-  IconSearch,
-  IconX,
-} from "@tabler/icons-react"
+import { IconChevronDown, IconChevronUp, IconSearch, IconX } from "@tabler/icons-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -63,19 +58,12 @@ export function pageWindow(page: number, total: number) {
     .filter((value) => value >= 1 && value <= total)
     .sort((a, b) => a - b)
     .flatMap((value, index, values) =>
-      index > 0 && value - values[index - 1]! > 1
-        ? ["..." as const, value]
-        : [value]
+      index > 0 && value - values[index - 1]! > 1 ? ["..." as const, value] : [value]
     )
 }
 
 export function Toolbar({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      className={cn("flex flex-wrap items-center gap-2", className)}
-      {...props}
-    />
-  )
+  return <div className={cn("flex flex-wrap items-center gap-2", className)} {...props} />
 }
 
 export function SearchInput({
@@ -123,8 +111,7 @@ export function ToggleChip({
       size="sm"
       className={cn(
         "rounded-full",
-        active &&
-          "bg-rose-500/10 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400"
+        active && "bg-rose-500/10 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400"
       )}
       {...props}
     >
@@ -147,9 +134,7 @@ export function FilterSelect({
   return (
     <Select
       value={value ?? "__all"}
-      onValueChange={(next) =>
-        onChange(next == null || next === "__all" ? undefined : next)
-      }
+      onValueChange={(next) => onChange(next == null || next === "__all" ? undefined : next)}
     >
       <SelectTrigger size="sm" className="rounded-full">
         <SelectValue placeholder={placeholder} />

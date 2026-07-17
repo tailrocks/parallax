@@ -1,11 +1,4 @@
-import type {
-  ConsoleMessage,
-  Dialog,
-  Download,
-  Page,
-  Request,
-  TestInfo,
-} from "@playwright/test"
+import type { ConsoleMessage, Dialog, Download, Page, Request, TestInfo } from "@playwright/test"
 
 export type DiagnosticKind =
   | "console-error"
@@ -116,11 +109,7 @@ export function attachDiagnostics(page: Page): DiagnosticSession {
     },
     unexpected() {
       return events.filter((event) => {
-        if (
-          event.kind === "request-failed" &&
-          event.url !== undefined &&
-          isLocalUrl(event.url)
-        ) {
+        if (event.kind === "request-failed" && event.url !== undefined && isLocalUrl(event.url)) {
           return false
         }
         return true

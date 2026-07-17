@@ -1,4 +1,4 @@
-import { rangeLinkSearch, resolveRangeSearch } from "@/lib/range"
+import { rangeLinkSearch, resolveRangeSearch } from "@/domain/time-range/range"
 
 export type DashboardSearch = {
   range?: string | undefined
@@ -15,9 +15,7 @@ function searchString(value: unknown): string | undefined {
   return undefined
 }
 
-export function validateDashboardSearch(
-  search: Record<string, unknown>
-): DashboardSearch {
+export function validateDashboardSearch(search: Record<string, unknown>): DashboardSearch {
   return {
     range: searchString(search["range"]),
     from: searchString(search["from"]),

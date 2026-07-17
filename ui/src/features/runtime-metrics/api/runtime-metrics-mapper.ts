@@ -14,9 +14,7 @@ export type StripPanel = {
   readonly points: readonly StripMetricPoint[]
 }
 
-export function mapRuntimeMetricStrip(
-  data: RuntimeMetricStripQuery
-): StripPanel[] {
+export function mapRuntimeMetricStrip(data: RuntimeMetricStripQuery): StripPanel[] {
   return [
     {
       title: "CPU",

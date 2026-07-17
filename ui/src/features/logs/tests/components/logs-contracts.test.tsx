@@ -1,13 +1,6 @@
 /* @vitest-environment jsdom */
 
-import {
-  act,
-  cleanup,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react"
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { defaultParseSearch } from "@tanstack/react-router"
 import { afterEach, describe, expect, it, vi } from "vitest"
@@ -26,10 +19,10 @@ import {
   type LogDoc,
 } from "@/features/logs"
 import { bucketWindow, dragWindow } from "@/shared/console/use-chart-brush"
-import { formatDateTime } from "@/lib/format"
-import { customRange } from "@/lib/range"
-import type { ResolvedRange } from "@/lib/range"
-import { serializeWhereClause, whereClauseFromSearch } from "@/lib/where-clause"
+import { formatDateTime } from "@/shared/format"
+import { customRange } from "@/domain/time-range/range"
+import type { ResolvedRange } from "@/domain/time-range/range"
+import { serializeWhereClause, whereClauseFromSearch } from "@/shared/where-clause"
 import { renderTestRouter } from "@/test/router"
 
 const range: ResolvedRange = {
@@ -70,23 +63,13 @@ function renderWithRouter(component: React.ReactNode) {
 
 function renderLogsHost(
   initialLogs: LogDoc[],
-  props: Pick<
-    React.ComponentProps<typeof LogsTable>,
-    "anchorNanos" | "onShowContext"
-  > = {}
+  props: Pick<React.ComponentProps<typeof LogsTable>, "anchorNanos" | "onShowContext"> = {}
 ) {
   let setRows!: React.Dispatch<React.SetStateAction<LogDoc[]>>
   function Host() {
     const [rows, setLogs] = useState(initialLogs)
     setRows = setLogs
-    return (
-      <LogsTable
-        logs={rows}
-        range={range}
-        columns={["service", "trace"]}
-        {...props}
-      />
-    )
+    return <LogsTable logs={rows} range={range} columns={["service", "trace"]} {...props} />
   }
 
   const rendered = renderWithRouter(<Host />)
@@ -125,11 +108,7 @@ describe("logs redesign helpers", () => {
   })
 
   it("round-trips optional column params", () => {
-    expect(parseLogColumns("trace,event,scope,nope,trace")).toEqual([
-      "trace",
-      "event",
-      "scope",
-    ])
+    expect(parseLogColumns("trace,event,scope,nope,trace")).toEqual(["trace", "event", "scope"])
     expect(serializeLogColumns(["service", "scope"])).toBe("service,scope")
   })
 
@@ -196,10 +175,7 @@ describe("LogsTable", () => {
     const before = Array.from(container.querySelectorAll("tbody tr"))
 
     await act(async () => {
-      setRows([
-        { ...log, tsNanos: "5000000000", traceId: "trace-d", body: "d" },
-        ...logs,
-      ])
+      setRows([{ ...log, tsNanos: "5000000000", traceId: "trace-d", body: "d" }, ...logs])
     })
 
     const after = Array.from(container.querySelectorAll("tbody tr"))
@@ -211,18 +187,14 @@ describe("LogsTable", () => {
   it("renders date-aware time for multi-day ranges and opens the sheet", async () => {
     const user = userEvent.setup()
     renderWithRouter(
-      <LogsTable
-        logs={[log]}
-        range={range}
-        columns={["service", "event", "trace", "scope"]}
-      />
+      <LogsTable logs={[log]} range={range} columns={["service", "event", "trace", "scope"]} />
     )
 
     expect(await screen.findByText(formatDateTime(log.tsNanos))).toBeTruthy()
     expect(screen.getByText("checkout.completed")).toBeTruthy()
-    expect(
-      screen.getByRole("link", { name: "Trace trace-a" }).getAttribute("href")
-    ).toBe("/traces/trace-a?range=7d")
+    expect(screen.getByRole("link", { name: "Trace trace-a" }).getAttribute("href")).toBe(
+      "/traces/trace-a?range=7d"
+    )
     await user.click(screen.getByText("checkout failed"))
     expect(await screen.findByText("Log document")).toBeTruthy()
     expect(screen.getByText("event.name")).toBeTruthy()
@@ -232,9 +204,9 @@ describe("LogsTable", () => {
         .getAllByRole("link", { name: /trace trace-a/i })
         .map((link) => link.getAttribute("href"))
     ).toContain("/traces/trace-a?range=7d")
-    expect(
-      screen.getByRole("link", { name: /run run-a/i }).getAttribute("href")
-    ).toBe("/invocations/run-a?range=7d")
+    expect(screen.getByRole("link", { name: /run run-a/i }).getAttribute("href")).toBe(
+      "/invocations/run-a?range=7d"
+    )
   })
 })
 
@@ -250,12 +222,8 @@ describe("logs where-clause URL (plan 164)", () => {
       { key: "http.request.method", op: "=", value: "POST" },
     ])
     // Serialize omits quotes when values have no whitespace.
-    expect(serializeWhereClause(filters)).toBe(
-      "service = checkout AND http.request.method = POST"
-    )
-    expect(whereClauseFromSearch(serializeWhereClause(filters))).toEqual(
-      filters
-    )
+    expect(serializeWhereClause(filters)).toBe("service = checkout AND http.request.method = POST")
+    expect(whereClauseFromSearch(serializeWhereClause(filters))).toEqual(filters)
   })
 
   it("drops empty where values", () => {
@@ -266,9 +234,7 @@ describe("logs where-clause URL (plan 164)", () => {
 
 describe("LogsTable navigation", () => {
   it("preserves custom ranges in trace drilldown links", async () => {
-    renderWithRouter(
-      <LogsTable logs={[log]} range={custom} columns={["service", "trace"]} />
-    )
+    renderWithRouter(<LogsTable logs={[log]} range={custom} columns={["service", "trace"]} />)
 
     expect(await screen.findByText("checkout failed")).toBeTruthy()
     const { search, url } = parseHref(
@@ -333,12 +299,7 @@ describe("SavedViewsMenu", () => {
     const onDelete = vi.fn()
     const onSave = vi.fn()
     renderWithRouter(
-      <SavedViewsMenu
-        views={[view]}
-        onSelect={onSelect}
-        onDelete={onDelete}
-        onSave={onSave}
-      />
+      <SavedViewsMenu views={[view]} onSelect={onSelect} onDelete={onDelete} onSave={onSave} />
     )
 
     await user.click(await screen.findByText("Views"))

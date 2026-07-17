@@ -4,7 +4,7 @@ import { render, screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
 import { EvidenceGapsCard } from "@/features/traces/components/trace-evidence-gaps"
-import type { EvidenceGap } from "@/lib/api"
+import type { EvidenceGap } from "@/features/traces/model/wire"
 
 const gaps: EvidenceGap[] = [
   {

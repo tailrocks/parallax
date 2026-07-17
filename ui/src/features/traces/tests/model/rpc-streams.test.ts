@@ -5,10 +5,7 @@ import {
   grpcStatusLabel,
   messagingSummary,
 } from "@/features/traces/model/rpc-streams"
-import type {
-  RpcTraceEvent,
-  RpcTraceSpan,
-} from "@/features/traces/model/rpc-streams"
+import type { RpcTraceEvent, RpcTraceSpan } from "@/features/traces/model/rpc-streams"
 
 function span(
   spanId: string,
@@ -116,10 +113,7 @@ describe("rpc trace builder", () => {
 
   it("excludes unary and non-rpc spans", () => {
     const streams = buildRpcStreams(
-      [
-        span("unary", { "rpc.system": "grpc" }),
-        span("http", { "http.route": "/quotes" }),
-      ],
+      [span("unary", { "rpc.system": "grpc" }), span("http", { "http.route": "/quotes" })],
       [
         event("unary", "110", { "rpc.message.type": "SENT" }),
         event("http", "120", { "rpc.message.type": "SENT" }),

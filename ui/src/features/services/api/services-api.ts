@@ -13,12 +13,9 @@ import {
   type ServicesListQuery,
   type ServicesListQueryVariables,
 } from "@/features/services/api/services-list.generated"
-import {
-  mapServiceDetail,
-  mapServicesList,
-} from "@/features/services/api/services-mapper"
-import type { ServiceDetailData } from "@/features/services/model/service-detail"
+import { mapServiceDetail, mapServicesList } from "@/features/services/api/services-mapper"
 import { stepSecondsForRange } from "@/features/services/model/service-detail"
+import type { ServiceDetailData } from "@/features/services/model/service-detail"
 import type { ServicesData } from "@/features/services/model/service-summary"
 import { ServicesError } from "@/features/services/model/services-error"
 import {
@@ -27,7 +24,7 @@ import {
 } from "@/platform/graphql/client"
 import { GraphqlBoundaryError } from "@/platform/graphql/error"
 import type { TypedDocumentNode } from "@/platform/graphql/typed-document"
-import type { ResolvedRange } from "@/lib/range"
+import type { ResolvedRange } from "@/domain/time-range/range"
 import * as Semconv from "@/shared/semconv"
 
 function brandDocument<TResult, TVariables>(
@@ -52,20 +49,12 @@ function mapBoundary(error: unknown, code: ServicesError["code"]): never {
       error.message
     )
   }
-  throw new ServicesError(
-    code,
-    error instanceof Error ? error.message : String(error)
-  )
+  throw new ServicesError(code, error instanceof Error ? error.message : String(error))
 }
 
-export async function loadServices(
-  range: ResolvedRange
-): Promise<ServicesData> {
+export async function loadServices(range: ResolvedRange): Promise<ServicesData> {
   try {
-    const data = await executeCachedGraphqlOperation<
-      ServicesListQuery,
-      ServicesListQueryVariables
-    >(
+    const data = await executeCachedGraphqlOperation<ServicesListQuery, ServicesListQueryVariables>(
       brandDocument(ServicesListDocument),
       brandSchema(ServicesListQuerySchema),
       {
@@ -87,18 +76,14 @@ export async function loadServiceDetail(
     const data = await executeCachedGraphqlOperation<
       ServiceDetailQuery,
       ServiceDetailQueryVariables
-    >(
-      brandDocument(ServiceDetailDocument),
-      brandSchema(ServiceDetailQuerySchema),
-      {
-        service,
-        fromNanos: range.fromNanos,
-        toNanos: range.toNanos,
-        stepSeconds: stepSecondsForRange(range),
-        httpDurationMetric: Semconv.HTTP_SERVER_REQUEST_DURATION,
-        rpcDurationMetric: Semconv.REQUEST_DURATION_METRICS[1],
-      }
-    )
+    >(brandDocument(ServiceDetailDocument), brandSchema(ServiceDetailQuerySchema), {
+      service,
+      fromNanos: range.fromNanos,
+      toNanos: range.toNanos,
+      stepSeconds: stepSecondsForRange(range),
+      httpDurationMetric: Semconv.HTTP_SERVER_REQUEST_DURATION,
+      rpcDurationMetric: Semconv.REQUEST_DURATION_METRICS[1],
+    })
     return mapServiceDetail(data)
   } catch (error) {
     mapBoundary(error, "load")

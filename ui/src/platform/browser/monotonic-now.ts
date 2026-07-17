@@ -2,10 +2,7 @@
 
 /** Monotonic milliseconds suitable for elapsed-time measurement. */
 export function monotonicNowMs(): number {
-  if (
-    typeof performance !== "undefined" &&
-    typeof performance.now === "function"
-  ) {
+  if (typeof performance !== "undefined" && typeof performance.now === "function") {
     return performance.now()
   }
   return Date.now()

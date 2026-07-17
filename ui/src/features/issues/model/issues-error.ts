@@ -1,9 +1,4 @@
-export type IssuesErrorCode =
-  | "transport"
-  | "invalid-response"
-  | "load"
-  | "mutation"
-  | "not-found"
+export type IssuesErrorCode = "transport" | "invalid-response" | "load" | "mutation" | "not-found"
 
 export class IssuesError extends Error {
   readonly code: IssuesErrorCode

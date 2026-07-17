@@ -2,8 +2,8 @@ import { useMemo } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import type { ReleaseWindow } from "@/features/services/model/service-detail"
-import { formatCount, formatDateTime } from "@/lib/format"
-import type { ResolvedRange } from "@/lib/range"
+import { formatCount, formatDateTime } from "@/shared/format"
+import type { ResolvedRange } from "@/domain/time-range/range"
 
 export function ServiceReleaseStrip({
   releases,

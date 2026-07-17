@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  loadSqlHistory,
-  recordSqlHistory,
-} from "@/features/sql/api/sql-history-repository"
+import { loadSqlHistory, recordSqlHistory } from "@/features/sql/api/sql-history-repository"
 import { SQL_HISTORY_KEY } from "@/features/sql/model/sql-history"
 import type { BrowserStorage } from "@/platform/storage/browser-storage"
 

@@ -8,7 +8,7 @@ import { useSqlWorkspace } from "@/features/sql/hooks/use-sql-workspace"
 import { PageHeader } from "@/shared/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatCount } from "@/lib/format"
+import { formatCount } from "@/shared/format"
 
 export function SqlPage({ searchQuery }: { searchQuery?: string | undefined }) {
   const workspace = useSqlWorkspace(searchQuery)
@@ -64,9 +64,7 @@ export function SqlPage({ searchQuery }: { searchQuery?: string | undefined }) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-sm">
                   Query result
-                  <Badge variant="outline">
-                    {formatCount(workspace.result.rowCount)} rows
-                  </Badge>
+                  <Badge variant="outline">{formatCount(workspace.result.rowCount)} rows</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>

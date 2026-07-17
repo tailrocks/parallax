@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge"
-import type { ScreenVisit } from "@/lib/api"
-import { formatDurationNs } from "@/lib/format"
+import type { ScreenVisit } from "@/features/invocations/model/wire"
+import { formatDurationNs } from "@/shared/format"
 import { cn } from "@/lib/utils"
 
 /** Gantt-style dwell lane: one row per screen visit, navigation order. */
@@ -19,10 +19,7 @@ export function ScreenVisitLane({ visits }: { visits: ScreenVisit[] }) {
         const from = BigInt(visit.enteredNanos)
         const to = visit.exitedNanos ? BigInt(visit.exitedNanos) : end
         const leftPct = Number(((from - start) * 1000n) / total) / 10
-        const widthPct = Math.max(
-          Number(((to - from) * 1000n) / total) / 10,
-          1.5
-        )
+        const widthPct = Math.max(Number(((to - from) * 1000n) / total) / 10, 1.5)
         return (
           <div
             key={visit.visitId}
@@ -30,9 +27,7 @@ export function ScreenVisitLane({ visits }: { visits: ScreenVisit[] }) {
           >
             <span className="truncate font-medium" title={visit.screenId}>
               {visit.navigationSequence != null ? (
-                <span className="mr-1 text-muted-foreground">
-                  {visit.navigationSequence}.
-                </span>
+                <span className="mr-1 text-muted-foreground">{visit.navigationSequence}.</span>
               ) : null}
               {visit.screenId}
             </span>
@@ -48,9 +43,7 @@ export function ScreenVisitLane({ visits }: { visits: ScreenVisit[] }) {
             <span className="text-right text-muted-foreground">
               {visit.exitedNanos != null ? (
                 formatDurationNs(
-                  (
-                    BigInt(visit.exitedNanos) - BigInt(visit.enteredNanos)
-                  ).toString()
+                  (BigInt(visit.exitedNanos) - BigInt(visit.enteredNanos)).toString()
                 )
               ) : (
                 <Badge variant="blue">active</Badge>

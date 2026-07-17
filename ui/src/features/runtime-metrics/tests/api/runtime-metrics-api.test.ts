@@ -89,9 +89,7 @@ describe("isRuntimeMetricsAbort", () => {
         })
       )
     ).toBe(true)
-    expect(
-      isRuntimeMetricsAbort(new DOMException("aborted", "AbortError"))
-    ).toBe(true)
+    expect(isRuntimeMetricsAbort(new DOMException("aborted", "AbortError"))).toBe(true)
     expect(isRuntimeMetricsAbort(new Error("network"))).toBe(false)
   })
 })

@@ -12,13 +12,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { formatCount, formatDurationNs } from "@/lib/format"
+import { formatCount, formatDurationNs } from "@/shared/format"
 import {
   appModeLabel,
   invocationDurationNs,
   invocationStatus,
-} from "@/lib/invocation"
-import type { InvocationRow } from "@/lib/invocation"
+} from "@/features/invocations/model/invocation"
+import type { InvocationRow } from "@/features/invocations/model/invocation"
 import { cn } from "@/lib/utils"
 
 import { InvocationStatusBadge, OutcomeChip } from "./invocation-status-badge"
@@ -79,10 +79,7 @@ function InvocationTableRow({
   const duration = invocationDurationNs(row, status)
   return (
     <TableRow
-      className={cn(
-        "cursor-pointer",
-        errors > 0 && "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]"
-      )}
+      className={cn("cursor-pointer", errors > 0 && "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]")}
       onClick={() => onOpen(row.invocationId)}
     >
       <TableCell>
@@ -94,10 +91,7 @@ function InvocationTableRow({
             className="min-w-0 hover:underline"
             onClick={(event) => event.stopPropagation()}
           >
-            <code
-              className="block max-w-44 truncate text-xs"
-              title={row.invocationId}
-            >
+            <code className="block max-w-44 truncate text-xs" title={row.invocationId}>
               {row.invocationId}
             </code>
           </Link>
@@ -143,24 +137,16 @@ function InvocationTableRow({
       <TableCell
         className={cn(
           "text-right tabular-nums",
-          errors > 0
-            ? "text-rose-600 dark:text-rose-400"
-            : "text-muted-foreground/40"
+          errors > 0 ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground/40"
         )}
       >
         {row.errorCount == null ? "-" : formatCount(errors)}
       </TableCell>
       <TableCell className="text-right tabular-nums">
-        {row.sessionCount == null || row.sessionCount === 0
-          ? "-"
-          : formatCount(row.sessionCount)}
+        {row.sessionCount == null || row.sessionCount === 0 ? "-" : formatCount(row.sessionCount)}
       </TableCell>
       <TableCell className="text-right tabular-nums">
-        {status === "running"
-          ? "..."
-          : duration
-            ? formatDurationNs(duration)
-            : "-"}
+        {status === "running" ? "..." : duration ? formatDurationNs(duration) : "-"}
       </TableCell>
       <TableCell className="text-right text-muted-foreground">
         <RelativeTime nanos={row.lastNanos} />

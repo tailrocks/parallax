@@ -1,12 +1,5 @@
 import type { CSSProperties, RefCallback } from "react"
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useReducer,
-  useRef,
-  useState,
-} from "react"
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react"
 import { IconAffiliate } from "@tabler/icons-react"
 import { useVirtualizer } from "@tanstack/react-virtual"
 
@@ -20,21 +13,18 @@ import {
   errorPathSpanIds,
   groupByService,
 } from "@/features/traces/model/trace-tree"
-import { colorForSpan } from "@/lib/color-by"
-import type { ColorByStrategy } from "@/lib/color-by"
+import type { OrderedTraceSpan, TraceTreeSpan } from "@/features/traces/model/trace-tree"
+import { colorForSpan } from "@/shared/color-by"
+import type { ColorByStrategy } from "@/shared/color-by"
 import {
   barLabelVisibility,
   barRect,
   initialTimelineState,
   timelineReducer,
-} from "@/lib/timeline-viewport"
-import type { TimelineViewport } from "@/lib/timeline-viewport"
-import { useTimelineInteractions } from "@/shared/hooks/use-timeline-interactions"
-import type {
-  OrderedTraceSpan,
-  TraceTreeSpan,
-} from "@/features/traces/model/trace-tree"
-import { formatDurationNs } from "@/lib/format"
+} from "@/features/traces/model/timeline-viewport"
+import type { TimelineViewport } from "@/features/traces/model/timeline-viewport"
+import { useTimelineInteractions } from "@/features/traces/hooks/use-timeline-interactions"
+import { formatDurationNs } from "@/shared/format"
 
 export const WHOLE_TRACE_ID = "__whole_trace__"
 export type TraceViewMode = "tree" | "errors" | "lanes"
@@ -70,10 +60,7 @@ function laneDurationNs(rows: readonly WaterfallRow[]): string {
   return computeWindow(rows.map((row) => row.span)).durationNs.toString()
 }
 
-function visualItemsForMode(
-  mode: TraceViewMode,
-  rows: readonly WaterfallRow[]
-): WaterfallItem[] {
+function visualItemsForMode(mode: TraceViewMode, rows: readonly WaterfallRow[]): WaterfallItem[] {
   if (mode !== "lanes") {
     return rows.map((row) => ({ type: "span", row }))
   }
@@ -119,17 +106,12 @@ export function TraceWaterfall({
   const allRows = useMemo(() => buildTraceTree(spans), [spans])
   const traceWindow = useMemo(() => computeWindow(spans), [spans])
   const traceDurationMs = Number(traceWindow.durationNs) / 1_000_000
-  const [timeline, dispatch] = useReducer(
-    timelineReducer,
-    traceDurationMs,
-    (durationMs) => {
-      const state = initialTimelineState(durationMs)
-      return initialViewport ? { ...state, viewport: initialViewport } : state
-    }
-  )
+  const [timeline, dispatch] = useReducer(timelineReducer, traceDurationMs, (durationMs) => {
+    const state = initialTimelineState(durationMs)
+    return initialViewport ? { ...state, viewport: initialViewport } : state
+  })
   const viewport = timeline.viewport
-  const isFit =
-    viewport.startMs <= 0 && viewport.endMs >= timeline.traceDurationMs
+  const isFit = viewport.startMs <= 0 && viewport.endMs >= timeline.traceDurationMs
   const selfTimes = useMemo(() => computeSelfTimes(spans), [spans])
   const reportViewport = useRef(onViewportChange)
   reportViewport.current = onViewportChange
@@ -154,8 +136,7 @@ export function TraceWaterfall({
     dispatch,
   })
   const spanStartMs = useCallback(
-    (span: WaterfallSpan) =>
-      Number(BigInt(span.tsNanos) - traceWindow.startNs) / 1_000_000,
+    (span: WaterfallSpan) => Number(BigInt(span.tsNanos) - traceWindow.startNs) / 1_000_000,
     [traceWindow.startNs]
   )
   // Minimap = second controller over the same viewport state: drag the
@@ -170,8 +151,7 @@ export function TraceWaterfall({
   } | null>(null)
   const minimapViewportPct = {
     left: (viewport.startMs / timeline.traceDurationMs) * 100,
-    width:
-      ((viewport.endMs - viewport.startMs) / timeline.traceDurationMs) * 100,
+    width: ((viewport.endMs - viewport.startMs) / timeline.traceDurationMs) * 100,
   }
   const minimapMsAt = (clientX: number): number => {
     const node = minimapRef.current
@@ -255,23 +235,11 @@ export function TraceWaterfall({
         : allRows,
     [allRows, errorPathIds, mode]
   )
-  const visualItems = useMemo(
-    () => visualItemsForMode(mode, rows),
-    [mode, rows]
-  )
+  const visualItems = useMemo(() => visualItemsForMode(mode, rows), [mode, rows])
   const minimapRows = useMemo(() => sampledMinimapRows(rows), [rows])
-  const ids = useMemo(
-    () => [WHOLE_TRACE_ID, ...rows.map((row) => row.span.spanId)],
-    [rows]
-  )
-  const services = useMemo(
-    () => Array.from(new Set(spans.map((span) => span.service))),
-    [spans]
-  )
-  const spanIds = useMemo(
-    () => new Set(spans.map((span) => span.spanId)),
-    [spans]
-  )
+  const ids = useMemo(() => [WHOLE_TRACE_ID, ...rows.map((row) => row.span.spanId)], [rows])
+  const services = useMemo(() => Array.from(new Set(spans.map((span) => span.service))), [spans])
+  const spanIds = useMemo(() => new Set(spans.map((span) => span.spanId)), [spans])
   const shouldVirtualize = visualItems.length > 300
   const itemIndexBySpanId = useMemo(() => {
     const index = new Map<string, number>()
@@ -336,8 +304,7 @@ export function TraceWaterfall({
     const active = span.spanId === selectedId
     const highlighted = highlightIds?.has(span.spanId) ?? false
     const failed = span.statusCode === "STATUS_CODE_ERROR"
-    const detached =
-      Boolean(span.parentSpanId) && !spanIds.has(span.parentSpanId ?? "")
+    const detached = Boolean(span.parentSpanId) && !spanIds.has(span.parentSpanId ?? "")
     const startMs = spanStartMs(span)
     const durationMs = Number(span.durationNs) / 1_000_000
     const rect = barRect(startMs, durationMs, viewport)
@@ -358,9 +325,7 @@ export function TraceWaterfall({
         ref={setRowRef(span.spanId)}
         type="button"
         onClick={() => onSelect(active ? null : span.spanId)}
-        onDoubleClick={() =>
-          interactions.zoomToSpan(startMs, startMs + durationMs)
-        }
+        onDoubleClick={() => interactions.zoomToSpan(startMs, startMs + durationMs)}
         className={cn(
           "grid w-full cursor-pointer grid-cols-[16rem_minmax(0,1fr)_6.5rem] items-center rounded-md border-l-2 border-transparent py-1.5 text-left text-sm hover:bg-accent/50",
           active && "bg-accent/70",
@@ -385,10 +350,7 @@ export function TraceWaterfall({
               <Badge variant="outline">{span.service}</Badge>
               {failed ? <Badge variant="rose">error</Badge> : null}
               {detached ? (
-                <Badge
-                  variant="amber"
-                  title="Parent span never arrived; shown at the top level"
-                >
+                <Badge variant="amber" title="Parent span never arrived; shown at the top level">
                   detached
                 </Badge>
               ) : null}
@@ -400,10 +362,8 @@ export function TraceWaterfall({
             <div
               className={cn(
                 "absolute top-1/2 flex h-3 -translate-y-1/2 items-center overflow-hidden rounded-full px-1",
-                active &&
-                  "ring-2 ring-foreground/30 ring-offset-1 ring-offset-background",
-                highlighted &&
-                  "ring-2 ring-primary/60 ring-offset-1 ring-offset-background"
+                active && "ring-2 ring-foreground/30 ring-offset-1 ring-offset-background",
+                highlighted && "ring-2 ring-primary/60 ring-offset-1 ring-offset-background"
               )}
               style={{
                 left: `${rect.leftPct}%`,
@@ -416,9 +376,7 @@ export function TraceWaterfall({
               {labels.name ? (
                 <span className="truncate text-[10px] leading-none text-white/95 mix-blend-luminosity">
                   {span.name}
-                  {labels.duration
-                    ? ` · ${formatDurationNs(span.durationNs)}`
-                    : ""}
+                  {labels.duration ? ` · ${formatDurationNs(span.durationNs)}` : ""}
                 </span>
               ) : null}
             </div>
@@ -426,11 +384,7 @@ export function TraceWaterfall({
         </div>
         <div
           className="pr-1 text-right text-[11px] font-medium text-muted-foreground tabular-nums"
-          title={
-            selfNs !== undefined
-              ? `self ${formatDurationNs(selfNs.toString())}`
-              : undefined
-          }
+          title={selfNs !== undefined ? `self ${formatDurationNs(selfNs.toString())}` : undefined}
         >
           {formatDurationNs(span.durationNs)}
         </div>
@@ -453,16 +407,12 @@ export function TraceWaterfall({
         {item.spanCount.toLocaleString()} span
         {item.spanCount === 1 ? "" : "s"}
       </div>
-      <div className="text-right tabular-nums">
-        {formatDurationNs(item.durationNs)}
-      </div>
+      <div className="text-right tabular-nums">{formatDurationNs(item.durationNs)}</div>
     </div>
   )
 
   const renderVisualItem = (item: WaterfallItem, style?: CSSProperties) =>
-    item.type === "lane"
-      ? renderLaneHeader(item, style)
-      : renderSpanRow(item.row, style)
+    item.type === "lane" ? renderLaneHeader(item, style) : renderSpanRow(item.row, style)
 
   return (
     <div
@@ -498,9 +448,7 @@ export function TraceWaterfall({
               +
               {formatDurationNs(
                 Math.round(
-                  (viewport.startMs +
-                    ((viewport.endMs - viewport.startMs) * pct) / 100) *
-                    1_000_000
+                  (viewport.startMs + ((viewport.endMs - viewport.startMs) * pct) / 100) * 1_000_000
                 )
               )}
             </span>
@@ -586,23 +534,15 @@ export function TraceWaterfall({
             const down = surfaceDown.current
             surfaceDown.current = null
             if (!down) return
-            const travel = Math.hypot(
-              event.clientX - down.x,
-              event.clientY - down.y
-            )
+            const travel = Math.hypot(event.clientX - down.x, event.clientY - down.y)
             if (travel >= 4) return
             // A tap is a span click: forward it to the row underneath the
             // gesture surface.
             const surface = event.currentTarget
             surface.style.pointerEvents = "none"
-            const target = document.elementFromPoint(
-              event.clientX,
-              event.clientY
-            )
+            const target = document.elementFromPoint(event.clientX, event.clientY)
             surface.style.pointerEvents = ""
-            target
-              ?.closest<HTMLButtonElement>('[data-testid^="trace-row-"]')
-              ?.click()
+            target?.closest<HTMLButtonElement>('[data-testid^="trace-row-"]')?.click()
           }}
           onPointerCancel={interactions.handlers.onPointerCancel}
         >
@@ -611,13 +551,8 @@ export function TraceWaterfall({
               data-testid="trace-marquee"
               className="absolute inset-y-0 bg-primary/15 ring-1 ring-primary/50"
               style={{
-                left: Math.min(
-                  interactions.marquee.startPx,
-                  interactions.marquee.endPx
-                ),
-                width: Math.abs(
-                  interactions.marquee.endPx - interactions.marquee.startPx
-                ),
+                left: Math.min(interactions.marquee.startPx, interactions.marquee.endPx),
+                width: Math.abs(interactions.marquee.endPx - interactions.marquee.startPx),
               }}
             />
           ) : null}
@@ -631,9 +566,7 @@ export function TraceWaterfall({
         <div className="relative z-10 flex flex-col gap-0.5">
           <button
             type="button"
-            onClick={() =>
-              onSelect(selectedId === WHOLE_TRACE_ID ? null : WHOLE_TRACE_ID)
-            }
+            onClick={() => onSelect(selectedId === WHOLE_TRACE_ID ? null : WHOLE_TRACE_ID)}
             className={cn(
               "grid w-full cursor-pointer grid-cols-[16rem_minmax(0,1fr)_6.5rem] items-center rounded-md py-1.5 text-left text-sm hover:bg-accent/50",
               selectedId === WHOLE_TRACE_ID && "bg-accent/70"
@@ -669,14 +602,8 @@ export function TraceWaterfall({
           ) : null}
 
           {shouldVirtualize ? (
-            <div
-              ref={rowsRef}
-              className="max-h-[min(70vh,720px)] overflow-auto"
-            >
-              <div
-                className="relative w-full"
-                style={{ height: rowVirtualizer.getTotalSize() }}
-              >
+            <div ref={rowsRef} className="max-h-[min(70vh,720px)] overflow-auto">
+              <div className="relative w-full" style={{ height: rowVirtualizer.getTotalSize() }}>
                 {virtualItems.map((virtualItem) => {
                   const item = visualItems[virtualItem.index]
                   return item

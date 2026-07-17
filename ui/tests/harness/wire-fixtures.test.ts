@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  graphqlWireFixture,
-  sseWireFixture,
-} from "../../src/test/wire-fixtures"
+import { graphqlWireFixture, sseWireFixture } from "../../src/test/wire-fixtures"
 
 describe("external wire fixtures", () => {
   it("returns fresh unknown GraphQL characterization values", () => {

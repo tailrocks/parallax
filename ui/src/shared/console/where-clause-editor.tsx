@@ -8,7 +8,7 @@ import {
   serializeWhereClause,
   WHERE_OPS,
   type WhereFilter,
-} from "@/lib/where-clause"
+} from "@/shared/where-clause"
 import { cn } from "@/lib/utils"
 
 /** Plan 164 where-clause editor (preliminary). Monospace input, live parse
@@ -129,9 +129,7 @@ export function WhereClauseEditor({
               setHighlightIndex((prev) => (prev + 1) % suggestions.length)
             } else if (event.key === "ArrowUp") {
               event.preventDefault()
-              setHighlightIndex(
-                (prev) => (prev - 1 + suggestions.length) % suggestions.length
-              )
+              setHighlightIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length)
             } else if (event.key === "Tab" || event.key === "Enter") {
               event.preventDefault()
               const chosen = suggestions[highlightIndex]

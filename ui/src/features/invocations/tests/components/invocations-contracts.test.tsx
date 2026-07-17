@@ -4,13 +4,10 @@ import { cleanup, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import {
-  InvocationsContent,
-  filterInvocationsByRange,
-} from "@/features/invocations"
+import { InvocationsContent, filterInvocationsByRange } from "@/features/invocations"
 import { errorTypeBreakdown } from "@/features/invocations/components/invocation-errors-tab"
 import { mergeLiveTraces } from "@/features/invocations/components/invocation-traces-tab"
-import { mergeInvocations } from "@/lib/invocation"
+import { mergeInvocations } from "@/features/invocations/model/invocation"
 import { renderTestRouter } from "@/test/router"
 
 const NOW_MS = 1_720_000_000_000
@@ -62,9 +59,7 @@ const rows = mergeInvocations(
   ]
 )
 
-function renderList(
-  overrides: Partial<Parameters<typeof InvocationsContent>[0]> = {}
-) {
+function renderList(overrides: Partial<Parameters<typeof InvocationsContent>[0]> = {}) {
   const onSearch = vi.fn()
   const onOpen = vi.fn()
   const onRefresh = vi.fn()

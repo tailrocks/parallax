@@ -1,12 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router"
 import { useState } from "react"
-import {
-  IconBell,
-  IconBellFilled,
-  IconPlus,
-  IconTrash,
-  IconWebhook,
-} from "@tabler/icons-react"
+import { IconBell, IconBellFilled, IconPlus, IconTrash, IconWebhook } from "@tabler/icons-react"
 
 import { EmptyState } from "@/shared/console/empty-state"
 import { RelativeTime } from "@/shared/console/relative-time"
@@ -53,25 +47,19 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { gqlString, graphql } from "@/lib/api"
+import { gqlString, graphql } from "@/platform/graphql/transport"
 import {
   ALERT_RULE_TEMPLATES,
   draftFromTemplate,
   metricGraduationDraft,
   validateAlertRuleDraft,
-} from "@/lib/alert-rule-form"
-import type {
-  AlertDestinationRow,
-  AlertIncidentRow,
-  AlertRuleRow,
-} from "@/lib/alerts-gql"
-import {
   ALERTS_INDEX_QUERY,
   alertDestinationSaveMutation,
   alertRuleSaveMutation,
   parseStringArray,
   ruleConditionLabel,
-} from "@/lib/alerts-gql"
+} from "@/features/alerts"
+import type { AlertDestinationRow, AlertIncidentRow, AlertRuleRow } from "@/features/alerts"
 
 /** /alerts index (plan 167 step 4, preliminary): rules, incidents, and
  * destinations over the alert GraphQL surface. Peer owns the rule-detail
@@ -105,16 +93,11 @@ export const Route = createFileRoute("/alerts/")({
 })
 
 function SeverityBadge({ severity }: { severity: string }) {
-  return (
-    <Badge variant={severity === "critical" ? "destructive" : "secondary"}>
-      {severity}
-    </Badge>
-  )
+  return <Badge variant={severity === "critical" ? "destructive" : "secondary"}>{severity}</Badge>
 }
 
 function AlertsPage() {
-  const { alertRules, alertIncidents, alertDestinations } =
-    Route.useLoaderData()
+  const { alertRules, alertIncidents, alertDestinations } = Route.useLoaderData()
   const search = Route.useSearch()
   const graduation =
     search.signal_type === "metric" && search.metric_name
@@ -136,9 +119,7 @@ function AlertsPage() {
     }
   }
 
-  const openIncidents = alertIncidents.filter(
-    (incident) => incident.status === "open"
-  )
+  const openIncidents = alertIncidents.filter((incident) => incident.status === "open")
 
   return (
     <div className="flex flex-col gap-4">
@@ -156,19 +137,13 @@ function AlertsPage() {
         }
       />
 
-      {actionError ? (
-        <p className="text-sm text-destructive">{actionError}</p>
-      ) : null}
+      {actionError ? <p className="text-sm text-destructive">{actionError}</p> : null}
 
       <Tabs defaultValue="rules">
         <TabsList>
           <TabsTrigger value="rules">Rules ({alertRules.length})</TabsTrigger>
-          <TabsTrigger value="incidents">
-            Incidents ({openIncidents.length} open)
-          </TabsTrigger>
-          <TabsTrigger value="destinations">
-            Destinations ({alertDestinations.length})
-          </TabsTrigger>
+          <TabsTrigger value="incidents">Incidents ({openIncidents.length} open)</TabsTrigger>
+          <TabsTrigger value="destinations">Destinations ({alertDestinations.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="rules">
@@ -201,8 +176,7 @@ function AlertsPage() {
                       {ruleConditionLabel(rule)}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {parseStringArray(rule.services).join(", ") ||
-                        "all services"}
+                      {parseStringArray(rule.services).join(", ") || "all services"}
                     </TableCell>
                     <TableCell>
                       <SeverityBadge severity={rule.severity} />
@@ -225,9 +199,7 @@ function AlertsPage() {
                       <DeleteButton
                         label={`Delete rule ${rule.name}?`}
                         onDelete={() =>
-                          void mutate(
-                            `mutation { alertRuleDelete(id: "${gqlString(rule.id)}") }`
-                          )
+                          void mutate(`mutation { alertRuleDelete(id: "${gqlString(rule.id)}") }`)
                         }
                       />
                     </TableCell>
@@ -262,19 +234,13 @@ function AlertsPage() {
                 {alertIncidents.map((incident) => (
                   <TableRow key={incident.id}>
                     <TableCell>
-                      <span className="font-medium">
-                        {incident.rule?.name ?? incident.ruleId}
-                      </span>
+                      <span className="font-medium">{incident.rule?.name ?? incident.ruleId}</span>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {incident.groupKey || "—"}
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant={
-                          incident.status === "open" ? "destructive" : "outline"
-                        }
-                      >
+                      <Badge variant={incident.status === "open" ? "destructive" : "outline"}>
                         {incident.status}
                       </Badge>
                     </TableCell>
@@ -322,12 +288,8 @@ function AlertsPage() {
                 <TableBody>
                   {alertDestinations.map((destination) => (
                     <TableRow key={destination.id}>
-                      <TableCell className="font-medium">
-                        {destination.name}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {destination.kind}
-                      </TableCell>
+                      <TableCell className="font-medium">{destination.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{destination.kind}</TableCell>
                       <TableCell className="max-w-64 truncate text-muted-foreground">
                         {destinationUrl(destination.config)}
                       </TableCell>
@@ -369,27 +331,17 @@ function destinationUrl(config: string): string {
   return config
 }
 
-function DeleteButton({
-  label,
-  onDelete,
-}: {
-  label: string
-  onDelete: () => void
-}) {
+function DeleteButton({ label, onDelete }: { label: string; onDelete: () => void }) {
   return (
     <AlertDialog>
-      <AlertDialogTrigger
-        render={<Button variant="ghost-destructive" size="icon-xs" />}
-      >
+      <AlertDialogTrigger render={<Button variant="ghost-destructive" size="icon-xs" />}>
         <IconTrash />
         <span className="sr-only">Delete</span>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{label}</AlertDialogTitle>
-          <AlertDialogDescription>
-            This cannot be undone.
-          </AlertDialogDescription>
+          <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -414,9 +366,7 @@ function NewRuleDialog({
   // A metric-explorer graduation handoff opens the dialog pre-filled.
   const [open, setOpen] = useState(Boolean(graduation))
   const [name, setName] = useState("")
-  const [templateId, setTemplateId] = useState(
-    ALERT_RULE_TEMPLATES[0]?.id ?? "high-error-rate"
-  )
+  const [templateId, setTemplateId] = useState(ALERT_RULE_TEMPLATES[0]?.id ?? "high-error-rate")
   const [threshold, setThreshold] = useState("")
   const [selectedDestinations, setSelectedDestinations] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -426,11 +376,7 @@ function NewRuleDialog({
   async function create() {
     setError(null)
     const draft = graduation
-      ? metricGraduationDraft(
-          name,
-          graduation.metricName,
-          graduation.metricAggregation
-        )
+      ? metricGraduationDraft(name, graduation.metricName, graduation.metricAggregation)
       : draftFromTemplate(templateId, name)
     if (!draft) {
       setError("unknown template")
@@ -475,8 +421,8 @@ function NewRuleDialog({
         <DialogHeader>
           <DialogTitle>New alert rule</DialogTitle>
           <DialogDescription>
-            Start from a template; scope, thresholds, and hysteresis can be
-            refined on the rule page.
+            Start from a template; scope, thresholds, and hysteresis can be refined on the rule
+            page.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3">
@@ -538,10 +484,7 @@ function NewRuleDialog({
             <div className="flex flex-col gap-1.5">
               <Label>Destinations</Label>
               {destinations.map((destination) => (
-                <label
-                  key={destination.id}
-                  className="flex items-center gap-2 text-sm"
-                >
+                <label key={destination.id} className="flex items-center gap-2 text-sm">
                   <Checkbox
                     checked={selectedDestinations.includes(destination.id)}
                     onCheckedChange={(checked) =>
@@ -553,16 +496,14 @@ function NewRuleDialog({
                     }
                   />
                   {destination.name}
-                  <span className="text-muted-foreground">
-                    ({destination.kind})
-                  </span>
+                  <span className="text-muted-foreground">({destination.kind})</span>
                 </label>
               ))}
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">
-              No destinations yet — the rule will open incidents in the UI only
-              until a webhook destination is added.
+              No destinations yet — the rule will open incidents in the UI only until a webhook
+              destination is added.
             </p>
           )}
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -611,8 +552,7 @@ function NewDestinationDialog({ onSaved }: { onSaved: () => void }) {
         <DialogHeader>
           <DialogTitle>New destination</DialogTitle>
           <DialogDescription>
-            Incident notifications POST to this URL. Email is not available in
-            V1.
+            Incident notifications POST to this URL. Email is not available in V1.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3">
@@ -654,10 +594,7 @@ function NewDestinationDialog({ onSaved }: { onSaved: () => void }) {
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
         <DialogFooter>
-          <Button
-            disabled={!name.trim() || !url.trim()}
-            onClick={() => void create()}
-          >
+          <Button disabled={!name.trim() || !url.trim()} onClick={() => void create()}>
             Add destination
           </Button>
         </DialogFooter>

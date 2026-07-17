@@ -1,11 +1,7 @@
 import { cleanup } from "@testing-library/react"
 import { afterEach, beforeEach } from "vitest"
 
-import {
-  assertDiagnostics,
-  recordDiagnostic,
-  resetDiagnostics,
-} from "@/test/diagnostics"
+import { assertDiagnostics, recordDiagnostic, resetDiagnostics } from "@/test/diagnostics"
 import { networkEscapeReason } from "@/test/network"
 import { resetRegisteredTestState } from "@/test/resets"
 

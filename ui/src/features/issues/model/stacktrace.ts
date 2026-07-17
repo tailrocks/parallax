@@ -111,8 +111,7 @@ export function parseStacktrace(input: string | null | undefined): Frame[] {
     }
 
     const rust = trimmed.match(/^\d+:\s+(.+)$/)
-    const rustAt =
-      next?.match(/^at (.+):(\d+):(\d+)$/) ?? next?.match(/^at (.+):(\d+)$/)
+    const rustAt = next?.match(/^at (.+):(\d+):(\d+)$/) ?? next?.match(/^at (.+):(\d+)$/)
     if (rust && rustAt) {
       frames.push(
         frame(`${raw}\n${lines[index + 1]}`, {
@@ -127,8 +126,7 @@ export function parseStacktrace(input: string | null | undefined): Frame[] {
     }
 
     const compactRust =
-      trimmed.match(/^(.+?) at (.+):(\d+):(\d+)$/) ??
-      trimmed.match(/^(.+?) at (.+):(\d+)$/)
+      trimmed.match(/^(.+?) at (.+):(\d+):(\d+)$/) ?? trimmed.match(/^(.+?) at (.+):(\d+)$/)
     if (compactRust) {
       frames.push(
         frame(raw, {

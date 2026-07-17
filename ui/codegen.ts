@@ -35,10 +35,7 @@ const sharedConfig = {
 const config: CodegenConfig = {
   schema: "./graphql/schema.graphql",
   // Production feature operations + one platform probe. No snapshots/build.
-  documents: [
-    "src/features/**/api/*.graphql",
-    "src/platform/graphql/tests/fixtures/*.graphql",
-  ],
+  documents: ["src/features/**/api/*.graphql", "src/platform/graphql/tests/fixtures/*.graphql"],
   ignoreNoDocuments: true,
   generates: {
     "src/platform/graphql/generated/schema-types.generated.ts": {
@@ -92,8 +89,7 @@ const config: CodegenConfig = {
         withObjectType: false,
         zodOptionalType: "nullable",
         // Local TypedDocumentNode — Oxc cannot resolve the empty-main core pkg.
-        documentNodeImport:
-          "@/platform/graphql/typed-document#TypedDocumentNode",
+        documentNodeImport: "@/platform/graphql/typed-document#TypedDocumentNode",
       },
     },
   },

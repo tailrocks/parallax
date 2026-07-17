@@ -3,14 +3,10 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
-import {
-  TopMovers,
-  computeMovers,
-  moverSentence,
-} from "@/shared/console/top-movers"
+import { TopMovers, computeMovers, moverSentence } from "@/shared/console/top-movers"
 import type { ServiceMoverInput } from "@/shared/console/top-movers"
 import { renderTestRouter } from "@/test/router"
-import type { ResolvedRange } from "@/lib/range"
+type ResolvedRange = { key: string; fromNanos: string; toNanos: string }
 
 const range: ResolvedRange = {
   key: "custom",
@@ -66,9 +62,7 @@ describe("computeMovers", () => {
       [{ name: "checkout", spanCount: "100", errorCount: "1", p95Ms: 10 }]
     )
 
-    expect(mover ? moverSentence(mover) : "").toBe(
-      "checkout error rate 1.0% -> 5.0%"
-    )
+    expect(mover ? moverSentence(mover) : "").toBe("checkout error rate 1.0% -> 5.0%")
   })
 })
 
@@ -77,12 +71,8 @@ describe("TopMovers", () => {
     renderWithRouter(
       <TopMovers
         range={range}
-        now={[
-          { name: "checkout", spanCount: "100", errorCount: "5", p95Ms: 10 },
-        ]}
-        previous={[
-          { name: "checkout", spanCount: "100", errorCount: "1", p95Ms: 10 },
-        ]}
+        now={[{ name: "checkout", spanCount: "100", errorCount: "5", p95Ms: 10 }]}
+        previous={[{ name: "checkout", spanCount: "100", errorCount: "1", p95Ms: 10 }]}
       />
     )
 
@@ -101,17 +91,11 @@ describe("TopMovers", () => {
     render(
       <TopMovers
         range={range}
-        now={[
-          { name: "checkout", spanCount: "100", errorCount: "1", p95Ms: 10 },
-        ]}
-        previous={[
-          { name: "checkout", spanCount: "100", errorCount: "1", p95Ms: 10 },
-        ]}
+        now={[{ name: "checkout", spanCount: "100", errorCount: "1", p95Ms: 10 }]}
+        previous={[{ name: "checkout", spanCount: "100", errorCount: "1", p95Ms: 10 }]}
       />
     )
 
-    expect(
-      screen.getByText("Nothing moved more than the thresholds in this window.")
-    ).toBeTruthy()
+    expect(screen.getByText("Nothing moved more than the thresholds in this window.")).toBeTruthy()
   })
 })

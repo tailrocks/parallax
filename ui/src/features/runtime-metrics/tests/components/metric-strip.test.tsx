@@ -59,23 +59,11 @@ describe("MetricStrip", () => {
       })
 
     const rendered = render(
-      <MetricStrip
-        title="Metrics"
-        service="api-a"
-        fromNanos="1"
-        toNanos="2"
-        stepSeconds={30}
-      />
+      <MetricStrip title="Metrics" service="api-a" fromNanos="1" toNanos="2" stepSeconds={30} />
     )
 
     rendered.rerender(
-      <MetricStrip
-        title="Metrics"
-        service="api-b"
-        fromNanos="1"
-        toNanos="2"
-        stepSeconds={30}
-      />
+      <MetricStrip title="Metrics" service="api-b" fromNanos="1" toNanos="2" stepSeconds={30} />
     )
     expect(signals[0]?.aborted).toBe(true)
 

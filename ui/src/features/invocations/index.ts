@@ -22,3 +22,31 @@ export { InvocationsTable } from "@/features/invocations/components/invocations-
 export { InvocationStatusBadge } from "@/features/invocations/components/invocation-status-badge"
 export { errorTypeBreakdown } from "@/features/invocations/components/invocation-errors-tab"
 export { mergeLiveTraces } from "@/features/invocations/components/invocation-traces-tab"
+
+export type {
+  BackgroundCycle,
+  Conversation,
+  Invocation,
+  Job,
+  JobAttempt,
+  ObservedInvocation,
+  ScreenVisit,
+  Session,
+  UiAction,
+} from "@/features/invocations/model/wire"
+export {
+  STALE_AFTER_NS,
+  invocationStatus,
+  mergeInvocations,
+  appModeLabel,
+  invocationDurationNs,
+  type AppMode,
+  type InvocationRow,
+  type InvocationStatus,
+} from "@/features/invocations/model/invocation"
+export {
+  INVOCATION_FACET_VALUES_CAP,
+  invocationFacetCounts,
+  type InvocationFacet,
+  type InvocationFacetValue,
+} from "@/features/invocations/model/invocation-facets"

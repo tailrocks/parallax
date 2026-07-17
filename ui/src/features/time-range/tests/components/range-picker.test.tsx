@@ -16,9 +16,7 @@ describe("RangePicker", () => {
     const button = screen
       .getAllByText(label)
       .map((node) => node.closest("button"))
-      .find(
-        (node): node is HTMLButtonElement => node instanceof HTMLButtonElement
-      )
+      .find((node): node is HTMLButtonElement => node instanceof HTMLButtonElement)
     if (!button) throw new Error(`missing day button ${label}`)
     return button
   }
@@ -30,15 +28,11 @@ describe("RangePicker", () => {
     const now = new Date(2026, 0, 15, 12, 0, 0, 0).getTime()
     vi.spyOn(Date, "now").mockReturnValue(now)
     const onChange = vi.fn()
-    render(
-      <RangePicker value={resolvePreset("24h", now)} onChange={onChange} />
-    )
+    render(<RangePicker value={resolvePreset("24h", now)} onChange={onChange} />)
 
     await user.click(screen.getByRole("button", { name: /Last 24h/i }))
     await user.click(await screen.findByRole("button", { name: /Last hour/i }))
-    expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ key: "1h" })
-    )
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ key: "1h" }))
 
     await user.click(dayButton("10"))
     await user.click(dayButton("12"))

@@ -39,25 +39,14 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
-import {
-  deleteDashboard,
-  saveDashboard,
-} from "@/features/dashboards/api/dashboard-api"
+import { deleteDashboard, saveDashboard } from "@/features/dashboards/api/dashboard-api"
 import { WidgetPicker } from "@/features/dashboards/components/dashboards-page"
-import {
-  emptyWidget,
-  serializeWidgets,
-  type Widget,
-} from "@/features/dashboards/model/widget"
-import { formatCount } from "@/lib/format"
-import { mergeRangeSearch } from "@/lib/range"
-import type { ResolvedRange } from "@/lib/range"
+import { emptyWidget, serializeWidgets, type Widget } from "@/features/dashboards/model/widget"
+import { formatCount } from "@/shared/format"
+import { mergeRangeSearch } from "@/domain/time-range/range"
+import type { ResolvedRange } from "@/domain/time-range/range"
 import type { WidgetData } from "@/features/dashboards/model/widget-data"
 import { cn } from "@/lib/utils"
 
@@ -171,9 +160,7 @@ export function DashboardDetailPage({
                   Edit
                 </Button>
                 <AlertDialog>
-                  <AlertDialogTrigger
-                    render={<Button size="sm" variant="ghost-destructive" />}
-                  >
+                  <AlertDialogTrigger render={<Button size="sm" variant="ghost-destructive" />}>
                     <IconTrash />
                     Delete
                   </AlertDialogTrigger>
@@ -209,11 +196,7 @@ export function DashboardDetailPage({
             <CardTitle className="text-sm">Add widget</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap items-end gap-2">
-            <WidgetPicker
-              metricNames={metricNames}
-              value={addition}
-              onChange={setAddition}
-            />
+            <WidgetPicker metricNames={metricNames} value={addition} onChange={setAddition} />
             <Button
               variant="outline"
               disabled={!addition.metric}
@@ -265,10 +248,7 @@ function WidgetChart({
   onMove: (delta: -1 | 1) => void
 }) {
   const config = Object.fromEntries(
-    data.groups.map((group, index) => [
-      group,
-      { label: group, color: `var(--chart-${index + 1})` },
-    ])
+    data.groups.map((group, index) => [group, { label: group, color: `var(--chart-${index + 1})` }])
   ) satisfies ChartConfig
   const common = { data: data.rows, margin: { left: 8, right: 8, top: 8 } }
   const axes = (
@@ -296,11 +276,7 @@ function WidgetChart({
               <IconArrowDown />
               <span className="sr-only">Move widget down</span>
             </Button>
-            <Button
-              variant="ghost-destructive"
-              size="icon-xs"
-              onClick={onRemove}
-            >
+            <Button variant="ghost-destructive" size="icon-xs" onClick={onRemove}>
               <IconTrash />
               <span className="sr-only">Remove widget</span>
             </Button>
@@ -329,12 +305,7 @@ function WidgetChart({
             <BarChart {...common}>
               {axes}
               {data.groups.map((group) => (
-                <Bar
-                  key={group}
-                  dataKey={group}
-                  fill={`var(--color-${group})`}
-                  radius={2}
-                />
+                <Bar key={group} dataKey={group} fill={`var(--color-${group})`} radius={2} />
               ))}
             </BarChart>
           ) : data.widget.chart === "area" ? (

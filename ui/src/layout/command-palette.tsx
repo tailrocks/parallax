@@ -21,8 +21,8 @@ import {
   CommandList,
   CommandShortcut,
 } from "@/components/ui/command"
-import { formatRelative } from "@/lib/format"
-import { graphql } from "@/lib/api"
+import { formatRelative } from "@/shared/format"
+import { graphql } from "@/platform/graphql/transport"
 import { guessId } from "@/features/quick-navigation"
 import type { IdGuess } from "@/features/quick-navigation"
 
@@ -353,13 +353,9 @@ export function CommandPalette({
               }}
             >
               <IconAffiliate />
-              <span className="min-w-0 flex-1 truncate">
-                {trace.rootName || trace.traceId}
-              </span>
+              <span className="min-w-0 flex-1 truncate">{trace.rootName || trace.traceId}</span>
               {trace.hasError ? <CommandShortcut>error</CommandShortcut> : null}
-              <CommandShortcut>
-                {formatRelative(trace.startNanos)}
-              </CommandShortcut>
+              <CommandShortcut>{formatRelative(trace.startNanos)}</CommandShortcut>
             </CommandItem>
           ))}
           {recent.data.runs.map((run) => (
@@ -375,15 +371,11 @@ export function CommandPalette({
               }}
             >
               <IconTerminal2 />
-              <span className="min-w-0 flex-1 truncate">
-                {run.command ?? run.invocationId}
-              </span>
+              <span className="min-w-0 flex-1 truncate">{run.command ?? run.invocationId}</span>
               {run.errorCount > 0 ? (
                 <CommandShortcut>{run.errorCount} errors</CommandShortcut>
               ) : null}
-              <CommandShortcut>
-                {formatRelative(run.startedAtNanos)}
-              </CommandShortcut>
+              <CommandShortcut>{formatRelative(run.startedAtNanos)}</CommandShortcut>
             </CommandItem>
           ))}
         </CommandGroup>

@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest"
 
-import type {
-  ServiceMapEdge,
-  ServiceMapNode,
-} from "@/features/ecosystem/model/service-map"
+import type { ServiceMapEdge, ServiceMapNode } from "@/features/ecosystem/model/service-map"
 import {
   clearEcosystemLayoutCache,
   ecosystemTopologyKey,
@@ -68,12 +65,8 @@ describe("ELK ecosystem layout", () => {
   it("lays a directed chain from left to right", async () => {
     const layout = await layoutEcosystem(request)
     const positions = new Map(layout.positions.map((item) => [item.id, item]))
-    expect(positions.get("browser")!.x).toBeLessThan(
-      positions.get("checkout")!.x
-    )
-    expect(positions.get("checkout")!.x).toBeLessThan(
-      positions.get("inventory")!.x
-    )
+    expect(positions.get("browser")!.x).toBeLessThan(positions.get("checkout")!.x)
+    expect(positions.get("checkout")!.x).toBeLessThan(positions.get("inventory")!.x)
     expect(layout.width).toBeGreaterThan(0)
     expect(layout.height).toBeGreaterThan(0)
   })

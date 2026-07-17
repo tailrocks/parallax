@@ -29,9 +29,7 @@ const edges: TopologyEdge[] = [
 
 describe("neighborhoodIds", () => {
   it("includes only the focus at 0 hops", () => {
-    expect([...neighborhoodIds("checkout", 0, edges)].sort()).toEqual([
-      "checkout",
-    ])
+    expect([...neighborhoodIds("checkout", 0, edges)].sort()).toEqual(["checkout"])
   })
 
   it("expands 1-hop undirected neighborhood", () => {
@@ -108,9 +106,7 @@ describe("filterLowTraffic", () => {
     expect(r.maxCallCount).toBe(1000)
     expect(r.hiddenCount).toBe(1)
     expect(r.edges.some((e) => e.source === "cli")).toBe(false)
-    expect(
-      r.edges.some((e) => e.source === "checkout" && e.target === "pricing")
-    ).toBe(true)
+    expect(r.edges.some((e) => e.source === "checkout" && e.target === "pricing")).toBe(true)
   })
 
   it("5% keeps edges at exactly the threshold, hides below", () => {
@@ -157,13 +153,11 @@ describe("resolveExternalNode", () => {
   })
 
   it("resolves bare server.address as external HTTP", () => {
-    expect(resolveExternalNode({ "server.address": "api.stripe.com" })).toEqual(
-      {
-        kind: "external",
-        name: "api.stripe.com",
-        system: "api.stripe.com",
-      }
-    )
+    expect(resolveExternalNode({ "server.address": "api.stripe.com" })).toEqual({
+      kind: "external",
+      name: "api.stripe.com",
+      system: "api.stripe.com",
+    })
   })
 
   it("returns null without external attributes", () => {

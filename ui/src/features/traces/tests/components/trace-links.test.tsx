@@ -4,7 +4,7 @@ import { render, screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
 import { LinkedTraceEdges, TraceCompareResult } from "@/features/traces"
-import type { SpanLink, TraceDiff, TraceSummary } from "@/lib/api"
+import type { SpanLink, TraceDiff, TraceSummary } from "@/features/traces/model/wire"
 import { renderTestRouter } from "@/test/router"
 
 describe("LinkedTraceEdges", () => {
@@ -39,9 +39,7 @@ describe("LinkedTraceEdges", () => {
     expect(screen.getByText("consume work")).toBeTruthy()
     expect(screen.getByText("2 spans")).toBeTruthy()
     expect(screen.getByText("error")).toBeTruthy()
-    expect(screen.getByRole("link").getAttribute("href")).toBe(
-      "/traces/target-trace?range=24h"
-    )
+    expect(screen.getByRole("link").getAttribute("href")).toBe("/traces/target-trace?range=24h")
   })
 })
 

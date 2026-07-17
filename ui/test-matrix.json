@@ -2,7 +2,7 @@
   "schema_version": 1,
   "ratchets": {
     "fire_event_calls": 28,
-    "legacy_handoffs": 17,
+    "legacy_handoffs": 2,
     "raw_router_builders": 1,
     "test_cases": 503,
     "test_files": 104
@@ -358,9 +358,8 @@
       "risk": "Telemetry units, dates, counts, and relative times can format inconsistently",
       "scenario_owner": "shared/format",
       "lane_owner": "vitest/unit",
-      "delivery_plan": 149,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/format.test.ts",
+      "test_file": "ui/src/shared/tests/format.test.ts",
       "test_ids": [
         "D-008: strips ANSI escapes instead of rendering raw bytes",
         "D-009: caps oversized bodies with an explicit size hint",
@@ -374,14 +373,7 @@
         "uses date labels for multi-day ranges"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/format.test.ts",
-        "destination_owner": "shared/format",
-        "removal_plan": 149,
-        "created": "2026-07-15",
-        "expires": "plan-149-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-022",
@@ -800,13 +792,12 @@
     },
     {
       "id": "vitest-070",
-      "surface": "features/runs",
+      "surface": "features/invocations",
       "risk": "Invocation status/duration/merge helpers can misclassify lifecycle states",
-      "scenario_owner": "features/runs",
+      "scenario_owner": "features/invocations",
       "lane_owner": "vitest/model",
-      "delivery_plan": 140,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/-invocation.test.ts",
+      "test_file": "ui/src/features/invocations/tests/model/invocation.test.ts",
       "test_ids": [
         "derives the full matrix",
         "uses now while running and end when finished",
@@ -814,14 +805,7 @@
         "prefers registered rows while keeping observed telemetry counts"
       ],
       "required_environment": "bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/-invocation.test.ts",
-        "destination_owner": "features/runs",
-        "removal_plan": 140,
-        "created": "2026-07-15",
-        "expires": "plan-140-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-071",
@@ -943,7 +927,7 @@
       "scenario_owner": "shared/console",
       "lane_owner": "vitest/model",
       "layer": "model",
-      "test_file": "ui/src/shared/hooks/tests/use-timeline-interactions.test.tsx",
+      "test_file": "ui/src/features/traces/tests/hooks/use-timeline-interactions.test.tsx",
       "test_ids": [
         "commits a marquee drag as ZOOM_TO_RANGE with px\u2192ms payload",
         "ctrl-wheel zooms anchored at the cursor",
@@ -958,13 +942,12 @@
     },
     {
       "id": "vitest-w2-7147",
-      "surface": "shared/console",
+      "surface": "features/alerts",
       "risk": "wave-2 alert rule form regression",
-      "scenario_owner": "shared/console",
+      "scenario_owner": "features/alerts",
       "lane_owner": "vitest/model",
-      "delivery_plan": 167,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/alert-rule-form.test.ts",
+      "test_file": "ui/src/features/alerts/tests/model/alert-rule-form.test.ts",
       "test_ids": [
         "accepts a well-formed high-error-rate draft",
         "builds a named draft from a template",
@@ -976,24 +959,16 @@
         "returns null for unknown template ids"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/alert-rule-form.test.ts",
-        "destination_owner": "shared/console",
-        "removal_plan": 167,
-        "created": "2026-07-15",
-        "expires": "plan-167-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-w2-4896",
-      "surface": "features/traces",
+      "surface": "shared/color-by",
       "risk": "wave-2 color by regression",
-      "scenario_owner": "features/traces",
+      "scenario_owner": "shared/color-by",
       "lane_owner": "vitest/model",
-      "delivery_plan": 163,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/color-by.test.ts",
+      "test_file": "ui/src/shared/tests/color-by.test.ts",
       "test_ids": [
         "attribute mode colors values deterministically, missing neutral",
         "falls back to service for missing or unrecognized values",
@@ -1006,24 +981,16 @@
         "status mode: error red, ok info, unset neutral"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/color-by.test.ts",
-        "destination_owner": "features/traces",
-        "removal_plan": 163,
-        "created": "2026-07-15",
-        "expires": "plan-163-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-w2-9955",
-      "surface": "shared/ui",
+      "surface": "shared/colors",
       "risk": "wave-2 colors regression",
-      "scenario_owner": "shared/ui",
+      "scenario_owner": "shared/colors",
       "lane_owner": "vitest/model",
-      "delivery_plan": 162,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/colors.test.ts",
+      "test_file": "ui/src/shared/tests/colors.test.ts",
       "test_ids": [
         "distinguishes the playground service set",
         "falls back to golden-angle for unknown series",
@@ -1035,14 +1002,7 @@
         "snaps hues to 15-degree slots so neighbors stay readable"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/colors.test.ts",
-        "destination_owner": "shared/ui",
-        "removal_plan": 162,
-        "created": "2026-07-15",
-        "expires": "plan-162-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-w2-1954",
@@ -1099,9 +1059,8 @@
       "risk": "wave-2 log histogram brush regression",
       "scenario_owner": "features/logs",
       "lane_owner": "vitest/model",
-      "delivery_plan": 165,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/log-histogram-brush.test.ts",
+      "test_file": "ui/src/features/logs/tests/model/log-histogram-brush.test.ts",
       "test_ids": [
         "builds ~targetCount buckets covering the window",
         "clamps out-of-range pixels",
@@ -1113,14 +1072,7 @@
         "snaps a drag range to inclusive bucket edges"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/log-histogram-brush.test.ts",
-        "destination_owner": "features/logs",
-        "removal_plan": 165,
-        "created": "2026-07-15",
-        "expires": "plan-165-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-w2-3461",
@@ -1128,9 +1080,8 @@
       "risk": "wave-2 log table prefs regression",
       "scenario_owner": "features/logs",
       "lane_owner": "vitest/model",
-      "delivery_plan": 165,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/log-table-prefs.test.ts",
+      "test_file": "ui/src/features/logs/tests/model/log-table-prefs.test.ts",
       "test_ids": [
         "decodes CSV and drops empties/dupes",
         "maps density to class names",
@@ -1140,24 +1091,16 @@
         "round-trips encode/decode"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/log-table-prefs.test.ts",
-        "destination_owner": "features/logs",
-        "removal_plan": 165,
-        "created": "2026-07-15",
-        "expires": "plan-165-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-w2-9888",
-      "surface": "features/dashboards",
+      "surface": "features/runtime-metrics",
       "risk": "wave-2 metric aggregation regression",
-      "scenario_owner": "features/dashboards",
+      "scenario_owner": "features/runtime-metrics",
       "lane_owner": "vitest/model",
-      "delivery_plan": 168,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/metric-aggregation.test.ts",
+      "test_file": "ui/src/features/runtime-metrics/tests/model/metric-aggregation.test.ts",
       "test_ids": [
         "alert graduation carries signal_type=metric",
         "clamps resets to zero (m-shapes counter reset)",
@@ -1172,14 +1115,7 @@
         "types sum/gauge/histogram aggregations"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/metric-aggregation.test.ts",
-        "destination_owner": "features/dashboards",
-        "removal_plan": 168,
-        "created": "2026-07-15",
-        "expires": "plan-168-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-w2-8456",
@@ -1187,9 +1123,8 @@
       "risk": "wave-2 timeline minimap regression",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/model",
-      "delivery_plan": 163,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/timeline-minimap.test.ts",
+      "test_file": "ui/src/features/traces/tests/model/timeline-minimap.test.ts",
       "test_ids": [
         "classifies interior pan and outside recenter",
         "degrades safely for a zero-width minimap",
@@ -1200,14 +1135,7 @@
         "resizes either viewport edge"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/timeline-minimap.test.ts",
-        "destination_owner": "features/traces",
-        "removal_plan": 163,
-        "created": "2026-07-15",
-        "expires": "plan-163-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-w2-2286",
@@ -1215,9 +1143,8 @@
       "risk": "wave-2 timeline viewport regression",
       "scenario_owner": "features/traces",
       "lane_owner": "vitest/model",
-      "delivery_plan": 163,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/timeline-viewport.test.ts",
+      "test_file": "ui/src/features/traces/tests/model/timeline-viewport.test.ts",
       "test_ids": [
         "adopts the marquee range regardless of drag direction",
         "caps the window at the trace duration",
@@ -1252,14 +1179,7 @@
         "toggles collapse on and off without mutating prior state"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/timeline-viewport.test.ts",
-        "destination_owner": "features/traces",
-        "removal_plan": 163,
-        "created": "2026-07-15",
-        "expires": "plan-163-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-w2-7567",
@@ -1287,13 +1207,12 @@
     },
     {
       "id": "vitest-w2-3877",
-      "surface": "features/traces",
+      "surface": "shared/where-clause",
       "risk": "wave-2 where clause regression",
-      "scenario_owner": "features/traces",
+      "scenario_owner": "shared/where-clause",
       "lane_owner": "vitest/model",
-      "delivery_plan": 163,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/where-clause.test.ts",
+      "test_file": "ui/src/shared/tests/where-clause.test.ts",
       "test_ids": [
         "AND chain with mixed operators",
         "CONTAINS and NOT CONTAINS",
@@ -1316,14 +1235,7 @@
         "values with spaces and unicode"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/where-clause.test.ts",
-        "destination_owner": "features/traces",
-        "removal_plan": 163,
-        "created": "2026-07-15",
-        "expires": "plan-163-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-w2-8871",
@@ -1342,13 +1254,12 @@
     },
     {
       "id": "vitest-073",
-      "surface": "features/issues",
+      "surface": "features/alerts",
       "risk": "Regression coverage for alert-incident-timeline.test.ts",
-      "scenario_owner": "features/issues",
+      "scenario_owner": "features/alerts",
       "lane_owner": "vitest/model",
-      "delivery_plan": 167,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/alert-incident-timeline.test.ts",
+      "test_file": "ui/src/features/alerts/tests/model/alert-incident-timeline.test.ts",
       "test_ids": [
         "orders open \u2192 renotify \u2192 resolved with deliveries and checks",
         "adds renotify when open and last > first",
@@ -1357,14 +1268,7 @@
         "returns empty for zero total"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/alert-incident-timeline.test.ts",
-        "destination_owner": "features/issues",
-        "removal_plan": 167,
-        "created": "2026-07-15",
-        "expires": "plan-167-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-074",
@@ -1387,27 +1291,19 @@
     },
     {
       "id": "vitest-075",
-      "surface": "features/runs",
+      "surface": "features/invocations",
       "risk": "Regression coverage for invocation-facets.test.ts",
-      "scenario_owner": "features/runs",
+      "scenario_owner": "features/invocations",
       "lane_owner": "vitest/model",
-      "delivery_plan": 164,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/invocation-facets.test.ts",
+      "test_file": "ui/src/features/invocations/tests/model/invocation-facets.test.ts",
       "test_ids": [
         "counts values per dimension, count-desc then value-asc",
         "derives status through invocationStatus (failed exit codes)",
         "skips missing values and caps the list"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/invocation-facets.test.ts",
-        "destination_owner": "features/runs",
-        "removal_plan": 164,
-        "created": "2026-07-15",
-        "expires": "plan-164-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-076",
@@ -1415,9 +1311,8 @@
       "risk": "Regression coverage for log-pattern-match.test.ts",
       "scenario_owner": "features/logs",
       "lane_owner": "vitest/model",
-      "delivery_plan": 165,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/log-pattern-match.test.ts",
+      "test_file": "ui/src/features/logs/tests/model/log-pattern-match.test.ts",
       "test_ids": [
         "matches parameter churn on the same skeleton",
         "rejects a different stable skeleton",
@@ -1427,14 +1322,7 @@
         "escapes regex metacharacters in stable tokens"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/log-pattern-match.test.ts",
-        "destination_owner": "features/logs",
-        "removal_plan": 165,
-        "created": "2026-07-15",
-        "expires": "plan-165-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-077",
@@ -1442,9 +1330,8 @@
       "risk": "Regression coverage for log-patterns-url.test.ts",
       "scenario_owner": "features/logs",
       "lane_owner": "vitest/model",
-      "delivery_plan": 165,
       "layer": "model",
-      "test_file": "ui/src/lib/__tests__/log-patterns-url.test.ts",
+      "test_file": "ui/src/features/logs/tests/model/log-patterns-url.test.ts",
       "test_ids": [
         "defaults when empty",
         "parses patterns flag variants",
@@ -1454,14 +1341,7 @@
         "merges onto existing params without clobbering unrelated keys"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented",
-      "legacy_handoff": {
-        "current_path": "ui/src/lib/__tests__/log-patterns-url.test.ts",
-        "destination_owner": "features/logs",
-        "removal_plan": 165,
-        "created": "2026-07-15",
-        "expires": "plan-165-completion"
-      }
+      "status": "implemented"
     },
     {
       "id": "vitest-078",
@@ -1496,7 +1376,6 @@
       "risk": "Foundation smoke must prove Chromium + Bun can load the shell brand and primary nav",
       "scenario_owner": "layout/shell",
       "lane_owner": "playwright/foundation",
-      "delivery_plan": 132,
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/smoke/foundation.spec.ts",
       "test_ids": [
@@ -1505,7 +1384,8 @@
       "required_environment": "chromium-foundation",
       "status": "implemented",
       "dataset_id": "foundation-default",
-      "state_class": "smoke"
+      "state_class": "smoke",
+      "delivery_plan": 132
     },
     {
       "id": "pw-shell-root-nav",
@@ -1513,7 +1393,6 @@
       "risk": "Root shell may fail to mount brand or primary navigation against the public GraphQL surface",
       "scenario_owner": "layout/shell",
       "lane_owner": "playwright/contracts",
-      "delivery_plan": 144,
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
       "test_ids": [
@@ -1522,7 +1401,8 @@
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "shell-empty",
-      "state_class": "ready"
+      "state_class": "ready",
+      "delivery_plan": 144
     },
     {
       "id": "pw-shell-workspace-deeplink",
@@ -1530,7 +1410,6 @@
       "risk": "Workspace navigation or deep-link refresh can lose route context",
       "scenario_owner": "layout/shell",
       "lane_owner": "playwright/contracts",
-      "delivery_plan": 144,
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
       "test_ids": [
@@ -1539,7 +1418,8 @@
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "shell-empty",
-      "state_class": "navigation"
+      "state_class": "navigation",
+      "delivery_plan": 144
     },
     {
       "id": "pw-shell-not-found",
@@ -1547,7 +1427,6 @@
       "risk": "Invalid routes may not surface the product not-found panel",
       "scenario_owner": "layout/shell",
       "lane_owner": "playwright/contracts",
-      "delivery_plan": 144,
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
       "test_ids": [
@@ -1556,7 +1435,8 @@
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "shell-empty",
-      "state_class": "not-found"
+      "state_class": "not-found",
+      "delivery_plan": 144
     },
     {
       "id": "pw-shell-theme",
@@ -1564,7 +1444,6 @@
       "risk": "Theme selection may fail to persist across reload",
       "scenario_owner": "layout/shell",
       "lane_owner": "playwright/contracts",
-      "delivery_plan": 144,
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
       "test_ids": [
@@ -1573,7 +1452,8 @@
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "shell-empty",
-      "state_class": "theme"
+      "state_class": "theme",
+      "delivery_plan": 144
     },
     {
       "id": "pw-shell-api-failure",
@@ -1581,7 +1461,6 @@
       "risk": "Recoverable GraphQL failure may not present a retryable error panel",
       "scenario_owner": "layout/shell",
       "lane_owner": "playwright/contracts",
-      "delivery_plan": 144,
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
       "test_ids": [
@@ -1590,7 +1469,8 @@
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "shell-empty",
-      "state_class": "recoverable-error"
+      "state_class": "recoverable-error",
+      "delivery_plan": 144
     },
     {
       "id": "pw-investigations-list-detail",
@@ -1598,7 +1478,6 @@
       "risk": "Seeded investigation list/detail may not load pins and notes from fixture state",
       "scenario_owner": "features/investigations",
       "lane_owner": "playwright/contracts",
-      "delivery_plan": 144,
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/investigations.spec.ts",
       "test_ids": [
@@ -1607,7 +1486,8 @@
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "investigations-pilot",
-      "state_class": "seeded-list-detail"
+      "state_class": "seeded-list-detail",
+      "delivery_plan": 144
     },
     {
       "id": "pw-investigations-crud-pilot",
@@ -1615,7 +1495,6 @@
       "risk": "Investigation create/edit/delete may not persist through the public GraphQL surface",
       "scenario_owner": "features/investigations",
       "lane_owner": "playwright/contracts",
-      "delivery_plan": 144,
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/investigations.spec.ts",
       "test_ids": [
@@ -1624,7 +1503,8 @@
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "investigations-pilot",
-      "state_class": "mutation"
+      "state_class": "mutation",
+      "delivery_plan": 144
     },
     {
       "id": "pw-reserved-investigations-contracts",
@@ -1632,7 +1512,6 @@
       "risk": "Remaining investigations browser contracts beyond the plan 144 pilot",
       "scenario_owner": "features/investigations",
       "lane_owner": "playwright/contracts",
-      "delivery_plan": 134,
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/investigations.spec.ts",
       "test_ids": [
@@ -1641,7 +1520,8 @@
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "investigations-default",
-      "state_class": "inventory"
+      "state_class": "inventory",
+      "delivery_plan": 134
     },
     {
       "id": "pw-reserved-sql-contracts",
@@ -1649,7 +1529,6 @@
       "risk": "SQL safe execution, result states, history, snippet CRUD, schema browser",
       "scenario_owner": "features/sql",
       "lane_owner": "playwright/contracts",
-      "delivery_plan": 135,
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/sql.spec.ts",
       "test_ids": [
@@ -1658,7 +1537,8 @@
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "sql-default",
-      "state_class": "inventory"
+      "state_class": "inventory",
+      "delivery_plan": 135
     },
     {
       "id": "pw-reserved-ecosystem-contracts",
@@ -1666,7 +1546,6 @@
       "risk": "Ecosystem topology, empty/error state, trace/service navigation",
       "scenario_owner": "features/ecosystem",
       "lane_owner": "playwright/contracts",
-      "delivery_plan": 136,
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/ecosystem.spec.ts",
       "test_ids": [
@@ -1675,7 +1554,8 @@
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "ecosystem-default",
-      "state_class": "inventory"
+      "state_class": "inventory",
+      "delivery_plan": 136
     },
     {
       "id": "pw-reserved-dashboards-contracts",
@@ -1683,7 +1563,6 @@
       "risk": "Dashboard list/detail/widget CRUD and chart states",
       "scenario_owner": "features/dashboards",
       "lane_owner": "playwright/contracts",
-      "delivery_plan": 137,
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/dashboards.spec.ts",
       "test_ids": [
@@ -1692,7 +1571,8 @@
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "dashboards-default",
-      "state_class": "inventory"
+      "state_class": "inventory",
+      "delivery_plan": 137
     },
     {
       "id": "pw-reserved-services-contracts",
@@ -1700,7 +1580,6 @@
       "risk": "Services list/detail, filtering, RED/infra absence, exemplars",
       "scenario_owner": "features/services",
       "lane_owner": "playwright/contracts",
-      "delivery_plan": 138,
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/services.spec.ts",
       "test_ids": [
@@ -1709,7 +1588,8 @@
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "services-default",
-      "state_class": "inventory"
+      "state_class": "inventory",
+      "delivery_plan": 138
     },
     {
       "id": "pw-reserved-issues-contracts",
@@ -1717,7 +1597,6 @@
       "risk": "Issues list/detail, search/filter/status mutation, context links",
       "scenario_owner": "features/issues",
       "lane_owner": "playwright/contracts",
-      "delivery_plan": 139,
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/issues.spec.ts",
       "test_ids": [
@@ -1726,7 +1605,8 @@
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "issues-default",
-      "state_class": "inventory"
+      "state_class": "inventory",
+      "delivery_plan": 139
     },
     {
       "id": "pw-reserved-runs-contracts",
@@ -1734,7 +1614,6 @@
       "risk": "Runs list/detail, session state, runtime snapshot, bundle download",
       "scenario_owner": "features/runs",
       "lane_owner": "playwright/contracts",
-      "delivery_plan": 140,
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/runs.spec.ts",
       "test_ids": [
@@ -1743,7 +1622,8 @@
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "runs-default",
-      "state_class": "inventory"
+      "state_class": "inventory",
+      "delivery_plan": 140
     },
     {
       "id": "pw-reserved-logs-contracts",
@@ -1751,7 +1631,6 @@
       "risk": "Logs search/filter/context/saved views/live/reconnect",
       "scenario_owner": "features/logs",
       "lane_owner": "playwright/contracts",
-      "delivery_plan": 141,
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/logs.spec.ts",
       "test_ids": [
@@ -1760,7 +1639,8 @@
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "logs-default",
-      "state_class": "inventory"
+      "state_class": "inventory",
+      "delivery_plan": 141
     },
     {
       "id": "pw-reserved-traces-contracts",
@@ -1768,7 +1648,6 @@
       "risk": "Traces list/detail/compare, waterfall, GraphQL/RPC/story links",
       "scenario_owner": "features/traces",
       "lane_owner": "playwright/contracts",
-      "delivery_plan": 142,
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/traces.spec.ts",
       "test_ids": [
@@ -1777,7 +1656,8 @@
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "traces-default",
-      "state_class": "inventory"
+      "state_class": "inventory",
+      "delivery_plan": 142
     },
     {
       "id": "pw-reserved-shell-contracts",
@@ -1785,7 +1665,6 @@
       "risk": "Remaining shell theme/route-failure contracts beyond plan 144 pilot",
       "scenario_owner": "layout/shell",
       "lane_owner": "playwright/contracts",
-      "delivery_plan": 143,
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
       "test_ids": [
@@ -1794,7 +1673,8 @@
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "shell-default",
-      "state_class": "inventory"
+      "state_class": "inventory",
+      "delivery_plan": 143
     },
     {
       "id": "pw-reserved-overview-contracts",

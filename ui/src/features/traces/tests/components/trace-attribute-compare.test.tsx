@@ -4,7 +4,7 @@ import { render, screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
 import { AttributeComparePanel } from "@/features/traces/components/trace-attribute-compare"
-import type { AttributeCompareRow } from "@/lib/api"
+import type { AttributeCompareRow } from "@/features/traces/model/wire"
 
 const rows: AttributeCompareRow[] = [
   {
@@ -33,8 +33,6 @@ describe("AttributeComparePanel", () => {
   it("renders an empty state", () => {
     render(<AttributeComparePanel rows={[]} />)
 
-    expect(
-      screen.getByText("No overrepresented span attributes in this window.")
-    ).toBeTruthy()
+    expect(screen.getByText("No overrepresented span attributes in this window.")).toBeTruthy()
   })
 })

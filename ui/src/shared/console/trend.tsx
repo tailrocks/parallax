@@ -35,11 +35,7 @@ export function ChartLegend({
 export function thinTicks<T>(ticks: T[], target = 8): T[] {
   if (ticks.length <= target) return ticks
   const step = Math.ceil((ticks.length - 2) / Math.max(1, target - 2))
-  return [
-    ticks[0]!,
-    ...ticks.slice(1, -1).filter((_, index) => index % step === 0),
-    ticks.at(-1)!,
-  ]
+  return [ticks[0]!, ...ticks.slice(1, -1).filter((_, index) => index % step === 0), ticks.at(-1)!]
 }
 
 export function makeEdgeTick(value: string, index: number, ticks: string[]) {

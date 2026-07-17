@@ -870,12 +870,9 @@ type Properties<T> = {
 
 type definedNonNullAny = {}
 
-export const isDefinedNonNullAny = (v: any): v is definedNonNullAny =>
-  v !== undefined && v !== null
+export const isDefinedNonNullAny = (v: any): v is definedNonNullAny => v !== undefined && v !== null
 
-export const definedNonNullAnySchema = z
-  .any()
-  .refine((v) => isDefinedNonNullAny(v))
+export const definedNonNullAnySchema = z.any().refine((v) => isDefinedNonNullAny(v))
 
 export const TraceSortSchema: z.ZodType<
   "DURATION_ASC" | "DURATION_DESC" | "SPAN_COUNT_DESC" | "START_DESC",
@@ -892,187 +889,182 @@ export const IssueSortSchema: z.ZodType<
   "EVENTS" | "FIRST_SEEN" | "LAST_SEEN" | "TREND"
 > = z.enum(["EVENTS", "FIRST_SEEN", "LAST_SEEN", "TREND"])
 
-export const AttributeFilterInputSchema: z.ZodObject<
-  Properties<AttributeFilterInput>
-> = z.object({
+export const AttributeFilterInputSchema: z.ZodObject<Properties<AttributeFilterInput>> = z.object({
   key: z.string(),
   op: z.string(),
   value: z.string(),
 })
 
-export const AlertRuleInputSchema: z.ZodObject<Properties<AlertRuleInput>> =
-  z.object({
-    attributeFilters: z.string().nullable(),
-    comparator: z.string(),
-    consecutiveBreachesRequired: z.number().nullable(),
-    consecutiveHealthyRequired: z.number().nullable(),
-    destinationIds: z.array(z.string()).nullable(),
-    enabled: z.boolean().nullable(),
-    excludeServices: z.array(z.string()).nullable(),
-    groupBy: z.string().nullable(),
-    id: z.string().nullable(),
-    metricAggregation: z.string().nullable(),
-    metricName: z.string().nullable(),
-    minimumSampleCount: z.number().nullable(),
-    name: z.string(),
-    noDataBehavior: z.string().nullable(),
-    renotifyIntervalMinutes: z.number().nullable(),
-    services: z.array(z.string()).nullable(),
-    severity: z.string(),
-    signalType: z.string(),
-    threshold: z.number(),
-    thresholdUpper: z.number().nullable(),
-    windowMinutes: z.number(),
-  })
+export const AlertRuleInputSchema: z.ZodObject<Properties<AlertRuleInput>> = z.object({
+  attributeFilters: z.string().nullable(),
+  comparator: z.string(),
+  consecutiveBreachesRequired: z.number().nullable(),
+  consecutiveHealthyRequired: z.number().nullable(),
+  destinationIds: z.array(z.string()).nullable(),
+  enabled: z.boolean().nullable(),
+  excludeServices: z.array(z.string()).nullable(),
+  groupBy: z.string().nullable(),
+  id: z.string().nullable(),
+  metricAggregation: z.string().nullable(),
+  metricName: z.string().nullable(),
+  minimumSampleCount: z.number().nullable(),
+  name: z.string(),
+  noDataBehavior: z.string().nullable(),
+  renotifyIntervalMinutes: z.number().nullable(),
+  services: z.array(z.string()).nullable(),
+  severity: z.string(),
+  signalType: z.string(),
+  threshold: z.number(),
+  thresholdUpper: z.number().nullable(),
+  windowMinutes: z.number(),
+})
 
-export const ServiceDetailQuerySchema: z.ZodType<ServiceDetailQuery> = z.object(
-  {
-    red: z.object({
-      rate: z.array(
-        z.object({
-          tsNanos: z.string(),
-          value: z.number(),
-        })
-      ),
-      errorRate: z.array(
-        z.object({
-          tsNanos: z.string(),
-          value: z.number(),
-        })
-      ),
-      p50: z.array(
-        z.object({
-          tsNanos: z.string(),
-          value: z.number(),
-        })
-      ),
-      p95: z.array(
-        z.object({
-          tsNanos: z.string(),
-          value: z.number(),
-        })
-      ),
-      p99: z.array(
-        z.object({
-          tsNanos: z.string(),
-          value: z.number(),
-        })
-      ),
-    }),
-    overview: z.object({
-      cpu: z.array(
-        z.object({
-          tsNanos: z.string(),
-          value: z.number(),
-        })
-      ),
-      memory: z.array(
-        z.object({
-          tsNanos: z.string(),
-          value: z.number(),
-        })
-      ),
-      requestRate: z.array(
-        z.object({
-          tsNanos: z.string(),
-          value: z.number(),
-        })
-      ),
-      errorRate: z.array(
-        z.object({
-          tsNanos: z.string(),
-          value: z.number(),
-        })
-      ),
-      latencyP50: z.array(
-        z.object({
-          tsNanos: z.string(),
-          value: z.number(),
-        })
-      ),
-      latencyP95: z.array(
-        z.object({
-          tsNanos: z.string(),
-          value: z.number(),
-        })
-      ),
-      latencyP99: z.array(
-        z.object({
-          tsNanos: z.string(),
-          value: z.number(),
-        })
-      ),
-    }),
-    releases: z.array(
-      z.object({
-        version: z.string(),
-        firstSeenNanos: z.string(),
-        lastSeenNanos: z.string(),
-        spanCount: z.string(),
-      })
-    ),
-    serviceCatalog: z.array(
-      z.object({
-        name: z.string(),
-        serviceVersion: z.string().nullable(),
-        serviceNamespace: z.string().nullable(),
-        deploymentEnvironment: z.string().nullable(),
-        telemetrySdkLanguage: z.string().nullable(),
-        telemetrySdkName: z.string().nullable(),
-        telemetrySdkVersion: z.string().nullable(),
-        lastSeenNanos: z.string(),
-        instanceCount: z.string(),
-      })
-    ),
-    httpDurationExemplars: z.array(
+export const ServiceDetailQuerySchema: z.ZodType<ServiceDetailQuery> = z.object({
+  red: z.object({
+    rate: z.array(
       z.object({
         tsNanos: z.string(),
-        service: z.string(),
-        name: z.string(),
         value: z.number(),
-        traceId: z.string(),
-        spanId: z.string(),
-        invocationId: z.string().nullable(),
-        attributes: z.string(),
       })
     ),
-    rpcDurationExemplars: z.array(
+    errorRate: z.array(
       z.object({
         tsNanos: z.string(),
-        service: z.string(),
-        name: z.string(),
         value: z.number(),
-        traceId: z.string(),
-        spanId: z.string(),
-        invocationId: z.string().nullable(),
-        attributes: z.string(),
       })
     ),
-    runtimeSnapshot: z.array(
+    p50: z.array(
       z.object({
-        family: z.string(),
-        metric: z.string(),
-        unit: z.string().nullable(),
-        points: z.array(
-          z.object({
-            tsNanos: z.string(),
-            value: z.number(),
-          })
-        ),
+        tsNanos: z.string(),
+        value: z.number(),
       })
     ),
-    tracesPage: z.object({
-      items: z.array(
+    p95: z.array(
+      z.object({
+        tsNanos: z.string(),
+        value: z.number(),
+      })
+    ),
+    p99: z.array(
+      z.object({
+        tsNanos: z.string(),
+        value: z.number(),
+      })
+    ),
+  }),
+  overview: z.object({
+    cpu: z.array(
+      z.object({
+        tsNanos: z.string(),
+        value: z.number(),
+      })
+    ),
+    memory: z.array(
+      z.object({
+        tsNanos: z.string(),
+        value: z.number(),
+      })
+    ),
+    requestRate: z.array(
+      z.object({
+        tsNanos: z.string(),
+        value: z.number(),
+      })
+    ),
+    errorRate: z.array(
+      z.object({
+        tsNanos: z.string(),
+        value: z.number(),
+      })
+    ),
+    latencyP50: z.array(
+      z.object({
+        tsNanos: z.string(),
+        value: z.number(),
+      })
+    ),
+    latencyP95: z.array(
+      z.object({
+        tsNanos: z.string(),
+        value: z.number(),
+      })
+    ),
+    latencyP99: z.array(
+      z.object({
+        tsNanos: z.string(),
+        value: z.number(),
+      })
+    ),
+  }),
+  releases: z.array(
+    z.object({
+      version: z.string(),
+      firstSeenNanos: z.string(),
+      lastSeenNanos: z.string(),
+      spanCount: z.string(),
+    })
+  ),
+  serviceCatalog: z.array(
+    z.object({
+      name: z.string(),
+      serviceVersion: z.string().nullable(),
+      serviceNamespace: z.string().nullable(),
+      deploymentEnvironment: z.string().nullable(),
+      telemetrySdkLanguage: z.string().nullable(),
+      telemetrySdkName: z.string().nullable(),
+      telemetrySdkVersion: z.string().nullable(),
+      lastSeenNanos: z.string(),
+      instanceCount: z.string(),
+    })
+  ),
+  httpDurationExemplars: z.array(
+    z.object({
+      tsNanos: z.string(),
+      service: z.string(),
+      name: z.string(),
+      value: z.number(),
+      traceId: z.string(),
+      spanId: z.string(),
+      invocationId: z.string().nullable(),
+      attributes: z.string(),
+    })
+  ),
+  rpcDurationExemplars: z.array(
+    z.object({
+      tsNanos: z.string(),
+      service: z.string(),
+      name: z.string(),
+      value: z.number(),
+      traceId: z.string(),
+      spanId: z.string(),
+      invocationId: z.string().nullable(),
+      attributes: z.string(),
+    })
+  ),
+  runtimeSnapshot: z.array(
+    z.object({
+      family: z.string(),
+      metric: z.string(),
+      unit: z.string().nullable(),
+      points: z.array(
         z.object({
-          traceId: z.string(),
-          rootName: z.string(),
-          service: z.string(),
-          startNanos: z.string(),
-          durationNs: z.string(),
-          spanCount: z.number(),
-          hasError: z.boolean(),
+          tsNanos: z.string(),
+          value: z.number(),
         })
       ),
-    }),
-  }
-)
+    })
+  ),
+  tracesPage: z.object({
+    items: z.array(
+      z.object({
+        traceId: z.string(),
+        rootName: z.string(),
+        service: z.string(),
+        startNanos: z.string(),
+        durationNs: z.string(),
+        spanCount: z.number(),
+        hasError: z.boolean(),
+      })
+    ),
+  }),
+})

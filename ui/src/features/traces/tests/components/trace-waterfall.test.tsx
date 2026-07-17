@@ -4,10 +4,7 @@ import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import {
-  TraceWaterfall,
-  WHOLE_TRACE_ID,
-} from "@/features/traces/components/trace-waterfall"
+import { TraceWaterfall, WHOLE_TRACE_ID } from "@/features/traces/components/trace-waterfall"
 import type { WaterfallSpan } from "@/features/traces/components/trace-waterfall"
 
 const spans: WaterfallSpan[] = [
@@ -55,13 +52,7 @@ afterEach(cleanup)
 
 describe("TraceWaterfall", () => {
   it("renders whole-trace and ordered span rows", () => {
-    render(
-      <TraceWaterfall
-        spans={spans}
-        selectedId={WHOLE_TRACE_ID}
-        onSelect={vi.fn()}
-      />
-    )
+    render(<TraceWaterfall spans={spans} selectedId={WHOLE_TRACE_ID} onSelect={vi.fn()} />)
 
     expect(screen.getByText("Whole trace")).toBeTruthy()
     expect(screen.getByText("GET /checkout")).toBeTruthy()
@@ -74,11 +65,7 @@ describe("TraceWaterfall", () => {
     const user = userEvent.setup()
     const onSelect = vi.fn()
     const { container, rerender } = render(
-      <TraceWaterfall
-        spans={spans}
-        selectedId={WHOLE_TRACE_ID}
-        onSelect={onSelect}
-      />
+      <TraceWaterfall spans={spans} selectedId={WHOLE_TRACE_ID} onSelect={onSelect} />
     )
     const waterfall = container.querySelector("[tabindex='0']")
     expect(waterfall).toBeTruthy()
@@ -90,15 +77,11 @@ describe("TraceWaterfall", () => {
     await user.keyboard("j")
     expect(onSelect).toHaveBeenLastCalledWith("root")
 
-    rerender(
-      <TraceWaterfall spans={spans} selectedId="root" onSelect={onSelect} />
-    )
+    rerender(<TraceWaterfall spans={spans} selectedId="root" onSelect={onSelect} />)
     await user.keyboard("{ArrowDown}")
     expect(onSelect).toHaveBeenLastCalledWith("child")
 
-    rerender(
-      <TraceWaterfall spans={spans} selectedId="child" onSelect={onSelect} />
-    )
+    rerender(<TraceWaterfall spans={spans} selectedId="child" onSelect={onSelect} />)
     await user.keyboard("k")
     expect(onSelect).toHaveBeenLastCalledWith("root")
   })
@@ -115,12 +98,8 @@ describe("TraceWaterfall modes", () => {
       />
     )
 
-    expect(screen.getByTestId("trace-row-child").className).toContain(
-      "border-primary"
-    )
-    expect(screen.getByTestId("trace-row-root").className).not.toContain(
-      "border-primary"
-    )
+    expect(screen.getByTestId("trace-row-child").className).toContain("border-primary")
+    expect(screen.getByTestId("trace-row-root").className).not.toContain("border-primary")
   })
 
   it("shows only errors and ancestors in errors mode", () => {
@@ -152,9 +131,7 @@ describe("TraceWaterfall modes", () => {
       />
     )
 
-    expect(
-      screen.getByText("No errored spans. Showing full trace.")
-    ).toBeTruthy()
+    expect(screen.getByText("No errored spans. Showing full trace.")).toBeTruthy()
     expect(screen.getByText("GET /cache")).toBeTruthy()
   })
 
@@ -174,13 +151,7 @@ describe("TraceWaterfall modes", () => {
   it("selects spans from the minimap", async () => {
     const user = userEvent.setup()
     const onSelect = vi.fn()
-    render(
-      <TraceWaterfall
-        spans={modeSpans}
-        selectedId={WHOLE_TRACE_ID}
-        onSelect={onSelect}
-      />
-    )
+    render(<TraceWaterfall spans={modeSpans} selectedId={WHOLE_TRACE_ID} onSelect={onSelect} />)
 
     await user.click(screen.getAllByTestId("trace-minimap-bar")[1]!)
     expect(onSelect).toHaveBeenCalledWith("child")
@@ -189,9 +160,7 @@ describe("TraceWaterfall modes", () => {
 
 describe("corpus regressions (plan 160)", () => {
   it("D-002 t-deep: span names render on one truncating line, never char-wrapped", () => {
-    render(
-      <TraceWaterfall spans={spans} selectedId={null} onSelect={() => {}} />
-    )
+    render(<TraceWaterfall spans={spans} selectedId={null} onSelect={() => {}} />)
     const name = screen.getByText("GET /checkout")
     expect(name.className).toContain("truncate")
     expect(name.className).not.toContain("break-words")
@@ -224,9 +193,7 @@ describe("corpus regressions (plan 160)", () => {
   })
 
   it("true children are not flagged detached", () => {
-    render(
-      <TraceWaterfall spans={spans} selectedId={null} onSelect={() => {}} />
-    )
+    render(<TraceWaterfall spans={spans} selectedId={null} onSelect={() => {}} />)
     expect(screen.queryByText("detached")).toBeNull()
   })
 })

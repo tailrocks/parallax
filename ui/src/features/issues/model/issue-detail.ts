@@ -1,5 +1,5 @@
-import { formatDelta, type Delta } from "@/lib/format"
-import type { ResolvedRange } from "@/lib/range"
+import { formatDelta, type Delta } from "@/shared/format"
+import type { ResolvedRange } from "@/domain/time-range/range"
 
 import type { TrendPoint } from "@/features/issues/model/issue-summary"
 
@@ -50,19 +50,13 @@ export function rangeHours(range: ResolvedRange): number {
 }
 
 export function shortRunId(invocationId: string): string {
-  return invocationId.length > 8
-    ? `${invocationId.slice(0, 8)}...`
-    : invocationId
+  return invocationId.length > 8 ? `${invocationId.slice(0, 8)}...` : invocationId
 }
 
 export function issueDelta(trend: readonly TrendPoint[]): Delta | null {
   if (trend.length < 2) return null
   const midpoint = Math.floor(trend.length / 2)
-  const previous = trend
-    .slice(0, midpoint)
-    .reduce((sum, point) => sum + point.count, 0)
-  const current = trend
-    .slice(midpoint)
-    .reduce((sum, point) => sum + point.count, 0)
+  const previous = trend.slice(0, midpoint).reduce((sum, point) => sum + point.count, 0)
+  const current = trend.slice(midpoint).reduce((sum, point) => sum + point.count, 0)
   return formatDelta(current, previous)
 }

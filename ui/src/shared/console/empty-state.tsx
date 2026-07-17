@@ -30,9 +30,7 @@ export function EmptyState({
           </EmptyMedia>
         ) : null}
         <EmptyTitle>{title}</EmptyTitle>
-        {description ? (
-          <EmptyDescription>{description}</EmptyDescription>
-        ) : null}
+        {description ? <EmptyDescription>{description}</EmptyDescription> : null}
       </EmptyHeader>
       <EmptyContent />
     </Empty>

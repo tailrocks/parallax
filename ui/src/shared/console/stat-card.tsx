@@ -1,23 +1,11 @@
 import { Area, AreaChart } from "recharts"
-import {
-  IconCircleArrowDownFilled,
-  IconCircleArrowUpFilled,
-} from "@tabler/icons-react"
+import { IconCircleArrowDownFilled, IconCircleArrowUpFilled } from "@tabler/icons-react"
 
-import type { Delta } from "@/lib/format"
+import type { Delta } from "@/shared/format"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
 
 export function DeltaBadge({
@@ -31,8 +19,7 @@ export function DeltaBadge({
     return <Badge variant="secondary">~0%</Badge>
   }
   const good = inverted ? delta.dir === "down" : delta.dir === "up"
-  const Icon =
-    delta.dir === "up" ? IconCircleArrowUpFilled : IconCircleArrowDownFilled
+  const Icon = delta.dir === "up" ? IconCircleArrowUpFilled : IconCircleArrowDownFilled
   return (
     <Badge variant={good ? "emerald" : "rose"}>
       <Icon />
@@ -67,12 +54,7 @@ export function StatCard({
         <div className="flex items-center justify-between gap-1.5">
           <div className="flex items-center gap-1.5">
             {Icon ? (
-              <Icon
-                className={cn(
-                  "size-[13px] shrink-0 text-muted-foreground",
-                  iconClassName
-                )}
-              />
+              <Icon className={cn("size-[13px] shrink-0 text-muted-foreground", iconClassName)} />
             ) : null}
             <CardDescription>{label}</CardDescription>
           </div>
@@ -102,10 +84,7 @@ export function CardSparkline({
   className?: string
 }) {
   return (
-    <ChartContainer
-      config={sparkConfig}
-      className={cn("h-12 w-full", className)}
-    >
+    <ChartContainer config={sparkConfig} className={cn("h-12 w-full", className)}>
       <AreaChart data={data} margin={{ left: 0, right: 0, top: 4, bottom: 0 }}>
         <defs>
           <linearGradient id="sparkline-fill" x1="0" y1="0" x2="0" y2="1">
@@ -127,23 +106,14 @@ export function CardSparkline({
   )
 }
 
-export function PillMeter({
-  value,
-  segments = 12,
-}: {
-  value: number
-  segments?: number
-}) {
+export function PillMeter({ value, segments = 12 }: { value: number; segments?: number }) {
   const filled = Math.round(Math.max(0, Math.min(1, value)) * segments)
   return (
     <div className="flex h-2 gap-0.5 rounded-full bg-muted p-0.5">
       {Array.from({ length: segments }, (_, index) => (
         <span
           key={index}
-          className={cn(
-            "flex-1 rounded-full",
-            index < filled ? "bg-primary" : "bg-transparent"
-          )}
+          className={cn("flex-1 rounded-full", index < filled ? "bg-primary" : "bg-transparent")}
         />
       ))}
     </div>

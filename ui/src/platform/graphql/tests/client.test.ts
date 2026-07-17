@@ -82,9 +82,7 @@ describe("executeGraphqlOperation", () => {
   it("rejects non-empty errors even when data is present", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () =>
-        Response.json({ data: validData, errors: [{ message: "x" }] })
-      )
+      vi.fn(async () => Response.json({ data: validData, errors: [{ message: "x" }] }))
     )
     await expect(
       executeGraphqlOperation(

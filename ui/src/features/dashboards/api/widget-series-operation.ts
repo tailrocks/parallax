@@ -188,15 +188,9 @@ function argument(name: string, variableName: string) {
 }
 
 /** Assert document has only Variable argument values and fixed selection. */
-export function assertWidgetSeriesDocumentInvariants(
-  document: DocumentNode
-): void {
+export function assertWidgetSeriesDocumentInvariants(document: DocumentNode): void {
   const op = document.definitions[0]
-  if (
-    !op ||
-    op.kind !== Kind.OPERATION_DEFINITION ||
-    op.name?.value !== "DashboardWidgetSeries"
-  ) {
+  if (!op || op.kind !== Kind.OPERATION_DEFINITION || op.name?.value !== "DashboardWidgetSeries") {
     throw new Error("expected named DashboardWidgetSeries operation")
   }
   if (op.selectionSet.selections.length > WIDGET_SERIES_CHUNK) {

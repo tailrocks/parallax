@@ -30,13 +30,7 @@ import {
 } from "@/features/investigations/api/investigation-api"
 import { investigationErrorMessage } from "@/features/investigations/model/investigation-error"
 
-export function PinButton({
-  kind,
-  label,
-}: {
-  kind: InvestigationPinKind
-  label: string
-}) {
+export function PinButton({ kind, label }: { kind: InvestigationPinKind; label: string }) {
   const router = useRouter()
   const currentHref = useRouterState({
     select: (state) => state.location.href,
@@ -78,10 +72,7 @@ export function PinButton({
     setError(null)
     setMessage(null)
     try {
-      const state = appendInvestigationPin(
-        parseInvestigationState(investigation.state),
-        pin
-      )
+      const state = appendInvestigationPin(parseInvestigationState(investigation.state), pin)
       await saveInvestigation({
         id: investigation.id,
         name: investigation.name,
@@ -134,9 +125,7 @@ export function PinButton({
       <PopoverContent align="end" className="w-80">
         <PopoverHeader>
           <PopoverTitle>Pin to investigation</PopoverTitle>
-          <PopoverDescription>
-            Capture this page with its current URL state.
-          </PopoverDescription>
+          <PopoverDescription>Capture this page with its current URL state.</PopoverDescription>
         </PopoverHeader>
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2 rounded-lg border bg-muted/30 px-3 py-2">
@@ -157,22 +146,16 @@ export function PinButton({
                   onClick={() => void saveToInvestigation(investigation)}
                 >
                   <span className="truncate">{investigation.name}</span>
-                  {savingId === investigation.id ? (
-                    <IconCheck data-icon="inline-end" />
-                  ) : null}
+                  {savingId === investigation.id ? <IconCheck data-icon="inline-end" /> : null}
                 </Button>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              No investigations yet.
-            </p>
+            <p className="text-sm text-muted-foreground">No investigations yet.</p>
           )}
           <FieldGroup className="gap-3">
             <Field>
-              <FieldLabel htmlFor="new-investigation-name">
-                New investigation
-              </FieldLabel>
+              <FieldLabel htmlFor="new-investigation-name">New investigation</FieldLabel>
               <Input
                 id="new-investigation-name"
                 value={newName}
@@ -190,9 +173,7 @@ export function PinButton({
               Create and pin
             </Button>
           </FieldGroup>
-          {message ? (
-            <p className="text-sm text-muted-foreground">{message}</p>
-          ) : null}
+          {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
       </PopoverContent>

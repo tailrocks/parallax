@@ -33,9 +33,7 @@ export function useRuntimeMetrics({
       activeController?.abort()
       const controller = new AbortController()
       activeController = controller
-      const to = live
-        ? ((BigInt(Date.now()) + 30_000n) * 1_000_000n).toString()
-        : toNanos
+      const to = live ? ((BigInt(Date.now()) + 30_000n) * 1_000_000n).toString() : toNanos
       void loadRuntimeMetricStrip({
         service,
         invocationId,
@@ -54,22 +52,13 @@ export function useRuntimeMetrics({
         })
     }
     if (pageVisible) fetchPanels()
-    const timer =
-      live && pageVisible ? setInterval(fetchPanels, 5000) : undefined
+    const timer = live && pageVisible ? setInterval(fetchPanels, 5000) : undefined
     return () => {
       cancelled = true
       activeController?.abort()
       if (timer) clearInterval(timer)
     }
-  }, [
-    service,
-    invocationId,
-    fromNanos,
-    toNanos,
-    stepSeconds,
-    live,
-    pageVisible,
-  ])
+  }, [service, invocationId, fromNanos, toNanos, stepSeconds, live, pageVisible])
 
   return panels
 }

@@ -12,7 +12,7 @@ import { TableSkeleton } from "@/shared/console/skeletons"
 import { PageHeader } from "@/shared/components/page-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { RangePicker } from "@/features/time-range"
-import { resolveRangeSearch, updateRangeSearch } from "@/lib/range"
+import { resolveRangeSearch, updateRangeSearch } from "@/domain/time-range/range"
 
 export function EcosystemPage({
   serviceMap,
@@ -27,10 +27,7 @@ export function EcosystemPage({
   })
   const showSkeleton = useDelayedLoading(pending)
   const range = useMemo(() => resolveRangeSearch(search), [search])
-  const graph = useMemo(
-    () => projectServiceMap(serviceMap, search),
-    [search, serviceMap]
-  )
+  const graph = useMemo(() => projectServiceMap(serviceMap, search), [search, serviceMap])
   const update = (patch: Partial<EcosystemSearch>) => {
     void navigate({
       search: (current) => ({ ...current, ...patch }),

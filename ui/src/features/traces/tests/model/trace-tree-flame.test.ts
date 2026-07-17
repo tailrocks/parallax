@@ -56,11 +56,7 @@ describe("computeSelfTimes (plan 163)", () => {
   })
 
   it("never goes negative when children fully cover the parent", () => {
-    const spans = [
-      span("root", null, 0, 10),
-      span("c1", "root", 0, 10),
-      span("c2", "root", 0, 10),
-    ]
+    const spans = [span("root", null, 0, 10), span("c1", "root", 0, 10), span("c2", "root", 0, 10)]
     expect(computeSelfTimes(spans).get("root")).toBe(0n)
   })
 

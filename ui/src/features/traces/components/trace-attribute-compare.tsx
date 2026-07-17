@@ -7,8 +7,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { AttributeCompareRow } from "@/lib/api"
-import { formatPercent } from "@/lib/format"
+import type { AttributeCompareRow } from "@/features/traces/model/wire"
+import { formatPercent } from "@/shared/format"
 import { cn } from "@/lib/utils"
 
 function count(value: string): number {
@@ -33,25 +33,16 @@ function ShareBar({ value, muted }: { value: number; muted?: boolean }) {
     <span className="flex min-w-32 items-center gap-2">
       <span className="h-2 flex-1 rounded-full bg-muted">
         <span
-          className={cn(
-            "block h-2 rounded-full",
-            muted ? "bg-muted-foreground/45" : "bg-primary"
-          )}
+          className={cn("block h-2 rounded-full", muted ? "bg-muted-foreground/45" : "bg-primary")}
           style={{ width: `${pct}%` }}
         />
       </span>
-      <span className="w-12 text-right font-mono text-xs tabular-nums">
-        {formatPercent(value)}
-      </span>
+      <span className="w-12 text-right font-mono text-xs tabular-nums">{formatPercent(value)}</span>
     </span>
   )
 }
 
-export function AttributeComparePanel({
-  rows,
-}: {
-  rows: AttributeCompareRow[]
-}) {
+export function AttributeComparePanel({ rows }: { rows: AttributeCompareRow[] }) {
   if (rows.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -78,15 +69,11 @@ export function AttributeComparePanel({
           const baselineShare = share(row.baselineCount, row.baselineTotal)
           return (
             <TableRow key={`${row.key}-${row.value}`}>
-              <TableCell className="font-mono text-xs tabular-nums">
-                #{index + 1}
-              </TableCell>
+              <TableCell className="font-mono text-xs tabular-nums">#{index + 1}</TableCell>
               <TableCell>
                 <span className="flex min-w-0 flex-wrap items-center gap-1.5">
                   <span className="font-mono text-xs break-all">{row.key}</span>
-                  {identifierKey(row.key) ? (
-                    <Badge variant="outline">identifier</Badge>
-                  ) : null}
+                  {identifierKey(row.key) ? <Badge variant="outline">identifier</Badge> : null}
                 </span>
               </TableCell>
               <TableCell className="max-w-72 font-mono text-xs break-words whitespace-normal">

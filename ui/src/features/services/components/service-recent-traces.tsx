@@ -15,8 +15,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import type { TraceSummary } from "@/features/services/model/service-detail"
-import { formatDurationNs } from "@/lib/format"
-import { rangeLinkSearch, type ResolvedRange } from "@/lib/range"
+import { formatDurationNs } from "@/shared/format"
+import { rangeLinkSearch, type ResolvedRange } from "@/domain/time-range/range"
 import { cn } from "@/lib/utils"
 
 export function ServiceRecentTraces({
@@ -55,10 +55,7 @@ export function ServiceRecentTraces({
                 {traces.map((trace) => (
                   <TableRow
                     key={trace.traceId}
-                    className={cn(
-                      trace.hasError &&
-                        "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]"
-                    )}
+                    className={cn(trace.hasError && "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]")}
                   >
                     <TableCell>
                       <Link

@@ -1,10 +1,6 @@
 import { createRouter as createTanStackRouter } from "@tanstack/react-router"
 
-import {
-  RouteErrorPanel,
-  RouteNotFoundPanel,
-  RoutePendingPanel,
-} from "@/layout/route-boundaries"
+import { RouteErrorPanel, RouteNotFoundPanel, RoutePendingPanel } from "@/layout/route-boundaries"
 import { routeTree } from "./routeTree.gen"
 
 export function getRouter() {

@@ -123,11 +123,7 @@ async function postOperation(
       schemaIssueCount: body.errors.length,
     })
   }
-  if (
-    body.data === null ||
-    body.data === undefined ||
-    typeof body.data !== "object"
-  ) {
+  if (body.data === null || body.data === undefined || typeof body.data !== "object") {
     throw graphqlError("invalid-envelope", {
       operationName: "DashboardWidgetSeries",
       message: "graphql response missing data",
@@ -163,10 +159,7 @@ function decodeAliasSet(
         schemaIssueCount: issues.length,
         schemaIssuePaths: issues
           .slice(0, 8)
-          .map(
-            (issue) =>
-              `${alias}.${issue.path.map(String).join(".") || "(root)"}`
-          ),
+          .map((issue) => `${alias}.${issue.path.map(String).join(".") || "(root)"}`),
       })
     }
     return parsed.data

@@ -1,18 +1,15 @@
 import { useMemo, useState } from "react"
 
 import type { WaterfallSpan } from "@/features/traces/components/trace-waterfall"
-import { serviceColor } from "@/lib/colors"
-import { formatDurationNs } from "@/lib/format"
+import { serviceColor } from "@/shared/colors"
+import { formatDurationNs } from "@/shared/format"
 import { packFlameLanes } from "@/features/traces/model/trace-tree"
 import { cn } from "@/lib/utils"
 
 const LANE_HEIGHT_PX = 30
 const LABEL_MIN_WIDTH_PCT = 7
 
-function focusedSpans(
-  spans: readonly WaterfallSpan[],
-  focusId: string | null
-): WaterfallSpan[] {
+function focusedSpans(spans: readonly WaterfallSpan[], focusId: string | null): WaterfallSpan[] {
   if (!focusId) return [...spans]
   const included = new Set([focusId])
   let changed = true
@@ -38,10 +35,7 @@ export function TraceFlamegraph({
   onSelect: (spanId: string) => void
 }) {
   const [focusId, setFocusId] = useState<string | null>(null)
-  const visibleSpans = useMemo(
-    () => focusedSpans(spans, focusId),
-    [focusId, spans]
-  )
+  const visibleSpans = useMemo(() => focusedSpans(spans, focusId), [focusId, spans])
   const layout = useMemo(() => packFlameLanes(visibleSpans), [visibleSpans])
   const depthOffsets = useMemo(() => {
     let lanes = 0

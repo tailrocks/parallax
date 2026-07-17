@@ -23,10 +23,7 @@ export function clearGraphqlCache(): void {
   inflight.clear()
 }
 
-export async function graphql<T>(
-  query: string,
-  init?: { signal?: AbortSignal }
-): Promise<T> {
+export async function graphql<T>(query: string, init?: { signal?: AbortSignal }): Promise<T> {
   const requestInit: RequestInit = {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -56,10 +53,7 @@ export async function graphql<T>(
  * the cache so a shared module never leaks data across requests. Pollers and
  * explicit Refresh paths should keep using raw `graphql`.
  */
-export async function graphqlCached<T>(
-  query: string,
-  init?: { signal?: AbortSignal }
-): Promise<T> {
+export async function graphqlCached<T>(query: string, init?: { signal?: AbortSignal }): Promise<T> {
   // Cache is client-only — Bun/SSR may share the module across requests.
   if (typeof window === "undefined") {
     return graphql<T>(query, init)
@@ -104,8 +98,5 @@ export function gqlString(value: string): string {
     .replace(/\n/g, "\\n")
     .replace(/\r/g, "")
     .replace(/\t/g, "\\t")
-    .replace(
-      rawControlCharacters,
-      (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")
-    )
+    .replace(rawControlCharacters, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"))
 }

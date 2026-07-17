@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest"
 
-import { draftFromTemplate } from "@/lib/alert-rule-form"
 import {
+  draftFromTemplate,
   alertDestinationSaveMutation,
   alertRuleSaveMutation,
   parseStringArray,
   ruleConditionLabel,
-} from "@/lib/alerts-gql"
+} from "@/features/alerts"
 
 describe("alertRuleSaveMutation", () => {
   it("serializes a template draft into an input-object mutation", () => {
@@ -70,9 +70,7 @@ describe("alertDestinationSaveMutation", () => {
     )
     expect(mutation).toContain('name: "Ops hook"')
     expect(mutation).toContain('kind: "webhook"')
-    expect(mutation).toContain(
-      'config: "{\\"url\\":\\"http://127.0.0.1:9099/hook\\"}"'
-    )
+    expect(mutation).toContain('config: "{\\"url\\":\\"http://127.0.0.1:9099/hook\\"}"')
     expect(mutation).not.toContain("id:")
   })
 })

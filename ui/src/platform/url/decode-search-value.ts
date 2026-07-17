@@ -2,10 +2,7 @@
 
 import { boundaryError } from "@/platform/external-values/boundary-error"
 import { reportBoundaryError } from "@/platform/external-values/boundary-diagnostic"
-import type {
-  BoundaryResult,
-  RuntimeDecoder,
-} from "@/platform/external-values/runtime-decoder"
+import type { BoundaryResult, RuntimeDecoder } from "@/platform/external-values/runtime-decoder"
 
 const BOUNDARY_ID = "url.decode-search-value"
 

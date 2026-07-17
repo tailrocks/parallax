@@ -6,8 +6,8 @@ import { FilterSelect, SearchInput, Toolbar } from "@/shared/console/data-table"
 import { EmptyState } from "@/shared/console/empty-state"
 import { PageHeader } from "@/shared/components/page-header"
 import { MetricsTable } from "./-metrics-table"
-import { graphqlCached } from "@/lib/api"
-import { inferMetricKind, type MetricKind } from "@/lib/metric-aggregation"
+import { graphqlCached } from "@/platform/graphql/transport"
+import { inferMetricKind, type MetricKind } from "@/features/runtime-metrics"
 
 // Plan 168 metrics explorer browse surface — metricCatalog for kind-aware
 // listing (falls back to metricNames + name inference if catalog empty).
@@ -56,12 +56,10 @@ export const Route = createFileRoute("/metrics/")({
     } catch {
       // fall through
     }
-    const names = await graphqlCached<{ metricNames: string[] }>(
-      `{ metricNames }`
-    ).then((d) => d.metricNames)
-    return names.map(
-      (name): CatalogRow => ({ name, kind: inferMetricKind(name) })
+    const names = await graphqlCached<{ metricNames: string[] }>(`{ metricNames }`).then(
+      (d) => d.metricNames
     )
+    return names.map((name): CatalogRow => ({ name, kind: inferMetricKind(name) }))
   },
   component: MetricsPage,
 })
@@ -86,10 +84,7 @@ function MetricsPage() {
   }, [catalog, search.kind, text])
   return (
     <div className="space-y-4 p-4">
-      <PageHeader
-        title="Metrics"
-        description="Browse metrics, then open one."
-      />
+      <PageHeader title="Metrics" description="Browse metrics, then open one." />
       <Toolbar>
         <SearchInput
           value={text}
@@ -104,9 +99,7 @@ function MetricsPage() {
         />
         <FilterSelect
           {...(search.kind ? { value: search.kind } : {})}
-          onChange={(kind) =>
-            void navigate({ search: (prev) => ({ ...prev, kind }) })
-          }
+          onChange={(kind) => void navigate({ search: (prev) => ({ ...prev, kind }) })}
           options={KIND_OPTIONS}
           placeholder="Kind"
         />

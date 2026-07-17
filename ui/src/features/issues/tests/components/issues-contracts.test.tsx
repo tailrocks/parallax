@@ -4,12 +4,8 @@ import { cleanup, screen } from "@testing-library/react"
 import { defaultParseSearch } from "@tanstack/react-router"
 import { afterEach, describe, expect, it } from "vitest"
 
-import { customRange, resolvePreset } from "@/lib/range"
-import {
-  IssueDetailContent,
-  IssuesContent,
-  type IssuesData,
-} from "@/features/issues"
+import { customRange, resolvePreset } from "@/domain/time-range/range"
+import { IssueDetailContent, IssuesContent, type IssuesData } from "@/features/issues"
 import { renderTestRouter } from "@/test/router"
 
 afterEach(cleanup)
@@ -100,18 +96,16 @@ describe("Issues route", () => {
 
     expect(await screen.findByText("panic")).toBeTruthy()
     expect(screen.getByRole("columnheader", { name: "Service" })).toBeTruthy()
-    expect(
-      screen.getByRole("link", { name: "checkout" }).getAttribute("href")
-    ).toBe("/services/checkout?range=24h")
-    expect(
-      screen.getByRole("link", { name: /trace trace-a/i }).getAttribute("href")
-    ).toBe("/traces/trace-a?range=24h")
+    expect(screen.getByRole("link", { name: "checkout" }).getAttribute("href")).toBe(
+      "/services/checkout?range=24h"
+    )
+    expect(screen.getByRole("link", { name: /trace trace-a/i }).getAttribute("href")).toBe(
+      "/traces/trace-a?range=24h"
+    )
     const links = screen.getAllByRole("link")
-    expect(
-      links.some(
-        (link) => link.getAttribute("href") === "/issues/panic-a?range=24h"
-      )
-    ).toBe(true)
+    expect(links.some((link) => link.getAttribute("href") === "/issues/panic-a?range=24h")).toBe(
+      true
+    )
   })
 
   it("preserves custom ranges in rendered drilldown links", async () => {
@@ -126,18 +120,10 @@ describe("Issues route", () => {
     )
 
     expect(await screen.findByText("panic")).toBeTruthy()
-    const urls = screen
-      .getAllByRole("link")
-      .map((link) => parseHref(link.getAttribute("href")!))
+    const urls = screen.getAllByRole("link").map((link) => parseHref(link.getAttribute("href")!))
 
-    for (const pathname of [
-      "/services/checkout",
-      "/traces/trace-a",
-      "/issues/panic-a",
-    ]) {
-      const match = urls.find(
-        (candidate) => candidate.url.pathname === pathname
-      )
+    for (const pathname of ["/services/checkout", "/traces/trace-a", "/issues/panic-a"]) {
+      const match = urls.find((candidate) => candidate.url.pathname === pathname)
       expect(match).toBeTruthy()
       expect(match?.search).toMatchObject({
         range: "custom",
@@ -149,32 +135,22 @@ describe("Issues route", () => {
 
   it("renders parsed stack frames and timestamped breadcrumbs", async () => {
     renderWithRouter(
-      <IssueDetailContent
-        data={detailFixture}
-        range={range}
-        onRange={() => {}}
-      />,
+      <IssueDetailContent data={detailFixture} range={range} onRange={() => {}} />,
       "/issues/panic-a"
     )
 
     expect(await screen.findByText("src/cart.rs:99:5")).toBeTruthy()
     expect(screen.getByText("checkout::cart::total")).toBeTruthy()
-    expect(
-      screen.getByText((_, element) => element?.textContent === "release v1")
-    ).toBeTruthy()
+    expect(screen.getByText((_, element) => element?.textContent === "release v1")).toBeTruthy()
     expect(screen.getByText("Logs around latest event")).toBeTruthy()
     expect(screen.getByText("parallax issue context panic-a")).toBeTruthy()
     expect(
       screen
         .getAllByRole("link")
-        .some(
-          (link) => link.getAttribute("href") === "/invocations/run-a?range=24h"
-        )
+        .some((link) => link.getAttribute("href") === "/invocations/run-a?range=24h")
     ).toBe(true)
-    expect(
-      screen
-        .getByRole("link", { name: /open trace trace-a/i })
-        .getAttribute("href")
-    ).toBe("/traces/trace-a?range=24h")
+    expect(screen.getByRole("link", { name: /open trace trace-a/i }).getAttribute("href")).toBe(
+      "/traces/trace-a?range=24h"
+    )
   })
 })

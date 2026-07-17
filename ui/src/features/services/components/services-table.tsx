@@ -20,8 +20,8 @@ import type {
   ServicesSearch,
   ServicesSearchPatch,
 } from "@/features/services/model/services-search"
-import { formatCount, formatDurationNs, formatPercent } from "@/lib/format"
-import { rangeLinkSearch, type ResolvedRange } from "@/lib/range"
+import { formatCount, formatDurationNs, formatPercent } from "@/shared/format"
+import { rangeLinkSearch, type ResolvedRange } from "@/domain/time-range/range"
 import { cn } from "@/lib/utils"
 
 export function ServicesTable({
@@ -40,8 +40,7 @@ export function ServicesTable({
   onSearch: (patch: ServicesSearchPatch) => void
 }) {
   const sortProps = search.sort ? { sort: search.sort } : {}
-  const onSort = (sort: string | undefined) =>
-    onSearch({ sort: sort as ServiceSort | undefined })
+  const onSort = (sort: string | undefined) => onSearch({ sort: sort as ServiceSort | undefined })
 
   return (
     <div className="overflow-hidden rounded-lg border bg-card">
@@ -118,9 +117,7 @@ export function ServicesTable({
                   className="font-mono text-xs"
                   title={`namespace ${row.serviceNamespace ?? "not emitted"}; instances ${row.instanceCount ?? "0"}`}
                 >
-                  {row.serviceVersion ?? (
-                    <span className="font-sans text-muted-foreground">-</span>
-                  )}
+                  {row.serviceVersion ?? <span className="font-sans text-muted-foreground">-</span>}
                 </TableCell>
                 <TableCell
                   className="text-muted-foreground"
@@ -147,9 +144,7 @@ export function ServicesTable({
                 <TableCell
                   className={cn(
                     "text-right tabular-nums",
-                    errors > 0
-                      ? "text-rose-600 dark:text-rose-400"
-                      : "text-muted-foreground/40"
+                    errors > 0 ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground/40"
                   )}
                 >
                   <Link

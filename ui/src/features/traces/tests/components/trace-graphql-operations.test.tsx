@@ -35,9 +35,7 @@ describe("GraphqlOperationCard", () => {
     const user = userEvent.setup()
     const onSelect = vi.fn()
 
-    render(
-      <GraphqlOperationCard operations={[operation]} onSelect={onSelect} />
-    )
+    render(<GraphqlOperationCard operations={[operation]} onSelect={onSelect} />)
 
     expect(screen.getByText("query")).toBeTruthy()
     expect(screen.getByText("GetProducts")).toBeTruthy()
@@ -51,9 +49,7 @@ describe("GraphqlOperationCard", () => {
   })
 
   it("renders nothing for non-graphql traces", () => {
-    const { container } = render(
-      <GraphqlOperationCard operations={[]} onSelect={vi.fn()} />
-    )
+    const { container } = render(<GraphqlOperationCard operations={[]} onSelect={vi.fn()} />)
 
     expect(container.textContent).toBe("")
   })

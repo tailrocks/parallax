@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event"
 import { defaultParseSearch } from "@tanstack/react-router"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { customRange } from "@/lib/range"
+import { customRange } from "@/domain/time-range/range"
 import {
   DashboardCards,
   DashboardCreateDialog,
@@ -32,7 +32,7 @@ const apiMock = vi.hoisted(() => ({
   graphql: vi.fn(),
 }))
 
-vi.mock("@/lib/api", () => ({
+vi.mock("@/platform/graphql/transport", () => ({
   gqlString: (value: string) =>
     value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n"),
   graphql: apiMock.graphql,
@@ -92,9 +92,9 @@ describe("dashboard contracts", () => {
   })
 
   it("does not propagate stale dashboard bounds for preset ranges", () => {
-    expect(
-      dashboardRangeSearch({ range: "24h", from: "1000", to: "2000" })
-    ).toEqual({ range: "24h" })
+    expect(dashboardRangeSearch({ range: "24h", from: "1000", to: "2000" })).toEqual({
+      range: "24h",
+    })
   })
 
   it("renders dashboard links with custom ranges", async () => {
@@ -126,9 +126,7 @@ describe("dashboard contracts", () => {
       { targetPaths: ["/dashboards/$dashboardId"] }
     )
     const { search, url } = parseHref(
-      (await screen.findByRole("link", { name: "checkout ops" })).getAttribute(
-        "href"
-      )!
+      (await screen.findByRole("link", { name: "checkout ops" })).getAttribute("href")!
     )
     expect(url.pathname).toBe("/dashboards/dash-a")
     expect(search).toMatchObject({

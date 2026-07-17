@@ -12,11 +12,7 @@ import {
 
 describe("investigation state helpers", () => {
   it("serializes the current route as a restorable pin", () => {
-    const pin = buildInvestigationPin(
-      "trace",
-      "Checkout root",
-      "/traces/abc?view=errors&range=24h"
-    )
+    const pin = buildInvestigationPin("trace", "Checkout root", "/traces/abc?view=errors&range=24h")
 
     expect(pin).toEqual({
       kind: "trace",
@@ -45,10 +41,7 @@ describe("investigation state helpers", () => {
     const parsed = parseInvestigationState(
       serializeInvestigationState({
         ...withPin,
-        pins: [
-          ...withPin.pins,
-          { kind: "bad", ref: "/bad", label: "bad" } as never,
-        ],
+        pins: [...withPin.pins, { kind: "bad", ref: "/bad", label: "bad" } as never],
         notes: "plain text",
       })
     )

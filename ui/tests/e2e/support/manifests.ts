@@ -12,9 +12,7 @@ export interface FoundationRuntimeManifest {
 export function parseRuntimeManifest(raw: string): FoundationRuntimeManifest {
   const parsed = JSON.parse(raw) as FoundationRuntimeManifest
   if (parsed.schema_version !== 1) {
-    throw new Error(
-      `unsupported runtime manifest schema ${String(parsed.schema_version)}`
-    )
+    throw new Error(`unsupported runtime manifest schema ${String(parsed.schema_version)}`)
   }
   return parsed
 }

@@ -53,17 +53,11 @@ describe("toggleFacetValue", () => {
   })
 
   it("removes a selected value and drops the empty dimension", () => {
-    expect(
-      toggleFacetValue({ service: ["checkout"] }, "service", "checkout")
-    ).toEqual({})
+    expect(toggleFacetValue({ service: ["checkout"] }, "service", "checkout")).toEqual({})
   })
 
   it("keeps other selections intact (OR within, AND across)", () => {
-    const next = toggleFacetValue(
-      { service: ["checkout"], outcome: ["error"] },
-      "service",
-      "cart"
-    )
+    const next = toggleFacetValue({ service: ["checkout"], outcome: ["error"] }, "service", "cart")
     expect(next).toEqual({
       service: ["checkout", "cart"],
       outcome: ["error"],

@@ -1,15 +1,8 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  TEST_NOW_ISO,
-  createTestIdFactory,
-  testNow,
-} from "../../src/test/fixtures"
+import { TEST_NOW_ISO, createTestIdFactory, testNow } from "../../src/test/fixtures"
 import { networkEscapeReason } from "../../src/test/network"
-import {
-  registerTestReset,
-  resetRegisteredTestState,
-} from "../../src/test/resets"
+import { registerTestReset, resetRegisteredTestState } from "../../src/test/resets"
 import { installTimerTracker, pendingTimerMessage } from "../../src/test/timers"
 
 describe("test harness boundaries", () => {
@@ -27,11 +20,7 @@ describe("test harness boundaries", () => {
     expect(testNow().toISOString()).toBe(TEST_NOW_ISO)
     const first = createTestIdFactory("trace")
     const second = createTestIdFactory("trace")
-    expect([first(), first(), second()]).toEqual([
-      "trace-001",
-      "trace-002",
-      "trace-001",
-    ])
+    expect([first(), first(), second()]).toEqual(["trace-001", "trace-002", "trace-001"])
   })
 
   it("runs registered state resets without retaining removed owners", async () => {

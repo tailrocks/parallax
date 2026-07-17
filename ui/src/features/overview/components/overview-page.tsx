@@ -9,14 +9,7 @@ import {
   IconNotes,
   IconX,
 } from "@tabler/icons-react"
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ReferenceArea,
-  XAxis,
-  YAxis,
-} from "recharts"
+import { Area, AreaChart, CartesianGrid, ReferenceArea, XAxis, YAxis } from "recharts"
 
 import { CopyButton } from "@/shared/console/copy-button"
 import { EmptyState } from "@/shared/console/empty-state"
@@ -33,36 +26,33 @@ import { navItem } from "@/shared/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
-import { graphqlCached } from "@/lib/api"
-import type { Issue, TraceSummary } from "@/lib/api"
+import { graphqlCached } from "@/platform/graphql/transport"
+import type { Issue } from "@/features/issues"
+import type { TraceSummary } from "@/features/traces"
 import {
   formatCount,
   formatDelta,
   formatDurationNs,
   formatPercent,
   formatTimeInRange,
-} from "@/lib/format"
+} from "@/shared/format"
 import {
   customRange,
   mergeRangeSearch,
   rangeLinkSearch,
   resolvePreset,
   resolveRangeSearch,
-} from "@/lib/range"
-import type { ResolvedRange } from "@/lib/range"
+} from "@/domain/time-range/range"
+import type { ResolvedRange } from "@/domain/time-range/range"
 import { cn } from "@/lib/utils"
 import { useChartBrush } from "@/shared/console/use-chart-brush"
 import {
   mergeSignalSeries,
   sampleLatencyData,
   sampleSignalData,
-} from "@/lib/overview-chart-helpers"
+} from "@/features/overview/model/overview-chart-helpers"
 
 interface SeriesPoint {
   tsNanos: string
@@ -89,12 +79,7 @@ interface SpanRed {
 
 type IssueRow = Pick<
   Issue,
-  | "fingerprint"
-  | "title"
-  | "service"
-  | "lastSeenNanos"
-  | "eventCount"
-  | "status"
+  "fingerprint" | "title" | "service" | "lastSeenNanos" | "eventCount" | "status"
 >
 
 type TraceRow = TraceSummary
@@ -181,10 +166,7 @@ export async function loadOverview(range: ResolvedRange) {
 }
 
 export function latencyBands(red: SpanRed) {
-  const pointsByTs = new Map<
-    string,
-    { tsNanos: string; p50: number; p95: number; p99: number }
-  >()
+  const pointsByTs = new Map<string, { tsNanos: string; p50: number; p95: number; p99: number }>()
   for (const point of red.p50) {
     pointsByTs.set(point.tsNanos, {
       tsNanos: point.tsNanos,
@@ -224,10 +206,7 @@ export function latencyBands(red: SpanRed) {
 }
 
 function latestValue(points: SeriesPoint[]): number | null {
-  return (
-    [...points].reverse().find((point) => Number.isFinite(point.value))
-      ?.value ?? null
-  )
+  return [...points].reverse().find((point) => Number.isFinite(point.value))?.value ?? null
 }
 
 function count(value: string): number {
@@ -389,10 +368,7 @@ export function OverviewContent({
             label="Error rate"
             value={formatPercent(data.overview.errorRate)}
             hint={`${formatCount(count(data.overview.errorCount))} errors`}
-            delta={formatDelta(
-              data.overview.errorRate,
-              data.previousOverview.errorRate
-            )}
+            delta={formatDelta(data.overview.errorRate, data.previousOverview.errorRate)}
             deltaInverted
             icon={IconAlertTriangleFilled}
             iconClassName="text-rose-500"
@@ -422,11 +398,7 @@ export function OverviewContent({
         </Link>
       </section>
 
-      <TopMovers
-        now={data.servicesNow}
-        previous={data.servicesPrev}
-        range={range}
-      />
+      <TopMovers now={data.servicesNow} previous={data.servicesPrev} range={range} />
 
       <section className="grid gap-4 lg:grid-cols-2">
         <SignalTrendCard
@@ -481,8 +453,7 @@ function SignalTrendCard({
     series: chartData,
     stepSeconds: stepSecondsForRange(range),
     disabled: empty,
-    onWindow: (fromNanos, toNanos) =>
-      onRangeChange(customRange(fromNanos, toNanos)),
+    onWindow: (fromNanos, toNanos) => onRangeChange(customRange(fromNanos, toNanos)),
     getReferenceValue: (point) => point.time,
   })
   const ticks = thinTicks(
@@ -512,11 +483,7 @@ function SignalTrendCard({
             </Link>
             <ChartLegend
               {...(visible === "all" ? {} : { selected: visible })}
-              onSelect={(key) =>
-                onVisibleChange(
-                  visible === key ? "all" : (key as VisibleSeries)
-                )
-              }
+              onSelect={(key) => onVisibleChange(visible === key ? "all" : (key as VisibleSeries))}
               items={[
                 {
                   key: "spans",
@@ -559,9 +526,7 @@ function SignalTrendCard({
               <XAxis
                 dataKey="time"
                 ticks={ticks}
-                tickFormatter={(value: string, index) =>
-                  makeEdgeTick(value, index, ticks)
-                }
+                tickFormatter={(value: string, index) => makeEdgeTick(value, index, ticks)}
                 tickLine={false}
                 axisLine={false}
               />
@@ -623,18 +588,15 @@ function LatencyTrendCard({
 }) {
   const bands = latencyBands(red)
   const empty = bands.length === 0
-  const displayData = (empty ? sampleLatencyData(range) : bands).map(
-    (point) => ({
-      ...point,
-      time: formatTimeInRange(point.tsNanos, range),
-    })
-  )
+  const displayData = (empty ? sampleLatencyData(range) : bands).map((point) => ({
+    ...point,
+    time: formatTimeInRange(point.tsNanos, range),
+  }))
   const brush = useChartBrush({
     series: empty ? [] : displayData,
     stepSeconds: stepSecondsForRange(range),
     disabled: empty,
-    onWindow: (fromNanos, toNanos) =>
-      onRangeChange(customRange(fromNanos, toNanos)),
+    onWindow: (fromNanos, toNanos) => onRangeChange(customRange(fromNanos, toNanos)),
     getReferenceValue: (point) => point.time,
   })
   const ticks = thinTicks(
@@ -657,11 +619,7 @@ function LatencyTrendCard({
             </Link>
             <ChartLegend
               {...(visible === "all" ? {} : { selected: visible })}
-              onSelect={(key) =>
-                onVisibleChange(
-                  visible === key ? "all" : (key as VisibleLatency)
-                )
-              }
+              onSelect={(key) => onVisibleChange(visible === key ? "all" : (key as VisibleLatency))}
               items={[
                 { key: "p50", label: "p50", color: "var(--chart-p50)" },
                 { key: "p95", label: "p95", color: "var(--chart-p95)" },
@@ -697,9 +655,7 @@ function LatencyTrendCard({
               <XAxis
                 dataKey="time"
                 ticks={ticks}
-                tickFormatter={(value: string, index) =>
-                  makeEdgeTick(value, index, ticks)
-                }
+                tickFormatter={(value: string, index) => makeEdgeTick(value, index, ticks)}
                 tickLine={false}
                 axisLine={false}
               />
@@ -707,9 +663,7 @@ function LatencyTrendCard({
                 tickLine={false}
                 axisLine={false}
                 width={52}
-                tickFormatter={(value: number) =>
-                  formatDurationNs(msToNs(value))
-                }
+                tickFormatter={(value: number) => formatDurationNs(msToNs(value))}
               />
               <ChartTooltip
                 content={
@@ -786,13 +740,7 @@ function EmptyChartOverlay() {
   )
 }
 
-function RecentIssuesCard({
-  issues,
-  range,
-}: {
-  issues: IssueRow[]
-  range: ResolvedRange
-}) {
+function RecentIssuesCard({ issues, range }: { issues: IssueRow[]; range: ResolvedRange }) {
   return (
     <Card size="sm">
       <CardHeader>
@@ -825,9 +773,7 @@ function RecentIssuesCard({
                     />
                     <div className="min-w-0">
                       <div className="truncate font-medium">{issue.title}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {issue.service}
-                      </div>
+                      <div className="text-xs text-muted-foreground">{issue.service}</div>
                     </div>
                   </div>
                   <div className="text-right text-xs text-muted-foreground">
@@ -846,13 +792,7 @@ function RecentIssuesCard({
   )
 }
 
-function SlowestTracesCard({
-  traces,
-  range,
-}: {
-  traces: TraceRow[]
-  range: ResolvedRange
-}) {
+function SlowestTracesCard({ traces, range }: { traces: TraceRow[]; range: ResolvedRange }) {
   const values = traces.map((trace) => Number(trace.durationNs))
   const scale = useMemo(() => buildHeatScale(values), [values])
   return (
@@ -882,9 +822,7 @@ function SlowestTracesCard({
                     <div className="truncate font-medium">{trace.rootName}</div>
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <span>{trace.service}</span>
-                      {trace.hasError ? (
-                        <Badge variant="rose">error</Badge>
-                      ) : null}
+                      {trace.hasError ? <Badge variant="rose">error</Badge> : null}
                     </div>
                   </div>
                   <div className="text-right text-xs text-muted-foreground">
@@ -920,17 +858,10 @@ function OnboardingCard() {
             ["CLI", run],
           ] satisfies Array<[string, string]>
         ).map(([label, value]) => (
-          <div
-            key={label}
-            className="rounded-lg border border-border/70 bg-background/60 p-3"
-          >
-            <div className="mb-1 text-xs font-medium text-muted-foreground">
-              {label}
-            </div>
+          <div key={label} className="rounded-lg border border-border/70 bg-background/60 p-3">
+            <div className="mb-1 text-xs font-medium text-muted-foreground">{label}</div>
             <div className="flex items-center justify-between gap-2">
-              <code className="min-w-0 truncate font-mono text-xs">
-                {value}
-              </code>
+              <code className="min-w-0 truncate font-mono text-xs">{value}</code>
               <CopyButton value={value} />
             </div>
           </div>

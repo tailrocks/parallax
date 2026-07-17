@@ -32,19 +32,9 @@ import {
 } from "@/features/sql/api/sql-snippets-list.generated"
 import { SqlError, type SqlErrorCode } from "@/features/sql/model/sql-error"
 import { mapSqlResult, type SqlResult } from "@/features/sql/model/sql-result"
-import {
-  groupSchemaRows,
-  type SchemaColumn,
-} from "@/features/sql/model/sql-row"
-import {
-  mapSqlSnippet,
-  SQL_SNIPPET_PAGE,
-  type SqlSnippet,
-} from "@/features/sql/model/sql-snippet"
-import {
-  executeGraphqlOperation,
-  type OperationResultSchema,
-} from "@/platform/graphql/client"
+import { groupSchemaRows, type SchemaColumn } from "@/features/sql/model/sql-row"
+import { mapSqlSnippet, SQL_SNIPPET_PAGE, type SqlSnippet } from "@/features/sql/model/sql-snippet"
+import { executeGraphqlOperation, type OperationResultSchema } from "@/platform/graphql/client"
 import { GraphqlBoundaryError } from "@/platform/graphql/error"
 import type { TypedDocumentNode } from "@/platform/graphql/typed-document"
 
@@ -73,20 +63,18 @@ function mapBoundary(error: unknown, code: SqlErrorCode): never {
       error.message
     )
   }
-  throw new SqlError(
-    code,
-    error instanceof Error ? error.message : String(error)
-  )
+  throw new SqlError(code, error instanceof Error ? error.message : String(error))
 }
 
 export async function loadSqlSchema(): Promise<Map<string, SchemaColumn[]>> {
   try {
-    const data = await executeGraphqlOperation<
-      SqlSchemaQuery,
-      SqlSchemaQueryVariables
-    >(brandDocument(SqlSchemaDocument), brandSchema(SqlSchemaQuerySchema), {
-      query: SCHEMA_DISCOVERY_SQL,
-    })
+    const data = await executeGraphqlOperation<SqlSchemaQuery, SqlSchemaQueryVariables>(
+      brandDocument(SqlSchemaDocument),
+      brandSchema(SqlSchemaQuerySchema),
+      {
+        query: SCHEMA_DISCOVERY_SQL,
+      }
+    )
     return groupSchemaRows(data.sql.rows)
   } catch (error) {
     mapBoundary(error, "schema-discovery")
@@ -95,12 +83,13 @@ export async function loadSqlSchema(): Promise<Map<string, SchemaColumn[]>> {
 
 export async function runSql(query: string): Promise<SqlResult> {
   try {
-    const data = await executeGraphqlOperation<
-      SqlExecuteQuery,
-      SqlExecuteQueryVariables
-    >(brandDocument(SqlExecuteDocument), brandSchema(SqlExecuteQuerySchema), {
-      query,
-    })
+    const data = await executeGraphqlOperation<SqlExecuteQuery, SqlExecuteQueryVariables>(
+      brandDocument(SqlExecuteDocument),
+      brandSchema(SqlExecuteQuerySchema),
+      {
+        query,
+      }
+    )
     return mapSqlResult(data.sql)
   } catch (error) {
     mapBoundary(error, "query-execution")
@@ -109,10 +98,7 @@ export async function runSql(query: string): Promise<SqlResult> {
 
 export async function loadSqlSnippets(): Promise<SqlSnippet[]> {
   try {
-    const data = await executeGraphqlOperation<
-      SqlSnippetsListQuery,
-      SqlSnippetsListQueryVariables
-    >(
+    const data = await executeGraphqlOperation<SqlSnippetsListQuery, SqlSnippetsListQueryVariables>(
       brandDocument(SqlSnippetsListDocument),
       brandSchema(SqlSnippetsListQuerySchema),
       { page: SQL_SNIPPET_PAGE }
@@ -131,15 +117,11 @@ export async function saveSqlSnippet(input: {
     const data = await executeGraphqlOperation<
       SqlSnippetSaveMutation,
       SqlSnippetSaveMutationVariables
-    >(
-      brandDocument(SqlSnippetSaveDocument),
-      brandSchema(SqlSnippetSaveMutationSchema),
-      {
-        name: input.name,
-        page: SQL_SNIPPET_PAGE,
-        state: input.state,
-      }
-    )
+    >(brandDocument(SqlSnippetSaveDocument), brandSchema(SqlSnippetSaveMutationSchema), {
+      name: input.name,
+      page: SQL_SNIPPET_PAGE,
+      state: input.state,
+    })
     return mapSqlSnippet(data.savedViewSave)
   } catch (error) {
     mapBoundary(error, "snippet-save")
@@ -148,10 +130,7 @@ export async function saveSqlSnippet(input: {
 
 export async function deleteSqlSnippet(id: string): Promise<void> {
   try {
-    await executeGraphqlOperation<
-      SqlSnippetDeleteMutation,
-      SqlSnippetDeleteMutationVariables
-    >(
+    await executeGraphqlOperation<SqlSnippetDeleteMutation, SqlSnippetDeleteMutationVariables>(
       brandDocument(SqlSnippetDeleteDocument),
       brandSchema(SqlSnippetDeleteMutationSchema),
       { id }

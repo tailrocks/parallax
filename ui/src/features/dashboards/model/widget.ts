@@ -22,9 +22,7 @@ export function parseLayout(layout: string): Widget[] {
     return Array.isArray(parsed)
       ? parsed.filter(
           (item): item is Widget =>
-            typeof item === "object" &&
-            item !== null &&
-            typeof (item as Widget).metric === "string"
+            typeof item === "object" && item !== null && typeof (item as Widget).metric === "string"
         )
       : []
   } catch {

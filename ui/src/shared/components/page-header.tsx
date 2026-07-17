@@ -42,9 +42,7 @@ export function PageHeader({
               to={back.href}
               className="flex shrink-0 items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
             >
-              <BackIcon
-                className={cn("size-4.5 shrink-0", back.iconClassName)}
-              />
+              <BackIcon className={cn("size-4.5 shrink-0", back.iconClassName)} />
               {back.label}
             </Link>
             <IconChevronRight className="size-4 shrink-0 stroke-[1.5px] text-muted-foreground/50" />
@@ -54,21 +52,15 @@ export function PageHeader({
           </h1>
         ) : (
           <h1 className="flex items-center gap-2 text-base font-medium tracking-tight">
-            {TitleIcon ? (
-              <TitleIcon className={cn("size-4.5 shrink-0", iconClassName)} />
-            ) : null}
+            {TitleIcon ? <TitleIcon className={cn("size-4.5 shrink-0", iconClassName)} /> : null}
             {titleLeading}
             <span className="truncate">{title}</span>
             {titleTrailing}
           </h1>
         )}
-        {description ? (
-          <p className="text-sm text-muted-foreground">{description}</p>
-        ) : null}
+        {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
       </div>
-      {actions ? (
-        <div className="flex items-center gap-2">{actions}</div>
-      ) : null}
+      {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
     </div>
   )
 }

@@ -8,8 +8,7 @@ class FakeEventSource implements EventSourceLike {
   static instances: FakeEventSource[] = []
   onopen: ((this: EventSourceLike, ev: Event) => unknown) | null = null
   onerror: ((this: EventSourceLike, ev: Event) => unknown) | null = null
-  onmessage: ((this: EventSourceLike, ev: MessageEvent) => unknown) | null =
-    null
+  onmessage: ((this: EventSourceLike, ev: MessageEvent) => unknown) | null = null
   closed = false
   readonly url: string
   constructor(url: string) {
@@ -26,8 +25,7 @@ class FakeEventSource implements EventSourceLike {
 
 const arrayDecoder: RuntimeDecoder<string[]> = {
   safeParse(input) {
-    return Array.isArray(input) &&
-      input.every((item) => typeof item === "string")
+    return Array.isArray(input) && input.every((item) => typeof item === "string")
       ? { success: true, data: input as string[] }
       : { success: false, error: "bad" }
   },

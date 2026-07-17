@@ -4,9 +4,9 @@ import { IconAlertTriangleFilled } from "@tabler/icons-react"
 import { EmptyState } from "@/shared/console/empty-state"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatCount } from "@/lib/format"
-import { rangeLinkSearch } from "@/lib/range"
-import type { ResolvedRange } from "@/lib/range"
+import { formatCount } from "@/shared/format"
+import { rangeLinkSearch } from "@/domain/time-range/range"
+import type { ResolvedRange } from "@/domain/time-range/range"
 
 export interface InvocationIssue {
   fingerprint: string

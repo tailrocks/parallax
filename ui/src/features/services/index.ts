@@ -9,10 +9,7 @@ export {
   ServiceDetailContent,
   ServiceDetailRoutePage,
 } from "@/features/services/components/service-detail-page"
-export {
-  loadServiceDetail,
-  loadServices,
-} from "@/features/services/api/services-api"
+export { loadServiceDetail, loadServices } from "@/features/services/api/services-api"
 export {
   serviceErrorRate,
   serviceHref,

@@ -45,31 +45,23 @@ const spans: WaterfallSpan[] = [
 describe("TraceFlamegraph", () => {
   it("renders accessible span controls and selects one", () => {
     const onSelect = vi.fn()
-    render(
-      <TraceFlamegraph spans={spans} selectedId={null} onSelect={onSelect} />
-    )
+    render(<TraceFlamegraph spans={spans} selectedId={null} onSelect={onSelect} />)
 
     fireEvent.click(screen.getByRole("button", { name: /select, db, 50ms/i }))
     expect(onSelect).toHaveBeenCalledWith("child")
   })
 
   it("focuses a subtree on shift-click and can restore the whole trace", () => {
-    render(
-      <TraceFlamegraph spans={spans} selectedId={null} onSelect={vi.fn()} />
-    )
+    render(<TraceFlamegraph spans={spans} selectedId={null} onSelect={vi.fn()} />)
 
     fireEvent.click(screen.getByRole("button", { name: /request, api/i }), {
       shiftKey: true,
     })
-    expect(
-      screen.queryByRole("button", { name: /background, worker/i })
-    ).toBeNull()
+    expect(screen.queryByRole("button", { name: /background, worker/i })).toBeNull()
     expect(screen.getByRole("button", { name: /select, db/i })).toBeDefined()
 
     fireEvent.click(screen.getByRole("button", { name: "Show whole trace" }))
-    expect(
-      screen.getByRole("button", { name: /background, worker/i })
-    ).toBeDefined()
+    expect(screen.getByRole("button", { name: /background, worker/i })).toBeDefined()
   })
 
   it("explains an empty trace", () => {

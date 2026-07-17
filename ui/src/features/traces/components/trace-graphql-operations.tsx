@@ -2,11 +2,8 @@ import { IconAlertTriangle, IconCode, IconGitBranch } from "@tabler/icons-react"
 
 import { HeatCell, buildHeatScale } from "@/shared/console/heat-cell"
 import { Badge } from "@/components/ui/badge"
-import { formatDurationNs } from "@/lib/format"
-import type {
-  GraphqlFieldNode,
-  GraphqlOperation,
-} from "@/features/traces/model/graphql-operations"
+import { formatDurationNs } from "@/shared/format"
+import type { GraphqlFieldNode, GraphqlOperation } from "@/features/traces/model/graphql-operations"
 import { cn } from "@/lib/utils"
 
 function bigintToNumber(value: bigint): number {
@@ -23,9 +20,7 @@ function FieldRows({
   depth?: number
   onSelect: (spanId: string) => void
 }) {
-  const scale = buildHeatScale(
-    nodes.map((node) => bigintToNumber(node.durationNs))
-  )
+  const scale = buildHeatScale(nodes.map((node) => bigintToNumber(node.durationNs)))
   return (
     <ul className={cn(depth === 0 ? "space-y-1.5" : "mt-1.5 space-y-1.5")}>
       {nodes.map((node) => {
@@ -40,12 +35,8 @@ function FieldRows({
             >
               <span className="flex min-w-0 flex-wrap items-center gap-1.5">
                 <IconGitBranch className="size-3.5 shrink-0 text-muted-foreground" />
-                <span className="min-w-0 truncate font-medium">
-                  {node.fieldName}
-                </span>
-                {node.callCount > 1 ? (
-                  <Badge variant="amber">{callLabel}</Badge>
-                ) : null}
+                <span className="min-w-0 truncate font-medium">{node.fieldName}</span>
+                {node.callCount > 1 ? <Badge variant="amber">{callLabel}</Badge> : null}
                 {node.hasError ? <Badge variant="rose">error</Badge> : null}
               </span>
               <span className="text-right text-xs text-muted-foreground tabular-nums">
@@ -58,11 +49,7 @@ function FieldRows({
               </span>
             </button>
             {node.children.length > 0 ? (
-              <FieldRows
-                nodes={node.children}
-                depth={depth + 1}
-                onSelect={onSelect}
-              />
+              <FieldRows nodes={node.children} depth={depth + 1} onSelect={onSelect} />
             ) : null}
           </li>
         )
@@ -88,9 +75,7 @@ function OperationSection({
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <Badge variant="blue">{operation.operationType}</Badge>
           <span className="min-w-0 truncate text-sm font-medium">{name}</span>
-          {operation.fieldErrors > 0 ? (
-            <Badge variant="rose">{fieldErrorLabel}</Badge>
-          ) : null}
+          {operation.fieldErrors > 0 ? <Badge variant="rose">{fieldErrorLabel}</Badge> : null}
         </div>
         <span className="text-xs text-muted-foreground tabular-nums">
           {formatDurationNs(operation.durationNs.toString())}

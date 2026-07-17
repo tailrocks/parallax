@@ -55,10 +55,7 @@ function parseAttributes(json: string): Record<string, unknown> {
   }
 }
 
-function stringAttr(
-  attributes: Record<string, unknown>,
-  key: string
-): string | null {
+function stringAttr(attributes: Record<string, unknown>, key: string): string | null {
   const value = attributes[key]
   if (typeof value === "string") return value
   if (typeof value === "number" || typeof value === "boolean") {
@@ -67,17 +64,10 @@ function stringAttr(
   return null
 }
 
-function numberAttr(
-  attributes: Record<string, unknown>,
-  key: string
-): number | null {
+function numberAttr(attributes: Record<string, unknown>, key: string): number | null {
   const value = attributes[key]
   const parsed =
-    typeof value === "number"
-      ? value
-      : typeof value === "string"
-        ? Number(value)
-        : Number.NaN
+    typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN
   return Number.isFinite(parsed) ? parsed : null
 }
 
@@ -96,11 +86,7 @@ function messageType(value: string | null): RpcMessage["type"] {
 }
 
 function isRpcMessageEvent(name: string): boolean {
-  return (
-    name === "message" ||
-    name === "rpc.message" ||
-    name.startsWith("rpc.message.")
-  )
+  return name === "message" || name === "rpc.message" || name.startsWith("rpc.message.")
 }
 
 function grpcOutcome(
@@ -109,10 +95,7 @@ function grpcOutcome(
 ): RpcStreamInfo["outcome"] {
   if (grpcStatusCode === 4) return "deadline_exceeded"
   if (grpcStatusCode === 1) return "cancelled"
-  if (
-    spanStatusCode === "STATUS_CODE_ERROR" ||
-    (grpcStatusCode != null && grpcStatusCode !== 0)
-  ) {
+  if (spanStatusCode === "STATUS_CODE_ERROR" || (grpcStatusCode != null && grpcStatusCode !== 0)) {
     return "error"
   }
   if (grpcStatusCode === 0 || spanStatusCode === "STATUS_CODE_UNSET") {
@@ -127,9 +110,7 @@ export function grpcStatusLabel(code: number | null): string | null {
   return null
 }
 
-export function parseGrpcStatusCode(
-  value: string | number | null
-): number | null {
+export function parseGrpcStatusCode(value: string | number | null): number | null {
   if (value == null || value === "") return null
   const parsed = typeof value === "number" ? value : Number(value)
   return Number.isFinite(parsed) ? parsed : null
@@ -177,9 +158,7 @@ export function buildRpcStreams(
     .filter((stream): stream is RpcStreamInfo => Boolean(stream))
 }
 
-export function messagingSummary(
-  spans: readonly RpcTraceSpan[]
-): MessagingSummary | null {
+export function messagingSummary(spans: readonly RpcTraceSpan[]): MessagingSummary | null {
   let producer = 0
   let consumer = 0
   let batchMax = 0
@@ -194,10 +173,7 @@ export function messagingSummary(
     const kind = span.kind.replace("SPAN_KIND_", "")
     if (kind === "PRODUCER") producer += 1
     if (kind === "CONSUMER") consumer += 1
-    batchMax = Math.max(
-      batchMax,
-      numberAttr(attributes, "messaging.batch.message_count") ?? 0
-    )
+    batchMax = Math.max(batchMax, numberAttr(attributes, "messaging.batch.message_count") ?? 0)
   }
 
   return seenMessaging ? { producer, consumer, batchMax } : null

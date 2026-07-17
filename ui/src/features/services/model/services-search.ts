@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { rangeSearchSchema } from "@/lib/range"
+import { rangeSearchSchema } from "@/domain/time-range/range"
 
 export type ServiceSort =
   | "name:asc"
@@ -58,9 +58,7 @@ const servicesSearchSchema = rangeSearchSchema.extend({
   sort: z.unknown().optional(),
 })
 
-export function validateServicesSearch(
-  search: Record<string, unknown>
-): ServicesSearch {
+export function validateServicesSearch(search: Record<string, unknown>): ServicesSearch {
   const parsed = servicesSearchSchema.parse(search)
   const result: ServicesSearch = {}
   if (typeof parsed.q === "string" && parsed.q) result.q = parsed.q

@@ -3,13 +3,9 @@ import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 
 import type { RuntimeMetric } from "@/domain/runtime-metrics/runtime-metric"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
-import { formatTimeShort } from "@/lib/format"
+import { formatTimeShort } from "@/shared/format"
 
 const runtimeConfig = {
   value: { label: "Value", color: "var(--chart-1)" },
@@ -54,19 +50,12 @@ function RuntimeChart({ metric }: { metric: RuntimeMetric }) {
         <p className="truncate text-xs font-medium text-muted-foreground">
           {formatMetricName(metric.metric)}
         </p>
-        {unit ? (
-          <span className="text-xs text-muted-foreground">{unit}</span>
-        ) : null}
+        {unit ? <span className="text-xs text-muted-foreground">{unit}</span> : null}
       </div>
       <ChartContainer config={runtimeConfig} className="h-24 w-full">
         <LineChart data={data} margin={{ left: 0, right: 8, top: 4 }}>
           <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey="time"
-            tickLine={false}
-            axisLine={false}
-            minTickGap={32}
-          />
+          <XAxis dataKey="time" tickLine={false} axisLine={false} minTickGap={32} />
           <YAxis tickLine={false} axisLine={false} width={44} />
           <ChartTooltip content={<ChartTooltipContent />} />
           <Line
@@ -107,9 +96,7 @@ export function RuntimeSnapshotCard({
       <CardContent className="space-y-5">
         {grouped.map(([family, rows]) => (
           <section key={family} className="space-y-3">
-            <h3 className="text-xs font-medium text-muted-foreground uppercase">
-              {family}
-            </h3>
+            <h3 className="text-xs font-medium text-muted-foreground uppercase">{family}</h3>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {rows.map((metric) => (
                 <RuntimeChart key={metric.metric} metric={metric} />

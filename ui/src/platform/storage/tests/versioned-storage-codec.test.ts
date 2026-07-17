@@ -9,8 +9,7 @@ import {
 
 const listDecoder: RuntimeDecoder<string[]> = {
   safeParse(input) {
-    return Array.isArray(input) &&
-      input.every((item) => typeof item === "string")
+    return Array.isArray(input) && input.every((item) => typeof item === "string")
       ? { success: true, data: input as string[] }
       : { success: false, error: "bad" }
   },

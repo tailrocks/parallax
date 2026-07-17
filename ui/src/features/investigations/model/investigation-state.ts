@@ -35,19 +35,14 @@ export function emptyInvestigationState(): InvestigationState {
 
 function isPinKind(value: unknown): value is InvestigationPinKind {
   return (
-    value === "trace" ||
-    value === "issue" ||
-    value === "run" ||
-    value === "log" ||
-    value === "view"
+    value === "trace" || value === "issue" || value === "run" || value === "log" || value === "view"
   )
 }
 
 function parseWindow(value: unknown): InvestigationWindow {
   if (!value || typeof value !== "object") return { range: DEFAULT_RANGE_KEY }
   const record = value as Record<string, unknown>
-  const range =
-    typeof record["range"] === "string" ? record["range"] : DEFAULT_RANGE_KEY
+  const range = typeof record["range"] === "string" ? record["range"] : DEFAULT_RANGE_KEY
   const from = typeof record["from"] === "string" ? record["from"] : undefined
   const to = typeof record["to"] === "string" ? record["to"] : undefined
   return { range, from, to }

@@ -35,8 +35,8 @@ export function RouteErrorPanel({ error, reset }: ErrorComponentProps) {
         </EmptyMedia>
         <EmptyTitle>Parallax API did not answer</EmptyTitle>
         <EmptyDescription>
-          The app shell is running, but this route could not load data from the
-          local API. Verify the server at{" "}
+          The app shell is running, but this route could not load data from the local API. Verify
+          the server at{" "}
           <code className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
             127.0.0.1:4000
           </code>
@@ -82,9 +82,7 @@ export function RouteNotFoundPanel() {
           <IconMapQuestion />
         </EmptyMedia>
         <EmptyTitle>Nothing is mounted here</EmptyTitle>
-        <EmptyDescription>
-          Pick a Parallax surface from the navigation.
-        </EmptyDescription>
+        <EmptyDescription>Pick a Parallax surface from the navigation.</EmptyDescription>
       </EmptyHeader>
     </Empty>
   )

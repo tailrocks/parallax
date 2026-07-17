@@ -1,9 +1,4 @@
-export type InvestigationErrorCode =
-  | "transport"
-  | "invalid-response"
-  | "load"
-  | "save"
-  | "delete"
+export type InvestigationErrorCode = "transport" | "invalid-response" | "load" | "save" | "delete"
 
 export class InvestigationError extends Error {
   readonly code: InvestigationErrorCode

@@ -102,13 +102,7 @@ export async function executeCachedGraphqlOperation<TResult, TVariables>(
   if (pending) return pending as Promise<TResult>
 
   const encodedVariables = JSON.parse(variablesKey) as Record<string, unknown>
-  const p = fetchAndDecode(
-    operationName,
-    query,
-    encodedVariables,
-    resultSchema,
-    options
-  ).then(
+  const p = fetchAndDecode(operationName, query, encodedVariables, resultSchema, options).then(
     (data) => {
       if (cache.size >= CACHE_MAX && !cache.has(cacheKey)) {
         const oldest = cache.keys().next().value
@@ -189,12 +183,7 @@ async function fetchAndDecode<TResult>(
     })
   }
 
-  return decodeGraphqlEnvelope(
-    raw,
-    resultSchema,
-    operationName,
-    response.status
-  )
+  return decodeGraphqlEnvelope(raw, resultSchema, operationName, response.status)
 }
 
 function decodeGraphqlEnvelope<TResult>(

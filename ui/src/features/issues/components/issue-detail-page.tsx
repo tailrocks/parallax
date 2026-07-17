@@ -1,14 +1,7 @@
 import { useMemo, useRef, useState } from "react"
 import { Link, useNavigate, useRouter } from "@tanstack/react-router"
-import {
-  IconArrowUpRight,
-  IconBug,
-  IconClock,
-  IconHash,
-  IconHistory,
-} from "@tabler/icons-react"
+import { IconArrowUpRight, IconBug, IconClock, IconHash, IconHistory } from "@tabler/icons-react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-
 import { CopyButton } from "@/shared/console/copy-button"
 import { EmptyState } from "@/shared/console/empty-state"
 import { HeatCell, buildHeatScale } from "@/shared/console/heat-cell"
@@ -18,16 +11,9 @@ import { navItem } from "@/shared/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
-import {
-  loadIssueOccurrences,
-  setIssueStatus,
-} from "@/features/issues/api/issues-api"
+import { loadIssueOccurrences, setIssueStatus } from "@/features/issues/api/issues-api"
 import {
   issueDelta,
   shortRunId,
@@ -44,13 +30,13 @@ import {
 import { PinButton } from "@/features/investigations"
 import { MetricStrip } from "@/features/runtime-metrics"
 import { RangePicker } from "@/features/time-range"
-import { formatCount, formatDateTime, formatTimeInRange } from "@/lib/format"
+import { formatCount, formatDateTime, formatTimeInRange } from "@/shared/format"
 import {
   mergeRangeSearch,
   rangeLinkSearch,
   resolveRangeSearch,
   type ResolvedRange,
-} from "@/lib/range"
+} from "@/domain/range"
 import { cn } from "@/lib/utils"
 import { PageHeader } from "@/shared/components/page-header"
 import type { IssuesSearch } from "@/features/issues/model/issues-search"
@@ -90,14 +76,7 @@ export function IssueDetailContent({
   range: ResolvedRange
   onRange: (range: ResolvedRange) => void
 }) {
-  const {
-    issue,
-    issueTrend,
-    resource,
-    breadcrumbs,
-    traceRunId,
-    releaseVersion,
-  } = data
+  const { issue, issueTrend, resource, breadcrumbs, traceRunId, releaseVersion } = data
   const router = useRouter()
   const [mutating, setMutating] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -153,7 +132,6 @@ export function IssueDetailContent({
         from.toString(),
         to.toString()
       )
-      // Another bucket was selected (or cleared) while this fetch was in flight.
       if (bucketRequestRef.current !== tsNanos) return
       setBucketEvents([...events])
       occurrencesRef.current?.scrollIntoView({
@@ -174,19 +152,12 @@ export function IssueDetailContent({
         description={currentIssue.title}
         actions={
           <>
-            <PinButton
-              kind="issue"
-              label={currentIssue.title || currentIssue.fingerprint}
-            />
+            <PinButton kind="issue" label={currentIssue.title || currentIssue.fingerprint} />
             <Button
               size="sm"
               variant="outline"
               disabled={mutating}
-              onClick={() =>
-                void setStatus(
-                  currentIssue.status === "open" ? "resolved" : "open"
-                )
-              }
+              onClick={() => void setStatus(currentIssue.status === "open" ? "resolved" : "open")}
             >
               {currentIssue.status === "open" ? "Resolve" : "Reopen"}
             </Button>
@@ -214,12 +185,8 @@ export function IssueDetailContent({
             <Badge variant="secondary">run {shortRunId(traceRunId)}</Badge>
           </Link>
         ) : null}
-        {releaseVersion ? (
-          <Badge variant="secondary">release {releaseVersion}</Badge>
-        ) : null}
-        <Badge variant={issue.status === "open" ? "rose" : "emerald"}>
-          {issue.status}
-        </Badge>
+        {releaseVersion ? <Badge variant="secondary">release {releaseVersion}</Badge> : null}
+        <Badge variant={issue.status === "open" ? "rose" : "emerald"}>{issue.status}</Badge>
         <Badge variant="secondary">
           first <RelativeTime nanos={issue.firstSeenNanos} />
         </Badge>
@@ -228,9 +195,7 @@ export function IssueDetailContent({
         </Badge>
       </div>
 
-      {actionError ? (
-        <p className="text-sm text-destructive">{actionError}</p>
-      ) : null}
+      {actionError ? <p className="text-sm text-destructive">{actionError}</p> : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
@@ -238,9 +203,7 @@ export function IssueDetailContent({
           label="Events"
           value={formatCount(issue.eventCount)}
           hint="total occurrences"
-          chart={
-            <CardSparkline data={issueTrend.map((p) => ({ value: p.count }))} />
-          }
+          chart={<CardSparkline data={issueTrend.map((p) => ({ value: p.count }))} />}
         />
         <StatCard
           icon={IconClock}
@@ -257,9 +220,7 @@ export function IssueDetailContent({
         <StatCard
           icon={IconBug}
           label="Trend"
-          value={formatCount(
-            issueTrend.reduce((sum, point) => sum + point.count, 0)
-          )}
+          value={formatCount(issueTrend.reduce((sum, point) => sum + point.count, 0))}
           hint="selected range"
           delta={issueDelta(issueTrend)}
           deltaInverted
@@ -272,9 +233,7 @@ export function IssueDetailContent({
         activeBucket={bucket}
       />
 
-      {latest ? (
-        <StacktraceCard event={latest} culprit={issue.culprit} range={range} />
-      ) : null}
+      {latest ? <StacktraceCard event={latest} culprit={issue.culprit} range={range} /> : null}
 
       {latest ? (
         <MetricStrip
@@ -303,12 +262,7 @@ export function IssueDetailContent({
         </CardContent>
       </Card>
 
-      <Occurrences
-        refEl={occurrencesRef}
-        events={shownEvents}
-        bucket={bucket}
-        range={range}
-      />
+      <Occurrences refEl={occurrencesRef} events={shownEvents} bucket={bucket} range={range} />
     </div>
   )
 }
@@ -344,19 +298,12 @@ function TrendChart({
               const payloadState = state as {
                 activePayload?: Array<{ payload?: { tsNanos?: unknown } }>
               }
-              const ts = payloadState.activePayload?.[0]?.payload?.tsNanos as
-                | string
-                | undefined
+              const ts = payloadState.activePayload?.[0]?.payload?.tsNanos as string | undefined
               if (ts) void onBucket(ts === activeBucket ? null : ts)
             }}
           >
             <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="time"
-              tickLine={false}
-              axisLine={false}
-              minTickGap={48}
-            />
+            <XAxis dataKey="time" tickLine={false} axisLine={false} minTickGap={48} />
             <YAxis tickLine={false} axisLine={false} width={40} />
             <ChartTooltip content={<ChartTooltipContent />} />
             <Bar dataKey="count" fill="var(--color-count)" radius={3} />
@@ -380,9 +327,7 @@ function StacktraceCard({
   const frames = parseStacktrace(event.stacktrace)
   const structured = structuredFrameCount(frames)
   const libraryCount = frames.filter((frame) => frame.isApp === false).length
-  const visibleFrames = showLibraries
-    ? frames
-    : frames.filter((frame) => frame.isApp !== false)
+  const visibleFrames = showLibraries ? frames : frames.filter((frame) => frame.isApp !== false)
 
   return (
     <Card>
@@ -406,11 +351,7 @@ function StacktraceCard({
         {event.stacktrace && structured >= 2 ? (
           <div className="overflow-hidden rounded-lg border">
             {visibleFrames.map((frame, index) => (
-              <FrameRow
-                key={`${frame.raw}-${index}`}
-                frame={frame}
-                culprit={culprit}
-              />
+              <FrameRow key={`${frame.raw}-${index}`} frame={frame} culprit={culprit} />
             ))}
             {libraryCount > 0 ? (
               <button
@@ -427,22 +368,14 @@ function StacktraceCard({
             {event.stacktrace}
           </pre>
         ) : (
-          <p className="text-sm text-muted-foreground">
-            No stacktrace captured.
-          </p>
+          <p className="text-sm text-muted-foreground">No stacktrace captured.</p>
         )}
       </CardContent>
     </Card>
   )
 }
 
-function FrameRow({
-  frame,
-  culprit,
-}: {
-  frame: Frame
-  culprit: string | null
-}) {
+function FrameRow({ frame, culprit }: { frame: Frame; culprit: string | null }) {
   const highlighted =
     Boolean(culprit) &&
     Boolean(
@@ -470,27 +403,21 @@ function FrameRow({
           frame.raw
         )}
       </span>
-      <span className="truncate text-xs text-muted-foreground">
-        {frame.fn ?? frame.raw}
-      </span>
+      <span className="truncate text-xs text-muted-foreground">{frame.fn ?? frame.raw}</span>
     </div>
   )
 }
 
 const CONTEXT_SECTIONS: [string, (key: string) => boolean][] = [
   ["Runtime", (key) => key.startsWith("process.runtime.")],
-  [
-    "Process",
-    (key) => key.startsWith("process.") && !key.startsWith("process.runtime."),
-  ],
+  ["Process", (key) => key.startsWith("process.") && !key.startsWith("process.runtime.")],
   ["OS / Host", (key) => key.startsWith("os.") || key.startsWith("host.")],
   ["SDK", (key) => key.startsWith("telemetry.")],
 ]
 
 function ContextSections({ resource }: { resource: Record<string, unknown> }) {
   const entries = Object.entries(resource).map(
-    ([key, value]) =>
-      [key, typeof value === "string" ? value : JSON.stringify(value)] as const
+    ([key, value]) => [key, typeof value === "string" ? value : JSON.stringify(value)] as const
   )
   const sections = CONTEXT_SECTIONS.map(([title, match]) => ({
     title,
@@ -505,9 +432,7 @@ function ContextSections({ resource }: { resource: Record<string, unknown> }) {
       <CardContent className="grid gap-4 sm:grid-cols-2">
         {sections.map((section) => (
           <div key={section.title}>
-            <p className="mb-1 text-xs font-medium text-muted-foreground">
-              {section.title}
-            </p>
+            <p className="mb-1 text-xs font-medium text-muted-foreground">{section.title}</p>
             <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
               {section.rows.map(([key, value]) => (
                 <div key={key} className="contents">
@@ -548,9 +473,7 @@ function TagsTable({ tags }: { tags: string }) {
                   .map(([value, count]) => (
                     <Badge key={value} variant="secondary">
                       {value}
-                      <span className="ml-1 text-muted-foreground">
-                        x{count}
-                      </span>
+                      <span className="ml-1 text-muted-foreground">x{count}</span>
                     </Badge>
                   ))}
               </dd>
@@ -562,13 +485,7 @@ function TagsTable({ tags }: { tags: string }) {
   )
 }
 
-function Breadcrumbs({
-  logs,
-  range,
-}: {
-  logs: readonly BreadcrumbLog[]
-  range: ResolvedRange
-}) {
+function Breadcrumbs({ logs, range }: { logs: readonly BreadcrumbLog[]; range: ResolvedRange }) {
   if (logs.length === 0) return null
   return (
     <Card>
@@ -578,13 +495,8 @@ function Breadcrumbs({
       <CardContent>
         <ul className="space-y-1 font-mono text-xs">
           {logs.map((log, index) => (
-            <li
-              key={`${log.tsNanos}-${index}`}
-              className="grid gap-2 sm:grid-cols-[90px_80px_1fr]"
-            >
-              <span className="text-muted-foreground">
-                {formatTimeInRange(log.tsNanos, range)}
-              </span>
+            <li key={`${log.tsNanos}-${index}`} className="grid gap-2 sm:grid-cols-[90px_80px_1fr]">
+              <span className="text-muted-foreground">{formatTimeInRange(log.tsNanos, range)}</span>
               <Badge variant="secondary">{log.severityText}</Badge>
               <span className="break-all">{log.body}</span>
             </li>
@@ -622,9 +534,7 @@ function Occurrences({
       </CardHeader>
       <CardContent>
         {events.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No occurrences in this window.
-          </p>
+          <p className="text-sm text-muted-foreground">No occurrences in this window.</p>
         ) : (
           <ul className="space-y-2 text-sm">
             {events.map((event) => (

@@ -61,14 +61,10 @@ describe("JobsCyclesTab", () => {
     expect(await screen.findByText("sync.remotes")).toBeTruthy()
     expect(screen.getByText("index.rebuild")).toBeTruthy()
     expect(
-      screen.getAllByText(
-        (_, element) => element?.textContent?.trim() === "#1 success"
-      ).length
+      screen.getAllByText((_, element) => element?.textContent?.trim() === "#1 success").length
     ).toBeGreaterThan(0)
     const links = screen.getAllByRole("link")
-    expect(
-      links.some((link) => link.getAttribute("href") === "/traces/trace-j")
-    ).toBe(true)
+    expect(links.some((link) => link.getAttribute("href") === "/traces/trace-j")).toBe(true)
   })
 })
 
@@ -148,14 +144,7 @@ describe("SessionsTab", () => {
 
 describe("InvocationTracesTab", () => {
   it("renders the explicit empty state", async () => {
-    renderTab(
-      <InvocationTracesTab
-        traces={[]}
-        liveSpans={[]}
-        live={false}
-        range={range}
-      />
-    )
+    renderTab(<InvocationTracesTab traces={[]} liveSpans={[]} live={false} range={range} />)
     expect(await screen.findByText("No traces")).toBeTruthy()
   })
 })

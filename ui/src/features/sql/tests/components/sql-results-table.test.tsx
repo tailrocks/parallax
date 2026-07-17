@@ -30,16 +30,7 @@ describe("SqlResultBody", () => {
         "span_id",
         "empty",
       ],
-      rows: [
-        JSON.stringify([
-          "trace-a",
-          "run-a",
-          "checkout",
-          "fp-a",
-          "span-a",
-          null,
-        ]),
-      ],
+      rows: [JSON.stringify(["trace-a", "run-a", "checkout", "fp-a", "span-a", null])],
       rowCount: 1,
       truncated: true,
     }

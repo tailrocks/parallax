@@ -33,19 +33,11 @@ describe("PageHeader", () => {
   })
 
   it("renders title with optional actions and no back link", async () => {
-    renderTestRouter(
-      <PageHeader
-        title="Overview"
-        actions={<button type="button">Go</button>}
-      />,
-      {
-        componentPaths: ["/"],
-        initialPath: "/",
-      }
-    )
-    expect(
-      await screen.findByRole("heading", { name: /overview/i })
-    ).toBeTruthy()
+    renderTestRouter(<PageHeader title="Overview" actions={<button type="button">Go</button>} />, {
+      componentPaths: ["/"],
+      initialPath: "/",
+    })
+    expect(await screen.findByRole("heading", { name: /overview/i })).toBeTruthy()
     expect(screen.getByRole("button", { name: "Go" })).toBeTruthy()
     expect(screen.queryByRole("link")).toBeNull()
   })

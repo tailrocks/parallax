@@ -48,9 +48,7 @@ interface SpanTimes {
 }
 
 /** Parse each span's timestamps once and index by spanId. */
-function buildTimesMap(
-  spans: readonly TraceTreeSpan[]
-): Map<string, SpanTimes> {
+function buildTimesMap(spans: readonly TraceTreeSpan[]): Map<string, SpanTimes> {
   const times = new Map<string, SpanTimes>()
   for (const span of spans) {
     const start = BigInt(span.tsNanos)
@@ -107,9 +105,7 @@ export function orderSpans<T extends TraceTreeSpan>(
     }
   }
 
-  for (const root of roots.sort((a, b) =>
-    compareByStartWithTimes(times, a, b)
-  )) {
+  for (const root of roots.sort((a, b) => compareByStartWithTimes(times, a, b))) {
     walk(root, 0)
   }
 
@@ -141,12 +137,10 @@ export function positionPct(
   window: TraceWindow
 ): { offsetPct: number; widthPct: number } {
   const start = typeof startNs === "bigint" ? startNs : BigInt(startNs)
-  const duration =
-    typeof durationNs === "bigint" ? durationNs : BigInt(durationNs)
+  const duration = typeof durationNs === "bigint" ? durationNs : BigInt(durationNs)
   const windowDuration = window.durationNs > 0n ? window.durationNs : 1n
   const offsetRatio = Number(start - window.startNs) / Number(windowDuration)
-  const durationRatio =
-    Number(duration > 0n ? duration : 0n) / Number(windowDuration)
+  const durationRatio = Number(duration > 0n ? duration : 0n) / Number(windowDuration)
   const offsetPct = Math.min(100, Math.max(0, offsetRatio * 100))
   const rawWidth = Math.max(durationRatio * 100, 1.5)
   return {
@@ -170,9 +164,7 @@ export function buildTraceTree<T extends TraceTreeSpan>(
   })
 }
 
-export function errorPathSpanIds<T extends ErrorTraceSpan>(
-  spans: readonly T[]
-): Set<string> {
+export function errorPathSpanIds<T extends ErrorTraceSpan>(spans: readonly T[]): Set<string> {
   const byId = new Map(spans.map((span) => [span.spanId, span]))
   const ids = new Set<string>()
 
@@ -183,9 +175,7 @@ export function errorPathSpanIds<T extends ErrorTraceSpan>(
     // Shared `ids` also terminates parent-chain cycles (self-parent / A↔B).
     while (current && !ids.has(current.spanId)) {
       ids.add(current.spanId)
-      current = current.parentSpanId
-        ? byId.get(current.parentSpanId)
-        : undefined
+      current = current.parentSpanId ? byId.get(current.parentSpanId) : undefined
     }
   }
 
@@ -195,8 +185,7 @@ export function errorPathSpanIds<T extends ErrorTraceSpan>(
 export function groupByService<T extends ServiceTraceSpan>(
   ordered: readonly OrderedTraceSpan<T>[]
 ): Array<{ service: string; spans: Array<OrderedTraceSpan<T>> }> {
-  const groups: Array<{ service: string; spans: Array<OrderedTraceSpan<T>> }> =
-    []
+  const groups: Array<{ service: string; spans: Array<OrderedTraceSpan<T>> }> = []
 
   for (const row of ordered) {
     const service = row.span.service || "unknown"
@@ -219,9 +208,7 @@ function nsToMs(value: bigint): number {
  * intervals, children clipped to the parent's own window and overlapping
  * children merged before subtracting (parallel children never subtract
  * twice). Keyed by spanId, in nanoseconds. */
-export function computeSelfTimes(
-  spans: readonly TraceTreeSpan[]
-): Map<string, bigint> {
+export function computeSelfTimes(spans: readonly TraceTreeSpan[]): Map<string, bigint> {
   const times = buildTimesMap(spans)
   const byId = new Map(spans.map((span) => [span.spanId, span]))
   const children = new Map<string, TraceTreeSpan[]>()
@@ -244,9 +231,7 @@ export function computeSelfTimes(
       const end = t.end < own.end ? t.end : own.end
       if (end > start) intervals.push({ start, end })
     }
-    intervals.sort((a, b) =>
-      a.start < b.start ? -1 : a.start > b.start ? 1 : 0
-    )
+    intervals.sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : 0))
 
     let covered = 0n
     let cursorStart: bigint | null = null
@@ -286,9 +271,7 @@ export interface FlameLayout<T extends TraceTreeSpan> {
 /** Icicle lane packing (plan 163): per depth, spans sorted by start take the
  * first lane whose previous occupant ended at or before their start —
  * siblings that don't overlap in time share a lane; overlapping ones stack. */
-export function packFlameLanes<T extends TraceTreeSpan>(
-  spans: readonly T[]
-): FlameLayout<T> {
+export function packFlameLanes<T extends TraceTreeSpan>(spans: readonly T[]): FlameLayout<T> {
   const times = buildTimesMap(spans)
   const window = computeWindow(spans, times)
   const ordered = orderSpans(spans, times)
@@ -332,9 +315,7 @@ export function packFlameLanes<T extends TraceTreeSpan>(
   return { rows, laneCounts }
 }
 
-export function detectSkew<T extends ServiceTraceSpan>(
-  spans: readonly T[]
-): SkewReport {
+export function detectSkew<T extends ServiceTraceSpan>(spans: readonly T[]): SkewReport {
   const times = buildTimesMap(spans)
   const byId = new Map(spans.map((span) => [span.spanId, span]))
   const suspectPairs: SkewPair[] = []
@@ -351,14 +332,9 @@ export function detectSkew<T extends ServiceTraceSpan>(
 
     const startsBeforeParent = parentTimes.start - childTimes.start
     const endsAfterParent = childTimes.end - parentTimes.end
-    const driftNs =
-      startsBeforeParent > endsAfterParent
-        ? startsBeforeParent
-        : endsAfterParent
+    const driftNs = startsBeforeParent > endsAfterParent ? startsBeforeParent : endsAfterParent
     const thresholdNs =
-      parent.service === child.service
-        ? TRACE_ROOT_SKEW_THRESHOLD_NS
-        : TRACE_SKEW_THRESHOLD_NS
+      parent.service === child.service ? TRACE_ROOT_SKEW_THRESHOLD_NS : TRACE_SKEW_THRESHOLD_NS
     if (driftNs <= thresholdNs) continue
 
     const driftMs = nsToMs(driftNs)

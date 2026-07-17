@@ -14,12 +14,7 @@ export function NavIcon({
   className?: string | undefined
 }) {
   return (
-    <span
-      className={cn(
-        "grid size-4.5 place-items-center [&_svg]:size-full!",
-        className
-      )}
-    >
+    <span className={cn("grid size-4.5 place-items-center [&_svg]:size-full!", className)}>
       <OutlineIcon
         aria-hidden="true"
         className={cn(

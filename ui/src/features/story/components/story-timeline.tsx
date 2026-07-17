@@ -1,14 +1,9 @@
 import { Link } from "@tanstack/react-router"
-import {
-  IconAlertTriangle,
-  IconArticle,
-  IconCircleDot,
-  IconClock,
-} from "@tabler/icons-react"
+import { IconAlertTriangle, IconArticle, IconCircleDot, IconClock } from "@tabler/icons-react"
 
 import type { StoryBeat } from "@/domain/story/story-beat"
 import { Badge } from "@/components/ui/badge"
-import { formatDurationNs, formatTimeInRange } from "@/lib/format"
+import { formatDurationNs, formatTimeInRange } from "@/shared/format"
 import { cn } from "@/lib/utils"
 
 function beatTone(beat: StoryBeat) {
@@ -30,10 +25,7 @@ function beatTone(beat: StoryBeat) {
 
 function timeRange(beats: readonly StoryBeat[]) {
   const timestamps = beats.map((beat) => BigInt(beat.tsNanos))
-  const start = timestamps.reduce(
-    (min, ts) => (ts < min ? ts : min),
-    timestamps[0] ?? 0n
-  )
+  const start = timestamps.reduce((min, ts) => (ts < min ? ts : min), timestamps[0] ?? 0n)
   const end = timestamps.reduce((max, ts) => (ts > max ? ts : max), start)
   return {
     fromNanos: start.toString(),
@@ -105,9 +97,7 @@ export function StoryTimeline({ beats }: { beats: readonly StoryBeat[] }) {
             <span className="flex min-w-0 flex-col gap-1">
               <span className="flex flex-wrap items-center gap-1.5">
                 <Badge variant={tone.badge}>{beat.kind}</Badge>
-                {beat.severity ? (
-                  <Badge variant={tone.badge}>{beat.severity}</Badge>
-                ) : null}
+                {beat.severity ? <Badge variant={tone.badge}>{beat.severity}</Badge> : null}
                 {beat.durationNs ? (
                   <span className="text-xs text-muted-foreground tabular-nums">
                     {formatDurationNs(beat.durationNs)}

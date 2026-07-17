@@ -37,7 +37,7 @@ import {
 } from "@/platform/graphql/client"
 import { GraphqlBoundaryError } from "@/platform/graphql/error"
 import type { TypedDocumentNode } from "@/platform/graphql/typed-document"
-import { graphql } from "@/lib/api"
+import { graphql } from "@/platform/graphql/transport"
 
 function brandDocument<TResult, TVariables>(
   document: unknown
@@ -61,10 +61,7 @@ function mapBoundary(error: unknown, code: DashboardError["code"]): never {
       error.message
     )
   }
-  throw new DashboardError(
-    code,
-    error instanceof Error ? error.message : String(error)
-  )
+  throw new DashboardError(code, error instanceof Error ? error.message : String(error))
 }
 
 export async function loadDashboardsList(): Promise<{
@@ -75,11 +72,7 @@ export async function loadDashboardsList(): Promise<{
     const data = await executeCachedGraphqlOperation<
       DashboardsListQuery,
       DashboardsListQueryVariables
-    >(
-      brandDocument(DashboardsListDocument),
-      brandSchema(DashboardsListQuerySchema),
-      {}
-    )
+    >(brandDocument(DashboardsListDocument), brandSchema(DashboardsListQuerySchema), {})
     return {
       dashboards: data.dashboards.map(mapDashboard),
       metricNames: [...data.metricNames],
@@ -97,11 +90,7 @@ export async function loadDashboardDetail(id: string): Promise<{
     const data = await executeCachedGraphqlOperation<
       DashboardDetailQuery,
       DashboardDetailQueryVariables
-    >(
-      brandDocument(DashboardDetailDocument),
-      brandSchema(DashboardDetailQuerySchema),
-      { id }
-    )
+    >(brandDocument(DashboardDetailDocument), brandSchema(DashboardDetailQuerySchema), { id })
     return {
       dashboard: data.dashboard
         ? {
@@ -126,15 +115,11 @@ export async function saveDashboard(input: {
     const data = await executeGraphqlOperation<
       DashboardSaveMutation,
       DashboardSaveMutationVariables
-    >(
-      brandDocument(DashboardSaveDocument),
-      brandSchema(DashboardSaveMutationSchema),
-      {
-        name: input.name,
-        layout: input.layout,
-        id: input.id ?? null,
-      }
-    )
+    >(brandDocument(DashboardSaveDocument), brandSchema(DashboardSaveMutationSchema), {
+      name: input.name,
+      layout: input.layout,
+      id: input.id ?? null,
+    })
     return mapDashboard(data.dashboardSave)
   } catch (error) {
     mapBoundary(error, "save")
@@ -143,10 +128,7 @@ export async function saveDashboard(input: {
 
 export async function deleteDashboard(id: string): Promise<void> {
   try {
-    await executeGraphqlOperation<
-      DashboardDeleteMutation,
-      DashboardDeleteMutationVariables
-    >(
+    await executeGraphqlOperation<DashboardDeleteMutation, DashboardDeleteMutationVariables>(
       brandDocument(DashboardDeleteDocument),
       brandSchema(DashboardDeleteMutationSchema),
       { id }

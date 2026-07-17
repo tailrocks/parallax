@@ -27,7 +27,7 @@
 - **Depends on**: 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 149, 150, 152, 153
 - **Category**: TypeScript / architecture verification / final closure
 - **Planned at**: `e3e7997`, 2026-07-12
-- **Status**: IN PROGRESS — shared console/hooks residual moved (2026-07-17); handwritten `lib/*` residual + browser 145/146 remain
+- **Status**: IN PROGRESS — lib/* residual claimed (2026-07-17); browser 145/146 remain
 
 ## Why This Matters
 

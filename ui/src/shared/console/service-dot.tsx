@@ -1,16 +1,10 @@
-import { serviceColor } from "@/lib/colors"
+import { serviceColor } from "@/shared/colors"
 import { cn } from "@/lib/utils"
 
 /** Squircle service-identity dot (plan 162). Identity only — never state.
  * Decorative (`aria-hidden`): it always sits next to the service name text,
  * which carries the information. */
-export function ServiceDot({
-  name,
-  className,
-}: {
-  name: string
-  className?: string
-}) {
+export function ServiceDot({ name, className }: { name: string; className?: string }) {
   return (
     <span
       aria-hidden

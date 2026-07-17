@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-import { formatDateTime, formatRelative } from "@/lib/format"
+import { formatDateTime, formatRelative } from "@/shared/format"
 
 type TickSubscriber = () => void
 

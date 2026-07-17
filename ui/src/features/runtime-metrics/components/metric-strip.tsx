@@ -4,13 +4,9 @@ import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 import type { StripPanel } from "@/features/runtime-metrics/api/runtime-metrics-mapper"
 import { useRuntimeMetrics } from "@/features/runtime-metrics/hooks/use-runtime-metrics"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
-import { formatBytes, formatTimeShort } from "@/lib/format"
+import { formatBytes, formatTimeShort } from "@/shared/format"
 
 const stripConfig = {
   cpu: { label: "CPU", color: "var(--chart-1)" },
@@ -40,20 +36,13 @@ function MetricPanel({ panel }: { panel: StripPanel }) {
       <ChartContainer config={stripConfig} className="h-24 w-full">
         <LineChart data={chartData} margin={{ left: 0, right: 8, top: 4 }}>
           <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey="time"
-            tickLine={false}
-            axisLine={false}
-            minTickGap={32}
-          />
+          <XAxis dataKey="time" tickLine={false} axisLine={false} minTickGap={32} />
           <YAxis
             tickLine={false}
             axisLine={false}
             width={panel.key === "memory" ? 72 : 44}
             tickFormatter={(value) =>
-              panel.key === "memory"
-                ? formatBytes(Number(value))
-                : String(value)
+              panel.key === "memory" ? formatBytes(Number(value)) : String(value)
             }
           />
           <ChartTooltip content={<ChartTooltipContent />} />

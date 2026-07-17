@@ -1,5 +1,3 @@
-// Traces list page + loader (Plan 142).
-
 import { useNavigate, useRouter, useRouterState } from "@tanstack/react-router"
 import {
   IconAffiliateFilled,
@@ -10,7 +8,6 @@ import {
 } from "@tabler/icons-react"
 import { useEffect, useMemo, useState } from "react"
 import { z } from "zod"
-
 import { AttributeComparePanel } from "@/features/traces/components/trace-attribute-compare"
 import { ServiceDot } from "@/shared/console/service-dot"
 import { PageHeader } from "@/shared/components/page-header"
@@ -18,13 +15,7 @@ import { useLiveStream } from "@/shared/hooks/use-live-stream"
 import { FieldExplorer } from "@/features/traces/components/trace-field-explorer"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import {
   Table,
@@ -46,39 +37,27 @@ import {
 import { EmptyState } from "@/shared/console/empty-state"
 import { DurationFilter } from "@/shared/console/duration-filter"
 import { FacetSidebar, type Facet } from "@/shared/console/facet-sidebar"
-import {
-  WhereClauseChips,
-  WhereClauseEditor,
-} from "@/shared/console/where-clause-editor"
+import { WhereClauseChips, WhereClauseEditor } from "@/shared/console/where-clause-editor"
 import {
   serializeWhereClause,
   whereClauseFromSearch,
   type WhereFilter,
-} from "@/lib/where-clause"
+} from "@/shared/where-clause"
 import { HeatCell, buildHeatScale } from "@/shared/console/heat-cell"
 import { useDelayedLoading } from "@/shared/console/hooks"
 import { RangePicker } from "@/features/time-range"
 import { RelativeTime } from "@/shared/console/relative-time"
 import { TableSkeleton } from "@/shared/console/skeletons"
-import { formatCount, formatDurationNs, formatTimeInRange } from "@/lib/format"
-import { gqlString, graphqlCached } from "@/lib/api"
-import type { AttributeCompareRow, LiveSpan, TraceSummary } from "@/lib/api"
-import {
-  rangeLinkSearch,
-  resolveRangeSearch,
-  updateRangeSearch,
-} from "@/lib/range"
-import type { ResolvedRange } from "@/lib/range"
+import { formatCount, formatDurationNs, formatTimeInRange } from "@/shared/format"
+import { gqlString, graphqlCached } from "@/platform/graphql/transport"
+import type { AttributeCompareRow, LiveSpan, TraceSummary } from "@/features/traces/model/wire"
+import { rangeLinkSearch, resolveRangeSearch, updateRangeSearch } from "@/domain/time-range/range"
+import type { ResolvedRange } from "@/domain/time-range/range"
 import { cn } from "@/lib/utils"
 
-/** Live feed span — derived from shared `Span` (+ `invocationId` on the wire). */
 type SpanDoc = LiveSpan
 
-type TraceSort =
-  | "START_DESC"
-  | "DURATION_DESC"
-  | "DURATION_ASC"
-  | "SPAN_COUNT_DESC"
+type TraceSort = "START_DESC" | "DURATION_DESC" | "DURATION_ASC" | "SPAN_COUNT_DESC"
 
 interface TracePage {
   total: string
@@ -106,12 +85,7 @@ export interface TracesSearch {
 }
 
 const PAGE_SIZE = 25
-const SORTS: TraceSort[] = [
-  "START_DESC",
-  "DURATION_DESC",
-  "DURATION_ASC",
-  "SPAN_COUNT_DESC",
-]
+const SORTS: TraceSort[] = ["START_DESC", "DURATION_DESC", "DURATION_ASC", "SPAN_COUNT_DESC"]
 
 const traceSearchSchema = z.object({
   q: z.unknown().optional(),
@@ -128,9 +102,7 @@ const traceSearchSchema = z.object({
   live: z.unknown().optional(),
 })
 
-export function validateTracesSearch(
-  search: Record<string, unknown>
-): TracesSearch {
+export function validateTracesSearch(search: Record<string, unknown>): TracesSearch {
   const parsed = traceSearchSchema.parse(search)
   const positiveNumber = (value: unknown) => {
     const number = Number(value)
@@ -140,8 +112,7 @@ export function validateTracesSearch(
     const number = Number(value)
     return Number.isInteger(number) && number > 0 ? number : undefined
   }
-  const stringValue = (value: unknown) =>
-    typeof value === "string" && value ? value : undefined
+  const stringValue = (value: unknown) => (typeof value === "string" && value ? value : undefined)
   return {
     q: stringValue(parsed.q),
     service: stringValue(parsed.service),
@@ -149,9 +120,7 @@ export function validateTracesSearch(
     minMs: positiveNumber(parsed.minMs),
     maxMs: positiveNumber(parsed.maxMs),
     where: stringValue(parsed.where),
-    sort: SORTS.includes(parsed.sort as TraceSort)
-      ? (parsed.sort as TraceSort)
-      : undefined,
+    sort: SORTS.includes(parsed.sort as TraceSort) ? (parsed.sort as TraceSort) : undefined,
     page: positiveInteger(parsed.page),
     range: stringValue(parsed.range),
     from: stringValue(parsed.from),
@@ -175,19 +144,14 @@ const FILTER_KEYS = new Set<keyof TracesSearch>([
   "live",
 ])
 
-export function patchTracesSearch(
-  current: TracesSearch,
-  patch: TraceSearchPatch
-): TracesSearch {
+export function patchTracesSearch(current: TracesSearch, patch: TraceSearchPatch): TracesSearch {
   const next: TracesSearch = { ...current, ...patch }
   for (const key of Object.keys(next) as Array<keyof TracesSearch>) {
     if (next[key] === "" || next[key] == null || next[key] === false) {
       delete next[key]
     }
   }
-  if (
-    Object.keys(patch).some((key) => FILTER_KEYS.has(key as keyof TracesSearch))
-  ) {
+  if (Object.keys(patch).some((key) => FILTER_KEYS.has(key as keyof TracesSearch))) {
     delete next.page
   }
   return next
@@ -212,16 +176,13 @@ export function traceDetailSearch(range: ResolvedRange) {
   return rangeLinkSearch(range)
 }
 
-export function paramToTraceSort(
-  param: string | undefined
-): TraceSort | undefined {
+export function paramToTraceSort(param: string | undefined): TraceSort | undefined {
   const parsed = parseSortParam(param)
   if (!parsed) return undefined
   if (parsed.key === "duration") {
     return parsed.direction === "asc" ? "DURATION_ASC" : "DURATION_DESC"
   }
-  if (parsed.key === "spans" && parsed.direction === "desc")
-    return "SPAN_COUNT_DESC"
+  if (parsed.key === "spans" && parsed.direction === "desc") return "SPAN_COUNT_DESC"
   if (parsed.key === "when" && parsed.direction === "desc") return "START_DESC"
   return undefined
 }
@@ -238,11 +199,7 @@ function graphQlAttributeFilters(search: TracesSearch): string | null {
   return `attributeFilters: [${items}]`
 }
 
-/** Base filter args shared by tracesPage, traceFacets, and traceDurationStats. */
-function graphQlTraceBaseArgs(
-  search: TracesSearch,
-  range: ResolvedRange
-): string {
+function graphQlTraceBaseArgs(search: TracesSearch, range: ResolvedRange): string {
   return [
     search.service ? `service: "${gqlString(search.service)}"` : null,
     `fromNanos: "${range.fromNanos}"`,
@@ -282,10 +239,7 @@ function baselineRange(range: ResolvedRange): ResolvedRange {
   }
 }
 
-function graphQlAttributeCompareArgs(
-  search: TracesSearch,
-  range: ResolvedRange
-): string {
+function graphQlAttributeCompareArgs(search: TracesSearch, range: ResolvedRange): string {
   const baseline = baselineRange(range)
   return [
     `selectedFromNanos: "${range.fromNanos}"`,
@@ -308,9 +262,7 @@ export type TracesLoaderData = {
   traceDurationStats: { p50Ms: number | null; p95Ms: number | null }
 }
 
-export async function loadTraces(
-  search: TracesSearch
-): Promise<TracesLoaderData> {
+export async function loadTraces(search: TracesSearch): Promise<TracesLoaderData> {
   if (search.live) {
     return graphqlCached<{ services: string[] }>(`
       {
@@ -368,20 +320,8 @@ function statusError(statusCode: string): boolean {
   return statusCode === "STATUS_CODE_ERROR"
 }
 
-export function TracesPage({
-  data,
-  search,
-}: {
-  data: TracesLoaderData
-  search: TracesSearch
-}) {
-  const {
-    services,
-    tracesPage,
-    attributeCompare,
-    traceFacets,
-    traceDurationStats,
-  } = data
+export function TracesPage({ data, search }: { data: TracesLoaderData; search: TracesSearch }) {
+  const { services, tracesPage, attributeCompare, traceFacets, traceDurationStats } = data
   const navigate = useNavigate({ from: "/traces/" })
   const router = useRouter()
   const pending = useRouterState({
@@ -389,7 +329,6 @@ export function TracesPage({
   })
   const showSkeleton = useDelayedLoading(pending)
   const [lookup, setLookup] = useState("")
-  // Plan 164: `F` focuses the where-clause editor (remount via key bump).
   const [whereFocusKey, setWhereFocusKey] = useState(0)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -424,15 +363,9 @@ export function TracesPage({
     search.where ||
     search.live
   )
-  const whereFilters = useMemo(
-    () => whereClauseFromSearch(search.where),
-    [search.where]
-  )
+  const whereFilters = useMemo(() => whereClauseFromSearch(search.where), [search.where])
   const applyWhereFilters = (filters: WhereFilter[]) =>
     update({ where: serializeWhereClause(filters) || undefined })
-  // Facet check state derives from the where-clause: a value is selected when
-  // an `=` filter for its dimension/value exists. Toggling adds/removes that
-  // filter (AND semantics — one value per dimension narrows, per backend).
   const facetSelections = useMemo(() => {
     const selections: Record<string, string[]> = {}
     for (const filter of whereFilters) {
@@ -443,8 +376,7 @@ export function TracesPage({
   }, [whereFilters])
   const toggleFacet = (dimension: string, value: string) => {
     const existing = whereFilters.findIndex(
-      (filter) =>
-        filter.key === dimension && filter.op === "=" && filter.value === value
+      (filter) => filter.key === dimension && filter.op === "=" && filter.value === value
     )
     const next =
       existing >= 0
@@ -463,12 +395,8 @@ export function TracesPage({
     searchable: true,
   }))
   const facetValueSuggestions = (key: string) =>
-    traceFacets
-      .find((facet) => facet.dimension === key)
-      ?.values.map((entry) => entry.value) ?? []
-  const durationValues = tracesPage.items.map((trace) =>
-    Number(trace.durationNs)
-  )
+    traceFacets.find((facet) => facet.dimension === key)?.values.map((entry) => entry.value) ?? []
+  const durationValues = tracesPage.items.map((trace) => Number(trace.durationNs))
   const liveDurationValues = spans.map((span) => Number(span.durationNs))
   const serviceOptions = services.map((service) => ({
     value: service,
@@ -494,7 +422,6 @@ export function TracesPage({
     return `/v1/traces/stream?${params}`
   }, [live, search])
 
-  // Preserve prior behavior: clear the live buffer when the stream URL changes.
   useEffect(() => {
     if (!streamUrl) return
     setSpans([])
@@ -512,10 +439,7 @@ export function TracesPage({
   })
 
   const pageStart = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
-  const pageEnd = Math.min(
-    total,
-    (page - 1) * PAGE_SIZE + tracesPage.items.length
-  )
+  const pageEnd = Math.min(total, (page - 1) * PAGE_SIZE + tracesPage.items.length)
 
   return (
     <div className="flex flex-col gap-4">
@@ -580,10 +504,7 @@ export function TracesPage({
                 </Button>
               ) : null}
             </div>
-            <RangePicker
-              value={range}
-              onChange={(next) => update(updateRangeSearch(next))}
-            />
+            <RangePicker value={range} onChange={(next) => update(updateRangeSearch(next))} />
           </>
         }
       />
@@ -606,8 +527,7 @@ export function TracesPage({
               ...(search.minMs === undefined ? {} : { minMs: search.minMs }),
               ...(search.maxMs === undefined ? {} : { maxMs: search.maxMs }),
             }}
-            {...(traceDurationStats.p50Ms != null &&
-            traceDurationStats.p95Ms != null
+            {...(traceDurationStats.p50Ms != null && traceDurationStats.p95Ms != null
               ? {
                   stats: {
                     p50Ms: traceDurationStats.p50Ms,
@@ -683,9 +603,7 @@ export function TracesPage({
             />
             <WhereClauseChips
               filters={whereFilters}
-              onRemove={(index) =>
-                applyWhereFilters(whereFilters.filter((_, i) => i !== index))
-              }
+              onRemove={(index) => applyWhereFilters(whereFilters.filter((_, i) => i !== index))}
             />
           </div>
         ) : null}
@@ -730,9 +648,7 @@ export function TracesPage({
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-sm">Attribute compare</CardTitle>
-                    <CardDescription>
-                      Selected window vs previous window
-                    </CardDescription>
+                    <CardDescription>Selected window vs previous window</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <AttributeComparePanel rows={attributeCompare} />
@@ -836,10 +752,7 @@ export function TraceTable({
   onSort: (next: string | undefined) => void
   onOpen: (traceId: string) => void
 }) {
-  const durationScale = useMemo(
-    () => buildHeatScale(durationValues),
-    [durationValues]
-  )
+  const durationScale = useMemo(() => buildHeatScale(durationValues), [durationValues])
   return (
     <Table density="compact">
       <TableHeader>
@@ -868,9 +781,7 @@ export function TraceTable({
             key={`${trace.traceId}-${trace.startNanos}`}
             interactive
             onClick={() => onOpen(trace.traceId)}
-            className={cn(
-              trace.hasError && "shadow-[inset_1px_0_0_0_var(--color-rose-500)]"
-            )}
+            className={cn(trace.hasError && "shadow-[inset_1px_0_0_0_var(--color-rose-500)]")}
           >
             <TableCell>
               <div className="flex min-w-0 flex-col gap-1">
@@ -881,19 +792,13 @@ export function TraceTable({
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-1.5">
                     <ServiceDot name={trace.service || "unknown"} />
-                    <Badge variant="outline">
-                      {trace.service || "unknown"}
-                    </Badge>
+                    <Badge variant="outline">{trace.service || "unknown"}</Badge>
                   </span>
-                  <span className="font-mono">
-                    {trace.traceId.slice(0, 16)}
-                  </span>
+                  <span className="font-mono">{trace.traceId.slice(0, 16)}</span>
                 </div>
               </div>
             </TableCell>
-            <TableCell className="text-right tabular-nums">
-              {trace.spanCount}
-            </TableCell>
+            <TableCell className="text-right tabular-nums">{trace.spanCount}</TableCell>
             <TableCell className="text-right tabular-nums">
               <HeatCell value={Number(trace.durationNs)} scale={durationScale}>
                 {formatDurationNs(trace.durationNs)}

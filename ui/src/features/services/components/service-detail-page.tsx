@@ -28,13 +28,13 @@ import {
 } from "@/features/services/model/service-detail"
 import { RuntimeSnapshotCard } from "@/features/runtime-metrics"
 import { RangePicker } from "@/features/time-range"
-import { formatCount, formatDurationNs, formatPercent } from "@/lib/format"
+import { formatCount, formatDurationNs, formatPercent } from "@/shared/format"
 import {
   mergeRangeSearch,
   rangeLinkSearch,
   resolveRangeSearch,
   type ResolvedRange,
-} from "@/lib/range"
+} from "@/domain/time-range/range"
 import type { ServicesSearch } from "@/features/services/model/services-search"
 import { PageHeader } from "@/shared/components/page-header"
 
@@ -76,13 +76,10 @@ export function ServiceDetailContent({
   onRange: (range: ResolvedRange) => void
 }) {
   const hasRed =
-    data.red.rate.length > 0 ||
-    data.red.errorRate.length > 0 ||
-    data.red.p95.length > 0
+    data.red.rate.length > 0 || data.red.errorRate.length > 0 || data.red.p95.length > 0
   const traces = data.tracesPage.items
   const identity = data.serviceCatalog.find((row) => row.name === service)
-  const noData =
-    !hasRed && traces.length === 0 && data.runtimeSnapshot.length === 0
+  const noData = !hasRed && traces.length === 0 && data.runtimeSnapshot.length === 0
   const lastSeen = traces[0]?.startNanos
   const servicesBack = navItem("/services")
 
@@ -185,10 +182,7 @@ export function ServiceDetailContent({
         <ServiceLatencyChart
           red={data.red}
           overview={data.overview}
-          exemplars={[
-            ...data.httpDurationExemplars,
-            ...data.rpcDurationExemplars,
-          ]}
+          exemplars={[...data.httpDurationExemplars, ...data.rpcDurationExemplars]}
           range={range}
         />
       </div>

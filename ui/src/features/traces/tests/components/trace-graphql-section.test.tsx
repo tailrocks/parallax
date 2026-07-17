@@ -29,9 +29,7 @@ const operation: GraphqlOperation = {
 
 describe("TraceGraphqlSection", () => {
   it("renders the GraphQL card only when operations exist", () => {
-    const empty = render(
-      <TraceGraphqlSection operations={[]} onSelect={vi.fn()} />
-    )
+    const empty = render(<TraceGraphqlSection operations={[]} onSelect={vi.fn()} />)
     expect(empty.container.textContent).toBe("")
     empty.unmount()
 

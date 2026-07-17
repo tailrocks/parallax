@@ -40,7 +40,7 @@ import {
   saveInvestigation,
 } from "@/features/investigations/api/investigation-api"
 import { investigationErrorMessage } from "@/features/investigations/model/investigation-error"
-import { formatCount } from "@/lib/format"
+import { formatCount } from "@/shared/format"
 
 export function InvestigationsPage({
   investigations,
@@ -106,9 +106,7 @@ export function InvestigationsPage({
                 onChange={(event) => setName(event.target.value)}
                 placeholder="Checkout outage"
               />
-              {error ? (
-                <p className="text-sm text-destructive">{error}</p>
-              ) : null}
+              {error ? <p className="text-sm text-destructive">{error}</p> : null}
               <DialogFooter>
                 <Button disabled={!name.trim()} onClick={() => void create()}>
                   Create
@@ -119,9 +117,7 @@ export function InvestigationsPage({
         }
       />
 
-      {deleteError ? (
-        <p className="text-sm text-destructive">{deleteError}</p>
-      ) : null}
+      {deleteError ? <p className="text-sm text-destructive">{deleteError}</p> : null}
 
       {investigations.length === 0 ? (
         <EmptyState
@@ -148,18 +144,14 @@ export function InvestigationsPage({
                     </CardTitle>
                     <AlertDialog>
                       <AlertDialogTrigger
-                        render={
-                          <Button variant="ghost-destructive" size="icon-xs" />
-                        }
+                        render={<Button variant="ghost-destructive" size="icon-xs" />}
                       >
                         <IconTrash />
                         <span className="sr-only">Delete</span>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Delete investigation?
-                          </AlertDialogTitle>
+                          <AlertDialogTitle>Delete investigation?</AlertDialogTitle>
                           <AlertDialogDescription>
                             Delete {investigation.name}. This cannot be undone.
                           </AlertDialogDescription>
@@ -177,9 +169,7 @@ export function InvestigationsPage({
                     </AlertDialog>
                   </CardHeader>
                   <CardContent className="flex items-center justify-between gap-2">
-                    <Badge variant="secondary">
-                      {formatCount(state.pins.length)} pins
-                    </Badge>
+                    <Badge variant="secondary">{formatCount(state.pins.length)} pins</Badge>
                     <span className="text-xs text-muted-foreground">
                       <RelativeTime nanos={investigation.updatedAtNanos} />
                     </span>

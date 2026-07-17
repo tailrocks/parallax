@@ -12,7 +12,7 @@ import { HeatCell, buildHeatScale } from "@/shared/console/heat-cell"
 import { RelativeTime } from "@/shared/console/relative-time"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatCount, formatDurationNs } from "@/lib/format"
+import { formatCount, formatDurationNs } from "@/shared/format"
 import { cn } from "@/lib/utils"
 
 export type AgentStepKind = "INVOKE_AGENT" | "EXECUTE_TOOL" | "SHELL" | "OTHER"
@@ -86,25 +86,17 @@ export function AgentSessionCard({ session }: { session: AgentSessionData }) {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle className="text-sm">Agent session</CardTitle>
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
-            <Badge variant="secondary">
-              {formatCount(session.steps.length)} steps
-            </Badge>
+            <Badge variant="secondary">{formatCount(session.steps.length)} steps</Badge>
             <Badge variant={session.errorCount > 0 ? "rose" : "outline"}>
               {formatCount(session.errorCount)} errors
             </Badge>
             {showTokens ? (
               <>
-                <Badge variant="blue">
-                  {formatTokenTotal(session.totalInputTokens)} in
-                </Badge>
-                <Badge variant="emerald">
-                  {formatTokenTotal(session.totalOutputTokens)} out
-                </Badge>
+                <Badge variant="blue">{formatTokenTotal(session.totalInputTokens)} in</Badge>
+                <Badge variant="emerald">{formatTokenTotal(session.totalOutputTokens)} out</Badge>
               </>
             ) : null}
-            {session.truncated ? (
-              <Badge variant="amber">truncated</Badge>
-            ) : null}
+            {session.truncated ? <Badge variant="amber">truncated</Badge> : null}
           </div>
         </div>
       </CardHeader>

@@ -1,17 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import {
-  IssueDetailRoutePage,
-  loadIssueDetail,
-  validateIssuesSearch,
-} from "@/features/issues"
-import { resolveRangeSearch } from "@/lib/range"
+import { IssueDetailRoutePage, loadIssueDetail, validateIssuesSearch } from "@/features/issues"
+import { resolveRangeSearch } from "@/domain/time-range/range"
 
 export const Route = createFileRoute("/issues/$fingerprint")({
   validateSearch: validateIssuesSearch,
   loaderDeps: ({ search }) => search,
-  loader: ({ params, deps }) =>
-    loadIssueDetail(params.fingerprint, resolveRangeSearch(deps)),
+  loader: ({ params, deps }) => loadIssueDetail(params.fingerprint, resolveRangeSearch(deps)),
   component: IssueDetailRoute,
 })
 

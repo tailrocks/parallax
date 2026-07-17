@@ -37,13 +37,13 @@ import {
   type IssuesSearchPatch,
 } from "@/features/issues/model/issues-search"
 import { RangePicker } from "@/features/time-range"
-import { formatCount } from "@/lib/format"
+import { formatCount } from "@/shared/format"
 import {
   rangeLinkSearch,
   resolveRangeSearch,
   updateRangeSearch,
   type ResolvedRange,
-} from "@/lib/range"
+} from "@/domain/time-range/range"
 import { cn } from "@/lib/utils"
 import { PageHeader } from "@/shared/components/page-header"
 
@@ -70,8 +70,7 @@ export const MiniSparkline = memo(function MiniSparkline({
   const pad = 2
   const points = values
     .map((value, index) => {
-      const x =
-        values.length === 1 ? width / 2 : (index / (values.length - 1)) * width
+      const x = values.length === 1 ? width / 2 : (index / (values.length - 1)) * width
       const y = height - pad - ((value - min) / span) * (height - pad * 2)
       return `${x},${y}`
     })
@@ -96,13 +95,7 @@ export const MiniSparkline = memo(function MiniSparkline({
   )
 })
 
-export function IssuesPage({
-  data,
-  search,
-}: {
-  data: IssuesData
-  search: IssuesSearch
-}) {
+export function IssuesPage({ data, search }: { data: IssuesData; search: IssuesSearch }) {
   const navigate = useNavigate({ from: "/issues/" })
   const range = resolveRangeSearch(search)
   const routerLoading = useRouterState({
@@ -157,10 +150,7 @@ export function IssuesContent({
         title="Issues"
         description="Grouped errors by service, message, and culprit."
         actions={
-          <RangePicker
-            value={range}
-            onChange={(next) => onSearch(updateRangeSearch(next))}
-          />
+          <RangePicker value={range} onChange={(next) => onSearch(updateRangeSearch(next))} />
         }
       />
 
@@ -184,10 +174,7 @@ export function IssuesContent({
             {...(search.status ? { value: search.status } : {})}
             onChange={(status) =>
               onSearch({
-                status:
-                  status === "open" || status === "resolved"
-                    ? status
-                    : undefined,
+                status: status === "open" || status === "resolved" ? status : undefined,
               })
             }
             placeholder="Any status"
@@ -220,8 +207,7 @@ export function IssuesContent({
           ) : null}
         </div>
         <span className="text-xs text-muted-foreground">
-          {formatCount(data.issues.items.length)} of{" "}
-          {formatCount(data.issues.total)}
+          {formatCount(data.issues.items.length)} of {formatCount(data.issues.total)}
         </span>
       </Toolbar>
 
@@ -230,9 +216,7 @@ export function IssuesContent({
       ) : data.issues.items.length === 0 ? (
         <EmptyState
           icon={IconTerminal2}
-          title={
-            hasFilters ? "No issues match filters" : "No issues ingested yet"
-          }
+          title={hasFilters ? "No issues match filters" : "No issues ingested yet"}
           description={
             hasFilters ? (
               "Loosen query, service, status, or range."
@@ -284,17 +268,13 @@ function IssuesTable({
   const lastVirtual = virtualItems?.at(-1)
   const paddingTop = firstVirtual?.start ?? 0
   const paddingBottom =
-    virtualize && lastVirtual
-      ? Math.max(0, virtualizer.getTotalSize() - lastVirtual.end)
-      : 0
+    virtualize && lastVirtual ? Math.max(0, virtualizer.getTotalSize() - lastVirtual.end) : 0
   const rows = virtualize
     ? (virtualItems ?? []).map((item) => items[item.index]!).filter(Boolean)
     : items
 
   const header = (
-    <TableHeader
-      className={virtualize ? "sticky top-0 z-10 bg-card" : undefined}
-    >
+    <TableHeader className={virtualize ? "sticky top-0 z-10 bg-card" : undefined}>
       <TableRow>
         <TableHead>Issue</TableHead>
         <TableHead className="w-36">Service</TableHead>
@@ -441,9 +421,7 @@ function IssuesTable({
                     >
                       {tag.label}
                       {tag.rest > 0 ? (
-                        <span className="ml-1 text-muted-foreground">
-                          +{tag.rest}
-                        </span>
+                        <span className="ml-1 text-muted-foreground">+{tag.rest}</span>
                       ) : null}
                     </Badge>
                   ))
@@ -451,9 +429,7 @@ function IssuesTable({
               </div>
             </TableCell>
             <TableCell>
-              <Badge variant={issue.status === "open" ? "rose" : "emerald"}>
-                {issue.status}
-              </Badge>
+              <Badge variant={issue.status === "open" ? "rose" : "emerald"}>{issue.status}</Badge>
             </TableCell>
           </TableRow>
         )

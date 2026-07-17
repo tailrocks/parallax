@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  loadIssueDetail,
-  loadIssues,
-  validateIssuesSearch,
-} from "@/features/issues"
+import { loadIssueDetail, loadIssues, validateIssuesSearch } from "@/features/issues"
 
 describe("issues route contracts", () => {
   it("exposes public search and loaders for thin route wiring", () => {

@@ -1,7 +1,7 @@
 import { RelativeTime } from "@/shared/console/relative-time"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { ServiceCatalogRow } from "@/features/services/model/service-summary"
-import { formatCount } from "@/lib/format"
+import { formatCount } from "@/shared/format"
 
 export function ServiceIdentityCard({
   identity,
@@ -10,9 +10,7 @@ export function ServiceIdentityCard({
   identity: ServiceCatalogRow | undefined
   fallbackLastSeen: string | undefined
 }) {
-  const sdk = [identity?.telemetrySdkName, identity?.telemetrySdkVersion]
-    .filter(Boolean)
-    .join(" ")
+  const sdk = [identity?.telemetrySdkName, identity?.telemetrySdkVersion].filter(Boolean).join(" ")
   const identityLastSeen = identity?.lastSeenNanos ?? fallbackLastSeen
   const values = [
     ["Version", identity?.serviceVersion],
@@ -21,10 +19,7 @@ export function ServiceIdentityCard({
     ["Runtime", identity?.telemetrySdkLanguage],
     ["SDK", sdk || null],
     ["Instances", formatCount(Number(identity?.instanceCount ?? 0))],
-    [
-      "Last seen",
-      identityLastSeen ? <RelativeTime nanos={identityLastSeen} /> : null,
-    ],
+    ["Last seen", identityLastSeen ? <RelativeTime nanos={identityLastSeen} /> : null],
   ] satisfies Array<[string, React.ReactNode]>
 
   return (
@@ -37,9 +32,7 @@ export function ServiceIdentityCard({
           <div key={label} className="space-y-1">
             <div className="text-xs text-muted-foreground">{label}</div>
             <div className="text-sm font-medium">
-              {value || (
-                <span className="text-muted-foreground">not emitted</span>
-              )}
+              {value || <span className="text-muted-foreground">not emitted</span>}
             </div>
           </div>
         ))}

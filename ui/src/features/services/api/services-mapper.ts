@@ -16,10 +16,7 @@ import type {
 } from "@/features/services/model/service-summary"
 import type { RuntimeMetric } from "@/domain/runtime-metrics/runtime-metric"
 
-function mapPoint(point: {
-  readonly tsNanos: string
-  readonly value: number
-}): SeriesPoint {
+function mapPoint(point: { readonly tsNanos: string; readonly value: number }): SeriesPoint {
   return { tsNanos: point.tsNanos, value: point.value }
 }
 
@@ -79,9 +76,7 @@ function mapRed(red: ServiceDetailQuery["red"]): SpanRed {
   }
 }
 
-function mapOverview(
-  overview: ServiceDetailQuery["overview"]
-): ServiceOverview {
+function mapOverview(overview: ServiceDetailQuery["overview"]): ServiceOverview {
   return {
     cpu: mapSeries(overview.cpu),
     memory: mapSeries(overview.memory),
@@ -149,9 +144,7 @@ function mapTrace(row: {
   }
 }
 
-function mapRuntime(
-  row: ServiceDetailQuery["runtimeSnapshot"][number]
-): RuntimeMetric {
+function mapRuntime(row: ServiceDetailQuery["runtimeSnapshot"][number]): RuntimeMetric {
   return {
     family: row.family,
     metric: row.metric,

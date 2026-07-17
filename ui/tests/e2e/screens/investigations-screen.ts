@@ -48,9 +48,7 @@ export class InvestigationsScreen {
   }
 
   confirmDelete() {
-    return this.#page
-      .getByRole("button", { name: "Delete", exact: true })
-      .last()
+    return this.#page.getByRole("button", { name: "Delete", exact: true }).last()
   }
 
   pinLabel(label: string) {

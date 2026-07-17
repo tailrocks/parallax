@@ -1,11 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router"
 
 import { OverviewPage, loadOverview } from "@/features/overview"
-import { rangeSearchSchema, resolveRangeSearch } from "@/lib/range"
+import { rangeSearchSchema, resolveRangeSearch } from "@/domain/time-range/range"
 
 export const Route = createFileRoute("/")({
-  validateSearch: (search: Record<string, unknown>) =>
-    rangeSearchSchema.parse(search),
+  validateSearch: (search: Record<string, unknown>) => rangeSearchSchema.parse(search),
   loaderDeps: ({ search }) => search,
   loader: ({ deps }) => loadOverview(resolveRangeSearch(deps)),
   component: OverviewRoute,

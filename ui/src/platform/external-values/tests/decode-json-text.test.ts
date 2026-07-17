@@ -35,15 +35,7 @@ describe("decodeJsonText", () => {
   })
 
   it("rejects non-string input kinds without throwing", () => {
-    const inputs: unknown[] = [
-      undefined,
-      null,
-      1,
-      true,
-      {},
-      [],
-      () => undefined,
-    ]
+    const inputs: unknown[] = [undefined, null, 1, true, {}, [], () => undefined]
     const codes = inputs.map((input) => {
       const result = decodeJsonText(input, stringDecoder)
       return result.ok ? "ok" : result.error.code

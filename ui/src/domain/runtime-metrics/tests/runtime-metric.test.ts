@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import type {
-  MetricPoint,
-  RuntimeMetric,
-} from "@/domain/runtime-metrics/runtime-metric"
+import type { MetricPoint, RuntimeMetric } from "@/domain/runtime-metrics/runtime-metric"
 
 describe("RuntimeMetric domain value", () => {
   it("accepts empty points and null unit", () => {

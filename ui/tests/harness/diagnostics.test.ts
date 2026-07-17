@@ -2,10 +2,7 @@
 
 import { describe, expect, it } from "vitest"
 
-import {
-  diagnosticMismatch,
-  expectDiagnostic,
-} from "../../src/test/diagnostics"
+import { diagnosticMismatch, expectDiagnostic } from "../../src/test/diagnostics"
 
 describe("test diagnostic policy", () => {
   it("accepts exact ordered diagnostics", () => {
@@ -18,16 +15,12 @@ describe("test diagnostic policy", () => {
 
   it("rejects unexpected, missing, reordered, and substring-only matches", () => {
     const expected = [{ level: "warn" as const, message: "exact warning" }]
-    expect(diagnosticMismatch(expected, [])).toContain(
+    expect(diagnosticMismatch(expected, [])).toContain("runtime diagnostics differ")
+    expect(diagnosticMismatch([], [{ level: "error", message: "unexpected" }])).toContain(
       "runtime diagnostics differ"
     )
     expect(
-      diagnosticMismatch([], [{ level: "error", message: "unexpected" }])
-    ).toContain("runtime diagnostics differ")
-    expect(
-      diagnosticMismatch(expected, [
-        { level: "warn", message: "prefix exact warning suffix" },
-      ])
+      diagnosticMismatch(expected, [{ level: "warn", message: "prefix exact warning suffix" }])
     ).toContain("runtime diagnostics differ")
     expect(
       diagnosticMismatch(
@@ -50,10 +43,7 @@ describe("test diagnostic policy", () => {
   })
 
   it("owns browser rejections exactly", () => {
-    expectDiagnostic(
-      "error",
-      "browser unhandled rejection Error: promise exploded"
-    )
+    expectDiagnostic("error", "browser unhandled rejection Error: promise exploded")
     const event = new Event("unhandledrejection", { cancelable: true })
     Object.defineProperty(event, "reason", {
       value: new Error("promise exploded"),

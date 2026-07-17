@@ -21,9 +21,7 @@ export function EcosystemControls({
     <div className="flex flex-wrap items-center gap-2">
       <Select
         value={search.focus ?? "all"}
-        onValueChange={(value) =>
-          update({ focus: !value || value === "all" ? undefined : value })
-        }
+        onValueChange={(value) => update({ focus: !value || value === "all" ? undefined : value })}
       >
         <SelectTrigger size="sm" aria-label="Focus service">
           <SelectValue placeholder="All services" />
@@ -39,9 +37,7 @@ export function EcosystemControls({
       </Select>
       <Select
         value={String(search.hops ?? 1)}
-        onValueChange={(value) =>
-          update({ hops: value === "2" ? 2 : undefined })
-        }
+        onValueChange={(value) => update({ hops: value === "2" ? 2 : undefined })}
       >
         <SelectTrigger size="sm" aria-label="Focus hops">
           <SelectValue />
@@ -53,9 +49,7 @@ export function EcosystemControls({
       </Select>
       <Select
         value={search.focusMode ?? "dim"}
-        onValueChange={(value) =>
-          update({ focusMode: value === "hide" ? "hide" : undefined })
-        }
+        onValueChange={(value) => update({ focusMode: value === "hide" ? "hide" : undefined })}
       >
         <SelectTrigger size="sm" aria-label="Outside focus behavior">
           <SelectValue />
@@ -69,8 +63,7 @@ export function EcosystemControls({
         value={search.minTraffic ?? "all"}
         onValueChange={(value) =>
           update({
-            minTraffic:
-              value && value !== "all" ? (value as TrafficPreset) : undefined,
+            minTraffic: value && value !== "all" ? (value as TrafficPreset) : undefined,
           })
         }
       >

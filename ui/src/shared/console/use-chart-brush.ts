@@ -13,8 +13,7 @@ interface ChartBrushOptions<T extends ChartBrushPoint> {
 }
 
 export function indexFromState(state: unknown): number | null {
-  const value = (state as { activeTooltipIndex?: unknown } | null)
-    ?.activeTooltipIndex
+  const value = (state as { activeTooltipIndex?: unknown } | null)?.activeTooltipIndex
   return typeof value === "number" ? value : null
 }
 
@@ -27,10 +26,7 @@ export function bucketWindow(
   if (!point) return null
   return {
     fromNanos: point.tsNanos,
-    toNanos: (
-      BigInt(point.tsNanos) +
-      BigInt(stepSeconds) * 1_000_000_000n
-    ).toString(),
+    toNanos: (BigInt(point.tsNanos) + BigInt(stepSeconds) * 1_000_000_000n).toString(),
   }
 }
 
@@ -48,8 +44,7 @@ export function dragWindow(
   return { fromNanos: from.tsNanos, toNanos: to.toNanos }
 }
 
-const defaultReferenceValue = <T extends ChartBrushPoint>(point: T) =>
-  point.tsNanos
+const defaultReferenceValue = <T extends ChartBrushPoint>(point: T) => point.tsNanos
 
 export function useChartBrush<T extends ChartBrushPoint>({
   series,

@@ -10,11 +10,7 @@ import {
 } from "@/domain/time-range/range"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 export function RangePicker({
   value,
@@ -73,9 +69,7 @@ export function RangePicker({
               onClick={() =>
                 onChange({
                   key: preset.key,
-                  fromNanos: (
-                    BigInt(Date.now() - preset.ms) * 1_000_000n
-                  ).toString(),
+                  fromNanos: (BigInt(Date.now() - preset.ms) * 1_000_000n).toString(),
                   toNanos: (BigInt(Date.now()) * 1_000_000n).toString(),
                 })
               }

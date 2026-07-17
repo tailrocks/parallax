@@ -3,15 +3,11 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import {
-  cycleSortParam,
-  pageWindow,
-  sortRows,
-} from "@/shared/console/data-table"
+import { cycleSortParam, pageWindow, sortRows } from "@/shared/console/data-table"
 import { RelativeTime } from "@/shared/console/relative-time"
 import { SpanKindChip, spanKindMeta } from "@/features/traces"
 import { StatCard } from "@/shared/console/stat-card"
-import { resolveRangeSearch } from "@/lib/range"
+import { resolveRangeSearch } from "@/domain/time-range/range"
 
 afterEach(() => {
   cleanup()
@@ -21,9 +17,12 @@ afterEach(() => {
 describe("console kit", () => {
   it("sorts rows nulls-last and cycles sort params", () => {
     const rows = [{ n: 2 }, { n: null }, { n: 1 }, { n: 1 }]
-    expect(
-      sortRows(rows, "n:asc", { n: (row) => row.n }).map((row) => row.n)
-    ).toEqual([1, 1, 2, null])
+    expect(sortRows(rows, "n:asc", { n: (row) => row.n }).map((row) => row.n)).toEqual([
+      1,
+      1,
+      2,
+      null,
+    ])
     expect(cycleSortParam(undefined, "n")).toBe("n:desc")
     expect(cycleSortParam("n:desc", "n")).toBe("n:asc")
     expect(cycleSortParam("n:asc", "n")).toBeUndefined()
@@ -42,20 +41,12 @@ describe("console kit", () => {
   })
 
   it("covers span kind palette and error override", () => {
-    for (const kind of [
-      "SERVER",
-      "CLIENT",
-      "INTERNAL",
-      "PRODUCER",
-      "CONSUMER",
-    ]) {
+    for (const kind of ["SERVER", "CLIENT", "INTERNAL", "PRODUCER", "CONSUMER"]) {
       const meta = spanKindMeta(kind)
       expect(meta.icon).toBeDefined()
       expect(meta.bar).toMatch(/^bg-/)
     }
-    expect(spanKindMeta("SERVER", "STATUS_CODE_ERROR").bar).toContain(
-      "bg-rose-500"
-    )
+    expect(spanKindMeta("SERVER", "STATUS_CODE_ERROR").bar).toContain("bg-rose-500")
     render(<SpanKindChip kind="SERVER" />)
     expect(screen.getByText("SERVER")).toBeTruthy()
   })

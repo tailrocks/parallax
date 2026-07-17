@@ -3,8 +3,8 @@
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 
-import type { TraceSummary } from "@/lib/api"
-import { customRange, resolvePreset, updateRangeSearch } from "@/lib/range"
+import type { TraceSummary } from "@/features/traces/model/wire"
+import { customRange, resolvePreset, updateRangeSearch } from "@/domain/time-range/range"
 import {
   TraceTable,
   traceDetailSearch,
@@ -35,10 +35,7 @@ describe("traces search params", () => {
 
   it("resets page when filters change", () => {
     expect(
-      patchTracesSearch(
-        { page: 4, sort: "DURATION_DESC", service: "api" },
-        { q: "checkout" }
-      )
+      patchTracesSearch({ page: 4, sort: "DURATION_DESC", service: "api" }, { q: "checkout" })
     ).toEqual({ sort: "DURATION_DESC", service: "api", q: "checkout" })
   })
 

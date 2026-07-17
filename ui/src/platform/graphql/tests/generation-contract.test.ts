@@ -13,9 +13,9 @@ describe("GraphQL generation contract", () => {
     expect(GraphqlContractStaticProbeDocument.kind).toBe("Document")
     const definition = GraphqlContractStaticProbeDocument.definitions[0]
     expect(definition?.kind).toBe("OperationDefinition")
-    expect(
-      definition && "name" in definition ? definition.name?.value : null
-    ).toBe("GraphqlContractStaticProbe")
+    expect(definition && "name" in definition ? definition.name?.value : null).toBe(
+      "GraphqlContractStaticProbe"
+    )
     const valid = GraphqlContractStaticProbeQuerySchema.safeParse({
       health: "ok",
       version: "1",
@@ -37,8 +37,6 @@ describe("GraphQL generation contract", () => {
   })
 
   it("generated modules export the probe operation schema", () => {
-    expect(typeof GraphqlContractStaticProbeQuerySchema.safeParse).toBe(
-      "function"
-    )
+    expect(typeof GraphqlContractStaticProbeQuerySchema.safeParse).toBe("function")
   })
 })

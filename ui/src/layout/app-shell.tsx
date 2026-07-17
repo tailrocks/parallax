@@ -4,8 +4,8 @@ import { useEffect, useState } from "react"
 
 import { CommandPalette } from "@/layout/command-palette"
 import { NavIcon } from "@/layout/nav-icon"
-import type { NavItem } from "@/shared/navigation"
 import { primaryNav, workspaceNav } from "@/shared/navigation"
+import type { NavItem } from "@/shared/navigation"
 import { ThemeSwitcher } from "@/layout/theme-switcher"
 import { Button } from "@/components/ui/button"
 import { Kbd } from "@/components/ui/kbd"
@@ -28,10 +28,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { loadAppStatus } from "@/features/app-status"
-import {
-  loadDashboardNavigation,
-  type DashboardNavigationItem,
-} from "@/features/dashboards"
+import { loadDashboardNavigation, type DashboardNavigationItem } from "@/features/dashboards"
 import { cn } from "@/lib/utils"
 
 function isActive(pathname: string, href: string) {
@@ -137,15 +134,8 @@ function StatusPill() {
 
   return (
     <div className="flex h-8 items-center gap-2 rounded-full bg-background px-3 text-xs text-muted-foreground shadow-(--custom-shadow) group-data-[collapsible=icon]:hidden">
-      <span
-        className={cn(
-          "size-1.5 rounded-full",
-          healthy ? "bg-green-500" : "bg-rose-500"
-        )}
-      />
-      <span className="font-medium text-foreground">
-        {healthy ? "Local" : "Offline"}
-      </span>
+      <span className={cn("size-1.5 rounded-full", healthy ? "bg-green-500" : "bg-rose-500")} />
+      <span className="font-medium text-foreground">{healthy ? "Local" : "Offline"}</span>
       <span className="font-mono">{endpoint}</span>
     </div>
   )
@@ -154,9 +144,7 @@ function StatusPill() {
 export function ParallaxShell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const [dashboards, setDashboards] = useState<DashboardNavigationItem[]>([])
-  const [dashboardNavError, setDashboardNavError] = useState<string | null>(
-    null
-  )
+  const [dashboardNavError, setDashboardNavError] = useState<string | null>(null)
   const [paletteOpen, setPaletteOpen] = useState(false)
 
   useEffect(() => {
@@ -172,9 +160,7 @@ export function ParallaxShell({ children }: { children: React.ReactNode }) {
         if (error instanceof DOMException && error.name === "AbortError") {
           return
         }
-        setDashboardNavError(
-          error instanceof Error ? error.message : String(error)
-        )
+        setDashboardNavError(error instanceof Error ? error.message : String(error))
       })
     return () => controller.abort()
   }, [pathname])
@@ -237,9 +223,7 @@ export function ParallaxShell({ children }: { children: React.ReactNode }) {
 
       <SidebarInset className="min-h-0 overflow-hidden">
         <main className="min-h-0 flex-1 overflow-y-auto">
-          <div className="mx-auto flex max-w-380 flex-col gap-6 p-10 2xl:p-16">
-            {children}
-          </div>
+          <div className="mx-auto flex max-w-380 flex-col gap-6 p-10 2xl:p-16">{children}</div>
         </main>
       </SidebarInset>
     </SidebarProvider>

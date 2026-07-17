@@ -34,9 +34,7 @@ export function LiveStreamPanel({
         </div>
         <div className="flex flex-wrap justify-end gap-2">
           <Badge variant={active ? "emerald" : "amber"}>
-            {active ? (
-              <span className="size-1.5 animate-pulse rounded-full bg-current" />
-            ) : null}
+            {active ? <span className="size-1.5 animate-pulse rounded-full bg-current" /> : null}
             {active ? "connected" : "reconnecting…"}
           </Badge>
           <Badge variant="outline">{count.toLocaleString()} shown</Badge>
@@ -62,8 +60,8 @@ export function LiveEventStack({
   if (items.length === 0) {
     return (
       <div className="rounded-lg border border-dashed bg-muted/20 p-6 text-sm text-muted-foreground">
-        Waiting for streamed events. New telemetry appears here as soon as it
-        crosses the local SSE broker.
+        Waiting for streamed events. New telemetry appears here as soon as it crosses the local SSE
+        broker.
       </div>
     )
   }
@@ -71,10 +69,7 @@ export function LiveEventStack({
   return (
     <div className="grid gap-2">
       {items.slice(0, 6).map((item, index) => (
-        <div
-          key={item.id}
-          className="flex items-start gap-3 rounded-lg border bg-muted/20 p-3"
-        >
+        <div key={item.id} className="flex items-start gap-3 rounded-lg border bg-muted/20 p-3">
           <span
             className={
               item.status === "error"
@@ -89,13 +84,9 @@ export function LiveEventStack({
               </span>
               <p className="truncate text-sm font-medium">{item.title}</p>
             </div>
-            <p className="mt-1 truncate text-xs text-muted-foreground">
-              {item.meta}
-            </p>
+            <p className="mt-1 truncate text-xs text-muted-foreground">{item.meta}</p>
             {item.detail ? (
-              <p className="mt-2 line-clamp-2 text-xs text-muted-foreground/80">
-                {item.detail}
-              </p>
+              <p className="mt-2 line-clamp-2 text-xs text-muted-foreground/80">{item.detail}</p>
             ) : null}
           </div>
         </div>

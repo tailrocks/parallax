@@ -29,8 +29,7 @@ export type LoadRuntimeMetricsInput = {
 export async function loadRuntimeMetricStrip(
   input: LoadRuntimeMetricsInput
 ): Promise<StripPanel[]> {
-  const service =
-    input.invocationId || !input.service ? null : (input.service ?? null)
+  const service = input.invocationId || !input.service ? null : (input.service ?? null)
   const invocationId = input.invocationId ?? null
   const variables: RuntimeMetricStripQueryVariables = {
     fromNanos: input.fromNanos,

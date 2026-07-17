@@ -5,7 +5,7 @@
   "singleQuote": false,
   "tabWidth": 2,
   "trailingComma": "es5",
-  "printWidth": 80,
+  "printWidth": 100,
   "sortImports": false,
   "sortPackageJson": false,
   "sortTailwindcss": {

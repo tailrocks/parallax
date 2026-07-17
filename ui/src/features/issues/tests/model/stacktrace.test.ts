@@ -1,15 +1,10 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  parseStacktrace,
-  structuredFrameCount,
-} from "@/features/issues/model/stacktrace"
+import { parseStacktrace, structuredFrameCount } from "@/features/issues/model/stacktrace"
 
 describe("parseStacktrace", () => {
   it("parses Rust frames", () => {
-    const frames = parseStacktrace(
-      "0: checkout::cart::total\n   at src/cart.rs:99:5"
-    )
+    const frames = parseStacktrace("0: checkout::cart::total\n   at src/cart.rs:99:5")
 
     expect(frames[0]).toMatchObject({
       fn: "checkout::cart::total",
@@ -70,9 +65,7 @@ describe("parseStacktrace", () => {
   })
 
   it("parses Java frames", () => {
-    const frames = parseStacktrace(
-      "at com.tailrocks.Checkout.total(Checkout.java:77)"
-    )
+    const frames = parseStacktrace("at com.tailrocks.Checkout.total(Checkout.java:77)")
 
     expect(frames[0]).toMatchObject({
       fn: "com.tailrocks.Checkout.total",

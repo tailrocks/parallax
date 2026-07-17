@@ -48,10 +48,7 @@ export function projectServiceMap(
     hops: search.hops ?? 1,
     mode: search.focusMode ?? "dim",
   })
-  const traffic = filterLowTraffic(
-    focused.edges,
-    TRAFFIC_PRESETS[search.minTraffic ?? "all"]
-  )
+  const traffic = filterLowTraffic(focused.edges, TRAFFIC_PRESETS[search.minTraffic ?? "all"])
   return {
     nodes: focused.nodes.map((node) => node.data),
     edges: traffic.edges.map((edge) => edge.data),

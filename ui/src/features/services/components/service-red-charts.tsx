@@ -1,13 +1,5 @@
 import { Link } from "@tanstack/react-router"
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  XAxis,
-  YAxis,
-} from "recharts"
+import { Area, AreaChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 
 import { ChartLegend, makeEdgeTick, thinTicks } from "@/shared/console/trend"
 import { Badge } from "@/components/ui/badge"
@@ -36,7 +28,7 @@ import {
   type ServiceOverview,
   type SpanRed,
 } from "@/features/services/model/service-detail"
-import { rangeLinkSearch, type ResolvedRange } from "@/lib/range"
+import { rangeLinkSearch, type ResolvedRange } from "@/domain/time-range/range"
 
 const chartConfig = {
   requests: { label: "Requests", color: "var(--chart-throughput)" },
@@ -56,8 +48,7 @@ export function ServiceRequestsChart({ red }: { red: SpanRed }) {
       requests: red.rate,
       errors: red.rate,
     },
-    (key, value, tsNanos) =>
-      key === "errors" ? value * (errorsByTs.get(tsNanos) ?? 0) : value
+    (key, value, tsNanos) => (key === "errors" ? value * (errorsByTs.get(tsNanos) ?? 0) : value)
   )
   const ticks = thinTicks(
     data.map((row) => row.label),
@@ -87,24 +78,12 @@ export function ServiceRequestsChart({ red }: { red: SpanRed }) {
               tickLine={false}
               axisLine={false}
               ticks={ticks}
-              tickFormatter={(value, index) =>
-                makeEdgeTick(String(value), index, ticks)
-              }
+              tickFormatter={(value, index) => makeEdgeTick(String(value), index, ticks)}
             />
             <YAxis tickLine={false} axisLine={false} width={48} />
             <ChartTooltip content={<ChartTooltipContent />} />
-            <Line
-              dataKey="requests"
-              stroke="var(--color-requests)"
-              dot={false}
-              strokeWidth={1.7}
-            />
-            <Line
-              dataKey="errors"
-              stroke="var(--color-errors)"
-              dot={false}
-              strokeWidth={1.7}
-            />
+            <Line dataKey="requests" stroke="var(--color-requests)" dot={false} strokeWidth={1.7} />
+            <Line dataKey="errors" stroke="var(--color-errors)" dot={false} strokeWidth={1.7} />
           </LineChart>
         </ChartContainer>
       </CardContent>
@@ -162,9 +141,7 @@ export function ServiceLatencyChart({
                 tickLine={false}
                 axisLine={false}
                 ticks={ticks}
-                tickFormatter={(value, index) =>
-                  makeEdgeTick(String(value), index, ticks)
-                }
+                tickFormatter={(value, index) => makeEdgeTick(String(value), index, ticks)}
               />
               <YAxis tickLine={false} axisLine={false} width={48} />
               <ChartTooltip content={<ChartTooltipContent />} />
@@ -215,15 +192,11 @@ export function ServiceLatencyChart({
                 <div className="grid gap-2 text-xs">
                   <div className="grid grid-cols-[64px_1fr] gap-2">
                     <span className="text-muted-foreground">trace</span>
-                    <span className="truncate font-mono">
-                      {marker.exemplar.traceId}
-                    </span>
+                    <span className="truncate font-mono">{marker.exemplar.traceId}</span>
                   </div>
                   <div className="grid grid-cols-[64px_1fr] gap-2">
                     <span className="text-muted-foreground">span</span>
-                    <span className="truncate font-mono">
-                      {marker.exemplar.spanId}
-                    </span>
+                    <span className="truncate font-mono">{marker.exemplar.spanId}</span>
                   </div>
                   <div className="grid grid-cols-[64px_1fr] gap-2">
                     <span className="text-muted-foreground">value</span>

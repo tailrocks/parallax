@@ -30,16 +30,9 @@ import {
   type IssuesListQuery,
   type IssuesListQueryVariables,
 } from "@/features/issues/api/issues-list.generated"
-import {
-  mapIssueDetail,
-  mapIssueEvents,
-  mapIssuesList,
-} from "@/features/issues/api/issues-mapper"
-import type {
-  IssueDetailData,
-  IssueEvent,
-} from "@/features/issues/model/issue-detail"
+import { mapIssueDetail, mapIssueEvents, mapIssuesList } from "@/features/issues/api/issues-mapper"
 import { rangeHours } from "@/features/issues/model/issue-detail"
+import type { IssueDetailData, IssueEvent } from "@/features/issues/model/issue-detail"
 import type { IssuesData } from "@/features/issues/model/issue-summary"
 import type { IssuesSearch } from "@/features/issues/model/issues-search"
 import { IssuesError } from "@/features/issues/model/issues-error"
@@ -50,7 +43,7 @@ import {
 } from "@/platform/graphql/client"
 import { GraphqlBoundaryError } from "@/platform/graphql/error"
 import type { TypedDocumentNode } from "@/platform/graphql/typed-document"
-import type { ResolvedRange } from "@/lib/range"
+import type { ResolvedRange } from "@/domain/time-range/range"
 
 function brandDocument<TResult, TVariables>(
   document: unknown
@@ -74,29 +67,24 @@ function mapBoundary(error: unknown, code: IssuesError["code"]): never {
       error.message
     )
   }
-  throw new IssuesError(
-    code,
-    error instanceof Error ? error.message : String(error)
-  )
+  throw new IssuesError(code, error instanceof Error ? error.message : String(error))
 }
 
-export async function loadIssues(
-  search: IssuesSearch,
-  range: ResolvedRange
-): Promise<IssuesData> {
+export async function loadIssues(search: IssuesSearch, range: ResolvedRange): Promise<IssuesData> {
   try {
-    const data = await executeCachedGraphqlOperation<
-      IssuesListQuery,
-      IssuesListQueryVariables
-    >(brandDocument(IssuesListDocument), brandSchema(IssuesListQuerySchema), {
-      service: search.service ?? null,
-      status: search.status ?? null,
-      query: search.q ?? null,
-      fromNanos: range.fromNanos,
-      toNanos: range.toNanos,
-      sort: search.sort ?? "LAST_SEEN",
-      limit: 100,
-    })
+    const data = await executeCachedGraphqlOperation<IssuesListQuery, IssuesListQueryVariables>(
+      brandDocument(IssuesListDocument),
+      brandSchema(IssuesListQuerySchema),
+      {
+        service: search.service ?? null,
+        status: search.status ?? null,
+        query: search.q ?? null,
+        fromNanos: range.fromNanos,
+        toNanos: range.toNanos,
+        sort: search.sort ?? "LAST_SEEN",
+        limit: 100,
+      }
+    )
     return mapIssuesList(data)
   } catch (error) {
     mapBoundary(error, "load")
@@ -108,15 +96,16 @@ export async function loadIssueDetail(
   range: ResolvedRange
 ): Promise<IssueDetailData> {
   try {
-    const data = await executeCachedGraphqlOperation<
-      IssueDetailQuery,
-      IssueDetailQueryVariables
-    >(brandDocument(IssueDetailDocument), brandSchema(IssueDetailQuerySchema), {
-      fingerprint,
-      fromNanos: range.fromNanos,
-      toNanos: range.toNanos,
-      hours: rangeHours(range),
-    })
+    const data = await executeCachedGraphqlOperation<IssueDetailQuery, IssueDetailQueryVariables>(
+      brandDocument(IssueDetailDocument),
+      brandSchema(IssueDetailQuerySchema),
+      {
+        fingerprint,
+        fromNanos: range.fromNanos,
+        toNanos: range.toNanos,
+        hours: rangeHours(range),
+      }
+    )
 
     let resource: Record<string, unknown> = {}
     let breadcrumbs: IssueDetailData["breadcrumbs"] = []
@@ -128,11 +117,9 @@ export async function loadIssueDetail(
         const correlated = await executeCachedGraphqlOperation<
           IssueCorrelationQuery,
           IssueCorrelationQueryVariables
-        >(
-          brandDocument(IssueCorrelationDocument),
-          brandSchema(IssueCorrelationQuerySchema),
-          { traceId }
-        )
+        >(brandDocument(IssueCorrelationDocument), brandSchema(IssueCorrelationQuerySchema), {
+          traceId,
+        })
         const resourceRaw = correlated.trace?.spans[0]?.resource ?? "{}"
         try {
           resource = JSON.parse(resourceRaw) as Record<string, unknown>
@@ -140,16 +127,13 @@ export async function loadIssueDetail(
           resource = {}
         }
         const version = resource["service.version"]
-        releaseVersion =
-          typeof version === "string" && version.trim() ? version.trim() : null
+        releaseVersion = typeof version === "string" && version.trim() ? version.trim() : null
         breadcrumbs = correlated.logsByTrace.slice(-12).map((log) => ({
           tsNanos: log.tsNanos,
           severityText: log.severityText,
           body: log.body,
         }))
-        traceRunId =
-          correlated.trace?.spans.find((s) => s.invocationId)?.invocationId ??
-          null
+        traceRunId = correlated.trace?.spans.find((s) => s.invocationId)?.invocationId ?? null
       } catch {
         // Trace may have aged out; issue detail still renders.
       }
@@ -171,10 +155,7 @@ export async function setIssueStatus(
   status: "open" | "resolved"
 ): Promise<void> {
   try {
-    await executeGraphqlOperation<
-      IssueSetStatusMutation,
-      IssueSetStatusMutationVariables
-    >(
+    await executeGraphqlOperation<IssueSetStatusMutation, IssueSetStatusMutationVariables>(
       brandDocument(IssueSetStatusDocument),
       brandSchema(IssueSetStatusMutationSchema),
       { fingerprint, status }
@@ -193,11 +174,11 @@ export async function loadIssueOccurrences(
     const data = await executeGraphqlOperation<
       IssueOccurrencesQuery,
       IssueOccurrencesQueryVariables
-    >(
-      brandDocument(IssueOccurrencesDocument),
-      brandSchema(IssueOccurrencesQuerySchema),
-      { fingerprint, fromNanos, toNanos }
-    )
+    >(brandDocument(IssueOccurrencesDocument), brandSchema(IssueOccurrencesQuerySchema), {
+      fingerprint,
+      fromNanos,
+      toNanos,
+    })
     return mapIssueEvents(data.issue?.events ?? [])
   } catch (error) {
     mapBoundary(error, "load")

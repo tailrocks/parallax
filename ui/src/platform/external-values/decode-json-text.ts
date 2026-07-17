@@ -10,10 +10,7 @@ const BOUNDARY_ID = "external-values.decode-json-text"
  * Prove `input` is a string, parse JSON to unknown, apply one decoder.
  * Never throws for expected malformed external values.
  */
-export function decodeJsonText<T>(
-  input: unknown,
-  decoder: RuntimeDecoder<T>
-): BoundaryResult<T> {
+export function decodeJsonText<T>(input: unknown, decoder: RuntimeDecoder<T>): BoundaryResult<T> {
   if (typeof input !== "string") {
     const error = boundaryError(BOUNDARY_ID, "invalid-type", input)
     reportBoundaryError(error)

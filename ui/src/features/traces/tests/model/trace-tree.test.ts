@@ -47,10 +47,7 @@ describe("trace tree", () => {
   })
 
   it("treats missing parents as orphan roots", () => {
-    const ordered = orderSpans([
-      span("late", "50", "1", "missing"),
-      span("early", "10", "1"),
-    ])
+    const ordered = orderSpans([span("late", "50", "1", "missing"), span("early", "10", "1")])
 
     expect(ordered.map((row) => row.span.spanId)).toEqual(["early", "late"])
     expect(ordered.map((row) => row.depth)).toEqual([0, 0])
@@ -64,12 +61,7 @@ describe("trace tree", () => {
       span("a", "10", "1", "root"),
     ])
 
-    expect(ordered.map((row) => row.span.spanId)).toEqual([
-      "root",
-      "a",
-      "c",
-      "b",
-    ])
+    expect(ordered.map((row) => row.span.spanId)).toEqual(["root", "a", "c", "b"])
   })
 
   it("keeps zero-duration traces drawable", () => {
@@ -107,9 +99,7 @@ describe("trace tree", () => {
   })
 
   it("terminates when an error span is its own parent", () => {
-    const ids = errorPathSpanIds([
-      richSpan("loop", "10", "5", "loop", "api", "STATUS_CODE_ERROR"),
-    ])
+    const ids = errorPathSpanIds([richSpan("loop", "10", "5", "loop", "api", "STATUS_CODE_ERROR")])
     expect(Array.from(ids)).toEqual(["loop"])
   })
 
@@ -147,9 +137,7 @@ describe("trace tree", () => {
       richSpan("local", "700000000", "10000000", "root", "api"),
     ])
 
-    expect(report.suspectPairs).toEqual([
-      { parentId: "root", childId: "db", driftMs: 200 },
-    ])
+    expect(report.suspectPairs).toEqual([{ parentId: "root", childId: "db", driftMs: 200 }])
     expect(report.maxDriftMs).toBe(200)
   })
 
@@ -170,26 +158,17 @@ describe("trace tree", () => {
   describe("corner-case corpus shapes", () => {
     it("t-deep: a 14-span linear chain renders full depth without truncation", () => {
       const chain = Array.from({ length: 14 }, (_, i) =>
-        span(
-          `s${i}`,
-          String(1_000 + i * 10),
-          String(200 - i * 10),
-          i === 0 ? null : `s${i - 1}`
-        )
+        span(`s${i}`, String(1_000 + i * 10), String(200 - i * 10), i === 0 ? null : `s${i - 1}`)
       )
       const rows = buildTraceTree(chain)
       expect(rows).toHaveLength(14)
-      expect(rows.map((row) => row.depth)).toEqual(
-        Array.from({ length: 14 }, (_, i) => i)
-      )
+      expect(rows.map((row) => row.depth)).toEqual(Array.from({ length: 14 }, (_, i) => i))
     })
 
     it("t-wide: 521 spans fanning from one root all render with finite geometry", () => {
       const fan = [
         span("root", "0", "1000000"),
-        ...Array.from({ length: 520 }, (_, i) =>
-          span(`c${i}`, String(1_000 + i), "500", "root")
-        ),
+        ...Array.from({ length: 520 }, (_, i) => span(`c${i}`, String(1_000 + i), "500", "root")),
       ]
       const rows = buildTraceTree(fan)
       expect(rows).toHaveLength(521)
@@ -206,9 +185,10 @@ describe("trace tree", () => {
         span("rootA", "1000", "500"),
         span("childA", "1100", "100", "rootA"),
       ])
-      expect(
-        rows.filter((row) => row.depth === 0).map((row) => row.span.spanId)
-      ).toEqual(["rootA", "rootB"])
+      expect(rows.filter((row) => row.depth === 0).map((row) => row.span.spanId)).toEqual([
+        "rootA",
+        "rootB",
+      ])
     })
 
     it("t-orphan: a child whose parent never arrives renders as a detached root", () => {
@@ -223,29 +203,18 @@ describe("trace tree", () => {
     it("t-skew: a cross-service child starting 120ms before its CLIENT parent flags skew with non-negative geometry", () => {
       const fixture = [
         richSpan("client", "120000000", "200000000", null, "playground-shapes"),
-        richSpan(
-          "server",
-          "0",
-          "125000000",
-          "client",
-          "playground-shapes-remote"
-        ),
+        richSpan("server", "0", "125000000", "client", "playground-shapes-remote"),
       ]
       for (const row of buildTraceTree(fixture)) {
         expect(row.offsetPct).toBeGreaterThanOrEqual(0)
         expect(row.widthPct).toBeGreaterThanOrEqual(0)
       }
       const report = detectSkew(fixture)
-      expect(report.suspectPairs).toEqual([
-        { parentId: "client", childId: "server", driftMs: 120 },
-      ])
+      expect(report.suspectPairs).toEqual([{ parentId: "client", childId: "server", driftMs: 120 }])
     })
 
     it("t-zero: zero-duration next to a 1µs span never yields NaN layout", () => {
-      const rows = buildTraceTree([
-        span("zero", "1000", "0"),
-        span("micro", "1000", "1000"),
-      ])
+      const rows = buildTraceTree([span("zero", "1000", "0"), span("micro", "1000", "1000")])
       for (const row of rows) {
         expect(Number.isNaN(row.offsetPct)).toBe(false)
         expect(Number.isNaN(row.widthPct)).toBe(false)

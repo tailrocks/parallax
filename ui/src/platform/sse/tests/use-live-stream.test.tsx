@@ -53,10 +53,7 @@ function StatusHarness({
   onBatch: (items: string[]) => void
   flushMs?: number
 }) {
-  const options =
-    flushMs === undefined
-      ? { url, parse, onBatch }
-      : { url, parse, onBatch, flushMs }
+  const options = flushMs === undefined ? { url, parse, onBatch } : { url, parse, onBatch, flushMs }
   const status: LiveStreamStatus = useLiveStream(options)
   return <output data-testid="status">{status}</output>
 }
@@ -79,14 +76,7 @@ describe("useLiveStream", () => {
     const onBatch = vi.fn()
     const parse = (data: string) => JSON.parse(data) as string[]
 
-    render(
-      <StatusHarness
-        url="/v1/logs/stream"
-        parse={parse}
-        onBatch={onBatch}
-        flushMs={250}
-      />
-    )
+    render(<StatusHarness url="/v1/logs/stream" parse={parse} onBatch={onBatch} flushMs={250} />)
 
     const source = MockEventSource.instances[0]
     expect(source).toBeDefined()
@@ -110,14 +100,7 @@ describe("useLiveStream", () => {
       return JSON.parse(data) as string[]
     }
 
-    render(
-      <StatusHarness
-        url="/v1/logs/stream"
-        parse={parse}
-        onBatch={onBatch}
-        flushMs={250}
-      />
-    )
+    render(<StatusHarness url="/v1/logs/stream" parse={parse} onBatch={onBatch} flushMs={250} />)
 
     const source = MockEventSource.instances[0]!
     act(() => {
@@ -135,9 +118,7 @@ describe("useLiveStream", () => {
 
   it("maps onerror to error and subsequent onopen to open", () => {
     const onBatch = vi.fn()
-    render(
-      <StatusHarness url="/v1/logs/stream" parse={() => []} onBatch={onBatch} />
-    )
+    render(<StatusHarness url="/v1/logs/stream" parse={() => []} onBatch={onBatch} />)
 
     expect(screen.getByTestId("status").textContent).toBe("connecting")
 
@@ -158,12 +139,7 @@ describe("useLiveStream", () => {
     const onBatch = vi.fn()
 
     const { unmount } = render(
-      <StatusHarness
-        url="/v1/logs/stream"
-        parse={() => ["x"]}
-        onBatch={onBatch}
-        flushMs={250}
-      />
+      <StatusHarness url="/v1/logs/stream" parse={() => ["x"]} onBatch={onBatch} flushMs={250} />
     )
 
     const source = MockEventSource.instances[0]!
@@ -199,9 +175,7 @@ describe("useLiveStream", () => {
     })
 
     const onBatch = vi.fn()
-    render(
-      <StatusHarness url="/v1/logs/stream" parse={() => []} onBatch={onBatch} />
-    )
+    render(<StatusHarness url="/v1/logs/stream" parse={() => []} onBatch={onBatch} />)
     expect(MockEventSource.instances).toHaveLength(1)
     const first = MockEventSource.instances[0]!
 

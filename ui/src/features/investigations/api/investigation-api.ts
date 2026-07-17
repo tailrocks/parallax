@@ -30,10 +30,7 @@ import {
   type InvestigationsListQuery,
   type InvestigationsListQueryVariables,
 } from "@/features/investigations/api/investigations-list.generated"
-import {
-  mapInvestigation,
-  type Investigation,
-} from "@/features/investigations/model/investigation"
+import { mapInvestigation, type Investigation } from "@/features/investigations/model/investigation"
 import { InvestigationError } from "@/features/investigations/model/investigation-error"
 import {
   executeCachedGraphqlOperation,
@@ -65,10 +62,7 @@ function mapBoundary(error: unknown, code: InvestigationError["code"]): never {
       error.message
     )
   }
-  throw new InvestigationError(
-    code,
-    error instanceof Error ? error.message : String(error)
-  )
+  throw new InvestigationError(code, error instanceof Error ? error.message : String(error))
 }
 
 export async function loadInvestigationsList(): Promise<Investigation[]> {
@@ -76,29 +70,21 @@ export async function loadInvestigationsList(): Promise<Investigation[]> {
     const data = await executeCachedGraphqlOperation<
       InvestigationsListQuery,
       InvestigationsListQueryVariables
-    >(
-      brandDocument(InvestigationsListDocument),
-      brandSchema(InvestigationsListQuerySchema),
-      {}
-    )
+    >(brandDocument(InvestigationsListDocument), brandSchema(InvestigationsListQuerySchema), {})
     return data.investigations.map(mapInvestigation)
   } catch (error) {
     mapBoundary(error, "load")
   }
 }
 
-export async function loadInvestigationDetail(
-  id: string
-): Promise<Investigation | null> {
+export async function loadInvestigationDetail(id: string): Promise<Investigation | null> {
   try {
     const data = await executeCachedGraphqlOperation<
       InvestigationDetailQuery,
       InvestigationDetailQueryVariables
-    >(
-      brandDocument(InvestigationDetailDocument),
-      brandSchema(InvestigationDetailQuerySchema),
-      { id }
-    )
+    >(brandDocument(InvestigationDetailDocument), brandSchema(InvestigationDetailQuerySchema), {
+      id,
+    })
     return data.investigation ? mapInvestigation(data.investigation) : null
   } catch (error) {
     mapBoundary(error, "load")
@@ -135,15 +121,11 @@ export async function saveInvestigation(input: {
     const data = await executeGraphqlOperation<
       InvestigationSaveMutation,
       InvestigationSaveMutationVariables
-    >(
-      brandDocument(InvestigationSaveDocument),
-      brandSchema(InvestigationSaveMutationSchema),
-      {
-        name: input.name,
-        state: input.state,
-        id: input.id ?? null,
-      }
-    )
+    >(brandDocument(InvestigationSaveDocument), brandSchema(InvestigationSaveMutationSchema), {
+      name: input.name,
+      state: input.state,
+      id: input.id ?? null,
+    })
     return mapInvestigation(data.investigationSave)
   } catch (error) {
     mapBoundary(error, "save")
@@ -155,11 +137,9 @@ export async function deleteInvestigation(id: string): Promise<void> {
     await executeGraphqlOperation<
       InvestigationDeleteMutation,
       InvestigationDeleteMutationVariables
-    >(
-      brandDocument(InvestigationDeleteDocument),
-      brandSchema(InvestigationDeleteMutationSchema),
-      { id }
-    )
+    >(brandDocument(InvestigationDeleteDocument), brandSchema(InvestigationDeleteMutationSchema), {
+      id,
+    })
   } catch (error) {
     mapBoundary(error, "delete")
   }

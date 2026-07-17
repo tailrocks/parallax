@@ -1,6 +1,6 @@
 import type { RuntimeMetric } from "@/domain/runtime-metrics/runtime-metric"
-import { formatTimeShort } from "@/lib/format"
-import type { ResolvedRange } from "@/lib/range"
+import { formatTimeShort } from "@/shared/format"
+import type { ResolvedRange } from "@/domain/time-range/range"
 
 import type { ServiceCatalogRow } from "@/features/services/model/service-summary"
 
@@ -108,10 +108,7 @@ export function latestErrorRate(red: SpanRed): number {
 }
 
 export function latencyBands(red: SpanRed): LatencyBandPoint[] {
-  const points = new Map<
-    string,
-    { tsNanos: string; p50: number; p95: number; p99: number }
-  >()
+  const points = new Map<string, { tsNanos: string; p50: number; p95: number; p99: number }>()
   for (const point of red.p50) {
     points.set(point.tsNanos, {
       tsNanos: point.tsNanos,
@@ -157,10 +154,7 @@ export function formatChartTime(tsNanos: string): string {
 
 export function toLineData(
   series: Record<string, readonly SeriesPoint[]>,
-  mapValue: (key: string, value: number, tsNanos: string) => number = (
-    _key,
-    value
-  ) => value
+  mapValue: (key: string, value: number, tsNanos: string) => number = (_key, value) => value
 ): MetricChartPoint[] {
   const rows = new Map<string, MetricChartPoint>()
   for (const [key, points] of Object.entries(series)) {
@@ -173,9 +167,7 @@ export function toLineData(
       rows.set(point.tsNanos, row)
     }
   }
-  return Array.from(rows.values()).sort((a, b) =>
-    BigInt(a.tsNanos) < BigInt(b.tsNanos) ? -1 : 1
-  )
+  return Array.from(rows.values()).sort((a, b) => (BigInt(a.tsNanos) < BigInt(b.tsNanos) ? -1 : 1))
 }
 
 export function exemplarMarkers(
@@ -197,8 +189,7 @@ export function exemplarMarkers(
     0
   )
   const exemplarMax = exemplars.reduce(
-    (max, exemplar) =>
-      Number.isFinite(exemplar.value) ? Math.max(max, exemplar.value) : max,
+    (max, exemplar) => (Number.isFinite(exemplar.value) ? Math.max(max, exemplar.value) : max),
     0
   )
   const maxValue = Math.max(chartMax, exemplarMax, 1)

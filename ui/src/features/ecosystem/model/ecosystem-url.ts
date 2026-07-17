@@ -27,12 +27,7 @@ export const DEFAULT_ECOSYSTEM_URL: EcosystemUrlState = {
   minTraffic: 0,
 }
 
-export const ECOSYSTEM_PARAM_KEYS = [
-  "focus",
-  "hops",
-  "focusMode",
-  "minTraffic",
-] as const
+export const ECOSYSTEM_PARAM_KEYS = ["focus", "hops", "focusMode", "minTraffic"] as const
 
 /** Clamp hops to a sensible product range (0–3). */
 export function clampHops(raw: number): number {
@@ -71,10 +66,7 @@ export function parseMinTraffic(raw: string | null | undefined): number {
 /** Encode minTraffic back to a stable preset label when possible. */
 export function encodeMinTraffic(fraction: number): string {
   if (fraction <= 0) return "all"
-  for (const [label, value] of Object.entries(TRAFFIC_PRESETS) as [
-    TrafficPreset,
-    number,
-  ][]) {
+  for (const [label, value] of Object.entries(TRAFFIC_PRESETS) as [TrafficPreset, number][]) {
     if (label === "all") continue
     if (Math.abs(value - fraction) < 1e-12) return label
   }
@@ -96,9 +88,7 @@ export function decodeEcosystemUrl(
   const hopsRaw = get("hops")
   return {
     focus: focusRaw ? focusRaw : null,
-    hops: clampHops(
-      hopsRaw != null ? Number(hopsRaw) : DEFAULT_ECOSYSTEM_URL.hops
-    ),
+    hops: clampHops(hopsRaw != null ? Number(hopsRaw) : DEFAULT_ECOSYSTEM_URL.hops),
     focusMode: parseFocusMode(get("focusMode")),
     minTraffic: parseMinTraffic(get("minTraffic")),
   }

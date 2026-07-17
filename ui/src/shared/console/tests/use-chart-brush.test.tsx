@@ -12,11 +12,7 @@ const points = [0, 30, 60, 90, 120, 150].map((seconds, index) => ({
 
 afterEach(cleanup)
 
-function Harness({
-  onWindow,
-}: {
-  onWindow: (fromNanos: string, toNanos: string) => void
-}) {
+function Harness({ onWindow }: { onWindow: (fromNanos: string, toNanos: string) => void }) {
   const brush = useChartBrush({
     series: points,
     stepSeconds: 30,
@@ -26,45 +22,32 @@ function Harness({
   return (
     <div>
       <output data-testid="range">
-        {brush.referenceRange
-          ? `${brush.referenceRange.x1}:${brush.referenceRange.x2}`
-          : "none"}
+        {brush.referenceRange ? `${brush.referenceRange.x1}:${brush.referenceRange.x2}` : "none"}
       </output>
-      <button
-        type="button"
-        onClick={() => brush.chartHandlers.onClick({ activeTooltipIndex: 1 })}
-      >
+      <button type="button" onClick={() => brush.chartHandlers.onClick({ activeTooltipIndex: 1 })}>
         click-1
       </button>
       <button
         type="button"
-        onClick={() =>
-          brush.chartHandlers.onMouseDown({ activeTooltipIndex: 2 })
-        }
+        onClick={() => brush.chartHandlers.onMouseDown({ activeTooltipIndex: 2 })}
       >
         start-2
       </button>
       <button
         type="button"
-        onClick={() =>
-          brush.chartHandlers.onMouseDown({ activeTooltipIndex: 5 })
-        }
+        onClick={() => brush.chartHandlers.onMouseDown({ activeTooltipIndex: 5 })}
       >
         start-5
       </button>
       <button
         type="button"
-        onClick={() =>
-          brush.chartHandlers.onMouseMove({ activeTooltipIndex: 2 })
-        }
+        onClick={() => brush.chartHandlers.onMouseMove({ activeTooltipIndex: 2 })}
       >
         move-2
       </button>
       <button
         type="button"
-        onClick={() =>
-          brush.chartHandlers.onMouseMove({ activeTooltipIndex: 5 })
-        }
+        onClick={() => brush.chartHandlers.onMouseMove({ activeTooltipIndex: 5 })}
       >
         move-5
       </button>

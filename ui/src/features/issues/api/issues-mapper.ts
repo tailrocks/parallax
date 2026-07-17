@@ -6,11 +6,7 @@ import type {
   IssueDetailData,
   IssueEvent,
 } from "@/features/issues/model/issue-detail"
-import type {
-  IssueRow,
-  IssuesData,
-  TrendPoint,
-} from "@/features/issues/model/issue-summary"
+import type { IssueRow, IssuesData, TrendPoint } from "@/features/issues/model/issue-summary"
 
 function mapTrend(
   points: ReadonlyArray<{ readonly tsNanos: string; readonly count: number }>
@@ -21,9 +17,7 @@ function mapTrend(
   }))
 }
 
-function mapIssueRow(
-  row: IssuesListQuery["issues"]["items"][number]
-): IssueRow {
+function mapIssueRow(row: IssuesListQuery["issues"]["items"][number]): IssueRow {
   return {
     fingerprint: row.fingerprint,
     title: row.title,

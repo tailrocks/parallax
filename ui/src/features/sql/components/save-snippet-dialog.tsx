@@ -38,18 +38,10 @@ export function SaveSnippetDialog({
           autoFocus
         />
         <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button
-            type="button"
-            onClick={onSave}
-            disabled={saving || !name.trim()}
-          >
+          <Button type="button" onClick={onSave} disabled={saving || !name.trim()}>
             <IconDeviceFloppy />
             Save
           </Button>

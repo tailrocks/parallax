@@ -2,7 +2,6 @@ import { useEffect, useState } from "react"
 import { useNavigate, useRouter } from "@tanstack/react-router"
 import { IconRefresh, IconTerminal2 } from "@tabler/icons-react"
 import { z } from "zod"
-
 import { CopyButton } from "@/shared/console/copy-button"
 import { EmptyState } from "@/shared/console/empty-state"
 import { FacetSidebar, type Facet } from "@/shared/console/facet-sidebar"
@@ -11,30 +10,27 @@ import { InvocationsTable } from "@/features/invocations/components/invocations-
 import { RangePicker } from "@/features/time-range"
 import { PageHeader } from "@/shared/components/page-header"
 import { Button } from "@/components/ui/button"
-import { graphql, graphqlCached } from "@/lib/api"
-import type { Invocation, ObservedInvocation } from "@/lib/api"
-import { formatCount } from "@/lib/format"
-import { invocationStatus, mergeInvocations } from "@/lib/invocation"
-import type { InvocationRow, InvocationStatus } from "@/lib/invocation"
+import { graphql, graphqlCached } from "../api/gql"
+import type { Invocation, ObservedInvocation } from "../model/wire"
+import { formatCount } from "@/shared/format"
+import {
+  invocationStatus,
+  mergeInvocations,
+  type InvocationRow,
+  type InvocationStatus,
+} from "../model/invocation"
 import {
   rangeLinkSearch,
   rangeSearchSchema,
   resolveRangeSearch,
   updateRangeSearch,
-} from "@/lib/range"
-import type { ResolvedRange } from "@/lib/range"
+  type ResolvedRange,
+} from "@/domain/range"
 import { usePageVisible } from "@/platform/visibility/use-page-visible"
 
 const MODES = ["one_shot", "interactive", "daemon", "capsule"] as const
 const STATUSES = ["running", "finished", "failed", "stale"] as const
-const OUTCOMES = [
-  "success",
-  "failure",
-  "error",
-  "timeout",
-  "skip",
-  "cancellation",
-] as const
+const OUTCOMES = ["success", "failure", "error", "timeout", "skip", "cancellation"] as const
 
 export interface InvocationsSearch {
   q?: string
@@ -117,9 +113,7 @@ const invocationsSearchSchema = rangeSearchSchema.extend({
   live: z.unknown().optional(),
 })
 
-export function validateInvocationsSearch(
-  search: Record<string, unknown>
-): InvocationsSearch {
+export function validateInvocationsSearch(search: Record<string, unknown>): InvocationsSearch {
   const parsed = invocationsSearchSchema.parse(search)
   const result: InvocationsSearch = {}
   if (typeof parsed.q === "string" && parsed.q) result.q = parsed.q
@@ -141,9 +135,7 @@ export type InvocationsListData = {
   facets: InvocationFacet[]
 }
 
-export async function loadInvocations(
-  search: InvocationsSearch
-): Promise<InvocationsListData> {
+export async function loadInvocations(search: InvocationsSearch): Promise<InvocationsListData> {
   const range = resolveRangeSearch(search)
   const facetsQuery = `{ ${invocationFacetsQuery(range)} }`
   const [data, facetsData] = await Promise.all([
@@ -174,12 +166,7 @@ export function InvocationsPage({
     if (!live || !pageVisible) return
     const timer = setInterval(() => {
       void graphql<InvocationsQueryData>(INVOCATIONS_QUERY)
-        .then((next) =>
-          setPolledRows(
-            mergeInvocations(next.invocations, next.observedInvocations)
-          )
-        )
-        // Live polling tolerates transient API failures; next tick retries.
+        .then((next) => setPolledRows(mergeInvocations(next.invocations, next.observedInvocations)))
         .catch(() => {})
     }, 5_000)
     return () => clearInterval(timer)
@@ -236,14 +223,10 @@ export function InvocationsContent({
   onRefresh: () => void
   onOpen: (invocationId: string) => void
 }) {
-  // Facet clicks drive the existing URL params: app.mode → mode,
-  // outcome → outcome, service / cli.command.name → the text query.
   const facetSelections: Record<string, string[]> = {
     ...(search.mode ? { "app.mode": [search.mode] } : {}),
     ...(search.outcome ? { outcome: [search.outcome] } : {}),
-    ...(search.q
-      ? { service: [search.q], "cli.command.name": [search.q] }
-      : {}),
+    ...(search.q ? { service: [search.q], "cli.command.name": [search.q] } : {}),
   }
   const toggleFacet = (dimension: string, value: string) => {
     if (dimension === "app.mode") {
@@ -272,8 +255,7 @@ export function InvocationsContent({
     if (search.mode && row.appMode !== search.mode) return false
     if (search.status && invocationStatus(row) !== search.status) return false
     if (search.outcome && row.outcome !== search.outcome) return false
-    const haystack =
-      `${row.invocationId} ${row.command ?? ""} ${row.service ?? ""}`.toLowerCase()
+    const haystack = `${row.invocationId} ${row.command ?? ""} ${row.service ?? ""}`.toLowerCase()
     return haystack.includes(query)
   })
 
@@ -302,10 +284,7 @@ export function InvocationsContent({
                 Refresh
               </Button>
             ) : null}
-            <RangePicker
-              value={range}
-              onChange={(next) => onSearch(updateRangeSearch(next))}
-            />
+            <RangePicker value={range} onChange={(next) => onSearch(updateRangeSearch(next))} />
           </>
         }
       />
@@ -319,9 +298,7 @@ export function InvocationsContent({
           />
           <FilterSelect
             {...(search.mode ? { value: search.mode } : {})}
-            onChange={(mode) =>
-              onSearch({ mode: MODES.find((value) => value === mode) })
-            }
+            onChange={(mode) => onSearch({ mode: MODES.find((value) => value === mode) })}
             placeholder="Any mode"
             options={MODES.map((value) => ({
               value,
@@ -330,9 +307,7 @@ export function InvocationsContent({
           />
           <FilterSelect
             {...(search.status ? { value: search.status } : {})}
-            onChange={(status) =>
-              onSearch({ status: STATUSES.find((value) => value === status) })
-            }
+            onChange={(status) => onSearch({ status: STATUSES.find((value) => value === status) })}
             placeholder="Any status"
             options={STATUSES.map((value) => ({ value, label: value }))}
           />
@@ -348,8 +323,7 @@ export function InvocationsContent({
           />
         </div>
         <span className="text-xs text-muted-foreground">
-          {formatCount(rows.length)} of {formatCount(rowsInWindow.length)} in
-          window
+          {formatCount(rows.length)} of {formatCount(rowsInWindow.length)} in window
         </span>
       </Toolbar>
 
@@ -359,9 +333,7 @@ export function InvocationsContent({
             facets={sidebarFacets}
             selections={facetSelections}
             onToggle={toggleFacet}
-            onClear={() =>
-              onSearch({ q: undefined, mode: undefined, outcome: undefined })
-            }
+            onClear={() => onSearch({ q: undefined, mode: undefined, outcome: undefined })}
           />
         ) : null}
         <div className="min-w-0 flex-1">
@@ -377,11 +349,7 @@ export function InvocationsContent({
               }
             />
           ) : (
-            <InvocationsTable
-              rows={rows}
-              detailSearch={rangeLinkSearch(range)}
-              onOpen={onOpen}
-            />
+            <InvocationsTable rows={rows} detailSearch={rangeLinkSearch(range)} onOpen={onOpen} />
           )}
         </div>
       </div>

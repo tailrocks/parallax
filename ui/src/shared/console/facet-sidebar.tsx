@@ -44,17 +44,13 @@ export function FacetSection({
   const filtered = useMemo(() => {
     if (!search) return facet.values
     const needle = search.toLowerCase()
-    return facet.values.filter((entry) =>
-      entry.value.toLowerCase().includes(needle)
-    )
+    return facet.values.filter((entry) => entry.value.toLowerCase().includes(needle))
   }, [facet.values, search])
 
   // Selected values stay visible even beyond the maxVisible cut.
   const visible = expanded
     ? filtered
-    : filtered.filter(
-        (entry, index) => index < maxVisible || selected.includes(entry.value)
-      )
+    : filtered.filter((entry, index) => index < maxVisible || selected.includes(entry.value))
   const hiddenCount = filtered.length - visible.length
 
   const Chevron = collapsed ? IconChevronRight : IconChevronDown
@@ -150,9 +146,7 @@ export function FacetSidebar({
   onClear?: () => void
   className?: string
 }) {
-  const anySelected = Object.values(selections).some(
-    (values) => values.length > 0
-  )
+  const anySelected = Object.values(selections).some((values) => values.length > 0)
   return (
     <aside className={cn("w-56 shrink-0 space-y-4", className)}>
       {onClear && anySelected ? (
@@ -180,9 +174,7 @@ export function FacetSidebar({
 }
 
 /** URL codec for facet selections: `dim:value` pairs, comma-joined. */
-export function facetSelectionsToParam(
-  selections: Record<string, string[]>
-): string | undefined {
+export function facetSelectionsToParam(selections: Record<string, string[]>): string | undefined {
   const parts = Object.entries(selections)
     .flatMap(([dimension, values]) =>
       values.map((value) => `${dimension}:${encodeURIComponent(value)}`)
@@ -191,9 +183,7 @@ export function facetSelectionsToParam(
   return parts.length > 0 ? parts.join(",") : undefined
 }
 
-export function facetSelectionsFromParam(
-  raw: string | undefined
-): Record<string, string[]> {
+export function facetSelectionsFromParam(raw: string | undefined): Record<string, string[]> {
   if (!raw) return {}
   const selections: Record<string, string[]> = {}
   for (const part of raw.split(",")) {

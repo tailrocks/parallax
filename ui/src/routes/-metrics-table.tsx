@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { MetricKind } from "@/lib/metric-aggregation"
+import type { MetricKind } from "@/features/runtime-metrics"
 
 export interface MetricsTableRow {
   name: string
@@ -50,9 +50,7 @@ export function MetricsTable({ rows }: { rows: MetricsTableRow[] }) {
             <TableCell>
               <Badge variant="outline">{row.kind}</Badge>
             </TableCell>
-            <TableCell className="text-xs text-muted-foreground">
-              {row.unit ?? "—"}
-            </TableCell>
+            <TableCell className="text-xs text-muted-foreground">{row.unit ?? "—"}</TableCell>
             <TableCell className="text-xs text-muted-foreground">
               {row.services?.join(", ") ?? "—"}
             </TableCell>
@@ -60,11 +58,7 @@ export function MetricsTable({ rows }: { rows: MetricsTableRow[] }) {
               {row.pointCount ?? "—"}
             </TableCell>
             <TableCell className="text-xs text-muted-foreground">
-              {row.lastDatapointNanos ? (
-                <RelativeTime nanos={row.lastDatapointNanos} />
-              ) : (
-                "—"
-              )}
+              {row.lastDatapointNanos ? <RelativeTime nanos={row.lastDatapointNanos} /> : "—"}
             </TableCell>
           </TableRow>
         ))}

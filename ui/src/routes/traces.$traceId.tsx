@@ -1,10 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import {
-  TraceDetailPage,
-  loadTraceDetail,
-  validateTraceDetailSearch,
-} from "@/features/traces"
+import { TraceDetailPage, loadTraceDetail, validateTraceDetailSearch } from "@/features/traces"
 
 export const Route = createFileRoute("/traces/$traceId")({
   validateSearch: validateTraceDetailSearch,

@@ -7,10 +7,7 @@ export type SqlCellTarget =
   | { to: "/issues/$fingerprint"; params: { fingerprint: string } }
   | { to: "/services/$service"; params: { service: string } }
 
-function cellValue(
-  row: Record<string, string>,
-  keys: readonly string[]
-): string | null {
+function cellValue(row: Record<string, string>, keys: readonly string[]): string | null {
   for (const key of keys) {
     const value = row[key]
     if (value && value !== "null") return value

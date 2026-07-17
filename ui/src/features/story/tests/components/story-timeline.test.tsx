@@ -55,11 +55,7 @@ describe("StoryTimeline", () => {
     expect(screen.getAllByText("api")).toHaveLength(2)
     expect(screen.getByText("db")).toBeTruthy()
     expect(rows[2]!.className).toContain("border-rose")
-    expect(
-      screen.getByText("SELECT orders error").closest("a")?.href
-    ).toContain("/traces/trace-1")
-    expect(screen.getByText("INFO cache hit").closest("a")?.href).toContain(
-      "/logs"
-    )
+    expect(screen.getByText("SELECT orders error").closest("a")?.href).toContain("/traces/trace-1")
+    expect(screen.getByText("INFO cache hit").closest("a")?.href).toContain("/logs")
   })
 })

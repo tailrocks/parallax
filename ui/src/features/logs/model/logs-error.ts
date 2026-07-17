@@ -1,8 +1,4 @@
-export type LogsErrorCode =
-  | "transport"
-  | "invalid-response"
-  | "load"
-  | "mutation"
+export type LogsErrorCode = "transport" | "invalid-response" | "load" | "mutation"
 
 export class LogsError extends Error {
   readonly code: LogsErrorCode

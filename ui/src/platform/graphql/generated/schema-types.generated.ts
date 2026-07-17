@@ -128,13 +128,9 @@ export type AlertRuleInput = {
   readonly comparator: Scalars["String"]["input"]
   readonly consecutiveBreachesRequired?: InputMaybe<Scalars["Int"]["input"]>
   readonly consecutiveHealthyRequired?: InputMaybe<Scalars["Int"]["input"]>
-  readonly destinationIds?: InputMaybe<
-    ReadonlyArray<Scalars["String"]["input"]>
-  >
+  readonly destinationIds?: InputMaybe<ReadonlyArray<Scalars["String"]["input"]>>
   readonly enabled?: InputMaybe<Scalars["Boolean"]["input"]>
-  readonly excludeServices?: InputMaybe<
-    ReadonlyArray<Scalars["String"]["input"]>
-  >
+  readonly excludeServices?: InputMaybe<ReadonlyArray<Scalars["String"]["input"]>>
   readonly groupBy?: InputMaybe<Scalars["String"]["input"]>
   readonly id?: InputMaybe<Scalars["String"]["input"]>
   readonly metricAggregation?: InputMaybe<Scalars["String"]["input"]>
@@ -1431,12 +1427,7 @@ export type Session = {
   readonly startNanos: Scalars["String"]["output"]
 }
 
-export type SignalKind =
-  | "ERRORS"
-  | "LOGS"
-  | "METRIC_POINTS"
-  | "SPANS"
-  | "TRACES"
+export type SignalKind = "ERRORS" | "LOGS" | "METRIC_POINTS" | "SPANS" | "TRACES"
 
 export type Span = {
   readonly __typename?: "Span"
@@ -1539,11 +1530,7 @@ export type TraceList = {
   readonly total: Scalars["String"]["output"]
 }
 
-export type TraceSort =
-  | "DURATION_ASC"
-  | "DURATION_DESC"
-  | "SPAN_COUNT_DESC"
-  | "START_DESC"
+export type TraceSort = "DURATION_ASC" | "DURATION_DESC" | "SPAN_COUNT_DESC" | "START_DESC"
 
 export type TraceSummary = {
   readonly __typename?: "TraceSummary"

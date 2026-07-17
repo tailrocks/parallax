@@ -1,10 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import {
-  InvocationsPage,
-  loadInvocations,
-  validateInvocationsSearch,
-} from "@/features/invocations"
+import { InvocationsPage, loadInvocations, validateInvocationsSearch } from "@/features/invocations"
 
 export const Route = createFileRoute("/invocations/")({
   validateSearch: validateInvocationsSearch,

@@ -27,12 +27,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field"
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"
 import {
   hrefForPin,
@@ -100,9 +95,7 @@ export function InvestigationDetailPage({
   function updatePin(index: number, patch: Partial<InvestigationPin>) {
     setDraft((current) => ({
       ...current,
-      pins: current.pins.map((pin, i) =>
-        i === index ? { ...pin, ...patch } : pin
-      ),
+      pins: current.pins.map((pin, i) => (i === index ? { ...pin, ...patch } : pin)),
     }))
   }
 
@@ -126,9 +119,7 @@ export function InvestigationDetailPage({
               Save
             </Button>
             <AlertDialog>
-              <AlertDialogTrigger
-                render={<Button size="sm" variant="ghost-destructive" />}
-              >
+              <AlertDialogTrigger render={<Button size="sm" variant="ghost-destructive" />}>
                 <IconTrash data-icon="inline-start" />
                 Delete
               </AlertDialogTrigger>
@@ -141,10 +132,7 @@ export function InvestigationDetailPage({
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    variant="destructive"
-                    onClick={() => void remove()}
-                  >
+                  <AlertDialogAction variant="destructive" onClick={() => void remove()}>
                     Delete
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -196,10 +184,7 @@ export function InvestigationDetailPage({
                     className="flex flex-col gap-3 rounded-lg border p-3"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <a
-                        href={href}
-                        className="flex min-w-0 items-center gap-2 hover:underline"
-                      >
+                      <a href={href} className="flex min-w-0 items-center gap-2 hover:underline">
                         <PinIcon className="size-4 shrink-0 text-muted-foreground" />
                         <span className="truncate">{pin.label}</span>
                       </a>
@@ -218,15 +203,11 @@ export function InvestigationDetailPage({
                     </div>
                     <FieldGroup className="gap-2">
                       <Field>
-                        <FieldLabel htmlFor={`pin-note-${index}`}>
-                          Note
-                        </FieldLabel>
+                        <FieldLabel htmlFor={`pin-note-${index}`}>Note</FieldLabel>
                         <Textarea
                           id={`pin-note-${index}`}
                           value={pin.note ?? ""}
-                          onChange={(event) =>
-                            updatePin(index, { note: event.target.value })
-                          }
+                          onChange={(event) => updatePin(index, { note: event.target.value })}
                           rows={2}
                         />
                       </Field>
@@ -247,9 +228,7 @@ export function InvestigationDetailPage({
           <FieldGroup>
             <Field>
               <FieldLabel htmlFor="investigation-notes">Markdown</FieldLabel>
-              <FieldDescription>
-                Saved as plain text; rendered nowhere as HTML.
-              </FieldDescription>
+              <FieldDescription>Saved as plain text; rendered nowhere as HTML.</FieldDescription>
               <Textarea
                 id="investigation-notes"
                 value={draft.notes}

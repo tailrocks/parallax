@@ -6,9 +6,7 @@ import {
 } from "@/platform/visibility/page-visibility"
 
 /** True when the document is visible (or during SSR where document is absent). */
-export function usePageVisible(
-  source: PageVisibilitySource = browserPageVisibility
-): boolean {
+export function usePageVisible(source: PageVisibilitySource = browserPageVisibility): boolean {
   const [visible, setVisible] = useState(() => source.isVisible())
   useEffect(() => {
     setVisible(source.isVisible())

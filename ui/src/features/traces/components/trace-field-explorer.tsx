@@ -7,7 +7,6 @@ import {
   IconSearch,
 } from "@tabler/icons-react"
 import { useEffect, useMemo, useState } from "react"
-
 import { CopyButton } from "@/shared/console/copy-button"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -20,10 +19,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { gqlString, graphql } from "@/lib/api"
-import type { FieldKey, FieldStats, FieldValueCount } from "@/lib/api"
-import { formatCount, formatPercent } from "@/lib/format"
-import type { ResolvedRange } from "@/lib/range"
+import { gqlString, graphql } from "@/platform/graphql/transport"
+import type { FieldKey, FieldStats, FieldValueCount } from "../model/wire"
+import { formatCount, formatPercent } from "@/shared/format"
+import type { ResolvedRange } from "@/domain/range"
 import { cn } from "@/lib/utils"
 
 interface FieldExplorerProps {
@@ -163,11 +162,7 @@ function FieldValueRow({
   )
 }
 
-export function FieldExplorer({
-  range,
-  service,
-  onApplyService,
-}: FieldExplorerProps) {
+export function FieldExplorer({ range, service, onApplyService }: FieldExplorerProps) {
   const [open, setOpen] = useState(false)
   const [keys, setKeys] = useState<FieldKey[]>([])
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
@@ -252,31 +247,22 @@ export function FieldExplorer({
     }
     return [...groups.entries()].map(([namespace, fields]) => ({
       namespace,
-      fields: fields.sort(
-        (a, b) => b.coverage - a.coverage || a.key.localeCompare(b.key)
-      ),
+      fields: fields.sort((a, b) => b.coverage - a.coverage || a.key.localeCompare(b.key)),
     }))
   }, [keys])
 
-  const maxValueCount = Math.max(
-    0,
-    ...(stats?.topValues ?? []).map((value) => count(value.count))
-  )
+  const maxValueCount = Math.max(0, ...(stats?.topValues ?? []).map((value) => count(value.count)))
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger
-        render={<Button type="button" variant="outline" size="sm" />}
-      >
+      <SheetTrigger render={<Button type="button" variant="outline" size="sm" />}>
         <IconDatabase />
         Fields
       </SheetTrigger>
       <SheetContent className="w-full gap-0 p-0 sm:max-w-3xl">
         <SheetHeader className="border-b">
           <SheetTitle>Fields</SheetTitle>
-          <SheetDescription>
-            {service ? `service:${service}` : "all services"}
-          </SheetDescription>
+          <SheetDescription>{service ? `service:${service}` : "all services"}</SheetDescription>
         </SheetHeader>
         <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[18rem_1fr]">
           <div className="min-h-0 border-b md:border-r md:border-b-0">
@@ -309,9 +295,7 @@ export function FieldExplorer({
                             {field.source === "RESOURCE" ? (
                               <Badge variant="outline">res</Badge>
                             ) : null}
-                            {field.isIdentifier ? (
-                              <Badge variant="amber">id</Badge>
-                            ) : null}
+                            {field.isIdentifier ? <Badge variant="amber">id</Badge> : null}
                           </div>
                           <div className="flex items-center gap-2">
                             <CoverageBar value={field.coverage} />
@@ -340,22 +324,14 @@ export function FieldExplorer({
               ) : stats ? (
                 <>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="min-w-0 flex-1 truncate font-mono text-sm">
-                      {stats.key}
-                    </h3>
-                    <Badge variant="outline">
-                      {stats.source.toLowerCase()}
-                    </Badge>
-                    {stats.isIdentifier ? (
-                      <Badge variant="amber">identifier</Badge>
-                    ) : null}
+                    <h3 className="min-w-0 flex-1 truncate font-mono text-sm">{stats.key}</h3>
+                    <Badge variant="outline">{stats.source.toLowerCase()}</Badge>
+                    {stats.isIdentifier ? <Badge variant="amber">identifier</Badge> : null}
                     {stats.capped ? <Badge variant="blue">capped</Badge> : null}
                   </div>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     <div className="rounded-md border p-3">
-                      <div className="text-xs text-muted-foreground">
-                        Coverage
-                      </div>
+                      <div className="text-xs text-muted-foreground">Coverage</div>
                       <div className="mt-1 text-lg font-medium tabular-nums">
                         {formatPercent(stats.coverage)}
                       </div>
@@ -367,17 +343,13 @@ export function FieldExplorer({
                       </div>
                     </div>
                     <div className="rounded-md border p-3">
-                      <div className="text-xs text-muted-foreground">
-                        Distinct
-                      </div>
+                      <div className="text-xs text-muted-foreground">Distinct</div>
                       <div className="mt-1 text-lg font-medium tabular-nums">
                         {formatCount(count(stats.distinctCount))}
                       </div>
                     </div>
                     <div className="rounded-md border p-3">
-                      <div className="text-xs text-muted-foreground">
-                        Window
-                      </div>
+                      <div className="text-xs text-muted-foreground">Window</div>
                       <div className="mt-1 text-lg font-medium tabular-nums">
                         {formatCount(count(stats.rowCount))}
                       </div>

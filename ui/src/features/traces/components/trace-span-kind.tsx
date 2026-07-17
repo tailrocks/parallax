@@ -9,13 +9,7 @@ import {
 
 import { Badge } from "@/components/ui/badge"
 
-export type SpanKind =
-  | "SERVER"
-  | "CLIENT"
-  | "INTERNAL"
-  | "PRODUCER"
-  | "CONSUMER"
-  | string
+export type SpanKind = "SERVER" | "CLIENT" | "INTERNAL" | "PRODUCER" | "CONSUMER" | string
 
 type SpanKindMeta = {
   variant: "blue" | "violet" | "amber" | "emerald" | "secondary" | "rose"

@@ -53,11 +53,7 @@ function Badge({
   ...props
 }: useRender.ComponentProps<"span"> & VariantProps<typeof badgeVariants>) {
   const wrappedChildren = React.Children.map(children, (child) =>
-    typeof child === "string" || typeof child === "number" ? (
-      <span>{child}</span>
-    ) : (
-      child
-    )
+    typeof child === "string" || typeof child === "number" ? <span>{child}</span> : child
   )
 
   return useRender({

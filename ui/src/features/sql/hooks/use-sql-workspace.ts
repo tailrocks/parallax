@@ -7,10 +7,7 @@ import {
   runSql,
   saveSqlSnippet,
 } from "@/features/sql/api/sql-api"
-import {
-  loadSqlHistory,
-  recordSqlHistory,
-} from "@/features/sql/api/sql-history-repository"
+import { loadSqlHistory, recordSqlHistory } from "@/features/sql/api/sql-history-repository"
 import { SQL_EXAMPLES } from "@/features/sql/model/sql-examples"
 import { sqlErrorMessage } from "@/features/sql/model/sql-error"
 import type { SqlResult } from "@/features/sql/model/sql-result"
@@ -46,9 +43,7 @@ export type SqlWorkspace = {
 
 export function useSqlWorkspace(searchQuery?: string): SqlWorkspace {
   const editorRef = useRef<HTMLTextAreaElement>(null)
-  const [statement, setStatement] = useState(
-    searchQuery ?? SQL_EXAMPLES[0]?.sql ?? ""
-  )
+  const [statement, setStatement] = useState(searchQuery ?? SQL_EXAMPLES[0]?.sql ?? "")
   const [result, setResult] = useState<SqlResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [running, setRunning] = useState(false)
@@ -86,16 +81,10 @@ export function useSqlWorkspace(searchQuery?: string): SqlWorkspace {
     }
     const start = textarea.selectionStart
     const end = textarea.selectionEnd
-    setStatement(
-      (current) =>
-        `${current.slice(0, start)}${identifier}${current.slice(end)}`
-    )
+    setStatement((current) => `${current.slice(0, start)}${identifier}${current.slice(end)}`)
     requestAnimationFrame(() => {
       textarea.focus()
-      textarea.setSelectionRange(
-        start + identifier.length,
-        start + identifier.length
-      )
+      textarea.setSelectionRange(start + identifier.length, start + identifier.length)
     })
   }
 
@@ -124,10 +113,7 @@ export function useSqlWorkspace(searchQuery?: string): SqlWorkspace {
     setSnippetError(null)
     try {
       const saved = await saveSqlSnippet({ name, state: statement })
-      setSnippets((current) => [
-        saved,
-        ...current.filter((snippet) => snippet.id !== saved.id),
-      ])
+      setSnippets((current) => [saved, ...current.filter((snippet) => snippet.id !== saved.id)])
       setSaveOpen(false)
       setSnippetName("")
     } catch (err) {

@@ -66,10 +66,7 @@ function parseAttributes(json: string): Record<string, unknown> {
   }
 }
 
-function stringAttr(
-  attributes: Record<string, unknown>,
-  key: string
-): string | null {
+function stringAttr(attributes: Record<string, unknown>, key: string): string | null {
   const value = attributes[key]
   if (typeof value === "string") return value
   if (typeof value === "number" || typeof value === "boolean") {
@@ -110,12 +107,8 @@ function compareNodes(a: MutableFieldNode, b: MutableFieldNode): number {
 
 function finalizeNode(node: MutableFieldNode): GraphqlFieldNode {
   const children = node.children.sort(compareNodes).map(finalizeNode)
-  const childDuration = children.reduce(
-    (total, child) => total + child.durationNs,
-    0n
-  )
-  const selfDurationNs =
-    node.durationNs > childDuration ? node.durationNs - childDuration : 0n
+  const childDuration = children.reduce((total, child) => total + child.durationNs, 0n)
+  const selfDurationNs = node.durationNs > childDuration ? node.durationNs - childDuration : 0n
   return {
     path: node.path,
     fieldName: node.fieldName,
@@ -143,22 +136,13 @@ function nearestOperationSpanId(
   return null
 }
 
-export function buildGraphqlOperations(
-  spans: readonly GraphqlTraceSpan[]
-): GraphqlOperation[] {
+export function buildGraphqlOperations(spans: readonly GraphqlTraceSpan[]): GraphqlOperation[] {
   const byId = new Map(spans.map((span) => [span.spanId, span]))
-  const attrBySpanId = new Map(
-    spans.map((span) => [span.spanId, parseAttributes(span.attributes)])
-  )
+  const attrBySpanId = new Map(spans.map((span) => [span.spanId, parseAttributes(span.attributes)]))
   const operationIds = new Set(
     spans
       .filter((span) =>
-        Boolean(
-          stringAttr(
-            attrBySpanId.get(span.spanId) ?? {},
-            GRAPHQL_OPERATION_TYPE
-          )
-        )
+        Boolean(stringAttr(attrBySpanId.get(span.spanId) ?? {}, GRAPHQL_OPERATION_TYPE))
       )
       .map((span) => span.spanId)
   )
@@ -198,9 +182,7 @@ export function buildGraphqlOperations(
       entry.path = entry.pathAttr
       return entry.path
     }
-    const parent = entry.span.parentSpanId
-      ? fieldBySpanId.get(entry.span.parentSpanId)
-      : null
+    const parent = entry.span.parentSpanId ? fieldBySpanId.get(entry.span.parentSpanId) : null
     if (!parent || seen.has(parent.span.spanId)) {
       entry.path = entry.fieldName
       return entry.path
@@ -215,9 +197,7 @@ export function buildGraphqlOperations(
     if (entry.pathAttr) {
       entry.parentPath = parentPathFrom(entry.pathAttr)
     } else {
-      const parent = entry.span.parentSpanId
-        ? fieldBySpanId.get(entry.span.parentSpanId)
-        : null
+      const parent = entry.span.parentSpanId ? fieldBySpanId.get(entry.span.parentSpanId) : null
       entry.parentPath = parent ? pathFor(parent) : parentPathFrom(path)
     }
   }
@@ -226,9 +206,7 @@ export function buildGraphqlOperations(
     .map((operationSpanId) => {
       const operationSpan = byId.get(operationSpanId)!
       const attributes = attrBySpanId.get(operationSpanId) ?? {}
-      const fields = rawFields.filter(
-        (field) => field.operationSpanId === operationSpanId
-      )
+      const fields = rawFields.filter((field) => field.operationSpanId === operationSpanId)
       const nodes = new Map<string, MutableFieldNode>()
 
       for (const field of fields) {
@@ -239,8 +217,7 @@ export function buildGraphqlOperations(
           existing.hasError = existing.hasError || field.hasError
           if (
             field.durationNs > existing.selectedDurationNs ||
-            (field.durationNs === existing.selectedDurationNs &&
-              field.startNs < existing.startNs)
+            (field.durationNs === existing.selectedDurationNs && field.startNs < existing.startNs)
           ) {
             existing.spanId = field.span.spanId
             existing.startNs = field.startNs
@@ -275,8 +252,7 @@ export function buildGraphqlOperations(
 
       return {
         operationSpanId,
-        operationType:
-          stringAttr(attributes, GRAPHQL_OPERATION_TYPE) ?? "graphql",
+        operationType: stringAttr(attributes, GRAPHQL_OPERATION_TYPE) ?? "graphql",
         operationName: stringAttr(attributes, GRAPHQL_OPERATION_NAME),
         document: stringAttr(attributes, GRAPHQL_DOCUMENT),
         durationNs: durationNs(operationSpan),

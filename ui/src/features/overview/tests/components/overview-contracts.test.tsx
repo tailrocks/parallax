@@ -3,17 +3,13 @@
 import { cleanup, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { graphqlCached } from "@/lib/api"
-import type { ResolvedRange } from "@/lib/range"
-import {
-  OverviewContent,
-  latencyBands,
-  loadOverview,
-} from "@/features/overview"
+import { graphqlCached } from "@/platform/graphql/transport"
+import type { ResolvedRange } from "@/domain/time-range/range"
+import { OverviewContent, latencyBands, loadOverview } from "@/features/overview"
 import type { OverviewData } from "@/features/overview"
 import { renderTestRouter } from "@/test/router"
 
-vi.mock("@/lib/api", () => {
+vi.mock("@/platform/graphql/transport", () => {
   return {
     graphql: vi.fn(),
     graphqlCached: vi.fn(),
@@ -72,12 +68,8 @@ const fixture: OverviewData = {
     p95: [{ tsNanos: "1000000000", value: 120 }],
     p99: [{ tsNanos: "1000000000", value: 160 }],
   },
-  servicesNow: [
-    { name: "checkout", spanCount: "120", errorCount: "6", p95Ms: 90 },
-  ],
-  servicesPrev: [
-    { name: "checkout", spanCount: "100", errorCount: "1", p95Ms: 80 },
-  ],
+  servicesNow: [{ name: "checkout", spanCount: "120", errorCount: "6", p95Ms: 90 }],
+  servicesPrev: [{ name: "checkout", spanCount: "100", errorCount: "1", p95Ms: 80 }],
   issues: {
     items: [
       {
@@ -124,11 +116,7 @@ function zeroFixture(): OverviewData {
 
 function renderWithRouter(component: React.ReactNode) {
   return renderTestRouter(component, {
-    targetPaths: [
-      "/issues/$fingerprint",
-      "/traces/$traceId",
-      "/services/$service",
-    ],
+    targetPaths: ["/issues/$fingerprint", "/traces/$traceId", "/services/$service"],
   })
 }
 
@@ -138,9 +126,7 @@ describe("Overview route", () => {
 
     await expect(loadOverview(range)).resolves.toBe(fixture)
     expect(vi.mocked(graphqlCached).mock.calls[0]?.[0]).toContain("overview")
-    expect(vi.mocked(graphqlCached).mock.calls[0]?.[0]).toContain(
-      "signalCountSeries"
-    )
+    expect(vi.mocked(graphqlCached).mock.calls[0]?.[0]).toContain("signalCountSeries")
     expect(vi.mocked(graphqlCached).mock.calls[0]?.[0]).toContain("servicesNow")
     expect(vi.mocked(graphqlCached).mock.calls[0]?.[0]).toContain("tracesPage")
   })
@@ -157,23 +143,17 @@ describe("Overview route", () => {
     expect(screen.getByText("What changed")).toBeTruthy()
     expect(screen.getByText("checkout error rate 1.0% -> 5.0%")).toBeTruthy()
 
-    const hrefs = screen
-      .getAllByRole("link")
-      .map((link) => link.getAttribute("href"))
+    const hrefs = screen.getAllByRole("link").map((link) => link.getAttribute("href"))
     expect(hrefs).toContain("/traces?range=24h")
     expect(hrefs).toContain("/logs?range=24h")
     expect(hrefs).toContain("/issues?status=open&range=24h")
     expect(hrefs).toContain("/traces?sort=DURATION_DESC&range=24h")
     expect(hrefs).toContain("/services/checkout?range=24h")
 
-    const invertedDelta = rendered.container.querySelector(
-      "[data-slot='badge'][class*='emerald']"
-    )
+    const invertedDelta = rendered.container.querySelector("[data-slot='badge'][class*='emerald']")
     expect(invertedDelta).toBeTruthy()
     expect(
-      (
-        await screen.findByRole("link", { name: /checkout timeout/i })
-      ).getAttribute("href")
+      (await screen.findByRole("link", { name: /checkout timeout/i })).getAttribute("href")
     ).toBe("/issues/issue-a?range=24h")
     expect(
       (
@@ -185,13 +165,7 @@ describe("Overview route", () => {
   })
 
   it("renders onboarding when there is no telemetry", async () => {
-    renderWithRouter(
-      <OverviewContent
-        data={zeroFixture()}
-        range={range}
-        onRangeChange={vi.fn()}
-      />
-    )
+    renderWithRouter(<OverviewContent data={zeroFixture()} range={range} onRangeChange={vi.fn()} />)
 
     expect(await screen.findByText("Send your first telemetry")).toBeTruthy()
     expect(screen.getByText("http://127.0.0.1:4317")).toBeTruthy()

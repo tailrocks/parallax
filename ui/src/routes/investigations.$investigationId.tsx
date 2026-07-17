@@ -1,10 +1,7 @@
 import { createFileRoute, notFound } from "@tanstack/react-router"
 
 import { navItem } from "@/shared/navigation"
-import {
-  InvestigationDetailPage,
-  loadInvestigationDetail,
-} from "@/features/investigations"
+import { InvestigationDetailPage, loadInvestigationDetail } from "@/features/investigations"
 
 export const Route = createFileRoute("/investigations/$investigationId")({
   loader: async ({ params }) => {
@@ -18,10 +15,5 @@ export const Route = createFileRoute("/investigations/$investigationId")({
 function InvestigationDetailRoute() {
   const { investigation } = Route.useLoaderData()
   const back = navItem("/investigations")
-  return (
-    <InvestigationDetailPage
-      investigation={investigation}
-      {...(back ? { back } : {})}
-    />
-  )
+  return <InvestigationDetailPage investigation={investigation} {...(back ? { back } : {})} />
 }

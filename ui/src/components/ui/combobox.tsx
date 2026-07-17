@@ -20,9 +20,7 @@ export function Combobox({
   const [query, setQuery] = useState(value)
   const matches = useMemo(() => {
     const lower = query.toLowerCase()
-    return options
-      .filter((option) => option.toLowerCase().includes(lower))
-      .slice(0, 8)
+    return options.filter((option) => option.toLowerCase().includes(lower)).slice(0, 8)
   }, [options, query])
 
   return (

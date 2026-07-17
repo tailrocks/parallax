@@ -14,17 +14,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { LiveSpan, TraceSummary } from "@/lib/api"
-import { formatCount, formatDurationNs } from "@/lib/format"
-import { rangeLinkSearch } from "@/lib/range"
-import type { ResolvedRange } from "@/lib/range"
+import type { LiveSpan, TraceSummary } from "@/features/traces"
+import { formatCount, formatDurationNs } from "@/shared/format"
+import { rangeLinkSearch } from "@/domain/time-range/range"
+import type { ResolvedRange } from "@/domain/time-range/range"
 import { cn } from "@/lib/utils"
 
 /** Fold live finished spans into per-trace prepend rows (newest first). */
-export function mergeLiveTraces(
-  traces: TraceSummary[],
-  liveSpans: LiveSpan[]
-): TraceSummary[] {
+export function mergeLiveTraces(traces: TraceSummary[], liveSpans: LiveSpan[]): TraceSummary[] {
   const known = new Set(traces.map((trace) => trace.traceId))
   const prepend = new Map<string, TraceSummary>()
   for (const span of liveSpans) {
@@ -63,10 +60,7 @@ export function InvocationTracesTab({
     () => mergeLiveTraces(traces, live ? liveSpans : []),
     [traces, liveSpans, live]
   )
-  const scale = useMemo(
-    () => buildHeatScale(rows.map((trace) => Number(trace.durationNs))),
-    [rows]
-  )
+  const scale = useMemo(() => buildHeatScale(rows.map((trace) => Number(trace.durationNs))), [rows])
   if (rows.length === 0) {
     return (
       <EmptyState
@@ -92,9 +86,7 @@ export function InvocationTracesTab({
           {rows.map((trace) => (
             <TableRow
               key={trace.traceId}
-              className={cn(
-                trace.hasError && "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]"
-              )}
+              className={cn(trace.hasError && "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]")}
             >
               <TableCell>
                 <Link
@@ -103,14 +95,10 @@ export function InvocationTracesTab({
                   search={rangeLinkSearch(range)}
                   className="inline-flex items-center gap-1 font-medium hover:underline"
                 >
-                  <span className="max-w-96 truncate">
-                    {trace.rootName || trace.traceId}
-                  </span>
+                  <span className="max-w-96 truncate">{trace.rootName || trace.traceId}</span>
                   <IconArrowUpRight className="size-3.5" />
                 </Link>
-                <div className="text-xs text-muted-foreground">
-                  {trace.service}
-                </div>
+                <div className="text-xs text-muted-foreground">{trace.service}</div>
               </TableCell>
               <TableCell className="text-right tabular-nums">
                 {formatCount(trace.spanCount)}

@@ -17,9 +17,7 @@ const silentSink: BoundaryDiagnosticSink = {
 let activeSink: BoundaryDiagnosticSink = silentSink
 
 /** Inject a diagnostic sink (tests/operators). Returns restore function. */
-export function setBoundaryDiagnosticSink(
-  sink: BoundaryDiagnosticSink | null
-): () => void {
+export function setBoundaryDiagnosticSink(sink: BoundaryDiagnosticSink | null): () => void {
   const previous = activeSink
   activeSink = sink ?? silentSink
   return () => {
@@ -32,10 +30,7 @@ export function setBoundaryDiagnosticSink(
  * Never includes raw JSON, storage content/key, URL query, origins, stacks, or
  * caught error text — only stable IDs/codes/kinds/numeric meta.
  */
-export function formatBoundaryDiagnostic(
-  error: BoundaryError,
-  cap: number = DEFAULT_CAP
-): string {
+export function formatBoundaryDiagnostic(error: BoundaryError, cap: number = DEFAULT_CAP): string {
   const parts = [
     `boundary=${truncate(error.boundaryId, 64)}`,
     `code=${error.code}`,

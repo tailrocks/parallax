@@ -1,11 +1,7 @@
 import { Link, createFileRoute } from "@tanstack/react-router"
 import { useMemo } from "react"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
-import {
-  IconBellPlus,
-  IconChartLine,
-  IconLayoutDashboard,
-} from "@tabler/icons-react"
+import { IconBellPlus, IconChartLine, IconLayoutDashboard } from "@tabler/icons-react"
 
 import { Button } from "@/components/ui/button"
 
@@ -27,25 +23,25 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { WhereClauseEditor } from "@/shared/console/where-clause-editor"
-import { gqlString, graphqlCached } from "@/lib/api"
+import { gqlString, graphqlCached } from "@/platform/graphql/transport"
 import {
   coerceAggregation,
   inferMetricKind,
   legalAggregations,
   type MetricAggregation,
   type MetricKind,
-} from "@/lib/metric-aggregation"
+} from "@/features/runtime-metrics"
 import {
   mergeRangeSearch,
   rangeSearchSchema,
   resolveRangeSearch,
   type ResolvedRange,
-} from "@/lib/range"
+} from "@/domain/time-range/range"
 import {
   serializeWhereClause,
   whereClauseFromSearch,
   type WhereFilter,
-} from "@/lib/where-clause"
+} from "@/shared/where-clause"
 
 // Plan 168 metric detail view (preliminary). Runs on the existing GraphQL
 // primitives (metricSeries / histogramQuantile / metricLabels); the
@@ -92,10 +88,7 @@ function supportedAggregations(kind: MetricKind): MetricAggregation[] {
   return [...legalAggregations(backendKind(kind))]
 }
 
-function resolveAggregation(
-  kind: MetricKind,
-  raw: string | undefined
-): MetricAggregation {
+function resolveAggregation(kind: MetricKind, raw: string | undefined): MetricAggregation {
   return coerceAggregation(backendKind(kind), raw) ?? "avg"
 }
 
@@ -110,19 +103,14 @@ interface DetailData {
   range: ResolvedRange
 }
 
-async function loadDetail(
-  metricName: string,
-  search: MetricDetailSearch
-): Promise<DetailData> {
+async function loadDetail(metricName: string, search: MetricDetailSearch): Promise<DetailData> {
   const range = resolveRangeSearch(search)
   const kind = (search.kind as MetricKind) || inferMetricKind(metricName)
   const agg = resolveAggregation(kind, search.agg)
   const stepSeconds = Number(search.step ?? "60") || 60
   const name = `"${gqlString(metricName)}"`
   const window = `fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}"`
-  const groupBy = search.groupBy
-    ? `, groupBy: "${gqlString(search.groupBy)}"`
-    : ""
+  const groupBy = search.groupBy ? `, groupBy: "${gqlString(search.groupBy)}"` : ""
   const whereFilters = whereClauseFromSearch(search.where)
   const where =
     whereFilters.length > 0
@@ -210,8 +198,7 @@ function MetricDetailPage() {
   const agg = resolveAggregation(kind, search.agg)
 
   const groups = useMemo(
-    () =>
-      series.map((entry, index) => entry.groupValue ?? `series-${index + 1}`),
+    () => series.map((entry, index) => entry.groupValue ?? `series-${index + 1}`),
     [series]
   )
   const rows = useMemo(() => {
@@ -222,9 +209,7 @@ function MetricDetailPage() {
       // dashed continuation series instead of a confident solid drop.
       const tailStart = Math.max(entry.points.length - 2, 0)
       entry.points.forEach((point, pointIndex) => {
-        const time = new Date(
-          Number(BigInt(point.tsNanos) / 1_000_000n)
-        ).toLocaleTimeString()
+        const time = new Date(Number(BigInt(point.tsNanos) / 1_000_000n)).toLocaleTimeString()
         const row = byTime.get(point.tsNanos) ?? { time }
         if (pointIndex < entry.points.length - 1) {
           row[key] = point.value
@@ -285,12 +270,7 @@ function MetricDetailPage() {
         }
       />
       <div className="flex flex-wrap items-center gap-2">
-        <Select
-          value={agg}
-          onValueChange={(next) =>
-            setSearch({ agg: next as MetricAggregation })
-          }
-        >
+        <Select value={agg} onValueChange={(next) => setSearch({ agg: next as MetricAggregation })}>
           <SelectTrigger size="sm" className="w-32">
             <SelectValue placeholder="Aggregation" />
           </SelectTrigger>
@@ -404,12 +384,7 @@ function MetricDetailPage() {
           <ChartContainer config={config} className="h-[280px] w-full">
             <LineChart data={rows} margin={{ left: 8, right: 8, top: 8 }}>
               <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="time"
-                tickLine={false}
-                axisLine={false}
-                minTickGap={32}
-              />
+              <XAxis dataKey="time" tickLine={false} axisLine={false} minTickGap={32} />
               <YAxis tickLine={false} axisLine={false} width={48} />
               <ChartTooltip content={<ChartTooltipContent />} />
               {groups.map((group) => (

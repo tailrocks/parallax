@@ -1,9 +1,4 @@
-export type DashboardErrorCode =
-  | "transport"
-  | "invalid-response"
-  | "load"
-  | "save"
-  | "delete"
+export type DashboardErrorCode = "transport" | "invalid-response" | "load" | "save" | "delete"
 
 export class DashboardError extends Error {
   readonly code: DashboardErrorCode

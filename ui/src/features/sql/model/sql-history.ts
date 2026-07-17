@@ -16,10 +16,7 @@ export function parseHistoryWire(raw: string | null): string[] {
 }
 
 /** Most-recent-first, de-duplicated, capped at SQL_HISTORY_CAP. */
-export function pushHistoryEntry(
-  current: readonly string[],
-  sql: string
-): string[] {
+export function pushHistoryEntry(current: readonly string[], sql: string): string[] {
   return [sql, ...current.filter((q) => q !== sql)].slice(0, SQL_HISTORY_CAP)
 }
 

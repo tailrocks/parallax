@@ -3,12 +3,8 @@ import { IconClock, IconX } from "@tabler/icons-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { formatDurationNs } from "@/lib/format"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { formatDurationNs } from "@/shared/format"
 import { cn } from "@/lib/utils"
 
 /** Plan 164 duration filter: preset chips seeded from the current result
@@ -135,9 +131,7 @@ export function DurationFilter({
               size="sm"
               className={cn(
                 "h-6 rounded-full px-2 text-xs",
-                range.minMs === preset.minMs &&
-                  range.maxMs === undefined &&
-                  "bg-muted font-medium"
+                range.minMs === preset.minMs && range.maxMs === undefined && "bg-muted font-medium"
               )}
               onClick={() => onChange({ minMs: preset.minMs })}
             >

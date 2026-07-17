@@ -6,10 +6,10 @@ import { useState } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { CommandPalette } from "@/layout/command-palette"
-import { graphql } from "@/lib/api"
+import { graphql } from "@/platform/graphql/transport"
 import { renderTestRouter } from "@/test/router"
 
-vi.mock("@/lib/api", () => ({
+vi.mock("@/platform/graphql/transport", () => ({
   graphql: vi.fn(),
 }))
 
@@ -19,39 +19,37 @@ afterEach(() => {
 })
 
 function mockPaletteData() {
-  vi.mocked(graphql).mockImplementation(
-    async <T,>(query: string): Promise<T> => {
-      if (query.includes("{ services }")) {
-        return { services: ["checkout", "catalog"] } as T
-      }
-      if (query.includes("tracesPage")) {
-        return {
-          tracesPage: {
-            items: [
-              {
-                traceId: "53e97e432cbb9280841b90ca56c4e4c4",
-                rootName: "GET /checkout",
-                service: "checkout",
-                startNanos: "1719999990000000000",
-                hasError: false,
-              },
-            ],
-          },
-          invocations: [
+  vi.mocked(graphql).mockImplementation(async <T,>(query: string): Promise<T> => {
+    if (query.includes("{ services }")) {
+      return { services: ["checkout", "catalog"] } as T
+    }
+    if (query.includes("tracesPage")) {
+      return {
+        tracesPage: {
+          items: [
             {
-              invocationId: "run-a",
-              command: "cargo test",
-              status: "finished",
-              startedAtNanos: "1719999980000000000",
-              endedAtNanos: "1719999990000000000",
-              errorCount: 1,
+              traceId: "53e97e432cbb9280841b90ca56c4e4c4",
+              rootName: "GET /checkout",
+              service: "checkout",
+              startNanos: "1719999990000000000",
+              hasError: false,
             },
           ],
-        } as T
-      }
-      throw new Error("unexpected query")
+        },
+        invocations: [
+          {
+            invocationId: "run-a",
+            command: "cargo test",
+            status: "finished",
+            startedAtNanos: "1719999980000000000",
+            endedAtNanos: "1719999990000000000",
+            errorCount: 1,
+          },
+        ],
+      } as T
     }
-  )
+    throw new Error("unexpected query")
+  })
 }
 
 function PaletteHarness() {
@@ -87,9 +85,7 @@ describe("CommandPalette", () => {
     expect(input).toBeTruthy()
 
     await user.keyboard("{Escape}")
-    await waitFor(() =>
-      expect(screen.queryByPlaceholderText(/search pages/i)).toBeNull()
-    )
+    await waitFor(() => expect(screen.queryByPlaceholderText(/search pages/i)).toBeNull())
   })
 
   it("filters pages and navigates on selection", async () => {
@@ -138,9 +134,7 @@ describe("CommandPalette entity navigation", () => {
     await user.click(await screen.findByText(/Open trace 53e97e/))
 
     await waitFor(() =>
-      expect(router.state.location.pathname).toBe(
-        "/traces/53e97e432cbb9280841b90ca56c4e4c4"
-      )
+      expect(router.state.location.pathname).toBe("/traces/53e97e432cbb9280841b90ca56c4e4c4")
     )
   })
 

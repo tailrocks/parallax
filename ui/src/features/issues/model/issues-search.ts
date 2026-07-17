@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { rangeSearchSchema } from "@/lib/range"
+import { rangeSearchSchema } from "@/domain/time-range/range"
 
 export type IssueSort = "LAST_SEEN" | "FIRST_SEEN" | "EVENTS" | "TREND"
 
@@ -27,9 +27,7 @@ const issuesSearchSchema = rangeSearchSchema.extend({
   sort: z.unknown().optional(),
 })
 
-export function validateIssuesSearch(
-  search: Record<string, unknown>
-): IssuesSearch {
+export function validateIssuesSearch(search: Record<string, unknown>): IssuesSearch {
   const parsed = issuesSearchSchema.parse(search)
   const result: IssuesSearch = {}
   if (typeof parsed.q === "string" && parsed.q) result.q = parsed.q
@@ -48,10 +46,7 @@ export function validateIssuesSearch(
   return result
 }
 
-export function patchIssuesSearch(
-  current: IssuesSearch,
-  patch: IssuesSearchPatch
-): IssuesSearch {
+export function patchIssuesSearch(current: IssuesSearch, patch: IssuesSearchPatch): IssuesSearch {
   const raw = { ...current, ...patch }
   const next: IssuesSearch = {}
   for (const key of Object.keys(raw) as Array<keyof IssuesSearch>) {

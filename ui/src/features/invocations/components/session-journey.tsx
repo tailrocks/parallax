@@ -10,8 +10,8 @@ import {
 } from "@tabler/icons-react"
 
 import { Badge } from "@/components/ui/badge"
-import type { ScreenVisit, Session, UiAction } from "@/lib/api"
-import { formatDurationNs, formatTimeShort } from "@/lib/format"
+import type { ScreenVisit, Session, UiAction } from "@/features/invocations/model/wire"
+import { formatDurationNs, formatTimeShort } from "@/shared/format"
 import { cn } from "@/lib/utils"
 
 export interface JourneyError {
@@ -57,9 +57,7 @@ export function buildJourney(
   const inSession = (ts: bigint) =>
     ts >= BigInt(session.startNanos) && (sessionEnd == null || ts <= sessionEnd)
 
-  const entries: JourneyEntry[] = [
-    { kind: "session-start", tsNanos: session.startNanos, session },
-  ]
+  const entries: JourneyEntry[] = [{ kind: "session-start", tsNanos: session.startNanos, session }]
   for (const visit of sessionVisits) {
     const dwellNs =
       visit.exitedNanos != null
@@ -77,10 +75,7 @@ export function buildJourney(
   }
   for (const action of actions) {
     const ts = BigInt(action.startNanos)
-    if (
-      (action.sessionId == null || action.sessionId === session.sessionId) &&
-      inSession(ts)
-    ) {
+    if ((action.sessionId == null || action.sessionId === session.sessionId) && inSession(ts)) {
       entries.push({ kind: "action", tsNanos: action.startNanos, action })
     }
   }
@@ -149,8 +144,7 @@ export function SessionJourney({
           key={`${entry.kind}-${entry.tsNanos}-${index}`}
           className={cn(
             "flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 px-3 py-1.5 text-sm",
-            entry.kind === "error" &&
-              "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]"
+            entry.kind === "error" && "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]"
           )}
         >
           <span className="w-20 shrink-0 font-mono text-xs text-muted-foreground">
@@ -180,10 +174,7 @@ function JourneyEntryBody({ entry }: { entry: JourneyEntry }) {
       return (
         <span className="inline-flex items-center gap-1.5">
           <IconLogin2 className="size-4 text-sky-500" />
-          session <code className="text-xs">
-            {entry.session.sessionId}
-          </code>{" "}
-          started
+          session <code className="text-xs">{entry.session.sessionId}</code> started
           {entry.session.previousSessionId ? (
             <span className="text-xs text-muted-foreground">
               (previous {entry.session.previousSessionId})
@@ -237,19 +228,13 @@ function JourneyEntryBody({ entry }: { entry: JourneyEntry }) {
             <IconArrowUpRight className="size-3.5" />
           </Link>
           {entry.action.screenId ? (
-            <span className="text-xs text-muted-foreground">
-              on {entry.action.screenId}
-            </span>
+            <span className="text-xs text-muted-foreground">on {entry.action.screenId}</span>
           ) : null}
           {entry.action.widgetName ? (
-            <span className="text-xs text-muted-foreground">
-              via {entry.action.widgetName}
-            </span>
+            <span className="text-xs text-muted-foreground">via {entry.action.widgetName}</span>
           ) : null}
           {entry.action.outcome ? (
-            <Badge
-              variant={entry.action.outcome === "success" ? "emerald" : "rose"}
-            >
+            <Badge variant={entry.action.outcome === "success" ? "emerald" : "rose"}>
               {entry.action.outcome}
             </Badge>
           ) : null}
@@ -276,9 +261,7 @@ function JourneyEntryBody({ entry }: { entry: JourneyEntry }) {
               {entry.error.title}
             </Link>
           ) : (
-            <span className="min-w-0 truncate font-medium">
-              {entry.error.title}
-            </span>
+            <span className="min-w-0 truncate font-medium">{entry.error.title}</span>
           )}
           <Badge variant="rose">
             {entry.screenId ? `on ${entry.screenId}` : "outside any screen"}

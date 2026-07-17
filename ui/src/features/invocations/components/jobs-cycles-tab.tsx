@@ -13,17 +13,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { BackgroundCycle, Job } from "@/lib/api"
-import { formatCount } from "@/lib/format"
+import type { BackgroundCycle, Job } from "@/features/invocations/model/wire"
+import { formatCount } from "@/shared/format"
 import { cn } from "@/lib/utils"
 
-export function JobsCyclesTab({
-  cycles,
-  jobs,
-}: {
-  cycles: BackgroundCycle[]
-  jobs: Job[]
-}) {
+export function JobsCyclesTab({ cycles, jobs }: { cycles: BackgroundCycle[]; jobs: Job[] }) {
   if (cycles.length === 0 && jobs.length === 0) {
     return (
       <EmptyState
@@ -65,8 +59,7 @@ function CyclesCard({ cycles }: { cycles: BackgroundCycle[] }) {
                 <TableRow
                   key={cycle.name}
                   className={cn(
-                    cycle.errorCount > 0 &&
-                      "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]"
+                    cycle.errorCount > 0 && "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]"
                   )}
                 >
                   <TableCell>
@@ -133,10 +126,7 @@ function JobsCard({ jobs }: { jobs: Job[] }) {
               {jobs.map((job) => (
                 <TableRow key={job.jobId}>
                   <TableCell>
-                    <code
-                      className="block max-w-36 truncate text-xs"
-                      title={job.jobId}
-                    >
+                    <code className="block max-w-36 truncate text-xs" title={job.jobId}>
                       {job.jobId}
                     </code>
                   </TableCell>
@@ -144,17 +134,11 @@ function JobsCard({ jobs }: { jobs: Job[] }) {
                     {job.jobType ?? "-"}
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground">
-                    {job.producedNanos != null ? (
-                      <RelativeTime nanos={job.producedNanos} />
-                    ) : (
-                      "-"
-                    )}
+                    {job.producedNanos != null ? <RelativeTime nanos={job.producedNanos} /> : "-"}
                   </TableCell>
                   <TableCell>
                     {job.attempts.length === 0 ? (
-                      <span className="text-xs text-muted-foreground">
-                        no consumer yet
-                      </span>
+                      <span className="text-xs text-muted-foreground">no consumer yet</span>
                     ) : (
                       <span className="flex flex-wrap gap-1">
                         {job.attempts.map((attempt, index) => (
@@ -166,8 +150,7 @@ function JobsCard({ jobs }: { jobs: Job[] }) {
                             <Badge
                               variant={
                                 attempt.hasError ||
-                                (attempt.outcome != null &&
-                                  attempt.outcome !== "success")
+                                (attempt.outcome != null && attempt.outcome !== "success")
                                   ? "rose"
                                   : "emerald"
                               }

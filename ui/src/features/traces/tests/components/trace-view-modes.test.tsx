@@ -4,11 +4,7 @@ import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import {
-  ClockSkewBanner,
-  TraceViewModeToggle,
-  validateTraceDetailSearch,
-} from "@/features/traces"
+import { ClockSkewBanner, TraceViewModeToggle, validateTraceDetailSearch } from "@/features/traces"
 
 afterEach(cleanup)
 
@@ -29,9 +25,7 @@ describe("trace detail view modes", () => {
       to: undefined,
     })
     expect(validateTraceDetailSearch({ view: "flame" }).view).toBe("flame")
-    expect(
-      validateTraceDetailSearch({ range: "custom", from: 1, to: "2" })
-    ).toEqual({
+    expect(validateTraceDetailSearch({ range: "custom", from: 1, to: "2" })).toEqual({
       tab: undefined,
       view: undefined,
       range: "custom",
@@ -54,9 +48,7 @@ describe("trace detail view modes", () => {
   })
 
   it("renders skew warnings only for suspect pairs", () => {
-    const empty = render(
-      <ClockSkewBanner report={{ suspectPairs: [], maxDriftMs: 0 }} />
-    )
+    const empty = render(<ClockSkewBanner report={{ suspectPairs: [], maxDriftMs: 0 }} />)
     expect(empty.container.textContent).toBe("")
     empty.unmount()
 

@@ -1,16 +1,8 @@
-import {
-  IconAlertTriangle,
-  IconArrowDown,
-  IconArrowUp,
-  IconClock,
-} from "@tabler/icons-react"
+import { IconAlertTriangle, IconArrowDown, IconArrowUp, IconClock } from "@tabler/icons-react"
 
 import { Badge } from "@/components/ui/badge"
-import { formatDateTime, formatDurationNs } from "@/lib/format"
-import type {
-  RpcMessage,
-  RpcStreamInfo,
-} from "@/features/traces/model/rpc-streams"
+import { formatDateTime, formatDurationNs } from "@/shared/format"
+import type { RpcMessage, RpcStreamInfo } from "@/features/traces/model/rpc-streams"
 import { cn } from "@/lib/utils"
 
 function outcomeBadge(outcome: RpcStreamInfo["outcome"]) {
@@ -88,9 +80,7 @@ function MessageRows({ messages }: { messages: RpcMessage[] }) {
               {message.id == null ? "-" : `#${message.id}`}
             </span>
             <span className="text-right text-muted-foreground tabular-nums">
-              {message.size == null
-                ? "-"
-                : `${message.size.toLocaleString()} B`}
+              {message.size == null ? "-" : `${message.size.toLocaleString()} B`}
             </span>
           </li>
         )
@@ -111,12 +101,8 @@ export function RpcStreamCard({ streams }: { streams: RpcStreamInfo[] }) {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <Badge variant="blue">{stream.system}</Badge>
-                <span className="min-w-0 truncate text-sm font-medium">
-                  {stream.method}
-                </span>
-                {outcome ? (
-                  <Badge variant={outcome.variant}>{outcome.label}</Badge>
-                ) : null}
+                <span className="min-w-0 truncate text-sm font-medium">{stream.method}</span>
+                {outcome ? <Badge variant={outcome.variant}>{outcome.label}</Badge> : null}
               </div>
               <span className="text-xs text-muted-foreground tabular-nums">
                 {stream.messages.length.toLocaleString()} messages
@@ -132,10 +118,7 @@ export function RpcStreamCard({ streams }: { streams: RpcStreamInfo[] }) {
                     key={`${message.timeUnixNano}-${index}`}
                     data-testid="rpc-message-dot"
                     title={messageTitle(message)}
-                    className={cn(
-                      "absolute top-1/2 size-2.5 -translate-y-1/2",
-                      tone.dot
-                    )}
+                    className={cn("absolute top-1/2 size-2.5 -translate-y-1/2", tone.dot)}
                     style={{
                       left: `calc(${positionPct(message, stream)}% - 5px)`,
                     }}
@@ -152,9 +135,7 @@ export function RpcStreamCard({ streams }: { streams: RpcStreamInfo[] }) {
               ) : null}
             </div>
 
-            {stream.messages.length < 8 ? (
-              <MessageRows messages={stream.messages} />
-            ) : null}
+            {stream.messages.length < 8 ? <MessageRows messages={stream.messages} /> : null}
             {stream.truncated ? (
               <p className="text-xs text-muted-foreground">
                 showing first {stream.messages.length.toLocaleString()} messages

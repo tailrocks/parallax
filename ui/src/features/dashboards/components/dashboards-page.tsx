@@ -37,10 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  deleteDashboard,
-  saveDashboard,
-} from "@/features/dashboards/api/dashboard-api"
+import { deleteDashboard, saveDashboard } from "@/features/dashboards/api/dashboard-api"
 import type { Dashboard } from "@/features/dashboards/model/dashboard"
 import {
   dashboardRangeSearch,
@@ -54,8 +51,8 @@ import {
   serializeWidgets,
   type Widget,
 } from "@/features/dashboards/model/widget"
-import { formatCount } from "@/lib/format"
-import { gqlString, graphql } from "@/lib/api"
+import { formatCount } from "@/shared/format"
+import { gqlString, graphql } from "@/platform/graphql/transport"
 
 const NO_GROUP = "__none__"
 const ALL_VALUES = "__all__"
@@ -114,9 +111,7 @@ export function WidgetPicker({
   }, [value.metric, value.groupBy])
 
   const groupOptions =
-    value.groupBy && !labels.includes(value.groupBy)
-      ? [value.groupBy, ...labels]
-      : labels
+    value.groupBy && !labels.includes(value.groupBy) ? [value.groupBy, ...labels] : labels
   const valueOptions =
     value.filterValue && !labelValues.includes(value.filterValue)
       ? [value.filterValue, ...labelValues]
@@ -169,9 +164,7 @@ export function WidgetPicker({
         <label className="text-xs text-muted-foreground">Chart</label>
         <Select
           value={value.chart}
-          onValueChange={(chart) =>
-            onChange({ ...value, chart: chart ?? "line" })
-          }
+          onValueChange={(chart) => onChange({ ...value, chart: chart ?? "line" })}
         >
           <SelectTrigger size="sm" className="w-24">
             <SelectValue />
@@ -218,10 +211,7 @@ export function WidgetPicker({
             onValueChange={(filterValue) =>
               onChange({
                 ...value,
-                filterValue:
-                  !filterValue || filterValue === ALL_VALUES
-                    ? undefined
-                    : filterValue,
+                filterValue: !filterValue || filterValue === ALL_VALUES ? undefined : filterValue,
               })
             }
           >
@@ -300,9 +290,7 @@ export function DashboardsPage({
         }
       />
 
-      {deleteError ? (
-        <p className="text-sm text-destructive">{deleteError}</p>
-      ) : null}
+      {deleteError ? <p className="text-sm text-destructive">{deleteError}</p> : null}
 
       {dashboards.length === 0 ? (
         <EmptyState
@@ -311,11 +299,7 @@ export function DashboardsPage({
           description="Dashboards appear here after you save a metric layout."
         />
       ) : (
-        <DashboardCards
-          dashboards={dashboards}
-          detailSearch={detailSearch}
-          onRemove={remove}
-        />
+        <DashboardCards dashboards={dashboards} detailSearch={detailSearch} onRemove={remove} />
       )}
     </div>
   )
@@ -337,9 +321,7 @@ export function DashboardCreateDialog({
 }) {
   const [open, setOpen] = useState(Boolean(initialWidget))
   const [name, setName] = useState("")
-  const [widgets, setWidgets] = useState<Widget[]>([
-    initialWidget ?? emptyWidget(),
-  ])
+  const [widgets, setWidgets] = useState<Widget[]>([initialWidget ?? emptyWidget()])
   const [error, setError] = useState<string | null>(null)
 
   async function create() {
@@ -368,9 +350,7 @@ export function DashboardCreateDialog({
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>New dashboard</DialogTitle>
-          <DialogDescription>
-            Choose metrics, aggregation, and chart type.
-          </DialogDescription>
+          <DialogDescription>Choose metrics, aggregation, and chart type.</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <Input
@@ -384,9 +364,7 @@ export function DashboardCreateDialog({
               metricNames={metricNames}
               value={widget}
               onChange={(next) =>
-                setWidgets((current) =>
-                  current.map((item, i) => (i === index ? next : item))
-                )
+                setWidgets((current) => current.map((item, i) => (i === index ? next : item)))
               }
             />
           ))}
@@ -439,9 +417,7 @@ export function DashboardCards({
                 </Link>
               </CardTitle>
               <AlertDialog>
-                <AlertDialogTrigger
-                  render={<Button variant="ghost-destructive" size="icon-xs" />}
-                >
+                <AlertDialogTrigger render={<Button variant="ghost-destructive" size="icon-xs" />}>
                   <IconTrash />
                   <span className="sr-only">Delete</span>
                 </AlertDialogTrigger>

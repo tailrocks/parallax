@@ -65,10 +65,7 @@ export function servicesWithCatalog(data: ServicesData): ServiceTableRow[] {
   })
 }
 
-export function sortedServices(
-  rows: ServiceTableRow[],
-  sort?: string
-): ServiceTableRow[] {
+export function sortedServices(rows: ServiceTableRow[], sort?: string): ServiceTableRow[] {
   return sortRows(rows, sort ?? "lastSeen:desc", {
     name: (row) => row.name.toLowerCase(),
     version: (row) => row.serviceVersion?.toLowerCase(),

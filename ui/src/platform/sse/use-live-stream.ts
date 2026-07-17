@@ -138,9 +138,7 @@ function mountLegacyParseController<T>(options: {
       const data = typeof event.data === "string" ? event.data : ""
       buffer.push(...options.parse(data))
     } catch {
-      reportBoundaryError(
-        boundaryError("sse.live-stream", "schema-rejected", "frame")
-      )
+      reportBoundaryError(boundaryError("sse.live-stream", "schema-rejected", "frame"))
     }
   }
   const flush = setInterval(() => {

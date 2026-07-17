@@ -1,17 +1,26 @@
 import { Link } from "@tanstack/react-router"
-import {
-  IconArrowDownRight,
-  IconArrowUpRight,
-  IconSparkles,
-} from "@tabler/icons-react"
+import { IconArrowDownRight, IconArrowUpRight, IconSparkles } from "@tabler/icons-react"
 import { useMemo } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatPercent } from "@/lib/format"
-import { rangeLinkSearch } from "@/lib/range"
-import type { ResolvedRange } from "@/lib/range"
+import { formatPercent } from "@/shared/format"
 import { cn } from "@/lib/utils"
+
+type RangeLink = {
+  key: string
+  fromNanos: string
+  toNanos: string
+}
+
+function rangeLinkSearch(range: RangeLink): {
+  range?: string
+  from?: string
+  to?: string
+} {
+  if (range.key !== "custom") return { range: range.key }
+  return { range: "custom", from: range.fromNanos, to: range.toNanos }
+}
 
 /** Error-rate deltas at or above 2 percentage points become movers. */
 export const ERROR_RATE_DELTA_THRESHOLD = 0.02
@@ -174,9 +183,7 @@ export function moverSentence(mover: Mover): string {
   if (mover.kind === "latency") {
     return `${mover.service} p95 up ${formatRatio(mover.score)}`
   }
-  return `${mover.service} volume ${mover.direction} ${formatRatio(
-    mover.score
-  )}`
+  return `${mover.service} volume ${mover.direction} ${formatRatio(mover.score)}`
 }
 
 function MoverIcon({ mover }: { mover: Mover }) {
@@ -209,7 +216,7 @@ export function TopMovers({
 }: {
   now: ServiceMoverInput[]
   previous: ServiceMoverInput[]
-  range: ResolvedRange
+  range: RangeLink
 }) {
   const movers = useMemo(() => computeMovers(now, previous), [now, previous])
 
@@ -236,9 +243,7 @@ export function TopMovers({
               >
                 <MoverIcon mover={mover} />
                 <span className="min-w-0">
-                  <span className="block truncate font-medium">
-                    {mover.service}
-                  </span>
+                  <span className="block truncate font-medium">{mover.service}</span>
                   <span className="block truncate text-muted-foreground">
                     {moverSentence(mover)}
                   </span>

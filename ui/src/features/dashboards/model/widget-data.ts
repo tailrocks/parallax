@@ -1,7 +1,7 @@
 import type { WidgetSeries } from "@/features/dashboards/api/widget-series-schema"
 import type { Widget } from "@/features/dashboards/model/widget"
-import { formatTimeInRange } from "@/lib/format"
-import type { ResolvedRange } from "@/lib/range"
+import { formatTimeInRange } from "@/shared/format"
+import type { ResolvedRange } from "@/domain/time-range/range"
 
 export type WidgetData = {
   widget: Widget
@@ -18,9 +18,7 @@ export function toWidgetData(
   range: ResolvedRange
 ): WidgetData {
   const kept = series.slice(0, MAX_GROUPS)
-  const groups = kept.map(
-    (s, i) => s.groupValue ?? (i === 0 ? "value" : `#${i}`)
-  )
+  const groups = kept.map((s, i) => s.groupValue ?? (i === 0 ? "value" : `#${i}`))
   const byTime = new Map<string, Record<string, number | string>>()
   kept.forEach((s, index) => {
     const group = groups[index]
@@ -33,9 +31,7 @@ export function toWidgetData(
       byTime.set(point.tsNanos, row)
     }
   })
-  const entries = [...byTime.entries()].sort(([a], [b]) =>
-    BigInt(a) < BigInt(b) ? -1 : 1
-  )
+  const entries = [...byTime.entries()].sort(([a], [b]) => (BigInt(a) < BigInt(b) ? -1 : 1))
   const rows = fillBucketGaps(entries, range)
   return { widget, groups, rows }
 }
