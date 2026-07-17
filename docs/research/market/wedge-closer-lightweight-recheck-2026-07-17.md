@@ -61,9 +61,23 @@ redacted evidence bundle **and** outcome loop — **not observed**.
 **Evidence class:** primary GitHub API + README/release tags (2026-07-17). Not
 a live deploy test of each product.
 
+**Pass 156 recheck (2026-07-18):** **Traceway-focused** wedge re-poll + Bugsink/Rustrak
+star-pin hygiene — combination **still not closed**.
+
+| Product | Stars | Latest pin | Push | Combo cells |
+| --- | --- | --- | --- | --- |
+| **Traceway** | **1,024** | **`backend/v1.9.1` + `cli/v1.9.1`** (2026-07-15; still latest release tags) | `pushed_at` **2026-07-17** (API); newest commits on default branch are still **2026-07-15** release/website/widget work | Still **OTLP/HTTP multi-signal + agent skills/CLI/MCP**. README probe: **no** Sentry envelope, **no** versioned portable redacted evidence bundle, **no** fix-outcome/recurrence loop. Cloud still Free / **$12.99** / **$24.99** / **$499.99** + **$0.25–$0.20/GB** overage ([tracewayapp.com/cloud](https://tracewayapp.com/cloud)). License **MIT**. |
+| **Bugsink** | **1,940** | **v2.4.0** (2026-07-10) | 2026-07-17 | Unchanged error-only Sentry-compat pin |
+| **Rustrak** | **64** | **`@rustrak/server@0.9.2` + `@rustrak/mcp@0.2.13`** (2026-07-15) | 2026-07-17 | Unchanged Sentry + MCP pin |
+
+**Evidence class (pass 156):** `gh api` repos + releases (authenticated); raw README;
+public cloud HTML pricing scrape. **Not** a live deploy of each product.
+**Falsification still unfired:** full combo (Sentry path **and** OTLP multi-signal
+**and** portable redacted bundle **and** outcome loop) in one watched product.
+
 ---
 
-## Cohort snapshot (pinned 2026-07-17)
+## Cohort snapshot (pinned 2026-07-17; stars re-confirmed pass 156)
 
 | Product | Repo | Stars | Latest pin | Stack | Sentry path | OTLP multi-signal | Agent surface | Portable redacted bundle | Outcome loop |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
