@@ -8172,3 +8172,9 @@ Not done.
 
 ### Run 328 — 2026-07-17 — not done
 
+
+### Run 329 — 2026-07-17 — latency bucket histogram
+
+`floor(duration_ms/50) GROUP BY` on spans1m: GT **35 ms**; CH floor buckets
+**13 ms**. Interactive both. GT `width_bucket` not available (code 3000); use
+`floor`/`case`.
