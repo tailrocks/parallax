@@ -27,7 +27,10 @@ async fn memo_helper_truncates_and_reuses_spans_for_same_trace() {
     let first = context.spans_for("big-trace").await.unwrap();
     let second = context.spans_for("big-trace").await.unwrap();
     assert_eq!(first.len(), crate::TRACE_SPANS_MAX);
-    assert!(first.len() > MAX_ROWS, "trace reads outgrow list pagination");
+    assert!(
+        first.len() > MAX_ROWS,
+        "trace reads outgrow list pagination"
+    );
     assert!(Arc::ptr_eq(&first, &second));
 }
 

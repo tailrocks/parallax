@@ -4,7 +4,7 @@
     "fire_event_calls": 7,
     "legacy_handoffs": 44,
     "raw_router_builders": 1,
-    "test_cases": 202,
+    "test_cases": 216,
     "test_files": 48
   },
   "private_route_imports": [
@@ -284,6 +284,7 @@
       "layer": "component",
       "test_file": "ui/src/components/console/__tests__/ecosystem-graph.test.tsx",
       "test_ids": [
+        "D-014 eco-full: a 9-node column grows the canvas instead of overlapping cards",
         "renders trace-path graph nodes and edge links"
       ],
       "required_environment": "jsdom-or-bun",
@@ -545,13 +546,16 @@
       "layer": "component",
       "test_file": "ui/src/components/console/__tests__/waterfall.test.tsx",
       "test_ids": [
-        "renders whole-trace and ordered span rows",
-        "moves selection with j/k and arrow keys",
-        "highlights critical-path span rows",
-        "shows only errors and ancestors in errors mode",
+        "D-002 t-deep: span names render on one truncating line, never char-wrapped",
         "falls back to the full tree when errors mode has no errors",
+        "highlights critical-path span rows",
+        "moves selection with j/k and arrow keys",
         "renders contiguous service lanes",
-        "selects spans from the minimap"
+        "renders whole-trace and ordered span rows",
+        "selects spans from the minimap",
+        "shows only errors and ancestors in errors mode",
+        "t-orphan: a span whose parent never arrived is flagged detached",
+        "true children are not flagged detached"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented",
@@ -655,13 +659,16 @@
       "layer": "model",
       "test_file": "ui/src/lib/__tests__/format.test.ts",
       "test_ids": [
-        "formats durations across units",
-        "formats counts and deltas",
+        "D-008: strips ANSI escapes instead of rendering raw bytes",
+        "D-009: caps oversized bodies with an explicit size hint",
         "formats bytes as IEC units",
+        "formats counts and deltas",
+        "formats durations across units",
         "formats relative ns strings with precision",
-        "uses date labels for multi-day ranges",
         "formats short time labels",
-        "returns consistent output across repeated formatter calls"
+        "leaves short clean bodies untouched",
+        "returns consistent output across repeated formatter calls",
+        "uses date labels for multi-day ranges"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented",
@@ -684,9 +691,10 @@
       "test_file": "ui/src/lib/__tests__/graphql-trace.test.ts",
       "test_ids": [
         "builds a nested field tree with self durations",
-        "merges repeated sibling paths into one N+1 node",
         "counts partial field errors under a successful operation",
         "ignores spans without graphql operation attributes",
+        "merges repeated sibling paths into one N+1 node",
+        "renders an operation whose only field is the operation span itself",
         "sorts roots by start time then path"
       ],
       "required_environment": "jsdom-or-bun",
@@ -836,18 +844,24 @@
       "layer": "model",
       "test_file": "ui/src/lib/__tests__/trace-tree.test.ts",
       "test_ids": [
-        "orders a parent chain with increasing depth",
-        "treats missing parents as orphan roots",
-        "sorts siblings by start time then span id",
-        "keeps zero-duration traces drawable",
         "clamps positions inside the remaining track",
-        "keeps errored spans with their ancestor chain",
-        "terminates when an error span is its own parent",
-        "terminates a two-node parent cycle containing an error span",
-        "groups ordered rows into contiguous service lanes",
-        "detects cross-service clock skew and ignores same-service drift",
         "detects a backdated rootless span in the same trace",
-        "detects a backdated same-service child when drift is extreme"
+        "detects a backdated same-service child when drift is extreme",
+        "detects cross-service clock skew and ignores same-service drift",
+        "groups ordered rows into contiguous service lanes",
+        "keeps errored spans with their ancestor chain",
+        "keeps zero-duration traces drawable",
+        "orders a parent chain with increasing depth",
+        "sorts siblings by start time then span id",
+        "t-deep: a 14-span linear chain renders full depth without truncation",
+        "t-multiroot: two roots under one trace id both survive ordering",
+        "t-orphan: a child whose parent never arrives renders as a detached root",
+        "t-skew: a cross-service child starting 120ms before its CLIENT parent flags skew with non-negative geometry",
+        "t-wide: 521 spans fanning from one root all render with finite geometry",
+        "t-zero: zero-duration next to a 1µs span never yields NaN layout",
+        "terminates a two-node parent cycle containing an error span",
+        "terminates when an error span is its own parent",
+        "treats missing parents as orphan roots"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented",

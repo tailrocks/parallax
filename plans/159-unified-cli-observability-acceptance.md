@@ -22,8 +22,9 @@
 - **Depends on**: plans/156-unified-cli-observability-contract.md,
   plans/157-cli-invocation-observability-ui.md,
   plans/158-playground-unified-cli-contract.md,
-  plans/160-ui-defect-audit-and-repair.md,
-  plans/161-playground-corner-case-matrix.md
+  plan 160 (DONE 2026-07-17 — see
+  docs/research/validation/2026-07-unified-cli-observability/ui-defect-ledger.md),
+  plan 161 (DONE)
 - **Category**: tests / acceptance
 - **Planned at**: commit `39f172c`, 2026-07-17
 

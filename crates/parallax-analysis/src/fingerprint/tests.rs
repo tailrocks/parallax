@@ -110,8 +110,5 @@ fn ansi_colored_message_groups_and_reads_like_plain_text() {
         None,
     );
     assert_eq!(plain, colored);
-    assert_eq!(
-        strip_ansi("\u{1b}[31mred\u{1b}[0m text"),
-        "red text"
-    );
+    assert_eq!(strip_ansi("\u{1b}[31mred\u{1b}[0m text"), "red text");
 }

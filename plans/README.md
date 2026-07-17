@@ -253,10 +253,10 @@ Second operator directive (2026-07-17), binding on every executor:
   a real browser against live playground data before the next step (plan
   157's six-item protocol: data correctness, links, states, layout,
   live behavior, clean console). Known display defects — span rendering
-  inside traces foremost — are audited and fixed under plan 160 against the
-  plan-161 corner-case corpus, including the generic session journey view
-  (which screen the user was on, where they moved, on which screen/widget
-  the error hit).
+  inside traces foremost — were audited and fixed by plan 160 (DONE,
+  2026-07-17) against the plan-161 corner-case corpus; the full grid,
+  defect records, and conformance sweep live in
+  [docs/research/validation/2026-07-unified-cli-observability/ui-defect-ledger.md](../docs/research/validation/2026-07-unified-cli-observability/ui-defect-ledger.md).
 
 Contract reconciliation for existing plans (binding on their executors):
 every `parallax.run.id` / `runId` / `$runId` / `runs`-field reference in
@@ -273,8 +273,7 @@ Plan 154's remaining sweep consumes the plan-158 emitter contract.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [160](160-ui-defect-audit-and-repair.md) | UI defect audit & repair against the corpus; generic-attributes conformance sweep | P1 | L | 156+157+161 (DONE) | TODO — next |
-| [159](159-unified-cli-observability-acceptance.md) | Live acceptance: coverage matrix, GraphQL assertions, journey + usability browser evidence | P1 | M | 156+157+158+161 (DONE), 160 | TODO |
+| [159](159-unified-cli-observability-acceptance.md) | Live acceptance: coverage matrix, GraphQL assertions, journey + usability browser evidence | P1 | M | 156+157+158+160+161 (DONE) | TODO — next |
 
 ### Wave 2 — Maple-Informed UI Evolution (operator /improve directive, 2026-07-17)
 

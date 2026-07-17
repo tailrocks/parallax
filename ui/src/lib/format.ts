@@ -176,6 +176,7 @@ export function formatDelta(current: number, previous: number): Delta {
 /** Longest log body shown inline in the table; the doc sheet has the rest. */
 export const LOG_BODY_PREVIEW_MAX = 512
 
+// oxlint-disable-next-line no-control-regex -- ESC is exactly the byte we strip
 const ANSI_ESCAPE_PATTERN = new RegExp(`\\u001b\\[[0-9;]*[A-Za-z]`, "g")
 
 /** Terminal escape sequences never render as styling here — strip them. */

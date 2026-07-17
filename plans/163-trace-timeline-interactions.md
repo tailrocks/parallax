@@ -24,7 +24,7 @@
 ## Why this matters
 
 The trace view is where incidents get solved, and it is the area the
-operator flagged as historically buggy (plan 160 fixes correctness). What it
+operator flagged as historically buggy (plan 160, DONE 2026-07-17, fixed correctness — see the ui-defect-ledger). What it
 still lacks after those fixes is *navigation*: today the only ways to move
 through a large trace are scrolling and the minimap. The reference product
 (Maple) shows the target interaction grammar: every viewport change is an
@@ -73,7 +73,7 @@ for detail; the contract below is complete):
 
 ## Current state
 
-(verified at `2288011`; plan 160 will have amended these files)
+(verified at `2288011`; plan 160 has since amended these files — re-verify)
 
 - `ui/src/components/console/trace-waterfall.tsx` — TanStack-Virtual above
   300 rows; view modes tree/errors/lanes; minimap (sampled ≤2000 bars);

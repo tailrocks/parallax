@@ -178,7 +178,8 @@ export function TraceWaterfall({
     const active = span.spanId === selectedId
     const highlighted = highlightIds?.has(span.spanId) ?? false
     const failed = span.statusCode === "STATUS_CODE_ERROR"
-    const detached = Boolean(span.parentSpanId) && !spanIds.has(span.parentSpanId ?? "")
+    const detached =
+      Boolean(span.parentSpanId) && !spanIds.has(span.parentSpanId ?? "")
     const meta = spanKindMeta(span.kind, span.statusCode)
     return (
       <button

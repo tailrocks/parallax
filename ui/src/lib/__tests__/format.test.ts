@@ -82,9 +82,9 @@ describe("formatters", () => {
 
 describe("log body preview (plan 160, corpus l-bodies)", () => {
   it("D-008: strips ANSI escapes instead of rendering raw bytes", () => {
-    expect(stripAnsi("\u001b[31merror\u001b[0m with \u001b[1mANSI\u001b[0m")).toBe(
-      "error with ANSI"
-    )
+    expect(
+      stripAnsi("\u001b[31merror\u001b[0m with \u001b[1mANSI\u001b[0m")
+    ).toBe("error with ANSI")
   })
 
   it("D-009: caps oversized bodies with an explicit size hint", () => {
