@@ -219,7 +219,6 @@ work.
 | [133](133-ui-tanstack-query-cache.md) | Replace the UI TTL cache with feature-owned TanStack Query | P1 | L | 095, 101, 128, 129, 132, 144, 145, 151 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 | [147](147-ui-live-data-performance.md) | Make live telemetry updates typed, bounded, and identity-stable | P1 | L | 095, 101, 129, 133, 140, 141, 142, 145, 151 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 | [148](148-ui-bundle-performance.md) | Enforce route-owned production chunks and deterministic bundle budgets | P1 | L | 095, 100, 101, 105, 132, 133, 144, 146, 147, 151 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
-| [105](105-metric-overview-and-trends.md) | Replace metric stubs and reconcile CLI, native-name, and metric-only service contracts | P2 | M | 097, 099, 133, 151 | TODO — ready when its listed dependencies complete (unblock directive 2026-07-17) |
 
 ### Dependencies, Tests, And Performance
 
