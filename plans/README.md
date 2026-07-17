@@ -247,7 +247,7 @@ Plan 111 DONE (2026-07-17): source-aware redaction + A6 public-safe canaries
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| [107](107-program-closure-audits.md) | Run independent source audits and verify the mechanical closure commit | P1 | M | Every other actionable indexed plan; all blockers freshly rechecked | TODO — runs last, after every other actionable plan (unblock directive 2026-07-17) |
+| [107](107-program-closure-audits.md) | Run independent source audits and verify the mechanical closure commit | P1 | M | Every other actionable indexed plan; all blockers freshly rechecked | IN PROGRESS — every other actionable plan retired; C0 freeze underway (2026-07-17) |
 
 ### Unified CLI Observability (operator, 2026-07-17)
 

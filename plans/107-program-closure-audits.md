@@ -14,8 +14,10 @@
 - **Depends on**: Every other actionable indexed plan; all blockers freshly rechecked
 - **Category**: validation / closure / plan lifecycle
 - **Planned at**: `a1d8bf82`, revised 2026-07-12
-- **Status**: BLOCKED — C0 cannot freeze while direct operator, upstream,
-  platform, release-cycle, and live-host conditions remain open
+- **Status**: IN PROGRESS (2026-07-17) — every other actionable plan retired;
+  remaining indexed plans 089/114 are minimal BLOCKED files with fresh
+  2026-07-17T16:40Z trigger rechecks; `closure-final --dry-run` fixtures pass;
+  freezing C0 next (claimed by Claude Code executor)
 
 ## Current Evidence
 
