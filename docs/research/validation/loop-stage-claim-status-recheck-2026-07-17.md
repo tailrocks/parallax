@@ -88,6 +88,14 @@ Detect precision/recall or dispatch idempotency on real telemetry.
 | `fixer_outcome` unit tests | **3/3 pass** (re-ran) |
 | Live replay | Still **open** / **`not_measured`** |
 
+### Pass 290 addendum (2026-07-18)
+
+| Check | Result |
+| --- | --- |
+| Detect trigger ledger | **Still absent** |
+| `fixer_outcome` unit tests | **3/3 pass** (re-ran) |
+| Live replay | Still **open** / **`not_measured`** |
+
 ## Allowed vs forbidden wording
 
 **Allowed:**
