@@ -12,6 +12,8 @@ import {
   GraphqlContractStaticProbeDocument,
   GraphqlContractStaticProbeQuerySchema,
 } from "@/platform/graphql/tests/fixtures/static-probe.generated"
+import { createAppQueryClient } from "@/platform/query/client"
+import { installBrowserQueryClient } from "@/platform/query/graphql-query"
 
 const probeVariables = {
   fromNanos: "0",
@@ -34,6 +36,7 @@ const validData = {
 
 describe("executeGraphqlOperation", () => {
   beforeEach(() => {
+    installBrowserQueryClient(createAppQueryClient())
     clearGraphqlOperationCache()
     vi.stubGlobal(
       "fetch",
@@ -44,7 +47,6 @@ describe("executeGraphqlOperation", () => {
   afterEach(() => {
     clearGraphqlOperationCache()
     vi.unstubAllGlobals()
-    vi.useRealTimers()
   })
 
   it("sends operationName, query, and variables", async () => {
@@ -179,9 +181,7 @@ describe("executeGraphqlOperation", () => {
     expect(fetch).toHaveBeenCalledTimes(1)
   })
 
-  it("cached form serves TTL hit and refetches after expiry", async () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date("2026-01-01T00:00:00Z"))
+  it("cached form serves Query hit and refetches after invalidate", async () => {
     await executeCachedGraphqlOperation(
       GraphqlContractStaticProbeDocument,
       GraphqlContractStaticProbeQuerySchema,
@@ -193,7 +193,7 @@ describe("executeGraphqlOperation", () => {
       probeVariables
     )
     expect(fetch).toHaveBeenCalledTimes(1)
-    vi.setSystemTime(new Date("2026-01-01T00:00:16Z"))
+    clearGraphqlOperationCache()
     await executeCachedGraphqlOperation(
       GraphqlContractStaticProbeDocument,
       GraphqlContractStaticProbeQuerySchema,

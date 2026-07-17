@@ -1,14 +1,29 @@
 import { createRouter as createTanStackRouter } from "@tanstack/react-router"
+import type { QueryClient } from "@tanstack/react-query"
 
 import { RouteErrorPanel, RouteNotFoundPanel, RoutePendingPanel } from "@/layout/route-boundaries"
+import { createAppQueryClient } from "@/platform/query/client"
+import { installBrowserQueryClient } from "@/platform/query/graphql-query"
 import { routeTree } from "./routeTree.gen"
 
+export interface AppRouterContext {
+  queryClient: QueryClient
+}
+
 export function getRouter() {
+  const queryClient = createAppQueryClient()
+  // SPA browser ownership: one stable client for this router lifetime.
+  if (typeof window !== "undefined") {
+    installBrowserQueryClient(queryClient)
+  }
+
   const router = createTanStackRouter({
     routeTree,
+    context: { queryClient } satisfies AppRouterContext,
     scrollRestoration: true,
     defaultPreload: "intent",
-    defaultPreloadStaleTime: 15_000,
+    // Query owns loader freshness (plan 133).
+    defaultPreloadStaleTime: 0,
     defaultErrorComponent: RouteErrorPanel,
     defaultPendingComponent: RoutePendingPanel,
     defaultNotFoundComponent: RouteNotFoundPanel,

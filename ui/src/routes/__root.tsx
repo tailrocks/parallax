@@ -1,10 +1,12 @@
-import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router"
+import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router"
 import { ThemeProvider } from "next-themes"
 
 import appCss from "../styles.css?url"
 import { ParallaxShell, RouteErrorPanel, RouteNotFoundPanel, RoutePendingPanel } from "@/layout"
+import { AppQueryProvider } from "@/platform/query/provider"
+import type { AppRouterContext } from "@/router"
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<AppRouterContext>()({
   head: () => ({
     meta: [
       {
@@ -32,13 +34,16 @@ export const Route = createRootRoute({
 })
 
 function RootOutlet() {
+  const { queryClient } = Route.useRouteContext()
   return (
     <RootDocument>
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-        <ParallaxShell>
-          <Outlet />
-        </ParallaxShell>
-      </ThemeProvider>
+      <AppQueryProvider client={queryClient}>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+          <ParallaxShell>
+            <Outlet />
+          </ParallaxShell>
+        </ThemeProvider>
+      </AppQueryProvider>
     </RootDocument>
   )
 }

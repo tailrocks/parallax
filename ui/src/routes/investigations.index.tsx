@@ -1,9 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import { InvestigationsPage, loadInvestigationsList } from "@/features/investigations"
+import { InvestigationsPage } from "@/features/investigations"
+import { investigationsListQueryOptions } from "@/features/investigations/queries/options"
 
 export const Route = createFileRoute("/investigations/")({
-  loader: () => loadInvestigationsList().then((investigations) => ({ investigations })),
+  loader: ({ context: { queryClient } }) =>
+    queryClient.ensureQueryData(investigationsListQueryOptions()).then((investigations) => ({
+      investigations,
+    })),
   component: InvestigationsRoute,
 })
 

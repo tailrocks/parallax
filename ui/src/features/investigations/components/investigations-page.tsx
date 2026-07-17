@@ -40,6 +40,8 @@ import {
   saveInvestigation,
 } from "@/features/investigations/api/investigation-api"
 import { investigationErrorMessage } from "@/features/investigations/model/investigation-error"
+import { investigationKeys } from "@/features/investigations/queries/keys"
+import { getBrowserQueryClient } from "@/platform/query/graphql-query"
 import { formatCount } from "@/shared/format"
 
 export function InvestigationsPage({
@@ -62,6 +64,7 @@ export function InvestigationsPage({
       })
       setName("")
       setOpen(false)
+      await getBrowserQueryClient()?.invalidateQueries({ queryKey: investigationKeys.all })
       await router.navigate({
         to: "/investigations/$investigationId",
         params: { investigationId: created.id },
@@ -75,6 +78,7 @@ export function InvestigationsPage({
     setDeleteError(null)
     try {
       await deleteInvestigation(id)
+      await getBrowserQueryClient()?.invalidateQueries({ queryKey: investigationKeys.all })
       await router.invalidate()
     } catch (err) {
       setDeleteError(investigationErrorMessage(err))

@@ -5,5 +5,10 @@ export {
   loadInvestigationsList,
   loadInvestigationDetail,
 } from "@/features/investigations/api/investigation-api"
+export { investigationKeys } from "@/features/investigations/queries/keys"
+export {
+  investigationsListQueryOptions,
+  investigationDetailQueryOptions,
+} from "@/features/investigations/queries/options"
 export type { Investigation } from "@/features/investigations/model/investigation"
 export type { InvestigationPinKind } from "@/features/investigations/model/investigation-state"

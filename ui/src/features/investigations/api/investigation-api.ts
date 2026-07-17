@@ -32,11 +32,7 @@ import {
 } from "@/features/investigations/api/investigations-list.generated"
 import { mapInvestigation, type Investigation } from "@/features/investigations/model/investigation"
 import { InvestigationError } from "@/features/investigations/model/investigation-error"
-import {
-  executeCachedGraphqlOperation,
-  executeGraphqlOperation,
-  type OperationResultSchema,
-} from "@/platform/graphql/client"
+import { executeGraphqlOperation, type OperationResultSchema } from "@/platform/graphql/client"
 import { GraphqlBoundaryError } from "@/platform/graphql/error"
 import type { TypedDocumentNode } from "@/platform/graphql/typed-document"
 
@@ -67,7 +63,8 @@ function mapBoundary(error: unknown, code: InvestigationError["code"]): never {
 
 export async function loadInvestigationsList(): Promise<Investigation[]> {
   try {
-    const data = await executeCachedGraphqlOperation<
+    // Uncached transport — TanStack Query owns cache (plan 133).
+    const data = await executeGraphqlOperation<
       InvestigationsListQuery,
       InvestigationsListQueryVariables
     >(brandDocument(InvestigationsListDocument), brandSchema(InvestigationsListQuerySchema), {})
@@ -79,7 +76,7 @@ export async function loadInvestigationsList(): Promise<Investigation[]> {
 
 export async function loadInvestigationDetail(id: string): Promise<Investigation | null> {
   try {
-    const data = await executeCachedGraphqlOperation<
+    const data = await executeGraphqlOperation<
       InvestigationDetailQuery,
       InvestigationDetailQueryVariables
     >(brandDocument(InvestigationDetailDocument), brandSchema(InvestigationDetailQuerySchema), {

@@ -8,18 +8,11 @@ import { Kind, print } from "graphql"
 import { graphqlError } from "@/platform/graphql/error"
 import type { TypedDocumentNode } from "@/platform/graphql/typed-document"
 import { encodeGraphqlVariables } from "@/platform/graphql/variables"
+import { getBrowserQueryClient, graphqlOperationQueryKey } from "@/platform/query/graphql-query"
 
 // Loaders are isomorphic (run on server AND client): relative URLs only work
 // in the browser, so SSR/loader calls target the API directly.
 const BASE = typeof window === "undefined" ? "http://127.0.0.1:4000" : ""
-
-const CACHE_TTL_MS = 15_000
-const CACHE_MAX = 100
-
-/** In-flight dedup of identical operation keys (client-side only). */
-const inflight = new Map<string, Promise<unknown>>()
-/** Short-lived result cache (client-side only). */
-const cache = new Map<string, { at: number; data: unknown }>()
 
 /** Compatible with generated Zod operation-result schemas (safeParse). */
 export interface OperationResultSchema<T> {
@@ -37,10 +30,9 @@ export interface ExecuteGraphqlOptions {
   readonly signal?: AbortSignal
 }
 
-/** Test-only: clear the client GraphQL cache and inflight map. */
+/** Test-only: clear the Query-backed GraphQL operation cache. */
 export function clearGraphqlOperationCache(): void {
-  cache.clear()
-  inflight.clear()
+  getBrowserQueryClient()?.removeQueries({ queryKey: ["graphql"] })
 }
 
 /**
@@ -75,8 +67,8 @@ export async function executeGraphqlOperation<TResult, TVariables>(
 }
 
 /**
- * Client-only TTL cache + in-flight dedup. Key = printed document + canonical
- * variables. SSR always bypasses so a shared module never leaks across requests.
+ * Query-backed cache (plan 133). Key = operation name + canonical variables.
+ * SSR always bypasses so a shared module never leaks across requests.
  */
 export async function executeCachedGraphqlOperation<TResult, TVariables>(
   document: TypedDocumentNode<TResult, TVariables>,
@@ -88,37 +80,17 @@ export async function executeCachedGraphqlOperation<TResult, TVariables>(
     return executeGraphqlOperation(document, resultSchema, variables, options)
   }
 
-  const operationName = deriveOperationName(document)
-  const query = print(document as DocumentNode)
-  const variablesKey = encodeGraphqlVariables(variables)
-  const cacheKey = `${operationName}\0${query}\0${variablesKey}`
-
-  const hit = cache.get(cacheKey)
-  if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
-    return hit.data as TResult
+  const queryClient = getBrowserQueryClient()
+  if (!queryClient) {
+    return executeGraphqlOperation(document, resultSchema, variables, options)
   }
 
-  const pending = inflight.get(cacheKey)
-  if (pending) return pending as Promise<TResult>
-
-  const encodedVariables = JSON.parse(variablesKey) as Record<string, unknown>
-  const p = fetchAndDecode(operationName, query, encodedVariables, resultSchema, options).then(
-    (data) => {
-      if (cache.size >= CACHE_MAX && !cache.has(cacheKey)) {
-        const oldest = cache.keys().next().value
-        if (oldest !== undefined) cache.delete(oldest)
-      }
-      cache.set(cacheKey, { at: Date.now(), data })
-      inflight.delete(cacheKey)
-      return data
-    },
-    (error: unknown) => {
-      inflight.delete(cacheKey)
-      throw error
-    }
-  )
-  inflight.set(cacheKey, p)
-  return p
+  const operationName = deriveOperationName(document)
+  const variablesKey = encodeGraphqlVariables(variables)
+  return queryClient.fetchQuery({
+    queryKey: graphqlOperationQueryKey(operationName, variablesKey),
+    queryFn: () => executeGraphqlOperation(document, resultSchema, variables, options),
+  })
 }
 
 function deriveOperationName(document: DocumentNode): string {

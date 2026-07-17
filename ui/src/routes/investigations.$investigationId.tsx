@@ -1,11 +1,14 @@
 import { createFileRoute, notFound } from "@tanstack/react-router"
 
 import { navItem } from "@/shared/navigation"
-import { InvestigationDetailPage, loadInvestigationDetail } from "@/features/investigations"
+import { InvestigationDetailPage } from "@/features/investigations"
+import { investigationDetailQueryOptions } from "@/features/investigations/queries/options"
 
 export const Route = createFileRoute("/investigations/$investigationId")({
-  loader: async ({ params }) => {
-    const investigation = await loadInvestigationDetail(params.investigationId)
+  loader: async ({ context: { queryClient }, params }) => {
+    const investigation = await queryClient.ensureQueryData(
+      investigationDetailQueryOptions(params.investigationId)
+    )
     if (!investigation) throw notFound()
     return { investigation }
   },

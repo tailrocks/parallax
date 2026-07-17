@@ -1,26 +1,19 @@
 // Platform GraphQL transport (Plan 100 provisional).
 // Plan 152 owns generated documents/schemas and decoded-hardening of this boundary.
-// Behavior-preserving extraction: raw string queries, client TTL cache, and gqlString.
+// Plan 133: raw-string path remains for legacy call sites; cache is TanStack Query.
 
 // The UI's only data path: GraphQL against the Parallax API (same-origin —
 // the vite dev proxy and the embedded prod build both serve /graphql).
+
+import { getBrowserQueryClient, graphqlRawQueryKey } from "@/platform/query/graphql-query"
 
 // Loaders are isomorphic (run on server AND client): relative URLs only work
 // in the browser, so SSR/loader calls target the API directly.
 const BASE = typeof window === "undefined" ? "http://127.0.0.1:4000" : ""
 
-const CACHE_TTL_MS = 15_000
-const CACHE_MAX = 100
-
-/** In-flight dedup of identical query strings (client-side only). */
-const inflight = new Map<string, Promise<unknown>>()
-/** Short-lived result cache keyed by query string (client-side only). */
-const cache = new Map<string, { at: number; data: unknown }>()
-
-/** Test-only: clear the client GraphQL cache and inflight map. */
+/** Test-only: clear the Query-backed raw GraphQL cache. */
 export function clearGraphqlCache(): void {
-  cache.clear()
-  inflight.clear()
+  getBrowserQueryClient()?.removeQueries({ queryKey: ["graphql-raw"] })
 }
 
 export async function graphql<T>(query: string, init?: { signal?: AbortSignal }): Promise<T> {
@@ -47,44 +40,23 @@ export async function graphql<T>(query: string, init?: { signal?: AbortSignal })
 }
 
 /**
- * Client-side query cache + in-flight dedup for route loaders and preload.
- *
- * Key = full query string (variables are embedded today). SSR always bypasses
- * the cache so a shared module never leaks data across requests. Pollers and
- * explicit Refresh paths should keep using raw `graphql`.
+ * Query-backed cache for raw string queries (plan 133).
+ * SSR always bypasses. Prefer feature queryOptions + executeGraphqlOperation.
  */
 export async function graphqlCached<T>(query: string, init?: { signal?: AbortSignal }): Promise<T> {
-  // Cache is client-only — Bun/SSR may share the module across requests.
   if (typeof window === "undefined") {
     return graphql<T>(query, init)
   }
 
-  const hit = cache.get(query)
-  if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
-    return hit.data as T
+  const queryClient = getBrowserQueryClient()
+  if (!queryClient) {
+    return graphql<T>(query, init)
   }
 
-  const pending = inflight.get(query)
-  if (pending) return pending as Promise<T>
-
-  const p = graphql<T>(query, init).then(
-    (data) => {
-      // Insertion-order LRU-ish: drop oldest when over cap.
-      if (cache.size >= CACHE_MAX && !cache.has(query)) {
-        const oldest = cache.keys().next().value
-        if (oldest !== undefined) cache.delete(oldest)
-      }
-      cache.set(query, { at: Date.now(), data })
-      inflight.delete(query)
-      return data
-    },
-    (error: unknown) => {
-      inflight.delete(query)
-      throw error
-    }
-  )
-  inflight.set(query, p)
-  return p
+  return queryClient.fetchQuery({
+    queryKey: graphqlRawQueryKey(query),
+    queryFn: () => graphql<T>(query, init),
+  })
 }
 
 /** Escape a value for inclusion inside a GraphQL double-quoted literal. */

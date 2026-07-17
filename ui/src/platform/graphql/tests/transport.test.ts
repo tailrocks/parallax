@@ -3,6 +3,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { clearGraphqlCache, gqlString, graphql, graphqlCached } from "@/platform/graphql/transport"
+import { createAppQueryClient } from "@/platform/query/client"
+import { installBrowserQueryClient } from "@/platform/query/graphql-query"
 
 describe("gqlString", () => {
   it("escapes backslash, quote, newline, and tab", () => {
@@ -26,10 +28,12 @@ describe("gqlString", () => {
   })
 })
 
-describe("graphqlCached", () => {
+describe("graphqlCached (TanStack Query)", () => {
   const query = `{ hello }`
 
   beforeEach(() => {
+    const client = createAppQueryClient()
+    installBrowserQueryClient(client)
     clearGraphqlCache()
     vi.stubGlobal(
       "fetch",
@@ -40,7 +44,6 @@ describe("graphqlCached", () => {
   afterEach(() => {
     clearGraphqlCache()
     vi.unstubAllGlobals()
-    vi.useRealTimers()
   })
 
   it("dedupes concurrent identical queries into one fetch", async () => {
@@ -53,17 +56,15 @@ describe("graphqlCached", () => {
     expect(fetch).toHaveBeenCalledTimes(1)
   })
 
-  it("serves a second call from cache within TTL", async () => {
+  it("serves a second call from Query cache within staleTime", async () => {
     await graphqlCached(query)
     await graphqlCached(query)
     expect(fetch).toHaveBeenCalledTimes(1)
   })
 
-  it("refetches after the TTL expires", async () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date("2026-01-01T00:00:00Z"))
+  it("refetches after invalidate", async () => {
     await graphqlCached(query)
-    vi.setSystemTime(new Date("2026-01-01T00:00:16Z"))
+    clearGraphqlCache()
     await graphqlCached(query)
     expect(fetch).toHaveBeenCalledTimes(2)
   })
