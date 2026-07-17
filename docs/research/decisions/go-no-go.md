@@ -130,6 +130,24 @@ Research date: 2026-05-25 · Restructured into a decision record 2026-05-29
 > schema adoption still **none**; Seer still closed on self-host. Related kills
 > **unfired** (open ≠ failed for A3). **Still GO (narrow product).**
 >
+> **Pass 275 (2026-07-18) — GO composite reaffirm** after passes **268–274**.
+> **Still GO (narrow product).** Kill criteria **still unfired** (desk + unit
+> hygiene; empirical A1/A2/A4/A6 mixed still **open**, not failed):
+>
+> | Kill / reverse trigger | Latest recheck | Fired? |
+> | --- | --- | --- |
+> | A1: bundles do not beat raw context | Pass **265** — golden ok; no result ledger | **No** (open) |
+> | A2: no paying segment | Pass **271** — **0** interview rows; desk triangle holds | **No** (open) |
+> | Full wedge closed by peer | Pass **270/272/274** — TMA1/error peers/Traceway **not** full combo | **No** |
+> | OTel commoditizes evidence-bundle schema | Pass **268** — #1185 idle; OCSF 1.8.0 | **No** |
+> | Incumbent self-host Seer-class AI | Pass **273/274** — Seer closed; Assistant hybrid Cloud | **No** |
+> | App-code auto-merge commodity | Pass **269** — Bits still never auto-merges | **No** |
+> | A4 real messy telemetry reliability | Pass **267** — no reliability-runs | **No** (open) |
+> | A6 agent-visible mixed redaction | Pass **267** — canary ok; mixed open | **No** (open) |
+> | A3 external schema adoption | Pass **273** — still none | **No** (open) |
+> | Sentry OTLP metrics GA | Pass **269** — still unsupported | **No** |
+> | TMA1 prod-incident collision | Pass **270** — **24th UNFIRED** | **No** |
+>
 > **Narrow product identity holds.** Research program continues.
 
 ## Verdict
