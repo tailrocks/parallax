@@ -25,8 +25,9 @@ pub(crate) struct GraphqlClient {
 
 impl GraphqlClient {
     pub(crate) fn new(base_url: String) -> anyhow::Result<Self> {
+        let base_url = normalize_local_base_url(&base_url)?;
         Ok(Self {
-            base_url: base_url.trim_end_matches('/').to_string(),
+            base_url,
             http: reqwest::Client::builder()
                 .connect_timeout(Duration::from_secs(5))
                 .timeout(Duration::from_secs(30))
@@ -68,6 +69,28 @@ impl GraphqlClient {
         }
         Ok(response)
     }
+}
+
+pub(crate) fn normalize_local_base_url(raw: &str) -> anyhow::Result<String> {
+    let url = reqwest::Url::parse(raw)
+        .map_err(|error| anyhow::anyhow!("invalid MCP API URL: {error}"))?;
+    let local_host = matches!(
+        url.host_str(),
+        Some("localhost" | "127.0.0.1" | "::1" | "[::1]")
+    );
+    if url.scheme() != "http"
+        || !local_host
+        || !url.username().is_empty()
+        || url.password().is_some()
+        || url.query().is_some()
+        || url.fragment().is_some()
+        || url.path() != "/"
+    {
+        anyhow::bail!(
+            "MCP API URL must be a credential-free loopback HTTP origin; remote transport is deferred to Plan 109"
+        );
+    }
+    Ok(url.as_str().trim_end_matches('/').to_string())
 }
 
 fn append_bounded(body: &mut Vec<u8>, chunk: &[u8]) -> anyhow::Result<()> {
@@ -165,6 +188,14 @@ mod tests {
 
         assert!(append_bounded(&mut body, &[2]).is_err());
         assert_eq!(body.len(), before, "overflow must not partially append");
+    }
+
+    #[test]
+    fn client_constructor_enforces_loopback_origin() {
+        GraphqlClient::new("http://127.0.0.1:4000".to_string()).expect("loopback");
+        let _remote = GraphqlClient::new("http://example.com:4000".to_string())
+            .err()
+            .expect("remote host");
     }
 
     #[test]

@@ -64,7 +64,7 @@ async fn main() -> anyhow::Result<()> {
         // Spike: env wins when set (clap workspace lacks the env feature).
         cli.url = url;
     }
-    cli.url = validate_local_base_url(&cli.url)?;
+    cli.url = gql::normalize_local_base_url(&cli.url)?;
     match cli.command.unwrap_or(Command::Serve) {
         Command::Serve => {
             if !cli.allow_local_stdio {
@@ -90,28 +90,6 @@ async fn main() -> anyhow::Result<()> {
     }
 }
 
-fn validate_local_base_url(raw: &str) -> anyhow::Result<String> {
-    let url = reqwest::Url::parse(raw)
-        .map_err(|error| anyhow::anyhow!("invalid MCP API URL: {error}"))?;
-    let local_host = matches!(
-        url.host_str(),
-        Some("localhost" | "127.0.0.1" | "::1" | "[::1]")
-    );
-    if url.scheme() != "http"
-        || !local_host
-        || !url.username().is_empty()
-        || url.password().is_some()
-        || url.query().is_some()
-        || url.fragment().is_some()
-        || url.path() != "/"
-    {
-        anyhow::bail!(
-            "MCP API URL must be a credential-free loopback HTTP origin; remote transport is deferred to Plan 109"
-        );
-    }
-    Ok(url.as_str().trim_end_matches('/').to_string())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -133,7 +111,10 @@ mod tests {
             "http://127.0.0.1:4000/",
             "http://[::1]:4000",
         ] {
-            assert!(validate_local_base_url(accepted).is_ok(), "{accepted}");
+            assert!(
+                gql::normalize_local_base_url(accepted).is_ok(),
+                "{accepted}"
+            );
         }
         for denied in [
             "https://localhost:4000",
@@ -143,7 +124,7 @@ mod tests {
             "http://localhost:4000?token=secret",
             "not-a-url",
         ] {
-            assert!(validate_local_base_url(denied).is_err(), "{denied}");
+            assert!(gql::normalize_local_base_url(denied).is_err(), "{denied}");
         }
     }
 }

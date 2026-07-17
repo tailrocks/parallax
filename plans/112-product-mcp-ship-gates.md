@@ -65,6 +65,8 @@ must not return in product output.
 - Agent-session GraphQL now uses a static syntactically valid variable query
   (removing stale doubled format-string braces), and bundle projections reject
   missing/null/non-string contract fields instead of substituting empty text.
+- Loopback-origin enforcement now lives inside the GraphQL client constructor,
+  preventing future internal callers from bypassing the CLI-level validation.
 
 This is preliminary hardening, not completion. The next executor must still
 define scopes/install trust, graduate or remove the spike, implement bounded
