@@ -7880,3 +7880,9 @@ Warm: GT **~10 ms**, CH **~7–8 ms**. Capability parity holds (Run 169).
 | CH | `uniq` / `uniqExact` | **50043** / **50043** | exact on this N |
 
 `hll_count` requires Binary not Utf8. Approx path exists on both; error small.
+
+### Run 267 — 2026-07-17 — row_number window capability
+
+`row_number() OVER (PARTITION BY service ORDER BY ts DESC)` filter rn=1:
+both engines return ranked rows (GT 23 ms / CH 11 ms at ~50k). Window
+capability parity for evidence-bundle ranking (Run 156) holds.
