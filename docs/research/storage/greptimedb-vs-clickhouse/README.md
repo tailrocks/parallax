@@ -131,6 +131,7 @@ managed quotes remain):
 | still not done | **449** | top 5 open |
 | row_number top-k | **450** | GT 21ms / CH 5ms warm |
 | still not done | **451** | top 5 open |
+| p50/p99 panel | **452** | GT 13ms / CH 3ms warm |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |

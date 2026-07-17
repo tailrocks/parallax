@@ -8495,3 +8495,13 @@ Function name note: GT uses **`approx_distinct`**, not `approx_count_distinct` /
 
 Capability parity for evidence-bundle window ranking (Run 156). CH ~4× at this N.
 
+### Run 452 — 2026-07-18 — multi-percentile panel on m2m
+
+| Build | Query | Warm |
+| --- | --- | --- |
+| GT | `approx_percentile_cont(val, 0.5/0.99) GROUP BY service` | 103 cold / **14** / **13** ms |
+| CH | `quantiles(0.5, 0.99)(val) GROUP BY service` | 19 / **3** / **3** ms |
+
+Both interactive. CH multi-percentile single-pass ~4× faster here (matches Run 135
+shape: GT per-percentile vs CH shared sketch). Blueprint: Flow-sketch for multi-p on GT.
+
