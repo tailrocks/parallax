@@ -20,6 +20,19 @@
 >   and wedge pressure (Traceway, passes 122–125) **still cannot** close A2.
 > - Empirical A1/A4/A6 gates remaining open does **not** block starting interviews
 >   (protocol allows demo of shipped V1); interviews remain **operator-owned**.
+>
+> **Pass 160 recheck (2026-07-18):** gate **still OPEN / zero rows**.
+> - Ledger files still **absent** at both documented paths; no committed
+>   `interview_id: A2-*` result rows (template example only in this note).
+> - SO **results**: [2025](https://survey.stackoverflow.co/2025/) still **HTTP 200**;
+>   `/2026/` still **HTTP 404** — **no published 2026 results** to cite.
+> - **Nuance vs pass 128:** the **2026 survey collection is live** (opened
+>   2026-06-23 per [SO blog](https://stackoverflow.blog/2026/06/23/the-2026-developer-survey-is-now-open-for-human-developers-only/);
+>   hub banner on [survey.stackoverflow.co](https://survey.stackoverflow.co/)).
+>   Collection-open ≠ results published. Ignore secondary blogs that claim 2026
+>   result stats while linking `/2025`.
+> - Desk monetization / wedge rechecks (passes 154–159) **still cannot** close A2.
+> - **Next real move remains operator execution of the interview runbook.**
 
 This note consolidates the following previously-separate research files, each preserved in full below:
 
