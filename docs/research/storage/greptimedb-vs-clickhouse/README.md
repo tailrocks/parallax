@@ -382,6 +382,9 @@ managed quotes remain):
 | milestone 700 | **700** | pins/healthy; NOT DONE |
 | identity increase Jaeger | **701** | holds; Code 48; 200 |
 | still not done | **702** | top 5 product/server |
+| still not done | **703** | top 5 product/server |
+| re-pin hold | **704** | pins healthy |
+| still not done | **705** | top 5 product/server |
 | greptime_identity schema-on-write | 237 | auto columns; no drift |
 | Cold S3 measure recipe in cache note | 238 | cache wipe + OpenDAL |
 | last_value vs argMax @50k | 239 | GT ~5ms / CH ~3ms |
