@@ -10,6 +10,7 @@ use parallax_semconv as semconv;
 use std::{collections::BTreeMap, path::Path};
 use turso::Value;
 
+mod alerts;
 mod connection;
 mod invocations;
 mod occurrences;
@@ -17,6 +18,10 @@ mod row;
 mod saved_state;
 mod values;
 
+pub use alerts::{
+    ALERT_CHECKS_KEEP_PER_RULE, AlertCheckRecord, AlertDeliveryEventRecord, AlertDestinationRecord,
+    AlertIncidentRecord, AlertRuleRecord, AlertRuleStateRecord,
+};
 use row::*;
 use values::*;
 
@@ -80,6 +85,96 @@ CREATE TABLE IF NOT EXISTS issue_occurrences (
 );
 CREATE INDEX IF NOT EXISTS issue_occurrences_observed_at
   ON issue_occurrences(observed_at);
+CREATE TABLE IF NOT EXISTS alert_rules (
+  id                            TEXT PRIMARY KEY,
+  name                          TEXT NOT NULL,
+  enabled                       INTEGER NOT NULL DEFAULT 1,
+  signal_type                   TEXT NOT NULL,
+  services                      TEXT NOT NULL DEFAULT '[]',
+  exclude_services              TEXT NOT NULL DEFAULT '[]',
+  attribute_filters             TEXT NOT NULL DEFAULT '[]',
+  group_by                      TEXT,
+  comparator                    TEXT NOT NULL,
+  threshold                     REAL NOT NULL,
+  threshold_upper               REAL,
+  window_minutes                INTEGER NOT NULL,
+  minimum_sample_count          INTEGER NOT NULL DEFAULT 1,
+  consecutive_breaches_required INTEGER NOT NULL DEFAULT 2,
+  consecutive_healthy_required  INTEGER NOT NULL DEFAULT 2,
+  no_data_behavior              TEXT NOT NULL DEFAULT 'skip',
+  severity                      TEXT NOT NULL DEFAULT 'warning',
+  renotify_interval_minutes     INTEGER NOT NULL DEFAULT 30,
+  destination_ids               TEXT NOT NULL DEFAULT '[]',
+  metric_name                   TEXT,
+  metric_aggregation            TEXT,
+  last_scheduled_at             INTEGER,
+  created_at                    INTEGER NOT NULL,
+  updated_at                    INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS alert_rule_states (
+  rule_id              TEXT NOT NULL,
+  group_key            TEXT NOT NULL,
+  consecutive_breaches INTEGER NOT NULL DEFAULT 0,
+  consecutive_healthy  INTEGER NOT NULL DEFAULT 0,
+  incident_open        INTEGER NOT NULL DEFAULT 0,
+  last_notified_at     INTEGER,
+  last_status          TEXT,
+  last_value           REAL,
+  last_sample_count    INTEGER NOT NULL DEFAULT 0,
+  last_evaluated_at    INTEGER,
+  last_error           TEXT,
+  PRIMARY KEY (rule_id, group_key)
+);
+CREATE TABLE IF NOT EXISTS alert_incidents (
+  id                 TEXT PRIMARY KEY,
+  rule_id            TEXT NOT NULL,
+  group_key          TEXT NOT NULL,
+  status             TEXT NOT NULL DEFAULT 'open',
+  severity           TEXT NOT NULL DEFAULT 'warning',
+  first_triggered_at INTEGER NOT NULL,
+  last_triggered_at  INTEGER NOT NULL,
+  resolved_at        INTEGER,
+  last_value         REAL,
+  last_notified_at   INTEGER
+);
+CREATE INDEX IF NOT EXISTS alert_incidents_rule_group_status
+  ON alert_incidents(rule_id, group_key, status);
+CREATE TABLE IF NOT EXISTS alert_destinations (
+  id         TEXT PRIMARY KEY,
+  name       TEXT NOT NULL,
+  kind       TEXT NOT NULL,
+  config     TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS alert_delivery_events (
+  id               TEXT PRIMARY KEY,
+  incident_id      TEXT NOT NULL,
+  destination_id   TEXT NOT NULL,
+  event_type       TEXT NOT NULL,
+  status           TEXT NOT NULL DEFAULT 'pending',
+  attempt_count    INTEGER NOT NULL DEFAULT 0,
+  next_attempt_at  INTEGER NOT NULL,
+  claimed_by       TEXT,
+  claim_expires_at INTEGER,
+  delivered_at     INTEGER,
+  last_error       TEXT,
+  delivery_key     TEXT NOT NULL UNIQUE,
+  created_at       INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS alert_delivery_events_due
+  ON alert_delivery_events(status, next_attempt_at);
+CREATE TABLE IF NOT EXISTS alert_checks (
+  rule_id      TEXT NOT NULL,
+  group_key    TEXT NOT NULL,
+  checked_at   INTEGER NOT NULL,
+  value        REAL,
+  sample_count INTEGER NOT NULL DEFAULT 0,
+  status       TEXT NOT NULL,
+  error        TEXT
+);
+CREATE INDEX IF NOT EXISTS alert_checks_rule_time
+  ON alert_checks(rule_id, checked_at);
 ";
 
 #[cfg(test)]
