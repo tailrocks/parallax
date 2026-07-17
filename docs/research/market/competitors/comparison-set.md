@@ -58,7 +58,7 @@ Component-level (the "stack it yourself" pieces, referenced not deep-dived):
 
 | Product | What it is | License / model | Primary signal focus | State |
 | --- | --- | --- | --- | --- |
-| **Langfuse** | OSS LLM/agent tracing + evals + prompt mgmt (self-host or cloud). | MIT (self-host) + Cloud. | LLM/agent traces + evals. | stub |
+| **Langfuse** | OSS LLM/agent tracing + evals + prompt mgmt (self-host or cloud). | MIT (self-host) + Cloud. | LLM/agent traces + evals. | [deep-dive](parallax-vs-langfuse.md) |
 | **LangSmith** | LangChain's closed tracing/eval/prompt platform. | Closed SaaS. | LLM/agent traces + evals. | watch |
 | **Arize Phoenix** | OSS LLM/agent tracing + evals. | Apache-2.0 (ELv2 parts). | LLM/agent traces + evals. | stub |
 | **PostHog** | OSS product analytics + session replay + (now) LLM/agent tracing. | OSS + Cloud. | Product analytics + LLM. | watch |
