@@ -257,3 +257,20 @@ scale, GreptimeDB's 1×+elastic model is the genuine win.
 
 - GreptimeDB: `src/partition/src/{splitter,multi_dim,manager}.rs`; **region-migration procedure `src/meta-srv/src/procedure/region_migration/` (flush_leader → downgrade → open_candidate → upgrade → close; no bulk-copy step)**; RFCs `2023-11-07-region-migration`, `2025-06-20-repartition`, `2025-07-23-global-gc-worker`; dist plan `src/query/src/dist_plan` — **`commutativity.rs`** (`Categorizer::check_plan`: TableScan/Filter/Projection=Commutative, steppable-agg→`step_aggr_to_upper_aggr` TransformedCommutative two-stage, partition-aligned agg=ConditionalCommutative, **`Join`=NonCommutative** frontend-only, Sort→`merge_sort_transformer`, Limit `fetch` PartialCommutative), **`merge_scan.rs`** (`MergeScanExec{regions, region_query_handler, target_partition}` → encode sub-plan, RPC per region, merge streams) (Run 148); remote WAL `src/log-store/src/kafka`.
 - ClickHouse: `src/Storages/StorageDistributed.cpp`, `src/Storages/StorageReplicatedMergeTree.cpp`, `src/Coordination/Keeper*`; `max_parallel_replicas`/`allow_experimental_parallel_reading_from_replicas` (`src/Core/Settings.cpp:7308`); **no** `SharedMergeTree` in `src/Storages` (Cloud-only); **zero-copy replication** `allow_remote_fs_zero_copy_replication=false` + *"Don't use … not ready"* (`MergeTreeSettings.cpp:1955`, EXPERIMENTAL), `remote_fs_zero_copy_zookeeper_path=/clickhouse/zero_copy`, `disable_{freeze,detach,fetch}_partition_for_zero_copy_replication`.
+
+## Run 204 (2026-07-17) — distributed roles source + standalone catalog live
+
+**GT source:** `meta-srv` still owns **region migration** (`RegionMigrationManager`,
+procedure metrics, trigger reasons) — horizontal rebalance is first-class.
+
+**Live standalone v1.1.3:**
+
+- `information_schema.cluster_info` returns peer rows (standalone still exposes cluster catalog).
+- `information_schema.region_peers` lists per-table region leadership.
+
+**CH 26.6 live:** `system.clusters` shows single-shard `default` / localhost:9000 (expected for
+one-node Docker). Distributed engine + manual sharding remain the OSS scale-out path;
+`SharedMergeTree` still Cloud-only (Run 155).
+
+**No architecture drift:** GT designed for region auto-migration; CH OSS scale-out still
+operator-driven sharding (or Cloud).

@@ -7144,3 +7144,8 @@ GT greptime_identity auto-schema 200; CH needs hand OTEL-like DDL. No drift.
 
 GT first 6→warm 4 ms; CH 4→3 ms at N=100k local. Cache hierarchy source-mapped. Object-store cold
 penalty remains separate. `caching-and-cold-warm.md`.
+
+### Run 204 — 2026-07-17 — distributed catalog live + region migration source
+
+GT cluster_info/region_peers live; metasrv region migration still in source. CH single-shard
+cluster view. `distributed-and-scaling.md`.
