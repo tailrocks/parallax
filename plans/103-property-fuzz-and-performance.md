@@ -12,7 +12,9 @@
 - **Depends on**: 097, 099, 101, 104, 133, 147, 148
 - **Category**: testing / fuzzing / performance
 - **Planned at**: `a1d8bf82`, revised 2026-07-12
-- **Status**: BLOCKED — Plan 104 approval and Plans 133/147/148 are incomplete
+- **Status**: IN PROGRESS (Rust lanes) — claimed 2026-07-17 by Claude Code
+  agent (session 5904). Rust property/golden work proceeds now; UI property
+  work stays gated on plans 133/147/148 owners.
 
 ## Why
 
