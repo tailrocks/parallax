@@ -61,9 +61,6 @@ const config: PlaywrightTestConfig = {
     locale: "en-US",
     timezoneId: "UTC",
     colorScheme: "dark",
-    launchOptions: {
-      args: ["--force-prefers-reduced-motion"],
-    },
     actionTimeout: 10_000,
     navigationTimeout: browserMode === "full-stack" ? 30_000 : 15_000,
     trace: "on-first-retry",

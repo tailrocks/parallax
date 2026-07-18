@@ -4397,7 +4397,7 @@ ceiling = 459
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-xtask/src/release/macho_dwarf.rs"
-ceiling = 669
+ceiling = 667
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
@@ -7303,11 +7303,6 @@ ceiling = 1
 
 [[limits]]
 metric = "rust.file-lines"
-scope = "crates/parallax-evidence/src/envelope.rs"
-ceiling = 402
-
-[[limits]]
-metric = "rust.file-lines"
 scope = "crates/parallax-analysis/src/junit_reconcile.rs"
 ceiling = 405
 
@@ -7702,4 +7697,3 @@ ceiling = 8
 metric = "rust.inline-test-modules"
 scope = "crates/parallax-analysis/src/test_adapter_export.rs"
 ceiling = 1
-

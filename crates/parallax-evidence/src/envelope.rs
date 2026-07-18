@@ -17,6 +17,7 @@
 
 use serde::Serialize;
 use sha2::{Digest, Sha256};
+use std::collections::BTreeSet;
 
 use crate::bundle::SCHEMA_VERSION as V1_SCHEMA_VERSION;
 
@@ -135,10 +136,8 @@ pub fn canonical_json(value: &serde_json::Value) -> String {
 /// Render a JSON number so re-parsing and re-rendering yields the same bytes.
 fn stable_json_number(value: &serde_json::Value) -> String {
     let mut rendered = serde_json::to_string(value).unwrap_or_default();
-    let mut seen = vec![rendered.clone()];
-    // Scientific inputs can either converge or enter a representable-f64
-    // spelling cycle. Select the same lexical representative from a cycle so
-    // every member canonicalizes to one stable byte string.
+    let mut seen = BTreeSet::from([rendered.clone()]);
+    // Choose one lexical representative when representable f64 spellings cycle.
     for _ in 0..64 {
         let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&rendered) else {
             break;
@@ -147,14 +146,12 @@ fn stable_json_number(value: &serde_json::Value) -> String {
         if next == rendered {
             return rendered;
         }
-        if seen.contains(&next) {
-            seen.push(next);
-            return seen.into_iter().min().unwrap_or_default();
+        if !seen.insert(next.clone()) {
+            return seen.into_iter().next().unwrap_or_default();
         }
         rendered = next;
-        seen.push(rendered.clone());
     }
-    seen.into_iter().min().unwrap_or(rendered)
+    seen.into_iter().next().unwrap_or(rendered)
 }
 
 fn sha256_hex(input: &str) -> String {
@@ -277,14 +274,7 @@ pub fn parse_bundle_json(value: serde_json::Value) -> Result<ParsedBundle, Envel
             let bundle_id = required_str(object, "bundle_id")?.to_string();
             let generated_at = required_str(object, "generated_at")?.to_string();
             let canonical_hash = required_str(object, "canonical_hash")?.to_string();
-            let anchor_object = object
-                .get("anchor")
-                .and_then(serde_json::Value::as_object)
-                .ok_or(EnvelopeError::MissingField("anchor"))?;
-            let anchor = EnvelopeAnchor {
-                kind: required_str(anchor_object, "kind")?.to_string(),
-                id: required_str(anchor_object, "id")?.to_string(),
-            };
+            let anchor = v1_anchor(&value)?;
             let payload = object
                 .get("payload")
                 .cloned()
@@ -501,11 +491,9 @@ mod tests {
         #[test]
         fn fuzz_crash_scientific_number_fixpoint() {
             for corpus in [b"9E294".as_slice(), b"99E29".as_slice()] {
-                let value: serde_json::Value =
-                    serde_json::from_slice(corpus).expect("parse fuzz crash bytes");
+                let value = serde_json::from_slice(corpus).expect("parse fuzz crash bytes");
                 let canonical = canonical_json(&value);
-                let reparsed: serde_json::Value =
-                    serde_json::from_str(&canonical).expect("canonical must re-parse");
+                let reparsed = serde_json::from_str(&canonical).expect("canonical must re-parse");
                 assert_eq!(
                     canonical_json(&reparsed),
                     canonical,
