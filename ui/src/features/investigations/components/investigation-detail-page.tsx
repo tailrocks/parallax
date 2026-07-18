@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import {
   IconAffiliate,
   IconArticle,
@@ -65,6 +65,7 @@ export function InvestigationDetailPage({
   const [draft, setDraft] = useState<InvestigationState>(() =>
     parseInvestigationState(investigation.state)
   )
+  const draftRef = useRef(draft)
   const [error, setError] = useState<string | null>(null)
   const windowSearch = investigationWindowSearch(draft.window)
 
@@ -74,7 +75,7 @@ export function InvestigationDetailPage({
       await saveInvestigation({
         id: investigation.id,
         name: investigation.name,
-        state: serializeInvestigationState(draft),
+        state: serializeInvestigationState(draftRef.current),
       })
       await router.invalidate()
     } catch (err) {
@@ -93,17 +94,25 @@ export function InvestigationDetailPage({
   }
 
   function updatePin(index: number, patch: Partial<InvestigationPin>) {
-    setDraft((current) => ({
-      ...current,
-      pins: current.pins.map((pin, i) => (i === index ? { ...pin, ...patch } : pin)),
-    }))
+    setDraft((current) => {
+      const next = {
+        ...current,
+        pins: current.pins.map((pin, i) => (i === index ? { ...pin, ...patch } : pin)),
+      }
+      draftRef.current = next
+      return next
+    })
   }
 
   function removePin(index: number) {
-    setDraft((current) => ({
-      ...current,
-      pins: current.pins.filter((_, i) => i !== index),
-    }))
+    setDraft((current) => {
+      const next = {
+        ...current,
+        pins: current.pins.filter((_, i) => i !== index),
+      }
+      draftRef.current = next
+      return next
+    })
   }
 
   return (
@@ -233,10 +242,14 @@ export function InvestigationDetailPage({
                 id="investigation-notes"
                 value={draft.notes}
                 onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    notes: event.target.value,
-                  }))
+                  setDraft((current) => {
+                    const next = {
+                      ...current,
+                      notes: event.target.value,
+                    }
+                    draftRef.current = next
+                    return next
+                  })
                 }
                 rows={10}
               />
