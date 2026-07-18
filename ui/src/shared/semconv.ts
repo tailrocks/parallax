@@ -6,7 +6,8 @@ export const SERVICE_NAMESPACE = "service.namespace" as const
 export const SERVICE_INSTANCE_ID = "service.instance.id" as const
 export const SERVICE_VERSION = "service.version" as const
 export const VCS_REF_HEAD_REVISION = "vcs.ref.head.revision" as const
-export const DEPLOYMENT_ENVIRONMENT_NAME = "deployment.environment.name" as const
+export const DEPLOYMENT_ENVIRONMENT_NAME =
+  "deployment.environment.name" as const
 export const DEPLOYMENT_ENVIRONMENT = "deployment.environment" as const
 export const TELEMETRY_SDK_LANGUAGE = "telemetry.sdk.language" as const
 export const TELEMETRY_SDK_NAME = "telemetry.sdk.name" as const
@@ -69,7 +70,8 @@ export const HTTP_REQUEST_METHOD = "http.request.method" as const
 export const HTTP_ROUTE = "http.route" as const
 export const HTTP_RESPONSE_STATUS_CODE = "http.response.status_code" as const
 export const URL_PATH = "url.path" as const
-export const HTTP_SERVER_REQUEST_DURATION = "http.server.request.duration" as const
+export const HTTP_SERVER_REQUEST_DURATION =
+  "http.server.request.duration" as const
 export const SERVER_ADDRESS = "server.address" as const
 export const DB_SYSTEM_NAME = "db.system.name" as const
 export const DB_SYSTEM = "db.system" as const
@@ -108,11 +110,20 @@ export const APP_SCREEN_CHECKOUT = "checkout" as const
 export const UI_ACTION_CART_ADD = "cart.add" as const
 export const UI_ACTION_CHECKOUT_SUBMIT = "checkout.submit" as const
 export const UI_ACTION_SCREEN_BACK = "screen.back" as const
-export const GEN_AI_AGENT_NAMES = ["claude", "codex", "amp"] as const
-export const GEN_AI_PROVIDER_NAMES = ["anthropic", "openai", "sourcegraph"] as const
+export const GEN_AI_AGENT_NAMES = [
+  "claude",
+  "codex",
+  "amp",
+] as const
+export const GEN_AI_PROVIDER_NAMES = [
+  "anthropic",
+  "openai",
+  "sourcegraph",
+] as const
 export const APP_SCREEN_NAME = "app.screen.name" as const
 export const APP_WIDGET_NAME = "app.widget.name" as const
-export const TELEMETRY_PROPAGATION_DISABLED = "telemetry.propagation.disabled" as const
+export const TELEMETRY_PROPAGATION_DISABLED =
+  "telemetry.propagation.disabled" as const
 export const OTEL_KIND = "otel.kind" as const
 export const SPAN_KIND_CLIENT = "client" as const
 export const SPAN_KIND_SERVER = "server" as const
@@ -145,7 +156,8 @@ export const TEST_ATTEMPT_ID = "test.attempt.id" as const
 export const TEST_ATTEMPT_TOTAL = "test.attempt.total" as const
 export const TEST_CODE_REFERENCE = "test.code_reference" as const
 export const TEST_CONFIGURATION_OS = "test.configuration.os" as const
-export const TEST_CONFIGURATION_ENVIRONMENT = "test.configuration.environment" as const
+export const TEST_CONFIGURATION_ENVIRONMENT =
+  "test.configuration.environment" as const
 export const TEST_CONFIGURATION_BROWSER = "test.configuration.browser" as const
 export const TEST_ARTIFACT_PATH = "test.artifact.path" as const
 export const TEST_SUITE_NAME = "test.suite.name" as const
@@ -170,12 +182,17 @@ export const WEB_VITAL_RATING = "web_vital.rating" as const
 export const WEB_VITAL_ID = "web_vital.id" as const
 export const WEB_VITAL_DELTA = "web_vital.delta" as const
 export const WEB_VITAL_NAVIGATION_TYPE = "web_vital.navigation_type" as const
-export const TOKIO_RUNTIME_WORKERS_COUNT = "tokio.runtime.workers_count" as const
+export const TOKIO_RUNTIME_WORKERS_COUNT =
+  "tokio.runtime.workers_count" as const
 export const TOKIO_RUNTIME_ALIVE_TASKS = "tokio.runtime.alive_tasks" as const
-export const TOKIO_RUNTIME_GLOBAL_QUEUE_DEPTH = "tokio.runtime.global_queue_depth" as const
-export const TOKIO_RUNTIME_BLOCKING_POOL_DEPTH = "tokio.runtime.blocking_pool_depth" as const
-export const TOKIO_RUNTIME_TOTAL_PARK_COUNT = "tokio.runtime.total_park_count" as const
-export const TOKIO_RUNTIME_TOTAL_BUSY_DURATION_MS = "tokio.runtime.total_busy_duration_ms" as const
+export const TOKIO_RUNTIME_GLOBAL_QUEUE_DEPTH =
+  "tokio.runtime.global_queue_depth" as const
+export const TOKIO_RUNTIME_BLOCKING_POOL_DEPTH =
+  "tokio.runtime.blocking_pool_depth" as const
+export const TOKIO_RUNTIME_TOTAL_PARK_COUNT =
+  "tokio.runtime.total_park_count" as const
+export const TOKIO_RUNTIME_TOTAL_BUSY_DURATION_MS =
+  "tokio.runtime.total_busy_duration_ms" as const
 export const TOKIO_RUNTIME_METRIC_NAMES = [
   "tokio.runtime.workers_count",
   "tokio.runtime.alive_tasks",

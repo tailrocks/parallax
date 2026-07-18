@@ -188,9 +188,16 @@ pub const TOKIO_RUNTIME_METRIC_NAMES: &[&str] = &[
 
 #[must_use]
 pub fn resource_json_path(attr: &str) -> String {
+    // GreptimeDB's json_get_string wants a plainly quoted member —
+    // `$."a.b"` — NOT backslash-escaped quotes (`$.\"a.b\"` matches
+    // nothing on the live engine). Embedded quotes stay escaped per the
+    // JSON-path grammar.
     format!(r#"$."{}""#, attr.replace('"', "\\\""))
 }
 
+/// Prometheus-style native metric table base name: every non
+/// `[A-Za-z0-9_]` byte becomes `_` — the same normalization GreptimeDB's
+/// OTLP ingest applies when it creates per-metric tables.
 #[must_use]
 pub fn native_metric_table_base(name: &str) -> String {
     name.chars()

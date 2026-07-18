@@ -641,6 +641,7 @@ fn write_u64(data: &mut [u8], off: usize, value: u64) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
     use std::process::Command;
 
     #[test]
