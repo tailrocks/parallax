@@ -69,24 +69,26 @@ pub(super) fn render_typescript(constants: &[Constant]) -> String {
                 output.push_str(&format!("{declaration}\n"));
             }
         } else if let Some(values) = &constant.values {
-            let rendered = values.iter().map(|value| json(value)).collect::<Vec<_>>();
-            let declaration = format!(
-                "export const {} = [{}] as const",
-                constant.typescript,
-                rendered.join(", ")
-            );
-            if declaration.len() <= 100 {
-                output.push_str(&format!("{declaration}\n"));
-            } else {
-                output.push_str(&format!("export const {} = [\n", constant.typescript));
-                for value in rendered {
-                    output.push_str(&format!("  {value},\n"));
-                }
-                output.push_str("] as const\n");
-            }
+            output.push_str(&render_typescript_values(&constant.typescript, values));
         }
     }
     output
+}
+
+fn render_typescript_values(identifier: &str, values: &[String]) -> String {
+    let rendered = values.iter().map(|value| json(value)).collect::<Vec<_>>();
+    let declaration = format!(
+        "export const {identifier} = [{}] as const",
+        rendered.join(", ")
+    );
+    if declaration.len() <= 100 {
+        return format!("{declaration}\n");
+    }
+    let values = rendered
+        .into_iter()
+        .map(|value| format!("  {value},\n"))
+        .collect::<String>();
+    format!("export const {identifier} = [\n{values}] as const\n")
 }
 
 pub(super) fn render_java(constants: &[Constant]) -> String {
