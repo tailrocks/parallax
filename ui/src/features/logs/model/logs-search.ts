@@ -34,7 +34,10 @@ const logsSearchSchema = z.object({
 
 export function validateLogsSearch(search: Record<string, unknown>): LogsSearch {
   const parsed = logsSearchSchema.parse(search)
-  const severity = Number(parsed.sev)
+  const severity =
+    typeof parsed.sev === "number" || typeof parsed.sev === "string"
+      ? Number(parsed.sev)
+      : Number.NaN
   return {
     q: typeof parsed.q === "string" && parsed.q ? parsed.q : undefined,
     service: typeof parsed.service === "string" && parsed.service ? parsed.service : undefined,
