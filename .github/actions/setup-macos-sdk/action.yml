@@ -1,0 +1,65 @@
+name: Set up verified macOS SDK
+description: Cache the immutable SDK archive, verify its SHA-256, then extract it.
+inputs:
+  version:
+    description: macOS SDK release and directory version.
+    required: true
+  sha256:
+    description: Expected lowercase SHA-256 from the GitHub release asset digest.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Validate macOS SDK identity
+      shell: bash
+      env:
+        SDK_VERSION: ${{ inputs.version }}
+        SDK_SHA256: ${{ inputs.sha256 }}
+      run: |
+        set -euo pipefail
+        [[ "$SDK_VERSION" =~ ^[0-9]+\.[0-9]+$ ]] || {
+          echo "invalid macOS SDK version: $SDK_VERSION" >&2
+          exit 1
+        }
+        [[ "$SDK_SHA256" =~ ^[0-9a-f]{64}$ ]] || {
+          echo "macOS SDK SHA-256 must be exactly 64 lowercase hex characters" >&2
+          exit 1
+        }
+
+    - name: Cache macOS SDK archive
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      with:
+        path: /tmp/macos-sdk-cache/MacOSX${{ inputs.version }}.sdk.tar.xz
+        key: macos-sdk-archive-${{ inputs.version }}-${{ inputs.sha256 }}
+
+    - name: Download macOS SDK archive
+      shell: bash
+      env:
+        SDK_VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        archive="/tmp/macos-sdk-cache/MacOSX${SDK_VERSION}.sdk.tar.xz"
+        if [ ! -f "$archive" ]; then
+          mkdir -p /tmp/macos-sdk-cache
+          curl -fL --retry 3 --retry-all-errors \
+            --output "$archive" \
+            "https://github.com/joseluisq/macosx-sdks/releases/download/${SDK_VERSION}/MacOSX${SDK_VERSION}.sdk.tar.xz"
+        fi
+
+    - name: Verify and extract macOS SDK
+      shell: bash
+      env:
+        SDK_VERSION: ${{ inputs.version }}
+        SDK_SHA256: ${{ inputs.sha256 }}
+      run: |
+        set -euo pipefail
+        archive="/tmp/macos-sdk-cache/MacOSX${SDK_VERSION}.sdk.tar.xz"
+        printf '%s  %s\n' "$SDK_SHA256" "$archive" | sha256sum --check --strict
+        rm -rf /tmp/macos-sdk
+        mkdir -p /tmp/macos-sdk
+        tar -xJf "$archive" -C /tmp/macos-sdk
+        test -d "/tmp/macos-sdk/MacOSX${SDK_VERSION}.sdk"
+        {
+          echo "SDKROOT=/tmp/macos-sdk/MacOSX${SDK_VERSION}.sdk"
+          echo "MACOSX_DEPLOYMENT_TARGET=12.0"
+        } >> "$GITHUB_ENV"

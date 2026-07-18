@@ -4039,6 +4039,11 @@ ceiling = 16341
 
 [[limits]]
 metric = "agent-doc-bytes"
+scope = ".github/AGENTS.md"
+ceiling = 1579
+
+[[limits]]
+metric = "agent-doc-bytes"
 scope = "ui/AGENTS.md"
 ceiling = 14426
 
@@ -7697,5 +7702,4 @@ ceiling = 8
 metric = "rust.inline-test-modules"
 scope = "crates/parallax-analysis/src/test_adapter_export.rs"
 ceiling = 1
-
 

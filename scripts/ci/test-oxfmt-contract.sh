@@ -16,17 +16,17 @@ config="$ui/.oxfmtrc.jsonc"
 [[ $(jq -r '.singleQuote' "$config") == false ]]
 [[ $(jq -r '.tabWidth' "$config") == 2 ]]
 [[ $(jq -r '.trailingComma' "$config") == es5 ]]
-[[ $(jq -r '.printWidth' "$config") == 80 ]]
+[[ $(jq -r '.printWidth' "$config") == 100 ]]
 [[ $(jq -r '.sortImports' "$config") == false ]]
 [[ $(jq -r '.sortPackageJson' "$config") == false ]]
 [[ $(jq -r '.sortTailwindcss.stylesheet' "$config") == src/styles.css ]]
 [[ $(jq -c '.sortTailwindcss.functions' "$config") == '["cn","cva"]' ]]
 [[ $(jq -c '.ignorePatterns' "$config") == '["src/routeTree.gen.ts"]' ]]
-[[ $(shasum -a 256 "$config" | awk '{print $1}') == 6804a8af65081087d786f925b09c6656dc4a14c645b73cddbb90a98a546e0d89 ]]
+[[ $(shasum -a 256 "$config" | awk '{print $1}') == f4b14c788a8026e1803de9d0166fef446933b707ac4f73f494500d3a02e5816e ]]
 
 files=$(git -C "$root" ls-files 'ui/*.ts' 'ui/*.tsx' 'ui/**/*.ts' 'ui/**/*.tsx' | sed 's#^ui/##' | rg -v '^src/routeTree\.gen\.ts$' | sort)
-[[ $(printf '%s\n' "$files" | wc -l | tr -d ' ') == 163 ]]
-[[ $(printf '%s\n' "$files" | shasum -a 256 | awk '{print $1}') == e25e246ddaffb213d6735eb0111ec5c7813bbf91dae9b67f076c8546fa59c49f ]]
+[[ $(printf '%s\n' "$files" | wc -l | tr -d ' ') == 493 ]]
+[[ $(printf '%s\n' "$files" | shasum -a 256 | awk '{print $1}') == 981c8a922295377969d4bb8adeaec7d5ae700fc820e748a4dcff99126eddf80c ]]
 
 platform=$(cd "$ui" && bun -e 'console.log(process.platform + "-" + process.arch)')
 case "$platform" in
@@ -99,7 +99,7 @@ if [[ -d /proc ]]; then
 fi
 
 check_output=$(cd "$ui" && bun run check)
-rg -F '163 files' <<<"$check_output" >/dev/null
+rg -F '493 files' <<<"$check_output" >/dev/null
 [[ -z $(cd "$ui" && bun run --silent format:list) ]]
 
-printf 'Oxfmt contract passed (163 files, %s)\n' "$platform"
+printf 'Oxfmt contract passed (493 files, %s)\n' "$platform"
