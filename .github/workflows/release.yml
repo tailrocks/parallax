@@ -59,7 +59,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 
@@ -129,11 +129,11 @@ jobs:
             builder: zigbuild
             zigbuild_target: x86_64-unknown-linux-gnu.2.17
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - name: Cache Rust toolchain
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.rustup/toolchains
@@ -142,7 +142,7 @@ jobs:
           restore-keys: |
             rustup-${{ runner.os }}-${{ runner.arch }}-
       - name: Cache Cargo registry
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry/cache
@@ -163,14 +163,14 @@ jobs:
           echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
           echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
       - name: Cache mise cargo tools
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.local/share/mise/installs/cargo-*
           key: mise-cargo-tools-${{ runner.os }}-${{ runner.arch }}-${{ matrix.builder }}-${{ hashFiles('mise.toml') }}
           restore-keys: |
             mise-cargo-tools-${{ runner.os }}-${{ runner.arch }}-${{ matrix.builder }}-
             mise-cargo-tools-${{ runner.os }}-${{ runner.arch }}-
-      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
+      - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: ${{ matrix.builder == 'zigbuild' && 'rust zig cargo:cargo-zigbuild cosign syft bun' || 'rust cosign syft bun' }}
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
@@ -179,7 +179,7 @@ jobs:
           TARGET: ${{ matrix.target }}
         run: rustup target add "$TARGET"
       - name: Cache Cargo build artifacts
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: target
           key: cargo-target-${{ runner.os }}-${{ runner.arch }}-${{ matrix.target }}-release-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
@@ -190,7 +190,7 @@ jobs:
             cargo-target-${{ runner.os }}-${{ runner.arch }}-release-${{ hashFiles('Cargo.lock') }}-
             cargo-target-${{ runner.os }}-${{ runner.arch }}-release-
       - name: Cache Bun modules
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.bun/install/cache
           key: bun-${{ runner.os }}-${{ hashFiles('ui/bun.lock') }}
@@ -269,7 +269,7 @@ jobs:
       contents: write
     environment: stable-release
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.0
