@@ -32,16 +32,18 @@ const logsSearchSchema = z.object({
   anchor: z.unknown().optional(),
 })
 
+function parseSeverity(value: unknown): number | undefined {
+  if (typeof value !== "number" && typeof value !== "string") return undefined
+  const severity = Number(value)
+  return Number.isFinite(severity) && severity > 0 ? severity : undefined
+}
+
 export function validateLogsSearch(search: Record<string, unknown>): LogsSearch {
   const parsed = logsSearchSchema.parse(search)
-  const severity =
-    typeof parsed.sev === "number" || typeof parsed.sev === "string"
-      ? Number(parsed.sev)
-      : Number.NaN
   return {
     q: typeof parsed.q === "string" && parsed.q ? parsed.q : undefined,
     service: typeof parsed.service === "string" && parsed.service ? parsed.service : undefined,
-    sev: Number.isFinite(severity) && severity > 0 ? severity : undefined,
+    sev: parseSeverity(parsed.sev),
     where: typeof parsed.where === "string" && parsed.where ? parsed.where : undefined,
     range: typeof parsed.range === "string" ? parsed.range : undefined,
     from: typeof parsed.from === "string" ? parsed.from : undefined,
