@@ -61,9 +61,6 @@ const config: PlaywrightTestConfig = {
     locale: "en-US",
     timezoneId: "UTC",
     colorScheme: "dark",
-    launchOptions: {
-      args: ["--force-prefers-reduced-motion"],
-    },
     actionTimeout: 10_000,
     navigationTimeout: browserMode === "full-stack" ? 30_000 : 15_000,
     trace: "on-first-retry",
@@ -140,6 +137,9 @@ const config: PlaywrightTestConfig = {
       snapshotPathTemplate: "{testDir}/{testFilePath}-snapshots/{arg}{ext}",
       use: {
         browserName: "chromium",
+        // Preserve the established Chromium visual baseline without passing
+        // this Chromium-only switch to Firefox or WebKit projects.
+        launchOptions: { args: ["--force-prefers-reduced-motion"] },
         viewport: { width: 1440, height: 900 },
         deviceScaleFactor: 1,
       },

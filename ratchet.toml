@@ -4039,6 +4039,11 @@ ceiling = 16341
 
 [[limits]]
 metric = "agent-doc-bytes"
+scope = ".github/AGENTS.md"
+ceiling = 1579
+
+[[limits]]
+metric = "agent-doc-bytes"
 scope = "ui/AGENTS.md"
 ceiling = 14426
 
@@ -4392,7 +4397,7 @@ ceiling = 459
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-xtask/src/release/macho_dwarf.rs"
-ceiling = 669
+ceiling = 667
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
@@ -5613,8 +5618,8 @@ ceiling = 16
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/logs/model/logs-search.ts:35"
-ceiling = 26
+scope = "ui/src/features/logs/model/logs-search.ts:41"
+ceiling = 23
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -5832,12 +5837,12 @@ ceiling = 15
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/logs/model/logs-search.ts:35"
-ceiling = 19
+scope = "ui/src/features/logs/model/logs-search.ts:41"
+ceiling = 17
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/logs/model/logs-search.ts:66"
+scope = "ui/src/features/logs/model/logs-search.ts:71"
 ceiling = 13
 
 [[limits]]
@@ -6018,8 +6023,8 @@ ceiling = 70
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/features/investigations/components/investigation-detail-page.tsx:57"
-ceiling = 193
+scope = "ui/src/features/investigations/components/investigation-detail-page.tsx:70"
+ceiling = 191
 
 
 [[limits]]
@@ -7298,11 +7303,6 @@ ceiling = 1
 
 [[limits]]
 metric = "rust.file-lines"
-scope = "crates/parallax-evidence/src/envelope.rs"
-ceiling = 402
-
-[[limits]]
-metric = "rust.file-lines"
 scope = "crates/parallax-analysis/src/junit_reconcile.rs"
 ceiling = 405
 
@@ -7697,5 +7697,3 @@ ceiling = 8
 metric = "rust.inline-test-modules"
 scope = "crates/parallax-analysis/src/test_adapter_export.rs"
 ceiling = 1
-
-

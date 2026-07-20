@@ -16,7 +16,8 @@ platform=$(cd "$ui" && bun -e 'console.log(process.platform + "-" + process.arch
 [[ $(jq -r 'has("jsPlugins")' "$ui/.oxlintrc.jsonc") == false ]]
 [[ $(jq -r '.categories.nursery // "absent"' "$ui/.oxlintrc.jsonc") == absent ]]
 
-if rg -n '(@tanstack/eslint-config|typescript-eslint|@typescript-eslint|eslint-plugin|@oxlint/migrate|typescript@6)' "$package" "$lock"; then
+if rg -n '(@tanstack/eslint-config|typescript-eslint|@typescript-eslint|eslint-plugin|@oxlint/migrate)' "$package" "$lock" ||
+  rg -n '"typescript": \["typescript@6' "$lock"; then
   printf 'legacy TypeScript/ESLint graph is reachable from the final package graph\n' >&2
   exit 1
 fi
@@ -36,13 +37,13 @@ hash_stream() {
 }
 
 selected=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --debug=files .)
-[[ $(printf '%s\n' "$selected" | wc -l | tr -d ' ') == 163 ]]
-[[ $(printf '%s\n' "$selected" | hash_stream) == e25e246ddaffb213d6735eb0111ec5c7813bbf91dae9b67f076c8546fa59c49f ]]
+[[ $(printf '%s\n' "$selected" | wc -l | tr -d ' ') == 493 ]]
+[[ $(printf '%s\n' "$selected" | hash_stream) == e82c14b0b414e4b5ed55a1256a212b2fc09fb4e51f0453a0ec66f21d6544a0c0 ]]
 
 config=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --print-config)
-[[ $(printf '%s\n' "$config" | hash_stream) == 94ea10d824fd58b6f2a9ac34b5074cc181949e864cea923d193b19fcaaac5316 ]]
+[[ $(printf '%s\n' "$config" | hash_stream) == f1796585c8362b98be550755de4b4bb27bfb6aba286e0f041ebfbb0e7410cf7e ]]
 ts_config=$(cd "$ui" && bun ./node_modules/typescript/bin/tsc --showConfig)
-[[ $(printf '%s\n' "$ts_config" | hash_stream) == a1b7ebf783bceaff79d1ee433696afcd3697d397fc4ba90ceeaf2e975a2a2882 ]]
+[[ $(printf '%s\n' "$ts_config" | hash_stream) == 42c4ccf18a377d4251c92d0b013e3b5ff1ea66c78ea74e7f9069e0b640922cd6 ]]
 [[ $(jq -r '.compilerOptions.noPropertyAccessFromIndexSignature' <<<"$ts_config") == true ]]
 [[ $(jq -r '.compilerOptions.strict' <<<"$ts_config") == true ]]
 [[ $(jq -r '.compilerOptions.allowJs' <<<"$ts_config") == false ]]
@@ -125,4 +126,4 @@ cycle_output=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint -A all -D import
 }
 rg -F 'import(no-cycle)' <<<"$cycle_output" >/dev/null
 
-printf 'TypeScript/Oxlint contract passed (163 selected files, 19 rule fixtures)\n'
+printf 'TypeScript/Oxlint contract passed (493 selected files, 19 rule fixtures)\n'

@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import {
   IconAffiliate,
   IconArticle,
@@ -54,6 +54,19 @@ const PIN_ICONS: Record<InvestigationPin["kind"], Icon> = {
   view: IconExternalLink,
 }
 
+function useInvestigationDraft(state: string) {
+  const [draft, setDraft] = useState<InvestigationState>(() => parseInvestigationState(state))
+  const draftRef = useRef(draft)
+  function updateDraft(update: (current: InvestigationState) => InvestigationState) {
+    setDraft((current) => {
+      const next = update(current)
+      draftRef.current = next
+      return next
+    })
+  }
+  return { draft, draftRef, updateDraft }
+}
+
 export function InvestigationDetailPage({
   investigation,
   back,
@@ -62,9 +75,7 @@ export function InvestigationDetailPage({
   back?: PageHeaderBack
 }) {
   const router = useRouter()
-  const [draft, setDraft] = useState<InvestigationState>(() =>
-    parseInvestigationState(investigation.state)
-  )
+  const { draft, draftRef, updateDraft } = useInvestigationDraft(investigation.state)
   const [error, setError] = useState<string | null>(null)
   const windowSearch = investigationWindowSearch(draft.window)
 
@@ -74,7 +85,7 @@ export function InvestigationDetailPage({
       await saveInvestigation({
         id: investigation.id,
         name: investigation.name,
-        state: serializeInvestigationState(draft),
+        state: serializeInvestigationState(draftRef.current),
       })
       await router.invalidate()
     } catch (err) {
@@ -93,14 +104,14 @@ export function InvestigationDetailPage({
   }
 
   function updatePin(index: number, patch: Partial<InvestigationPin>) {
-    setDraft((current) => ({
+    updateDraft((current) => ({
       ...current,
       pins: current.pins.map((pin, i) => (i === index ? { ...pin, ...patch } : pin)),
     }))
   }
 
   function removePin(index: number) {
-    setDraft((current) => ({
+    updateDraft((current) => ({
       ...current,
       pins: current.pins.filter((_, i) => i !== index),
     }))
@@ -233,7 +244,7 @@ export function InvestigationDetailPage({
                 id="investigation-notes"
                 value={draft.notes}
                 onChange={(event) =>
-                  setDraft((current) => ({
+                  updateDraft((current) => ({
                     ...current,
                     notes: event.target.value,
                   }))

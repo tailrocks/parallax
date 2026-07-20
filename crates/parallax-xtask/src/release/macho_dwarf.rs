@@ -11,7 +11,6 @@
 //! rewritten binary is re-signed ad-hoc with `codesign`.
 
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 use anyhow::{Context, Result, bail, ensure};
 use object::{BinaryFormat, Object, ObjectSection};
@@ -89,7 +88,7 @@ fn ensure_dsym_companion(binary: &Path) -> Result<PathBuf> {
          dsymutil is only available when packaging on macOS"
     );
     println!("==> dsymutil {}", binary.display());
-    let status = Command::new("dsymutil")
+    let status = std::process::Command::new("dsymutil")
         .arg(binary)
         .status()
         .context("start dsymutil")?;
@@ -135,7 +134,7 @@ fn resign_macho(binary: &Path) -> Result<()> {
         bail!("Mach-O DWARF embed requires codesign on macOS after rewrite");
     }
     println!("==> codesign ad-hoc {}", binary.display());
-    let status = Command::new("codesign")
+    let status = std::process::Command::new("codesign")
         .args(["-s", "-", "-f"])
         .arg(binary)
         .status()
@@ -641,7 +640,6 @@ fn write_u64(data: &mut [u8], off: usize, value: u64) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::process::Command;
 
     #[test]
     fn rejects_non_macho_bytes() {
@@ -695,7 +693,7 @@ rustflags = ["-C", "link-arg=-Wl,-headerpad,0x10000"]
 static PARALLAX_RELEASE_IDENTITY: &[u8] = b"parallax-release-identity:0.1.0-spike+deadbeef";
 "#,
         )?;
-        let status = Command::new("cargo")
+        let status = std::process::Command::new("cargo")
             .args(["build", "--release"])
             .current_dir(&project)
             .env_remove("CARGO_TARGET_DIR")
@@ -719,7 +717,7 @@ static PARALLAX_RELEASE_IDENTITY: &[u8] = b"parallax-release-identity:0.1.0-spik
             "aarch64-apple-darwin",
             "0.1.0-spike+deadbeef",
         )?;
-        let run = Command::new(&binary)
+        let run = std::process::Command::new(&binary)
             .output()
             .context("run embedded spike")?;
         ensure!(

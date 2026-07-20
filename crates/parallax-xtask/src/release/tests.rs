@@ -314,7 +314,10 @@ fn release_callers_use_one_packager_and_verified_sdk() -> Result<(), String> {
                 .contains("--source-version \"sha256:${digest}\"")
             && include_str!("../../../../mise.toml")
                 .contains(&format!("syft = \"{}\"", verify::SYFT_VERSION)),
-        !stable.contains("workflow_dispatch:")
+        stable.contains("workflow_dispatch:")
+            && stable.contains("description: velnor (default) | github | both")
+            && stable.contains("default: velnor")
+            && stable.contains("options: [velnor, github, both]")
             && stable.contains("STABLE_RELEASE_ENABLED")
             && stable.contains("environment: stable-release"),
         !preview.contains("GH_PARALLAX_HOMEBREW_TAP_TOKEN")
