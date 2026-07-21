@@ -19,7 +19,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: scheduled-measurement
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
