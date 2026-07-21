@@ -55,12 +55,12 @@ jobs:
             echo "sha=${WORKFLOW_RUN_SHA}" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           ref: ${{ steps.source.outputs.sha }}
           # Full history is required to diff against the last published preview.
-          fetch-depth: 0
+          fetch-depth: 0 # required by last-published-preview comparison
 
       - name: Classify changed paths
         id: filter
@@ -185,7 +185,7 @@ jobs:
             builder: zigbuild
             zigbuild_target: x86_64-unknown-linux-gnu.2.17
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           ref: ${{ needs.source-changed.outputs.sha }}
