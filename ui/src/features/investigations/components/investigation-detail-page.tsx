@@ -58,11 +58,9 @@ function useInvestigationDraft(state: string) {
   const [draft, setDraft] = useState<InvestigationState>(() => parseInvestigationState(state))
   const draftRef = useRef(draft)
   function updateDraft(update: (current: InvestigationState) => InvestigationState) {
-    setDraft((current) => {
-      const next = update(current)
-      draftRef.current = next
-      return next
-    })
+    const next = update(draftRef.current)
+    draftRef.current = next
+    setDraft(next)
   }
   return { draft, draftRef, updateDraft }
 }
