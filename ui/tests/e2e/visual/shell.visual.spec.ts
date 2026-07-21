@@ -14,6 +14,8 @@ test.describe("shell visual pilot @visual", () => {
     await shell.openRoot()
     await expect(shell.brandText()).toBeVisible()
     await expect(shell.navItem("Overview")).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Send your first telemetry" })).toBeVisible()
 
     // Stabilize animations before capture.
     await page.emulateMedia({ reducedMotion: "reduce", colorScheme: "dark" })
