@@ -57,12 +57,14 @@ const PIN_ICONS: Record<InvestigationPin["kind"], Icon> = {
 function useInvestigationDraft(state: string) {
   const [draft, setDraft] = useState<InvestigationState>(() => parseInvestigationState(state))
   const draftRef = useRef(draft)
+  const [saved, setSaved] = useState(false)
   function updateDraft(update: (current: InvestigationState) => InvestigationState) {
     const next = update(draftRef.current)
     draftRef.current = next
     setDraft(next)
+    setSaved(false)
   }
-  return { draft, draftRef, updateDraft }
+  return { draft, draftRef, saved, setSaved, updateDraft }
 }
 
 export function InvestigationDetailPage({
@@ -73,12 +75,17 @@ export function InvestigationDetailPage({
   back?: PageHeaderBack
 }) {
   const router = useRouter()
-  const { draft, draftRef, updateDraft } = useInvestigationDraft(investigation.state)
+  const { draft, draftRef, saved, setSaved, updateDraft } = useInvestigationDraft(
+    investigation.state
+  )
   const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
   const windowSearch = investigationWindowSearch(draft.window)
 
   async function save() {
     setError(null)
+    setSaved(false)
+    setSaving(true)
     try {
       await saveInvestigation({
         id: investigation.id,
@@ -86,8 +93,11 @@ export function InvestigationDetailPage({
         state: serializeInvestigationState(draftRef.current),
       })
       await router.invalidate()
+      setSaved(true)
     } catch (err) {
       setError(investigationErrorMessage(err))
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -123,9 +133,9 @@ export function InvestigationDetailPage({
         description="Pinned telemetry pages and working notes."
         actions={
           <>
-            <Button size="sm" onClick={() => void save()}>
+            <Button size="sm" disabled={saving} onClick={() => void save()}>
               <IconPencil data-icon="inline-start" />
-              Save
+              {saving ? "Saving..." : "Save"}
             </Button>
             <AlertDialog>
               <AlertDialogTrigger render={<Button size="sm" variant="ghost-destructive" />}>
@@ -152,6 +162,11 @@ export function InvestigationDetailPage({
       />
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {saved ? (
+        <p className="text-sm text-muted-foreground" role="status">
+          Investigation saved.
+        </p>
+      ) : null}
 
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-2">

@@ -46,9 +46,9 @@ test.describe("investigations product pilot", () => {
 
     await screen.notesField().fill("Persisted note from browser contract")
     await screen.saveButton().click()
-    // Wait for mutation to complete (button stays enabled; assert no error).
+    // Server-confirmed status prevents snapshot reads from racing the mutation.
+    await expect(page.getByRole("status")).toHaveText("Investigation saved.")
     await expect(page.getByText(/error/i)).toHaveCount(0)
-    await expect(page.getByRole("heading", { name: "Mutation pilot case" })).toBeVisible()
 
     // Typed postcondition before relying on list cache.
     const afterSave = await snapshot()
