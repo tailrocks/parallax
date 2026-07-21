@@ -32,6 +32,6 @@ wire spellings and must not be edited by hand.
 
 ## Verification
 
-Run `cargo test -p parallax-semconv` for the narrow crate gate,
+Run `cargo nextest run -p parallax-semconv --locked` for the narrow crate gate,
 `cargo xtask semconv check` for registry/output drift, and
 `cargo xtask facade check` for root-surface drift.

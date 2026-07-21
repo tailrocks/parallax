@@ -71,7 +71,7 @@ Facts an executor may rely on without re-deriving; re-verify only on failure:
 - **Live-engine test lanes**: the real-GreptimeDB tests download and cache
   the engine themselves (`target/greptime-test-bin/`) and are gated behind
   `#[ignore]` — run them with `cargo nextest run --run-ignored all -E
-  'binary(/greptime/)'` (or the per-test `cargo test … -- --ignored`
+  'binary(/greptime/)'` (or the per-test `cargo nextest run … --run-ignored all`
   documented in each test header). A plan's "live engine" verification means
   this shape; a zero-test selection is a command-shape error, not a pass.
 - **Browser verification (operator, 2026-07-17): the `agent-browser` CLI is
@@ -512,7 +512,7 @@ cargo xtask dependencies --all
 cargo xtask ui graphql check
 cargo xtask policy --only ui.runtime-boundaries
 cargo nextest run --locked --workspace --all-targets --profile ci
-cargo test --locked --workspace --doc
+cargo nextest run --locked --workspace --all-targets
 cargo xtask ci --full
 cd ui && bun ci
 cd ui && bun run check

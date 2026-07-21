@@ -91,7 +91,7 @@ fn main() -> anyhow::Result<()> {
             let candidate = build_fix_candidate(
                 b,
                 budget,
-                vec!["cargo test -p checkout".to_string()],
+                vec!["cargo nextest run -p checkout".to_string()],
             );
             let path = out_dir.join(format!("fix-candidate-{}.json", b.anchor.fingerprint));
             fs::write(&path, serde_json::to_string_pretty(&candidate)?)?;

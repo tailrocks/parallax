@@ -3,6 +3,7 @@ dir = "target/nextest"
 
 [test-groups]
 greptime-engine = { max-threads = 1 }
+compile-ui = { max-threads = 1 }
 
 [profile.default]
 retries = 0
@@ -53,3 +54,8 @@ store-failure-output = true
 filter = 'test(managed_engine_roundtrip) | test(only_extension_tables_are_custom) | test(managed_engine_metrics_roundtrip) | test(greptime_conformance_scenarios) | test(forward_only_bootstrap_drops_legacy_exemplar_shapes) | test(invocation_contract_resolves_projections_on_live_engine) | test(measure_m5_gates)'
 test-group = "greptime-engine"
 slow-timeout = { period = "15m", terminate-after = 1, on-timeout = "fail" }
+
+[[profile.default.overrides]]
+filter = 'binary_id(/public_api/)'
+test-group = "compile-ui"
+slow-timeout = { period = "5m", terminate-after = 1, on-timeout = "fail" }

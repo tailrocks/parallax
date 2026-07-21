@@ -1,0 +1,13 @@
+error[E0603]: module `self_telemetry` is private
+ --> tests/ui/private_self_telemetry.rs:1:22
+  |
+1 | use parallax_server::self_telemetry::Installed;
+  |                      ^^^^^^^^^^^^^^  --------- struct `Installed` is not publicly re-exported
+  |                      |
+  |                      private module
+  |
+note: the module `self_telemetry` is defined here
+ --> src/lib.rs
+  |
+  | mod self_telemetry;
+  | ^^^^^^^^^^^^^^^^^^

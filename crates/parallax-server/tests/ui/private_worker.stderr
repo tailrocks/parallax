@@ -1,0 +1,11 @@
+error[E0603]: module `worker` is private
+ --> tests/ui/private_worker.rs:1:22
+  |
+1 | use parallax_server::worker::Worker;
+  |                      ^^^^^^ private module
+  |
+note: the module `worker` is defined here
+ --> src/lib.rs
+  |
+  | mod worker;
+  | ^^^^^^^^^^

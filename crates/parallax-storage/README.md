@@ -31,5 +31,5 @@ compatibility surface.
 
 ## Verification
 
-Run `cargo test -p parallax-storage --all-features` for the narrow crate gate and `cargo xtask facade check` for
+Run `cargo nextest run -p parallax-storage --all-features --locked` for the narrow crate gate and `cargo xtask facade check` for
 root-surface drift.

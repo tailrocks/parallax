@@ -174,7 +174,7 @@ not force private implementation modules public. Shared fixtures use typed
 builders; sleeps, ambient environment mutation, global ports, wall-clock time,
 and unordered assertions are forbidden unless the harness owns and proves the
 boundary. Non-doctest Rust tests run through nextest; doctests remain a separate
-required `cargo test --doc` partition.
+required nextest-discoverable compile-UI partition.
 
 ## Rust Strictness Target
 

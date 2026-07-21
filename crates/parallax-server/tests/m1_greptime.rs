@@ -2,7 +2,7 @@
 //! supervises a real `GreptimeDB` standalone child, bootstraps the DDL, and
 //! round-trips telemetry through the `GreptimeStore` adapter.
 //!
-//! Run with: `cargo test -p parallax-server --test m1_greptime -- --ignored`
+//! Run with: `cargo nextest run -p parallax-server --locked --test m1_greptime --run-ignored all`
 //! The binary is cached under target/greptime-test-bin/ across runs.
 
 #![allow(clippy::expect_used, reason = "test fixture assertions")]

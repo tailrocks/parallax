@@ -3,7 +3,7 @@
   "hook_event_name": "PostToolUse",
   "tool_name": "Bash",
   "tool_input": {
-    "command": "cargo test -p secret-crate -- --password=super-secret-token"
+    "command": "cargo nextest run -p secret-crate -- --password=super-secret-token"
   },
   "tool_response": {
     "stdout": "ok",

@@ -421,7 +421,7 @@ async fn external_runs_register_once() {
     store
         .start_invocation(
             "run_cli",
-            Some("cargo test"),
+            Some("cargo nextest run"),
             Some("one_shot"),
             1_000_000_000,
         )
@@ -437,7 +437,7 @@ async fn external_runs_register_once() {
         .expect("run")
         .expect("present");
     assert_eq!(cli_run.status, "running");
-    assert_eq!(cli_run.command.as_deref(), Some("cargo test"));
+    assert_eq!(cli_run.command.as_deref(), Some("cargo nextest run"));
 }
 
 #[tokio::test]

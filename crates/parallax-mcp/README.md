@@ -117,5 +117,5 @@ compatibility surface.
 
 ## Verification
 
-Run `cargo test -p parallax-mcp` (35 tests) for the crate gate and
+Run `cargo nextest run -p parallax-mcp --locked` (35 tests) for the crate gate and
 `cargo xtask facade check` for root-surface drift.

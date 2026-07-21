@@ -43,7 +43,7 @@ fn semantic_crate_body_checks_roots_links_and_gates() {
     fs::create_dir(directory.path().join("src")).expect("src");
     fs::write(directory.path().join("src/lib.rs"), "").expect("root");
     fs::write(directory.path().join("facade.toml"), "").expect("facade");
-    let source = "+++\nschema_version=1\npackage='x'\nclass='aux'\ndependencies=[]\nfacade_roots=['lib.rs']\n+++\n# x\n\n## Owned concerns\n\nPolicy.\n\n## Source map\n\n- [root](src/lib.rs)\n- [facade](facade.toml)\n\n## Public surface\n\nSee [facade](facade.toml).\n\n## Verification\n\n`cargo test -p x` and `cargo xtask facade check`.\n";
+    let source = "+++\nschema_version=1\npackage='x'\nclass='aux'\ndependencies=[]\nfacade_roots=['lib.rs']\n+++\n# x\n\n## Owned concerns\n\nPolicy.\n\n## Source map\n\n- [root](src/lib.rs)\n- [facade](facade.toml)\n\n## Public surface\n\nSee [facade](facade.toml).\n\n## Verification\n\n`cargo nextest run -p x` and `cargo xtask facade check`.\n";
     let doc = parse(source).expect("crate doc");
     let facade = Facade {
         roots: BTreeMap::from([("lib.rs".to_string(), Vec::new())]),

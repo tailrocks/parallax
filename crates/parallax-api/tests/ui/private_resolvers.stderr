@@ -1,0 +1,11 @@
+error[E0603]: module `resolvers` is private
+ --> tests/ui/private_resolvers.rs:1:19
+  |
+1 | use parallax_api::resolvers::Trace;
+  |                   ^^^^^^^^^ private module
+  |
+note: the module `resolvers` is defined here
+ --> src/lib.rs
+  |
+  | mod resolvers;
+  | ^^^^^^^^^^^^^

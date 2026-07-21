@@ -33,5 +33,5 @@ values inside redaction markers and must never be renamed casually.
 
 ## Verification
 
-Run `cargo test -p parallax-redaction` for the narrow crate gate and
+Run `cargo nextest run -p parallax-redaction --locked` for the narrow crate gate and
 `cargo xtask facade check` for root-surface drift.

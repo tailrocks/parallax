@@ -33,7 +33,7 @@ cargo run --release -- range-check
 ## Tests
 
 ```bash
-cargo test                 # offline unit + optional live parity when GREPTIME_HTTP set
+cargo nextest run          # offline unit + optional live parity when GREPTIME_HTTP set
 ```
 
 Outputs are JSON suitable for pasting into
