@@ -67,20 +67,14 @@ function useInvestigationDraft(state: string) {
   return { draft, draftRef, saved, setSaved, updateDraft }
 }
 
-export function InvestigationDetailPage({
-  investigation,
-  back,
-}: {
-  investigation: Investigation
-  back?: PageHeaderBack
-}) {
+function useInvestigationPersistence(
+  investigation: Investigation,
+  draftRef: { readonly current: InvestigationState },
+  setSaved: (saved: boolean) => void
+) {
   const router = useRouter()
-  const { draft, draftRef, saved, setSaved, updateDraft } = useInvestigationDraft(
-    investigation.state
-  )
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const windowSearch = investigationWindowSearch(draft.window)
 
   async function save() {
     setError(null)
@@ -110,6 +104,26 @@ export function InvestigationDetailPage({
       setError(investigationErrorMessage(err))
     }
   }
+
+  return { error, remove, save, saving }
+}
+
+export function InvestigationDetailPage({
+  investigation,
+  back,
+}: {
+  investigation: Investigation
+  back?: PageHeaderBack
+}) {
+  const { draft, draftRef, saved, setSaved, updateDraft } = useInvestigationDraft(
+    investigation.state
+  )
+  const { error, remove, save, saving } = useInvestigationPersistence(
+    investigation,
+    draftRef,
+    setSaved
+  )
+  const windowSearch = investigationWindowSearch(draft.window)
 
   function updatePin(index: number, patch: Partial<InvestigationPin>) {
     updateDraft((current) => ({
