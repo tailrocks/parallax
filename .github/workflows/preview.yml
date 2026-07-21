@@ -55,7 +55,7 @@ jobs:
             echo "sha=${WORKFLOW_RUN_SHA}" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.0
         with:
           persist-credentials: false
           ref: ${{ steps.source.outputs.sha }}
@@ -185,7 +185,7 @@ jobs:
             builder: zigbuild
             zigbuild_target: x86_64-unknown-linux-gnu.2.17
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.0
         with:
           persist-credentials: false
           ref: ${{ needs.source-changed.outputs.sha }}
@@ -202,7 +202,7 @@ jobs:
           restore-keys: |
             cargo-registry-${{ matrix.os }}-${{ runner.os }}-${{ runner.arch }}-
       - id: sccache
-        uses: mozilla-actions/sccache-action@1583d6b38d7be47f593cb472781bbb21cab4321e # v0.0.10
+        uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
         with:
           version: v0.16.0
           disable_annotations: "false"
