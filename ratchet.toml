@@ -4040,7 +4040,7 @@ ceiling = 16341
 [[limits]]
 metric = "agent-doc-bytes"
 scope = ".github/AGENTS.md"
-ceiling = 1579
+ceiling = 1531
 
 [[limits]]
 metric = "agent-doc-bytes"
