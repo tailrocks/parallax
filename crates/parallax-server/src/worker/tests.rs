@@ -333,10 +333,18 @@ async fn process_is_reentrant_after_failure_shape() {
 
 #[test]
 fn ingest_retry_constants_are_bounded() {
-    assert_eq!(INGEST_RETRIES, 3);
-    assert_eq!(INGEST_BACKOFF.len(), 3);
-    assert!(INGEST_BACKOFF[0] < INGEST_BACKOFF[1]);
-    assert!(INGEST_BACKOFF[1] < INGEST_BACKOFF[2]);
+    assert_eq!(
+        (INGEST_RETRIES, INGEST_BACKOFF),
+        (
+            3,
+            [
+                Duration::from_millis(100),
+                Duration::from_millis(500),
+                Duration::from_secs(2),
+            ],
+        ),
+        "retry count and the complete bounded backoff schedule must remain coupled",
+    );
 }
 
 #[tokio::test]

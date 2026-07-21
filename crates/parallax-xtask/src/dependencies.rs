@@ -363,14 +363,25 @@ fn capture(directory: &Path, program: &str, args: &[&str]) -> Result<String> {
         .output()
         .with_context(|| format!("failed to start {program}"))?;
     if !output.status.success() {
+        let detail = combined_output(&output.stdout, &output.stderr);
         return Err(anyhow::anyhow!(
             "{program} {} exited with {}: {}",
             args.join(" "),
             output.status,
-            String::from_utf8_lossy(&output.stderr).trim()
+            detail,
         ));
     }
     Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+}
+
+fn combined_output(stdout: &[u8], stderr: &[u8]) -> String {
+    let stdout = String::from_utf8_lossy(stdout);
+    let stderr = String::from_utf8_lossy(stderr);
+    [stdout.trim(), stderr.trim()]
+        .into_iter()
+        .filter(|text| !text.is_empty())
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn failure(rule: &str, file: &str, reason: &str, rerun: &str) -> Finding {
