@@ -119,6 +119,12 @@ impl ServerError {
     }
 }
 
+impl From<crate::greptime_supervisor::GreptimeShutdownError> for ServerError {
+    fn from(source: crate::greptime_supervisor::GreptimeShutdownError) -> Self {
+        Self::lifecycle(source)
+    }
+}
+
 pub type ServerResult<T> = Result<T, ServerError>;
 
 #[cfg(test)]

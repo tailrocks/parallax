@@ -235,7 +235,7 @@ async fn health_reports_real_queue_overload_and_recovery() -> Result<(), String>
         return Err(format!("recovery health mismatch: {recovered:?}"));
     }
 
-    handle.shutdown_graceful().await;
+    handle.shutdown_graceful().await.expect("server shutdown");
     Ok(())
 }
 

@@ -61,17 +61,16 @@ impl ServerHandle {
         }
     }
 
-    /// Graceful shutdown: stop listeners first so no new ingest items are
-    /// accepted, then wait for the worker to drain the channel (bounded).
-    pub async fn shutdown_graceful(mut self) {
-        if let Some(supervisor) = &self.supervisor {
-            supervisor.stop();
-        }
+    /// Stop listeners, drain workers, then prove the managed engine exited.
+    pub async fn shutdown_graceful(mut self) -> ServerResult<()> {
         for task in &self.tasks {
             task.abort();
         }
-        let workers = std::mem::take(&mut self.worker_tasks);
-        crate::outcomes::drain_workers(workers, &self.ingest_health).await;
+        crate::outcomes::drain_workers(self.worker_tasks, &self.ingest_health).await;
+        if let Some(supervisor) = self.supervisor.take() {
+            supervisor.stop_and_wait().await?;
+        }
+        Ok(())
     }
 }
 

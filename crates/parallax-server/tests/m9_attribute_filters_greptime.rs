@@ -300,5 +300,5 @@ async fn attribute_filters_narrow_and_count_on_live_engine() {
         "log facet counts match the seeded split"
     );
 
-    handle.shutdown_graceful().await;
+    handle.shutdown_graceful().await.expect("server shutdown");
 }

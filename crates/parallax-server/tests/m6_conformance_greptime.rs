@@ -113,12 +113,18 @@ async fn greptime_conformance_scenarios() {
     }
     assert!(seeded, "seed never became queryable: {last_error:?}");
 
-    handle.shutdown_graceful().await;
+    handle
+        .shutdown_graceful()
+        .await
+        .expect("managed server stops before restart");
     let restarted = parallax_server::start(&config)
         .await
         .expect("managed server restarts");
     conformance::assert_seeded(restarted.store.as_ref(), "conformance_duration", window)
         .await
         .expect("restarted engine retains conformance seed");
-    restarted.shutdown_graceful().await;
+    restarted
+        .shutdown_graceful()
+        .await
+        .expect("restarted managed server stops");
 }

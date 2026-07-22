@@ -32,6 +32,10 @@ pub struct GreptimeSupervisor {
     task: Option<tokio::task::JoinHandle<()>>,
 }
 
+#[derive(Debug, thiserror::Error)]
+#[error("managed GreptimeDB did not release ports 24000–24003 within 10s")]
+pub(crate) struct GreptimeShutdownError;
+
 /// The engine ports must be free before spawning; a foreign listener means
 /// we would supervise one process but query another.
 async fn preflight_port_free(port: u16) -> anyhow::Result<()> {
@@ -421,6 +425,26 @@ impl GreptimeSupervisor {
             task.abort();
         }
         crate::outcomes::note(std::fs::remove_file(&self.pid_path), "remove pid file");
+    }
+
+    /// Stop the monitor and do not return until every managed engine port can
+    /// be rebound. This is the restart-safe shutdown path: aborting the task
+    /// requests child termination, but `kill_on_drop` does not prove the OS has
+    /// released the child's listeners yet.
+    pub(crate) async fn stop_and_wait(mut self) -> Result<(), GreptimeShutdownError> {
+        crate::engine_io::stop_child_and_wait(
+            self.task.take(),
+            &self.pid_path,
+            &[
+                GREPTIME_HTTP_PORT,
+                GREPTIME_GRPC_PORT,
+                GREPTIME_MYSQL_PORT,
+                GREPTIME_POSTGRES_PORT,
+            ],
+        )
+        .await
+        .then_some(())
+        .ok_or(GreptimeShutdownError)
     }
 }
 
