@@ -5,7 +5,7 @@ use parallax_server::{Config, ServerHandle, start};
 fn accepts(_: Option<ServerHandle>) {}
 
 #[test]
-fn documented_public_api_boundary() {
+fn documented_public_api_boundary() -> Result<(), &'static str> {
     // Ordinary integration-test compilation proves the supported imports
     // without launching a second Cargo graph at test runtime.
     let _boundary = (Config::default(), start);
@@ -16,7 +16,12 @@ fn documented_public_api_boundary() {
     // paths private even if somebody deliberately refreshes a widened
     // manifest after making them public.
     let facade = include_str!("../facade.toml");
-    assert!(!facade.contains("mod worker"));
-    assert!(!facade.contains("mod self_telemetry"));
-    assert!(facade.contains("Installed as InstalledSelfTelemetry"));
+    let boundary_is_exact = !facade.contains("mod worker")
+        && !facade.contains("mod self_telemetry")
+        && facade.contains("Installed as InstalledSelfTelemetry");
+    if boundary_is_exact {
+        Ok(())
+    } else {
+        Err("documented facade exposed a private module or lost its public alias")
+    }
 }
