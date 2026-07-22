@@ -25,4 +25,3 @@ tracing = { workspace = true }
 
 [dev-dependencies]
 parallax-test-support = { workspace = true }
-trybuild = { workspace = true }

@@ -15,23 +15,29 @@ Full nextest-pool reservation removed scheduler competition but could not remove
 the nested compiler graph. A larger timeout or retry would preserve the
 enabling structure and make cold correctness depend on machine speed.
 
+Exact-head GitHub run `29887096900` then exposed the same failure class in
+`parallax-api::public_api`: its compile-fail trybuild graph timed out at 60
+seconds on both attempts. This proved nested compiler ownership was the shared
+architectural defect, not a server-specific test-size problem.
+
 ## Structural correction
 
 The supported lifecycle imports now compile as an ordinary Rust integration
 test. Cargo therefore proves them while building the normal test graph, before
-nextest runs. Private-module exclusion uses fixed assertions against the
-committed syntax-derived facade manifest; `cargo xtask facade check` separately
-proves that manifest matches current Rust visibility. Deliberately refreshing a
-widened manifest cannot hide an accidental `pub mod worker` or
-`pub mod self_telemetry` because the fixed exclusion assertions still fail.
+nextest runs. Private-module exclusions use source predicates plus committed
+syntax-derived facade manifests; `cargo xtask facade check` separately proves
+those manifests match current Rust visibility. Deliberately refreshing a
+widened manifest cannot hide accidental visibility because the source
+predicates still fail.
 
-The server no longer needs trybuild, its UI fixture graph, full-pool override,
-or special five-minute allowance. `parallax-api` retains trybuild for its
-different compile-fail contracts.
+Neither server nor API now launches trybuild. Their UI fixture graphs, full-pool
+override, special five-minute allowance, and now-unused trybuild dependency are
+removed.
 
 ## Verification
 
 - `cargo nextest run -p parallax-server --test public_api --locked`
+- `cargo nextest run -p parallax-api --test public_api --locked`
 - `cargo xtask facade check`
 - strict package clippy and formatting
 - exact-head GitHub and Velnor lane proof remain required
