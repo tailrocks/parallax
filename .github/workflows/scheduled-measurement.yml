@@ -50,7 +50,7 @@ jobs:
           disable_annotations: "false"
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
-          install_args: "rust cargo:cargo-fuzz"
+          install_args: "rust cargo-binstall cargo:cargo-fuzz"
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
       # cache: Cargo owns registry downloads; sccache owns compiler outputs.
       - name: Cache Cargo registry
@@ -123,6 +123,12 @@ jobs:
             ~/.cargo/registry/src
           key: cargo-registry-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: cargo-registry-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-
+      - name: Cache Cargo target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: target
+          key: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-
       - name: Run criterion benches (three repeats for variance)
         # Explicit bash gives pipefail so a cargo bench failure fails the step
         # even through tee (plan 107 audit B-2).
