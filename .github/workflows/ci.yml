@@ -176,6 +176,10 @@ jobs:
     env:
       CARGO_INCREMENTAL: "0"
       CARGO_TERM_COLOR: always
+      RUSTFLAGS: "-C link-arg=-fuse-ld=mold"
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "false"
+      SCCACHE_CACHE_SIZE: 20G
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -189,14 +193,31 @@ jobs:
             ~/.cargo/registry/index
             ~/.cargo/registry/src
             ~/.cargo/git/db
-          key: cargo-registry-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: cargo-registry-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-
+          key: cargo-registry-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: cargo-registry-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
+      - uses: rui314/setup-mold@9c9c13bf4c3f1adef0cc596abc155580bcb04444 # v1
+      - uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
+        with:
+          version: v0.16.0
+          disable_annotations: "false"
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "rust bun github:open-telemetry/weaver"
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - run: bun ci
         working-directory: ui
+      - name: Cache Cargo target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: &cargo-target-paths |
+            target
+            !target/**/incremental
+            !target/**/.fingerprint/parallax-*
+            !target/**/build/parallax-*
+            !target/**/deps/libparallax*
+            !target/**/deps/parallax*
+          key: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-xtask-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-xtask-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-
       - run: cargo xtask policy --output github
       - run: cargo xtask facade check
       - run: cargo xtask semconv check
@@ -241,14 +262,30 @@ jobs:
     timeout-minutes: 15
     env:
       CARGO_TERM_COLOR: always
+      CARGO_INCREMENTAL: "0"
+      RUSTFLAGS: "-C link-arg=-fuse-ld=mold"
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "false"
+      SCCACHE_CACHE_SIZE: 20G
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: rui314/setup-mold@9c9c13bf4c3f1adef0cc596abc155580bcb04444 # v1
+      - uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
+        with:
+          version: v0.16.0
+          disable_annotations: "false"
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "rust"
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
+      - name: Cache Cargo target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: *cargo-target-paths
+          key: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-xtask-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-xtask-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-
       - run: cargo xtask docs links --output github
 
   audit:
@@ -263,14 +300,30 @@ jobs:
     timeout-minutes: 15
     env:
       MISE_JOBS: "1"
+      CARGO_INCREMENTAL: "0"
+      RUSTFLAGS: "-C link-arg=-fuse-ld=mold"
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "false"
+      SCCACHE_CACHE_SIZE: 20G
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: rui314/setup-mold@9c9c13bf4c3f1adef0cc596abc155580bcb04444 # v1
+      - uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
+        with:
+          version: v0.16.0
+          disable_annotations: "false"
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
-          install_args: "rust bun cargo:cargo-audit cargo:cargo-deny cargo:cargo-hack cargo:cargo-shear"
+          install_args: "rust bun cargo-binstall cargo:cargo-audit cargo:cargo-deny cargo:cargo-hack cargo:cargo-shear"
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
+      - name: Cache Cargo target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: *cargo-target-paths
+          key: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-xtask-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-xtask-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-
       - run: cargo xtask dependencies --all --output github
 
   check:
@@ -316,6 +369,13 @@ jobs:
           key: cargo-registry-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             cargo-registry-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-
+      - &cargo-target-cache
+        name: Cache Cargo target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: *cargo-target-paths
+          key: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-
       - run: cargo check --workspace --all-targets --locked --timings
       - name: Upload Cargo timing and cache evidence
         if: always()
@@ -370,6 +430,7 @@ jobs:
         with:
           install_args: "rust"
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
+      - *cargo-target-cache
       - run: rustup component add clippy
       - run: cargo clippy --workspace --all-targets --locked -- -D warnings
   test:
@@ -413,8 +474,9 @@ jobs:
           disable_annotations: "false"
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
-          install_args: "rust cargo:cargo-nextest"
+          install_args: "rust aqua:nextest-rs/nextest/cargo-nextest"
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
+      - *cargo-target-cache
       - run: scripts/ci/test-nextest-evidence.sh
       - name: Run Rust tests with slow-test evidence
         run: |
@@ -540,6 +602,7 @@ jobs:
         with:
           install_args: "rust bun"
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
+      - *cargo-target-cache
       - run: rustup component add clippy
       - run: bun ci
         working-directory: ui
@@ -594,12 +657,25 @@ jobs:
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - run: bun ci
         working-directory: ui
+      - &playwright-chromium-cache
+        name: Cache Playwright Chromium
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ matrix.config.lane }}-${{ runner.os }}-${{ hashFiles('ui/bun.lock') }}
+          restore-keys: playwright-chromium-${{ matrix.config.lane }}-${{ runner.os }}-
       - name: Install locked Chromium with system deps
         run: bunx --bun --no-install playwright install --with-deps chromium
         working-directory: ui
       - name: Build UI once
         run: bun run build
         working-directory: ui
+      - name: Cache Cargo target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: *cargo-target-paths
+          key: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-browser-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-browser-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-
       - name: Build browser contracts harness
         run: cargo build --locked -p parallax-server --example browser_contracts_serve
       - name: Run product contract lane
@@ -664,12 +740,19 @@ jobs:
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - run: bun ci
         working-directory: ui
+      - *playwright-chromium-cache
       - name: Install locked Chromium with system deps
         run: bunx --bun --no-install playwright install --with-deps chromium
         working-directory: ui
       - name: Build UI once
         run: bun run build
         working-directory: ui
+      - name: Cache Cargo target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: *cargo-target-paths
+          key: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-browser-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-browser-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-
       - name: Build browser full-stack harness
         run: cargo build --locked -p parallax-server --example browser_full_stack_serve
       - name: Run managed GreptimeDB + Turso full-stack lane
@@ -732,12 +815,24 @@ jobs:
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - run: bun ci
         working-directory: ui
+      - name: Cache Playwright browser matrix
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-all-${{ matrix.config.lane }}-${{ runner.os }}-${{ hashFiles('ui/bun.lock') }}
+          restore-keys: playwright-all-${{ matrix.config.lane }}-${{ runner.os }}-
       - name: Install locked Chromium Firefox WebKit with system deps
         run: bunx --bun --no-install playwright install --with-deps chromium firefox webkit
         working-directory: ui
       - name: Build UI once
         run: bun run build
         working-directory: ui
+      - name: Cache Cargo target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: *cargo-target-paths
+          key: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-browser-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-browser-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-
       - name: Build browser contracts harness
         run: cargo build --locked -p parallax-server --example browser_contracts_serve
       - name: Cross-browser and mobile lanes
@@ -775,20 +870,37 @@ jobs:
     # It cannot write and cannot influence the verifier's verdict.
     permissions:
       contents: read
+    env:
+      CARGO_INCREMENTAL: "0"
+      RUSTFLAGS: "-C link-arg=-fuse-ld=mold"
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "false"
+      SCCACHE_CACHE_SIZE: 20G
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           # Three commits are required by the closure evidence comparison.
           fetch-depth: 3
+      - uses: rui314/setup-mold@9c9c13bf4c3f1adef0cc596abc155580bcb04444 # v1
+      - uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
+        with:
+          version: v0.16.0
+          disable_annotations: "false"
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "rust bun actionlint"
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
-          install_args: "cargo:cargo-nextest cargo:cargo-audit cargo:cargo-deny cargo:cargo-hack cargo:cargo-shear"
+          install_args: "cargo-binstall aqua:nextest-rs/nextest/cargo-nextest cargo:cargo-audit cargo:cargo-deny cargo:cargo-hack cargo:cargo-shear"
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
+      - name: Cache Cargo target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: target
+          key: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-xtask-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-xtask-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-
       - name: Verify closure fixtures or final commit
         run: |
           if test -f plans/107-program-closure-audits.md; then
@@ -827,7 +939,7 @@ jobs:
           disable_annotations: "false"
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
-          install_args: "rust cargo:cargo-fuzz"
+          install_args: "rust cargo-binstall cargo:cargo-fuzz"
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
       # cache: Cargo owns registry downloads; sccache owns compiler outputs.
       - name: Cache Cargo registry
@@ -839,14 +951,29 @@ jobs:
             ~/.cargo/registry/src
           key: cargo-registry-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-fuzz-${{ hashFiles('fuzz/Cargo.lock', 'Cargo.lock') }}
           restore-keys: cargo-registry-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-
-      - run: rustup toolchain install nightly --profile minimal
+      - name: Cache Cargo targets
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            target
+            fuzz/target
+            !target/**/incremental
+            !target/**/.fingerprint/parallax-*
+            !target/**/build/parallax-*
+            !target/**/deps/libparallax*
+            !target/**/deps/parallax*
+          key: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-
+      - run: rustup toolchain install nightly --profile minimal --target x86_64-unknown-linux-gnu
       # Plan 103 Step 5 (PR lane): compile every fuzz target and smoke each
       # boundary briefly; long campaigns stay off PR CI. Benches must compile.
-      - run: cargo +nightly fuzz build
+      # cargo-binstall may supply a MUSL-linked cargo-fuzz binary whose compiled
+      # host default is MUSL; ASan requires GNU libc on these Linux lanes.
+      - run: cargo +nightly fuzz build --target x86_64-unknown-linux-gnu
       - name: Smoke fuzz targets
         run: |
           for target in $(cargo +nightly fuzz list); do
-            cargo +nightly fuzz run "$target" -- -runs=2000 -max_total_time=30
+            cargo +nightly fuzz run "$target" --target x86_64-unknown-linux-gnu -- -runs=2000 -max_total_time=30
           done
       - run: cargo check --locked --benches -p parallax-ingest -p parallax-spool -p parallax-greptime
 
