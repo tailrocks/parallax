@@ -604,6 +604,13 @@ jobs:
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - run: bun ci
         working-directory: ui
+      - &playwright-chromium-cache
+        name: Cache Playwright Chromium
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ matrix.config.lane }}-${{ runner.os }}-${{ hashFiles('ui/bun.lock') }}
+          restore-keys: playwright-chromium-${{ matrix.config.lane }}-${{ runner.os }}-
       - name: Install locked Chromium with system deps
         run: bunx --bun --no-install playwright install --with-deps chromium
         working-directory: ui
@@ -680,6 +687,7 @@ jobs:
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - run: bun ci
         working-directory: ui
+      - *playwright-chromium-cache
       - name: Install locked Chromium with system deps
         run: bunx --bun --no-install playwright install --with-deps chromium
         working-directory: ui
@@ -749,6 +757,12 @@ jobs:
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - run: bun ci
         working-directory: ui
+      - name: Cache Playwright browser matrix
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-all-${{ matrix.config.lane }}-${{ runner.os }}-${{ hashFiles('ui/bun.lock') }}
+          restore-keys: playwright-all-${{ matrix.config.lane }}-${{ runner.os }}-
       - name: Install locked Chromium Firefox WebKit with system deps
         run: bunx --bun --no-install playwright install --with-deps chromium firefox webkit
         working-directory: ui
