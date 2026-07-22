@@ -816,9 +816,9 @@ jobs:
       - name: Build UI once
         run: bun run build
         working-directory: ui
+      - *cargo-target-cache
       - name: Build browser contracts harness
         run: cargo build --locked -p parallax-server --example browser_contracts_serve
-      - *cargo-target-cache
       - name: Cross-browser and mobile lanes
         run: bun run test:browser:cross
         working-directory: ui
