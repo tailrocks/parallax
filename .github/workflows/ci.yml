@@ -945,7 +945,14 @@ jobs:
             ~/.cargo/registry/src
           key: cargo-registry-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-fuzz-${{ hashFiles('fuzz/Cargo.lock', 'Cargo.lock') }}
           restore-keys: cargo-registry-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-
-      - *cargo-target-cache
+      - name: Cache Cargo targets
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            target
+            fuzz/target
+          key: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-
       - run: rustup toolchain install nightly --profile minimal --target x86_64-unknown-linux-gnu
       # Plan 103 Step 5 (PR lane): compile every fuzz target and smoke each
       # boundary briefly; long campaigns stay off PR CI. Benches must compile.
