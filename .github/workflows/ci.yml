@@ -853,7 +853,7 @@ jobs:
   ci-required:
     needs: [changes, actionlint, source-hygiene, security-hygiene, policy, fmt, docs-links, audit, check, clippy, test, ui, ui-formatter-platform, embed, browser-contracts, browser-full-stack, browser-breadth, closure-final, fuzz-bench]
     if: always()
-    name: Ci Required (${{ matrix.config.lane }})
+    name: CI required (${{ matrix.config.lane }})
     strategy:
       fail-fast: false
       matrix:
