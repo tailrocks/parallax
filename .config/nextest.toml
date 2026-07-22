@@ -3,7 +3,6 @@ dir = "target/nextest"
 
 [test-groups]
 greptime-engine = { max-threads = 1 }
-compile-ui = { max-threads = 1 }
 
 [profile.default]
 retries = 0
@@ -56,12 +55,3 @@ store-failure-output = true
 filter = 'binary_id(/::m[0-9]+_.*greptime$/) | binary_id(/::m5_gates$/)'
 test-group = "greptime-engine"
 slow-timeout = { period = "15m", terminate-after = 1, on-timeout = "fail" }
-
-[[profile.default.overrides]]
-filter = 'binary_id(/public_api/)'
-test-group = "compile-ui"
-# trybuild launches a nested compiler graph at test runtime. Reserve the full
-# nextest pool so a cold runner cannot make that compiler compete with the rest
-# of the workspace and cross the timeout before retrying on a warm graph.
-threads-required = "num-test-threads"
-slow-timeout = { period = "5m", terminate-after = 1, on-timeout = "fail" }

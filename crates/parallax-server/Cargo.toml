@@ -71,4 +71,3 @@ reqwest = { workspace = true }
 tempfile = "3"
 tower = { version = "0.5", features = ["util"] }
 parallax-test-support = { workspace = true }
-trybuild = { workspace = true }
