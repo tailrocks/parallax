@@ -8,7 +8,7 @@ fn accepts(_: Option<ServerHandle>) {}
 fn documented_public_api_boundary() {
     // Ordinary integration-test compilation proves the supported imports
     // without launching a second Cargo graph at test runtime.
-    let _ = (Config::default(), start);
+    let _boundary = (Config::default(), start);
     accepts(None);
 
     // The syntax-derived facade manifest is checked independently by

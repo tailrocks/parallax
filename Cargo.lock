@@ -3450,7 +3450,6 @@ dependencies = [
  "tracing",
  "tracing-opentelemetry",
  "tracing-subscriber",
- "trybuild",
 ]
 
 [[package]]
