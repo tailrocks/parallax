@@ -125,8 +125,11 @@ structure quickly.
   release, Parallax follows the Jackin packaging model: a disabled stable
   formula plus a CI-owned rolling `parallax-preview` formula in the
   per-project `tailrocks/homebrew-parallax` tap. Formulae must install release
-  binaries only; never build from source at install time. Preview and stable
-  release archives are both built with Zig/cargo-zigbuild. Tool dependencies
+  binaries only; never build from source at install time. Linux preview and
+  stable archives use Zig/cargo-zigbuild. The two Apple package targets are the
+  measured exception: their single-file Mach-O contract requires native
+  `dsymutil`, Apple linker header padding, DWARF insertion, and `codesign`, so
+  GitHub-hosted macOS builds them outside the CI lane matrix. Tool dependencies
   are installed through `mise`, matching Jackin. Keep this pattern consistent
   across Tailrocks projects.
 - License and attribution (operator, 2026-06-11; extended 2026-06-12): the
