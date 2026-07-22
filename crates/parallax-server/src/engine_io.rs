@@ -1,4 +1,38 @@
 use std::path::Path;
+use std::time::Duration;
+
+pub(crate) async fn wait_for_ports_free(ports: &[u16], timeout: Duration) -> bool {
+    let deadline = std::time::Instant::now() + timeout;
+    loop {
+        let mut listeners = Vec::with_capacity(ports.len());
+        for port in ports {
+            match tokio::net::TcpListener::bind(("127.0.0.1", *port)).await {
+                Ok(listener) => listeners.push(listener),
+                Err(_) => break,
+            }
+        }
+        if listeners.len() == ports.len() {
+            return true;
+        }
+        if std::time::Instant::now() >= deadline {
+            return false;
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+}
+
+pub(crate) async fn stop_child_and_wait(
+    task: Option<tokio::task::JoinHandle<()>>,
+    pid_path: &Path,
+    ports: &[u16],
+) -> bool {
+    if let Some(task) = task {
+        task.abort();
+        let _cancelled = task.await;
+    }
+    crate::outcomes::note(tokio::fs::remove_file(pid_path).await, "remove pid file");
+    wait_for_ports_free(ports, Duration::from_secs(10)).await
+}
 
 pub(crate) async fn reap_stale_child(pid_path: &Path, port: u16) {
     let Some(pid) = tokio::fs::read_to_string(pid_path)
@@ -46,7 +80,7 @@ pub(crate) async fn reap_stale_child(pid_path: &Path, port: u16) {
             {
                 break;
             }
-            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+            tokio::time::sleep(Duration::from_millis(50)).await;
         }
     }
     crate::outcomes::note(

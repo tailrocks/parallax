@@ -150,7 +150,7 @@ Run:
 
 ```bash
 cd poc/evidence-loop
-cargo test          # the eighteen property tests
+cargo nextest run   # the eighteen property tests
 cargo run           # prints derivation/bundle/dispatch/learner summary, writes out/*.json
 ```
 

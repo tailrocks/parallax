@@ -10,7 +10,7 @@
       "actions": [
         { "seq": 1, "action_type": "file_read", "target": "src/payment.rs", "detail": "inspected retry handling in payment.authorize" },
         { "seq": 2, "action_type": "file_edit", "target": "src/payment.rs", "detail": "raised redis retry budget from 2 to 4 attempts, kept 2000ms timeout" },
-        { "seq": 3, "action_type": "command", "target": "cargo test -p checkout", "detail": "exit 0, 84 tests passed" },
+        { "seq": 3, "action_type": "command", "target": "cargo nextest run -p checkout", "detail": "exit 0, 84 tests passed" },
         { "seq": 4, "action_type": "patch", "target": "PR #455", "detail": "opened draft PR: tune payment retry budget" }
       ]
     },

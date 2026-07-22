@@ -3431,7 +3431,6 @@ dependencies = [
  "parallax-spool",
  "parallax-storage",
  "parallax-test-support",
- "proptest",
  "prost",
  "reqwest",
  "rust-embed",

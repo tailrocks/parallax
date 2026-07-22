@@ -8,7 +8,7 @@
 //! is exactly the documented set, and none of the retired `otel_*` raw tables
 //! exist.
 //!
-//! Run with: `cargo test -p parallax-server --test m1_table_inventory_greptime -- --ignored`
+//! Run with: `cargo nextest run -p parallax-server --locked --test m1_table_inventory_greptime --run-ignored all`
 
 #![allow(clippy::expect_used, reason = "test fixture assertions")]
 

@@ -333,10 +333,18 @@ async fn process_is_reentrant_after_failure_shape() {
 
 #[test]
 fn ingest_retry_constants_are_bounded() {
-    assert_eq!(INGEST_RETRIES, 3);
-    assert_eq!(INGEST_BACKOFF.len(), 3);
-    assert!(INGEST_BACKOFF[0] < INGEST_BACKOFF[1]);
-    assert!(INGEST_BACKOFF[1] < INGEST_BACKOFF[2]);
+    assert_eq!(
+        (INGEST_RETRIES, INGEST_BACKOFF),
+        (
+            3,
+            [
+                Duration::from_millis(100),
+                Duration::from_millis(500),
+                Duration::from_secs(2),
+            ],
+        ),
+        "retry count and the complete bounded backoff schedule must remain coupled",
+    );
 }
 
 #[tokio::test]
@@ -370,38 +378,25 @@ async fn failure_stage_replay_behavior_is_characterized() {
     );
 }
 
-proptest::proptest! {
-    #![proptest_config(proptest::test_runner::Config {
-        cases: 32,
-        failure_persistence: None,
-        ..proptest::test_runner::Config::default()
-    })]
-
-    #[test]
-    fn completed_effects_are_not_replayed_after_late_retries(
-        stage_index in 0_usize..5,
-        failures in 1_usize..=INGEST_RETRIES,
-    ) {
-        let stage = [
-            FailureStage::Registration,
-            FailureStage::Broadcast,
-            FailureStage::TelemetryStorage,
-            FailureStage::IssueRecording,
-            FailureStage::TestRecording,
-        ][stage_index];
-        let actual = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .expect("test runtime")
-            .block_on(characterize_failure_after(stage, failures));
-
-        proptest::prop_assert_eq!(
-            actual,
-            (1, 1, 1, 1, 1, 1),
-            "stage={:?}, failures={}",
-            stage,
-            failures,
-        );
+#[tokio::test]
+async fn completed_effects_are_not_replayed_after_late_retries() {
+    // This is a finite 5 x 3 state space. Random property cases repeated
+    // expensive SQLite setup without increasing coverage and could exceed
+    // nextest's slow timeout under parallel CI load.
+    for stage in [
+        FailureStage::Registration,
+        FailureStage::Broadcast,
+        FailureStage::TelemetryStorage,
+        FailureStage::IssueRecording,
+        FailureStage::TestRecording,
+    ] {
+        for failures in 1..=INGEST_RETRIES {
+            assert_eq!(
+                characterize_failure_after(stage, failures).await,
+                (1, 1, 1, 1, 1, 1),
+                "stage={stage:?}, failures={failures}",
+            );
+        }
     }
 }
 

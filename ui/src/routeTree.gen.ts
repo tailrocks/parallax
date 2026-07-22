@@ -9,41 +9,31 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SqlRouteImport } from './routes/sql'
-import { Route as ServicesRouteImport } from './routes/services'
-import { Route as LogsRouteImport } from './routes/logs'
-import { Route as EcosystemRouteImport } from './routes/ecosystem'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as TracesIndexRouteImport } from './routes/traces.index'
-import { Route as TestsIndexRouteImport } from './routes/tests.index'
-import { Route as MetricsIndexRouteImport } from './routes/metrics.index'
-import { Route as IssuesIndexRouteImport } from './routes/issues.index'
-import { Route as InvocationsIndexRouteImport } from './routes/invocations.index'
-import { Route as InvestigationsIndexRouteImport } from './routes/investigations.index'
-import { Route as DashboardsIndexRouteImport } from './routes/dashboards.index'
+import { Route as EcosystemRouteImport } from './routes/ecosystem'
+import { Route as LogsRouteImport } from './routes/logs'
+import { Route as ServicesRouteImport } from './routes/services'
+import { Route as SqlRouteImport } from './routes/sql'
 import { Route as AlertsIndexRouteImport } from './routes/alerts.index'
-import { Route as TracesTraceIdRouteImport } from './routes/traces.$traceId'
-import { Route as TestsCaseKeyRouteImport } from './routes/tests.$caseKey'
-import { Route as ServicesServiceRouteImport } from './routes/services.$service'
-import { Route as MetricsMetricNameRouteImport } from './routes/metrics.$metricName'
-import { Route as IssuesFingerprintRouteImport } from './routes/issues.$fingerprint'
-import { Route as InvocationsInvocationIdRouteImport } from './routes/invocations.$invocationId'
-import { Route as InvestigationsInvestigationIdRouteImport } from './routes/investigations.$investigationId'
+import { Route as DashboardsIndexRouteImport } from './routes/dashboards.index'
 import { Route as DashboardsDashboardIdRouteImport } from './routes/dashboards.$dashboardId'
+import { Route as InvestigationsIndexRouteImport } from './routes/investigations.index'
+import { Route as InvestigationsInvestigationIdRouteImport } from './routes/investigations.$investigationId'
+import { Route as InvocationsIndexRouteImport } from './routes/invocations.index'
+import { Route as InvocationsInvocationIdRouteImport } from './routes/invocations.$invocationId'
+import { Route as IssuesIndexRouteImport } from './routes/issues.index'
+import { Route as IssuesFingerprintRouteImport } from './routes/issues.$fingerprint'
+import { Route as MetricsIndexRouteImport } from './routes/metrics.index'
+import { Route as MetricsMetricNameRouteImport } from './routes/metrics.$metricName'
+import { Route as ServicesServiceRouteImport } from './routes/services.$service'
+import { Route as TestsIndexRouteImport } from './routes/tests.index'
+import { Route as TestsCaseKeyRouteImport } from './routes/tests.$caseKey'
+import { Route as TracesIndexRouteImport } from './routes/traces.index'
+import { Route as TracesTraceIdRouteImport } from './routes/traces.$traceId'
 
-const SqlRoute = SqlRouteImport.update({
-  id: '/sql',
-  path: '/sql',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ServicesRoute = ServicesRouteImport.update({
-  id: '/services',
-  path: '/services',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LogsRoute = LogsRouteImport.update({
-  id: '/logs',
-  path: '/logs',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EcosystemRoute = EcosystemRouteImport.update({
@@ -51,44 +41,19 @@ const EcosystemRoute = EcosystemRouteImport.update({
   path: '/ecosystem',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const LogsRoute = LogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TracesIndexRoute = TracesIndexRouteImport.update({
-  id: '/traces/',
-  path: '/traces/',
+const ServicesRoute = ServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TestsIndexRoute = TestsIndexRouteImport.update({
-  id: '/tests/',
-  path: '/tests/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MetricsIndexRoute = MetricsIndexRouteImport.update({
-  id: '/metrics/',
-  path: '/metrics/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IssuesIndexRoute = IssuesIndexRouteImport.update({
-  id: '/issues/',
-  path: '/issues/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InvocationsIndexRoute = InvocationsIndexRouteImport.update({
-  id: '/invocations/',
-  path: '/invocations/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InvestigationsIndexRoute = InvestigationsIndexRouteImport.update({
-  id: '/investigations/',
-  path: '/investigations/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardsIndexRoute = DashboardsIndexRouteImport.update({
-  id: '/dashboards/',
-  path: '/dashboards/',
+const SqlRoute = SqlRouteImport.update({
+  id: '/sql',
+  path: '/sql',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AlertsIndexRoute = AlertsIndexRouteImport.update({
@@ -96,34 +61,19 @@ const AlertsIndexRoute = AlertsIndexRouteImport.update({
   path: '/alerts/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TracesTraceIdRoute = TracesTraceIdRouteImport.update({
-  id: '/traces/$traceId',
-  path: '/traces/$traceId',
+const DashboardsIndexRoute = DashboardsIndexRouteImport.update({
+  id: '/dashboards/',
+  path: '/dashboards/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TestsCaseKeyRoute = TestsCaseKeyRouteImport.update({
-  id: '/tests/$caseKey',
-  path: '/tests/$caseKey',
+const DashboardsDashboardIdRoute = DashboardsDashboardIdRouteImport.update({
+  id: '/dashboards/$dashboardId',
+  path: '/dashboards/$dashboardId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ServicesServiceRoute = ServicesServiceRouteImport.update({
-  id: '/$service',
-  path: '/$service',
-  getParentRoute: () => ServicesRoute,
-} as any)
-const MetricsMetricNameRoute = MetricsMetricNameRouteImport.update({
-  id: '/metrics/$metricName',
-  path: '/metrics/$metricName',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IssuesFingerprintRoute = IssuesFingerprintRouteImport.update({
-  id: '/issues/$fingerprint',
-  path: '/issues/$fingerprint',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InvocationsInvocationIdRoute = InvocationsInvocationIdRouteImport.update({
-  id: '/invocations/$invocationId',
-  path: '/invocations/$invocationId',
+const InvestigationsIndexRoute = InvestigationsIndexRouteImport.update({
+  id: '/investigations/',
+  path: '/investigations/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvestigationsInvestigationIdRoute =
@@ -132,9 +82,59 @@ const InvestigationsInvestigationIdRoute =
     path: '/investigations/$investigationId',
     getParentRoute: () => rootRouteImport,
   } as any)
-const DashboardsDashboardIdRoute = DashboardsDashboardIdRouteImport.update({
-  id: '/dashboards/$dashboardId',
-  path: '/dashboards/$dashboardId',
+const InvocationsIndexRoute = InvocationsIndexRouteImport.update({
+  id: '/invocations/',
+  path: '/invocations/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvocationsInvocationIdRoute = InvocationsInvocationIdRouteImport.update({
+  id: '/invocations/$invocationId',
+  path: '/invocations/$invocationId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IssuesIndexRoute = IssuesIndexRouteImport.update({
+  id: '/issues/',
+  path: '/issues/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IssuesFingerprintRoute = IssuesFingerprintRouteImport.update({
+  id: '/issues/$fingerprint',
+  path: '/issues/$fingerprint',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MetricsIndexRoute = MetricsIndexRouteImport.update({
+  id: '/metrics/',
+  path: '/metrics/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MetricsMetricNameRoute = MetricsMetricNameRouteImport.update({
+  id: '/metrics/$metricName',
+  path: '/metrics/$metricName',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServicesServiceRoute = ServicesServiceRouteImport.update({
+  id: '/$service',
+  path: '/$service',
+  getParentRoute: () => ServicesRoute,
+} as any)
+const TestsIndexRoute = TestsIndexRouteImport.update({
+  id: '/tests/',
+  path: '/tests/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TestsCaseKeyRoute = TestsCaseKeyRouteImport.update({
+  id: '/tests/$caseKey',
+  path: '/tests/$caseKey',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TracesIndexRoute = TracesIndexRouteImport.update({
+  id: '/traces/',
+  path: '/traces/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TracesTraceIdRoute = TracesTraceIdRouteImport.update({
+  id: '/traces/$traceId',
+  path: '/traces/$traceId',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -305,25 +305,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sql': {
-      id: '/sql'
-      path: '/sql'
-      fullPath: '/sql'
-      preLoaderRoute: typeof SqlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/services': {
-      id: '/services'
-      path: '/services'
-      fullPath: '/services'
-      preLoaderRoute: typeof ServicesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/logs': {
-      id: '/logs'
-      path: '/logs'
-      fullPath: '/logs'
-      preLoaderRoute: typeof LogsRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ecosystem': {
@@ -333,60 +319,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EcosystemRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/logs': {
+      id: '/logs'
+      path: '/logs'
+      fullPath: '/logs'
+      preLoaderRoute: typeof LogsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/traces/': {
-      id: '/traces/'
-      path: '/traces'
-      fullPath: '/traces/'
-      preLoaderRoute: typeof TracesIndexRouteImport
+    '/services': {
+      id: '/services'
+      path: '/services'
+      fullPath: '/services'
+      preLoaderRoute: typeof ServicesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/tests/': {
-      id: '/tests/'
-      path: '/tests'
-      fullPath: '/tests/'
-      preLoaderRoute: typeof TestsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/metrics/': {
-      id: '/metrics/'
-      path: '/metrics'
-      fullPath: '/metrics/'
-      preLoaderRoute: typeof MetricsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/issues/': {
-      id: '/issues/'
-      path: '/issues'
-      fullPath: '/issues/'
-      preLoaderRoute: typeof IssuesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/invocations/': {
-      id: '/invocations/'
-      path: '/invocations'
-      fullPath: '/invocations/'
-      preLoaderRoute: typeof InvocationsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/investigations/': {
-      id: '/investigations/'
-      path: '/investigations'
-      fullPath: '/investigations/'
-      preLoaderRoute: typeof InvestigationsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboards/': {
-      id: '/dashboards/'
-      path: '/dashboards'
-      fullPath: '/dashboards/'
-      preLoaderRoute: typeof DashboardsIndexRouteImport
+    '/sql': {
+      id: '/sql'
+      path: '/sql'
+      fullPath: '/sql'
+      preLoaderRoute: typeof SqlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/alerts/': {
@@ -396,46 +347,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AlertsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/traces/$traceId': {
-      id: '/traces/$traceId'
-      path: '/traces/$traceId'
-      fullPath: '/traces/$traceId'
-      preLoaderRoute: typeof TracesTraceIdRouteImport
+    '/dashboards/': {
+      id: '/dashboards/'
+      path: '/dashboards'
+      fullPath: '/dashboards/'
+      preLoaderRoute: typeof DashboardsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/tests/$caseKey': {
-      id: '/tests/$caseKey'
-      path: '/tests/$caseKey'
-      fullPath: '/tests/$caseKey'
-      preLoaderRoute: typeof TestsCaseKeyRouteImport
+    '/dashboards/$dashboardId': {
+      id: '/dashboards/$dashboardId'
+      path: '/dashboards/$dashboardId'
+      fullPath: '/dashboards/$dashboardId'
+      preLoaderRoute: typeof DashboardsDashboardIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/services/$service': {
-      id: '/services/$service'
-      path: '/$service'
-      fullPath: '/services/$service'
-      preLoaderRoute: typeof ServicesServiceRouteImport
-      parentRoute: typeof ServicesRoute
-    }
-    '/metrics/$metricName': {
-      id: '/metrics/$metricName'
-      path: '/metrics/$metricName'
-      fullPath: '/metrics/$metricName'
-      preLoaderRoute: typeof MetricsMetricNameRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/issues/$fingerprint': {
-      id: '/issues/$fingerprint'
-      path: '/issues/$fingerprint'
-      fullPath: '/issues/$fingerprint'
-      preLoaderRoute: typeof IssuesFingerprintRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/invocations/$invocationId': {
-      id: '/invocations/$invocationId'
-      path: '/invocations/$invocationId'
-      fullPath: '/invocations/$invocationId'
-      preLoaderRoute: typeof InvocationsInvocationIdRouteImport
+    '/investigations/': {
+      id: '/investigations/'
+      path: '/investigations'
+      fullPath: '/investigations/'
+      preLoaderRoute: typeof InvestigationsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/investigations/$investigationId': {
@@ -445,11 +375,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InvestigationsInvestigationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboards/$dashboardId': {
-      id: '/dashboards/$dashboardId'
-      path: '/dashboards/$dashboardId'
-      fullPath: '/dashboards/$dashboardId'
-      preLoaderRoute: typeof DashboardsDashboardIdRouteImport
+    '/invocations/': {
+      id: '/invocations/'
+      path: '/invocations'
+      fullPath: '/invocations/'
+      preLoaderRoute: typeof InvocationsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invocations/$invocationId': {
+      id: '/invocations/$invocationId'
+      path: '/invocations/$invocationId'
+      fullPath: '/invocations/$invocationId'
+      preLoaderRoute: typeof InvocationsInvocationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/issues/': {
+      id: '/issues/'
+      path: '/issues'
+      fullPath: '/issues/'
+      preLoaderRoute: typeof IssuesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/issues/$fingerprint': {
+      id: '/issues/$fingerprint'
+      path: '/issues/$fingerprint'
+      fullPath: '/issues/$fingerprint'
+      preLoaderRoute: typeof IssuesFingerprintRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/metrics/': {
+      id: '/metrics/'
+      path: '/metrics'
+      fullPath: '/metrics/'
+      preLoaderRoute: typeof MetricsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/metrics/$metricName': {
+      id: '/metrics/$metricName'
+      path: '/metrics/$metricName'
+      fullPath: '/metrics/$metricName'
+      preLoaderRoute: typeof MetricsMetricNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/services/$service': {
+      id: '/services/$service'
+      path: '/$service'
+      fullPath: '/services/$service'
+      preLoaderRoute: typeof ServicesServiceRouteImport
+      parentRoute: typeof ServicesRoute
+    }
+    '/tests/': {
+      id: '/tests/'
+      path: '/tests'
+      fullPath: '/tests/'
+      preLoaderRoute: typeof TestsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tests/$caseKey': {
+      id: '/tests/$caseKey'
+      path: '/tests/$caseKey'
+      fullPath: '/tests/$caseKey'
+      preLoaderRoute: typeof TestsCaseKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/traces/': {
+      id: '/traces/'
+      path: '/traces'
+      fullPath: '/traces/'
+      preLoaderRoute: typeof TracesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/traces/$traceId': {
+      id: '/traces/$traceId'
+      path: '/traces/$traceId'
+      fullPath: '/traces/$traceId'
+      preLoaderRoute: typeof TracesTraceIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

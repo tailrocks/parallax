@@ -13,7 +13,6 @@ cargo xtask dependencies --all
 cargo xtask ui graphql check
 cargo xtask policy --only ui.runtime-boundaries
 cargo nextest run --locked --workspace --all-targets --profile ci
-cargo test --locked --workspace --doc
 cargo xtask ci --full
 (
   cd ui

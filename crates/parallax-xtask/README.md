@@ -33,6 +33,6 @@ compatibility surface.
 
 ## Verification
 
-Run `cargo test -p parallax-xtask --all-features` for the narrow crate gate,
+Run `cargo nextest run -p parallax-xtask --all-features --locked` for the narrow crate gate,
 `cargo xtask facade check` for root-surface drift, and
 `cargo xtask docs links` for tracked internal Markdown link integrity.

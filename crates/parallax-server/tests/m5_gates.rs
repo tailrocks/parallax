@@ -2,7 +2,7 @@
 //! p95 and warm bundle-assembly latency, printed for the gates report
 //! (docs/research/architecture/v1-gates-report.md).
 //!
-//! Run with: `cargo test -p parallax-server --test m5_gates -- --ignored --nocapture`
+//! Run with: `cargo nextest run -p parallax-server --locked --test m5_gates --run-ignored all --no-capture`
 
 #![expect(
     clippy::excessive_nesting,

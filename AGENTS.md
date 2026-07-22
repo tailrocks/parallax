@@ -121,14 +121,13 @@ structure quickly.
   unfinished implementation work lives only in `plans/`. Contract changes go
   to the implementation spec first, then code; update `PROJECT_STRUCTURE.md`
   when the directories change.
-- Homebrew packaging policy (operator, 2026-06-15): before the first stable
-  release, Parallax follows the Jackin packaging model: a disabled stable
-  formula plus a CI-owned rolling `parallax-preview` formula in the
-  per-project `tailrocks/homebrew-parallax` tap. Formulae must install release
-  binaries only; never build from source at install time. Preview and stable
-  release archives are both built with Zig/cargo-zigbuild. Tool dependencies
-  are installed through `mise`, matching Jackin. Keep this pattern consistent
-  across Tailrocks projects.
+- Homebrew packaging policy (operator, 2026-06-15): before first stable release,
+  use Jackin's model: disabled stable formula plus CI-owned rolling
+  `parallax-preview` in `tailrocks/homebrew-parallax`. Formulae install release
+  binaries only. Linux archives use Zig/cargo-zigbuild. Apple targets require
+  native `dsymutil`, linker header padding, DWARF insertion, and `codesign`;
+  GitHub-hosted macOS builds them outside CI lane matrix. Install tools through
+  `mise`, matching Jackin and other Tailrocks projects.
 - License and attribution (operator, 2026-06-11; extended 2026-06-12): the
   **entire repository is Apache-2.0** — the root `LICENSE` carries the
   canonical Apache-2.0 text and `NOTICE` the copyright line. Every artifact

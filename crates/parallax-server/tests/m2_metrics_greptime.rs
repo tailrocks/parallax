@@ -9,7 +9,7 @@
 //! collapse), `greptime_timestamp`/`greptime_value` ms→ns scaling, attribute
 //! tag-column grouping, and the cumulative `_bucket` quantile math.
 //!
-//! Run with: `cargo test -p parallax-server --test m2_metrics_greptime -- --ignored`
+//! Run with: `cargo nextest run -p parallax-server --locked --test m2_metrics_greptime --run-ignored all`
 
 #![allow(clippy::expect_used, reason = "test fixture assertions")]
 

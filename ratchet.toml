@@ -929,7 +929,7 @@ ceiling = 5
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-server/src/worker/tests.rs"
-ceiling = 40
+ceiling = 38
 
 [[limits]]
 metric = "rust.assertions"
@@ -4035,7 +4035,12 @@ kind = "handwritten"
 [[limits]]
 metric = "agent-doc-bytes"
 scope = "AGENTS.md"
-ceiling = 16341
+ceiling = 16303
+
+[[limits]]
+metric = "agent-doc-bytes"
+scope = ".github/AGENTS.md"
+ceiling = 1531
 
 [[limits]]
 metric = "agent-doc-bytes"
@@ -6023,8 +6028,8 @@ ceiling = 70
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/features/investigations/components/investigation-detail-page.tsx:70"
-ceiling = 191
+scope = "ui/src/features/investigations/components/investigation-detail-page.tsx:111"
+ceiling = 177
 
 
 [[limits]]

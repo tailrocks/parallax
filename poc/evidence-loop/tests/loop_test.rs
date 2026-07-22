@@ -245,7 +245,7 @@ fn fix_candidate_payload_is_deterministic_and_carries_budget() {
         build_fix_candidate(
             bundle,
             compute_budget(&rows, "backend_error"),
-            vec!["cargo test -p checkout".to_string()],
+            vec!["cargo nextest run -p checkout".to_string()],
         )
     };
     let a = serde_json::to_string(&make()).unwrap();
@@ -373,7 +373,7 @@ fn emitted_artifacts_validate_against_published_schemas() {
         let candidate = build_fix_candidate(
             bundle,
             compute_budget(&rows, "backend_error"),
-            vec!["cargo test -p checkout".to_string()],
+            vec!["cargo nextest run -p checkout".to_string()],
         );
         let candidate_json = serde_json::to_value(&candidate).unwrap();
         assert!(

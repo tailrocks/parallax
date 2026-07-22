@@ -50,6 +50,8 @@ store-success-output = false
 store-failure-output = true
 
 [[profile.default.overrides]]
-filter = 'test(managed_engine_roundtrip) | test(only_extension_tables_are_custom) | test(managed_engine_metrics_roundtrip) | test(greptime_conformance_scenarios) | test(forward_only_bootstrap_drops_legacy_exemplar_shapes) | test(invocation_contract_resolves_projections_on_live_engine) | test(measure_m5_gates)'
+# Every live Greptime integration binary shares the managed port and data root.
+# Match the binary family so adding a scenario cannot silently escape serialization.
+filter = 'binary_id(/::m[0-9]+_.*greptime$/) | binary_id(/::m5_gates$/)'
 test-group = "greptime-engine"
 slow-timeout = { period = "15m", terminate-after = 1, on-timeout = "fail" }

@@ -25,6 +25,8 @@ export interface ProductFixtures {
   productDataset: ProductDatasetId
   /** Ensures control-plane reset completed for productDataset. */
   seeded: void
+  /** Freezes wall-clock labels while leaving application timers running. */
+  fixedTime: void
   diagnostics: DiagnosticSession
   snapshot: () => Promise<ControlSnapshot>
   injectGraphqlFailure: () => Promise<void>
@@ -59,6 +61,13 @@ export const test = base.extend<FoundationFixtures>({
  */
 export const productTest = base.extend<ProductFixtures>({
   productDataset: ["shell-empty", { option: true }],
+  fixedTime: [
+    async ({ page }, use) => {
+      await page.clock.setFixedTime(new Date("2026-07-18T00:00:00Z"))
+      await use()
+    },
+    { auto: true },
+  ],
   seeded: [
     async ({ productDataset }, use) => {
       await resetDataset(productDataset)
