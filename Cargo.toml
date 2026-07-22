@@ -109,7 +109,6 @@ turso = "0.6"
 tower-http = { version = "0.7", features = ["fs", "decompression-gzip"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-trybuild = "1.0.118"
 
 [workspace.lints.rust]
 rust_2024_compatibility = { level = "warn", priority = -1 }
