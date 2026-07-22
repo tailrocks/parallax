@@ -33,6 +33,11 @@ rg '^      - run: cargo xtask semconv check$' "$workflows/ci.yml" >/dev/null || 
   printf 'policy lane does not enforce generated semantic conventions\n' >&2
   failures=$((failures + 1))
 }
+browser_target_key="-browser-\${{ hashFiles"
+if [[ $(rg -F -c -- "$browser_target_key" "$workflows/ci.yml") -ne 6 ]]; then
+  printf 'three browser lanes must share one Cargo target cache namespace\n' >&2
+  failures=$((failures + 1))
+fi
 rg -U '^  closure-final:\n(?:.*\n)*?    permissions:\n      contents: read\n(?:.*\n)*?          install_args: "rust bun actionlint"\n(?:.*\n)*?          install_args: "cargo-binstall aqua:nextest-rs/nextest/cargo-nextest cargo:cargo-audit cargo:cargo-deny cargo:cargo-hack cargo:cargo-shear"\n(?:.*\n)*?            scripts/ci/closure-baseline.sh\n            cargo xtask closure-final$' "$workflows/ci.yml" >/dev/null || {
   printf 'closure-final does not run its full read-only baseline with required tools\n' >&2
   failures=$((failures + 1))

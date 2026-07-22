@@ -668,8 +668,8 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: target
-          key: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-${{ github.sha }}
-          restore-keys: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-
+          key: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-browser-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-browser-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-
       - name: Build browser contracts harness
         run: cargo build --locked -p parallax-server --example browser_contracts_serve
       - name: Run product contract lane
@@ -741,7 +741,12 @@ jobs:
       - name: Build UI once
         run: bun run build
         working-directory: ui
-      - *cargo-target-cache
+      - name: Cache Cargo target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: target
+          key: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-browser-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-browser-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-
       - name: Build browser full-stack harness
         run: cargo build --locked -p parallax-server --example browser_full_stack_serve
       - name: Run managed GreptimeDB + Turso full-stack lane
@@ -816,7 +821,12 @@ jobs:
       - name: Build UI once
         run: bun run build
         working-directory: ui
-      - *cargo-target-cache
+      - name: Cache Cargo target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: target
+          key: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-browser-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-browser-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-
       - name: Build browser contracts harness
         run: cargo build --locked -p parallax-server --example browser_contracts_serve
       - name: Cross-browser and mobile lanes
