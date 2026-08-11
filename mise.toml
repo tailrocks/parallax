@@ -21,6 +21,7 @@ zig = "0.16.0"
 "github:open-telemetry/weaver" = "0.24.2"
 
 [settings]
+lockfile = true
 idiomatic_version_file_enable_tools = ["rust"]
 cargo.binstall_only = true
 cargo.binstall_quickinstall = true
