@@ -1,40 +1,17 @@
 # NOTE: `preview.yml` triggers on `workflow_run.workflows: ["CI"]`,
 # so this workflow name is load-bearing.
-name: CI
+name: CI (public unmerged)
 
 on:
-  push:
+  pull_request:
     branches: [main]
-  schedule:
-    - cron: "0 4 * * 0"
-  workflow_dispatch:
-    inputs:
-      lanes:
-        description: velnor (default) | github | both
-        type: choice
-        default: velnor
-        options: [velnor, github, both]
-  workflow_call:
-    inputs:
-      lanes:
-        type: string
-        default: velnor
-      # Inside a called reusable workflow github.event_name is the CALLER's
-      # event, so callers that need every gate (release.yml) must say so
-      # explicitly.
-      force_all:
-        type: boolean
-        default: false
-    secrets:
-      GH_READONLY_TOKEN:
-        required: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ci-public-unmerged-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   changes:
@@ -42,17 +19,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 20
     outputs:
-      rust: ${{ steps.dispatch.outputs.rust || steps.filter.outputs.rust }}
-      ui: ${{ steps.dispatch.outputs.ui || steps.filter.outputs.ui }}
-      workflows: ${{ steps.dispatch.outputs.workflows || steps.filter.outputs.workflows }}
-      advisory: ${{ steps.dispatch.outputs.advisory || steps.filter.outputs.advisory }}
-      release: ${{ steps.dispatch.outputs.release || steps.filter.outputs.release }}
-      security: ${{ steps.dispatch.outputs.security || steps.filter.outputs.security }}
-      docs: ${{ steps.dispatch.outputs.docs || steps.filter.outputs.docs }}
+      rust: ${{ steps.filter.outputs.rust }}
+      ui: ${{ steps.filter.outputs.ui }}
+      workflows: ${{ steps.filter.outputs.workflows }}
+      advisory: ${{ steps.filter.outputs.advisory }}
+      release: ${{ steps.filter.outputs.release }}
+      security: ${{ steps.filter.outputs.security }}
+      docs: ${{ steps.filter.outputs.docs }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -60,24 +37,8 @@ jobs:
           # Full history is required for committed-range classification.
           fetch-depth: 0 # required by committed-range classification
 
-      - name: Force all gates on workflow_dispatch/forced workflow_call/tag builds
-        id: dispatch
-        if: github.event_name == 'workflow_dispatch' || inputs.force_all == true || startsWith(github.ref, 'refs/tags/')
-        shell: bash
-        run: |
-          {
-            echo "rust=true"
-            echo "ui=true"
-            echo "workflows=true"
-            echo "advisory=true"
-            echo "release=true"
-            echo "security=true"
-            echo "docs=true"
-          } >> "$GITHUB_OUTPUT"
-
       - name: Classify changed paths
         id: filter
-        if: github.event_name != 'workflow_dispatch' && inputs.force_all != true && !startsWith(github.ref, 'refs/tags/')
         shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -94,7 +55,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 10
     steps:
@@ -104,7 +65,7 @@ jobs:
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "actionlint shellcheck ripgrep"
-          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+          github_token: ${{ github.token }}
       - run: actionlint .github/workflows/*.yml
       - run: shellcheck scripts/*.sh scripts/ci/*.sh
       - run: scripts/ci/test-classify-paths.sh
@@ -119,7 +80,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 10
     steps:
@@ -145,7 +106,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 10
     steps:
@@ -155,7 +116,7 @@ jobs:
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "gitleaks zizmor"
-          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+          github_token: ${{ github.token }}
       - name: Scan checked-out tree for secrets
         run: gitleaks dir . --redact=100 --no-banner --no-color --log-level warn
       - name: Audit workflow security offline
@@ -168,7 +129,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 30
     env:
@@ -201,7 +162,7 @@ jobs:
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "rust bun github:open-telemetry/weaver"
-          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+          github_token: ${{ github.token }}
       - run: bun ci
         working-directory: ui
       - name: Cache Cargo target
@@ -227,7 +188,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 30
     env:
@@ -244,7 +205,7 @@ jobs:
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "rust"
-          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+          github_token: ${{ github.token }}
       - run: rustup component add rustfmt
       - run: cargo fmt --all -- --check
 
@@ -255,7 +216,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 15
     env:
@@ -277,7 +238,7 @@ jobs:
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "rust"
-          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+          github_token: ${{ github.token }}
       - name: Cache Cargo target
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -293,7 +254,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 15
     env:
@@ -315,7 +276,7 @@ jobs:
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "rust bun cargo-binstall cargo:cargo-audit cargo:cargo-deny cargo:cargo-hack cargo:cargo-shear"
-          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+          github_token: ${{ github.token }}
       - name: Cache Cargo target
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -331,7 +292,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 30
     env:
@@ -354,7 +315,7 @@ jobs:
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "rust"
-          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+          github_token: ${{ github.token }}
       # cache: Cargo owns registry downloads; sccache owns compiler outputs.
       - name: Cache Cargo registry
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -392,7 +353,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 30
     env:
@@ -427,7 +388,7 @@ jobs:
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "rust"
-          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+          github_token: ${{ github.token }}
       - *cargo-target-cache
       - run: rustup component add clippy
       - run: cargo clippy --workspace --all-targets --locked -- -D warnings
@@ -438,7 +399,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 30
     env:
@@ -473,7 +434,7 @@ jobs:
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "rust aqua:nextest-rs/nextest/cargo-nextest"
-          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+          github_token: ${{ github.token }}
       - *cargo-target-cache
       - run: scripts/ci/test-nextest-evidence.sh
       - name: Run Rust tests with slow-test evidence
@@ -498,7 +459,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 15
     steps:
@@ -508,7 +469,7 @@ jobs:
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "bun ripgrep"
-          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+          github_token: ${{ github.token }}
       - run: bun ci
         working-directory: ui
       - run: scripts/ci/test-bun-contract.sh
@@ -536,7 +497,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 15
     steps:
@@ -546,7 +507,7 @@ jobs:
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "bun ripgrep"
-          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+          github_token: ${{ github.token }}
       - run: bun ci
         working-directory: ui
       - run: scripts/ci/test-oxfmt-contract.sh
@@ -564,7 +525,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 30
     env:
@@ -599,7 +560,7 @@ jobs:
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "rust bun"
-          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+          github_token: ${{ github.token }}
       - *cargo-target-cache
       - run: rustup component add clippy
       - run: bun ci
@@ -616,7 +577,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 45
     env:
@@ -652,7 +613,7 @@ jobs:
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "rust bun"
-          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+          github_token: ${{ github.token }}
       - run: bun ci
         working-directory: ui
       - &playwright-chromium-cache
@@ -697,7 +658,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 60
     env:
@@ -735,7 +696,7 @@ jobs:
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "rust bun"
-          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+          github_token: ${{ github.token }}
       - run: bun ci
         working-directory: ui
       - *playwright-chromium-cache
@@ -774,7 +735,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 45
     env:
@@ -810,7 +771,7 @@ jobs:
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "rust bun"
-          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+          github_token: ${{ github.token }}
       - run: bun ci
         working-directory: ui
       - name: Cache Playwright browser matrix
@@ -860,7 +821,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 20
     # Documented exception (plan 107 audit B-3): GH_READONLY_TOKEN below is a
@@ -888,11 +849,11 @@ jobs:
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "rust bun actionlint"
-          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+          github_token: ${{ github.token }}
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "cargo-binstall aqua:nextest-rs/nextest/cargo-nextest cargo:cargo-audit cargo:cargo-deny cargo:cargo-hack cargo:cargo-shear"
-          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+          github_token: ${{ github.token }}
       - name: Cache Cargo target
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -915,7 +876,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 30
     env:
@@ -938,7 +899,7 @@ jobs:
       - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
         with:
           install_args: "rust cargo-binstall cargo:cargo-fuzz"
-          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+          github_token: ${{ github.token }}
       # cache: Cargo owns registry downloads; sccache owns compiler outputs.
       - name: Cache Cargo registry
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -982,7 +943,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON((github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both')) && '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true},{"lane":"GitHub","runner":"ubuntu-26.04","writer":false}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]' || '[{"lane":"Velnor","runner":["self-hosted","velnor-target-mvp"],"writer":true}]') }}
+        config: [{"lane":"GitHub","runner":"ubuntu-26.04","writer":true}]
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 10
     steps:
