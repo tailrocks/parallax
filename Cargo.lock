@@ -3226,7 +3226,7 @@ dependencies = [
 
 [[package]]
 name = "parallax-analysis"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "parallax-model",
  "parallax-proto",
@@ -3240,7 +3240,7 @@ dependencies = [
 
 [[package]]
 name = "parallax-api"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "juniper",
@@ -3256,7 +3256,7 @@ dependencies = [
 
 [[package]]
 name = "parallax-cli"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -3284,7 +3284,7 @@ dependencies = [
 
 [[package]]
 name = "parallax-evidence"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "hmac",
  "jsonschema",
@@ -3300,7 +3300,7 @@ dependencies = [
 
 [[package]]
 name = "parallax-greptime"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "arrow",
@@ -3322,7 +3322,7 @@ dependencies = [
 
 [[package]]
 name = "parallax-ingest"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "criterion",
  "parallax-model",
@@ -3334,7 +3334,7 @@ dependencies = [
 
 [[package]]
 name = "parallax-mcp"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -3352,7 +3352,7 @@ dependencies = [
 
 [[package]]
 name = "parallax-metadata"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3369,7 +3369,7 @@ dependencies = [
 
 [[package]]
 name = "parallax-model"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "proptest",
@@ -3380,7 +3380,7 @@ dependencies = [
 
 [[package]]
 name = "parallax-proto"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "opentelemetry-proto",
  "parallax-semconv",
@@ -3389,7 +3389,7 @@ dependencies = [
 
 [[package]]
 name = "parallax-redaction"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "proptest",
  "regex",
@@ -3398,14 +3398,14 @@ dependencies = [
 
 [[package]]
 name = "parallax-semconv"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "proptest",
 ]
 
 [[package]]
 name = "parallax-server"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3453,7 +3453,7 @@ dependencies = [
 
 [[package]]
 name = "parallax-spool"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "bytes",
@@ -3465,7 +3465,7 @@ dependencies = [
 
 [[package]]
 name = "parallax-storage"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3482,7 +3482,7 @@ dependencies = [
 
 [[package]]
 name = "parallax-test-support"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3500,7 +3500,7 @@ dependencies = [
 
 [[package]]
 name = "parallax-xtask"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "addr2line",
  "anyhow",

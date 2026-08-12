@@ -1,6 +1,6 @@
 {
   "schema_version": "bundle-v1",
-  "generator": "parallax/0.1.0-dev",
+  "generator": "parallax/0.1.0",
   "anchor": { "kind": "issue", "id": "fp" },
   "issue": {
     "title": "test::Boom: boom",
@@ -46,7 +46,7 @@
   "redaction": { "policy": "redaction-lite-v3", "redacted_counts": {} },
   "bounded": {
     "max_tokens": 8000,
-    "estimated_tokens": 323,
+    "estimated_tokens": 322,
     "dropped_log_lines": 0,
     "truncated_stacktrace": false
   },
