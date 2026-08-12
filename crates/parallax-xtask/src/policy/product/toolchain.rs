@@ -1,6 +1,6 @@
 use std::{collections::BTreeSet, fs, path::Path};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use cargo_metadata::Metadata;
 
 use crate::diagnostic::Finding;
@@ -52,6 +52,10 @@ const CLIPPY_WARN: [&str; 17] = [
 
 pub(super) fn check(root: &Path, metadata: &Metadata, findings: &mut Vec<Finding>) -> Result<()> {
     check_files(root, findings)?;
+    let root_manifest: toml::Value = toml::from_str(&fs::read_to_string(root.join("Cargo.toml"))?)?;
+    let workspace_version = root_manifest["workspace"]["package"]["version"]
+        .as_str()
+        .context("[workspace.package].version must be a string")?;
     let members: BTreeSet<_> = metadata.workspace_members.iter().collect();
     for package in metadata
         .packages
@@ -59,7 +63,7 @@ pub(super) fn check(root: &Path, metadata: &Metadata, findings: &mut Vec<Finding
         .filter(|package| members.contains(&package.id))
     {
         let manifest_path = package.manifest_path.as_std_path();
-        let valid_metadata = package.version.to_string() == "0.1.0-dev"
+        let valid_metadata = package.version.to_string() == workspace_version
             && package.edition.to_string() == "2024"
             && package
                 .rust_version
