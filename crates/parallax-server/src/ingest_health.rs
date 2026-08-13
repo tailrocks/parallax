@@ -3,6 +3,9 @@ use std::sync::Mutex;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
+use axum::extract::State;
+use axum::http::StatusCode;
+use axum::response::IntoResponse;
 use opentelemetry::KeyValue;
 use opentelemetry::metrics::{Counter, Gauge, Histogram};
 use parallax_proto::collector_metrics::ExportMetricsServiceRequest;
@@ -15,6 +18,9 @@ struct SignalState {
     high_water: AtomicUsize,
     retries: AtomicU64,
     drops: AtomicU64,
+    unavailable: AtomicU64,
+    rejects: AtomicU64,
+    spool_fails: AtomicU64,
     capacity: usize,
     attributes: [KeyValue; 1],
     accepted_attributes: [KeyValue; 2],
@@ -29,6 +35,9 @@ impl SignalState {
             high_water: AtomicUsize::new(0),
             retries: AtomicU64::new(0),
             drops: AtomicU64::new(0),
+            unavailable: AtomicU64::new(0),
+            rejects: AtomicU64::new(0),
+            spool_fails: AtomicU64::new(0),
             capacity,
             attributes: [KeyValue::new("signal", signal)],
             accepted_attributes: [
@@ -61,7 +70,13 @@ pub(crate) struct IngestHealth {
     queue_age: Histogram<f64>,
     retries: Counter<u64>,
     drops: Counter<u64>,
+    ingress_rejects: Counter<u64>,
+    spool_writes: Counter<u64>,
+    unsupported_metrics: Counter<u64>,
+    live_tail_lags: Counter<u64>,
     drain: Histogram<f64>,
+    unsupported_metric: AtomicU64,
+    live_tail_lag: AtomicU64,
     self_metric_batches: AtomicU64,
     depth_gauge: Gauge<u64>,
     capacity_gauge: Gauge<u64>,
@@ -102,11 +117,29 @@ impl IngestHealth {
                 .u64_counter("parallax.ingest.worker.drops")
                 .with_unit("{batch}")
                 .build(),
+            ingress_rejects: meter
+                .u64_counter("parallax.ingest.loss.ingress_reject")
+                .with_unit("{batch}")
+                .build(),
+            spool_writes: meter
+                .u64_counter("parallax.ingest.loss.spool_write")
+                .with_unit("{batch}")
+                .build(),
+            unsupported_metrics: meter
+                .u64_counter("parallax.ingest.loss.unsupported_metric")
+                .with_unit("{metric}")
+                .build(),
+            live_tail_lags: meter
+                .u64_counter("parallax.ingest.loss.live_tail_lag")
+                .with_unit("{batch}")
+                .build(),
             drain: meter
                 .f64_histogram("parallax.ingest.worker.drain")
                 .with_unit("s")
                 .build(),
             self_metric_batches: AtomicU64::new(0),
+            unsupported_metric: AtomicU64::new(0),
+            live_tail_lag: AtomicU64::new(0),
             depth_gauge: meter
                 .u64_gauge("parallax.ingest.queue.depth")
                 .with_unit("{batch}")
@@ -161,9 +194,38 @@ impl IngestHealth {
 
     pub(crate) fn unavailable(&self, signal: Signal, waited: Duration) {
         let state = self.state(signal);
+        state.unavailable.fetch_add(1, Ordering::Relaxed);
         self.enqueue_wait
             .record(waited.as_secs_f64(), &state.attributes);
         self.enqueue_outcomes.add(1, &state.unavailable_attributes);
+    }
+
+    pub(crate) fn ingress_reject(&self, signal: Signal) {
+        let state = self.state(signal);
+        state.rejects.fetch_add(1, Ordering::Relaxed);
+        self.ingress_rejects.add(1, &state.attributes);
+    }
+
+    pub(crate) fn spool_failed(&self, signal: Signal) {
+        let state = self.state(signal);
+        state.spool_fails.fetch_add(1, Ordering::Relaxed);
+        self.spool_writes.add(1, &state.attributes);
+    }
+
+    pub(crate) fn unsupported_metric(&self, count: u64) {
+        if count == 0 {
+            return;
+        }
+        self.unsupported_metric.fetch_add(count, Ordering::Relaxed);
+        self.unsupported_metrics.add(count, &[]);
+    }
+
+    pub(crate) fn live_lagged(&self, skipped: u64) {
+        if skipped == 0 {
+            return;
+        }
+        self.live_tail_lag.fetch_add(skipped, Ordering::Relaxed);
+        self.live_tail_lags.add(skipped, &[]);
     }
 
     pub(crate) fn dequeued(&self, signal: Signal, age: Duration, observed: bool) {
@@ -236,6 +298,7 @@ impl IngestHealth {
     }
 
     pub(crate) fn degradation(&self) -> Option<String> {
+        let mut reasons = Vec::new();
         let full = [
             ("traces", self.snapshot(Signal::Traces)),
             ("logs", self.snapshot(Signal::Logs)),
@@ -245,7 +308,34 @@ impl IngestHealth {
         .filter(|(_, snapshot)| snapshot.depth >= snapshot.capacity)
         .map(|(signal, snapshot)| format!("{signal}={}/{}", snapshot.depth, snapshot.capacity))
         .collect::<Vec<_>>();
-        (!full.is_empty()).then(|| format!("ingest queue full ({})", full.join(", ")))
+        if !full.is_empty() {
+            reasons.push(format!("ingest queue full ({})", full.join(", ")));
+        }
+        let drops = self.sum_signal(|state| state.drops.load(Ordering::Relaxed));
+        if drops > 0 {
+            reasons.push(format!("ingest terminal drop ({drops})"));
+        }
+        let spool = self.sum_signal(|state| state.spool_fails.load(Ordering::Relaxed));
+        if spool > 0 {
+            reasons.push(format!("spool write failed ({spool})"));
+        }
+        (!reasons.is_empty()).then(|| reasons.join("; "))
+    }
+
+    pub(crate) fn loss_json(&self) -> String {
+        format!(
+            "{{\"queue_unavailable\":{},\"terminal_drop\":{},\"ingress_reject\":{},\"spool_write\":{},\"unsupported_metric\":{},\"live_tail_lag\":{}}}",
+            self.sum_signal(|state| state.unavailable.load(Ordering::Relaxed)),
+            self.sum_signal(|state| state.drops.load(Ordering::Relaxed)),
+            self.sum_signal(|state| state.rejects.load(Ordering::Relaxed)),
+            self.sum_signal(|state| state.spool_fails.load(Ordering::Relaxed)),
+            self.unsupported_metric.load(Ordering::Relaxed),
+            self.live_tail_lag.load(Ordering::Relaxed),
+        )
+    }
+
+    fn sum_signal(&self, read: impl Fn(&SignalState) -> u64) -> u64 {
+        self.signals.iter().map(read).sum()
     }
 
     fn record_gauges(&self, state: &SignalState) {
@@ -279,6 +369,28 @@ impl IngestHealth {
             Signal::Sentry => 3,
         }]
     }
+}
+
+pub(crate) async fn health_handler(
+    State(health): State<std::sync::Arc<IngestHealth>>,
+) -> impl IntoResponse {
+    if let Some(reason) = health.degradation() {
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
+            format!("degraded: {reason}"),
+        )
+    } else {
+        (StatusCode::OK, "ok".to_string())
+    }
+}
+
+pub(crate) async fn loss_handler(
+    State(health): State<std::sync::Arc<IngestHealth>>,
+) -> impl IntoResponse {
+    (
+        [(axum::http::header::CONTENT_TYPE, "application/json")],
+        health.loss_json(),
+    )
 }
 
 #[derive(Debug)]

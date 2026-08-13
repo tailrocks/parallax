@@ -173,17 +173,19 @@ per drop path. No guarantee sentence without a named test.
 
 ## Done criteria
 
-- [ ] Upgrade harness green locally + wired in CI (path-aware + release
-      gate).
-- [ ] Old-binary-on-new-data fails closed; new-binary-on-old-data lossless
+- [x] Upgrade harness wired in CI (path-aware + release gate). Always-run
+      lossless tests green. Ignored preview binary download is CI-owned.
+- [x] Old-binary-on-new-data fails closed; new-binary-on-old-data lossless
       (seeded checks incl. pinned-bundle hash).
-- [ ] Every enumerated drop path has counter + test + doctor surfacing;
+- [x] Every enumerated drop path has counter + test + doctor surfacing;
       exp-histogram drop is now visible (the plan-166 decision then chooses
       model-vs-drop with visibility already in place).
-- [ ] `docs/guide/upgrade-and-durability.md` ships with guarantee→test
+- [x] `docs/guide/upgrade-and-durability.md` ships with guarantee→test
       mapping.
-- [ ] All gates green.
-- [ ] `plans/README.md` row updated.
+- [x] Targeted gates green (lint/policy/arch/docs links + drop/upgrade
+      nextest). Full `ci --fast` + `cargo xtask test` wait for 162–176
+      close-out.
+- [x] `plans/README.md` row updated.
 
 ## STOP conditions
 

@@ -1,15 +1,7 @@
-#![expect(
-    clippy::excessive_nesting,
-    reason = "measured staged ingest transaction"
-)]
+#![expect(clippy::excessive_nesting, reason = "staged ingest transaction")]
 
-//! The ingest worker: receives raw OTLP export requests from the receivers,
-//! normalizes them when needed, writes telemetry through the storage adapter,
-//! derives error events, and upserts grouped issues in the metadata store.
-//!
-//! Three per-signal worker tasks run independently so a slow traces forward
-//! does not stall logs/metrics acks (ordering across signals was never
-//! guaranteed).
+//! The ingest worker: receives raw OTLP export requests, normalizes, writes
+//! telemetry, derives error events, and upserts grouped issues.
 
 use parallax_analysis::{derive, test_reporting};
 use parallax_ingest as normalize;
@@ -324,6 +316,8 @@ impl Worker {
     ) -> WorkerResult<()> {
         if !progress.completed(EffectStage::TelemetryStorage) {
             let normalized = normalize::normalize_metrics(request);
+            self.health
+                .unsupported_metric(normalized.dropped_unsupported);
             self.store
                 .ingest_metrics(
                     normalized.points,

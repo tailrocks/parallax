@@ -90,7 +90,10 @@ async fn envelope(
     }
 
     match parse_envelope(&body) {
-        EnvelopeOutcome::Rejected { reason } => reject_response(reason),
+        EnvelopeOutcome::Rejected { reason } => {
+            state.ingest.health.ingress_reject(Signal::Sentry);
+            reject_response(reason)
+        }
         EnvelopeOutcome::Accepted {
             event_id,
             event_json,
@@ -106,6 +109,7 @@ async fn accept_event(
     event_json: serde_json::Value,
 ) -> Response {
     if event_id.is_empty() || !is_32_hex(&event_id) {
+        state.ingest.health.ingress_reject(Signal::Sentry);
         return (
             StatusCode::BAD_REQUEST,
             "malformed event: missing or invalid event_id",
@@ -113,6 +117,7 @@ async fn accept_event(
             .into_response();
     }
     let Some(row) = derive_from_sentry_event(&event_json) else {
+        state.ingest.health.ingress_reject(Signal::Sentry);
         return (StatusCode::BAD_REQUEST, "malformed event payload").into_response();
     };
     let durable = match serde_json::to_vec(&row) {
@@ -136,6 +141,7 @@ async fn accept_event(
         .await
     {
         tracing::warn!(error = %e, "sentry spool write failed");
+        state.ingest.health.spool_failed(Signal::Sentry);
         return (
             StatusCode::SERVICE_UNAVAILABLE,
             [(header::RETRY_AFTER, "1")],

@@ -888,7 +888,7 @@ ceiling = 7
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-ingest/src/tests.rs"
-ceiling = 47
+ceiling = 44
 
 [[limits]]
 metric = "rust.assertions"
@@ -1055,6 +1055,11 @@ scope = "crates/parallax-server/tests/m6_conformance_greptime.rs"
 ceiling = 1
 
 [[limits]]
+metric = "rust.test-sleeps"
+scope = "crates/parallax-server/tests/upgrade_preview.rs"
+ceiling = 2
+
+[[limits]]
 metric = "rust.test-temp-root-accesses"
 scope = "crates/parallax-cli/src/doctor/tests.rs"
 ceiling = 1
@@ -1092,6 +1097,11 @@ ceiling = 4
 [[limits]]
 metric = "rust.test-wall-clocks"
 scope = "crates/parallax-server/tests/m6_conformance_greptime.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.test-wall-clocks"
+scope = "crates/parallax-server/tests/upgrade_preview.rs"
 ceiling = 1
 
 [[limits]]
@@ -4211,6 +4221,21 @@ ceiling = 8
 
 [[limits]]
 metric = "rust.assertions"
+scope = "crates/parallax-metadata/src/turso/upgrade_tests.rs"
+ceiling = 3
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/src/ingest_health/tests.rs"
+ceiling = 9
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/tests/upgrade_contract.rs"
+ceiling = 2
+
+[[limits]]
+metric = "rust.assertions"
 scope = "crates/parallax-evidence/src/claude_code.rs"
 ceiling = 55
 
@@ -4418,7 +4443,7 @@ ceiling = 450
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-cli/src/doctor.rs"
-ceiling = 515
+ceiling = 489
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4478,12 +4503,17 @@ ceiling = 635
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/src/serve.rs"
-ceiling = 677
+ceiling = 665
 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/src/worker.rs"
-ceiling = 431
+ceiling = 430
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-server/src/sentry_http.rs"
+ceiling = 405
 
 [[limits]]
 metric = "rust.file-lines"
@@ -6979,7 +7009,7 @@ ceiling = 115
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-cli/src/doctor.rs::doctor"
-ceiling = 153
+ceiling = 132
 
 [[limits]]
 metric = "rust.function-lines"

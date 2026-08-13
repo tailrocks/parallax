@@ -19,6 +19,8 @@ use parallax_storage::{
     PruneJournalStepState, PrunePlan, PrunePlanLimits, PruneSnapshot, PruneStepStart, PruneStore,
 };
 
+mod http;
+
 const SPOOL_SIGNALS: [(&str, &str); 3] = [
     ("traces", "traces.pspl"),
     ("logs", "logs.pspl"),
@@ -127,15 +129,6 @@ fn spool_stats(spool_dir: &Path, stem: &str, active_file: &str) -> SignalSpoolSt
     }
 }
 
-async fn check_http(url: &str) -> Option<String> {
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(2))
-        .build()
-        .ok()?;
-    let response = client.get(url).send().await.ok()?;
-    response.status().is_success().then(|| "ok".to_string())
-}
-
 #[expect(
     clippy::too_many_lines,
     reason = "linear inventory walkthrough with narration"
@@ -145,28 +138,7 @@ pub(crate) async fn doctor() -> anyhow::Result<()> {
     let dir = config.data_dir();
     println!("parallax doctor");
     println!("  data dir: {} ({})", dir.display(), human(dir_size(&dir)));
-
-    // Server + listeners.
-    for (name, url) in [
-        ("api (:4000)", "http://127.0.0.1:4000/health"),
-        ("greptime child (:24000)", "http://127.0.0.1:24000/health"),
-    ] {
-        match check_http(url).await {
-            Some(_) => println!("  {name}: ok"),
-            None => println!("  {name}: NOT RESPONDING"),
-        }
-    }
-    match check_http("http://127.0.0.1:4000/version").await {
-        Some(_) => {
-            let version = reqwest::get("http://127.0.0.1:4000/version")
-                .await?
-                .text()
-                .await
-                .unwrap_or_default();
-            println!("  server version: {version}");
-        }
-        None => println!("  server version: unavailable (is `parallax serve` running?)"),
-    }
+    http::print_server_probes().await?;
 
     // Engine binary.
     let engine = dir.join("bin/greptime");

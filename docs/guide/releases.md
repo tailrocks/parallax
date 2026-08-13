@@ -1,5 +1,10 @@
 # Rehearse and verify releases
 
+The [upgrade and durability](upgrade-and-durability.md) contract is a
+release gate: the ignored preview-harness test must stay green on
+metadata/spool/server/greptime changes, and the stable workflow runs it
+before publish.
+
 Parallax uses one repository-owned Rust archive implementation for local
 rehearsal, rolling previews, and future stable releases. Every archive contains
 one top-level `parallax` executable with normalized metadata and retains source

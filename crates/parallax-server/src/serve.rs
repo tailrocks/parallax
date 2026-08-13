@@ -4,15 +4,12 @@
 
 use crate::config::Config;
 use crate::errors::{ServerError, ServerResult};
-use crate::ingest_health::IngestHealth;
+use crate::ingest_health::{IngestHealth, health_handler, loss_handler};
 use crate::ingest_runtime::{IngestState, assemble_ingest};
 use crate::otlp_grpc::OtlpGrpc;
 use crate::otlp_http;
 use axum::Router;
-use axum::extract::State;
-use axum::http::StatusCode;
 use axum::middleware;
-use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use parallax_metadata::TursoMetadataStore;
 use parallax_spool::{Spool, SpoolRetention};
@@ -269,6 +266,7 @@ fn build_api_router(
         .merge(
             Router::new()
                 .route("/health", get(health_handler))
+                .route("/ingest/loss", get(loss_handler))
                 .with_state(ingest_health),
         )
         .route("/version", get(|| async { env!("CARGO_PKG_VERSION") }))
@@ -335,17 +333,6 @@ fn build_api_router(
             router.fallback_service(tower_http::services::ServeDir::new(&dist).fallback(shell))
         }
         _ => embedded_ui::fallback(router),
-    }
-}
-
-async fn health_handler(State(health): State<Arc<IngestHealth>>) -> impl IntoResponse {
-    if let Some(reason) = health.degradation() {
-        (
-            StatusCode::SERVICE_UNAVAILABLE,
-            format!("degraded: {reason}"),
-        )
-    } else {
-        (StatusCode::OK, "ok".to_string())
     }
 }
 

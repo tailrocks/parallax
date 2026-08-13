@@ -58,7 +58,8 @@ pub(crate) fn assemble_ingest(
         senders,
         health: health.clone(),
     };
-    let live = crate::live::channels();
+    let mut live = crate::live::channels();
+    live.health = Some(health.clone());
     let worker = Worker::new_with_health(store, metadata, live.clone(), health.clone());
     let workers = vec![
         tokio::spawn(worker.clone().run(Signal::Traces, receivers.traces)),

@@ -15,4 +15,8 @@ pub use turso::{
     DeployDeliveryRecord, DeployStoreError, EvidenceClaimRow, FixerOutcomeStoreRecord,
     IncidentBundleSnapshot, SentryAck, SentryAckError, TursoMetadataStore, payload_sha256_hex,
 };
+#[cfg(test)]
+#[path = "turso/upgrade_tests.rs"]
+mod upgrade_tests;
+
 // re-export keeps pin types public while the module stays crate-private

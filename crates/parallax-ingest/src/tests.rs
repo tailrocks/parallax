@@ -488,9 +488,15 @@ fn exponential_histogram_is_dropped_today() {
         ..Default::default()
     });
     let normalized = normalize_metrics(&request);
-    assert!(normalized.points.is_empty());
-    assert!(normalized.histograms.is_empty());
-    assert!(normalized.exemplars.is_empty());
+    assert_eq!(
+        (
+            normalized.points.len(),
+            normalized.histograms.len(),
+            normalized.exemplars.len(),
+            normalized.dropped_unsupported
+        ),
+        (0, 0, 0, 1)
+    );
 }
 
 #[test]
@@ -501,8 +507,14 @@ fn summary_is_dropped_today() {
         ..Default::default()
     });
     let normalized = normalize_metrics(&request);
-    assert!(normalized.points.is_empty());
-    assert!(normalized.histograms.is_empty());
+    assert_eq!(
+        (
+            normalized.points.len(),
+            normalized.histograms.len(),
+            normalized.dropped_unsupported
+        ),
+        (0, 0, 1)
+    );
 }
 
 #[test]

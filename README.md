@@ -43,6 +43,7 @@ The V1 implementation (workspace under [`crates/`](crates/), web UI under
 - **[CLI reference](docs/guide/cli.md)** — every `parallax` command.
 - **[Agent how-to](docs/guide/agent-howto.md)** — point your coding agent at `parallax issue context`.
 - **[Conventions](docs/guide/conventions.md)** — resource attributes, `parallax.run.id`, exception encodings, DB wrapper spans.
+- **[Upgrade and durability](docs/guide/upgrade-and-durability.md)** — data-dir upgrade contract and loss counters.
 - **[Evidence bundle schema (`bundle-v1`)](schema/evidence-bundle.v1.schema.json)** — portable JSON Schema for the canonical bundle bytes (versioning policy in [`schema/README.md`](schema/README.md)).
 - **Developing Parallax itself** — see [CONTRIBUTING.md § Development](CONTRIBUTING.md#development).
 

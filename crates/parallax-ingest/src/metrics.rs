@@ -5,12 +5,15 @@ pub struct NormalizedMetrics {
     pub points: Vec<MetricPointRow>,
     pub histograms: Vec<HistogramRow>,
     pub exemplars: Vec<MetricExemplarRow>,
+    /// Exponential-histogram / summary metrics received but not stored (V1).
+    pub dropped_unsupported: u64,
 }
 
 pub fn normalize_metrics(request: &ExportMetricsServiceRequest) -> NormalizedMetrics {
     let mut points = Vec::new();
     let mut histograms = Vec::new();
     let mut exemplars = Vec::new();
+    let mut dropped_unsupported = 0_u64;
     for rm in &request.resource_metrics {
         let resource_attrs = rm
             .resource
@@ -81,9 +84,10 @@ pub fn normalize_metrics(request: &ExportMetricsServiceRequest) -> NormalizedMet
                             });
                         }
                     }
-                    // Exponential histograms / summaries: V1 stores nothing
-                    // yet; arrival is surfaced through doctor counters later.
-                    _ => {}
+                    Some(Data::ExponentialHistogram(_) | Data::Summary(_)) => {
+                        dropped_unsupported += 1;
+                    }
+                    None => {}
                 }
             }
         }
@@ -92,6 +96,7 @@ pub fn normalize_metrics(request: &ExportMetricsServiceRequest) -> NormalizedMet
         points,
         histograms,
         exemplars,
+        dropped_unsupported,
     }
 }
 

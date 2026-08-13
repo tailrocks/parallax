@@ -1,0 +1,84 @@
+name: Upgrade harness
+
+on:
+  pull_request:
+    paths:
+      - "crates/parallax-metadata/**"
+      - "crates/parallax-spool/**"
+      - "crates/parallax-greptime/**"
+      - "crates/parallax-server/**"
+      - "crates/parallax-ingest/**"
+      - ".github/workflows/upgrade-harness.yml"
+  push:
+    branches: [main]
+    paths:
+      - "crates/parallax-metadata/**"
+      - "crates/parallax-spool/**"
+      - "crates/parallax-greptime/**"
+      - "crates/parallax-server/**"
+      - "crates/parallax-ingest/**"
+      - ".github/workflows/upgrade-harness.yml"
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upgrade-harness-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview-upgrade:
+    name: Preview data dir
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    env:
+      RUSTFLAGS: "-C link-arg=-fuse-ld=mold"
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "false"
+      SCCACHE_CACHE_SIZE: 20G
+      CARGO_INCREMENTAL: "0"
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Cache Cargo registry
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/cache
+            ~/.cargo/registry/index
+            ~/.cargo/registry/src
+            ~/.cargo/git/db
+          key: cargo-registry-github-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-registry-github-${{ runner.os }}-${{ runner.arch }}-
+      - name: Cache Cargo target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: target
+          key: cargo-target-github-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: cargo-target-github-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-
+      - name: Cache preview binary
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/parallax-upgrade-preview
+          key: preview-bin-${{ runner.os }}-${{ runner.arch }}-preview
+      - uses: rui314/setup-mold@9c9c13bf4c3f1adef0cc596abc155580bcb04444 # v1
+      - uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
+        with:
+          version: v0.16.0
+          disable_annotations: "false"
+      - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
+        with:
+          install_args: "rust aqua:nextest-rs/nextest/cargo-nextest"
+          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+      - name: Run ignored upgrade harness
+        env:
+          CARGO_TARGET_TMPDIR: ${{ runner.temp }}/parallax-upgrade-preview
+        run: |
+          mkdir -p "$CARGO_TARGET_TMPDIR"
+          cargo nextest run -p parallax-server --locked --run-ignored only \
+            -E 'test(/upgrade/)' --no-fail-fast
