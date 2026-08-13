@@ -14,11 +14,11 @@ under `docs/research/validation/`. Do not keep plan history here.
 | [163](163-playground-example-upgrades.md) | Upgrade every playground example to current-latest instrumentation and re-verify emission | BLOCKED — depends on 162; SigNoz v0.137.0 Foundry layout blocks the pinned full-lab re-verify |
 | [164](164-playground-feature-coverage.md) | Extend the playground until every Parallax feature has a scripted scenario | BLOCKED — depends on 162+163 |
 | [165](165-user-lens-comparison.md) | Run the full playground sweep and record a user-lens comparison across all backends | BLOCKED — depends on 162–164 |
-| [166](166-production-readiness-fix-loop.md) | Drive every verified discrepancy to zero — the production-readiness fix loop | BLOCKED — W5 list empty (`DISCREPANCY:`/`CLOSED:`/`PROMOTED` count=0); 165+167 not executed |
+| [166](166-production-readiness-fix-loop.md) | Drive every verified discrepancy to zero — the production-readiness fix loop | BLOCKED — W5 has 1 open `DISCREPANCY:` (not-found React #418 from plan 170 diagnostics-auto); 165+167 not executed |
 | [167](167-agent-browser-ui-verification.md) | Verify every Parallax UI surface with agent-browser — functional + responsive | BLOCKED — depends on 163+164 seeded stack |
 | [168](168-rust-correctness-test-wave.md) | Close the correctness-critical Rust test gaps (wave 1) | DONE |
 | [169](169-rust-parity-and-structural-tests.md) | Fake/engine parity, resolver depth, and metadata versioning (wave 2) | DONE |
-| [170](170-playwright-critical-coverage.md) | Playwright coverage for every critical user flow | TODO — independent; dataset seam first |
+| [170](170-playwright-critical-coverage.md) | Playwright coverage for every critical user flow | IN PROGRESS — steps 1–4 (seam, CRUD, deep-read, honesty+diagnostics); a11y + Vitest remain |
 | [171](171-competitor-informed-feature-uplift.md) | Preview-before-save, agent issue lease, MCP evals, instrumented onboarding | TODO — after 168; feature 2 gated on decision-record approval |
 | [172](172-design-system-and-guide.md) | Design-system uplift and the documented design guide (foglamp-informed) | TODO — after 170 (regression net); coordinates with 171 feature 4 |
 | [173](173-evidence-carrying-alerts.md) | Alerts carry evidence — every incident notification delivers a bundle | TODO — spec-first; c4 (164) is the live verification |

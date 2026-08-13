@@ -1,5 +1,6 @@
 import { fullStackTest as test, expect } from "../fixtures/test"
 import { readFullStackManifest, seedLiveLog, seedLiveSpan } from "../fixtures/full-stack-fixture"
+import { LIVE_TIMEOUT_MS, SURFACE_TIMEOUT_MS } from "../support/timeouts"
 
 /**
  * Feature-owned @live cases for invocations/runs hub (plan 147).
@@ -15,26 +16,22 @@ test.describe("full-stack invocations live performance @live", () => {
       `/invocations/${encodeURIComponent(fullStack.invocation_id)}?live=true&tab=logs`
     )
     await expect(page.getByText(fullStack.invocation_id, { exact: false }).first()).toBeVisible({
-      timeout: 20_000,
+      timeout: SURFACE_TIMEOUT_MS,
     })
 
-    const goLive = page.getByRole("button", { name: /Go live/i })
-    if (await goLive.isVisible().catch(() => false)) {
-      await goLive.click()
-    }
+    await expect(page.getByRole("button", { name: /Go live/i })).toBeVisible()
+    await page.getByRole("button", { name: /Go live/i }).click()
     await expect(page.getByRole("button", { name: /^Live$/i }).first()).toBeVisible({
       timeout: 10_000,
     })
 
-    const logsTab = page.getByRole("tab", { name: /^Logs$/i })
-    if (await logsTab.isVisible().catch(() => false)) {
-      await logsTab.click()
-    }
+    await expect(page.getByRole("tab", { name: /^Logs$/i })).toBeVisible()
+    await page.getByRole("tab", { name: /^Logs$/i }).click()
 
     const body = `pw-live-hub-log-${manifest.dataset_id}-${Date.now()}`
     await seedLiveLog(body)
     await expect(page.getByText(body, { exact: false }).first()).toBeVisible({
-      timeout: 45_000,
+      timeout: LIVE_TIMEOUT_MS,
     })
   })
 
@@ -44,26 +41,22 @@ test.describe("full-stack invocations live performance @live", () => {
       `/invocations/${encodeURIComponent(fullStack.invocation_id)}?live=true&tab=traces`
     )
     await expect(page.getByText(fullStack.invocation_id, { exact: false }).first()).toBeVisible({
-      timeout: 20_000,
+      timeout: SURFACE_TIMEOUT_MS,
     })
 
-    const goLive = page.getByRole("button", { name: /Go live/i })
-    if (await goLive.isVisible().catch(() => false)) {
-      await goLive.click()
-    }
+    await expect(page.getByRole("button", { name: /Go live/i })).toBeVisible()
+    await page.getByRole("button", { name: /Go live/i }).click()
     await expect(page.getByRole("button", { name: /^Live$/i }).first()).toBeVisible({
       timeout: 10_000,
     })
 
-    const tracesTab = page.getByRole("tab", { name: /^Traces$/i })
-    if (await tracesTab.isVisible().catch(() => false)) {
-      await tracesTab.click()
-    }
+    await expect(page.getByRole("tab", { name: /^Traces$/i })).toBeVisible()
+    await page.getByRole("tab", { name: /^Traces$/i }).click()
 
     const spanName = `pw.live.hub.span.${manifest.dataset_id}.${Date.now()}`
     await seedLiveSpan({ spanName })
     await expect(page.getByText(spanName, { exact: false }).first()).toBeVisible({
-      timeout: 45_000,
+      timeout: LIVE_TIMEOUT_MS,
     })
   })
 })

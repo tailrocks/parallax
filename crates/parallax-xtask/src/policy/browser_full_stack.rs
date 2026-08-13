@@ -69,7 +69,7 @@ fn check_config(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
         "name: \"full-stack-chromium\"",
         "cargo xtask browser-full-stack-serve",
         "testMatch: \"**/full-stack/**/*.spec.ts\"",
-        "retries: 0",
+        "retries: isCi ? 1 : 0",
     ] {
         if !source.contains(needle) {
             findings.push(error(

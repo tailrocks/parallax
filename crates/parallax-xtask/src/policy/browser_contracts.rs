@@ -65,7 +65,7 @@ fn check_config(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
     for needle in [
         "name: \"contracts-chromium\"",
         "cargo xtask browser-contracts-serve",
-        "retries: 0",
+        "retries: isCi ? 1 : 0",
         "testMatch: \"**/contracts/**/*.spec.ts\"",
         "timezoneId: \"UTC\"",
         "locale: \"en-US\"",

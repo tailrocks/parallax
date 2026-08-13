@@ -280,3 +280,8 @@ promoted to `plans/` with a blocking reason).
 - Playground changes land in the playground repo; fan-out lab, comparison
   matrices, and this inventory live here — update both sides in the same
   program step.
+
+## W5 discrepancy list
+
+DISCREPANCY: not-found hydration | 170/diagnostics-auto | parallax-ui | React minified #418 pageerror on GET /this-route-does-not-exist | expected: no pageerror | parallax bug
+
