@@ -198,18 +198,22 @@ including the unresolved Java-agent→Rotel→OpenObserve delivery snag).
 ### Workstream 2 — latest backend versions, pinned
 
 Pin every backend/tool at latest stable and keep pins current (research date
-2026-08-13):
+2026-08-13; pins applied 2026-08-14):
 
 | Tool | Deployed today | Latest stable |
 | --- | --- | --- |
-| Maple (maple.dev, Makisuo/maple) | v0.0.12 | v0.0.18 |
-| OpenObserve | `:latest` unpinned | v0.92.0 |
-| SigNoz | vendored, unpinned | v0.137.0 |
-| Sentry self-hosted | verified at 26.6.0 | 26.7.2 |
-| Rotel hub | `streamfold/rotel:latest` | pin current |
+| Maple (maple.dev, Makisuo/maple) | v0.0.18 | v0.0.18 |
+| OpenObserve | `v0.92.0` | v0.92.0 |
+| SigNoz | vendored `v0.137.0` | v0.137.0 |
+| Sentry self-hosted | vendored `26.7.2` | 26.7.2 |
+| Rotel hub | `streamfold/rotel:v0.2.5` | v0.2.5 |
 | OTel Collector (if added as alt hub) | — | v0.158.0 |
-| postgres | 17 | 18 |
-| Redpanda / flagd / k6 / telemetrygen | `:latest` unpinned | pin current |
+| postgres | 18 | 18 |
+| Redpanda / flagd / k6 / telemetrygen | `v26.2.1` / `v0.16.1` / `2.2.0` / `v0.158.0` | same |
+
+SigNoz `v0.137.0` vendor pin is current-stable, but the lab overlay cannot start:
+upstream removed `deploy/docker/docker-compose.yaml` (Foundry-only). Plan 162
+STOP — do not invent a Foundry rewrite in this workstream.
 
 Candidate roster additions (decide in planning; deep-dives exist under
 `market/competitors/`): Grafana LGTM v13.x, HyperDX v2.x, Uptrace v2.1.

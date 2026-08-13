@@ -11,14 +11,14 @@
 # source. SigNoz and Maple are layered in via overlays (see README):
 #   docker compose -f compose.yml -f compose.signoz.yml -f compose.maple.yml up
 #
-# Pin every image tag at implementation; :latest here is a starting point.
+# Pinned 2026-08-14; bump via plan-162 procedure.
 
 name: parallax-otlp-fanout
 
 services:
   # The fan-out hub. The ONLY service publishing OTLP ports to the host.
   rotel:
-    image: streamfold/rotel:latest
+    image: streamfold/rotel:v0.2.5
     container_name: pfanout-rotel
     restart: unless-stopped
     env_file: rotel.env
@@ -33,7 +33,7 @@ services:
 
   # OTLP-native, Rust, single binary. UI on host :5080; OTLP gRPC :5081 internal.
   openobserve:
-    image: public.ecr.aws/zinclabs/openobserve:latest
+    image: public.ecr.aws/zinclabs/openobserve:v0.92.0
     container_name: pfanout-openobserve
     restart: unless-stopped
     environment:
@@ -51,7 +51,7 @@ services:
   # Synthetic OTLP load source (interim payload, operator 2026-06-23).
   # `--profile loadgen` so it's opt-in. Sends to Rotel by service name.
   telemetrygen:
-    image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest
+    image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.158.0
     container_name: pfanout-telemetrygen
     profiles: [loadgen]
     command:
