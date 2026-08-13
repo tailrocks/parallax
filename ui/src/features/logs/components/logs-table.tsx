@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router"
 import { useMemo, useRef, useState } from "react"
-import type { KeyboardEvent, ReactNode } from "react"
+import type { ReactNode } from "react"
 import { useVirtualizer } from "@tanstack/react-virtual"
 
 import { Chip } from "@/shared/console/chip"
@@ -276,13 +276,6 @@ export function LogsTable({
     setFieldSearch("")
   }
 
-  function handleRowKeyDown(event: KeyboardEvent<HTMLTableRowElement>, log: LogDoc) {
-    if (event.target !== event.currentTarget) return
-    if (event.key !== "Enter" && event.key !== " ") return
-    event.preventDefault()
-    openLog(log)
-  }
-
   const renderRow = (log: LogDoc) => {
     const isAnchor = String(anchorNanos ?? "") === log.tsNanos
     return (
@@ -290,14 +283,20 @@ export function LogsTable({
         key={logKey(log)}
         data-anchor={isAnchor ? "true" : undefined}
         data-state={isAnchor ? "selected" : undefined}
-        role="button"
-        tabIndex={0}
-        className="cursor-pointer focus-visible:ring-[1.5px] focus-visible:ring-ring/50 focus-visible:outline-none"
+        className="cursor-pointer"
         onClick={() => openLog(log)}
-        onKeyDown={(event) => handleRowKeyDown(event, log)}
       >
         <TableCell className="font-mono text-xs whitespace-nowrap">
-          {formatTimeInRange(log.tsNanos, range)}
+          <button
+            type="button"
+            className="text-left focus-visible:ring-[1.5px] focus-visible:ring-ring/50 focus-visible:outline-none"
+            onClick={(event) => {
+              event.stopPropagation()
+              openLog(log)
+            }}
+          >
+            {formatTimeInRange(log.tsNanos, range)}
+          </button>
         </TableCell>
         <TableCell>
           <SeverityBadge log={log} />
