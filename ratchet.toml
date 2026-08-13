@@ -2685,6 +2685,13 @@ migration_plan = "173"
 kind = "handwritten"
 
 [[ui.ownership]]
+path = "ui/src/features/issues/components/issue-trend-chart.tsx"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "176"
+kind = "handwritten"
+
+[[ui.ownership]]
 path = "ui/src/features/issues/components/grouping-card.tsx"
 current_owner = "features/issues"
 target_owner = "features/issues"
@@ -4482,7 +4489,7 @@ ceiling = 708
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-metadata/src/turso/alerts.rs"
-ceiling = 909
+ceiling = 900
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4947,6 +4954,51 @@ reason = "private delivery loop composition reports through the typed outcome pa
 path = "crates/parallax-server/src/alerting/evaluator.rs"
 ceiling = 7
 reason = "private evaluation tick composition reports through the typed outcome path"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-metadata/src/turso/alerts_bundle.rs"
+ceiling = 1
+reason = "incident bundle persist is converted at the typed metadata port"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-server/src/alerting/evaluator_transitions.rs"
+ceiling = 4
+reason = "incident transition side effects report through the typed tick path"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-server/src/alerting/preview.rs"
+ceiling = 2
+reason = "draft preview composition reports through the typed preview port"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-api/src/alert_preview.rs"
+ceiling = 1
+reason = "API preview trait uses anyhow at the server-wired port"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-server/src/serve/http.rs"
+ceiling = 1
+reason = "GraphQL preview adapter maps to the typed preview port"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-api/src/resolvers/alerts/preview_tests.rs"
+ceiling = 1
+reason = "preview test double implements the typed preview port"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-server/src/alerting/preview_tests.rs"
+ceiling = 1
+reason = "preview measurement stub implements the typed source trait"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-server/src/alerting/evaluator_tests.rs"
+ceiling = 1
+reason = "evaluator measurement stub implements the typed source trait"
+
+[[product.anyhow_edges]]
+path = "crates/parallax-server/src/alerting/evaluator_bundle_tests.rs"
+ceiling = 1
+reason = "bundle evaluator stub implements the typed source trait"
 
 [[product.anyhow_edges]]
 path = "crates/parallax-server/src/alerting/measurement_source.rs"
@@ -5621,7 +5673,7 @@ ceiling = 327
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/features/issues/components/issue-detail-page.tsx"
-ceiling = 539
+ceiling = 493
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -5776,7 +5828,7 @@ ceiling = 20
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/issues/components/issue-detail-page.tsx:369"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:323"
 ceiling = 26
 
 [[limits]]
@@ -6000,12 +6052,12 @@ ceiling = 13
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/issues/components/issue-detail-page.tsx:369"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:323"
 ceiling = 14
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/issues/components/issue-detail-page.tsx:64"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:65"
 ceiling = 14
 
 [[limits]]
@@ -6285,12 +6337,12 @@ ceiling = 73
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/features/issues/components/issue-detail-page.tsx:501"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:455"
 ceiling = 61
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/features/issues/components/issue-detail-page.tsx:64"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:65"
 ceiling = 196
 
 [[limits]]

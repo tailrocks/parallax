@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react"
 import { Link, useNavigate, useRouter } from "@tanstack/react-router"
 import { IconArrowUpRight, IconBug, IconClock, IconHash, IconHistory } from "@tabler/icons-react"
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+
 import { CopyButton } from "@/shared/console/copy-button"
 import { EmptyState } from "@/shared/console/empty-state"
 import { HeatCell, buildHeatScale } from "@/shared/console/heat-cell"
@@ -11,7 +11,6 @@ import { navItem } from "@/shared/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { loadIssueOccurrences, setIssueStatus } from "@/features/issues/api/issues-api"
 import {
   issueDelta,
@@ -20,25 +19,27 @@ import {
   type IssueDetailData,
   type IssueEvent,
 } from "@/features/issues/model/issue-detail"
-import type { TrendPoint } from "@/features/issues/model/issue-summary"
 import {
   parseStacktrace,
   structuredFrameCount,
   type Frame,
 } from "@/features/issues/model/stacktrace"
 import { issueGroupingCard } from "@/features/issues/components/grouping-card"
+import { TrendChart } from "@/features/issues/components/issue-trend-chart"
 import { PinButton } from "@/features/investigations"
 import { MetricStrip } from "@/features/runtime-metrics"
 import { RangePicker } from "@/features/time-range"
 import { formatCount, formatDateTime, formatTimeInRange } from "@/shared/format"
-import { mergeRangeSearch, rangeLinkSearch, resolveRangeSearch, type ResolvedRange } from "@/domain/range"
+import {
+  mergeRangeSearch,
+  rangeLinkSearch,
+  resolveRangeSearch,
+  type ResolvedRange,
+} from "@/domain/range"
 import { cn } from "@/lib/utils"
 import { PageHeader } from "@/shared/components/page-header"
 import type { IssuesSearch } from "@/features/issues/model/issues-search"
 
-const trendConfig = {
-  count: { label: "events", color: "var(--destructive)" },
-} satisfies ChartConfig
 export function IssueDetailRoutePage({
   data,
   search,
@@ -255,53 +256,6 @@ export function IssueDetailContent({
 
       <Occurrences refEl={occurrencesRef} events={shownEvents} bucket={bucket} range={range} />
     </div>
-  )
-}
-
-function TrendChart({
-  trend,
-  onBucket,
-  activeBucket,
-}: {
-  trend: readonly TrendPoint[]
-  onBucket: (tsNanos: string | null) => void
-  activeBucket: string | null
-}) {
-  if (trend.length === 0) return null
-  const data = trend.map((point) => ({
-    ...point,
-    time: formatTimeInRange(point.tsNanos, {
-      fromNanos: trend[0]?.tsNanos ?? point.tsNanos,
-      toNanos: trend.at(-1)?.tsNanos ?? point.tsNanos,
-    }),
-  }))
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm">Occurrence trend</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={trendConfig} className="h-[180px] w-full">
-          <BarChart
-            data={data}
-            margin={{ left: 8, right: 8, top: 8 }}
-            onClick={(state) => {
-              const payloadState = state as {
-                activePayload?: Array<{ payload?: { tsNanos?: unknown } }>
-              }
-              const ts = payloadState.activePayload?.[0]?.payload?.tsNanos as string | undefined
-              if (ts) void onBucket(ts === activeBucket ? null : ts)
-            }}
-          >
-            <CartesianGrid vertical={false} />
-            <XAxis dataKey="time" tickLine={false} axisLine={false} minTickGap={48} />
-            <YAxis tickLine={false} axisLine={false} width={40} />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="count" fill="var(--color-count)" radius={3} />
-          </BarChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
   )
 }
 

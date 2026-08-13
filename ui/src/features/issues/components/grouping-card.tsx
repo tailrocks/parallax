@@ -37,10 +37,8 @@ export function GroupingCard({
   ].filter((part): part is string => Boolean(part))
   return (
     <div data-testid="grouping-card" className="rounded-lg border p-3 text-sm">
-      <p className="text-muted-foreground text-xs">{algorithmVersion}</p>
-      <p>
-        Grouped by: {parts.join(" · ") || "fingerprint inputs unavailable"}
-      </p>
+      <p className="text-xs text-muted-foreground">{algorithmVersion}</p>
+      <p>Grouped by: {parts.join(" · ") || "fingerprint inputs unavailable"}</p>
     </div>
   )
 }
