@@ -5,7 +5,7 @@
 > spec amendments BEFORE code. Run every verification command. On any "STOP
 > conditions" item, stop and report.
 >
-> **Drift check (run first)**: `git diff --stat f6208070..HEAD -- docs/research/decisions/agent-access-surface.md docs/research/architecture/v1-implementation-spec.md ui/graphql/schema.graphql crates/parallax-mcp/`
+> **Drift check (run first)**: `git diff --stat f6208070..HEAD -- docs/research/decisions/agent-access-surface.md docs/research/decisions/fixer-boundary.md docs/research/architecture/v1-implementation-spec.md ui/graphql/schema.graphql crates/parallax-mcp/ crates/parallax-server/src/alerting/ crates/parallax-api/src/resolvers/alerts.rs crates/parallax-metadata/ crates/parallax-cli/`
 > — on mismatch with the excerpts below, STOP.
 
 ## Status
@@ -14,7 +14,11 @@
 - **Effort**: L (four independent features; each S–M; land separately)
 - **Risk**: MED (two features amend product contracts; gated spec-first)
 - **Depends on**: plans/168-rust-correctness-test-wave.md recommended first
-  (test substrate); independent of the playground program (162–167)
+  (test substrate); feature 1 step 4's Playwright piece additionally needs
+  plan 170 Step 1-2 (`alerts-pilot` dataset + `contracts/alerts.spec.ts`)
+  — if 170 has not landed, create that dataset + spec per 170's Step 1
+  recipe as part of this feature; independent of the playground program
+  (162–167)
 - **Category**: direction
 - **Planned at**: parallax `f6208070`, 2026-08-13
 
@@ -80,15 +84,20 @@ is Apache-2.0.) The four:
   (`crates/parallax-metadata/` table list) and a proven CAS-claim idiom
   (occurrence claim + alert rule claim, concurrency test at
   `crates/parallax-metadata/src/turso/tests.rs:41`).
-- CLI empty states today print a copyable OTLP endpoint
-  (`ui/src/shared/console/` empty states); no per-framework snippets.
+- Zero-data onboarding today: the copyable OTLP endpoint lives in feature
+  pages, NOT the shared empty-state component —
+  `ui/src/features/overview/components/overview-page.tsx:845-865` and
+  `ui/src/features/issues/components/issues-page.tsx:225-226`;
+  `ui/src/shared/console/empty-state.tsx` has no endpoint/copy affordance.
+  No per-framework snippets anywhere.
 - No eval harness anywhere in the repo (grep `eval` under crates/parallax-mcp → none).
 
 ## Commands you will need
 
 | Purpose | Command | Expected |
 |---|---|---|
-| Gates | `cargo xtask ci && cargo xtask lint && cargo xtask test && cargo xtask arch` | green |
+| Gates | `cargo xtask ci --fast && cargo xtask lint && cargo xtask test && cargo xtask arch` | green |
+| Structural policy | `cargo xtask policy --only structural` | green after ratchet.toml rows updated for touched Rust files |
 | GraphQL drift | `cargo xtask ui graphql check` | no drift (after SDL export) |
 | SDL export | `cargo xtask ui graphql export` | regenerates `ui/graphql/schema.graphql` |
 | MCP checks | `cargo run -p parallax-mcp -- check --fingerprint <fp>` | exit 0 |
@@ -169,8 +178,11 @@ agent trailer per `COMMITS.md`.
 
 ### Feature 3 — MCP LLM evals, label-gated
 
-1. New dev-only eval harness (suggested: `crates/parallax-mcp/tests/evals/`
-   or a `poc/`-style dir if it needs network): scenario table — a user
+1. New dev-only eval harness at `crates/parallax-mcp/tests/evals/`
+   (decision made: colocate with the crate; the tests are `#[ignore]`d and
+   run only when `ANTHROPIC_API_KEY` is set, so no network in normal CI;
+   if the trust-boundary build gate rejects the dev-dep, STOP condition 4
+   moves it to a standalone tools/ crate): scenario table — a user
    prompt + seeded store state → expected tool + expected key args; driver
    calls a real Claude model (claude-sonnet-5 default) with the MCP tool
    schemas and scores tool-choice + arg accuracy. Read the `claude-api`
@@ -180,25 +192,38 @@ agent trailer per `COMMITS.md`.
    (cost gate); requires `ANTHROPIC_API_KEY` secret; job absent-key →
    skip with notice, never fail.
 3. Baseline: ≥8 scenarios (issue-context happy path, ambiguous fingerprint,
-   session-show, wrong-tool distractors). Score threshold recorded in the
-   harness, failures print transcript.
+   session-show, wrong-tool distractors). Threshold: ≥7 of 8 scenarios
+   must select the right tool with required args (record the constant in
+   the harness); failures print the model transcript.
 
-**Verify**: local run with a key passes ≥ threshold; workflow triggers only
-with the label (push a test PR label toggle); without label CI unaffected.
+**Verify**: with a key set,
+`cargo nextest run -p parallax-mcp --run-ignored only -E 'test(/eval/)'`
+→ ≥8 tests run, ≥7 pass per the scoring assert; the workflow file greps
+for the label gate:
+`grep -n "run-mcp-evals" .github/workflows/<eval workflow>.yml` shows an
+`if: contains(github.event.pull_request.labels.*.name, 'run-mcp-evals')`
+condition; a PR without the label shows the job skipped in CI.
 
 ### Feature 4 — Framework snippet contract
 
-Write `docs/guide/instrument-snippets.md`: canonical, tested,
-copy-pasteable OTLP setup snippets for Rust (tracing +
-opentelemetry-otlp), Java (OTel javaagent), JS/browser (sdk-trace-web),
-each pointing at `:4317`/`:4318` with `service.name` and the conventions
-doc's required resource attributes. Source of truth for plan 172's
-empty-state tabs. Validate each snippet compiles/runs against the
-playground stack (the playground services are the living reference —
-document the verified date).
+Write `docs/guide/instrument-snippets.md`: canonical, copy-pasteable OTLP
+setup snippets for Rust (tracing + opentelemetry-otlp), Java (OTel
+javaagent), JS/browser (sdk-trace-web), each pointing at `:4317`/`:4318`
+with `service.name` and the conventions doc's required resource
+attributes. Source of truth for plan 172's empty-state tabs. Validation
+method (no separate test rig): cross-check each snippet against the
+known-working equivalents in the sibling playground checkout
+`../parallax-telemetry-playground` — Rust:
+`libs/playground-telemetry/src/lib.rs` + a service main; Java:
+`deploy/Dockerfile.java` agent wiring + `deploy/docker-compose.yml` OTEL
+env block; JS: `web/src/telemetry.ts` — and cite those files + their
+versions in a "verified <date> against <playground files @ commit>" line
+per snippet. If the sibling checkout is absent, shallow-clone
+github.com/tailrocks/parallax-telemetry-playground to a temp dir for the
+comparison.
 
-**Verify**: `cargo xtask docs links` pass; each snippet carries a
-"verified <date> against <versions>" line.
+**Verify**: `cargo xtask docs links` pass; every snippet carries the
+verified line citing concrete playground files + commit.
 
 ## Test plan
 
@@ -215,8 +240,9 @@ doc-verified-by-run.
       parked at the STOP with the proposal PR open.
 - [ ] `run-mcp-evals`-labeled PRs run the eval job; unlabeled PRs don't;
       ≥8 scenarios ≥ threshold.
-- [ ] `docs/guide/instrument-snippets.md` exists with 3 verified snippets.
-- [ ] `cargo xtask ci|lint|test|arch` + `ui graphql check` green.
+- [ ] `docs/guide/instrument-snippets.md` exists with 3 snippets, each
+      carrying a verified line citing playground files + commit.
+- [ ] `cargo xtask ci --fast`, `lint`, `test`, `arch`, `policy --only structural` + `ui graphql check` green.
 - [ ] `plans/README.md` row updated (also record the rejected/deferred
       Maple-inspired ideas: session replay, anomaly detection, K8s pages,
       AI investigations, web analytics, digest emails).

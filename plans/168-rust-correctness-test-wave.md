@@ -5,9 +5,23 @@
 > anything in "STOP conditions" occurs, stop and report — do not improvise.
 > When done, update this plan's row in `plans/README.md`.
 >
-> **Drift check (run first)**: `git diff --stat f6208070..HEAD -- crates/parallax-xtask/src/command.rs crates/parallax-redaction/ crates/parallax-greptime/src/arrow_sql.rs crates/parallax-evidence/src/bundle/ crates/parallax-spool/ crates/parallax-ingest/src/metrics.rs crates/parallax-server/src/otlp_validation.rs crates/parallax-server/src/live.rs crates/parallax-server/src/sentry_http.rs crates/parallax-server/src/alerting/delivery.rs crates/parallax-api/src/query_limits.rs crates/parallax-cli/`
+> **Drift check (run first)**: `git diff --stat f6208070..HEAD -- crates/parallax-xtask/src/command.rs crates/parallax-xtask/src/cli.rs crates/parallax-redaction/ crates/parallax-greptime/src/arrow_sql.rs crates/parallax-greptime/src/arrow_sql/ crates/parallax-evidence/src/bundle/ crates/parallax-spool/ crates/parallax-ingest/ crates/parallax-server/src/otlp_validation.rs crates/parallax-server/src/live.rs crates/parallax-server/src/sentry_http.rs crates/parallax-server/src/alerting/delivery.rs crates/parallax-metadata/src/turso/alerts.rs crates/parallax-api/src/query_limits.rs crates/parallax-cli/`
 > — on any change, re-verify the excerpts below against live code before
 > proceeding; on mismatch, STOP.
+>
+> **Ratchet gate (applies to EVERY step)**: `ratchet.toml` pins per-file
+> structural metrics with EXACT-match enforcement — `rust.assertions`,
+> `rust.file-lines`, `rust.inline-test-modules` error when the actual value
+> is above OR below the pinned ceiling
+> (`crates/parallax-xtask/src/policy/structural.rs:190-219`). Every step
+> that adds tests MUST update the touched files' rows in `ratchet.toml` to
+> the new actual values in the same commit (e.g. the redaction test file's
+> row currently pins `rust.assertions = 17`), then run
+> `cargo xtask policy --only structural` → green. A brand-new test file
+> needs a new row. Determinism policy also targets 0 for
+> `SystemTime::now`/`sleep`/`std::env::set_var` in test files
+> (`policy/rust/determinism.rs`) — design tests with injected clocks and
+> child-process env (`Command::env`, which is NOT `set_var`).
 
 ## Status
 
@@ -97,11 +111,14 @@ order-invariance is the good pattern), fmt+clippy zero warnings.
 
 | Purpose | Command | Expected |
 |---|---|---|
-| Fast gates | `cargo xtask ci && cargo xtask lint` | exit 0, zero warnings |
+| Fast gates | `cargo xtask ci --fast && cargo xtask lint` | exit 0, zero warnings (`ci` REQUIRES `--fast` or `--full`) |
 | Full unit suite | `cargo xtask test` | all pass |
 | One crate | `cargo nextest run -p <crate>` | all pass |
 | One test | `cargo nextest run -p <crate> -E 'test(<name>)'` | listed + pass |
-| Real-engine suite (after Step 1) | `cargo xtask integration` | runs `--run-ignored` real-engine profile, exit 0 (needs Docker-free managed engine download; CI mirrors storage-integration.yml) |
+| Real-engine suite (after Step 1) | `cargo xtask integration` | runs `--run-ignored only --profile real-engine`, exit 0 (managed engine download; CI mirror: `.github/workflows/storage-integration.yml:72-74`, which also runs `cargo xtask nextest-evidence --profile real-engine`) |
+| Structural policy | `cargo xtask policy --only structural` | exit 0 after ratchet rows updated |
+| Facade drift | `cargo xtask facade check` | exit 0 (Step 5 touches a facade) |
+| Dependency policy | `cargo xtask dependencies` | exit 0 (Step 12 adds dev-deps) |
 | Arch tiers | `cargo xtask arch` | exit 0 |
 
 ## Scope
@@ -129,17 +146,27 @@ agent trailer per `COMMITS.md`.
 ### Step 1: Real integration gate
 
 In `crates/parallax-xtask/src/command.rs`: rename the current `integration`
-body to a new `doctests` arm (keep it reachable: `cargo xtask doctests`);
-make `integration` run
-`cargo nextest run --workspace --run-ignored all --profile real-engine --locked`
-(profile exists in `.config/nextest.toml`). Update the xtask CLI enum/help
-in `crates/parallax-xtask/src/cli.rs` accordingly and any CI workflow that
-called `cargo xtask integration` expecting doctests
-(`grep -rn "xtask integration" .github/ docs/ CONTRIBUTING.md`).
+body (`command.rs:241-243`) to a new `doctests` arm (keep it reachable:
+`cargo xtask doctests`); make `integration` run
+`cargo nextest run --workspace --run-ignored only --profile real-engine --locked`
+(`only`, matching the proven invocation in
+`.github/workflows/storage-integration.yml:72` — NOT `all`, which would
+drag the whole unit suite under the 45m real-engine timeout). Update the
+`Integration` variant / help in `crates/parallax-xtask/src/cli.rs:51`.
+
+**Consumer warning**: the string `xtask integration` appears in NO workflow
+— the real consumer is the partition list in
+`crates/parallax-xtask/src/command.rs:198-203`, where `"integration"` is
+part of the `ci --full` set. After this change `cargo xtask ci --full`
+would start a real-engine run (engine download included). Decide explicitly:
+keep `integration` OUT of the `--full` partition (replace it with
+`doctests` there) so `ci --full` behavior is unchanged — that is the
+default choice; note it in the PR.
 
 **Verify**: `cargo xtask doctests` → runs doc tests, exit 0.
-`cargo xtask integration` → executes the 9 previously-ignored tests (count
-visible in nextest summary). CI references updated.
+`cargo xtask integration` → nextest summary shows exactly the ignored
+real-engine set (9 tests today) and exit 0. `cargo xtask ci --full` still
+runs doctests, not the engine (check its output lists `doctests`).
 
 ### Step 2: Redaction detector table
 
@@ -190,17 +217,30 @@ output is a subsequence of input.
 
 `crates/parallax-spool`: byte-level tests — truncated final frame, corrupt
 magic (expect an error or a distinct "damaged" signal, NOT Ok(0): change
-`count_pspl_frames` to return `Err` on bad magic — callers:
-`grep -rn "count_pspl_frames" crates/`), zero-length frame, restart-then-append
-(reopen path, no second MAGIC mid-file). Change `append.rs:73` oversized
-clamp to return an error instead of writing `u32::MAX`. Proptest:
-`Vec<Vec<u8>>` append → count round-trip. Export the parser
-(`pub fn count_pspl_frames`) and delete the duplicate at
-`crates/parallax-cli/src/doctor.rs:104`, pointing the CLI at the spool
-crate's export.
+`count_pspl_frames` to return `Err` on bad magic — the function lives at
+`crates/parallax-spool/src/spool/framing.rs:19`, currently `pub(super)`;
+callers: `grep -rn "count_pspl_frames" crates/`), zero-length frame,
+restart-then-append (reopen path, no second MAGIC mid-file). Change
+`append.rs:73` oversized clamp to return an error instead of writing
+`u32::MAX`. Proptest: `Vec<Vec<u8>>` append → count round-trip.
+
+Deduplicate the parser copy at `crates/parallax-cli/src/doctor.rs:104`.
+This needs three coordinated changes, all in this step:
+1. Make the framing parser public at the spool crate root. The crate is
+   facade-gated: `crates/parallax-spool/src/lib.rs` has ONE root export and
+   `ratchet.toml` pins `rust.public-root-items = 1` for it — update
+   `crates/parallax-spool/facade.toml` via `cargo xtask facade refresh`
+   and the ratchet row to the new count.
+2. Add `parallax-spool` to `crates/parallax-cli/Cargo.toml` dependencies
+   (path/workspace dep; `Cargo.lock` will change — expected under
+   `--locked` after `cargo update -p parallax-cli` or a plain build).
+   Confirm `cargo xtask arch` accepts the cli→spool edge; if the tier
+   graph rejects it, STOP condition 5.
+3. Delete the duplicate in `doctor.rs` and call the export.
 
 **Verify**: `cargo nextest run -p parallax-spool -p parallax-cli` → pass;
-`grep -rn "fn count_pspl_frames" crates/ | wc -l` → 1.
+`grep -rn "fn count_pspl_frames" crates/ | wc -l` → 1;
+`cargo xtask facade check && cargo xtask arch && cargo xtask policy --only structural` → green.
 
 ### Step 6: Ingest characterization
 
@@ -249,32 +289,42 @@ production code actually called by the claim path — whichever matches the
 CAS SQL's semantics; then add a two-concurrent-claimers test against a temp
 Turso store in `crates/parallax-metadata/src/turso/alerts.rs` tests,
 modeled on `turso/tests.rs:41`: exactly one claimer wins, loser gets none,
-lease expiry allows re-claim.
+lease expiry allows re-claim. Drive expiry with INJECTED timestamps (pass
+advanced now/epoch values through the claim API), never
+`SystemTime::now` + sleep — the determinism policy targets 0 for both in
+test files.
 
 **Verify**: `cargo nextest run -p parallax-metadata -E 'test(/claim/)'` →
 includes the new concurrency test, pass.
 
 ### Step 11: clamp_limit boundaries
 
-Direct tests in `crates/parallax-api/src/query_limits.rs`: `None` →
-default; negative → default; `Some(0)` → document the chosen semantics in
-a doc comment (0 rows today — keep and pin, or map to default: STOP and
-ask ONLY if changing; pinning current behavior needs no approval);
-`i32::MAX` → MAX_ROWS; default > MAX_ROWS → MAX_ROWS. Plus
+Direct tests in `crates/parallax-api/src/query_limits.rs` pinning CURRENT
+behavior (read the excerpt: `l.max(0)` clamps, `try_from` then can't fail):
+`None` → default; `Some(-5)` → **0** (clamped, NOT default); `Some(0)` →
+**0**; `i32::MAX` → MAX_ROWS; default > MAX_ROWS → MAX_ROWS. Document the
+negative/zero semantics in a doc comment (pinning current behavior needs
+no approval; STOP and ask only if you believe it should change). Plus
 `check_query_limits` fragment-cycle and named-operation tests.
 
 **Verify**: `cargo nextest run -p parallax-api -E 'test(/limits|clamp/)'` → pass.
 
 ### Step 12: CLI end-to-end skeleton + prune guard
 
-Add `assert_cmd` + `predicates` as dev-deps of parallax-cli. New
-`crates/parallax-cli/tests/cli.rs`: `--help` exits 0; unknown command exits
-2; retired `run` verb rejected; `metrics --run` rejected; **prune dry-run
-against a temp HOME** (`HOME=<tempdir>` with a seeded fake data dir):
-prints a plan, deletes nothing (dir hash unchanged); `prune` without
-`--yes` on a TTY-less stdin does not delete; `--execute --yes` deletes only
-expected classes. JSON output shape asserted for `doctor --json` (if flag
-exists — check `src/doctor.rs`; else `prune --json`).
+Add `assert_cmd` + `predicates` as dev-deps of parallax-cli — that means:
+`[workspace.dependencies]` entries in root `Cargo.toml`, crate dev-deps,
+AND `dependency-policy.toml` review entries (the `dependencies` gate runs
+in `ci --full`). New `crates/parallax-cli/tests/cli.rs`: `--help` exits 0;
+unknown command exits 2; `metrics --run <id>` rejected (the retired alias
+— there is no top-level `run` verb, see `main.rs:64-66`); **prune dry-run
+against a temp HOME** — set via the CHILD's env
+(`Command::env("HOME", tempdir)` in assert_cmd; never `std::env::set_var`,
+which the determinism policy forbids) with a seeded fake data dir: prints
+a plan, deletes nothing (dir hash unchanged); `prune` without `--yes` on a
+TTY-less stdin does not delete; `--execute --yes` deletes only expected
+classes. JSON output shape asserted for `prune --json`
+(`main.rs:169`; there is NO `doctor --json` — `Doctor` is a bare variant,
+`main.rs:154`).
 
 **Verify**: `cargo nextest run -p parallax-cli` → new integration tests
 pass; the dry-run test proves byte-identical data dir.
@@ -298,14 +348,18 @@ expect) each carry their own regression tests above.
 - [ ] Spool corruption suite passes; `count_pspl_frames` single
       implementation; oversized payload errors.
 - [ ] Ingest characterization tests for exp-histogram/summary/None arms.
-- [ ] `cargo xtask ci && cargo xtask lint && cargo xtask test && cargo xtask arch` all green.
+- [ ] Every touched file's `ratchet.toml` row updated to new actuals;
+      spool facade row updated; `cargo xtask policy --only structural` and
+      `cargo xtask facade check` green.
+- [ ] `cargo xtask ci --fast && cargo xtask lint && cargo xtask test && cargo xtask arch && cargo xtask dependencies` all green.
 - [ ] `plans/README.md` row updated.
 
 ## STOP conditions
 
 1. Drift check fails on any excerpt above.
-2. Step 1 reveals CI depends on `integration`==doctests in a way that can't
-   be updated in the same PR — report the coupling.
+2. The `ci --full` partition swap (Step 1: `integration` → `doctests` in
+   `command.rs:198-203`) breaks some other consumer of the partition list —
+   report the coupling.
 3. The real-engine suite fails on main before your changes — pre-existing
    red, report, don't chase.
 4. A redaction canary exposes a detector defect needing more than a

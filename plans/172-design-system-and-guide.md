@@ -5,8 +5,17 @@
 > anything in "STOP conditions" occurs, stop and report — do not improvise.
 > When done, update this plan's row in `plans/README.md`.
 >
-> **Drift check (run first)**: `git diff --stat f6208070..HEAD -- ui/src/styles.css ui/AGENTS.md ui/src/shared/console/ ui/src/layout/`
+> **Drift check (run first)**: `git diff --stat f6208070..HEAD -- ui/src/styles.css ui/AGENTS.md ui/src/shared/ ui/src/layout/ ui/src/features/overview/components/overview-page.tsx ui/src/features/issues/components/issues-page.tsx ratchet.toml`
 > — on mismatch with the excerpts below, STOP.
+>
+> **Two byte/count gates this plan WILL hit**:
+> 1. `ratchet.toml` pins `agent-doc-bytes` for `ui/AGENTS.md` at its EXACT
+>    current size (14426; `ratchet.toml:4046-4048`) — any edit must update
+>    that pinned value to the new byte count in the same commit
+>    (`wc -c ui/AGENTS.md`), then `cargo xtask policy --only structural`.
+> 2. `ui.tests` policy: every new Vitest/spec file needs a
+>    `ui/test-matrix.json` entry + exact ratchet counts —
+>    `cargo xtask policy --only ui.tests` must pass.
 
 ## Status
 
@@ -96,19 +105,27 @@ NOTICE). Contrast: Maple (plan 171) is FSL — ideas only, never code.
 |---|---|---|
 | Typecheck/tests | `cd ui && bun run typecheck && bun run test` | green |
 | UI gates | `cargo xtask ui && cargo xtask policy --only ui.architecture && cargo xtask policy --only ui.ratchets` | green |
-| Browser lanes | `cargo xtask browser-contracts-serve && cargo xtask browser-full-stack-serve` | green |
-| Visual baselines | run visual lane; regenerate goldens per its README when intentional | diffs only where intended |
+| Browser lanes | `cd ui && bun run test:browser` then `bun run test:browser:full` | green (the `cargo xtask browser-*-serve` commands are blocking webServer processes, not test runners) |
+| Visual lane | `cd ui && bun run test:browser:visual` | diffs only where intended |
+| Visual golden update | `cd ui && bun run test:browser:visual:update` | goldens regenerated (there is no README under ui/tests — these scripts in `ui/package.json` are the procedure) |
 | Docs links | `cargo xtask docs links` | pass |
 
 ## Scope
 
 **In scope**: `ui/DESIGN.md` (new), `ui/src/styles.css` (token additions
 only — no removals), `ui/src/shared/console/**` (stat cards, skeletons,
-empty states, heat cells refinements), `ui/src/layout/**` (nav chips,
-page-fade), a new `ui/src/shared/signal-colors.ts`-style color-map module
-+ migration of scattered per-signal colors to it, `ui/tests/e2e/visual/`
-golden regeneration, `ui/AGENTS.md` (one pointer line to DESIGN.md),
-`NOTICE` (attribution if code copied).
+empty states, heat cells refinements), `ui/src/shared/colors.ts` +
+`ui/src/shared/color-by.ts` (Step 6 EXTENDS these — see step),
+`ui/src/shared/navigation.ts` + `ui/src/layout/**` (nav chips, page-fade),
+the zero-data blocks in
+`ui/src/features/overview/components/overview-page.tsx:845-865` and
+`ui/src/features/issues/components/issues-page.tsx:225-226` (Step 4
+replaces their inline endpoint block with the shared snippet component —
+content/presentation only, no data-flow change), `ui/test-matrix.json` (+
+entries for new tests), `ratchet.toml` (agent-doc-bytes + any structural
+rows), `ui/tests/e2e/visual/` golden regeneration, `ui/AGENTS.md` (pointer
++ reconciliation of its existing design section), `NOTICE` (attribution if
+code copied).
 
 **Out of scope**: route/feature behavior changes; chart library changes
 (Recharts stays, rule 12); React Flow internals (styling via tokens only);
@@ -149,11 +166,18 @@ absorbed from `ui/AGENTS.md`):
    compliance, density-first dashboards, command-palette-centric nav,
    accessible contrast targets APCA-aware) with sources; explicitly a
    living section — re-verify on major redesigns.
-Add one line to `ui/AGENTS.md` §Design pointing at DESIGN.md as the
-canonical guide (do not duplicate rules).
+`ui/AGENTS.md` has NO §Design — its sections are TypeScript / TanStack
+Start-Router / shadcn-ui / Parallax-specific / "Observability design
+language (plan 162)" / Architecture / Final placement. Add the DESIGN.md
+pointer INSIDE the existing "Observability design language (plan 162)"
+section and reconcile: that section's rules either move into DESIGN.md
+(leaving a pointer) or are cited by it — no duplicated normative text.
+Remember the agent-doc-bytes ratchet (header note): update the pinned
+byte count in the same commit.
 
 **Verify**: `cargo xtask docs links` pass; DESIGN.md token table values
-grep-match `ui/src/styles.css` (spot-check 5 tokens).
+grep-match `ui/src/styles.css` (spot-check 5 tokens);
+`cargo xtask policy --only structural` green (agent-doc-bytes updated).
 
 ### Step 2: Elevation token system
 
@@ -172,24 +196,32 @@ intentional diffs only; light + dark manually screenshotted for the PR.
 
 ### Step 3: Loading & entrance discipline
 
-Audit `shared/console/hooks.ts` delayed-skeleton timing → align to the
-documented 700ms; add the once-per-boot 75ms opacity page-fade (module-
-scope gate, `prefers-reduced-motion` respected); ensure table skeletons
-mirror real column alignment and their tables use fixed layout where row
-identity matters (logs, traces, issues).
+`useDelayedLoading` in `shared/console/hooks.ts:3` already defaults to
+700ms — no timing change needed; DESIGN.md documents it (Step 1). The
+actual work: (a) add the once-per-boot ~75ms opacity-only page fade
+(module-scope gate so it fires once per hard load, skipped entirely under
+`prefers-reduced-motion`); (b) audit that table skeletons mirror their
+real column alignment and that logs/traces/issues tables use fixed table
+layout so widths can't shift on skeleton→data swap — fix mismatches.
 
-**Verify**: `bun run test` green; no skeleton flashes on fast loads
-(manual: throttled + unthrottled load of `/logs`).
+**Verify**: new Vitest for the fade gate module (fires once, second call
+no-op, reduced-motion short-circuits) — green; `bun run test` green;
+matrix entry added for the new test file
+(`cargo xtask policy --only ui.tests` green).
 
 ### Step 4: Instrumented empty states
 
-Extend the existing empty-state component: dashed border + 40%-opacity
-icon idiom, and on zero-data surfaces render tabbed (Rust/Java/JS)
+Build a shared snippet-tabs component in `shared/console/` (the existing
+`empty-state.tsx` already renders its icon at 40% opacity and has NO
+endpoint content — the copyable endpoint blocks live inline in
+`features/overview/components/overview-page.tsx:845-865` and
+`features/issues/components/issues-page.tsx:225-226`). Replace those two
+inline blocks with the shared component rendering tabbed (Rust/Java/JS)
 copy-pasteable setup snippets sourced from
 `docs/guide/instrument-snippets.md` (plan 171 feature 4; if that file
-doesn't exist yet, inline the OTLP endpoint + `service.name` env exports as
-v1 and leave a TODO referencing plan 171). Segmented toggle = sliding pill
-with cross-faded fixed-height content (no layout shift).
+doesn't exist yet, inline the OTLP endpoint + `service.name` env exports
+as v1 and leave a TODO referencing plan 171). Segmented toggle = sliding
+pill with cross-faded fixed-height content (no layout shift).
 
 **Verify**: contracts lane spec: fresh `shell-empty` dataset → overview
 empty state shows tabs, copy button copies the visible snippet.
@@ -214,16 +246,23 @@ contrast of tinted chips checked against WCAG AA at minimum.
 
 ### Step 6: One color map per concept
 
-Create a single normative module (e.g. `ui/src/shared/signal-colors.ts`)
-exporting records for: signal type (trace/log/metric/error), severity
-ladder, span status, invocation status/outcome, test rollup/flaky state —
-each mapping to token-based classes for badge/bar/chip/icon. Migrate
-scattered inline color choices in `shared/console/` + feature components
-to it (grep hex/`text-{color}-` literals; migrate only clear duplicates —
-chart series stay on `--chart-*`/dataviz rules).
+TWO normative color modules already exist — do NOT create a competing
+one: `ui/src/shared/colors.ts` (the plan-162 three-axis system: severity
+ramp / service identity / percentile tokens, with binding
+"never repurpose" rules) and `ui/src/shared/color-by.ts` (built on it).
+The work: EXTEND `colors.ts` with the missing domain records — span
+status, invocation status/outcome, test rollup/flaky state — each mapping
+to token-based classes for badge/bar/chip/icon (the foglamp
+one-record-drives-all pattern), honoring the existing never-repurpose
+rules. Then migrate scattered per-status Tailwind color literals in
+`shared/console/` + feature components onto the new records (migrate only
+clear status/type duplicates — chart series stay on `--chart-*`/dataviz
+rules).
 
-**Verify**: `grep -rn "#[0-9a-fA-F]\{6\}" ui/src/features ui/src/shared --include=*.tsx | wc -l`
-strictly decreases (record before/after in PR); typecheck + lanes green.
+**Verify**: new records unit-tested for exhaustive key coverage (matrix
+entry added); `grep -rEn "text-(red|rose|amber|green|emerald)-[0-9]" ui/src/features ui/src/shared/console --include="*.tsx" | wc -l`
+recorded before/after in the PR and does not increase; every migrated
+call site imports from `colors.ts`; typecheck + lanes green.
 
 ## Test plan
 

@@ -5,8 +5,16 @@
 > anything in "STOP conditions" occurs, stop and report — do not improvise.
 > When done, update this plan's row in `plans/README.md`.
 >
-> **Drift check (run first)**: `git diff --stat f6208070..HEAD -- ui/tests/ ui/playwright.config.ts ui/test-matrix.json crates/parallax-test-support/src/browser/`
+> **Drift check (run first)**: `git diff --stat f6208070..HEAD -- ui/tests/ ui/playwright.config.ts ui/test-matrix.json ui/src/routes/tests/ ui/src/workers/ ui/src/features/ecosystem/workers/ crates/parallax-test-support/src/browser/`
 > — on mismatch with the excerpts below, STOP.
+>
+> **Matrix gate (applies to EVERY step adding a test file)**: the
+> `ui.tests` policy enforces EXACT equality on `ui/test-matrix.json`
+> ratchets (`test_files`, `test_cases`) AND errors on any discovered test
+> file with no matrix entry
+> (`crates/parallax-xtask/src/policy/ui_tests.rs:166-190`). Every new spec
+> or Vitest file needs a matrix entry + updated ratchet counts in the same
+> commit; verify with `cargo xtask policy --only ui.tests`.
 
 ## Status
 
@@ -22,8 +30,8 @@
 ## Why this matters
 
 The UI has 42 Playwright tests but real interaction coverage for only 2 of
-21 surfaces (shell, investigations). 8 of 11 GraphQL mutations have zero
-browser exercise; `/traces/$traceId` — the deepest surface and
+21 surfaces (shell, investigations). 11 of the SDL's 14 mutations have
+zero browser exercise; `/traces/$traceId` — the deepest surface and
 highest-churn route file — is never opened by any spec; `/alerts` and
 `/metrics` appear in no spec at all; several full-stack assertions are
 unfalsifiable (pass on a bare `<h1>`); and the diagnostics gate that would
@@ -39,20 +47,31 @@ mutation CRUD specs → deepest read surfaces → assertion honesty → gates.
   Rust facade mirror `crates/parallax-test-support/src/browser/datasets.rs`
   (`ShellEmpty`/`InvestigationsPilot` → `as_str`). Reset/snapshot control
   plane exists (`ui/tests/e2e/fixtures/product-fixture.ts:77-91`).
-  `ui/test-matrix.json` holds 11 `status: "reserved"` playwright entries
-  whose spec files don't exist.
+  `ui/test-matrix.json` holds 11 `status: "reserved"` playwright entries;
+  9 point at spec files that don't exist yet (the shell + investigations
+  reserved entries already have living specs — reconcile those two rows
+  to their real status while in the file).
 - Diagnostics fixture: `ui/tests/e2e/fixtures/test.ts:78-90` — declared
   WITHOUT `{ auto: true }` (unlike `fixedTime`/`seeded`); catches
   console-error/pageerror/external-network/dialog/download; only
   `contracts/shell.spec.ts` and `smoke/foundation.spec.ts` opt in.
-- Mutation ledger (browser-covered: 3 of 11): covered =
+- Mutation ledger — the SDL (`ui/graphql/schema.graphql` `type Mutation`)
+  has 14 mutations. Browser-covered today: 3 —
   investigationSave/Delete (`contracts/investigations.spec.ts:47,68`),
-  issueSetStatus (`full-stack/storage-composition.spec.ts:25,46`). NOT
-  covered: dashboardSave/Delete, sqlSnippetSave/Delete,
-  savedViewSave/Delete (`ui/src/features/logs/components/logs-page.tsx:294-318`,
-  string-interpolated, no escaping test), alertRuleSave,
-  alertDestinationSave (`ui/src/features/alerts/api/alerts-gql.ts:120,155`
+  issueSetStatus (`full-stack/storage-composition.spec.ts:25,46`).
+  NOT covered, browser-relevant (9): dashboardSave, dashboardDelete,
+  savedViewSave, savedViewDelete (used TWICE client-side: logs saved
+  views at `ui/src/features/logs/components/logs-page.tsx:294-318`
+  (string-interpolated, no escaping test) AND the SQL snippet documents
+  `ui/src/features/sql/api/sql-snippet-save.graphql` /
+  `sql-snippet-delete.graphql`, which are CLIENT document names over
+  savedViewSave/Delete — both call paths need exercise), alertRuleSave,
+  alertRuleDelete, alertRuleSetEnabled, alertDestinationSave,
+  alertDestinationDelete (`ui/src/features/alerts/api/alerts-gql.ts:120,155`
   — string-built over `gqlString`).
+  Not browser-relevant (2): invocationStart, invocationFinish (CLI
+  wrapper surface — covered by the playground c2 scenario, plan 164);
+  record this split in the PR.
 - Never-navigated routes: `/traces/$traceId` (trace-detail-page.tsx 49.7K,
   highest churn), `/services/$service`, `/tests/$caseKey`, `/metrics`,
   `/metrics/$metricName`, `/alerts`.
@@ -65,7 +84,7 @@ mutation CRUD specs → deepest read surfaces → assertion honesty → gates.
   in `runs-live-performance.spec.ts:22-32,50-61`; in-body cleanup in
   `storage-composition.spec.ts:46-48` (workers:1 lane inherits dirty
   state); ~25 magic 20s/45s timeouts; `retries: 0`
-  (`ui/playwright.config.ts:69`).
+  (`ui/playwright.config.ts:49`).
 - Near-zero-value route tests: 7 files asserting
   `expect(typeof loadX).toBe("function")`
   (`ui/src/routes/tests/-logs-routes.test.tsx:7-8` et al); good pattern to
@@ -88,11 +107,13 @@ mutation CRUD specs → deepest read surfaces → assertion honesty → gates.
 |---|---|---|
 | UI unit | `cd ui && bun run test` (see package.json scripts) | pass |
 | Typecheck | `cd ui && bun run typecheck` | exit 0 |
-| Contracts lane | `cargo xtask browser-contracts-serve` | Playwright green |
-| Full-stack lane | `cargo xtask browser-full-stack-serve` | green |
-| One spec | append Playwright args per xtask lane help (check `cargo xtask browser-contracts-serve --help`); fallback: run lane then filter via `-g` if supported | targeted spec runs |
+| Contracts lane | `cd ui && bun run test:browser` | Playwright green (`test:browser` = contracts-chromium project; the `cargo xtask browser-*-serve` commands are the lanes' blocking webServer processes, NOT test runners — never invoke them to run tests) |
+| Full-stack lane | `cd ui && bun run test:browser:full` | green |
+| A11y / cross+mobile / visual | `cd ui && bun run test:browser:a11y` / `test:browser:cross` / `test:browser:visual` | green |
+| One spec | `cd ui && bun run test:browser -- -g "<test name>"` | targeted spec runs |
+| Visual golden update | `cd ui && bun run test:browser:visual:update` | goldens regenerated |
 | Policy gates | `cargo xtask policy --only ui.tests && cargo xtask policy --only ui.browser-contracts` | pass |
-| Rust seed build | `cargo xtask ci` | pass |
+| Rust seed build | `cargo xtask ci --fast` | pass (`ci` REQUIRES `--fast` or `--full`) |
 
 ## Scope
 
@@ -131,8 +152,9 @@ destination, 1 resolved incident), `metrics-pilot` (2 metrics: gauge +
 histogram with known series). Ship `logs-pilot` end-to-end FIRST (builder →
 catalog → one passing spec) to prove the seam, then batch the rest.
 
-**Verify**: `cargo xtask ci` (Rust builders compile+unit-test);
-`cargo xtask browser-contracts-serve` green with the first new spec.
+**Verify**: `cargo xtask ci --fast` (Rust builders compile+unit-test);
+`cd ui && bun run test:browser` green with the first new spec (matrix
+entry added — see Matrix gate).
 
 ### Step 2 (P0): Mutation CRUD specs (contracts lane)
 
@@ -152,8 +174,11 @@ Model each on `contracts/investigations.spec.ts`:
   reflects filter → rows narrow → save view (name with a quote char) →
   reload → select view → filters restored → delete view.
 
-**Verify**: contracts lane green; `ui/test-matrix.json` reserved entries
-flipped to implemented for these surfaces.
+**Verify**: `cd ui && bun run test:browser` green; `ui/test-matrix.json`:
+reserved entries flipped to implemented where one exists (sql,
+dashboards, logs); alerts and metrics have NO reserved entry — ADD new
+entries for their specs; ratchet counts updated;
+`cargo xtask policy --only ui.tests` green.
 
 ### Step 3 (P1): Deep-read surfaces (full-stack lane)
 
@@ -184,7 +209,10 @@ flipped to implemented for these surfaces.
   `traces-live-performance.spec.ts:29-30` with the `toHaveCount(1)` row
   pattern from `:51-53`. Replace fixture self-checks with product asserts.
 - Make `diagnostics` `{ auto: true }` on `productTest` first
-  (`fixtures/test.ts:78`); triage fallout (each failure = real console/page
+  (`fixtures/test.ts:78`; note THREE fixtures define diagnostics — base
+  `test` at `:43`, `productTest` at `:78`, `fullStackTest` at `:116` —
+  this plan flips `productTest` then `fullStackTest`; leave base `test`
+  as-is for the smoke tier unless fallout is zero); triage fallout (each failure = real console/page
   error → fix the SPEC only if it's test-induced, else `DISCREPANCY:` row);
   then auto on `fullStackTest` (already pageerror-only).
 - Flake fixes: conditional `isVisible` guards → unconditional
@@ -215,13 +243,18 @@ Extend axe + horizontal-overflow checks (reuse
   `services-search.ts`, `overview-chart-helpers.ts`. Resolve the duplicate
   ecosystem worker entry (one canonical module; other imports it).
 - Fold the 7 `typeof === "function"` route tests into search-param coercion
-  tests per the `-traces-routes.test.tsx:12-27` pattern; delete the typeof
-  asserts; adjust the `ui.ratchets` counts if the policy gate complains
-  (`cargo xtask policy --only ui.ratchets` tells you).
+  tests per the coercion section at `-traces-routes.test.tsx:12-27` (that
+  FILE also contains typeof asserts at `:28-29` — delete those too; the
+  pattern to keep is the coercion assertions, not the file wholesale);
+  delete every typeof assert across all 7 files; update the affected
+  `ui/test-matrix.json` entries + ratchet counts (`test_cases` changes),
+  and check `cargo xtask policy --only ui.tests` and
+  `--only ui.ratchets` both pass.
 
 **Verify**: `cd ui && bun run test && bun run typecheck` green;
-`grep -rn 'toBe("function")' ui/src/routes/tests/` → no matches;
-`cargo xtask policy --only ui.tests` green.
+`grep -rn 'toBe("function")' ui/src/routes/tests/` → zero matches (all 7
+files incl. -traces-routes);
+`cargo xtask policy --only ui.tests && cargo xtask policy --only ui.ratchets` green.
 
 ## Test plan
 
@@ -232,19 +265,30 @@ This plan IS tests. Expected net-new: ~6 datasets, ~12 new spec files,
 
 - [ ] 8 dataset ids in `catalog.ts` (2 existing + 6 new), each with a Rust
       builder and ≥1 spec consuming it.
-- [ ] All 11 mutations have a browser CRUD exercise
-      (`grep -l "dashboardSave\|alertRuleSave\|sqlSnippetSave\|savedViewSave" ui/tests/e2e/contracts/` non-empty per family).
+- [ ] All 12 browser-relevant mutations exercised: each of
+      `contracts/dashboards.spec.ts`, `contracts/alerts.spec.ts`,
+      `contracts/sql.spec.ts`, `contracts/logs-views.spec.ts` exists and
+      is green, and together with the existing investigations + issues
+      specs they invoke dashboardSave/Delete, alertRuleSave/Delete/
+      SetEnabled, alertDestinationSave/Delete, savedViewSave/Delete (both
+      client paths), investigationSave/Delete, issueSetStatus.
+      invocationStart/Finish recorded as CLI-covered (playground c2).
 - [ ] `/traces/$traceId`, `/services/$service`, `/tests/$caseKey`,
       `/metrics`, `/metrics/$metricName`, `/alerts` each appear in ≥1
-      `page.goto` (`grep -rn "goto(" ui/tests/e2e/ | grep -c "alerts\|metrics\|traces/\|services/\|tests/"` ≥ 6).
-- [ ] `diagnostics` fixture is `{ auto: true }` on both fixtures.
+      `page.goto`: `grep -rhoE 'goto\\(\"[^\"]+' ui/tests/e2e/ | sort -u`
+      lists a URL for each of the six (use -h so file paths can't
+      false-match).
+- [ ] `diagnostics` fixture is `{ auto: true }` on `productTest` and
+      `fullStackTest` (`ui/tests/e2e/fixtures/test.ts:78,116`).
 - [ ] No heading-only full-stack specs remain; no `.or()` disjunction
       asserts; no conditional-isVisible guards.
 - [ ] Both browser lanes green twice consecutively; `retries: isCi ? 1 : 0`.
 - [ ] 5 model unit files added; typeof route tests gone; worker entry
       deduplicated.
-- [ ] `ui/test-matrix.json` reflects reality (no reserved entry whose spec
-      exists; no implemented entry that is heading-only).
+- [ ] `ui/test-matrix.json` reflects reality (no reserved entry whose
+      spec exists — incl. the 2 pre-existing stale rows; no implemented
+      entry that is heading-only; every new file has an entry);
+      `cargo xtask policy --only ui.tests` green.
 - [ ] `plans/README.md` row updated.
 
 ## STOP conditions

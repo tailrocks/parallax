@@ -5,8 +5,15 @@
 > anything in "STOP conditions" occurs, stop and report — do not improvise.
 > When done, update this plan's row in `plans/README.md`.
 >
-> **Drift check (run first)**: `git diff --stat f6208070..HEAD -- crates/parallax-test-support/src/conformance.rs crates/parallax-server/tests/ crates/parallax-api/src/resolvers/issues* crates/parallax-metadata/src/turso.rs crates/parallax-metadata/src/turso/connection.rs crates/parallax-server/src/serve.rs`
+> **Drift check (run first)**: `git diff --stat f6208070..HEAD -- crates/parallax-test-support/src/conformance.rs crates/parallax-server/tests/ crates/parallax-api/src/resolvers/issues* crates/parallax-metadata/src/turso.rs crates/parallax-metadata/src/turso/connection.rs crates/parallax-metadata/src/turso/tests.rs crates/parallax-server/src/serve.rs crates/parallax-ingest/src/tests.rs crates/parallax-evidence/src/bundle/`
 > — on mismatch with the excerpts below, STOP.
+>
+> **Ratchet gate (applies to EVERY step)**: `ratchet.toml` pins per-file
+> `rust.assertions` / `rust.file-lines` / `rust.inline-test-modules` with
+> EXACT-match enforcement (above OR below the pin errors). Every step that
+> adds tests must update the touched files' rows to the new actuals in the
+> same commit and pass `cargo xtask policy --only structural`. New test
+> files need new rows.
 
 ## Status
 
@@ -76,7 +83,8 @@ DBs safely (fail-closed).
 | Unit | `cargo xtask test` | pass |
 | Real engine | `cargo xtask integration` (plan 168 Step 1) | runs real-engine profile, pass |
 | One suite | `cargo nextest run -p parallax-metadata -E 'test(/migration/)'` | pass |
-| Gates | `cargo xtask ci && cargo xtask lint && cargo xtask arch` | green |
+| Gates | `cargo xtask ci --fast && cargo xtask lint && cargo xtask arch` | green |
+| Structural policy | `cargo xtask policy --only structural` | green after ratchet rows updated |
 
 ## Scope
 
@@ -101,20 +109,42 @@ migrations+serve); `git commit -s`; Conventional Commits; agent trailer per
 
 ## Steps
 
-### Step 1: Widen and wire the conformance harness
+### Step 1: Make the conformance scenarios assert, then run them dual
 
-Change `trace_search_scenario` and `log_count_series_scenario` signatures
-from `&MemoryStore` to `&dyn TelemetryStore` (mechanical: they only use
-trait methods; if either touches fake-only internals, STOP condition 2).
-Then call ALL FIVE scenarios from `m6_conformance_greptime.rs` after the
-seeded fixture, mirroring how `assert_seeded` is invoked.
+Two defects to fix, in order:
 
-**Verify**: `cargo xtask test` (fake path still green) and
-`cargo xtask integration` — five scenarios run against live Greptime.
-Divergences: record each as
+(a) **Seeding is fake-coupled**: `trace_search_scenario` calls
+`seed_memory(store)` whose signature is `pub fn seed_memory(&MemoryStore)`
+(`conformance.rs:21`, call at `:216`) — the scenario cannot take a trait
+object while it seeds. Restructure: scenarios take a PRE-SEEDED
+`&dyn TelemetryStore` plus an expectations struct; move seeding to the
+caller (memory tests keep `seed_memory`; the Greptime test seeds the same
+logical dataset through its existing fixture path in
+`m6_conformance_greptime.rs`). Apply the same split to
+`log_count_series_scenario` (`:220`).
+
+(b) **Three scenarios assert almost nothing**: `overview_totals_scenario`
+asserts `trace_count < u64::MAX`, `attribute_compare_scenario` and
+`service_map_scenario` only `.await?` (`conformance.rs:231-247`). Give
+every scenario CONCRETE expected values derived from the shared seeded
+dataset (span counts, service names, edge list, compare deltas) so a
+fake-vs-engine divergence FAILS the test rather than needing a manual
+diff.
+
+Then call all five scenarios from `m6_conformance_greptime.rs` after its
+seeded fixture, mirroring the `assert_seeded` invocation style.
+
+**Verify**: `cargo xtask test` (fake path green with the strengthened
+asserts) and `cargo xtask integration` — five scenarios run against live
+Greptime. Each engine-side failure = real divergence: record as
 `DISCREPANCY: <query> | conformance | parallax | fake=<x> engine=<y> | … | parallax bug`
-in the inventory doc W5 list; where the fake is wrong and the fix is a
+in the inventory doc W5 list; where the FAKE is wrong and the fix is a
 small fake-side change, fix the fake in the same PR.
+
+Additionally: add an Arrow-vs-JSON transport parity case to the Greptime
+suite — same SQL through both read transports, equal decoded rows (this
+replaces the tautological `row_count_parity_json_shape` that plan 168
+Step 3 deletes).
 
 ### Step 2: Issues resolver suite
 
@@ -127,7 +157,7 @@ paging, and the markdown bundle projection path reached from
 `issues.rs:447` (assert stable section headers, not full text).
 
 **Verify**: `cargo nextest run -p parallax-api -E 'test(/issues/)'` →
-suite comparable in case-count to metrics'; all pass.
+≥ 12 test cases listed (was 1), all pass.
 
 ### Step 3: Hypothesis-ranking order tests
 
@@ -158,9 +188,12 @@ closed with a clear error.
 Add tests: router assembly exposes the expected route set (snapshot of
 paths from `build_api_router`/`:232` — assert presence of `/graphql`,
 `/health`, `/version`, `/v1/logs/stream`, `/v1/traces/stream`, sentry +
-github routes per config flags); graceful shutdown joins all spawned tasks
-within a timeout (introduce the smallest seam needed — e.g. return
-JoinHandles from the spawn helper — no behavior change).
+github routes per config flags); shutdown characterization pinning
+CURRENT semantics — `shutdown_graceful` (`serve.rs:65-70`) ABORTS listener
+tasks then drains workers (it does not join listeners): assert the abort +
+drain sequence completes within a timeout and the drained workers finish
+cleanly (introduce the smallest seam needed — e.g. return handles from the
+spawn helper — no behavior change).
 
 **Verify**: `cargo nextest run -p parallax-server -E 'test(/serve/)'` → pass;
 `cargo xtask arch` green.
@@ -170,7 +203,9 @@ JoinHandles from the spawn helper — no behavior change).
 Replace the two f(x)==f(x) determinism proptests in
 `crates/parallax-ingest/src/tests.rs:399-456` with: span-count
 conservation (normalize_traces), log-record conservation, attribute-key
-conservation; add metrics point-count conservation (gauge+histogram).
+conservation. (Metrics point-count conservation is OWNED BY plan 168
+Step 6 — if it already landed there, do not duplicate; if 168 has not
+landed, still leave metrics to it.)
 
 **Verify**: `cargo nextest run -p parallax-ingest` → pass.
 
@@ -190,7 +225,7 @@ fixture tests — the riskiest piece; review it hardest).
       fail-closed future-version guard.
 - [ ] serve.rs route-table + shutdown-join tests green.
 - [ ] Determinism proptests replaced with conservation properties.
-- [ ] `cargo xtask ci|lint|test|integration|arch` all green.
+- [ ] `cargo xtask ci --fast`, `lint`, `test`, `integration`, `arch`, `policy --only structural` all green.
 - [ ] `plans/README.md` row updated.
 
 ## STOP conditions
