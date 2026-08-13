@@ -16,6 +16,11 @@ under `docs/research/validation/`. Do not keep plan history here.
 | [165](165-user-lens-comparison.md) | Run the full playground sweep and record a user-lens comparison across all backends | TODO — after 162–164 |
 | [166](166-production-readiness-fix-loop.md) | Drive every verified discrepancy to zero — the production-readiness fix loop | TODO — after 165, 167; loops until W5 list empty |
 | [167](167-agent-browser-ui-verification.md) | Verify every Parallax UI surface with agent-browser — functional + responsive | TODO — after 163, 164; runs alongside 165 |
+| [168](168-rust-correctness-test-wave.md) | Close the correctness-critical Rust test gaps (wave 1) | TODO — independent; do first in the QA program |
+| [169](169-rust-parity-and-structural-tests.md) | Fake/engine parity, resolver depth, and metadata versioning (wave 2) | TODO — after 168 (real integration gate) |
+| [170](170-playwright-critical-coverage.md) | Playwright coverage for every critical user flow | TODO — independent; dataset seam first |
+| [171](171-competitor-informed-feature-uplift.md) | Preview-before-save, agent issue lease, MCP evals, instrumented onboarding | TODO — after 168; feature 2 gated on decision-record approval |
+| [172](172-design-system-and-guide.md) | Design-system uplift and the documented design guide (foglamp-informed) | TODO — after 170 (regression net); coordinates with 171 feature 4 |
 
 Plans 162–167 implement the verification program defined in
 [docs/research/reference/feature-inventory-and-playground-verification.md](../docs/research/reference/feature-inventory-and-playground-verification.md)
@@ -25,13 +30,29 @@ same seeded stack; 166 consumes both and iterates as a loop.
 Playground-side changes land in `tailrocks/parallax-telemetry-playground`
 via its own single PR per plan.
 
-Deferred decisions from that program (do not re-audit): lab roster stays at
-five backends (Parallax, OpenObserve, Maple, SigNoz, Sentry) — adding
+Plans 168–172 are the QA + quality program (2026-08-13 deep audit:
+Playwright/Rust coverage, Maple feature study, foglamp design study).
+168→169 sequence; 170 independent; 171 after 168 with feature 2 gated on an
+operator decision-record amendment; 172 after 170. Both programs share the
+`DISCREPANCY:` pipeline consumed by plan 166.
+
+Deferred decisions from these programs (do not re-audit): lab roster stays
+at five backends (Parallax, OpenObserve, Maple, SigNoz, Sentry) — adding
 Grafana LGTM / HyperDX / Uptrace is a separate operator decision; automated
 cross-backend scoring stays out (comparison is manual by design); product
 gaps (profiles signal, SLO/burn-rate, GraphQL subscriptions, alert email,
 browser sessions) are roadmap items, not bugs, and stay in the inventory
-doc's gap list.
+doc's gap list. Maple-inspired ideas deliberately NOT planned: session
+replay, anomaly-detection incidents, K8s/host infra pages, AI
+investigations, web analytics, digest emails (roadmap candidates; Maple is
+FSL-licensed — ideas only, never code). foglamp items rejected: squircle
+corner plugin (Chromium-only), grayscale chart tokens (Parallax's dataviz
+palette is stronger for many-series telemetry), repo-wide border ban
+(tables keep hairline borders). Playwright visual-snapshot expansion to
+dense data tables rejected (churn > value; a11y/overflow checks instead).
+Rust line-coverage chasing in parallax-greptime SQL builders rejected
+(only meaningful against the live engine — the real-engine gate covers
+it).
 
 ## Constraints
 
