@@ -22,7 +22,9 @@
 - **Priority**: P1
 - **Effort**: L (multi-session)
 - **Risk**: HIGH (real product fixes across ingest/API/UI; each mitigated by the per-fix gates below)
-- **Depends on**: plans/165-user-lens-comparison.md
+- **Depends on**: plans/165-user-lens-comparison.md,
+  plans/167-agent-browser-ui-verification.md (UI discrepancies enter the
+  same W5 list)
 - **Category**: bug
 - **Planned at**: parallax `f6208070`, playground `6e0a0d5`, 2026-08-13
 
@@ -193,7 +195,9 @@ c-sweep green. No fix merges on scenario-green alone.
 
 - [ ] W5 discrepancy list: zero OPEN rows (all CLOSED with evidence or
       PROMOTED to a numbered blocked plan).
-- [ ] Full c-series sweep green at pinned versions (`run.sh c1..c10` exit 0).
+- [ ] Full c-series sweep green at pinned versions (`run.sh c1..c11` exit 0
+      — c11 is the agent-browser UI pass from plan 167; re-run after every
+      UI-touching fix).
 - [ ] `cargo xtask ci && cargo xtask lint && cargo xtask test && cargo xtask
       integration && cargo xtask policy && cargo xtask ui graphql check` all
       exit 0 on `main`.

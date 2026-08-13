@@ -14,13 +14,16 @@ under `docs/research/validation/`. Do not keep plan history here.
 | [163](163-playground-example-upgrades.md) | Upgrade every playground example to current-latest instrumentation and re-verify emission | TODO — after 162 |
 | [164](164-playground-feature-coverage.md) | Extend the playground until every Parallax feature has a scripted scenario | TODO — after 162, 163 |
 | [165](165-user-lens-comparison.md) | Run the full playground sweep and record a user-lens comparison across all backends | TODO — after 162–164 |
-| [166](166-production-readiness-fix-loop.md) | Drive every verified discrepancy to zero — the production-readiness fix loop | TODO — after 165; loops until W5 list empty |
+| [166](166-production-readiness-fix-loop.md) | Drive every verified discrepancy to zero — the production-readiness fix loop | TODO — after 165, 167; loops until W5 list empty |
+| [167](167-agent-browser-ui-verification.md) | Verify every Parallax UI surface with agent-browser — functional + responsive | TODO — after 163, 164; runs alongside 165 |
 
-Plans 162–166 implement the verification program defined in
+Plans 162–167 implement the verification program defined in
 [docs/research/reference/feature-inventory-and-playground-verification.md](../docs/research/reference/feature-inventory-and-playground-verification.md)
-(workstreams W2, W1, W3, W4, W5 respectively). Execute in numeric order;
-166 iterates with 165 as a loop. Playground-side changes land in
-`tailrocks/parallax-telemetry-playground` via its own single PR per plan.
+(162→W2, 163→W1, 164→W3, 165→W4, 166→W5, 167→the agent-browser UI
+verification pass). Execute in numeric order; 167 runs alongside 165 on the
+same seeded stack; 166 consumes both and iterates as a loop.
+Playground-side changes land in `tailrocks/parallax-telemetry-playground`
+via its own single PR per plan.
 
 Deferred decisions from that program (do not re-audit): lab roster stays at
 five backends (Parallax, OpenObserve, Maple, SigNoz, Sentry) — adding

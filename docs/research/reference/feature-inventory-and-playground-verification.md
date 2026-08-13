@@ -234,6 +234,17 @@ the current catalog:
 - Redaction canary corpus assertions on every egress surface (UI, bundle,
   MCP, Sentry ack paths).
 
+### Workstream 4a — agent-browser UI verification
+
+Operator requirement (2026-08-13): every UI surface is additionally driven
+by an agent-controlled browser (`agent-browser` CLI) — functional checks per
+route (filters, live tail, waterfall interactions, mutations, ⌘K palette,
+theme persistence) plus responsive checks (no horizontal overflow, nav
+usable) across phone/tablet/desktop viewports in light and dark themes.
+Deterministic core = playground scenario `c11-ui-agent-verify.sh`;
+exploratory functional pass = agent-led checklist. Failures enter the same
+`DISCREPANCY:` pipeline as Workstream 5.
+
 ### Workstream 4 — run it, user-lens comparison
 
 Run the full stack + scenario sweep; for each feature record how each backend
