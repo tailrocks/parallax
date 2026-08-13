@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 577,
-    "test_files": 150
+    "test_cases": 583,
+    "test_files": 156
   },
   "private_route_imports": [],
   "entries": [
@@ -2354,6 +2354,108 @@
       "status": "implemented",
       "dataset_id": "traces-full-stack",
       "state_class": "inventory"
+    },
+    {
+      "id": "pw-trace-detail",
+      "surface": "features/traces",
+      "risk": "Trace detail deep-link may not render tree, flame, or critical path",
+      "scenario_owner": "features/traces",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/trace-detail.spec.ts",
+      "test_ids": [
+        "deep-link tree flame and critical path @pw-trace-detail"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "implemented",
+      "dataset_id": "traces-full-stack",
+      "state_class": "seeded-detail",
+      "delivery_plan": 170
+    },
+    {
+      "id": "pw-service-detail",
+      "surface": "features/services",
+      "risk": "Service detail RED charts or prefiltered links can be empty",
+      "scenario_owner": "features/services",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/service-detail.spec.ts",
+      "test_ids": [
+        "RED charts and prefiltered links @pw-service-detail"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "implemented",
+      "dataset_id": "services-full-stack",
+      "state_class": "seeded-detail",
+      "delivery_plan": 170
+    },
+    {
+      "id": "pw-metrics-workbench",
+      "surface": "features/overview",
+      "risk": "Metrics catalog/workbench may not list seeded series",
+      "scenario_owner": "features/overview",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/metrics.spec.ts",
+      "test_ids": [
+        "catalog workbench and add-to-dashboard @pw-metrics-workbench"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "implemented",
+      "dataset_id": "metrics-full-stack",
+      "state_class": "seeded-detail",
+      "delivery_plan": 170
+    },
+    {
+      "id": "pw-tests-detail",
+      "surface": "features/overview",
+      "risk": "Tests case route may not mount",
+      "scenario_owner": "features/overview",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/tests-detail.spec.ts",
+      "test_ids": [
+        "case route renders explorer or empty @pw-tests-detail"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "implemented",
+      "dataset_id": "tests-full-stack",
+      "state_class": "seeded-detail",
+      "delivery_plan": 170
+    },
+    {
+      "id": "pw-invocation-hub",
+      "surface": "features/runs",
+      "risk": "Invocation hub tabs may not switch or render seeded content",
+      "scenario_owner": "features/runs",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/invocation-hub.spec.ts",
+      "test_ids": [
+        "six hub tabs render seeded invocation @pw-invocation-hub"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "implemented",
+      "dataset_id": "runs-full-stack",
+      "state_class": "seeded-detail",
+      "delivery_plan": 170
+    },
+    {
+      "id": "pw-command-palette-trace",
+      "surface": "layout/shell",
+      "risk": "Command palette paste of a seeded trace id may not land on detail",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "playwright/contracts",
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/command-palette.spec.ts",
+      "test_ids": [
+        "paste seeded trace id lands on detail @pw-command-palette-trace"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "implemented",
+      "dataset_id": "traces-pilot",
+      "state_class": "navigation",
+      "delivery_plan": 170
     },
     {
       "id": "pw-full-stack-shell",
