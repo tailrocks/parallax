@@ -4035,7 +4035,7 @@ kind = "handwritten"
 [[limits]]
 metric = "agent-doc-bytes"
 scope = "AGENTS.md"
-ceiling = 15997
+ceiling = 16215
 
 [[limits]]
 metric = "agent-doc-bytes"

@@ -15,6 +15,9 @@ structure quickly.
 - Keep findings in the repository, not only in chat.
 - Always commit and push AI-agent changes after finishing them, including
   research, docs, code, prompts, and repository-rule updates.
+- Red CI (operator, 2026-08-13): if CI is red, first verify the branch
+  has the latest `origin/main`. Fetch and rebase or merge `main` before
+  treating the failure as a new defect. A stale base is not a product bug.
 - Keep research under `docs/research/` unless a topic-specific root file is a
   better fit.
 - Active-plan policy (operator, 2026-08-13): `plans/` holds only future
