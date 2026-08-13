@@ -6,8 +6,8 @@
 > When done, update this plan's row in `plans/README.md` (parallax repo).
 >
 > **Drift check (run first)**:
-> `git -C ../parallax-telemetry-playground diff --stat 6e0a0d5..HEAD -- Cargo.toml services web libs mise.toml`
-> and `git diff --stat f6208070..HEAD -- bench/otlp-fanout/lab.env`.
+> `git -C ../parallax-telemetry-playground diff --stat 6e0a0d5..HEAD -- Cargo.toml services web libs mise.toml deploy README.md VERIFICATION.md`
+> and `git diff --stat f6208070..HEAD -- bench/otlp-fanout/lab.env bench/otlp-fanout/README.md`.
 > On mismatch with "Current state" excerpts, STOP.
 
 ## Status
@@ -75,9 +75,11 @@ Known-issue anchors to re-test after upgrading:
   supports the current sentry/opentelemetry pair; adopt it only if it does.
 - Playground `README.md` verified matrix — dated 2026-06-23, including the
   unresolved "Java-agent→Rotel→OpenObserve delivery" row.
-- parallax `bench/otlp-fanout/lab.env:3` — stale text `parallax run start`;
-  the live CLI verb is `parallax invocation start` (the `run` alias is
-  rejected by the CLI). Fix the comment text.
+- parallax fan-out lab stale text `parallax run start` (live verb is
+  `parallax invocation start`; the retired `run` alias is rejected by the
+  CLI): `bench/otlp-fanout/lab.env:3` (comment) and `lab.env:14` (echo
+  string), plus three occurrences in `bench/otlp-fanout/README.md:115,119,120`.
+  Fix all five.
 
 Repo constraints (playground `AGENTS`-equivalent conventions + parallax
 `AGENTS.md`): Bun only (never npm/pnpm/node), `bun.lock` sole JS lockfile,
@@ -100,7 +102,9 @@ All run in `../parallax-telemetry-playground` unless noted.
 | Web install | `cd web && bun install` | `bun.lock` updated, exit 0 |
 | Web typecheck/tests | `cd web && bun run typecheck && bun run test` (see `web/package.json` scripts) | exit 0 |
 | Full stack | `docker compose -f deploy/docker-compose.yml build && docker compose -f deploy/docker-compose.yml up -d` | all services up |
-| Machine verification | `cargo run -p playground-cli -- test-verify` (see `VERIFICATION.md` for the exact invocation used there) | acceptance checks pass |
+| Baseline traffic | `cd scenarios && ./run.sh a1` | script exit 0; checkout trace emitted |
+| Machine verification | `cargo run -p playground-cli -- test-verify <invocation-id> <rust\|java\|web> [parallax-api-url]` — the recorded PASS shape is at `VERIFICATION.md:303-305` ("90/90 ci nextest + w4 flaky fixtures + test-report … verified: 3 traces, 95 test attempts, 2 app descendants"); the `<invocation-id>` comes from the `parallax invocation start`-wrapped test run that precedes it | exit 0, verified counts printed |
+| Version resolution | `gh api repos/<owner>/<repo>/releases/latest --jq .tag_name` (GitHub); `cargo search <crate> --limit 1` (crates.io); `curl -s https://repo1.maven.org/maven2/<group-path>/<artifact>/maven-metadata.xml \| grep -o "<release>[^<]*</release>"` (Maven); `bun pm view <pkg> version` (npm) | one latest-stable string per dependency |
 
 ## Scope
 
@@ -110,7 +114,8 @@ All run in `../parallax-telemetry-playground` unless noted.
 to retests only), `libs/playground-telemetry/src/**` and service source files
 *only where upgraded SDK APIs force changes*, `README.md` (verified matrix),
 `VERIFICATION.md` (re-dated results).
-**In scope** (parallax repo): `bench/otlp-fanout/lab.env` (comment text only).
+**In scope** (parallax repo): `bench/otlp-fanout/lab.env` and
+`bench/otlp-fanout/README.md` (stale `run start` text only).
 
 **Out of scope**:
 - New scenarios or features (plan 164).
@@ -174,10 +179,14 @@ forced by API changes).
 ### Step 5: Rebuild the stack and re-run the emission contract
 
 `docker compose -f deploy/docker-compose.yml build` then `up -d` against a
-running fan-out lab (plan 162 pins). Drive baseline traffic
-(`scenarios/a1-checkout.sh`, `scenarios/run.sh` catalog per its README) and
-run the machine verification path documented in `VERIFICATION.md`
-(`playground test-verify` + `smoke.sh` in parallax `bench/otlp-fanout/`).
+running fan-out lab (plan 162 pins). Drive baseline traffic:
+`cd scenarios && ./run.sh a1` (checkout waterfall) and `./run.sh a12`
+(CLI-run driver) — each exits 0. Then run the machine verification: wrap the
+test suite (`parallax invocation start -- mise run test`), capture the
+invocation id it prints, and run
+`cargo run -p playground-cli -- test-verify <invocation-id> rust`
+(binary name is `playground`, package `playground-cli`). Repeat the
+per-backend asserts from plan 162 Step 6 for the fan-out check.
 
 Re-test the two known issues:
 - Java agent → Rotel over **gRPC** (flip `OTEL_EXPORTER_OTLP_PROTOCOL` back
@@ -187,17 +196,21 @@ Re-test the two known issues:
 - Java-agent→Rotel→OpenObserve delivery row in `README.md`.
 
 **Verify**: every service exports traces+logs+metrics to all lab backends
-(per-backend smoke counts match); Sentry envelopes still arrive from Rust,
-Java, and web SDK paths (Sentry UI shows events from all three platforms).
+(plan-162 per-backend asserts show the traffic); Sentry envelope path green
+via `bench/otlp-fanout/sentry/verify.sh` → exit 0, and one forced error each
+from a Rust service (`./run.sh b2`), the Java tier (`./run.sh a14`), and the
+web app (`./run.sh a5`) appears as a Sentry event (record the three event
+URLs in the PR description).
 
 ### Step 6: Refresh the paper trail
 
 - Playground `README.md`: verified matrix re-dated with today's results.
 - `VERIFICATION.md`: append the re-run results; update or close the
   `sentry-opentelemetry` version-blocker note per Step 2 findings.
-- parallax `bench/otlp-fanout/lab.env:3`: change the comment text
-  `parallax run start` → `parallax invocation start` (two occurrences check:
-  `grep -rn "run start" bench/otlp-fanout/` → none after).
+- parallax fan-out lab: change every `parallax run start` to
+  `parallax invocation start` — `lab.env:3` (comment), `lab.env:14` (echo
+  string), `README.md:115,119,120`.
+  Check: `grep -rn "run start" bench/otlp-fanout/` → no matches.
 
 **Verify**: `grep -n "2026-06-23" README.md` → no stale matrix date;
 parallax `cargo xtask docs links` → passes.
@@ -213,16 +226,18 @@ integration test; record per-backend results in the PR.
 ## Done criteria
 
 - [ ] Every dependency family listed in "Current state" is at latest stable
-      resolved at execution date; no rustls feature anywhere
-      (`grep -rn "rustls" ../parallax-telemetry-playground/Cargo.toml` →
-      comments only).
+      resolved at execution date (record the resolved set in the PR
+      description); no active rustls feature:
+      `awk '!/^ *#/' ../parallax-telemetry-playground/Cargo.toml | grep -c rustls`
+      → `0`.
 - [ ] `mise run ci|lint|fmt|test`, 3× `./gradlew build`, `bun run typecheck`
       + `bun run test` all exit 0.
 - [ ] Full compose stack runs; smoke + `test-verify` pass against the pinned
       lab; Sentry receives envelopes from Rust+Java+web.
 - [ ] README verified matrix re-dated; Java-gRPC and sentry-opentelemetry
       notes updated with retest evidence.
-- [ ] `bench/otlp-fanout/lab.env` says `invocation start`.
+- [ ] `grep -rn "run start" bench/otlp-fanout/` → no matches (lab.env +
+      README fixed).
 - [ ] `plans/README.md` (parallax) row updated.
 
 ## STOP conditions

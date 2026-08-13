@@ -7,10 +7,15 @@
 > row in `plans/README.md` each session (it stays IN PROGRESS across
 > sessions until the done criteria hold).
 >
-> **Drift check (run first)**:
-> `git diff --stat f6208070..HEAD -- docs/research/reference/feature-inventory-and-playground-verification.md plans/`
-> — this plan's input is the Workstream 5 discrepancy list plan 165 produced;
-> if that list does not exist yet, STOP (dependency not met).
+> **Dependency gate (run first)**:
+> `grep -c "^DISCREPANCY:\|^CLOSED:\|^PROMOTED" docs/research/reference/feature-inventory-and-playground-verification.md`
+> → must be ≥ 1 (plan 165 wrote the W5 list with these tokens). Zero
+> matches = dependency not met → STOP.
+>
+> **Drift check**: `git diff --stat f6208070..HEAD -- docs/research/reference/feature-inventory-and-playground-verification.md plans/ docs/guide/`
+> plus, before EACH fix cluster (Step 2), diff the exact files that cluster
+> will touch against their "Current state" reproduction — this plan spans
+> sessions, so per-cluster drift checks replace a single global one.
 
 ## Status
 
@@ -55,14 +60,21 @@ plan with a named blocker.
     GraphQL SDL drift-gated (`cargo xtask ui graphql check`).
 - Known pre-triaged items that belong in this loop's first sessions:
   1. Guides drift: `docs/guide/cli.md`, `agent-howto.md`, `conventions.md`,
-     and `docs/guide/jackin.md` still document `parallax run …` and
-     `parallax.run.id`; live CLI + spec use `invocation` / `cli.invocation.id`
-     (spec §; CLI rejects the retired `--run` alias). Docs-only fix, no code.
+     `jackin.md`, AND `quickstart.md` (`docs/guide/quickstart.md:106,110`)
+     still document `parallax run …` / `parallax.run.id`; live CLI + spec
+     use `invocation` / `cli.invocation.id` (CLI rejects the retired `run`
+     alias). Fix every guide the done-criteria grep finds — the five named
+     files are the known set, the grep is the authority. Docs-only fix.
   2. Exponential-histogram drop: `crates/parallax-ingest` `normalize_metrics`
      silently drops exponential histograms/summaries (`_ => {}` arm,
      `crates/parallax-ingest/src/metrics.rs`; CODE-CONFIRMED in playground
      `VERIFICATION.md` 2026-07-17). The playground JVM tier emits base2
      exponential histograms by default (`deploy/docker-compose.yml:143`).
+     (Note: the playground JVM tier emits exponential histograms via an
+     explicit "W5 probe" env var
+     `OTEL_EXPORTER_OTLP_METRICS_DEFAULT_HISTOGRAM_AGGREGATION` at
+     `deploy/docker-compose.yml:141-143` — not an SDK default; keep the
+     probe in place, it is the reproduction.)
      Decide per spec-first rule: either model exponential histograms (spec
      update → ingest + query + UI) or make the drop *observable* (ingest
      counter + doctor/UI signal) — silent data loss is the bug even if
@@ -81,7 +93,9 @@ Parallax repo gates (every fix session, before PR):
 |---|---|---|
 | Fast partition | `cargo xtask ci` | exit 0 |
 | Lint | `cargo xtask lint` | zero warnings |
+| Workspace tiers | `cargo xtask arch` | exit 0 (required for any `crates/` change) |
 | Tests | `cargo xtask test` | all pass |
+| Single new test | `cargo nextest run -p <crate> -E 'test(<test_name>)'` | 1 test listed; fails pre-fix, passes post-fix |
 | Integration | `cargo xtask integration` | all pass |
 | Policy families | `cargo xtask policy` | all pass |
 | GraphQL drift | `cargo xtask ui graphql check` | no drift |
@@ -134,8 +148,9 @@ integration in the owning crate, or UI test per `ui/` conventions — the
 c-series scenario alone is not the regression net for a code fix), then the
 root-cause fix per the rules above. Spec-first if a contract moves.
 
-**Verify**: new test fails before the fix, passes after; full gate table
-above green.
+**Verify**: `cargo nextest run -p <crate> -E 'test(<test_name>)'` fails
+before the fix and passes after (record both runs in the PR); full gate
+table above green (`arch` included when `crates/` changed).
 
 ### Step 3: Re-verify through the playground (repeat)
 
@@ -182,10 +197,13 @@ c-sweep green. No fix merges on scenario-green alone.
 - [ ] `cargo xtask ci && cargo xtask lint && cargo xtask test && cargo xtask
       integration && cargo xtask policy && cargo xtask ui graphql check` all
       exit 0 on `main`.
-- [ ] Guides drift item closed (`grep -rn "parallax run start\|parallax.run.id" docs/guide/` → no matches).
+- [ ] Guides drift item closed:
+      `grep -rln "parallax run \|parallax\.run\.id" docs/guide/` → no output
+      (covers quickstart.md and any file the named five missed).
 - [ ] Exponential-histogram decision executed spec-first (either modeled or
-      observable-drop; `grep -n "_ => {}" crates/parallax-ingest/src/metrics.rs`
-      no longer a silent arm for exponential histograms).
+      observable-drop), proven by a named regression test:
+      `cargo nextest run -p parallax-ingest -E 'test(/exponential/)'` →
+      ≥ 1 test listed, all pass.
 - [ ] Inventory doc stamped with completion date; this plan file + row
       removed per lifecycle.
 

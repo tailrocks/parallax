@@ -32,9 +32,14 @@ competitor matrices that are currently part-stale (`PROGRESS.md` tracks
 
 ## Current state
 
-- Scenario sweep available after plan 164: a-series (~30), b-series chaos,
-  c-series Parallax journeys (`../parallax-telemetry-playground/scenarios/`).
-  Each script prints per-backend "Check in <backend> UI" lines.
+- Scenario sweep available after plan 164: a-series, b-series chaos,
+  corner-case IDs (`t-*`/`l-*`/`m-*`/`e-*`/`p-*`/`j-*`/`eco-*` via
+  `corner-cases.sh`), and c-series Parallax journeys
+  (`../parallax-telemetry-playground/scenarios/`). All are dispatched by
+  catalog ID through `scenarios/run.sh` (plan 164 registers the c-series
+  there — hard dependency; if `./run.sh c1` exits 2 "Unknown scenario",
+  plan 164 is incomplete → STOP). Each script prints per-backend
+  "Check in <backend> UI" lines.
 - Backends (plan-162 pins): Parallax (host), OpenObserve, Maple, SigNoz,
   Sentry self-hosted. Sentry receives traces+logs only (no OTLP metrics —
   `bench/otlp-fanout/rotel.env.example:51`).
@@ -64,7 +69,8 @@ competitor matrices that are currently part-stale (`PROGRESS.md` tracks
 | Purpose | Command | Expected on success |
 |---|---|---|
 | Stack + lab up | plan-162/163 procedures | all backends healthy |
-| Full sweep | `cd ../parallax-telemetry-playground/scenarios && for s in a*.sh b*.sh c*.sh; do ./run.sh ${s%.sh} || echo RED ${s%.sh}; done 2>&1 | tee /tmp/sweep.log` | log of every scenario; RED lines only where VERIFICATION.md already records a DISCREPANCY |
+| Sweep ID list | `cd ../parallax-telemetry-playground/scenarios && ./run.sh \| awk 'NR>1 && NF{print $1}' > /tmp/ids.txt` (run.sh with no args prints the catalog; IDs are its first column — this includes corner-case IDs like `t-*`/`eco-*` and the Bun-run a7, which filenames globs would miss) | `/tmp/ids.txt` non-empty |
+| Full sweep | `while read -r id; do [ "$id" = "b20" ] && { echo SKIP b20 destructive; continue; }; ./run.sh "$id" || echo "RED $id"; done < /tmp/ids.txt 2>&1 \| tee /tmp/sweep.log` — **run.sh takes catalog IDs, never filenames**; `b20` (container OOM) is destructive/`--yes`-gated and stays excluded from the sweep | log of every ID; RED lines only where VERIFICATION.md already records a DISCREPANCY |
 | Ambient load (during UI review) | `docker compose -f deploy/docker-compose.yml --profile demo up loadgen` | k6 profile running |
 | Docs links | `cargo xtask docs links` (parallax) | passes |
 
@@ -105,17 +111,24 @@ block this plan).
 
 ### Step 2: Per-feature user-lens review
 
-For each feature axis (list in "Current state"), in each backend's actual UI,
-perform the user task the scenario sets up (find the failing trace, read the
-N+1, tail the logs, build the alert, …). Record per cell:
-`capability (full/partial/absent) | fidelity notes | workflow friction |
-evidence (scenario id + screenshot-worthy observation)`. Sentry metrics cells
-= N/A-by-transport, not absent. Parallax-only surfaces (bundle, MCP,
-invocation evidence): record the competitor's nearest-equivalent workflow
-honestly (e.g. Sentry issue context, SigNoz trace detail export).
+The grid is a fixed markdown table with exactly these 13 axis rows (one per
+feature family, in this order): ingest-fidelity, traces-ux, logs-ux,
+metrics-ux, errors-issues, evidence-agent, service-map, alerting,
+dashboards, saved-state, sql-raw-query, cli-invocation-evidence,
+test-reporting. Columns: `Axis | Parallax | OpenObserve | Maple | SigNoz |
+Sentry`. For each axis, in each backend's actual UI, perform the user task
+the scenario sets up (find the failing trace, read the N+1, tail the logs,
+build the alert, …). Cell format:
+`full|partial|absent|n/a — <fidelity/friction note> — <scenario id>`.
+Sentry metrics cells = `n/a` by transport (no OTLP metrics), not absent.
+Parallax-only surfaces (bundle, MCP, invocation evidence): record the
+competitor's nearest-equivalent workflow honestly (e.g. Sentry issue
+context, SigNoz trace detail export).
 
-**Verify**: a filled grid exists (features × 5 backends) — attach it as the
-Workstream 4 results table in the inventory doc.
+**Verify**: the grid in the inventory doc has exactly 13 axis rows ×
+5 backend columns and zero empty cells:
+`awk '/^\| ingest-fidelity/,/^\| test-reporting/' docs/research/reference/feature-inventory-and-playground-verification.md | grep -c '^|'` → `13`,
+and `grep -c '\|  *\|' <same section>` → `0`.
 
 ### Step 3: Write the records
 
@@ -125,15 +138,26 @@ Workstream 4 results table in the inventory doc.
 - `docs/corner-case-matrix.md`: add rows for rendering risks found.
 - Parallax `PROGRESS.md`: flip cells verified this run to ✅ with date +
   scenario id; leave unverified cells untouched.
-- Deep-dives for the four lab competitors: update only sections contradicted
-  or newly evidenced by the run; keep the multi-angle rule (capability +
-  price/TCO + license + ops).
+- Deep-dives for the four lab competitors
+  (`parallax-vs-{maple,openobserve,signoz,sentry}.md`): update only sections
+  contradicted or newly evidenced by the run; touch
+  `parallax-vs-hyperdx.md` ONLY if a lab observation contradicts one of its
+  inherited cells (HyperDX is not in the lab roster). Keep the multi-angle
+  rule (capability + price/TCO + license + ops).
 - Inventory doc: Workstream 4 grid + Workstream 5 input list — every
-  discrepancy as `feature | scenario | backend(s) | observed | expected |
-  suspected owner (parallax bug / playground bug / product gap)`.
+  discrepancy on its own line starting with the literal token
+  `DISCREPANCY:` followed by
+  `feature | scenario | backend(s) | observed | expected | suspected owner
+  (parallax bug / playground bug / product gap)`. Use the same
+  `DISCREPANCY:` token in `VERIFICATION.md`'s new section (plan 164
+  introduced it there).
 
-**Verify**: `cargo xtask docs links` passes; `grep -c "DISCREPANCY"` in the
-inventory doc's W5 list equals the count in `VERIFICATION.md`'s new section.
+**Verify**: `cargo xtask docs links` passes;
+`grep -c "^DISCREPANCY:" docs/research/reference/feature-inventory-and-playground-verification.md`
+equals
+`grep -c "^DISCREPANCY:" ../parallax-telemetry-playground/VERIFICATION.md`
+(both files use the token only for the current program's open items —
+closed ones get rewritten to `CLOSED:` by plan 166).
 
 ### Step 4: Roster review note
 
