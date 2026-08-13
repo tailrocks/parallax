@@ -1,0 +1,267 @@
+# Parallax Feature Inventory and Playground Verification Focus
+
+Research date: 2026-08-13. Purpose: a compact reference of everything Parallax
+ships today, plus the current highest-priority program — verify every feature
+through the [telemetry playground](https://github.com/tailrocks/parallax-telemetry-playground)
+against competitor backends until all features are production-ready. This file
+is the input document for a deep implementation plan (e.g. an `/improve` pass);
+it states *what exists* and *what the program must achieve*, not the step-by-step
+plan itself.
+
+Canonical deep contracts: [v1-implementation-spec.md](../architecture/v1-implementation-spec.md)
+(API/UI/CLI contracts), [code-reality-ledger.md](../code-reality-ledger.md)
+(claim vs shipped), [competitors/README.md](../market/competitors/README.md)
+(comparison method), playground design
+[telemetry-playground-sample-project.md](../validation/telemetry-playground-sample-project.md)
+and fan-out lab [otlp-fanout-comparison-lab.md](../validation/otlp-fanout-comparison-lab.md).
+
+## What Parallax is
+
+Sentry-compatible, OpenTelemetry-native, self-hosted execution-context engine:
+one Rust binary (`parallax serve`) exposing OTLP ingest + GraphQL + embedded UI,
+storing telemetry in a supervised GreptimeDB child (native OTLP tables) and
+mutable metadata in Turso. It serves bounded, redacted evidence bundles to
+humans and coding agents; it is the context engine, not the fixer.
+
+## Feature inventory (shipped on `main`)
+
+### Ingest
+
+- OTLP/gRPC `:4317` and OTLP/HTTP `:4318` — traces, logs, metrics (gzip,
+  size limits, validation gate). No profiles signal.
+- Sentry envelope endpoint `POST /api/<project_id>/envelope/` (disabled by
+  default) — normalizes to Parallax error events, no second issue model.
+- GitHub webhooks `POST /webhooks/github` (disabled by default) — HMAC-verified
+  deploy + Actions CI events; bounded read-only REST backfills for both.
+- Claude Code session import: `parallax import-claude` (consent-only NDJSON).
+- Pipeline: raw-frame spool (PSPL1, crash forensics) → per-signal workers (no
+  head-of-line blocking) → normalize → GreptimeDB write → error derivation →
+  issue upsert → live broadcast. `/health` reports ingest degradation (503).
+
+### Storage and lifecycle
+
+- GreptimeDB native tables (`opentelemetry_traces`, `opentelemetry_logs`,
+  per-metric tables) + derived extension tables (`error_events`,
+  `invocation_metric_points`, exemplars). Bootstrap, repair `ALTER`s, TTL
+  reconcile. Managed child (checksum-verified download, ports 24000–24003,
+  supervised restart) or `external` mode.
+- Turso metadata: issues/occurrences, invocations, dashboards, investigations,
+  saved views, alert rules/states/incidents/destinations/deliveries, test
+  reporting, CI/deploy deliveries, evidence pins, fixer outcomes, prune journal.
+- Retention defaults: traces/logs 7d, metrics 14d, error events 30d;
+  `parallax prune` plan-first, dry-run default, pin-aware, journaled.
+
+### Errors, issues, evidence, agent surface
+
+- Deterministic error derivation from exception spans + ERROR/FATAL logs;
+  fingerprint grouping; issue lifecycle (open/resolve), trend, correlation.
+- Evidence bundles (`bundle-v1` dossier in `bundle-v2` envelope, canonical
+  hash, token-bounded, redacted, hypothesis-ranked): anchors = issue
+  fingerprint | invocation | trace; `missing_evidence` gap detection; evidence
+  pins survive telemetry TTL.
+- Redaction engine `redaction-lite-v3` (20 secret detectors, default-deny).
+- Story timeline (deterministic beats), agent-session projection, fixer
+  outcome records (PR ≠ success; requires review + non-recurrence).
+- MCP: local-stdio read-only `parallax-mcp`, exactly 2 tools
+  (`parallax_issue_context`, `parallax_agent_session_show`), wire budgets,
+  projection-equivalence `check`.
+
+### CLI (`parallax`)
+
+- `serve`; `doctor`; `prune`; `uninstall`; `sql` (read-only); `metrics`.
+- `logs` / `traces` browse with UI-equivalent filters plus `--follow` / `--for`
+  bounded live tail (the agent fix-verification signal); `trace inspect`.
+- Invocations (CLI apps as first-class evidence): `invocation start`
+  (wrapper/bare, OTel env injection incl. `TRACEPARENT`, `--otlp-forward`
+  compare mode), `finish`, `inspect`, `bundle`, `agent`, `list`, `watch`.
+- Issues: `issue list|context|resolve` (`issue context` = agent handoff).
+- Remote contexts: `context add|list|use|show|remove` (`~/.parallax/contexts.toml`).
+- Output contract `--format table|json|md`, exit codes 0/1/2.
+
+### API
+
+- One canonical GraphQL surface `POST :4000/graphql` — 76 queries, 14
+  mutations, 0 subscriptions; depth/complexity limits; SDL checked into
+  `ui/graphql/schema.graphql` and drift-gated.
+- Query families: overview/signal series; services (catalog, map, RED,
+  releases, runtime snapshot); traces (search, facets, duration stats, events,
+  span links, critical path, structural compare, paging); logs (filters,
+  around-anchor, histogram, facets, Drain patterns); issues + trend; metrics
+  (catalog, typed query with kind-legal aggregations, labels, exemplars,
+  histogram quantile); invocations + observed invocations; derived projections
+  (sessions, screen visits, UI actions, background cycles, jobs,
+  conversations); evidence (`bundle`, `story`, `agentSession`,
+  `evidenceGaps`); field stats + `attributeCompare`; test cases; dashboards /
+  investigations / saved views; alerting; raw `sql`.
+- Live tail is SSE: `GET /v1/logs/stream`, `/v1/traces/stream` (per-row
+  predicates, broadcast lag-drop).
+
+### UI (embedded TanStack Start SPA)
+
+- Surfaces: Overview (stat cards, trends, brush-to-zoom, top movers), Issues
+  (list/detail, stacktrace with culprit frames, breadcrumbs, resolve/reopen,
+  agent-handoff card), Traces (search + live tail, field explorer; detail with
+  waterfall/compact/flamegraph, color-by-attribute, minimap, keyboard zoom,
+  critical path, trace compare, clock-skew banner, evidence gaps, GraphQL ops,
+  RPC streams, story tab), Logs (where-clause chips with facet autocomplete,
+  severity floor, columns, patterns, saved views, live tail, histogram brush,
+  context-around anchor), Metrics (catalog; per-metric workbench with legal
+  aggregations, group-by, step; graduate to dashboard widget or alert rule),
+  Services (heat catalog; detail with RED charts, exemplar dots, release
+  strip, runtime snapshot), Ecosystem (React Flow + ELK service map: focus,
+  hops, dim/hide, traffic threshold), CLI Apps (invocation list + 6-tab hub
+  incl. sessions/screens/UI actions/conversations/jobs/cycles), Tests
+  (variant explorer, flaky states, attempt chains), Alerts (rules/incidents/
+  destinations tabs, template rule dialog), Dashboards (gallery + widget
+  grid), Investigations (case files: pins with notes, window, markdown notes),
+  SQL workbench (schema browser, snippets, history, examples).
+- Cross-cutting: URL-driven shareable filters + time range everywhere, ⌘K
+  palette with id-shape jump, theme system/light/dark, virtualized tables,
+  route error/pending/not-found boundaries, onboarding empty states.
+
+### Alerting
+
+- Rule signals: error_rate, p95/p99 latency, throughput, log_count, metric;
+  comparators incl. between; hysteresis, min samples, no-data behavior,
+  severity, renotify, service scoping, group-by, attribute filters.
+- Evaluator with CAS claim + pure state machine + audit rows + incidents;
+  outbox delivery: webhook + Slack webhook (email deferred), backoff,
+  dead-letter. Module marked preliminary.
+
+### Test reporting
+
+- JUnit/nextest adaptation, variant identity, attempt chains, fail-then-pass
+  flaky detection (replay-safe scan), UI explorer + GraphQL.
+
+### Operations, release, engineering gates
+
+- Self-telemetry export (`PARALLAX_SELF_OTLP`, feedback-loop filtered).
+- Homebrew preview channel; deterministic packaging with SBOM/signature/
+  provenance verification; embedded-UI feature; Apple native + Linux
+  zigbuild/vendored-OpenSSL builds (native TLS everywhere, never rustls).
+- `cargo xtask` control plane: ci/lint/test partitions, policy families
+  (architecture, structural, TS strictness, UI ownership/ratchets, GraphQL
+  drift, runtime boundaries), facade + semconv generation, docs link check,
+  Playwright lanes (smoke/contracts/full-stack + a11y/mobile/visual/cross).
+
+### Known gaps and unfinished work (fold into the plan)
+
+- No profiles signal end-to-end; no GraphQL subscriptions (SSE only); no
+  SLO/error-budget/burn-rate; alert email deferred; Sentry/GitHub surfaces
+  disabled by default; browser-RUM sessions are CLI/desktop-shaped
+  projections, not a browser session product.
+- `plans/089` (extension-table gRPC writes — blocked on upstream rustls-free
+  ingester) and `plans/114` (retire legacy spool reader — blocked on stable
+  release cadence).
+- Doc drift: guides still say `run` / `parallax.run.id`; spec + code use
+  `invocation` / `cli.invocation.id`. Sentry multi-SDK compatibility ledger
+  unproven; A1 (bundle beats raw context) still the open existential gate.
+
+## Highest-priority program: playground-verified, competitor-compared features
+
+Operator intent (2026-08-13): the next work program uses the playground as the
+proving ground for **every** Parallax feature, compared side-by-side with
+competitor backends fed identical telemetry through the fan-out hub, from the
+perspective of a real user of each product. End state: every feature above is
+verified working, compared, and production-ready — zero known bugs.
+
+### Current playground state (repo `tailrocks/parallax-telemetry-playground`)
+
+- 12 components: 8 Rust services (axum/tonic/sqlx/Juniper: checkout, pricing,
+  inventory, recommendation, orders, notifications, storefront), 3 Java Spring
+  Boot 4.1 (catalog GraphQL, payment gRPC, fulfillment Kafka), TanStack
+  Start/React 19 web (browser OTLP + web-vitals + session.id + SSR
+  traceparent), Rust `playground` CLI (runs/cron, JUnit→OTLP bridge).
+  Dual emission: OTLP + Sentry SDK envelopes. Infra: postgres:17, Redpanda,
+  flagd, k6.
+- ~60 scripted scenarios: a-series feature proofs (waterfall, exemplars, span
+  links, reverse-language hop, RUM error, GraphQL N+1, subscriptions/stream
+  cancel, log spike, baggage, CLI run/cron, deploy regression, flag flip,
+  PII-redaction canary, long/wide trace, trace compare, tokio saturation,
+  Postgres pathologies, cache stampede, RUM journey, business events) +
+  b-series chaos (error/latency breach, retries, OOM, GC pressure, consumer
+  lag, poison message, sampling gap, rage click, …).
+- Fan-out lab lives in this repo at `bench/otlp-fanout/` — Rotel hub fanning
+  identical OTLP to Parallax, OpenObserve, Maple, SigNoz, Sentry (per-signal
+  routing; Sentry has no OTLP metrics).
+- `VERIFICATION.md` runbook + machine-checked `playground test-verify`;
+  `TOUR.md`; corner-case matrix. Comparison is manual by design.
+
+### Workstream 1 — upgrade playground examples
+
+Bring every example/service to current ecosystem latest (Boot, OTel Java
+agent, OTel Rust, JS SDKs, Sentry SDKs); refresh `postgres:17` → 18; re-run
+`renovate`-missed surfaces; re-verify the dual OTLP+Sentry emission contract
+after upgrades; refresh the README verified matrix (stale since 2026-06-23,
+including the unresolved Java-agent→Rotel→OpenObserve delivery snag).
+
+### Workstream 2 — latest backend versions, pinned
+
+Pin every backend/tool at latest stable and keep pins current (research date
+2026-08-13):
+
+| Tool | Deployed today | Latest stable |
+| --- | --- | --- |
+| Maple (maple.dev, Makisuo/maple) | v0.0.12 | v0.0.18 |
+| OpenObserve | `:latest` unpinned | v0.92.0 |
+| SigNoz | vendored, unpinned | v0.137.0 |
+| Sentry self-hosted | verified at 26.6.0 | 26.7.2 |
+| Rotel hub | `streamfold/rotel:latest` | pin current |
+| OTel Collector (if added as alt hub) | — | v0.158.0 |
+| postgres | 17 | 18 |
+| Redpanda / flagd / k6 / telemetrygen | `:latest` unpinned | pin current |
+
+Candidate roster additions (decide in planning; deep-dives exist under
+`market/competitors/`): Grafana LGTM v13.x, HyperDX v2.x, Uptrace v2.1.
+Roster changes must keep the fan-out lab docs + `comparison-set.md` in sync.
+
+### Workstream 3 — extend playground to cover missed Parallax features
+
+Every inventory item above needs a scenario that exercises it; known holes in
+the current catalog:
+
+- Evidence bundles/pins/story/agent handoff: scripted `issue context` +
+  `invocation bundle` + MCP tool calls against playground data; A1 gate probes.
+- Alerting end-to-end: rules over playground signals, incident open/resolve,
+  webhook + Slack delivery capture; compare alert UX per backend.
+- Dashboards, investigations, saved views, SQL workbench flows as scripted
+  user journeys, not just ad-hoc clicks.
+- GitHub deploy/CI ingest + backfill (webhook fixtures), test-reporting
+  depth (flaky chains across invocations), Claude Code session import,
+  Sentry-envelope multi-SDK ledger (Rust/Java/JS at minimum).
+- Live tail (SSE + CLI `--follow --for`), prune/retention/doctor, remote
+  contexts, `--otlp-forward` compare mode, self-telemetry.
+- Redaction canary corpus assertions on every egress surface (UI, bundle,
+  MCP, Sentry ack paths).
+
+### Workstream 4 — run it, user-lens comparison
+
+Run the full stack + scenario sweep; for each feature record how each backend
+(Parallax, Maple, OpenObserve, SigNoz, Sentry, any roster additions) serves a
+practicing user on identical data: capability present/absent, fidelity,
+workflow quality, gaps. Feed results into the competitor matrix
+(`market/competitors/` axes: signals, ingestion, storage/cost, agent story,
+architecture, security, economics) and the playground corner-case matrix.
+Honesty rule stands: a comparison that always favors Parallax is a failure
+state.
+
+### Workstream 5 — fix and verify to production-ready
+
+Every discrepancy found becomes a fix in Parallax (root cause first, per
+repository rules), a scenario in the playground, or both; re-verify after fix.
+Exit criteria: every feature in this inventory exercised by at least one
+scripted scenario, verified in Parallax UI/CLI/API, compared against the
+roster, `VERIFICATION.md` matrix fully green at current versions, zero known
+bugs or issues open against shipped features (tracked defects either fixed or
+promoted to `plans/` with a blocking reason).
+
+### Planning notes for the deep plan
+
+- Keep mandatory constraints: GreptimeDB+Turso only, native OTLP tables,
+  native TLS never rustls, Bun only, zero-copy ingest hot path, single-branch
+  `main` workflow, latest-stable version policy.
+- Sequence suggestion: W2 (pins) → W1 (example upgrades) → W3 (coverage) →
+  W4 (run/compare) → W5 (fix/verify) with W4/W5 iterating as a loop.
+- Playground changes land in the playground repo; fan-out lab, comparison
+  matrices, and this inventory live here — update both sides in the same
+  program step.

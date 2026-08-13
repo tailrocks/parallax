@@ -157,6 +157,7 @@ Historical architecture/capture notes keep evidence under dated or **historical*
 - [test-reporting-ecosystem.md](market/test-reporting-ecosystem.md) — **test-reporting landscape + Parallax test-observability concept**: Allure deep-dive (identity system, failed-vs-broken, categories, TestOps), ReportPortal/Datadog Test Optimization/Currents/Codecov/Buildkite/Trunk/CTRF survey, identity + flakiness models in the wild, and the two cells nobody fills (SUT telemetry in the test window; fingerprints shared between test failures and production issues). Feeds plans 154/155.
 
 ### `reference/`
+- [feature-inventory-and-playground-verification.md](reference/feature-inventory-and-playground-verification.md) — **compact inventory of every shipped Parallax feature** (ingest, storage, evidence, CLI, GraphQL, UI, alerting, tests, ops) plus the current highest-priority program: playground-verified, competitor-compared, production-ready features; the input document for the next deep implementation plan.
 - [agent-observability-review.md](reference/agent-observability-review.md) — technical review of current agent-observability tools and the Parallax-specific gap.
 - [grafana-tempo-v3-architecture-review.md](reference/grafana-tempo-v3-architecture-review.md) — Tempo v3.0.0 (Kafka-log write path, vParquet5, TraceQL Metrics GA, retroactive redaction) reviewed as an architectural reference: three borrows, not a wedge competitor.
 
