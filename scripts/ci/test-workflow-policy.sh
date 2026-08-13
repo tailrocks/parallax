@@ -3,6 +3,7 @@ set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
 workflows="$root/.github/workflows"
+project_ci="$workflows/ci-public-unmerged.yml"
 failures=0
 
 while IFS=: read -r file line value; do
@@ -17,11 +18,11 @@ while IFS=: read -r file line value; do
   fi
 done < <(rg -n --no-heading '^\s*- uses:' "$workflows")
 
-rg -U '^  clippy:\n    needs: changes$' "$workflows/ci.yml" >/dev/null || {
+rg -U '^  clippy:\n    needs: changes$' "$project_ci" >/dev/null || {
   printf 'Clippy is not a sibling of check\n' >&2
   failures=$((failures + 1))
 }
-rg '^    needs: \[changes, actionlint, source-hygiene, security-hygiene, policy, fmt, docs-links, audit, check, clippy, test, ui, ui-formatter-platform, embed, browser-contracts, browser-full-stack, browser-breadth, closure-final, fuzz-bench\]$' "$workflows/ci.yml" >/dev/null || {
+rg '^    needs: \[changes, actionlint, source-hygiene, security-hygiene, policy, fmt, docs-links, audit, check, clippy, test, ui, ui-formatter-platform, embed, browser-contracts, browser-full-stack, browser-breadth, closure-final, fuzz-bench\]$' "$project_ci" >/dev/null || {
   printf 'ci-required does not explicitly aggregate every required lane\n' >&2
   failures=$((failures + 1))
 }
@@ -29,17 +30,17 @@ if rg -n '^\s*permissions:\s*write-all' "$workflows"; then
   printf 'write-all workflow permission found\n' >&2
   failures=$((failures + 1))
 fi
-rg '^      - run: cargo xtask semconv check$' "$workflows/ci.yml" >/dev/null || {
+rg '^      - run: cargo xtask semconv check$' "$project_ci" >/dev/null || {
   printf 'policy lane does not enforce generated semantic conventions\n' >&2
   failures=$((failures + 1))
 }
 browser_target_key="-browser-\${{ hashFiles"
-if [[ $(rg -F -c -- "$browser_target_key" "$workflows/ci.yml") -ne 6 ]]; then
+if [[ $(rg -F -c -- "$browser_target_key" "$project_ci") -ne 6 ]]; then
   printf 'three browser lanes must share one Cargo target cache namespace\n' >&2
   failures=$((failures + 1))
 fi
 xtask_target_key="-xtask-\${{ hashFiles"
-if [[ $(rg -F -c -- "$xtask_target_key" "$workflows/ci.yml") -ne 8 ]]; then
+if [[ $(rg -F -c -- "$xtask_target_key" "$project_ci") -ne 8 ]]; then
   printf 'four xtask lanes must share one Cargo target cache namespace\n' >&2
   failures=$((failures + 1))
 fi
@@ -49,16 +50,16 @@ for exclusion in \
   '!target/**/build/parallax-*' \
   '!target/**/deps/libparallax*' \
   '!target/**/deps/parallax*'; do
-  rg -F -- "$exclusion" "$workflows/ci.yml" >/dev/null || {
+  rg -F -- "$exclusion" "$project_ci" >/dev/null || {
     printf 'Cargo target cache omits quota guard: %s\n' "$exclusion" >&2
     failures=$((failures + 1))
   }
 done
-if [[ $(rg -F -c 'path: *cargo-target-paths' "$workflows/ci.yml") -ne 6 ]]; then
+if [[ $(rg -F -c 'path: *cargo-target-paths' "$project_ci") -ne 6 ]]; then
   printf 'Cargo target caches do not share the quota-bounded path contract\n' >&2
   failures=$((failures + 1))
 fi
-rg -U '^  closure-final:\n(?:.*\n)*?    permissions:\n      contents: read\n(?:.*\n)*?          install_args: "rust bun actionlint"\n(?:.*\n)*?          install_args: "cargo-binstall aqua:nextest-rs/nextest/cargo-nextest cargo:cargo-audit cargo:cargo-deny cargo:cargo-hack cargo:cargo-shear"\n(?:.*\n)*?            scripts/ci/closure-baseline.sh\n            cargo xtask closure-final$' "$workflows/ci.yml" >/dev/null || {
+rg -U '^  closure-final:\n(?:.*\n)*?    permissions:\n      contents: read\n(?:.*\n)*?          install_args: "rust bun actionlint"\n(?:.*\n)*?          install_args: "cargo-binstall aqua:nextest-rs/nextest/cargo-nextest cargo:cargo-audit cargo:cargo-deny cargo:cargo-hack cargo:cargo-shear"\n(?:.*\n)*?            scripts/ci/closure-baseline.sh\n            cargo xtask closure-final$' "$project_ci" >/dev/null || {
   printf 'closure-final does not run its full read-only baseline with required tools\n' >&2
   failures=$((failures + 1))
 }
