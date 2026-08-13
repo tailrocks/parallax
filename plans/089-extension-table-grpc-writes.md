@@ -23,10 +23,7 @@
 
 ## Residual only
 
-Completed elsewhere / not owned here: exemplar PK fix (plan 092), SQL path in
-`crates/parallax-storage/src/greptime.rs`, upstream PR contribution packet.
-
-Unfinished after Step 0 clears:
+After the upstream blocker clears:
 
 1. Wire trusted local / explicit external gRPC endpoints; ready-banner name.
 2. Route `error_events`, `run_metric_points`, `metric_exemplars` through

@@ -17,21 +17,17 @@ structure quickly.
   research, docs, code, prompts, and repository-rule updates.
 - Keep research under `docs/research/` unless a topic-specific root file is a
   better fit.
-- Active-plan policy (operator, 2026-07-12): `plans/` is the only directory
-  for active product/engineering implementation plans, their execution
-  checklists, and active plan run contracts. Keep unfinished work only. When an
-  item becomes terminal, preserve durable evidence where appropriate, then
-  delete its plan file and index row in the same commit. Never create another
-  implementation-plan directory or active implementation prompt except the sole
-  compact `plans/GOAL.md` orchestration brief explicitly authorized on
-  2026-07-12; it adds no work beyond numbered plans and Plan 107 deletes it at
-  closure. When research, a decision record, or a specification identifies
-  executable product or engineering work, move the complete work packet into a
-  numbered `plans/` file and leave only evidence, requirements, or an ownership
-  link at the source.
-  Durable research agendas, experiment protocols, specifications, and reusable
-  research prompts stay in their topic-specific homes only when they are not
-  implementation backlogs.
+- Active-plan policy (operator, 2026-08-13): `plans/` holds only future
+  product or engineering work we still intend to implement or improve. No
+  completed-program history, execution-contract archive, or orchestration
+  brief belongs there. When an item becomes terminal, preserve durable
+  evidence outside `plans/` if useful, then delete its file and index row in
+  the same commit. When research, a decision record, or a specification
+  identifies executable work, move the complete work packet into a numbered
+  `plans/` file and leave only evidence, requirements, or an ownership link
+  at the source. Durable research agendas, experiment protocols,
+  specifications, and reusable research prompts stay in their topic-specific
+  homes.
 - Do not build a documentation site yet. Plain Markdown is enough for this
   stage.
 - Concept-proving Rust code is allowed under `poc/` (operator, 2026-06-11):

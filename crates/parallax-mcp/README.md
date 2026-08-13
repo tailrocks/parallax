@@ -18,7 +18,7 @@ Evidence and decision:
 - Graduation evidence: [`docs/research/validation/2026-07-plan-112-product-mcp/README.md`](../../docs/research/validation/2026-07-plan-112-product-mcp/README.md)
 - Spike projection proof (historical): [`docs/research/validation/2026-07-11-mcp-spike-projection-equivalence.md`](../../docs/research/validation/2026-07-11-mcp-spike-projection-equivalence.md)
 - Design: [`docs/research/decisions/agent-access-surface.md`](../../docs/research/decisions/agent-access-surface.md)
-- Workspace policy: `Aux parallax-mcp` in [`plans/ENGINEERING-STANDARDS.md`](../../plans/ENGINEERING-STANDARDS.md)
+- Workspace policy: `Aux parallax-mcp` in [`docs/research/architecture/rust-workspace-map.md`](../../docs/research/architecture/rust-workspace-map.md)
 
 ## Tools (read-only catalog)
 

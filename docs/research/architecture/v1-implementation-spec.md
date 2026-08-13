@@ -589,6 +589,5 @@ With this spec, [v1-scope.md](v1-scope.md) (inventory + acceptance) and
 [simple-ui-v2.md](simple-ui-v2.md) (UI) are implementable end-to-end: schemas, mappings, ports,
 pins, API shape, and supervision are decided; the PoC supplies derivation/fingerprint/bundle
 semantics; acceptance is the dogfood scenarios in v1-scope §1. The recommended long-running
-execution contract for all unfinished implementation work is
-[`plans/IMPLEMENTATION.md`](../../../plans/IMPLEMENTATION.md), with the active
-index in [`plans/README.md`](../../../plans/README.md).
+index of unfinished implementation work is
+[`plans/README.md`](../../../plans/README.md).
