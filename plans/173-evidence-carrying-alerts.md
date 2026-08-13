@@ -177,7 +177,7 @@ matches `alertIncident.bundle`.
 
 ## Done criteria
 
-- [ ] Spec carries the fourth anchor + payload fields (committed before
+- [x] Spec carries the fourth anchor + payload fields (committed before
       code).
 - [ ] Incident open assembles + persists a bundle without ever blocking
       delivery (failure-injection test proves it).
