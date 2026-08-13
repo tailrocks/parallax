@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 573,
-    "test_files": 146
+    "test_cases": 577,
+    "test_files": 150
   },
   "private_route_imports": [],
   "entries": [
@@ -1525,7 +1525,7 @@
       "delivery_plan": 134
     },
     {
-      "id": "pw-reserved-sql-contracts",
+      "id": "pw-sql-crud",
       "surface": "features/sql",
       "risk": "SQL safe execution, result states, history, snippet CRUD, schema browser",
       "scenario_owner": "features/sql",
@@ -1533,13 +1533,13 @@
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/sql.spec.ts",
       "test_ids": [
-        "reserved @sql browser contracts"
+        "run query snippet save and delete @pw-sql-crud"
       ],
       "required_environment": "chromium-fixture",
-      "status": "reserved",
-      "dataset_id": "sql-default",
-      "state_class": "inventory",
-      "delivery_plan": 135
+      "status": "implemented",
+      "dataset_id": "sql-pilot",
+      "state_class": "mutation",
+      "delivery_plan": 170
     },
     {
       "id": "pw-reserved-ecosystem-contracts",
@@ -1559,7 +1559,7 @@
       "delivery_plan": 136
     },
     {
-      "id": "pw-reserved-dashboards-contracts",
+      "id": "pw-dashboards-crud",
       "surface": "features/dashboards",
       "risk": "Dashboard list/detail/widget CRUD and chart states",
       "scenario_owner": "features/dashboards",
@@ -1567,13 +1567,13 @@
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/dashboards.spec.ts",
       "test_ids": [
-        "reserved @dashboards browser contracts"
+        "create widget persist and delete @pw-dashboards-crud"
       ],
       "required_environment": "chromium-fixture",
-      "status": "reserved",
-      "dataset_id": "dashboards-default",
-      "state_class": "inventory",
-      "delivery_plan": 137
+      "status": "implemented",
+      "dataset_id": "dashboards-pilot",
+      "state_class": "mutation",
+      "delivery_plan": 170
     },
     {
       "id": "pw-reserved-services-contracts",
@@ -1641,6 +1641,40 @@
       "status": "implemented",
       "dataset_id": "logs-pilot",
       "state_class": "seeded-list",
+      "delivery_plan": 170
+    },
+    {
+      "id": "pw-alerts-crud",
+      "surface": "features/overview",
+      "risk": "Alert destination/rule CRUD and enable toggle may fail to persist",
+      "scenario_owner": "features/overview",
+      "lane_owner": "playwright/contracts",
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/alerts.spec.ts",
+      "test_ids": [
+        "destination rule toggle and delete @pw-alerts-crud"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "implemented",
+      "dataset_id": "alerts-pilot",
+      "state_class": "mutation",
+      "delivery_plan": 170
+    },
+    {
+      "id": "pw-logs-views-crud",
+      "surface": "features/logs",
+      "risk": "Logs saved-view save/restore/delete may drop where-clause filters",
+      "scenario_owner": "features/logs",
+      "lane_owner": "playwright/contracts",
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/logs-views.spec.ts",
+      "test_ids": [
+        "filter save restore and delete view @pw-logs-views-crud"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "implemented",
+      "dataset_id": "logs-pilot",
+      "state_class": "mutation",
       "delivery_plan": 170
     },
     {
