@@ -25,3 +25,15 @@ lockfile = true
 idiomatic_version_file_enable_tools = ["rust"]
 cargo.binstall_only = true
 cargo.binstall_quickinstall = true
+
+[tasks.ci]
+run = "cargo check --workspace --all-targets --locked"
+
+[tasks.test]
+run = "cargo nextest run --workspace --all-targets --profile ci --no-tests=fail --color=always"
+
+[tasks.lint]
+run = "cargo clippy --workspace --all-targets --locked -- -D warnings"
+
+[tasks.fmt]
+run = "cargo fmt --all -- --check"
