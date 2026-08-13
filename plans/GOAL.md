@@ -1,95 +1,65 @@
-# Ship Unified CLI Observability Directly On Main, Then Close The Remaining Program
+# Close The Remaining Leftover Plans
 
 ## Authorization And Objective
 
-The previous authorization (branch `codex/active-plan-closure-7f3c`, sole PR
-#20) completed and merged on 2026-07-15; that program is closed.
+Retired program waves are not current work. Their evidence lives under
+`docs/research/validation/`. Do not execute retired numbered plans.
 
-The operator (2026-07-17, superseding the same-day branch authorization)
-directs: **the entire program is implemented directly on `main`** in BOTH
-repositories — `tailrocks/parallax` and
-`tailrocks/parallax-telemetry-playground`. Do not create any branch,
-worktree branch, remote branch, or pull request, in either repository, for
-any part of this program. Every durable green slice is committed to `main`
-(DCO sign-off, exactly one agent trailer, Conventional Commits) and pushed
-immediately. The parallax `main` ruleset is bypassed by the operator's
-admin rights — the "Bypassed rule violations" notice on push is expected,
-not an error. Plan/index/document maintenance commits land on `main` the
-same way.
+The leftover unfinished work is only:
 
-Primary objective: execute plans 156, 157, 158, 161, 160, and 159 (the
-Unified CLI Observability vertical in `plans/README.md`) **completely and
-one-shot, without operator questions** — every decision needed is fixed
-inside those plans. The vertical removes `parallax.run.id` support entirely
-and replaces the runs surface with generic CLI-application observability
-(`cli.invocation.id`, `session.id`, `app.mode`, `ui.*` events,
-`background.cycle`, jobs, `gen_ai.*`, bounded `outcome`/`error.type` —
-generic attributes only, application-specific keys are display-only opaque
-data), builds the invocation hub UI with per-page real-time toggles and the
-session journey view, extends the playground with the corner-case corpus,
-audits and fixes every UI display defect (span rendering inside traces
-foremost) with browser verification after every implemented feature, and
-proves the whole coverage matrix live on the operator's Docker host with
-GraphQL assertions and browser evidence (plan 159) before Wave 1 is
-declared complete.
+- Plan 089 — BLOCKED on the upstream `greptimedb-ingester` native-TLS /
+  plaintext feature. Recheck the crates.io / GitHub / PR #58 trigger; leave
+  the plan BLOCKED if it still fails. Do not enable rustls, fork the crate,
+  or weaken native-TLS policy.
+- Plan 114 — BLOCKED until a qualifying stable raw-frame release cycle and
+  expired legacy segments exist. Recheck published tags; leave BLOCKED while
+  the only tag is rolling `preview`.
+- Plan 107 — IN PROGRESS, last. Independent source audits and the mechanical
+  program-close commit. Do not retire this plan, do not impersonate its
+  closure commit, and do not delete still-binding contracts
+  (`IMPLEMENTATION.md`, `ENGINEERING-STANDARDS.md`, `OXC-IMPLEMENTATION.md`,
+  this file) until 107's mechanical allowlist says so.
 
-Secondary objective: after plan 159's evidence completes Wave 1, execute
-Wave 2 (plans 162-168, the Maple-informed UI evolution — see its section in
-`plans/README.md`) the same way — directly on `main` in both repositories —
-then continue every remaining actionable plan under the same rules,
-honoring genuine blockers.
-
-Before the first plan, read `plans/README.md#execution-preflight-verified-live-2026-07-17`
-— it records the verified host facts (Docker, toolchains, push rights,
-live-engine test invocation shape, browser-tooling requirement) and the
-only operator-gated leftovers. Do not re-derive or second-guess those
-facts unless a command contradicts them.
+Primary objective: honor the two external blockers, keep their residuals and
+done criteria intact, and continue plan 107 only when its C0 freeze criteria
+are honestly met. Do not invent actionable product work from retired waves.
 
 ## Sources And Scope
 
-Before editing and before each new plan, read `AGENTS.md`, `BRANCHING.md`,
-`COMMITS.md`, `PROJECT_STRUCTURE.md`, `plans/README.md`, this file,
-`plans/IMPLEMENTATION.md`, `plans/ENGINEERING-STANDARDS.md`, the selected
-plan and its dependencies, and the relevant source, tests, CI, manifests, and
-configuration. Read `ui/AGENTS.md` before UI work. Recheck version-sensitive
-details in current official documentation via Context7. Use live evidence to
-correct stale mechanics; never silently change operator decisions,
-architecture, scope, or gates.
+Before editing and before each leftover step, read `AGENTS.md`,
+`BRANCHING.md`, `COMMITS.md`, `PROJECT_STRUCTURE.md`, `plans/README.md`, this
+file, `plans/IMPLEMENTATION.md`, `plans/ENGINEERING-STANDARDS.md`, the
+selected leftover plan, and the live source those leftovers name. Recheck
+version-sensitive details in current official documentation. Use live
+evidence to correct stale mechanics; never silently change operator
+decisions, architecture, scope, or gates.
 
 Preserve all non-negotiable repository constraints: GreptimeDB plus Turso
 only, GreptimeDB native raw-signal tables, native TLS only, Bun only for
 JavaScript and TypeScript, decode once and move ownership on the ingest hot
-path, Apache-2.0, progress narration for long-running commands, and the UI
-rules. The contract-reconciliation note in the Unified CLI Observability
-section of `plans/README.md` binds every executor of plans 105, 140, 141,
-142, 147, 154, and 155.
+path, Apache-2.0, and progress narration for long-running commands.
 
 ## Continuous Execution
 
-For each ready plan: run its drift check, mark it `IN PROGRESS`, implement
-its complete scope, run every stated verification and done criterion, then
-retire it per the lifecycle (delete file + index row in the same commit,
-preserving durable evidence). **Commit often — small green slices** (a step,
-a component, a fixed defect per commit) with Conventional Commits, DCO
-sign-off, and exactly one agent-product trailer, and **push each commit to
-`main` immediately, in whichever repository the change lives** — never batch
-pushes or hold local-only work. A STOP condition blocks only that plan: preserve
+For each leftover: run its drift / trigger check, keep 089 and 114 `BLOCKED`
+while their exact external conditions still hold, and only mark 107
+`IN PROGRESS` toward C0 when every other leftover is a minimal freshly
+rechecked BLOCKED file. Implement complete leftover scope when a trigger
+clears. Run every stated verification and done criterion, then retire the
+plan per the lifecycle (delete file + index row in the same commit,
+preserving durable evidence). Commit with Conventional Commits, DCO
+sign-off, and exactly one agent-product trailer, and push each durable
+update to `main`. A STOP condition blocks only that plan: preserve
 reproducible evidence, shrink the file to unfinished work, mark `BLOCKED`,
-continue independent ready work. Never stub a gate, never claim an unrun
-check passed, never invent an operator decision.
+continue independent ready leftover work. Never stub a gate, never claim an
+unrun check passed, never invent an operator decision.
 
 ## Verification And Done
 
-There are no pull requests: `main` is the integration line in both
-repositories. Compensating discipline is therefore mandatory — never push a
-slice whose targeted checks are red, and run each plan's full gate set
-before retiring it. Wave 1 is complete only when plan 159's evidence bundle
-exists and the shared verification baseline in
-`plans/README.md#shared-verification` passes for the commands that exist at
-that head (UI browser lanes that plans 132/144-146 have not yet created are
-not yet required), verified from a clean checkout of `main`; report the
-verified SHA, completed plans, and remaining blockers. Wave 2 closes the
-same way at its final `main` SHA.
+There are no leftover-implementation pull requests: `main` is the
+integration line. Compensating discipline is therefore mandatory — never
+push a slice whose targeted checks are red, and run each leftover's full
+gate set before retiring it.
 
 The overall program's completion state remains
 `plans/IMPLEMENTATION.md#completion-state`. Plan 107 runs last and deletes
@@ -97,7 +67,8 @@ this file in the final mechanical closure commit.
 
 ## STOP
 
-Stop globally only when the objectives are proven, the operator replaces this
-goal, or no honest progress remains without an operator/external decision. In
-that case finish and push every independent ready plan, report exact
-reproducible evidence and the required decision, and do not claim completion.
+Stop globally only when the leftovers are proven complete, the operator
+replaces this goal, or no honest progress remains without an
+operator/external decision. In that case finish and push every independent
+ready leftover, report exact reproducible evidence and the required
+decision, and do not claim completion.
