@@ -228,7 +228,7 @@ ceiling = 11
 [[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "clippy::too_many_lines"
-ceiling = 17
+ceiling = 16
 
 [[rust_suppressions]]
 crate_name = "parallax-greptime"
@@ -4477,7 +4477,7 @@ ceiling = 119
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-server/examples/browser_contracts_serve.rs::main"
-ceiling = 142
+ceiling = 115
 
 [[limits]]
 metric = "rust.function-lines"

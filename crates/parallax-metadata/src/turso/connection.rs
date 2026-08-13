@@ -47,4 +47,19 @@ impl TursoMetadataStore {
             conn: tokio::sync::Mutex::new(conn),
         })
     }
+
+    /// Wipe alert tables so browser dataset reset is deterministic.
+    pub async fn alert_reset(&self) {
+        let conn = self.conn.lock().await;
+        for table in [
+            "alert_delivery_events",
+            "alert_checks",
+            "alert_incidents",
+            "alert_rule_states",
+            "alert_rules",
+            "alert_destinations",
+        ] {
+            let _deleted = conn.execute(&format!("DELETE FROM {table}"), ()).await;
+        }
+    }
 }

@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 572,
-    "test_files": 145
+    "test_cases": 573,
+    "test_files": 146
   },
   "private_route_imports": [],
   "entries": [
@@ -1627,21 +1627,21 @@
       "delivery_plan": 140
     },
     {
-      "id": "pw-reserved-logs-contracts",
+      "id": "pw-logs-pilot-body",
       "surface": "features/logs",
-      "risk": "Logs search/filter/context/saved views/live/reconnect",
+      "risk": "Seeded logs may not render the known body or both services in the contracts lane",
       "scenario_owner": "features/logs",
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/logs.spec.ts",
       "test_ids": [
-        "reserved @logs browser contracts"
+        "lists seeded log body across services @pw-logs-pilot-body"
       ],
       "required_environment": "chromium-fixture",
-      "status": "reserved",
-      "dataset_id": "logs-default",
-      "state_class": "inventory",
-      "delivery_plan": 141
+      "status": "implemented",
+      "dataset_id": "logs-pilot",
+      "state_class": "seeded-list",
+      "delivery_plan": 170
     },
     {
       "id": "pw-reserved-traces-contracts",
