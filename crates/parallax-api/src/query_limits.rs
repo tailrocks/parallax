@@ -4,6 +4,10 @@ use std::collections::BTreeMap;
 
 use crate::{MAX_ROWS, Schema};
 
+/// Clamp a GraphQL `limit` argument to `[0, MAX_ROWS]`.
+///
+/// `None` uses `default` (then still capped at `MAX_ROWS`). Negative and
+/// zero values stay at 0 — they do **not** fall back to `default`.
 pub(crate) fn clamp_limit(limit: Option<i32>, default: usize) -> usize {
     limit
         .map_or(default, |l| usize::try_from(l.max(0)).unwrap_or(default))
@@ -123,4 +127,40 @@ pub fn check_query_limits(
         ));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::schema::build_schema;
+
+    #[test]
+    fn clamp_limit_boundaries() {
+        assert_eq!(clamp_limit(None, 25), 25);
+        assert_eq!(clamp_limit(Some(-5), 25), 0);
+        assert_eq!(clamp_limit(Some(0), 25), 0);
+        assert_eq!(clamp_limit(Some(i32::MAX), 25), MAX_ROWS);
+        assert_eq!(clamp_limit(None, MAX_ROWS + 10), MAX_ROWS);
+    }
+
+    #[test]
+    fn check_query_limits_named_operation_and_fragment_cycle() {
+        let schema = build_schema();
+        check_query_limits(&schema, "query { __typename }", None, 8, 1_000).expect("simple query");
+        check_query_limits(
+            &schema,
+            "query One { __typename } query Two { __typename }",
+            Some("Two"),
+            8,
+            1_000,
+        )
+        .expect("named operation");
+        let cycled = r"
+            fragment A on Query { ...B }
+            fragment B on Query { ...A }
+            query { ...A }
+        ";
+        let err = check_query_limits(&schema, cycled, None, 8, 1_000).expect_err("cycle");
+        assert!(err.contains("fragment cycle"), "{err}");
+    }
 }

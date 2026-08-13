@@ -16,7 +16,7 @@ under `docs/research/validation/`. Do not keep plan history here.
 | [165](165-user-lens-comparison.md) | Run the full playground sweep and record a user-lens comparison across all backends | BLOCKED — depends on 162–164 |
 | [166](166-production-readiness-fix-loop.md) | Drive every verified discrepancy to zero — the production-readiness fix loop | BLOCKED — W5 list empty (`DISCREPANCY:`/`CLOSED:`/`PROMOTED` count=0); 165+167 not executed |
 | [167](167-agent-browser-ui-verification.md) | Verify every Parallax UI surface with agent-browser — functional + responsive | BLOCKED — depends on 163+164 seeded stack |
-| [168](168-rust-correctness-test-wave.md) | Close the correctness-critical Rust test gaps (wave 1) | TODO — independent; do first in the QA program |
+| [168](168-rust-correctness-test-wave.md) | Close the correctness-critical Rust test gaps (wave 1) | DONE |
 | [169](169-rust-parity-and-structural-tests.md) | Fake/engine parity, resolver depth, and metadata versioning (wave 2) | TODO — after 168 (real integration gate) |
 | [170](170-playwright-critical-coverage.md) | Playwright coverage for every critical user flow | TODO — independent; dataset seam first |
 | [171](171-competitor-informed-feature-uplift.md) | Preview-before-save, agent issue lease, MCP evals, instrumented onboarding | TODO — after 168; feature 2 gated on decision-record approval |

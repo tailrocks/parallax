@@ -101,38 +101,11 @@ fn rotated_segment_paths(spool_dir: &Path, stem: &str) -> Vec<PathBuf> {
         .collect()
 }
 
-fn count_pspl_frames(path: &Path) -> usize {
-    use std::io::Read;
-    let Ok(mut file) = std::fs::File::open(path) else {
-        return 0;
-    };
-    let mut magic = [0u8; 5];
-    let Ok(n) = file.read(&mut magic) else {
-        return 0;
-    };
-    if n < 5 || &magic != b"PSPL1" {
-        return 0;
-    }
-    let mut count = 0usize;
-    loop {
-        let mut len_buf = [0u8; 4];
-        if file.read_exact(&mut len_buf).is_err() {
-            break;
-        }
-        let len = u64::from(u32::from_le_bytes(len_buf));
-        if std::io::copy(&mut file.by_ref().take(len), &mut std::io::sink()).is_err() {
-            break;
-        }
-        count += 1;
-    }
-    count
-}
-
 fn spool_stats(spool_dir: &Path, stem: &str, active_file: &str) -> SignalSpoolStats {
     let active_path = spool_dir.join(active_file);
     let legacy_path = spool_dir.join(format!("{stem}.ndjson"));
     let mut active_lines = if active_path.exists() {
-        count_pspl_frames(&active_path)
+        parallax_spool::count_pspl_frames(&active_path).unwrap_or(0)
     } else {
         0
     };

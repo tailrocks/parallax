@@ -169,29 +169,6 @@ pub(crate) fn is_dead_letter(attempt_count: u32) -> bool {
 
 #[cfg(test)]
 mod tests {
-    /// Whether an outbox row is claimable now given optional prior claim expiry.
-    /// `now_unix_secs` and `claim_expires_at` are unix seconds.
-    fn claim_is_available(
-        now_unix_secs: i64,
-        claim_expires_at: Option<i64>,
-        delivered: bool,
-    ) -> bool {
-        if delivered {
-            return false;
-        }
-        match claim_expires_at {
-            None => true,
-            Some(exp) => now_unix_secs >= exp,
-        }
-    }
-    /// Default claim lease length for the delivery worker (30s CAS-style);
-    /// kept beside its arithmetic test until a caller claims it.
-    const CLAIM_LEASE_SECS: i64 = 30;
-
-    fn claim_expires_at(now_unix_secs: i64) -> i64 {
-        now_unix_secs.saturating_add(CLAIM_LEASE_SECS)
-    }
-
     use super::*;
 
     fn ctx() -> NotificationContext<'static> {
@@ -261,16 +238,6 @@ mod tests {
         assert!(!is_dead_letter(4));
         assert!(is_dead_letter(5));
         assert!(is_dead_letter(6));
-    }
-
-    #[test]
-    fn claim_lease_rules() {
-        assert!(claim_is_available(1000, None, false));
-        assert!(!claim_is_available(1000, None, true));
-        assert!(!claim_is_available(1000, Some(1001), false));
-        assert!(claim_is_available(1000, Some(1000), false));
-        assert!(claim_is_available(1001, Some(1000), false));
-        assert_eq!(claim_expires_at(1000), 1000 + CLAIM_LEASE_SECS);
     }
 
     #[test]

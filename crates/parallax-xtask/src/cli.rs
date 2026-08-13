@@ -47,8 +47,10 @@ pub(crate) enum Command {
         #[command(subcommand)]
         action: UiBundleAction,
     },
-    /// Run the distinct Rust doctest integration partition.
+    /// Run ignored real-engine nextest tests (`--profile real-engine`).
     Integration,
+    /// Run workspace Rust doctests (the previous `integration` partition).
+    Doctests,
     /// Validate repository documentation.
     Docs {
         #[command(subcommand)]

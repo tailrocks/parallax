@@ -1,7 +1,8 @@
 use super::*;
 use parallax_proto::metrics::{
-    Exemplar, Gauge, Histogram, HistogramDataPoint, Metric, NumberDataPoint,
-    exemplar::Value as ExemplarValue, metric::Data, number_data_point::Value as NumberValue,
+    Exemplar, ExponentialHistogram, Gauge, Histogram, HistogramDataPoint, Metric, NumberDataPoint,
+    Summary, exemplar::Value as ExemplarValue, metric::Data,
+    number_data_point::Value as NumberValue,
 };
 
 fn string_kv(key: &str, value: &str) -> KeyValue {
@@ -454,4 +455,151 @@ mod property_tests {
             prop_assert_eq!(a_json, b_json);
         }
     }
+}
+
+fn metric_request(metric: Metric) -> ExportMetricsServiceRequest {
+    ExportMetricsServiceRequest {
+        resource_metrics: vec![parallax_proto::metrics::ResourceMetrics {
+            resource: Some(parallax_proto::resource::Resource {
+                attributes: vec![string_kv("service.name", "checkout")],
+                ..Default::default()
+            }),
+            scope_metrics: vec![parallax_proto::metrics::ScopeMetrics {
+                metrics: vec![metric],
+                ..Default::default()
+            }],
+            ..Default::default()
+        }],
+    }
+}
+
+#[test]
+fn exponential_histogram_is_dropped_today() {
+    // Plan 166 owns whether this drop stays. This test pins current behavior.
+    let request = metric_request(Metric {
+        name: "exp.hist".into(),
+        data: Some(Data::ExponentialHistogram(ExponentialHistogram::default())),
+        ..Default::default()
+    });
+    let normalized = normalize_metrics(&request);
+    assert!(normalized.points.is_empty());
+    assert!(normalized.histograms.is_empty());
+    assert!(normalized.exemplars.is_empty());
+}
+
+#[test]
+fn summary_is_dropped_today() {
+    let request = metric_request(Metric {
+        name: "summary".into(),
+        data: Some(Data::Summary(Summary::default())),
+        ..Default::default()
+    });
+    let normalized = normalize_metrics(&request);
+    assert!(normalized.points.is_empty());
+    assert!(normalized.histograms.is_empty());
+}
+
+#[test]
+fn metric_with_no_data_is_empty() {
+    let request = metric_request(Metric {
+        name: "empty".into(),
+        data: None,
+        ..Default::default()
+    });
+    let normalized = normalize_metrics(&request);
+    assert!(normalized.points.is_empty());
+    assert!(normalized.histograms.is_empty());
+}
+
+#[test]
+fn number_point_absent_value_becomes_zero() {
+    // Plan 166 decision: None => 0.0 fabricates a zero sample.
+    let request = metric_request(Metric {
+        name: "gauge.none".into(),
+        data: Some(Data::Gauge(Gauge {
+            data_points: vec![NumberDataPoint {
+                time_unix_nano: 1,
+                value: None,
+                ..Default::default()
+            }],
+        })),
+        ..Default::default()
+    });
+    let normalized = normalize_metrics(&request);
+    assert_eq!(normalized.points.len(), 1);
+    assert_eq!(normalized.points[0].value, 0.0);
+}
+
+#[test]
+fn exemplar_missing_value_or_ids_is_skipped() {
+    let mut missing_value = exemplar(ExemplarValue::AsDouble(1.0), 11);
+    missing_value.value = None;
+    let mut missing_ids = exemplar(ExemplarValue::AsDouble(1.0), 11);
+    missing_ids.trace_id.clear();
+    missing_ids.span_id.clear();
+    let request = metric_request(Metric {
+        name: "gauge".into(),
+        data: Some(Data::Gauge(Gauge {
+            data_points: vec![NumberDataPoint {
+                time_unix_nano: 10,
+                value: Some(NumberValue::AsDouble(1.0)),
+                exemplars: vec![missing_value, missing_ids],
+                ..Default::default()
+            }],
+        })),
+        ..Default::default()
+    });
+    let normalized = normalize_metrics(&request);
+    assert_eq!(normalized.points.len(), 1);
+    assert!(normalized.exemplars.is_empty());
+}
+
+#[test]
+fn gauge_plus_histogram_conserves_point_count() {
+    let request = ExportMetricsServiceRequest {
+        resource_metrics: vec![parallax_proto::metrics::ResourceMetrics {
+            resource: Some(parallax_proto::resource::Resource {
+                attributes: vec![string_kv("service.name", "checkout")],
+                ..Default::default()
+            }),
+            scope_metrics: vec![parallax_proto::metrics::ScopeMetrics {
+                metrics: vec![
+                    Metric {
+                        name: "g".into(),
+                        data: Some(Data::Gauge(Gauge {
+                            data_points: vec![
+                                NumberDataPoint {
+                                    time_unix_nano: 1,
+                                    value: Some(NumberValue::AsDouble(1.0)),
+                                    ..Default::default()
+                                },
+                                NumberDataPoint {
+                                    time_unix_nano: 2,
+                                    value: Some(NumberValue::AsDouble(2.0)),
+                                    ..Default::default()
+                                },
+                            ],
+                        })),
+                        ..Default::default()
+                    },
+                    Metric {
+                        name: "h".into(),
+                        data: Some(Data::Histogram(Histogram {
+                            data_points: vec![HistogramDataPoint {
+                                time_unix_nano: 3,
+                                count: 1,
+                                ..Default::default()
+                            }],
+                            ..Default::default()
+                        })),
+                        ..Default::default()
+                    },
+                ],
+                ..Default::default()
+            }],
+            ..Default::default()
+        }],
+    };
+    let normalized = normalize_metrics(&request);
+    assert_eq!(normalized.points.len() + normalized.histograms.len(), 3);
 }

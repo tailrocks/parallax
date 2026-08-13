@@ -697,3 +697,137 @@ fn v2_envelope_conforms_to_bundle_v2_schema_and_payload_to_v1() {
         "v1-style hash rejected on v2"
     );
 }
+
+fn metric_points(count: usize) -> Vec<MetricPointLine> {
+    (0..count)
+        .map(|index| MetricPointLine {
+            ts_nanos: index.to_string(),
+            value: index as f64,
+        })
+        .collect()
+}
+
+fn metric_window(count: usize) -> MetricWindow {
+    MetricWindow {
+        metric: "http.server.duration".to_string(),
+        scope: "service",
+        from_nanos: "0".to_string(),
+        to_nanos: "1".to_string(),
+        step_seconds: 1,
+        points: metric_points(count),
+        stats: MetricStats {
+            min: 0.0,
+            max: count.saturating_sub(1) as f64,
+            avg: 0.0,
+            last: 0.0,
+        },
+    }
+}
+
+#[test]
+fn decimate_points_len_1_2_3_and_keep_bounds() {
+    for count in [1usize, 2, 3] {
+        let mut points = metric_points(count);
+        let dropped = decimate_points(&mut points, 10);
+        assert_eq!(dropped, 0, "keep>=len drops nothing for {count}");
+        assert_eq!(points.len(), count);
+    }
+
+    let mut keep_one = metric_points(5);
+    let first = keep_one[0].ts_nanos.clone();
+    let last = keep_one[4].ts_nanos.clone();
+    assert_eq!(decimate_points(&mut keep_one, 1), 4);
+    assert_eq!(keep_one.len(), 1);
+    assert_eq!(keep_one[0].ts_nanos, last);
+    assert_ne!(keep_one[0].ts_nanos, first);
+
+    let mut keep_two = metric_points(8);
+    let first = keep_two[0].ts_nanos.clone();
+    let last = keep_two[7].ts_nanos.clone();
+    assert_eq!(decimate_points(&mut keep_two, 2), 6);
+    assert!(!keep_two.is_empty() && keep_two.len() <= 2);
+    assert_eq!(
+        keep_two.first().map(|p| p.ts_nanos.as_str()),
+        Some(first.as_str())
+    );
+    assert_eq!(
+        keep_two.last().map(|p| p.ts_nanos.as_str()),
+        Some(last.as_str())
+    );
+
+    let mut keep_ge = metric_points(4);
+    assert_eq!(decimate_points(&mut keep_ge, 4), 0);
+    assert_eq!(keep_ge.len(), 4);
+}
+
+#[test]
+fn bound_metric_windows_fits_or_records_bounded_note() {
+    let mut bundle = assemble(test_inputs(vec![test_span(0, true, 10)]), 8_000);
+    bundle.metric_windows = vec![metric_window(60)];
+    bound_metric_windows(&mut bundle, 80);
+    let tokens = estimate_bundle_tokens(&bundle);
+    assert!(
+        tokens <= 80
+            || bundle
+                .missing_evidence
+                .iter()
+                .any(|message| message.contains("bounded:")),
+        "tokens={tokens} missing={:?}",
+        bundle.missing_evidence
+    );
+}
+
+#[test]
+fn populated_bundle_json_serialization_cannot_fail() {
+    let mut inputs = test_inputs(
+        (0..8)
+            .map(|index| test_span(index, index == 1, 10))
+            .collect(),
+    );
+    inputs.metric_windows = vec![metric_window(12)];
+    let bundle = assemble(inputs, 8_000);
+    serde_json::to_value(&bundle).expect("Bundle serialization is infallible");
+    let hash = canonical_hash(&bundle);
+    assert!(hash.starts_with("sha256:"));
+    assert_eq!(hash.len(), "sha256:".len() + 64);
+}
+
+mod bounding_property_tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn decimate_output_is_a_subsequence(
+            values in proptest::collection::vec(-1000.0f64..1000.0, 0..40),
+            keep in 1usize..24,
+        ) {
+            let point_at = |index: usize, value: f64| MetricPointLine {
+                ts_nanos: index.to_string(),
+                value,
+            };
+            let original: Vec<MetricPointLine> = values
+                .iter()
+                .enumerate()
+                .map(|(index, value)| point_at(index, *value))
+                .collect();
+            let mut points: Vec<MetricPointLine> = values
+                .iter()
+                .enumerate()
+                .map(|(index, value)| point_at(index, *value))
+                .collect();
+            decimate_points(&mut points, keep);
+            let mut cursor = 0usize;
+            for point in &points {
+                while cursor < original.len()
+                    && (original[cursor].ts_nanos != point.ts_nanos
+                        || original[cursor].value != point.value)
+                {
+                    cursor += 1;
+                }
+                prop_assert!(cursor < original.len());
+                cursor += 1;
+            }
+        }
+    }
+}

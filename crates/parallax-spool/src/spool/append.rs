@@ -1,7 +1,13 @@
 use super::*;
 
+pub(super) fn frame_len(payload_len: usize) -> anyhow::Result<u32> {
+    u32::try_from(payload_len)
+        .map_err(|_| anyhow::anyhow!("spool frame exceeds u32::MAX ({payload_len} bytes)"))
+}
+
 impl Spool {
     pub async fn append_raw(&self, signal: Signal, raw: &bytes::Bytes) -> anyhow::Result<()> {
+        frame_len(raw.len())?;
         let payload = raw.to_vec();
         let write_len = u64::try_from(payload.len().saturating_add(4)).unwrap_or(u64::MAX);
         let dir = self.dir.clone();
@@ -70,7 +76,7 @@ fn append_blocking(
     if needs_magic {
         handle.write_all(MAGIC)?;
     }
-    let len = u32::try_from(payload.len()).unwrap_or(u32::MAX);
+    let len = frame_len(payload.len())?;
     handle.write_all(&len.to_le_bytes())?;
     handle.write_all(&payload)?;
     Ok((Some(handle), size.saturating_add(total_write)))

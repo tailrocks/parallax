@@ -1277,6 +1277,35 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn concurrent_claimers_exactly_one_wins() {
+        let (_dir, path) = temp_db();
+        let store = std::sync::Arc::new(TursoMetadataStore::open(path).await.expect("open"));
+        let due = MINUTE_NANOS;
+        store
+            .alert_delivery_enqueue(&delivery("e-conc", "k-conc", due))
+            .await
+            .expect("enqueue");
+        let first = {
+            let store = std::sync::Arc::clone(&store);
+            tokio::spawn(async move { store.alert_deliveries_claim("w1", due, 60, 10).await })
+        };
+        let second = {
+            let store = std::sync::Arc::clone(&store);
+            tokio::spawn(async move { store.alert_deliveries_claim("w2", due, 60, 10).await })
+        };
+        let left = first.await.expect("join").expect("claim");
+        let right = second.await.expect("join").expect("claim");
+        assert_eq!(left.len() + right.len(), 1);
+        let later = due + 2 * MINUTE_NANOS;
+        let reclaim = store
+            .alert_deliveries_claim("w3", later, 60, 10)
+            .await
+            .expect("reclaim");
+        assert_eq!(reclaim.len(), 1);
+        assert_eq!(reclaim[0].claimed_by.as_deref(), Some("w3"));
+    }
+
+    #[tokio::test]
     async fn delivery_failure_backoff_and_dead_letter() {
         let (_dir, path) = temp_db();
         let store = TursoMetadataStore::open(path).await.expect("open");

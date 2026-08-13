@@ -1,6 +1,11 @@
 use super::*;
-use arrow::array::{Float64Array, Int64Array, StringArray};
-use arrow::datatypes::{Field, Schema};
+use arrow::array::{
+    ArrayRef, BinaryArray, BooleanArray, Decimal128Array, DictionaryArray, Float32Array,
+    Float64Array, Int8Array, Int16Array, Int32Array, Int64Array, LargeBinaryArray,
+    LargeStringArray, NullArray, StringArray, TimestampMillisecondArray, TimestampNanosecondArray,
+    UInt8Array, UInt16Array, UInt32Array, UInt64Array,
+};
+use arrow::datatypes::{Field, Int32Type, Schema};
 use arrow_ipc::CompressionType;
 use arrow_ipc::writer::{IpcWriteOptions, StreamWriter};
 use std::sync::Arc;
@@ -88,14 +93,155 @@ fn empty_body_is_empty_result() {
     assert!(rows.is_empty());
 }
 
+fn decode_one_col(name: &str, array: ArrayRef) -> Value {
+    let schema = Arc::new(Schema::new(vec![Field::new(
+        name,
+        array.data_type().clone(),
+        true,
+    )]));
+    let batch = RecordBatch::try_new(schema.clone(), vec![array]).expect("batch");
+    let mut buf = Vec::new();
+    {
+        let mut writer = StreamWriter::try_new(&mut buf, &schema).expect("writer");
+        writer.write(&batch).expect("write");
+        writer.finish().expect("finish");
+    }
+    let (columns, rows) = decode_arrow_ipc(&buf).expect("decode");
+    assert_eq!(columns, vec![name]);
+    assert_eq!(rows.len(), 1);
+    rows[0][0].clone()
+}
+
 #[test]
-fn row_count_parity_json_shape() {
-    // Same fixture decoded twice must match (stand-in for JSON vs Arrow parity
-    // without a live engine).
-    let bytes = write_fixture(true);
-    let (c1, r1) = decode_arrow_ipc(&bytes).unwrap();
-    let (c2, r2) = decode_arrow_ipc(&bytes).unwrap();
-    assert_eq!(c1, c2);
-    assert_eq!(r1.len(), r2.len());
-    assert_eq!(r1, r2);
+fn array_value_to_json_covers_supported_data_types() {
+    assert_eq!(
+        decode_one_col(
+            "ts_ns",
+            Arc::new(TimestampNanosecondArray::from(vec![Some(
+                1_700_000_000_000_000_000
+            )]))
+        ),
+        json_i64(1_700_000_000_000_000_000)
+    );
+    assert_eq!(
+        decode_one_col(
+            "ts_ms",
+            Arc::new(TimestampMillisecondArray::from(vec![Some(
+                1_700_000_000_000
+            )]))
+        ),
+        json_i64(1_700_000_000_000)
+    );
+
+    let dict_values = StringArray::from(vec!["alpha", "beta"]);
+    let dict_keys = Int32Array::from(vec![1]);
+    let dict = DictionaryArray::<Int32Type>::try_new(dict_keys, Arc::new(dict_values))
+        .expect("dictionary");
+    assert_eq!(
+        decode_one_col("dict", Arc::new(dict)),
+        Value::String("beta".into())
+    );
+
+    let decimal = Decimal128Array::from(vec![12_345])
+        .with_precision_and_scale(10, 2)
+        .expect("decimal");
+    assert_eq!(decode_one_col("dec", Arc::new(decimal)), json_f64(123.45));
+
+    assert_eq!(
+        decode_one_col(
+            "bin",
+            Arc::new(BinaryArray::from(vec![Some(b"hi".as_ref())]))
+        ),
+        Value::String("hi".into())
+    );
+    assert_eq!(
+        decode_one_col(
+            "bin_hex",
+            Arc::new(BinaryArray::from(vec![Some([0xff, 0x00].as_ref())]))
+        ),
+        Value::String("ff00".into())
+    );
+    assert_eq!(
+        decode_one_col(
+            "lbin",
+            Arc::new(LargeBinaryArray::from(vec![Some(b"lg".as_ref())]))
+        ),
+        Value::String("lg".into())
+    );
+    assert_eq!(
+        decode_one_col(
+            "lutf8",
+            Arc::new(LargeStringArray::from(vec![Some("wide")]))
+        ),
+        Value::String("wide".into())
+    );
+
+    assert_eq!(
+        decode_one_col("u8", Arc::new(UInt8Array::from(vec![7u8]))),
+        json_u64(7)
+    );
+    assert_eq!(
+        decode_one_col("u16", Arc::new(UInt16Array::from(vec![700u16]))),
+        json_u64(700)
+    );
+    assert_eq!(
+        decode_one_col("u32", Arc::new(UInt32Array::from(vec![70_000u32]))),
+        json_u64(70_000)
+    );
+    assert_eq!(
+        decode_one_col("u64", Arc::new(UInt64Array::from(vec![7_000_000_000u64]))),
+        json_u64(7_000_000_000)
+    );
+    assert_eq!(
+        decode_one_col("i8", Arc::new(Int8Array::from(vec![-8]))),
+        json_i64(-8)
+    );
+    assert_eq!(
+        decode_one_col("i16", Arc::new(Int16Array::from(vec![-16]))),
+        json_i64(-16)
+    );
+    assert_eq!(
+        decode_one_col("i32", Arc::new(Int32Array::from(vec![-32]))),
+        json_i64(-32)
+    );
+    assert_eq!(
+        decode_one_col("f32", Arc::new(Float32Array::from(vec![1.25f32]))),
+        json_f64(1.25)
+    );
+    assert_eq!(
+        decode_one_col("bool", Arc::new(BooleanArray::from(vec![true]))),
+        Value::Bool(true)
+    );
+    assert_eq!(
+        decode_one_col("nulls", Arc::new(NullArray::new(1))),
+        Value::Null
+    );
+}
+
+#[test]
+fn validate_ipc_frame_lengths_rejects_truncated_declared_metadata() {
+    let mut bytes = 65_535u32.to_le_bytes().to_vec();
+    bytes.extend_from_slice(&[1, 2, 3]);
+    let err = validate_ipc_frame_lengths(&bytes).expect_err("truncated");
+    let msg = format!("{err:#}");
+    assert!(msg.contains("declares 65535 metadata bytes"), "{msg}");
+}
+
+#[test]
+fn append_batch_rows_concatenates_two_record_batches() {
+    let schema = Arc::new(Schema::new(vec![Field::new("n", DataType::Int64, true)]));
+    let first = RecordBatch::try_new(schema.clone(), vec![Arc::new(Int64Array::from(vec![1i64]))])
+        .expect("first");
+    let second = RecordBatch::try_new(schema.clone(), vec![Arc::new(Int64Array::from(vec![2i64]))])
+        .expect("second");
+    let mut buf = Vec::new();
+    {
+        let mut writer = StreamWriter::try_new(&mut buf, &schema).expect("writer");
+        writer.write(&first).expect("write first");
+        writer.write(&second).expect("write second");
+        writer.finish().expect("finish");
+    }
+    let (columns, rows) = decode_arrow_ipc(&buf).expect("decode");
+    assert_eq!(columns, vec!["n"]);
+    assert_eq!(rows, vec![vec![json_i64(1)], vec![json_i64(2)]]);
 }

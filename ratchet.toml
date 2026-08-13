@@ -41,6 +41,16 @@ lint = "clippy::expect_used"
 ceiling = 1
 
 [[rust_suppressions]]
+crate_name = "parallax-cli"
+lint = "clippy::expect_used"
+ceiling = 1
+
+[[rust_suppressions]]
+crate_name = "parallax-evidence"
+lint = "clippy::expect_used"
+ceiling = 2
+
+[[rust_suppressions]]
 crate_name = "parallax-analysis"
 lint = "clippy::expect_used"
 ceiling = 2
@@ -399,12 +409,12 @@ reason = "filesystem spool construction preserves multi-step operator context"
 
 [[product.anyhow_edges]]
 path = "crates/parallax-spool/src/spool/append.rs"
-ceiling = 4
+ceiling = 6
 reason = "filesystem append and rotation composition preserves path and IO context"
 
 [[product.anyhow_edges]]
 path = "crates/parallax-spool/src/spool/framing.rs"
-ceiling = 2
+ceiling = 3
 reason = "private frame decoding composes IO and format sources"
 
 [[product.anyhow_edges]]
@@ -878,7 +888,7 @@ ceiling = 7
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-ingest/src/tests.rs"
-ceiling = 35
+ceiling = 47
 
 [[limits]]
 metric = "rust.assertions"
@@ -919,7 +929,7 @@ ceiling = 4
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-server/src/live/tests.rs"
-ceiling = 3
+ceiling = 18
 
 [[limits]]
 metric = "rust.assertions"
@@ -934,7 +944,7 @@ ceiling = 38
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-greptime/src/arrow_sql/tests.rs"
-ceiling = 22
+ceiling = 42
 
 
 [[limits]]
@@ -4091,7 +4101,7 @@ ceiling = 9
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-evidence/src/bundle/tests.rs"
-ceiling = 91
+ceiling = 106
 
 [[limits]]
 metric = "rust.assertions"
@@ -4127,7 +4137,7 @@ ceiling = 13
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-metadata/src/turso/alerts.rs"
-ceiling = 49
+ceiling = 52
 
 [[limits]]
 metric = "rust.assertions"
@@ -4152,7 +4162,7 @@ ceiling = 109
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-server/src/alerting/delivery.rs"
-ceiling = 30
+ceiling = 24
 
 [[limits]]
 metric = "rust.assertions"
@@ -4182,7 +4192,7 @@ ceiling = 16
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-server/src/sentry_http.rs"
-ceiling = 2
+ceiling = 9
 
 [[limits]]
 metric = "rust.assertions"
@@ -4207,7 +4217,7 @@ ceiling = 10
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-spool/src/spool/tests.rs"
-ceiling = 21
+ceiling = 28
 
 [[limits]]
 metric = "rust.assertions"
@@ -4302,7 +4312,7 @@ ceiling = 450
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-cli/src/doctor.rs"
-ceiling = 541
+ceiling = 515
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4327,7 +4337,7 @@ ceiling = 708
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-metadata/src/turso/alerts.rs"
-ceiling = 1252
+ceiling = 1280
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4587,7 +4597,7 @@ ceiling = 1
 [[limits]]
 metric = "rust.inline-test-modules"
 scope = "crates/parallax-server/src/sentry_http.rs"
-ceiling = 1
+ceiling = 2
 
 [[limits]]
 metric = "rust.inline-test-modules"
@@ -6584,12 +6594,12 @@ ceiling = 29
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-redaction/src/lib.rs"
-ceiling = 17
+ceiling = 25
 
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-redaction/src/lib.rs"
-ceiling = 422
+ceiling = 548
 
 [[limits]]
 metric = "rust.function-lines"
@@ -7282,7 +7292,7 @@ ceiling = 7
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-evidence/src/bundle/tests.rs"
-ceiling = 638
+ceiling = 762
 
 [[limits]]
 metric = "rust.file-lines"
@@ -7697,3 +7707,23 @@ ceiling = 8
 metric = "rust.inline-test-modules"
 scope = "crates/parallax-analysis/src/test_adapter_export.rs"
 ceiling = 1
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-api/src/query_limits.rs"
+ceiling = 6
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-api/src/query_limits.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-cli/tests/cli.rs"
+ceiling = 2
+
+[[limits]]
+metric = "rust.function-lines"
+scope = "crates/parallax-greptime/src/arrow_sql/tests.rs::array_value_to_json_covers_supported_data_types"
+ceiling = 105
