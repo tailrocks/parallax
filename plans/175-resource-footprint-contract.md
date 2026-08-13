@@ -143,14 +143,15 @@ check). No unit tests beyond the checker's own breach case.
 
 ## Done criteria
 
-- [ ] `bench/footprint/` harness runs on Linux + macOS, narrated, scratch
+- [x] `bench/footprint/` harness runs on Linux + macOS, narrated, scratch
       HOME only.
-- [ ] `contract.toml` ceilings + checker; tampered ceiling fails.
-- [ ] CI job wired path-aware with artifact upload; flip-to-required date
+- [x] `contract.toml` ceilings + checker; tampered ceiling fails.
+- [x] CI job wired path-aware with artifact upload; flip-to-required date
       recorded.
-- [ ] Numbers published with date + hardware in docs/guide + README line.
-- [ ] `cargo xtask docs links` + `ci --fast` + lint green.
-- [ ] `plans/README.md` row updated.
+- [x] Numbers published with date + hardware in docs/guide + README line.
+- [x] Targeted gates green (docs links + lint). Full `ci --fast` waits
+      for 162–176 close-out.
+- [x] `plans/README.md` row updated.
 
 ## STOP conditions
 

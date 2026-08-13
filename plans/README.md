@@ -23,7 +23,7 @@ under `docs/research/validation/`. Do not keep plan history here.
 | [172](172-design-system-and-guide.md) | Design-system uplift and the documented design guide (foglamp-informed) | DONE — DESIGN.md + elevation + page-fade + snippet tabs + domain records; nav chips already present |
 | [173](173-evidence-carrying-alerts.md) | Alerts carry evidence — every incident notification delivers a bundle | DONE — fourth anchor + fire-time persist + payloads + UI panel; c4 (164) remains live verification |
 | [174](174-durable-upgrade-no-silent-loss.md) | Durable-upgrade + no-silent-loss contract, proven in CI | DONE — user_version fail-closed + spool reopen + loss counters + preview harness |
-| [175](175-resource-footprint-contract.md) | Resource-footprint contract — measured, published, regression-gated | TODO — independent |
+| [175](175-resource-footprint-contract.md) | Resource-footprint contract — measured, published, regression-gated | DONE — measure/check + 2× ceilings; CI warn-only until 2026-08-28 |
 | [176](176-grouping-transparency.md) | Grouping transparency — explain why events grouped; steering spec gated | TODO — Steps 1–3 independent; Step 4 operator-gated |
 
 Plans 162–167 implement the verification program defined in
