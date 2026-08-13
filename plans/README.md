@@ -21,6 +21,10 @@ under `docs/research/validation/`. Do not keep plan history here.
 | [170](170-playwright-critical-coverage.md) | Playwright coverage for every critical user flow | TODO — independent; dataset seam first |
 | [171](171-competitor-informed-feature-uplift.md) | Preview-before-save, agent issue lease, MCP evals, instrumented onboarding | TODO — after 168; feature 2 gated on decision-record approval |
 | [172](172-design-system-and-guide.md) | Design-system uplift and the documented design guide (foglamp-informed) | TODO — after 170 (regression net); coordinates with 171 feature 4 |
+| [173](173-evidence-carrying-alerts.md) | Alerts carry evidence — every incident notification delivers a bundle | TODO — spec-first; c4 (164) is the live verification |
+| [174](174-durable-upgrade-no-silent-loss.md) | Durable-upgrade + no-silent-loss contract, proven in CI | TODO — metadata leg after 169 Step 4; harness independent |
+| [175](175-resource-footprint-contract.md) | Resource-footprint contract — measured, published, regression-gated | TODO — independent |
+| [176](176-grouping-transparency.md) | Grouping transparency — explain why events grouped; steering spec gated | TODO — Steps 1–3 independent; Step 4 operator-gated |
 
 Plans 162–167 implement the verification program defined in
 [docs/research/reference/feature-inventory-and-playground-verification.md](../docs/research/reference/feature-inventory-and-playground-verification.md)
@@ -29,6 +33,14 @@ verification pass). Execute in numeric order; 167 runs alongside 165 on the
 same seeded stack; 166 consumes both and iterates as a loop.
 Playground-side changes land in `tailrocks/parallax-telemetry-playground`
 via its own single PR per plan.
+
+Plans 173–176 are the pain-point-driven improvement program: evidence base
+= [docs/research/market/competitor-pain-points.md](../docs/research/market/competitor-pain-points.md)
+(2026-08-14 user-voice corpus: HN/Reddit/GitHub-issue/survey evidence for
+every roster cohort). Its mapping table records which pains are covered by
+existing plans and which direction items (free-tier OIDC posture,
+GitOps-as-config, backup tooling, alert digest routing) are deliberately
+recorded without plans.
 
 Plans 168–172 are the QA + quality program (2026-08-13 deep audit:
 Playwright/Rust coverage, Maple feature study, foglamp design study).
