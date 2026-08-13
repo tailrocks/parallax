@@ -11,11 +11,11 @@ under `docs/research/validation/`. Do not keep plan history here.
 | [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | BLOCKED — crates.io `greptimedb-ingester` still 0.18.0; upstream [PR #58](https://github.com/GreptimeTeam/greptimedb-ingester-rust/pull/58) OPEN (recheck 2026-07-17T17:18Z); HTTP SQL path remains |
 | [114](114-retire-legacy-spool-reader.md) | Retire the legacy NDJSON spool reader | BLOCKED — only rolling `preview` tag; need one stable raw-frame release cycle + expired legacy segments (recheck 2026-07-17T17:18Z) |
 | [162](162-fanout-lab-backend-pins.md) | Pin every fan-out-lab and playground infra image at current latest stable | BLOCKED — SigNoz v0.137.0 removed `deploy/docker/docker-compose.yaml` (Foundry-only); overlay include gone. Pins landed. Smoke PASS: OpenObserve v0.92.0, Maple v0.0.18, Sentry 26.7.2, Parallax host sink. Do not invent Foundry rewrite |
-| [163](163-playground-example-upgrades.md) | Upgrade every playground example to current-latest instrumentation and re-verify emission | TODO — after 162 |
-| [164](164-playground-feature-coverage.md) | Extend the playground until every Parallax feature has a scripted scenario | TODO — after 162, 163 |
-| [165](165-user-lens-comparison.md) | Run the full playground sweep and record a user-lens comparison across all backends | TODO — after 162–164 |
-| [166](166-production-readiness-fix-loop.md) | Drive every verified discrepancy to zero — the production-readiness fix loop | TODO — after 165, 167; loops until W5 list empty |
-| [167](167-agent-browser-ui-verification.md) | Verify every Parallax UI surface with agent-browser — functional + responsive | TODO — after 163, 164; runs alongside 165 |
+| [163](163-playground-example-upgrades.md) | Upgrade every playground example to current-latest instrumentation and re-verify emission | BLOCKED — depends on 162; SigNoz v0.137.0 Foundry layout blocks the pinned full-lab re-verify |
+| [164](164-playground-feature-coverage.md) | Extend the playground until every Parallax feature has a scripted scenario | BLOCKED — depends on 162+163 |
+| [165](165-user-lens-comparison.md) | Run the full playground sweep and record a user-lens comparison across all backends | BLOCKED — depends on 162–164 |
+| [166](166-production-readiness-fix-loop.md) | Drive every verified discrepancy to zero — the production-readiness fix loop | BLOCKED — W5 list empty (`DISCREPANCY:`/`CLOSED:`/`PROMOTED` count=0); 165+167 not executed |
+| [167](167-agent-browser-ui-verification.md) | Verify every Parallax UI surface with agent-browser — functional + responsive | BLOCKED — depends on 163+164 seeded stack |
 | [168](168-rust-correctness-test-wave.md) | Close the correctness-critical Rust test gaps (wave 1) | TODO — independent; do first in the QA program |
 | [169](169-rust-parity-and-structural-tests.md) | Fake/engine parity, resolver depth, and metadata versioning (wave 2) | TODO — after 168 (real integration gate) |
 | [170](170-playwright-critical-coverage.md) | Playwright coverage for every critical user flow | TODO — independent; dataset seam first |
