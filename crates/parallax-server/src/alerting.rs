@@ -9,6 +9,10 @@ mod delivery_worker;
 mod evaluator;
 mod measurement;
 mod measurement_source;
+mod preview;
+#[cfg(test)]
+#[path = "alerting/preview_tests.rs"]
+mod preview_tests;
 
 pub(crate) use measurement_source::AdapterMeasurementSource;
 
@@ -20,7 +24,8 @@ pub(crate) use measurement::{
 pub(crate) use delivery_worker::deliver_due_once;
 mod state_machine;
 
-pub(crate) use evaluator::{GroupMeasurement, MeasurementSource, tick_once};
+pub(crate) use evaluator::{GroupMeasurement, MeasurementSource, eval_config, tick_once};
+pub(crate) use preview::preview_rule;
 
 pub(crate) use delivery::{
     DeliveryEventType, NotificationContext, backoff_after_failure, is_dead_letter,

@@ -2619,6 +2619,13 @@ migration_plan = "142"
 kind = "handwritten"
 
 [[ui.ownership]]
+path = "ui/src/features/alerts/components/new-rule-dialog.tsx"
+current_owner = "features/alerts"
+target_owner = "features/alerts"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
 path = "ui/src/routes/alerts.index.tsx"
 current_owner = "routes"
 target_owner = "features/alerts"
@@ -4305,7 +4312,7 @@ ceiling = 2
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-api/src/resolvers/alerts.rs"
-ceiling = 579
+ceiling = 452
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4464,7 +4471,7 @@ ceiling = 25
 
 [[limits]]
 metric = "rust.function-lines"
-scope = "crates/parallax-api/src/resolvers/alerts.rs::validated_rule"
+scope = "crates/parallax-api/src/resolvers/alerts/validate.rs::validated_rule"
 ceiling = 124
 
 [[limits]]
@@ -5550,12 +5557,12 @@ ceiling = 362
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/platform/graphql/generated/schema-types.generated.ts"
-ceiling = 1545
+ceiling = 1569
 
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/routes/alerts.index.tsx"
-ceiling = 579
+ceiling = 414
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -6412,18 +6419,18 @@ ceiling = 69
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/alerts.index.tsx:357"
-ceiling = 163
+scope = "ui/src/routes/alerts.index.tsx:94"
+ceiling = 221
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/alerts.index.tsx:521"
+scope = "ui/src/routes/alerts.index.tsx:352"
 ceiling = 84
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/alerts.index.tsx:99"
-ceiling = 221
+scope = "ui/src/features/alerts/components/new-rule-dialog.tsx:35"
+ceiling = 204
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -7249,6 +7256,21 @@ ceiling = 510
 metric = "rust.assertions"
 scope = "crates/parallax-mcp/src/audit.rs"
 ceiling = 25
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-mcp/src/evals.rs"
+ceiling = 1
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/src/alerting/preview_tests.rs"
+ceiling = 4
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-api/src/resolvers/alerts/preview_tests.rs"
+ceiling = 5
 
 [[product.anyhow_edges]]
 path = "crates/parallax-mcp/src/check.rs"

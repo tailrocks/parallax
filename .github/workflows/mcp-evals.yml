@@ -1,0 +1,22 @@
+name: mcp-evals
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+
+jobs:
+  mcp-evals:
+    if: contains(github.event.pull_request.labels.*.name, 'run-mcp-evals')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run ignored MCP evals
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "ANTHROPIC_API_KEY absent — skip with notice, do not fail"
+            exit 0
+          fi
+          cargo nextest run -p parallax-mcp --run-ignored only -E 'test(/eval/)'

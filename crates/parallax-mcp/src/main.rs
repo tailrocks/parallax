@@ -5,6 +5,8 @@
 
 mod audit;
 mod check;
+#[cfg(test)]
+mod evals;
 mod gql;
 mod server;
 

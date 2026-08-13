@@ -28,6 +28,7 @@ export {
   ALERT_RULE_FIELDS,
   alertDestinationSaveMutation,
   alertRuleDetailQuery,
+  alertRulePreviewQuery,
   alertRuleSaveMutation,
   parseStringArray,
   ruleConditionLabel,

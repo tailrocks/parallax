@@ -1,5 +1,7 @@
 # Conventions: what to send so Parallax can correlate
 
+Copy-paste OTLP setup lives in [instrument-snippets.md](instrument-snippets.md).
+
 Parallax derives everything from standard OTLP — these conventions are what
 make the derived views sharp instead of mushy.
 

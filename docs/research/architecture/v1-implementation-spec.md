@@ -405,7 +405,8 @@ this implemented dialect is the contract.
 `invocationFacets`/`observedInvocations`, `sessions`/`agentSession`/`story`/
 `screenVisits`/`uiActions`/`backgroundCycles`/`jobs`/`conversations`/`evidenceGaps`,
 `investigations`/`investigation`/`savedViews`, `alertRules`/`alertRule`/
-`alertRuleStates`/`alertIncidents`/`alertIncident`/`alertDestinations`/`alertChecks`,
+`alertRuleStates`/`alertIncidents`/`alertIncident`/`alertDestinations`/`alertChecks`/
+`alertRulePreview`,
 `testCases`/`testCase`, trace analytics (`traceEvents`/`linkedTraces`/
 `traceCriticalPath`/`traceCompare`/`traceFacets`/`traceDurationStats`/`tracesPage`),
 log analytics (`logsAround`/`logCountSeries`/`logFacets`/`logPatterns`), and a
@@ -418,6 +419,14 @@ metrics explorer (`metricCatalog`/`metricQuery`/`metricLabels`/`metricLabelValue
 // `tracesByInvocation`/`logsByInvocation`/`invocationMetrics`, keyed on
 // `cli.invocation.id` (see [capture/run-id-standardization.md](../capture/run-id-standardization.md)).
 // Live tail is SSE, not subscriptions (see the live-tail note below).
+//
+// **Alert rule preview (plan 171 feature 1):** read-only query
+// `alertRulePreview(input: AlertRuleInput!, windowMinutes: Int): AlertRulePreview!`
+// evaluates a draft over the recent window using the same measurement path +
+// pure state machine as the live evaluator. Returns bounded series points,
+// per-group would-fire markers, and sample-count sufficiency. No persistence,
+// no incident writes, no destination side effects. `windowMinutes` defaults to
+// the draft's own window and is clamped to the metric-summary bound.
 //
 // Historical V1-launch core (field set as shipped at V1; names and shapes that
 // have since been renamed are retained only to read older notes):

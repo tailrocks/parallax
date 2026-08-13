@@ -19,6 +19,8 @@ test.describe("alerts product contracts", () => {
     await page.getByRole("tab", { name: /Rules/ }).click()
     await page.getByRole("button", { name: "New rule" }).click()
     await page.getByLabel("Name").fill('Quote\\rule "name"')
+    await page.getByRole("button", { name: "Preview" }).click()
+    await expect(page.getByText(/would-fire points/)).toBeVisible()
     await page.getByRole("button", { name: "Create rule" }).click()
     await expect(page.getByText('Quote\\rule "name"')).toBeVisible()
 

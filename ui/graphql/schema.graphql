@@ -169,6 +169,19 @@ type AlertIncident {
   rule: AlertRule
 }
 
+type AlertPreviewGroup {
+  groupKey: String!
+  points: [AlertPreviewPoint!]!
+  samplesSufficient: Boolean!
+}
+
+type AlertPreviewPoint {
+  tsNanos: String!
+  value: Float
+  sampleCount: Int!
+  wouldFire: Boolean!
+}
+
 type AlertRule {
   id: String!
   name: String!
@@ -202,6 +215,11 @@ type AlertRule {
   metricAggregation: String
   createdAtNanos: String!
   updatedAtNanos: String!
+}
+
+type AlertRulePreview {
+  windowMinutes: Int!
+  groups: [AlertPreviewGroup!]!
 }
 
 type AlertRuleState {
@@ -830,6 +848,8 @@ type Query {
   invocations(limit: Int): [Invocation!]!
   "Alert rules, most recently updated first (plan 167)."
   alertRules: [AlertRule!]!
+  "Evaluate a draft rule over the recent window without persisting (plan 171)."
+  alertRulePreview(input: AlertRuleInput!, windowMinutes: Int): AlertRulePreview!
   alertRule(id: String!): AlertRule
   "Per-group rolling evaluation state for one rule."
   alertRuleStates(ruleId: String!): [AlertRuleState!]!

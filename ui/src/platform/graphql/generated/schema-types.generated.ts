@@ -81,6 +81,21 @@ export type AlertIncident = {
   readonly status: Scalars["String"]["output"]
 }
 
+export type AlertPreviewGroup = {
+  readonly __typename?: "AlertPreviewGroup"
+  readonly groupKey: Scalars["String"]["output"]
+  readonly points: ReadonlyArray<AlertPreviewPoint>
+  readonly samplesSufficient: Scalars["Boolean"]["output"]
+}
+
+export type AlertPreviewPoint = {
+  readonly __typename?: "AlertPreviewPoint"
+  readonly sampleCount: Scalars["Int"]["output"]
+  readonly tsNanos: Scalars["String"]["output"]
+  readonly value: Maybe<Scalars["Float"]["output"]>
+  readonly wouldFire: Scalars["Boolean"]["output"]
+}
+
 export type AlertRule = {
   readonly __typename?: "AlertRule"
   /** JSON array of attribute filters (`{key, op, value}` — plan 164 shape). */
@@ -145,6 +160,12 @@ export type AlertRuleInput = {
   readonly threshold: Scalars["Float"]["input"]
   readonly thresholdUpper?: InputMaybe<Scalars["Float"]["input"]>
   readonly windowMinutes: Scalars["Int"]["input"]
+}
+
+export type AlertRulePreview = {
+  readonly __typename?: "AlertRulePreview"
+  readonly groups: ReadonlyArray<AlertPreviewGroup>
+  readonly windowMinutes: Scalars["Int"]["output"]
 }
 
 export type AlertRuleState = {
@@ -690,6 +711,8 @@ export type Query = {
   /** Incidents newest-first; `status` filters open|resolved. */
   readonly alertIncidents: ReadonlyArray<AlertIncident>
   readonly alertRule: Maybe<AlertRule>
+  /** Evaluate a draft rule over the recent window without persisting (plan 171). */
+  readonly alertRulePreview: AlertRulePreview
   /** Per-group rolling evaluation state for one rule. */
   readonly alertRuleStates: ReadonlyArray<AlertRuleState>
   /** Alert rules, most recently updated first (plan 167). */
@@ -937,6 +960,11 @@ export type QueryAlertIncidentsArgs = {
 
 export type QueryAlertRuleArgs = {
   id: Scalars["String"]["input"]
+}
+
+export type QueryAlertRulePreviewArgs = {
+  input: AlertRuleInput
+  windowMinutes: InputMaybe<Scalars["Int"]["input"]>
 }
 
 export type QueryAlertRuleStatesArgs = {

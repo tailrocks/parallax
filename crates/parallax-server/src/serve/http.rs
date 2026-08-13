@@ -1,15 +1,35 @@
 //! Developer-API host protection, optional bearer auth, and GraphQL handling.
 
+use crate::alerting::{AdapterMeasurementSource, preview_rule};
 use crate::config::LimitsConfig;
 use axum::Json;
 use axum::extract::{Request, State};
 use axum::http::{StatusCode, header};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
-use parallax_api::{ApiContext, Schema as ParallaxSchema};
+use parallax_api::{AlertPreviewData, AlertPreviewer, ApiContext, Schema as ParallaxSchema};
+use parallax_metadata::AlertRuleRecord;
 use parallax_storage::{adapter::TelemetryStore, metadata::MetadataStore};
+use std::future::Future;
 use std::net::SocketAddr;
+use std::pin::Pin;
 use std::sync::Arc;
+
+struct StoreAlertPreviewer {
+    store: Arc<dyn TelemetryStore>,
+}
+
+impl AlertPreviewer for StoreAlertPreviewer {
+    fn preview(
+        &self,
+        rule: AlertRuleRecord,
+        window_minutes: u32,
+        now_nanos: u128,
+    ) -> Pin<Box<dyn Future<Output = anyhow::Result<AlertPreviewData>> + Send + '_>> {
+        let source = AdapterMeasurementSource::new(self.store.clone());
+        Box::pin(async move { preview_rule(&source, &rule, window_minutes, now_nanos).await })
+    }
+}
 
 #[derive(Clone)]
 pub(super) struct GraphQlState {
@@ -203,6 +223,9 @@ pub(super) async fn graphql_handler(
             store: state.store.clone(),
             metadata: state.metadata.clone(),
             alerts: state.alerts.clone(),
+            alert_previewer: Some(Arc::new(StoreAlertPreviewer {
+                store: state.store.clone(),
+            })),
             otlp_grpc_port: state.otlp_grpc_port,
             otlp_http_port: state.otlp_http_port,
             memo: parallax_api::RequestMemo::default(),

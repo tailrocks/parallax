@@ -13,10 +13,15 @@
 //! use parallax_api::resolvers::Trace;
 //! ```
 
+mod alert_preview;
 mod api_errors;
 mod query_limits;
 mod resolvers;
 mod schema;
+
+pub use alert_preview::{
+    AlertPreviewData, AlertPreviewGroupData, AlertPreviewPointData, AlertPreviewer,
+};
 
 pub(crate) use resolvers::helpers::{
     parse_range, retained_recent_range, step_nanos, validate_investigation_name,
@@ -30,13 +35,14 @@ use std::{collections::HashMap, sync::Arc};
 
 use resolvers::{
     AgentSessionOut, AlertCheck, AlertDestination, AlertIncident, AlertRule, AlertRuleInput,
-    AlertRuleState, AttributeCompareRow, AttributeFilterInput, BundleOut, CriticalPath, Dashboard,
-    DurationStats, EvidenceGap, Facet, FieldKey, FieldStats, Investigation, Invocation, Issue,
-    IssueList, IssueSort, LogRecord, MetricExemplar, ObservedInvocation, Overview, Point,
-    ReleaseWindow, RuntimeMetric, SavedView, Series, ServiceCatalogRow, ServiceMap,
-    ServiceOverview, ServiceSummary, SignalKind, SpanRed, SqlResultOut, StoryBeat, TestCaseDetail,
-    TestConfigurationFilterInput, TestExplorerPage, TestExplorerSort, TestFlakyState, TestRollup,
-    Trace, TraceDiff, TraceEventsOut, TraceList, TraceSort, TraceSummary, TrendPoint,
+    AlertRulePreview, AlertRuleState, AttributeCompareRow, AttributeFilterInput, BundleOut,
+    CriticalPath, Dashboard, DurationStats, EvidenceGap, Facet, FieldKey, FieldStats,
+    Investigation, Invocation, Issue, IssueList, IssueSort, LogRecord, MetricExemplar,
+    ObservedInvocation, Overview, Point, ReleaseWindow, RuntimeMetric, SavedView, Series,
+    ServiceCatalogRow, ServiceMap, ServiceOverview, ServiceSummary, SignalKind, SpanRed,
+    SqlResultOut, StoryBeat, TestCaseDetail, TestConfigurationFilterInput, TestExplorerPage,
+    TestExplorerSort, TestFlakyState, TestRollup, Trace, TraceDiff, TraceEventsOut, TraceList,
+    TraceSort, TraceSummary, TrendPoint,
 };
 
 mod memo;
@@ -54,6 +60,9 @@ pub struct ApiContext {
     /// a concrete handle, `None` in pure in-memory harnesses (alert resolvers
     /// then report alerting unavailable).
     pub alerts: Option<Arc<parallax_metadata::TursoMetadataStore>>,
+    /// Server-wired preview runner (plan 171). None in unit harnesses that
+    /// do not exercise `alertRulePreview`.
+    pub alert_previewer: Option<Arc<dyn AlertPreviewer>>,
     pub otlp_grpc_port: u16,
     pub otlp_http_port: u16,
     pub memo: RequestMemo,
@@ -380,6 +389,9 @@ impl Query {
 
     /// Alert rules, most recently updated first (plan 167).
     async fn alert_rules(context: &ApiContext) -> FieldResult<Vec<AlertRule>> { resolvers::alerts::alert_rules(context).await }
+
+    /// Evaluate a draft rule over the recent window without persisting (plan 171).
+    async fn alert_rule_preview(context: &ApiContext, input: AlertRuleInput, window_minutes: Option<i32>,) -> FieldResult<AlertRulePreview> { resolvers::alerts::alert_rule_preview(context, input, window_minutes).await }
 
     async fn alert_rule(context: &ApiContext, id: String) -> FieldResult<Option<AlertRule>> { resolvers::alerts::alert_rule(context, id).await }
 
