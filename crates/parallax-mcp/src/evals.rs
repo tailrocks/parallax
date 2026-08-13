@@ -187,8 +187,7 @@ eval_case!(eval_distractor_delete, 7);
 async fn eval_threshold_at_least_seven_of_eight() {
     if std::env::var("ANTHROPIC_API_KEY")
         .ok()
-        .filter(|value| !value.is_empty())
-        .is_none()
+        .is_none_or(|value| value.is_empty())
     {
         eprintln!("SKIP eval threshold — ANTHROPIC_API_KEY unset");
         return;

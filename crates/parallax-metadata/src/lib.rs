@@ -12,7 +12,7 @@ pub use turso::{
     AgentSessionImportRecord, AlertCheckRecord, AlertDeliveryEventRecord, AlertDestinationRecord,
     AlertIncidentRecord, AlertRuleRecord, AlertRuleStateRecord, CiAttemptAccept,
     CiAttemptDeliveryRecord, CiAttemptStoreError, CiBackfillState, DeployAccept,
-    DeployDeliveryRecord, DeployStoreError, EvidenceClaimRow, FixerOutcomeStoreRecord, SentryAck,
-    SentryAckError, TursoMetadataStore, payload_sha256_hex,
+    DeployDeliveryRecord, DeployStoreError, EvidenceClaimRow, FixerOutcomeStoreRecord,
+    IncidentBundleSnapshot, SentryAck, SentryAckError, TursoMetadataStore, payload_sha256_hex,
 };
 // re-export keeps pin types public while the module stays crate-private

@@ -167,6 +167,7 @@ type AlertIncident {
   lastNotifiedAtNanos: String
   "The owning rule, if it still exists."
   rule: AlertRule
+  bundle: BundleOut
 }
 
 type AlertPreviewGroup {
@@ -789,13 +790,8 @@ type Query {
     the facet sidebar (plan 164).
   """
   traceFacets(service: String, fromNanos: String, toNanos: String, errorOnly: Boolean, query: String, attributeFilters: [AttributeFilterInput!]): [Facet!]!
-  """
-    The bounded, redacted, hypothesis-ranked evidence bundle — the agent
-    handoff artifact assembling trace + logs + metric windows together.
-    Exactly one anchor: `fingerprint` (issue), `invocationId`, or `traceId`
-    (spec §8). Null when the anchor does not exist.
-  """
-  bundle(fingerprint: String, invocationId: String, traceId: String, maxTokens: Int): BundleOut
+  "Bounded redacted evidence bundle. Exactly one of fingerprint, invocationId, traceId, alertIncidentId."
+  bundle(fingerprint: String, invocationId: String, traceId: String, alertIncidentId: String, maxTokens: Int): BundleOut
   """
     Window-scoped metric explorer catalog (plan 168): canonical names with
     kind (gauge|sum|histogram), unit, emitting services, last datapoint,

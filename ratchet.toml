@@ -223,12 +223,12 @@ ceiling = 6
 [[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "clippy::excessive_nesting"
-ceiling = 11
+ceiling = 10
 
 [[rust_suppressions]]
 crate_name = "parallax-server"
 lint = "clippy::too_many_lines"
-ceiling = 16
+ceiling = 15
 
 [[rust_suppressions]]
 crate_name = "parallax-greptime"
@@ -647,7 +647,7 @@ ceiling = 25
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-api/src/resolvers/issues.rs::bundle"
-ceiling = 170
+ceiling = 146
 
 [[limits]]
 metric = "rust.function-lines"
@@ -657,7 +657,7 @@ ceiling = 114
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-evidence/src/bundle/assembly.rs::assemble"
-ceiling = 245
+ceiling = 173
 
 
 
@@ -2661,6 +2661,27 @@ migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
+path = "ui/src/features/alerts/components/incident-bundle-panel.tsx"
+current_owner = "features/alerts"
+target_owner = "features/alerts"
+migration_plan = "173"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/alerts/components/incidents-table.tsx"
+current_owner = "features/alerts"
+target_owner = "features/alerts"
+migration_plan = "173"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/alerts/tests/components/incident-bundle-panel.test.tsx"
+current_owner = "features/alerts"
+target_owner = "features/alerts"
+migration_plan = "173"
+kind = "handwritten"
+
+[[ui.ownership]]
 path = "ui/src/routes/alerts.index.tsx"
 current_owner = "routes"
 target_owner = "features/alerts"
@@ -4175,6 +4196,21 @@ ceiling = 110
 
 [[limits]]
 metric = "rust.assertions"
+scope = "crates/parallax-evidence/src/bundle/incident_tests.rs"
+ceiling = 12
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/src/alerting/evaluator_bundle_tests.rs"
+ceiling = 8
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/src/alerting/incident_bundle_tests.rs"
+ceiling = 8
+
+[[limits]]
+metric = "rust.assertions"
 scope = "crates/parallax-evidence/src/claude_code.rs"
 ceiling = 55
 
@@ -4206,7 +4242,7 @@ ceiling = 13
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-metadata/src/turso/alerts.rs"
+scope = "crates/parallax-metadata/src/turso/alerts_tests.rs"
 ceiling = 52
 
 [[limits]]
@@ -4241,7 +4277,7 @@ ceiling = 18
 
 [[limits]]
 metric = "rust.assertions"
-scope = "crates/parallax-server/src/alerting/evaluator.rs"
+scope = "crates/parallax-server/src/alerting/evaluator_tests.rs"
 ceiling = 29
 
 [[limits]]
@@ -4347,7 +4383,7 @@ ceiling = 2
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-api/src/resolvers/alerts.rs"
-ceiling = 452
+ceiling = 444
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4357,7 +4393,7 @@ ceiling = 444
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-api/src/resolvers/issues.rs"
-ceiling = 502
+ceiling = 449
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4407,7 +4443,12 @@ ceiling = 708
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-metadata/src/turso/alerts.rs"
-ceiling = 1280
+ceiling = 909
+
+[[limits]]
+metric = "rust.file-lines"
+scope = "crates/parallax-metadata/src/turso/alerts_tests.rs"
+ceiling = 406
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4426,8 +4467,8 @@ ceiling = 207
 
 [[limits]]
 metric = "rust.file-lines"
-scope = "crates/parallax-server/src/alerting/evaluator.rs"
-ceiling = 560
+scope = "crates/parallax-server/src/alerting/delivery_worker.rs"
+ceiling = 413
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4496,11 +4537,6 @@ ceiling = 25
 
 [[limits]]
 metric = "rust.function-cognitive-complexity"
-scope = "crates/parallax-server/src/alerting/evaluator.rs::tick_once"
-ceiling = 25
-
-[[limits]]
-metric = "rust.function-cognitive-complexity"
 scope = "crates/parallax-xtask/src/policy.rs::run"
 ceiling = 25
 
@@ -4548,12 +4584,6 @@ ceiling = 119
 metric = "rust.function-lines"
 scope = "crates/parallax-server/examples/browser_contracts_serve.rs::main"
 ceiling = 115
-
-[[limits]]
-metric = "rust.function-lines"
-scope = "crates/parallax-server/src/alerting/evaluator.rs::tick_once"
-ceiling = 210
-
 
 [[limits]]
 metric = "rust.function-lines"
@@ -4625,11 +4655,6 @@ ceiling = 1
 
 [[limits]]
 metric = "rust.inline-test-modules"
-scope = "crates/parallax-metadata/src/turso/alerts.rs"
-ceiling = 1
-
-[[limits]]
-metric = "rust.inline-test-modules"
 scope = "crates/parallax-metadata/src/turso/pins.rs"
 ceiling = 1
 
@@ -4647,11 +4672,6 @@ ceiling = 1
 [[limits]]
 metric = "rust.inline-test-modules"
 scope = "crates/parallax-server/src/alerting/delivery_worker.rs"
-ceiling = 1
-
-[[limits]]
-metric = "rust.inline-test-modules"
-scope = "crates/parallax-server/src/alerting/evaluator.rs"
 ceiling = 1
 
 [[limits]]
@@ -5496,6 +5516,11 @@ ceiling = 8
 
 [[limits]]
 metric = "typescript.assertions"
+scope = "ui/src/features/alerts/tests/components/incident-bundle-panel.test.tsx"
+ceiling = 3
+
+[[limits]]
+metric = "typescript.assertions"
 scope = "ui/src/shared/tests/components/page-header.test.tsx"
 ceiling = 5
 
@@ -5607,12 +5632,12 @@ ceiling = 362
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/platform/graphql/generated/schema-types.generated.ts"
-ceiling = 1569
+ceiling = 1566
 
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/routes/alerts.index.tsx"
-ceiling = 414
+ceiling = 374
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -6469,12 +6494,12 @@ ceiling = 69
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/alerts.index.tsx:94"
-ceiling = 221
+scope = "ui/src/routes/alerts.index.tsx:95"
+ceiling = 180
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/alerts.index.tsx:352"
+scope = "ui/src/routes/alerts.index.tsx:312"
 ceiling = 84
 
 [[limits]]

@@ -53,6 +53,7 @@ import {
   parseStringArray,
   ruleConditionLabel,
 } from "@/features/alerts"
+import { IncidentsTable } from "@/features/alerts/components/incidents-table"
 import { NewRuleDialog } from "@/features/alerts/components/new-rule-dialog"
 import type { AlertDestinationRow, AlertIncidentRow, AlertRuleRow } from "@/features/alerts"
 
@@ -213,48 +214,7 @@ function AlertsPage() {
               description="Incidents appear when an enabled rule breaches for its required consecutive windows."
             />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Rule</TableHead>
-                  <TableHead>Group</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Severity</TableHead>
-                  <TableHead className="text-right">Last value</TableHead>
-                  <TableHead>First triggered</TableHead>
-                  <TableHead>Last triggered</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {alertIncidents.map((incident) => (
-                  <TableRow key={incident.id}>
-                    <TableCell>
-                      <span className="font-medium">{incident.rule?.name ?? incident.ruleId}</span>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {incident.groupKey || "—"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={incident.status === "open" ? "destructive" : "outline"}>
-                        {incident.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <SeverityBadge severity={incident.severity} />
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {incident.lastValue ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      <RelativeTime nanos={incident.firstTriggeredAtNanos} />
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      <RelativeTime nanos={incident.lastTriggeredAtNanos} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <IncidentsTable incidents={alertIncidents} />
           )}
         </TabsContent>
 

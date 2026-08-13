@@ -210,6 +210,11 @@ pub(super) async fn seed_alerts_pilot(metadata: &TursoMetadataStore) -> Result<(
             resolved_at_nanos: None,
             last_value: Some(0.4),
             last_notified_at_nanos: None,
+            bundle_hash: None,
+            bundle_assembled_at_nanos: None,
+            bundle_top_hypothesis: None,
+            bundle_deploy_adjacency: None,
+            bundle_error: None,
         })
         .await
         .context("seed incident")?;

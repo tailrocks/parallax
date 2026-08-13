@@ -4,8 +4,8 @@ use juniper::FieldResult;
 use parallax_metadata::AlertRuleRecord;
 
 use super::{
-    ALERT_COMPARATORS, ALERT_NAME_MAX, ALERT_NO_DATA_BEHAVIORS, ALERT_SEVERITIES, ALERT_SIGNAL_TYPES,
-    AlertRuleInput, now_nanos,
+    ALERT_COMPARATORS, ALERT_NAME_MAX, ALERT_NO_DATA_BEHAVIORS, ALERT_SEVERITIES,
+    ALERT_SIGNAL_TYPES, AlertRuleInput, now_nanos,
 };
 use crate::field_err;
 
@@ -145,4 +145,3 @@ pub(crate) fn validated_rule(
         updated_at_nanos: now,
     })
 }
-

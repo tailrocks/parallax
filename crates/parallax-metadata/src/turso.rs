@@ -31,7 +31,7 @@ pub use agent_sessions::{
 };
 pub use alerts::{
     ALERT_CHECKS_KEEP_PER_RULE, AlertCheckRecord, AlertDeliveryEventRecord, AlertDestinationRecord,
-    AlertIncidentRecord, AlertRuleRecord, AlertRuleStateRecord,
+    AlertIncidentRecord, AlertRuleRecord, AlertRuleStateRecord, IncidentBundleSnapshot,
 };
 pub use ci::{CiAttemptAccept, CiAttemptDeliveryRecord, CiAttemptStoreError, CiBackfillState};
 pub use claims::EvidenceClaimRow;
@@ -43,7 +43,7 @@ use row::*;
 use values::*;
 
 /// Current `PRAGMA user_version`. v0 = pre-versioning DBs.
-pub(crate) const SCHEMA_USER_VERSION: i32 = 2;
+pub(crate) const SCHEMA_USER_VERSION: i32 = 3;
 
 const SCHEMA: &str = "
 CREATE TABLE IF NOT EXISTS issues (

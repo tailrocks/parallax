@@ -1,9 +1,14 @@
 //! Resolver tests for `alertRulePreview` (plan 171).
 
 use crate::resolvers::test_support::context_with_memory;
-use crate::{build_schema, execute};
+use crate::{
+    AlertPreviewData, AlertPreviewGroupData, AlertPreviewPointData, ApiContext, Schema,
+    build_schema, execute,
+};
 
 use parallax_test_support::builders::MemoryStore;
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 
 // Re-export helpers if tests module doesn't pub them.
@@ -11,8 +16,8 @@ use std::sync::Arc;
 // Duplicate the tiny run helper to avoid coupling.
 
 async fn exec(
-    schema: &crate::Schema,
-    context: &crate::ApiContext,
+    schema: &Schema,
+    context: &ApiContext,
     query: impl Into<String>,
 ) -> serde_json::Value {
     let request = juniper::http::GraphQLRequest::new(query.into(), None, None);
@@ -37,16 +42,14 @@ impl crate::AlertPreviewer for StubPreviewer {
         _rule: parallax_metadata::AlertRuleRecord,
         window_minutes: u32,
         _now_nanos: u128,
-    ) -> std::pin::Pin<
-        Box<dyn std::future::Future<Output = anyhow::Result<crate::AlertPreviewData>> + Send + '_>,
-    > {
+    ) -> Pin<Box<dyn Future<Output = anyhow::Result<AlertPreviewData>> + Send + '_>> {
         Box::pin(async move {
-            Ok(crate::AlertPreviewData {
+            Ok(AlertPreviewData {
                 window_minutes,
-                groups: vec![crate::AlertPreviewGroupData {
+                groups: vec![AlertPreviewGroupData {
                     group_key: "checkout".into(),
                     samples_sufficient: true,
-                    points: vec![crate::AlertPreviewPointData {
+                    points: vec![AlertPreviewPointData {
                         ts_nanos: "1".into(),
                         value: Some(0.4),
                         sample_count: 8,

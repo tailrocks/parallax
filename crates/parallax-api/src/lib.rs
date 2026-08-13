@@ -321,11 +321,8 @@ impl Query {
     #[expect(clippy::too_many_arguments, reason = "GraphQL trace filters are the public query contract")]
     async fn trace_facets(context: &ApiContext, service: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, error_only: Option<bool>, query: Option<String>, attribute_filters: Option<Vec<AttributeFilterInput>>,) -> FieldResult<Vec<Facet>> { resolvers::traces::trace_facets(context, service, from_nanos, to_nanos, error_only, query, attribute_filters).await }
 
-    /// The bounded, redacted, hypothesis-ranked evidence bundle — the agent
-    /// handoff artifact assembling trace + logs + metric windows together.
-    /// Exactly one anchor: `fingerprint` (issue), `invocationId`, or `traceId`
-    /// (spec §8). Null when the anchor does not exist.
-    async fn bundle(context: &ApiContext, fingerprint: Option<String>, invocation_id: Option<String>, trace_id: Option<String>, max_tokens: Option<i32>,) -> FieldResult<Option<BundleOut>> { resolvers::issues::bundle(context, fingerprint, invocation_id, trace_id, max_tokens).await }
+    /// Bounded redacted evidence bundle. Exactly one of fingerprint, invocationId, traceId, alertIncidentId.
+    async fn bundle(context: &ApiContext, fingerprint: Option<String>, invocation_id: Option<String>, trace_id: Option<String>, alert_incident_id: Option<String>, max_tokens: Option<i32>,) -> FieldResult<Option<BundleOut>> { resolvers::issues::bundle(context, fingerprint, invocation_id, trace_id, alert_incident_id, max_tokens).await }
 
     /// Window-scoped metric explorer catalog (plan 168): canonical names with
     /// kind (gauge|sum|histogram), unit, emitting services, last datapoint,

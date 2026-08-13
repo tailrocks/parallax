@@ -53,6 +53,11 @@ pub(crate) struct NotificationContext<'a> {
     pub incident_url: &'a str,
     /// Absolute UI link to scoped traces/logs for investigation.
     pub investigate_url: &'a str,
+    pub bundle_hash: Option<&'a str>,
+    pub bundle_url: Option<&'a str>,
+    pub top_hypothesis: Option<&'a str>,
+    pub deploy_adjacency: &'a [String],
+    pub bundle_error: Option<&'a str>,
 }
 
 /// Stable unique delivery key: one successful delivery per
@@ -90,7 +95,12 @@ pub(crate) fn webhook_payload_json(ctx: &NotificationContext<'_>) -> String {
             "\"threshold\":{},",
             "\"threshold_upper\":{},",
             "\"window_minutes\":{},",
-            "\"links\":{{\"incident\":\"{}\",\"investigate\":\"{}\"}}",
+            "\"links\":{{\"incident\":\"{}\",\"investigate\":\"{}\"}},",
+            "\"bundle_hash\":{},",
+            "\"bundle_url\":{},",
+            "\"top_hypothesis\":{},",
+            "\"deploy_adjacency\":{},",
+            "\"bundle_error\":{}",
             "}}"
         ),
         ctx.event_type.as_str(),
@@ -106,6 +116,11 @@ pub(crate) fn webhook_payload_json(ctx: &NotificationContext<'_>) -> String {
         ctx.window_minutes,
         escape_json(ctx.incident_url),
         escape_json(ctx.investigate_url),
+        json_opt_str(ctx.bundle_hash),
+        json_opt_str(ctx.bundle_url),
+        json_opt_str(ctx.top_hypothesis),
+        json_string_array(ctx.deploy_adjacency),
+        json_opt_str(ctx.bundle_error),
     )
 }
 
@@ -121,8 +136,13 @@ pub(crate) fn slack_webhook_payload_json(ctx: &NotificationContext<'_>) -> Strin
         .observed_value
         .map(|v| format!("{v}"))
         .unwrap_or_else(|| "n/a".to_string());
+    let evidence = ctx
+        .bundle_hash
+        .map(|hash| format!(" bundle={hash}"))
+        .or_else(|| ctx.bundle_error.map(|err| format!(" bundle_error={err}")))
+        .unwrap_or_default();
     let text = format!(
-        "[{verb}] {name} ({sev}) group={group} value={value} threshold={thr} — {url}",
+        "[{verb}] {name} ({sev}) group={group} value={value} threshold={thr}{evidence} — {url}",
         name = ctx.rule_name,
         sev = ctx.severity,
         group = ctx.group_key,
@@ -130,6 +150,21 @@ pub(crate) fn slack_webhook_payload_json(ctx: &NotificationContext<'_>) -> Strin
         url = ctx.incident_url,
     );
     format!("{{\"text\":\"{}\"}}", escape_json(&text))
+}
+
+fn json_opt_str(value: Option<&str>) -> String {
+    match value {
+        Some(value) => format!("\"{}\"", escape_json(value)),
+        None => "null".into(),
+    }
+}
+
+fn json_string_array(values: &[String]) -> String {
+    let parts: Vec<String> = values
+        .iter()
+        .map(|value| format!("\"{}\"", escape_json(value)))
+        .collect();
+    format!("[{}]", parts.join(","))
 }
 
 fn escape_json(s: &str) -> String {
@@ -186,6 +221,11 @@ mod tests {
             window_minutes: 5,
             incident_url: "http://localhost:3000/alerts/incidents/inc-9",
             investigate_url: "http://localhost:3000/traces?service=checkout",
+            bundle_hash: None,
+            bundle_url: None,
+            top_hypothesis: None,
+            deploy_adjacency: &[],
+            bundle_error: None,
         }
     }
 

@@ -7,6 +7,13 @@
 mod delivery;
 mod delivery_worker;
 mod evaluator;
+#[cfg(test)]
+#[path = "alerting/evaluator_bundle_tests.rs"]
+mod evaluator_bundle_tests;
+mod incident_bundle;
+#[cfg(test)]
+#[path = "alerting/incident_bundle_tests.rs"]
+mod incident_bundle_tests;
 mod measurement;
 mod measurement_source;
 mod preview;
@@ -32,6 +39,6 @@ pub(crate) use delivery::{
     slack_webhook_payload_json, unique_delivery_key, webhook_payload_json,
 };
 pub(crate) use state_machine::{
-    AlertComparator, AlertMeasurement, AlertSeverity, AlertTransition, NoDataBehavior,
-    RuleEvalConfig, RuleEvalState, evaluate_rule,
+    AlertComparator, AlertMeasurement, AlertSeverity, AlertTransition, EvaluationOutcome,
+    NoDataBehavior, RuleEvalConfig, RuleEvalState, evaluate_rule,
 };

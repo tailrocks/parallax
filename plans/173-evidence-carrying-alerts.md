@@ -179,15 +179,16 @@ matches `alertIncident.bundle`.
 
 - [x] Spec carries the fourth anchor + payload fields (committed before
       code).
-- [ ] Incident open assembles + persists a bundle without ever blocking
+- [x] Incident open assembles + persists a bundle without ever blocking
       delivery (failure-injection test proves it).
-- [ ] Webhook + Slack payloads carry bundle_hash/url/top_hypothesis/
+- [x] Webhook + Slack payloads carry bundle_hash/url/top_hypothesis/
       deploy_adjacency or `bundle_error`.
-- [ ] `alertIncident.bundle` in SDL; UI incident view shows the bundle.
-- [ ] Canary secrets provably absent from payload bytes.
-- [ ] All gates green (`ci --fast`, lint, test, arch, structural policy,
-      graphql check, ui.tests).
-- [ ] `plans/README.md` row updated.
+- [x] `alertIncident.bundle` in SDL; UI incident view shows the bundle.
+- [x] Canary secrets provably absent from payload bytes.
+- [x] Targeted gates green (lint, arch, structural policy, graphql
+      check, ui.tests, incident/alert/bundle nextest). Full `ci --fast`
+      + `cargo xtask test` wait for the 162–176 close-out dual gate.
+- [x] `plans/README.md` row updated.
 
 ## STOP conditions
 

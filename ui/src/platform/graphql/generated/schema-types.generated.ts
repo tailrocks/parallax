@@ -65,6 +65,7 @@ export type AlertDestination = {
 
 export type AlertIncident = {
   readonly __typename?: "AlertIncident"
+  readonly bundle: Maybe<BundleOut>
   readonly firstTriggeredAtNanos: Scalars["String"]["output"]
   readonly groupKey: Scalars["String"]["output"]
   readonly id: Scalars["String"]["output"]
@@ -721,12 +722,7 @@ export type Query = {
   readonly attributeCompare: ReadonlyArray<AttributeCompareRow>
   /** Periodic daemon work grouped by cycle name (`background.cycle` spans). */
   readonly backgroundCycles: ReadonlyArray<BackgroundCycle>
-  /**
-   * The bounded, redacted, hypothesis-ranked evidence bundle — the agent
-   * handoff artifact assembling trace + logs + metric windows together.
-   * Exactly one anchor: `fingerprint` (issue), `invocationId`, or `traceId`
-   * (spec §8). Null when the anchor does not exist.
-   */
+  /** Bounded redacted evidence bundle. Exactly one of fingerprint, invocationId, traceId, alertIncidentId. */
   readonly bundle: Maybe<BundleOut>
   /** Agent conversations (`gen_ai.conversation.id` spans) in one invocation. */
   readonly conversations: ReadonlyArray<Conversation>
@@ -989,6 +985,7 @@ export type QueryBackgroundCyclesArgs = {
 }
 
 export type QueryBundleArgs = {
+  alertIncidentId: InputMaybe<Scalars["String"]["input"]>
   fingerprint: InputMaybe<Scalars["String"]["input"]>
   invocationId: InputMaybe<Scalars["String"]["input"]>
   maxTokens: InputMaybe<Scalars["Int"]["input"]>

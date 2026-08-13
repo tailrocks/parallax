@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 624,
-    "test_files": 167
+    "test_cases": 626,
+    "test_files": 168
   },
   "private_route_imports": [],
   "entries": [
@@ -3246,6 +3246,21 @@
       "dataset_id": "shell-empty",
       "state_class": "empty",
       "delivery_plan": 172
+    },
+    {
+      "id": "vitest-173-incident-bundle-panel",
+      "surface": "features/alerts",
+      "risk": "Incident evidence panel can hide the fire-time bundle",
+      "scenario_owner": "features/alerts",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/features/alerts/tests/components/incident-bundle-panel.test.tsx",
+      "test_ids": [
+        "renders an empty notice when assembly is missing",
+        "renders markdown and hash when a bundle exists"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
     }
   ],
   "browser_contract_paths": [

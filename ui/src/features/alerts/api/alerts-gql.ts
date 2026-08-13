@@ -43,6 +43,7 @@ export interface AlertIncidentRow {
   resolvedAtNanos: string | null
   lastValue: number | null
   rule: { id: string; name: string } | null
+  bundle: { markdown: string; canonicalHash: string } | null
 }
 
 export interface AlertDestinationRow {
@@ -85,6 +86,7 @@ export const ALERT_RULE_FIELDS = `
 export const ALERT_INCIDENT_FIELDS = `
   id ruleId groupKey status severity firstTriggeredAtNanos
   lastTriggeredAtNanos resolvedAtNanos lastValue rule { id name }
+  bundle { markdown canonicalHash }
 `
 
 export const ALERTS_INDEX_QUERY = `

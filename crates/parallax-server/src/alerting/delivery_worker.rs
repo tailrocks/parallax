@@ -66,6 +66,12 @@ async fn build_payload(
     } else {
         format!("{base_url}/traces?service={}", incident.group_key)
     };
+    let bundle_url = format!("{base_url}/alerts?incident={}", incident.id);
+    let adjacency: Vec<String> = incident
+        .bundle_deploy_adjacency
+        .as_deref()
+        .and_then(|raw| serde_json::from_str(raw).ok())
+        .unwrap_or_default();
     let ctx = NotificationContext {
         rule_id: &rule.id,
         rule_name: &rule.name,
@@ -80,6 +86,18 @@ async fn build_payload(
         window_minutes: rule.window_minutes,
         incident_url: &incident_url,
         investigate_url: &investigate_url,
+        bundle_hash: incident.bundle_hash.as_deref(),
+        bundle_url: incident.bundle_hash.as_ref().map(|_| bundle_url.as_str()),
+        top_hypothesis: incident.bundle_top_hypothesis.as_deref(),
+        deploy_adjacency: &adjacency,
+        bundle_error: incident
+            .bundle_error
+            .as_deref()
+            .or(if incident.bundle_hash.is_none() {
+                Some("assembly unavailable")
+            } else {
+                None
+            }),
     };
     let body = match destination.kind.as_str() {
         "webhook" => webhook_payload_json(&ctx),
@@ -285,6 +303,11 @@ mod tests {
                 resolved_at_nanos: None,
                 last_value: Some(0.4),
                 last_notified_at_nanos: Some(MIN),
+                bundle_hash: None,
+                bundle_assembled_at_nanos: None,
+                bundle_top_hypothesis: None,
+                bundle_deploy_adjacency: None,
+                bundle_error: None,
             })
             .await
             .expect("incident");

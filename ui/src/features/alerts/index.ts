@@ -38,3 +38,4 @@ export {
   type AlertRuleRow,
   type AlertRuleStateRow,
 } from "@/features/alerts/api/alerts-gql"
+export { IncidentBundlePanel } from "@/features/alerts/components/incident-bundle-panel"

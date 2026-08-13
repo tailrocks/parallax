@@ -28,6 +28,17 @@ async fn apply_schema_migrations(conn: &turso::Connection) -> anyhow::Result<()>
                 .await?;
         }
     }
+    if version < 3 {
+        for column in [
+            "ALTER TABLE alert_incidents ADD COLUMN bundle_hash TEXT",
+            "ALTER TABLE alert_incidents ADD COLUMN bundle_assembled_at INTEGER",
+            "ALTER TABLE alert_incidents ADD COLUMN bundle_top_hypothesis TEXT",
+            "ALTER TABLE alert_incidents ADD COLUMN bundle_deploy_adjacency TEXT",
+            "ALTER TABLE alert_incidents ADD COLUMN bundle_error TEXT",
+        ] {
+            drop(conn.execute(column, ()).await);
+        }
+    }
     conn.execute(&format!("PRAGMA user_version = {SCHEMA_USER_VERSION}"), ())
         .await?;
     Ok(())

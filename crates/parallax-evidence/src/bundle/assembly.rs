@@ -1,7 +1,7 @@
 use super::*;
 
 /// What the bundle is anchored to (spec §8: exactly one of issue fingerprint,
-/// invocation id, trace id).
+/// invocation id, trace id, or alert incident id).
 #[derive(Debug)]
 pub enum BundleAnchor {
     Issue(Box<Issue>),
@@ -14,6 +14,7 @@ pub enum BundleAnchor {
         trace_id: String,
         issues: Vec<Issue>,
     },
+    Incident(Box<IncidentAnchor>),
 }
 
 /// Inputs for assembly — the caller (API layer) fetches these through the
@@ -62,76 +63,8 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
     };
     let mut missing = Vec::new();
 
-    // Resolve the anchor into its sections and the primary issue.
-    let (anchor, invocation_section, primary_issue) = match &inputs.anchor {
-        BundleAnchor::Issue(issue) => (
-            Anchor {
-                kind: "issue",
-                id: project_required(EvidenceField::AnchorId, &issue.fingerprint, &mut redaction),
-            },
-            None,
-            Some(issue.as_ref().clone()),
-        ),
-        BundleAnchor::Invocation { invocation, issues } => {
-            let primary = inputs
-                .events
-                .first()
-                .and_then(|e| issues.iter().find(|i| i.fingerprint == e.fingerprint))
-                .or_else(|| issues.first())
-                .cloned();
-            (
-                Anchor {
-                    kind: "invocation",
-                    id: project_required(
-                        EvidenceField::AnchorId,
-                        &invocation.invocation_id,
-                        &mut redaction,
-                    ),
-                },
-                Some(InvocationSection {
-                    invocation_id: project_required(
-                        EvidenceField::AnchorId,
-                        &invocation.invocation_id,
-                        &mut redaction,
-                    ),
-                    command: invocation.command.as_deref().and_then(|command| {
-                        project_text(EvidenceField::InvocationCommand, command, &mut redaction)
-                    }),
-                    app_mode: invocation.app_mode.as_deref().map(|mode| {
-                        project_required(EvidenceField::InvocationMode, mode, &mut redaction)
-                    }),
-                    outcome: invocation.outcome.as_deref().map(|outcome| {
-                        project_required(EvidenceField::InvocationOutcome, outcome, &mut redaction)
-                    }),
-                    status: invocation.status.clone(),
-                    exit_code: invocation.exit_code,
-                    started_at_nanos: invocation.started_at_nanos.to_string(),
-                    ended_at_nanos: invocation.ended_at_nanos.map(|n| n.to_string()),
-                    issues: issues
-                        .iter()
-                        .map(|issue| issue_summary(issue, &mut redaction))
-                        .collect(),
-                }),
-                primary,
-            )
-        }
-        BundleAnchor::Trace { trace_id, issues } => {
-            let primary = inputs
-                .events
-                .first()
-                .and_then(|e| issues.iter().find(|i| i.fingerprint == e.fingerprint))
-                .or_else(|| issues.first())
-                .cloned();
-            (
-                Anchor {
-                    kind: "trace",
-                    id: project_required(EvidenceField::TraceId, trace_id, &mut redaction),
-                },
-                None,
-                primary,
-            )
-        }
-    };
+    let (anchor, invocation_section, primary_issue) =
+        resolve_anchor(&inputs.anchor, &inputs.events, &mut redaction);
 
     let latest_event = inputs.events.first().map(|event| EventDetail {
         ts_nanos: event.ts_nanos.to_string(),
@@ -147,11 +80,7 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
         trace_id: project_required(EvidenceField::TraceId, &event.trace_id, &mut redaction),
     });
     if inputs.events.is_empty() {
-        missing.push(match anchor.kind {
-            "invocation" => "no error events inside this invocation's traces".into(),
-            "trace" => "no error events on this trace".into(),
-            _ => "no stored error events for this fingerprint (check retention)".to_string(),
-        });
+        missing.push(missing_events_message(anchor.kind));
     }
 
     let trace = if inputs.trace_spans.is_empty() {
@@ -299,4 +228,96 @@ pub fn assemble(inputs: BundleInputs, max_tokens: usize) -> Bundle {
     bundle.bounded.estimated_tokens = estimate_bundle_tokens(&bundle);
     bundle.canonical_hash = Some(canonical_hash(&bundle));
     bundle
+}
+
+fn missing_events_message(kind: &str) -> String {
+    match kind {
+        "invocation" => "no error events inside this invocation's traces".into(),
+        "trace" => "no error events on this trace".into(),
+        "alert_incident" => "no stored error events in the incident window".into(),
+        _ => "no stored error events for this fingerprint (check retention)".into(),
+    }
+}
+
+fn primary_from_events(events: &[ErrorEventRow], issues: &[Issue]) -> Option<Issue> {
+    events
+        .first()
+        .and_then(|event| {
+            issues
+                .iter()
+                .find(|issue| issue.fingerprint == event.fingerprint)
+        })
+        .or_else(|| issues.first())
+        .cloned()
+}
+
+fn resolve_anchor(
+    anchor: &BundleAnchor,
+    events: &[ErrorEventRow],
+    redaction: &mut RedactionReport,
+) -> (Anchor, Option<InvocationSection>, Option<Issue>) {
+    match anchor {
+        BundleAnchor::Issue(issue) => (
+            Anchor {
+                kind: "issue",
+                id: project_required(EvidenceField::AnchorId, &issue.fingerprint, redaction),
+            },
+            None,
+            Some(issue.as_ref().clone()),
+        ),
+        BundleAnchor::Invocation { invocation, issues } => {
+            let primary = primary_from_events(events, issues);
+            (
+                Anchor {
+                    kind: "invocation",
+                    id: project_required(
+                        EvidenceField::AnchorId,
+                        &invocation.invocation_id,
+                        redaction,
+                    ),
+                },
+                Some(InvocationSection {
+                    invocation_id: project_required(
+                        EvidenceField::AnchorId,
+                        &invocation.invocation_id,
+                        redaction,
+                    ),
+                    command: invocation.command.as_deref().and_then(|command| {
+                        project_text(EvidenceField::InvocationCommand, command, redaction)
+                    }),
+                    app_mode: invocation.app_mode.as_deref().map(|mode| {
+                        project_required(EvidenceField::InvocationMode, mode, redaction)
+                    }),
+                    outcome: invocation.outcome.as_deref().map(|outcome| {
+                        project_required(EvidenceField::InvocationOutcome, outcome, redaction)
+                    }),
+                    status: invocation.status.clone(),
+                    exit_code: invocation.exit_code,
+                    started_at_nanos: invocation.started_at_nanos.to_string(),
+                    ended_at_nanos: invocation.ended_at_nanos.map(|n| n.to_string()),
+                    issues: issues
+                        .iter()
+                        .map(|issue| issue_summary(issue, redaction))
+                        .collect(),
+                }),
+                primary,
+            )
+        }
+        BundleAnchor::Trace { trace_id, issues } => (
+            Anchor {
+                kind: "trace",
+                id: project_required(EvidenceField::TraceId, trace_id, redaction),
+            },
+            None,
+            primary_from_events(events, issues),
+        ),
+        BundleAnchor::Incident(incident) => (
+            Anchor {
+                kind: "alert_incident",
+                id: project_required(EvidenceField::AnchorId, &incident.incident_id, redaction),
+            },
+            None,
+            None,
+        ),
+    }
 }
