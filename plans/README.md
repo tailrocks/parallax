@@ -20,7 +20,7 @@ under `docs/research/validation/`. Do not keep plan history here.
 | [169](169-rust-parity-and-structural-tests.md) | Fake/engine parity, resolver depth, and metadata versioning (wave 2) | DONE |
 | [170](170-playwright-critical-coverage.md) | Playwright coverage for every critical user flow | DONE |
 | [171](171-competitor-informed-feature-uplift.md) | Preview-before-save, agent issue lease, MCP evals, instrumented onboarding | OPERATOR-GATED — f1 preview shipped; f2 lease catalog proposal awaiting operator; f3 evals label-gated; f4 snippets landed |
-| [172](172-design-system-and-guide.md) | Design-system uplift and the documented design guide (foglamp-informed) | TODO — after 170 (regression net); coordinates with 171 feature 4 |
+| [172](172-design-system-and-guide.md) | Design-system uplift and the documented design guide (foglamp-informed) | DONE — DESIGN.md + elevation + page-fade + snippet tabs + domain records; nav chips already present |
 | [173](173-evidence-carrying-alerts.md) | Alerts carry evidence — every incident notification delivers a bundle | TODO — spec-first; c4 (164) is the live verification |
 | [174](174-durable-upgrade-no-silent-loss.md) | Durable-upgrade + no-silent-loss contract, proven in CI | TODO — metadata leg after 169 Step 4; harness independent |
 | [175](175-resource-footprint-contract.md) | Resource-footprint contract — measured, published, regression-gated | TODO — independent |

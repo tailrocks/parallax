@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router"
 import { Chip } from "@/shared/console/chip"
 import { TableCell } from "@/components/ui/table"
 import { formatTimeInRange } from "@/shared/format"
-import { rangeLinkSearch, type ResolvedRange } from "@/domain/time-range/range"
+import { type rangeLinkSearch, type ResolvedRange } from "@/domain/time-range/range"
 
 export function LogTimeCell({
   tsNanos,

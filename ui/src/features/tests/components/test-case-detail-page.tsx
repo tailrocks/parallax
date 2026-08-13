@@ -24,6 +24,7 @@ import {
 import type { TestsSearch } from "@/features/tests/model/tests-search"
 import { RangePicker } from "@/features/time-range"
 import { mergeRangeSearch, resolveRangeSearch, type ResolvedRange } from "@/domain/time-range/range"
+import { TEST_RESULT } from "@/shared/colors"
 import { cn } from "@/lib/utils"
 import { PageHeader } from "@/shared/components/page-header"
 import { navItem } from "@/shared/navigation"
@@ -44,16 +45,7 @@ function statusToRollup(status: TestResultRef["status"]): TestRollup {
 }
 
 function statusTone(status: TestResultRef["status"]): string {
-  switch (status) {
-    case "FAILED":
-    case "BROKEN":
-      return "bg-destructive/15 text-destructive"
-    case "PASSED":
-      return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-    case "SKIPPED":
-    case "UNKNOWN":
-      return "bg-muted text-muted-foreground"
-  }
+  return TEST_RESULT[status].badge
 }
 
 export function TestCaseDetailRoutePage({

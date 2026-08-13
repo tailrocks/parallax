@@ -194,7 +194,7 @@ function VirtualizedLogTable({
     >
       <table
         data-slot="table"
-        className="w-full caption-bottom rounded-xl bg-card/40 text-sm shadow-(--custom-shadow) corner-squircle dark:shadow-(--custom-shadow)"
+        className="w-full table-fixed caption-bottom rounded-xl bg-card/40 text-sm shadow-(--custom-shadow) corner-squircle dark:shadow-(--custom-shadow)"
       >
         <TableHeader className="sticky top-0 z-10 bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/75">
           {headerRows}
@@ -326,7 +326,7 @@ export function LogsTable({
         renderRow={renderRow}
       />
     ) : (
-      <Table>
+      <Table className="table-fixed">
         {header}
         <TableBody>{logs.map(renderRow)}</TableBody>
       </Table>

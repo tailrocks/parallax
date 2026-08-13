@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table"
 import { serviceErrorRate } from "@/features/services/model/service-summary"
 import type { ServiceTableRow } from "@/features/services/model/service-summary"
+import { errorCountTone } from "@/shared/colors"
 import type {
   ServiceSort,
   ServicesSearch,
@@ -141,12 +142,7 @@ export function ServicesTable({
                     {formatCount(Number(row.spanCount))}
                   </Link>
                 </TableCell>
-                <TableCell
-                  className={cn(
-                    "text-right tabular-nums",
-                    errors > 0 ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground/40"
-                  )}
-                >
+                <TableCell className={cn("text-right tabular-nums", errorCountTone(errors))}>
                   <Link
                     to="/traces"
                     search={{

@@ -19,6 +19,7 @@ import {
   invocationStatus,
 } from "@/features/invocations/model/invocation"
 import type { InvocationRow } from "@/features/invocations/model/invocation"
+import { errorCountTone } from "@/shared/colors"
 import { cn } from "@/lib/utils"
 
 import { InvocationStatusBadge, OutcomeChip } from "./invocation-status-badge"
@@ -134,12 +135,7 @@ function InvocationTableRow({
       <TableCell className="text-right tabular-nums">
         {row.traceCount == null ? "-" : formatCount(row.traceCount)}
       </TableCell>
-      <TableCell
-        className={cn(
-          "text-right tabular-nums",
-          errors > 0 ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground/40"
-        )}
-      >
+      <TableCell className={cn("text-right tabular-nums", errorCountTone(errors))}>
         {row.errorCount == null ? "-" : formatCount(errors)}
       </TableCell>
       <TableCell className="text-right tabular-nums">

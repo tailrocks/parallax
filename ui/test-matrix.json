@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 614,
-    "test_files": 163
+    "test_cases": 624,
+    "test_files": 167
   },
   "private_route_imports": [],
   "entries": [
@@ -3181,6 +3181,71 @@
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
+    },
+    {
+      "id": "vitest-172-colors-domain",
+      "surface": "shared/colors",
+      "risk": "Domain status records can miss a key or tone slot",
+      "scenario_owner": "shared/colors",
+      "lane_owner": "vitest/unit",
+      "layer": "model",
+      "test_file": "ui/src/shared/tests/colors-domain.test.ts",
+      "test_ids": [
+        "covers every invocation status and outcome tone slot",
+        "covers every span status tone slot",
+        "covers every test rollup, result, and flaky tone slot"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-172-page-fade",
+      "surface": "layout/shell",
+      "risk": "Hard-load page fade can replay on remount or ignore reduced-motion",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "vitest/unit",
+      "layer": "model",
+      "test_file": "ui/src/shared/tests/page-fade.test.ts",
+      "test_ids": [
+        "fires once per boot",
+        "reduced-motion short-circuits",
+        "second call is a no-op"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-172-snippet-tabs",
+      "surface": "shared/console",
+      "risk": "Empty-state snippet tabs can shift layout or copy the hidden language",
+      "scenario_owner": "shared/console",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/shared/console/tests/snippet-tabs.test.tsx",
+      "test_ids": [
+        "copy writes the visible snippet",
+        "renders rust java js tabs",
+        "switching tabs shows the selected snippet"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "pw-overview-empty-snippets",
+      "surface": "features/overview",
+      "risk": "Zero-data overview can lose copy-pasteable setup snippets",
+      "scenario_owner": "features/overview",
+      "lane_owner": "playwright/contracts",
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/overview-empty.spec.ts",
+      "test_ids": [
+        "overview empty state shows copyable setup snippets @pw-overview-empty-snippets"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "implemented",
+      "dataset_id": "shell-empty",
+      "state_class": "empty",
+      "delivery_plan": 172
     }
   ],
   "browser_contract_paths": [

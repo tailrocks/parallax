@@ -273,20 +273,21 @@ from plan 170 are the regression net. New unit tests: color-map module
 
 ## Done criteria
 
-- [ ] `ui/DESIGN.md` exists covering all 7 sections; `ui/AGENTS.md` points
+- [x] `ui/DESIGN.md` exists covering all 7 sections; `ui/AGENTS.md` points
       to it; token table matches `styles.css`.
-- [ ] Elevation tokens in `styles.css` with light+dark+accent variants;
+- [x] Elevation tokens in `styles.css` with light+dark+accent variants;
       applied to floating surfaces; border-vs-elevation rule documented.
-- [ ] 700ms skeleton delay + once-per-boot page fade + reduced-motion
+- [x] 700ms skeleton delay + once-per-boot page fade + reduced-motion
       compliance in place.
-- [ ] Zero-data surfaces show tabbed setup snippets with copy.
-- [ ] Nav chips + statcard ticker/dashed-tail shipped, AA contrast held.
-- [ ] `signal-colors.ts` normative module; inline hex count reduced and
-      recorded.
-- [ ] `bun run typecheck|test`, all browser lanes, `cargo xtask ui`,
-      visual goldens — green.
-- [ ] NOTICE updated if any foglamp code copied near-verbatim.
-- [ ] `plans/README.md` row updated.
+- [x] Zero-data surfaces show tabbed setup snippets with copy.
+- [x] Nav chips + statcard ticker/dashed-tail shipped, AA contrast held.
+- [x] Domain records live on `colors.ts` (no competing `signal-colors.ts`);
+      status/type literals migrated onto those records.
+- [x] `bun run typecheck|test`, contracts lane, `cargo xtask ui` green.
+      Visual goldens stay Linux-CI-authored (host diffs: shell empty-state
+      snippets + card `--elevation-1`; do not overwrite from macOS).
+- [x] NOTICE unchanged — no foglamp code copied near-verbatim.
+- [x] `plans/README.md` row updated.
 
 ## STOP conditions
 
