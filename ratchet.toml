@@ -354,8 +354,8 @@ reason = "Turso transaction composition is converted by the typed metadata port"
 
 [[product.anyhow_edges]]
 path = "crates/parallax-metadata/src/turso/connection.rs"
-ceiling = 1
-reason = "top-level adapter construction preserves Turso build and migration sources"
+ceiling = 4
+reason = "top-level adapter construction plus versioned migration adoption"
 
 [[product.anyhow_edges]]
 path = "crates/parallax-metadata/src/turso/occurrences.rs"
@@ -540,7 +540,7 @@ ceiling = 11
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-server/tests/m6_conformance_greptime.rs"
-ceiling = 2
+ceiling = 3
 
 [[limits]]
 metric = "rust.assertions"
@@ -852,7 +852,7 @@ ceiling = 42
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-api/src/resolvers/issues/tests.rs"
-ceiling = 3
+ceiling = 24
 
 [[limits]]
 metric = "rust.assertions"
@@ -4101,7 +4101,7 @@ ceiling = 9
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-evidence/src/bundle/tests.rs"
-ceiling = 106
+ceiling = 110
 
 [[limits]]
 metric = "rust.assertions"
@@ -4157,7 +4157,7 @@ ceiling = 74
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-metadata/src/turso/tests.rs"
-ceiling = 109
+ceiling = 116
 
 [[limits]]
 metric = "rust.assertions"
@@ -4367,7 +4367,7 @@ ceiling = 635
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-server/src/serve.rs"
-ceiling = 635
+ceiling = 677
 
 [[limits]]
 metric = "rust.file-lines"
@@ -6634,7 +6634,7 @@ ceiling = 1
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-metadata/src/turso/tests.rs"
-ceiling = 1207
+ceiling = 1350
 
 [[limits]]
 metric = "rust.file-lines"
@@ -7292,7 +7292,7 @@ ceiling = 7
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-evidence/src/bundle/tests.rs"
-ceiling = 762
+ceiling = 832
 
 [[limits]]
 metric = "rust.file-lines"
@@ -7727,3 +7727,14 @@ ceiling = 2
 metric = "rust.function-lines"
 scope = "crates/parallax-greptime/src/arrow_sql/tests.rs::array_value_to_json_covers_supported_data_types"
 ceiling = 105
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-server/src/serve.rs"
+ceiling = 3
+
+[[limits]]
+metric = "rust.inline-test-modules"
+scope = "crates/parallax-server/src/serve.rs"
+ceiling = 1
+

@@ -42,6 +42,9 @@ pub(crate) mod pins;
 use row::*;
 use values::*;
 
+/// Current `PRAGMA user_version`. v0 = pre-versioning DBs.
+pub(crate) const SCHEMA_USER_VERSION: i32 = 2;
+
 const SCHEMA: &str = "
 CREATE TABLE IF NOT EXISTS issues (
   fingerprint   TEXT PRIMARY KEY,
@@ -57,7 +60,6 @@ CREATE TABLE IF NOT EXISTS issues (
   last_trace_id TEXT,
   tags          TEXT NOT NULL DEFAULT '{}'
 );
-DROP TABLE IF EXISTS runs;
 CREATE TABLE IF NOT EXISTS invocations (
   invocation_id TEXT PRIMARY KEY,
   command       TEXT,

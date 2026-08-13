@@ -1,14 +1,22 @@
 use super::*;
 
-impl TursoMetadataStore {
-    pub async fn open(path: impl AsRef<Path>) -> anyhow::Result<Self> {
-        let db = turso::Builder::new_local(path.as_ref().to_string_lossy().as_ref())
-            .build()
-            .await?;
-        let conn = db.connect()?;
-        for statement in SCHEMA.split(';').map(str::trim).filter(|s| !s.is_empty()) {
-            conn.execute(statement, ()).await?;
-        }
+async fn apply_schema_migrations(conn: &turso::Connection) -> anyhow::Result<()> {
+    let version = {
+        let mut rows = conn.query("PRAGMA user_version", ()).await?;
+        let Some(row) = rows.next().await? else {
+            anyhow::bail!("PRAGMA user_version returned no row");
+        };
+        i32::try_from(integer(&row, 0))?
+    };
+    if version > SCHEMA_USER_VERSION {
+        anyhow::bail!(
+            "metadata schema user_version {version} is newer than supported {SCHEMA_USER_VERSION}"
+        );
+    }
+    if version < 1 {
+        conn.execute("DROP TABLE IF EXISTS runs", ()).await?;
+    }
+    if version < 2 {
         let mut columns = conn.query("PRAGMA table_info(issues)", ()).await?;
         let mut has_resolved_at = false;
         while let Some(row) = columns.next().await? {
@@ -19,6 +27,22 @@ impl TursoMetadataStore {
             conn.execute("ALTER TABLE issues ADD COLUMN resolved_at INTEGER", ())
                 .await?;
         }
+    }
+    conn.execute(&format!("PRAGMA user_version = {SCHEMA_USER_VERSION}"), ())
+        .await?;
+    Ok(())
+}
+
+impl TursoMetadataStore {
+    pub async fn open(path: impl AsRef<Path>) -> anyhow::Result<Self> {
+        let db = turso::Builder::new_local(path.as_ref().to_string_lossy().as_ref())
+            .build()
+            .await?;
+        let conn = db.connect()?;
+        for statement in SCHEMA.split(';').map(str::trim).filter(|s| !s.is_empty()) {
+            conn.execute(statement, ()).await?;
+        }
+        apply_schema_migrations(&conn).await?;
         Ok(Self {
             conn: tokio::sync::Mutex::new(conn),
         })

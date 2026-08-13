@@ -792,6 +792,79 @@ fn populated_bundle_json_serialization_cannot_fail() {
     assert_eq!(hash.len(), "sha256:".len() + 64);
 }
 
+#[test]
+fn rank_hypotheses_timeout_outranks_fallback() {
+    let event = EventDetail {
+        ts_nanos: "1".into(),
+        message: "upstream timed out after 30s".into(),
+        stacktrace: None,
+        source: "log".into(),
+        trace_id: "t".into(),
+    };
+    let ranked = rank_hypotheses(
+        None,
+        Some(&event),
+        None,
+        &Anchor {
+            kind: "issue",
+            id: "fp".into(),
+        },
+        &[],
+        &[],
+    );
+    assert_eq!(ranked[0].kind, "dependency_failure");
+}
+
+#[test]
+fn rank_hypotheses_slow_span_when_duration_dominates() {
+    let span = SpanLine {
+        service: "checkout".into(),
+        name: "slow".into(),
+        kind: "SPAN_KIND_INTERNAL".into(),
+        status_code: "STATUS_CODE_UNSET".into(),
+        duration_us: 2_000_000,
+        db_query: None,
+    };
+    let ranked = rank_hypotheses(
+        None,
+        Some(&EventDetail {
+            ts_nanos: "1".into(),
+            message: "ok".into(),
+            stacktrace: None,
+            source: "log".into(),
+            trace_id: "t".into(),
+        }),
+        Some(&TraceSection {
+            trace_id: "t".into(),
+            spans: vec![span],
+        }),
+        &Anchor {
+            kind: "trace",
+            id: "t".into(),
+        },
+        &[],
+        &[],
+    );
+    assert_eq!(ranked[0].kind, "slow_span");
+}
+
+#[test]
+fn rank_hypotheses_empty_evidence_is_stable_fallback() {
+    let ranked = rank_hypotheses(
+        None,
+        None,
+        None,
+        &Anchor {
+            kind: "issue",
+            id: "none".into(),
+        },
+        &[],
+        &[],
+    );
+    assert_eq!(ranked.len(), 1);
+    assert_eq!(ranked[0].kind, "insufficient_evidence");
+}
+
 mod bounding_property_tests {
     use super::*;
     use proptest::prelude::*;

@@ -398,9 +398,9 @@ mod property_tests {
     }
 
     proptest! {
-        /// Same OTLP request always yields identical SpanRow vectors (determinism).
+        /// Span-count conservation: one OTLP span in, one SpanRow out.
         #[test]
-        fn normalize_traces_is_deterministic(
+        fn normalize_traces_conserves_span_count(
             service in "[a-zA-Z0-9._-]{1,32}",
             name in "[a-zA-Z0-9._/ -]{0,64}",
             start in 0u64..1_000_000_000_000u64,
@@ -408,22 +408,23 @@ mod property_tests {
             status in 0i32..=2,
         ) {
             let request = span_request(&service, &name, start, start.saturating_add(duration), status);
-            let a = normalize_traces(&request);
-            let b = normalize_traces(&request);
-            // SpanRow is not PartialEq; compare via stable serde JSON.
-            let a_json = serde_json::to_value(&a).expect("a");
-            let b_json = serde_json::to_value(&b).expect("b");
-            prop_assert_eq!(a_json, b_json);
-            prop_assert_eq!(a.len(), 1);
-            prop_assert_eq!(&a[0].service, &service);
-            prop_assert_eq!(&a[0].name, &name);
+            let rows = normalize_traces(&request);
+            prop_assert_eq!(rows.len(), 1);
+            prop_assert_eq!(&rows[0].service, &service);
+            prop_assert_eq!(&rows[0].name, &name);
+            let keys: Vec<&String> = rows[0]
+                .attributes
+                .as_object()
+                .map(|map| map.keys().collect())
+                .unwrap_or_default();
+            prop_assert!(keys.iter().all(|key| !key.is_empty()));
         }
     }
 
     proptest! {
-        /// Log normalize is deterministic for bounded service/body pairs.
+        /// Log-record conservation: one OTLP record in, one LogRow out.
         #[test]
-        fn normalize_logs_is_deterministic(
+        fn normalize_logs_conserves_record_count(
             service in "[a-zA-Z0-9._-]{1,32}",
             body in ".*{0,128}",
             severity in 1i32..=24,
@@ -448,11 +449,16 @@ mod property_tests {
                     ..Default::default()
                 }],
             };
-            let a = normalize_logs(&request);
-            let b = normalize_logs(&request);
-            let a_json = serde_json::to_value(&a).expect("a");
-            let b_json = serde_json::to_value(&b).expect("b");
-            prop_assert_eq!(a_json, b_json);
+            let rows = normalize_logs(&request);
+            prop_assert_eq!(rows.len(), 1);
+            prop_assert_eq!(&rows[0].service, &service);
+            prop_assert_eq!(&rows[0].body, &body);
+            let keys: Vec<&String> = rows[0]
+                .attributes
+                .as_object()
+                .map(|map| map.keys().collect())
+                .unwrap_or_default();
+            prop_assert!(keys.iter().all(|key| !key.is_empty()));
         }
     }
 }

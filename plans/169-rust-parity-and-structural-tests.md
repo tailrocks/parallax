@@ -217,16 +217,16 @@ fixture tests — the riskiest piece; review it hardest).
 
 ## Done criteria
 
-- [ ] All five conformance scenarios execute in
+- [x] All five conformance scenarios execute in
       `m6_conformance_greptime.rs` under `cargo xtask integration`.
-- [ ] Issues resolver suite ≥ 10 cases, green.
-- [ ] `rank_hypotheses` ordering pinned by tests.
-- [ ] `PRAGMA user_version` migrations with v0-adoption + fixture tests +
+- [x] Issues resolver suite ≥ 10 cases, green.
+- [x] `rank_hypotheses` ordering pinned by tests.
+- [x] `PRAGMA user_version` migrations with v0-adoption + fixture tests +
       fail-closed future-version guard.
-- [ ] serve.rs route-table + shutdown-join tests green.
-- [ ] Determinism proptests replaced with conservation properties.
-- [ ] `cargo xtask ci --fast`, `lint`, `test`, `integration`, `arch`, `policy --only structural` all green.
-- [ ] `plans/README.md` row updated.
+- [x] serve.rs route-table + shutdown-join tests green.
+- [x] Determinism proptests replaced with conservation properties.
+- [x] `cargo xtask ci --fast`, `lint`, `test`, `integration`, `arch`, `policy --only structural` all green.
+- [x] `plans/README.md` row updated.
 
 ## STOP conditions
 

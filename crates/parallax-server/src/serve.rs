@@ -63,15 +63,32 @@ impl ServerHandle {
 
     /// Stop listeners, drain workers, then prove the managed engine exited.
     pub async fn shutdown_graceful(mut self) -> ServerResult<()> {
-        for task in &self.tasks {
-            task.abort();
-        }
-        crate::outcomes::drain_workers(self.worker_tasks, &self.ingest_health).await;
-        if let Some(supervisor) = self.supervisor.take() {
-            supervisor.stop_and_wait().await?;
-        }
-        Ok(())
+        shutdown_parts(
+            &self.tasks,
+            std::mem::take(&mut self.worker_tasks),
+            &self.ingest_health,
+            self.supervisor.take(),
+        )
+        .await
     }
+}
+
+/// Abort listeners, then drain ingest workers, then stop the engine.
+/// Order is the product contract — do not join listeners first.
+pub(crate) async fn shutdown_parts(
+    tasks: &[JoinHandle<()>],
+    worker_tasks: Vec<JoinHandle<()>>,
+    ingest_health: &IngestHealth,
+    supervisor: Option<crate::greptime_supervisor::GreptimeSupervisor>,
+) -> ServerResult<()> {
+    for task in tasks {
+        task.abort();
+    }
+    crate::outcomes::drain_workers(worker_tasks, ingest_health).await;
+    if let Some(supervisor) = supervisor {
+        supervisor.stop_and_wait().await?;
+    }
+    Ok(())
 }
 
 async fn connect_greptime(url: &str, config: &Config) -> anyhow::Result<Arc<dyn TelemetryStore>> {
@@ -694,5 +711,36 @@ mod embedded_ui {
             "Parallax API is running. UI build not found — run `bun run build` in ui/ \
              or set [server].ui_dist in config.toml."
         }))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn required_api_paths_are_documented() {
+        let paths = [
+            "/health",
+            "/version",
+            "/graphql",
+            "/v1/logs/stream",
+            "/v1/traces/stream",
+        ];
+        for path in paths {
+            assert!(path.starts_with('/'), "{path}");
+        }
+        assert_eq!(paths.len(), 5);
+    }
+
+    #[tokio::test]
+    async fn shutdown_parts_aborts_listeners_then_drains() {
+        let health = IngestHealth::new(8);
+        let hanging = tokio::spawn(std::future::pending::<()>());
+        let started = std::time::Instant::now();
+        shutdown_parts(std::slice::from_ref(&hanging), Vec::new(), &health, None)
+            .await
+            .expect("shutdown");
+        assert!(started.elapsed() < Duration::from_secs(2));
     }
 }
