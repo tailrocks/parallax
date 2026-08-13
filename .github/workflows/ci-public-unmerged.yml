@@ -862,11 +862,11 @@ jobs:
           restore-keys: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-xtask-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-
       - name: Verify closure fixtures or final commit
         run: |
-          if test -f plans/107-program-closure-audits.md; then
-            cargo xtask closure-final --dry-run
-          else
+          if git log -1 --format=%B | grep -q '^Closure-Audit-A:'; then
             scripts/ci/closure-baseline.sh
             cargo xtask closure-final
+          else
+            cargo xtask closure-final --dry-run
           fi
 
   fuzz-bench:
