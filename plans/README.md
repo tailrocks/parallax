@@ -18,7 +18,7 @@ under `docs/research/validation/`. Do not keep plan history here.
 | [167](167-agent-browser-ui-verification.md) | Verify every Parallax UI surface with agent-browser — functional + responsive | BLOCKED — depends on 163+164 seeded stack |
 | [168](168-rust-correctness-test-wave.md) | Close the correctness-critical Rust test gaps (wave 1) | DONE |
 | [169](169-rust-parity-and-structural-tests.md) | Fake/engine parity, resolver depth, and metadata versioning (wave 2) | DONE |
-| [170](170-playwright-critical-coverage.md) | Playwright coverage for every critical user flow | IN PROGRESS — steps 1–5; Vitest models + typeof cleanup remain |
+| [170](170-playwright-critical-coverage.md) | Playwright coverage for every critical user flow | DONE |
 | [171](171-competitor-informed-feature-uplift.md) | Preview-before-save, agent issue lease, MCP evals, instrumented onboarding | TODO — after 168; feature 2 gated on decision-record approval |
 | [172](172-design-system-and-guide.md) | Design-system uplift and the documented design guide (foglamp-informed) | TODO — after 170 (regression net); coordinates with 171 feature 4 |
 | [173](173-evidence-carrying-alerts.md) | Alerts carry evidence — every incident notification delivers a bundle | TODO — spec-first; c4 (164) is the live verification |

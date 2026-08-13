@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 593,
-    "test_files": 158
+    "test_cases": 614,
+    "test_files": 163
   },
   "private_route_imports": [],
   "entries": [
@@ -1020,6 +1020,92 @@
         "lays a directed chain from left to right",
         "memoizes identical topology",
         "handles an empty graph"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-service-map-layout-engine",
+      "surface": "features/ecosystem",
+      "risk": "ELK layout may overlap nodes or become non-deterministic",
+      "scenario_owner": "features/ecosystem",
+      "lane_owner": "vitest/model",
+      "layer": "model",
+      "test_file": "ui/src/features/ecosystem/tests/model/service-map-layout-engine.test.ts",
+      "test_ids": [
+        "runElkLayout is deterministic",
+        "runElkLayout boxes do not overlap",
+        "fallback is deterministic and non-overlapping",
+        "topology key ignores metrics"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-service-detail-model",
+      "surface": "features/services",
+      "risk": "Service RED math and exemplar placement can mis-scale",
+      "scenario_owner": "features/services",
+      "lane_owner": "vitest/model",
+      "layer": "model",
+      "test_file": "ui/src/features/services/tests/model/service-detail.test.ts",
+      "test_ids": [
+        "stepSeconds clamps below 30 min",
+        "stepSeconds is 60 for one hour",
+        "latestErrorRate reads the last point",
+        "latencyBands stack non-negative deltas",
+        "toLineData sorts and maps values",
+        "exemplarMarkers empty on zero span",
+        "exemplarMarkers clamp x/y"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-services-search-model",
+      "surface": "features/services",
+      "risk": "Services search coercion can keep unknown sorts",
+      "scenario_owner": "features/services",
+      "lane_owner": "vitest/model",
+      "layer": "model",
+      "test_file": "ui/src/features/services/tests/model/services-search.test.ts",
+      "test_ids": [
+        "keeps known sort and query",
+        "drops unknown sort",
+        "patchServicesSearch removes empty",
+        "rejects empty q"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-test-summary-model",
+      "surface": "features/tests",
+      "risk": "Test rollup/flaky labels can drift from status enums",
+      "scenario_owner": "features/tests",
+      "lane_owner": "vitest/model",
+      "layer": "model",
+      "test_file": "ui/src/features/tests/tests/model/test-summary.test.ts",
+      "test_ids": [
+        "suiteLabel empty and joined",
+        "rollupLabel every variant",
+        "flakyLabel every variant"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-overview-chart-helpers",
+      "surface": "features/overview",
+      "risk": "Overview chart merge can drop timestamps or invert bands",
+      "scenario_owner": "features/overview",
+      "lane_owner": "vitest/model",
+      "layer": "model",
+      "test_file": "ui/src/features/overview/tests/model/overview-chart-helpers.test.ts",
+      "test_ids": [
+        "mergeSignalSeries unions timestamps",
+        "sampleSignalData has 6 points",
+        "sampleLatencyData bands non-negative"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"

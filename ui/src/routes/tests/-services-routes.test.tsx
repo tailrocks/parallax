@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { loadServiceDetail, loadServices, validateServicesSearch } from "@/features/services"
+import { validateServicesSearch } from "@/features/services"
 
 describe("services route contracts", () => {
   it("exposes public search and loaders for thin route wiring", () => {
@@ -9,7 +9,6 @@ describe("services route contracts", () => {
       range: "24h",
       q: "api",
     })
-    expect(typeof loadServices).toBe("function")
-    expect(typeof loadServiceDetail).toBe("function")
+    expect(validateServicesSearch({ sort: "p95:desc", q: "" })).toEqual({ sort: "p95:desc" })
   })
 })

@@ -2669,6 +2669,13 @@ migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
+path = "ui/src/features/overview/tests/model/overview-chart-helpers.test.ts"
+current_owner = "features/overview"
+target_owner = "features/overview"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
 path = "ui/src/routes/tests/-overview-routes.test.tsx"
 current_owner = "routes-tests"
 target_owner = "routes-tests"
@@ -2965,6 +2972,13 @@ migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
+path = "ui/src/features/logs/components/log-row-cells.tsx"
+current_owner = "features/logs"
+target_owner = "features/logs"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
 path = "ui/src/features/logs/components/logs-table.tsx"
 current_owner = "features/logs"
 target_owner = "features/logs"
@@ -3162,6 +3176,20 @@ migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
+path = "ui/src/features/services/tests/model/service-detail.test.ts"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/services/tests/model/services-search.test.ts"
+current_owner = "features/services"
+target_owner = "features/services"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
 path = "ui/src/routes/tests/-services-routes.test.tsx"
 current_owner = "routes-tests"
 target_owner = "routes-tests"
@@ -3265,13 +3293,6 @@ current_owner = "test-support"
 target_owner = "test-support"
 migration_plan = "129"
 kind = "test-support"
-
-[[ui.ownership]]
-path = "ui/src/workers/ecosystem-layout.worker.ts"
-current_owner = "workers"
-target_owner = "features/ecosystem"
-migration_plan = "136"
-kind = "handwritten"
 
 [[ui.ownership]]
 path = "ui/tests/harness/boundaries.test.ts"
@@ -3641,6 +3662,13 @@ kind = "handwritten"
 
 [[ui.ownership]]
 path = "ui/src/features/ecosystem/tests/model/service-map-layout.test.ts"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/tests/model/service-map-layout-engine.test.ts"
 current_owner = "features/ecosystem"
 target_owner = "features/ecosystem"
 migration_plan = "none"
@@ -4981,6 +5009,31 @@ ceiling = 11
 
 [[limits]]
 metric = "typescript.assertions"
+scope = "ui/src/features/ecosystem/tests/model/service-map-layout-engine.test.ts"
+ceiling = 5
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/overview/tests/model/overview-chart-helpers.test.ts"
+ceiling = 11
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/services/tests/model/service-detail.test.ts"
+ceiling = 14
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/services/tests/model/services-search.test.ts"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/tests/tests/model/test-summary.test.ts"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.assertions"
 scope = "ui/src/features/investigations/tests/model/investigation-state.test.ts"
 ceiling = 8
 
@@ -5307,7 +5360,7 @@ ceiling = 4
 [[limits]]
 metric = "typescript.assertions"
 scope = "ui/src/routes/tests/-issues-routes.test.tsx"
-ceiling = 4
+ceiling = 3
 
 [[limits]]
 metric = "typescript.assertions"
@@ -5322,7 +5375,7 @@ ceiling = 2
 [[limits]]
 metric = "typescript.assertions"
 scope = "ui/src/routes/tests/-services-routes.test.tsx"
-ceiling = 4
+ceiling = 3
 
 [[limits]]
 metric = "typescript.assertions"
@@ -5447,7 +5500,7 @@ ceiling = 842
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/features/logs/components/logs-table.tsx"
-ceiling = 461
+ceiling = 430
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -5608,17 +5661,17 @@ ceiling = 26
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/logs/components/logs-table.tsx:131"
+scope = "ui/src/features/logs/components/logs-table.tsx:132"
 ceiling = 23
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/logs/components/logs-table.tsx:227"
+scope = "ui/src/features/logs/components/logs-table.tsx:228"
 ceiling = 18
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/logs/components/logs-table.tsx:95"
+scope = "ui/src/features/logs/components/logs-table.tsx:96"
 ceiling = 27
 
 [[limits]]
@@ -5837,12 +5890,12 @@ ceiling = 14
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/logs/components/logs-table.tsx:227"
+scope = "ui/src/features/logs/components/logs-table.tsx:228"
 ceiling = 16
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/logs/components/logs-table.tsx:95"
+scope = "ui/src/features/logs/components/logs-table.tsx:96"
 ceiling = 15
 
 [[limits]]
@@ -6143,18 +6196,13 @@ ceiling = 79
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/features/logs/components/logs-table.tsx:163"
+scope = "ui/src/features/logs/components/logs-table.tsx:164"
 ceiling = 62
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/features/logs/components/logs-table.tsx:227"
-ceiling = 258
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/features/logs/components/logs-table.tsx:286"
-ceiling = 65
+scope = "ui/src/features/logs/components/logs-table.tsx:228"
+ceiling = 225
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -7558,6 +7606,13 @@ migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
+path = "ui/src/features/tests/tests/model/test-summary.test.ts"
+current_owner = "features/tests"
+target_owner = "features/tests"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
 path = "ui/src/routes/tests.$caseKey.tsx"
 current_owner = "routes"
 target_owner = "routes"
@@ -7586,7 +7641,7 @@ ceiling = 9
 [[limits]]
 metric = "typescript.assertions"
 scope = "ui/src/routes/tests/-tests-routes.test.tsx"
-ceiling = 4
+ceiling = 3
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -7646,7 +7701,7 @@ ceiling = 9
 [[limits]]
 metric = "typescript.assertions"
 scope = "ui/src/routes/tests/-tests-routes.test.tsx"
-ceiling = 4
+ceiling = 3
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
