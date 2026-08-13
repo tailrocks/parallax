@@ -135,10 +135,12 @@ jobs:
 
   test:
     needs: check-version
-    uses: ./.github/workflows/ci.yml
+    permissions:
+      actions: read
+      contents: read
+    uses: tailrocks/velnor-actions/.github/workflows/ci-code.yml@36ef486f0cce1728b7fa7372d99c4c03ad1d08e1 # 2026.8.17
     with:
-      force_all: true
-      lanes: ${{ inputs.lanes || 'velnor' }}
+      lane: ${{ inputs.lanes || 'velnor' }}
 
   build:
     needs: [check-version, test]
