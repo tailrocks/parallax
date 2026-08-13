@@ -299,9 +299,7 @@ impl Query {
     /// Recent traces (root span + aggregates), newest first.
     async fn recent_traces(context: &ApiContext, limit: Option<i32>,) -> FieldResult<Vec<TraceSummary>> { resolvers::traces::recent_traces(context, limit).await }
 
-    /// Filtered trace browse (UI Traces page / `parallax traces`): every
-    /// filter optional; filters hit the root span except `errorOnly`,
-    /// which looks at the whole trace.
+    /// Filtered trace browse; optional filters, root span except errorOnly.
     #[expect(clippy::too_many_arguments, reason = "GraphQL trace filters are the public query contract")]
     async fn traces(context: &ApiContext, service: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, min_duration_ms: Option<f64>, max_duration_ms: Option<f64>, error_only: Option<bool>, query: Option<String>, limit: Option<i32>, offset: Option<i32>, sort: Option<TraceSort>,) -> FieldResult<Vec<TraceSummary>> { resolvers::traces::traces(context, service, from_nanos, to_nanos, min_duration_ms, max_duration_ms, error_only, query, limit, offset, sort).await }
 
@@ -324,15 +322,10 @@ impl Query {
     /// Bounded redacted evidence bundle. Exactly one of fingerprint, invocationId, traceId, alertIncidentId.
     async fn bundle(context: &ApiContext, fingerprint: Option<String>, invocation_id: Option<String>, trace_id: Option<String>, alert_incident_id: Option<String>, max_tokens: Option<i32>,) -> FieldResult<Option<BundleOut>> { resolvers::issues::bundle(context, fingerprint, invocation_id, trace_id, alert_incident_id, max_tokens).await }
 
-    /// Window-scoped metric explorer catalog (plan 168): canonical names with
-    /// kind (gauge|sum|histogram), unit, emitting services, last datapoint,
-    /// and finite-sample counts per the metric-summary contract. `q` is a
-    /// Bounded invocation-scoped metric family summaries (plan 105): typed
-    /// projection over invocation_metric_points, canonical names, finite
-    /// samples only.
+    /// Invocation-scoped metric family summaries (plan 105).
     async fn invocation_metrics(context: &ApiContext, invocation_id: String, from_nanos: Option<String>, to_nanos: Option<String>, limit: Option<i32>,) -> FieldResult<Vec<resolvers::metrics::InvocationMetricRow>> { resolvers::metrics::invocation_metrics(context, invocation_id, from_nanos, to_nanos, limit).await }
 
-    /// case-insensitive substring filter; `kind` filters one metric kind.
+    /// Metric catalog; `q` substring, `kind` one kind.
     async fn metric_catalog(context: &ApiContext, from_nanos: String, to_nanos: String, q: Option<String>, kind: Option<String>, limit: Option<i32>,) -> FieldResult<Vec<resolvers::MetricCatalogRow>> { resolvers::metrics::metric_catalog(context, from_nanos, to_nanos, q, kind, limit).await }
 
     /// The single shared metric read path (plan 168): typed kind + aggregation

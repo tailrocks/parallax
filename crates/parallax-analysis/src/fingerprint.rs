@@ -117,6 +117,21 @@ pub fn top_frame(stacktrace: Option<&str>) -> String {
         .to_string()
 }
 
+/// Current grouping algorithm label. Bump when normalization changes.
+pub const ALGORITHM_VERSION: &str = "fp-v1";
+
+/// Why events share an issue. Inputs are the same ones hashed.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GroupingExplanation {
+    pub algorithm_version: &'static str,
+    pub hash: String,
+    pub error_type: String,
+    pub message_template: String,
+    pub anchor_frame: String,
+    pub operation: Option<String>,
+    pub inputs_present: Vec<&'static str>,
+}
+
 /// 16-hex-char fingerprint over (type, normalized message, normalized top frame).
 #[must_use]
 pub fn fingerprint(error_type: &str, message: &str, stacktrace: Option<&str>) -> String {
@@ -124,24 +139,64 @@ pub fn fingerprint(error_type: &str, message: &str, stacktrace: Option<&str>) ->
 }
 
 /// 16-hex-char fingerprint with an optional structured operation component.
+#[must_use]
 pub fn fingerprint_with_operation(
     error_type: &str,
     message: &str,
     stacktrace: Option<&str>,
     operation: Option<&str>,
 ) -> String {
+    fingerprint_explained(error_type, message, stacktrace, operation).hash
+}
+
+/// Hash plus the normalized inputs that produced it.
+#[must_use]
+pub fn fingerprint_explained(
+    error_type: &str,
+    message: &str,
+    stacktrace: Option<&str>,
+    operation: Option<&str>,
+) -> GroupingExplanation {
+    let message_template = normalize_message(message);
+    let anchor_frame = normalize_frame(&top_frame(stacktrace));
+    let operation = operation
+        .map(str::trim)
+        .filter(|op| !op.is_empty())
+        .map(str::to_string);
     let mut hasher = Sha256::new();
     hasher.update(error_type.as_bytes());
     hasher.update([0u8]);
-    hasher.update(normalize_message(message).as_bytes());
+    hasher.update(message_template.as_bytes());
     hasher.update([0u8]);
-    hasher.update(normalize_frame(&top_frame(stacktrace)).as_bytes());
-    if let Some(operation) = operation.map(str::trim).filter(|op| !op.is_empty()) {
+    hasher.update(anchor_frame.as_bytes());
+    if let Some(operation) = operation.as_deref() {
         hasher.update([0u8]);
         hasher.update(operation.as_bytes());
     }
     let digest = hasher.finalize();
-    digest.iter().take(8).map(|b| format!("{b:02x}")).collect()
+    let hash = digest.iter().take(8).map(|b| format!("{b:02x}")).collect();
+    let mut inputs_present = Vec::new();
+    if !error_type.is_empty() {
+        inputs_present.push("error_type");
+    }
+    if !message_template.is_empty() {
+        inputs_present.push("message");
+    }
+    if !anchor_frame.is_empty() {
+        inputs_present.push("frame");
+    }
+    if operation.is_some() {
+        inputs_present.push("operation");
+    }
+    GroupingExplanation {
+        algorithm_version: ALGORITHM_VERSION,
+        hash,
+        error_type: error_type.to_string(),
+        message_template,
+        anchor_frame,
+        operation,
+        inputs_present,
+    }
 }
 
 #[cfg(test)]

@@ -353,6 +353,16 @@ export type FieldValueCount = {
   readonly value: Scalars["String"]["output"]
 }
 
+export type GroupingExplanation = {
+  readonly __typename?: "GroupingExplanation"
+  readonly algorithmVersion: Scalars["String"]["output"]
+  readonly anchorFrame: Scalars["String"]["output"]
+  readonly errorType: Scalars["String"]["output"]
+  readonly inputsPresent: ReadonlyArray<Scalars["String"]["output"]>
+  readonly messageTemplate: Scalars["String"]["output"]
+  readonly operation: Maybe<Scalars["String"]["output"]>
+}
+
 export type Investigation = {
   readonly __typename?: "Investigation"
   readonly createdAtNanos: Scalars["String"]["output"]
@@ -439,6 +449,7 @@ export type Issue = {
   readonly events: ReadonlyArray<ErrorEvent>
   readonly fingerprint: Scalars["String"]["output"]
   readonly firstSeenNanos: Scalars["String"]["output"]
+  readonly groupingExplanation: GroupingExplanation
   readonly lastSeenNanos: Scalars["String"]["output"]
   readonly lastTraceId: Maybe<Scalars["String"]["output"]>
   /** The most recent stored occurrence. */
@@ -752,14 +763,7 @@ export type Query = {
    * retained recent window.
    */
   readonly invocationFacets: ReadonlyArray<Facet>
-  /**
-   * Window-scoped metric explorer catalog (plan 168): canonical names with
-   * kind (gauge|sum|histogram), unit, emitting services, last datapoint,
-   * and finite-sample counts per the metric-summary contract. `q` is a
-   * Bounded invocation-scoped metric family summaries (plan 105): typed
-   * projection over invocation_metric_points, canonical names, finite
-   * samples only.
-   */
+  /** Invocation-scoped metric family summaries (plan 105). */
   readonly invocationMetrics: ReadonlyArray<InvocationMetricRow>
   readonly invocations: ReadonlyArray<Invocation>
   readonly issue: Maybe<Issue>
@@ -803,7 +807,7 @@ export type Query = {
   readonly logsByInvocation: ReadonlyArray<LogRecord>
   /** Logs correlated to one trace, time ascending. */
   readonly logsByTrace: ReadonlyArray<LogRecord>
-  /** case-insensitive substring filter; `kind` filters one metric kind. */
+  /** Metric catalog; `q` substring, `kind` one kind. */
   readonly metricCatalog: ReadonlyArray<MetricCatalogRow>
   /** Trace-linked exemplars for one metric, newest first. */
   readonly metricExemplars: ReadonlyArray<MetricExemplar>
@@ -914,11 +918,7 @@ export type Query = {
    * the facet sidebar (plan 164).
    */
   readonly traceFacets: ReadonlyArray<Facet>
-  /**
-   * Filtered trace browse (UI Traces page / `parallax traces`): every
-   * filter optional; filters hit the root span except `errorOnly`,
-   * which looks at the whole trace.
-   */
+  /** Filtered trace browse; optional filters, root span except errorOnly. */
   readonly traces: ReadonlyArray<TraceSummary>
   /**
    * Traces produced by one run, summarized (root span + aggregates),

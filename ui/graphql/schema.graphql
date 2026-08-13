@@ -380,6 +380,15 @@ type FieldValueCount {
   count: String!
 }
 
+type GroupingExplanation {
+  algorithmVersion: String!
+  errorType: String!
+  messageTemplate: String!
+  anchorFrame: String!
+  operation: String
+  inputsPresent: [String!]!
+}
+
 type Investigation {
   id: String!
   name: String!
@@ -463,6 +472,7 @@ type Issue {
   lastTraceId: String
   "Bounded top-tag-values cache as JSON: `{key: {value: count}}`."
   tags: String!
+  groupingExplanation: GroupingExplanation!
   "The last-24h occurrence sparkline (hourly buckets), oldest first."
   trend: [TrendPoint!]!
   "The most recent stored occurrence."
@@ -768,11 +778,7 @@ type Query {
   invocationFacets(fromNanos: String, toNanos: String): [Facet!]!
   "Recent traces (root span + aggregates), newest first."
   recentTraces(limit: Int): [TraceSummary!]!
-  """
-    Filtered trace browse (UI Traces page / `parallax traces`): every
-    filter optional; filters hit the root span except `errorOnly`,
-    which looks at the whole trace.
-  """
+  "Filtered trace browse; optional filters, root span except errorOnly."
   traces(service: String, fromNanos: String, toNanos: String, minDurationMs: Float, maxDurationMs: Float, errorOnly: Boolean, query: String, limit: Int, offset: Int, sort: TraceSort): [TraceSummary!]!
   """
     Filtered, sorted, paged trace browse with total count for redesigned
@@ -792,16 +798,9 @@ type Query {
   traceFacets(service: String, fromNanos: String, toNanos: String, errorOnly: Boolean, query: String, attributeFilters: [AttributeFilterInput!]): [Facet!]!
   "Bounded redacted evidence bundle. Exactly one of fingerprint, invocationId, traceId, alertIncidentId."
   bundle(fingerprint: String, invocationId: String, traceId: String, alertIncidentId: String, maxTokens: Int): BundleOut
-  """
-    Window-scoped metric explorer catalog (plan 168): canonical names with
-    kind (gauge|sum|histogram), unit, emitting services, last datapoint,
-    and finite-sample counts per the metric-summary contract. `q` is a
-    Bounded invocation-scoped metric family summaries (plan 105): typed
-    projection over invocation_metric_points, canonical names, finite
-    samples only.
-  """
+  "Invocation-scoped metric family summaries (plan 105)."
   invocationMetrics(invocationId: String!, fromNanos: String, toNanos: String, limit: Int): [InvocationMetricRow!]!
-  "case-insensitive substring filter; `kind` filters one metric kind."
+  "Metric catalog; `q` substring, `kind` one kind."
   metricCatalog(fromNanos: String!, toNanos: String!, q: String, kind: String, limit: Int): [MetricCatalogRow!]!
   """
     The single shared metric read path (plan 168): typed kind + aggregation

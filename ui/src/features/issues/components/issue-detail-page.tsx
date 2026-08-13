@@ -11,8 +11,7 @@ import { navItem } from "@/shared/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import type { ChartConfig } from "@/components/ui/chart"
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { loadIssueOccurrences, setIssueStatus } from "@/features/issues/api/issues-api"
 import {
   issueDelta,
@@ -27,16 +26,12 @@ import {
   structuredFrameCount,
   type Frame,
 } from "@/features/issues/model/stacktrace"
+import { issueGroupingCard } from "@/features/issues/components/grouping-card"
 import { PinButton } from "@/features/investigations"
 import { MetricStrip } from "@/features/runtime-metrics"
 import { RangePicker } from "@/features/time-range"
 import { formatCount, formatDateTime, formatTimeInRange } from "@/shared/format"
-import {
-  mergeRangeSearch,
-  rangeLinkSearch,
-  resolveRangeSearch,
-  type ResolvedRange,
-} from "@/domain/range"
+import { mergeRangeSearch, rangeLinkSearch, resolveRangeSearch, type ResolvedRange } from "@/domain/range"
 import { cn } from "@/lib/utils"
 import { PageHeader } from "@/shared/components/page-header"
 import type { IssuesSearch } from "@/features/issues/model/issues-search"
@@ -44,7 +39,6 @@ import type { IssuesSearch } from "@/features/issues/model/issues-search"
 const trendConfig = {
   count: { label: "events", color: "var(--destructive)" },
 } satisfies ChartConfig
-
 export function IssueDetailRoutePage({
   data,
   search,
@@ -84,7 +78,6 @@ export function IssueDetailContent({
   const [bucketEvents, setBucketEvents] = useState<IssueEvent[] | null>(null)
   const occurrencesRef = useRef<HTMLDivElement>(null)
   const bucketRequestRef = useRef<string | null>(null)
-
   const issuesBack = navItem("/issues")
 
   if (!issue) {
@@ -165,7 +158,7 @@ export function IssueDetailContent({
           </>
         }
       />
-
+      {issueGroupingCard(currentIssue)}
       <div className="flex flex-wrap items-center gap-2">
         <Link
           to="/services/$service"
@@ -232,9 +225,7 @@ export function IssueDetailContent({
         onBucket={(tsNanos) => void filterBucket(tsNanos)}
         activeBucket={bucket}
       />
-
       {latest ? <StacktraceCard event={latest} culprit={issue.culprit} range={range} /> : null}
-
       {latest ? (
         <MetricStrip
           title="Metrics around latest event"

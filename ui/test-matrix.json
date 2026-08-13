@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 626,
-    "test_files": 168
+    "test_cases": 627,
+    "test_files": 169
   },
   "private_route_imports": [],
   "entries": [
@@ -3258,6 +3258,20 @@
       "test_ids": [
         "renders an empty notice when assembly is missing",
         "renders markdown and hash when a bundle exists"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-176-grouping-card",
+      "surface": "features/issues",
+      "risk": "Issue detail can hide why events grouped",
+      "scenario_owner": "features/issues",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/features/issues/tests/components/grouping-card.test.tsx",
+      "test_ids": [
+        "renders type, template, and frame"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"

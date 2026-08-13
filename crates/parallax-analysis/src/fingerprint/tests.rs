@@ -13,7 +13,16 @@ fn volatile_tokens_group_together() {
         Some("checkout::payment::authorize at src/payment.rs:184"),
     );
     assert_eq!(a, b);
-    assert_eq!(a.len(), 16);
+    assert_eq!(
+        a,
+        fingerprint_explained(
+            "redis::ConnectionTimeout",
+            "timed out connecting to redis://cache-7:6379 after 2000ms (attempt 4)",
+            Some("checkout::payment::authorize at src/payment.rs:184"),
+            None,
+        )
+        .hash
+    );
 }
 
 #[test]

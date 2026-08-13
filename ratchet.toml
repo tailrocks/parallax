@@ -2685,6 +2685,20 @@ migration_plan = "173"
 kind = "handwritten"
 
 [[ui.ownership]]
+path = "ui/src/features/issues/components/grouping-card.tsx"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "176"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/issues/tests/components/grouping-card.test.tsx"
+current_owner = "features/issues"
+target_owner = "features/issues"
+migration_plan = "176"
+kind = "handwritten"
+
+[[ui.ownership]]
 path = "ui/src/features/alerts/tests/components/incident-bundle-panel.test.tsx"
 current_owner = "features/alerts"
 target_owner = "features/alerts"
@@ -5036,6 +5050,11 @@ removal_plan = "151"
 reason = "alerts index still embeds loaders; thin route adapter pending full alerts page move"
 [[limits]]
 metric = "typescript.assertions"
+scope = "ui/src/features/issues/tests/components/grouping-card.test.tsx"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.assertions"
 scope = "ui/src/components/ui/__tests__/primitives.test.tsx"
 ceiling = 5
 
@@ -5596,8 +5615,13 @@ ceiling = 338
 
 [[limits]]
 metric = "typescript.file-lines"
+scope = "ui/src/features/issues/api/issue-detail.generated.ts"
+ceiling = 327
+
+[[limits]]
+metric = "typescript.file-lines"
 scope = "ui/src/features/issues/components/issue-detail-page.tsx"
-ceiling = 543
+ceiling = 539
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -5662,7 +5686,7 @@ ceiling = 362
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/platform/graphql/generated/schema-types.generated.ts"
-ceiling = 1566
+ceiling = 1565
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -5752,7 +5776,7 @@ ceiling = 20
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/issues/components/issue-detail-page.tsx:378"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:369"
 ceiling = 26
 
 [[limits]]
@@ -5976,12 +6000,12 @@ ceiling = 13
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/issues/components/issue-detail-page.tsx:378"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:369"
 ceiling = 14
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/issues/components/issue-detail-page.tsx:70"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:64"
 ceiling = 14
 
 [[limits]]
@@ -6261,13 +6285,13 @@ ceiling = 73
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/features/issues/components/issue-detail-page.tsx:510"
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:501"
 ceiling = 61
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/features/issues/components/issue-detail-page.tsx:70"
-ceiling = 199
+scope = "ui/src/features/issues/components/issue-detail-page.tsx:64"
+ceiling = 196
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -6291,7 +6315,7 @@ ceiling = 110
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/features/issues/tests/components/issues-contracts.test.tsx:85"
+scope = "ui/src/features/issues/tests/components/issues-contracts.test.tsx:86"
 ceiling = 72
 
 [[limits]]

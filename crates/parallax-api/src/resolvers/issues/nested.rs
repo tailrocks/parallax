@@ -1,4 +1,53 @@
 use super::*;
+use parallax_analysis::fingerprint::{GroupingExplanation, fingerprint_explained};
+
+pub(crate) struct GroupingExplanationOut {
+    algorithm_version: String,
+    error_type: String,
+    message_template: String,
+    anchor_frame: String,
+    operation: Option<String>,
+    inputs_present: Vec<String>,
+}
+
+impl From<GroupingExplanation> for GroupingExplanationOut {
+    fn from(value: GroupingExplanation) -> Self {
+        Self {
+            algorithm_version: value.algorithm_version.to_string(),
+            error_type: value.error_type,
+            message_template: value.message_template,
+            anchor_frame: value.anchor_frame,
+            operation: value.operation,
+            inputs_present: value
+                .inputs_present
+                .into_iter()
+                .map(str::to_string)
+                .collect(),
+        }
+    }
+}
+
+#[graphql_object(name = "GroupingExplanation", context = ApiContext)]
+impl GroupingExplanationOut {
+    fn algorithm_version(&self) -> &str {
+        &self.algorithm_version
+    }
+    fn error_type(&self) -> &str {
+        &self.error_type
+    }
+    fn message_template(&self) -> &str {
+        &self.message_template
+    }
+    fn anchor_frame(&self) -> &str {
+        &self.anchor_frame
+    }
+    fn operation(&self) -> Option<&str> {
+        self.operation.as_deref()
+    }
+    fn inputs_present(&self) -> &[String] {
+        &self.inputs_present
+    }
+}
 
 pub(crate) struct Issue {
     row: model::Issue,
@@ -59,6 +108,31 @@ impl Issue {
     /// Bounded top-tag-values cache as JSON: `{key: {value: count}}`.
     fn tags(&self) -> &str {
         &self.row.tags
+    }
+
+    async fn grouping_explanation(
+        &self,
+        context: &ApiContext,
+    ) -> FieldResult<GroupingExplanationOut> {
+        let latest = context
+            .issue_events_for(&self.cohort, &self.row.fingerprint, 0, u128::MAX, 1)
+            .await?
+            .into_iter()
+            .next();
+        let error_type = latest
+            .as_ref()
+            .map(|event| event.error_type.as_str())
+            .unwrap_or(self.row.error_type.as_str());
+        let message = latest
+            .as_ref()
+            .map(|event| event.message.as_str())
+            .unwrap_or(self.row.title.as_str());
+        let stack = latest
+            .as_ref()
+            .and_then(|event| event.stacktrace.as_deref());
+        Ok(GroupingExplanationOut::from(fingerprint_explained(
+            error_type, message, stack, None,
+        )))
     }
 
     /// The last-24h occurrence sparkline (hourly buckets), oldest first.

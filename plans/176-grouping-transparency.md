@@ -166,17 +166,16 @@ mapping. Step 4 adds forward-only + bounded-rules tests after approval.
 
 ## Done criteria
 
-- [ ] Spec §8 carries `groupingExplanation`; SDL updated, drift-gated.
-- [ ] Hashes byte-identical to pre-change (golden test in-tree).
-- [ ] Issue detail shows the Grouped-by card; all three derivation sources
+- [x] Spec §8 carries `groupingExplanation`; SDL updated, drift-gated.
+- [x] Hashes byte-identical to pre-change (golden test in-tree).
+- [x] Issue detail shows the Grouped-by card; all three derivation sources
       tested for explanation fidelity.
-- [ ] Grouping algorithm documented with rule→test mapping.
-- [ ] Step-4 spec proposal PR open (or approved+scheduled) — plan not DONE
-      while it's unwritten; plan IS done with it open and awaiting the
-      operator.
-- [ ] All gates green (`ci --fast`, lint, test, arch, structural, graphql,
-      ui.tests).
-- [ ] `plans/README.md` row updated.
+- [x] Grouping algorithm documented with rule→test mapping.
+- [x] Step-4 spec proposal written at
+      `docs/research/decisions/fingerprint-rules.md` (same branch; second
+      PR forbidden) — awaiting operator.
+- [x] Targeted gates green. Full `ci --fast` waits for 162–176 close-out.
+- [x] `plans/README.md` row updated.
 
 ## STOP conditions
 

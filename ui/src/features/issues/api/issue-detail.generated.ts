@@ -45,6 +45,14 @@ export type IssueDetailQuery = {
     readonly eventCount: number
     readonly lastTraceId: string | null
     readonly tags: string
+    readonly groupingExplanation: {
+      readonly algorithmVersion: string
+      readonly errorType: string
+      readonly messageTemplate: string
+      readonly anchorFrame: string
+      readonly operation: string | null
+      readonly inputsPresent: ReadonlyArray<string>
+    }
     readonly events: ReadonlyArray<{
       readonly tsNanos: string
       readonly service: string
@@ -127,6 +135,21 @@ export const IssueDetailDocument = {
                 { kind: "Field", name: { kind: "Name", value: "eventCount" } },
                 { kind: "Field", name: { kind: "Name", value: "lastTraceId" } },
                 { kind: "Field", name: { kind: "Name", value: "tags" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "groupingExplanation" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "algorithmVersion" } },
+                      { kind: "Field", name: { kind: "Name", value: "errorType" } },
+                      { kind: "Field", name: { kind: "Name", value: "messageTemplate" } },
+                      { kind: "Field", name: { kind: "Name", value: "anchorFrame" } },
+                      { kind: "Field", name: { kind: "Name", value: "operation" } },
+                      { kind: "Field", name: { kind: "Name", value: "inputsPresent" } },
+                    ],
+                  },
+                },
                 {
                   kind: "Field",
                   name: { kind: "Name", value: "events" },
@@ -293,6 +316,14 @@ export const IssueDetailQuerySchema: z.ZodType<IssueDetailQuery> = z.object({
       eventCount: z.number(),
       lastTraceId: z.string().nullable(),
       tags: z.string(),
+      groupingExplanation: z.object({
+        algorithmVersion: z.string(),
+        errorType: z.string(),
+        messageTemplate: z.string(),
+        anchorFrame: z.string(),
+        operation: z.string().nullable(),
+        inputsPresent: z.array(z.string()),
+      }),
       events: z.array(
         z.object({
           tsNanos: z.string(),

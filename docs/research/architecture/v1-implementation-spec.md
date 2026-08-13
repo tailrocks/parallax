@@ -377,6 +377,14 @@ and uid/gid pairs, and prefer producer-stated `error.type` plus
 rows keep their old fingerprints and age out under normal retention instead of
 being regrouped in place.
 
+**Grouping explanation (plan 176):** `issue.groupingExplanation` is read-only
+and derived from the same inputs the hash uses: `{ algorithmVersion,
+errorType, messageTemplate, anchorFrame, operation, inputsPresent }`.
+`algorithmVersion` is `fp-v1` until a normalization change bumps it.
+The explanation describes why events share an issue; it does not change
+identity. User-steerable fingerprint rules are a gated follow-on
+(`docs/research/decisions/fingerprint-rules.md`).
+
 ## 8. GraphQL SDL (the V1 core, as implemented by Juniper)
 
 Dialect conventions (decided against the real build, 2026-06-12 — Juniper, not async-graphql):

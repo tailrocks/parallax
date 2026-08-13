@@ -26,6 +26,14 @@ export interface IssueDetail {
   readonly eventCount: number
   readonly lastTraceId: string | null
   readonly tags: string
+  readonly groupingExplanation: {
+    readonly algorithmVersion: string
+    readonly errorType: string
+    readonly messageTemplate: string
+    readonly anchorFrame: string
+    readonly operation: string | null
+    readonly inputsPresent: readonly string[]
+  } | null
   readonly events: readonly IssueEvent[]
 }
 
