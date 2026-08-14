@@ -74,14 +74,18 @@ pub(crate) async fn issue_context(
     client: &Client,
     fingerprint: &str,
     format: OutputFormat,
+    max_tokens: Option<u32>,
 ) -> anyhow::Result<()> {
+    let tokens = max_tokens
+        .map(|n| format!(", maxTokens: {n}"))
+        .unwrap_or_default();
     let query = match format {
         OutputFormat::Markdown => format!(
-            r#"{{ bundle(fingerprint: "{}") {{ markdown canonicalHash }} }}"#,
+            r#"{{ bundle(fingerprint: "{}"{tokens}) {{ markdown canonicalHash }} }}"#,
             gql_str(fingerprint)
         ),
         OutputFormat::Json => format!(
-            r#"{{ bundle(fingerprint: "{}") {{ json canonicalHash }} }}"#,
+            r#"{{ bundle(fingerprint: "{}"{tokens}) {{ json canonicalHash }} }}"#,
             gql_str(fingerprint)
         ),
     };

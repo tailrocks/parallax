@@ -13,10 +13,9 @@
 - **Priority**: P2
 - **Effort**: L (four independent features; each S–M; land separately)
 - **Risk**: MED (two features amend product contracts; gated spec-first)
-- **Depends on**: plans/168-rust-correctness-test-wave.md recommended first
-  (test substrate); feature 1 step 4's Playwright piece additionally needs
-  plan 170 Step 1-2 (`alerts-pilot` dataset + `contracts/alerts.spec.ts`)
-  — if 170 has not landed, create that dataset + spec per 170's Step 1
+- **Depends on**: 168/170 QA waves already shipped on `main`; f2 remains
+  operator-gated. Playwright `alerts-pilot` dataset + `contracts/alerts.spec.ts`
+  exist if 170 landed — otherwise add them before f1 step 4.
   recipe as part of this feature; independent of the playground program
   (162–167)
 - **Category**: direction
