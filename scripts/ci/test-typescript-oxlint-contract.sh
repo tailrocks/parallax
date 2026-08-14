@@ -113,8 +113,12 @@ expect_compiler_failure 'TS1294' $'enum RuntimeMode { Active }\nvoid RuntimeMode
 expect_rule_failure() {
   local rule=$1
   local source=$2
+  local mode=()
+  if [[ "$rule" == typescript/* ]]; then
+    mode=(--type-aware)
+  fi
   printf '%s\n' "$source" >"$probe"
-  output=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --type-aware -A all -D "$rule" "$probe" 2>&1) && {
+  output=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint "${mode[@]}" -A all -D "$rule" "$probe" 2>&1) && {
     printf 'negative fixture unexpectedly passed: %s\n' "$rule" >&2
     exit 1
   }
