@@ -136,7 +136,7 @@ export function FilterSelect({
       value={value ?? "__all"}
       onValueChange={(next) => onChange(next == null || next === "__all" ? undefined : next)}
     >
-      <SelectTrigger size="sm" className="rounded-full">
+      <SelectTrigger size="sm" className="rounded-full" aria-label={placeholder}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>

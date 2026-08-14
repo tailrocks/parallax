@@ -377,6 +377,14 @@ and uid/gid pairs, and prefer producer-stated `error.type` plus
 rows keep their old fingerprints and age out under normal retention instead of
 being regrouped in place.
 
+**Grouping explanation (plan 176):** `issue.groupingExplanation` is read-only
+and derived from the same inputs the hash uses: `{ algorithmVersion,
+errorType, messageTemplate, anchorFrame, operation, inputsPresent }`.
+`algorithmVersion` is `fp-v1` until a normalization change bumps it.
+The explanation describes why events share an issue; it does not change
+identity. User-steerable fingerprint rules are a gated follow-on
+(`docs/research/decisions/fingerprint-rules.md`).
+
 ## 8. GraphQL SDL (the V1 core, as implemented by Juniper)
 
 Dialect conventions (decided against the real build, 2026-06-12 — Juniper, not async-graphql):
@@ -405,7 +413,8 @@ this implemented dialect is the contract.
 `invocationFacets`/`observedInvocations`, `sessions`/`agentSession`/`story`/
 `screenVisits`/`uiActions`/`backgroundCycles`/`jobs`/`conversations`/`evidenceGaps`,
 `investigations`/`investigation`/`savedViews`, `alertRules`/`alertRule`/
-`alertRuleStates`/`alertIncidents`/`alertIncident`/`alertDestinations`/`alertChecks`,
+`alertRuleStates`/`alertIncidents`/`alertIncident`/`alertDestinations`/`alertChecks`/
+`alertRulePreview`,
 `testCases`/`testCase`, trace analytics (`traceEvents`/`linkedTraces`/
 `traceCriticalPath`/`traceCompare`/`traceFacets`/`traceDurationStats`/`tracesPage`),
 log analytics (`logsAround`/`logCountSeries`/`logFacets`/`logPatterns`), and a
@@ -418,6 +427,20 @@ metrics explorer (`metricCatalog`/`metricQuery`/`metricLabels`/`metricLabelValue
 // `tracesByInvocation`/`logsByInvocation`/`invocationMetrics`, keyed on
 // `cli.invocation.id` (see [capture/run-id-standardization.md](../capture/run-id-standardization.md)).
 // Live tail is SSE, not subscriptions (see the live-tail note below).
+//
+// **Alert rule preview (plan 171 feature 1):** read-only query
+// `alertRulePreview(input: AlertRuleInput!, windowMinutes: Int): AlertRulePreview!`
+// evaluates a draft over the recent window using the same measurement path +
+// pure state machine as the live evaluator. Returns bounded series points,
+// per-group would-fire markers, and sample-count sufficiency. No persistence,
+// no incident writes, no destination side effects. `windowMinutes` defaults to
+// the draft's own window and is clamped to the metric-summary bound.
+//
+// **Evidence-carrying incidents (plan 173):** `alertIncident` gains
+// nullable `bundle` (old rows have none). `bundle(alertIncidentId:)` is
+// the fourth exclusive anchor. Notification JSON adds `bundle_hash` /
+// `bundle_url` / `top_hypothesis` / `deploy_adjacency`, or `bundle_error`
+// when assembly failed. Delivery never waits on assembly.
 //
 // Historical V1-launch core (field set as shipped at V1; names and shapes that
 // have since been renamed are retained only to read older notes):
@@ -494,7 +517,26 @@ runtime families (`process.*`, `system.*`, `jvm.*`, `tokio.runtime.*`, `containe
 `db.client.connection.*`). Rust playground runtime scenarios should prefer the emitted
 `tokio.runtime.*` names; `process.*` remains a supported family for hosts/CLI/SDKs that emit it.
 `bundle` accepts exactly one anchor: `fingerprint` (issue), `invocationId` (invocation-anchored:
-the invocation's traces, logs, and grouped issues), or `traceId`.
+the invocation's traces, logs, and grouped issues), `traceId`, or `alertIncidentId`
+(plan 173 — incident-anchored: the rule's evaluation window around the
+breach). Exactly one of the four; mixing anchors is a request error.
+
+**Incident bundle (`alertIncidentId`).** Window = the rule's
+`windowMinutes` centered on the breach (same cap as other anchors). Scope =
+the rule's service filter plus the incident `group_key`. Sections = a
+bounded measured-series snapshot (metric-summary semantics), in-window
+traces/logs for the scoped services, `deploy_adjacency`, ranked
+hypotheses, and `missing_evidence` (absent deploy data or absent traces
+are gaps, not omissions). The same window/scope derivation is shared with
+alert-rule preview so the two cannot drift.
+
+**Notification payloads (plan 173).** Webhook and Slack bodies stay
+deliver-first: assembly failure NEVER blocks or delays delivery. When a
+bundle exists the payload carries `bundle_hash`, `bundle_url` (UI deep
+link to the incident bundle panel), `top_hypothesis`, and a bounded
+`deploy_adjacency` list. When assembly failed or timed out the payload
+carries `bundle_error` instead and the rest of the notification is
+unchanged. Old incidents have no bundle.
 
 **Bundle correlation sections (`metric_window`).** The bundle is the
 correlation artifact — every anchor assembles **trace + logs + metric

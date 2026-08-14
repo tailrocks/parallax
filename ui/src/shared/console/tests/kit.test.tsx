@@ -46,7 +46,7 @@ describe("console kit", () => {
       expect(meta.icon).toBeDefined()
       expect(meta.bar).toMatch(/^bg-/)
     }
-    expect(spanKindMeta("SERVER", "STATUS_CODE_ERROR").bar).toContain("bg-rose-500")
+    expect(spanKindMeta("SERVER", "STATUS_CODE_ERROR").bar).toBe("bg-destructive")
     render(<SpanKindChip kind="SERVER" />)
     expect(screen.getByText("SERVER")).toBeTruthy()
   })

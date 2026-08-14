@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { loadTestCaseDetail, loadTests, validateTestsSearch } from "@/features/tests"
+import { validateTestsSearch } from "@/features/tests"
 
 describe("tests route contracts", () => {
   it("exposes public search and loaders for thin route wiring", () => {
@@ -9,7 +9,6 @@ describe("tests route contracts", () => {
       status: "FLAKY_PASS",
       sort: "NAME",
     })
-    expect(typeof loadTests).toBe("function")
-    expect(typeof loadTestCaseDetail).toBe("function")
+    expect(validateTestsSearch({ status: "nope", sort: "NOPE" })).toEqual({})
   })
 })

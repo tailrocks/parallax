@@ -16,7 +16,7 @@ impl Spool {
     }
 }
 
-pub(super) fn count_pspl_frames(path: &Path) -> anyhow::Result<usize> {
+pub fn count_pspl_frames(path: &Path) -> anyhow::Result<usize> {
     let mut file = std::fs::File::open(path)?;
     let mut magic = [0u8; 5];
     let n = file.read(&mut magic)?;
@@ -24,7 +24,7 @@ pub(super) fn count_pspl_frames(path: &Path) -> anyhow::Result<usize> {
         return Ok(0);
     }
     if n < 5 || &magic != MAGIC {
-        return Ok(0);
+        anyhow::bail!("corrupt pspl magic in {}", path.display());
     }
     let mut count = 0usize;
     loop {

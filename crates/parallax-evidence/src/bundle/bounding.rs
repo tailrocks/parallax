@@ -1,7 +1,11 @@
 use super::*;
 
+#[expect(
+    clippy::expect_used,
+    reason = "Bundle serialization is a type invariant; panic is the fail-loud contract"
+)]
 pub(super) fn estimate_bundle_tokens(bundle: &Bundle) -> usize {
-    estimate_tokens(&serde_json::to_string(bundle).unwrap_or_default())
+    estimate_tokens(&serde_json::to_string(bundle).expect("Bundle serialization is infallible"))
 }
 
 pub(super) fn retain_top_trace_spans(trace: &mut TraceSection, keep: usize) {

@@ -167,6 +167,20 @@ type AlertIncident {
   lastNotifiedAtNanos: String
   "The owning rule, if it still exists."
   rule: AlertRule
+  bundle: BundleOut
+}
+
+type AlertPreviewGroup {
+  groupKey: String!
+  points: [AlertPreviewPoint!]!
+  samplesSufficient: Boolean!
+}
+
+type AlertPreviewPoint {
+  tsNanos: String!
+  value: Float
+  sampleCount: Int!
+  wouldFire: Boolean!
 }
 
 type AlertRule {
@@ -202,6 +216,11 @@ type AlertRule {
   metricAggregation: String
   createdAtNanos: String!
   updatedAtNanos: String!
+}
+
+type AlertRulePreview {
+  windowMinutes: Int!
+  groups: [AlertPreviewGroup!]!
 }
 
 type AlertRuleState {
@@ -361,6 +380,15 @@ type FieldValueCount {
   count: String!
 }
 
+type GroupingExplanation {
+  algorithmVersion: String!
+  errorType: String!
+  messageTemplate: String!
+  anchorFrame: String!
+  operation: String
+  inputsPresent: [String!]!
+}
+
 type Investigation {
   id: String!
   name: String!
@@ -444,6 +472,7 @@ type Issue {
   lastTraceId: String
   "Bounded top-tag-values cache as JSON: `{key: {value: count}}`."
   tags: String!
+  groupingExplanation: GroupingExplanation!
   "The last-24h occurrence sparkline (hourly buckets), oldest first."
   trend: [TrendPoint!]!
   "The most recent stored occurrence."
@@ -749,11 +778,7 @@ type Query {
   invocationFacets(fromNanos: String, toNanos: String): [Facet!]!
   "Recent traces (root span + aggregates), newest first."
   recentTraces(limit: Int): [TraceSummary!]!
-  """
-    Filtered trace browse (UI Traces page / `parallax traces`): every
-    filter optional; filters hit the root span except `errorOnly`,
-    which looks at the whole trace.
-  """
+  "Filtered trace browse; optional filters, root span except errorOnly."
   traces(service: String, fromNanos: String, toNanos: String, minDurationMs: Float, maxDurationMs: Float, errorOnly: Boolean, query: String, limit: Int, offset: Int, sort: TraceSort): [TraceSummary!]!
   """
     Filtered, sorted, paged trace browse with total count for redesigned
@@ -771,23 +796,11 @@ type Query {
     the facet sidebar (plan 164).
   """
   traceFacets(service: String, fromNanos: String, toNanos: String, errorOnly: Boolean, query: String, attributeFilters: [AttributeFilterInput!]): [Facet!]!
-  """
-    The bounded, redacted, hypothesis-ranked evidence bundle — the agent
-    handoff artifact assembling trace + logs + metric windows together.
-    Exactly one anchor: `fingerprint` (issue), `invocationId`, or `traceId`
-    (spec §8). Null when the anchor does not exist.
-  """
-  bundle(fingerprint: String, invocationId: String, traceId: String, maxTokens: Int): BundleOut
-  """
-    Window-scoped metric explorer catalog (plan 168): canonical names with
-    kind (gauge|sum|histogram), unit, emitting services, last datapoint,
-    and finite-sample counts per the metric-summary contract. `q` is a
-    Bounded invocation-scoped metric family summaries (plan 105): typed
-    projection over invocation_metric_points, canonical names, finite
-    samples only.
-  """
+  "Bounded redacted evidence bundle. Exactly one of fingerprint, invocationId, traceId, alertIncidentId."
+  bundle(fingerprint: String, invocationId: String, traceId: String, alertIncidentId: String, maxTokens: Int): BundleOut
+  "Invocation-scoped metric family summaries (plan 105)."
   invocationMetrics(invocationId: String!, fromNanos: String, toNanos: String, limit: Int): [InvocationMetricRow!]!
-  "case-insensitive substring filter; `kind` filters one metric kind."
+  "Metric catalog; `q` substring, `kind` one kind."
   metricCatalog(fromNanos: String!, toNanos: String!, q: String, kind: String, limit: Int): [MetricCatalogRow!]!
   """
     The single shared metric read path (plan 168): typed kind + aggregation
@@ -830,6 +843,8 @@ type Query {
   invocations(limit: Int): [Invocation!]!
   "Alert rules, most recently updated first (plan 167)."
   alertRules: [AlertRule!]!
+  "Evaluate a draft rule over the recent window without persisting (plan 171)."
+  alertRulePreview(input: AlertRuleInput!, windowMinutes: Int): AlertRulePreview!
   alertRule(id: String!): AlertRule
   "Per-group rolling evaluation state for one rule."
   alertRuleStates(ruleId: String!): [AlertRuleState!]!

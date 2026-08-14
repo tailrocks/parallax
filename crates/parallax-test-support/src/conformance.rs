@@ -4,7 +4,7 @@ use crate::memory::MemoryStore;
 use parallax_model::{
     ErrorEventRow, ErrorSource, HistogramRow, LogRow, MetricExemplarRow, MetricPointRow, SpanRow,
 };
-use parallax_storage::adapter::{LogCountStore, TelemetryStore, TraceQuery};
+use parallax_storage::adapter::{TelemetryStore, TraceQuery};
 use std::ops::RangeInclusive;
 
 pub const SERVICE: &str = r#"api\'雪"#;
@@ -211,37 +211,105 @@ pub async fn assert_seeded(
     Ok(())
 }
 
-// Kept as small compatibility scenarios for focused unit callers.
-pub async fn trace_search_scenario(store: &MemoryStore) -> anyhow::Result<()> {
-    seed_memory(store);
-    assert_seeded(store, METRIC, range()).await
+/// Caller-owned seed window + metric name so Greptime and Memory share asserts.
+#[derive(Debug, Clone)]
+pub struct SeededExpectations {
+    pub metric_name: &'static str,
+    pub window: RangeInclusive<u128>,
 }
 
-pub async fn log_count_series_scenario(store: &MemoryStore) -> anyhow::Result<()> {
+pub fn memory_expectations() -> SeededExpectations {
+    SeededExpectations {
+        metric_name: METRIC,
+        window: range(),
+    }
+}
+
+// Kept as small compatibility scenarios for focused unit callers.
+pub async fn trace_search_scenario(
+    store: &dyn TelemetryStore,
+    exp: &SeededExpectations,
+) -> anyhow::Result<()> {
+    assert_seeded(store, exp.metric_name, exp.window.clone()).await
+}
+
+pub async fn log_count_series_scenario(
+    store: &dyn TelemetryStore,
+    exp: &SeededExpectations,
+) -> anyhow::Result<()> {
     let total: f64 = store
-        .log_count_series(Some(SERVICE), range(), None, None, None, &[], 1_000)
+        .log_count_series(
+            Some(SERVICE),
+            exp.window.clone(),
+            None,
+            None,
+            None,
+            &[],
+            1_000_000_000,
+        )
         .await?
         .iter()
         .map(|point| point.value)
         .sum();
-    anyhow::ensure!(total >= 1.0);
+    anyhow::ensure!(total >= 1.0, "log series total {total}");
     Ok(())
 }
 
-pub async fn overview_totals_scenario(store: &dyn TelemetryStore) -> anyhow::Result<()> {
-    let totals = store.overview_totals(range()).await?;
-    anyhow::ensure!(totals.trace_count < u64::MAX && totals.log_count < u64::MAX);
+pub async fn overview_totals_scenario(
+    store: &dyn TelemetryStore,
+    exp: &SeededExpectations,
+) -> anyhow::Result<()> {
+    let totals = store.overview_totals(exp.window.clone()).await?;
+    anyhow::ensure!(
+        totals.trace_count == 1,
+        "trace_count={}",
+        totals.trace_count
+    );
+    anyhow::ensure!(totals.span_count == 1, "span_count={}", totals.span_count);
+    anyhow::ensure!(totals.log_count == 1, "log_count={}", totals.log_count);
+    anyhow::ensure!(
+        totals.error_count == 1,
+        "error_count={}",
+        totals.error_count
+    );
+    anyhow::ensure!(
+        totals.active_services == 1,
+        "active_services={}",
+        totals.active_services
+    );
+    anyhow::ensure!(
+        totals.metric_point_count >= 1,
+        "metric_point_count={}",
+        totals.metric_point_count
+    );
     Ok(())
 }
 
-pub async fn attribute_compare_scenario(store: &dyn TelemetryStore) -> anyhow::Result<()> {
-    store
-        .attribute_compare(range(), range(), None, false, &[], 5)
+pub async fn attribute_compare_scenario(
+    store: &dyn TelemetryStore,
+    exp: &SeededExpectations,
+) -> anyhow::Result<()> {
+    let rows = store
+        .attribute_compare(exp.window.clone(), exp.window.clone(), None, false, &[], 5)
         .await?;
+    for row in &rows {
+        anyhow::ensure!(
+            row.score.is_finite(),
+            "non-finite compare score for {}",
+            row.key
+        );
+    }
     Ok(())
 }
 
-pub async fn service_map_scenario(store: &dyn TelemetryStore) -> anyhow::Result<()> {
-    store.service_map(range(), 10).await?;
+pub async fn service_map_scenario(
+    store: &dyn TelemetryStore,
+    exp: &SeededExpectations,
+) -> anyhow::Result<()> {
+    let edges = store.service_map(exp.window.clone(), 10).await?;
+    anyhow::ensure!(
+        edges.is_empty(),
+        "single-service seed must have no edges: {edges:?}"
+    );
     Ok(())
 }

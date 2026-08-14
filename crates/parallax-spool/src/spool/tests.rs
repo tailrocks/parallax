@@ -207,3 +207,100 @@ async fn health_counts_only_the_selected_signal() -> Result<(), std::io::Error> 
     }
     Ok(())
 }
+
+#[test]
+fn corrupt_magic_is_an_error_not_empty() {
+    let tmp = TempDir::new("bad-magic");
+    let path = tmp.path().join("logs.pspl");
+    std::fs::write(&path, b"XXXXX").expect("write");
+    let err = count_pspl_frames(&path).expect_err("corrupt magic");
+    assert!(format!("{err:#}").contains("corrupt pspl magic"), "{err:#}");
+}
+
+#[test]
+fn truncated_final_frame_is_not_counted() {
+    let tmp = TempDir::new("trunc");
+    let path = tmp.path().join("logs.pspl");
+    let mut bytes = MAGIC.to_vec();
+    bytes.extend_from_slice(&20u32.to_le_bytes());
+    bytes.extend_from_slice(&[1, 2, 3]);
+    std::fs::write(&path, bytes).expect("write");
+    assert_eq!(count_pspl_frames(&path).expect("trunc"), 0);
+}
+
+#[test]
+fn zero_length_frame_counts_as_one() {
+    let tmp = TempDir::new("zero");
+    let path = tmp.path().join("logs.pspl");
+    let mut bytes = MAGIC.to_vec();
+    bytes.extend_from_slice(&0u32.to_le_bytes());
+    std::fs::write(&path, bytes).expect("write");
+    assert_eq!(count_pspl_frames(&path).expect("zero"), 1);
+}
+
+#[tokio::test]
+async fn reopen_then_append_does_not_write_second_magic() {
+    let tmp = TempDir::new("reopen");
+    {
+        let spool = Spool::open(tmp.path()).expect("spool");
+        spool
+            .append_raw(Signal::Logs, &bytes::Bytes::from(vec![1u8; 4]))
+            .await
+            .expect("first");
+    }
+    {
+        let spool = Spool::open(tmp.path()).expect("reopen");
+        spool
+            .append_raw(Signal::Logs, &bytes::Bytes::from(vec![2u8; 4]))
+            .await
+            .expect("second");
+    }
+    let bytes = std::fs::read(tmp.path().join("logs.pspl")).expect("read");
+    assert_eq!(&bytes[..5], MAGIC);
+    assert_eq!(
+        bytes[5..]
+            .windows(5)
+            .filter(|window| *window == MAGIC)
+            .count(),
+        0
+    );
+    assert_eq!(
+        count_pspl_frames(&tmp.path().join("logs.pspl")).expect("count"),
+        2
+    );
+}
+
+#[test]
+fn oversized_payload_errors_instead_of_clamping() {
+    frame_len(u32::MAX as usize).expect("u32::MAX fits");
+    let err = frame_len(usize::try_from(u32::MAX).expect("u32") + 1).expect_err("oversize");
+    assert!(format!("{err:#}").contains("u32::MAX"), "{err:#}");
+}
+
+mod framing_property_tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn append_then_count_round_trips(frames in proptest::collection::vec(proptest::collection::vec(0u8..16, 0..24), 0..8)) {
+            let runtime = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .expect("runtime");
+            runtime.block_on(async {
+                let tmp = TempDir::new("proptest-count");
+                let spool = Spool::open(tmp.path()).expect("spool");
+                for frame in &frames {
+                    spool
+                        .append_raw(Signal::Logs, &bytes::Bytes::from(frame.clone()))
+                        .await
+                        .expect("append");
+                }
+                let counted = spool.line_count(Signal::Logs).expect("count");
+                prop_assert_eq!(counted, frames.len());
+                Ok(())
+            })?;
+        }
+    }
+}

@@ -13,6 +13,7 @@ fn parses_every_initial_command() {
         vec!["xtask", "ui", "graphql", "export"],
         vec!["xtask", "ui", "graphql", "check"],
         vec!["xtask", "integration"],
+        vec!["xtask", "doctests"],
         vec!["xtask", "docs", "links"],
         vec!["xtask", "policy"],
         vec!["xtask", "policy", "--only", "architecture"],

@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  loadTraceDetail,
-  loadTraces,
-  validateTraceDetailSearch,
-  validateTracesSearch,
-} from "@/features/traces"
+import { validateTraceDetailSearch, validateTracesSearch } from "@/features/traces"
 
 describe("traces route contracts", () => {
   it("exposes public search and loaders for thin route wiring", () => {
@@ -25,7 +20,7 @@ describe("traces route contracts", () => {
       ve: undefined,
       color: undefined,
     })
-    expect(typeof loadTraces).toBe("function")
-    expect(typeof loadTraceDetail).toBe("function")
+    expect(validateTracesSearch({ errors: "nope", minMs: "x" }).errors).toBeUndefined()
+    expect(validateTracesSearch({ errors: "nope", minMs: "x" }).minMs).toBeUndefined()
   })
 })

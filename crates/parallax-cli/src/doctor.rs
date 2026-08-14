@@ -19,6 +19,8 @@ use parallax_storage::{
     PruneJournalStepState, PrunePlan, PrunePlanLimits, PruneSnapshot, PruneStepStart, PruneStore,
 };
 
+mod http;
+
 const SPOOL_SIGNALS: [(&str, &str); 3] = [
     ("traces", "traces.pspl"),
     ("logs", "logs.pspl"),
@@ -101,38 +103,11 @@ fn rotated_segment_paths(spool_dir: &Path, stem: &str) -> Vec<PathBuf> {
         .collect()
 }
 
-fn count_pspl_frames(path: &Path) -> usize {
-    use std::io::Read;
-    let Ok(mut file) = std::fs::File::open(path) else {
-        return 0;
-    };
-    let mut magic = [0u8; 5];
-    let Ok(n) = file.read(&mut magic) else {
-        return 0;
-    };
-    if n < 5 || &magic != b"PSPL1" {
-        return 0;
-    }
-    let mut count = 0usize;
-    loop {
-        let mut len_buf = [0u8; 4];
-        if file.read_exact(&mut len_buf).is_err() {
-            break;
-        }
-        let len = u64::from(u32::from_le_bytes(len_buf));
-        if std::io::copy(&mut file.by_ref().take(len), &mut std::io::sink()).is_err() {
-            break;
-        }
-        count += 1;
-    }
-    count
-}
-
 fn spool_stats(spool_dir: &Path, stem: &str, active_file: &str) -> SignalSpoolStats {
     let active_path = spool_dir.join(active_file);
     let legacy_path = spool_dir.join(format!("{stem}.ndjson"));
     let mut active_lines = if active_path.exists() {
-        count_pspl_frames(&active_path)
+        parallax_spool::count_pspl_frames(&active_path).unwrap_or(0)
     } else {
         0
     };
@@ -154,15 +129,6 @@ fn spool_stats(spool_dir: &Path, stem: &str, active_file: &str) -> SignalSpoolSt
     }
 }
 
-async fn check_http(url: &str) -> Option<String> {
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(2))
-        .build()
-        .ok()?;
-    let response = client.get(url).send().await.ok()?;
-    response.status().is_success().then(|| "ok".to_string())
-}
-
 #[expect(
     clippy::too_many_lines,
     reason = "linear inventory walkthrough with narration"
@@ -172,28 +138,7 @@ pub(crate) async fn doctor() -> anyhow::Result<()> {
     let dir = config.data_dir();
     println!("parallax doctor");
     println!("  data dir: {} ({})", dir.display(), human(dir_size(&dir)));
-
-    // Server + listeners.
-    for (name, url) in [
-        ("api (:4000)", "http://127.0.0.1:4000/health"),
-        ("greptime child (:24000)", "http://127.0.0.1:24000/health"),
-    ] {
-        match check_http(url).await {
-            Some(_) => println!("  {name}: ok"),
-            None => println!("  {name}: NOT RESPONDING"),
-        }
-    }
-    match check_http("http://127.0.0.1:4000/version").await {
-        Some(_) => {
-            let version = reqwest::get("http://127.0.0.1:4000/version")
-                .await?
-                .text()
-                .await
-                .unwrap_or_default();
-            println!("  server version: {version}");
-        }
-        None => println!("  server version: unavailable (is `parallax serve` running?)"),
-    }
+    http::print_server_probes().await?;
 
     // Engine binary.
     let engine = dir.join("bin/greptime");

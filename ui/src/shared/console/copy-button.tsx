@@ -18,7 +18,7 @@ export function CopyButton({ value }: { value: string }) {
       }}
     >
       <Icon />
-      <span className="sr-only">Copy</span>
+      <span className="sr-only">{copied ? "Copied" : "Copy"}</span>
     </Button>
   )
 }

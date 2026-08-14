@@ -9,7 +9,6 @@
 #![expect(clippy::expect_used, reason = "harness exits on setup failure")]
 #![expect(
     clippy::excessive_nesting,
-    clippy::too_many_lines,
     reason = "self-contained browser-contract fixture server"
 )]
 #![expect(
@@ -30,8 +29,7 @@ use axum::response::IntoResponse;
 use axum::routing::any;
 use axum::{Json, Router};
 use parallax_metadata::TursoMetadataStore;
-use parallax_server::{Config, start_with_capabilities};
-use parallax_storage::metadata::MetadataStore;
+use parallax_server::{Config, start_with_turso};
 use parallax_test_support::browser::{DatasetId, investigation_snapshot, reset_and_seed};
 use parallax_test_support::builders::MemoryStore;
 use serde::Deserialize;
@@ -43,7 +41,7 @@ use tokio::sync::Mutex;
 #[derive(Clone)]
 struct ControlState {
     store: Arc<MemoryStore>,
-    metadata: Arc<dyn MetadataStore>,
+    metadata: Arc<TursoMetadataStore>,
     dataset: Arc<Mutex<Option<DatasetId>>>,
     fail_next_graphql: Arc<AtomicU32>,
     lock: Arc<Mutex<()>>,
@@ -55,24 +53,9 @@ struct ControlRequest {
     dataset: Option<String>,
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
-        )
-        .init();
-
-    let root = workspace_root()?;
-    let ui_dist = root.join("ui/dist/client");
-    if !ui_dist.join("_shell.html").is_file() {
-        bail!(
-            "browser contracts require built UI at {} — run `cd ui && bun run build` first",
-            ui_dist.display()
-        );
-    }
-
+async fn assemble_harness(
+    ui_dist: &Path,
+) -> Result<(Config, Arc<MemoryStore>, Arc<TursoMetadataStore>, PathBuf)> {
     let data_dir = std::env::temp_dir().join(format!(
         "parallax-browser-contracts-{}-{}",
         std::process::id(),
@@ -99,16 +82,41 @@ async fn main() -> Result<()> {
         Arc::new(parallax_ingest::normalize_traces),
         Arc::new(parallax_ingest::normalize_logs),
     ));
-    let metadata_concrete = Arc::new(
+    let metadata = Arc::new(
         TursoMetadataStore::open(data_dir.join("meta.db"))
             .await
             .context("open turso metadata")?,
     );
-    let metadata: Arc<dyn MetadataStore> = metadata_concrete.clone();
+    Ok((config, store, metadata, data_dir))
+}
 
-    let handle = start_with_capabilities(&config, store.clone(), metadata.clone())
-        .await
-        .context("start server with injected test adapter")?;
+#[tokio::main]
+async fn main() -> Result<()> {
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
+        )
+        .init();
+
+    let root = workspace_root()?;
+    let ui_dist = root.join("ui/dist/client");
+    if !ui_dist.join("_shell.html").is_file() {
+        bail!(
+            "browser contracts require built UI at {} — run `cd ui && bun run build` first",
+            ui_dist.display()
+        );
+    }
+
+    let (config, store, metadata, data_dir) = assemble_harness(&ui_dist).await?;
+    let handle = start_with_turso(
+        &config,
+        store.clone(),
+        metadata.clone(),
+        Some(metadata.clone()),
+    )
+    .await
+    .context("start server with injected test adapter")?;
 
     let public_port: u16 = std::env::var("PARALLAX_BROWSER_CONTRACTS_PORT")
         .ok()

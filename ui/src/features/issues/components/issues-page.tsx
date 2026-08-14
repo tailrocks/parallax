@@ -10,8 +10,8 @@ import {
   SortableHead,
   Toolbar,
 } from "@/shared/console/data-table"
-import { CopyButton } from "@/shared/console/copy-button"
 import { EmptyState } from "@/shared/console/empty-state"
+import { SnippetTabs } from "@/shared/console/snippet-tabs"
 import { useDelayedLoading } from "@/shared/console/hooks"
 import { RelativeTime } from "@/shared/console/relative-time"
 import { TableSkeleton } from "@/shared/console/skeletons"
@@ -217,16 +217,7 @@ export function IssuesContent({
         <EmptyState
           icon={IconTerminal2}
           title={hasFilters ? "No issues match filters" : "No issues ingested yet"}
-          description={
-            hasFilters ? (
-              "Loosen query, service, status, or range."
-            ) : (
-              <span className="inline-flex items-center gap-2">
-                <code>OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4317</code>
-                <CopyButton value="OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4317" />
-              </span>
-            )
-          }
+          description={hasFilters ? "Loosen query, service, status, or range." : <SnippetTabs />}
         />
       ) : (
         <IssuesTable
@@ -449,7 +440,7 @@ function IssuesTable({
   if (!virtualize) {
     return (
       <div className="overflow-hidden rounded-lg border bg-card">
-        <Table>
+        <Table className="table-fixed">
           {header}
           {body}
         </Table>

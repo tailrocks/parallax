@@ -40,9 +40,12 @@ The V1 implementation (workspace under [`crates/`](crates/), web UI under
   [release verification guide](docs/guide/releases.md) for independent asset
   checks and local rehearsal.
 - **[Quickstart](docs/guide/quickstart.md)** — install → serve → connect a Rust app → first evidence bundle.
+- **[Footprint](docs/guide/footprint.md)** — idle ~24 MiB Parallax + ~139 MiB Greptime (2026-08-13, Apple M5 Max).
 - **[CLI reference](docs/guide/cli.md)** — every `parallax` command.
 - **[Agent how-to](docs/guide/agent-howto.md)** — point your coding agent at `parallax issue context`.
 - **[Conventions](docs/guide/conventions.md)** — resource attributes, `parallax.run.id`, exception encodings, DB wrapper spans.
+- **[Grouping](docs/guide/grouping.md)** — why events share an issue (`fp-v1`).
+- **[Upgrade and durability](docs/guide/upgrade-and-durability.md)** — data-dir upgrade contract and loss counters.
 - **[Evidence bundle schema (`bundle-v1`)](schema/evidence-bundle.v1.schema.json)** — portable JSON Schema for the canonical bundle bytes (versioning policy in [`schema/README.md`](schema/README.md)).
 - **Developing Parallax itself** — see [CONTRIBUTING.md § Development](CONTRIBUTING.md#development).
 

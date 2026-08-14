@@ -15,7 +15,7 @@ fn ci_inventory_has_no_empty_or_placeholder_partition() {
             "docs-links",
             "ui",
             "test",
-            "integration",
+            "doctests",
             "dependencies"
         ]
     );

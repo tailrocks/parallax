@@ -142,6 +142,12 @@ jobs:
     with:
       lane: ${{ inputs.lanes || 'velnor' }}
 
+  upgrade-harness:
+    needs: check-version
+    permissions:
+      contents: read
+    uses: ./.github/workflows/upgrade-harness.yml
+
   build:
     needs: [check-version, test]
     # Apple targets require macOS (dsymutil + codesign + Apple ld headerpad) so
@@ -379,7 +385,7 @@ jobs:
       source-ref: refs/tags/v${{ needs.check-version.outputs.version }}
 
   release:
-    needs: [check-version, build, package-record, sign-arm64-macos, sign-x86-macos, sign-arm64-linux, sign-x86-linux]
+    needs: [check-version, build, package-record, sign-arm64-macos, sign-x86-macos, sign-arm64-linux, sign-x86-linux, upgrade-harness]
     name: Publish (${{ matrix.config.lane }})
     strategy:
       fail-fast: false

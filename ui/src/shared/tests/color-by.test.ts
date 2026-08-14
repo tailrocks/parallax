@@ -10,7 +10,7 @@ import {
   encodeColorBy,
   type ColorableSpan,
 } from "@/shared/color-by"
-import { serviceColor } from "@/shared/colors"
+import { serviceColor, SPAN_STATUS } from "@/shared/colors"
 
 function span(overrides: Partial<ColorableSpan> = {}): ColorableSpan {
   return {
@@ -64,10 +64,10 @@ describe("colorForSpan", () => {
 
   it("status mode: error red, ok info, unset neutral", () => {
     expect(colorForSpan({ kind: "status" }, span({ statusCode: "STATUS_CODE_ERROR" }))).toBe(
-      "var(--chart-error)"
+      SPAN_STATUS.error.color
     )
     expect(colorForSpan({ kind: "status" }, span({ statusCode: "STATUS_CODE_OK" }))).toBe(
-      "var(--severity-info)"
+      SPAN_STATUS.ok.color
     )
     expect(colorForSpan({ kind: "status" }, span({ statusCode: "STATUS_CODE_UNSET" }))).toBe(
       COLOR_BY_UNKNOWN

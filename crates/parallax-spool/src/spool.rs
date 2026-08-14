@@ -25,7 +25,8 @@ mod framing;
 mod retention;
 
 #[cfg(test)]
-use framing::count_pspl_frames;
+use append::frame_len;
+pub use framing::count_pspl_frames;
 use framing::rotated_timestamp;
 
 const DEFAULT_MAX_SEGMENT_BYTES: u64 = 64 * 1024 * 1024;

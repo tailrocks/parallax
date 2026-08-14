@@ -1,17 +1,17 @@
 import { fullStackTest as test, expect } from "../fixtures/test"
-import { readFullStackManifest } from "../fixtures/full-stack-fixture"
+import { SURFACE_TIMEOUT_MS } from "../support/timeouts"
 
 test.describe("full-stack logs @logs", () => {
   test("logs surface loads for seeded service @pw-full-stack-logs", async ({ page, fullStack }) => {
-    const manifest = readFullStackManifest()
     await page.goto("/logs")
     await expect(page.getByRole("heading", { name: /logs/i }).first()).toBeVisible({
-      timeout: 20_000,
+      timeout: SURFACE_TIMEOUT_MS,
     })
-    // Seed body or service may appear; at minimum the surface is live.
-    const marker = page
-      .getByText(fullStack.service, { exact: false })
-      .or(page.getByText(manifest.log_body, { exact: false }))
-    await expect(marker.first()).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByText(fullStack.service, { exact: false }).first()).toBeVisible({
+      timeout: SURFACE_TIMEOUT_MS,
+    })
+    await expect(page.getByText(fullStack.log_body, { exact: false }).first()).toBeVisible({
+      timeout: SURFACE_TIMEOUT_MS,
+    })
   })
 })

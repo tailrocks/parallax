@@ -16,6 +16,14 @@ query IssueDetail(
     eventCount
     lastTraceId
     tags
+    groupingExplanation {
+      algorithmVersion
+      errorType
+      messageTemplate
+      anchorFrame
+      operation
+      inputsPresent
+    }
     events(limit: 20, fromNanos: $fromNanos, toNanos: $toNanos) {
       tsNanos
       service

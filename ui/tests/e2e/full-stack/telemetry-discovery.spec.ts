@@ -1,6 +1,7 @@
 import { fullStackTest as test, expect } from "../fixtures/test"
 import { ShellScreen } from "../screens/shell-screen"
 import { graphqlQuery, readFullStackManifest } from "../fixtures/full-stack-fixture"
+import { SURFACE_TIMEOUT_MS } from "../support/timeouts"
 
 test.describe("full-stack telemetry discovery @storage", () => {
   test("seeded service trace issue appear across routes @pw-storage-telemetry-discovery", async ({
@@ -44,13 +45,13 @@ test.describe("full-stack telemetry discovery @storage", () => {
     await shell.navItem("Services").click()
     await expect(page).toHaveURL(/\/services/)
     await expect(page.getByText(manifest.service, { exact: false }).first()).toBeVisible({
-      timeout: 20_000,
+      timeout: SURFACE_TIMEOUT_MS,
     })
 
     await shell.navItem("Issues").click()
     await expect(page).toHaveURL(/\/issues/)
     await expect(page.getByText(manifest.error_type, { exact: false }).first()).toBeVisible({
-      timeout: 20_000,
+      timeout: SURFACE_TIMEOUT_MS,
     })
 
     await page.goto(`/issues/${manifest.issue_fingerprint}`)

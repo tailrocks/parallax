@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 
 import { CommandPalette } from "@/layout/command-palette"
 import { NavIcon } from "@/layout/nav-icon"
+import { PageFade } from "@/shared/page-fade"
 import { primaryNav, workspaceNav } from "@/shared/navigation"
 import type { NavItem } from "@/shared/navigation"
 import { ThemeSwitcher } from "@/layout/theme-switcher"
@@ -141,6 +142,14 @@ function StatusPill() {
   )
 }
 
+function ShellMain({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-auto flex max-w-380 flex-col gap-6 p-10 2xl:p-16">
+      <PageFade>{children}</PageFade>
+    </div>
+  )
+}
+
 export function ParallaxShell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const [dashboards, setDashboards] = useState<DashboardNavigationItem[]>([])
@@ -223,7 +232,7 @@ export function ParallaxShell({ children }: { children: React.ReactNode }) {
 
       <SidebarInset className="min-h-0 overflow-hidden">
         <main className="min-h-0 flex-1 overflow-y-auto">
-          <div className="mx-auto flex max-w-380 flex-col gap-6 p-10 2xl:p-16">{children}</div>
+          <ShellMain>{children}</ShellMain>
         </main>
       </SidebarInset>
     </SidebarProvider>

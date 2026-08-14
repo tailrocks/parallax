@@ -11,7 +11,7 @@ import {
 } from "@tabler/icons-react"
 import { Area, AreaChart, CartesianGrid, ReferenceArea, XAxis, YAxis } from "recharts"
 
-import { CopyButton } from "@/shared/console/copy-button"
+import { SnippetTabs } from "@/shared/console/snippet-tabs"
 import { EmptyState } from "@/shared/console/empty-state"
 import { HeatCell, buildHeatScale } from "@/shared/console/heat-cell"
 import { RangePicker } from "@/features/time-range"
@@ -842,30 +842,13 @@ function SlowestTracesCard({ traces, range }: { traces: TraceRow[]; range: Resol
 }
 
 function OnboardingCard() {
-  const grpc = "http://127.0.0.1:4317"
-  const http = "http://127.0.0.1:4318"
-  const run = "parallax run -- <your command>"
   return (
     <Card>
       <CardHeader>
         <CardTitle>Send your first telemetry</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-3 text-sm md:grid-cols-3">
-        {(
-          [
-            ["OTLP/gRPC", grpc],
-            ["OTLP/HTTP", http],
-            ["CLI", run],
-          ] satisfies Array<[string, string]>
-        ).map(([label, value]) => (
-          <div key={label} className="rounded-lg border border-border/70 bg-background/60 p-3">
-            <div className="mb-1 text-xs font-medium text-muted-foreground">{label}</div>
-            <div className="flex items-center justify-between gap-2">
-              <code className="min-w-0 truncate font-mono text-xs">{value}</code>
-              <CopyButton value={value} />
-            </div>
-          </div>
-        ))}
+      <CardContent>
+        <SnippetTabs />
       </CardContent>
     </Card>
   )

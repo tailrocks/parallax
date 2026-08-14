@@ -1,5 +1,5 @@
 import type { ErrorComponentProps } from "@tanstack/react-router"
-import { IconAlertTriangleFilled, IconMapQuestion } from "@tabler/icons-react"
+import { IconAlertTriangleFilled } from "@tabler/icons-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
+
+export { RouteNotFoundPanel } from "@/shared/route-not-found"
 
 function safeErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) {
@@ -71,19 +73,5 @@ export function RoutePendingPanel() {
         <Skeleton className="h-32" />
       </div>
     </section>
-  )
-}
-
-export function RouteNotFoundPanel() {
-  return (
-    <Empty className="max-w-2xl">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <IconMapQuestion />
-        </EmptyMedia>
-        <EmptyTitle>Nothing is mounted here</EmptyTitle>
-        <EmptyDescription>Pick a Parallax surface from the navigation.</EmptyDescription>
-      </EmptyHeader>
-    </Empty>
   )
 }

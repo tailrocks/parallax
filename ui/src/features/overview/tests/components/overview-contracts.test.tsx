@@ -168,7 +168,7 @@ describe("Overview route", () => {
     renderWithRouter(<OverviewContent data={zeroFixture()} range={range} onRangeChange={vi.fn()} />)
 
     expect(await screen.findByText("Send your first telemetry")).toBeTruthy()
-    expect(screen.getByText("http://127.0.0.1:4317")).toBeTruthy()
+    expect(screen.getByTestId("instrument-snippet-tabs").textContent).toMatch(/init_tracing/)
     expect(screen.queryByText("Recent issues")).toBeNull()
   })
 

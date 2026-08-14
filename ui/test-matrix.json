@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 572,
-    "test_files": 145
+    "test_cases": 632,
+    "test_files": 171
   },
   "private_route_imports": [],
   "entries": [
@@ -347,8 +347,7 @@
         "dedupes concurrent identical queries into one fetch",
         "serves a second call from Query cache within staleTime",
         "refetches after invalidate",
-        "raw graphql always hits the network",
-        "is available in the browser (client-side cache active)"
+        "raw graphql always hits the network"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -738,6 +737,7 @@
         "accepts exact ordered diagnostics",
         "rejects unexpected, missing, reordered, and substring-only matches",
         "owns page errors exactly",
+        "treats WebKit unused modulepreload as engine noise",
         "owns browser rejections exactly"
       ],
       "required_environment": "jsdom-or-bun",
@@ -1025,6 +1025,92 @@
       "status": "implemented"
     },
     {
+      "id": "vitest-service-map-layout-engine",
+      "surface": "features/ecosystem",
+      "risk": "ELK layout may overlap nodes or become non-deterministic",
+      "scenario_owner": "features/ecosystem",
+      "lane_owner": "vitest/model",
+      "layer": "model",
+      "test_file": "ui/src/features/ecosystem/tests/model/service-map-layout-engine.test.ts",
+      "test_ids": [
+        "runElkLayout is deterministic",
+        "runElkLayout boxes do not overlap",
+        "fallback is deterministic and non-overlapping",
+        "topology key ignores metrics"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-service-detail-model",
+      "surface": "features/services",
+      "risk": "Service RED math and exemplar placement can mis-scale",
+      "scenario_owner": "features/services",
+      "lane_owner": "vitest/model",
+      "layer": "model",
+      "test_file": "ui/src/features/services/tests/model/service-detail.test.ts",
+      "test_ids": [
+        "stepSeconds clamps below 30 min",
+        "stepSeconds is 60 for one hour",
+        "latestErrorRate reads the last point",
+        "latencyBands stack non-negative deltas",
+        "toLineData sorts and maps values",
+        "exemplarMarkers empty on zero span",
+        "exemplarMarkers clamp x/y"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-services-search-model",
+      "surface": "features/services",
+      "risk": "Services search coercion can keep unknown sorts",
+      "scenario_owner": "features/services",
+      "lane_owner": "vitest/model",
+      "layer": "model",
+      "test_file": "ui/src/features/services/tests/model/services-search.test.ts",
+      "test_ids": [
+        "keeps known sort and query",
+        "drops unknown sort",
+        "patchServicesSearch removes empty",
+        "rejects empty q"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-test-summary-model",
+      "surface": "features/tests",
+      "risk": "Test rollup/flaky labels can drift from status enums",
+      "scenario_owner": "features/tests",
+      "lane_owner": "vitest/model",
+      "layer": "model",
+      "test_file": "ui/src/features/tests/tests/model/test-summary.test.ts",
+      "test_ids": [
+        "suiteLabel empty and joined",
+        "rollupLabel every variant",
+        "flakyLabel every variant"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-overview-chart-helpers",
+      "surface": "features/overview",
+      "risk": "Overview chart merge can drop timestamps or invert bands",
+      "scenario_owner": "features/overview",
+      "lane_owner": "vitest/model",
+      "layer": "model",
+      "test_file": "ui/src/features/overview/tests/model/overview-chart-helpers.test.ts",
+      "test_ids": [
+        "mergeSignalSeries unions timestamps",
+        "sampleSignalData has 6 points",
+        "sampleLatencyData bands non-negative"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
       "id": "vitest-w2-7323",
       "surface": "features/ecosystem",
       "risk": "wave-2 ecosystem topology regression",
@@ -1234,6 +1320,23 @@
         "unterminated string reports position",
         "valid clause parses",
         "values with spaces and unicode"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-where-clause-reserved",
+      "surface": "shared/where-clause",
+      "risk": "Reserved-word keys/values (AND, CONTAINS, NOT) can be eaten as operators and break serialize→parse",
+      "scenario_owner": "shared/where-clause",
+      "lane_owner": "vitest/model",
+      "layer": "model",
+      "test_file": "ui/src/shared/tests/where-clause-reserved.test.ts",
+      "test_ids": [
+        "reserved words in value position keep original spelling",
+        "reserved words in key position stay keys",
+        "reserved-word values quoted (case-insensitive)",
+        "serialize\u2192parse reserved-word keys and values"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1508,24 +1611,7 @@
       "delivery_plan": 144
     },
     {
-      "id": "pw-reserved-investigations-contracts",
-      "surface": "features/investigations",
-      "risk": "Remaining investigations browser contracts beyond the plan 144 pilot",
-      "scenario_owner": "features/investigations",
-      "lane_owner": "playwright/contracts",
-      "layer": "browser-contract",
-      "test_file": "ui/tests/e2e/contracts/investigations.spec.ts",
-      "test_ids": [
-        "reserved @investigations browser contracts"
-      ],
-      "required_environment": "chromium-fixture",
-      "status": "reserved",
-      "dataset_id": "investigations-default",
-      "state_class": "inventory",
-      "delivery_plan": 134
-    },
-    {
-      "id": "pw-reserved-sql-contracts",
+      "id": "pw-sql-crud",
       "surface": "features/sql",
       "risk": "SQL safe execution, result states, history, snippet CRUD, schema browser",
       "scenario_owner": "features/sql",
@@ -1533,13 +1619,13 @@
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/sql.spec.ts",
       "test_ids": [
-        "reserved @sql browser contracts"
+        "run query snippet save and delete @pw-sql-crud"
       ],
       "required_environment": "chromium-fixture",
-      "status": "reserved",
-      "dataset_id": "sql-default",
-      "state_class": "inventory",
-      "delivery_plan": 135
+      "status": "implemented",
+      "dataset_id": "sql-pilot",
+      "state_class": "mutation",
+      "delivery_plan": 170
     },
     {
       "id": "pw-reserved-ecosystem-contracts",
@@ -1559,7 +1645,7 @@
       "delivery_plan": 136
     },
     {
-      "id": "pw-reserved-dashboards-contracts",
+      "id": "pw-dashboards-crud",
       "surface": "features/dashboards",
       "risk": "Dashboard list/detail/widget CRUD and chart states",
       "scenario_owner": "features/dashboards",
@@ -1567,13 +1653,13 @@
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/dashboards.spec.ts",
       "test_ids": [
-        "reserved @dashboards browser contracts"
+        "create widget persist and delete @pw-dashboards-crud"
       ],
       "required_environment": "chromium-fixture",
-      "status": "reserved",
-      "dataset_id": "dashboards-default",
-      "state_class": "inventory",
-      "delivery_plan": 137
+      "status": "implemented",
+      "dataset_id": "dashboards-pilot",
+      "state_class": "mutation",
+      "delivery_plan": 170
     },
     {
       "id": "pw-reserved-services-contracts",
@@ -1627,21 +1713,72 @@
       "delivery_plan": 140
     },
     {
-      "id": "pw-reserved-logs-contracts",
+      "id": "pw-logs-pilot-body",
       "surface": "features/logs",
-      "risk": "Logs search/filter/context/saved views/live/reconnect",
+      "risk": "Seeded logs may not render the known body or both services in the contracts lane",
       "scenario_owner": "features/logs",
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/logs.spec.ts",
       "test_ids": [
-        "reserved @logs browser contracts"
+        "lists seeded log body across services @pw-logs-pilot-body"
       ],
       "required_environment": "chromium-fixture",
-      "status": "reserved",
-      "dataset_id": "logs-default",
-      "state_class": "inventory",
-      "delivery_plan": 141
+      "status": "implemented",
+      "dataset_id": "logs-pilot",
+      "state_class": "seeded-list",
+      "delivery_plan": 170
+    },
+    {
+      "id": "pw-alerts-crud",
+      "surface": "features/overview",
+      "risk": "Alert destination/rule CRUD and enable toggle may fail to persist",
+      "scenario_owner": "features/overview",
+      "lane_owner": "playwright/contracts",
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/alerts.spec.ts",
+      "test_ids": [
+        "destination rule toggle and delete @pw-alerts-crud"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "implemented",
+      "dataset_id": "alerts-pilot",
+      "state_class": "mutation",
+      "delivery_plan": 170
+    },
+    {
+      "id": "pw-metrics-pilot-catalog",
+      "surface": "features/overview",
+      "risk": "Metrics catalog may not list seeded metrics-pilot gauge and histogram",
+      "scenario_owner": "features/overview",
+      "lane_owner": "playwright/contracts",
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/metrics.spec.ts",
+      "test_ids": [
+        "lists seeded gauge and histogram @pw-metrics-pilot-catalog"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "implemented",
+      "dataset_id": "metrics-pilot",
+      "state_class": "seeded-list",
+      "delivery_plan": 170
+    },
+    {
+      "id": "pw-logs-views-crud",
+      "surface": "features/logs",
+      "risk": "Logs saved-view save/restore/delete may drop where-clause filters",
+      "scenario_owner": "features/logs",
+      "lane_owner": "playwright/contracts",
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/logs-views.spec.ts",
+      "test_ids": [
+        "filter save restore and delete view @pw-logs-views-crud"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "implemented",
+      "dataset_id": "logs-pilot",
+      "state_class": "mutation",
+      "delivery_plan": 170
     },
     {
       "id": "pw-reserved-traces-contracts",
@@ -1659,23 +1796,6 @@
       "dataset_id": "traces-default",
       "state_class": "inventory",
       "delivery_plan": 142
-    },
-    {
-      "id": "pw-reserved-shell-contracts",
-      "surface": "layout/shell",
-      "risk": "Remaining shell theme/route-failure contracts beyond plan 144 pilot",
-      "scenario_owner": "layout/shell",
-      "lane_owner": "playwright/contracts",
-      "layer": "browser-contract",
-      "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
-      "test_ids": [
-        "reserved @shell browser contracts"
-      ],
-      "required_environment": "chromium-fixture",
-      "status": "reserved",
-      "dataset_id": "shell-default",
-      "state_class": "inventory",
-      "delivery_plan": 143
     },
     {
       "id": "pw-reserved-overview-contracts",
@@ -2322,6 +2442,108 @@
       "state_class": "inventory"
     },
     {
+      "id": "pw-trace-detail",
+      "surface": "features/traces",
+      "risk": "Trace detail deep-link may not render tree, flame, or critical path",
+      "scenario_owner": "features/traces",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/trace-detail.spec.ts",
+      "test_ids": [
+        "deep-link tree flame and critical path @pw-trace-detail"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "implemented",
+      "dataset_id": "traces-full-stack",
+      "state_class": "seeded-detail",
+      "delivery_plan": 170
+    },
+    {
+      "id": "pw-service-detail",
+      "surface": "features/services",
+      "risk": "Service detail RED charts or prefiltered links can be empty",
+      "scenario_owner": "features/services",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/service-detail.spec.ts",
+      "test_ids": [
+        "RED charts and prefiltered links @pw-service-detail"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "implemented",
+      "dataset_id": "services-full-stack",
+      "state_class": "seeded-detail",
+      "delivery_plan": 170
+    },
+    {
+      "id": "pw-metrics-workbench",
+      "surface": "features/overview",
+      "risk": "Metrics catalog/workbench may not list seeded series",
+      "scenario_owner": "features/overview",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/metrics.spec.ts",
+      "test_ids": [
+        "catalog workbench and add-to-dashboard @pw-metrics-workbench"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "implemented",
+      "dataset_id": "metrics-full-stack",
+      "state_class": "seeded-detail",
+      "delivery_plan": 170
+    },
+    {
+      "id": "pw-tests-detail",
+      "surface": "features/overview",
+      "risk": "Tests case route may not mount",
+      "scenario_owner": "features/overview",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/tests-detail.spec.ts",
+      "test_ids": [
+        "case route renders explorer or empty @pw-tests-detail"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "implemented",
+      "dataset_id": "tests-full-stack",
+      "state_class": "seeded-detail",
+      "delivery_plan": 170
+    },
+    {
+      "id": "pw-invocation-hub",
+      "surface": "features/runs",
+      "risk": "Invocation hub tabs may not switch or render seeded content",
+      "scenario_owner": "features/runs",
+      "lane_owner": "playwright/full-stack",
+      "layer": "browser-full-stack",
+      "test_file": "ui/tests/e2e/full-stack/invocation-hub.spec.ts",
+      "test_ids": [
+        "six hub tabs render seeded invocation @pw-invocation-hub"
+      ],
+      "required_environment": "chromium-full-stack",
+      "status": "implemented",
+      "dataset_id": "runs-full-stack",
+      "state_class": "seeded-detail",
+      "delivery_plan": 170
+    },
+    {
+      "id": "pw-command-palette-trace",
+      "surface": "layout/shell",
+      "risk": "Command palette paste of a seeded trace id may not land on detail",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "playwright/contracts",
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/command-palette.spec.ts",
+      "test_ids": [
+        "paste seeded trace id lands on detail @pw-command-palette-trace"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "implemented",
+      "dataset_id": "traces-pilot",
+      "state_class": "navigation",
+      "delivery_plan": 170
+    },
+    {
       "id": "pw-full-stack-shell",
       "surface": "layout/shell",
       "risk": "Full-stack smoke for shell after foundation project is green",
@@ -2480,6 +2702,146 @@
       "required_environment": "mobile-chromium-webkit",
       "status": "implemented",
       "dataset_id": "investigations-pilot",
+      "state_class": "mobile-touch"
+    },
+    {
+      "id": "pw-breadth-a11y-logs",
+      "surface": "features/logs",
+      "risk": "Logs list may fail axe serious/critical",
+      "scenario_owner": "features/logs",
+      "lane_owner": "playwright/breadth",
+      "layer": "browser-breadth",
+      "test_file": "ui/tests/e2e/accessibility/surfaces-accessibility.spec.ts",
+      "test_ids": ["logs list axe @pw-a11y-logs"],
+      "required_environment": "accessibility-chromium",
+      "status": "implemented",
+      "dataset_id": "logs-pilot",
+      "state_class": "accessibility"
+    },
+    {
+      "id": "pw-breadth-a11y-traces",
+      "surface": "features/traces",
+      "risk": "Traces list may fail axe serious/critical",
+      "scenario_owner": "features/traces",
+      "lane_owner": "playwright/breadth",
+      "layer": "browser-breadth",
+      "test_file": "ui/tests/e2e/accessibility/surfaces-accessibility.spec.ts",
+      "test_ids": ["traces list axe @pw-a11y-traces"],
+      "required_environment": "accessibility-chromium",
+      "status": "implemented",
+      "dataset_id": "traces-pilot",
+      "state_class": "accessibility"
+    },
+    {
+      "id": "pw-breadth-a11y-issues",
+      "surface": "features/issues",
+      "risk": "Issues list may fail axe serious/critical",
+      "scenario_owner": "features/issues",
+      "lane_owner": "playwright/breadth",
+      "layer": "browser-breadth",
+      "test_file": "ui/tests/e2e/accessibility/surfaces-accessibility.spec.ts",
+      "test_ids": ["issues list axe @pw-a11y-issues"],
+      "required_environment": "accessibility-chromium",
+      "status": "implemented",
+      "dataset_id": "traces-pilot",
+      "state_class": "accessibility"
+    },
+    {
+      "id": "pw-breadth-a11y-services",
+      "surface": "features/services",
+      "risk": "Services list may fail axe serious/critical",
+      "scenario_owner": "features/services",
+      "lane_owner": "playwright/breadth",
+      "layer": "browser-breadth",
+      "test_file": "ui/tests/e2e/accessibility/surfaces-accessibility.spec.ts",
+      "test_ids": ["services list axe @pw-a11y-services"],
+      "required_environment": "accessibility-chromium",
+      "status": "implemented",
+      "dataset_id": "traces-pilot",
+      "state_class": "accessibility"
+    },
+    {
+      "id": "pw-breadth-a11y-dashboards",
+      "surface": "features/dashboards",
+      "risk": "Dashboards list may fail axe serious/critical",
+      "scenario_owner": "features/dashboards",
+      "lane_owner": "playwright/breadth",
+      "layer": "browser-breadth",
+      "test_file": "ui/tests/e2e/accessibility/surfaces-accessibility.spec.ts",
+      "test_ids": ["dashboards list axe @pw-a11y-dashboards"],
+      "required_environment": "accessibility-chromium",
+      "status": "implemented",
+      "dataset_id": "dashboards-pilot",
+      "state_class": "accessibility"
+    },
+    {
+      "id": "pw-breadth-mobile-logs",
+      "surface": "features/logs",
+      "risk": "Logs list may overflow horizontally on mobile",
+      "scenario_owner": "features/logs",
+      "lane_owner": "playwright/breadth",
+      "layer": "browser-breadth",
+      "test_file": "ui/tests/e2e/mobile/surfaces-mobile.spec.ts",
+      "test_ids": ["logs list no horizontal overflow @pw-mobile-logs"],
+      "required_environment": "mobile-chromium-webkit",
+      "status": "implemented",
+      "dataset_id": "logs-pilot",
+      "state_class": "mobile-touch"
+    },
+    {
+      "id": "pw-breadth-mobile-traces",
+      "surface": "features/traces",
+      "risk": "Traces list may overflow horizontally on mobile",
+      "scenario_owner": "features/traces",
+      "lane_owner": "playwright/breadth",
+      "layer": "browser-breadth",
+      "test_file": "ui/tests/e2e/mobile/surfaces-mobile.spec.ts",
+      "test_ids": ["traces list no horizontal overflow @pw-mobile-traces"],
+      "required_environment": "mobile-chromium-webkit",
+      "status": "implemented",
+      "dataset_id": "traces-pilot",
+      "state_class": "mobile-touch"
+    },
+    {
+      "id": "pw-breadth-mobile-issues",
+      "surface": "features/issues",
+      "risk": "Issues list may overflow horizontally on mobile",
+      "scenario_owner": "features/issues",
+      "lane_owner": "playwright/breadth",
+      "layer": "browser-breadth",
+      "test_file": "ui/tests/e2e/mobile/surfaces-mobile.spec.ts",
+      "test_ids": ["issues list no horizontal overflow @pw-mobile-issues"],
+      "required_environment": "mobile-chromium-webkit",
+      "status": "implemented",
+      "dataset_id": "traces-pilot",
+      "state_class": "mobile-touch"
+    },
+    {
+      "id": "pw-breadth-mobile-services",
+      "surface": "features/services",
+      "risk": "Services list may overflow horizontally on mobile",
+      "scenario_owner": "features/services",
+      "lane_owner": "playwright/breadth",
+      "layer": "browser-breadth",
+      "test_file": "ui/tests/e2e/mobile/surfaces-mobile.spec.ts",
+      "test_ids": ["services list no horizontal overflow @pw-mobile-services"],
+      "required_environment": "mobile-chromium-webkit",
+      "status": "implemented",
+      "dataset_id": "traces-pilot",
+      "state_class": "mobile-touch"
+    },
+    {
+      "id": "pw-breadth-mobile-dashboards",
+      "surface": "features/dashboards",
+      "risk": "Dashboards list may overflow horizontally on mobile",
+      "scenario_owner": "features/dashboards",
+      "lane_owner": "playwright/breadth",
+      "layer": "browser-breadth",
+      "test_file": "ui/tests/e2e/mobile/surfaces-mobile.spec.ts",
+      "test_ids": ["dashboards list no horizontal overflow @pw-mobile-dashboards"],
+      "required_environment": "mobile-chromium-webkit",
+      "status": "implemented",
+      "dataset_id": "dashboards-pilot",
       "state_class": "mobile-touch"
     },
     {
@@ -2816,6 +3178,100 @@
       "test_file": "ui/src/routes/tests/-tests-routes.test.tsx",
       "test_ids": [
         "exposes public search and loaders for thin route wiring"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-172-colors-domain",
+      "surface": "shared/colors",
+      "risk": "Domain status records can miss a key or tone slot",
+      "scenario_owner": "shared/colors",
+      "lane_owner": "vitest/unit",
+      "layer": "model",
+      "test_file": "ui/src/shared/tests/colors-domain.test.ts",
+      "test_ids": [
+        "covers every invocation status and outcome tone slot",
+        "covers every span status tone slot",
+        "covers every test rollup, result, and flaky tone slot"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-172-page-fade",
+      "surface": "layout/shell",
+      "risk": "Hard-load page fade can replay on remount or ignore reduced-motion",
+      "scenario_owner": "layout/shell",
+      "lane_owner": "vitest/unit",
+      "layer": "model",
+      "test_file": "ui/src/shared/tests/page-fade.test.ts",
+      "test_ids": [
+        "fires once per boot",
+        "reduced-motion short-circuits",
+        "second call is a no-op"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-172-snippet-tabs",
+      "surface": "shared/console",
+      "risk": "Empty-state snippet tabs can shift layout or copy the hidden language",
+      "scenario_owner": "shared/console",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/shared/console/tests/snippet-tabs.test.tsx",
+      "test_ids": [
+        "copy writes the visible snippet",
+        "renders rust java js tabs",
+        "switching tabs shows the selected snippet"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "pw-overview-empty-snippets",
+      "surface": "features/overview",
+      "risk": "Zero-data overview can lose copy-pasteable setup snippets",
+      "scenario_owner": "features/overview",
+      "lane_owner": "playwright/contracts",
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/overview-empty.spec.ts",
+      "test_ids": [
+        "overview empty state shows copyable setup snippets @pw-overview-empty-snippets"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "implemented",
+      "dataset_id": "shell-empty",
+      "state_class": "empty",
+      "delivery_plan": 172
+    },
+    {
+      "id": "vitest-173-incident-bundle-panel",
+      "surface": "features/alerts",
+      "risk": "Incident evidence panel can hide the fire-time bundle",
+      "scenario_owner": "features/alerts",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/features/alerts/tests/components/incident-bundle-panel.test.tsx",
+      "test_ids": [
+        "renders an empty notice when assembly is missing",
+        "renders markdown and hash when a bundle exists"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-176-grouping-card",
+      "surface": "features/issues",
+      "risk": "Issue detail can hide why events grouped",
+      "scenario_owner": "features/issues",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/features/issues/tests/components/grouping-card.test.tsx",
+      "test_ids": [
+        "renders type, template, and frame"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"

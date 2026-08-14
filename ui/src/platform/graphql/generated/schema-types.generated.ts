@@ -65,6 +65,7 @@ export type AlertDestination = {
 
 export type AlertIncident = {
   readonly __typename?: "AlertIncident"
+  readonly bundle: Maybe<BundleOut>
   readonly firstTriggeredAtNanos: Scalars["String"]["output"]
   readonly groupKey: Scalars["String"]["output"]
   readonly id: Scalars["String"]["output"]
@@ -79,6 +80,21 @@ export type AlertIncident = {
   readonly severity: Scalars["String"]["output"]
   /** `open|resolved`. */
   readonly status: Scalars["String"]["output"]
+}
+
+export type AlertPreviewGroup = {
+  readonly __typename?: "AlertPreviewGroup"
+  readonly groupKey: Scalars["String"]["output"]
+  readonly points: ReadonlyArray<AlertPreviewPoint>
+  readonly samplesSufficient: Scalars["Boolean"]["output"]
+}
+
+export type AlertPreviewPoint = {
+  readonly __typename?: "AlertPreviewPoint"
+  readonly sampleCount: Scalars["Int"]["output"]
+  readonly tsNanos: Scalars["String"]["output"]
+  readonly value: Maybe<Scalars["Float"]["output"]>
+  readonly wouldFire: Scalars["Boolean"]["output"]
 }
 
 export type AlertRule = {
@@ -145,6 +161,12 @@ export type AlertRuleInput = {
   readonly threshold: Scalars["Float"]["input"]
   readonly thresholdUpper?: InputMaybe<Scalars["Float"]["input"]>
   readonly windowMinutes: Scalars["Int"]["input"]
+}
+
+export type AlertRulePreview = {
+  readonly __typename?: "AlertRulePreview"
+  readonly groups: ReadonlyArray<AlertPreviewGroup>
+  readonly windowMinutes: Scalars["Int"]["output"]
 }
 
 export type AlertRuleState = {
@@ -331,6 +353,16 @@ export type FieldValueCount = {
   readonly value: Scalars["String"]["output"]
 }
 
+export type GroupingExplanation = {
+  readonly __typename?: "GroupingExplanation"
+  readonly algorithmVersion: Scalars["String"]["output"]
+  readonly anchorFrame: Scalars["String"]["output"]
+  readonly errorType: Scalars["String"]["output"]
+  readonly inputsPresent: ReadonlyArray<Scalars["String"]["output"]>
+  readonly messageTemplate: Scalars["String"]["output"]
+  readonly operation: Maybe<Scalars["String"]["output"]>
+}
+
 export type Investigation = {
   readonly __typename?: "Investigation"
   readonly createdAtNanos: Scalars["String"]["output"]
@@ -417,6 +449,7 @@ export type Issue = {
   readonly events: ReadonlyArray<ErrorEvent>
   readonly fingerprint: Scalars["String"]["output"]
   readonly firstSeenNanos: Scalars["String"]["output"]
+  readonly groupingExplanation: GroupingExplanation
   readonly lastSeenNanos: Scalars["String"]["output"]
   readonly lastTraceId: Maybe<Scalars["String"]["output"]>
   /** The most recent stored occurrence. */
@@ -690,6 +723,8 @@ export type Query = {
   /** Incidents newest-first; `status` filters open|resolved. */
   readonly alertIncidents: ReadonlyArray<AlertIncident>
   readonly alertRule: Maybe<AlertRule>
+  /** Evaluate a draft rule over the recent window without persisting (plan 171). */
+  readonly alertRulePreview: AlertRulePreview
   /** Per-group rolling evaluation state for one rule. */
   readonly alertRuleStates: ReadonlyArray<AlertRuleState>
   /** Alert rules, most recently updated first (plan 167). */
@@ -698,12 +733,7 @@ export type Query = {
   readonly attributeCompare: ReadonlyArray<AttributeCompareRow>
   /** Periodic daemon work grouped by cycle name (`background.cycle` spans). */
   readonly backgroundCycles: ReadonlyArray<BackgroundCycle>
-  /**
-   * The bounded, redacted, hypothesis-ranked evidence bundle — the agent
-   * handoff artifact assembling trace + logs + metric windows together.
-   * Exactly one anchor: `fingerprint` (issue), `invocationId`, or `traceId`
-   * (spec §8). Null when the anchor does not exist.
-   */
+  /** Bounded redacted evidence bundle. Exactly one of fingerprint, invocationId, traceId, alertIncidentId. */
   readonly bundle: Maybe<BundleOut>
   /** Agent conversations (`gen_ai.conversation.id` spans) in one invocation. */
   readonly conversations: ReadonlyArray<Conversation>
@@ -733,14 +763,7 @@ export type Query = {
    * retained recent window.
    */
   readonly invocationFacets: ReadonlyArray<Facet>
-  /**
-   * Window-scoped metric explorer catalog (plan 168): canonical names with
-   * kind (gauge|sum|histogram), unit, emitting services, last datapoint,
-   * and finite-sample counts per the metric-summary contract. `q` is a
-   * Bounded invocation-scoped metric family summaries (plan 105): typed
-   * projection over invocation_metric_points, canonical names, finite
-   * samples only.
-   */
+  /** Invocation-scoped metric family summaries (plan 105). */
   readonly invocationMetrics: ReadonlyArray<InvocationMetricRow>
   readonly invocations: ReadonlyArray<Invocation>
   readonly issue: Maybe<Issue>
@@ -784,7 +807,7 @@ export type Query = {
   readonly logsByInvocation: ReadonlyArray<LogRecord>
   /** Logs correlated to one trace, time ascending. */
   readonly logsByTrace: ReadonlyArray<LogRecord>
-  /** case-insensitive substring filter; `kind` filters one metric kind. */
+  /** Metric catalog; `q` substring, `kind` one kind. */
   readonly metricCatalog: ReadonlyArray<MetricCatalogRow>
   /** Trace-linked exemplars for one metric, newest first. */
   readonly metricExemplars: ReadonlyArray<MetricExemplar>
@@ -895,11 +918,7 @@ export type Query = {
    * the facet sidebar (plan 164).
    */
   readonly traceFacets: ReadonlyArray<Facet>
-  /**
-   * Filtered trace browse (UI Traces page / `parallax traces`): every
-   * filter optional; filters hit the root span except `errorOnly`,
-   * which looks at the whole trace.
-   */
+  /** Filtered trace browse; optional filters, root span except errorOnly. */
   readonly traces: ReadonlyArray<TraceSummary>
   /**
    * Traces produced by one run, summarized (root span + aggregates),
@@ -939,6 +958,11 @@ export type QueryAlertRuleArgs = {
   id: Scalars["String"]["input"]
 }
 
+export type QueryAlertRulePreviewArgs = {
+  input: AlertRuleInput
+  windowMinutes: InputMaybe<Scalars["Int"]["input"]>
+}
+
 export type QueryAlertRuleStatesArgs = {
   ruleId: Scalars["String"]["input"]
 }
@@ -961,6 +985,7 @@ export type QueryBackgroundCyclesArgs = {
 }
 
 export type QueryBundleArgs = {
+  alertIncidentId: InputMaybe<Scalars["String"]["input"]>
   fingerprint: InputMaybe<Scalars["String"]["input"]>
   invocationId: InputMaybe<Scalars["String"]["input"]>
   maxTokens: InputMaybe<Scalars["Int"]["input"]>

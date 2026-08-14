@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react"
 import { Area, AreaChart } from "recharts"
 import { IconCircleArrowDownFilled, IconCircleArrowUpFilled } from "@tabler/icons-react"
 
@@ -7,6 +8,61 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  )
+}
+
+function parseDisplayNumber(value: string): { n: number; prefix: string; suffix: string } | null {
+  const match = /^(\D*?)(-?\d[\d,]*(?:\.\d+)?)(.*)$/.exec(value)
+  if (!match) return null
+  const n = Number(match[2]!.replace(/,/g, ""))
+  if (!Number.isFinite(n)) return null
+  return { n, prefix: match[1] ?? "", suffix: match[3] ?? "" }
+}
+
+function formatTicker(from: { prefix: string; suffix: string }, n: number): string {
+  const rounded = Number.isInteger(n) ? String(Math.round(n)) : n.toFixed(1)
+  return `${from.prefix}${rounded}${from.suffix}`
+}
+
+function Ticker({ value }: { value: React.ReactNode }) {
+  const text = typeof value === "string" || typeof value === "number" ? String(value) : null
+  const [display, setDisplay] = useState(text ?? "")
+  const previous = useRef(text)
+
+  useEffect(() => {
+    if (text == null) return
+    const prior = previous.current
+    previous.current = text
+    if (prior === text || prior == null || prefersReducedMotion()) {
+      setDisplay(text)
+      return
+    }
+    const start = parseDisplayNumber(prior)
+    const end = parseDisplayNumber(text)
+    if (!start || !end) {
+      setDisplay(text)
+      return
+    }
+    const duration = 150
+    const origin = performance.now()
+    let frame = 0
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - origin) / duration)
+      const eased = 1 - (1 - t) * (1 - t)
+      setDisplay(formatTicker(end, start.n + (end.n - start.n) * eased))
+      if (t < 1) frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [text])
+
+  if (text == null) return <>{value}</>
+  return <span className="tabular-nums">{display}</span>
+}
 
 export function DeltaBadge({
   delta,
@@ -61,7 +117,9 @@ export function StatCard({
           {delta ? <DeltaBadge delta={delta} inverted={deltaInverted} /> : null}
         </div>
         <div className="flex items-baseline justify-between gap-2">
-          <CardTitle className="tracking-tight tabular-nums">{value}</CardTitle>
+          <CardTitle className="tracking-tight tabular-nums">
+            <Ticker value={value} />
+          </CardTitle>
           {hint ? (
             <span className="min-w-0 truncate text-end text-xs text-muted-foreground/70">
               {hint}
@@ -83,6 +141,13 @@ export function CardSparkline({
   data: Array<{ value: number }>
   className?: string
 }) {
+  const complete = data.map((point, index) => ({
+    value: index < data.length - 1 ? point.value : null,
+  }))
+  const tail = data.map((point, index) => ({
+    value: index >= data.length - 2 ? point.value : null,
+  }))
+  const dashed = data.length >= 2
   return (
     <ChartContainer config={sparkConfig} className={cn("h-12 w-full", className)}>
       <AreaChart data={data} margin={{ left: 0, right: 0, top: 4, bottom: 0 }}>
@@ -94,13 +159,28 @@ export function CardSparkline({
         </defs>
         <ChartTooltip content={<ChartTooltipContent />} />
         <Area
+          data={dashed ? complete : data}
           dataKey="value"
           type="monotone"
           stroke="currentColor"
           fill="url(#sparkline-fill)"
           strokeWidth={1.5}
           dot={false}
+          connectNulls={false}
         />
+        {dashed ? (
+          <Area
+            data={tail}
+            dataKey="value"
+            type="monotone"
+            stroke="currentColor"
+            fill="none"
+            strokeWidth={1.5}
+            strokeDasharray="3 3"
+            dot={false}
+            connectNulls
+          />
+        ) : null}
       </AreaChart>
     </ChartContainer>
   )

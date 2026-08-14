@@ -55,7 +55,7 @@ export async function graphqlCached<T>(query: string, init?: { signal?: AbortSig
 
   return queryClient.fetchQuery({
     queryKey: graphqlRawQueryKey(query),
-    queryFn: () => graphql<T>(query, init),
+    queryFn: ({ signal }) => graphql<T>(query, { signal: init?.signal ?? signal }),
   })
 }
 

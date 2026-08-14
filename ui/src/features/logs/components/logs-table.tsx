@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router"
 import { useMemo, useRef, useState } from "react"
-import type { KeyboardEvent, ReactNode } from "react"
+import type { ReactNode } from "react"
 import { useVirtualizer } from "@tanstack/react-virtual"
 
 import { Chip } from "@/shared/console/chip"
@@ -25,7 +25,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { severityColor, severityToken } from "@/shared/colors"
-import { formatDateTime, formatLogBodyPreview, formatTimeInRange, stripAnsi } from "@/shared/format"
+import { formatDateTime, formatLogBodyPreview, stripAnsi } from "@/shared/format"
+import { LogTimeCell, LogTraceCell } from "@/features/logs/components/log-row-cells"
 import { rangeLinkSearch, resolvePreset } from "@/domain/time-range/range"
 import type { ResolvedRange } from "@/domain/time-range/range"
 
@@ -193,7 +194,7 @@ function VirtualizedLogTable({
     >
       <table
         data-slot="table"
-        className="w-full caption-bottom rounded-xl bg-card/40 text-sm shadow-(--custom-shadow) corner-squircle dark:shadow-(--custom-shadow)"
+        className="w-full table-fixed caption-bottom rounded-xl bg-card/40 text-sm shadow-(--custom-shadow) corner-squircle dark:shadow-(--custom-shadow)"
       >
         <TableHeader className="sticky top-0 z-10 bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/75">
           {headerRows}
@@ -276,13 +277,6 @@ export function LogsTable({
     setFieldSearch("")
   }
 
-  function handleRowKeyDown(event: KeyboardEvent<HTMLTableRowElement>, log: LogDoc) {
-    if (event.target !== event.currentTarget) return
-    if (event.key !== "Enter" && event.key !== " ") return
-    event.preventDefault()
-    openLog(log)
-  }
-
   const renderRow = (log: LogDoc) => {
     const isAnchor = String(anchorNanos ?? "") === log.tsNanos
     return (
@@ -290,15 +284,10 @@ export function LogsTable({
         key={logKey(log)}
         data-anchor={isAnchor ? "true" : undefined}
         data-state={isAnchor ? "selected" : undefined}
-        role="button"
-        tabIndex={0}
-        className="cursor-pointer focus-visible:ring-[1.5px] focus-visible:ring-ring/50 focus-visible:outline-none"
+        className="cursor-pointer"
         onClick={() => openLog(log)}
-        onKeyDown={(event) => handleRowKeyDown(event, log)}
       >
-        <TableCell className="font-mono text-xs whitespace-nowrap">
-          {formatTimeInRange(log.tsNanos, range)}
-        </TableCell>
+        <LogTimeCell tsNanos={log.tsNanos} range={range} onOpen={() => openLog(log)} />
         <TableCell>
           <SeverityBadge log={log} />
         </TableCell>
@@ -318,28 +307,7 @@ export function LogsTable({
         <TableCell className="max-w-xl truncate font-mono text-xs">
           {formatLogBodyPreview(log.body)}
         </TableCell>
-        {visible.has("trace") ? (
-          <TableCell>
-            {log.traceId ? (
-              <Chip
-                render={
-                  <Link
-                    to="/traces/$traceId"
-                    params={{ traceId: log.traceId }}
-                    search={detailSearch}
-                    aria-label={`Trace ${log.traceId}`}
-                    onClick={(event) => event.stopPropagation()}
-                  />
-                }
-                className="text-muted-foreground hover:text-foreground"
-              >
-                {log.traceId.slice(0, 8)}
-              </Chip>
-            ) : (
-              <span className="text-muted-foreground">-</span>
-            )}
-          </TableCell>
-        ) : null}
+        {visible.has("trace") ? <LogTraceCell log={log} detailSearch={detailSearch} /> : null}
         {visible.has("scope") ? (
           <TableCell className="max-w-36 truncate text-muted-foreground">
             {log.scopeName || "-"}
@@ -358,7 +326,7 @@ export function LogsTable({
         renderRow={renderRow}
       />
     ) : (
-      <Table>
+      <Table className="table-fixed">
         {header}
         <TableBody>{logs.map(renderRow)}</TableBody>
       </Table>

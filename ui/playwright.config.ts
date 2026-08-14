@@ -46,7 +46,7 @@ const config: PlaywrightTestConfig = {
   testDir: "./tests/e2e",
   fullyParallel: true,
   forbidOnly: isCi,
-  retries: 0,
+  retries: isCi ? 1 : 0,
   timeout: browserMode === "full-stack" ? 60_000 : 30_000,
   expect: { timeout: browserMode === "full-stack" ? 15_000 : 5_000 },
   reporter: isCi

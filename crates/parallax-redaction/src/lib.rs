@@ -487,4 +487,136 @@ mod engine_tests {
         assert_eq!(output, "safe\n\t[31mred\rtext");
         assert_eq!(report.redacted_counts.get("control_character"), Some(&3));
     }
+
+    /// Public-safe canaries only. Never live provider-shaped secrets.
+    const DETECTOR_ROWS: &[(&str, &str, &str)] = &[
+        (
+            "dsn_userinfo",
+            "postgres://alice:s3cret@db.example:5432/app",
+            "postgres host db.example has no userinfo",
+        ),
+        (
+            "private_key_block",
+            "-----BEGIN PRIVATE KEY-----\nMIIE\n-----END PRIVATE KEY-----",
+            "no private key here, just a comment",
+        ),
+        ("github_token", "ghp_0123456789ABCDEFGHIJKLMN", "ghp short"),
+        (
+            "github_pat",
+            "github_pat_0123456789ABCDEFGHIJ",
+            "github_pat_short",
+        ),
+        ("slack_token", "xoxb-1234567890-abcdefghij", "xoxb-short"),
+        (
+            "jwt",
+            "eyJhbGciOiJub25lIn0.eyJzdWIiOiJ4eHh4eHh4eHgifQ.xxxxxxxxxxxxxxxxxxxx",
+            "eyJnot.a.jwt",
+        ),
+        ("aws_access_key_id", "AKIAIOSFODNN7EXAMPLE", "AKIASHORT"),
+        (
+            "aws_secret_access_key",
+            "aws_secret_access_key=wJalrXUtnFEMIEXAMPLEKEY",
+            "aws_access_key_id looks similar but is not the secret assignment",
+        ),
+        (
+            "bearer_token",
+            "Bearer abcdefghijklmnop",
+            "bearer token without the scheme prefix",
+        ),
+        (
+            "stripe_live_key",
+            "sk_live_XXXXXXXXXXXXXXXXXXXX",
+            "sk_live_short",
+        ),
+        (
+            "stripe_test_key",
+            "sk_test_XXXXXXXXXXXXXXXXXXXX",
+            "sk_test_short",
+        ),
+        (
+            "anthropic_api_key",
+            "sk-ant-api03-XXXXXXXXXX",
+            "sk-ant-short",
+        ),
+        (
+            "openai_api_key",
+            "sk-abcdefghijklmnopqrstuvwxyz12",
+            "sk-tooshort",
+        ),
+        ("google_api_key", "AIzaSyDummyKeyValueHere", "AIzaShort"),
+        ("gitlab_pat", "glpat-xxxxxxxxxxxxxxxxxxxx", "glpat-short"),
+        ("npm_token", "npm_xxxxxxxxxxxxxxxxxxxx", "npm_short"),
+        (
+            "basic_auth",
+            "Basic dXNlcjpwYXNzd29yZHh4eHg=",
+            "Basic short",
+        ),
+        (
+            "password_assignment",
+            "password=s3cretvalue",
+            "password is mentioned but not assigned",
+        ),
+        (
+            "generic_secret_assignment",
+            "api_key=supersecretvalue",
+            "api_key is mentioned but not assigned",
+        ),
+        (
+            "email_address",
+            "user@example.com",
+            "user at example dot com",
+        ),
+    ];
+
+    #[test]
+    fn every_detector_has_a_positive_canary_and_benign_negative() {
+        assert_eq!(DETECTOR_ROWS.len(), 20);
+        for (detector, positive, benign) in DETECTOR_ROWS {
+            let mut hit = RedactionReport {
+                policy: "test",
+                ..Default::default()
+            };
+            drop(redact(positive, &mut hit));
+            assert_eq!(
+                hit.redacted_counts.keys().copied().collect::<Vec<_>>(),
+                [*detector],
+                "positive {positive:?} keys={:?}",
+                hit.redacted_counts
+            );
+            assert_eq!(hit.redacted_counts.get(detector), Some(&1));
+
+            let mut clean = RedactionReport {
+                policy: "test",
+                ..Default::default()
+            };
+            let out = redact(benign, &mut clean);
+            assert!(
+                clean.redacted_counts.is_empty(),
+                "benign {benign:?} leaked {:?} -> {out:?}",
+                clean.redacted_counts
+            );
+        }
+    }
+
+    #[test]
+    fn anthropic_canary_is_not_classified_as_openai() {
+        let mut report = RedactionReport {
+            policy: "test",
+            ..Default::default()
+        };
+        drop(redact("sk-ant-api03-XXXXXXXXXX", &mut report));
+        assert_eq!(report.redacted_counts.get("anthropic_api_key"), Some(&1));
+        assert_eq!(report.redacted_counts.get("openai_api_key"), None);
+    }
+
+    #[test]
+    fn bearer_canary_without_github_token_fires_bearer_token() {
+        let mut report = RedactionReport {
+            policy: "test",
+            ..Default::default()
+        };
+        drop(redact("Bearer abcdefghijklmnop", &mut report));
+        assert_eq!(report.redacted_counts.get("bearer_token"), Some(&1));
+        assert_eq!(report.redacted_counts.get("github_token"), None);
+    }
 }

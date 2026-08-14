@@ -431,7 +431,7 @@ export function LogsPage({ data, search }: { data: LogsData; search: LogsSearch 
             })
           }
         >
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-48" aria-label="All services">
             <SelectValue placeholder="All services" />
           </SelectTrigger>
           <SelectContent>
@@ -447,7 +447,7 @@ export function LogsPage({ data, search }: { data: LogsData; search: LogsSearch 
           value={String(search.sev ?? 0)}
           onValueChange={(value) => update({ sev: Number(value) || undefined })}
         >
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-36" aria-label="Minimum severity">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

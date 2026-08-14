@@ -43,6 +43,7 @@ export interface AlertIncidentRow {
   resolvedAtNanos: string | null
   lastValue: number | null
   rule: { id: string; name: string } | null
+  bundle: { markdown: string; canonicalHash: string } | null
 }
 
 export interface AlertDestinationRow {
@@ -85,6 +86,7 @@ export const ALERT_RULE_FIELDS = `
 export const ALERT_INCIDENT_FIELDS = `
   id ruleId groupKey status severity firstTriggeredAtNanos
   lastTriggeredAtNanos resolvedAtNanos lastValue rule { id name }
+  bundle { markdown canonicalHash }
 `
 
 export const ALERTS_INDEX_QUERY = `
@@ -116,12 +118,11 @@ function numberField(name: string, value: number): string {
   return `${name}: ${Number.isFinite(value) ? String(value) : "0"}`
 }
 
-/** Build the alertRuleSave mutation from a validated draft. */
-export function alertRuleSaveMutation(
+function draftInputFields(
   draft: AlertRuleDraft,
   options?: { id?: string; destinationIds?: string[] }
 ): string {
-  const fields = [
+  return [
     options?.id ? `id: "${gqlString(options.id)}"` : null,
     `name: "${gqlString(draft.name)}"`,
     `enabled: ${draft.enabled ? "true" : "false"}`,
@@ -133,7 +134,6 @@ export function alertRuleSaveMutation(
     numberField("threshold", draft.threshold),
     draft.thresholdUpper != null ? numberField("thresholdUpper", draft.thresholdUpper) : null,
     numberField("windowMinutes", draft.windowMinutes),
-    // The API floors minimumSampleCount at 1; the form's 0 means "any".
     numberField("minimumSampleCount", Math.max(1, draft.minimumSampleCount)),
     numberField("consecutiveBreachesRequired", draft.consecutiveBreachesRequired),
     numberField("consecutiveHealthyRequired", draft.consecutiveHealthyRequired),
@@ -149,7 +149,22 @@ export function alertRuleSaveMutation(
   ]
     .filter(Boolean)
     .join(", ")
-  return `mutation { alertRuleSave(input: { ${fields} }) { id } }`
+}
+
+/** Read-only draft evaluation (plan 171). Does not persist. */
+export function alertRulePreviewQuery(draft: AlertRuleDraft): string {
+  return `{ alertRulePreview(input: { ${draftInputFields(draft)} }) {
+    windowMinutes
+    groups { groupKey samplesSufficient points { tsNanos value sampleCount wouldFire } }
+  } }`
+}
+
+/** Build the alertRuleSave mutation from a validated draft. */
+export function alertRuleSaveMutation(
+  draft: AlertRuleDraft,
+  options?: { id?: string; destinationIds?: string[] }
+): string {
+  return `mutation { alertRuleSave(input: { ${draftInputFields(draft, options)} }) { id } }`
 }
 
 export function alertDestinationSaveMutation(

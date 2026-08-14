@@ -30,6 +30,7 @@ pub(crate) async fn context_with_memory(store: Arc<MemoryStore>) -> ApiContext {
         store,
         metadata: metadata.clone(),
         alerts: Some(metadata),
+        alert_previewer: None,
         otlp_grpc_port: 4317,
         otlp_http_port: 4318,
         memo: RequestMemo::default(),

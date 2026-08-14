@@ -75,6 +75,7 @@ where
     let request = match R::decode(body) {
         Ok(r) => r,
         Err(e) => {
+            state.health.ingress_reject(signal);
             return (
                 StatusCode::BAD_REQUEST,
                 format!("invalid OTLP protobuf body: {e}"),
@@ -83,9 +84,11 @@ where
         }
     };
     if let Err(error) = validate(&request) {
+        state.health.ingress_reject(signal);
         return (StatusCode::BAD_REQUEST, error.to_string()).into_response();
     }
     if let Err(e) = state.spool.append_raw(signal, &raw).await {
+        state.health.spool_failed(signal);
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("spool write failed: {e}"),

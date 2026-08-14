@@ -28,6 +28,8 @@ export interface ProductFixtures {
   /** Freezes wall-clock labels while leaving application timers running. */
   fixedTime: void
   diagnostics: DiagnosticSession
+  /** Substrings that are expected (injected 503, known product DISCREPANCY). */
+  allowedDiagnostic: string[]
   snapshot: () => Promise<ControlSnapshot>
   injectGraphqlFailure: () => Promise<void>
 }
@@ -75,19 +77,25 @@ export const productTest = base.extend<ProductFixtures>({
     },
     { auto: true },
   ],
-  diagnostics: async ({ page }, use, testInfo) => {
-    const session = attachDiagnostics(page)
-    await use(session)
-    await session.attach(testInfo)
-    const unexpected = session.unexpected()
-    session.dispose()
-    expect(
-      unexpected,
-      `unexpected browser diagnostics:\n${unexpected
-        .map((event) => `- ${event.kind}: ${event.message}`)
-        .join("\n")}`
-    ).toEqual([])
-  },
+  allowedDiagnostic: [[], { option: true }],
+  diagnostics: [
+    async ({ page, allowedDiagnostic }, use, testInfo) => {
+      const session = attachDiagnostics(page)
+      await use(session)
+      await session.attach(testInfo)
+      const unexpected = session
+        .unexpected()
+        .filter((event) => !allowedDiagnostic.some((needle) => event.message.includes(needle)))
+      session.dispose()
+      expect(
+        unexpected,
+        `unexpected browser diagnostics:\n${unexpected
+          .map((event) => `- ${event.kind}: ${event.message}`)
+          .join("\n")}`
+      ).toEqual([])
+    },
+    { auto: true },
+  ],
   snapshot: async ({}, use) => {
     await use(async () => snapshotState())
   },
@@ -113,22 +121,25 @@ export const fullStackTest = base.extend<FullStackFixtures>({
     expect(manifest.issue_fingerprint.length).toBeGreaterThan(0)
     await use(manifest)
   },
-  diagnostics: async ({ page }, use, testInfo) => {
-    const session = attachDiagnostics(page)
-    await use(session)
-    await session.attach(testInfo)
-    const unexpected = session.unexpected()
-    session.dispose()
-    // Full-stack against a long-lived QA attach may carry noisy console from
-    // unrelated surfaces; only fail on page errors.
-    const hard = unexpected.filter((event) => event.kind === "pageerror")
-    expect(
-      hard,
-      `unexpected browser page errors:\n${hard
-        .map((event) => `- ${event.kind}: ${event.message}`)
-        .join("\n")}`
-    ).toEqual([])
-  },
+  diagnostics: [
+    async ({ page }, use, testInfo) => {
+      const session = attachDiagnostics(page)
+      await use(session)
+      await session.attach(testInfo)
+      const unexpected = session.unexpected()
+      session.dispose()
+      // Full-stack against a long-lived QA attach may carry noisy console from
+      // unrelated surfaces; only fail on page errors.
+      const hard = unexpected.filter((event) => event.kind === "pageerror")
+      expect(
+        hard,
+        `unexpected browser page errors:\n${hard
+          .map((event) => `- ${event.kind}: ${event.message}`)
+          .join("\n")}`
+      ).toEqual([])
+    },
+    { auto: true },
+  ],
   snapshot: async ({}, use) => {
     await use(async () => fullStackSnapshot())
   },

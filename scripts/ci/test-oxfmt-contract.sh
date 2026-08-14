@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# File-list hashes must match Ubuntu CI. UTF-8 sort puts `$.tsx` after `__root.tsx`.
+export LC_ALL=C
 
 root=$(git rev-parse --show-toplevel)
 ui="$root/ui"
@@ -25,8 +27,8 @@ config="$ui/.oxfmtrc.jsonc"
 [[ $(shasum -a 256 "$config" | awk '{print $1}') == f4b14c788a8026e1803de9d0166fef446933b707ac4f73f494500d3a02e5816e ]]
 
 files=$(git -C "$root" ls-files 'ui/*.ts' 'ui/*.tsx' 'ui/**/*.ts' 'ui/**/*.tsx' | sed 's#^ui/##' | rg -v '^src/routeTree\.gen\.ts$' | sort)
-[[ $(printf '%s\n' "$files" | wc -l | tr -d ' ') == 493 ]]
-[[ $(printf '%s\n' "$files" | shasum -a 256 | awk '{print $1}') == 981c8a922295377969d4bb8adeaec7d5ae700fc820e748a4dcff99126eddf80c ]]
+[[ $(printf '%s\n' "$files" | wc -l | tr -d ' ') == 529 ]]
+[[ $(printf '%s\n' "$files" | shasum -a 256 | awk '{print $1}') == 098af61aa03a7ec77598004f95f0e891e0d14c461d2d3a88f64a4d662fe36b57 ]]
 
 platform=$(cd "$ui" && bun -e 'console.log(process.platform + "-" + process.arch)')
 case "$platform" in
@@ -99,7 +101,7 @@ if [[ -d /proc ]]; then
 fi
 
 check_output=$(cd "$ui" && bun run check)
-rg -F '493 files' <<<"$check_output" >/dev/null
+rg -F '529 files' <<<"$check_output" >/dev/null
 [[ -z $(cd "$ui" && bun run --silent format:list) ]]
 
-printf 'Oxfmt contract passed (493 files, %s)\n' "$platform"
+printf 'Oxfmt contract passed (529 files, %s)\n' "$platform"

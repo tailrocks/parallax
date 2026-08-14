@@ -11,7 +11,7 @@ services:
         # call is unauthenticated and rate-limited inside `docker build` — a 403
         # resolves an empty tag → "no release found". Bump at
         # https://github.com/Makisuo/maple/releases.
-        MAPLE_VERSION: "v0.0.12"
+        MAPLE_VERSION: "v0.0.18"
     container_name: pfanout-maple
     restart: unless-stopped
     ports:

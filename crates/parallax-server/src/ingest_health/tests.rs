@@ -52,7 +52,7 @@ fn queue_state_and_self_metric_filter_are_exact() -> Result<(), String> {
             retries: 1,
             drops: 1,
         },
-        None,
+        Some("ingest terminal drop (1)".to_string()),
         QueueSnapshot {
             depth: 2,
             capacity: 2,
@@ -79,6 +79,10 @@ fn instrument_contract_is_bounded() -> bool {
         "parallax.ingest.queue.age",
         "parallax.ingest.worker.retries",
         "parallax.ingest.worker.drops",
+        "parallax.ingest.loss.ingress_reject",
+        "parallax.ingest.loss.spool_write",
+        "parallax.ingest.loss.unsupported_metric",
+        "parallax.ingest.loss.live_tail_lag",
         "parallax.ingest.worker.drain",
         "parallax.ingest.queue.depth",
         "parallax.ingest.queue.capacity",
@@ -93,4 +97,46 @@ fn instrument_contract_is_bounded() -> bool {
         && !["tenant", "trace_id", "service.name", "error.message"]
             .iter()
             .any(|label| source.contains(&format!("KeyValue::new(\"{label}\"")))
+}
+
+#[test]
+fn ingress_reject_increments_loss_json() {
+    let health = IngestHealth::new(4);
+    health.ingress_reject(Signal::Logs);
+    assert!(health.loss_json().contains("\"ingress_reject\":1"));
+    assert!(health.degradation().is_none());
+}
+
+#[test]
+fn spool_write_fail_degrades_health() {
+    let health = IngestHealth::new(4);
+    health.spool_failed(Signal::Traces);
+    assert!(health.loss_json().contains("\"spool_write\":1"));
+    assert_eq!(
+        health.degradation().as_deref(),
+        Some("spool write failed (1)")
+    );
+}
+
+#[test]
+fn unsupported_metric_is_visible_and_does_not_degrade() {
+    let health = IngestHealth::new(4);
+    health.unsupported_metric(2);
+    assert!(health.loss_json().contains("\"unsupported_metric\":2"));
+    assert!(health.degradation().is_none());
+}
+
+#[test]
+fn live_tail_lag_is_counted_and_does_not_degrade() {
+    let health = IngestHealth::new(4);
+    health.live_lagged(3);
+    assert!(health.loss_json().contains("\"live_tail_lag\":3"));
+    assert!(health.degradation().is_none());
+}
+
+#[test]
+fn queue_unavailable_is_counted() {
+    let health = IngestHealth::new(4);
+    health.unavailable(Signal::Metrics, Duration::ZERO);
+    assert!(health.loss_json().contains("\"queue_unavailable\":1"));
 }

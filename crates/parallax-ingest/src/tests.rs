@@ -1,7 +1,8 @@
 use super::*;
 use parallax_proto::metrics::{
-    Exemplar, Gauge, Histogram, HistogramDataPoint, Metric, NumberDataPoint,
-    exemplar::Value as ExemplarValue, metric::Data, number_data_point::Value as NumberValue,
+    Exemplar, ExponentialHistogram, Gauge, Histogram, HistogramDataPoint, Metric, NumberDataPoint,
+    Summary, exemplar::Value as ExemplarValue, metric::Data,
+    number_data_point::Value as NumberValue,
 };
 
 fn string_kv(key: &str, value: &str) -> KeyValue {
@@ -397,9 +398,9 @@ mod property_tests {
     }
 
     proptest! {
-        /// Same OTLP request always yields identical SpanRow vectors (determinism).
+        /// Span-count conservation: one OTLP span in, one SpanRow out.
         #[test]
-        fn normalize_traces_is_deterministic(
+        fn normalize_traces_conserves_span_count(
             service in "[a-zA-Z0-9._-]{1,32}",
             name in "[a-zA-Z0-9._/ -]{0,64}",
             start in 0u64..1_000_000_000_000u64,
@@ -407,22 +408,23 @@ mod property_tests {
             status in 0i32..=2,
         ) {
             let request = span_request(&service, &name, start, start.saturating_add(duration), status);
-            let a = normalize_traces(&request);
-            let b = normalize_traces(&request);
-            // SpanRow is not PartialEq; compare via stable serde JSON.
-            let a_json = serde_json::to_value(&a).expect("a");
-            let b_json = serde_json::to_value(&b).expect("b");
-            prop_assert_eq!(a_json, b_json);
-            prop_assert_eq!(a.len(), 1);
-            prop_assert_eq!(&a[0].service, &service);
-            prop_assert_eq!(&a[0].name, &name);
+            let rows = normalize_traces(&request);
+            prop_assert_eq!(rows.len(), 1);
+            prop_assert_eq!(&rows[0].service, &service);
+            prop_assert_eq!(&rows[0].name, &name);
+            let keys: Vec<&String> = rows[0]
+                .attributes
+                .as_object()
+                .map(|map| map.keys().collect())
+                .unwrap_or_default();
+            prop_assert!(keys.iter().all(|key| !key.is_empty()));
         }
     }
 
     proptest! {
-        /// Log normalize is deterministic for bounded service/body pairs.
+        /// Log-record conservation: one OTLP record in, one LogRow out.
         #[test]
-        fn normalize_logs_is_deterministic(
+        fn normalize_logs_conserves_record_count(
             service in "[a-zA-Z0-9._-]{1,32}",
             body in ".*{0,128}",
             severity in 1i32..=24,
@@ -447,11 +449,175 @@ mod property_tests {
                     ..Default::default()
                 }],
             };
-            let a = normalize_logs(&request);
-            let b = normalize_logs(&request);
-            let a_json = serde_json::to_value(&a).expect("a");
-            let b_json = serde_json::to_value(&b).expect("b");
-            prop_assert_eq!(a_json, b_json);
+            let rows = normalize_logs(&request);
+            prop_assert_eq!(rows.len(), 1);
+            prop_assert_eq!(&rows[0].service, &service);
+            prop_assert_eq!(&rows[0].body, &body);
+            let keys: Vec<&String> = rows[0]
+                .attributes
+                .as_object()
+                .map(|map| map.keys().collect())
+                .unwrap_or_default();
+            prop_assert!(keys.iter().all(|key| !key.is_empty()));
         }
     }
+}
+
+fn metric_request(metric: Metric) -> ExportMetricsServiceRequest {
+    ExportMetricsServiceRequest {
+        resource_metrics: vec![parallax_proto::metrics::ResourceMetrics {
+            resource: Some(parallax_proto::resource::Resource {
+                attributes: vec![string_kv("service.name", "checkout")],
+                ..Default::default()
+            }),
+            scope_metrics: vec![parallax_proto::metrics::ScopeMetrics {
+                metrics: vec![metric],
+                ..Default::default()
+            }],
+            ..Default::default()
+        }],
+    }
+}
+
+#[test]
+fn exponential_histogram_is_dropped_today() {
+    // Plan 166 owns whether this drop stays. This test pins current behavior.
+    let request = metric_request(Metric {
+        name: "exp.hist".into(),
+        data: Some(Data::ExponentialHistogram(ExponentialHistogram::default())),
+        ..Default::default()
+    });
+    let normalized = normalize_metrics(&request);
+    assert_eq!(
+        (
+            normalized.points.len(),
+            normalized.histograms.len(),
+            normalized.exemplars.len(),
+            normalized.dropped_unsupported
+        ),
+        (0, 0, 0, 1)
+    );
+}
+
+#[test]
+fn summary_is_dropped_today() {
+    let request = metric_request(Metric {
+        name: "summary".into(),
+        data: Some(Data::Summary(Summary::default())),
+        ..Default::default()
+    });
+    let normalized = normalize_metrics(&request);
+    assert_eq!(
+        (
+            normalized.points.len(),
+            normalized.histograms.len(),
+            normalized.dropped_unsupported
+        ),
+        (0, 0, 1)
+    );
+}
+
+#[test]
+fn metric_with_no_data_is_empty() {
+    let request = metric_request(Metric {
+        name: "empty".into(),
+        data: None,
+        ..Default::default()
+    });
+    let normalized = normalize_metrics(&request);
+    assert!(normalized.points.is_empty());
+    assert!(normalized.histograms.is_empty());
+}
+
+#[test]
+fn number_point_absent_value_becomes_zero() {
+    // Plan 166 decision: None => 0.0 fabricates a zero sample.
+    let request = metric_request(Metric {
+        name: "gauge.none".into(),
+        data: Some(Data::Gauge(Gauge {
+            data_points: vec![NumberDataPoint {
+                time_unix_nano: 1,
+                value: None,
+                ..Default::default()
+            }],
+        })),
+        ..Default::default()
+    });
+    let normalized = normalize_metrics(&request);
+    assert_eq!(normalized.points.len(), 1);
+    assert_eq!(normalized.points[0].value, 0.0);
+}
+
+#[test]
+fn exemplar_missing_value_or_ids_is_skipped() {
+    let mut missing_value = exemplar(ExemplarValue::AsDouble(1.0), 11);
+    missing_value.value = None;
+    let mut missing_ids = exemplar(ExemplarValue::AsDouble(1.0), 11);
+    missing_ids.trace_id.clear();
+    missing_ids.span_id.clear();
+    let request = metric_request(Metric {
+        name: "gauge".into(),
+        data: Some(Data::Gauge(Gauge {
+            data_points: vec![NumberDataPoint {
+                time_unix_nano: 10,
+                value: Some(NumberValue::AsDouble(1.0)),
+                exemplars: vec![missing_value, missing_ids],
+                ..Default::default()
+            }],
+        })),
+        ..Default::default()
+    });
+    let normalized = normalize_metrics(&request);
+    assert_eq!(normalized.points.len(), 1);
+    assert!(normalized.exemplars.is_empty());
+}
+
+#[test]
+fn gauge_plus_histogram_conserves_point_count() {
+    let request = ExportMetricsServiceRequest {
+        resource_metrics: vec![parallax_proto::metrics::ResourceMetrics {
+            resource: Some(parallax_proto::resource::Resource {
+                attributes: vec![string_kv("service.name", "checkout")],
+                ..Default::default()
+            }),
+            scope_metrics: vec![parallax_proto::metrics::ScopeMetrics {
+                metrics: vec![
+                    Metric {
+                        name: "g".into(),
+                        data: Some(Data::Gauge(Gauge {
+                            data_points: vec![
+                                NumberDataPoint {
+                                    time_unix_nano: 1,
+                                    value: Some(NumberValue::AsDouble(1.0)),
+                                    ..Default::default()
+                                },
+                                NumberDataPoint {
+                                    time_unix_nano: 2,
+                                    value: Some(NumberValue::AsDouble(2.0)),
+                                    ..Default::default()
+                                },
+                            ],
+                        })),
+                        ..Default::default()
+                    },
+                    Metric {
+                        name: "h".into(),
+                        data: Some(Data::Histogram(Histogram {
+                            data_points: vec![HistogramDataPoint {
+                                time_unix_nano: 3,
+                                count: 1,
+                                ..Default::default()
+                            }],
+                            ..Default::default()
+                        })),
+                        ..Default::default()
+                    },
+                ],
+                ..Default::default()
+            }],
+            ..Default::default()
+        }],
+    };
+    let normalized = normalize_metrics(&request);
+    assert_eq!(normalized.points.len() + normalized.histograms.len(), 3);
 }

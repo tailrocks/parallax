@@ -113,3 +113,102 @@ export function seriesColor(name: string, index: number): string {
   }
   return goldenAngleColor(index)
 }
+
+/** One record per domain concept (plan 172): badge + bar + chip + icon +
+ * color share a single mapping. Do not invent a competing module.
+ * Severity-ramp tokens stay reserved for error/incident state; success /
+ * running / skip use --success/--warning/--info/--muted, never --severity-*. */
+
+export type DomainTone = {
+  readonly color: string
+  readonly badge: string
+  readonly bar: string
+  readonly chip: string
+  readonly icon: string
+}
+
+const TONE = {
+  error: {
+    color: "var(--severity-error)",
+    badge: "bg-destructive/15 text-destructive",
+    bar: "bg-destructive",
+    chip: "text-destructive",
+    icon: "text-destructive",
+  },
+  success: {
+    color: "var(--success)",
+    badge: "bg-success/15 text-success",
+    bar: "bg-success",
+    chip: "text-success",
+    icon: "text-success",
+  },
+  warning: {
+    color: "var(--warning)",
+    badge: "bg-warning/15 text-warning",
+    bar: "bg-warning",
+    chip: "text-warning",
+    icon: "text-warning",
+  },
+  info: {
+    color: "var(--info)",
+    badge: "bg-info/15 text-info",
+    bar: "bg-info",
+    chip: "text-info",
+    icon: "text-info",
+  },
+  neutral: {
+    color: "var(--muted-foreground)",
+    badge: "bg-muted text-muted-foreground",
+    bar: "bg-muted-foreground",
+    chip: "text-muted-foreground",
+    icon: "text-muted-foreground",
+  },
+} as const satisfies Record<string, DomainTone>
+
+export const SPAN_STATUS = {
+  ok: TONE.success,
+  error: TONE.error,
+  unset: TONE.neutral,
+} as const satisfies Record<string, DomainTone>
+
+export const INVOCATION_STATUS = {
+  running: TONE.info,
+  finished: TONE.success,
+  failed: TONE.error,
+  stale: TONE.neutral,
+} as const satisfies Record<string, DomainTone>
+
+export const INVOCATION_OUTCOME = {
+  success: TONE.success,
+  skip: TONE.neutral,
+  cancellation: TONE.neutral,
+  error: TONE.error,
+} as const satisfies Record<string, DomainTone>
+
+export const TEST_ROLLUP = {
+  PASSED: TONE.success,
+  FLAKY_PASS: TONE.warning,
+  FAILED: TONE.error,
+  BROKEN: TONE.error,
+  SKIPPED: TONE.neutral,
+  UNKNOWN: TONE.neutral,
+} as const satisfies Record<string, DomainTone>
+
+export const TEST_RESULT = {
+  PASSED: TONE.success,
+  FAILED: TONE.error,
+  BROKEN: TONE.error,
+  SKIPPED: TONE.neutral,
+  UNKNOWN: TONE.neutral,
+} as const satisfies Record<string, DomainTone>
+
+export const TEST_FLAKY = {
+  HEALTHY: TONE.success,
+  FLAKY: TONE.warning,
+  FIXED: TONE.info,
+  BROKEN: TONE.error,
+} as const satisfies Record<string, DomainTone>
+
+export function errorCountTone(count: number): string {
+  return count > 0 ? SPAN_STATUS.error.icon : "text-muted-foreground/40"
+}

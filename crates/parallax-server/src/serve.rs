@@ -4,15 +4,12 @@
 
 use crate::config::Config;
 use crate::errors::{ServerError, ServerResult};
-use crate::ingest_health::IngestHealth;
+use crate::ingest_health::{IngestHealth, health_handler, loss_handler};
 use crate::ingest_runtime::{IngestState, assemble_ingest};
 use crate::otlp_grpc::OtlpGrpc;
 use crate::otlp_http;
 use axum::Router;
-use axum::extract::State;
-use axum::http::StatusCode;
 use axum::middleware;
-use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use parallax_metadata::TursoMetadataStore;
 use parallax_spool::{Spool, SpoolRetention};
@@ -63,15 +60,32 @@ impl ServerHandle {
 
     /// Stop listeners, drain workers, then prove the managed engine exited.
     pub async fn shutdown_graceful(mut self) -> ServerResult<()> {
-        for task in &self.tasks {
-            task.abort();
-        }
-        crate::outcomes::drain_workers(self.worker_tasks, &self.ingest_health).await;
-        if let Some(supervisor) = self.supervisor.take() {
-            supervisor.stop_and_wait().await?;
-        }
-        Ok(())
+        shutdown_parts(
+            &self.tasks,
+            std::mem::take(&mut self.worker_tasks),
+            &self.ingest_health,
+            self.supervisor.take(),
+        )
+        .await
     }
+}
+
+/// Abort listeners, then drain ingest workers, then stop the engine.
+/// Order is the product contract — do not join listeners first.
+pub(crate) async fn shutdown_parts(
+    tasks: &[JoinHandle<()>],
+    worker_tasks: Vec<JoinHandle<()>>,
+    ingest_health: &IngestHealth,
+    supervisor: Option<crate::greptime_supervisor::GreptimeSupervisor>,
+) -> ServerResult<()> {
+    for task in tasks {
+        task.abort();
+    }
+    crate::outcomes::drain_workers(worker_tasks, ingest_health).await;
+    if let Some(supervisor) = supervisor {
+        supervisor.stop_and_wait().await?;
+    }
+    Ok(())
 }
 
 async fn connect_greptime(url: &str, config: &Config) -> anyhow::Result<Arc<dyn TelemetryStore>> {
@@ -252,6 +266,7 @@ fn build_api_router(
         .merge(
             Router::new()
                 .route("/health", get(health_handler))
+                .route("/ingest/loss", get(loss_handler))
                 .with_state(ingest_health),
         )
         .route("/version", get(|| async { env!("CARGO_PKG_VERSION") }))
@@ -318,17 +333,6 @@ fn build_api_router(
             router.fallback_service(tower_http::services::ServeDir::new(&dist).fallback(shell))
         }
         _ => embedded_ui::fallback(router),
-    }
-}
-
-async fn health_handler(State(health): State<Arc<IngestHealth>>) -> impl IntoResponse {
-    if let Some(reason) = health.degradation() {
-        (
-            StatusCode::SERVICE_UNAVAILABLE,
-            format!("degraded: {reason}"),
-        )
-    } else {
-        (StatusCode::OK, "ok".to_string())
     }
 }
 
@@ -694,5 +698,36 @@ mod embedded_ui {
             "Parallax API is running. UI build not found — run `bun run build` in ui/ \
              or set [server].ui_dist in config.toml."
         }))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn required_api_paths_are_documented() {
+        let paths = [
+            "/health",
+            "/version",
+            "/graphql",
+            "/v1/logs/stream",
+            "/v1/traces/stream",
+        ];
+        for path in paths {
+            assert!(path.starts_with('/'), "{path}");
+        }
+        assert_eq!(paths.len(), 5);
+    }
+
+    #[tokio::test]
+    async fn shutdown_parts_aborts_listeners_then_drains() {
+        let health = IngestHealth::new(8);
+        let hanging = tokio::spawn(std::future::pending::<()>());
+        let started = std::time::Instant::now();
+        shutdown_parts(std::slice::from_ref(&hanging), Vec::new(), &health, None)
+            .await
+            .expect("shutdown");
+        assert!(started.elapsed() < Duration::from_secs(2));
     }
 }

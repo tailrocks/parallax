@@ -10,6 +10,7 @@ use sha2::{Digest, Sha256};
 mod assembly;
 mod bounding;
 mod hash;
+mod incident;
 mod markdown;
 mod ranking;
 mod redaction;
@@ -18,6 +19,7 @@ mod v2;
 pub use assembly::{BundleAnchor, BundleInputs, assemble};
 use bounding::*;
 use hash::*;
+pub use incident::{IncidentAnchor, incident_bundle_window};
 pub use markdown::to_markdown;
 use ranking::*;
 use redaction::estimate_tokens;
@@ -107,7 +109,7 @@ pub struct TraceSection {
 
 /// One correlated metric slice around the anchor — the bundle's
 /// trace+logs+**metric window** promise (spec §8 correlation sections).
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct MetricWindow {
     pub metric: String,
     /// "invocation" (points tagged with the anchor's invocation id) or "service".
@@ -119,13 +121,13 @@ pub struct MetricWindow {
     pub stats: MetricStats,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct MetricPointLine {
     pub ts_nanos: String,
     pub value: f64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct MetricStats {
     pub min: f64,
     pub max: f64,
@@ -211,5 +213,7 @@ pub struct BoundReport {
     pub truncated_stacktrace: bool,
 }
 
+#[cfg(test)]
+mod incident_tests;
 #[cfg(test)]
 mod tests;
