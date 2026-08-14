@@ -26,9 +26,10 @@ fi
 
 fail=0
 
-# Parse criterion lines → "name|observed_us" (max mid per name across file).
-# Criterion often omits the name on the first/last bench of a group:
-# bare µs → normalize_metrics_1k_points; bare ms → arrow_decode_10k_rows_zstd.
+# Parse full Criterion logs → "name|observed_us" (max mid per name).
+# Criterion can omit the name from a time line, so retain the identity from the
+# preceding "Benchmarking <name>: Analyzing" line. Never infer identity from
+# units: multiple benchmarks legitimately share the same unit.
 parsed="$(mktemp)"
 python3 - "$samples_file" >"$parsed" <<'PY'
 import re, sys
@@ -38,6 +39,7 @@ time_re = re.compile(
     r"^\s*(?:(\S+)\s+)?time:\s*\[\s*[0-9.]+\s+\S+\s+([0-9.]+)\s+(\S+)",
     re.I,
 )
+analyzing_re = re.compile(r"^Benchmarking (\S+): Analyzing\s*$")
 
 def to_us(value: str, unit: str) -> float:
     unit = unit.replace("μ", "µ")
@@ -52,20 +54,24 @@ def to_us(value: str, unit: str) -> float:
     raise SystemExit(f"unknown unit: {unit!r}")
 
 mids: dict[str, list[float]] = defaultdict(list)
+current_name = None
 
 for raw in open(sys.argv[1], encoding="utf-8", errors="replace"):
+    analyzing = analyzing_re.match(raw.strip())
+    if analyzing:
+        current_name = analyzing.group(1)
+        continue
     m = time_re.search(raw)
     if not m:
         continue
     name, mid, unit = m.group(1), m.group(2), m.group(3)
     unit_norm = unit.replace("μ", "µ")
     if not name:
-        name = (
-            "normalize_metrics_1k_points"
-            if unit_norm in ("µs", "us")
-            else "arrow_decode_10k_rows_zstd"
-        )
+        if current_name is None:
+            raise SystemExit("unnamed Criterion time line without benchmark identity")
+        name = current_name
     mids[name].append(to_us(mid, unit_norm))
+    current_name = None
 
 for name, values in sorted(mids.items()):
     print(f"{name}|{max(values):.6f}")

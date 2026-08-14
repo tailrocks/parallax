@@ -68,8 +68,8 @@ jobs:
           path: fuzz/target
           key: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', 'fuzz/Cargo.toml', 'fuzz/Cargo.lock', 'Cargo.lock') }}-${{ github.sha }}
           restore-keys: cargo-target-${{ matrix.config.lane }}-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', 'fuzz/Cargo.toml', 'fuzz/Cargo.lock', 'Cargo.lock') }}-
-      - run: rustup toolchain install nightly --profile minimal
-      - run: cargo +nightly fuzz build
+      - run: rustup toolchain install nightly --profile minimal --target x86_64-unknown-linux-gnu
+      - run: cargo +nightly fuzz build --target x86_64-unknown-linux-gnu
       - name: Run five-minute campaigns per boundary
         run: |
           mkdir -p measurement/fuzz
@@ -149,15 +149,13 @@ jobs:
               cargo bench --locked -p parallax-spool --bench spool_io
               cargo bench --locked -p parallax-greptime --bench arrow_decode
             } 2>&1 | tee "measurement/bench/full-${repeat}.log"
-            grep -E "time:" "measurement/bench/full-${repeat}.log" \
-              >> "measurement/bench/repeat-${repeat}.txt"
           done
       - name: Allocation profile (plan 103 zero-copy instrumentation)
         run: |
           (cd bench-alloc && cargo run --release) | tee measurement/bench/allocation-profile.txt
       - name: Fail-closed bench ratchets (no auto-refresh)
         run: |
-          cat measurement/bench/repeat-*.txt > measurement/bench/all-repeats.txt
+          cat measurement/bench/full-*.log > measurement/bench/all-repeats.txt
           scripts/ci/check-bench-baselines.sh \
             measurement/bench/all-repeats.txt \
             measurement/bench/allocation-profile.txt
