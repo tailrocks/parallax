@@ -18,6 +18,9 @@ describe("snippet tabs", () => {
     expect(screen.getByRole("tab", { name: "Java" })).toBeTruthy()
     expect(screen.getByRole("tab", { name: "JS" })).toBeTruthy()
     expect(screen.getByText(/init_tracing/)).toBeTruthy()
+    const panel = document.getElementById("snippet-panel-rust")
+    const snippet = panel?.querySelector("pre")
+    expect(snippet?.tabIndex).toBe(0)
   })
 
   it("switching tabs shows the selected snippet", async () => {

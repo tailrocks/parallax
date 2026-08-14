@@ -100,6 +100,14 @@ export function snippetFor(id: SnippetTabId): string {
   return tab?.code ?? SNIPPET_TABS[0].code
 }
 
+function SnippetCode({ code }: { code: string }) {
+  return (
+    <pre tabIndex={0} className="max-h-72 min-w-0 flex-1 overflow-auto font-mono text-xs leading-5">
+      <code>{code}</code>
+    </pre>
+  )
+}
+
 export function SnippetTabs({ className }: { className?: string }) {
   const [active, setActive] = useState<SnippetTabId>("rust")
   const activeIndex = SNIPPET_TABS.findIndex((tab) => tab.id === active)
@@ -160,9 +168,7 @@ export function SnippetTabs({ className }: { className?: string }) {
               )}
             >
               <div className="flex items-start gap-2 rounded-lg border border-dashed border-border/70 bg-background/60 p-3">
-                <pre className="max-h-72 min-w-0 flex-1 overflow-auto font-mono text-xs leading-5">
-                  <code>{tab.code}</code>
-                </pre>
+                <SnippetCode code={tab.code} />
                 {selected ? <CopyButton value={visible} /> : null}
               </div>
             </div>

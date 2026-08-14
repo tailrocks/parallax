@@ -7,8 +7,8 @@ test.describe("full-stack trace detail @traces", () => {
     await expect(page.getByText("pw.storage.root").first()).toBeVisible({
       timeout: SURFACE_TIMEOUT_MS,
     })
-    await page.getByRole("radio", { name: "Flame" }).click()
-    await expect(page.getByRole("radio", { name: "Flame" })).toBeChecked()
+    await page.getByRole("radio", { name: /Flame view/i }).click()
+    await expect(page.getByRole("radio", { name: /Flame view/i })).toBeChecked()
     await page.getByRole("button", { name: "Critical path" }).click()
     await page.getByText("pw.storage.root").first().click()
     await expect(page.getByText(/span|service|duration/i).first()).toBeVisible()

@@ -5627,7 +5627,7 @@ ceiling = 5
 [[limits]]
 metric = "typescript.assertions"
 scope = "ui/src/shared/console/tests/snippet-tabs.test.tsx"
-ceiling = 8
+ceiling = 9
 
 [[limits]]
 metric = "typescript.assertions"
@@ -6590,8 +6590,8 @@ ceiling = 88
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/shared/console/snippet-tabs.tsx:103"
-ceiling = 72
+scope = "ui/src/shared/console/snippet-tabs.tsx:111"
+ceiling = 70
 
 [[limits]]
 metric = "typescript.function-lines"

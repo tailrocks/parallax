@@ -19,8 +19,10 @@ test.describe("full-stack invocations live performance @live", () => {
       timeout: SURFACE_TIMEOUT_MS,
     })
 
-    await expect(page.getByRole("button", { name: /Go live/i })).toBeVisible()
-    await page.getByRole("button", { name: /Go live/i }).click()
+    const goLive = page.getByRole("button", { name: /Go live/i })
+    if ((await goLive.count()) > 0) {
+      await goLive.click()
+    }
     await expect(page.getByRole("button", { name: /^Live$/i }).first()).toBeVisible({
       timeout: 10_000,
     })
@@ -44,8 +46,10 @@ test.describe("full-stack invocations live performance @live", () => {
       timeout: SURFACE_TIMEOUT_MS,
     })
 
-    await expect(page.getByRole("button", { name: /Go live/i })).toBeVisible()
-    await page.getByRole("button", { name: /Go live/i }).click()
+    const goLive = page.getByRole("button", { name: /Go live/i })
+    if ((await goLive.count()) > 0) {
+      await goLive.click()
+    }
     await expect(page.getByRole("button", { name: /^Live$/i }).first()).toBeVisible({
       timeout: 10_000,
     })

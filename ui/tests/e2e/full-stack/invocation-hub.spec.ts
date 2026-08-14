@@ -11,7 +11,7 @@ test.describe("full-stack invocation hub @runs", () => {
     })
     for (const tab of TABS) {
       await page.getByRole("tab", { name: tab }).click()
-      await expect(page.getByRole("tab", { name: tab })).toHaveAttribute("data-state", /active|on/)
+      await expect(page.getByRole("tab", { name: tab })).toHaveAttribute("aria-selected", "true")
     }
   })
 })
