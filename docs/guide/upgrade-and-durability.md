@@ -18,7 +18,7 @@ rows.
 
 ## What the upgrade harness proves
 
-The ignored test `preview_data_dir_opens_losslessly_under_workspace`
+The ignored test `upgrade_preview_data_dir_opens_losslessly_under_workspace`
 downloads the rolling `preview` archive (or
 `PARALLAX_UPGRADE_PREVIOUS`), seeds OTLP into that binary, then reopens
 the same data dir with the workspace build.
@@ -33,7 +33,7 @@ Always-run tests cover the pieces that do not need a previous binary.
 | Future `user_version` fails closed | `migration_rejects_future_user_version` |
 | Fresh open stamps the current version | `migration_stamps_user_version_on_fresh_open` |
 | Spool frame count is unchanged across reopen | `spool_frame_count_survives_reopen` |
-| Preview binary data dir opens under this workspace | `preview_data_dir_opens_losslessly_under_workspace` (ignored; CI upgrade-harness) |
+| Preview binary data dir opens under this workspace | `upgrade_preview_data_dir_opens_losslessly_under_workspace` (ignored; CI upgrade-harness) |
 | Queue-full degrades `/health` | `queue_state_and_self_metric_filter_are_exact`, `health_reports_real_queue_overload_and_recovery` |
 | Terminal ingest drop increments the counter and degrades `/health` | `retry_exhaustion_metrics_match_worker_attempts`, `queue_state_and_self_metric_filter_are_exact` |
 | OTLP/Sentry reject after receipt is counted | `ingress_reject_increments_loss_json`, `otlp_http_and_health_endpoints_work` |

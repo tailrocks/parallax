@@ -1057,7 +1057,7 @@ ceiling = 1
 [[limits]]
 metric = "rust.test-sleeps"
 scope = "crates/parallax-server/tests/upgrade_preview.rs"
-ceiling = 2
+ceiling = 1
 
 [[limits]]
 metric = "rust.test-temp-root-accesses"

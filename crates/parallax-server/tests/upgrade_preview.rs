@@ -119,6 +119,10 @@ fn spawn_serve(bin: &Path, config: &Path, home: &Path) -> anyhow::Result<Child> 
         .spawn()?)
 }
 
+async fn sleep_ms(ms: u64) {
+    tokio::time::sleep(Duration::from_millis(ms)).await;
+}
+
 async fn wait_http(url: &str, timeout: Duration) -> anyhow::Result<String> {
     let client = reqwest::Client::new();
     let start = std::time::Instant::now();
@@ -131,7 +135,7 @@ async fn wait_http(url: &str, timeout: Duration) -> anyhow::Result<String> {
         {
             return Ok(response.text().await.unwrap_or_default());
         }
-        tokio::time::sleep(Duration::from_millis(200)).await;
+        sleep_ms(200).await;
     }
 }
 
@@ -140,9 +144,53 @@ fn stop_child(mut child: Child) {
     drop(child.wait());
 }
 
+/// SIGKILL of preview `serve` leaves a managed Greptime grandchild. Reap by
+/// data-home, not pidfile: an older preview or a kill-before-write leaves no
+/// `greptime.pid`, and workspace start then fails preflight on 24000.
+fn stop_preview_engine(data_dir: &Path) {
+    let data_home = data_dir.join("greptime-data");
+    let needle = data_home.display().to_string();
+    let Ok(output) = Command::new("ps")
+        .args(["-ax", "-o", "pid=,command="])
+        .output()
+    else {
+        return;
+    };
+    for line in String::from_utf8_lossy(&output.stdout).lines() {
+        let line = line.trim();
+        if !line.contains("greptime") || !line.contains(&needle) {
+            continue;
+        }
+        if let Some(pid) = line.split_whitespace().next() {
+            drop(Command::new("kill").args(["-TERM", pid]).status());
+        }
+    }
+}
+
+fn engine_port_held(port: u16) -> bool {
+    std::net::TcpStream::connect_timeout(
+        &(std::net::Ipv4Addr::LOCALHOST, port).into(),
+        Duration::from_millis(20),
+    )
+    .is_ok()
+}
+
+async fn wait_engine_ports_free() -> anyhow::Result<()> {
+    for _ in 0..200 {
+        if ![24_000_u16, 24_001, 24_002, 24_003]
+            .into_iter()
+            .any(engine_port_held)
+        {
+            return Ok(());
+        }
+        sleep_ms(50).await;
+    }
+    anyhow::bail!("managed Greptime ports 24000–24003 still held after preview stop")
+}
+
 #[tokio::test(flavor = "multi_thread")]
 #[ignore = "downloads preview release binary; run with --ignored"]
-async fn preview_data_dir_opens_losslessly_under_workspace() -> anyhow::Result<()> {
+async fn upgrade_preview_data_dir_opens_losslessly_under_workspace() -> anyhow::Result<()> {
     let old_bin = download_preview_bin().await?;
     let tmp = tempfile::tempdir()?;
     let home = tmp.path().join("home");
@@ -175,8 +223,10 @@ async fn preview_data_dir_opens_losslessly_under_workspace() -> anyhow::Result<(
         "preview OTLP rejected: {}",
         posted.status()
     );
-    tokio::time::sleep(Duration::from_millis(400)).await;
+    sleep_ms(400).await;
     stop_child(child);
+    stop_preview_engine(&data_dir);
+    wait_engine_ports_free().await?;
 
     let spool_before =
         parallax_spool::Spool::open(data_dir.join("spool"))?.line_count(Signal::Traces)?;
