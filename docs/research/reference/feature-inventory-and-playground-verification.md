@@ -178,9 +178,11 @@ verified working, compared, and production-ready — zero known bugs.
   links, reverse-language hop, RUM error, GraphQL N+1, subscriptions/stream
   cancel, log spike, baggage, CLI run/cron, deploy regression, flag flip,
   PII-redaction canary, long/wide trace, trace compare, tokio saturation,
-  Postgres pathologies, cache stampede, RUM journey, business events) +
+  Postgres pathologies, cache stampede, RUM journey, business events,
+  teaching up-down/cardinality, handled vs panic) +
   b-series chaos (error/latency breach, retries, OOM, GC pressure, consumer
-  lag, poison message, sampling gap, rage click, …).
+  lag, poison message, sampling gap, rage click, …) +
+  c-series product surfaces (`c1`–`c11`, coverage-matrix spine).
 - Fan-out lab lives in this repo at `bench/otlp-fanout/` — Rotel hub fanning
   identical OTLP to Parallax, OpenObserve, Maple, SigNoz, Sentry (per-signal
   routing; Sentry has no OTLP metrics).
@@ -280,3 +282,15 @@ promoted to `plans/` with a blocking reason).
 
 CLOSED: not-found hydration | 170/diagnostics-auto | parallax-ui | React minified #418 pageerror on GET /this-route-does-not-exist | expected: no pageerror | FIXED 2026-08-14: splat `/$` makes unknown URLs a real child of root (same hydrate path as `/sql`); `shellComponent` keeps document/theme/shell around MatchInner not-found; `shell.spec.ts` drops #418 allow
 CLOSED: where-clause reserved-word value | 168-176/unit-gate | parallax-ui | `serialize→parse` property fail seed `632427516` value `"nOt"` → `expected CONTAINS after NOT` | expected: reserved-word keys/values round-trip | FIXED 2026-08-14: parser accepts keyword tokens as keys/values in those positions (original `.text`); `needsQuoting` quotes AND/CONTAINS/NOT so serialize cannot emit a keyword in value position
+
+Coverage (2026-08-14, playground PR #13 + this inventory):
+`docs/coverage-matrix.md` in the playground is the spine. `c1`–`c11` EXIT 0
+against live Parallax (retry log). agent-browser walk of every inventory UI
+route (desktop 1440 + phone 390, light + dark) is PASS after @ref retest —
+first-pass FAILs were harness (`printf --`, overflow JSON, idle Logs control
+labeled **Query** not Live). Screenshots:
+`parallax-telemetry-playground/artifacts/ui/`. **No new open DISCREPANCY.**
+Tests explorer was empty of cases on this host (page rendered). Maple /
+OpenObserve / Sentry per-concept dispositions (including cells that do not
+favor Parallax) live in playground `VERIFICATION.md`. SigNoz remains plan
+162 residue.

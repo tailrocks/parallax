@@ -88,6 +88,23 @@ emitters ─► localhost:4317 (Rotel) ─┬─► openobserve:5081        (com
   + the traces/logs lists (omit from `ROTEL_EXPORTERS_METRICS` — Sentry has no
   OTLP metrics), and restart Rotel.
 
+## 4-sink re-verify (2026-08-14)
+
+Playground coverage program (plans 162–167 minus SigNoz Foundry rewrite)
+re-ran the live Rotel `v0.2.5` fan-out after lockstep SDK upgrades:
+
+| Sink | Result |
+| --- | --- |
+| OpenObserve v0.92.0 | checkout/catalog/payment/inventory/recommendation/pricing spans present |
+| Maple v0.0.18 | `services --since 2h` lists the same six names |
+| Parallax host (scratch OTLP 14317 via loopback+TCP bridge) | GraphQL + UI walk of every coverage-matrix surface |
+| Sentry 26.7.2 | `verify.sh` A1 OTLP=200, A15/A16 grouping; no OTLP metrics |
+
+Java agent gRPC→Rotel PASS (2.30.0). Per-concept dispositions (Maple/OO
+win some cells) are in the playground `VERIFICATION.md`. SigNoz overlay
+stays **blocked** — do not invent Foundry. Coverage spine:
+playground `docs/coverage-matrix.md`.
+
 ## Pinned versions (2026-08-14)
 
 | Component | Pin |
