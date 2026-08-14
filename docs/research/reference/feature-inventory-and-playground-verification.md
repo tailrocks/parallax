@@ -283,14 +283,15 @@ promoted to `plans/` with a blocking reason).
 CLOSED: not-found hydration | 170/diagnostics-auto | parallax-ui | React minified #418 pageerror on GET /this-route-does-not-exist | expected: no pageerror | FIXED 2026-08-14: splat `/$` makes unknown URLs a real child of root (same hydrate path as `/sql`); `shellComponent` keeps document/theme/shell around MatchInner not-found; `shell.spec.ts` drops #418 allow
 CLOSED: where-clause reserved-word value | 168-176/unit-gate | parallax-ui | `serialize→parse` property fail seed `632427516` value `"nOt"` → `expected CONTAINS after NOT` | expected: reserved-word keys/values round-trip | FIXED 2026-08-14: parser accepts keyword tokens as keys/values in those positions (original `.text`); `needsQuoting` quotes AND/CONTAINS/NOT so serialize cannot emit a keyword in value position
 
-Coverage (2026-08-14, playground PR #13 + this inventory):
-`docs/coverage-matrix.md` in the playground is the spine. `c1`–`c11` EXIT 0
-against live Parallax (retry log). agent-browser walk of every inventory UI
-route (desktop 1440 + phone 390, light + dark) is PASS after @ref retest —
-first-pass FAILs were harness (`printf --`, overflow JSON, idle Logs control
-labeled **Query** not Live). Screenshots:
-`parallax-telemetry-playground/artifacts/ui/`. **No new open DISCREPANCY.**
-Tests explorer was empty of cases on this host (page rendered). Maple /
-OpenObserve / Sentry per-concept dispositions (including cells that do not
-favor Parallax) live in playground `VERIFICATION.md`. SigNoz remains plan
-162 residue.
+Coverage (2026-08-14 restamp, playground PR #13 + this inventory):
+`docs/coverage-matrix.md` restamped — no `MAPPED`/`UNTESTED` data cells.
+`c1`–`c11` re-run: c4/c5/c6/c9/c10/c11 PASS; c8 rust+java PASS, js FAIL;
+c7 import PASS, `parallax-mcp check` CLI≢GraphQL JSON. Tests explorer seeded
+(`FLAKY_PASS` w4 fixtures). Teaching traces: 18-span waterfall, `rpc.message`
+stream, GraphQL batch vs N+1, span links, exemplars. Gradle
+`BUILD SUCCESSFUL` catalog/payment/fulfillment twice.
+
+OPEN: MCP check CLI≢HTTP bundle JSON | 164/c7 | parallax-mcp | `parallax-mcp check --fingerprint` FAIL while GraphQL `bundle` + CLI `issue context` both return | expected: byte-identical JSON | playground records FAIL, does not weaken check
+OPEN: clock-skew banner | 167/display | parallax-ui | `?skew=1` same-service degrade trace has no "Clock skew suspected" banner | expected: banner when child starts before parent | detector is cross-service only
+OPEN: JS Sentry envelope | 164/c8 | playground+ingest | `@sentry/node` flush to Parallax DSN and Sentry 9000 produced no issue/Group | rust+java SDKs PASS | keep FAIL
+CLOSED: empty Tests explorer | playground | test-verify rust --acceptance | FLAKY_PASS rows now visible (`tests-teach-flaky-1440-dark.png`)
