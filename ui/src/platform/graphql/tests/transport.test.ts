@@ -54,6 +54,7 @@ describe("graphqlCached (TanStack Query)", () => {
     expect(a).toEqual({ hello: "world" })
     expect(b).toEqual({ hello: "world" })
     expect(fetch).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(fetch).mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal)
   })
 
   it("serves a second call from Query cache within staleTime", async () => {
@@ -73,22 +74,5 @@ describe("graphqlCached (TanStack Query)", () => {
     await graphql(query)
     await graphql(query)
     expect(fetch).toHaveBeenCalledTimes(2)
-  })
-
-  it("is available in the browser (client-side cache active)", () => {
-    expect(typeof window).not.toBe("undefined")
-  })
-
-  it("forwards the Query abort signal to fetch", async () => {
-    let seen: AbortSignal | null | undefined
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
-        seen = init?.signal
-        return Response.json({ data: { hello: "world" } })
-      })
-    )
-    await graphqlCached(query)
-    expect(seen).toBeInstanceOf(AbortSignal)
   })
 })

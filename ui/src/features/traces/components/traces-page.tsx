@@ -264,19 +264,13 @@ export type TracesLoaderData = {
   traceDurationStats: { p50Ms: number | null; p95Ms: number | null }
 }
 
-export async function loadTraces(
-  search: TracesSearch,
-  signal?: AbortSignal
-): Promise<TracesLoaderData> {
+export async function loadTraces(search: TracesSearch): Promise<TracesLoaderData> {
   if (search.live) {
-    return graphqlCached<{ services: string[] }>(
-      `
+    return graphqlCached<{ services: string[] }>(`
       {
         services
       }
-    `,
-      signal ? { signal } : undefined
-    ).then((data) => ({
+    `).then((data) => ({
       services: data.services,
       tracesPage: { total: "0", items: [] },
       attributeCompare: [],
@@ -294,8 +288,7 @@ export async function loadTraces(
     attributeCompare: AttributeCompareRow[]
     traceFacets: TraceFacet[]
     traceDurationStats: { p50Ms: number | null; p95Ms: number | null }
-  }>(
-    `
+  }>(`
     {
       services
       tracesPage(${args}) {
@@ -313,9 +306,7 @@ export async function loadTraces(
       }
       traceDurationStats(${baseArgs}) { p50Ms p95Ms }
     }
-  `,
-    signal ? { signal } : undefined
-  )
+  `)
 }
 
 function toNumber(value: string): number {
