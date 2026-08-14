@@ -67,7 +67,7 @@ const INVOCATIONS_QUERY = `
       traceCount
       sessionCount
     }
-    observedInvocations {
+    observedInvocations(limit: 50) {
       invocationId
       service
       lastCommand

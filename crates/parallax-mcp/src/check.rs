@@ -1,6 +1,6 @@
 //! Projection-equivalence proof: MCP tool path ↔ CLI ↔ plain HTTP GraphQL.
 
-use crate::gql::{self, GraphqlClient};
+use crate::gql::{self, GraphqlClient, MCP_BUNDLE_MAX_TOKENS};
 use anyhow::Context;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -94,14 +94,32 @@ async fn check_one(client: &GraphqlClient, args: &CheckArgs, case: &Case) -> any
     };
 
     // 3) CLI: `parallax issue context` / `parallax invocation bundle` --format json
+    // Same maxTokens as MCP fetch_bundle so the three projections bound equally.
+    let max_tokens = MCP_BUNDLE_MAX_TOKENS.to_string();
     let cli_json = match &case.kind {
         CaseKind::IssueBundle { fingerprint } => run_cli_json(
             &args.parallax_bin,
-            &["issue", "context", fingerprint, "--format", "json"],
+            &[
+                "issue",
+                "context",
+                fingerprint,
+                "--format",
+                "json",
+                "--max-tokens",
+                &max_tokens,
+            ],
         )?,
         CaseKind::RunBundle { invocation_id } => run_cli_json(
             &args.parallax_bin,
-            &["invocation", "bundle", invocation_id, "--format", "json"],
+            &[
+                "invocation",
+                "bundle",
+                invocation_id,
+                "--format",
+                "json",
+                "--max-tokens",
+                &max_tokens,
+            ],
         )?,
     };
 

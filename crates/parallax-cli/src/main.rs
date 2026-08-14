@@ -237,6 +237,9 @@ pub(crate) enum InvocationCommand {
         invocation_id: String,
         #[arg(long = "format", value_enum, default_value = "markdown")]
         format: OutputFormat,
+        /// Bound the bundle (must match `parallax-mcp check` / MCP tools).
+        #[arg(long = "max-tokens")]
+        max_tokens: Option<u32>,
     },
     /// Agent-session projection for an invocation (tool steps, token totals).
     Agent {
@@ -277,6 +280,9 @@ pub(crate) enum IssueCommand {
         fingerprint: String,
         #[arg(long = "format", value_enum, default_value = "markdown")]
         format: OutputFormat,
+        /// Bound the bundle (must match `parallax-mcp check` / MCP tools).
+        #[arg(long = "max-tokens")]
+        max_tokens: Option<u32>,
     },
     /// Mark an issue resolved.
     Resolve { fingerprint: String },

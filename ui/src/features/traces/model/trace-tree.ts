@@ -333,9 +333,7 @@ export function detectSkew<T extends ServiceTraceSpan>(spans: readonly T[]): Ske
     const startsBeforeParent = parentTimes.start - childTimes.start
     const endsAfterParent = childTimes.end - parentTimes.end
     const driftNs = startsBeforeParent > endsAfterParent ? startsBeforeParent : endsAfterParent
-    const thresholdNs =
-      parent.service === child.service ? TRACE_ROOT_SKEW_THRESHOLD_NS : TRACE_SKEW_THRESHOLD_NS
-    if (driftNs <= thresholdNs) continue
+    if (driftNs <= TRACE_SKEW_THRESHOLD_NS) continue
 
     const driftMs = nsToMs(driftNs)
     maxDriftMs = Math.max(maxDriftMs, driftMs)

@@ -138,7 +138,8 @@ async fn invocation(
         InvocationCommand::Bundle {
             invocation_id,
             format,
-        } => commands::invocation_bundle(&client()?, &invocation_id, format).await,
+            max_tokens,
+        } => commands::invocation_bundle(&client()?, &invocation_id, format, max_tokens).await,
         InvocationCommand::Agent {
             invocation_id,
             format,
@@ -172,7 +173,8 @@ async fn issue(
         IssueCommand::Context {
             fingerprint,
             format,
-        } => commands::issue_context(&client()?, &fingerprint, format).await,
+            max_tokens,
+        } => commands::issue_context(&client()?, &fingerprint, format, max_tokens).await,
         IssueCommand::Resolve { fingerprint } => {
             client()?.graphql(&format!(r#"mutation {{ issueSetStatus(fingerprint: "{}", status: "resolved") {{ status }} }}"#, gql_str(&fingerprint))).await?;
             println!("issue {fingerprint} resolved");

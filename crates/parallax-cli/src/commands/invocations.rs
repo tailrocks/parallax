@@ -318,14 +318,18 @@ pub(crate) async fn invocation_bundle(
     c: &Client,
     id: &str,
     fmt: OutputFormat,
+    max_tokens: Option<u32>,
 ) -> anyhow::Result<()> {
+    let tokens = max_tokens
+        .map(|n| format!(", maxTokens: {n}"))
+        .unwrap_or_default();
     let query = match fmt {
         OutputFormat::Markdown => format!(
-            r#"{{ bundle(invocationId: "{}") {{ markdown canonicalHash }} }}"#,
+            r#"{{ bundle(invocationId: "{}"{tokens}) {{ markdown canonicalHash }} }}"#,
             gql_str(id)
         ),
         OutputFormat::Json => format!(
-            r#"{{ bundle(invocationId: "{}") {{ json canonicalHash }} }}"#,
+            r#"{{ bundle(invocationId: "{}"{tokens}) {{ json canonicalHash }} }}"#,
             gql_str(id)
         ),
     };

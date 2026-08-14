@@ -97,10 +97,41 @@ interface SeriesOut {
   points: Array<{ tsNanos: string; value: number }>
 }
 
+interface MetricExemplarLink {
+  tsNanos: string
+  traceId: string
+  spanId: string
+  value: number
+}
+
 interface DetailData {
   labels: string[]
   series: SeriesOut[]
   range: ResolvedRange
+  exemplars: MetricExemplarLink[]
+}
+
+async function loadExemplars(
+  metricName: string,
+  range: ResolvedRange
+): Promise<MetricExemplarLink[]> {
+  try {
+    const data = await graphqlCached<{
+      metricExemplars: Array<{
+        tsNanos: string
+        traceId: string
+        spanId: string
+        value: number
+      }>
+    }>(`{
+      metricExemplars(name: "${gqlString(metricName)}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", limit: 20) {
+        tsNanos traceId spanId value
+      }
+    }`)
+    return data.metricExemplars.filter((row) => row.traceId.length > 0)
+  } catch {
+    return []
+  }
 }
 
 async function loadDetail(metricName: string, search: MetricDetailSearch): Promise<DetailData> {
@@ -141,6 +172,7 @@ async function loadDetail(metricName: string, search: MetricDetailSearch): Promi
       labels: data.metricLabels,
       series: data.metricQuery.series,
       range,
+      exemplars: await loadExemplars(metricName, range),
     }
   } catch {
     // Fall back to legacy metricSeries / histogramQuantile paths.
@@ -158,6 +190,7 @@ async function loadDetail(metricName: string, search: MetricDetailSearch): Promi
       labels: data.metricLabels,
       series: [{ groupValue: null, points: data.histogramQuantile }],
       range,
+      exemplars: await loadExemplars(metricName, range),
     }
   }
   const data = await graphqlCached<{
@@ -170,7 +203,12 @@ async function loadDetail(metricName: string, search: MetricDetailSearch): Promi
       points { tsNanos value }
     }
   }`)
-  return { labels: data.metricLabels, series: data.metricSeries, range }
+  return {
+    labels: data.metricLabels,
+    series: data.metricSeries,
+    range,
+    exemplars: await loadExemplars(metricName, range),
+  }
 }
 
 export const Route = createFileRoute("/metrics/$metricName")({
@@ -189,7 +227,7 @@ export const Route = createFileRoute("/metrics/$metricName")({
 
 function MetricDetailPage() {
   const { metricName } = Route.useParams()
-  const { labels, series, range } = Route.useLoaderData()
+  const { labels, series, range, exemplars } = Route.useLoaderData()
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
 
@@ -407,6 +445,35 @@ function MetricDetailPage() {
               ))}
             </LineChart>
           </ChartContainer>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">
+            Trace links {exemplars.length > 0 ? `· ${exemplars.length}` : ""}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {exemplars.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              No trace exemplar attached; showing series only
+            </p>
+          ) : (
+            <ul className="space-y-1 text-sm">
+              {exemplars.map((exemplar) => (
+                <li key={`${exemplar.traceId}-${exemplar.spanId}-${exemplar.tsNanos}`}>
+                  <Link
+                    to="/traces/$traceId"
+                    params={{ traceId: exemplar.traceId }}
+                    data-has-trace-link="true"
+                    data-testid={`trace-link-${exemplar.traceId}`}
+                  >
+                    {exemplar.traceId} · {exemplar.value}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </CardContent>
       </Card>
     </div>
