@@ -7,8 +7,10 @@ test.describe("full-stack trace detail @traces", () => {
     await expect(page.getByText("pw.storage.root").first()).toBeVisible({
       timeout: SURFACE_TIMEOUT_MS,
     })
-    await page.getByRole("radio", { name: /Flame view/i }).click()
-    await expect(page.getByRole("radio", { name: /Flame view/i })).toBeChecked()
+    const flame = page.getByRole("button", { name: "Flame view" })
+    await expect(flame).toBeVisible({ timeout: SURFACE_TIMEOUT_MS })
+    await flame.click()
+    await expect(flame).toHaveAttribute("aria-pressed", "true")
     await page.getByRole("button", { name: "Critical path" }).click()
     await page.getByText("pw.storage.root").first().click()
     await expect(page.getByText(/span|service|duration/i).first()).toBeVisible()

@@ -4,6 +4,9 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
 
+permissions:
+  contents: read
+
 jobs:
   mcp-evals:
     if: contains(github.event.pull_request.labels.*.name, 'run-mcp-evals')
@@ -11,6 +14,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Run ignored MCP evals
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
