@@ -110,9 +110,7 @@ pub(crate) async fn service_map(
     let (services, mut edges, invocations, catalog, external) = tokio::try_join!(
         context.store.service_summaries(from..=to),
         context.store.service_map(from..=to, max_traces),
-        context
-            .store
-            .observed_invocations(crate::MAX_ROWS, from..=to),
+        context.store.observed_invocations(max_traces, from..=to),
         context.store.service_catalog(from..=to),
         context.store.external_dependency_edges(from..=to),
     )

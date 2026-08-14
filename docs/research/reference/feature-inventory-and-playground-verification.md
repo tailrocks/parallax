@@ -290,11 +290,11 @@ Coverage (2026-08-14T15:43Z restamp, playground PR #13 + this inventory):
 two `reviewsSlow`, consumer Links 1/1 `f22fbe511f04f149` → `05a35c01c4869f7c`,
 RUM stitch `19ace18bd8315e84` `ui.click`→checkout, a13 5×502 **2 versions**.
 
-OPEN: MCP check CLI≢HTTP bundle JSON | 164/c7 | parallax-mcp | 2026-08-14T15:23Z `parallax-mcp check` FAIL (CLI≢GraphQL bundle) while import+GraphQL `agentSession` PASS and c7 EXIT 0 | expected: byte-identical JSON | playground records FAIL, does not weaken check
-OPEN: clock-skew banner | 167/display | parallax-ui | 2026-08-14T15:43Z same-service `?skew=1` still has no "Clock skew suspected" banner | expected: banner when child starts before parent | detector is cross-service only
-OPEN: exemplar click-through | 167/display | parallax-ui | 2026-08-14T15:43Z `/metrics/catalog.product.queries` `hasTraceLink=false` (GraphQL `metricExemplars` → `c9464650357d6f26`) | expected: dot/id navigates to `/traces/{id}` | telemetry PASS, display FAIL
-OPEN: ecosystem default 24h ServiceMap | 167/display | parallax-ui | 2026-08-15T01:40Z default `/ecosystem` (`DEFAULT_RANGE_KEY=24h`) GraphQL `serviceMap` INTERNAL; `maxTraces=100` 1h/15m windows return nodes | expected: default 24h map renders | playground telemetry present; display FAIL
-OPEN: invocations unbounded observedInvocations | 167/display | parallax-ui | 2026-08-15T01:40Z `/invocations` queries `observedInvocations { … }` with no `limit` → INTERNAL; `observedInvocations(limit: 3)` OK | expected: CLI Apps list loads | product query, not playground emit
+CLOSED: MCP check CLI≢HTTP bundle JSON | 164/c7 | parallax-mcp | CLI omitted `maxTokens` (API default 10000) while MCP check used 4000 | FIXED 2026-08-15: CLI `--max-tokens`; check passes 4000
+CLOSED: clock-skew banner | 167/display | parallax-ui | same-service parent/child used 5min threshold | FIXED 2026-08-15: all parent/child pairs use 50ms `TRACE_SKEW_THRESHOLD`
+CLOSED: exemplar click-through | 167/display | parallax-ui | metric workbench never queried `metricExemplars` | FIXED 2026-08-15: `/metrics/$name` loads exemplars and links `/traces/$traceId` (`data-has-trace-link`)
+CLOSED: ecosystem default 24h ServiceMap | 167/display | parallax-api | `serviceMap` joined `observed_invocations(MAX_ROWS)` on the window | FIXED 2026-08-15: join uses the same `max_traces` cap
+CLOSED: invocations unbounded observedInvocations | 167/display | parallax-ui | UI omitted `limit` | FIXED 2026-08-15: UI `limit: 50`; resolver already defaulted to 50
 NOTE: service detail route is `/services/$name` (not `/$name`); `/$name` is splat not-found. Runtime lanes PASS on `/services/checkout` (tokio) and `/services/catalog` (jvm).
 CLOSED: JS Sentry envelope | 164/c8 | playground | first POST is `type=session` (Parallax 415); second POST `type=event` is the exception. `c8 ok rust+java+js`. Sentry Group `plat=node Error: c8-js-sdk PaymentError`. FIXED 2026-08-14: disable session-first wait; emit type=event
 CLOSED: empty Tests explorer | playground | test-verify rust --acceptance | FLAKY_PASS rows now visible (`tests-teach-flaky-1440-dark.png`)

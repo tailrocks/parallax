@@ -130,15 +130,18 @@ describe("trace tree", () => {
     ])
   })
 
-  it("detects cross-service clock skew and ignores same-service drift", () => {
+  it("detects parent/child clock skew on both same-service and cross-service pairs", () => {
     const report = detectSkew([
       richSpan("root", "1000000000", "100000000", null, "api"),
       richSpan("db", "800000000", "10000000", "root", "db"),
       richSpan("local", "700000000", "10000000", "root", "api"),
     ])
 
-    expect(report.suspectPairs).toEqual([{ parentId: "root", childId: "db", driftMs: 200 }])
-    expect(report.maxDriftMs).toBe(200)
+    expect(report.suspectPairs).toEqual([
+      { parentId: "root", childId: "db", driftMs: 200 },
+      { parentId: "root", childId: "local", driftMs: 300 },
+    ])
+    expect(report.maxDriftMs).toBe(300)
   })
 
   it("detects a backdated rootless span in the same trace", () => {
