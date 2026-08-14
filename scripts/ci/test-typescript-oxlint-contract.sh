@@ -39,13 +39,13 @@ hash_stream() {
 }
 
 selected=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --debug=files .)
-[[ $(printf '%s\n' "$selected" | wc -l | tr -d ' ') == 529 ]]
-[[ $(printf '%s\n' "$selected" | hash_stream) == 552800439f5c58a354f7c301dada725c7f6a9c5ca2cc2e2d4946d9244233bae1 ]]
+[[ $(printf '%s\n' "$selected" | wc -l | tr -d ' ') == 531 ]]
+[[ $(printf '%s\n' "$selected" | hash_stream) == ea5ff92cdf00179295b03a840034e402b3e1806cd113b48aee4abc71d8764280 ]]
 
 config=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --print-config)
 [[ $(printf '%s\n' "$config" | hash_stream) == f1796585c8362b98be550755de4b4bb27bfb6aba286e0f041ebfbb0e7410cf7e ]]
 ts_config=$(cd "$ui" && bun ./node_modules/typescript/bin/tsc --showConfig)
-[[ $(printf '%s\n' "$ts_config" | hash_stream) == d4356941f4b05be1d10adaddd52ae5f74753dae809c562fb49704fdc00abbd39 ]]
+[[ $(printf '%s\n' "$ts_config" | hash_stream) == 3a52b7cb912074366a80ebbee2b54fc340d869d727ab122f9b879dce96d71ad2 ]]
 [[ $(jq -r '.compilerOptions.noPropertyAccessFromIndexSignature' <<<"$ts_config") == true ]]
 [[ $(jq -r '.compilerOptions.strict' <<<"$ts_config") == true ]]
 [[ $(jq -r '.compilerOptions.allowJs' <<<"$ts_config") == false ]]
@@ -90,8 +90,12 @@ expect_compiler_failure 'TS1294' $'enum RuntimeMode { Active }\nvoid RuntimeMode
 expect_rule_failure() {
   local rule=$1
   local source=$2
+  local mode=()
+  if [[ "$rule" == typescript/* ]]; then
+    mode=(--type-aware)
+  fi
   printf '%s\n' "$source" >"$probe"
-  output=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --type-aware -A all -D "$rule" "$probe" 2>&1) && {
+  output=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint "${mode[@]}" -A all -D "$rule" "$probe" 2>&1) && {
     printf 'negative fixture unexpectedly passed: %s\n' "$rule" >&2
     exit 1
   }
@@ -128,4 +132,4 @@ cycle_output=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint -A all -D import
 }
 rg -F 'import(no-cycle)' <<<"$cycle_output" >/dev/null
 
-printf 'TypeScript/Oxlint contract passed (529 selected files, 19 rule fixtures)\n'
+printf 'TypeScript/Oxlint contract passed (531 selected files, 19 rule fixtures)\n'
