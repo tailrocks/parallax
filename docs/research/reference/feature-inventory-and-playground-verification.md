@@ -150,9 +150,9 @@ humans and coding agents; it is the context engine, not the fixer.
   SLO/error-budget/burn-rate; alert email deferred; Sentry/GitHub surfaces
   disabled by default; browser-RUM sessions are CLI/desktop-shaped
   projections, not a browser session product.
-- `plans/089` (extension-table gRPC writes — blocked on upstream rustls-free
-  ingester) and `plans/114` (retire legacy spool reader — blocked on stable
-  release cadence).
+- Extension-table gRPC writes still blocked on upstream rustls-free
+  `greptimedb-ingester`; retire legacy spool reader still needs one stable
+  raw-frame release cycle. Residual index: [`plans/README.md`](../../../plans/README.md).
 - Doc drift: guides still say `run` / `parallax.run.id`; spec + code use
   `invocation` / `cli.invocation.id`. Sentry multi-SDK compatibility ledger
   unproven; A1 (bundle beats raw context) still the open existential gate.

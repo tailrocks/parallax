@@ -57,29 +57,30 @@ const PIN_ICONS: Record<InvestigationPin["kind"], Icon> = {
 function useInvestigationDraft(state: string) {
   const [draft, setDraft] = useState<InvestigationState>(() => parseInvestigationState(state))
   const draftRef = useRef(draft)
-  const [saved, setSaved] = useState(false)
   function updateDraft(update: (current: InvestigationState) => InvestigationState) {
-    const next = update(draftRef.current)
-    draftRef.current = next
-    setDraft(next)
-    setSaved(false)
+    setDraft((current) => {
+      const next = update(current)
+      draftRef.current = next
+      return next
+    })
   }
-  return { draft, draftRef, saved, setSaved, updateDraft }
+  return { draft, draftRef, updateDraft }
 }
 
-function useInvestigationPersistence(
-  investigation: Investigation,
-  draftRef: { readonly current: InvestigationState },
-  setSaved: (saved: boolean) => void
-) {
+export function InvestigationDetailPage({
+  investigation,
+  back,
+}: {
+  investigation: Investigation
+  back?: PageHeaderBack
+}) {
   const router = useRouter()
+  const { draft, draftRef, updateDraft } = useInvestigationDraft(investigation.state)
   const [error, setError] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
+  const windowSearch = investigationWindowSearch(draft.window)
 
   async function save() {
     setError(null)
-    setSaved(false)
-    setSaving(true)
     try {
       await saveInvestigation({
         id: investigation.id,
@@ -87,11 +88,8 @@ function useInvestigationPersistence(
         state: serializeInvestigationState(draftRef.current),
       })
       await router.invalidate()
-      setSaved(true)
     } catch (err) {
       setError(investigationErrorMessage(err))
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -104,26 +102,6 @@ function useInvestigationPersistence(
       setError(investigationErrorMessage(err))
     }
   }
-
-  return { error, remove, save, saving }
-}
-
-export function InvestigationDetailPage({
-  investigation,
-  back,
-}: {
-  investigation: Investigation
-  back?: PageHeaderBack
-}) {
-  const { draft, draftRef, saved, setSaved, updateDraft } = useInvestigationDraft(
-    investigation.state
-  )
-  const { error, remove, save, saving } = useInvestigationPersistence(
-    investigation,
-    draftRef,
-    setSaved
-  )
-  const windowSearch = investigationWindowSearch(draft.window)
 
   function updatePin(index: number, patch: Partial<InvestigationPin>) {
     updateDraft((current) => ({
@@ -147,9 +125,9 @@ export function InvestigationDetailPage({
         description="Pinned telemetry pages and working notes."
         actions={
           <>
-            <Button size="sm" disabled={saving} onClick={() => void save()}>
+            <Button size="sm" onClick={() => void save()}>
               <IconPencil data-icon="inline-start" />
-              {saving ? "Saving..." : "Save"}
+              Save
             </Button>
             <AlertDialog>
               <AlertDialogTrigger render={<Button size="sm" variant="ghost-destructive" />}>
@@ -176,11 +154,6 @@ export function InvestigationDetailPage({
       />
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      {saved ? (
-        <p className="text-sm text-muted-foreground" role="status">
-          Investigation saved.
-        </p>
-      ) : null}
 
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-2">
