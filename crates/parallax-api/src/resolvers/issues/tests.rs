@@ -308,6 +308,79 @@ async fn issues_query_text_filter() {
 }
 
 #[tokio::test]
+async fn grouping_explanation_uses_derive_operation() {
+    let store = Arc::new(MemoryStore::new());
+    let context = context_with_memory(Arc::clone(&store)).await;
+    let operation = "capsule.attach";
+    let error_type = "jackin::CapsuleAttach";
+    let message = "capsule attach failed for jk-alpha-demo";
+    let attributes = serde_json::json!({
+        "cli.command.name": operation,
+        "error.type": error_type,
+    });
+    let fingerprint = parallax_analysis::fingerprint::fingerprint_with_operation(
+        error_type,
+        message,
+        None,
+        Some(operation),
+    );
+    let without_operation =
+        parallax_analysis::fingerprint::fingerprint_with_operation(error_type, message, None, None);
+    assert_ne!(fingerprint, without_operation);
+
+    context
+        .metadata
+        .upsert_issue_occurrence(&IssueOccurrence {
+            occurrence_id: fingerprint.as_str().into(),
+            fingerprint: &fingerprint,
+            title: format!("{error_type}: {message}"),
+            error_type,
+            culprit: None,
+            service: "checkout",
+            ts_nanos: 10,
+            trace_id: None,
+            attributes: &attributes,
+        })
+        .await
+        .unwrap();
+    store
+        .write_error_events(vec![ErrorEventRow {
+            ts_nanos: 10,
+            service: "checkout".to_string(),
+            fingerprint: fingerprint.clone(),
+            error_type: error_type.to_string(),
+            message: message.to_string(),
+            stacktrace: None,
+            source: ErrorSource::LogRecord,
+            trace_id: String::new(),
+            span_id: String::new(),
+            attributes,
+        }])
+        .await
+        .unwrap();
+
+    let json = gql(
+        &context,
+        &format!(
+            r#"{{ issue(fingerprint: "{fingerprint}") {{ fingerprint groupingExplanation {{ operation inputsPresent }} }} }}"#
+        ),
+    )
+    .await;
+    assert!(error_messages(&json).is_empty(), "{json}");
+    assert_eq!(
+        json.pointer("/data/issue/groupingExplanation/operation")
+            .and_then(serde_json::Value::as_str),
+        Some(operation)
+    );
+    let inputs = json
+        .pointer("/data/issue/groupingExplanation/inputsPresent")
+        .and_then(serde_json::Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    assert!(inputs.iter().any(|value| value == "operation"), "{json}");
+}
+
+#[tokio::test]
 async fn issues_time_window_filter() {
     let store = Arc::new(MemoryStore::new());
     let context = context_with_memory(Arc::clone(&store)).await;

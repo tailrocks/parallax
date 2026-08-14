@@ -39,16 +39,15 @@ test.describe("shell product contracts", () => {
     await expect(shell.navItem("SQL")).toBeVisible()
   })
 
-  test.describe("not-found", () => {
-    // DISCREPANCY: not-found hydration | 170/diagnostics-auto | parallax-ui
-    // React #418 pageerror on unknown routes (SSR/client HTML mismatch).
-    test.use({ allowedDiagnostic: ["Minified React error #418"] })
-    test("invalid route shows not-found surface @pw-shell-not-found", async ({ page }) => {
-      const shell = new ShellScreen(page)
-      await page.goto("/this-route-does-not-exist")
-      await expect(shell.notFoundTitle()).toBeVisible()
-      await expect(page.getByText("Pick a Parallax surface from the navigation.")).toBeVisible()
-    })
+  test("invalid route shows not-found surface @pw-shell-not-found", async ({
+    page,
+    diagnostics,
+  }) => {
+    expect(diagnostics.events).toEqual([])
+    const shell = new ShellScreen(page)
+    await page.goto("/this-route-does-not-exist")
+    await expect(shell.notFoundTitle()).toBeVisible()
+    await expect(page.getByText("Pick a Parallax surface from the navigation.")).toBeVisible()
   })
 
   test("theme choice persists across reload @pw-shell-theme", async ({ page }) => {

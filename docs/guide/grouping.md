@@ -10,7 +10,7 @@ Parallax groups error events into issues with a deterministic fingerprint
 | `error.type` | Structured exception type, else a log/sentry fallback | `different_types_do_not_group` |
 | Message | Normalized before hashing | `volatile_tokens_group_together`, `distinct_messages_without_volatile_tokens_do_not_group` |
 | Top stack frame | First line; line numbers and deep paths collapse | `frame_line_numbers_do_not_split` |
-| Operation | Optional `jackin.operation` (or equivalent) | `operation_partitions_same_error_message` |
+| Operation | Optional `cli.command.name` (hashed at derive time; GraphQL rereads the same attribute) | `operation_partitions_same_error_message`, `grouping_explanation_uses_derive_operation` |
 
 Hash = first 16 hex chars of SHA-256 over those fields, NUL-separated.
 `fingerprint_explained` returns the same hash as `fingerprint` /

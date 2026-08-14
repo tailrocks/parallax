@@ -74,6 +74,24 @@ fn json_attr_str<'a>(attributes: &'a serde_json::Value, key: &str) -> Option<&'a
         .filter(|value| !value.is_empty())
 }
 
+/// Structured operation hashed into the issue fingerprint (`cli.command.name`).
+#[must_use]
+pub fn operation_from_json_attributes(attributes: &serde_json::Value) -> Option<&str> {
+    json_attr_str(attributes, semconv::CLI_COMMAND_NAME)
+}
+
+fn persist_operation(
+    mut attributes: serde_json::Value,
+    operation: Option<&str>,
+) -> serde_json::Value {
+    if let Some(operation) = operation
+        && operation_from_json_attributes(&attributes).is_none()
+    {
+        attributes[semconv::CLI_COMMAND_NAME] = operation.into();
+    }
+    attributes
+}
+
 /// Derive error events from a trace export request (span exceptions + span
 /// ERROR statuses). Works on the raw request so exception span *events* are
 /// visible (they are not part of `SpanRow`).
@@ -164,7 +182,10 @@ pub fn derive_from_traces(request: &ExportTraceServiceRequest) -> Vec<ErrorEvent
                     source,
                     trace_id: hex(&span.trace_id),
                     span_id: hex(&span.span_id),
-                    attributes: attributes_to_json(&span.attributes),
+                    attributes: persist_operation(
+                        attributes_to_json(&span.attributes),
+                        operation.as_deref(),
+                    ),
                 });
             }
         }
@@ -192,7 +213,7 @@ pub fn derive_from_logs(rows: &[LogRow]) -> Vec<ErrorEventRow> {
             continue;
         }
         let structured_error_type = json_attr_str(&row.attributes, semconv::ERROR_TYPE);
-        let operation = json_attr_str(&row.attributes, semconv::CLI_COMMAND_NAME);
+        let operation = operation_from_json_attributes(&row.attributes);
         let (source, error_type, message, stacktrace) = if has_exception_attrs {
             (
                 ErrorSource::LogException,

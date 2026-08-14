@@ -14,7 +14,7 @@ under `docs/research/validation/`. Do not keep plan history here.
 | [163](163-playground-example-upgrades.md) | Upgrade every playground example to current-latest instrumentation and re-verify emission | BLOCKED — depends on 162; SigNoz v0.137.0 Foundry layout blocks the pinned full-lab re-verify |
 | [164](164-playground-feature-coverage.md) | Extend the playground until every Parallax feature has a scripted scenario | BLOCKED — depends on 162+163 |
 | [165](165-user-lens-comparison.md) | Run the full playground sweep and record a user-lens comparison across all backends | BLOCKED — depends on 162–164 |
-| [166](166-production-readiness-fix-loop.md) | Drive every verified discrepancy to zero — the production-readiness fix loop | BLOCKED — W5 has 1 open `DISCREPANCY:` (not-found React #418 from plan 170 diagnostics-auto); 165+167 not executed |
+| [166](166-production-readiness-fix-loop.md) | Drive every verified discrepancy to zero — the production-readiness fix loop | BLOCKED — W5 OPEN=0 (`#418` CLOSED via root `shellComponent`); 165+167 still blocked on SigNoz Foundry |
 | [167](167-agent-browser-ui-verification.md) | Verify every Parallax UI surface with agent-browser — functional + responsive | BLOCKED — depends on 163+164 seeded stack |
 | [168](168-rust-correctness-test-wave.md) | Close the correctness-critical Rust test gaps (wave 1) | DONE |
 | [169](169-rust-parity-and-structural-tests.md) | Fake/engine parity, resolver depth, and metadata versioning (wave 2) | DONE |

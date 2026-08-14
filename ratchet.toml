@@ -852,7 +852,7 @@ ceiling = 42
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-api/src/resolvers/issues/tests.rs"
-ceiling = 24
+ceiling = 28
 
 [[limits]]
 metric = "rust.assertions"
@@ -873,7 +873,7 @@ ceiling = 8
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-analysis/src/derive/tests.rs"
-ceiling = 24
+ceiling = 26
 
 [[limits]]
 metric = "rust.assertions"
@@ -2252,6 +2252,13 @@ migration_plan = "172"
 kind = "handwritten"
 
 [[ui.ownership]]
+path = "ui/src/shared/route-not-found.tsx"
+current_owner = "shared"
+target_owner = "shared"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
 path = "ui/src/shared/tests/page-fade.test.ts"
 current_owner = "shared"
 target_owner = "shared"
@@ -2639,6 +2646,13 @@ kind = "generated"
 path = "ui/src/router.tsx"
 current_owner = "app"
 target_owner = "app"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/$.tsx"
+current_owner = "routes"
+target_owner = "layout"
 migration_plan = "none"
 kind = "handwritten"
 

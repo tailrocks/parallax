@@ -1,4 +1,10 @@
-import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router"
+import {
+  ClientOnly,
+  HeadContent,
+  Outlet,
+  Scripts,
+  createRootRouteWithContext,
+} from "@tanstack/react-router"
 import { ThemeProvider } from "next-themes"
 
 import appCss from "../styles.css?url"
@@ -29,22 +35,35 @@ export const Route = createRootRouteWithContext<AppRouterContext>()({
   }),
   errorComponent: RouteErrorPanel,
   pendingComponent: RoutePendingPanel,
-  notFoundComponent: RouteNotFoundPanel,
+  notFoundComponent: HydrationSafeNotFound,
+  // MatchInner replaces `component` on not-found. Keep document/theme/shell here
+  // so SSR and client 404 trees stay identical (React #418).
+  shellComponent: RootShell,
   component: RootOutlet,
 })
 
-function RootOutlet() {
+function RootShell({ children }: { children: React.ReactNode }) {
   const { queryClient } = Route.useRouteContext()
   return (
     <RootDocument>
       <AppQueryProvider client={queryClient}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          <ParallaxShell>
-            <Outlet />
-          </ParallaxShell>
+          <ParallaxShell>{children}</ParallaxShell>
         </ThemeProvider>
       </AppQueryProvider>
     </RootDocument>
+  )
+}
+
+function RootOutlet() {
+  return <Outlet />
+}
+
+function HydrationSafeNotFound() {
+  return (
+    <ClientOnly fallback={<RoutePendingPanel />}>
+      <RouteNotFoundPanel />
+    </ClientOnly>
   )
 }
 

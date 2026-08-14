@@ -1,4 +1,5 @@
 use super::*;
+use parallax_analysis::derive::operation_from_json_attributes;
 use parallax_analysis::fingerprint::{GroupingExplanation, fingerprint_explained};
 
 pub(crate) struct GroupingExplanationOut {
@@ -130,8 +131,11 @@ impl Issue {
         let stack = latest
             .as_ref()
             .and_then(|event| event.stacktrace.as_deref());
+        let operation = latest
+            .as_ref()
+            .and_then(|event| operation_from_json_attributes(&event.attributes));
         Ok(GroupingExplanationOut::from(fingerprint_explained(
-            error_type, message, stack, None,
+            error_type, message, stack, operation,
         )))
     }
 

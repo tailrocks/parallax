@@ -193,8 +193,9 @@ c-sweep green. No fix merges on scenario-green alone.
 
 ## Done criteria
 
-- [ ] W5 discrepancy list: zero OPEN rows (all CLOSED with evidence or
-      PROMOTED to a numbered blocked plan).
+- [x] W5 discrepancy list: zero OPEN rows (all CLOSED with evidence or
+      PROMOTED to a numbered blocked plan). #418 CLOSED 2026-08-14;
+      165+167 still blocked so this plan stays BLOCKED.
 - [ ] Full c-series sweep green at pinned versions (`run.sh c1..c11` exit 0
       — c11 is the agent-browser UI pass from plan 167; re-run after every
       UI-touching fix).
