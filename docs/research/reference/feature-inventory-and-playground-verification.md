@@ -293,5 +293,5 @@ stream, GraphQL batch vs N+1, span links, exemplars. Gradle
 
 OPEN: MCP check CLI≢HTTP bundle JSON | 164/c7 | parallax-mcp | `parallax-mcp check --fingerprint` FAIL while GraphQL `bundle` + CLI `issue context` both return | expected: byte-identical JSON | playground records FAIL, does not weaken check
 OPEN: clock-skew banner | 167/display | parallax-ui | `?skew=1` same-service degrade trace has no "Clock skew suspected" banner | expected: banner when child starts before parent | detector is cross-service only
-OPEN: JS Sentry envelope | 164/c8 | playground+ingest | `@sentry/node` flush to Parallax DSN and Sentry 9000 produced no issue/Group | rust+java SDKs PASS | keep FAIL
+CLOSED: JS Sentry envelope | 164/c8 | playground | first POST is `type=session` (Parallax 415); second POST `type=event` is the exception. `c8 ok rust+java+js`. Sentry Group `plat=node Error: c8-js-sdk PaymentError`. FIXED 2026-08-14: disable session-first wait; emit type=event
 CLOSED: empty Tests explorer | playground | test-verify rust --acceptance | FLAKY_PASS rows now visible (`tests-teach-flaky-1440-dark.png`)
