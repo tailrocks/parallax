@@ -6,5 +6,10 @@ export function commandPaletteShortcut(): string {
 }
 
 export async function openCommandPalette(page: Page): Promise<void> {
+  const search = page.getByRole("button", { name: /search/i })
+  if (await search.isVisible()) {
+    await search.click()
+    return
+  }
   await page.keyboard.press(commandPaletteShortcut())
 }

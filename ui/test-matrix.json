@@ -4,7 +4,7 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 628,
+    "test_cases": 629,
     "test_files": 169
   },
   "private_route_imports": [],
@@ -348,7 +348,8 @@
         "serves a second call from Query cache within staleTime",
         "refetches after invalidate",
         "raw graphql always hits the network",
-        "is available in the browser (client-side cache active)"
+        "is available in the browser (client-side cache active)",
+        "forwards the Query abort signal to fetch"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"

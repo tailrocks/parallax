@@ -5,7 +5,7 @@ import { TracesPage, loadTraces, validateTracesSearch } from "@/features/traces"
 export const Route = createFileRoute("/traces/")({
   validateSearch: validateTracesSearch,
   loaderDeps: ({ search }) => search,
-  loader: ({ deps }) => loadTraces(deps),
+  loader: ({ deps, abortController }) => loadTraces(deps, abortController.signal),
   component: TracesRoute,
 })
 

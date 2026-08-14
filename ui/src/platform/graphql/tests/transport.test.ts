@@ -78,4 +78,17 @@ describe("graphqlCached (TanStack Query)", () => {
   it("is available in the browser (client-side cache active)", () => {
     expect(typeof window).not.toBe("undefined")
   })
+
+  it("forwards the Query abort signal to fetch", async () => {
+    let seen: AbortSignal | null | undefined
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        seen = init?.signal
+        return Response.json({ data: { hello: "world" } })
+      })
+    )
+    await graphqlCached(query)
+    expect(seen).toBeInstanceOf(AbortSignal)
+  })
 })

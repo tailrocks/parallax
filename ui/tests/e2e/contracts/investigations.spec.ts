@@ -59,6 +59,7 @@ test.describe("investigations product pilot", () => {
     // Cross-route navigation then hard reload so list bypasses client TTL cache.
     await shell.navItem("Traces").click()
     await expect(page).toHaveURL(/\/traces/)
+    await expect(page.getByRole("heading", { name: /trace/i }).first()).toBeVisible()
     await page.goto("/investigations")
     await page.reload()
     await expect(screen.caseLink("Mutation pilot case")).toBeVisible()
