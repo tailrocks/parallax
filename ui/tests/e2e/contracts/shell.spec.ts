@@ -39,7 +39,11 @@ test.describe("shell product contracts", () => {
     await expect(shell.navItem("SQL")).toBeVisible()
   })
 
-  test("invalid route shows not-found surface @pw-shell-not-found", async ({ page }) => {
+  test("invalid route shows not-found surface @pw-shell-not-found", async ({
+    page,
+    diagnostics,
+  }) => {
+    expect(diagnostics.events).toEqual([])
     const shell = new ShellScreen(page)
     await page.goto("/this-route-does-not-exist")
     await expect(shell.notFoundTitle()).toBeVisible()
@@ -57,20 +61,23 @@ test.describe("shell product contracts", () => {
     expect(await shell.documentThemeClass()).toContain("dark")
   })
 
-  test("recoverable API failure surfaces error panel @pw-shell-api-failure", async ({
-    page,
-    injectGraphqlFailure,
-  }) => {
-    const shell = new ShellScreen(page)
-    await injectGraphqlFailure()
-    await page.goto("/")
-    await expect(shell.apiErrorTitle()).toBeVisible()
-    await expect(page.getByText(/unreachable \(503\)/)).toBeVisible()
+  test.describe("api-failure", () => {
+    test.use({ allowedDiagnostic: ["503", "unreachable"] })
+    test("recoverable API failure surfaces error panel @pw-shell-api-failure", async ({
+      page,
+      injectGraphqlFailure,
+    }) => {
+      const shell = new ShellScreen(page)
+      await injectGraphqlFailure()
+      await page.goto("/")
+      await expect(shell.apiErrorTitle()).toBeVisible()
+      await expect(page.getByText(/unreachable \(503\)/)).toBeVisible()
 
-    // Full navigation recovers once the one-shot failure is consumed.
-    await page.reload()
-    await expect(shell.apiErrorTitle()).toHaveCount(0)
-    await expect(shell.homeLink()).toBeVisible()
-    await expect(shell.navItem("Overview")).toBeVisible()
+      // Full navigation recovers once the one-shot failure is consumed.
+      await page.reload()
+      await expect(shell.apiErrorTitle()).toHaveCount(0)
+      await expect(shell.homeLink()).toBeVisible()
+      await expect(shell.navItem("Overview")).toBeVisible()
+    })
   })
 })

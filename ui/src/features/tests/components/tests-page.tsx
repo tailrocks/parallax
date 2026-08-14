@@ -42,6 +42,7 @@ import {
   updateRangeSearch,
   type ResolvedRange,
 } from "@/domain/time-range/range"
+import { TEST_ROLLUP } from "@/shared/colors"
 import { cn } from "@/lib/utils"
 import { PageHeader } from "@/shared/components/page-header"
 
@@ -62,19 +63,7 @@ const FLAKY_OPTIONS = [
 ] as const
 
 function rollupTone(rollup: TestExplorerRow["rollup"]): string {
-  switch (rollup) {
-    case "FAILED":
-    case "BROKEN":
-      return "bg-destructive/15 text-destructive"
-    case "FLAKY_PASS":
-      return "bg-amber-500/15 text-amber-700 dark:text-amber-300"
-    case "PASSED":
-      return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-    case "SKIPPED":
-      return "bg-muted text-muted-foreground"
-    case "UNKNOWN":
-      return "bg-muted text-muted-foreground"
-  }
+  return TEST_ROLLUP[rollup].badge
 }
 
 export function TestsPage({ data, search }: { data: TestsData; search: TestsSearch }) {

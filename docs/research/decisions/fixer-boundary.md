@@ -4,6 +4,13 @@
 >
 > **Claim split (pass 64, 2026-07-17):** (1) **Boundary + offline residual = shipped** — plan **123 DONE** (`fixer_outcome` state machine + Turso append-only outcomes; see validation evidence). (2) **Live measured outcome loop = unproven** — no public ledger of dated production rows linking bundle → fixer → session → PR → CI → merge/revert/recurrence that moves autonomy budgets. Autonomy L0–L5 design stands; L5 out of MVP; draft-PR adapter deferred. Do not collapse (1) into (2).
 
+> **Plan 171 feature 2 proposal (2026-08-14) — OPERATOR DECISION, not shipped.**
+> An issue-lease `release` verb may append a `fixer_outcomes` disposition row
+> (`claimed`/`abandoned`/`handed_off` — never `success`). Success remains
+> review + non-recurrence evidence only. Lease writes go through the HTTP API,
+> not a new agent-context storage dep. See
+> [agent-access-surface.md](agent-access-surface.md) § proposal.
+>
 > **Implementation ownership (updated 2026-07-17):** this file is the durable
 > boundary, claim-level, schema, and measurement-protocol record. It is not an
 > executable queue. Plan **123 offline residual is DONE** — see

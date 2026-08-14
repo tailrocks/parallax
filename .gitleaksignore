@@ -2,3 +2,7 @@ REPOSITORY_PROTECTION.md:generic-api-key:31
 crates/parallax-server/tests/m2_bundle.rs:stripe-access-token:101
 crates/parallax-server/tests/m2_bundle.rs:stripe-access-token:230
 crates/parallax-core/src/bundle/tests.rs:generic-api-key:270
+crates/parallax-redaction/src/lib.rs:private-key:399
+crates/parallax-redaction/src/lib.rs:generic-api-key:503
+crates/parallax-redaction/src/lib.rs:generic-api-key:509
+crates/parallax-redaction/src/lib.rs:jwt:512

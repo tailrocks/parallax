@@ -27,8 +27,10 @@ emitters ─► localhost:4317 (Rotel) ─┬─► openobserve:5081        (com
   was corrected to match. The Parallax exporter targets the host; it simply
   retries until Parallax is up (note: Rotel fan-out is **sequential**, so list a
   down host-Parallax sink *after* the others or it back-pressures them).
-- ✅ **SigNoz** — overlay `compose.signoz.yml` (vendored clone via
-  `setup-vendor.sh`, pinned `v0.129.0`). **Verified end-to-end live 2026-06-23:**
+- ⚠️ **SigNoz** — overlay `compose.signoz.yml` (vendored clone via
+  `setup-vendor.sh`, pinned `v0.137.0`). **v0.137.0 removed
+  `deploy/docker/docker-compose.yaml` (Foundry-only); overlay cannot start.**
+  **Verified end-to-end live 2026-06-23 on v0.129.0:**
   Rotel → SigNoz `otel-collector` → ClickHouse, `signoz-smoke = 8` spans queried
   back from `signoz_traces.distributed_signoz_index_v3`.
 
@@ -67,14 +69,14 @@ emitters ─► localhost:4317 (Rotel) ─┬─► openobserve:5081        (com
      published on host `:8081`. (Rotel logs a cosmetic protobuf-response-decode
      warning — Maple's OTLP/HTTP *response* body isn't protobuf — but ingestion
      succeeds and spans land in chDB.)
-- ✅ **Sentry** — runnable, **verified end-to-end live 2026-06-23 on v26.6.0**.
+- ✅ **Sentry** — runnable, **verified end-to-end live 2026-06-23 on v26.6.0**; vendor pin is `26.7.2` (2026-08-14).
   Self-hosted Sentry is ~72 services bootstrapped by its own `install.sh` (not a
   clean `include:` target), so it runs as its **own vendored Compose stack**
   under `vendor/sentry` and Rotel reaches it over the **host bridge**
   (`host.docker.internal:9000` → nginx → relay) — no network-join needed. Three
   scripts drive it:
   1. `sentry/setup.sh` — vendor `getsentry/self-hosted` (pinned `SENTRY_REF`,
-     default `26.6.0` ≥ native-OTLP `25.8.0`), run `install.sh` non-interactively
+     default `26.7.2` ≥ native-OTLP `25.8.0`), run `install.sh` non-interactively
      (needs bash ≥ 4.4 — `brew install bash` on macOS), `docker compose up`.
   2. `sentry/onboard.sh` — create the admin (idempotent), read the internal
      project DSN, and print the exact `rotel.env` exports + `SENTRY_DSN`.
@@ -85,6 +87,36 @@ emitters ─► localhost:4317 (Rotel) ─┬─► openobserve:5081        (com
   Paste the printed exports into `rotel.env`, add `sentry` to `ROTEL_EXPORTERS`
   + the traces/logs lists (omit from `ROTEL_EXPORTERS_METRICS` — Sentry has no
   OTLP metrics), and restart Rotel.
+
+## 4-sink re-verify (2026-08-14)
+
+Playground coverage program (plans 162–167 minus SigNoz Foundry rewrite)
+re-ran the live Rotel `v0.2.5` fan-out after lockstep SDK upgrades:
+
+| Sink | Result |
+| --- | --- |
+| OpenObserve v0.92.0 | checkout/catalog/payment/inventory/recommendation/pricing spans present |
+| Maple v0.0.18 | `services --since 2h` lists the same six names |
+| Parallax host (scratch OTLP 14317 via loopback+TCP bridge) | GraphQL + UI walk of every coverage-matrix surface |
+| Sentry 26.7.2 | `verify.sh` A1 OTLP=200, A15/A16 grouping; no OTLP metrics |
+
+Java agent gRPC→Rotel PASS (2.30.0). Per-concept dispositions (Maple/OO
+win some cells) are in the playground `VERIFICATION.md`. SigNoz overlay
+stays **blocked** — do not invent Foundry. Coverage spine:
+playground `docs/coverage-matrix.md`.
+
+## Pinned versions (2026-08-14)
+
+| Component | Pin |
+| --- | --- |
+| Rotel | `streamfold/rotel:v0.2.5` |
+| OpenObserve | `public.ecr.aws/zinclabs/openobserve:v0.92.0` |
+| telemetrygen | `ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.158.0` |
+| Maple | build arg `MAPLE_VERSION=v0.0.18` |
+| SigNoz vendor | `SIGNOZ_REF=v0.137.0` |
+| Sentry vendor | `SENTRY_REF=26.7.2` |
+
+Playground infra pins (sibling repo `deploy/docker-compose.yml`): `postgres:18`, `redpandadata/redpanda:v26.2.1`, `ghcr.io/open-feature/flagd:v0.16.1`, `grafana/k6:2.2.0`. Bump via the plan-162 procedure. Existing playground `postgres` volumes must be dropped (`docker compose down -v`) when moving 17→18.
 
 ## Quick start (core)
 
@@ -112,12 +144,12 @@ parallax serve --config ~/.parallax/config.toml    # UI http://localhost:4000
 Rotel reaches it at `host.docker.internal:14317`. **Bind `0.0.0.0`** — a
 loopback-only bind is unreachable from the container (the lab's one fragile hop).
 
-## Compare mode — `parallax run start`
+## Compare mode — `parallax invocation start`
 
 ```bash
 source bench/otlp-fanout/lab.env          # sets PARALLAX_OTLP_FORWARD=http://localhost:4317
-parallax run start -- <your-otel-app>     # child telemetry → Rotel → every backend incl. Parallax
-parallax run start --otlp-forward off -- <app>   # one-off: straight to Parallax
+parallax invocation start -- <your-otel-app>     # child telemetry → Rotel → every backend incl. Parallax
+parallax invocation start --otlp-forward off -- <app>   # one-off: straight to Parallax
 ```
 
 Implemented in `crates/parallax-cli` (env + flag; config-file deferred).

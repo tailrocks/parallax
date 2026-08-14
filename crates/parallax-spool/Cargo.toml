@@ -19,6 +19,7 @@ tokio = { workspace = true }
 
 [dev-dependencies]
 criterion = { workspace = true }
+proptest = { workspace = true }
 tempfile = "3"
 tracing = { workspace = true }
 

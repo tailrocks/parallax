@@ -7,6 +7,7 @@ import {
   IconServer,
 } from "@tabler/icons-react"
 
+import { SPAN_STATUS } from "@/shared/colors"
 import { Badge } from "@/components/ui/badge"
 
 export type SpanKind = "SERVER" | "CLIENT" | "INTERNAL" | "PRODUCER" | "CONSUMER" | string
@@ -56,7 +57,7 @@ export function spanKindMeta(kind: SpanKind, statusCode?: string) {
     return {
       variant: "rose" as const,
       icon: IconServer,
-      bar: "bg-rose-500 dark:bg-rose-400",
+      bar: SPAN_STATUS.error.bar,
     }
   }
   return (

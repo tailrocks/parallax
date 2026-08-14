@@ -5,6 +5,7 @@
 
 import { expect } from "@playwright/test"
 import type { Page } from "@playwright/test"
+import { LIVE_TIMEOUT_MS } from "./timeouts"
 
 export interface LiveBurstObservation {
   readonly seededCount: number
@@ -20,7 +21,7 @@ export async function waitForExactTextCount(
   page: Page,
   text: string,
   expected: number,
-  timeoutMs = 45_000
+  timeoutMs = LIVE_TIMEOUT_MS
 ): Promise<number> {
   let last = 0
   try {

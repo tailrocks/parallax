@@ -90,7 +90,10 @@ async fn envelope(
     }
 
     match parse_envelope(&body) {
-        EnvelopeOutcome::Rejected { reason } => reject_response(reason),
+        EnvelopeOutcome::Rejected { reason } => {
+            state.ingest.health.ingress_reject(Signal::Sentry);
+            reject_response(reason)
+        }
         EnvelopeOutcome::Accepted {
             event_id,
             event_json,
@@ -106,6 +109,7 @@ async fn accept_event(
     event_json: serde_json::Value,
 ) -> Response {
     if event_id.is_empty() || !is_32_hex(&event_id) {
+        state.ingest.health.ingress_reject(Signal::Sentry);
         return (
             StatusCode::BAD_REQUEST,
             "malformed event: missing or invalid event_id",
@@ -113,6 +117,7 @@ async fn accept_event(
             .into_response();
     }
     let Some(row) = derive_from_sentry_event(&event_json) else {
+        state.ingest.health.ingress_reject(Signal::Sentry);
         return (StatusCode::BAD_REQUEST, "malformed event payload").into_response();
     };
     let durable = match serde_json::to_vec(&row) {
@@ -136,6 +141,7 @@ async fn accept_event(
         .await
     {
         tracing::warn!(error = %e, "sentry spool write failed");
+        state.ingest.health.spool_failed(Signal::Sentry);
         return (
             StatusCode::SERVICE_UNAVAILABLE,
             [(header::RETRY_AFTER, "1")],
@@ -295,5 +301,147 @@ mod tests {
     fn rejects_missing_key() {
         let headers = HeaderMap::new();
         assert!(extract_sentry_key(&headers).is_none());
+    }
+
+    #[test]
+    fn reject_reason_never_returns_2xx() {
+        use RejectReason::*;
+        for reason in [
+            EnvelopeTooLarge,
+            HeaderLineTooLarge,
+            EventPayloadTooLarge,
+            LengthOverflow,
+            TooManyItems,
+            NoEventItem,
+            EmptyInput,
+            MalformedEnvelopeHeader,
+            MalformedItemHeader,
+            PrematureEof,
+            TrailingGarbageAfterPayload,
+            DuplicateEventItem,
+            EventPayloadNotJson,
+        ] {
+            let response = reject_response(reason);
+            assert!(
+                !response.status().is_success(),
+                "{reason:?} -> {}",
+                response.status()
+            );
+        }
+        assert_eq!(
+            reject_response(EnvelopeTooLarge).status(),
+            StatusCode::PAYLOAD_TOO_LARGE
+        );
+        assert_eq!(
+            reject_response(EmptyInput).status(),
+            StatusCode::BAD_REQUEST
+        );
+        assert_eq!(
+            reject_response(NoEventItem).status(),
+            StatusCode::UNSUPPORTED_MEDIA_TYPE
+        );
+    }
+}
+
+#[cfg(test)]
+mod router_tests {
+    use super::*;
+    use axum::body::Body;
+    use axum::http::{Request, StatusCode};
+    use parallax_metadata::TursoMetadataStore;
+    use parallax_spool::Spool;
+    use parallax_test_support::builders::MemoryStore;
+    use tower::ServiceExt;
+
+    struct Harness {
+        app: Router,
+        _runtime: crate::ingest_runtime::IngestRuntime,
+        _tmp: tempfile::TempDir,
+    }
+
+    async fn enabled_router() -> Harness {
+        let tmp = tempfile::tempdir().expect("tmp");
+        let spool = Arc::new(Spool::open(tmp.path()).expect("spool"));
+        let store = Arc::new(MemoryStore::new());
+        let metadata = Arc::new(
+            TursoMetadataStore::open(tmp.path().join("meta.db"))
+                .await
+                .expect("meta"),
+        );
+        let runtime = crate::ingest_runtime::assemble_ingest(8, spool, store, metadata);
+        let app = router(SentryHttpState {
+            ingest: runtime.state.clone(),
+            config: SentryConfig {
+                enabled: true,
+                project_id: "1".into(),
+                public_key: "abc123".into(),
+            },
+            public_key: Some("abc123".into()),
+            metadata: None,
+        });
+        Harness {
+            app,
+            _runtime: runtime,
+            _tmp: tmp,
+        }
+    }
+
+    fn auth_headers() -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            "x-sentry-auth",
+            header::HeaderValue::from_static("Sentry sentry_key=abc123"),
+        );
+        headers
+    }
+
+    #[tokio::test]
+    async fn empty_envelope_is_400() {
+        let harness = enabled_router().await;
+        let mut request = Request::post("/api/1/envelope/")
+            .body(Body::empty())
+            .unwrap();
+        *request.headers_mut() = auth_headers();
+        let response = harness.app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn oversized_envelope_is_413() {
+        let harness = enabled_router().await;
+        let body = vec![b'x'; MAX_ENVELOPE_BODY + 1];
+        let mut request = Request::post("/api/1/envelope/")
+            .body(Body::from(body))
+            .unwrap();
+        *request.headers_mut() = auth_headers();
+        let response = harness.app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
+    }
+
+    #[tokio::test]
+    async fn valid_envelope_acks_200() {
+        let harness = enabled_router().await;
+        let event = serde_json::json!({
+            "event_id": "9ec79c33ec9942ab8353589fcb2e04dc",
+            "message": "hello world",
+            "level": "error",
+            "platform": "native"
+        });
+        let event_bytes = serde_json::to_vec(&event).unwrap();
+        let mut body = Vec::new();
+        body.extend_from_slice(br#"{"event_id":"9ec79c33ec9942ab8353589fcb2e04dc"}"#);
+        body.push(b'\n');
+        body.extend_from_slice(
+            format!(r#"{{"type":"event","length":{}}}"#, event_bytes.len()).as_bytes(),
+        );
+        body.push(b'\n');
+        body.extend_from_slice(&event_bytes);
+        body.push(b'\n');
+        let mut request = Request::post("/api/1/envelope/")
+            .body(Body::from(body))
+            .unwrap();
+        *request.headers_mut() = auth_headers();
+        let response = harness.app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
     }
 }

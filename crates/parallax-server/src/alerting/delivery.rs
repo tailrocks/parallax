@@ -53,6 +53,11 @@ pub(crate) struct NotificationContext<'a> {
     pub incident_url: &'a str,
     /// Absolute UI link to scoped traces/logs for investigation.
     pub investigate_url: &'a str,
+    pub bundle_hash: Option<&'a str>,
+    pub bundle_url: Option<&'a str>,
+    pub top_hypothesis: Option<&'a str>,
+    pub deploy_adjacency: &'a [String],
+    pub bundle_error: Option<&'a str>,
 }
 
 /// Stable unique delivery key: one successful delivery per
@@ -90,7 +95,12 @@ pub(crate) fn webhook_payload_json(ctx: &NotificationContext<'_>) -> String {
             "\"threshold\":{},",
             "\"threshold_upper\":{},",
             "\"window_minutes\":{},",
-            "\"links\":{{\"incident\":\"{}\",\"investigate\":\"{}\"}}",
+            "\"links\":{{\"incident\":\"{}\",\"investigate\":\"{}\"}},",
+            "\"bundle_hash\":{},",
+            "\"bundle_url\":{},",
+            "\"top_hypothesis\":{},",
+            "\"deploy_adjacency\":{},",
+            "\"bundle_error\":{}",
             "}}"
         ),
         ctx.event_type.as_str(),
@@ -106,6 +116,11 @@ pub(crate) fn webhook_payload_json(ctx: &NotificationContext<'_>) -> String {
         ctx.window_minutes,
         escape_json(ctx.incident_url),
         escape_json(ctx.investigate_url),
+        json_opt_str(ctx.bundle_hash),
+        json_opt_str(ctx.bundle_url),
+        json_opt_str(ctx.top_hypothesis),
+        json_string_array(ctx.deploy_adjacency),
+        json_opt_str(ctx.bundle_error),
     )
 }
 
@@ -121,8 +136,13 @@ pub(crate) fn slack_webhook_payload_json(ctx: &NotificationContext<'_>) -> Strin
         .observed_value
         .map(|v| format!("{v}"))
         .unwrap_or_else(|| "n/a".to_string());
+    let evidence = ctx
+        .bundle_hash
+        .map(|hash| format!(" bundle={hash}"))
+        .or_else(|| ctx.bundle_error.map(|err| format!(" bundle_error={err}")))
+        .unwrap_or_default();
     let text = format!(
-        "[{verb}] {name} ({sev}) group={group} value={value} threshold={thr} — {url}",
+        "[{verb}] {name} ({sev}) group={group} value={value} threshold={thr}{evidence} — {url}",
         name = ctx.rule_name,
         sev = ctx.severity,
         group = ctx.group_key,
@@ -130,6 +150,21 @@ pub(crate) fn slack_webhook_payload_json(ctx: &NotificationContext<'_>) -> Strin
         url = ctx.incident_url,
     );
     format!("{{\"text\":\"{}\"}}", escape_json(&text))
+}
+
+fn json_opt_str(value: Option<&str>) -> String {
+    match value {
+        Some(value) => format!("\"{}\"", escape_json(value)),
+        None => "null".into(),
+    }
+}
+
+fn json_string_array(values: &[String]) -> String {
+    let parts: Vec<String> = values
+        .iter()
+        .map(|value| format!("\"{}\"", escape_json(value)))
+        .collect();
+    format!("[{}]", parts.join(","))
 }
 
 fn escape_json(s: &str) -> String {
@@ -169,29 +204,6 @@ pub(crate) fn is_dead_letter(attempt_count: u32) -> bool {
 
 #[cfg(test)]
 mod tests {
-    /// Whether an outbox row is claimable now given optional prior claim expiry.
-    /// `now_unix_secs` and `claim_expires_at` are unix seconds.
-    fn claim_is_available(
-        now_unix_secs: i64,
-        claim_expires_at: Option<i64>,
-        delivered: bool,
-    ) -> bool {
-        if delivered {
-            return false;
-        }
-        match claim_expires_at {
-            None => true,
-            Some(exp) => now_unix_secs >= exp,
-        }
-    }
-    /// Default claim lease length for the delivery worker (30s CAS-style);
-    /// kept beside its arithmetic test until a caller claims it.
-    const CLAIM_LEASE_SECS: i64 = 30;
-
-    fn claim_expires_at(now_unix_secs: i64) -> i64 {
-        now_unix_secs.saturating_add(CLAIM_LEASE_SECS)
-    }
-
     use super::*;
 
     fn ctx() -> NotificationContext<'static> {
@@ -209,6 +221,11 @@ mod tests {
             window_minutes: 5,
             incident_url: "http://localhost:3000/alerts/incidents/inc-9",
             investigate_url: "http://localhost:3000/traces?service=checkout",
+            bundle_hash: None,
+            bundle_url: None,
+            top_hypothesis: None,
+            deploy_adjacency: &[],
+            bundle_error: None,
         }
     }
 
@@ -261,16 +278,6 @@ mod tests {
         assert!(!is_dead_letter(4));
         assert!(is_dead_letter(5));
         assert!(is_dead_letter(6));
-    }
-
-    #[test]
-    fn claim_lease_rules() {
-        assert!(claim_is_available(1000, None, false));
-        assert!(!claim_is_available(1000, None, true));
-        assert!(!claim_is_available(1000, Some(1001), false));
-        assert!(claim_is_available(1000, Some(1000), false));
-        assert!(claim_is_available(1001, Some(1000), false));
-        assert_eq!(claim_expires_at(1000), 1000 + CLAIM_LEASE_SECS);
     }
 
     #[test]

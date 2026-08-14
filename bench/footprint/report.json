@@ -1,0 +1,24 @@
+{
+  "measured_at": "2026-08-13T23:16:01Z",
+  "hardware": "Darwin 25.5.0 arm64 Apple M5 Max",
+  "phases": {
+    "idle": {
+      "parallax_rss_kb": 24416,
+      "greptime_rss_kb": 142384,
+      "cpu_pct": 0.0,
+      "data_dir_bytes": 487739392
+    },
+    "steady": {
+      "parallax_rss_kb": 28192,
+      "greptime_rss_kb": 187328,
+      "cpu_pct": 0.0,
+      "data_dir_bytes": 496234496
+    },
+    "post_idle": {
+      "parallax_rss_kb": 28176,
+      "greptime_rss_kb": 187328,
+      "cpu_pct": 0.0,
+      "data_dir_bytes": 496234496
+    }
+  }
+}

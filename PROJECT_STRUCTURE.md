@@ -31,7 +31,7 @@ and active implementation plans remain plain Markdown.
 | Path | Ownership |
 | --- | --- |
 | [`crates/`](crates/) | Rust product, adapter, test-support, proof, and control-plane crates; see the [workspace map](docs/research/architecture/rust-workspace-map.md) |
-| [`ui/`](ui/) | Bun-only TanStack Start application and browser tests; source layers and ownership ledger in `ui/AGENTS.md` + `ratchet.toml` `[[ui.ownership]]` |
+| [`ui/`](ui/) | Bun-only TanStack Start application and browser tests; source layers and ownership ledger in `ui/AGENTS.md` + `ratchet.toml` `[[ui.ownership]]`; visual language in [`ui/DESIGN.md`](ui/DESIGN.md) |
 | [`docs/guide/`](docs/guide/) | User-facing product documentation |
 | [`docs/research/`](docs/research/) | Research, evidence, architecture, validation, and decisions |
 | [`plans/`](plans/) | Unfinished implementation plans only |

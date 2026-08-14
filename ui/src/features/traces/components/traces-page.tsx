@@ -753,7 +753,7 @@ export function TraceTable({
 }) {
   const durationScale = useMemo(() => buildHeatScale(durationValues), [durationValues])
   return (
-    <Table density="compact">
+    <Table density="compact" className="table-fixed">
       <TableHeader>
         <TableRow>
           <TableHead>Trace</TableHead>

@@ -254,10 +254,9 @@ describe("LogsTable navigation", () => {
       <LogsTable logs={[log]} range={range} columns={["service", "trace"]} />
     )
     await within(container).findByText("checkout failed")
-    const row = container.querySelector("tbody tr") as HTMLElement
-
-    row.focus()
-    expect(document.activeElement).toBe(row)
+    const open = container.querySelector("tbody tr button") as HTMLElement
+    open.focus()
+    expect(document.activeElement).toBe(open)
     await user.keyboard("{Enter}")
 
     expect(await screen.findByText("Log document")).toBeTruthy()

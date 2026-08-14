@@ -44,6 +44,7 @@ const issuesFixture: IssuesData = {
 const detailFixture = {
   issue: {
     ...issuesFixture.issues.items[0]!,
+    groupingExplanation: null,
     events: [
       {
         tsNanos: "1719999990000000000",

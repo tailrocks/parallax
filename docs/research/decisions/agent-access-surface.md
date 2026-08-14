@@ -11,6 +11,28 @@
 > The executable product-code boundary is specified in
 > [agent-trust-boundary-and-prompt-injection.md](agent-trust-boundary-and-prompt-injection.md).
 >
+> ## Proposal (plan 171 feature 2) — OPERATOR DECISION, not shipped
+>
+> **Status: awaiting operator approval.** Do not implement lease tools until
+> this section is accepted.
+>
+> Propose extending the **closed catalog** with three **write-scoped** local-stdio
+> tools. They do not replace the two read-only tools. They call the HTTP GraphQL
+> API only — no new storage dependencies in agent-context crates (trust-boundary
+> rule). Remote MCP stays excluded.
+>
+> | Tool | Role |
+> | --- | --- |
+> | `parallax_issue_claim` | CAS acquire a TTL lease on `issues.fingerprint` for one agent identity |
+> | `parallax_issue_heartbeat` | Extend an owned lease; fail if expired or owned by another agent |
+> | `parallax_issue_release` | Drop the lease and append a `fixer_outcomes`-compatible disposition (never success) |
+>
+> Lease semantics: key = fingerprint + agent identity; CAS acquisition (exactly
+> one winner); heartbeat extends TTL; expired leases are reclaimable; release
+> records disposition only — success still requires review + non-recurrence
+> ([fixer-boundary.md](fixer-boundary.md)). Wire-budget and audit rules match
+> the existing two tools. CLI verbs would be `parallax issue claim|heartbeat|release`.
+>
 > **Current implementation:** `parallax-mcp` (aux product surface) uses `rmcp`
 > and provides stdio serve (requiring `--allow-local-stdio`) and `check`. Closed
 > tool catalog: `parallax_issue_context`, `parallax_agent_session_show`. Loopback-only

@@ -35,6 +35,7 @@ pub(crate) fn execute(cli: Cli) -> Result<()> {
             UiBundleAction::BuildTwice => ui_bundle::build_twice(&root),
         },
         Command::Integration => integration(&root),
+        Command::Doctests => doctests(&root),
         Command::Docs { action } => execute_docs(&root, action, cli.output),
         Command::Policy { only } => policy::run(&root, only.as_deref(), cli.output),
         Command::Arch => policy::run(&root, Some("architecture"), cli.output),
@@ -112,7 +113,7 @@ fn execute_ci(root: &Path, fast: bool, full: bool, output: Output) -> Result<()>
             "docs-links" => docs_links::run(root, output)?,
             "ui" => ui_gates(root)?,
             "test" => test(root)?,
-            "integration" => integration(root)?,
+            "doctests" => doctests(root)?,
             "dependencies" => dependencies::run(root, Selection::All, output)?,
             unknown => bail!("internal unknown CI partition `{unknown}`"),
         }
@@ -198,7 +199,7 @@ fn dependency_selection(rust: bool, ui: bool, all: bool) -> Selection {
 fn ci_partitions(full: bool) -> Vec<&'static str> {
     let mut partitions = vec!["lint", "policy", "facade", "docs-links", "ui"];
     if full {
-        partitions.extend(["test", "integration", "dependencies"]);
+        partitions.extend(["test", "doctests", "dependencies"]);
     }
     partitions
 }
@@ -238,8 +239,25 @@ fn test(root: &Path) -> Result<()> {
     nextest_evidence::run(root, "ci", Output::Human)
 }
 
-fn integration(root: &Path) -> Result<()> {
+fn doctests(root: &Path) -> Result<()> {
     run(root, "cargo", &["test", "--workspace", "--doc", "--locked"])
+}
+
+fn integration(root: &Path) -> Result<()> {
+    run(
+        root,
+        "cargo",
+        &[
+            "nextest",
+            "run",
+            "--workspace",
+            "--run-ignored",
+            "only",
+            "--profile",
+            "real-engine",
+            "--locked",
+        ],
+    )
 }
 
 fn execute_ui(root: &Path, action: Option<UiAction>) -> Result<()> {

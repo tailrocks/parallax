@@ -31,6 +31,7 @@ pub(crate) use alerts::AlertDestination;
 pub(crate) use alerts::AlertIncident;
 pub(crate) use alerts::AlertRule;
 pub(crate) use alerts::AlertRuleInput;
+pub(crate) use alerts::AlertRulePreview;
 pub(crate) use alerts::AlertRuleState;
 pub(crate) use common::Point;
 pub(crate) use dashboards::Dashboard;

@@ -3,7 +3,9 @@ import { readFileSync } from "fs"
 import { createConnection } from "net"
 import { join } from "path"
 
-export type ProductDatasetId = "shell-empty" | "investigations-pilot"
+import type { ProductDatasetId } from "../datasets/catalog"
+
+export type { ProductDatasetId }
 
 export interface RuntimeManifest {
   schema_version: number

@@ -1290,3 +1290,150 @@ async fn legacy_issues_table_gains_nullable_resolution_time() {
     }
     assert!(resolved_at, "bootstrap must add issue resolution time");
 }
+
+#[tokio::test]
+async fn migration_adopts_v0_with_runs_table() {
+    let (_directory, path) = temp_db();
+    {
+        let db = turso::Builder::new_local(path.to_string_lossy().as_ref())
+            .build()
+            .await
+            .expect("raw db");
+        let conn = db.connect().expect("connect");
+        conn.execute("CREATE TABLE runs (id TEXT PRIMARY KEY)", ())
+            .await
+            .expect("runs");
+        conn.execute(
+            "CREATE TABLE issues (
+                fingerprint TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                error_type TEXT NOT NULL,
+                culprit TEXT,
+                service TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'open',
+                first_seen INTEGER NOT NULL,
+                last_seen INTEGER NOT NULL,
+                event_count INTEGER NOT NULL DEFAULT 0,
+                last_trace_id TEXT,
+                tags TEXT NOT NULL DEFAULT '{}'
+            )",
+            (),
+        )
+        .await
+        .expect("issues");
+        conn.execute(
+            "INSERT INTO issues (fingerprint, title, error_type, service, first_seen, last_seen, event_count, tags)
+             VALUES ('kept', 'title', 'E', 'svc', 1, 1, 1, '{}')",
+            (),
+        )
+        .await
+        .expect("row");
+        conn.execute("INSERT INTO runs (id) VALUES ('legacy')", ())
+            .await
+            .expect("legacy run");
+    }
+    let store = MetadataStore::open(&path).await.expect("adopt");
+    {
+        let conn = store.conn.lock().await;
+        let mut runs = conn
+            .query(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'",
+                (),
+            )
+            .await
+            .expect("master");
+        assert!(runs.next().await.expect("row").is_none());
+        let mut version = conn.query("PRAGMA user_version", ()).await.expect("ver");
+        let row = version.next().await.expect("vrow").expect("present");
+        assert_eq!(
+            i32::try_from(integer(&row, 0)).expect("user_version fits i32"),
+            SCHEMA_USER_VERSION
+        );
+    }
+    let issue = store.issue("kept").await.expect("issue").expect("present");
+    assert_eq!(issue.title, "title");
+}
+
+#[tokio::test]
+async fn migration_adopts_v0_without_resolved_at() {
+    let (_directory, path) = temp_db();
+    {
+        let db = turso::Builder::new_local(path.to_string_lossy().as_ref())
+            .build()
+            .await
+            .expect("raw db");
+        let conn = db.connect().expect("connect");
+        conn.execute(
+            "CREATE TABLE issues (
+                fingerprint TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                error_type TEXT NOT NULL,
+                culprit TEXT,
+                service TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'open',
+                first_seen INTEGER NOT NULL,
+                last_seen INTEGER NOT NULL,
+                event_count INTEGER NOT NULL DEFAULT 0,
+                last_trace_id TEXT,
+                tags TEXT NOT NULL DEFAULT '{}'
+            )",
+            (),
+        )
+        .await
+        .expect("issues");
+        conn.execute(
+            "INSERT INTO issues (fingerprint, title, error_type, service, first_seen, last_seen, event_count, tags)
+             VALUES ('old', 't', 'E', 'svc', 2, 2, 1, '{}')",
+            (),
+        )
+        .await
+        .expect("row");
+    }
+    let store = MetadataStore::open(&path).await.expect("adopt");
+    let conn = store.conn.lock().await;
+    let mut columns = conn
+        .query("PRAGMA table_info(issues)", ())
+        .await
+        .expect("cols");
+    let mut resolved_at = false;
+    while let Some(row) = columns.next().await.expect("col") {
+        resolved_at |= text(&row, 1) == "resolved_at";
+    }
+    assert!(resolved_at);
+    let mut version = conn.query("PRAGMA user_version", ()).await.expect("ver");
+    let row = version.next().await.expect("vrow").expect("present");
+    assert_eq!(
+        i32::try_from(integer(&row, 0)).expect("user_version fits i32"),
+        SCHEMA_USER_VERSION
+    );
+}
+
+#[tokio::test]
+async fn migration_rejects_future_user_version() {
+    let (_directory, path) = temp_db();
+    {
+        let db = turso::Builder::new_local(path.to_string_lossy().as_ref())
+            .build()
+            .await
+            .expect("raw db");
+        let conn = db.connect().expect("connect");
+        conn.execute("PRAGMA user_version = 99", ())
+            .await
+            .expect("stamp");
+    }
+    let err = MetadataStore::open(&path).await.expect_err("future");
+    assert!(err.to_string().contains("newer than supported"), "{err:#}");
+}
+
+#[tokio::test]
+async fn migration_stamps_user_version_on_fresh_open() {
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(&path).await.expect("fresh");
+    let conn = store.conn.lock().await;
+    let mut version = conn.query("PRAGMA user_version", ()).await.expect("ver");
+    let row = version.next().await.expect("vrow").expect("present");
+    assert_eq!(
+        i32::try_from(integer(&row, 0)).expect("user_version fits i32"),
+        SCHEMA_USER_VERSION
+    );
+}

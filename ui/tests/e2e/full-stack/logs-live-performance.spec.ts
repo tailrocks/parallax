@@ -6,6 +6,7 @@ import {
   seedLiveLogDuplicatePair,
 } from "../fixtures/full-stack-fixture"
 import { summarizeBurst, waitForExactTextCount } from "../support/live-performance"
+import { SURFACE_TIMEOUT_MS, LIVE_TIMEOUT_MS } from "../support/timeouts"
 
 /**
  * Plan 147 feature-owned @live cases for logs.
@@ -21,7 +22,7 @@ test.describe("full-stack logs live performance @live", () => {
 
     await page.goto("/logs?live=true")
     await expect(page.getByRole("heading", { name: "Logs" })).toBeVisible({
-      timeout: 20_000,
+      timeout: SURFACE_TIMEOUT_MS,
     })
     await expect(page.getByRole("button", { name: "Live", exact: true })).toBeVisible({
       timeout: 10_000,
@@ -51,14 +52,14 @@ test.describe("full-stack logs live performance @live", () => {
 
     await page.goto("/logs?live=true")
     await expect(page.getByRole("heading", { name: "Logs" })).toBeVisible({
-      timeout: 20_000,
+      timeout: SURFACE_TIMEOUT_MS,
     })
 
     const body = `pw-live-dup-${manifest.dataset_id}`
     // Two identical rows in one OTLP export — merge identity must keep one.
     await seedLiveLogDuplicatePair(body)
     await expect(page.getByText(body, { exact: false }).first()).toBeVisible({
-      timeout: 45_000,
+      timeout: LIVE_TIMEOUT_MS,
     })
     // Log rows use role=button; count <tr> with the body marker.
     await expect(page.locator("tr").filter({ hasText: body })).toHaveCount(1, {
@@ -84,7 +85,7 @@ test.describe("full-stack logs live performance @live", () => {
     const before = `pw-live-pre-filter-${manifest.dataset_id}-${Date.now()}`
     await seedLiveLog(before)
     await expect(page.locator("tr").filter({ hasText: before })).toHaveCount(1, {
-      timeout: 45_000,
+      timeout: LIVE_TIMEOUT_MS,
     })
 
     // Wrong service filter → stream regenerates; prior live rows cleared.
@@ -104,7 +105,7 @@ test.describe("full-stack logs live performance @live", () => {
     const after = `pw-live-post-filter-${manifest.dataset_id}-${Date.now()}`
     await seedLiveLog(after)
     await expect(page.locator("tr").filter({ hasText: after })).toHaveCount(1, {
-      timeout: 45_000,
+      timeout: LIVE_TIMEOUT_MS,
     })
   })
 })

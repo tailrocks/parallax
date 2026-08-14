@@ -244,6 +244,11 @@ async fn alert_incidents_states_and_checks_read_paths() {
             resolved_at_nanos: None,
             last_value: Some(0.4),
             last_notified_at_nanos: None,
+            bundle_hash: None,
+            bundle_assembled_at_nanos: None,
+            bundle_top_hypothesis: None,
+            bundle_deploy_adjacency: None,
+            bundle_error: None,
         })
         .await
         .unwrap();

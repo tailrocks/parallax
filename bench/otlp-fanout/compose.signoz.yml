@@ -1,5 +1,10 @@
 # Overlay: SigNoz (its bundled ClickHouse + ZooKeeper + otel-collector + signoz).
 #
+# BLOCKED at SIGNOZ_REF=v0.137.0 (plan 162, 2026-08-14): upstream removed
+# vendor/signoz/deploy/docker/docker-compose.yaml and deprecated compose in
+# favor of Foundry (https://github.com/SigNoz/foundry). The include below is
+# the last working path (v0.129.0). Do not invent a Foundry rewrite here.
+#
 # SigNoz is a multi-service stack installed from its own repo. Run setup-vendor.sh
 # first to clone it into ./vendor/signoz, then:
 #   docker compose -f compose.yml -f compose.signoz.yml up

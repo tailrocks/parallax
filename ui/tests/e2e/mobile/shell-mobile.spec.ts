@@ -1,5 +1,6 @@
 import { productTest as test, expect } from "../fixtures/test"
 import { ShellScreen } from "../screens/shell-screen"
+import { assertNoHorizontalOverflow } from "../support/overflow"
 
 test.describe("shell mobile/touch @mobile", () => {
   test.use({ productDataset: "shell-empty" })
@@ -42,13 +43,6 @@ test.describe("shell mobile/touch @mobile", () => {
       timeout: 15_000,
     })
 
-    const overflow = await page.evaluate(() => {
-      const doc = document.documentElement
-      return {
-        scrollWidth: doc.scrollWidth,
-        clientWidth: doc.clientWidth,
-      }
-    })
-    expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.clientWidth + 1)
+    await assertNoHorizontalOverflow(page)
   })
 })

@@ -65,39 +65,11 @@ major upgrades. The root [`AGENTS.md`](../AGENTS.md) and the
 
 ## Observability design language (plan 162)
 
-19. **Three semantic color axes — never repurpose:**
-    - **Severity ramp** (`--severity-trace|debug|info|warn|error|fatal` via
-      `@/lib/colors` `severityToken`/`severityColor`): log severity and error/
-      incident state ONLY. Always pair color with the **literal severity word**
-      (dot + WORD); color is never the sole signal.
-    - **Service identity** (`serviceColor(name)` + `ServiceDot`): service
-      **identity** ONLY — never sentiment, health, or a metric. Same service
-      name → same color on every page. Always render the service name text
-      next to the decorative (`aria-hidden`) squircle.
-    - **Percentile / RED charts** (`--chart-p50|p95|p99|error|throughput`):
-      latency and RED series ONLY. Generic series use `--chart-1..5` or
-      `seriesColor(name, index)` (semantic names map; unknown → golden-angle).
-20. **Tabular numerals** on every stacked duration/count cell
-    (`tabular-nums` / `.tabular-stack`) so columns align vertically.
-21. **Motion doctrine:** content replacing a skeleton uses opacity-only
-    `.content-enter` (~150ms); never move data the user is about to read
-    (no height animations on rows; no spinners for sub-second loads). All
-    motion respects `prefers-reduced-motion`.
-22. **Empty-state voice:** say what is missing and what would produce it
-    (e.g. "No sessions yet — this invocation emitted no session.start event"),
-    never marketing copy.
-23. **Six-item browser verification checklist** (every UI change against
-    playground data before the next step):
-    1. **Data correctness** — values match GraphQL/source for the visible
-       window.
-    2. **Links** — every row/chip navigates to a real detail surface.
-    3. **States** — empty, loading (skeleton), error, and live/polling each
-       render sanely.
-    4. **Layout** — no overflow/clip at default density; table numerals
-       align.
-    5. **Theme** — light and dark both readable (severity words + contrast).
-    6. **Motion** — no layout shift on refresh; reduced-motion does not
-       break usability.
+19. **Design guide:** follow [`DESIGN.md`](DESIGN.md) for tokens, color axes
+    (never-repurpose), typography, motion, empty-state voice, elevation vs
+    border, and component exemplars. Do not add colors, shadows, or motion
+    outside that vocabulary. The six-item browser verification checklist
+    lives there.
 
 24. **Every graph visualization renders with React Flow** (operator,
     2026-07-17): wherever the UI draws a graph schema or displays anything

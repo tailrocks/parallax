@@ -15,7 +15,7 @@ run in Docker Compose.** Maple runs fully local as a **chDB-binary container (no
 Tinybird)**. The only Parallax-side support needed is forwarding to the collector;
 Rotel reaches the single host sink (Parallax) via `host.docker.internal:14317`.
 **All five backends are now implemented and verified live (2026-06-23):**
-OpenObserve, SigNoz, Maple (chDB), and Sentry (v26.6.0, its own vendored stack
+OpenObserve, SigNoz, Maple (chDB), and Sentry (pin `26.7.2`, its own vendored stack
 reached over the host bridge `host.docker.internal:9000`). Sentry is no longer
 deferred — see `bench/otlp-fanout/sentry/`.
 
@@ -339,11 +339,11 @@ separately on the host (see prerequisites / workflow step 0).
 
 | Service | Image / build | Host ports | Profile | Notes |
 |---|---|---|---|---|
-| `rotel` | `streamfold/rotel` (Docker Hub, pin tag) | `4317`, `4318` | default | the only published OTLP ports; config via `rotel.env`; `extra_hosts` on Linux to reach host Parallax |
+| `rotel` | `streamfold/rotel:v0.2.5` | `4317`, `4318` | default | the only published OTLP ports; config via `rotel.env`; `extra_hosts` on Linux to reach host Parallax |
 | `maple` | container running Maple's **chDB single-binary** (local mode) — small image wrapping the binary; **no Tinybird** | `8081`→UI | default | OTLP `4318` HTTP internal, **no auth**; chDB data in a named volume |
 | `signoz` | `include:` SigNoz `deploy/docker` (signoz + otel-collector + clickhouse + zookeeper) | `3301`→`8080` | default | **override to unpublish its host `4317/4318`** (see Hard rule); collector service `otel-collector` |
-| `openobserve` | `public.ecr.aws/zinclabs/openobserve` (pin tag) | `5080` | default | OTLP `5081` gRPC internal; set `ZO_ROOT_USER_EMAIL`/`ZO_ROOT_USER_PASSWORD`; **ingest needs auth headers** (see `rotel.env`) |
-| `sentry-*` | `getsentry/self-hosted` (**~72 services**, `install.sh`) | `9000` (nginx) | own stack | **not a clean `include:` target** — runs as its **own vendored Compose stack** (`bench/otlp-fanout/sentry/setup.sh`); Rotel reaches it over the **host bridge** `host.docker.internal:9000` → nginx → relay (no network-join needed). **IMPLEMENTED + verified live 2026-06-23 on v26.6.0** (A1 OTLP ingest + A15/A16 grouping). Pin ≥ native-OTLP (`~25.8.0`); default `SENTRY_REF=26.6.0` |
+| `openobserve` | `public.ecr.aws/zinclabs/openobserve:v0.92.0` | `5080` | default | OTLP `5081` gRPC internal; set `ZO_ROOT_USER_EMAIL`/`ZO_ROOT_USER_PASSWORD`; **ingest needs auth headers** (see `rotel.env`) |
+| `sentry-*` | `getsentry/self-hosted` (**~72 services**, `install.sh`) | `9000` (nginx) | own stack | **not a clean `include:` target** — runs as its **own vendored Compose stack** (`bench/otlp-fanout/sentry/setup.sh`); Rotel reaches it over the **host bridge** `host.docker.internal:9000` → nginx → relay (no network-join needed). **IMPLEMENTED + verified live 2026-06-23 on v26.6.0**; vendor pin `SENTRY_REF=26.7.2` (2026-08-14). Pin ≥ native-OTLP (`~25.8.0`) |
 | `loadgen` | small OTel SDK / `telemetrygen` container | — | `loadgen` | optional fixed-fixture emitter → `rotel:4317`; pins trace/span ids for cross-UI diffing |
 
 Hard rule: **only `rotel` publishes `4317/4318` to the host.** Every competitor
@@ -535,7 +535,9 @@ The dated design separated a host-bridge smoke, the core SigNoz/OpenObserve lab,
 the full Sentry lab, and a server-sized sustained run. The host-bridge assertion
 is the protocol's fragile-hop check. The full Sentry lab was completed on
 2026-06-23 with v26.6.0 through `sentry/setup.sh`, `sentry/onboard.sh`, and
-`sentry/verify.sh`. Any unexecuted core/server rerun or compare-mode product gap is **design-only
+`sentry/verify.sh`. Lab image/vendor pins moved to current-stable on 2026-08-14
+(plan 162: Rotel `v0.2.5`, OpenObserve `v0.92.0`, Maple `v0.0.18`, SigNoz
+`v0.137.0`, Sentry `26.7.2`, telemetrygen `v0.158.0`). Any unexecuted core/server rerun or compare-mode product gap is **design-only
 or plan 154** (playground multi-backend residual) — **not** plan 122 (DONE/deleted).
 The scored fixture/diff harness remains outside the manual protocol by operator
 decision.

@@ -90,6 +90,7 @@ export function mapIssueDetail(
         eventCount: data.issue.eventCount,
         lastTraceId: data.issue.lastTraceId,
         tags: data.issue.tags,
+        groupingExplanation: data.issue.groupingExplanation,
         events: mapIssueEvents(data.issue.events),
       }
     : null

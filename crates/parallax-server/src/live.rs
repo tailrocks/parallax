@@ -18,6 +18,9 @@ use parallax_storage::model::{LogRow, SpanRow};
 use std::sync::Arc;
 use tokio_stream::StreamExt as _;
 use tokio_stream::wrappers::BroadcastStream;
+use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
+
+use crate::ingest_health::IngestHealth;
 
 /// Broadcast capacity: a lagging browser drops old batches rather than
 /// stalling ingest (broadcast semantics), which is exactly tail behavior.
@@ -46,6 +49,7 @@ pub(crate) type SpanSender = tokio::sync::broadcast::Sender<Arc<LiveSpanBatch>>;
 pub(crate) struct LiveChannels {
     pub logs: LogSender,
     pub spans: SpanSender,
+    pub health: Option<Arc<IngestHealth>>,
 }
 
 #[must_use]
@@ -53,6 +57,7 @@ pub(crate) fn channels() -> LiveChannels {
     LiveChannels {
         logs: tokio::sync::broadcast::channel(CHANNEL_CAPACITY).0,
         spans: tokio::sync::broadcast::channel(CHANNEL_CAPACITY).0,
+        health: None,
     }
 }
 
@@ -121,9 +126,18 @@ pub(crate) async fn stream_logs(
     Query(filter): Query<StreamFilter>,
 ) -> Sse<impl Stream<Item = Result<Event, axum::Error>>> {
     let receiver = channels.logs.subscribe();
+    let health = channels.health.clone();
     let stream = BroadcastStream::new(receiver).filter_map(move |batch| {
         // Lagged receivers skip dropped batches and keep tailing.
-        let batch = batch.ok()?;
+        let batch = match batch {
+            Ok(batch) => batch,
+            Err(BroadcastStreamRecvError::Lagged(skipped)) => {
+                if let Some(health) = &health {
+                    health.live_lagged(skipped);
+                }
+                return None;
+            }
+        };
         let matching: Vec<serde_json::Value> = batch
             .rows
             .iter()
@@ -203,8 +217,17 @@ pub(crate) async fn stream_traces(
     Query(filter): Query<SpanStreamFilter>,
 ) -> Sse<impl Stream<Item = Result<Event, axum::Error>>> {
     let receiver = channels.spans.subscribe();
+    let health = channels.health.clone();
     let stream = BroadcastStream::new(receiver).filter_map(move |batch| {
-        let batch = batch.ok()?;
+        let batch = match batch {
+            Ok(batch) => batch,
+            Err(BroadcastStreamRecvError::Lagged(skipped)) => {
+                if let Some(health) = &health {
+                    health.live_lagged(skipped);
+                }
+                return None;
+            }
+        };
         let matching: Vec<serde_json::Value> = batch
             .rows
             .iter()

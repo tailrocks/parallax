@@ -174,6 +174,7 @@ async fn runs_list_stats_match_single_run() {
             store: context.store.clone(),
             metadata: context.metadata.clone(),
             alerts: context.alerts.clone(),
+            alert_previewer: None,
             otlp_grpc_port: 4317,
             otlp_http_port: 4318,
             memo: RequestMemo::default(),

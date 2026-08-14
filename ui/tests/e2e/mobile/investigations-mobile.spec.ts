@@ -1,5 +1,6 @@
 import { productTest as test, expect } from "../fixtures/test"
 import { InvestigationsScreen } from "../screens/investigations-screen"
+import { assertNoHorizontalOverflow } from "../support/overflow"
 
 const PILOT_NAME = "Checkout latency case"
 
@@ -21,8 +22,6 @@ test.describe("investigations mobile pilot @mobile", () => {
     await screen.nameInput().fill("Mobile pilot case")
     await expect(screen.nameInput()).toHaveValue("Mobile pilot case")
 
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth)
-    const client = await page.evaluate(() => document.documentElement.clientWidth)
-    expect(overflow).toBeLessThanOrEqual(client + 1)
+    await assertNoHorizontalOverflow(page)
   })
 })

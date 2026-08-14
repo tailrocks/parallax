@@ -1,0 +1,20 @@
+# Plan 175 ceilings. 2× the 2026-08-13 Apple M5 Max first run in
+# report.json. Raise only with a new measured report in the same change.
+
+[idle]
+parallax_rss_kb = 48832
+greptime_rss_kb = 284768
+cpu_pct = 80
+data_dir_bytes = 975478784
+
+[steady]
+parallax_rss_kb = 56384
+greptime_rss_kb = 374656
+cpu_pct = 200
+data_dir_bytes = 992468992
+
+[post_idle]
+parallax_rss_kb = 56352
+greptime_rss_kb = 374656
+cpu_pct = 80
+data_dir_bytes = 992468992

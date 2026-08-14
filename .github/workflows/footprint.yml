@@ -1,0 +1,87 @@
+# Plan 175 footprint gate.
+# Flip-to-required date: 2026-08-28 (two weeks after first landing 2026-08-14).
+# Until then this job is non-blocking (continue-on-error) so runner noise
+# cannot red the PR; after the date, drop continue-on-error and add the
+# job to the required-check aggregate.
+name: Footprint
+
+on:
+  pull_request:
+    paths:
+      - "crates/**"
+      - "Cargo.lock"
+      - "bench/footprint/**"
+      - ".github/workflows/footprint.yml"
+  push:
+    branches: [main]
+    paths:
+      - "crates/**"
+      - "Cargo.lock"
+      - "bench/footprint/**"
+      - ".github/workflows/footprint.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: footprint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  measure:
+    # Pinned runner class: GitHub-hosted ubuntu. Variance risk is why the
+    # contract starts at 2× observed and this job stays warn-only until
+    # 2026-08-28.
+    name: Measure
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    continue-on-error: true
+    env:
+      RUSTFLAGS: "-C link-arg=-fuse-ld=mold"
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "false"
+      SCCACHE_CACHE_SIZE: 20G
+      CARGO_INCREMENTAL: "0"
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Cache Cargo registry
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/cache
+            ~/.cargo/registry/index
+            ~/.cargo/registry/src
+            ~/.cargo/git/db
+          key: cargo-registry-github-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-registry-github-${{ runner.os }}-${{ runner.arch }}-
+      - name: Cache Cargo target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: target
+          key: cargo-target-github-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: cargo-target-github-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('rust-toolchain.toml', '.cargo/config.toml', '**/Cargo.toml', '**/Cargo.lock') }}-
+      - uses: rui314/setup-mold@9c9c13bf4c3f1adef0cc596abc155580bcb04444 # v1
+      - uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
+        with:
+          version: v0.16.0
+          disable_annotations: "false"
+      - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
+        with:
+          install_args: "rust"
+          github_token: ${{ secrets.GH_READONLY_TOKEN }}
+      - name: Measure and check footprint
+        run: |
+          chmod +x bench/footprint/measure.sh bench/footprint/check.sh
+          bench/footprint/measure.sh
+          bench/footprint/check.sh
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: footprint-report
+          path: bench/footprint/report.json

@@ -348,19 +348,21 @@ async fn service_summaries_and_red_use_trace_durations() {
 #[tokio::test]
 async fn conformance_scenarios_pass_on_memory() {
     let store = MemoryStore::new();
-    crate::conformance::trace_search_scenario(&store)
+    crate::conformance::seed_memory(&store);
+    let exp = crate::conformance::memory_expectations();
+    crate::conformance::trace_search_scenario(&store, &exp)
         .await
         .expect("trace_search");
-    crate::conformance::log_count_series_scenario(&store)
+    crate::conformance::log_count_series_scenario(&store, &exp)
         .await
         .expect("log_count_series");
-    crate::conformance::overview_totals_scenario(&store)
+    crate::conformance::overview_totals_scenario(&store, &exp)
         .await
         .expect("overview_totals");
-    crate::conformance::attribute_compare_scenario(&store)
+    crate::conformance::attribute_compare_scenario(&store, &exp)
         .await
         .expect("attribute_compare");
-    crate::conformance::service_map_scenario(&store)
+    crate::conformance::service_map_scenario(&store, &exp)
         .await
         .expect("service_map");
 }

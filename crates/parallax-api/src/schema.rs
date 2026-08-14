@@ -4,6 +4,8 @@ use juniper::{EmptySubscription, RootNode};
 
 use crate::{ApiContext, Mutation, Query};
 
+pub use crate::query_limits::check_query_limits;
+
 pub type Schema = RootNode<Query, Mutation, EmptySubscription<ApiContext>>;
 
 #[must_use]

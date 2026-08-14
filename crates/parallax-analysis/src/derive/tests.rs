@@ -134,6 +134,23 @@ fn logs_prefer_structured_error_type_and_operation_for_fingerprint() {
     assert_eq!(events[0].error_type, "jackin::CapsuleAttach");
     assert_eq!(events[0].fingerprint, events[1].fingerprint);
     assert_ne!(events[0].fingerprint, events[2].fingerprint);
+    assert_eq!(
+        operation_from_json_attributes(&events[0].attributes),
+        Some("capsule.attach")
+    );
+}
+
+#[test]
+fn exception_event_operation_is_stored_on_event_attributes() {
+    let mut span = test_span(status::StatusCode::Ok as i32, true);
+    span.events[0]
+        .attributes
+        .push(string_kv("cli.command.name", "capsule.attach"));
+    let events = derive_from_traces(&span_request(span));
+    assert_eq!(
+        operation_from_json_attributes(&events[0].attributes),
+        Some("capsule.attach")
+    );
 }
 
 #[test]

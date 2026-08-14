@@ -13,10 +13,15 @@
 //! use parallax_api::resolvers::Trace;
 //! ```
 
+mod alert_preview;
 mod api_errors;
 mod query_limits;
 mod resolvers;
 mod schema;
+
+pub use alert_preview::{
+    AlertPreviewData, AlertPreviewGroupData, AlertPreviewPointData, AlertPreviewer,
+};
 
 pub(crate) use resolvers::helpers::{
     parse_range, retained_recent_range, step_nanos, validate_investigation_name,
@@ -30,13 +35,14 @@ use std::{collections::HashMap, sync::Arc};
 
 use resolvers::{
     AgentSessionOut, AlertCheck, AlertDestination, AlertIncident, AlertRule, AlertRuleInput,
-    AlertRuleState, AttributeCompareRow, AttributeFilterInput, BundleOut, CriticalPath, Dashboard,
-    DurationStats, EvidenceGap, Facet, FieldKey, FieldStats, Investigation, Invocation, Issue,
-    IssueList, IssueSort, LogRecord, MetricExemplar, ObservedInvocation, Overview, Point,
-    ReleaseWindow, RuntimeMetric, SavedView, Series, ServiceCatalogRow, ServiceMap,
-    ServiceOverview, ServiceSummary, SignalKind, SpanRed, SqlResultOut, StoryBeat, TestCaseDetail,
-    TestConfigurationFilterInput, TestExplorerPage, TestExplorerSort, TestFlakyState, TestRollup,
-    Trace, TraceDiff, TraceEventsOut, TraceList, TraceSort, TraceSummary, TrendPoint,
+    AlertRulePreview, AlertRuleState, AttributeCompareRow, AttributeFilterInput, BundleOut,
+    CriticalPath, Dashboard, DurationStats, EvidenceGap, Facet, FieldKey, FieldStats,
+    Investigation, Invocation, Issue, IssueList, IssueSort, LogRecord, MetricExemplar,
+    ObservedInvocation, Overview, Point, ReleaseWindow, RuntimeMetric, SavedView, Series,
+    ServiceCatalogRow, ServiceMap, ServiceOverview, ServiceSummary, SignalKind, SpanRed,
+    SqlResultOut, StoryBeat, TestCaseDetail, TestConfigurationFilterInput, TestExplorerPage,
+    TestExplorerSort, TestFlakyState, TestRollup, Trace, TraceDiff, TraceEventsOut, TraceList,
+    TraceSort, TraceSummary, TrendPoint,
 };
 
 mod memo;
@@ -54,6 +60,9 @@ pub struct ApiContext {
     /// a concrete handle, `None` in pure in-memory harnesses (alert resolvers
     /// then report alerting unavailable).
     pub alerts: Option<Arc<parallax_metadata::TursoMetadataStore>>,
+    /// Server-wired preview runner (plan 171). None in unit harnesses that
+    /// do not exercise `alertRulePreview`.
+    pub alert_previewer: Option<Arc<dyn AlertPreviewer>>,
     pub otlp_grpc_port: u16,
     pub otlp_http_port: u16,
     pub memo: RequestMemo,
@@ -290,9 +299,7 @@ impl Query {
     /// Recent traces (root span + aggregates), newest first.
     async fn recent_traces(context: &ApiContext, limit: Option<i32>,) -> FieldResult<Vec<TraceSummary>> { resolvers::traces::recent_traces(context, limit).await }
 
-    /// Filtered trace browse (UI Traces page / `parallax traces`): every
-    /// filter optional; filters hit the root span except `errorOnly`,
-    /// which looks at the whole trace.
+    /// Filtered trace browse; optional filters, root span except errorOnly.
     #[expect(clippy::too_many_arguments, reason = "GraphQL trace filters are the public query contract")]
     async fn traces(context: &ApiContext, service: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, min_duration_ms: Option<f64>, max_duration_ms: Option<f64>, error_only: Option<bool>, query: Option<String>, limit: Option<i32>, offset: Option<i32>, sort: Option<TraceSort>,) -> FieldResult<Vec<TraceSummary>> { resolvers::traces::traces(context, service, from_nanos, to_nanos, min_duration_ms, max_duration_ms, error_only, query, limit, offset, sort).await }
 
@@ -312,21 +319,13 @@ impl Query {
     #[expect(clippy::too_many_arguments, reason = "GraphQL trace filters are the public query contract")]
     async fn trace_facets(context: &ApiContext, service: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, error_only: Option<bool>, query: Option<String>, attribute_filters: Option<Vec<AttributeFilterInput>>,) -> FieldResult<Vec<Facet>> { resolvers::traces::trace_facets(context, service, from_nanos, to_nanos, error_only, query, attribute_filters).await }
 
-    /// The bounded, redacted, hypothesis-ranked evidence bundle — the agent
-    /// handoff artifact assembling trace + logs + metric windows together.
-    /// Exactly one anchor: `fingerprint` (issue), `invocationId`, or `traceId`
-    /// (spec §8). Null when the anchor does not exist.
-    async fn bundle(context: &ApiContext, fingerprint: Option<String>, invocation_id: Option<String>, trace_id: Option<String>, max_tokens: Option<i32>,) -> FieldResult<Option<BundleOut>> { resolvers::issues::bundle(context, fingerprint, invocation_id, trace_id, max_tokens).await }
+    /// Bounded redacted evidence bundle. Exactly one of fingerprint, invocationId, traceId, alertIncidentId.
+    async fn bundle(context: &ApiContext, fingerprint: Option<String>, invocation_id: Option<String>, trace_id: Option<String>, alert_incident_id: Option<String>, max_tokens: Option<i32>,) -> FieldResult<Option<BundleOut>> { resolvers::issues::bundle(context, fingerprint, invocation_id, trace_id, alert_incident_id, max_tokens).await }
 
-    /// Window-scoped metric explorer catalog (plan 168): canonical names with
-    /// kind (gauge|sum|histogram), unit, emitting services, last datapoint,
-    /// and finite-sample counts per the metric-summary contract. `q` is a
-    /// Bounded invocation-scoped metric family summaries (plan 105): typed
-    /// projection over invocation_metric_points, canonical names, finite
-    /// samples only.
+    /// Invocation-scoped metric family summaries (plan 105).
     async fn invocation_metrics(context: &ApiContext, invocation_id: String, from_nanos: Option<String>, to_nanos: Option<String>, limit: Option<i32>,) -> FieldResult<Vec<resolvers::metrics::InvocationMetricRow>> { resolvers::metrics::invocation_metrics(context, invocation_id, from_nanos, to_nanos, limit).await }
 
-    /// case-insensitive substring filter; `kind` filters one metric kind.
+    /// Metric catalog; `q` substring, `kind` one kind.
     async fn metric_catalog(context: &ApiContext, from_nanos: String, to_nanos: String, q: Option<String>, kind: Option<String>, limit: Option<i32>,) -> FieldResult<Vec<resolvers::MetricCatalogRow>> { resolvers::metrics::metric_catalog(context, from_nanos, to_nanos, q, kind, limit).await }
 
     /// The single shared metric read path (plan 168): typed kind + aggregation
@@ -380,6 +379,9 @@ impl Query {
 
     /// Alert rules, most recently updated first (plan 167).
     async fn alert_rules(context: &ApiContext) -> FieldResult<Vec<AlertRule>> { resolvers::alerts::alert_rules(context).await }
+
+    /// Evaluate a draft rule over the recent window without persisting (plan 171).
+    async fn alert_rule_preview(context: &ApiContext, input: AlertRuleInput, window_minutes: Option<i32>,) -> FieldResult<AlertRulePreview> { resolvers::alerts::alert_rule_preview(context, input, window_minutes).await }
 
     async fn alert_rule(context: &ApiContext, id: String) -> FieldResult<Option<AlertRule>> { resolvers::alerts::alert_rule(context, id).await }
 
@@ -454,9 +456,10 @@ impl Mutation {
 
 }
 
-pub use query_limits::check_query_limits;
 pub(crate) use query_limits::clamp_limit;
-pub use schema::{Schema, build_schema, execute, export_schema_sdl, normalize_schema_sdl};
+pub use schema::{
+    Schema, build_schema, check_query_limits, execute, export_schema_sdl, normalize_schema_sdl,
+};
 
 #[cfg(test)]
 mod tests;

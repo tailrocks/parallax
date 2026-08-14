@@ -6,7 +6,7 @@
  * params so a colored view survives reload and sharing.
  */
 
-import { serviceColor } from "@/shared/colors"
+import { serviceColor, SPAN_STATUS } from "@/shared/colors"
 
 export type ColorByStrategy =
   | { kind: "service" }
@@ -68,8 +68,8 @@ const SPAN_KIND_COLORS: Record<string, string> = {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  STATUS_CODE_ERROR: "var(--chart-error)",
-  STATUS_CODE_OK: "var(--severity-info)",
+  STATUS_CODE_ERROR: SPAN_STATUS.error.color,
+  STATUS_CODE_OK: SPAN_STATUS.ok.color,
   STATUS_CODE_UNSET: COLOR_BY_UNKNOWN,
 }
 

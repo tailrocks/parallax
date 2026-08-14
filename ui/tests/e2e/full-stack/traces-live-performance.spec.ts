@@ -4,6 +4,7 @@ import {
   seedLiveSpan,
   seedLiveSpanDuplicatePair,
 } from "../fixtures/full-stack-fixture"
+import { LIVE_TIMEOUT_MS, SURFACE_TIMEOUT_MS } from "../support/timeouts"
 
 /**
  * Plan 147 feature-owned @live cases for traces.
@@ -16,7 +17,7 @@ test.describe("full-stack traces live performance @live", () => {
 
     await page.goto("/traces?live=true")
     await expect(page.getByRole("heading", { name: /traces/i }).first()).toBeVisible({
-      timeout: 20_000,
+      timeout: SURFACE_TIMEOUT_MS,
     })
 
     const spanName = `pw.live.span.${manifest.dataset_id}`
@@ -24,10 +25,11 @@ test.describe("full-stack traces live performance @live", () => {
     expect(first.span_id.length).toBeGreaterThanOrEqual(8)
 
     await expect(page.getByText(spanName, { exact: false }).first()).toBeVisible({
-      timeout: 45_000,
+      timeout: LIVE_TIMEOUT_MS,
     })
-    const count = await page.getByText(spanName, { exact: false }).count()
-    expect(count).toBeGreaterThanOrEqual(1)
+    await expect(page.locator("tr").filter({ hasText: spanName })).toHaveCount(1, {
+      timeout: 10_000,
+    })
   })
 
   test("duplicate spanId does not double-render @pw-live-traces-dedup", async ({
@@ -39,13 +41,13 @@ test.describe("full-stack traces live performance @live", () => {
 
     await page.goto("/traces?live=true")
     await expect(page.getByRole("heading", { name: /traces/i }).first()).toBeVisible({
-      timeout: 20_000,
+      timeout: SURFACE_TIMEOUT_MS,
     })
 
     const spanName = `pw.live.span.dedup.${manifest.dataset_id}`
     await seedLiveSpanDuplicatePair({ spanName })
     await expect(page.getByText(spanName, { exact: false }).first()).toBeVisible({
-      timeout: 45_000,
+      timeout: LIVE_TIMEOUT_MS,
     })
     // Count <tr> with the span name once (merge dedupe of identical spanId).
     await expect(page.locator("tr").filter({ hasText: spanName })).toHaveCount(1, {

@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from "vitest"
 
+import { isBrowserEngineNoise, isUnusedModulepreloadWarning } from "../e2e/fixtures/diagnostics"
 import { diagnosticMismatch, expectDiagnostic } from "../../src/test/diagnostics"
 
 describe("test diagnostic policy", () => {
@@ -40,6 +41,18 @@ describe("test diagnostic policy", () => {
         })
       )
     ).toBe(false)
+  })
+
+  it("treats WebKit unused modulepreload as engine noise", () => {
+    const webkit =
+      "The resource http://127.0.0.1:4174/assets/routes-N2TyLTuY.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it wasn't preloaded for nothing."
+    expect(isUnusedModulepreloadWarning(webkit)).toBe(true)
+    expect(isBrowserEngineNoise({ kind: "console-warning", message: webkit })).toBe(true)
+    expect(isUnusedModulepreloadWarning("React key warning on list row")).toBe(false)
+    expect(
+      isBrowserEngineNoise({ kind: "console-warning", message: "React key warning on list row" })
+    ).toBe(false)
+    expect(isBrowserEngineNoise({ kind: "pageerror", message: webkit })).toBe(false)
   })
 
   it("owns browser rejections exactly", () => {

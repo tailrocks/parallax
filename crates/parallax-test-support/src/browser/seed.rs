@@ -3,13 +3,15 @@
 use std::sync::Arc;
 
 use anyhow::{Context, Result, bail};
+use parallax_metadata::TursoMetadataStore;
 use parallax_storage::metadata::MetadataStore;
 
-use super::datasets::{
-    ANCHOR_TS_NANOS, DatasetId, INVESTIGATION_PILOT_ID, INVESTIGATION_PILOT_NAME, ScenarioManifest,
-    manifest_for, pilot_investigation_state_json,
+use super::datasets::{DatasetId, ScenarioManifest, manifest_for};
+use super::seed_builders::{
+    seed_alerts_pilot, seed_dashboards_pilot, seed_investigations_pilot, seed_logs_pilot,
+    seed_metrics_pilot, seed_sql_pilot, seed_traces_pilot,
 };
-use crate::builders::{MemoryStore, span};
+use crate::builders::MemoryStore;
 
 /// Wipe Turso-like metadata tables used by browser contracts.
 pub async fn clear_metadata(metadata: &dyn MetadataStore) -> Result<()> {
@@ -49,41 +51,31 @@ pub async fn clear_metadata(metadata: &dyn MetadataStore) -> Result<()> {
 /// Reset telemetry + metadata and seed the requested dataset.
 pub async fn reset_and_seed(
     store: &MemoryStore,
-    metadata: Arc<dyn MetadataStore>,
+    metadata: Arc<TursoMetadataStore>,
     dataset: DatasetId,
 ) -> Result<ScenarioManifest> {
     store.clear();
     clear_metadata(metadata.as_ref()).await?;
+    metadata.alert_reset().await;
     seed_dataset(store, metadata.as_ref(), dataset).await
 }
 
 /// Seed without clearing first (tests that compose seeds deliberately).
 pub async fn seed_dataset(
     store: &MemoryStore,
-    metadata: &dyn MetadataStore,
+    metadata: &TursoMetadataStore,
     dataset: DatasetId,
 ) -> Result<ScenarioManifest> {
     let manifest = manifest_for(dataset);
     match dataset {
         DatasetId::ShellEmpty => {}
-        DatasetId::InvestigationsPilot => {
-            store.push_spans(vec![span(
-                "checkout",
-                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                "bbbbbbbbbbbbbbbb",
-                ANCHOR_TS_NANOS,
-                12_000_000,
-            )]);
-            metadata
-                .investigation_save(
-                    INVESTIGATION_PILOT_ID,
-                    INVESTIGATION_PILOT_NAME,
-                    &pilot_investigation_state_json(),
-                    ANCHOR_TS_NANOS,
-                )
-                .await
-                .context("seed pilot investigation")?;
-        }
+        DatasetId::InvestigationsPilot => seed_investigations_pilot(store, metadata).await?,
+        DatasetId::LogsPilot => seed_logs_pilot(store),
+        DatasetId::TracesPilot => seed_traces_pilot(store),
+        DatasetId::DashboardsPilot => seed_dashboards_pilot(store, metadata).await?,
+        DatasetId::SqlPilot => seed_sql_pilot(store),
+        DatasetId::AlertsPilot => seed_alerts_pilot(metadata).await?,
+        DatasetId::MetricsPilot => seed_metrics_pilot(store),
     }
     Ok(manifest)
 }
@@ -120,7 +112,7 @@ pub async fn postconditions_hold(
     dataset: DatasetId,
 ) -> Result<()> {
     let expected = manifest_for(dataset);
-    let (spans, logs, _metrics, _errors) = store.counts();
+    let (spans, logs, metrics, _errors) = store.counts();
     if spans != expected.span_count {
         bail!(
             "dataset {dataset}: span_count {spans} != expected {}",
@@ -131,6 +123,12 @@ pub async fn postconditions_hold(
         bail!(
             "dataset {dataset}: log_count {logs} != expected {}",
             expected.log_count
+        );
+    }
+    if metrics != expected.metric_count {
+        bail!(
+            "dataset {dataset}: metric_count {metrics} != expected {}",
+            expected.metric_count
         );
     }
     let investigations = investigation_snapshot(metadata).await?;
@@ -153,13 +151,15 @@ pub async fn postconditions_hold(
 
 #[cfg(test)]
 mod tests {
+    use super::super::datasets::ANCHOR_TS_NANOS;
     use super::*;
+    use crate::builders::span;
     use parallax_metadata::TursoMetadataStore;
     use std::sync::atomic::{AtomicU64, Ordering};
 
     static SEQ: AtomicU64 = AtomicU64::new(0);
 
-    async fn temp_metadata() -> Arc<dyn MetadataStore> {
+    async fn temp_metadata() -> Arc<TursoMetadataStore> {
         let mut path = std::env::temp_dir();
         path.push(format!(
             "parallax-browser-seed-{}-{}-{}.db",
@@ -172,6 +172,20 @@ mod tests {
         ));
         drop(std::fs::remove_file(&path));
         Arc::new(TursoMetadataStore::open(&path).await.expect("open turso"))
+    }
+
+    #[tokio::test]
+    async fn every_dataset_meets_postconditions() {
+        let store = MemoryStore::new();
+        let metadata = temp_metadata().await;
+        for dataset in crate::browser::dataset_ids() {
+            reset_and_seed(&store, metadata.clone(), dataset)
+                .await
+                .unwrap_or_else(|error| panic!("{dataset}: {error:#}"));
+            postconditions_hold(&store, metadata.as_ref(), dataset)
+                .await
+                .unwrap_or_else(|error| panic!("{dataset} post: {error:#}"));
+        }
     }
 
     #[tokio::test]

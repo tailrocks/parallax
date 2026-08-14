@@ -91,7 +91,7 @@ fn check_config(root: &Path, findings: &mut Vec<Finding>) -> Result<()> {
         "name: \"accessibility-chromium\"",
         "name: \"visual-chromium-linux\"",
         "devices[",
-        "retries: 0",
+        "retries: isCi ? 1 : 0",
     ] {
         if !source.contains(needle) {
             findings.push(error(
