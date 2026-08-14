@@ -7,7 +7,7 @@ Decision date: 2026-06-03
 > **Status (2026-07-17): implemented V1 design record, not an active plan or
 > supported-profile contract.** The local profile and its expanded product
 > surfaces shipped. Closed plans cited in historical sections no longer own
-> work; only currently present files in [`plans/`](../../../plans/) do.
+> work; only an operator-opened numbered plan does.
 > GreptimeDB plus Turso is mandatory. The older `--no-greptime`, Turso-only,
 > Postgres, and engine-substitution projections below are superseded.
 

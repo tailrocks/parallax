@@ -187,7 +187,7 @@ The original build checklist below is retained as a shipped contract inventory,
 not an active implementation runner. Dated V1 evidence lives in
 [v1-gates-report.md](v1-gates-report.md). Every remaining implementation
 divergence is indexed only under currently present files in
-[`plans/`](../../../plans/). Former plans 093, 104, 109, 111, 116, 117, and 128
+research decisions. Former plans 093, 104, 109, 111, 116, 117, and 128
 are closed and no longer own work.
 
 1. **Workspace:** 17 crates: `parallax-cli`, `parallax-analysis`, `parallax-api`,

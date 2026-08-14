@@ -9,7 +9,7 @@ Research date: 2026-05-24
 > OTLP and Sentry ingest, GraphQL, SSE, evidence bundles, the broad UI/CLI, and
 > alerting are implemented. Former plans 093, 104, 109, 111, 116, 117, and 128
 > are closed; they own no current work. Only active files in
-> [`plans/`](../../../plans/) authorize implementation. GreptimeDB plus Turso is
+> an operator-opened numbered plan authorizes implementation. GreptimeDB plus Turso is
 > mandatory in every product profile. Earlier Iggy, ClickHouse, Postgres, and
 > engine-substitution projections below are design history, not authority.
 

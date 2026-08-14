@@ -9,7 +9,7 @@ cheapest-to-kill-first. This is no longer a pre-build gate or implementation bac
 SSE, TanStack Start UI, and local-stdio MCP (plan 112 DONE). **Present-tense code claims** live in
 [code-reality-ledger.md](code-reality-ledger.md) — use that before asserting capability here or in
 market notes. Unfinished engineering is owned only by active numbered files in
-[`plans/`](../../plans/). The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
+research decisions. The full per-assumption proof-gate list (A1–A7 and the conformance ledgers)
 lives in [decisions/strategic-coverage.md → "What Is Still Unproven"](decisions/strategic-coverage.md);
 this file is the **prioritized, decision-moving** view plus the explicit **comparisons** still owed.
 Last updated 2026-07-18 after pass 404 (GO composite; full unit+docs re-fetch;

@@ -9,7 +9,7 @@ Research date: 2026-05-25
 > OTLP/Sentry ingest, GreptimeDB + Turso persistence, GraphQL/SSE, evidence
 > bundles, CLI/UI, and alerting are implemented. Closed plans cited below no
 > longer own work; only currently present numbered plans do.
-> Only [`plans/`](../../../plans/) authorizes implementation. GreptimeDB plus
+> Only an operator-opened numbered plan authorizes implementation. GreptimeDB plus
 > Turso is mandatory in every product profile. The older ClickHouse, Postgres,
 > engine-free, and storage-substitution projections below are superseded and
 > provide historical comparison context only.

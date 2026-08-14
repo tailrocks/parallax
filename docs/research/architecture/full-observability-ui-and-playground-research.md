@@ -9,7 +9,7 @@ Research date: 2026-07-06
 > SQL, story, traces, evidence gaps, and SSE live tails. React Flow + ELK owns
 > graph rendering. Closed plan references below are historical, not ownership.
 > Only current files in
-> [`plans/`](../../../plans/) authorize implementation. Lists below are dated
+> an operator-opened numbered plan authorizes implementation. Lists below are dated
 > option inventories and may be stale; do not implement from them.
 
 ## Executive thesis

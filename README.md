@@ -59,13 +59,13 @@ reach "what is Parallax, which storage engine, and why" in a few minutes:
 - **[Problem, audience, and product shape](docs/research/00-vision/problem-audience-product-shape.md)** — what Parallax solves, who it is for (developer on a dev machine first), and the shape: best of three worlds (OTel collect, Sentry organize, Grafana understand), agent-first, CLI + API + UI over one canonical API.
 - **[North star: the autonomous fix loop](docs/research/00-vision/north-star-autonomous-fix-loop.md)** — the named moonshot (earned autonomy, the impossible triangle) and how it coexists with the narrow wedge. Build-order note: the moonshot is the ceiling, not the schedule.
 - **[V1 scope](docs/research/architecture/v1-scope.md)** — the self-sufficient local-machine contract and shipped delivery inventory (install, engine supervision, ingest, run wrapper, CLI, retention, docs, exclusions, and acceptance scenarios).
-- **[V1 build record](docs/research/architecture/v1-build-plan.md)** — historical crate/milestone sequencing and dogfood criteria; current unfinished implementation work is indexed only in [`plans/`](plans/).
+- **[V1 build record](docs/research/architecture/v1-build-plan.md)** — historical crate/milestone sequencing and dogfood criteria; unfinished residuals live in research decisions, not a `plans/` index.
 - **[Deployment architecture map](docs/research/architecture/deployment-architecture-map.md)** — the three historical topology angles; current implementation policy is GreptimeDB telemetry plus Turso metadata in every supported profile.
 - **[Go / no-go verdict](docs/research/decisions/go-no-go.md)** — GO, for the narrow evidence/context engine.
 - **[Storage engine decision](docs/research/decisions/storage-engine.md)** — GreptimeDB is the committed telemetry engine; ClickHouse remains a research/benchmark comparator, never a product fallback.
 - **[Risks and the bear case](docs/research/decisions/risks-and-bear-case.md)** — the adversarial counterweight.
 - **[Strategic synthesis + coverage map](docs/research/decisions/strategic-coverage.md)** — every prompt area mapped to its evidence.
-- **[Historical implementation concept](docs/research/architecture/implementation-concept.md)** — the original end-to-end architecture reasoning; current executable work is only in [`plans/`](plans/).
+- **[Historical implementation concept](docs/research/architecture/implementation-concept.md)** — the original end-to-end architecture reasoning; shipped work lives under `crates/` and `ui/`.
 
 Other entry points: [Repository structure](PROJECT_STRUCTURE.md) · [Agent instructions](AGENTS.md) · [Research prompt runbook](prompts/README.md).
 

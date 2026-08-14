@@ -34,7 +34,6 @@ and active implementation plans remain plain Markdown.
 | [`ui/`](ui/) | Bun-only TanStack Start application and browser tests; source layers and ownership ledger in `ui/AGENTS.md` + `ratchet.toml` `[[ui.ownership]]`; visual language in [`ui/DESIGN.md`](ui/DESIGN.md) |
 | [`docs/guide/`](docs/guide/) | User-facing product documentation |
 | [`docs/research/`](docs/research/) | Research, evidence, architecture, validation, and decisions |
-| [`plans/`](plans/) | Unfinished implementation plans only |
 | [`prompts/`](prompts/) | Runnable research prompts; usage belongs in its README |
 | [`schema/`](schema/) | Portable evidence-bundle schema and version policy |
 | [`telemetry/semconv/`](telemetry/semconv/) | Versioned semantic-convention registry, Weaver-negative fixtures, and checked-in generated language contracts |

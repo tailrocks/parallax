@@ -14,8 +14,7 @@ Research date: 2026-05-25
 > [Plan 113 validation](../../validation/2026-07-13-plan-113-ingest-health.md).
 > The candidate comparisons and dormant experiment protocol below become
 > executable only after the measured broker trigger in
-> [`plans/README.md`](../../../../plans/README.md) fires and the operator opens a
-> new numbered plan.
+> an operator decision fires and a new numbered plan is opened.
 
 ## Executive Summary
 

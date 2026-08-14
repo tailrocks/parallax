@@ -11,8 +11,7 @@ Research date: 2026-05-25 · **Iggy pin recheck 2026-07-17 (pass 74)**
 > [Plan 113 validation](../../validation/2026-07-13-plan-113-ingest-health.md) and
 > [Plan 099 validation](../../validation/2026-07-13-plan-099-boundary-errors-idempotency.md).
 > Run or revise this protocol only after the measured broker trigger in
-> [`plans/README.md`](../../../../plans/README.md) fires and the operator opens a
-> new numbered plan.
+> an operator decision fires and a new numbered plan is opened.
 >
 > **Pass 74 primary recheck:** Apache Iggy latest server release still
 > **`server-0.8.0`** (2026-04-22); repo active (pushed 2026-07-17, ~4.4k★).
