@@ -39,8 +39,8 @@ hash_stream() {
 }
 
 selected=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --debug=files .)
-[[ $(printf '%s\n' "$selected" | wc -l | tr -d ' ') == 529 ]]
-[[ $(printf '%s\n' "$selected" | hash_stream) == 552800439f5c58a354f7c301dada725c7f6a9c5ca2cc2e2d4946d9244233bae1 ]]
+[[ $(printf '%s\n' "$selected" | wc -l | tr -d ' ') == 531 ]]
+[[ $(printf '%s\n' "$selected" | hash_stream) == ea5ff92cdf00179295b03a840034e402b3e1806cd113b48aee4abc71d8764280 ]]
 
 config=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --print-config)
 [[ $(printf '%s\n' "$config" | hash_stream) == f1796585c8362b98be550755de4b4bb27bfb6aba286e0f041ebfbb0e7410cf7e ]]
@@ -128,4 +128,4 @@ cycle_output=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint -A all -D import
 }
 rg -F 'import(no-cycle)' <<<"$cycle_output" >/dev/null
 
-printf 'TypeScript/Oxlint contract passed (529 selected files, 19 rule fixtures)\n'
+printf 'TypeScript/Oxlint contract passed (531 selected files, 19 rule fixtures)\n'
