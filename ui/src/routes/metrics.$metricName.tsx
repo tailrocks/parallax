@@ -455,7 +455,7 @@ function MetricDetailPage() {
         </CardHeader>
         <CardContent>
           {exemplars.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               No trace exemplar attached; showing series only
             </p>
           ) : (
