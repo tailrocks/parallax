@@ -285,10 +285,11 @@ CLOSED: where-clause reserved-word value | 168-176/unit-gate | parallax-ui | `se
 
 Coverage (2026-08-14 restamp, playground PR #13 + this inventory):
 `docs/coverage-matrix.md` restamped — no `MAPPED`/`UNTESTED` data cells.
-`c1`–`c11` re-run: c4/c5/c6/c9/c10/c11 PASS; c8 rust+java PASS, js FAIL;
+`c1`–`c11` re-run: c4/c5/c6/c9/c10/c11 PASS; c8 rust+java+js PASS;
 c7 import PASS, `parallax-mcp check` CLI≢GraphQL JSON. Tests explorer seeded
 (`FLAKY_PASS` w4 fixtures). Teaching traces: 18-span waterfall, `rpc.message`
-stream, GraphQL batch vs N+1, span links, exemplars. Gradle
+stream, GraphQL batch vs N+1, **consumer** span-link UI, exemplars (GraphQL),
+a13 v1→v2 release strip, RUM `ui.click`→checkout stitch. Gradle
 `BUILD SUCCESSFUL` catalog/payment/fulfillment twice.
 
 OPEN: MCP check CLI≢HTTP bundle JSON | 164/c7 | parallax-mcp | `parallax-mcp check --fingerprint` FAIL while GraphQL `bundle` + CLI `issue context` both return | expected: byte-identical JSON | playground records FAIL, does not weaken check
@@ -297,3 +298,6 @@ OPEN: exemplar click-through | 167/display | parallax-ui | Metrics workbench `ca
 NOTE: service detail route is `/services/$name` (not `/$name`); `/$name` is splat not-found. Runtime lanes PASS on `/services/checkout` (tokio) and `/services/catalog` (jvm).
 CLOSED: JS Sentry envelope | 164/c8 | playground | first POST is `type=session` (Parallax 415); second POST `type=event` is the exception. `c8 ok rust+java+js`. Sentry Group `plat=node Error: c8-js-sdk PaymentError`. FIXED 2026-08-14: disable session-first wait; emit type=event
 CLOSED: empty Tests explorer | playground | test-verify rust --acceptance | FLAKY_PASS rows now visible (`tests-teach-flaky-1440-dark.png`)
+CLOSED: span-links false-PASS | playground WS5 | agent-browser | prior shot was orders producer `96339146…` Links/events 0/7 `producer_without_consumer` | expected: visible link UI | 2026-08-14 consumer `ff46e8d94be06b78` inspector Links (1) → producer span `c1e6afa8585c40e0`
+CLOSED: v1-only checkout strip | playground a13 | services UI | `/services/checkout` showed 1 version v1 | expected: v1+v2 after `RELEASE=v2` | 2026-08-14 5×502 + GraphQL releases v1+v2 + badge **2 versions**
+CLOSED: RUM shot was playground HTML | playground a5 | agent-browser | `web-rum-break-1440-dark.png` is producer HTML | expected: Parallax stitch | 2026-08-14 `/traces/19edbf0ad9f030364b4657dfc7f4f463` web `ui.click` → checkout
