@@ -33,6 +33,18 @@ function isLocalUrl(raw: string): boolean {
   }
 }
 
+/** WebKit unused `<link rel=preload>` of a Vite chunk — engine hint, not product. */
+export function isUnusedModulepreloadWarning(message: string): boolean {
+  return message.includes("was preloaded using link preload but not used")
+}
+
+export function isBrowserEngineNoise(event: DiagnosticEvent): boolean {
+  if (event.kind === "request-failed" && event.url !== undefined && isLocalUrl(event.url)) {
+    return true
+  }
+  return event.kind === "console-warning" && isUnusedModulepreloadWarning(event.message)
+}
+
 /**
  * Capture unexpected browser diagnostics for a page.
  *
@@ -108,12 +120,7 @@ export function attachDiagnostics(page: Page): DiagnosticSession {
       page.off("download", onDownload)
     },
     unexpected() {
-      return events.filter((event) => {
-        if (event.kind === "request-failed" && event.url !== undefined && isLocalUrl(event.url)) {
-          return false
-        }
-        return true
-      })
+      return events.filter((event) => !isBrowserEngineNoise(event))
     },
     async attach(testInfo) {
       if (events.length === 0) return

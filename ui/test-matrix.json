@@ -4,7 +4,7 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 627,
+    "test_cases": 628,
     "test_files": 169
   },
   "private_route_imports": [],
@@ -738,6 +738,7 @@
         "accepts exact ordered diagnostics",
         "rejects unexpected, missing, reordered, and substring-only matches",
         "owns page errors exactly",
+        "treats WebKit unused modulepreload as engine noise",
         "owns browser rejections exactly"
       ],
       "required_environment": "jsdom-or-bun",
