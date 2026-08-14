@@ -293,5 +293,7 @@ stream, GraphQL batch vs N+1, span links, exemplars. Gradle
 
 OPEN: MCP check CLI≢HTTP bundle JSON | 164/c7 | parallax-mcp | `parallax-mcp check --fingerprint` FAIL while GraphQL `bundle` + CLI `issue context` both return | expected: byte-identical JSON | playground records FAIL, does not weaken check
 OPEN: clock-skew banner | 167/display | parallax-ui | `?skew=1` same-service degrade trace has no "Clock skew suspected" banner | expected: banner when child starts before parent | detector is cross-service only
+OPEN: exemplar click-through | 167/display | parallax-ui | Metrics workbench `catalog.product.queries` has no clickable exemplar `trace_id` (GraphQL `metricExemplars` returns ids) | expected: dot/id navigates to `/traces/{id}` | telemetry PASS, display FAIL
+NOTE: service detail route is `/services/$name` (not `/$name`); `/$name` is splat not-found. Runtime lanes PASS on `/services/checkout` (tokio) and `/services/catalog` (jvm).
 CLOSED: JS Sentry envelope | 164/c8 | playground | first POST is `type=session` (Parallax 415); second POST `type=event` is the exception. `c8 ok rust+java+js`. Sentry Group `plat=node Error: c8-js-sdk PaymentError`. FIXED 2026-08-14: disable session-first wait; emit type=event
 CLOSED: empty Tests explorer | playground | test-verify rust --acceptance | FLAKY_PASS rows now visible (`tests-teach-flaky-1440-dark.png`)
