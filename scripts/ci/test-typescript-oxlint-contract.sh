@@ -13,7 +13,10 @@ lock="$ui/bun.lock"
 [[ $(jq -r '.devDependencies["oxlint-tsgolint"]' "$package") == 0.24.0 ]]
 compiler=$(cd "$ui" && bun -e 'import getExePath from "./node_modules/typescript/lib/getExePath.js"; console.log(getExePath())')
 platform=$(cd "$ui" && bun -e 'console.log(process.platform + "-" + process.arch)')
-[[ "$compiler" == *"/@typescript/typescript-$platform/lib/tsc" && -x "$compiler" ]]
+if [[ "$compiler" != *"/@typescript/typescript-$platform/lib/tsc" || ! -x "$compiler" ]]; then
+  printf 'typescript compiler path=%s platform=%s\n' "$compiler" "$platform" >&2
+  exit 1
+fi
 [[ $(jq -r '.options.typeCheck' "$ui/.oxlintrc.jsonc") == false ]]
 [[ $(jq -r 'has("jsPlugins")' "$ui/.oxlintrc.jsonc") == false ]]
 [[ $(jq -r '.categories.nursery // "absent"' "$ui/.oxlintrc.jsonc") == absent ]]
@@ -38,14 +41,34 @@ hash_stream() {
   shasum -a 256 | awk '{print $1}'
 }
 
-selected=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --debug=files .)
-[[ $(printf '%s\n' "$selected" | wc -l | tr -d ' ') == 532 ]]
-[[ $(printf '%s\n' "$selected" | hash_stream) == c165d82a9bf0a8017bc1a5f8e53a72a2044f1967d73d4432ab86523c941692b1 ]]
+# Sort so the pin is independent of filesystem readdir order (Darwin ≠ Linux).
+selected=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --debug=files . | LC_ALL=C sort)
+selected_count=$(printf '%s\n' "$selected" | wc -l | tr -d ' ')
+selected_hash=$(printf '%s\n' "$selected" | hash_stream)
+if [[ "$selected_count" != 532 || "$selected_hash" != 8989e34a54a9dcb66599245633c2bdc8035c3751ea5c0a987240a202734b9dd2 ]]; then
+  printf 'oxlint selected files: count=%s hash=%s (want 532 / 8989e34a…)\n' \
+    "$selected_count" "$selected_hash" >&2
+  exit 1
+fi
 
 config=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --print-config)
-[[ $(printf '%s\n' "$config" | hash_stream) == f1796585c8362b98be550755de4b4bb27bfb6aba286e0f041ebfbb0e7410cf7e ]]
+config_hash=$(printf '%s\n' "$config" | hash_stream)
+if [[ "$config_hash" != f1796585c8362b98be550755de4b4bb27bfb6aba286e0f041ebfbb0e7410cf7e ]]; then
+  printf 'oxlint --print-config hash=%s\n' "$config_hash" >&2
+  exit 1
+fi
+# Do not hash raw --showConfig: the files[] order follows readdir (Darwin ≠ Linux).
 ts_config=$(cd "$ui" && bun ./node_modules/typescript/bin/tsc --showConfig)
-[[ $(printf '%s\n' "$ts_config" | hash_stream) == a50bf88735679b04200bb001698725ec6769d029cd42d8e218184589e7183d21 ]]
+opts_hash=$(jq -cS '.compilerOptions' <<<"$ts_config" | hash_stream)
+files_count=$(jq '.files | length' <<<"$ts_config")
+files_hash=$(jq -r '.files[]' <<<"$ts_config" | sed 's#^\./##' | LC_ALL=C sort | hash_stream)
+if [[ "$opts_hash" != 3885db28b54bf8f8208f90505464e9b313369d7d6332bf61bc975b98054eaae9 ||
+  "$files_count" != 533 ||
+  "$files_hash" != 73aba17652fa4ef514bc01ea00a352be2bab759d598405e75beb380baffb7355 ]]; then
+  printf 'tsc --showConfig: opts=%s files=%s hash=%s\n' \
+    "$opts_hash" "$files_count" "$files_hash" >&2
+  exit 1
+fi
 [[ $(jq -r '.compilerOptions.noPropertyAccessFromIndexSignature' <<<"$ts_config") == true ]]
 [[ $(jq -r '.compilerOptions.strict' <<<"$ts_config") == true ]]
 [[ $(jq -r '.compilerOptions.allowJs' <<<"$ts_config") == false ]]
