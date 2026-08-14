@@ -15,6 +15,8 @@ export const TRACES_PILOT_TRACE_ID = "cccccccccccccccccccccccccccccccc"
 export const TRACES_PILOT_ROOT_NAME = "checkout.authorize"
 export const DASHBOARD_PILOT_NAME = "Checkout RED"
 export const ALERT_RULE_PILOT_NAME = "High checkout errors"
+export const METRICS_PILOT_GAUGE = "checkout.queue.depth"
+export const METRICS_PILOT_HISTOGRAM = "http.server.duration"
 
 export const DATASET_CATALOG = {
   "shell-empty": {

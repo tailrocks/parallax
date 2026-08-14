@@ -263,8 +263,9 @@ This plan IS tests. Expected net-new: ~6 datasets, ~12 new spec files,
 
 ## Done criteria
 
-- [ ] 8 dataset ids in `catalog.ts` (2 existing + 6 new), each with a Rust
-      builder and ≥1 spec consuming it.
+- [x] 8 dataset ids in `catalog.ts` (2 existing + 6 new), each with a Rust
+      builder and ≥1 spec consuming it (`metrics-pilot` via
+      `contracts/metrics.spec.ts`).
 - [ ] All 12 browser-relevant mutations exercised: each of
       `contracts/dashboards.spec.ts`, `contracts/alerts.spec.ts`,
       `contracts/sql.spec.ts`, `contracts/logs-views.spec.ts` exists and
@@ -285,7 +286,7 @@ This plan IS tests. Expected net-new: ~6 datasets, ~12 new spec files,
 - [ ] Both browser lanes green twice consecutively; `retries: isCi ? 1 : 0`.
 - [ ] 5 model unit files added; typeof route tests gone; worker entry
       deduplicated.
-- [ ] `ui/test-matrix.json` reflects reality (no reserved entry whose
+- [x] `ui/test-matrix.json` reflects reality (no reserved entry whose
       spec exists — incl. the 2 pre-existing stale rows; no implemented
       entry that is heading-only; every new file has an entry);
       `cargo xtask policy --only ui.tests` green.

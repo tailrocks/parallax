@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 627,
-    "test_files": 169
+    "test_cases": 628,
+    "test_files": 170
   },
   "private_route_imports": [],
   "entries": [
@@ -1594,23 +1594,6 @@
       "delivery_plan": 144
     },
     {
-      "id": "pw-reserved-investigations-contracts",
-      "surface": "features/investigations",
-      "risk": "Remaining investigations browser contracts beyond the plan 144 pilot",
-      "scenario_owner": "features/investigations",
-      "lane_owner": "playwright/contracts",
-      "layer": "browser-contract",
-      "test_file": "ui/tests/e2e/contracts/investigations.spec.ts",
-      "test_ids": [
-        "reserved @investigations browser contracts"
-      ],
-      "required_environment": "chromium-fixture",
-      "status": "reserved",
-      "dataset_id": "investigations-default",
-      "state_class": "inventory",
-      "delivery_plan": 134
-    },
-    {
       "id": "pw-sql-crud",
       "surface": "features/sql",
       "risk": "SQL safe execution, result states, history, snippet CRUD, schema browser",
@@ -1747,6 +1730,23 @@
       "delivery_plan": 170
     },
     {
+      "id": "pw-metrics-pilot-catalog",
+      "surface": "features/overview",
+      "risk": "Metrics catalog may not list seeded metrics-pilot gauge and histogram",
+      "scenario_owner": "features/overview",
+      "lane_owner": "playwright/contracts",
+      "layer": "browser-contract",
+      "test_file": "ui/tests/e2e/contracts/metrics.spec.ts",
+      "test_ids": [
+        "lists seeded gauge and histogram @pw-metrics-pilot-catalog"
+      ],
+      "required_environment": "chromium-fixture",
+      "status": "implemented",
+      "dataset_id": "metrics-pilot",
+      "state_class": "seeded-list",
+      "delivery_plan": 170
+    },
+    {
       "id": "pw-logs-views-crud",
       "surface": "features/logs",
       "risk": "Logs saved-view save/restore/delete may drop where-clause filters",
@@ -1779,23 +1779,6 @@
       "dataset_id": "traces-default",
       "state_class": "inventory",
       "delivery_plan": 142
-    },
-    {
-      "id": "pw-reserved-shell-contracts",
-      "surface": "layout/shell",
-      "risk": "Remaining shell theme/route-failure contracts beyond plan 144 pilot",
-      "scenario_owner": "layout/shell",
-      "lane_owner": "playwright/contracts",
-      "layer": "browser-contract",
-      "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
-      "test_ids": [
-        "reserved @shell browser contracts"
-      ],
-      "required_environment": "chromium-fixture",
-      "status": "reserved",
-      "dataset_id": "shell-default",
-      "state_class": "inventory",
-      "delivery_plan": 143
     },
     {
       "id": "pw-reserved-overview-contracts",
