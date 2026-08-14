@@ -23,20 +23,19 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { WhereClauseEditor } from "@/shared/console/where-clause-editor"
-import { gqlString, graphqlCached } from "@/platform/graphql/transport"
 import {
-  coerceAggregation,
   inferMetricKind,
-  legalAggregations,
   type MetricAggregation,
   type MetricKind,
 } from "@/features/runtime-metrics"
+import { mergeRangeSearch, rangeSearchSchema } from "@/domain/time-range/range"
 import {
-  mergeRangeSearch,
-  rangeSearchSchema,
-  resolveRangeSearch,
-  type ResolvedRange,
-} from "@/domain/time-range/range"
+  backendKind,
+  loadMetricDetail,
+  resolveAggregation,
+  supportedAggregations,
+  type MetricDetailSearch,
+} from "@/features/runtime-metrics/api/load-metric-detail"
 import {
   serializeWhereClause,
   whereClauseFromSearch,
@@ -49,167 +48,12 @@ import {
 // where-filter, incomplete-bucket dashed tail, and graduation buttons land
 // with the full plan.
 
-interface MetricDetailSearch {
-  range?: string | undefined
-  from?: string | undefined
-  to?: string | undefined
-  agg?: string | undefined
-  where?: string | undefined
-  groupBy?: string | undefined
-  step?: string | undefined
-  kind?: string | undefined
-}
-
 function searchString(value: unknown) {
   return typeof value === "string" && value ? value : undefined
 }
 
 const NO_GROUP = "__none__"
 const STEP_OPTIONS = ["30", "60", "300", "900"] as const
-
-// Full contract legality table (lib/metric-aggregation.ts): the plan-168
-// metricQuery backend accepts gauge avg|min|max|last, sum sum|rate|increase,
-// histogram p50|p95|p99|avg. Backend kinds are gauge|sum|histogram; summary
-// maps to histogram semantics and unknown to gauge.
-function backendKind(kind: MetricKind): "gauge" | "sum" | "histogram" {
-  switch (kind) {
-    case "sum":
-      return "sum"
-    case "histogram":
-    case "summary":
-      return "histogram"
-    case "gauge":
-    case "unknown":
-      return "gauge"
-  }
-}
-
-function supportedAggregations(kind: MetricKind): MetricAggregation[] {
-  return [...legalAggregations(backendKind(kind))]
-}
-
-function resolveAggregation(kind: MetricKind, raw: string | undefined): MetricAggregation {
-  return coerceAggregation(backendKind(kind), raw) ?? "avg"
-}
-
-interface SeriesOut {
-  groupValue: string | null
-  points: Array<{ tsNanos: string; value: number }>
-}
-
-interface MetricExemplarLink {
-  tsNanos: string
-  traceId: string
-  spanId: string
-  value: number
-}
-
-interface DetailData {
-  labels: string[]
-  series: SeriesOut[]
-  range: ResolvedRange
-  exemplars: MetricExemplarLink[]
-}
-
-async function loadExemplars(
-  metricName: string,
-  range: ResolvedRange
-): Promise<MetricExemplarLink[]> {
-  try {
-    const data = await graphqlCached<{
-      metricExemplars: Array<{
-        tsNanos: string
-        traceId: string
-        spanId: string
-        value: number
-      }>
-    }>(`{
-      metricExemplars(name: "${gqlString(metricName)}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", limit: 20) {
-        tsNanos traceId spanId value
-      }
-    }`)
-    return data.metricExemplars.filter((row) => row.traceId.length > 0)
-  } catch {
-    return []
-  }
-}
-
-async function loadDetail(metricName: string, search: MetricDetailSearch): Promise<DetailData> {
-  const range = resolveRangeSearch(search)
-  const kind = (search.kind as MetricKind) || inferMetricKind(metricName)
-  const agg = resolveAggregation(kind, search.agg)
-  const stepSeconds = Number(search.step ?? "60") || 60
-  const name = `"${gqlString(metricName)}"`
-  const window = `fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}"`
-  const groupBy = search.groupBy ? `, groupBy: "${gqlString(search.groupBy)}"` : ""
-  const whereFilters = whereClauseFromSearch(search.where)
-  const where =
-    whereFilters.length > 0
-      ? `, attributeFilters: [${whereFilters
-          .map(
-            (filter) =>
-              `{key: "${gqlString(filter.key)}", op: "${gqlString(filter.op)}", value: "${gqlString(filter.value)}"}`
-          )
-          .join(", ")}]`
-      : ""
-  try {
-    const data = await graphqlCached<{
-      metricLabels: string[]
-      metricQuery: {
-        kind: string
-        effectiveStepSeconds: number
-        series: SeriesOut[]
-      }
-    }>(`{
-      metricLabels(name: ${name})
-      metricQuery(name: ${name}, kind: "${gqlString(backendKind(kind))}", agg: "${gqlString(agg)}", ${window}, stepSeconds: ${stepSeconds}${groupBy}${where}) {
-        kind
-        effectiveStepSeconds
-        series { groupValue points { tsNanos value } }
-      }
-    }`)
-    return {
-      labels: data.metricLabels,
-      series: data.metricQuery.series,
-      range,
-      exemplars: await loadExemplars(metricName, range),
-    }
-  } catch {
-    // Fall back to legacy metricSeries / histogramQuantile paths.
-  }
-  if ((kind === "histogram" || kind === "summary") && agg.startsWith("p")) {
-    const q = Number(agg.slice(1)) / 100
-    const data = await graphqlCached<{
-      metricLabels: string[]
-      histogramQuantile: Array<{ tsNanos: string; value: number }>
-    }>(`{
-      metricLabels(name: ${name})
-      histogramQuantile(name: ${name}, ${window}, q: ${q}, stepSeconds: ${stepSeconds}) { tsNanos value }
-    }`)
-    return {
-      labels: data.metricLabels,
-      series: [{ groupValue: null, points: data.histogramQuantile }],
-      range,
-      exemplars: await loadExemplars(metricName, range),
-    }
-  }
-  const data = await graphqlCached<{
-    metricLabels: string[]
-    metricSeries: SeriesOut[]
-  }>(`{
-    metricLabels(name: ${name})
-    metricSeries(name: ${name}, ${window}, agg: "${gqlString(agg)}", stepSeconds: ${stepSeconds}${groupBy}) {
-      groupValue
-      points { tsNanos value }
-    }
-  }`)
-  return {
-    labels: data.metricLabels,
-    series: data.metricSeries,
-    range,
-    exemplars: await loadExemplars(metricName, range),
-  }
-}
 
 export const Route = createFileRoute("/metrics/$metricName")({
   validateSearch: (search: Record<string, unknown>): MetricDetailSearch => ({
@@ -221,7 +65,7 @@ export const Route = createFileRoute("/metrics/$metricName")({
     kind: searchString(search["kind"]),
   }),
   loaderDeps: ({ search }) => search,
-  loader: ({ params, deps }) => loadDetail(params.metricName, deps),
+  loader: ({ params, deps }) => loadMetricDetail(params.metricName, deps),
   component: MetricDetailPage,
 })
 

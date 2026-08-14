@@ -17,9 +17,7 @@
       "lane_owner": "vitest/component",
       "layer": "component",
       "test_file": "ui/src/features/runtime-metrics/tests/components/metric-strip.test.tsx",
-      "test_ids": [
-        "aborts stale requests and ignores late responses"
-      ],
+      "test_ids": ["aborts stale requests and ignores late responses"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -112,10 +110,7 @@
       "lane_owner": "vitest/component",
       "layer": "component",
       "test_file": "ui/src/features/traces/tests/components/trace-evidence-gaps.test.tsx",
-      "test_ids": [
-        "renders gaps when present",
-        "renders nothing for clean evidence"
-      ],
+      "test_ids": ["renders gaps when present", "renders nothing for clean evidence"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -127,9 +122,7 @@
       "lane_owner": "vitest/component",
       "layer": "component",
       "test_file": "ui/src/features/traces/tests/components/trace-field-explorer.test.tsx",
-      "test_ids": [
-        "loads field keys, stats, service filters, and SQL pivots"
-      ],
+      "test_ids": ["loads field keys, stats, service filters, and SQL pivots"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -193,9 +186,7 @@
       "lane_owner": "vitest/component",
       "layer": "component",
       "test_file": "ui/src/features/time-range/tests/components/range-picker.test.tsx",
-      "test_ids": [
-        "emits preset and custom calendar ranges"
-      ],
+      "test_ids": ["emits preset and custom calendar ranges"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -222,9 +213,7 @@
       "lane_owner": "vitest/component",
       "layer": "component",
       "test_file": "ui/src/features/story/tests/components/story-timeline.test.tsx",
-      "test_ids": [
-        "renders time ordered lanes with linked error beats"
-      ],
+      "test_ids": ["renders time ordered lanes with linked error beats"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -493,7 +482,7 @@
         "clamps positions inside the remaining track",
         "detects a backdated rootless span in the same trace",
         "detects a backdated same-service child when drift is extreme",
-        "detects cross-service clock skew and ignores same-service drift",
+        "detects parent/child clock skew on both same-service and cross-service pairs",
         "groups ordered rows into contiguous service lanes",
         "keeps errored spans with their ancestor chain",
         "keeps zero-duration traces drawable",
@@ -520,9 +509,7 @@
       "lane_owner": "vitest/unit",
       "layer": "platform-contract",
       "test_file": "ui/src/platform/browser/tests/use-page-visible.test.tsx",
-      "test_ids": [
-        "tracks document.visibilitychange"
-      ],
+      "test_ids": ["tracks document.visibilitychange"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -652,9 +639,7 @@
       "lane_owner": "vitest/route",
       "layer": "route-contract",
       "test_file": "ui/src/features/traces/tests/components/trace-graphql-section.test.tsx",
-      "test_ids": [
-        "renders the GraphQL card only when operations exist"
-      ],
+      "test_ids": ["renders the GraphQL card only when operations exist"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -1482,9 +1467,7 @@
       "lane_owner": "playwright/foundation",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/smoke/foundation.spec.ts",
-      "test_ids": [
-        "root shell exposes brand and primary navigation @pw-foundation-shell"
-      ],
+      "test_ids": ["root shell exposes brand and primary navigation @pw-foundation-shell"],
       "required_environment": "chromium-foundation",
       "status": "implemented",
       "dataset_id": "foundation-default",
@@ -1499,9 +1482,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
-      "test_ids": [
-        "root readiness and primary navigation @pw-shell-root-nav"
-      ],
+      "test_ids": ["root readiness and primary navigation @pw-shell-root-nav"],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "shell-empty",
@@ -1516,9 +1497,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
-      "test_ids": [
-        "workspace navigation and deep-link refresh @pw-shell-workspace-deeplink"
-      ],
+      "test_ids": ["workspace navigation and deep-link refresh @pw-shell-workspace-deeplink"],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "shell-empty",
@@ -1533,9 +1512,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
-      "test_ids": [
-        "invalid route shows not-found surface @pw-shell-not-found"
-      ],
+      "test_ids": ["invalid route shows not-found surface @pw-shell-not-found"],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "shell-empty",
@@ -1550,9 +1527,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
-      "test_ids": [
-        "theme choice persists across reload @pw-shell-theme"
-      ],
+      "test_ids": ["theme choice persists across reload @pw-shell-theme"],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "shell-empty",
@@ -1567,9 +1542,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
-      "test_ids": [
-        "recoverable API failure surfaces error panel @pw-shell-api-failure"
-      ],
+      "test_ids": ["recoverable API failure surfaces error panel @pw-shell-api-failure"],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "shell-empty",
@@ -1584,9 +1557,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/investigations.spec.ts",
-      "test_ids": [
-        "lists seeded investigation and opens detail @pw-investigations-list-detail"
-      ],
+      "test_ids": ["lists seeded investigation and opens detail @pw-investigations-list-detail"],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "investigations-pilot",
@@ -1601,9 +1572,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/investigations.spec.ts",
-      "test_ids": [
-        "create edit delete pin note and persist @pw-investigations-crud-pilot"
-      ],
+      "test_ids": ["create edit delete pin note and persist @pw-investigations-crud-pilot"],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "investigations-pilot",
@@ -1618,9 +1587,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/sql.spec.ts",
-      "test_ids": [
-        "run query snippet save and delete @pw-sql-crud"
-      ],
+      "test_ids": ["run query snippet save and delete @pw-sql-crud"],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "sql-pilot",
@@ -1635,9 +1602,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/ecosystem.spec.ts",
-      "test_ids": [
-        "reserved @ecosystem browser contracts"
-      ],
+      "test_ids": ["reserved @ecosystem browser contracts"],
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "ecosystem-default",
@@ -1652,9 +1617,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/dashboards.spec.ts",
-      "test_ids": [
-        "create widget persist and delete @pw-dashboards-crud"
-      ],
+      "test_ids": ["create widget persist and delete @pw-dashboards-crud"],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "dashboards-pilot",
@@ -1669,9 +1632,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/services.spec.ts",
-      "test_ids": [
-        "reserved @services browser contracts"
-      ],
+      "test_ids": ["reserved @services browser contracts"],
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "services-default",
@@ -1686,9 +1647,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/issues.spec.ts",
-      "test_ids": [
-        "reserved @issues browser contracts"
-      ],
+      "test_ids": ["reserved @issues browser contracts"],
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "issues-default",
@@ -1703,9 +1662,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/runs.spec.ts",
-      "test_ids": [
-        "reserved @runs browser contracts"
-      ],
+      "test_ids": ["reserved @runs browser contracts"],
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "runs-default",
@@ -1720,9 +1677,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/logs.spec.ts",
-      "test_ids": [
-        "lists seeded log body across services @pw-logs-pilot-body"
-      ],
+      "test_ids": ["lists seeded log body across services @pw-logs-pilot-body"],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "logs-pilot",
@@ -1737,9 +1692,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/alerts.spec.ts",
-      "test_ids": [
-        "destination rule toggle and delete @pw-alerts-crud"
-      ],
+      "test_ids": ["destination rule toggle and delete @pw-alerts-crud"],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "alerts-pilot",
@@ -1754,9 +1707,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/metrics.spec.ts",
-      "test_ids": [
-        "lists seeded gauge and histogram @pw-metrics-pilot-catalog"
-      ],
+      "test_ids": ["lists seeded gauge and histogram @pw-metrics-pilot-catalog"],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "metrics-pilot",
@@ -1771,9 +1722,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/logs-views.spec.ts",
-      "test_ids": [
-        "filter save restore and delete view @pw-logs-views-crud"
-      ],
+      "test_ids": ["filter save restore and delete view @pw-logs-views-crud"],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "logs-pilot",
@@ -1788,9 +1737,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/traces.spec.ts",
-      "test_ids": [
-        "reserved @traces browser contracts"
-      ],
+      "test_ids": ["reserved @traces browser contracts"],
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "traces-default",
@@ -1805,9 +1752,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/overview.spec.ts",
-      "test_ids": [
-        "reserved @overview browser contracts"
-      ],
+      "test_ids": ["reserved @overview browser contracts"],
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "overview-default",
@@ -1837,10 +1782,7 @@
       "lane_owner": "vitest/unit",
       "test_file": "ui/src/domain/story/tests/story-beat.test.ts",
       "scenario_owner": "features/story",
-      "test_ids": [
-        "accepts full and sparse beat shapes",
-        "keeps nanosecond timestamps as strings"
-      ],
+      "test_ids": ["accepts full and sparse beat shapes", "keeps nanosecond timestamps as strings"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -1935,9 +1877,7 @@
       "lane_owner": "vitest/unit",
       "test_file": "ui/src/platform/external-values/tests/boundary-diagnostic.test.ts",
       "scenario_owner": "platform/graphql",
-      "test_ids": [
-        "renders only stable fields and caps length"
-      ],
+      "test_ids": ["renders only stable fields and caps length"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -2087,9 +2027,7 @@
       "lane_owner": "vitest/component",
       "test_file": "ui/src/platform/visibility/tests/use-page-visible.test.tsx",
       "scenario_owner": "platform/browser",
-      "test_ids": [
-        "tracks document.visibilitychange"
-      ],
+      "test_ids": ["tracks document.visibilitychange"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -2162,9 +2100,7 @@
       "lane_owner": "vitest/component",
       "layer": "component",
       "test_file": "ui/src/features/sql/tests/components/sql-results-table.test.tsx",
-      "test_ids": [
-        "renders truncation notice and linkified cells"
-      ],
+      "test_ids": ["renders truncation notice and linkified cells"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -2176,9 +2112,7 @@
       "lane_owner": "vitest/component",
       "layer": "component",
       "test_file": "ui/src/features/sql/tests/components/snippets-menu.test.tsx",
-      "test_ids": [
-        "dispatches select, save, and delete actions"
-      ],
+      "test_ids": ["dispatches select, save, and delete actions"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -2190,9 +2124,7 @@
       "lane_owner": "vitest/route",
       "layer": "route-contract",
       "test_file": "ui/src/routes/tests/-sql-route.test.tsx",
-      "test_ids": [
-        "renders SQL keyboard hint and examples menu"
-      ],
+      "test_ids": ["renders SQL keyboard hint and examples menu"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented",
       "raw_router_reason": "Composes the public SqlPage behind a private memory router for route chrome assertions without importing Route.options.component"
@@ -2205,9 +2137,7 @@
       "lane_owner": "vitest/route",
       "layer": "route-contract",
       "test_file": "ui/src/routes/tests/-services-routes.test.tsx",
-      "test_ids": [
-        "exposes public search and loaders for thin route wiring"
-      ],
+      "test_ids": ["exposes public search and loaders for thin route wiring"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -2219,9 +2149,7 @@
       "lane_owner": "vitest/route",
       "layer": "route-contract",
       "test_file": "ui/src/routes/tests/-issues-routes.test.tsx",
-      "test_ids": [
-        "exposes public search and loaders for thin route wiring"
-      ],
+      "test_ids": ["exposes public search and loaders for thin route wiring"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -2233,9 +2161,7 @@
       "lane_owner": "vitest/route",
       "layer": "route-contract",
       "test_file": "ui/src/routes/tests/-logs-routes.test.tsx",
-      "test_ids": [
-        "exposes public search and loader for thin route wiring"
-      ],
+      "test_ids": ["exposes public search and loader for thin route wiring"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -2247,9 +2173,7 @@
       "lane_owner": "vitest/route",
       "layer": "route-contract",
       "test_file": "ui/src/routes/tests/-invocations-routes.test.tsx",
-      "test_ids": [
-        "exposes public search and loaders for thin route wiring"
-      ],
+      "test_ids": ["exposes public search and loaders for thin route wiring"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -2261,9 +2185,7 @@
       "lane_owner": "vitest/route",
       "layer": "route-contract",
       "test_file": "ui/src/routes/tests/-overview-routes.test.tsx",
-      "test_ids": [
-        "exposes public loader helpers for thin route wiring"
-      ],
+      "test_ids": ["exposes public loader helpers for thin route wiring"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -2277,9 +2199,7 @@
       "risk": "Traces route wiring can lose public search/loader facade contracts",
       "scenario_owner": "features/traces",
       "test_file": "ui/src/routes/tests/-traces-routes.test.tsx",
-      "test_ids": [
-        "exposes public search and loaders for thin route wiring"
-      ]
+      "test_ids": ["exposes public search and loaders for thin route wiring"]
     },
     {
       "id": "pw-full-stack-investigations",
@@ -2289,9 +2209,7 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/investigations.spec.ts",
-      "test_ids": [
-        "investigations surface mounts on managed stack @pw-full-stack-investigations"
-      ],
+      "test_ids": ["investigations surface mounts on managed stack @pw-full-stack-investigations"],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "investigations-full-stack",
@@ -2305,9 +2223,7 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/sql.spec.ts",
-      "test_ids": [
-        "sql surface mounts on managed stack @pw-full-stack-sql"
-      ],
+      "test_ids": ["sql surface mounts on managed stack @pw-full-stack-sql"],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "sql-full-stack",
@@ -2321,9 +2237,7 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/ecosystem.spec.ts",
-      "test_ids": [
-        "ecosystem surface mounts on managed stack @pw-full-stack-ecosystem"
-      ],
+      "test_ids": ["ecosystem surface mounts on managed stack @pw-full-stack-ecosystem"],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "ecosystem-full-stack",
@@ -2337,9 +2251,7 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/dashboards.spec.ts",
-      "test_ids": [
-        "dashboards surface mounts on managed stack @pw-full-stack-dashboards"
-      ],
+      "test_ids": ["dashboards surface mounts on managed stack @pw-full-stack-dashboards"],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "dashboards-full-stack",
@@ -2353,9 +2265,7 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/services.spec.ts",
-      "test_ids": [
-        "seeded service visible on services list @pw-full-stack-services"
-      ],
+      "test_ids": ["seeded service visible on services list @pw-full-stack-services"],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "services-full-stack",
@@ -2369,9 +2279,7 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/issues.spec.ts",
-      "test_ids": [
-        "seeded issue open on issues list and detail @pw-full-stack-issues"
-      ],
+      "test_ids": ["seeded issue open on issues list and detail @pw-full-stack-issues"],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "issues-full-stack",
@@ -2385,9 +2293,7 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/tests.spec.ts",
-      "test_ids": [
-        "tests explorer loads product chrome @pw-full-stack-tests"
-      ],
+      "test_ids": ["tests explorer loads product chrome @pw-full-stack-tests"],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "tests-full-stack",
@@ -2401,9 +2307,7 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/runs.spec.ts",
-      "test_ids": [
-        "invocations list loads seeded invocation @pw-full-stack-runs"
-      ],
+      "test_ids": ["invocations list loads seeded invocation @pw-full-stack-runs"],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "runs-full-stack",
@@ -2417,9 +2321,7 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/logs.spec.ts",
-      "test_ids": [
-        "logs surface loads for seeded service @pw-full-stack-logs"
-      ],
+      "test_ids": ["logs surface loads for seeded service @pw-full-stack-logs"],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "logs-full-stack",
@@ -2433,9 +2335,7 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/traces.spec.ts",
-      "test_ids": [
-        "traces surface loads for seeded stack @pw-full-stack-traces"
-      ],
+      "test_ids": ["traces surface loads for seeded stack @pw-full-stack-traces"],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "traces-full-stack",
@@ -2449,9 +2349,7 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/trace-detail.spec.ts",
-      "test_ids": [
-        "deep-link tree flame and critical path @pw-trace-detail"
-      ],
+      "test_ids": ["deep-link tree flame and critical path @pw-trace-detail"],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "traces-full-stack",
@@ -2466,9 +2364,7 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/service-detail.spec.ts",
-      "test_ids": [
-        "RED charts and prefiltered links @pw-service-detail"
-      ],
+      "test_ids": ["RED charts and prefiltered links @pw-service-detail"],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "services-full-stack",
@@ -2483,9 +2379,7 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/metrics.spec.ts",
-      "test_ids": [
-        "catalog workbench and add-to-dashboard @pw-metrics-workbench"
-      ],
+      "test_ids": ["catalog workbench and add-to-dashboard @pw-metrics-workbench"],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "metrics-full-stack",
@@ -2500,9 +2394,7 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/tests-detail.spec.ts",
-      "test_ids": [
-        "case route renders explorer or empty @pw-tests-detail"
-      ],
+      "test_ids": ["case route renders explorer or empty @pw-tests-detail"],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "tests-full-stack",
@@ -2517,9 +2409,7 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/invocation-hub.spec.ts",
-      "test_ids": [
-        "six hub tabs render seeded invocation @pw-invocation-hub"
-      ],
+      "test_ids": ["six hub tabs render seeded invocation @pw-invocation-hub"],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "runs-full-stack",
@@ -2534,9 +2424,7 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/command-palette.spec.ts",
-      "test_ids": [
-        "paste seeded trace id lands on detail @pw-command-palette-trace"
-      ],
+      "test_ids": ["paste seeded trace id lands on detail @pw-command-palette-trace"],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "traces-pilot",
@@ -2551,9 +2439,7 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/shell.spec.ts",
-      "test_ids": [
-        "shell nav and brand against managed stack @pw-full-stack-shell"
-      ],
+      "test_ids": ["shell nav and brand against managed stack @pw-full-stack-shell"],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "shell-full-stack",
@@ -2567,9 +2453,7 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/overview.spec.ts",
-      "test_ids": [
-        "overview renders for seeded stack @pw-full-stack-overview"
-      ],
+      "test_ids": ["overview renders for seeded stack @pw-full-stack-overview"],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "overview-full-stack",
@@ -2615,9 +2499,7 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/live-transport.spec.ts",
-      "test_ids": [
-        "one post-open log appears once through live path @pw-storage-live-transport"
-      ],
+      "test_ids": ["one post-open log appears once through live path @pw-storage-live-transport"],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "pw-storage",
@@ -2631,9 +2513,7 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/cross/shell-cross.spec.ts",
-      "test_ids": [
-        "root readiness on alternate engine @pw-shell-cross-root-nav"
-      ],
+      "test_ids": ["root readiness on alternate engine @pw-shell-cross-root-nav"],
       "required_environment": "cross-firefox-webkit",
       "status": "implemented",
       "dataset_id": "shell-empty",
@@ -2647,9 +2527,7 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/mobile/shell-mobile.spec.ts",
-      "test_ids": [
-        "device settings active and nav without horizontal overflow @pw-shell-mobile"
-      ],
+      "test_ids": ["device settings active and nav without horizontal overflow @pw-shell-mobile"],
       "required_environment": "mobile-chromium-webkit",
       "status": "implemented",
       "dataset_id": "shell-empty",
@@ -2680,9 +2558,7 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/accessibility/investigations-accessibility.spec.ts",
-      "test_ids": [
-        "list detail and dialog axe keyboard focus @pw-investigations-a11y-detail"
-      ],
+      "test_ids": ["list detail and dialog axe keyboard focus @pw-investigations-a11y-detail"],
       "required_environment": "accessibility-chromium",
       "status": "implemented",
       "dataset_id": "investigations-pilot",
@@ -2696,9 +2572,7 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/mobile/investigations-mobile.spec.ts",
-      "test_ids": [
-        "list open detail and dialog on mobile @pw-investigations-mobile"
-      ],
+      "test_ids": ["list open detail and dialog on mobile @pw-investigations-mobile"],
       "required_environment": "mobile-chromium-webkit",
       "status": "implemented",
       "dataset_id": "investigations-pilot",
@@ -2852,9 +2726,7 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/visual/shell.visual.spec.ts",
-      "test_ids": [
-        "root shell dark reduced-motion snapshot @pw-shell-visual"
-      ],
+      "test_ids": ["root shell dark reduced-motion snapshot @pw-shell-visual"],
       "required_environment": "visual-chromium-linux",
       "status": "implemented",
       "dataset_id": "shell-empty",
@@ -2868,9 +2740,7 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/visual/investigations.visual.spec.ts",
-      "test_ids": [
-        "investigations list snapshot @pw-investigations-visual"
-      ],
+      "test_ids": ["investigations list snapshot @pw-investigations-visual"],
       "required_environment": "visual-chromium-linux",
       "status": "implemented",
       "dataset_id": "investigations-pilot",
@@ -2884,9 +2754,7 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/cross/investigations-cross.spec.ts",
-      "test_ids": [
-        "list and open detail on alternate engine @pw-investigations-cross-list-detail"
-      ],
+      "test_ids": ["list and open detail on alternate engine @pw-investigations-cross-list-detail"],
       "required_environment": "cross-firefox-webkit",
       "status": "implemented",
       "dataset_id": "investigations-pilot",
@@ -2915,9 +2783,7 @@
       "lane_owner": "vitest/platform",
       "layer": "platform-contract",
       "test_file": "ui/src/platform/sse/tests/bounded-frame-buffer.test.ts",
-      "test_ids": [
-        "drops oldest on overflow and reports diagnostics"
-      ],
+      "test_ids": ["drops oldest on overflow and reports diagnostics"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -3176,9 +3042,7 @@
       "lane_owner": "vitest/route",
       "layer": "route-contract",
       "test_file": "ui/src/routes/tests/-tests-routes.test.tsx",
-      "test_ids": [
-        "exposes public search and loaders for thin route wiring"
-      ],
+      "test_ids": ["exposes public search and loaders for thin route wiring"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -3270,9 +3134,7 @@
       "lane_owner": "vitest/component",
       "layer": "component",
       "test_file": "ui/src/features/issues/tests/components/grouping-card.test.tsx",
-      "test_ids": [
-        "renders type, template, and frame"
-      ],
+      "test_ids": ["renders type, template, and frame"],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     }

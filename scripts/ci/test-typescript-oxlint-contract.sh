@@ -45,8 +45,8 @@ hash_stream() {
 selected=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --debug=files . | LC_ALL=C sort)
 selected_count=$(printf '%s\n' "$selected" | wc -l | tr -d ' ')
 selected_hash=$(printf '%s\n' "$selected" | hash_stream)
-if [[ "$selected_count" != 531 || "$selected_hash" != b7445af2fae13f9f2bdcc013ea06c7ff346276680d3548040c3e141caf304304 ]]; then
-  printf 'oxlint selected files: count=%s hash=%s (want 531 / b7445af2…)\n' \
+if [[ "$selected_count" != 532 || "$selected_hash" != 8989e34a54a9dcb66599245633c2bdc8035c3751ea5c0a987240a202734b9dd2 ]]; then
+  printf 'oxlint selected files: count=%s hash=%s (want 532 / 8989e34a…)\n' \
     "$selected_count" "$selected_hash" >&2
   exit 1
 fi
@@ -63,8 +63,8 @@ opts_hash=$(jq -cS '.compilerOptions' <<<"$ts_config" | hash_stream)
 files_count=$(jq '.files | length' <<<"$ts_config")
 files_hash=$(jq -r '.files[]' <<<"$ts_config" | sed 's#^\./##' | LC_ALL=C sort | hash_stream)
 if [[ "$opts_hash" != 3885db28b54bf8f8208f90505464e9b313369d7d6332bf61bc975b98054eaae9 ||
-  "$files_count" != 532 ||
-  "$files_hash" != 9574bbb8818fc335ca450addbde4f94c55265d5dde740082960a31b9f872b147 ]]; then
+  "$files_count" != 533 ||
+  "$files_hash" != 73aba17652fa4ef514bc01ea00a352be2bab759d598405e75beb380baffb7355 ]]; then
   printf 'tsc --showConfig: opts=%s files=%s hash=%s\n' \
     "$opts_hash" "$files_count" "$files_hash" >&2
   exit 1
@@ -113,8 +113,13 @@ expect_compiler_failure 'TS1294' $'enum RuntimeMode { Active }\nvoid RuntimeMode
 expect_rule_failure() {
   local rule=$1
   local source=$2
+  local -a cmd=(bun ./node_modules/oxlint/bin/oxlint)
+  if [[ "$rule" == typescript/* ]]; then
+    cmd+=(--type-aware)
+  fi
+  cmd+=(-A all -D "$rule" "$probe")
   printf '%s\n' "$source" >"$probe"
-  output=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --type-aware -A all -D "$rule" "$probe" 2>&1) && {
+  output=$(cd "$ui" && "${cmd[@]}" 2>&1) && {
     printf 'negative fixture unexpectedly passed: %s\n' "$rule" >&2
     exit 1
   }
@@ -151,4 +156,4 @@ cycle_output=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint -A all -D import
 }
 rg -F 'import(no-cycle)' <<<"$cycle_output" >/dev/null
 
-printf 'TypeScript/Oxlint contract passed (531 selected files, 19 rule fixtures)\n'
+printf 'TypeScript/Oxlint contract passed (532 selected files, 19 rule fixtures)\n'

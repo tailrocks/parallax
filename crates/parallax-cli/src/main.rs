@@ -4,20 +4,13 @@ mod client;
 mod commands;
 mod dispatch;
 mod doctor;
+mod output_format;
 mod runtime;
 
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Parser, Subcommand};
+pub(crate) use output_format::OutputFormat;
 
 const RELEASE_IDENTITY: &str = concat!("parallax-release-identity:", env!("PARALLAX_VERSION"));
-
-/// Output shape for agent-facing projections (bundles, agent sessions).
-/// Markdown is the human default; JSON is the machine/agent contract.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, ValueEnum)]
-pub enum OutputFormat {
-    #[default]
-    Markdown,
-    Json,
-}
 
 #[derive(Parser)]
 #[command(
