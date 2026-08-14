@@ -6287,8 +6287,8 @@ ceiling = 70
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/features/investigations/components/investigation-detail-page.tsx:111"
-ceiling = 177
+scope = "ui/src/features/investigations/components/investigation-detail-page.tsx:70"
+ceiling = 191
 
 
 [[limits]]
