@@ -632,4 +632,4 @@ With this spec, [v1-scope.md](v1-scope.md) (inventory + acceptance) and
 pins, API shape, and supervision are decided; the PoC supplies derivation/fingerprint/bundle
 semantics; acceptance is the dogfood scenarios in v1-scope §1. The recommended long-running
 index of unfinished implementation work is
-[`plans/README.md`](../../../plans/README.md).
+research decisions under [`docs/research/decisions/`](../decisions/).

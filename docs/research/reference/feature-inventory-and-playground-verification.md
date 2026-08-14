@@ -152,7 +152,7 @@ humans and coding agents; it is the context engine, not the fixer.
   projections, not a browser session product.
 - Extension-table gRPC writes still blocked on upstream rustls-free
   `greptimedb-ingester`; retire legacy spool reader still needs one stable
-  raw-frame release cycle. Residual index: [`plans/README.md`](../../../plans/README.md).
+  raw-frame release cycle. Residual: [native-otel-tables](../decisions/native-otel-tables.md).
 - Doc drift: guides still say `run` / `parallax.run.id`; spec + code use
   `invocation` / `cli.invocation.id`. Sentry multi-SDK compatibility ledger
   unproven; A1 (bundle beats raw context) still the open existential gate.

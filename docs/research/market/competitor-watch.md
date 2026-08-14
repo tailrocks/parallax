@@ -12,7 +12,7 @@
 > **Implementation ownership (2026-07-12):** this is a rolling market-evidence
 > record, not a product roadmap. Historical product recommendations are mapped to
 > plan 104 (bundle contract), closed plan 118 (Sentry envelope DONE),
-> and blocked plan 123 (fixer/outcome loop) in [`plans/`](../../../plans/).
+> and retired plan 123 (fixer/outcome loop).
 > Competitor refresh triggers authorize research updates only.
 
 > **2026-06-11 update (post-DASH drift):** Datadog DASH (June 9–10, 2026) is the largest competitive

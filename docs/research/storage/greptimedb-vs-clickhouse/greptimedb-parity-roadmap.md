@@ -4,7 +4,7 @@
 > implementation roadmap.** This dated assessment records possible GreptimeDB
 > and DataFusion improvements behind measured ClickHouse advantages. Parallax
 > remains committed to GreptimeDB + Turso. A product change may begin only from
-> a numbered file in [`plans/`](../../../../plans/); this document cannot
+> a research decision or a new numbered plan; this document cannot
 > authorize implementation, a fork, or an alternate engine.
 
 <!-- markdownlint-disable MD013 -->

@@ -153,7 +153,7 @@ models gaps). No plan needed; recorded for the V2 auth/profile decisions.
 
 - No benchmark claims (footprint/perf numbers become claims only via
   plans/175 and the existing benchmark program).
-- No new roster additions; the do-not-repropose list in `plans/README.md`
+- No new roster additions; the do-not-repropose list stays in research, not a `plans/` index
   stands.
 - A1 (bundle value vs raw context) remains the open existential gate — this
   corpus strengthens the *demand* signal (Datadog token-trimming, Grafana

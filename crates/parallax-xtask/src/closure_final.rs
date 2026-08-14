@@ -1,9 +1,4 @@
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    fs,
-    path::Path,
-    process::Command,
-};
+use std::{collections::BTreeMap, fs, path::Path, process::Command};
 
 use anyhow::{Context, Result, ensure};
 use sha2::{Digest, Sha256};
@@ -11,7 +6,7 @@ use sha2::{Digest, Sha256};
 mod fixtures;
 mod packet;
 
-const CLOSURE_PATHS: [&str; 8] = [
+const CLOSURE_PATHS: [&str; 7] = [
     "AGENTS.md",
     "PROJECT_STRUCTURE.md",
     "plans/107-program-closure-audits.md",
@@ -19,7 +14,6 @@ const CLOSURE_PATHS: [&str; 8] = [
     "plans/GOAL.md",
     "plans/IMPLEMENTATION.md",
     "plans/OXC-IMPLEMENTATION.md",
-    "plans/README.md",
 ];
 
 #[derive(Debug, Eq, PartialEq)]
@@ -262,6 +256,7 @@ fn validate_program_files_retired(root: &Path) -> Result<()> {
         "plans/GOAL.md",
         "plans/IMPLEMENTATION.md",
         "plans/OXC-IMPLEMENTATION.md",
+        "plans/README.md",
     ] {
         ensure!(
             !root.join(path).exists(),
@@ -277,10 +272,6 @@ fn validate_program_files_retired(root: &Path) -> Result<()> {
             "PROJECT_STRUCTURE.md",
             ["plans/GOAL.md", "codex/active-plan-closure-7f3c"],
         ),
-        (
-            "plans/README.md",
-            ["GOAL.md", "107-program-closure-audits.md"],
-        ),
     ] {
         let source = fs::read_to_string(root.join(path))?;
         for marker in forbidden {
@@ -294,46 +285,18 @@ fn validate_program_files_retired(root: &Path) -> Result<()> {
 }
 
 fn validate_remaining_plans(root: &Path) -> Result<()> {
-    let mut files = BTreeSet::new();
-    for entry in fs::read_dir(root.join("plans"))? {
-        let path = entry?.path();
-        let Some(name) = path.file_name().and_then(|name| name.to_str()) else {
-            continue;
-        };
-        if name.len() < 4
-            || !name[..3].chars().all(|char| char.is_ascii_digit())
-            || !name.ends_with(".md")
-        {
-            continue;
-        }
-        let source = fs::read_to_string(&path)?;
-        ensure!(
-            source.contains("- **Status**: BLOCKED"),
-            "remaining plan `{name}` is not BLOCKED"
-        );
-        files.insert(name.to_owned());
+    let plans = root.join("plans");
+    if !plans.exists() {
+        return Ok(());
     }
-    let index = fs::read_to_string(root.join("plans/README.md"))?;
-    let mut rows = BTreeSet::new();
-    for line in index.lines().filter(|line| line.starts_with("| [")) {
-        let Some((_, target)) = line.split_once("](") else {
-            continue;
-        };
-        let Some((target, _)) = target.split_once(')') else {
-            continue;
-        };
-        if target.len() >= 4
-            && target[..3].chars().all(|char| char.is_ascii_digit())
-            && target.ends_with(".md")
-        {
-            ensure!(
-                line.contains("| BLOCKED"),
-                "remaining plan index row `{target}` is not BLOCKED"
-            );
-            rows.insert(target.to_owned());
-        }
-    }
-    ensure!(files == rows, "remaining plan file/index bijection differs");
+    let leftover = fs::read_dir(&plans)?
+        .filter_map(Result::ok)
+        .map(|entry| entry.file_name())
+        .collect::<Vec<_>>();
+    ensure!(
+        leftover.is_empty(),
+        "plans/ still contains files: {leftover:?}"
+    );
     Ok(())
 }
 

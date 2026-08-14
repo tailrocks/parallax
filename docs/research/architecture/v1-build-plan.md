@@ -6,7 +6,7 @@
 > M0-M2, the V1 UI, packaging, and the initial M5 measurements shipped. Body
 > text may still name historical extension table `run_metric_points` — current
 > code uses `invocation_metric_points` and drops the legacy table at bootstrap.
-> Unfinished implementation lives only in active [`plans/`](../../../plans/)
+> Unfinished residuals live in research decisions
 > files that still exist (e.g. 089, 103, 107, 110, 114, 115, 123, 154, 155). Plans 112 (MCP), 118 (Sentry), 120 (Claude Code), 121 (deploy), and 124 (CI
 > evidence) are DONE/deleted. Closed plans (093, 104–106, 109, 111, 112, 116,
 > 118, 121, 124, etc.) are not active queues.
