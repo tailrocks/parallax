@@ -4,10 +4,7 @@ import { productTest as test, expect } from "../fixtures/test"
 test.describe("metrics product pilot", () => {
   test.use({ productDataset: "metrics-pilot" })
 
-  test("lists seeded gauge and histogram @pw-metrics-pilot-catalog", async ({
-    page,
-    snapshot,
-  }) => {
+  test("lists seeded gauge and histogram @pw-metrics-pilot-catalog", async ({ page, snapshot }) => {
     await page.goto("/metrics")
     await expect(page.getByRole("heading", { name: "Metrics", exact: true })).toBeVisible()
     await page.getByPlaceholder("Search").fill(METRICS_PILOT_GAUGE)
