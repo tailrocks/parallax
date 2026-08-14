@@ -1921,6 +1921,13 @@ migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
+path = "ui/src/features/runtime-metrics/api/load-metric-detail.ts"
+current_owner = "features/runtime-metrics"
+target_owner = "features/runtime-metrics"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
 path = "ui/src/features/runtime-metrics/model/runtime-metrics-error.ts"
 current_owner = "features/runtime-metrics"
 target_owner = "features/runtime-metrics"
@@ -4630,7 +4637,7 @@ ceiling = 127
 [[limits]]
 metric = "rust.function-lines"
 scope = "crates/parallax-api/src/resolvers/services/queries.rs::service_map"
-ceiling = 109
+ceiling = 107
 
 [[limits]]
 metric = "rust.function-lines"
@@ -5754,7 +5761,7 @@ ceiling = 782
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/features/traces/model/trace-tree.ts"
-ceiling = 327
+ceiling = 325
 
 [[limits]]
 metric = "typescript.file-lines"
@@ -5774,7 +5781,7 @@ ceiling = 374
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/routes/metrics.$metricName.tsx"
-ceiling = 394
+ceiling = 312
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -5962,7 +5969,7 @@ ceiling = 16
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/features/traces/model/trace-tree.ts:318"
-ceiling = 24
+ceiling = 22
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -6167,11 +6174,6 @@ ceiling = 13
 metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/features/traces/model/trace-tree.ts:211"
 ceiling = 20
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/features/traces/model/trace-tree.ts:318"
-ceiling = 13
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
@@ -6582,13 +6584,13 @@ ceiling = 105
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/features/traces/tests/model/trace-tree.test.ts:158"
+scope = "ui/src/features/traces/tests/model/trace-tree.test.ts:162"
 ceiling = 67
 
 [[limits]]
 metric = "typescript.function-lines"
 scope = "ui/src/features/traces/tests/model/trace-tree.test.ts:34"
-ceiling = 204
+ceiling = 125
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -6636,13 +6638,8 @@ ceiling = 204
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/routes/metrics.$metricName.tsx:106"
-ceiling = 69
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/routes/metrics.$metricName.tsx:190"
-ceiling = 225
+scope = "ui/src/routes/metrics.$metricName.tsx:72"
+ceiling = 254
 
 [[limits]]
 metric = "typescript.function-lines"
