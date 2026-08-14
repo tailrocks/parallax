@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Same C locale as test-oxfmt-contract.sh so file-list hashes match Ubuntu CI.
+export LC_ALL=C
 
 root=$(git rev-parse --show-toplevel)
 ui="$root/ui"

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# File-list hashes must match Ubuntu CI. UTF-8 sort puts `$.tsx` after `__root.tsx`.
+export LC_ALL=C
 
 root=$(git rev-parse --show-toplevel)
 ui="$root/ui"
@@ -26,7 +28,7 @@ config="$ui/.oxfmtrc.jsonc"
 
 files=$(git -C "$root" ls-files 'ui/*.ts' 'ui/*.tsx' 'ui/**/*.ts' 'ui/**/*.tsx' | sed 's#^ui/##' | rg -v '^src/routeTree\.gen\.ts$' | sort)
 [[ $(printf '%s\n' "$files" | wc -l | tr -d ' ') == 528 ]]
-[[ $(printf '%s\n' "$files" | shasum -a 256 | awk '{print $1}') == 577bf5a159fab98603496fc6d28ddbf079e57b66fd3244b2167f128f4365768c ]]
+[[ $(printf '%s\n' "$files" | shasum -a 256 | awk '{print $1}') == 4d75db79d9cbdbfbddfa2c7c5fb462e314456b94e041d4a52c1f44ef4d018f33 ]]
 
 platform=$(cd "$ui" && bun -e 'console.log(process.platform + "-" + process.arch)')
 case "$platform" in
