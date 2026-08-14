@@ -283,18 +283,16 @@ promoted to `plans/` with a blocking reason).
 CLOSED: not-found hydration | 170/diagnostics-auto | parallax-ui | React minified #418 pageerror on GET /this-route-does-not-exist | expected: no pageerror | FIXED 2026-08-14: splat `/$` makes unknown URLs a real child of root (same hydrate path as `/sql`); `shellComponent` keeps document/theme/shell around MatchInner not-found; `shell.spec.ts` drops #418 allow
 CLOSED: where-clause reserved-word value | 168-176/unit-gate | parallax-ui | `serialize→parse` property fail seed `632427516` value `"nOt"` → `expected CONTAINS after NOT` | expected: reserved-word keys/values round-trip | FIXED 2026-08-14: parser accepts keyword tokens as keys/values in those positions (original `.text`); `needsQuoting` quotes AND/CONTAINS/NOT so serialize cannot emit a keyword in value position
 
-Coverage (2026-08-14 restamp, playground PR #13 + this inventory):
+Coverage (2026-08-14T15:43Z restamp, playground PR #13 + this inventory):
 `docs/coverage-matrix.md` restamped — no `MAPPED`/`UNTESTED` data cells.
-`c1`–`c11` re-run: c4/c5/c6/c9/c10/c11 PASS; c8 rust+java+js PASS;
-c7 import PASS, `parallax-mcp check` CLI≢GraphQL JSON. Tests explorer seeded
-(`FLAKY_PASS` w4 fixtures). Teaching traces: 18-span waterfall, `rpc.message`
-stream, GraphQL batch vs N+1, **consumer** span-link UI, exemplars (GraphQL),
-a13 v1→v2 release strip, RUM `ui.click`→checkout stitch. Gradle
-`BUILD SUCCESSFUL` catalog/payment/fulfillment twice.
+`c1`–`c11` EXIT 0 this serve (c4 after `?fail=1` burst; c8 after JS
+`X-Sentry-Auth`). Teaching: 18-span `5e14f8c670eb1e15`, N+1 `ae13ff562135f5e6`
+two `reviewsSlow`, consumer Links 1/1 `f22fbe511f04f149` → `05a35c01c4869f7c`,
+RUM stitch `19ace18bd8315e84` `ui.click`→checkout, a13 5×502 **2 versions**.
 
-OPEN: MCP check CLI≢HTTP bundle JSON | 164/c7 | parallax-mcp | `parallax-mcp check --fingerprint` FAIL while GraphQL `bundle` + CLI `issue context` both return | expected: byte-identical JSON | playground records FAIL, does not weaken check
-OPEN: clock-skew banner | 167/display | parallax-ui | `?skew=1` same-service degrade trace has no "Clock skew suspected" banner | expected: banner when child starts before parent | detector is cross-service only
-OPEN: exemplar click-through | 167/display | parallax-ui | Metrics workbench `catalog.product.queries` has no clickable exemplar `trace_id` (GraphQL `metricExemplars` returns ids) | expected: dot/id navigates to `/traces/{id}` | telemetry PASS, display FAIL
+OPEN: MCP check CLI≢HTTP bundle JSON | 164/c7 | parallax-mcp | 2026-08-14T15:23Z `parallax-mcp check` FAIL (CLI≢GraphQL bundle) while import+GraphQL `agentSession` PASS and c7 EXIT 0 | expected: byte-identical JSON | playground records FAIL, does not weaken check
+OPEN: clock-skew banner | 167/display | parallax-ui | 2026-08-14T15:43Z same-service `?skew=1` still has no "Clock skew suspected" banner | expected: banner when child starts before parent | detector is cross-service only
+OPEN: exemplar click-through | 167/display | parallax-ui | 2026-08-14T15:43Z `/metrics/catalog.product.queries` `hasTraceLink=false` (GraphQL `metricExemplars` → `c9464650357d6f26`) | expected: dot/id navigates to `/traces/{id}` | telemetry PASS, display FAIL
 NOTE: service detail route is `/services/$name` (not `/$name`); `/$name` is splat not-found. Runtime lanes PASS on `/services/checkout` (tokio) and `/services/catalog` (jvm).
 CLOSED: JS Sentry envelope | 164/c8 | playground | first POST is `type=session` (Parallax 415); second POST `type=event` is the exception. `c8 ok rust+java+js`. Sentry Group `plat=node Error: c8-js-sdk PaymentError`. FIXED 2026-08-14: disable session-first wait; emit type=event
 CLOSED: empty Tests explorer | playground | test-verify rust --acceptance | FLAKY_PASS rows now visible (`tests-teach-flaky-1440-dark.png`)
