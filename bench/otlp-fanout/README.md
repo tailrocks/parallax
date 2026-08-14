@@ -127,12 +127,12 @@ parallax serve --config ~/.parallax/config.toml    # UI http://localhost:4000
 Rotel reaches it at `host.docker.internal:14317`. **Bind `0.0.0.0`** — a
 loopback-only bind is unreachable from the container (the lab's one fragile hop).
 
-## Compare mode — `parallax run start`
+## Compare mode — `parallax invocation start`
 
 ```bash
 source bench/otlp-fanout/lab.env          # sets PARALLAX_OTLP_FORWARD=http://localhost:4317
-parallax run start -- <your-otel-app>     # child telemetry → Rotel → every backend incl. Parallax
-parallax run start --otlp-forward off -- <app>   # one-off: straight to Parallax
+parallax invocation start -- <your-otel-app>     # child telemetry → Rotel → every backend incl. Parallax
+parallax invocation start --otlp-forward off -- <app>   # one-off: straight to Parallax
 ```
 
 Implemented in `crates/parallax-cli` (env + flag; config-file deferred).

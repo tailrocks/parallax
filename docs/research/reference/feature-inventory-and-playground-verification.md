@@ -224,19 +224,14 @@ Roster changes must keep the fan-out lab docs + `comparison-set.md` in sync.
 Every inventory item above needs a scenario that exercises it; known holes in
 the current catalog:
 
-- Evidence bundles/pins/story/agent handoff: scripted `issue context` +
-  `invocation bundle` + MCP tool calls against playground data; A1 gate probes.
-- Alerting end-to-end: rules over playground signals, incident open/resolve,
-  webhook + Slack delivery capture; compare alert UX per backend.
-- Dashboards, investigations, saved views, SQL workbench flows as scripted
-  user journeys, not just ad-hoc clicks.
-- GitHub deploy/CI ingest + backfill (webhook fixtures), test-reporting
-  depth (flaky chains across invocations), Claude Code session import,
-  Sentry-envelope multi-SDK ledger (Rust/Java/JS at minimum).
-- Live tail (SSE + CLI `--follow --for`), prune/retention/doctor, remote
-  contexts, `--otlp-forward` compare mode, self-telemetry.
-- Redaction canary corpus assertions on every egress surface (UI, bundle,
-  MCP, Sentry ack paths).
+- Evidence bundles/pins/story/agent handoff: **c1** (`issue context` +
+  GraphQL `bundle`) + **c2** (`invocation bundle`) + **c7** (Claude import).
+- Alerting end-to-end: **c4** (rule → open incident after error seed).
+- Dashboards, investigations, saved views, SQL: **c5**.
+- GitHub deploy/CI ingest: **c6** (HMAC deploy fixture). Claude Code import:
+  **c7**. Sentry envelope ingest: **c8**.
+- Live tail: **c3** (SSE). doctor/prune dry-run: **c9**.
+- Redaction canary on bundle egress: **c10**. agent-browser Overview: **c11**.
 
 ### Workstream 4a — agent-browser UI verification
 
