@@ -141,106 +141,131 @@ export function tokenizeWhereClause(
   return { ok: true, tokens }
 }
 
-function mergeNotContains(tokens: Token[]): Token[] | WhereParseError {
-  const out: Token[] = []
-  for (let i = 0; i < tokens.length; i += 1) {
-    const tok = tokens[i]!
-    if (tok.kind === "op" && tok.value === "NOT") {
-      const next = tokens[i + 1]
-      if (!next || next.kind !== "op" || next.value !== "CONTAINS") {
-        return {
-          message: "expected CONTAINS after NOT",
-          start: tok.start,
-          end: tok.end,
-        }
-      }
-      out.push({
-        kind: "op",
-        text: `${tok.text} ${next.text}`,
-        value: "NOT CONTAINS",
-        start: tok.start,
-        end: next.end,
-      })
-      i += 1
-      continue
-    }
-    out.push(tok)
+function isReservedKeyword(word: string): boolean {
+  const upper = word.toUpperCase()
+  return upper === "AND" || upper === "CONTAINS" || upper === "NOT"
+}
+
+/** Key position: a literal ident, or a reserved word used as an attribute name. */
+function keyFromToken(tok: Token): string | null {
+  if (tok.kind === "literal" && IDENT_RE.test(tok.value)) return tok.value
+  if ((tok.kind === "op" || tok.kind === "and") && IDENT_RE.test(tok.text)) {
+    return tok.text
   }
-  return out
+  return null
+}
+
+/**
+ * Value position: quoted string, bare literal, or a reserved word.
+ * Keyword tokens keep `.text` so `nOt` stays `nOt`, not the uppercased `.value`.
+ */
+function valueFromToken(tok: Token): string | null {
+  if (tok.kind === "string" || tok.kind === "literal") return tok.value
+  if (tok.kind === "op" || tok.kind === "and") return tok.text
+  return null
+}
+
+function err(message: string, start: number, end: number): WhereParseError {
+  return { message, start, end }
+}
+
+function readKey(tok: Token): { ok: true; key: string } | { ok: false; error: WhereParseError } {
+  const key = keyFromToken(tok)
+  if (key === null) {
+    return { ok: false, error: err("expected attribute key", tok.start, tok.end) }
+  }
+  return { ok: true, key }
+}
+
+function readOperator(
+  tokens: Token[],
+  index: number,
+  key: string,
+  keyTok: Token
+): { ok: true; op: WhereOp; next: number; end: number } | { ok: false; error: WhereParseError } {
+  const opTok = tokens[index]
+  if (!opTok || opTok.kind !== "op") {
+    const at = opTok ?? keyTok
+    return {
+      ok: false,
+      error: err(
+        `expected operator after "${key}"`,
+        opTok ? at.start : keyTok.end,
+        opTok ? at.end : keyTok.end + 1
+      ),
+    }
+  }
+  if (opTok.value === "NOT") {
+    const containsTok = tokens[index + 1]
+    if (!containsTok || containsTok.kind !== "op" || containsTok.value !== "CONTAINS") {
+      return {
+        ok: false,
+        error: err("expected CONTAINS after NOT", opTok.start, opTok.end),
+      }
+    }
+    return { ok: true, op: "NOT CONTAINS", next: index + 2, end: containsTok.end }
+  }
+  return { ok: true, op: opTok.value as WhereOp, next: index + 1, end: opTok.end }
+}
+
+function readValue(
+  tokens: Token[],
+  index: number,
+  op: WhereOp,
+  opEnd: number,
+  opTok: Token
+): { ok: true; value: string; next: number } | { ok: false; error: WhereParseError } {
+  const valueTok = tokens[index]
+  const value = valueTok ? valueFromToken(valueTok) : null
+  if (value === null) {
+    const at = valueTok ?? opTok
+    return {
+      ok: false,
+      error: err(
+        `expected value after "${op}"`,
+        valueTok ? at.start : opEnd,
+        valueTok ? at.end : opEnd + 1
+      ),
+    }
+  }
+  return { ok: true, value, next: index + 1 }
 }
 
 export function parseWhereClause(input: string): WhereParseResult {
   if (input.trim() === "") return { ok: true, filters: [] }
   const tokenized = tokenizeWhereClause(input)
   if (!tokenized.ok) return tokenized
-  const merged = mergeNotContains(tokenized.tokens)
-  if ("message" in merged) return { ok: false, error: merged }
+  const tokens = tokenized.tokens
 
   const filters: WhereFilter[] = []
   let i = 0
-  while (i < merged.length) {
-    const keyTok = merged[i]!
-    if (keyTok.kind !== "literal" || !IDENT_RE.test(keyTok.value)) {
-      return {
-        ok: false,
-        error: {
-          message: "expected attribute key",
-          start: keyTok.start,
-          end: keyTok.end,
-        },
-      }
-    }
-    const opTok = merged[i + 1]
-    if (!opTok || opTok.kind !== "op") {
-      const at = opTok ?? keyTok
-      return {
-        ok: false,
-        error: {
-          message: `expected operator after "${keyTok.value}"`,
-          start: opTok ? at.start : keyTok.end,
-          end: opTok ? at.end : keyTok.end + 1,
-        },
-      }
-    }
-    const valueTok = merged[i + 2]
-    if (!valueTok || (valueTok.kind !== "string" && valueTok.kind !== "literal")) {
-      const at = valueTok ?? opTok
-      return {
-        ok: false,
-        error: {
-          message: `expected value after "${opTok.value}"`,
-          start: valueTok ? at.start : opTok.end,
-          end: valueTok ? at.end : opTok.end + 1,
-        },
-      }
-    }
-    filters.push({
-      key: keyTok.value,
-      op: opTok.value as WhereOp,
-      value: valueTok.value,
-    })
-    i += 3
-    if (i >= merged.length) break
-    const andTok = merged[i]!
+  while (i < tokens.length) {
+    const keyTok = tokens[i]!
+    const keyRead = readKey(keyTok)
+    if (!keyRead.ok) return keyRead
+    const opRead = readOperator(tokens, i + 1, keyRead.key, keyTok)
+    if (!opRead.ok) return opRead
+    const valueRead = readValue(tokens, opRead.next, opRead.op, opRead.end, tokens[i + 1] ?? keyTok)
+    if (!valueRead.ok) return valueRead
+    filters.push({ key: keyRead.key, op: opRead.op, value: valueRead.value })
+    i = valueRead.next
+    if (i >= tokens.length) break
+    const andTok = tokens[i]!
     if (andTok.kind !== "and") {
       return {
         ok: false,
-        error: {
-          message: "expected AND between conditions (v1 grammar is AND-only)",
-          start: andTok.start,
-          end: andTok.end,
-        },
+        error: err(
+          "expected AND between conditions (v1 grammar is AND-only)",
+          andTok.start,
+          andTok.end
+        ),
       }
     }
     i += 1
-    if (i >= merged.length) {
+    if (i >= tokens.length) {
       return {
         ok: false,
-        error: {
-          message: "expected condition after AND",
-          start: andTok.start,
-          end: andTok.end,
-        },
+        error: err("expected condition after AND", andTok.start, andTok.end),
       }
     }
   }
@@ -248,7 +273,7 @@ export function parseWhereClause(input: string): WhereParseResult {
 }
 
 function needsQuoting(value: string): boolean {
-  return value === "" || !/^[\w.\-/:]+$/.test(value)
+  return value === "" || !/^[\w.\-/:]+$/.test(value) || isReservedKeyword(value)
 }
 
 export function quoteWhereValue(value: string): string {

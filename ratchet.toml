@@ -2210,6 +2210,13 @@ migration_plan = "151"
 kind = "handwritten"
 
 [[ui.ownership]]
+path = "ui/src/shared/tests/where-clause-reserved.test.ts"
+current_owner = "shared"
+target_owner = "shared"
+migration_plan = "151"
+kind = "handwritten"
+
+[[ui.ownership]]
 path = "ui/src/features/alerts/model/alert-incident-timeline.ts"
 current_owner = "features/alerts"
 target_owner = "features/alerts"
@@ -5650,6 +5657,11 @@ scope = "ui/src/shared/tests/where-clause.test.ts"
 ceiling = 27
 
 [[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/shared/tests/where-clause-reserved.test.ts"
+ceiling = 9
+
+[[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/components/ui/chart.tsx"
 ceiling = 302
@@ -5995,13 +6007,13 @@ ceiling = 24
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/shared/where-clause.ts:144"
-ceiling = 18
+scope = "ui/src/shared/where-clause.ts:180"
+ceiling = 19
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/shared/where-clause.ts:172"
-ceiling = 47
+scope = "ui/src/shared/where-clause.ts:234"
+ceiling = 17
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
@@ -6175,11 +6187,6 @@ ceiling = 15
 metric = "typescript.function-cyclomatic-complexity"
 scope = "ui/src/shared/console/where-clause-editor.tsx:109"
 ceiling = 15
-
-[[limits]]
-metric = "typescript.function-cyclomatic-complexity"
-scope = "ui/src/shared/where-clause.ts:172"
-ceiling = 21
 
 [[limits]]
 metric = "typescript.function-cyclomatic-complexity"
@@ -6686,11 +6693,6 @@ ceiling = 67
 metric = "typescript.function-lines"
 scope = "ui/src/shared/tests/where-clause.test.ts:11"
 ceiling = 122
-
-[[limits]]
-metric = "typescript.function-lines"
-scope = "ui/src/shared/where-clause.ts:172"
-ceiling = 77
 
 [[limits]]
 metric = "typescript.function-lines"

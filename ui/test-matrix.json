@@ -4,8 +4,8 @@
     "fire_event_calls": 28,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 628,
-    "test_files": 170
+    "test_cases": 632,
+    "test_files": 171
   },
   "private_route_imports": [],
   "entries": [
@@ -1320,6 +1320,23 @@
         "unterminated string reports position",
         "valid clause parses",
         "values with spaces and unicode"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-where-clause-reserved",
+      "surface": "shared/where-clause",
+      "risk": "Reserved-word keys/values (AND, CONTAINS, NOT) can be eaten as operators and break serialize→parse",
+      "scenario_owner": "shared/where-clause",
+      "lane_owner": "vitest/model",
+      "layer": "model",
+      "test_file": "ui/src/shared/tests/where-clause-reserved.test.ts",
+      "test_ids": [
+        "reserved words in value position keep original spelling",
+        "reserved words in key position stay keys",
+        "reserved-word values quoted (case-insensitive)",
+        "serialize\u2192parse reserved-word keys and values"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"

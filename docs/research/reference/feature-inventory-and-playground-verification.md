@@ -284,3 +284,4 @@ promoted to `plans/` with a blocking reason).
 ## W5 discrepancy list
 
 CLOSED: not-found hydration | 170/diagnostics-auto | parallax-ui | React minified #418 pageerror on GET /this-route-does-not-exist | expected: no pageerror | FIXED 2026-08-14: splat `/$` makes unknown URLs a real child of root (same hydrate path as `/sql`); `shellComponent` keeps document/theme/shell around MatchInner not-found; `shell.spec.ts` drops #418 allow
+CLOSED: where-clause reserved-word value | 168-176/unit-gate | parallax-ui | `serialize→parse` property fail seed `632427516` value `"nOt"` → `expected CONTAINS after NOT` | expected: reserved-word keys/values round-trip | FIXED 2026-08-14: parser accepts keyword tokens as keys/values in those positions (original `.text`); `needsQuoting` quotes AND/CONTAINS/NOT so serialize cannot emit a keyword in value position
