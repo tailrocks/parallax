@@ -8009,4 +8009,3 @@ ceiling = 3
 metric = "rust.inline-test-modules"
 scope = "crates/parallax-server/src/serve.rs"
 ceiling = 1
-

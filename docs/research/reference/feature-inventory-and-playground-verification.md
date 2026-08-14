@@ -284,4 +284,3 @@ promoted to `plans/` with a blocking reason).
 ## W5 discrepancy list
 
 CLOSED: not-found hydration | 170/diagnostics-auto | parallax-ui | React minified #418 pageerror on GET /this-route-does-not-exist | expected: no pageerror | FIXED 2026-08-14: splat `/$` makes unknown URLs a real child of root (same hydrate path as `/sql`); `shellComponent` keeps document/theme/shell around MatchInner not-found; `shell.spec.ts` drops #418 allow
-

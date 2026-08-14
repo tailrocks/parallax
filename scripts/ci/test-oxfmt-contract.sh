@@ -25,8 +25,8 @@ config="$ui/.oxfmtrc.jsonc"
 [[ $(shasum -a 256 "$config" | awk '{print $1}') == f4b14c788a8026e1803de9d0166fef446933b707ac4f73f494500d3a02e5816e ]]
 
 files=$(git -C "$root" ls-files 'ui/*.ts' 'ui/*.tsx' 'ui/**/*.ts' 'ui/**/*.tsx' | sed 's#^ui/##' | rg -v '^src/routeTree\.gen\.ts$' | sort)
-[[ $(printf '%s\n' "$files" | wc -l | tr -d ' ') == 493 ]]
-[[ $(printf '%s\n' "$files" | shasum -a 256 | awk '{print $1}') == 981c8a922295377969d4bb8adeaec7d5ae700fc820e748a4dcff99126eddf80c ]]
+[[ $(printf '%s\n' "$files" | wc -l | tr -d ' ') == 528 ]]
+[[ $(printf '%s\n' "$files" | shasum -a 256 | awk '{print $1}') == 577bf5a159fab98603496fc6d28ddbf079e57b66fd3244b2167f128f4365768c ]]
 
 platform=$(cd "$ui" && bun -e 'console.log(process.platform + "-" + process.arch)')
 case "$platform" in
@@ -99,7 +99,7 @@ if [[ -d /proc ]]; then
 fi
 
 check_output=$(cd "$ui" && bun run check)
-rg -F '493 files' <<<"$check_output" >/dev/null
+rg -F '528 files' <<<"$check_output" >/dev/null
 [[ -z $(cd "$ui" && bun run --silent format:list) ]]
 
-printf 'Oxfmt contract passed (493 files, %s)\n' "$platform"
+printf 'Oxfmt contract passed (528 files, %s)\n' "$platform"

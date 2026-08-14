@@ -37,13 +37,13 @@ hash_stream() {
 }
 
 selected=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --debug=files .)
-[[ $(printf '%s\n' "$selected" | wc -l | tr -d ' ') == 493 ]]
-[[ $(printf '%s\n' "$selected" | hash_stream) == e82c14b0b414e4b5ed55a1256a212b2fc09fb4e51f0453a0ec66f21d6544a0c0 ]]
+[[ $(printf '%s\n' "$selected" | wc -l | tr -d ' ') == 528 ]]
+[[ $(printf '%s\n' "$selected" | hash_stream) == 78f3749326c15bf7fc5093dc4dffcb38ff1f7ecf81e0dec61ff42375c65e3484 ]]
 
 config=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --print-config)
 [[ $(printf '%s\n' "$config" | hash_stream) == f1796585c8362b98be550755de4b4bb27bfb6aba286e0f041ebfbb0e7410cf7e ]]
 ts_config=$(cd "$ui" && bun ./node_modules/typescript/bin/tsc --showConfig)
-[[ $(printf '%s\n' "$ts_config" | hash_stream) == 42c4ccf18a377d4251c92d0b013e3b5ff1ea66c78ea74e7f9069e0b640922cd6 ]]
+[[ $(printf '%s\n' "$ts_config" | hash_stream) == 62f94ff64231f988f5d46f332f8701d60a1450c7307058d24c67c44ac4633ac8 ]]
 [[ $(jq -r '.compilerOptions.noPropertyAccessFromIndexSignature' <<<"$ts_config") == true ]]
 [[ $(jq -r '.compilerOptions.strict' <<<"$ts_config") == true ]]
 [[ $(jq -r '.compilerOptions.allowJs' <<<"$ts_config") == false ]]
@@ -126,4 +126,4 @@ cycle_output=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint -A all -D import
 }
 rg -F 'import(no-cycle)' <<<"$cycle_output" >/dev/null
 
-printf 'TypeScript/Oxlint contract passed (493 selected files, 19 rule fixtures)\n'
+printf 'TypeScript/Oxlint contract passed (528 selected files, 19 rule fixtures)\n'
