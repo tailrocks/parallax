@@ -38,9 +38,15 @@ hash_stream() {
   shasum -a 256 | awk '{print $1}'
 }
 
-selected=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --debug=files .)
-[[ $(printf '%s\n' "$selected" | wc -l | tr -d ' ') == 531 ]]
-[[ $(printf '%s\n' "$selected" | hash_stream) == ea5ff92cdf00179295b03a840034e402b3e1806cd113b48aee4abc71d8764280 ]]
+# Sort so the pin is independent of filesystem readdir order (Darwin ≠ Linux).
+selected=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --debug=files . | LC_ALL=C sort)
+selected_count=$(printf '%s\n' "$selected" | wc -l | tr -d ' ')
+selected_hash=$(printf '%s\n' "$selected" | hash_stream)
+if [[ "$selected_count" != 531 || "$selected_hash" != b7445af2fae13f9f2bdcc013ea06c7ff346276680d3548040c3e141caf304304 ]]; then
+  printf 'oxlint selected files: count=%s hash=%s (want 531 / b7445af2…)\n' \
+    "$selected_count" "$selected_hash" >&2
+  exit 1
+fi
 
 config=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --print-config)
 [[ $(printf '%s\n' "$config" | hash_stream) == f1796585c8362b98be550755de4b4bb27bfb6aba286e0f041ebfbb0e7410cf7e ]]
