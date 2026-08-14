@@ -2,7 +2,7 @@
 
 **Status:** OPERATOR-GATED — proposal only. No product code until approved.
 **Date:** 2026-08-14
-**Plan:** [176](../../../plans/176-grouping-transparency.md) Step 4
+**Plan:** grouping Step 4 (operator-gated; residual in this decision)
 
 ## Proposal
 

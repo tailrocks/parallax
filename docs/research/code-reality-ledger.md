@@ -44,7 +44,7 @@ not override code.
 | GreptimeDB telemetry (native OTLP tables) | **shipped** (mandatory) | `crates/parallax-greptime/`; policy [decisions/native-otel-tables.md](decisions/native-otel-tables.md), [decisions/storage-engine.md](decisions/storage-engine.md) | ClickHouse = research comparator only — **never product fallback** |
 | Turso metadata | **shipped** (mandatory) | `crates/parallax-metadata/`; [decisions/metadata-store.md](decisions/metadata-store.md) | No Postgres/rusqlite product fallback |
 | `StorageAdapter` / capability ports | **shipped** (test/fake boundary) | `crates/parallax-storage/` | Capability split + test fakes; **not** multi-engine product promise |
-| Extension tables (`error_events`, exemplars, etc.) | **partial** | Greptime adapter + [decisions/native-otel-tables.md](decisions/native-otel-tables.md); open work e.g. [plans/089-extension-table-grpc-writes.md](../../plans/089-extension-table-grpc-writes.md) | Derived signals only; raw signals stay native |
+| Extension tables (`error_events`, exemplars, etc.) | **partial** | Greptime adapter + [decisions/native-otel-tables.md](decisions/native-otel-tables.md); row-API write still blocked on crates.io `greptimedb-ingester` 0.18.0 | Derived signals only; raw signals stay native |
 | Large-server four-way storage cost/latency | **unproven gate** | [storage/greptimedb-vs-clickhouse/](storage/greptimedb-vs-clickhouse/), [research-agenda.md](research-agenda.md) §5 | Local small benches exist; sized server tier deferred |
 
 ---

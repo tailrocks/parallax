@@ -6,17 +6,15 @@ under `docs/research/validation/`. Do not keep plan history here.
 
 ## Active
 
-| Plan | Title | Status |
-|------|-------|--------|
-| [089](089-extension-table-grpc-writes.md) | Move derived extension-table writes to GreptimeDB's row API | BLOCKED — crates.io `greptimedb-ingester` still 0.18.0; upstream [PR #58](https://github.com/GreptimeTeam/greptimedb-ingester-rust/pull/58) OPEN; HTTP SQL path remains |
-| [114](114-retire-legacy-spool-reader.md) | Retire the legacy NDJSON spool reader | BLOCKED — only rolling `preview` tag; need one stable raw-frame release cycle + expired legacy segments |
-| [171](171-competitor-informed-feature-uplift.md) | Preview-before-save, agent issue lease, MCP evals, instrumented onboarding | OPERATOR-GATED — f1 preview shipped; f2 lease catalog proposal awaiting operator; f3 evals label-gated; f4 snippets landed |
-| [176](176-grouping-transparency.md) | Grouping transparency — explain why events grouped; steering spec gated | OPERATOR-GATED — Steps 1–3 shipped; Step 4 fingerprint-rules proposal awaits operator |
+No numbered plans are active. External or operator-gated residuals live in
+research, not here:
 
-Shipped 2026-08-15 (deleted from this folder): 162–167 playground verification
-(SigNoz Foundry residue only; 4-sink + c-series + coverage matrix + W5
-in-repo display fixes on `main`); 168–170 QA waves; 172 design system;
-173–175 evidence alerts / durable upgrade / footprint.
+- row API / `greptimedb-ingester` — [docs/research/decisions/native-otel-tables.md](../docs/research/decisions/native-otel-tables.md)
+- legacy NDJSON spool reader — [docs/research/decisions/native-otel-tables.md](../docs/research/decisions/native-otel-tables.md)
+- competitor-informed lease (f2) — [docs/research/reference/feature-inventory-and-playground-verification.md](../docs/research/reference/feature-inventory-and-playground-verification.md)
+- fingerprint-rules (Step 4) — [docs/research/decisions/fingerprint-rules.md](../docs/research/decisions/fingerprint-rules.md)
+
+A numbered file returns here only when an operator or upstream gate lifts.
 
 ## Constraints
 
