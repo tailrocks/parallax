@@ -878,7 +878,7 @@ ceiling = 26
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-analysis/src/fingerprint/tests.rs"
-ceiling = 13
+ceiling = 15
 
 [[limits]]
 metric = "rust.assertions"
