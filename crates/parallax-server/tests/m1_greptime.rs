@@ -114,7 +114,7 @@ async fn managed_engine_roundtrip() {
     // upsert is visible. Poll for the grouped issue rather than assuming the
     // span's visibility implies it.
     let mut issues = Vec::new();
-    for _ in 0..100 {
+    for _ in 0..300 {
         issues = handle.metadata.issues(10).await.expect("issues");
         if issues
             .iter()
