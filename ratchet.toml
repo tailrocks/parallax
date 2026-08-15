@@ -4205,7 +4205,7 @@ ceiling = 12667
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-analysis/src/sentry.rs"
-ceiling = 18
+ceiling = 19
 
 [[limits]]
 metric = "rust.assertions"
