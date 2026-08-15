@@ -167,4 +167,5 @@ schema_version = 1
     "fn resource_column",
     "fn resource_json_path",
     "fn span_column",
+    "use identity::*",
 ]
