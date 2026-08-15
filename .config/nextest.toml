@@ -52,6 +52,6 @@ store-failure-output = true
 [[profile.default.overrides]]
 # Every live Greptime integration binary shares the managed port and data root.
 # Match the binary family so adding a scenario cannot silently escape serialization.
-filter = 'binary_id(/::m[0-9]+_.*greptime$/) | binary_id(/::m5_gates$/)'
+filter = 'binary_id(/::m[0-9]+_.*greptime$/) | binary_id(/::m5_gates$/) | binary_id(/::upgrade_preview$/)'
 test-group = "greptime-engine"
 slow-timeout = { period = "15m", terminate-after = 1, on-timeout = "fail" }
