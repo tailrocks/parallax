@@ -7,6 +7,8 @@
 use crate::fingerprint::fingerprint_with_operation;
 use parallax_model::{ErrorEventRow, ErrorSource};
 use serde_json::{Map, Value};
+use time::OffsetDateTime;
+use time::format_description::well_known::Rfc3339;
 
 /// Map one accepted Sentry event object into a single error row.
 ///
@@ -231,20 +233,23 @@ fn timestamp_nanos(object: &Map<String, Value>) -> u128 {
                     u128::from(i) * 1_000_000_000
                 };
             }
+            0
         }
-        Some(Value::String(s)) => {
-            // RFC3339 / ISO8601 not fully parsed here; keep 0 if unknown so
-            // issue first/last seen still get wall-clock on write if needed.
-            if let Ok(secs) = s.parse::<f64>()
-                && secs.is_finite()
-                && secs > 0.0
-            {
-                return seconds_to_nanos(secs);
-            }
-        }
-        _ => {}
+        Some(Value::String(s)) => parse_timestamp_string(s.trim()).unwrap_or(0),
+        _ => 0,
     }
-    0
+}
+
+fn parse_timestamp_string(raw: &str) -> Option<u128> {
+    if let Ok(secs) = raw.parse::<f64>()
+        && secs.is_finite()
+        && secs > 0.0
+    {
+        return Some(seconds_to_nanos(secs));
+    }
+    let parsed = OffsetDateTime::parse(raw, &Rfc3339).ok()?;
+    let secs = u128::try_from(parsed.unix_timestamp()).ok()?;
+    Some(secs.saturating_mul(1_000_000_000) + u128::from(parsed.nanosecond()))
 }
 
 #[expect(
@@ -414,5 +419,14 @@ mod tests {
         assert_eq!(tags.get("env").and_then(Value::as_str), Some("prod"));
         assert!(tags.get("api_token").is_none());
         assert!(tags.get("dsn").is_none());
+    }
+
+    #[test]
+    fn rfc3339_timestamp_from_java_sdk_maps_to_nanos() {
+        let event = json!({"event_id":"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee","timestamp":"2023-11-15T12:00:00.500Z","message":"c8-java-sdk PaymentError","level":"error"});
+        assert_eq!(
+            derive_from_sentry_event(&event).expect("row").ts_nanos,
+            1_700_049_600_500_000_000
+        );
     }
 }
