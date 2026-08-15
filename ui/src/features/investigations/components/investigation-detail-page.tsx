@@ -77,7 +77,6 @@ export function InvestigationDetailPage({
   const router = useRouter()
   const { draft, draftRef, updateDraft } = useInvestigationDraft(investigation.state)
   const [status, setStatus] = useState<string | null>(null)
-  const windowSearch = investigationWindowSearch(draft.window)
 
   async function save() {
     setStatus(null)
@@ -161,7 +160,7 @@ export function InvestigationDetailPage({
           <CardTitle className="text-sm">Window</CardTitle>
           <Link
             to="/"
-            search={windowSearch}
+            search={investigationWindowSearch(draft.window)}
             className={buttonVariants({ variant: "outline", size: "sm" })}
           >
             <IconExternalLink data-icon="inline-start" />
