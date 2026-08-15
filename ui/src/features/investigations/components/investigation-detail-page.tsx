@@ -77,10 +77,12 @@ export function InvestigationDetailPage({
   const router = useRouter()
   const { draft, draftRef, updateDraft } = useInvestigationDraft(investigation.state)
   const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
   const windowSearch = investigationWindowSearch(draft.window)
 
   async function save() {
     setError(null)
+    setSaved(false)
     try {
       await saveInvestigation({
         id: investigation.id,
@@ -88,6 +90,7 @@ export function InvestigationDetailPage({
         state: serializeInvestigationState(draftRef.current),
       })
       await router.invalidate()
+      setSaved(true)
     } catch (err) {
       setError(investigationErrorMessage(err))
     }
@@ -154,6 +157,11 @@ export function InvestigationDetailPage({
       />
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {saved ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          Investigation saved.
+        </p>
+      ) : null}
 
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-2">
