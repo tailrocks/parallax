@@ -33,7 +33,7 @@ run = "cargo check --workspace --all-targets --locked"
 run = "cargo nextest run --workspace --all-targets --profile ci --no-tests=fail --color=always"
 
 [tasks.lint]
-run = "rustup component add clippy && cargo clippy --workspace --all-targets --locked -- -D warnings"
+run = "cargo clippy --version >/dev/null 2>&1 || rustup component add clippy; cargo clippy --workspace --all-targets --locked -- -D warnings"
 
 [tasks.fmt]
-run = "rustup component add rustfmt && cargo fmt --all -- --check"
+run = "cargo fmt --version >/dev/null 2>&1 || rustup component add rustfmt; cargo fmt --all -- --check"

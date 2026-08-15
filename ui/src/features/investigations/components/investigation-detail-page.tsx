@@ -76,11 +76,10 @@ export function InvestigationDetailPage({
 }) {
   const router = useRouter()
   const { draft, draftRef, updateDraft } = useInvestigationDraft(investigation.state)
-  const [error, setError] = useState<string | null>(null)
-  const windowSearch = investigationWindowSearch(draft.window)
+  const [status, setStatus] = useState<string | null>(null)
 
   async function save() {
-    setError(null)
+    setStatus(null)
     try {
       await saveInvestigation({
         id: investigation.id,
@@ -88,18 +87,19 @@ export function InvestigationDetailPage({
         state: serializeInvestigationState(draftRef.current),
       })
       await router.invalidate()
+      setStatus("Investigation saved.")
     } catch (err) {
-      setError(investigationErrorMessage(err))
+      setStatus(investigationErrorMessage(err))
     }
   }
 
   async function remove() {
-    setError(null)
+    setStatus(null)
     try {
       await deleteInvestigation(investigation.id)
       await router.navigate({ to: "/investigations" })
     } catch (err) {
-      setError(investigationErrorMessage(err))
+      setStatus(investigationErrorMessage(err))
     }
   }
 
@@ -153,14 +153,14 @@ export function InvestigationDetailPage({
         }
       />
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {status ? <p role="status">{status}</p> : null}
 
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-2">
           <CardTitle className="text-sm">Window</CardTitle>
           <Link
             to="/"
-            search={windowSearch}
+            search={investigationWindowSearch(draft.window)}
             className={buttonVariants({ variant: "outline", size: "sm" })}
           >
             <IconExternalLink data-icon="inline-start" />

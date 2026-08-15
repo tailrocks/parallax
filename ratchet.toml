@@ -847,7 +847,7 @@ ceiling = 42
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-api/src/resolvers/issues/tests.rs"
-ceiling = 32
+ceiling = 28
 
 [[limits]]
 metric = "rust.assertions"
