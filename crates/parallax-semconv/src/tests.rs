@@ -24,6 +24,26 @@ fn preserves_load_bearing_wire_names() -> Result<(), String> {
     Ok(())
 }
 
+#[test]
+fn catalog_prom_name_matches_stored_otel_exemplar_name() {
+    assert!(metric_names_match(
+        "catalog_product_queries_total",
+        "catalog.product.queries"
+    ));
+    assert!(metric_names_match(
+        "http_server_request_duration",
+        "http.server.request.duration"
+    ));
+    assert!(metric_names_match(
+        "http.server.request.duration",
+        "http.server.request.duration"
+    ));
+    assert!(!metric_names_match(
+        "catalog_product_queries_total",
+        "http.server.request.duration"
+    ));
+}
+
 proptest::proptest! {
     #[test]
     fn native_metric_table_names_use_only_greptime_safe_characters(name in ".*") {

@@ -261,6 +261,13 @@ async fn metric_exemplars_filters_by_metric_service_range_and_limit() {
     assert_eq!(rows[0].trace_id, "trace-a");
     assert_eq!(rows[0].invocation_id.as_deref(), Some("run-a"));
     assert_eq!(rows[0].attributes["route"], "/checkout");
+
+    let listed = store
+        .metric_exemplars("http_server_request_duration", Some("checkout"), 0..=25, 1)
+        .await
+        .unwrap();
+    assert_eq!(listed.len(), 1);
+    assert_eq!(listed[0].trace_id, "trace-a");
 }
 
 #[tokio::test]

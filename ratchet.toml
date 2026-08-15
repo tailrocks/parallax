@@ -945,7 +945,7 @@ ceiling = 42
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-test-support/src/memory/tests/fields_metrics.rs"
-ceiling = 57
+ceiling = 59
 
 [[limits]]
 metric = "rust.assertions"
@@ -4225,7 +4225,7 @@ ceiling = 15
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-api/src/resolvers/metrics/tests.rs"
-ceiling = 61
+ceiling = 63
 
 [[limits]]
 metric = "rust.assertions"
@@ -4252,6 +4252,11 @@ ceiling = 110
 metric = "rust.assertions"
 scope = "crates/parallax-evidence/src/bundle/incident_tests.rs"
 ceiling = 12
+
+[[limits]]
+metric = "rust.assertions"
+scope = "crates/parallax-semconv/src/tests.rs"
+ceiling = 4
 
 [[limits]]
 metric = "rust.assertions"
@@ -4297,7 +4302,7 @@ ceiling = 20
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-greptime/src/greptime/tests.rs"
-ceiling = 89
+ceiling = 91
 
 [[limits]]
 metric = "rust.assertions"
@@ -4472,7 +4477,7 @@ ceiling = 511
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-api/src/resolvers/metrics/tests.rs"
-ceiling = 712
+ceiling = 739
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4532,7 +4537,7 @@ ceiling = 488
 [[limits]]
 metric = "rust.file-lines"
 scope = "crates/parallax-semconv/src/lib.rs"
-ceiling = 207
+ceiling = 209
 
 [[limits]]
 metric = "rust.file-lines"
@@ -4816,7 +4821,7 @@ ceiling = 2
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-semconv/facade.toml"
-ceiling = 165
+ceiling = 166
 
 [[limits]]
 metric = "rust.public-root-items"

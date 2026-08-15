@@ -232,6 +232,34 @@ async fn metric_exemplars_resolver_returns_trace_links() {
         json.pointer("/data/metricExemplars/0/value"),
         Some(&serde_json::json!(120.0))
     );
+
+    let listed_name = juniper::http::GraphQLRequest::new(
+        r#"
+        {
+          metricExemplars(
+            name: "http_server_request_duration"
+            fromNanos: "0"
+            toNanos: "100"
+            service: "checkout"
+            limit: 10
+          ) {
+            traceId
+          }
+        }
+        "#
+        .into(),
+        None,
+        None,
+    );
+    let listed = serde_json::to_value(execute(&schema, &context, listed_name).await).unwrap();
+    assert!(
+        error_messages(&listed).is_empty(),
+        "listed-name metricExemplars: {listed}"
+    );
+    assert_eq!(
+        listed.pointer("/data/metricExemplars/0/traceId"),
+        Some(&serde_json::json!("trace-a"))
+    );
 }
 
 #[tokio::test]

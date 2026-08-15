@@ -221,5 +221,8 @@ pub fn span_column(attr: &str) -> String {
     format!("span_attributes.{attr}")
 }
 
+mod identity;
+pub use identity::*;
+
 #[cfg(test)]
 mod tests;
