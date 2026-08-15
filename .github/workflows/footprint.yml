@@ -36,7 +36,6 @@ jobs:
     name: Measure
     runs-on: ubuntu-26.04
     timeout-minutes: 45
-    continue-on-error: true
     env:
       RUSTFLAGS: "-C link-arg=-fuse-ld=mold"
       RUSTC_WRAPPER: sccache
@@ -75,10 +74,18 @@ jobs:
           install_args: "rust"
           github_token: ${{ secrets.GH_READONLY_TOKEN }}
       - name: Measure and check footprint
+        id: footprint
+        continue-on-error: true
         run: |
           chmod +x bench/footprint/measure.sh bench/footprint/check.sh
           bench/footprint/measure.sh
           bench/footprint/check.sh
+      - name: Report footprint breach during calibration
+        if: steps.footprint.outcome == 'failure'
+        run: |
+          echo '::warning title=Footprint contract breach::Measurement exceeded the calibration contract; inspect the retained footprint report.'
+          echo '### Footprint contract breach' >> "${GITHUB_STEP_SUMMARY}"
+          echo 'Measurement exceeded the calibration contract. This lane remains warn-only until 2026-08-28.' >> "${GITHUB_STEP_SUMMARY}"
       - name: Upload report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
