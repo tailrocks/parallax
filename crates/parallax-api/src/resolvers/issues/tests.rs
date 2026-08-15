@@ -285,6 +285,27 @@ async fn issues_bundle_markdown_has_stable_headers() {
 }
 
 #[tokio::test]
+async fn issues_bundle_json_is_byte_stable_across_repeated_reads() {
+    let store = Arc::new(MemoryStore::new());
+    let context = context_with_memory(Arc::clone(&store)).await;
+    seed_issue(&store, &context, "stable-fp", "checkout", 10, "alpha").await;
+    let query = r#"{ bundle(fingerprint: "stable-fp", maxTokens: 4000) { json canonicalHash } }"#;
+    let first = gql(&context, query).await;
+    let second = gql(&context, query).await;
+    assert!(error_messages(&first).is_empty(), "{first}");
+    assert!(error_messages(&second).is_empty(), "{second}");
+    assert_eq!(
+        first.pointer("/data/bundle/json"),
+        second.pointer("/data/bundle/json"),
+        "wall-clock generated_at must not make sequential bundle json diverge"
+    );
+    assert_eq!(
+        first.pointer("/data/bundle/canonicalHash"),
+        second.pointer("/data/bundle/canonicalHash"),
+    );
+}
+
+#[tokio::test]
 async fn issues_query_text_filter() {
     let store = Arc::new(MemoryStore::new());
     let context = context_with_memory(Arc::clone(&store)).await;

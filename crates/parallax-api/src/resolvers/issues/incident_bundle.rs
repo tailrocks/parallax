@@ -80,12 +80,11 @@ pub(super) async fn finish_bundle(
 ) -> FieldResult<Option<BundleOut>> {
     let bundle = parallax_evidence::bundle::assemble(inputs, max_tokens);
     let markdown = parallax_evidence::bundle::to_markdown(&bundle);
-    let generated_at_nanos = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_err(crate::internal_field_err)?
-        .as_nanos();
-    let window_nanos =
-        bundle_window_nanos(&bundle).unwrap_or((generated_at_nanos, generated_at_nanos));
+    // Envelope hash covers `generated_at`. A wall-clock stamp made sequential
+    // CLI / HTTP / MCP reads of the same evidence byte-diverge. Stamp from
+    // the evidence window so the three projections stay identical.
+    let window_nanos = bundle_window_nanos(&bundle).unwrap_or((0, 0));
+    let generated_at_nanos = window_nanos.1;
     let envelope_inputs = parallax_evidence::bundle::EnvelopeInputs {
         bundle_id: bundle
             .canonical_hash
