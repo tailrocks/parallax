@@ -276,15 +276,15 @@ impl MetricAnalyticsStore for GreptimeStore {
         let service_clause = service
             .map(|svc| format!(r#" AND "service" = '{}'"#, escape(svc)))
             .unwrap_or_default();
+        let name_filter = metric_name_sql_filter(r#""name""#, name);
         let rows = self
             .sql_lenient(&format!(
                 r#"SELECT CAST("ts" AS BIGINT) AS "ts_nanos",
                           "service", "name", "value", "trace_id", "span_id", "invocation_id",
                           json_to_string("attributes")
                    FROM {METRIC_EXEMPLARS_TABLE}
-                   WHERE "name" = '{}' AND "ts" >= {} AND "ts" <= {}{service_clause}
+                   WHERE {name_filter} AND "ts" >= {} AND "ts" <= {}{service_clause}
                    ORDER BY "ts" DESC LIMIT {}"#,
-                escape(name),
                 sql_ts(*range.start()),
                 sql_ts(*range.end()),
                 limit.min(MAX_ROWS)

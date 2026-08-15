@@ -10,6 +10,19 @@ fn escape_ident_doubles_double_quotes_only() {
 }
 
 #[test]
+fn exemplar_filter_includes_otel_name_for_prom_catalog_name() {
+    let filter = metric_name_sql_filter(r#""name""#, "catalog_product_queries_total");
+    assert!(
+        filter.contains("'catalog.product.queries'"),
+        "expected OTel exemplar name in {filter}"
+    );
+    assert!(
+        filter.contains("'catalog_product_queries_total'"),
+        "expected listed name in {filter}"
+    );
+}
+
+#[test]
 fn metric_exemplars_fresh_ddl_has_low_cardinality_primary_key() {
     let ddl = GreptimeStore::metric_exemplars_ddl(METRIC_EXEMPLARS_TABLE, "30d");
     assert!(ddl.contains(r#""trace_id" STRING SKIPPING INDEX"#));

@@ -199,7 +199,7 @@ impl MetricAnalyticsStore for MemoryStore {
             .metric_exemplars
             .iter()
             .filter(|row| {
-                row.name == name
+                parallax_semconv::metric_names_match(name, &row.name)
                     && service.is_none_or(|svc| row.service == svc)
                     && range.contains(&row.ts_nanos)
             })

@@ -132,10 +132,12 @@ pub(crate) fn canonical_metric_display_name(name: &str) -> String {
 }
 
 fn metric_name_query_names(name: &str) -> Vec<String> {
-    let mut names = vec![name.to_string(), canonical_metric_display_name(name)];
+    let mut names = semconv::metric_name_aliases(name);
+    names.push(canonical_metric_display_name(name));
     for (legacy, canonical) in METRIC_DISPLAY_ALIASES {
-        if *canonical == name {
+        if *canonical == name || *legacy == name {
             names.push((*legacy).to_string());
+            names.push((*canonical).to_string());
         }
     }
     names.sort();
