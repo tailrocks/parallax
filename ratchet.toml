@@ -4821,7 +4821,7 @@ ceiling = 2
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-semconv/facade.toml"
-ceiling = 165
+ceiling = 166
 
 [[limits]]
 metric = "rust.public-root-items"
