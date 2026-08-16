@@ -5,20 +5,28 @@ set -euo pipefail
 cd "$(dirname "$0")"
 mkdir -p vendor
 
-# Pin a release tag, NOT main (re-pinned 2026-08-14 to v0.137.0; first verified
-# end-to-end 2026-06-23 on v0.129.0):
-# Rotel -> SigNoz collector -> ClickHouse, 8 spans). SigNoz's otel-collector is
-# OpAMP-managed: its OTLP :4317 receiver binds only after the server pushes a
-# config, which the server does only after the FIRST org/admin is created. So
-# after `compose up` you must register the first user once (see README "SigNoz"
-# for the exact /api/v1/register call); `compose up` alone leaves :4317 closed.
-SIGNOZ_REF="${SIGNOZ_REF:-v0.137.0}"
+# Last bootable community compose is v0.129.0 (verified 2026-06-23: Rotel ->
+# SigNoz collector -> ClickHouse). v0.137.0+ removed
+# deploy/docker/docker-compose.yaml (Foundry-only). Do not invent Foundry.
+# SigNoz otel-collector is OpAMP-managed: OTLP :4317 binds only after the
+# server pushes a config, which happens only after the FIRST org/admin is
+# created. After `compose up` register once (see README); compose alone
+# leaves :4317 closed.
+SIGNOZ_REF="${SIGNOZ_REF:-v0.129.0}"
+COMPOSE_PATH="vendor/signoz/deploy/docker/docker-compose.yaml"
+if [ -d vendor/signoz ] && [ ! -f "$COMPOSE_PATH" ]; then
+  echo "vendor/signoz has no community compose (Foundry-only tree) — moving aside"
+  mv vendor/signoz "vendor/signoz-foundry-$(date +%Y%m%dT%H%M%S)"
+fi
 if [ ! -d vendor/signoz ]; then
   echo "cloning SigNoz ($SIGNOZ_REF) into vendor/signoz ..."
   git clone --depth 1 --branch "$SIGNOZ_REF" https://github.com/SigNoz/signoz.git vendor/signoz
 else
   echo "vendor/signoz already present — skipping"
 fi
-echo "done. SigNoz compose: vendor/signoz/deploy/docker/docker-compose.yaml"
-# v0.137.0 removed that compose path (Foundry-only). Overlay include is stale;
-# do not invent a Foundry rewrite here — see plan 162 STOP.
+if [ -f "$COMPOSE_PATH" ]; then
+  echo "done. SigNoz compose: $COMPOSE_PATH"
+else
+  echo "ERROR: $COMPOSE_PATH missing after clone of $SIGNOZ_REF (Foundry-only?)" >&2
+  exit 1
+fi

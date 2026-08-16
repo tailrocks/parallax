@@ -2,6 +2,11 @@
 
 Research date: 2026-06-22
 Status: **historical design plus live-verified comparison protocol**
+**2026-08-16 live restamp:** eight named sinks attempted on this lab.
+Write-up: [2026-08-16-fanout-eight-sink-comparison.md](2026-08-16-fanout-eight-sink-comparison.md).
+SigNoz last bootable compose is **v0.129.0** (v0.137.0 Foundry-only). highlight
+hobby **BLOCKED**. Grafana LGTM, HyperDX ClickStack, and rustrak overlays now
+live in `bench/otlp-fanout/`.
 Topology: Parallax runs on the host (Homebrew); Rotel + competitor backends run
 in Docker Compose; Rotel fans out across the host↔container boundary.
 Deep review: 2026-06-22 (two passes) — every external claim verified against live
