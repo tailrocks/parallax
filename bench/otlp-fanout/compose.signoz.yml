@@ -1,9 +1,8 @@
 # Overlay: SigNoz (its bundled ClickHouse + ZooKeeper + otel-collector + signoz).
 #
-# BLOCKED at SIGNOZ_REF=v0.137.0 (plan 162, 2026-08-14): upstream removed
-# vendor/signoz/deploy/docker/docker-compose.yaml and deprecated compose in
-# favor of Foundry (https://github.com/SigNoz/foundry). The include below is
-# the last working path (v0.129.0). Do not invent a Foundry rewrite here.
+# Default vendor pin is v0.129.0 (setup-vendor.sh). v0.137.0+ removed
+# vendor/signoz/deploy/docker/docker-compose.yaml (Foundry-only). The include
+# below is the last working path. Do not invent a Foundry rewrite here.
 #
 # SigNoz is a multi-service stack installed from its own repo. Run setup-vendor.sh
 # first to clone it into ./vendor/signoz, then:
@@ -20,8 +19,11 @@ include:
 services:
   otel-collector:
     # Unpublish SigNoz's own OTLP host ports (collision with Rotel) and join lab.
+    # Keep signoz-net so the collector still reaches bundled ClickHouse.
     ports: !reset []
-    networks: [lab]
+    networks:
+      - lab
+      - signoz-net
   signoz:
     # Replace (not merge) the stock `8080:8080` — 8080 collides with other lab
     # services; publish the SigNoz UI on host 3301. `!override` swaps the whole
@@ -32,3 +34,5 @@ services:
 networks:
   lab:
     name: parallax-otlp-fanout
+  signoz-net:
+    name: signoz-net

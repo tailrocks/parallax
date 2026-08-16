@@ -1,0 +1,26 @@
+# Overlay: Grafana LGTM (Loki + Grafana + Tempo + Prometheus/Mimir + OTel collector).
+#
+# Single official image: grafana/otel-lgtm. OTLP stays on the lab network —
+# do NOT publish 4317/4318 (Rotel owns the host). UI on host 3300.
+#
+#   docker compose -f compose.yml -f compose.grafana.yml up -d grafana-lgtm
+#   then add `grafana` to rotel.env exporters (all three signals).
+name: parallax-otlp-fanout
+services:
+  grafana-lgtm:
+    image: grafana/otel-lgtm:0.30.2
+    container_name: pfanout-grafana-lgtm
+    restart: unless-stopped
+    ports:
+      - "3300:3000" # Grafana UI
+    # OTLP 4317/4318 stay container-local; Rotel reaches grafana-lgtm:4317.
+    networks: [lab]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:3000/api/health >/dev/null || wget -qO- http://127.0.0.1:3000/api/health >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+networks:
+  lab:
+    name: parallax-otlp-fanout

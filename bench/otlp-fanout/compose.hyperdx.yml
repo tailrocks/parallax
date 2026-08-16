@@ -1,0 +1,24 @@
+# Overlay: HyperDX as ClickHouse ClickStack all-in-one.
+#
+# Image publishes its own OTLP 4317/4318. Those must stay off the host
+# (Rotel owns 4317/4318). Playground catalog already owns host 8080, so
+# the HyperDX UI is remapped to 18080.
+#
+#   docker compose -f compose.yml -f compose.hyperdx.yml up -d hyperdx
+#   create the first org in the UI, copy the ingest API key, then add
+#   `hyperdx` to rotel.env (header authorization=... / x-hyperdx-api-key).
+name: parallax-otlp-fanout
+services:
+  hyperdx:
+    image: clickhouse/clickstack-all-in-one:2.35.0
+    container_name: pfanout-hyperdx
+    restart: unless-stopped
+    ports:
+      - "18080:8080" # HyperDX UI (8080 is playground catalog)
+    # Do not publish 4317/4318/8123 to the host.
+    networks: [lab]
+    # Let the image print its own app URL. A host-remapped HYPERDX_APP_URL
+    # made the entrypoint emit `http://127.0.0.1:18080:8080` and then exit.
+networks:
+  lab:
+    name: parallax-otlp-fanout

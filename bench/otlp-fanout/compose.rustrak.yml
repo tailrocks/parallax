@@ -1,0 +1,46 @@
+# Overlay: rustrak (Sentry-protocol error tracker). Not an OTLP sink.
+#
+# Same playground emit for rustrak means Sentry envelopes (c8 / dual-emission),
+# not Rotel OTLP metrics. Do not add rustrak to ROTEL_EXPORTERS.
+#
+# Host ports avoid playground catalog :8080 and Grafana LGTM :3300.
+#   docker compose -f compose.yml -f compose.rustrak.yml up -d
+name: parallax-otlp-fanout
+services:
+  rustrak:
+    image: rustrak/rustrak-server:v0.14.4
+    container_name: pfanout-rustrak
+    restart: unless-stopped
+    ports:
+      - "18081:8080"
+    environment:
+      PORT: "8080"
+      RUST_LOG: info
+      # cookie crate requires ≥64 bytes; 64 hex chars = 32 bytes is TooShort.
+      SESSION_SECRET_KEY: "parallax-lab-rustrak-session-secret-key-must-be-at-least-64-bytes-long"
+      CREATE_SUPERUSER: "admin@parallax.lab:Complexpass#123"
+      PUBLIC_URL: "http://127.0.0.1:18081"
+    volumes:
+      - rustrak-data:/data
+    networks: [lab]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health >/dev/null || wget -qO- http://127.0.0.1:8080/ >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+  rustrak-ui:
+    image: rustrak/rustrak-ui:v0.14.4
+    container_name: pfanout-rustrak-ui
+    restart: unless-stopped
+    ports:
+      - "18082:3000"
+    environment:
+      RUSTRAK_API_URL: "http://rustrak:8080"
+    depends_on: [rustrak]
+    networks: [lab]
+volumes:
+  rustrak-data:
+networks:
+  lab:
+    name: parallax-otlp-fanout

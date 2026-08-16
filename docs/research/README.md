@@ -121,6 +121,7 @@ Historical architecture/capture notes keep evidence under dated or **historical*
 - [monetization-and-paying-segment.md](validation/monetization-and-paying-segment.md) — the paying buyer (hard-boundary/air-gap/sovereign self-hoster) sized, and the monetization shape (Apache-2.0 open core + gated enterprise-ops + managed cloud + outcome-priced fixer).
 - [repo-intent.md](validation/repo-intent.md) — how much Parallax depends on a context-rich repo (runtime floor vs intent multiplier) + ledger.
 - [jackin-first-integration.md](validation/jackin-first-integration.md) — the first real CLI on Parallax: jackin' run telemetry over OTLP (design, verified end-to-end evidence, gaps found, operator verification recipe).
+- [2026-08-16-fanout-eight-sink-comparison.md](validation/2026-08-16-fanout-eight-sink-comparison.md) — live Rotel fan-out of one playground emit to Maple, OpenObserve, SigNoz, Grafana LGTM, HyperDX, rustrak, Sentry; highlight BLOCKED; Parallax UI/UX improvements recorded not shipped.
 
 > A4 lives in [capture/correlation.md](capture/correlation.md), A5 in [decisions/stack-decision.md](decisions/stack-decision.md), A6 in [capture/redaction.md](capture/redaction.md).
 

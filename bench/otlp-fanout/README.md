@@ -11,9 +11,14 @@ via `host.docker.internal:14317`.
 
 ```
 emitters ─► localhost:4317 (Rotel) ─┬─► openobserve:5081        (compose)
-                                     ├─► otel-collector:4317     (SigNoz, overlay)
+                                     ├─► otel-collector:4317     (SigNoz v0.129.0 overlay)
                                      ├─► maple:4318              (overlay, chDB)
+                                     ├─► grafana-lgtm:4317       (overlay, Loki/Tempo/Prometheus)
+                                     ├─► hyperdx:4317            (overlay, ClickStack; after first org)
+                                     ├─► host.docker.internal:9000 (Sentry nginx, own stack)
                                      └─► host.docker.internal:14317 ─► Parallax (host)
+# rustrak is Sentry-envelope only (host :18081), not a Rotel exporter.
+# highlight hobby self-host: last live attempt BLOCKED (2026-08-16).
 ```
 
 ## Status
@@ -28,11 +33,11 @@ emitters ─► localhost:4317 (Rotel) ─┬─► openobserve:5081        (com
   retries until Parallax is up (note: Rotel fan-out is **sequential**, so list a
   down host-Parallax sink *after* the others or it back-pressures them).
 - ⚠️ **SigNoz** — overlay `compose.signoz.yml` (vendored clone via
-  `setup-vendor.sh`, pinned `v0.137.0`). **v0.137.0 removed
-  `deploy/docker/docker-compose.yaml` (Foundry-only); overlay cannot start.**
-  **Verified end-to-end live 2026-06-23 on v0.129.0:**
-  Rotel → SigNoz `otel-collector` → ClickHouse, `signoz-smoke = 8` spans queried
-  back from `signoz_traces.distributed_signoz_index_v3`.
+  `setup-vendor.sh`, default **`v0.129.0`**). **v0.137.0 removed
+  `deploy/docker/docker-compose.yaml` (Foundry-only); do not invent Foundry.**
+  **Re-verified 2026-08-16 on v0.129.0:** first org register opens OpAMP-managed
+  OTLP `:4317`; ClickHouse `checkout=63` after playground `a1`. Also verified
+  2026-06-23 (`signoz-smoke = 8` spans).
 
   **One-time onboarding is required** (the key run finding): SigNoz's
   `otel-collector` is **OpAMP-managed** by the SigNoz server — its OTLP `:4317`
@@ -113,8 +118,11 @@ playground `docs/coverage-matrix.md`.
 | OpenObserve | `public.ecr.aws/zinclabs/openobserve:v0.92.0` |
 | telemetrygen | `ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.158.0` |
 | Maple | build arg `MAPLE_VERSION=v0.0.18` |
-| SigNoz vendor | `SIGNOZ_REF=v0.137.0` |
+| SigNoz vendor | `SIGNOZ_REF=v0.129.0` (last bootable community compose; v0.137.0+ Foundry-only) |
 | Sentry vendor | `SENTRY_REF=26.7.2` |
+| Grafana LGTM | `grafana/otel-lgtm:0.30.2` (UI host 3300) |
+| HyperDX ClickStack | `clickhouse/clickstack-all-in-one:2.35.0` (UI host 18080) |
+| rustrak | `rustrak/rustrak-server:v0.14.4` + `rustrak/rustrak-ui:v0.14.4` (18081/18082) |
 
 Playground infra pins (sibling repo `deploy/docker-compose.yml`): `postgres:18`, `redpandadata/redpanda:v26.2.1`, `ghcr.io/open-feature/flagd:v0.16.1`, `grafana/k6:2.2.0`. Bump via the plan-162 procedure. Existing playground `postgres` volumes must be dropped (`docker compose down -v`) when moving 17→18.
 
@@ -183,9 +191,12 @@ Paste the printed `ROTEL_EXPORTER_SENTRY_*` exports into `rotel.env`, add
 | `compose.yml` | core: Rotel + OpenObserve + telemetrygen (loadgen profile) |
 | `rotel.env` | Rotel fan-out config (exporters, per-signal lists, auth headers) |
 | `lab.env` | `source` it to put the shell in compare mode |
-| `compose.signoz.yml` / `compose.maple.yml` | backend overlays |
+| `compose.signoz.yml` / `compose.maple.yml` | SigNoz / Maple overlays |
+| `compose.grafana.yml` / `compose.hyperdx.yml` / `compose.rustrak.yml` | Grafana LGTM / HyperDX / rustrak overlays |
+| `exporters-reachable.sh` | parse `rotel.env` + TCP-probe listed exporters (`--parse-only` for CI) |
 | `maple/Dockerfile` | Maple chDB local-mode build (best-effort) |
-| `setup-vendor.sh` | clone SigNoz into `vendor/` |
+| `setup-vendor.sh` | clone SigNoz into `vendor/` (default v0.129.0) |
+| `setup-highlight.sh` | last highlight.io hobby attempt (expected BLOCKED) |
 | `sentry/setup.sh` | vendor + install self-hosted Sentry as its own Compose stack |
 | `sentry/onboard.sh` | create admin, print DSN + `rotel.env` exports |
 | `sentry/verify.sh` | assert Sentry OTLP ingest + issue grouping (A1/A15/A16) |
