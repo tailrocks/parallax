@@ -1,5 +1,5 @@
-# NOTE: `preview.yml` triggers on `workflow_run.workflows: ["CI"]`,
-# so this workflow name is load-bearing.
+# PR-only public lane. Preview publish is `preview.yml` on push to main,
+# not this workflow.
 name: CI (public unmerged)
 
 on:
