@@ -15,8 +15,9 @@ Only `matrix.config.writer` may gate mutations and must select exactly one
 writer. Never branch step semantics by lane.
 
 Rust compile jobs use mold and local-only sccache v0.16.0 with a 20 GiB bound.
-The adapter owns cache reporting. Do not combine target-directory
-caches with sccache, compile CI tooling, or enable a remote cache backend.
+The adapter owns cache reporting. Persist content-compatible target-directory
+generations with a ref-independent restore prefix; do not compile CI tooling or
+enable a remote cache backend.
 Install tools through mise on both lanes; do not add ad hoc installers that
 bypass the shared mise store.
 
