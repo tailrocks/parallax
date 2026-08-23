@@ -1,0 +1,24 @@
+{
+  "measured_at": "2026-08-16T08:56:08Z",
+  "hardware": "Linux 6.12.74+deb13+1-amd64 x86_64 ",
+  "phases": {
+    "idle": {
+      "parallax_rss_kb": 56488,
+      "greptime_rss_kb": 301428,
+      "cpu_pct": 1.0,
+      "data_dir_bytes": 576684032
+    },
+    "steady": {
+      "parallax_rss_kb": 58568,
+      "greptime_rss_kb": 301332,
+      "cpu_pct": 0.2,
+      "data_dir_bytes": 576368640
+    },
+    "post_idle": {
+      "parallax_rss_kb": 58568,
+      "greptime_rss_kb": 299948,
+      "cpu_pct": 0.2,
+      "data_dir_bytes": 576368640
+    }
+  }
+}

@@ -36,14 +36,15 @@ concurrency:
 
 jobs:
   measure:
-    # Pinned runner class: GitHub-hosted ubuntu. Variance risk is why the
-    # contract starts at 2× observed and this job stays warn-only until
-    # 2026-08-28.
+    # Default lane: Velnor self-hosted fleet. Per-lane ceilings in
+    # contract.toml keep cross-runner-class RSS comparable (absolute RSS
+    # scales with host core count). Variance risk is why the contract starts
+    # at 2× observed per lane and this job stays warn-only until 2026-08-28.
     name: Measure
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON(github.event_name == 'pull_request' && '[{"lane":"github","runner":"ubuntu-26.04"}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both') && '[{"lane":"velnor","runner":["self-hosted","velnor-target-mvp"]},{"lane":"github","runner":"ubuntu-26.04"}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"github","runner":"ubuntu-26.04"}]' || '[{"lane":"velnor","runner":["self-hosted","velnor-target-mvp"]}]') }}
+        config: ${{ fromJSON((github.event_name == 'workflow_dispatch' && inputs.lanes == 'both') && '[{"lane":"velnor","runner":["self-hosted","velnor-target-mvp"]},{"lane":"github","runner":"ubuntu-26.04"}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"github","runner":"ubuntu-26.04"}]' || '[{"lane":"velnor","runner":["self-hosted","velnor-target-mvp"]}]') }}
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 45
     env:
@@ -86,6 +87,8 @@ jobs:
       - name: Measure and check footprint
         id: footprint
         continue-on-error: true
+        env:
+          FOOTPRINT_LANE: ${{ matrix.config.lane }}
         run: |
           chmod +x bench/footprint/measure.sh bench/footprint/check.sh
           bench/footprint/measure.sh
@@ -100,5 +103,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: footprint-report
+          name: footprint-report-${{ matrix.config.lane }}
           path: bench/footprint/report.json

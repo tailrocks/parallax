@@ -18,3 +18,21 @@ parallax_rss_kb = 56352
 greptime_rss_kb = 374656
 cpu_pct = 80
 data_dir_bytes = 992468992
+
+# Velnor lane (many-core Linux container host). RSS baselines scale with the
+# host: glibc malloc arenas and Greptime's Go heap (GOMAXPROCS) grow with core
+# count, so absolute RSS is not comparable across runner classes. Same 2x
+# policy, first Velnor measurement 2026-08-16 (run 31936687808, kept in
+# report.velnor.json). cpu_pct and data_dir_bytes inherit the baseline caps.
+
+[idle.velnor]
+parallax_rss_kb = 112976
+greptime_rss_kb = 602856
+
+[steady.velnor]
+parallax_rss_kb = 117136
+greptime_rss_kb = 602664
+
+[post_idle.velnor]
+parallax_rss_kb = 117136
+greptime_rss_kb = 599896

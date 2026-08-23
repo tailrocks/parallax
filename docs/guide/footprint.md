@@ -19,4 +19,9 @@ a multi-tenant server.
 
 Contract ceilings (2× this run) live in
 [`bench/footprint/contract.toml`](../../bench/footprint/contract.toml).
+Ceilings are lane-aware: `check.sh` applies `[<phase>.<lane>]` overrides
+(from `FOOTPRINT_LANE`, set by CI to the runner lane) before the baseline
+`[<phase>]` caps, because absolute RSS scales with the host (malloc arenas
+and Greptime's Go heap grow with core count). The Velnor lane baseline is
+[`bench/footprint/report.velnor.json`](../../bench/footprint/report.velnor.json).
 The GitHub Actions job is warn-only until **2026-08-28**.

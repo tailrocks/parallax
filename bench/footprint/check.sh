@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Compare bench/footprint/report.json to contract.toml (plan 175).
+# FOOTPRINT_LANE selects per-lane ceiling overrides (`[<phase>.<lane>]`
+# sections) before the baseline `[<phase>]` ceilings; unset means baseline.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -10,9 +12,10 @@ CONTRACT="${2:-$ROOT/contract.toml}"
 [[ -f "$CONTRACT" ]] || { echo "missing contract: $CONTRACT" >&2; exit 2; }
 
 python3 - "$REPORT" "$CONTRACT" <<'PY'
-import json, re, sys
+import json, os, re, sys
 
 report_path, contract_path = sys.argv[1], sys.argv[2]
+lane = os.environ.get("FOOTPRINT_LANE", "").strip()
 report = json.loads(open(report_path, encoding="utf-8").read())
 text = open(contract_path, encoding="utf-8").read()
 section = None
@@ -31,7 +34,12 @@ for raw in text.splitlines():
 failed = []
 for phase, metrics in report["phases"].items():
     for key, observed in metrics.items():
+        # Lane-aware calibration: a `<phase>.<lane>` section overrides the
+        # baseline `<phase>` ceiling per key; missing keys fall back to the
+        # baseline section. Fail closed when neither defines the key.
         ceiling = ceilings.get((phase, key))
+        if lane:
+            ceiling = ceilings.get((f"{phase}.{lane}", key), ceiling)
         if ceiling is None:
             failed.append(f"{phase}.{key}: no ceiling")
             continue
