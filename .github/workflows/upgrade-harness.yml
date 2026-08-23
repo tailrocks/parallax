@@ -40,7 +40,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: ${{ fromJSON(github.event_name == 'pull_request' && '[{"lane":"github","runner":"ubuntu-26.04"}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'both') && '[{"lane":"velnor","runner":["self-hosted","velnor-target-mvp"]},{"lane":"github","runner":"ubuntu-26.04"}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"github","runner":"ubuntu-26.04"}]' || '[{"lane":"velnor","runner":["self-hosted","velnor-target-mvp"]}]') }}
+        config: ${{ fromJSON((github.event_name == 'workflow_dispatch' && inputs.lanes == 'both') && '[{"lane":"velnor","runner":["self-hosted","velnor-target-mvp"]},{"lane":"github","runner":"ubuntu-26.04"}]' || (github.event_name == 'workflow_dispatch' && inputs.lanes == 'github') && '[{"lane":"github","runner":"ubuntu-26.04"}]' || '[{"lane":"velnor","runner":["self-hosted","velnor-target-mvp"]}]') }}
     runs-on: ${{ matrix.config.runner }}
     timeout-minutes: 45
     env:

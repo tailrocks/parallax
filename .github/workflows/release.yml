@@ -138,7 +138,7 @@ jobs:
     permissions:
       actions: read
       contents: read
-    uses: tailrocks/velnor-actions/.github/workflows/ci-code.yml@36ef486f0cce1728b7fa7372d99c4c03ad1d08e1 # 2026.8.17
+    uses: tailrocks/velnor-actions/.github/workflows/ci-code.yml@87b3c3178c6e72ba35d3726be9c598aecc2acbdc # 2026.8.31
     with:
       lane: ${{ inputs.lanes || 'velnor' }}
 
