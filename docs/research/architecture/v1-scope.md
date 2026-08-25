@@ -63,7 +63,7 @@ Statement #7 adds the stack-shaped scenarios V1 must pass on the operator's real
 
 | Item | V1 answer |
 | --- | --- |
-| Install | `brew install tailrocks/tap/parallax` and a static binary download; `cargo install` for Rust users. One binary. |
+| Install | Preview only: `brew tap tailrocks/parallax && brew install parallax@preview`, latest-preview archives, or a local cargo checkout. Always resolve the latest preview; do not pin a preview version. One binary. |
 | GreptimeDB acquisition | Self-sufficient by default: `parallax serve` detects `greptime` on PATH or in `~/.parallax/bin/`; if absent, downloads the **pinned** release binary (checksum-verified) into `~/.parallax/bin/` — no Docker or fallback. `storage.mode = "external"` connects to a supplied GreptimeDB URL. GreptimeDB + Turso are mandatory; the in-memory adapter is compiled only for test support and is unreachable from product config. |
 | Offline | Everything works with zero network after install (the only network feature is the optional engine download). No phone-home, no telemetry-about-telemetry, no account. |
 | Data layout | `~/.parallax/`: `bin/` (managed engine), `greptime-data/`, `meta.db` (Turso), `spool/` (ingest WAL), `config.toml`. One directory to back up or delete. |
@@ -209,8 +209,9 @@ are closed and no longer own work.
    release.
 2. **Engine supervision**: spawn/health/restart of `greptime standalone`, pinned version,
    checksum-verified auto-download, PATH/brew detection. (Top V1 risk — first M1 spike.)
-3. **Packaging**: brew tap (`tailrocks/tap`), static release binaries (macOS arm64 first — the
-   operator's machine — then Linux x86_64), `cargo install` path.
+3. **Packaging**: preview-only brew tap (`tailrocks/parallax`), latest-preview archives (macOS
+   arm64 first — the operator's machine — then Linux x86_64), and a local cargo checkout. Always
+   resolve the latest preview; do not pin a preview version.
 4. **Fixtures→SDK tests**: integration tests driven by real `tracing` + `opentelemetry-otlp`
    emission (replacing hand-written OTLP JSON), which doubles as the A1 overlay generator.
 5. **Docs** from §2.8.

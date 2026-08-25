@@ -1,7 +1,7 @@
 # Parallax public walkthrough: CLI → browser
 
 **Review date:** 2026-08-25  
-**Verified release:** `parallax 0.1.0-preview.2497+dd93398` (Homebrew preview)  
+**Preview observed during review:** `parallax 0.1.0-preview.2497+dd93398` (Homebrew preview)  
 **Repositories:** [parallax](https://github.com/tailrocks/parallax) ·
 [parallax-telemetry-playground](https://github.com/tailrocks/parallax-telemetry-playground)
 
@@ -28,7 +28,7 @@ First install:
 ```bash
 brew tap tailrocks/parallax
 brew update
-brew install tailrocks/parallax/parallax-preview
+brew install parallax@preview
 ```
 
 Later runs:
@@ -44,9 +44,9 @@ Verify before presenting:
 parallax --version
 ```
 
-At review time, `0.1.0-preview.2497+dd93398` is the latest preview formula
-available through the Homebrew tap. Always use preview for this walkthrough;
-do not switch to the stable `parallax` formula.
+The version printed by `parallax --version` is the preview resolved by Homebrew
+at install time. Always refresh and resolve the latest preview before a run;
+do not pin `2497` or switch to the stable `parallax` formula.
 
 Set the playground path once. Replace the path with the checkout on your
 machine:
@@ -87,7 +87,7 @@ curl -fsS http://127.0.0.1:4000/version
 
 Expected: `ok`, then API schema version `0.1.0`. That endpoint is not the
 release/channel identifier; the build identity is the CLI output from
-`parallax --version` above: `0.1.0-preview.2497+dd93398`.
+`parallax --version` above.
 
 Optional diagnostics:
 
