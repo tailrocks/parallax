@@ -111,7 +111,9 @@ The SigNoz open-investigation-format claim now has a focused falsification note:
 
 None of the three closes the Parallax wedge today, but the window is narrow.
 
-Parallax is still differentiated only if it ships the combination:
+Parallax's proposed distinction is the following combination, not MCP presence
+alone; competitors already expose MCP, and the combination's user value remains
+unproven:
 
 ```text
 Sentry-compatible error ingest
@@ -126,9 +128,10 @@ Sentry-compatible error ingest
 
 OpenObserve is closest on storage/runtime fit. SigNoz is closest on open
 agent-native MCP. Coroot is closest on zero-code infrastructure visibility and
-now has an official MCP endpoint. None currently combines Sentry-envelope
-migration, portable evidence bundle/schema, and coding-agent/CLI side-effect
-audit.
+now has an official MCP endpoint. No checked competitor currently combines
+Sentry-envelope migration, a portable/redacted/versioned evidence projection,
+and coding-agent/CLI side-effect audit. This is a current research
+observation, not proof of an unoccupied market or product value.
 
 #### Competitor Matrix
 

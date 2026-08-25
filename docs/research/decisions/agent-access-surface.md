@@ -91,11 +91,11 @@ The lightweight end of the same pressure is tracked in
 | [Claude Code MCP docs](https://code.claude.com/docs/en/mcp) and local `claude mcp --help` on `2.1.150` | Claude Code supports local, project, user, plugin, claude.ai connector, and managed MCP sources. Current docs define source precedence, project `.mcp.json` approval, environment expansion in command/args/env/url/headers, OAuth callback/client credentials/metadata override/scope pinning, dynamic `headersHelper` commands gated by workspace trust, output warnings and limits, per-tool `_meta["anthropic/maxResultSizeChars"]`, resource `@` mentions that auto-fetch resources as attachments, tool-search deferral enabled by default, and `claude mcp serve`. Local help confirms `add` supports stdio/SSE/HTTP, headers, env vars, scope, client credentials, callback port, and warns that `mcp get`/`list` skip the workspace trust dialog and spawn stdio servers for health checks. |
 | [NSA MCP security design considerations](https://www.nsa.gov/Portals/75/documents/Cybersecurity/CSI_MCP_SECURITY.pdf?ver=bmgiSbNQLP6Z_GiWtRt6bg%3D%3D) | As of May 2026, NSA describes MCP as widely adopted but security-maturing, with risks around dynamic tool invocation, implicit trust, context sharing, serialization, token/session handling, overbroad tools, and unauthorized servers. |
 
-Version note: the official MCP pages checked for this pass show
-`2025-11-25` as the latest specification revision, and the March 2026 MCP
-roadmap says no newer spec version has been cut since the November 2025 release.
-Do not cite or implement a future-dated spec revision until the official site
-publishes it as current. However, the draft changelog, SEP index, and roadmap
+Version note: `2025-11-25` is the compatibility-pinned MCP specification
+revision used and tested by this decision record (research pass dated
+2026-05-25), not an evergreen "latest" claim. Do not cite or implement a
+future-dated spec revision until the official site publishes it as current.
+However, the draft changelog, SEP index, and roadmap
 are now important watch inputs because the next revision could change
 transport/session assumptions, discovery, result-reference behavior, enterprise
 auth/gateway expectations, and `_meta` trace context. The OpenTelemetry
@@ -109,7 +109,7 @@ handshake/spec versions separately from the semconv example version.
 Current checks kept the CLI-first, MCP-later decision, but narrowed the product
 claim:
 
-- The official MCP site labels `2025-11-25` as latest. The tools spec still
+- The tested MCP compatibility pin is `2025-11-25`. The tools spec still
   supports `structuredContent`, optional `outputSchema`, `tools/list_changed`,
   and tool-level `taskSupport` with `forbidden` as the default value.
 - The 2026 roadmap confirms no newer stable spec release, but it also confirms
@@ -156,8 +156,10 @@ claim:
   redacted, hash-equivalent evidence-bundle projections.
 
 Implication: keep MCP out of the tiny-tier critical path, but do not defer it so
-long that Parallax sounds non-agent-native. The claimable gap is the evidence
-contract, not protocol support.
+long that Parallax sounds non-agent-native. Competitors already expose MCP;
+protocol presence is table stakes. Parallax's proposed distinction is a
+portable, redacted, versioned evidence projection, and its user value remains
+unproven.
 
 ### Decision
 
@@ -418,7 +420,7 @@ MCP should not ship until these tests pass:
 | Audit fixture | Every MCP call emits an audit row and OpenTelemetry span with caller, tool, scopes, bundle id, status, and redaction policy. |
 | Negative tool catalog | Generic shell, SQL, deploy, rollback, and delete tools are absent. |
 | Management-tool catalog | Alert, dashboard, role, user, pipeline, notification, incident, ticket, saved-view, stream, sourcemap, and search-job create/update/delete tools are absent from the context server. |
-| Protocol-drift fixture | Fixture records latest-stable spec, observed protocol version, no session-id dependence, deterministic/cacheable list behavior where supported, and explicit handling for draft-only features. |
+| Protocol-drift fixture | Fixture records the compatibility-pinned spec, observed protocol version, no session-id dependence, deterministic/cacheable list behavior where supported, and explicit handling for draft-only features. |
 | Capability fixture | Roots, sampling, elicitation, multi-round-trip (MRTR) input requests, task-augmented execution, and unreviewed catalog changes are denied or audited for the read-only context server. |
 | Client-retention fixture | Codex memory settings, Claude persisted-file behavior, resource attachments, and any client-side output persistence are recorded; sensitive evidence is excluded from memory or persisted only as redacted bounded artifacts. |
 
@@ -496,8 +498,8 @@ The central rule:
 | [MCP tools specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) | Tools are model-controlled, should keep a human in the loop, use JSON Schema input, optional output schemas, structured content, annotations, error results, optional task-support metadata, and security requirements around validation, access control, rate limiting, sanitization, confirmation, and audit logging. | Every Parallax MCP tool needs a closed schema, bounded output, audit row, and explicit denial of task-augmented execution unless a later fixture proves it safe. |
 | [MCP resources specification](https://modelcontextprotocol.io/specification/2025-11-25/server/resources) | Resources expose context through `resources/list`, `resources/read`, templates, optional change notifications/subscriptions, annotations, and text/binary contents. The spec leaves incorporation of resources into model context to host applications and explicitly calls for access controls on sensitive resources. | Parallax cannot treat resource links as harmless raw refs. `resources/read`, resource templates, and client attachment paths need the same redaction, scope, output-budget, source-field, and audit rows as tools. |
 | [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) | Authorization is optional for MCP overall; HTTP-based transports that support it should follow the spec, while stdio should retrieve credentials from the environment instead of using the HTTP authorization flow. Remote MCP uses OAuth-style authorization with protected-resource metadata, resource indicators in authorization and token requests, audience validation, HTTPS, redirects, PKCE, secure token handling, and explicit token-passthrough prohibitions. | Remote Parallax MCP cannot be a bearer-token side door into evidence; protected-resource metadata, resource indicators, audience, PKCE, and no-token-passthrough behavior need their own rows. Local stdio trust and credential-source behavior must be measured separately. |
-| [MCP draft changelog](https://modelcontextprotocol.io/specification/draft/changelog) and [SEP index](https://modelcontextprotocol.io/seps) | Latest stable remains `2025-11-25`, but the draft and final/accepted SEPs show likely next-revision changes: sessionless/stateless transport, `server/discover`, `subscriptions/listen`, deterministic/cacheable lists, standard MCP request headers, `_meta` trace context, roots/sampling/logging deprecation, and tasks as an extension. | Access-surface fixtures must record stable-vs-draft semantics, avoid `Mcp-Session-Id` dependence, and deny or separately gate task, multi-round-trip (MRTR), and server-initiated features. |
-| [MCP 2026 roadmap](https://blog.modelcontextprotocol.io/posts/2026-mcp-roadmap/) | Current stable remains the November 2025 release, but 2026 priorities include transport scalability, agent communication, governance maturation, enterprise audit/SSO/gateway/config portability, triggers/event-driven updates, streamed/reference-based results, deeper security and authorization, and extensions. | Claim freshness must track roadmap and SEP movement. Parallax should not hard-code current session/result assumptions into the safety matrix, and should add rows when reference-based results, DPoP, workload identity, or enterprise gateway guidance becomes stable. |
+| [MCP draft changelog](https://modelcontextprotocol.io/specification/draft/changelog) and [SEP index](https://modelcontextprotocol.io/seps) | The compatibility pin is `2025-11-25`; the draft and final/accepted SEPs show likely next-revision changes: sessionless/stateless transport, `server/discover`, `subscriptions/listen`, deterministic/cacheable lists, standard MCP request headers, `_meta` trace context, roots/sampling/logging deprecation, and tasks as an extension. | Access-surface fixtures must record pinned-vs-draft semantics, avoid `Mcp-Session-Id` dependence, and deny or separately gate task, multi-round-trip (MRTR), and server-initiated features. |
+| [MCP 2026 roadmap](https://blog.modelcontextprotocol.io/posts/2026-mcp-roadmap/) | The tested compatibility pin is the November 2025 release, while 2026 priorities include transport scalability, agent communication, governance maturation, enterprise audit/SSO/gateway/config portability, triggers/event-driven updates, streamed/reference-based results, deeper security and authorization, and extensions. | Claim freshness must track roadmap and SEP movement. Parallax should not hard-code current session/result assumptions into the safety matrix, and should add rows when reference-based results, DPoP, workload identity, or enterprise gateway guidance becomes stable. |
 | [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices) | Official guidance emphasizes least privilege, precise scope challenges, resource indicators, token audience validation, correlation IDs, and avoiding broad scopes. | The first MCP server must start read-only and deny wildcard/admin scopes. |
 | [OpenTelemetry MCP semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/mcp/) | MCP client/server spans, JSON-RPC request IDs, transport values, tool/resource/prompt attributes, session metrics, `elicitation/create`, `sampling/createMessage`, `notifications/tools/list_changed`, and `_meta` trace propagation are defined with development-stage status. The OTel page says to prioritize official MCP guidance if it lands. | MCP calls and server-initiated capability attempts must be observable and normalized into Parallax audit/action rows without treating development-stage semconv names as stable storage fields. |
 | [OpenAI Docs MCP](https://developers.openai.com/learn/docs-mcp) | OpenAI documents MCP as a docs integration surface for Codex and other agent clients. | Cross-client MCP is a distribution requirement, not a unique moat. |
@@ -579,7 +581,7 @@ Each `manifest.json` should include:
   "audit_schema_version": "parallax-audit-vN",
   "source_snapshot": {
     "mcp_spec": "2025-11-25",
-    "mcp_spec_latest_label_checked": "2025-11-25 (latest on official site)",
+    "mcp_spec_pin_checked": "2025-11-25 (compatibility-pinned/current tested version; research pass 2026-05-25)",
     "mcp_roadmap_watch": "2026 roadmap checked; transport_scalability, agent_communication, enterprise_audit_sso_gateway_config, reference_based_results, security_authorization_extensions",
     "mcp_draft_watch": "draft_changelog_checked; sessionless/stateless, server/discover, subscriptions/listen, cacheable lists, trace_context_meta, tasks_extension",
     "otel_semconv": "1.41.0",

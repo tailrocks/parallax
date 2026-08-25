@@ -70,7 +70,10 @@ Focused recheck: [agent-debugging-competitor-drift-2026-06-02.md](agent-debuggin
 
 ## Key Takeaways
 
-### What Parallax uniquely offers (no competitor has all of these):
+### Proposed Parallax distinction (not yet proven)
+
+Competitors already expose MCP, so MCP presence is not unique. The proposed
+distinction is the combination below, with product value still unproven:
 
 1. **Sentry-envelope + OTLP ingest** in one engine
 2. **Portable, versioned, redacted evidence bundles** as a typed artifact

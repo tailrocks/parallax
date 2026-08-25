@@ -13,6 +13,15 @@ brew install parallax@preview
 parallax --version
 ```
 
+For an existing preview install, refresh the tap and upgrade the rolling
+preview formula:
+
+```sh
+brew update
+brew upgrade parallax@preview
+parallax --version
+```
+
 For local development from the repository:
 
 ```sh
