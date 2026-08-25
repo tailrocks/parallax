@@ -151,9 +151,13 @@ Delegated bounded checks on 2026-08-25 produced this evidence:
 | Parallax server validation/deduplication | **PASS** — 9/9 targeted tests | OTLP boundaries, gzip input, trace IDs, exemplars, and shared occurrence behavior are covered. |
 | Parallax API query surfaces | **PASS** — 7/7 targeted tests | Issue, trace, log, metric, and schema query paths are covered. |
 | Parallax evidence bundles | **PASS** — 31/31 targeted tests | Bundle bounds/stability and incident projections are covered. |
-| Parallax end-to-end smoke | **Not yet recorded** | Needs a fresh local Parallax + storage run and query assertions. |
+| Parallax local serve + seed smoke | **PASS** — managed GreptimeDB, `/health`, `/version`, `/ingest/loss`, GraphQL health, seed trace, CLI trace/log output | Local collection/query path booted and cleaned up; this is not public-network proof. |
+| Playground live `a1` | **PARTIAL** — HTTP responses returned `1999`, `3998`, `5997`, `9995`; Parallax persistence failed because managed GreptimeDB archive extraction was truncated | Workload path passes; persisted Parallax UI/query evidence remains unproven. |
+| Parallax end-to-end UI smoke | **BLOCKED** — GreptimeDB archive failure during live playground run | Repeat after repairing/redownloading the managed engine; retain the failed run as a known setup gate. |
 
-Therefore the document proves source-level capability and focused web checks, but not a fresh live end-to-end observability session. That remains the next evidence task.
+Therefore the document proves source-level capability, focused web checks, and a Parallax local serve/seed smoke. It does not yet prove a fresh live playground → Parallax persistence → UI/query session because the managed GreptimeDB download failed during the bounded `a1` run.
+
+The playground is a sibling repository. Paths written as `parallax-telemetry-playground/...` in this document refer to `/Users/donbeave/Projects/tailrocks/parallax-project/parallax-telemetry-playground/...`, not a nested directory in this repository.
 
 ## Suggested repository shape
 
