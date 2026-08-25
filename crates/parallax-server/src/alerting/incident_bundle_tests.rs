@@ -1,7 +1,6 @@
 use super::delivery::{DeliveryEventType, NotificationContext, webhook_payload_json};
-use super::incident_bundle::{FAIL_INCIDENT_BUNDLE, assemble_incident_hash};
+use super::incident_bundle::{assemble_incident_hash, assemble_incident_hash_with_failure};
 use parallax_metadata::AlertRuleRecord;
-use std::sync::atomic::Ordering;
 
 fn rule() -> AlertRuleRecord {
     AlertRuleRecord {
@@ -42,9 +41,8 @@ fn assemble_hash_is_stable() {
 
 #[test]
 fn injected_failure_does_not_yield_hash() {
-    FAIL_INCIDENT_BUNDLE.store(true, Ordering::SeqCst);
-    let result = assemble_incident_hash(&rule(), "inc-1", "checkout", Some(0.4), 10_000);
-    FAIL_INCIDENT_BUNDLE.store(false, Ordering::SeqCst);
+    let result =
+        assemble_incident_hash_with_failure(&rule(), "inc-1", "checkout", Some(0.4), 10_000, true);
     assert_eq!(result, Err("injected assembly failure".into()));
 }
 

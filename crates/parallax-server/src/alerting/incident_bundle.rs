@@ -1,16 +1,12 @@
 //! Fire-time incident bundle assembly (plan 173). Never blocks delivery:
 //! enqueue happens first; this persist is best-effort with a hard timeout.
 
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use parallax_evidence::bundle::{
     BundleAnchor, BundleInputs, IncidentAnchor, MetricWindow, assemble,
 };
 use parallax_metadata::{AlertIncidentRecord, AlertRuleRecord, TursoMetadataStore};
-
-/// Injected assembly failure for evaluator tests. Never set in product.
-pub(crate) static FAIL_INCIDENT_BUNDLE: AtomicBool = AtomicBool::new(false);
 
 pub(crate) const ASSEMBLY_TIMEOUT: Duration = Duration::from_millis(250);
 
@@ -43,7 +39,18 @@ pub(crate) fn assemble_incident_hash(
     last_value: Option<f64>,
     now_nanos: u128,
 ) -> Result<(String, Option<String>, String), String> {
-    if FAIL_INCIDENT_BUNDLE.load(Ordering::SeqCst) {
+    assemble_incident_hash_with_failure(rule, incident_id, group_key, last_value, now_nanos, false)
+}
+
+pub(crate) fn assemble_incident_hash_with_failure(
+    rule: &AlertRuleRecord,
+    incident_id: &str,
+    group_key: &str,
+    last_value: Option<f64>,
+    now_nanos: u128,
+    fail_assembly: bool,
+) -> Result<(String, Option<String>, String), String> {
+    if fail_assembly {
         return Err("injected assembly failure".into());
     }
     let inputs = BundleInputs {
@@ -88,9 +95,17 @@ pub(crate) async fn persist_incident_bundle(
     group_key: &str,
     last_value: Option<f64>,
     now_nanos: u128,
+    fail_assembly: bool,
 ) {
     let assembled = tokio::time::timeout(ASSEMBLY_TIMEOUT, async {
-        assemble_incident_hash(rule, incident_id, group_key, last_value, now_nanos)
+        assemble_incident_hash_with_failure(
+            rule,
+            incident_id,
+            group_key,
+            last_value,
+            now_nanos,
+            fail_assembly,
+        )
     })
     .await;
     let (hash, top, adjacency, error) = match assembled {

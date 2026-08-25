@@ -1,7 +1,5 @@
-use super::evaluator::{MeasurementSource, tick_once};
-use super::incident_bundle::FAIL_INCIDENT_BUNDLE;
+use super::evaluator::{MeasurementSource, tick_once, tick_once_with_bundle_failure};
 use parallax_metadata::{AlertDestinationRecord, AlertRuleRecord, TursoMetadataStore};
-use std::sync::atomic::Ordering;
 
 const SEC: u128 = 1_000_000_000;
 const MIN: u128 = 60 * SEC;
@@ -116,7 +114,6 @@ async fn open_persists_bundle_hash() {
 
 #[tokio::test]
 async fn open_survives_injected_assembly_failure() {
-    FAIL_INCIDENT_BUNDLE.store(true, Ordering::SeqCst);
     let (_dir, path) = temp_store();
     let store = TursoMetadataStore::open(path).await.expect("open");
     store.alert_rule_save(&rule()).await.expect("save");
@@ -125,8 +122,9 @@ async fn open_survives_injected_assembly_failure() {
     let mut now = 100 * MIN;
     tick_once(&store, &source, now, 30).await.expect("tick1");
     now += MIN;
-    let report = tick_once(&store, &source, now, 30).await.expect("tick2");
-    FAIL_INCIDENT_BUNDLE.store(false, Ordering::SeqCst);
+    let report = tick_once_with_bundle_failure(&store, &source, now, 30, true)
+        .await
+        .expect("tick2");
     assert_eq!(report.incidents_opened, 1);
     assert_eq!(report.deliveries_enqueued, 1);
     let open = store

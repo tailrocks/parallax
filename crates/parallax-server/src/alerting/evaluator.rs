@@ -188,6 +188,34 @@ pub(crate) async fn tick_once(
     now_nanos: u128,
     claim_interval_secs: u32,
 ) -> anyhow::Result<TickReport> {
+    tick_once_inner(store, source, now_nanos, claim_interval_secs, false).await
+}
+
+#[cfg(test)]
+pub(crate) async fn tick_once_with_bundle_failure(
+    store: &TursoMetadataStore,
+    source: &dyn MeasurementSource,
+    now_nanos: u128,
+    claim_interval_secs: u32,
+    fail_bundle_assembly: bool,
+) -> anyhow::Result<TickReport> {
+    tick_once_inner(
+        store,
+        source,
+        now_nanos,
+        claim_interval_secs,
+        fail_bundle_assembly,
+    )
+    .await
+}
+
+async fn tick_once_inner(
+    store: &TursoMetadataStore,
+    source: &dyn MeasurementSource,
+    now_nanos: u128,
+    claim_interval_secs: u32,
+    fail_bundle_assembly: bool,
+) -> anyhow::Result<TickReport> {
     let mut report = TickReport::default();
     for rule in store.alert_rules().await? {
         report.rules_seen += 1;
@@ -222,8 +250,16 @@ pub(crate) async fn tick_once(
         pad_unmeasured_groups(store, &rule.id, &mut groups).await?;
 
         for group in groups {
-            transitions::evaluate_group(store, &rule, &config, group, now_nanos, &mut report)
-                .await?;
+            transitions::evaluate_group(
+                store,
+                &rule,
+                &config,
+                group,
+                now_nanos,
+                &mut report,
+                fail_bundle_assembly,
+            )
+            .await?;
         }
     }
     Ok(report)

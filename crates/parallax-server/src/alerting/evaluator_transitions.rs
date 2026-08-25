@@ -66,6 +66,7 @@ pub(super) async fn evaluate_group(
     group: GroupMeasurement,
     now_nanos: u128,
     report: &mut TickReport,
+    fail_bundle_assembly: bool,
 ) -> anyhow::Result<()> {
     report.groups_evaluated += 1;
     let now_secs = nanos_to_unix_secs(now_nanos);
@@ -103,7 +104,16 @@ pub(super) async fn evaluate_group(
             error: None,
         })
         .await?;
-    apply_transition(store, rule, &group.group_key, &outcome, now_nanos, report).await
+    apply_transition(
+        store,
+        rule,
+        &group.group_key,
+        &outcome,
+        now_nanos,
+        report,
+        fail_bundle_assembly,
+    )
+    .await
 }
 
 fn new_incident(
@@ -143,6 +153,7 @@ async fn open_incident(
     outcome: &EvaluationOutcome,
     now_nanos: u128,
     report: &mut TickReport,
+    fail_bundle_assembly: bool,
 ) -> anyhow::Result<()> {
     let incident = new_incident(rule, group_key, outcome, now_nanos);
     if store.alert_incident_open(&incident).await? {
@@ -163,6 +174,7 @@ async fn open_incident(
             group_key,
             outcome.effective_value,
             now_nanos,
+            fail_bundle_assembly,
         )
         .await;
     }
@@ -176,11 +188,21 @@ async fn apply_transition(
     outcome: &EvaluationOutcome,
     now_nanos: u128,
     report: &mut TickReport,
+    fail_bundle_assembly: bool,
 ) -> anyhow::Result<()> {
     match outcome.transition {
         AlertTransition::None => Ok(()),
         AlertTransition::OpenIncident => {
-            open_incident(store, rule, group_key, outcome, now_nanos, report).await
+            open_incident(
+                store,
+                rule,
+                group_key,
+                outcome,
+                now_nanos,
+                report,
+                fail_bundle_assembly,
+            )
+            .await
         }
         AlertTransition::ResolveIncident => {
             if let Some(incident_id) = store
@@ -222,6 +244,7 @@ async fn apply_transition(
                         group_key,
                         outcome.effective_value,
                         now_nanos,
+                        fail_bundle_assembly,
                     )
                     .await;
                 }
