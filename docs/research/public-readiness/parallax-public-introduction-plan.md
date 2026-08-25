@@ -148,7 +148,8 @@ Then in Parallax:
 3. Show the waterfall: checkout → pricing, inventory/Postgres, and
    recommendation.
 
-Pin the exact result from the CLI when precision matters:
+Use the current run's result when precision matters; do not record a fixed
+trace ID because `a1` generates new IDs on each run:
 
 ```bash
 parallax traces --service checkout --grep http.server.request --since 2m --limit 5
@@ -228,8 +229,10 @@ cd "$PLAYGROUND_DIR"
 ./scenarios/run.sh a2
 ```
 
-Open `/metrics`, select the recent `catalog.product.queries` series, and show a
-trace-linked exemplar when present.
+Open `/metrics`, discover the recent `catalog_product_queries_total` series,
+and show a trace-linked exemplar when present. If the UI presents a semantic
+alias, confirm it resolves to that emitted metric name; do not assume a fixed
+series exists in every dataset.
 
 ### E. Structured logs — `a9`
 
@@ -241,8 +244,11 @@ cd "$PLAYGROUND_DIR"
 ```
 
 Open `/logs`, use the recent time window, and show that
-`app_screen_name=workspace-select` dominates the spike. Use **Live** only after
-the static result is clear.
+The earlier browser spike report said `app_screen_name=workspace-select`
+dominated the result, but that claim was not reproduced in the current
+dataset. Query the field and report it only if the current run contains it;
+otherwise state that it was not observed. Use **Live** only after the static
+result is clear.
 
 ## 5. Full feature map
 

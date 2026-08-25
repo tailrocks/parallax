@@ -77,14 +77,14 @@ These overlap maximally on architecture — both Rust, single-binary, self-host,
   - **MCP server (Enterprise only)** — live docs [openobserve.ai/docs/…/mcp](https://openobserve.ai/docs/integration/ai/mcp/) (pass **56**): explicitly **Enterprise edition**; requires `O2_AI_ENABLED=true`. Tool surface includes **search** (`SearchSQL`, PromQL, traces) **and large write/destructive sets** (⚠️ legend): Create/Delete **alerts**, **dashboards**, **streams**, **pipelines**, **users/roles**, **KV**, ingest `LogsIngestionJson`, etc. Categories documented: Alerts 28, Dashboards 20, Search 17, Auth, Pipelines, Streams, Traces, Users, … — **far beyond a read-only projection; no public “read-only MCP mode” product flag**. Docs recommend dedicated scoped user + confirm tool calls (security section).
   - **AI Assistant** (Enterprise).
   - **All AI/MCP features are Enterprise-gated** (AGPL core does not include them); **Sensitive Data Redaction (SDR) is also Enterprise** (pass 60 re-confirm + [oss-agent-surface-gating-2026-07-17.md](../oss-agent-surface-gating-2026-07-17.md) — README lists SDR as EE; free AGPL core has no portable redacted evidence-bundle export).
-- **Parallax's claim (code-shipped, A1 value unproven):** bounded, redacted, agent-safe evidence bundle served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) — **read-only by design**, redaction as a first-class pre-exposure gate.
+- **Parallax's claim (code-shipped, A1 value unproven):** bounded, redacted, agent-use (safety/value unproven) evidence bundle served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) — **read-only by design**, redaction as a first-class pre-exposure gate.
 
 **Honest verdict:** OpenObserve ships far more AI today (AI SRE + EE MCP with **dozens of mutating tools** + assistant) than Parallax. On shipped AI, **OpenObserve leads.** OpenObserve's AI is **Enterprise-gated + BYO-key + write-capable by design** — not a free read-only agent surface. That cell (free, read-only, redacted, bounded) stays unoccupied in O2 — Parallax designs it, value **unproven (A1)**. **No-bias:** O2's EE MCP is a mature, broad agent ops surface; Parallax cannot claim “MCP for obs” as unique — only the read-only/redacted/portable bundle posture.
 
 ## Architecture & deployment model — near-mirror, OpenObserve shipped
 
 - **OpenObserve:** **single Rust binary** (SQLite + local/object store) or horizontally-scaled stateless services (Postgres + object store + NATS). Self-host OSS (AGPL, free, no caps) or OpenObserve Cloud (SaaS, usage-based). Multi-region Super Cluster = Enterprise.
-- **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0. GreptimeDB + Turso.
+- **Parallax:** single-binary self-host target, local-first, offline/local deployment target (air-gap unverified), Apache-2.0. GreptimeDB + Turso.
 
 **Verdict:** on the single-binary-Rust-self-host bet, **these are the same design — and OpenObserve has shipped it**, while Parallax is pre-release. **OpenObserve is ahead on Parallax's own architectural claim.** Parallax's real differentiators here are **Apache-2.0 vs AGPL-3.0** (a license-permissiveness edge) and the **GreptimeDB-native** storage choice (unproven advantage). Honestly: the "Rust single-binary self-host OTLP-native" wedge is **no longer unique to Parallax** — OpenObserve owns it, shipped.
 
@@ -164,7 +164,7 @@ OpenObserve pricing is **public** ([openobserve.ai/pricing](https://openobserve.
 - **Sentry-envelope compatibility** — OpenObserve has no Sentry-envelope path; Parallax ships envelope ingest to absorb Sentry's 30+ SDKs. *(Real; Parallax shipped; plan 118 DONE.)*
 - **Production error-issue workflow + fix-outcome loop** — OpenObserve has none. *(Real gap; Parallax error derivation **shipped**; fix-outcome offline residual plan 123 DONE; live value unproven.)*
 - **GreptimeDB native-OTLP storage** — a different storage bet (vs Parquet/DataFusion). *(Design choice; advantage unproven.)*
-- **Bounded, redacted, agent-safe evidence bundle** — the differentiated thesis. *(Thesis, **unproven** — A1 gate.)*
+- **Bounded, redacted, agent-use (safety/value unproven) evidence bundle** — the differentiated thesis. *(Thesis, **unproven** — A1 gate.)*
 
 > **The honest summary:** OpenObserve has *already shipped* the Rust-single-binary-self-host-OTLP-native architecture Parallax is building. Parallax's wedge against OpenObserve is **not** the architecture — it is (a) Apache-vs-AGPL, (b) read-only-safe + free-redaction agent posture vs Enterprise-gated-write-capable MCP, (c) Sentry-envelope compat, (d) production-error derivation (**shipped**) + outcome offline residual (plan 123 DONE), and (e) the bounded agent bundle (**code-shipped**, A1 value **unproven**). This is the sharpest "competitor may be better on Parallax's own axes" case in the set.
 

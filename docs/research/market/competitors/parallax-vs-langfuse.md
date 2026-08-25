@@ -98,14 +98,14 @@ These overlap on **agent/LLM tracing and "context for agents,"** but were built 
 This is the axis that matters most for Parallax's thesis, so be most honest.
 
 - **Langfuse's position:** it is an **LLMOps platform for developers improving their LLM applications** — trace, evaluate, iterate prompts, run experiments. It is a **human dev loop + analytics**, not a *context engine that serves bounded, redacted evidence to autonomous coding agents for production incident resolution*. Langfuse does not derive production error events, does not run a fix-outcome loop, and does not serve a read-only bounded agent-context projection.
-- **Parallax's claim:** a bounded, redacted, agent-safe evidence bundle served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) for *production incidents* — a context engine, not an LLMOps dashboard.
+- **Parallax's claim:** a bounded, redacted, agent-use (safety/value unproven) evidence bundle served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) for *production incidents* — a context engine, not an LLMOps dashboard.
 
 **Honest verdict:** Langfuse is **far more mature** on the thing both touch — capturing and structuring agent/LLM execution traces. On shipped capability, **Langfuse leads.** Parallax's differentiation is entirely in the cells Langfuse does not occupy: production-error derivation, fix-outcome loop, and a bounded/redacted agent-context artifact — all **unproven (A1 gate).** A fair read: today, a team wanting "agent traces + evals" gets far more from Langfuse than from pre-release Parallax. Parallax's bet is that *production-incident evidence for coding agents* is a different, valuable job Langfuse doesn't do — and that bet is unvalidated.
 
 ## Architecture & deployment model
 
 - **Langfuse:** self-host (Docker/K8s, MIT, free, unlimited) **or** Langfuse Cloud (managed, multi-region). Open-core; self-host Enterprise is **custom-priced** (project RBAC/SCIM/audit/retention + ClickHouse commercial bundle) — **no public $** (pass 61).
-- **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0.
+- **Parallax:** single-binary self-host target, local-first, offline/local deployment target (air-gap unverified), Apache-2.0.
 
 **Verdict:** both are open + self-hostable. **Langfuse is shipped and mature today; Parallax is pre-release.** Parallax's single-binary local-first target is a simplicity edge (by design), unproven in production.
 
@@ -179,7 +179,7 @@ A billable unit = trace / observation / score. **Langfuse Assistant (in-app agen
 
 - **Production telemetry breadth** — OTLP-native logs/metrics/errors; Langfuse is not a general telemetry backend. *(Real design difference.)*
 - **Production error events + fix-outcome loop** — Langfuse has neither; unoccupied cells. *(Thesis, **unproven** — A1 gate.)*
-- **Bounded, redacted, agent-safe evidence bundle for production incidents** — Langfuse is an LLMOps dev loop, not an incident-context engine. *(Thesis, **unproven** — A1 gate; this is the crux of whether Parallax is a real product vs a feature Langfuse could add.)*
+- **Bounded, redacted, agent-use (safety/value unproven) evidence bundle for production incidents** — Langfuse is an LLMOps dev loop, not an incident-context engine. *(Thesis, **unproven** — A1 gate; this is the crux of whether Parallax is a real product vs a feature Langfuse could add.)*
 - **Single-binary local-first** — Langfuse self-host is a Docker stack. *(Minor design edge.)*
 
 ## Open questions / what measurement would settle

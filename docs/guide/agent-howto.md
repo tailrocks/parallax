@@ -1,8 +1,10 @@
 # Agent how-to: point your coding agent at Parallax
 
-Parallax's V1 agent surface is the CLI. No MCP server yet (gated decision —
-see [agent-access-surface.md](../research/decisions/agent-access-surface.md));
-any agent that can run shell commands already has everything it needs.
+Parallax's V1 agent surfaces are the CLI and a local-stdio MCP adapter. The MCP
+adapter is read-only and exposes only bounded evidence lookups; it has no write,
+shell, SQL, deploy, rollback, or management tools. Remote MCP transport is not
+shipped. Any agent that can run shell commands can use the CLI; MCP requires a
+local `parallax serve` and explicit `--allow-local-stdio` trust.
 
 ## The one command that matters
 

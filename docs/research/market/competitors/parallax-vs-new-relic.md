@@ -126,7 +126,7 @@ Parallax: minimal. **New Relic wins.**
 - **New Relic ships broad AI today:** NRAI assistant, **AI Agent Platform**
   (Feb 2026), **AI Coding Observability** (June 2026 — Claude Code/Cursor/
   Copilot/Windsurf/Amazon Q; spend + tracing), **AIM** (APM for AI), MCP, Canvas.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding
+- **Parallax's claim:** bounded, redacted, agent-use (safety/value unproven) evidence bundle for coding
   agents (CLI/HTTP, MCP after gates) for *production incidents*.
 
 > **Honest verdict:** on every *shipped* AI axis — including the AI
@@ -140,9 +140,10 @@ Parallax: minimal. **New Relic wins.**
 ### Architecture & deployment
 
 New Relic: **SaaS-only**, multi-tenant, multi-region. **No self-host product.**
-Parallax: single-binary self-host, local-first, air-gap, Apache-2.0.
+Parallax: single-binary self-host target, local-first, Apache-2.0; air-gap capability is unverified.
 
-> **Self-host / data-ownership / air-gap is Parallax's one real, structural edge
+> **Self-host / data-ownership is Parallax's design target; air-gap capability is
+> not yet verified. This is a structural hypothesis, not a proven edge
 > vs New Relic** — New Relic offers none of it (SaaS-only). This is the same edge
 > Parallax holds over Datadog (both closed SaaS). But it is a *deployment-model*
 > edge, not a capability edge — teams who can use SaaS get far more from New
@@ -206,7 +207,7 @@ generous for small teams; at scale the user+data metering compounds.
 2. **Openness** — Apache-2.0 vs closed SaaS; portable bundle. *(Real.)*
 3. **Production error events + fix-outcome loop** — New Relic has neither as a
    managed artifact. *(Thesis, **unproven** — A1 gate.)*
-4. **Bounded, redacted, agent-safe evidence bundle** — New Relic's AI is
+4. **Bounded, redacted, agent-use (safety/value unproven) evidence bundle** — New Relic's AI is
    dashboard + raw-context + chat, not a bounded safe projection. *(Thesis,
    **unproven** — A1 gate; and New Relic's shipped AI Coding Obs shrinks the
    gap.)*

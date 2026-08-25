@@ -76,14 +76,14 @@ Both touch agent/LLM tracing, but LangSmith is a closed LLMOps platform tied to 
   - **Sandboxes** — ephemeral isolated compute for agent-generated code.
   - Expose agent as **MCP server**.
 - Still **not** a bounded/redacted/portable *production-incident* evidence bundle for general backend systems (no OTLP full-stack, no Sentry envelope, no prod error_event derivation outside the LLM-agent app surface).
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for production incidents (**code-shipped**; value **unproven A1**).
+- **Parallax's claim:** bounded, redacted, agent-use (safety/value unproven) evidence bundle for production incidents (**code-shipped**; value **unproven A1**).
 
 **Honest verdict (no-bias, pass 43):** LangSmith is **far more mature** on agent traces + evals **and now ships an autonomous Engine that diagnoses and proposes fixes** — a direct competitor surface for the “agent fix loop,” not just LLMOps analytics. On shipped agent-app investigation, **LangSmith leads** pre-release Parallax. Parallax’s residual claim is **production-backend** (non-LangChain) incident context + portable redacted bundle + Sentry/OTLP breadth — all **A1-unproven**. Do not claim “LangSmith is only a human dashboard.”
 
 ## Architecture & deployment
 
 - **LangSmith:** **closed, commercial, SaaS-default.** Self-host and hybrid **do exist** ([docs](https://docs.langchain.com/langsmith/architectural-overview), cloud guides for [AWS](https://docs.langchain.com/langsmith/aws-self-hosted)/[GCP](https://docs.langchain.com/langsmith/gcp-self-hosted)/[Azure](https://docs.langchain.com/langsmith/azure-self-hosted)) — but **only on the Enterprise contract** (custom pricing, annual invoice, license beacon to `beacon.langchain.com` unless air-gapped), and the production path is **Kubernetes + Helm** with **PostgreSQL 14+** (metadata), **Redis 5+/Valkey 8** (queues), **ClickHouse** (trace analytics; LangChain recommends externally-managed ClickHouse Cloud or a LangSmith-managed option), and **blob storage (S3/GCS/Azure Blob) required in production**, baseline **16 vCPU / 64 GB RAM**. Docker Compose is dev/test-only. This is a real but heavy, paid-gated self-host path — not an OSS self-host option like Parallax/Langfuse/OpenObserve.
-- **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0.
+- **Parallax:** single-binary self-host target, local-first, offline/local deployment target (air-gap unverified), Apache-2.0.
 
 **Verdict:** on **self-host accessibility / data sovereignty, Parallax wins by design** (free Apache single-binary vs a paid-Enterprise-gated, multi-component K8s stack). Note honestly: "LangSmith has no self-host" is **false** — it has a real one, just commercial and operationally heavy. On managed SaaS scale/maturity, LangSmith wins.
 
@@ -164,7 +164,7 @@ LangSmith pricing is **public** ([langchain.com/pricing](https://www.langchain.c
 - **Self-host accessibility / data sovereignty** — Parallax: free Apache single-binary. LangSmith: self-host/hybrid exist but are Enterprise-contract-gated and operationally heavy (K8s+Helm, Postgres+Redis+ClickHouse+blob storage, 16 vCPU/64 GB baseline). *(Real edge on accessibility, not on existence — LangSmith self-host is real, just paid and heavy.)*
 - **Production telemetry breadth** — OTLP-native logs/metrics/errors; LangSmith is LLM-only. *(Real design difference.)*
 - **Production error events + fix-outcome loop** — LangSmith has neither. *(Thesis, unproven, A1.)*
-- **Bounded, redacted, agent-safe evidence bundle** — LangSmith is an LLMOps eval tool, not an incident-context engine. *(Thesis, unproven, A1.)*
+- **Bounded, redacted, agent-use (safety/value unproven) evidence bundle** — LangSmith is an LLMOps eval tool, not an incident-context engine. *(Thesis, unproven, A1.)*
 
 ## Open questions / what measurement would settle
 

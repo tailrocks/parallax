@@ -95,7 +95,7 @@ Both touch "AI-driven investigation" and (now) "agent" framing, but Dynatrace is
     autonomous agents the observability truth they need to reason accurately,
     take decisive actions, and operate safely." **= shipped MCP for agent context.**
   - Plus pre-existing **Davis AI causal RCA** + **AI Observability** (LLM/agent via OTLP).
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle served to coding agents (**code-shipped**, A1 value unproven).
+- **Parallax's claim:** bounded, redacted, agent-use (safety/value unproven) evidence bundle served to coding agents (**code-shipped**, A1 value unproven).
 
 **Honest verdict (pass-38, no-bias — the strongest incumbent collision yet):**
 Dynatrace now **ships a production-grade "context/grounding layer for agents" at
@@ -119,7 +119,7 @@ under direct pressure from a shipped enterprise competitor claiming the same
 ## Architecture & deployment
 
 - **Dynatrace:** **closed SaaS** (Dynatrace Platform); OneAgent/ActiveGate run in your env but ship to Dynatrace. No OSS self-host.
-- **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0.
+- **Parallax:** single-binary self-host target, local-first, offline/local deployment target (air-gap unverified), Apache-2.0.
 
 **Verdict:** on **self-host / data sovereignty, Parallax wins by design** (Dynatrace is closed SaaS). On managed SaaS + enterprise deployment maturity, Dynatrace wins.
 
@@ -181,7 +181,7 @@ Dynatrace pricing is **public** ([dynatrace.com/pricing](https://www.dynatrace.c
 
 **Parallax pricing:** none public yet (pre-release); stated shape = Apache open core + managed cloud + outcome-priced fixer.
 
-**Honest cost read:** Dynatrace is among the most expensive observability platforms (enterprise contracts in the $100K–$1M+/yr range). Whether Parallax self-host is cheaper is benchmark-dependent/unmeasured, but the **cost gap is a real Parallax opening** for price-sensitive buyers — though Parallax is pre-release and unproven at scale.
+**Honest cost read:** Dynatrace is among the most expensive observability platforms (enterprise contracts in the $100K–$1M+/yr range). Whether Parallax self-host is cheaper is benchmark-dependent and unmeasured; any cost opening remains a hypothesis while Parallax is pre-release and unproven at scale.
 
 ## Where Dynatrace plainly wins
 
@@ -198,7 +198,7 @@ Dynatrace pricing is **public** ([dynatrace.com/pricing](https://www.dynatrace.c
 - **Self-host / data sovereignty** — Parallax designed for it; Dynatrace is SaaS-only. *(Real.)*
 - **Cost** — Dynatrace is enterprise-expensive ($100K–$1M+/yr); Parallax self-host targets a real price opening. *(Real gap; Parallax pre-release/unproven.)*
 - **Sentry-envelope compatibility** — Dynatrace has none; Parallax ships it. *(Real.)*
-- **Bounded, redacted, agent-safe evidence bundle + fix-outcome loop** — *narrowed by pass-38:* Dynatrace now ships its own "bounded agent context" (Smartscape + MCP Server + Intelligence grounding), so the *intent* overlaps. Parallax's residual edge is specifically **portable + redacted + versioned bundle for a coding-agent fix loop** (vs Dynatrace's live, proprietary, SaaS, enterprise-ops-agent grounding). *(Thesis, unproven, A1 — and now directly pressured by a shipped enterprise competitor.)*
+- **Bounded, redacted, agent-use (safety/value unproven) evidence bundle + fix-outcome loop** — *narrowed by pass-38:* Dynatrace now ships its own "bounded agent context" (Smartscape + MCP Server + Intelligence grounding), so the *intent* overlaps. Parallax's residual edge is specifically **portable + redacted + versioned bundle for a coding-agent fix loop** (vs Dynatrace's live, proprietary, SaaS, enterprise-ops-agent grounding). *(Thesis, unproven, A1 — and now directly pressured by a shipped enterprise competitor.)*
 
 > **Honest summary:** Dynatrace is the category leader for **deterministic causal RCA** (Davis + OneAgent topology) and enterprise AIOps — far ahead of pre-release Parallax on AI-RCA, auto-instrumentation, topology, scale, compliance. **Pass-38: its "agent control plane" is no longer a forthcoming pivot but a SHIPPED agentic-operations platform** (Dynatrace Intelligence + Smartscape truth-graph + Intelligence Agents + MCP Server) that explicitly delivers **"bounded agent context"** to autonomous agents — a **direct, named collision with Parallax's "bounded context for agents" thesis**, on a far more mature substrate. Parallax's defensible delta narrows to **openness/cost/self-host** (Apache vs closed; Dynatrace is enterprise-expensive) + the **portable+redacted+versioned bundle for a coding-agent fix loop** specifically (A1 unproven, now under direct enterprise pressure) + **Sentry-envelope**. Do not claim "AI RCA," "agent," or now **"bounded context for agents"** as Parallax-unique — Dynatrace leads all three today.
 

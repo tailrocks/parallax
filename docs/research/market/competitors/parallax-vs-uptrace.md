@@ -69,14 +69,14 @@ Both OSS, OTLP-native, ClickHouse-adjacent, self-hostable. Uptrace is a tracing-
 ## AI-native / agent-context story
 
 - **Uptrace:** no significant AI/agent surface (traditional APM). Not an agent-context engine.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven gate).
+- **Parallax's claim:** bounded, redacted, agent-use (safety/value unproven) evidence bundle for coding agents (**code-shipped**, A1 value unproven gate).
 
 **Honest verdict:** Uptrace has no AI/agent story. Parallax's differentiated agent-context claim is **unproven (A1)** — Uptrace doesn't occupy that cell.
 
 ## Architecture & deployment
 
 - **Uptrace:** **self-host OSS (AGPL)** free unlimited (Docker Compose / K8s / on-prem) or Cloud + paid editions. Go.
-- **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0, Rust.
+- **Parallax:** single-binary self-host target, local-first, offline/local deployment target (air-gap unverified), Apache-2.0, Rust.
 
 **Verdict:** both OSS + self-hostable. **Uptrace ships; Parallax pre-release.** Parallax's **Rust single-binary + Apache** vs Uptrace's **Go + AGPL + multi-container**.
 
@@ -124,7 +124,7 @@ Live [uptrace.dev/pricing](https://uptrace.dev/pricing) (**pass 63 re-confirm**)
 - **Engine choice (GreptimeDB-native telemetry)** — vs ClickHouse (unproven advantage).
 - **Sentry-envelope compatibility** — Uptrace has none; Parallax ships it. *(Real.)*
 - **Production error events + fix-outcome loop** — Uptrace has neither. *(Real: error events **shipped**; fix-outcome offline residual plan 123 DONE; live value **unproven**.)*
-- **Bounded, redacted, agent-safe evidence bundle** — Uptrace has none. *(Thesis, unproven, A1.)*
+- **Bounded, redacted, agent-use (safety/value unproven) evidence bundle** — Uptrace has none. *(Thesis, unproven, A1.)*
 
 > **Honest summary:** Uptrace is a solid **OSS tracing-first APM** (AGPL, ClickHouse+Postgres, OTLP-native, cheap, Bun-author lineage) — same family as SigNoz/OpenObserve/HyperDX but tracing-centric. Ahead of pre-release Parallax on tracing-APM maturity, ClickHouse+Postgres, AGPL-self-host-free, cost. Parallax's defensible delta is **Apache-vs-AGPL**, **GreptimeDB-native** (vs ClickHouse, unproven), **Sentry-envelope**, **prod-error + outcome loop**, and the **bounded+outcome bundle** (A1 unproven). Lower strategic priority than SigNoz/OpenObserve (more niche), but completes the OSS-ClickHouse-OTLP-platform coverage.
 

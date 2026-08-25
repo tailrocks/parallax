@@ -63,7 +63,7 @@ people the UI to see the same truth.
   deploy events ─►└───────────────────────┬───────────────────────────┘
                                           │ one canonical API (GraphQL query + OTLP ingest)
               ┌───────────────┬───────────┴────────────┬──────────────┐
-            CLI             HTTP API                  UI            MCP (read-only, gated)
+            CLI             HTTP API                  UI        MCP (local-stdio, read-only)
         (kubectl model)   (canonical)          (human window)     (agent transport)
 ```
 
@@ -76,8 +76,9 @@ people the UI to see the same truth.
   matter where the server is deployed or which storage backend it runs.
 - **UI** is the human window over the same API — Sentry-style issues plus Grafana/Kibana-style
   cross-signal inspection. Humans need to know what is going on too; the UI is how.
-- **MCP** local-stdio product surface graduated (plan 112 DONE). Remote MCP remains a future
-  read-only projection.
+- **MCP** is a graduated local-stdio product surface over the canonical API. Its closed catalog
+  currently has two read-only evidence tools; it cannot write, execute shell/SQL, deploy, roll
+  back, or manage Parallax. Remote MCP transport remains deferred.
 
 One API + swappable `StorageAdapter` is what makes the scale ladder below a topology change
 rather than a rewrite.

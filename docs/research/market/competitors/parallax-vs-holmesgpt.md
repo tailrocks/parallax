@@ -40,7 +40,7 @@ Both Apache-2.0, agent-facing, in the "AI investigation" space. **HolmesGPT is t
 | Evidence bundle / bounded agent context | ❌ | 🟡🧪 code (A1 unproven) |
 | Sentry envelope / DSN | ❌ | ✅ shipped |
 
-**Verdict:** **different layers.** HolmesGPT excels at *investigating* telemetry you already have; Parallax excels (in design) at *owning, deriving, and bounding* telemetry into agent-safe evidence. HolmesGPT **has no store, no error-derivation, no bounded bundle** — exactly Parallax's layers.
+**Verdict:** **different layers.** HolmesGPT excels at *investigating* telemetry you already have; Parallax excels (in design) at *owning, deriving, and bounding* telemetry into agent-use (safety/value unproven) evidence. HolmesGPT **has no store, no error-derivation, no bounded bundle** — exactly Parallax's layers.
 
 ## Ingestion & transport — the layer relationship
 
@@ -58,14 +58,14 @@ HolmesGPT **has no storage, no query engine, no error-derivation, no issue lifec
 ## AI-native / agent-context story — the central crux
 
 - **HolmesGPT:** a **shipped AI SRE agent** — fetch an alert, pull evidence across the stack, produce an RCA, run a runbook, write it back. **CNCF-native, MCP-extensible, Apache-2.0.** This is the **canonical "AI investigation agent that consumes telemetry"** — exactly the role Parallax's framing assigns to "a separate agent."
-- **Parallax's claim:** a **bounded, redacted, agent-safe evidence bundle** served to coding agents — a *context engine* that produces a safe, validated dossier, not an open-ended investigator.
+- **Parallax's claim:** a **bounded, redacted, agent-use (safety/value unproven) evidence bundle** served to coding agents — a *context engine* that produces a safe, validated dossier, not an open-ended investigator.
 
 **Honest verdict (the crux):** HolmesGPT **is the shipped realization of "an agent that investigates telemetry"** — and it's Apache-2.0, CNCF-backed, mature. **Parallax's entire thesis rests on the bet that a bounded/redacted/validated bundle beats raw-telemetry-querying-via-HolmesGPT for coding-agent fix outcomes** — and that bet is **unproven (A1 gate).** Written plainly: if a team already has HolmesGPT investigating their stack, the value-add of Parallax must be *measured*, not assumed. The honest framing from Parallax's own legacy research holds: **HolmesGPT is "the AI investigation layer Parallax must feed, not beat."** Parallax's delta is owning the telemetry + error-derivation + bounded/redacted safety — unproven to beat HolmesGPT-over-raw-telemetry.
 
 ## Architecture & deployment
 
 - **HolmesGPT:** **Apache-2.0 OSS** (self-host), deployable via Robusta; CNCF Sandbox. No backend to run (uses yours).
-- **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0, Rust + GreptimeDB + Turso.
+- **Parallax:** single-binary self-host target, local-first, offline/local deployment target (air-gap unverified), Apache-2.0, Rust + GreptimeDB + Turso.
 
 **Verdict:** both Apache-2.0 + self-hostable. HolmesGPT is lighter (no backend); Parallax owns the backend. **Complementary deployment** — HolmesGPT can query Parallax.
 
@@ -99,7 +99,7 @@ HolmesGPT **has no storage, no query engine, no error-derivation, no issue lifec
 ## Where Parallax honestly edges HolmesGPT
 
 - **Owns the telemetry** (store + error-derivation + fingerprint) — HolmesGPT has no store; it queries yours. *(Real layer difference.)*
-- **Bounded, redacted, agent-safe evidence bundle** — HolmesGPT investigates open-endedly over raw telemetry; Parallax produces a validated dossier. *(Thesis, unproven A1 — the crux.)*
+- **Bounded, redacted, agent-use (safety/value unproven) evidence bundle** — HolmesGPT investigates open-endedly over raw telemetry; Parallax produces a validated dossier. *(Thesis, unproven A1 — the crux.)*
 - **Fix-outcome loop (Parallax-shaped)** — HolmesGPT has **no portable outcome ledger / recurrence verdict product** over app errors. **Pass 95 nuance:** Operator mode + GitHub PR is a **real SRE automation path** (detect→investigate→propose PR); do **not** pretend HolmesGPT is fix-loop-free. Difference = **layer + artifact**: HolmesGPT automates over **your existing stack APIs**, not a versioned redacted multi-signal **bundle + outcome record**. Parallax offline residual plan **123 DONE**; live value **unproven**.
 - **Sentry-envelope compatibility** — HolmesGPT has a **Sentry MCP toolset** (query issues as a consumer); Parallax **ingests** Sentry envelopes as a store path. Different sides of Sentry.
 

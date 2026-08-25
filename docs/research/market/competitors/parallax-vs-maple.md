@@ -73,14 +73,14 @@ Both single-binary-local-first, OTLP-native, Turso-metadata. The closest pair on
 ## AI-native / agent-context story
 
 - **Maple's AI/MCP:** MCP server in `apps/api`, **10+ read-oriented tools**; explore-level AI. A read-leaning agent surface, but not a bounded/redacted/versioned bundle.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven).
+- **Parallax's claim:** bounded, redacted, agent-use (safety/value unproven) evidence bundle for coding agents (**code-shipped**, A1 value unproven).
 
 **Verdict:** Maple ships more agent surface today (10+ MCP tools) than Parallax. On **read-oriented** MCP, Maple is closer to Parallax's safety intent than SigNoz/OpenObserve (which are write-capable) — but Maple's is not bounded/redacted/versioned. Parallax's differentiated bundle is **unproven (A1).**
 
 ## Architecture & deployment — the local-UX benchmark
 
 - **Maple:** **single Bun binary** for local mode (`maple` + `libchdb`, OTLP :4318, dashboard at `local.maple.dev` or `--offline`). Polished "Operator Terminal" design. Hosted = Cloudflare Workers + D1. K8s Helm. **This local-mode UX is the benchmark Parallax wants to match.**
-- **Parallax:** single-binary Rust target, local-first, air-gap-capable, Apache-2.0.
+- **Parallax:** single-binary Rust target, local-first, offline/local deployment target (air-gap unverified), Apache-2.0.
 
 **Verdict:** on **shipped single-binary local-mode polish, Maple wins** (it is the local-experience benchmark). Parallax's single-binary target is parity-by-design, pre-release. On **language/substrate, Parallax (Rust) vs Maple (TS/Bun)** — Parallax's stated preference; not a decisive product difference.
 

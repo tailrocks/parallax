@@ -72,14 +72,14 @@ Both OSS, self-hostable, with an LLM/agent-obs surface. But the **core domains d
 ## AI-native / agent-context story — the real overlap
 
 - **PostHog (pass 65):** **AI Observability** free **100K events/mo** (LLM/agent tracing-style surface) + **PostHog AI** free **500 credits** (~$5) then **$0.01/credit**. Overlaps Langfuse/Phoenix territory; product-analytics correlation remains the primary frame. **Not** a bounded, read-only, redacted portable agent-context projection for production incidents.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven gate).
+- **Parallax's claim:** bounded, redacted, agent-use (safety/value unproven) evidence bundle for coding agents (**code-shipped**, A1 value unproven gate).
 
 **Honest verdict:** PostHog ships **AI Observability + PostHog AI** on the free tier — **ahead of pre-release Parallax** on shipped LLM/agent product surface. Parallax's differentiated claim remains the **bounded/redacted/portable prod-incident bundle + outcome loop (A1 unproven)**, not “AI/LLM obs exists.”
 
 ## Architecture & deployment
 
 - **PostHog:** **self-host OSS** (ClickHouse-backed, multi-component) **or** PostHog Cloud (managed). Large, mature self-host community.
-- **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0.
+- **Parallax:** single-binary self-host target, local-first, offline/local deployment target (air-gap unverified), Apache-2.0.
 
 **Verdict:** on **OSS-self-host maturity + community, PostHog wins** (large, proven). On single-binary Rust local-first, Parallax's target is a different ergonomics story. **License:** both permissive-core (PostHog **MIT Expat** + proprietary `ee/`; Parallax **uniform Apache-2.0**, no `ee/`). Parallax’s edge is **uniform OSI openness** (no proprietary EE directory), not “competitive-use clauses” (those do not apply to PostHog core).
 
@@ -145,7 +145,7 @@ Identified events can bill higher (~**$0.000248 / event** after free 1M) when pe
 - **Sentry-envelope compatibility** — PostHog has none; Parallax ships it. *(Real.)*
 - **Fix-outcome loop + derived fingerprint semantics** — PostHog Error Tracking ≠ Parallax `error_event` + outcome residual. *(Partial: errors now on both sides; outcome still Parallax-only and **unproven**.)*
 - **Uniform OSI openness** — Apache-2.0 with no proprietary `ee/` vs PostHog MIT core + proprietary `ee/`. *(Narrow.)*
-- **Bounded, redacted, agent-safe evidence bundle** — PostHog has none. *(Thesis, unproven, A1.)*
+- **Bounded, redacted, agent-use (safety/value unproven) evidence bundle** — PostHog has none. *(Thesis, unproven, A1.)*
 
 > **Honest summary (pass 65):** PostHog and Parallax **still differ on primary job** (product analytics OS vs production-incident evidence), but **overlap grew**: Error Tracking, Logs, and AI Observability free tiers make PostHog a stronger adjacent alternative for product teams. On shipped multi-product breadth + community + free-tier economics, **PostHog leads**. Parallax residual delta = **OTLP-native prod backend + Sentry-envelope + outcome loop + portable redacted bundle** (A1 unproven) — **not** “PostHog has no errors/logs/AI.”
 

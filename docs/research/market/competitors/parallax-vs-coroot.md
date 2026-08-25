@@ -92,14 +92,14 @@ Both Apache-2.0 OSS, self-hostable, with an agent/MCP surface and AI RCA. The ov
 ## AI-native / agent-context story — the safe-agent crux
 
 - **Coroot's AI (shipped, Enterprise/Cloud-gated):** 2-stage RCA (deterministic-ML-then-LLM), OpenAI-compatible/BYO key, "what broke, why, how to fix." **And the key one: the best MCP safety model in the field** — per-user **OAuth + RBAC projection**, ~18 tools, **only `resolve_alerts` mutates.** This is the closest shipped thing to Parallax's "read-only safe agent projection" thesis.
-- **Parallax's claim (code-shipped, A1 value unproven):** bounded, redacted, agent-safe evidence bundle served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) — **read-only by design**, redaction as a first-class gate.
+- **Parallax's claim (code-shipped, A1 value unproven):** bounded, redacted, agent-use (safety/value unproven) evidence bundle served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) — **read-only by design**, redaction as a first-class gate.
 
 **Honest verdict:** On shipped AI (2-stage RCA) **Coroot leads.** On **safe-agent-projection — a recurring Parallax claim — Coroot already ships the best RBAC-scoped MCP in the market.** This is a direct, uncomfortable test of Parallax's wedge: the "safe agent surface" is NOT unoccupied; Coroot owns the best version of it. Parallax's narrowing differentiators: (a) **strictly read-only** (Coroot has one mutating tool), (b) **redaction-before-access as a gate** (Coroot's MCP doesn't redact), (c) **bounded/versioned bundle** (Coroot serves queries, not a bounded artifact), (d) **production-incident evidence** scope. Error/Sentry/MCP/bundle pieces are **code-shipped**; A1 **value** unproven. Write it plainly: Parallax cannot claim "safe agent projection" as unique — Coroot ships the best one today.
 
 ## Architecture & deployment
 
 - **Coroot:** multi-container (node-agent DaemonSet + cluster-agent + server), Docker Compose / K8s Helm / Swarm. Apache-2.0 core + Enterprise. Cloud available.
-- **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0.
+- **Parallax:** single-binary self-host target, local-first, offline/local deployment target (air-gap unverified), Apache-2.0.
 
 **Verdict:** on **single-binary local-first simplicity, Parallax's target beats Coroot's multi-container stack.** On **eBPF zero-instrumentation + K8s-native deploy, Coroot wins.** Different deployment ergonomics.
 

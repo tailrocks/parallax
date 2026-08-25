@@ -132,7 +132,7 @@ prompt playground. Mature for the AI-app domain. Parallax: minimal V1.
   analytics, **not** a context engine that serves bounded, redacted evidence to
   autonomous coding agents for *production-incident* resolution. No production-
   error derivation, no fix-outcome loop, no read-only bounded agent projection.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding
+- **Parallax's claim:** bounded, redacted, agent-use (safety/value unproven) evidence bundle for coding
   agents (CLI/HTTP first, MCP after gates) for production incidents.
 
 > **Honest verdict:** Phoenix (like Langfuse) is **far more mature** on capturing
@@ -202,7 +202,7 @@ edge only applies to its *different* job (production telemetry evidence);
 
 1. **Production telemetry breadth** — OTLP-native logs/metrics/errors; Phoenix is not a general telemetry backend. *(Real design difference.)*
 2. **Production error events + fix-outcome loop** — Phoenix has neither. *(Thesis, **unproven** — A1 gate.)*
-3. **Bounded, redacted, agent-safe evidence bundle for production incidents** — Phoenix is an AI-app eval loop, not an incident-context engine. *(Thesis, **unproven** — A1 gate; existential question.)*
+3. **Bounded, redacted, agent-use (safety/value unproven) evidence bundle for production incidents** — Phoenix is an AI-app eval loop, not an incident-context engine. *(Thesis, **unproven** — A1 gate; existential question.)*
 4. **License permissiveness** — Apache-2.0 vs ELv2 (managed-service restriction). *(Narrow but real.)*
 5. **Single-binary local-first** — Phoenix self-host is a Docker/container stack. *(Minor design edge.)*
 

@@ -54,9 +54,9 @@ exporter to gRPC when you prefer the gRPC port.
 
 ## Java (OpenTelemetry javaagent)
 
-Verified 2026-08-25 against `deploy/Dockerfile.java` (agent 2.30.0) +
-`deploy/docker-compose.yml` catalog/payment/fulfillment `OTEL_*` block @
-`171d87a` in `tailrocks/parallax-telemetry-playground`.
+Verified 2026-08-25 against the sibling playground's `deploy/Dockerfile.java`
+(upstream Java agent 2.30.0) and the catalog/payment/fulfillment
+`OTEL_*` blocks in `deploy/docker-compose.yml` at `171d87a`.
 
 ```bash
 # Download the upstream agent (do not swap in a vendor-only agent).
@@ -76,8 +76,10 @@ export OTEL_PROPAGATORS="tracecontext,baggage"
 java -jar app.jar
 ```
 
-OTLP/gRPC to `:4317` is the verified Java path. HTTP/protobuf to `:4318` is a
-fallback when the collector or environment cannot use gRPC.
+The sibling playground verifies OTLP/gRPC to `:4317` with
+`OTEL_EXPORTER_OTLP_PROTOCOL=grpc`. It does not verify this standalone
+copy-paste launch, HTTP/protobuf to `:4318`, or a Java application outside that
+playground deployment; treat those as unverified here.
 
 ## JS / browser (sdk-trace-web)
 
