@@ -357,11 +357,12 @@ Do not use `down -v` when the generated data is needed for the next presenter.
   do not expose them to a shared network.
 - `a28` requires real browser interaction through `agent-browser`. A shell
   smoke check cannot prove RUM navigation or propagation.
-- Browser verification used `agent-browser` on the latest locally resolved
-  preview: Overview, trace detail, Issues, Logs, Metrics, CLI Apps, and SQL
-  loaded; the playground home, checkout, and exact `nopropagate=1` route also
-  worked. Keep route-specific visual claims limited to pages opened in the
-  presentation session.
+- The recorded browser verification used `agent-browser` on the locally
+  resolved preview before the latest playground feedback change. `agent-browser`
+  is unavailable in the current audit environment, so that changed playground
+  feedback path has not been reverified. Do not present it as reverified; keep
+  route-specific visual claims limited to pages opened in the presentation
+  session.
 - `c4` created the alert rule and destinations, but the current preview did not
   open an incident during its 180-second poll. Treat incident creation as an
   open product gap; reproduce with sustained breach traffic before presenting.
