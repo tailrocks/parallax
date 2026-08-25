@@ -186,8 +186,8 @@ Then:
 3. Return home and click **apply promo (unresponsive)** several times.
 4. Click **break (RUM error)**.
 5. Open <http://localhost:5173/checkout?nopropagate=1> directly and submit
-   again. Do not use the page's propagation-break link; its current encoding
-   is incorrect.
+   again, or use the page's **open intentional propagation-break test** link.
+   Both routes select the same structured `nopropagate=1` query state.
 6. Background or close the tab so browser telemetry flushes.
 
 Then in Parallax `/traces`, find the recent `web` traces. Show that the normal
@@ -365,8 +365,9 @@ Do not use `down -v` when the generated data is needed for the next presenter.
   playground checkout feedback path: the propagation-break heading and note
   are visible, and the intentional HTTP 502 is announced in the live status.
 - `c4` created the alert rule and destinations, but the current preview did not
-  open an incident during its 180-second poll. Treat incident creation as an
-  open product gap; reproduce with sustained breach traffic before presenting.
+  open an incident during its 180-second poll. Historical coverage proves the
+  rule/webhook path; revalidate incident opening on the current preview before
+  presenting it as a live lifecycle claim.
 - Background load can create newer rows while presenting. Pin a trace ID or use
   service/time filters before making a claim.
 - This proves local ingest, correlation, UI navigation, CLI inspection, and the
@@ -383,6 +384,8 @@ Do not use `down -v` when the generated data is needed for the next presenter.
   lifecycle remains unverified.
 - Sentry envelope emission is proven. Sentry UI grouping and flamegraph
   behavior were not independently proven.
+- The agent workflow has a known MCP limitation: `parallax-mcp check` output
+  does not currently match the CLI/GraphQL bundle JSON exactly.
 - Fresh `agent-browser` verification of the post-change playground checkout
   feedback path passed: propagation-break context is visible and the HTTP 502
   result is announced through the accessible live status.

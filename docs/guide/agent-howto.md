@@ -31,10 +31,11 @@ parallax run bundle <run_id> --format json
 parallax run agent <run_id> --format json
 ```
 
-Bundle JSON is the server's canonical bytes (schema `bundle-v1`); the hash is
-already a field inside that object — do not re-pretty-print it. `run agent`
-returns the run-scoped agent-session projection (steps, token totals) for
-tool/shell reconstruction. Markdown remains the default for human eyes.
+Bundle JSON is the server's canonical `bundle-v2` envelope. Its immutable
+`data` field carries the unchanged `bundle-v1` dossier, and the hash is already
+a field inside the envelope — do not re-pretty-print it. `run agent` returns
+the run-scoped agent-session projection (steps, token totals) for tool/shell
+reconstruction. Markdown remains the default for human eyes.
 
 A working loop to give your agent:
 
