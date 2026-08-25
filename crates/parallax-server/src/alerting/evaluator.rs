@@ -249,17 +249,13 @@ async fn tick_once_inner(
         };
         pad_unmeasured_groups(store, &rule.id, &mut groups).await?;
 
+        let scope = transitions::TickScope {
+            store,
+            now_nanos,
+            fail_bundle_assembly,
+        };
         for group in groups {
-            transitions::evaluate_group(
-                store,
-                &rule,
-                &config,
-                group,
-                now_nanos,
-                &mut report,
-                fail_bundle_assembly,
-            )
-            .await?;
+            transitions::evaluate_group(&scope, &rule, &config, group, &mut report).await?;
         }
     }
     Ok(report)

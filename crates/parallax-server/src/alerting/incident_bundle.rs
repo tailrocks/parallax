@@ -32,41 +32,39 @@ pub(crate) fn measured_series_window(
     .collect()
 }
 
-pub(crate) fn assemble_incident_hash(
-    rule: &AlertRuleRecord,
-    incident_id: &str,
-    group_key: &str,
-    last_value: Option<f64>,
-    now_nanos: u128,
-) -> Result<(String, Option<String>, String), String> {
-    assemble_incident_hash_with_failure(rule, incident_id, group_key, last_value, now_nanos, false)
+/// Inputs for one fire-time incident bundle assembly. `fail_assembly` injects
+/// an assembly failure for tests; product paths always pass `false`.
+pub(crate) struct IncidentAssembly<'a> {
+    pub(crate) rule: &'a AlertRuleRecord,
+    pub(crate) incident_id: &'a str,
+    pub(crate) group_key: &'a str,
+    pub(crate) last_value: Option<f64>,
+    pub(crate) now_nanos: u128,
+    pub(crate) fail_assembly: bool,
 }
 
-pub(crate) fn assemble_incident_hash_with_failure(
-    rule: &AlertRuleRecord,
-    incident_id: &str,
-    group_key: &str,
-    last_value: Option<f64>,
-    now_nanos: u128,
-    fail_assembly: bool,
+pub(crate) fn assemble_incident_hash(
+    assembly: &IncidentAssembly<'_>,
 ) -> Result<(String, Option<String>, String), String> {
-    if fail_assembly {
+    if assembly.fail_assembly {
         return Err("injected assembly failure".into());
     }
+    let rule = assembly.rule;
+    let last_value = assembly.last_value;
     let inputs = BundleInputs {
         anchor: BundleAnchor::Incident(Box::new(IncidentAnchor {
-            incident_id: incident_id.to_string(),
+            incident_id: assembly.incident_id.to_string(),
             rule_name: rule.name.clone(),
             signal_type: rule.signal_type.clone(),
             severity: rule.severity.clone(),
-            group_key: group_key.to_string(),
+            group_key: assembly.group_key.to_string(),
             window_minutes: rule.window_minutes,
             last_value,
         })),
         events: Vec::new(),
         trace_spans: Vec::new(),
         trace_logs: Vec::new(),
-        metric_windows: measured_series_window(rule, last_value, now_nanos),
+        metric_windows: measured_series_window(rule, last_value, assembly.now_nanos),
         ci_adjacency: Vec::new(),
         deploy_adjacency: Vec::new(),
     };
@@ -90,22 +88,10 @@ pub(crate) fn assemble_incident_hash_with_failure(
 /// the tick and outbox enqueue must proceed.
 pub(crate) async fn persist_incident_bundle(
     store: &TursoMetadataStore,
-    rule: &AlertRuleRecord,
-    incident_id: &str,
-    group_key: &str,
-    last_value: Option<f64>,
-    now_nanos: u128,
-    fail_assembly: bool,
+    assembly: IncidentAssembly<'_>,
 ) {
     let assembled = tokio::time::timeout(ASSEMBLY_TIMEOUT, async {
-        assemble_incident_hash_with_failure(
-            rule,
-            incident_id,
-            group_key,
-            last_value,
-            now_nanos,
-            fail_assembly,
-        )
+        assemble_incident_hash(&assembly)
     })
     .await;
     let (hash, top, adjacency, error) = match assembled {
@@ -116,10 +102,10 @@ pub(crate) async fn persist_incident_bundle(
     drop(
         store
             .alert_incident_set_bundle(
-                incident_id,
+                assembly.incident_id,
                 parallax_metadata::IncidentBundleSnapshot {
                     hash: hash.as_deref(),
-                    assembled_at_nanos: now_nanos,
+                    assembled_at_nanos: assembly.now_nanos,
                     top_hypothesis: top.as_deref(),
                     deploy_adjacency: adjacency.as_deref(),
                     error: error.as_deref(),
