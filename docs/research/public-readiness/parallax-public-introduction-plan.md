@@ -226,7 +226,32 @@ The first demo should present only these five pages: `/`, `/traces`, `/logs`,
 `/metrics`, and `/issues`. Return to the route map for the remaining product
 surfaces.
 
-## 8. Stop and reset
+## 8. Extended product-surface tour
+
+Run these only when the audience wants the corresponding feature. The `c*`
+scenarios are machine-checked against a live Parallax instance.
+
+| Feature | Command | Browser/CLI result |
+| --- | --- | --- |
+| Issue bundle and resolve | `scenarios/run.sh c1` | `/issues/<fingerprint>`; compare the bundle hash with `parallax issue context`. |
+| CLI invocations | `scenarios/run.sh c2` | `/invocations`; also use `parallax invocation inspect <id>` and `parallax invocation bundle <id> --format json`. |
+| Live tail | `scenarios/run.sh c3` | `/logs` or `/traces` live mode; proves the SSE streams. |
+| Alerts | `scenarios/run.sh c4` | `/alerts`; waits for the local alert evaluator and creates an incident. |
+| Saved state | `scenarios/run.sh c5` | `/dashboards`, `/investigations`, and `/sql`. |
+| Sentry envelopes | `scenarios/run.sh c8` | `/issues`; requires the playground Rust/Java/JS build tools. |
+| Lifecycle safety | `scenarios/run.sh c9` | CLI only: isolated `doctor`, dry-run/execute `prune`, contexts, and `invocation --otlp-forward off`. |
+| Redaction egress | `scenarios/run.sh c10` | `/issues` plus CLI/MCP outputs; requires the repository-built `parallax-mcp`. |
+| Browser route inventory | `scenarios/run.sh c11` | Overview snapshot; for every primary UI route, run `./scenarios/c11-ui-agent-verify.sh` directly. Both require `agent-browser`. |
+
+Optional integrations have explicit prerequisites:
+
+- `c6` needs GitHub webhook secrets enabled in the Parallax config.
+- `c7` needs the repository-built `parallax-mcp` binary and a local Claude
+  fixture; it is not part of the Homebrew CLI formula.
+- `c11` needs `agent-browser`; it is a separate browser-agent check, not a
+  substitute for a human visual review.
+
+## 9. Stop and reset
 
 Stop the playground from Terminal B:
 
@@ -245,7 +270,7 @@ docker compose -f deploy/docker-compose.yml --profile demo down -v
 
 Do not run `down -v` in a demo that needs to preserve generated data.
 
-## 9. Honest boundaries
+## 10. Honest boundaries
 
 - Preview builds are local-only. API bearer-token configuration exists, but the
   default demo runs auth off and current OTLP routes must stay on loopback.
@@ -265,7 +290,7 @@ Do not run `down -v` in a demo that needs to preserve generated data.
   an optional repository-built surface, not a remote hosted MCP claim in this
   walkthrough.
 
-## 10. Competitor boundary
+## 11. Competitor boundary
 
 Parallax is a basic local observability/context alternative, not a replacement
 for these mature products:
@@ -283,7 +308,7 @@ ownership, or proven superior AI-agent outcomes. Canonical comparison sources:
 `docs/research/market/landscape.md`, and
 `docs/research/market/competitors/comparison-set.md`.
 
-## 11. Source of truth
+## 12. Source of truth
 
 - Preview install and server ports: `docs/guide/quickstart.md`
 - CLI behavior: `parallax --help` and `crates/parallax-cli/src/main.rs`
