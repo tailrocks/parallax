@@ -21,7 +21,7 @@ preserved as the record that led to V1.
 > standard), **Sentry** (how collected failures are organized into grouped, workflow-ready
 > issues), and **Grafana** (how humans see across signals to understand what is going on) — into
 > one open-source Rust engine that is **agent-first**: the same evidence that renders in a UI for
-> a human is served as bounded, redacted, citable bundles to an AI that proposes the fix. It
+> a human is served as bounded, redacted, citable context for a separate coding agent to assess. It
 > starts on one developer's laptop and scales, by topology change rather than rewrite, to
 > companies that fix this month's bugs next quarter.
 
@@ -51,9 +51,9 @@ given it at all. The end state this serves is the
 | **Grafana** | Humans understand systems by looking *across* signals | The cross-signal investigation UI (plus Kibana's object-centric log view, Tempo's waterfall) — [simple-ui-v2.md](../architecture/simple-ui-v2.md) |
 
 The difference from all three: Parallax is designed **for AI first**. Every view a human gets is
-a projection of the same evidence graph an agent receives as a bounded bundle. The platform's job
-is to give the agent the full picture so it can make reasonable decisions about fixes — and give
-people the UI to see the same truth.
+a projection of the same evidence graph a separate coding agent can receive as bounded context.
+The architectural target is to give that agent enough evidence to assess a failure; fix quality and
+outcomes remain unverified. People get the UI to see the same truth.
 
 ## 3. Product shape: three surfaces, one API
 
@@ -88,9 +88,9 @@ rather than a rewrite.
 **Rung 1 — the developer on a dev machine (first priority).** "I am developing a tool locally; I
 want to point my app at something and say *send all your data here*." One command starts a local
 Parallax; a Rust backend connects via standard OTel env vars; the developer (or their coding
-agent) inspects the run, sees the panic with its logs/trace/metrics, and finds the bug they just
+agent) inspects the run, sees the panic with its logs/trace/metrics, and assesses the bug they just
 introduced. This is [local-first-v1.md](../architecture/local-first-v1.md), and it is the wedge:
-the operator is user #1.
+the operator is user #1; any resulting code change is outside Parallax and remains unverified.
 
 **Rung 2 — the team with a deployed server.** Same binary deployed remotely; developers connect
 from their desktops with the kubectl-style CLI; coding agents connect through CLI/API/MCP and
@@ -100,17 +100,17 @@ way. (Capture *depth* stays Rust-first per scope; the engine and infra stay Rust
 **sources** are polyglot by design — same clarification as the frontend-as-source rule.)
 
 **Rung 2, sharpened (operator statement #4): one binary, deployment profiles.** The old world
-made a growing startup assemble and operate Sentry + Grafana + Loki + a trace store + a metrics
-stack — and "they always never do this properly." Parallax replaces that with **one binary plus a
-profile** — refined into the three-profile family `local | server | cloud` in the
+made a growing startup assemble and operate several observability systems. Parallax's
+**architectural target** is one binary plus a profile — refined into the three-profile family
+`local | server | cloud` in the
 [deployment architecture map](../architecture/deployment-architecture-map.md): `local` for the
 laptop, `server` for your own hardware, `cloud` adapting to the environment (which cloud,
 object-storage-backed retention, cloud-suited defaults) instead of making the operator design a
-deployment. You are not "managing Sentry"; you are running one thing that was designed to run in
-the cloud from the start.
+deployment. This is a target shape, not a verified simplicity or replacement claim.
 
-**Rung 3 — the big company.** Bugs are not fixed the day they fire; they are fixed next month or
-next quarter. That makes **retention economics** the product feature: object storage as the only
+**Rung 3 — the big company.** Bugs are not necessarily resolved the day they fire; they may be
+resolved next month or next quarter. That makes **retention economics** the product feature:
+object storage as the only
 copy, hot/cold tiering, pre-aggregation, evidence pinning so bundle-cited raw slices outlive TTL
 ([north-star §4](north-star-autonomous-fix-loop.md)). Storage scales horizontally on the
 GreptimeDB production profile with mandatory Turso metadata and no fallback engine; ingest/workers scale as
@@ -147,8 +147,8 @@ verbatim-in-substance:
 
 **Lifecycle 1 — the feature-development loop.** The developer runs Parallax locally as the
 telemetry server; their application sends logs, metrics, and traces over OTLP while they build.
-When a Rust test fails or behaves oddly, the coding agent pulls the run's telemetry and usually
-fixes it unaided — agents are smart enough once they can see the runtime facts. The Sentry
+When a Rust test fails or behaves oddly, a separate coding agent can pull the run's bounded
+telemetry context and assess the failure. Fix quality and agent outcomes are unverified. The Sentry
 protocol enters only where OTLP genuinely cannot express something. The operator's own example is
 the right one: **breadcrumbs**. OpenTelemetry has no first-class breadcrumb signal — an
 interaction trail can be approximated with log records (and span events are deprecated toward
@@ -169,13 +169,12 @@ multiplexer sometimes renders a dirty screen state. A bug like that is *hard to 
 agent but *easy to point at*: "I just saw it — check this `run_id`/`trace_id`." The agent pulls
 the debug information through CLI/MCP and diagnoses immediately — **if** the app followed good
 observability practice. When it didn't, the loop has a second gear that turns the bundle's
-`missing_evidence` report into action: the agent sees what instrumentation was absent, **adds the
-tracing/debug logging itself**, asks the human to reproduce the glitch once more ("just tell me
-when you see it"), and then extracts the now-complete evidence. Observe → notice the gap →
-instrument → reproduce → diagnose. This kills the most expensive loop in agent-assisted
-development — the blind "no, you still didn't fix it" iteration — because the agent stops
-guessing and starts measuring. It is also why `missing_evidence` is a load-bearing schema field,
-not a politeness: it is the machine-readable signal that drives gap-closing.
+`missing_evidence` report into a bounded handoff: a separate agent can identify absent
+instrumentation, while the developer decides whether and how to add it before reproducing the
+glitch. Observe → notice the gap → instrument → reproduce → diagnose. The evidence can reduce
+guessing, but agent diagnosis and any resulting code change remain unverified. It is also why
+`missing_evidence` is a load-bearing schema field, not a politeness: it is the machine-readable
+signal that drives gap-closing.
 
 **Lifecycle 4 — the trace-ID complaint loop (rung 2).** The startup has deployed its
 microservices with Parallax as the ecosystem's observability source of truth; everything emits
@@ -186,7 +185,8 @@ integration convention, see
 "can you give me the trace ID?" The developer hands it to the agent: "user complained about X,
 here is the trace ID — analyze it and figure out the fix." The agent walks the whole user
 workflow through the Parallax CLI/API — what the user did, which services the request crossed,
-where it failed — and proposes the fix or opens the PR.
+where it failed — and returns an assessment to the developer. Any code change remains outside
+Parallax and requires separate agent and human evaluation.
 
 Two boundaries inside this lifecycle, both operator-confirmed:
 
@@ -196,10 +196,10 @@ Two boundaries inside this lifecycle, both operator-confirmed:
   traces/logs/metrics/observability layer and never proxies raw database access (consistent with
   [production-db-evidence.md](../capture/production-db-evidence.md) and the access-surface
   rejection of generic SQL tools).
-- **The UI is the human trust surface for agent fixes.** The developer reviews the agent's PR,
-  opens the Parallax UI (a Sentry-like website over the same API), checks the charts, metrics,
-  and logs the fix claims to address, and concludes "the agent was right — this fix makes
-  sense." Human verification of agent work is a first-class workflow
+- **The UI is the human trust surface for proposed agent changes.** The developer reviews any
+  separate agent output, opens the Parallax UI (a Sentry-like website over the same API), checks
+  the charts, metrics, and logs relevant to the proposed change, and decides whether it makes
+  sense. Human verification of agent work is a first-class workflow
   ([simple-ui-v2.md](../architecture/simple-ui-v2.md)), which is also why `human_review` is a
   required field in the outcome records.
 
@@ -207,7 +207,7 @@ Two boundaries inside this lifecycle, both operator-confirmed:
 
 | Persona | What they get | Which rung |
 | --- | --- | --- |
-| **AI coding agent** (primary consumer) | Bounded, redacted, citable evidence bundles + dispatch wakes; enough context to propose or make the fix without a human gathering it | All |
+| **AI coding agent** (primary consumer) | Bounded, redacted, citable evidence context; enough runtime facts for a separate agent to assess a failure without a human gathering them | All |
 | **Developer building with agents** (primary first user) | Local-first evidence server for "what did my app just do"; their agent debugs with runtime facts instead of guesses | 1 |
 | **Team/SRE operating services** | Self-hosted, low-ops alternative to the five-tool stack; kubectl-style remote access; Sentry-grade issue workflow without 72 containers | 2 |
 | **Hard-boundary organization** (air-gap, sovereign, compliance) | The paying segment: data ownership, open schema, audit-grade evidence and outcome records ([monetization-and-paying-segment.md](../validation/monetization-and-paying-segment.md)) | 3 |
@@ -233,12 +233,12 @@ and 2 landed; plan **123 offline residual is DONE** (append-only outcomes + offl
 deferred; live value unproven) — [validation](../validation/2026-07-plan-123-fixer-offline/README.md).
 See [architecture/v1-build-plan.md](../architecture/v1-build-plan.md).
 
-Operator statement #4 (2026-06-11) adds: the **one-binary-plus-profile** deployment model
-(`--profile local|cloud`, cloud-adapted defaults) replacing the assemble-a-Sentry-Grafana-Loki
-stack ritual (§4); the **trace-ID complaint loop** as lifecycle 4, including the surface-the-
+Operator statement #4 (2026-06-11) adds: the **one-binary-plus-profile architectural target**
+(`--profile local|cloud`, cloud-adapted defaults) alongside the prior multi-system deployment
+model (§4); the **trace-ID complaint loop** as lifecycle 4, including the surface-the-
 trace-ID-to-users integration convention (§5); the operator-confirmed boundary that **production
 database state is a developer↔agent side-channel, never a Parallax feature** (§5); the **UI as
-the human trust surface** for verifying agent fixes (§5); and the priority ruling that **rungs 1
+the human trust surface** for verifying proposed agent changes (§5); and the priority ruling that **rungs 1
 and 2 are the first-priority audiences**, with rung-3 scalability as a design constraint rather
 than a build focus (§4).
 

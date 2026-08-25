@@ -3,8 +3,9 @@
 > **Historical source (not canonical).** Superseded by
 > [`competitors/README.md`](competitors/README.md) (wider, no-bias presence matrix)
 > and [code-reality-ledger.md](../code-reality-ledger.md) for Parallax cells.
-> Dated 2026-06-22; **many Parallax cells are stale** (e.g. MCP marked planned while
-> local-stdio MCP shipped; outcome loop marked ✅ while still unshipped). Do not
+> Dated 2026-06-22; **many Parallax cells are historical** (e.g. the original MCP
+> launch status and outcome-loop design). Local-stdio MCP is shipped; remote MCP is
+> deferred. Do not
 > cite this matrix for present-tense product claims — use `competitors/` + ledger.
 
 Research date: 2026-06-22
@@ -35,8 +36,8 @@ Broader, shallower coverage of 37+ tools lives in
 - **❌ No** — absent / not in category.
 - **—** — not applicable.
 
-"Parallax" column = the planned V1 target shape (no product yet), included as the reference design
-the others are measured against.
+"Parallax" column = the V1 target shape and current shipped/verified status, included as the
+reference design the others are measured against. This historical matrix is not a release ledger.
 
 ## At-a-Glance Identity
 
@@ -103,7 +104,7 @@ the others are measured against.
 
 | Capability | Parallax | Maple | SigNoz | OpenObserve | Coroot | Sentry | Gonzo |
 |---|---|---|---|---|---|---|---|
-| **Official MCP server** | ✅ planned | ✅ 10+ tools | ✅ ~38 tools | ✅ 140+ tools | ✅ 18 tools | ✅ ~20 tools | ❌ (Dstl8 only) |
+| **Official MCP server** | ✅ local-stdio shipped; remote deferred | ✅ 10+ tools | ✅ ~38 tools | ✅ 140+ tools | ✅ 18 tools | ✅ ~20 tools | ❌ (Dstl8 only) |
 | Self-hostable MCP | ✅ | ✅ | ✅ | 🟡 Enterprise | ✅ | ✅ stdio | — |
 | **MCP read-only / safe by default** | ✅ | 🟡 read-oriented | ❌ has write/delete | ❌ write/delete default | 🟡 1 mutating tool | 🟡 | — |
 | Per-user RBAC-scoped agent | 🟡 | ❌ | 🟡 | 🟡 RBAC | ✅ OAuth+RBAC | 🟡 | — |

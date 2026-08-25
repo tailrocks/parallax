@@ -7,9 +7,9 @@
 > observability stack** and the strongest open-source full-platform competitor.
 > On **breadth, the OSS component ecosystem, dashboards (its namesake), scale,
 > OTLP-native ingest, and Cloud maturity, Grafana wins decisively over pre-release
-> Parallax.** Parallax's honest edges are **self-host simplicity** (Grafana's
-> self-hosted Mimir+Loki+Tempo+Pyroscope+Grafana stack is a heavy distributed
-> system vs Parallax's single-binary target), **Apache-2.0 vs AGPLv3**,
+> Parallax.** Parallax's architectural deployment target is a single binary, while
+> Grafana's self-hosted Mimir+Loki+Tempo+Pyroscope+Grafana stack is distributed; any
+> operational advantage remains unmeasured. Other comparison axes are **Apache-2.0 vs AGPLv3**,
 > **native error-workflow** (Grafana has no Sentry-grade issue lifecycle), and
 > the *unproven* bundle + fix-outcome thesis.
 
@@ -97,14 +97,14 @@ Latest stable tags via the [github.com/grafana](https://github.com/grafana) rele
 - **Grafana Cloud:** managed SaaS (Free/Pro/Advanced/Enterprise), multi-region. **Self-host OSS:** the full Mimir+Loki+Tempo+Pyroscope+Grafana stack (AGPLv3) — a **distributed, multi-component system** (ingesters, distributors, queriers, compactors, store-gateways per signal) requiring real SRE. Grafana Enterprise adds RBAC/SSO/licensing on the viz layer.
 - **Parallax:** single-binary self-host target, local-first, offline/local deployment target (air-gap unverified), Apache-2.0.
 
-**Verdict:** on **self-host simplicity, Parallax's single-binary target beats Grafana's distributed OSS stack** (operating Mimir+Loki+Tempo+Pyroscope+Grafana in prod is heavy — this is a real Parallax wedge against self-hosted Grafana). On **managed SaaS scale/maturity, Grafana Cloud wins.**
+**Verdict:** Grafana's self-hosted OSS stack is distributed, while Parallax's single-binary deployment is an architectural target. Comparative self-host operations and simplicity are **unverified**. On **managed SaaS scale/maturity, Grafana Cloud wins.**
 
 ## Operational footprint
 
 - **Grafana Cloud:** zero backend ops. **Grafana self-host:** non-trivial — multiple stateful distributed services per signal; documented operational burden (ingester capacity, compaction, object-store config).
 - **Parallax:** self-hosted GreptimeDB + Turso + engine; single-binary target lowers burden.
 
-**Verdict:** **Grafana Cloud wins on zero-ops; Parallax's target wins on self-host simplicity** vs Grafana's distributed stack. Scoped.
+**Verdict:** **Grafana Cloud wins on zero-ops.** Parallax's lower-ops self-hosting is an architectural target; comparative simplicity remains unverified.
 
 ## Scalability & performance
 
@@ -182,7 +182,7 @@ Grafana Cloud pricing is **public** ([grafana.com/pricing](https://grafana.com/p
 
 ## Where Parallax honestly edges Grafana
 
-- **Self-host simplicity** — single-binary vs Grafana's distributed Mimir+Loki+Tempo+Pyroscope+Grafana stack. *(Real operational wedge; Parallax pre-release.)*
+- **Deployment shape** — Parallax targets a single binary vs Grafana's distributed Mimir+Loki+Tempo+Pyroscope+Grafana stack. *(Comparative operational benefit is unverified; Parallax pre-release.)*
 - **Native error-issue workflow** — Grafana has none; Parallax **ships** derived errors + fingerprint; fix-outcome offline residual plan **123 DONE**. *(Real Grafana gap; Parallax error derivation **shipped**; fix-outcome offline residual plan 123 DONE; live value unproven.)*
 - **License permissiveness** — Apache-2.0 vs AGPLv3 (network-use copyleft). *(Narrow but real.)*
 - **Bounded, redacted, agent-use (safety/value unproven) evidence bundle + fix-outcome loop** — unoccupied cells. *(Thesis, **unproven** — A1 gate.)*

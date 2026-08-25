@@ -36,7 +36,7 @@ The operator connects one of his real Rust services locally with OTLP/gRPC
 endpoint/protocol env vars for traces, logs, and metrics plus the
 resource-attribute conventions; a real panic appears as a grouped issue with
 trace + logs + metric window within ~5 seconds; `parallax issue context <id>`
-yields the bundle; his agent fixes the bug from that context alone; cold
+yields bounded context for a separate agent to assess; fix outcomes remain unverified; cold
 install → first evidence in under 15 minutes. Plus the lifecycle-3 loop: when evidence is missing, the bundle's
 `missing_evidence` + instrumentation suggestions tell the agent what to add.
 
@@ -174,7 +174,7 @@ encodings).
 | --- | --- |
 | Server + cloud profiles, tokens/auth, remote contexts | Outside shipped local profile; build-plan M3 is historical projection only ([deployment map](deployment-architecture-map.md) angles B/C) |
 | ~~Web UI~~ | **Moved into V1** by statement #7 (§2.5a); only the fix-review screen stays deferred with the fixer rails |
-| MCP adapter | Gated ([agent-access-surface.md](../decisions/agent-access-surface.md)); CLI is the V1 agent path |
+| MCP adapter | **Shipped local-stdio, read-only** ([agent-access-surface.md](../decisions/agent-access-surface.md)); remote MCP transport is deferred |
 | Sentry envelope ingest | **Shipped** compatibility adapter; retained here only because it was outside the original V1 launch boundary. |
 | Trigger/dispatch machinery, autonomy budgets, fixer rails, outcome ledger | Deferred nice-to-have (statement #5); schemas stay versioned |
 | Deploy-event ingestion, GitHub webhooks | GitHub webhook ingest subsequently shipped; this row records only the original V1 exclusion. |
