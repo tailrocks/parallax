@@ -136,7 +136,7 @@ minimal V1. **HyperDX wins** within its full-stack domain.
 - **HyperDX:** a **human full-stack monitoring platform** (logs/traces/replay for
   engineers). No bounded/redacted agent-context projection, no fix-outcome loop,
   no AI autofix→PR surfaced.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding
+- **Parallax's claim:** bounded, redacted, agent-use (safety/value unproven) evidence bundle for coding
   agents.
 
 > **Honest verdict:** HyperDX is **not** an agent-context engine. The two barely
@@ -197,7 +197,7 @@ See **Pricing & economics — RESOLVED pass 44** above. HyperDX Cloud is public
 
 1. **Production error events + fix-outcome loop** — HyperDX has neither as a
    managed artifact. *(Thesis, **unproven** — A1 gate.)*
-2. **Bounded, redacted, agent-safe evidence bundle** — HyperDX is a human
+2. **Bounded, redacted, agent-use (safety/value unproven) evidence bundle** — HyperDX is a human
    dashboard, not an agent-context projection. *(Thesis, **unproven** — A1 gate.)*
 3. **Sentry-envelope ingest lane** — HyperDX reads the Datadog format, not Sentry
    envelopes (Parallax ships `sentry_envelope.rs`).

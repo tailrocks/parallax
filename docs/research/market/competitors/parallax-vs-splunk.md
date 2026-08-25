@@ -72,14 +72,14 @@ Both OTLP/OTel-native. Splunk Obs Cloud is a closed enterprise full-stack SaaS; 
   - **Cisco AI Defense integration** — compliance with AI standards + threat detection for AI apps.
   - **AI Agent Governance + Federated Analytics** — managing autonomous agent behavior at scale.
   - Still **not** a bounded, read-only, redacted, *portable* agent-context projection.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven).
+- **Parallax's claim:** bounded, redacted, agent-use (safety/value unproven) evidence bundle for coding agents (**code-shipped**, A1 value unproven).
 
 **Honest verdict (pass-36, no-bias):** Splunk now **ships agent-obs (AI Agent Monitoring) AND autonomous investigation (Agentic Observability)** — two cells Parallax aspired to are occupied by Splunk. This is the **4th shipped autonomous investigator** in the set (after HolmesGPT, Causely, Honeycomb Auto-investigations) — Parallax's "context-engine, *not* the fixer" thesis now faces four shipped "fixers." Parallax's remaining wedge narrows to the bounded/redacted/portable production-incident bundle + outcome loop (A1 unproven).
 
 ## Architecture & deployment
 
 - **Splunk Obs Cloud:** **closed SaaS** (Cisco). The OTel Collector runs in your env but ships to Splunk. No OSS self-host of Obs Cloud (Splunk *Enterprise* self-hosts logs/SIEM separately, but that's a different product).
-- **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0.
+- **Parallax:** single-binary self-host target, local-first, offline/local deployment target (air-gap unverified), Apache-2.0.
 
 **Verdict:** on **self-host / data sovereignty, Parallax wins by design** (Splunk Obs Cloud is SaaS-only). On managed SaaS + enterprise maturity, Splunk wins.
 
@@ -137,7 +137,7 @@ Cisco-era enterprise contracts skew expensive (Splunk's historical reputation); 
 
 **Parallax pricing:** none public yet (pre-release).
 
-**Honest cost read:** Splunk skews enterprise-expensive (per-host tiers + Cisco enterprise positioning). Whether Parallax self-host is cheaper is benchmark-dependent/unmeasured, but cost is a real Parallax opening for price-sensitive buyers (Parallax pre-release/unproven).
+**Honest cost read:** Splunk skews enterprise-expensive (per-host tiers + Cisco enterprise positioning). Whether Parallax self-host is cheaper is benchmark-dependent and unmeasured; any cost opening remains a hypothesis while Parallax is pre-release.
 
 ## Where Splunk Obs Cloud plainly wins
 
@@ -153,7 +153,7 @@ Cisco-era enterprise contracts skew expensive (Splunk's historical reputation); 
 - **Self-host / data sovereignty** — Parallax designed for it; Obs Cloud is SaaS-only. *(Real.)*
 - **Cost** — Splunk enterprise-expensive; Parallax self-host targets a price opening. *(Real gap; Parallax pre-release.)*
 - **Sentry-envelope compatibility** — Splunk has none; Parallax ships it. *(Real.)*
-- **Bounded, redacted, agent-safe evidence bundle + fix-outcome loop** — Splunk has neither. *(Thesis, unproven, A1.)*
+- **Bounded, redacted, agent-use (safety/value unproven) evidence bundle + fix-outcome loop** — Splunk has neither. *(Thesis, unproven, A1.)*
 
 > **Honest summary:** Splunk Obs Cloud is the cleanest OTel-native closed incumbent (100% OTel + NoSample tracing) — far ahead of pre-release Parallax on OTel-maturity, breadth, scale, security/SIEM, compliance. Parallax's defensible delta is **openness/cost/self-host** (Apache vs closed Cisco SaaS; Splunk is enterprise-expensive) + **Sentry-envelope** + the **bounded+outcome bundle** (A1 unproven). Notably: on the OTLP-native axis, Splunk is at parity with Parallax's design (both truly native) — Parallax cannot claim OTel-native as a wedge vs Splunk.
 

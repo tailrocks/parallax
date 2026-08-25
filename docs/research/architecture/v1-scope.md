@@ -36,7 +36,7 @@ The operator connects one of his real Rust services locally with OTLP/gRPC
 endpoint/protocol env vars for traces, logs, and metrics plus the
 resource-attribute conventions; a real panic appears as a grouped issue with
 trace + logs + metric window within ~5 seconds; `parallax issue context <id>`
-yields the bundle; his agent fixes the bug from that context alone; cold
+yields bounded context for a separate agent to assess; fix outcomes remain unverified; cold
 install → first evidence in under 15 minutes. Plus the lifecycle-3 loop: when evidence is missing, the bundle's
 `missing_evidence` + instrumentation suggestions tell the agent what to add.
 
@@ -63,7 +63,7 @@ Statement #7 adds the stack-shaped scenarios V1 must pass on the operator's real
 
 | Item | V1 answer |
 | --- | --- |
-| Install | `brew install tailrocks/tap/parallax` and a static binary download; `cargo install` for Rust users. One binary. |
+| Install | Preview only: `brew tap tailrocks/parallax && brew install parallax@preview`, latest-preview archives, or a local cargo checkout. Always resolve the latest preview; do not pin a preview version. One binary. |
 | GreptimeDB acquisition | Self-sufficient by default: `parallax serve` detects `greptime` on PATH or in `~/.parallax/bin/`; if absent, downloads the **pinned** release binary (checksum-verified) into `~/.parallax/bin/` — no Docker or fallback. `storage.mode = "external"` connects to a supplied GreptimeDB URL. GreptimeDB + Turso are mandatory; the in-memory adapter is compiled only for test support and is unreachable from product config. |
 | Offline | Everything works with zero network after install (the only network feature is the optional engine download). No phone-home, no telemetry-about-telemetry, no account. |
 | Data layout | `~/.parallax/`: `bin/` (managed engine), `greptime-data/`, `meta.db` (Turso), `spool/` (ingest WAL), `config.toml`. One directory to back up or delete. |
@@ -174,7 +174,7 @@ encodings).
 | --- | --- |
 | Server + cloud profiles, tokens/auth, remote contexts | Outside shipped local profile; build-plan M3 is historical projection only ([deployment map](deployment-architecture-map.md) angles B/C) |
 | ~~Web UI~~ | **Moved into V1** by statement #7 (§2.5a); only the fix-review screen stays deferred with the fixer rails |
-| MCP adapter | Gated ([agent-access-surface.md](../decisions/agent-access-surface.md)); CLI is the V1 agent path |
+| MCP adapter | **Shipped local-stdio, read-only** ([agent-access-surface.md](../decisions/agent-access-surface.md)); remote MCP transport is deferred |
 | Sentry envelope ingest | **Shipped** compatibility adapter; retained here only because it was outside the original V1 launch boundary. |
 | Trigger/dispatch machinery, autonomy budgets, fixer rails, outcome ledger | Deferred nice-to-have (statement #5); schemas stay versioned |
 | Deploy-event ingestion, GitHub webhooks | GitHub webhook ingest subsequently shipped; this row records only the original V1 exclusion. |
@@ -209,8 +209,9 @@ are closed and no longer own work.
    release.
 2. **Engine supervision**: spawn/health/restart of `greptime standalone`, pinned version,
    checksum-verified auto-download, PATH/brew detection. (Top V1 risk — first M1 spike.)
-3. **Packaging**: brew tap (`tailrocks/tap`), static release binaries (macOS arm64 first — the
-   operator's machine — then Linux x86_64), `cargo install` path.
+3. **Packaging**: preview-only brew tap (`tailrocks/parallax`), latest-preview archives (macOS
+   arm64 first — the operator's machine — then Linux x86_64), and a local cargo checkout. Always
+   resolve the latest preview; do not pin a preview version.
 4. **Fixtures→SDK tests**: integration tests driven by real `tracing` + `opentelemetry-otlp`
    emission (replacing hand-written OTLP JSON), which doubles as the A1 overlay generator.
 5. **Docs** from §2.8.

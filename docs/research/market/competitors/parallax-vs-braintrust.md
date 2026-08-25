@@ -67,14 +67,14 @@ Both touch "evaluation" of AI behavior, but **Braintrust = LLM-app eval/experime
 ## AI-native / agent-context story
 
 - **Braintrust's position:** an **LLM-app eval/experiment tool** (improve your LLM app via evals/experiments) + **Loop** (AI). A human dev-eval tool; **not a bounded, read-only, redacted agent-context projection for production incidents.**
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven gate).
+- **Parallax's claim:** bounded, redacted, agent-use (safety/value unproven) evidence bundle for coding agents (**code-shipped**, A1 value unproven gate).
 
 **Honest verdict:** Braintrust and Parallax serve different jobs even at the "AI evaluation" overlap — Braintrust = LLM-app eval/experimentation; Parallax = production-incident agent context. Parallax's differentiated bundle is **unproven (A1)**. Note: Parallax's **A1 gate (does a bundle beat raw context for agent fix outcomes?) is itself an eval question — Braintrust's eval tooling is exactly the kind of harness that could measure it.** (Useful cross-reference, not a competitive overlap.)
 
 ## Architecture & deployment
 
 - **Braintrust:** **SaaS** (braintrust.dev); OSS SDK only — core platform is not self-hostable OSS.
-- **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0.
+- **Parallax:** single-binary self-host target, local-first, offline/local deployment target (air-gap unverified), Apache-2.0.
 
 **Verdict:** on **self-host / openness, Parallax wins by design** (Braintrust core is SaaS; only the SDK is OSS).
 
@@ -118,7 +118,7 @@ Source: live [braintrust.dev/pricing](https://www.braintrust.dev/pricing) (2026-
 - **Production error events + fix-outcome loop** — Braintrust has neither. *(Real: error events **shipped**; fix-outcome offline residual plan 123 DONE; live value **unproven**.)*
 - **Openness** — Apache-2.0 OSS core vs Braintrust's closed core (OSS SDK only). *(Real.)*
 - **Sentry-envelope compatibility** — Braintrust has none; Parallax ships it. *(Real.)*
-- **Bounded, redacted, agent-safe evidence bundle** — Braintrust has none. *(Thesis, unproven, A1 — and Braintrust's eval tooling could help *measure* the A1 gate.)*
+- **Bounded, redacted, agent-use (safety/value unproven) evidence bundle** — Braintrust has none. *(Thesis, unproven, A1 — and Braintrust's eval tooling could help *measure* the A1 gate.)*
 
 > **Honest summary:** Braintrust and Parallax **barely overlap** — Braintrust is the **eval-first LLM eval/experiment specialist** (datasets/scorers/experiments/playground, the strongest on that axis); Parallax is a production-incident evidence engine. On eval/experiment tooling Braintrust is far ahead and Parallax doesn't compete there. Parallax's defensible delta is its **production-incident + agent-bundle** domain (where Braintrust doesn't play) + **Apache-OSS-core** + **Sentry-envelope**. Cross-reference: Parallax's **A1 gate is an eval question — Braintrust-class eval tooling is exactly how to measure whether a Parallax bundle beats raw context for agent fix outcomes.** Not direct competitors; potentially complementary tooling.
 

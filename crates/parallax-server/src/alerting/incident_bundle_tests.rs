@@ -1,7 +1,17 @@
 use super::delivery::{DeliveryEventType, NotificationContext, webhook_payload_json};
-use super::incident_bundle::{FAIL_INCIDENT_BUNDLE, assemble_incident_hash};
+use super::incident_bundle::{IncidentAssembly, assemble_incident_hash};
 use parallax_metadata::AlertRuleRecord;
-use std::sync::atomic::Ordering;
+
+fn assembly(rule: &AlertRuleRecord, fail_assembly: bool) -> IncidentAssembly<'_> {
+    IncidentAssembly {
+        rule,
+        incident_id: "inc-1",
+        group_key: "checkout",
+        last_value: Some(0.4),
+        now_nanos: 10_000,
+        fail_assembly,
+    }
+}
 
 fn rule() -> AlertRuleRecord {
     AlertRuleRecord {
@@ -34,17 +44,15 @@ fn rule() -> AlertRuleRecord {
 #[test]
 fn assemble_hash_is_stable() {
     let rule = rule();
-    let a = assemble_incident_hash(&rule, "inc-1", "checkout", Some(0.4), 10_000).unwrap();
-    let b = assemble_incident_hash(&rule, "inc-1", "checkout", Some(0.4), 10_000).unwrap();
+    let a = assemble_incident_hash(&assembly(&rule, false)).unwrap();
+    let b = assemble_incident_hash(&assembly(&rule, false)).unwrap();
     assert_eq!(a.0, b.0);
     assert!(!a.0.is_empty());
 }
 
 #[test]
 fn injected_failure_does_not_yield_hash() {
-    FAIL_INCIDENT_BUNDLE.store(true, Ordering::SeqCst);
-    let result = assemble_incident_hash(&rule(), "inc-1", "checkout", Some(0.4), 10_000);
-    FAIL_INCIDENT_BUNDLE.store(false, Ordering::SeqCst);
+    let result = assemble_incident_hash(&assembly(&rule(), true));
     assert_eq!(result, Err("injected assembly failure".into()));
 }
 
@@ -78,8 +86,7 @@ fn webhook_payload_without_bundle_carries_bundle_error() {
 #[test]
 fn webhook_payload_never_leaks_canary_secret() {
     let canary = "CANARY_TOKEN_XYZ";
-    let (hash, top, adjacency) =
-        assemble_incident_hash(&rule(), "inc-1", "checkout", Some(0.4), 10_000).unwrap();
+    let (hash, top, adjacency) = assemble_incident_hash(&assembly(&rule(), false)).unwrap();
     let adj: Vec<String> = serde_json::from_str(&adjacency).unwrap();
     let ctx = NotificationContext {
         rule_id: "r1",

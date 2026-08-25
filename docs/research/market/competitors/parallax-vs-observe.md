@@ -65,14 +65,14 @@ Both build a **relationship/evidence graph** over telemetry and pursue an **agen
 ## AI-native / agent-context story — the direct overlap
 
 - **Observe's AI (pass 47 re-verify on [AI SRE product page](https://www.observeinc.com/product/ai-sre)):** **AI SRE** (chat RCA, recommended actions, monitors) + **MCP Server** — **troubleshoot from coding agents (Cursor, Claude, Augment)** via Observe MCP; custom agentic workflows; RBAC + SOC2/ISO/GDPR claims. Knowledge Graph grounds investigations. **Direct shipped overlap** with Parallax’s “context for coding agents” thesis — and **MCP-to-Cursor/Claude is a closer collision** than chat-only AI SRE.
-- **Parallax's claim:** bounded, redacted, agent-safe **portable** evidence bundle for coding agents (**code-shipped**, A1 value unproven).
+- **Parallax's claim:** bounded, redacted, agent-use (safety/value unproven) **portable** evidence bundle for coding agents (**code-shipped**, A1 value unproven).
 
 **Honest verdict (no-bias):** Observe **ships more agent surface today** (AI SRE + **MCP for coding agents** + Knowledge Graph) than pre-release Parallax. On shipped agent capability, **Observe leads.** Parallax residual = **portable/versioned/redacted bundle + offline fix-outcome residual** — Observe MCP is **live SaaS grounding**, not a portable redacted dossier. **A1 unproven** either way; burden on Parallax.
 
 ## Architecture & deployment
 
 - **Observe:** **closed SaaS** (now **Snowflake**); data-lake on cloud storage. No OSS self-host.
-- **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0.
+- **Parallax:** single-binary self-host target, local-first, offline/local deployment target (air-gap unverified), Apache-2.0.
 
 **Verdict:** on **self-host / data sovereignty, Parallax wins by design** (Observe is closed SaaS, Snowflake-coupled). On managed SaaS + data-platform scale, Observe wins.
 

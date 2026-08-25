@@ -13,8 +13,8 @@ context.
 The current working thesis is narrower than generic AI observability and more
 specific than a CI debugging tool:
 
-> Build a Sentry-compatible, OpenTelemetry-native execution context system that
-> is simpler and cheaper to self-host than Sentry, while giving humans and
+> Build a Sentry-compatible, OpenTelemetry-native execution context system for
+> self-hosted investigation, while giving humans and
 > coding agents the surrounding logs, traces, metrics, releases, CLI runs,
 > agent actions, and runtime context needed to fix software failures.
 
@@ -112,5 +112,5 @@ What is already on the critical path (see
    (capture adapters still deepen under active plans).
 6. Bounded, redacted evidence bundles for humans and coding agents (bundle
    **value** vs raw context remains the open A1 gate).
-7. Keep self-host ops much simpler than self-hosted Sentry; prove with
-   measurement, not slogans.
+7. Measure self-host operations against relevant alternatives before making
+   simplicity or cost claims; no comparative result is established yet.

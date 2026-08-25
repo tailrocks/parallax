@@ -105,7 +105,7 @@ envelopes are a secondary path).
   pinned this pass — Django default SQLite / PostgreSQL for scale; verify on
   bugsink.com/docs)*. Built explicitly to self-host.
 - **Parallax:** Rust single-binary supervising GreptimeDB + embedded Turso
-  metadata; Apache-2.0; air-gap-capable.
+  metadata; Apache-2.0; offline/local deployment target (air-gap unverified).
 
 **Verdict:** **Both self-host-first**, both simple-ish deploy (Docker / single
 binary). Bugsink's "2-minute install" is a genuine simplicity strength (the UX bar
@@ -172,7 +172,7 @@ Vendor markets **“80% cheaper at scale”** vs Sentry Hosted (claim, not indep
 - **Full-signal OTLP breadth** — traces/logs/metrics; Bugsink has none. *(Real, by design.)*
 - **Error→bundle→outcome loop** — Bugsink is classic error tracking (no outcome);
   Parallax targets it. *(Thesis, **unproven** — A1.)*
-- **Bounded, redacted, agent-safe bundle** — Bugsink has no agent-context
+- **Bounded, redacted, agent-use (safety/value unproven) bundle** — Bugsink has no agent-context
   surface. *(Thesis, **unproven** — A1.)*
 - **Apache-2.0 (no `ee/` paywall)** vs Bugsink open-core. *(Real.)*
 - **Rust + GreptimeDB** substrate. *(Design choice, unproven vs Bugsink's stack.)*

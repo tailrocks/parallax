@@ -13,6 +13,16 @@ use crate::alerting::{
     unique_delivery_key,
 };
 
+use super::super::incident_bundle::IncidentAssembly;
+
+/// Shared state for one evaluation tick: the metadata store handle, the tick
+/// timestamp, and the test-only bundle failure injection flag.
+pub(super) struct TickScope<'a> {
+    pub(super) store: &'a TursoMetadataStore,
+    pub(super) now_nanos: u128,
+    pub(super) fail_bundle_assembly: bool,
+}
+
 fn destination_ids(rule: &AlertRuleRecord) -> Vec<String> {
     serde_json::from_str::<Vec<String>>(&rule.destination_ids).unwrap_or_default()
 }
@@ -60,13 +70,14 @@ async fn enqueue_deliveries(
 }
 
 pub(super) async fn evaluate_group(
-    store: &TursoMetadataStore,
+    scope: &TickScope<'_>,
     rule: &AlertRuleRecord,
     config: &RuleEvalConfig,
     group: GroupMeasurement,
-    now_nanos: u128,
     report: &mut TickReport,
 ) -> anyhow::Result<()> {
+    let store = scope.store;
+    let now_nanos = scope.now_nanos;
     report.groups_evaluated += 1;
     let now_secs = nanos_to_unix_secs(now_nanos);
     let prev = store
@@ -103,7 +114,7 @@ pub(super) async fn evaluate_group(
             error: None,
         })
         .await?;
-    apply_transition(store, rule, &group.group_key, &outcome, now_nanos, report).await
+    apply_transition(scope, rule, &group.group_key, &outcome, report).await
 }
 
 fn new_incident(
@@ -137,13 +148,14 @@ fn new_incident(
 }
 
 async fn open_incident(
-    store: &TursoMetadataStore,
+    scope: &TickScope<'_>,
     rule: &AlertRuleRecord,
     group_key: &str,
     outcome: &EvaluationOutcome,
-    now_nanos: u128,
     report: &mut TickReport,
 ) -> anyhow::Result<()> {
+    let store = scope.store;
+    let now_nanos = scope.now_nanos;
     let incident = new_incident(rule, group_key, outcome, now_nanos);
     if store.alert_incident_open(&incident).await? {
         report.incidents_opened += 1;
@@ -158,11 +170,14 @@ async fn open_incident(
         .await?;
         super::super::incident_bundle::persist_incident_bundle(
             store,
-            rule,
-            &incident.id,
-            group_key,
-            outcome.effective_value,
-            now_nanos,
+            IncidentAssembly {
+                rule,
+                incident_id: &incident.id,
+                group_key,
+                last_value: outcome.effective_value,
+                now_nanos,
+                fail_assembly: scope.fail_bundle_assembly,
+            },
         )
         .await;
     }
@@ -170,17 +185,18 @@ async fn open_incident(
 }
 
 async fn apply_transition(
-    store: &TursoMetadataStore,
+    scope: &TickScope<'_>,
     rule: &AlertRuleRecord,
     group_key: &str,
     outcome: &EvaluationOutcome,
-    now_nanos: u128,
     report: &mut TickReport,
 ) -> anyhow::Result<()> {
+    let store = scope.store;
+    let now_nanos = scope.now_nanos;
     match outcome.transition {
         AlertTransition::None => Ok(()),
         AlertTransition::OpenIncident => {
-            open_incident(store, rule, group_key, outcome, now_nanos, report).await
+            open_incident(scope, rule, group_key, outcome, report).await
         }
         AlertTransition::ResolveIncident => {
             if let Some(incident_id) = store
@@ -217,11 +233,14 @@ async fn apply_transition(
                 if !super::super::incident_bundle::should_reuse_bundle(&incident) {
                     super::super::incident_bundle::persist_incident_bundle(
                         store,
-                        rule,
-                        &incident.id,
-                        group_key,
-                        outcome.effective_value,
-                        now_nanos,
+                        IncidentAssembly {
+                            rule,
+                            incident_id: &incident.id,
+                            group_key,
+                            last_value: outcome.effective_value,
+                            now_nanos,
+                            fail_assembly: scope.fail_bundle_assembly,
+                        },
                     )
                     .await;
                 }

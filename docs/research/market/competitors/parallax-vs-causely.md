@@ -71,7 +71,7 @@ backend**.
   tokens/tool-calls/better RCA. This is the **strongest shipped "context layer
   for production agents"** in the set — directly competitive with Parallax's
   bounded-bundle-for-agents idea.
-- **Parallax's claim:** a bounded, redacted, agent-safe *evidence bundle* served
+- **Parallax's claim:** a bounded, redacted, agent-use (safety/value unproven) *evidence bundle* served
   to coding agents, **derived from telemetry Parallax owns** (incl. Sentry
   envelopes + error events + outcome loop).
 
@@ -131,7 +131,7 @@ a telemetry store + minimal UI. Different surfaces.
 1. **Telemetry ownership** — Parallax ingests/owns OTLP + Sentry envelopes +
    derives error events; Causely sees only what you point it at (no Sentry-derived
    errors, no outcome data). *(Real scope difference.)*
-2. **Bounded, redacted, agent-safe evidence bundle** — Causely's MCP is a live
+2. **Bounded, redacted, agent-use (safety/value unproven) evidence bundle** — Causely's MCP is a live
    causal-model query surface, not a portable/redacted/versioned artifact.
    *(Thesis, **unproven** — A1 gate.)*
 3. **Fix-outcome loop** — Causely reasons to a cause; it does not track

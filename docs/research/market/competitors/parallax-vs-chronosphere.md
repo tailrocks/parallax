@@ -71,14 +71,14 @@ Both touch a **cost** story, but Chronosphere is a closed metrics-scale/cost-con
 ## AI-native / agent-context story
 
 - **Chronosphere's AI (pass 46 + 49 + 56 + 59 re-check):** AI-assisted query/detection + **Control Plane** cost/data-volume governance. **Post-PANW:** acq press (2026-01-29) still the primary public wording for **“planned integration”** of **Cortex® AgentiX™** × Chronosphere. **Pass 56/59:** Cortex AgentiX platform itself has arrived on PANW Cortex (SOC/agentic); **Chronosphere-specific AgentiX product docs still absent**. **Pass 59:** PANW Q2 FY26 investor remarks say they are **“ready to put our integration plans into action with … Chronosphere”** — still **plans**, not GA product docs. Treat Chronosphere×AgentiX as **still planned / not verified GA as an observability product surface** — AgentiX GA on Cortex ≠ Chronosphere integration GA.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven).
+- **Parallax's claim:** bounded, redacted, agent-use (safety/value unproven) evidence bundle for coding agents (**code-shipped**, A1 value unproven).
 
 **Honest verdict:** Proven Chronosphere edge remains **metrics scale + cost control**. **If AgentiX×Chronosphere ships**, another enterprise autonomous remediation surface — pressure on “context-engine-not-the-fixer,” not Parallax uniqueness. Bundle value **A1-unproven**.
 
 ## Architecture & deployment
 
 - **Chronosphere:** **closed SaaS** under **Palo Alto Networks** (post-2026-01-29). Telemetry Pipeline data plane is **BYOC/hybrid** (processing in your env; management plane hosted); Observability Platform backend remains vendor SaaS. No OSS self-host of the store.
-- **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0.
+- **Parallax:** single-binary self-host target, local-first, offline/local deployment target (air-gap unverified), Apache-2.0.
 
 **Verdict:** on **self-host / data sovereignty, Parallax wins by design** (Chronosphere is closed SaaS under a security-incumbent parent). On managed SaaS + enterprise scale + security-portfolio bundling potential, Chronosphere/PANW wins.
 

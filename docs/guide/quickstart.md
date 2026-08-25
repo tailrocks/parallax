@@ -13,6 +13,15 @@ brew install parallax@preview
 parallax --version
 ```
 
+For an existing preview install, refresh the tap and upgrade the rolling
+preview formula:
+
+```sh
+brew update
+brew upgrade parallax@preview
+parallax --version
+```
+
 For local development from the repository:
 
 ```sh
@@ -89,8 +98,9 @@ fn init_telemetry() -> anyhow::Result<()> {
         )
         .with_resource(resource)
         .build();
-    // Bridge `tracing` into both signals; see the conventions page for the
-    // panic hook and the tracing-opentelemetry layer.
+    // This constructs the trace and log exporters. Register the logger
+    // provider and bridge `tracing` in the complete stack wiring below; this
+    // compact snippet intentionally omits subscriber/lifecycle setup.
     let _ = logger_provider;
     Ok(())
 }

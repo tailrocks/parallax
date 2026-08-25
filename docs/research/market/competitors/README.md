@@ -140,7 +140,7 @@ Extended slice (pass **49** AI-column sweep — incumbents + layers; full depth 
 | LLM / agent-obs product | ✅ Agent Obs + GenAI semconv | ✅ Preflight + Agent Platform | ✅ AI Observability | ✅ AI Agent Monitoring | 🟡 | 🟡 | 🟡 | — | — | ✅ LLM-call local | ✅ native LangChain | ✅ AI Engineering | — |
 | “Bounded agent context” language | ❌ | ❌ | ✅ **named** (Perform 2026) | ❌ | 🟡 Knowledge Graph | ❌ | ❌ | ❌ | 🟡 causal ground | 🟡 live bundle | ❌ | ❌ | — |
 
-> **Honest read:** on every *shipped* AI axis above, multiple competitors are ahead of pre-release Parallax. Parallax's only differentiated AI claim is the *portable, redacted, versioned production-incident bundle* as a typed artifact — **code-shipped**, value **unproven (A1)**. Do not read a 🏗 cell as parity with a shipped competitor feature.
+> **Honest read:** on every *shipped* AI axis above, multiple competitors are ahead of pre-release Parallax, and several competitors already expose MCP. Parallax must not claim MCP presence as unique. Its proposed distinction is a *portable, redacted, versioned production-incident bundle* as a typed evidence projection — **code-shipped**, value **unproven (A1)**. Do not read a 🏗 cell as parity with a shipped competitor feature.
 >
 > **Chronosphere×Cortex AgentiX remains not GA** (pass 49 re-check of PANW press — “planned integration,” no product GA docs). **Odigos** AI-SRE marketing ≠ own store/backend.
 

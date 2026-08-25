@@ -12,7 +12,7 @@
 > workflow, SDK breadth, maturity, AI debugging (Seer), profiling, replay, and
 > compliance, Sentry is far ahead of pre-release Parallax.** Parallax's honest
 > edges are OTLP-native ingest (Sentry is not), a single-binary self-host that is
-> genuinely simpler than Sentry's ~20–40-container stack, Apache-2.0 vs
+> architecturally different from Sentry's ~20–40-container stack, Apache-2.0 vs
 > source-available FSL, and the *code-shipped, A1-unproven* evidence-bundle + *offline residual* fix-outcome thesis.
 
 ## What each product is
@@ -99,18 +99,18 @@ These overlap most directly on **error tracking + tracing**. Sentry is a broad p
 ## AI-native / agent-context story
 
 - **Sentry's AI (Seer, shipped, additional cost):** Root Cause Analysis, **Fix Generation (Autofix → creates a branch + opens a PR with the fix)**, Error Prediction, AI Code Review, and a **Seer Agent** (Jan 2026: expanded into local-development + code-review debugging). Pricing confirmed: **$40 / active contributor / month, unlimited usage**, add-on for any paid plan (Team/Business/Enterprise) — [BusinessWire announcement](https://www.businesswire.com/news/home/20260127739891/en/Sentry-Adds-Local-Development-and-Code-Review-Debugging-to-Seer) (2026-01) + [sentry.io/product/seer](https://sentry.io/product/seer/). This is shipped, production AI debugging — directly overlapping Parallax's "context → fix" thesis.
-- **Parallax's AI claim (code-shipped, A1 value unproven):** a bounded, redacted, agent-safe evidence bundle served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) — a *context engine*, not a chat/autofix tool.
+- **Parallax's AI claim (code-shipped, A1 value unproven):** a bounded, redacted, agent-use (safety/value unproven) evidence bundle served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) — a *context engine*, not a chat/autofix tool.
 
-**Honest verdict:** Seer already does much of "context → root cause → proposed fix → PR" today, from SaaS, at scale. On every *shipped* AI axis, **Sentry is ahead.** Parallax's differentiated claim is the bounded/redacted/agent-safe bundle — unoccupied but **unproven** (A1 gate). The burden of proof that a Parallax bundle beats Seer-as-context for agent fix quality is on Parallax and unmet. Sentry's Seer is a real competitive pressure on the A1 thesis, written plainly.
+**Honest verdict:** Seer already does much of "context → root cause → proposed fix → PR" today, from SaaS, at scale. On every *shipped* AI axis, **Sentry is ahead.** Parallax's differentiated claim is the bounded/redacted/agent-use (safety/value unproven) bundle — unoccupied but **unproven** (A1 gate). The burden of proof that a Parallax bundle beats Seer-as-context for agent fix quality is on Parallax and unmet. Sentry's Seer is a real competitive pressure on the A1 thesis, written plainly.
 
 A Sentry weakness here: Seer is a SaaS, additional-cost, human-facing AI tool — **not a self-hosted, read-only, bounded agent-context projection.** That cell stays unoccupied. But "unoccupied" ≠ "valuable."
 
 ## Architecture & deployment model
 
 - **Sentry:** SaaS primary (sentry.io, multi-region, data-residency on Enterprise); **self-hosted** via `getsentry/self-hosted` (single-node Docker Compose; **pass 44 latest `26.7.0`** published **2026-07-16** on [getsentry/self-hosted/releases](https://github.com/getsentry/self-hosted/releases) — supersedes pass-3 pin **26.4.2**; legacy note's **26.6.0** existed as an intermediate tag and is no longer latest). Architecture: **Relay → Kafka → Snuba → ClickHouse** + Postgres/Redis/Memcached + Celery workers — ~20–40 containers, ~16–32 GB RAM locally (legacy internal measurement; heavy operator burden, widely corroborated). Relay can run on-prem as an ingest proxy. FSL source-available.
-- **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0. Designed to be *much* simpler to self-host than Sentry.
+- **Parallax:** single-binary self-host target, local-first, Apache-2.0. Its operational simplicity and air-gap suitability are targets, not verified comparative results.
 
-**Verdict:** on **self-host simplicity, local-first loop, and air-gap, Parallax's target beats Sentry** (Sentry self-host is notoriously heavy — this is Parallax's explicit "simpler than self-hosted Sentry" wedge, and it is *real in design*, though Parallax is pre-release). On **managed SaaS scale/multi-region, Sentry wins; Parallax has no SaaS.**
+**Verdict:** Parallax has a local-first, self-hosted design target, while Sentry has a mature self-host and managed-SaaS offering. Comparative simplicity, cost, and air-gap capability have not been verified for Parallax. On **managed SaaS scale/multi-region, Sentry wins; Parallax has no SaaS.**
 
 ## Operational footprint
 
@@ -138,7 +138,7 @@ A Sentry weakness here: Seer is a SaaS, additional-cost, human-facing AI tool �
 - **Sentry:** **SOC 2, ISO 27001, HIPAA (BAA),** data residency, SSO/SCIM — on Business/Enterprise. Mature.
 - **Parallax:** no compliance certifications yet (pre-release). Redaction designed but unattested. Total data ownership via self-host.
 
-**Verdict:** on **compliance certifications, Sentry wins decisively.** On **data ownership/sovereignty (self-host, air-gap), Parallax wins by design.**
+**Verdict:** on **compliance certifications, Sentry wins decisively.** Parallax targets self-hosted data ownership, but its air-gap capability and comparative sovereignty posture are unverified.
 
 ## Openness, licensing & vendor lock-in
 
@@ -196,9 +196,9 @@ Sentry's entry is cheap (free / $26) and the per-error unit is small, but volume
 ## Where Parallax honestly edges Sentry
 
 - **OTLP-native ingest (incl. metrics)** — Sentry ingests OTLP traces+logs but **not metrics**; Parallax is OTLP-native across all three. *(Real, current Sentry gap.)*
-- **Self-host simplicity** — single-binary vs Sentry's ~20–40-container self-host stack. *(Real in design; Parallax pre-release. This is the explicit "simpler than self-hosted Sentry" wedge.)*
+- **Self-host shape** — a single-binary target versus Sentry's documented self-host stack. This is an architectural difference, not proof that Parallax is simpler or cheaper.
 - **Openness / lock-in** — Apache-2.0 OTLP-native vs Sentry's FSL proprietary-format. *(Real.)*
-- **Data sovereignty / air-gap** — Parallax designed for it; Sentry self-host possible but heavy, SaaS can't.
+- **Data sovereignty / air-gap** — Parallax targets local deployment, but air-gap capability is unverified; Sentry self-host is possible while its SaaS is networked.
 - **Fix-outcome loop + bounded/redacted agent bundle** — unoccupied cells. *(Thesis, **unproven** — A1 gate. Seer already covers much of context→fix from SaaS today.)*
 
 ## Open questions / what measurement would settle

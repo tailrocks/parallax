@@ -1,8 +1,10 @@
 # Agent how-to: point your coding agent at Parallax
 
-Parallax's V1 agent surface is the CLI. No MCP server yet (gated decision —
-see [agent-access-surface.md](../research/decisions/agent-access-surface.md));
-any agent that can run shell commands already has everything it needs.
+Parallax's V1 agent surfaces are the CLI and a local-stdio MCP adapter. The MCP
+adapter is read-only and exposes only bounded evidence lookups; it has no write,
+shell, SQL, deploy, rollback, or management tools. Remote MCP transport is not
+shipped. Any agent that can run shell commands can use the CLI; MCP requires a
+local `parallax serve` and explicit `--allow-local-stdio` trust.
 
 ## The one command that matters
 
@@ -29,10 +31,11 @@ parallax run bundle <run_id> --format json
 parallax run agent <run_id> --format json
 ```
 
-Bundle JSON is the server's canonical bytes (schema `bundle-v1`); the hash is
-already a field inside that object — do not re-pretty-print it. `run agent`
-returns the run-scoped agent-session projection (steps, token totals) for
-tool/shell reconstruction. Markdown remains the default for human eyes.
+Bundle JSON is the server's canonical `bundle-v2` envelope. Its immutable
+`data` field carries the unchanged `bundle-v1` dossier, and the hash is already
+a field inside the envelope — do not re-pretty-print it. `run agent` returns
+the run-scoped agent-session projection (steps, token totals) for tool/shell
+reconstruction. Markdown remains the default for human eyes.
 
 A working loop to give your agent:
 

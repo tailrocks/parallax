@@ -77,7 +77,8 @@ dependency diagnostics.
 
 ## SDK / TLS
 
-`rmcp` 2.2.0 (latest stable rechecked 2026-07-17) with
+`rmcp` 2.2.0 (compatibility-pinned; current tested version for this surface,
+rechecked 2026-07-17) with
 `default-features = false` and only `server`, `transport-io`,
 `macros`. No `reqwest`/`rustls` feature of the SDK is enabled. HTTP to GraphQL
 uses the workspace `reqwest` with `native-tls-vendored`.

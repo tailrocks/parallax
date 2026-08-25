@@ -238,7 +238,7 @@ marketing than many OSS obs peers; record as competitor strength.
   published calculator when available.
 - **OTLP gRPC:** Traceway README emphasizes HTTP; confirm gRPC absence.
 - **MCP tool list / mutability:** re-verify against `/product/mcp` + source when
-  expanding agent-safety comparison (Coroot-class safety model?).
+  expanding agent-use comparison (Coroot-class safety model?).
 
 ## Sources (accessed 2026-07-17; pass 50)
 

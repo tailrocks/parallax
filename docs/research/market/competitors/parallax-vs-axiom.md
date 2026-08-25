@@ -74,14 +74,14 @@ Both OTLP/OTel-native. Axiom is a closed serverless log/event-analytics SaaS; Pa
 ## AI-native / agent-context story
 
 - **Axiom (pass-34 + pass-63):** dedicated **AI Engineering** product — agent-workflow tracing, cost/latency, prompt evals/experiments — plus (pass **63** live pricing FAQ) **MCP server + SRE skill + Metrics skill included** on Personal and Cloud (**not** a separate add-on; agent queries count toward query-hour usage). Occupies LLM/agent-obs **and** a **free coding-agent MCP surface** on the free Personal tier. Still **not** a portable redacted versioned production-incident dossier.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven).
+- **Parallax's claim:** bounded, redacted, agent-use (safety/value unproven) evidence bundle for coding agents (**code-shipped**, A1 value unproven).
 
 **Honest verdict (no-bias):** Axiom ships AI Engineering **and free MCP/SRE agent skills** — stronger agent-access than pass-34 alone recorded. On **LLM/agent tracing + free MCP for agents, Axiom ships; Parallax is 🟡🧪 + A1 unproven.** Residual Parallax claim = **portable/redacted/versioned prod-incident bundle + outcome** — not "has MCP."
 
 ## Architecture & deployment
 
 - **Axiom:** **closed SaaS, serverless** (zero infra). No OSS self-host.
-- **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0.
+- **Parallax:** single-binary self-host target, local-first, offline/local deployment target (air-gap unverified), Apache-2.0.
 
 **Verdict:** on **self-host / data sovereignty, Parallax wins by design** (Axiom is serverless SaaS-only). On zero-ops serverless, Axiom wins.
 
@@ -168,7 +168,7 @@ different cost model entirely (own the hardware, not the scan).
 - **Self-host / data sovereignty** — Parallax designed for it; Axiom is serverless SaaS-only. *(Real.)*
 - **Production error events + fix-outcome loop** — Axiom is log/event-analytics-centric, no error-issue lifecycle. *(Real gap in Axiom; Parallax error derivation **shipped**, fix-outcome offline residual plan 123 DONE, live value unproven.)*
 - **Sentry-envelope compatibility** — Axiom has none; Parallax ships it. *(Real.)*
-- **Bounded, redacted, agent-safe evidence bundle** — Axiom has none. *(Thesis, unproven, A1.)*
+- **Bounded, redacted, agent-use (safety/value unproven) evidence bundle** — Axiom has none. *(Thesis, unproven, A1.)*
 
 > **Honest summary:** Axiom is a strong **serverless, full-stack observability +
 > AI-engineering SaaS** — ahead of pre-release Parallax on full-stack analytics,

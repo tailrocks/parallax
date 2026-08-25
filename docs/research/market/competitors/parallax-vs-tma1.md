@@ -91,14 +91,14 @@ Same shape (a typed object an agent reads); fundamentally different artifact. Do
 ## AI-native / agent-context story — the convergence point
 
 - **TMA1's position:** it is **literally a context engine for coding agents** — record the agent's LLM calls, detect anomalies, feed a bounded read-only view back into the next turn. This is the closest existing product to Parallax's "context engine, not the fixer" framing. **Read-only by design** (7 tools, none mutate), local, Apache-2.0.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for production incidents (**code-shipped**, A1 unproven) + fix-outcome offline residual (plan **123 DONE**).
+- **Parallax's claim:** bounded, redacted, agent-use (safety/value unproven) evidence bundle for production incidents (**code-shipped**, A1 unproven) + fix-outcome offline residual (plan **123 DONE**).
 
 **Honest verdict:** TMA1 is **the closest shipped realization of "a read-only context projection for coding agents"** — and it is Apache-2.0, local-first, GreptimeDB-backed, exactly Parallax's substrate. On the *architecture-for-agent-loops*, **TMA1 is ahead (shipped, even alpha).** Parallax's differentiation is entirely: (a) **production-incident scope** (TMA1 is dev-machine-local), (b) **redaction gate** (TMA1's bundle is unredacted), (c) **versioned/portable bundle** (TMA1's is live/unversioned), (d) **fix-outcome loop** (offline residual plan **123 DONE**; live value unproven), (e) **Sentry-envelope compat** (shipped), (f) **Turso metadata** (shipped). Bundle/redaction **code-shipped**; A1 value **unproven.** The honest, uncomfortable read: **a lot of "Parallax's wedge" is already shipped by TMA1 in narrower form.** Parallax's bet is that production-incident + redaction + outcome is a different, valuable job — unproven (A1).
 
 ## Architecture & deployment
 
 - **TMA1:** single Go binary (`CGO_ENABLED=0`), GreptimeDB child process, embedded JS dashboard, `~/.tma1/` data. **Local-only, single-user, no auth/multi-tenant.** Apache-2.0.
-- **Parallax:** single-binary Rust target, GreptimeDB + Turso, local-first + production tiers, air-gap-capable. Apache-2.0.
+- **Parallax:** single-binary Rust target, GreptimeDB + Turso, local-first + production tiers, offline/local deployment target (air-gap unverified). Apache-2.0.
 
 **Verdict:** on **local-agent-loop polish and MCP tool breadth for that loop, TMA1 still leads** (purpose-built alpha). Parallax **ships** supervised GreptimeDB + Turso, OTLP, Sentry envelope, UI/CLI/MCP, and production-oriented metadata — different maturity and scope, not "architecture planned-only." TMA1 is local-only by intent; Parallax targets production multi-entity — different deployment tiers.
 

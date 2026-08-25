@@ -103,16 +103,16 @@ This is where Parallax claims differentiation, so it must be examined most hones
 
 - **Parallax's AI claim (code-shipped, A1 value unproven):** a **read-only, redacted, bounded evidence bundle** served to coding agents (CLI/HTTP first, local-stdio MCP graduated (plan 112 DONE; remote deferred)) — a *context engine for autonomous agents*, not a human chat dashboard. The thesis is that a bounded, validated, redacted dossier beats dumping raw telemetry into an agent.
 
-**Honest verdict:** On every *shipped* AI axis — natural-language query, autonomous investigation, autofix-to-PR, LLM tracing, evals — **Datadog is ahead, and by a lot.** Parallax's only differentiated AI claim is the bounded/redacted/agent-safe bundle, which is **unproven** (this is the A1 gate: does such a bundle actually improve agent fix outcomes vs raw context?). Datadog's Bits Investigation already does much of what a "context for triage" story promises, today, at scale. The burden of proof that Parallax's bundle beats Bits-as-context is on Parallax and has not been met.
+**Honest verdict:** On every *shipped* AI axis — natural-language query, autonomous investigation, autofix-to-PR, LLM tracing, evals — **Datadog is ahead, and by a lot.** Parallax's only differentiated AI claim is the bounded/redacted/agent-use (safety/value unproven) bundle, which is **unproven** (this is the A1 gate: does such a bundle actually improve agent fix outcomes vs raw context?). Datadog's Bits Investigation already does much of what a "context for triage" story promises, today, at scale. The burden of proof that Parallax's bundle beats Bits-as-context is on Parallax and has not been met.
 
 A real Datadog weakness here, written plainly: its AI is a **human dashboard plus chat**, gated behind Datadog's SaaS and credit meter, with **write/destructive management-plane capability** — it is not a safe, bounded, self-hosted agent-context projection. That is the genuinely unoccupied cell. But "unoccupied" ≠ "valuable"; it is unproven.
 
 ## Architecture & deployment model
 
 - **Datadog:** SaaS-first, multi-region (US/EU/APAC), multi-tenant. **Gov:** **Datadog for Government (US1-FED) achieved FedRAMP® High** (announced **2026-05-06**; FedRAMP Marketplace FR2023864279A, Class D High as of 2026-05-05) — elevates beyond older “Moderate subset” framing. **No production self-host of the observability *backend***: only the OSS Agent + **Observability Pipelines Worker** (runs in your env to aggregate/process/route; still a path into Datadog SaaS, not a self-hosted Datadog store). If the constraint is "data never leaves our network / air-gap," Datadog still largely cannot satisfy it.
-- **Parallax:** self-hosted, single-binary target, local-first, air-gapped-capable, three deployment tiers. Designed for the team that cannot or will not use a closed SaaS.
+- **Parallax:** self-hosted, single-binary target, local-first, offline/local deployment target (air-gap unverified), three deployment tiers. Designed for the team that cannot or will not use a closed SaaS.
 
-**Verdict:** on **self-host / air-gap / data-sovereignty, Parallax wins (by design); Datadog cannot play here.** On **managed-SaaS scale/multi-region/multi-tenancy, Datadog wins; Parallax has none of that operational machinery.** Again, different axes.
+**Verdict:** Datadog is SaaS-first, while Parallax targets self-hosted local deployment. Parallax's air-gap capability and comparative data-sovereignty posture are unverified. On **managed-SaaS scale/multi-region/multi-tenancy, Datadog wins; Parallax has none of that operational machinery.** Again, different axes.
 
 ## Operational footprint
 
@@ -140,7 +140,7 @@ A real Datadog weakness here, written plainly: its AI is a **human dashboard plu
 - **Datadog:** SOC 2, HIPAA, PCI; data residency US/EU/APAC; **FedRAMP High** on **Datadog for Government (US1-FED)** (2026-05; not “Moderate-only”); **Sensitive Data Scanner** (detection $0.03/GB @ 10% sampling, or $0.30/scanned GB full obfuscation) for PII scrubbing across logs/APM/RUM/S3.
 - **Parallax:** no compliance certifications (not yet — pre-release, Apache-2.0). Redaction is a designed pipeline (A6) but unattested. Data ownership is total (self-host).
 
-**Verdict:** on **compliance certifications and attested PII tooling, Datadog wins decisively.** On **data ownership/sovereignty (self-host, air-gap), Parallax wins by design.**
+**Verdict:** on **compliance certifications and attested PII tooling, Datadog wins decisively.** Parallax's self-host/data-ownership design target is not a verified air-gap claim or compliance substitute.
 
 ## Openness, licensing & vendor lock-in
 
@@ -204,10 +204,10 @@ Datadog pricing is **public** and itemized below (annual prices, [datadoghq.com/
 ## Where Parallax honestly edges Datadog
 
 - **Openness & vendor lock-in** — Apache-2.0, OTLP-native in/out, portable bundle; Datadog is closed proprietary SaaS with high documented migration cost. *(Real, structural, today — Parallax's strongest non-thesis edge.)*
-- **Self-host / air-gap / data sovereignty** — Parallax is designed for it; Datadog cannot satisfy "data never leaves our network."
+- **Self-host / data ownership** — Parallax targets local deployment; air-gap capability and a "data never leaves our network" guarantee are unverified.
 - **Cost transparency & predictability** — no per-event/per-host consumption tax by design; Datadog's composite metering is documented as expensive/unpredictable. *(Real in shape; specific savings unmeasured.)*
 - **Local-first single-binary dev loop** — Parallax's target; Datadog has no local-first story.
-- **Bounded, redacted, agent-safe context bundle** — the genuinely unoccupied cell. *(Thesis, **unproven** — A1 gate. Bits Investigation already covers much of the "context for triage" need today, from SaaS.)*
+- **Bounded, redacted, agent-use (safety/value unproven) context bundle** — the genuinely unoccupied cell. *(Thesis, **unproven** — A1 gate. Bits Investigation already covers much of the "context for triage" need today, from SaaS.)*
 
 ## Open questions / what measurement would settle
 

@@ -69,14 +69,14 @@ Both OSS-origin, self-hostable, OTLP-native, with a columnar/search backend. The
 ## AI-native / agent-context story
 
 - **Elastic's AI:** Elastic AI Assistant (observability + security), ES|QL-from-natural-language, anomaly detection, the **Elastic AI Error Assistant**. A human-assistive AI across obs+sec; not a bounded agent-context projection.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven).
+- **Parallax's claim:** bounded, redacted, agent-use (safety/value unproven) evidence bundle for coding agents (**code-shipped**, A1 value unproven).
 
 **Honest verdict:** Elastic ships more AI today (assistant, NL→ES|QL, anomaly, error assistant, plus the LLM-obs features) than Parallax. On shipped AI, **Elastic leads.** Parallax's bounded-agent-context claim is **unproven (A1).**
 
 ## Architecture & deployment
 
 - **Elastic:** **self-host** (ELv2, distributed ES cluster — operationally heavy: shards, replicas, JVM) or **Elastic Cloud Hosted** / **Serverless** (managed). K8s/Helm + on-prem.
-- **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0.
+- **Parallax:** single-binary self-host target, local-first, offline/local deployment target (air-gap unverified), Apache-2.0.
 
 **Verdict:** on **single-binary local-first + low-ops, Parallax's target beats Elastic's distributed cluster** (real operational edge — operating production Elasticsearch is famously heavy). On **managed SaaS + Serverless, Elastic wins.** On **self-host viability, both** (but Elastic's is heavy).
 

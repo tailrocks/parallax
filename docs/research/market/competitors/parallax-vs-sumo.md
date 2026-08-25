@@ -70,14 +70,14 @@ Both OTLP/OTel-capable. Sumo is a closed logs-first + SIEM SaaS; Parallax is an 
 ## AI-native / agent-context story
 
 - **Sumo Logic (pass 41 re-verify on live pricing page):** **Dojo AI** ships a multi-agent surface — **Mobot** conversational UI + **Query Agent** (NL→query) + **Knowledge Agent** (platform how-to) + **Summary Agent** (Insight signal condensation; SIEM) + **SOC Analyst Agent (preview)** (alert triage; SIEM). Plus AI-driven alerting / ML RCA / anomaly. This is a **shipped multi-agent assistive/investigation surface** — human+security-ops oriented, **not** a bounded/redacted/portable coding-agent evidence bundle.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding agents (**code-shipped**, A1 value unproven).
+- **Parallax's claim:** bounded, redacted, agent-use (safety/value unproven) evidence bundle for coding agents (**code-shipped**, A1 value unproven).
 
 **Honest verdict (no-bias):** Sumo now ships **agent-flavored investigation tools** (Dojo AI), so “Sumo has only classic ML anomaly” is **stale**. On shipped AI investigation, **Sumo leads** pre-release Parallax. Parallax’s residual claim is still the **bounded/redacted/portable prod-incident bundle + outcome loop** (A1 unproven) — not “AI exists.”
 
 ## Architecture & deployment
 
 - **Sumo Logic:** **closed SaaS** (Francisco Partners-owned). Collectors run in your env but ship to Sumo. No OSS self-host.
-- **Parallax:** single-binary self-host target, local-first, air-gap-capable, Apache-2.0.
+- **Parallax:** single-binary self-host target, local-first, offline/local deployment target (air-gap unverified), Apache-2.0.
 
 **Verdict:** on **self-host / data sovereignty, Parallax wins by design** (Sumo is SaaS-only). On managed SaaS + enterprise maturity, Sumo wins.
 
@@ -137,7 +137,7 @@ Primary: live [sumologic.com/pricing](https://www.sumologic.com/pricing) (access
 - **Self-host / data sovereignty** — Parallax designed for it; Sumo is SaaS-only. *(Real.)*
 - **Full-signal-native + production error-workflow** — Sumo is logs-first; Parallax **ships** production error derivation + fix-outcome offline residual (plan **123 DONE**; live value unproven). *(Real gap in Sumo; Parallax error path **shipped**.)*
 - **Sentry-envelope compatibility** — Sumo has none; Parallax ships it. *(Real.)*
-- **Bounded, redacted, agent-safe evidence bundle** — Sumo has none. *(Thesis, unproven, A1.)*
+- **Bounded, redacted, agent-use (safety/value unproven) evidence bundle** — Sumo has none. *(Thesis, unproven, A1.)*
 
 > **Honest summary:** Sumo Logic is a mature **logs-first + SIEM** cloud SaaS (Francisco Partners-owned) — far ahead of pre-release Parallax on logs analytics, security/SIEM, Flex scan-pricing, scale, compliance. Parallax's defensible delta is **openness/self-host** (Apache vs closed SaaS), **full-signal + production-error-native** (vs logs-first), **Sentry-envelope**, and the **bounded+outcome bundle** (A1 unproven). Sumo's Flex scan-pricing is a distinctive cost model but still SaaS-metered — not the same as Parallax's self-host-no-metering bet.
 

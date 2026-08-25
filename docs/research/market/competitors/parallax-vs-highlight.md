@@ -132,7 +132,7 @@ Highlight: replay viewer + error console + traces/logs UI. Parallax: minimal V1.
 - **Highlight:** a **human monitoring platform** (replay, errors, traces for
   engineers debugging). No bounded/redacted agent-context projection, no
   fix-outcome loop, no AI autofix→PR surfaced.
-- **Parallax's claim:** bounded, redacted, agent-safe evidence bundle for coding
+- **Parallax's claim:** bounded, redacted, agent-use (safety/value unproven) evidence bundle for coding
   agents.
 
 > **Honest verdict:** Highlight is **not** an agent-context engine — it's a human
@@ -214,7 +214,7 @@ an actively-maintained Highlight fork.
    Highlight is human-RUM/error. *(Different job; not a head-to-head Parallax win.)*
 2. **Production error events + fix-outcome loop** — Highlight has neither as a
    managed artifact. *(Thesis, **unproven** — A1 gate.)*
-3. **Bounded, redacted, agent-safe evidence bundle** — Highlight is a human
+3. **Bounded, redacted, agent-use (safety/value unproven) evidence bundle** — Highlight is a human
    dashboard, not an agent-context projection. *(Thesis, **unproven** — A1 gate.)*
 4. **Single-binary local-first** — Highlight self-host is a multi-service stack.
    *(Design edge.)*

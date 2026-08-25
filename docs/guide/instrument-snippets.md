@@ -54,20 +54,26 @@ exporter to gRPC when you prefer the gRPC port.
 
 ## Java (OpenTelemetry javaagent)
 
-Verified 2026-08-14 against `deploy/Dockerfile.java` (agent 2.29.0) +
-`deploy/docker-compose.yml` catalog/payment/fulfillment `OTEL_*` block @
-`171d87a` in `tailrocks/parallax-telemetry-playground`.
+Current-HEAD evidence from the sibling playground is commit
+`80acc216991dc8f393df8eccf60e4e1a594a2e44`: its checked-in
+`deploy/Dockerfile.java` sets `OTEL_AGENT_VERSION=2.30.0`, and its catalog,
+payment, and fulfillment `OTEL_*` blocks in `deploy/docker-compose.yml` set
+`OTEL_EXPORTER_OTLP_ENDPOINT` to `http://host.docker.internal:4317` and
+`OTEL_EXPORTER_OTLP_PROTOCOL` to `grpc`. This is deployment-source evidence,
+not a stable public contract. The standalone launch below remains unverified;
+in particular, `127.0.0.1` assumes a listener reachable from the standalone
+Java process, while the cited compose deployment uses the container host name.
 
 ```bash
 # Download the upstream agent (do not swap in a vendor-only agent).
 curl -fsSL -o otel-agent.jar \
-  https://repo1.maven.org/maven2/io/opentelemetry/javaagent/opentelemetry-javaagent/2.29.0/opentelemetry-javaagent-2.29.0.jar
+  https://repo1.maven.org/maven2/io/opentelemetry/javaagent/opentelemetry-javaagent/2.30.0/opentelemetry-javaagent-2.30.0.jar
 
 export JAVA_TOOL_OPTIONS="-javaagent:./otel-agent.jar"
 export OTEL_SERVICE_NAME="catalog"
 export OTEL_RESOURCE_ATTRIBUTES="service.version=0.1.0,deployment.environment.name=dev"
-export OTEL_EXPORTER_OTLP_ENDPOINT="http://127.0.0.1:4318"
-export OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://127.0.0.1:4317"
+export OTEL_EXPORTER_OTLP_PROTOCOL="grpc"
 export OTEL_TRACES_EXPORTER="otlp"
 export OTEL_METRICS_EXPORTER="otlp"
 export OTEL_LOGS_EXPORTER="otlp"
@@ -76,9 +82,9 @@ export OTEL_PROPAGATORS="tracecontext,baggage"
 java -jar app.jar
 ```
 
-HTTP/protobuf to `:4318` is the playground's proven Java path (the agent's gRPC
-sender cannot read some collector gRPC responses). Use `:4317` + `grpc` only
-after you confirm the collector answers that agent.
+The current-HEAD playground deployment uses OTLP/gRPC to `:4317`. This
+standalone copy-paste launch, the local listener address, and any Java
+application outside that playground deployment remain unverified here.
 
 ## JS / browser (sdk-trace-web)
 
