@@ -16,6 +16,7 @@ open every page.
 - [CLI checkpoints](#cli-checkpoints)
 - [Stop and reset](#stop-and-reset)
 - [Verified boundaries](#verified-boundaries)
+- [Final audit evidence and gaps](#final-audit-evidence-and-gaps)
 
 ## 1. Install the current preview CLI
 
@@ -372,6 +373,22 @@ Do not use `down -v` when the generated data is needed for the next presenter.
   evidence handoff. It does not prove production scale, TLS, multi-user
   isolation, hosted MCP, autonomous fixing, or replacement parity with mature
   observability products.
+
+## Final audit evidence and gaps
+
+- Scalar, histogram, and exemplar metrics are supported. Exponential
+  histograms and summaries are dropped; do not present them as supported.
+- A metric-exemplar API exists, but workbench click-through from a metric to its
+  exemplar trace was not proven.
+- No clock-skew banner was observed.
+- Ecosystem default-range behavior needs revalidation. Use `range=1h` as a
+  workaround if that query parameter is supported by the current preview.
+- The invocation-failure note is historical and needs revalidation; it is not
+  current browser evidence.
+- Sentry envelope emission is proven. Sentry UI grouping and flamegraph
+  behavior were not independently proven.
+- A post-change browser recheck was unavailable. Route-specific visual claims
+  therefore remain limited to the browser sessions explicitly recorded above.
 
 ## Sources of truth
 
