@@ -54,20 +54,20 @@ exporter to gRPC when you prefer the gRPC port.
 
 ## Java (OpenTelemetry javaagent)
 
-Verified 2026-08-14 against `deploy/Dockerfile.java` (agent 2.29.0) +
+Verified 2026-08-25 against `deploy/Dockerfile.java` (agent 2.30.0) +
 `deploy/docker-compose.yml` catalog/payment/fulfillment `OTEL_*` block @
 `171d87a` in `tailrocks/parallax-telemetry-playground`.
 
 ```bash
 # Download the upstream agent (do not swap in a vendor-only agent).
 curl -fsSL -o otel-agent.jar \
-  https://repo1.maven.org/maven2/io/opentelemetry/javaagent/opentelemetry-javaagent/2.29.0/opentelemetry-javaagent-2.29.0.jar
+  https://repo1.maven.org/maven2/io/opentelemetry/javaagent/opentelemetry-javaagent/2.30.0/opentelemetry-javaagent-2.30.0.jar
 
 export JAVA_TOOL_OPTIONS="-javaagent:./otel-agent.jar"
 export OTEL_SERVICE_NAME="catalog"
 export OTEL_RESOURCE_ATTRIBUTES="service.version=0.1.0,deployment.environment.name=dev"
-export OTEL_EXPORTER_OTLP_ENDPOINT="http://127.0.0.1:4318"
-export OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://127.0.0.1:4317"
+export OTEL_EXPORTER_OTLP_PROTOCOL="grpc"
 export OTEL_TRACES_EXPORTER="otlp"
 export OTEL_METRICS_EXPORTER="otlp"
 export OTEL_LOGS_EXPORTER="otlp"
@@ -76,9 +76,8 @@ export OTEL_PROPAGATORS="tracecontext,baggage"
 java -jar app.jar
 ```
 
-HTTP/protobuf to `:4318` is the playground's proven Java path (the agent's gRPC
-sender cannot read some collector gRPC responses). Use `:4317` + `grpc` only
-after you confirm the collector answers that agent.
+OTLP/gRPC to `:4317` is the verified Java path. HTTP/protobuf to `:4318` is a
+fallback when the collector or environment cannot use gRPC.
 
 ## JS / browser (sdk-trace-web)
 
