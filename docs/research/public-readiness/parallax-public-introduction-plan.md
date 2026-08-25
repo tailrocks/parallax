@@ -361,8 +361,9 @@ Do not use `down -v` when the generated data is needed for the next presenter.
 - `a28` requires real browser interaction through `agent-browser`. A shell
   smoke check cannot prove RUM navigation or propagation.
 - The latest-preview local browser session verified the current route evidence
-  recorded below. The post-change playground checkout feedback path was not
-  directly rerun; do not present it as reverified.
+  recorded below. A fresh `agent-browser` run also checked the post-change
+  playground checkout feedback path: the propagation-break heading and note
+  are visible, and the intentional HTTP 502 is announced in the live status.
 - `c4` created the alert rule and destinations, but the current preview did not
   open an incident during its 180-second poll. Treat incident creation as an
   open product gap; reproduce with sustained breach traffic before presenting.
@@ -382,7 +383,9 @@ Do not use `down -v` when the generated data is needed for the next presenter.
   lifecycle remains unverified.
 - Sentry envelope emission is proven. Sentry UI grouping and flamegraph
   behavior were not independently proven.
-- The post-change playground checkout feedback path was not directly rerun.
+- Fresh `agent-browser` verification of the post-change playground checkout
+  feedback path passed: propagation-break context is visible and the HTTP 502
+  result is announced through the accessible live status.
 
 ## Sources of truth
 
