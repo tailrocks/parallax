@@ -387,8 +387,14 @@ Do not use `down -v` when the generated data is needed for the next presenter.
 - The agent workflow has a known MCP limitation: `parallax-mcp check` output
   does not currently match the CLI/GraphQL bundle JSON exactly.
 - Fresh `agent-browser` verification of the post-change playground checkout
-  feedback path passed: propagation-break context is visible and the HTTP 502
-  result is announced through the accessible live status.
+  feedback path passed: propagation-break context is visible and the current
+  successful result is announced through the accessible live status. The
+  status path also makes intentional HTTP failures explicit when induced.
+- After removing stale Compose orphans and restarting the demo, all 16
+  playground services were `Up`; fresh `agent-browser` runs then showed both
+  normal checkout and the intentional propagation-break checkout returning
+  visible accessible success status. The latter remains the correct way to
+  demonstrate disconnected browser/backend propagation, not a service outage.
 
 ## Sources of truth
 
