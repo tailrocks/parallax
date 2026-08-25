@@ -146,8 +146,8 @@ Then in Parallax:
 
 1. Open <http://127.0.0.1:4000/traces>.
 2. Open a recent `[checkout] http.server.request` row.
-3. Show the waterfall: checkout → pricing, inventory/Postgres, and
-   recommendation.
+3. Show the waterfall from the latest preview session: checkout → pricing,
+   inventory, and recommendation.
 
 Use the current run's result when precision matters; do not record a fixed
 trace ID because `a1` generates new IDs on each run:
@@ -206,7 +206,8 @@ cd "$PLAYGROUND_DIR"
 Then in Parallax:
 
 1. Open <http://127.0.0.1:4000/issues>.
-2. Open `PaymentError` and show its occurrences and linked trace.
+2. Open `PaymentError` and show its occurrences and linked trace; the latest
+   preview session displayed that linked trace in the issue detail.
 3. Compare the handled `502` with the unhandled panic, which may appear as
    `500` or a connection reset (`000`).
 
@@ -231,9 +232,10 @@ cd "$PLAYGROUND_DIR"
 ```
 
 Open `/metrics`, discover the recent `catalog_product_queries_total` series,
-and show a trace-linked exemplar when present. If the UI presents a semantic
-alias, confirm it resolves to that emitted metric name; do not assume a fixed
-series exists in every dataset.
+and show its trace-linked exemplar. The exemplar link opens the corresponding
+`/traces/<id>` view. If the UI presents a semantic alias, confirm it resolves
+to that emitted metric name; do not assume a fixed series exists in every
+dataset.
 
 ### E. Structured logs — `a9`
 
@@ -244,12 +246,12 @@ cd "$PLAYGROUND_DIR"
 ./scenarios/run.sh a9
 ```
 
-Open `/logs`, use the recent time window, and show that
-The earlier browser spike report said `app_screen_name=workspace-select`
-dominated the result, but that claim was not reproduced in the current
-dataset. Query the field and report it only if the current run contains it;
-otherwise state that it was not observed. Use **Live** only after the static
-result is clear.
+Open `/logs`, use the recent time window, and open a row. Show the Log
+document, its trace link, and the structured fields. The earlier browser spike
+report said `app_screen_name=workspace-select` dominated the result, but that
+claim was not reproduced in the current dataset. Query the field and report it
+only if the current run contains it; otherwise state that it was not observed.
+Use **Live** only after the static result is clear.
 
 ## 5. Full feature map
 
@@ -261,10 +263,10 @@ recommended story; the remaining rows are short optional stops.
 | `/` | Overview: telemetry volume, error rate, latency, recent issues, slow traces | Background traffic or `a1` |
 | `/issues` | Grouped failures, occurrences, linked traces, resolve state | `a31`; CLI `parallax issue list` |
 | `/tests` | Test run/session evidence | Acceptance run in [playground README](https://github.com/tailrocks/parallax-telemetry-playground#test-telemetry-conventions) |
-| `/traces` | Waterfalls, filters, field facets, live tail | `a1`, `a6`, `a3`, `a23` |
-| `/ecosystem` | Detected languages, SDKs, and instrumentation inventory | Background traffic |
-| `/logs` | Structured fields, trace links, SQL mode, live tail | `a9`; optional `./scenarios/run.sh c3` |
-| `/metrics` | Series, windows, finite samples, exemplars | `a2` |
+| `/traces` | Waterfalls, filters, field facets, live tail | `a1`, `a6`, `a3`, `a23`; latest preview showed checkout → pricing, inventory, and recommendation |
+| `/ecosystem` | Detected languages, SDKs, instrumentation inventory, dependency graph | Background traffic; default **Last 24h** rendered the graph |
+| `/logs` | Structured fields, trace links, SQL mode, live tail | `a9`; latest preview opened a Log document with trace link and fields; optional `./scenarios/run.sh c3` |
+| `/metrics` | Series, windows, finite samples, exemplars | `a2`; latest preview showed `catalog_product_queries_total` and opened its exemplar trace |
 | `/services` | Service inventory and dependency/runtime context | `a1`; optional `b5` |
 | `/invocations` (sidebar: **CLI Apps**) | Bounded command execution, exit code, traces, issues | `parallax invocation start -- echo parallax-demo` |
 | `/alerts` | Alert rules, destinations, and incident state | `./scenarios/run.sh c4` (rule setup verified; incident opening currently unverified) |
@@ -358,12 +360,9 @@ Do not use `down -v` when the generated data is needed for the next presenter.
   do not expose them to a shared network.
 - `a28` requires real browser interaction through `agent-browser`. A shell
   smoke check cannot prove RUM navigation or propagation.
-- The recorded browser verification used `agent-browser` on the locally
-  resolved preview before the latest playground feedback change. `agent-browser`
-  is unavailable in the current audit environment, so that changed playground
-  feedback path has not been reverified. Do not present it as reverified; keep
-  route-specific visual claims limited to pages opened in the presentation
-  session.
+- The latest-preview local browser session verified the current route evidence
+  recorded below. The post-change playground checkout feedback path was not
+  directly rerun; do not present it as reverified.
 - `c4` created the alert rule and destinations, but the current preview did not
   open an incident during its 180-second poll. Treat incident creation as an
   open product gap; reproduce with sustained breach traffic before presenting.
@@ -378,17 +377,12 @@ Do not use `down -v` when the generated data is needed for the next presenter.
 
 - Scalar, histogram, and exemplar metrics are supported. Exponential
   histograms and summaries are dropped; do not present them as supported.
-- A metric-exemplar API exists, but workbench click-through from a metric to its
-  exemplar trace was not proven.
 - No clock-skew banner was observed.
-- Ecosystem default-range behavior needs revalidation. Use `range=1h` as a
-  workaround if that query parameter is supported by the current preview.
-- The invocation-failure note is historical and needs revalidation; it is not
-  current browser evidence.
+- Alert rule setup and destinations are verified, but the alert incident
+  lifecycle remains unverified.
 - Sentry envelope emission is proven. Sentry UI grouping and flamegraph
   behavior were not independently proven.
-- A post-change browser recheck was unavailable. Route-specific visual claims
-  therefore remain limited to the browser sessions explicitly recorded above.
+- The post-change playground checkout feedback path was not directly rerun.
 
 ## Sources of truth
 
