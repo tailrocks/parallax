@@ -153,9 +153,12 @@ Delegated bounded checks on 2026-08-25 produced this evidence:
 | Parallax evidence bundles | **PASS** — 31/31 targeted tests | Bundle bounds/stability and incident projections are covered. |
 | Parallax local serve + seed smoke | **PASS** — managed GreptimeDB, `/health`, `/version`, `/ingest/loss`, GraphQL health, seed trace, CLI trace/log output | Local collection/query path booted and cleaned up; this is not public-network proof. |
 | Playground live `a1` | **PARTIAL** — HTTP responses returned `1999`, `3998`, `5997`, `9995`; Parallax persistence failed because managed GreptimeDB archive extraction was truncated | Workload path passes; persisted Parallax UI/query evidence remains unproven. |
-| Parallax end-to-end UI smoke | **BLOCKED** — GreptimeDB archive failure during live playground run | Repeat after repairing/redownloading the managed engine; retain the failed run as a known setup gate. |
+| Parallax end-to-end persistence/query smoke | **PASS** — 1,085 spans, 105 traces, 745 logs; metrics persisted; PaymentError and unhandled issues; evidence bundle generated | Fresh isolated managed GreptimeDB retry plus playground `a1`/`a31`; no listeners left running. |
+| Browser UX audit | **BLOCKED** — in-app Browser backend unavailable; two independent browser-agent attempts found no session | No browser usability or navigation claim is made. Repeat with a connected browser session. |
 
-Therefore the document proves source-level capability, focused web checks, and a Parallax local serve/seed smoke. It does not yet prove a fresh live playground → Parallax persistence → UI/query session because the managed GreptimeDB download failed during the bounded `a1` run.
+Therefore the document proves source-level capability, focused web checks, local serve/seed, and a fresh live playground → Parallax persistence/query session. It does not prove browser UX quality because the required in-app Browser backend was unavailable. The prior Greptime extraction failure was not reproducible on an isolated retry.
+
+Live proof details: `a1` produced trace `d2f913c3e2837b48398b8f7ee879c346` with 16 spans and 10 logs; `a31` produced handled and unhandled failures. Persisted metrics included 90 active-request rows, 106 duration counts, 18 cache hits, and 60 cardinality events. PaymentError fingerprint `863e8066e7f6c5e5` had five events; the generated bundle hash began `sha256:6854512b`.
 
 The playground is a sibling repository. Paths written as `parallax-telemetry-playground/...` in this document refer to `/Users/donbeave/Projects/tailrocks/parallax-project/parallax-telemetry-playground/...`, not a nested directory in this repository.
 
