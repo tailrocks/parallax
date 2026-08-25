@@ -1,7 +1,7 @@
 # Parallax public walkthrough: CLI → browser
 
 **Review date:** 2026-08-25  
-**Preview observed during review:** `parallax 0.1.0-preview.2497+dd93398` (Homebrew preview)  
+**Channel:** latest Homebrew preview, resolved at install time
 **Repositories:** [parallax](https://github.com/tailrocks/parallax) ·
 [parallax-telemetry-playground](https://github.com/tailrocks/parallax-telemetry-playground)
 
@@ -46,7 +46,8 @@ parallax --version
 
 The version printed by `parallax --version` is the preview resolved by Homebrew
 at install time. Always refresh and resolve the latest preview before a run;
-do not pin `2497` or switch to the stable `parallax` formula.
+record that output with the demo notes. Never pin a preview build or switch to
+the stable `parallax` formula.
 
 Set the playground path once. Replace the path with the checkout on your
 machine:
