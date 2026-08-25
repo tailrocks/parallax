@@ -29,7 +29,8 @@ Use macOS/Linux with:
 - Homebrew
 - Docker Desktop, running
 - `git`, `curl`, `nc`, and `python3`
-- at least 10 GB free disk space for the playground images and local engine
+- roughly 10 GB free disk space as a planning estimate for playground images and
+  local engine data; measure your own Docker/cache footprint
 
 Use the preview formula. Do not install the stable `parallax` formula for this
 walkthrough.
@@ -37,13 +38,13 @@ walkthrough.
 ```bash
 brew tap tailrocks/parallax
 brew update
-brew install tailrocks/parallax/parallax-preview
+brew install parallax@preview
 ```
 
 If preview is already installed, update it instead:
 
 ```bash
-brew upgrade tailrocks/parallax/parallax-preview
+brew upgrade parallax@preview
 ```
 
 Verify the binary before continuing. The exact version changes as preview
@@ -126,6 +127,11 @@ inspection.
 | Rust-to-Java gRPC | `scenarios/run.sh a23` | `/traces`: show the storefront GraphQL resolver followed by the Java payment hop. |
 | SQL | no producer command required | `/sql`: run the read-only query shown in section 6. |
 
+The demo profile emits background traffic. Treat “newest” as a navigation aid,
+not an assertion that the row belongs to the scenario you just ran. For a
+reproducible walkthrough, copy the scenario's trace ID or filter by its service,
+time window, and known attributes before making a claim.
+
 ### Browser-to-backend step (`a28`)
 
 `a28` checks the page endpoints and prints the manual journey. Follow its
@@ -173,9 +179,28 @@ parallax logs --trace <trace-id>
 ```
 
 The issue context command is the agent handoff in the preview. Treat its
-output as sensitive even though obvious secrets are redacted.
+output as sensitive: bundle-path redaction is bounded (`redaction-lite`/pre-A6),
+not a complete safety guarantee.
 
-## 6. Browser route map
+## 6. Agent handoff: evidence, not autonomy
+
+Give a coding agent the JSON projection after inspecting the issue manually:
+
+```bash
+parallax issue context <fingerprint> --format json
+```
+
+The local repository-built MCP surface can expose read-only issue context and
+agent-session projections. It is optional, local-stdio only, and not a remote
+hosted MCP service; parity checking still has a known discrepancy. The agent
+proposes and verifies code changes; Parallax does not autonomously modify the
+repository.
+
+The agent story is therefore: bounded evidence, correlated telemetry,
+deterministic hypotheses, and session context. Bundle-vs-raw fix quality,
+remote MCP, and autonomous fixing remain unproven.
+
+## 7. Browser route map
 
 Use this map when presenting the product. Start at `/`, then move left to right
 through the evidence path. Do not open every route during the first five-minute
@@ -201,7 +226,7 @@ The first demo should present only these five pages: `/`, `/traces`, `/logs`,
 `/metrics`, and `/issues`. Return to the route map for the remaining product
 surfaces.
 
-## 7. Stop and reset
+## 8. Stop and reset
 
 Stop the playground from Terminal B:
 
@@ -220,7 +245,7 @@ docker compose -f deploy/docker-compose.yml --profile demo down -v
 
 Do not run `down -v` in a demo that needs to preserve generated data.
 
-## 8. Honest boundaries
+## 9. Honest boundaries
 
 - Preview builds are local-only. API bearer-token configuration exists, but the
   default demo runs auth off and current OTLP routes must stay on loopback.
@@ -228,6 +253,8 @@ Do not run `down -v` in a demo that needs to preserve generated data.
   demo database password. Do not expose it to a shared network.
 - The `a28` browser journey needs real browser interaction; a shell command
   alone cannot prove browser UX.
+- This audit environment had no connected in-app Browser session, so navigation
+  intuitiveness and visual UX remain unverified.
 - `a31` may report an unhandled failure as HTTP `500` or connection reset
   (`000`), depending on server/client timing.
 - Metrics support is intentionally bounded; exponential histograms and
@@ -238,7 +265,25 @@ Do not run `down -v` in a demo that needs to preserve generated data.
   an optional repository-built surface, not a remote hosted MCP claim in this
   walkthrough.
 
-## Source of truth
+## 10. Competitor boundary
+
+Parallax is a basic local observability/context alternative, not a replacement
+for these mature products:
+
+| Tool | Stronger today | Parallax's narrower angle |
+| --- | --- | --- |
+| Sentry | Issue lifecycle, SDK ecosystem, ownership, Seer/fix workflows | Local issue context, correlated OTLP evidence, bounded Sentry-envelope ingest |
+| Grafana | Dashboards, alerting, ecosystem, maturity, and scale | Simpler local traces/metrics/logs workflow with native issue correlation |
+| Kibana/Elastic | Full-text log search, ES|QL, Discover, SIEM/security operations | Structured telemetry logs tied to traces, issues, and evidence bundles |
+| OpenObserve, SigNoz, Coroot, and agent-native tools | Direct open/self-hosted overlap and existing investigation/agent surfaces | A local-first execution-context hypothesis that still needs comparative validation |
+
+Do not claim replacement parity, cheaper-at-scale economics, unique MCP
+ownership, or proven superior AI-agent outcomes. Canonical comparison sources:
+`docs/research/market/competitors/README.md`,
+`docs/research/market/landscape.md`, and
+`docs/research/market/competitors/comparison-set.md`.
+
+## 11. Source of truth
 
 - Preview install and server ports: `docs/guide/quickstart.md`
 - CLI behavior: `parallax --help` and `crates/parallax-cli/src/main.rs`
