@@ -1,228 +1,362 @@
-# Parallax public walkthrough: CLI → browser
+# Parallax public walkthrough: CLI to browser
 
-**Review date:** 2026-08-25  
-**Channel:** latest Homebrew preview, resolved at install time
-**Repositories:** [parallax](https://github.com/tailrocks/parallax) ·
+**Review date:** 2026-08-25
+
+**Required channel:** latest Homebrew preview; never use the stable formula
+
+**Repositories:** [parallax](https://github.com/tailrocks/parallax) and
 [parallax-telemetry-playground](https://github.com/tailrocks/parallax-telemetry-playground)
 
-Use this document in order. The five-minute path proves the product story;
-the feature map covers the rest of the UI without forcing the presenter to
-open every page.
+Follow this document from top to bottom. The core story is a live,
+deterministic tour. The feature maps cover every primary browser route and
+every top-level CLI family without pretending that every experimental surface
+is ready for a live claim.
+
+Last verified live:
+
+- Parallax `0.1.0-preview.2497+dd93398`; moving release tag
+  [`preview`](https://github.com/tailrocks/parallax/releases/tag/preview).
+- Parallax source SHA recorded in the Homebrew formula:
+  `dd9339891f379723e6fa52c4daad798c57517401`.
+- All 13 primary UI routes rendered with `agent-browser`.
+- Checkout, orders, RUM, traces, issues, metrics, exemplars, logs, CLI
+  invocations, and read-only SQL were exercised against that preview.
 
 ## Navigation
 
-- [Five-minute path](#five-minute-path)
-- [Full feature map](#full-feature-map)
-- [CLI checkpoints](#cli-checkpoints)
-- [Stop and reset](#stop-and-reset)
-- [Verified boundaries](#verified-boundaries)
-- [Final audit evidence and gaps](#final-audit-evidence-and-gaps)
+- [One-time setup](#1-one-time-setup)
+- [Preflight](#2-preflight-before-every-presentation)
+- [Start Parallax and the playground](#3-start-parallax-and-the-playground)
+- [Core story](#4-core-story)
+- [Complete feature maps](#5-complete-feature-maps)
+- [Stop, reset, and known limits](#6-stop-reset-and-known-limits)
 
-## 1. Install the current preview CLI
+## 1. One-time setup
 
-Requirements: macOS or Linux, Homebrew, Docker Desktop running, `git`, `curl`,
-`nc`, `python3`, and `agent-browser`. The playground builds several
-containers; leave about 10 GB free as a planning estimate.
+Requirements: macOS or Linux, Homebrew, Docker with Compose, `git`, `curl`,
+`nc`, `awk`, `python3`, and `agent-browser`. The first playground build is
+large and can take several minutes.
 
-First install:
+The playground publishes unauthenticated demo services and credentials on host
+ports. Run it only on a trusted machine and network; do not expose those ports
+to a shared or public network.
+
+Install the preview formula by its full name. This auto-taps the repository
+and grants formula-scoped Homebrew trust; it avoids the broader tap trust
+needed by the short alias.
 
 ```bash
-brew tap tailrocks/parallax
+brew install tailrocks/parallax/parallax-preview
+"$(brew --prefix tailrocks/parallax/parallax-preview)/bin/parallax" --version
+```
+
+The output must contain `-preview.`. Never run `brew install parallax` or
+`brew install tailrocks/parallax/parallax`; those select the stable channel.
+
+Clone both repositories into one parent directory:
+
+```bash
+mkdir -p parallax-walkthrough
+cd parallax-walkthrough
+git clone https://github.com/tailrocks/parallax.git
+git clone https://github.com/tailrocks/parallax-telemetry-playground.git
+```
+
+Set these paths in every new terminal. Replace the parent path once. Prepending
+the formula prefix makes every terminal, including `demo.sh`, use the preview:
+
+```bash
+export PARALLAX_REPO="/absolute/path/to/parallax-walkthrough/parallax"
+export PLAYGROUND_DIR="/absolute/path/to/parallax-walkthrough/parallax-telemetry-playground"
+export PREVIEW_PREFIX="$(brew --prefix tailrocks/parallax/parallax-preview)"
+export PATH="$PREVIEW_PREFIX/bin:$PATH"
+hash -r
+```
+
+## 2. Preflight before every presentation
+
+Refresh Homebrew first. This resolves the latest published preview instead of
+pinning the version recorded above.
+
+```bash
 brew update
-brew install parallax@preview
+brew upgrade tailrocks/parallax/parallax-preview
+
+PREVIEW_PREFIX="$(brew --prefix tailrocks/parallax/parallax-preview)"
+export PATH="$PREVIEW_PREFIX/bin:$PATH"
+hash -r
+
+PARALLAX_VERSION="$("$PREVIEW_PREFIX/bin/parallax" --version)"
+printf '%s\n' "$PARALLAX_VERSION"
+case "$PARALLAX_VERSION" in
+  *-preview.*) ;;
+  *) printf 'STOP: Parallax preview is not installed\n' >&2; exit 1 ;;
+esac
+test "$(parallax --version)" = "$PARALLAX_VERSION" || {
+  printf 'STOP: another Parallax binary shadows the preview\n' >&2
+  exit 1
+}
 ```
 
-Later runs:
+Update both source checkouts and record their revisions with the demo notes:
 
 ```bash
-brew update
-brew upgrade parallax@preview
+git -C "$PARALLAX_REPO" pull --ff-only
+git -C "$PLAYGROUND_DIR" pull --ff-only
+git -C "$PARALLAX_REPO" rev-parse --short HEAD
+git -C "$PLAYGROUND_DIR" rev-parse --short HEAD
 ```
 
-Verify before presenting:
+Verify the required tools:
 
 ```bash
-parallax --version
+docker info >/dev/null
+docker compose version
+agent-browser --version
+curl --version | head -1
 ```
 
-The version printed by `parallax --version` is the preview resolved by Homebrew
-at install time. Always refresh and resolve the latest preview before a run;
-record that output with the demo notes. Never pin a preview build or switch to
-the stable `parallax` formula.
+## 3. Start Parallax and the playground
 
-Set the playground path once. Replace the path with the checkout on your
-machine:
+### Terminal A: Parallax
 
-```bash
-export PLAYGROUND_DIR="/path/to/parallax-telemetry-playground"
-```
-
-Use a dedicated `agent-browser` session for every browser check:
-
-```bash
-export AGENT_BROWSER_SESSION="$(agent-browser session id --scope worktree --prefix parallax-public)"
-```
-
-## 2. Start Parallax
-
-Terminal A — keep this running:
+Keep this process running:
 
 ```bash
 parallax serve
 ```
 
-Wait for the `Parallax ready` banner. It gives the same endpoints used below:
+Wait for the `Parallax ready` banner. It names these surfaces:
 
 | Surface | Address |
 | --- | --- |
-| Web UI + GraphQL | <http://127.0.0.1:4000> |
+| Web UI and GraphQL | <http://127.0.0.1:4000> |
 | OTLP/gRPC ingest | `127.0.0.1:4317` |
 | OTLP/HTTP ingest | `127.0.0.1:4318` |
 | Managed GreptimeDB | `127.0.0.1:24000` |
 
-Terminal B — verify readiness:
+### Terminal B: health and playground
 
 ```bash
 curl -fsS http://127.0.0.1:4000/health
 curl -fsS http://127.0.0.1:4000/version
-```
-
-Expected: `ok`, then API schema version `0.1.0`. That endpoint is not the
-release/channel identifier; the build identity is the CLI output from
-`parallax --version` above.
-
-Optional diagnostics:
-
-```bash
 parallax doctor
 ```
 
-The important gates are `api (:4000): ok` and `greptime child (:24000): ok`.
-On this verification, a live server also printed a non-fatal metadata lock note
-for deploy-context deliveries; do not present that optional line as a demo
-feature.
+Expected: health prints `ok`; `/version` prints the server package version.
+It is not the Homebrew channel/build identity. `parallax --version` is the
+authoritative preview identity. In `doctor`, require `api (:4000): ok` and
+`greptime child (:24000): ok`; a metadata-lock note from an optional diagnostic
+does not fail those gates.
 
-## 3. Start the telemetry playground
-
-Terminal B:
+Start the playground. Exporting the current revision overrides any stale local
+`deploy/.env` value and records the checkout HEAD in emitted telemetry.
 
 ```bash
 cd "$PLAYGROUND_DIR"
+export GIT_SHA="$(git rev-parse HEAD)"
 ./demo.sh
 ```
 
-`demo.sh` checks Parallax's OTLP/gRPC port, builds the images, starts the demo
-profile, and starts background traffic. Verify the two browser-facing services:
+Wait for both browser-facing services, then stop background load so each
+scenario has an unambiguous result:
 
 ```bash
-curl -fsS http://localhost:5173/
-curl -fsS http://localhost:8088/healthz
+curl --retry 30 --retry-connrefused --retry-delay 2 -fsS \
+  http://localhost:5173/ >/dev/null
+for port in 8088 8089 8090 8092; do
+  curl --retry 30 --retry-connrefused --retry-delay 2 -fsS \
+    "http://localhost:$port/healthz"
+done
+curl --retry 30 --retry-connrefused --retry-delay 2 -fsS \
+  -H 'content-type: application/json' \
+  --data '{"query":"{ __typename }"}' \
+  http://localhost:8080/graphql >/dev/null
+docker compose -f deploy/docker-compose.yml --profile demo stop loadgen
 ```
 
-Open these during the presentation:
+Create one visible, isolated browser session:
 
-| Page | Purpose |
-| --- | --- |
-| <http://localhost:5173/> | Playground home and browser actions |
-| <http://localhost:5173/checkout> | Browser → backend checkout |
-| <http://localhost:5173/orders> | Browser order journey |
-| <http://127.0.0.1:4000/> | Parallax overview |
+```bash
+export AGENT_BROWSER_SESSION="$(agent-browser session id --scope worktree --prefix parallax-public)"
+agent-browser --headed open http://127.0.0.1:4000/
+agent-browser wait --load networkidle
+agent-browser snapshot -i -c
+```
 
-## 4. Five-minute path
+After every navigation, submit, or dynamic update, run a fresh snapshot before
+using another `@ref`.
 
-Run one command, then show one result. Use the same Parallax browser tab and
-open each route directly when listed.
+## 4. Core story
 
-### A. Distributed trace — `a1`
+### A. Overview: one local system
+
+Browser: <http://127.0.0.1:4000/>.
+
+Show spans, logs, metric points, error rate, recent issues, and slow traces.
+Say: **one local process receives OTLP and joins the signals used in the rest
+of the tour.**
+
+Pass condition: the page is populated; it is not a blank shell.
+
+### B. Distributed trace: checkout to three dependencies
 
 Terminal B:
 
 ```bash
 cd "$PLAYGROUND_DIR"
 ./scenarios/run.sh a1
+
+TRACE_ID=""
+for attempt in 1 2 3 4 5; do
+  TRACE_ID="$(parallax traces --service checkout --grep http.server.request \
+    --since 2m --limit 1 | \
+    awk 'length($3) == 32 && $3 ~ /^[0-9a-f]+$/ { print $3; exit }')"
+  test -n "$TRACE_ID" && break
+  sleep 1
+done
+test -n "$TRACE_ID"
+printf 'TRACE_ID=%s\n' "$TRACE_ID"
+parallax trace inspect "$TRACE_ID"
 ```
 
-Then in Parallax:
-
-1. Open <http://127.0.0.1:4000/traces>.
-2. Open a recent `[checkout] http.server.request` row.
-3. Show the waterfall from the latest preview session: checkout → pricing,
-   inventory, and recommendation.
-
-Use the current run's result when precision matters; do not record a fixed
-trace ID because `a1` generates new IDs on each run:
+Browser:
 
 ```bash
-parallax traces --service checkout --grep http.server.request --since 2m --limit 5
-parallax trace inspect <trace-id>
+agent-browser open "http://127.0.0.1:4000/traces/$TRACE_ID"
+agent-browser wait --load networkidle
+agent-browser snapshot -i -c
 ```
 
-Present this sentence: **one checkout request becomes one correlated,
-cross-service trace.**
+Show the waterfall and service chips: `checkout`, `pricing`, `inventory`, and
+`recommendation`. Show the PostgreSQL reserve span inside inventory.
 
-### B. Browser RUM stitch — `a28`
+Say: **one checkout request becomes one correlated, cross-service trace.**
 
-Terminal B:
+Pass condition: the selected trace contains all four services. Never paste a
+historical trace ID into the presentation.
+
+### C. Browser RUM: stitched request versus intentional gap
+
+Print the scenario contract:
 
 ```bash
 cd "$PLAYGROUND_DIR"
 ./scenarios/run.sh a28
 ```
 
-Use `agent-browser` for the printed browser steps at <http://localhost:5173/>.
-After every navigation or dynamic update, refresh the accessibility snapshot
-and use its current `@ref` values:
+Drive the current browser with semantic locators:
 
 ```bash
 agent-browser open http://localhost:5173/
 agent-browser wait --load networkidle
-agent-browser snapshot -i
+agent-browser snapshot -i -c
+agent-browser find role link click --name "checkout journey"
+agent-browser wait --load networkidle
+agent-browser snapshot -i -c
+agent-browser find role button click --name "submit checkout"
+agent-browser wait --fn "document.body.innerText.includes('Success:')"
+agent-browser snapshot -i -c
+
+agent-browser open http://localhost:5173/orders
+agent-browser wait --load networkidle
+agent-browser snapshot -i -c
+agent-browser find role button click --name "submit order"
+agent-browser wait --fn "document.body.innerText.includes('Success:')"
+agent-browser snapshot -i -c
+
+agent-browser open http://localhost:5173/
+agent-browser wait --load networkidle
+agent-browser find role button click --name "apply promo (unresponsive)"
+agent-browser find role button click --name "apply promo (unresponsive)"
+agent-browser find role button click --name "apply promo (unresponsive)"
+agent-browser snapshot -i -c
+agent-browser find role button click --name "break (RUM error)"
+agent-browser wait --fn "document.body.innerText.includes('intentional RUM error')"
+agent-browser snapshot -i -c
+
+agent-browser open 'http://localhost:5173/checkout?nopropagate=1'
+agent-browser wait --load networkidle
+agent-browser snapshot -i -c
+agent-browser find role button click --name "submit checkout"
+agent-browser wait --fn "document.body.innerText.includes('Success:')"
+agent-browser snapshot -i -c
+agent-browser close
 ```
 
-Then:
+Use the direct `?nopropagate=1` URL. Do not use the page's **open intentional
+propagation-break test** link: the current playground serializes its value as
+`%221%22`, so it does not enable the exact `nopropagate=1` state.
 
-1. Click **checkout journey** and submit the default checkout.
-2. Open **orders** and submit an order.
-3. Return home and click **apply promo (unresponsive)** several times.
-4. Click **break (RUM error)**.
-5. Open <http://localhost:5173/checkout?nopropagate=1> directly and submit
-   again, or use the page's **open intentional propagation-break test** link.
-   Both routes select the same structured `nopropagate=1` query state.
-6. Background or close the tab so browser telemetry flushes.
+Find the current browser submits:
 
-Then in Parallax `/traces`, find the recent `web` traces. Show that the normal
-checkout shares a trace with the backend; the `nopropagate` variant is the
-intentional disconnected comparison.
+```bash
+parallax sql "SELECT trace_id, \
+  \`span_attributes.telemetry.propagation.disabled\` AS propagation_disabled \
+  FROM \`opentelemetry_traces\` \
+  WHERE service_name = 'web' AND span_name = 'ui.submit' \
+  ORDER BY timestamp DESC LIMIT 6"
+```
 
-### C. Grouped issues — `a31`
+Reopen Parallax and open the current trace IDs from that result:
+
+```bash
+agent-browser --headed open http://127.0.0.1:4000/traces
+agent-browser wait --load networkidle
+agent-browser snapshot -i -c
+```
+
+Show that a `propagation_disabled=false` submit shares a trace with checkout
+and its dependencies. The `true` submit is the deliberate web-only gap. Also
+show the visible RUM error and web-vital/browser-route spans.
+
+Say: **Parallax shows both successful browser-to-backend correlation and the
+instrumentation gap when propagation is disabled.**
+
+### D. Grouped issues and bounded agent evidence
 
 Terminal B:
 
 ```bash
 cd "$PLAYGROUND_DIR"
 ./scenarios/run.sh a31
+parallax issue list --status open
+
+ISSUE_FP=""
+for attempt in 1 2 3 4 5; do
+  ISSUE_FP="$(parallax issue list --status open | \
+    awk '$NF == "PaymentError" { print $1; exit }')"
+  test -n "$ISSUE_FP" && break
+  sleep 1
+done
+test -n "$ISSUE_FP"
+printf 'ISSUE_FP=%s\n' "$ISSUE_FP"
+parallax issue context "$ISSUE_FP"
+parallax issue context "$ISSUE_FP" --format json --max-tokens 1200
 ```
 
-Then in Parallax:
-
-1. Open <http://127.0.0.1:4000/issues>.
-2. Open `PaymentError` and show its occurrences and linked trace; the latest
-   preview session displayed that linked trace in the issue detail.
-3. Compare the handled `502` with the unhandled panic, which may appear as
-   `500` or a connection reset (`000`).
-
-CLI handoff:
+Browser:
 
 ```bash
-parallax issue list --status open
-parallax issue context <fingerprint>
-parallax issue context <fingerprint> --format json
+agent-browser open "http://127.0.0.1:4000/issues/$ISSUE_FP"
+agent-browser wait --load networkidle
+agent-browser snapshot -i -c
+agent-browser open http://127.0.0.1:4000/issues
+agent-browser wait --load networkidle
+agent-browser snapshot -i -c
+agent-browser find text "http.server.error" click
+agent-browser wait --load networkidle
+agent-browser snapshot -i -c
 ```
 
-Present this sentence: **the CLI and browser show the same bounded evidence
-for the failure.** Treat the bundle as sensitive even with bounded redaction.
+Show occurrences, latest trace, nearby logs and metrics, the copied CLI handoff,
+and the handled `PaymentError` versus the unhandled `http.server.error`. The
+unhandled request may report HTTP `500` or connection reset `000`.
 
-### D. Metrics and exemplars — `a2`
+Say: **the browser and CLI expose the same bounded evidence packet.** Treat
+bundle output as sensitive even though it is bounded and redacted.
+
+### E. Metric exemplar to exact trace
 
 Terminal B:
 
@@ -231,13 +365,26 @@ cd "$PLAYGROUND_DIR"
 ./scenarios/run.sh a2
 ```
 
-Open `/metrics`, discover the recent `catalog_product_queries_total` series,
-and show its trace-linked exemplar. The exemplar link opens the corresponding
-`/traces/<id>` view. If the UI presents a semantic alias, confirm it resolves
-to that emitted metric name; do not assume a fixed series exists in every
-dataset.
+Browser:
 
-### E. Structured logs — `a9`
+```bash
+agent-browser open http://127.0.0.1:4000/metrics/catalog_product_queries_total
+agent-browser wait --load networkidle
+agent-browser snapshot -i -c
+agent-browser click 'a[href^="/traces/"]'
+agent-browser wait --load networkidle
+agent-browser snapshot -i -c
+```
+
+Show the rate chart and trace-ID links below it. Click a current exemplar link
+and show that it opens `/traces/<id>`.
+
+Say: **a metric point links directly to the trace that produced it.**
+
+Pass condition: the page contains at least one trace link. The exact metric
+name verified on the current preview is `catalog_product_queries_total`.
+
+### F. Structured logs and trace correlation
 
 Terminal B:
 
@@ -246,161 +393,143 @@ cd "$PLAYGROUND_DIR"
 ./scenarios/run.sh a9
 ```
 
-Open `/logs`, use the recent time window, and open a row. Show the Log
-document, its trace link, and the structured fields. The earlier browser spike
-report said `app_screen_name=workspace-select` dominated the result, but that
-claim was not reproduced in the current dataset. Query the field and report it
-only if the current run contains it; otherwise state that it was not observed.
-Use **Live** only after the static result is clear.
-
-## 5. Full feature map
-
-This is the complete presentation map. The first five rows above are the
-recommended story; the remaining rows are short optional stops.
-
-| Parallax route | Show | Producer/checkpoint |
-| --- | --- | --- |
-| `/` | Overview: telemetry volume, error rate, latency, recent issues, slow traces | Background traffic or `a1` |
-| `/issues` | Grouped failures, occurrences, linked traces, resolve state | `a31`; CLI `parallax issue list` |
-| `/tests` | Test run/session evidence | Acceptance run in [playground README](https://github.com/tailrocks/parallax-telemetry-playground#test-telemetry-conventions) |
-| `/traces` | Waterfalls, filters, field facets, live tail | `a1`, `a6`, `a3`, `a23`; latest preview showed checkout → pricing, inventory, and recommendation |
-| `/ecosystem` | Detected languages, SDKs, instrumentation inventory, dependency graph | Background traffic; default **Last 24h** rendered the graph |
-| `/logs` | Structured fields, trace links, SQL mode, live tail | `a9`; latest preview opened a Log document with trace link and fields; optional `./scenarios/run.sh c3` |
-| `/metrics` | Series, windows, finite samples, exemplars | `a2`; latest preview showed `catalog_product_queries_total` and opened its exemplar trace |
-| `/services` | Service inventory and dependency/runtime context | `a1`; optional `b5` |
-| `/invocations` (sidebar: **CLI Apps**) | Bounded command execution, exit code, traces, issues | `parallax invocation start -- echo parallax-demo` |
-| `/alerts` | Alert rules, destinations, and incident state | `./scenarios/run.sh c4` (rule setup verified; incident opening currently unverified) |
-| `/dashboards` | Saved telemetry views | `./scenarios/run.sh c5` |
-| `/investigations` | Saved investigation state | `./scenarios/run.sh c5` |
-| `/sql` | Read-only query against GreptimeDB telemetry tables | Query below |
-
-Optional deep-dive commands:
+Browser:
 
 ```bash
-# GraphQL batching vs N+1, partial errors, operation-name cardinality.
+agent-browser open \
+  'http://127.0.0.1:4000/logs?where=app_screen_name%20%3D%20workspace-select'
+agent-browser wait --load networkidle
+agent-browser snapshot -i -c
+```
+
+Show the WARN spike, open `slow render observed`, then show its structured
+fields and trace link. Switch to **Live** only after the static result is clear.
+
+Say: **structured fields narrow a spike; the selected log still links to its
+trace.**
+
+## 5. Complete feature maps
+
+### Browser routes
+
+The core story covers the strongest public narrative. Use this table for a
+complete route walk.
+
+| Route | Present | Producer or honest boundary |
+| --- | --- | --- |
+| `/` | Volume, error rate, latency, issues, slow traces | `a1` and the core story |
+| `/issues` | Grouping, occurrences, trace/log/metric context, resolve state | `a31`; verified live |
+| `/tests` | Run/session, cases, flaky/failure evidence | Empty state only in the base tour; the populated acceptance path requires `mise`, Rust, and Bun and is outside this Homebrew walkthrough |
+| `/traces` | Query/live modes, facets, waterfalls, story, compare | `a1`; optional `a6`, `a3`, `a23` |
+| `/ecosystem` | Languages, SDKs, instrumentation inventory, dependency graph | Current data; use **Last 24h** |
+| `/logs` | Query/live modes, fields, patterns, trace links | `a9`; optional `c3` |
+| `/metrics` | Series, aggregation, grouping, exemplars, alert/dashboard actions | `a2`; verified live |
+| `/services` | Service inventory, dependencies, runtime context, releases | `a1`; optional `b5` or `a13` |
+| `/invocations` | Wrapped CLI command, exit code, linked telemetry counts, evidence bundle | `parallax invocation start -- echo parallax-demo` proves lifecycle; its telemetry counts may be zero |
+| `/alerts` | Rules, destinations, incident state | Present setup controls only; current incident opening is not live-verified |
+| `/dashboards` | Saved telemetry view surface | `c5` creates an empty shell only; do not present it as a populated dashboard |
+| `/investigations` | Saved investigation state | `c5` creates minimal state only; do not present a full workflow claim |
+| `/sql` | Read-only query against native telemetry tables | Query below; verified live |
+
+Useful optional producers:
+
+```bash
 cd "$PLAYGROUND_DIR"
+
+# GraphQL batching, N+1, partial errors, operation-name cardinality.
 ./scenarios/run.sh a6
 
-# Async producer → consumer span link.
+# Async producer-to-consumer span link.
 ./scenarios/run.sh a3
 
-# Rust storefront GraphQL → Java payment gRPC.
+# Rust storefront GraphQL to Java payment gRPC.
 ./scenarios/run.sh a23
 
-# Capture one bounded CLI invocation; copy the printed ID.
-cd "$PLAYGROUND_DIR"
+# Saved-state shells; not populated content.
+./scenarios/run.sh c5
+
+# One bounded CLI invocation.
 parallax invocation start -- echo parallax-demo
-parallax invocation inspect <invocation-id>
-parallax invocation bundle <invocation-id>
 
-# Read-only raw telemetry query. Paste the same query into Parallax /sql.
+# Read-only raw telemetry; paste the same query into /sql.
 parallax sql 'SELECT * FROM `opentelemetry_logs` ORDER BY timestamp DESC LIMIT 5'
 ```
 
-For live tails, use a bounded window so the presentation ends:
+### CLI families
+
+This list covers every top-level command in the verified preview.
+
+| Family | Safe presentation command | Notes |
+| --- | --- | --- |
+| Server | `parallax serve` | Core startup |
+| Trace list/detail | `parallax traces ...`; `parallax trace inspect <trace-id>` | Core story; add `--follow --for 30s` for a bounded live tail |
+| Logs | `parallax logs --service checkout --since 15m --limit 50` | Add `--follow --for 30s` for a bounded live tail |
+| Issues | `parallax issue list`; `parallax issue context <fingerprint>` | `issue resolve` changes local workflow state; run only intentionally |
+| Invocations | `parallax invocation start -- echo parallax-demo` | Then use `list`, `inspect`, `bundle`, or bounded `watch --for 30s` |
+| Invocation metrics | `parallax metrics --invocation <invocation-id>` | Requires an instrumented invocation; the playground acceptance path supplies one |
+| SQL | `parallax sql 'SELECT ...'` | Read-only SELECT-shaped statements only |
+| Diagnostics | `parallax doctor` | Core preflight |
+| Contexts | `parallax context list` | `add`, `use`, `show`, and `remove` manage named API targets |
+| Claude import | `parallax import-claude --help` | Consent-only; requires an operator-provided stream-json NDJSON file |
+| Lifecycle prune | `parallax prune` | Dry-run by default; run after stopping the server if the metadata DB is locked |
+| Uninstall | `parallax uninstall --help` | Do not run in a presentation; `--purge` deletes the Parallax data directory |
+
+Bare invocation mode also exposes `invocation finish`; `invocation agent`
+requires imported agent-session evidence and should not be shown on a plain
+`echo` invocation.
+
+## 6. Stop, reset, and known limits
+
+Close the browser and stop the playground:
 
 ```bash
-parallax logs --follow --grep "checkout" --for 30s
-parallax traces --follow --errors --service checkout --for 30s
-```
-
-## 6. CLI checkpoints
-
-Use these after any scenario. Copy IDs from output; background load makes “most
-recent” a navigation hint, not proof that a row came from the last command.
-
-```bash
-# Traces.
-parallax traces --service checkout --since 15m --limit 20
-parallax traces --errors --since 15m --limit 20
-parallax trace inspect <trace-id>
-
-# Logs.
-parallax logs --service checkout --since 15m --limit 50
-parallax logs --trace <trace-id>
-
-# Issues and bounded agent context.
-parallax issue list --status open
-parallax issue context <fingerprint> --format json
-
-# Invocations.
-parallax invocation list
-parallax invocation inspect <invocation-id>
-
-# Read-only SQL.
-parallax sql 'SELECT * FROM `opentelemetry_logs` ORDER BY timestamp DESC LIMIT 5'
-```
-
-## Stop and reset
-
-Stop the playground in Terminal B:
-
-```bash
+agent-browser close
 cd "$PLAYGROUND_DIR"
 docker compose -f deploy/docker-compose.yml --profile demo down
 ```
 
-Stop Parallax with `Ctrl-C` in Terminal A. This preserves Parallax data under
-`~/.parallax`.
+Stop `parallax serve` with `Ctrl-C` in Terminal A. This preserves Parallax data
+under `~/.parallax`.
 
-For a disposable playground reset only, remove its volumes too:
+For a disposable playground-only reset, remove its Docker volumes too:
 
 ```bash
 docker compose -f deploy/docker-compose.yml --profile demo down -v
 ```
 
-Do not use `down -v` when the generated data is needed for the next presenter.
+`down -v` deletes playground database/broker volumes. Do not run it when the
+generated data is needed for another presenter.
 
-## Verified boundaries
+Known limits on the verified preview:
 
-- The walkthrough uses the Homebrew preview CLI, not a source build or stable
-  formula.
-- The demo is local-only. Default auth is off; OTLP listeners are on loopback.
-- Playground containers are unauthenticated demo services with demo credentials;
-  do not expose them to a shared network.
-- `a28` requires real browser interaction through `agent-browser`. A shell
-  smoke check cannot prove RUM navigation or propagation.
-- The latest-preview local browser session verified the current route evidence
-  recorded below. A fresh `agent-browser` run also checked the post-change
-  playground checkout feedback path: the propagation-break heading and note
-  are visible, and the intentional HTTP 502 is announced in the live status.
-- `c4` created the alert rule and destinations, but the current preview did not
-  open an incident during its 180-second poll. Historical coverage proves the
-  rule/webhook path; revalidate incident opening on the current preview before
-  presenting it as a live lifecycle claim.
-- Background load can create newer rows while presenting. Pin a trace ID or use
-  service/time filters before making a claim.
-- This proves local ingest, correlation, UI navigation, CLI inspection, and the
-  evidence handoff. It does not prove production scale, TLS, multi-user
-  isolation, hosted MCP, autonomous fixing, or replacement parity with mature
-  observability products.
-
-## Final audit evidence and gaps
-
+- The page-generated propagation-break link is encoded incorrectly; use the
+  direct `?nopropagate=1` URL documented above.
+- Alert rule and destination setup are visible, but current-preview incident
+  opening was not reproduced. Do not run `c4` live or claim the incident
+  lifecycle until sustained-breach verification passes.
+- `c5` saves an empty dashboard and minimal investigation state. It proves
+  persistence plumbing, not meaningful saved content.
+- The direct playground stack does not prove a live Sentry UI or flamegraph.
+  Sentry envelope emission has separate coverage.
 - Scalar, histogram, and exemplar metrics are supported. Exponential
-  histograms and summaries are dropped; do not present them as supported.
+  histograms and summaries are dropped.
 - No clock-skew banner was observed.
-- Alert rule setup and destinations are verified, but the alert incident
-  lifecycle remains unverified.
-- Sentry envelope emission is proven. Sentry UI grouping and flamegraph
-  behavior were not independently proven.
-- The agent workflow has a known MCP limitation: `parallax-mcp check` output
-  does not currently match the CLI/GraphQL bundle JSON exactly.
-- Fresh `agent-browser` verification of the post-change playground checkout
-  feedback path passed: propagation-break context is visible and the current
-  successful result is announced through the accessible live status. The
-  status path also makes intentional HTTP failures explicit when induced.
-- After removing stale Compose orphans and restarting the demo, all 16
-  playground services were `Up`; fresh `agent-browser` runs then showed both
-  normal checkout and the intentional propagation-break checkout returning
-  visible accessible success status. The latter remains the correct way to
-  demonstrate disconnected browser/backend propagation, not a service outage.
+- The Homebrew preview ships `parallax`, not `parallax-mcp`; MCP requires a
+  source build outside this walkthrough. Its current `check` output also does
+  not match CLI/GraphQL bundle JSON exactly.
+- This walkthrough proves local ingest, correlation, UI navigation, CLI
+  inspection, and evidence handoff. It does not prove production scale, TLS,
+  multi-user isolation, hosted MCP, or competitor-replacement parity.
 
 ## Sources of truth
 
-- Install and ports: Homebrew formula plus `parallax serve --help`
-- CLI behavior: `parallax --help` and `crates/parallax-cli/src/main.rs`
-- Playground startup: `parallax-telemetry-playground/demo.sh`
-- Browser journey: `parallax-telemetry-playground/scenarios/a28-rum-journey.sh`
-- Scenario catalog: `parallax-telemetry-playground/scenarios/README.md`
-- UI routes: `ui/src/routes/`
+- Preview identity: moving GitHub `preview` release and Homebrew
+  `parallax-preview` formula.
+- Install/update behavior: Homebrew documentation and tap README.
+- CLI syntax: installed preview `--help` and
+  `crates/parallax-cli/src/main.rs`.
+- Ports and startup: `parallax serve` ready banner plus playground `demo.sh`
+  and `deploy/docker-compose.yml`.
+- Scenarios: `parallax-telemetry-playground/scenarios/README.md` and
+  `scenarios/run.sh`.
+- Browser routes: `parallax/ui/src/routes/`, verified with `agent-browser`.
