@@ -14,7 +14,7 @@ concurrency:
 jobs:
   mcp-evals:
     if: contains(github.event.pull_request.labels.*.name, 'run-mcp-evals')
-    runs-on: [self-hosted, velnor-target-mvp]
+    runs-on: ${{ github.event_name == 'pull_request' && 'ubuntu-26.04' || fromJSON('["self-hosted","velnor-target-mvp"]') }}
     timeout-minutes: 20
     env:
       CARGO_INCREMENTAL: "0"
