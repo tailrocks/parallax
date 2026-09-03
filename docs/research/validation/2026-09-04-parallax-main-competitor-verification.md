@@ -6,7 +6,7 @@
 
 ## Executive conclusion
 
-Parallax at [`6b3a92b`](https://github.com/tailrocks/parallax/commit/6b3a92bc32178e6f651e06f54009b3a9646d1954) is a working Rust-first execution-context engine, not a mature general observability suite. The live run proved OTLP traces/logs/metrics, derived errors and issue fingerprints, Sentry-envelope ingest, CLI invocation/session context, Claude Code import, bounded live tails, alerting, dashboards, investigations, redaction, MCP projection equivalence, GitHub webhook validation, and the embedded UI/API.
+Parallax at [`3c4b68d`](https://github.com/tailrocks/parallax/commit/3c4b68d3acf8fb435102ae2beb8f184bf40b617c) is a working Rust-first execution-context engine, not a mature general observability suite. The live run proved OTLP traces/logs/metrics, derived errors and issue fingerprints, Sentry-envelope ingest, CLI invocation/session context, Claude Code import, bounded live tails, alerting, dashboards, investigations, redaction, MCP projection equivalence, GitHub webhook validation, and the embedded UI/API.
 
 Parallax is strongest where the product model is distinctive: one canonical API joining telemetry, errors, invocations, agent sessions, deploy/CI context, redacted evidence, and fix-oriented investigation. It is not strongest on generic observability breadth. OpenObserve, SigNoz, and Grafana LGTM had more mature cross-signal exploration; Sentry led issue workflow, SDK breadth, replay, and profiling; Grafana led query/visualization; Maple led local single-binary UX. Parallax's bundle value versus raw context remains unproven.
 
@@ -24,9 +24,9 @@ HyperDX/ClickStack UI and API worked at `2.37.0`, but its AIO OTLP listener did 
 | Item | Exact value |
 | --- | --- |
 | Parallax remote | `git@github.com:tailrocks/parallax.git` |
-| Parallax source | `main` / `6b3a92bc32178e6f651e06f54009b3a9646d1954` |
+| Parallax source | `main` / `3c4b68d3acf8fb435102ae2beb8f184bf40b617c` |
 | Playground remote | `git@github.com:tailrocks/parallax-telemetry-playground.git` |
-| Playground source | `main` / `c6c1516e8580da632a55240613abea7b30da76ce` |
+| Playground source | `main` / `bc3d771a386a99387fab6989ac98992d978965cc` |
 | Binary | `parallax 0.1.0-research.6b3a92b` |
 | Binary SHA-256 | `0425344e2ad0e56cf15554cdd9b53622dfad76379f914d6465c9864f85d00801` |
 | MCP binary SHA-256 | `990ba5fc282425cd9f46c04f140dfebc2b5f5c17f0fb8263b951bc373c0ab540` |
@@ -120,9 +120,9 @@ The complete shipped inventory remains in [feature-inventory-and-playground-veri
 | HyperDX AIO OTLP endpoint unavailable | Current AIO image showed receiver config but did not bind 4317/4318 after onboarding | No unsafe workaround. Removed HyperDX from active sequential Rotel exporters and recorded blocker | UI/API remained verified; direct telemetrygen probe failed with connection refused. |
 | Cold live-tail probe timed out | Server broadcast path requires a connected receiver; first probe opened after event | Test ordering corrected: open `curl -N` before stimulus; no product code change | Warm rerun returned `294` bytes; source behavior explains first timeout. |
 
-Fixes are present in this working tree and intentionally uncommitted; no commit
-was created because the user did not request a history mutation. The changed
-files are the fix record until a maintainer commits them.
+Fix commits: playground readiness `5f37ea32e1d68d1cb0a0df79c9e48e12a51bfd06`;
+playground documentation `bc3d771a386a99387fab6989ac98992d978965cc`; Parallax
+lab/integration/policy/docs `3c4b68d3acf8fb435102ae2beb8f184bf40b617c`.
 
 No Parallax product-code bug was left unexplained in the tested shipped feature set. The live-tail cold race is a harness ordering issue; HyperDX and Rustrak health issues belong to comparator integrations.
 
@@ -181,7 +181,7 @@ SIGNOZ_POURS_DIR=../../artifacts/research/2026-09-04-main/signoz-pours \
 docker compose -p parallax-otlp-fanout --env-file rotel.env -f compose.yml up -d
 ```
 
-Then run the playground scenario drivers and current backend-specific checks documented in [`bench/otlp-fanout/README.md`](../../../bench/otlp-fanout/README.md), [`parallax-telemetry-playground/VERIFICATION.md`](https://github.com/tailrocks/parallax-telemetry-playground/blob/c6c1516e8580da632a55240613abea7b30da76ce/VERIFICATION.md), and the Sentry/Rustrak scripts. Do not copy local credentials from `rotel.env` into source control.
+Then run the playground scenario drivers and current backend-specific checks documented in [`bench/otlp-fanout/README.md`](../../../bench/otlp-fanout/README.md), [`parallax-telemetry-playground/VERIFICATION.md`](https://github.com/tailrocks/parallax-telemetry-playground/blob/bc3d771a386a99387fab6989ac98992d978965cc/VERIFICATION.md), and the Sentry/Rustrak scripts. Do not copy local credentials from `rotel.env` into source control.
 
 ## Final verdict
 

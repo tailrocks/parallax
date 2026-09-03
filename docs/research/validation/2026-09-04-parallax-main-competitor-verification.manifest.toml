@@ -1,6 +1,6 @@
 run_date = "2026-09-04T04:35:46+07:00"
-parallax_sha = "6b3a92bc32178e6f651e06f54009b3a9646d1954"
-playground_sha = "c6c1516e8580da632a55240613abea7b30da76ce"
+parallax_sha = "3c4b68d3acf8fb435102ae2beb8f184bf40b617c"
+playground_sha = "bc3d771a386a99387fab6989ac98992d978965cc"
 parallax_binary_sha256 = "0425344e2ad0e56cf15554cdd9b53622dfad76379f914d6465c9864f85d00801"
 parallax_mcp_binary_sha256 = "990ba5fc282425cd9f46c04f140dfebc2b5f5c17f0fb8263b951bc373c0ab540"
 parallax_version = "0.1.0-research.6b3a92b"

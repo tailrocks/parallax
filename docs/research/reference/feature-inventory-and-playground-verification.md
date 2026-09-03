@@ -170,7 +170,7 @@ competitor backends fed identical telemetry through the fan-out hub, from the
 perspective of a real user of each product. End state: every feature above is
 verified working, compared, and production-ready — zero known bugs.
 
-### Current playground state (repo `tailrocks/parallax-telemetry-playground`, SHA `c6c1516e8580da632a55240613abea7b30da76ce`)
+### Current playground state (repo `tailrocks/parallax-telemetry-playground`, SHA `bc3d771a386a99387fab6989ac98992d978965cc`)
 
 - 12 components: 8 Rust services (axum/tonic/sqlx/Juniper: checkout, pricing,
   inventory, recommendation, orders, notifications, storefront), 3 Java Spring

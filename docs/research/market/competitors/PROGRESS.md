@@ -15,8 +15,8 @@
 
 ## Current live restamp (2026-09-04)
 
-Mandatory set verified against Parallax `main` `6b3a92bc32178e6f651e06f54009b3a9646d1954`
-and playground `c6c1516e8580da632a55240613abea7b30da76ce`:
+Mandatory set verified against Parallax `main` `3c4b68d3acf8fb435102ae2beb8f184bf40b617c`
+and playground `bc3d771a386a99387fab6989ac98992d978965cc`:
 
 | Product | Current artifact | Result |
 | --- | --- | --- |

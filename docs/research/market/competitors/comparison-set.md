@@ -11,8 +11,8 @@
 ## Current mandatory live comparison set (2026-09-04)
 
 The required self-hosted set was run against refreshed Parallax `main`
-`6b3a92bc32178e6f651e06f54009b3a9646d1954` and playground
-`c6c1516e8580da632a55240613abea7b30da76ce`: OpenObserve `v0.92.2`, Maple
+`3c4b68d3acf8fb435102ae2beb8f184bf40b617c` and playground
+`bc3d771a386a99387fab6989ac98992d978965cc`: OpenObserve `v0.92.2`, Maple
 `v0.0.21`, Sentry self-hosted `26.8.0`, SigNoz `v0.140.0` via Foundry
 `v0.2.17`, Grafana LGTM `0.32.0`, ClickStack `2.37.0`, and Rustrak `v0.14.11`.
 The feature-oriented results, exact refs/digests, API evidence, screenshots,
