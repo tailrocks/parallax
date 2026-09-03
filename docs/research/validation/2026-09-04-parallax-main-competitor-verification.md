@@ -27,9 +27,9 @@ HyperDX/ClickStack UI and API worked at `2.37.0`, but its AIO OTLP listener did 
 | Parallax source | `main` / `3c4b68d3acf8fb435102ae2beb8f184bf40b617c` |
 | Playground remote | `git@github.com:tailrocks/parallax-telemetry-playground.git` |
 | Playground source | `main` / `bc3d771a386a99387fab6989ac98992d978965cc` |
-| Binary | `parallax 0.1.0-research.6b3a92b` |
-| Binary SHA-256 | `0425344e2ad0e56cf15554cdd9b53622dfad76379f914d6465c9864f85d00801` |
-| MCP binary SHA-256 | `990ba5fc282425cd9f46c04f140dfebc2b5f5c17f0fb8263b951bc373c0ab540` |
+| Binary | `parallax 0.1.0-research.3c4b68d` |
+| Binary SHA-256 | `67d33904b37e806ff72351f968afed97d885b242a374c0be5c926e25e83f79ab` |
+| MCP binary SHA-256 | `0137327784c16cde2e3c6fba6e9ef348bb7e77d2642135405ccc0f058f8b16c6` |
 | Rust/Cargo | `rustc 1.98.0`, `cargo 1.98.0` |
 | Bun | `1.4.0` bare shell; repository `mise` runtime `1.3.14` |
 | agent-browser | `0.36.0` |
@@ -165,7 +165,7 @@ Run from the two refreshed repositories:
 
 ```bash
 # Parallax
-PARALLAX_VERSION_OVERRIDE=0.1.0-research.6b3a92b cargo build --release -p parallax-cli -p parallax-mcp
+PARALLAX_VERSION_OVERRIDE=0.1.0-research.3c4b68d cargo build --release -p parallax-cli -p parallax-mcp
 ./target/release/parallax serve --config artifacts/research/2026-09-04-main/parallax/config.toml
 
 # Playground
