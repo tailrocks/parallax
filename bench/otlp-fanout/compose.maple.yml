@@ -10,8 +10,8 @@ services:
         # Pinned (not "latest"): the installer's `releases/latest` GitHub API
         # call is unauthenticated and rate-limited inside `docker build` — a 403
         # resolves an empty tag → "no release found". Bump at
-        # https://github.com/Makisuo/maple/releases.
-        MAPLE_VERSION: "v0.0.18"
+        # https://github.com/MapleTechLabs/maple/releases.
+        MAPLE_VERSION: "v0.0.21"
     container_name: pfanout-maple
     restart: unless-stopped
     ports:

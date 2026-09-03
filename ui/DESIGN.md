@@ -1,7 +1,7 @@
 # Parallax UI design guide
 
 Canonical visual language for `ui/`. Binding agent rules stay in
-[`AGENTS.md`](AGENTS.md); this file is the vocabulary those rules point at.
+[`../AGENTS.md`](../AGENTS.md); this file is the vocabulary those rules point at.
 Tokens come from [`src/styles.css`](src/styles.css). Domain color records
 live in [`src/shared/colors.ts`](src/shared/colors.ts) — there is no
 `signal-colors.ts`.

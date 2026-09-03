@@ -1,6 +1,6 @@
 # Parallax Feature Inventory and Playground Verification Focus
 
-Research date: 2026-08-13. Purpose: a compact reference of everything Parallax
+Research date: 2026-08-13; current live restamp: 2026-09-04. Purpose: a compact reference of everything Parallax
 ships today, plus the current highest-priority program — verify every feature
 through the [telemetry playground](https://github.com/tailrocks/parallax-telemetry-playground)
 against competitor backends until all features are production-ready. This file
@@ -14,6 +14,11 @@ Canonical deep contracts: [v1-implementation-spec.md](../architecture/v1-impleme
 (comparison method), playground design
 [telemetry-playground-sample-project.md](../validation/telemetry-playground-sample-project.md)
 and fan-out lab [otlp-fanout-comparison-lab.md](../validation/otlp-fanout-comparison-lab.md).
+
+Current live evidence is canonical in
+[2026-09-04-parallax-main-competitor-verification.md](../validation/2026-09-04-parallax-main-competitor-verification.md).
+The inventory below is the shipped-surface reference; dated version tables and
+older run notes are historical unless explicitly marked current.
 
 ## What Parallax is
 
@@ -165,14 +170,14 @@ competitor backends fed identical telemetry through the fan-out hub, from the
 perspective of a real user of each product. End state: every feature above is
 verified working, compared, and production-ready — zero known bugs.
 
-### Current playground state (repo `tailrocks/parallax-telemetry-playground`)
+### Current playground state (repo `tailrocks/parallax-telemetry-playground`, SHA `bc3d771a386a99387fab6989ac98992d978965cc`)
 
 - 12 components: 8 Rust services (axum/tonic/sqlx/Juniper: checkout, pricing,
   inventory, recommendation, orders, notifications, storefront), 3 Java Spring
   Boot 4.1 (catalog GraphQL, payment gRPC, fulfillment Kafka), TanStack
   Start/React 19 web (browser OTLP + web-vitals + session.id + SSR
   traceparent), Rust `playground` CLI (runs/cron, JUnit→OTLP bridge).
-  Dual emission: OTLP + Sentry SDK envelopes. Infra: postgres:17, Redpanda,
+  Dual emission: OTLP + Sentry SDK envelopes. Infra: postgres:18, Redpanda,
   flagd, k6.
 - ~60 scripted scenarios: a-series feature proofs (waterfall, exemplars, span
   links, reverse-language hop, RUM error, GraphQL N+1, subscriptions/stream
@@ -184,23 +189,26 @@ verified working, compared, and production-ready — zero known bugs.
   lag, poison message, sampling gap, rage click, …) +
   c-series product surfaces (`c1`–`c11`, coverage-matrix spine).
 - Fan-out lab lives in this repo at `bench/otlp-fanout/` — Rotel hub fanning
-  identical OTLP to Parallax, OpenObserve, Maple, SigNoz, Sentry (per-signal
-  routing; Sentry has no OTLP metrics).
+  identical OTLP to Parallax, OpenObserve, Maple, SigNoz, Grafana, and Sentry
+  (per-signal routing; Sentry has no OTLP metrics; HyperDX was probed but its
+  current AIO OTLP listener did not bind in the 2026-09-04 run).
 - `VERIFICATION.md` runbook + machine-checked `playground test-verify`;
   `TOUR.md`; corner-case matrix. Comparison is manual by design.
 
-### Workstream 1 — upgrade playground examples
+### Historical Workstream 1 — upgrade playground examples (superseded 2026-09-04)
 
-Bring every example/service to current ecosystem latest (Boot, OTel Java
+The 2026-08-13 workstream asked to bring every example/service to current
+ecosystem latest (Boot, OTel Java
 agent, OTel Rust, JS SDKs, Sentry SDKs); refresh `postgres:17` → 18; re-run
 `renovate`-missed surfaces; re-verify the dual OTLP+Sentry emission contract
-after upgrades; refresh the README verified matrix (stale since 2026-06-23,
-including the unresolved Java-agent→Rotel→OpenObserve delivery snag).
+after upgrades; refresh the README verified matrix. The 2026-09-04 run completed
+the current-source rebuild and closed the Java-agent→Rotel→OpenObserve delivery
+snag; the dated workstream text remains as history.
 
-### Workstream 2 — latest backend versions, pinned
+### Historical Workstream 2 pin table (2026-08-14)
 
-Pin every backend/tool at latest stable and keep pins current (research date
-2026-08-13; pins applied 2026-08-14):
+The current version manifest superseding this table is the dated canonical
+report linked above.
 
 | Tool | Deployed today | Latest stable |
 | --- | --- | --- |

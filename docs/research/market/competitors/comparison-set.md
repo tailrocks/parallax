@@ -5,7 +5,18 @@
 > current as the market shifts — products are added, merged, or retired on every
 > pass. Verify each still exists and still matters before relying on a row.
 >
-> Last reviewed: 2026-07-17.
+> Last broad market review: 2026-07-17. Current live backend verification:
+> 2026-09-04 — see the [canonical report](../../validation/2026-09-04-parallax-main-competitor-verification.md).
+
+## Current mandatory live comparison set (2026-09-04)
+
+The required self-hosted set was run against refreshed Parallax `main`
+`3c4b68d3acf8fb435102ae2beb8f184bf40b617c` and playground
+`bc3d771a386a99387fab6989ac98992d978965cc`: OpenObserve `v0.92.2`, Maple
+`v0.0.21`, Sentry self-hosted `26.8.0`, SigNoz `v0.140.0` via Foundry
+`v0.2.17`, Grafana LGTM `0.32.0`, ClickStack `2.37.0`, and Rustrak `v0.14.11`.
+The feature-oriented results, exact refs/digests, API evidence, screenshots,
+and HyperDX ingest blocker are in the canonical report.
 
 Legend for the **State** column:
 

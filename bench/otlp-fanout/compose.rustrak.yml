@@ -8,7 +8,7 @@
 name: parallax-otlp-fanout
 services:
   rustrak:
-    image: rustrak/rustrak-server:v0.14.4
+    image: rustrak/rustrak-server:v0.14.11
     container_name: pfanout-rustrak
     restart: unless-stopped
     ports:
@@ -30,7 +30,7 @@ services:
       retries: 20
       start_period: 20s
   rustrak-ui:
-    image: rustrak/rustrak-ui:v0.14.4
+    image: rustrak/rustrak-ui:v0.14.11
     container_name: pfanout-rustrak-ui
     restart: unless-stopped
     ports:

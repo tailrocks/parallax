@@ -5,16 +5,16 @@ compare how each renders identical data. Design + rationale:
 [`docs/research/validation/otlp-fanout-comparison-lab.md`](../../docs/research/validation/otlp-fanout-comparison-lab.md).
 
 **Topology:** only **Parallax** runs on the host (Homebrew). Everything else runs
-in Compose. **Rotel** is the single shared OTLP endpoint published on host
-`4317/4318`; it fans every signal out to each backend AND back to host Parallax
-via `host.docker.internal:14317`.
+in Compose or its required own Compose stack. **Rotel** is the single shared OTLP
+endpoint published on host `4317/4318`; it fans each applicable signal out to
+ready backends and back to host Parallax via `host.docker.internal:14317`.
 
 ```
 emitters ─► localhost:4317 (Rotel) ─┬─► openobserve:5081        (compose)
-                                     ├─► otel-collector:4317     (SigNoz v0.129.0 overlay)
+                                     ├─► host.docker.internal:4321 (SigNoz v0.140.0 Foundry ingester)
                                      ├─► maple:4318              (overlay, chDB)
                                      ├─► grafana-lgtm:4317       (overlay, Loki/Tempo/Prometheus)
-                                     ├─► hyperdx:4317            (overlay, ClickStack; after first org)
+                                     ├─► hyperdx:4317            (probe only; .37 listener blocked in this run)
                                      ├─► host.docker.internal:9000 (Sentry nginx, own stack)
                                      └─► host.docker.internal:14317 ─► Parallax (host)
 # rustrak is Sentry-envelope only (host :18081), not a Rotel exporter.
@@ -24,7 +24,8 @@ emitters ─► localhost:4317 (Rotel) ─┬─► openobserve:5081        (com
 ## Status
 
 - ✅ **Core (Rotel + OpenObserve)** — implemented and **verified end-to-end**
-  (re-verified live 2026-06-23 on the upgraded Rust stack, otel 0.32/tonic 0.14):
+  (re-verified live 2026-09-04 on the current playground and OpenObserve
+  `v0.92.2`; historical 2026-06-23 counts remain below):
   the playground's four Rust services emit OTLP → Rotel fans out → OpenObserve,
   and a search returns the multi-service trace by service: `checkout=30,
   pricing=6, inventory=6, recommendation=6` spans. The OpenObserve search path is
@@ -32,37 +33,16 @@ emitters ─► localhost:4317 (Rotel) ─┬─► openobserve:5081        (com
   was corrected to match. The Parallax exporter targets the host; it simply
   retries until Parallax is up (note: Rotel fan-out is **sequential**, so list a
   down host-Parallax sink *after* the others or it back-pressures them).
-- ⚠️ **SigNoz** — overlay `compose.signoz.yml` (vendored clone via
-  `setup-vendor.sh`, default **`v0.129.0`**). **v0.137.0 removed
-  `deploy/docker/docker-compose.yaml` (Foundry-only); do not invent Foundry.**
-  **Re-verified 2026-08-16 on v0.129.0:** first org register opens OpAMP-managed
-  OTLP `:4317`; ClickHouse `checkout=63` after playground `a1`. Also verified
-  2026-06-23 (`signoz-smoke = 8` spans).
-
-  **One-time onboarding is required** (the key run finding): SigNoz's
-  `otel-collector` is **OpAMP-managed** by the SigNoz server — its OTLP `:4317`
-  receiver is *not* opened by the static `otel-collector-config.yaml`; it binds
-  only after the server pushes a config, and the server pushes it only after the
-  **first org/admin is created**. On a fresh `compose up` the collector loops
-  `opamp/server_client.go` errors and `:4317` stays closed. Create the first user
-  once (the SigNoz UI does this, or via API), then the collector starts its OTLP
-  receiver and Rotel delivers:
-
-  ```bash
-  # after `docker compose -f compose.yml -f compose.signoz.yml up -d` and the
-  # signoz server is healthy — register the first org+admin (OpenAccess route):
-  docker exec signoz wget -qO- --header='Content-Type: application/json' \
-    --post-data='{"name":"Admin","email":"admin@parallax.lab","password":"Complexpass#123","orgDisplayName":"Parallax Lab","orgName":"parallax"}' \
-    http://localhost:8080/api/v1/register
-  # then enable `signoz` in rotel.env (ROTEL_EXPORTERS + ROTEL_EXPORTERS_TRACES).
-  ```
-
-  (Overlay networking verified: Rotel resolves `otel-collector` on the shared
-  `lab` network; host `4317/4318` unpublished. Note: the `signoz: ports: !reset`
-  override did not publish the UI on host `3301` in this run — reach the API
-  in-container as above, or fix the publish — tracked.)
+- ✅ **SigNoz** — current supported deployment uses **Foundry v0.2.17** to
+  generate the v0.140.0 Compose stack. `setup-vendor.sh` verifies the Foundry
+  checksum and writes `vendor/signoz-pours`; `compose.signoz.yml` includes that
+  generated output. First UI registration is required because the ingester is
+  OpAMP-managed. Current live run: UI/API `http://localhost:3301` returned 200;
+  traces, logs, and metrics were visible after onboarding. The overlay remaps
+  OTLP/HTTP to host `:4321` so Rotel keeps `:4317/4318`.
 - ✅ **Maple** — overlay `compose.maple.yml` (`maple/Dockerfile`). **Verified
-  end-to-end live 2026-06-23:** Rotel → `maple:4318` → embedded chDB, `maple
+  end-to-end live 2026-09-04 on official `MapleTechLabs/maple v0.0.21`: Rotel →
+  `maple:4318` → embedded chDB, `maple
   traces` returns 6 `maple-fanout` spans. Two findings, both handled in the
   Dockerfile/entrypoint:
   1. Maple **does** ship prebuilt Linux bundles (`maple.dev/cli/install` → GitHub
@@ -74,14 +54,14 @@ emitters ─► localhost:4317 (Rotel) ─┬─► openobserve:5081        (com
      published on host `:8081`. (Rotel logs a cosmetic protobuf-response-decode
      warning — Maple's OTLP/HTTP *response* body isn't protobuf — but ingestion
      succeeds and spans land in chDB.)
-- ✅ **Sentry** — runnable, **verified end-to-end live 2026-06-23 on v26.6.0**; vendor pin is `26.7.2` (2026-08-14).
+- ✅ **Sentry** — runnable, **verified end-to-end live 2026-09-04 on v26.8.0**.
   Self-hosted Sentry is ~72 services bootstrapped by its own `install.sh` (not a
   clean `include:` target), so it runs as its **own vendored Compose stack**
   under `vendor/sentry` and Rotel reaches it over the **host bridge**
   (`host.docker.internal:9000` → nginx → relay) — no network-join needed. Three
   scripts drive it:
   1. `sentry/setup.sh` — vendor `getsentry/self-hosted` (pinned `SENTRY_REF`,
-     default `26.7.2` ≥ native-OTLP `25.8.0`), run `install.sh` non-interactively
+     default `26.8.0` ≥ native-OTLP `25.8.0`), run `install.sh` non-interactively
      (needs bash ≥ 4.4 — `brew install bash` on macOS), `docker compose up`.
   2. `sentry/onboard.sh` — create the admin (idempotent), read the internal
      project DSN, and print the exact `rotel.env` exports + `SENTRY_DSN`.
@@ -93,7 +73,28 @@ emitters ─► localhost:4317 (Rotel) ─┬─► openobserve:5081        (com
   + the traces/logs lists (omit from `ROTEL_EXPORTERS_METRICS` — Sentry has no
   OTLP metrics), and restart Rotel.
 
-## 4-sink re-verify (2026-08-14)
+## Current verification (2026-09-04)
+
+Latest supported releases were used for the live run. Stable-only policy excludes
+OpenObserve `v1.0.0-rc2`; latest GA is `v0.92.2`. OTel Contrib is `v0.160.0`,
+but its telemetrygen image is not published; the newest runnable image is
+`v0.159.0`.
+
+| Component | Current release / image |
+| --- | --- |
+| Rotel | `streamfold/rotel:v0.2.5` |
+| OpenObserve | `public.ecr.aws/zinclabs/openobserve:v0.92.2` |
+| telemetrygen | `ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.159.0` |
+| Maple | `v0.0.21` |
+| SigNoz | `v0.140.0`; Foundry `v0.2.17`; collector `v0.144.9` |
+| Sentry | `26.8.0` |
+| Grafana LGTM | `grafana/otel-lgtm:0.32.0` |
+| HyperDX / ClickStack | `clickhouse/clickstack-all-in-one:2.37.0` |
+| Rustrak | `v0.14.11` |
+
+Evidence and feature matrix: [canonical 2026-09-04 report](../../docs/research/validation/2026-09-04-parallax-main-competitor-verification.md).
+
+## Historical 4-sink re-verify (2026-08-14)
 
 Playground coverage program (plans 162–167 minus SigNoz Foundry rewrite)
 re-ran the live Rotel `v0.2.5` fan-out after lockstep SDK upgrades:
@@ -110,7 +111,7 @@ win some cells) are in the playground `VERIFICATION.md`. SigNoz overlay
 stays **blocked** — do not invent Foundry. Coverage spine:
 playground `docs/coverage-matrix.md`.
 
-## Pinned versions (2026-08-14)
+## Historical pinned versions (2026-08-14)
 
 | Component | Pin |
 | --- | --- |
@@ -165,7 +166,7 @@ Implemented in `crates/parallax-cli` (env + flag; config-file deferred).
 ## Adding backends
 
 ```bash
-./setup-vendor.sh                                   # clone SigNoz into vendor/
+./setup-vendor.sh                                   # Foundry -> vendor/signoz-pours/
 docker compose -f compose.yml -f compose.signoz.yml -f compose.maple.yml up -d
 ```
 
@@ -195,11 +196,12 @@ Paste the printed `ROTEL_EXPORTER_SENTRY_*` exports into `rotel.env`, add
 | `compose.grafana.yml` / `compose.hyperdx.yml` / `compose.rustrak.yml` | Grafana LGTM / HyperDX / rustrak overlays |
 | `exporters-reachable.sh` | parse `rotel.env` + TCP-probe listed exporters (`--parse-only` for CI) |
 | `maple/Dockerfile` | Maple chDB local-mode build (best-effort) |
-| `setup-vendor.sh` | clone SigNoz into `vendor/` (default v0.129.0) |
+| `setup-vendor.sh` | generate current SigNoz Compose with Foundry (default `v0.2.17`) |
 | `setup-highlight.sh` | last highlight.io hobby attempt (expected BLOCKED) |
 | `sentry/setup.sh` | vendor + install self-hosted Sentry as its own Compose stack |
 | `sentry/onboard.sh` | create admin, print DSN + `rotel.env` exports |
 | `sentry/verify.sh` | assert Sentry OTLP ingest + issue grouping (A1/A15/A16) |
 | `smoke.sh` | bring up core, drive load, assert delivery |
 
-Pin every image tag at implementation; `:latest` here is a starting point.
+Pin every image tag at implementation. The current run uses the exact versions
+listed above; `:latest` is not accepted as comparison evidence.
