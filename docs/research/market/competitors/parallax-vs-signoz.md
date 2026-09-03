@@ -1,5 +1,17 @@
 # Parallax vs SigNoz
 
+## Current live verification — 2026-09-04
+
+SigNoz `v0.140.0` was deployed through the supported Foundry `v0.2.17` workflow,
+with pinned core/collector digests and an explicit port-replacement overlay.
+After first-user onboarding, the UI/API and fresh traces, logs, and metrics
+were verified. SigNoz remains ahead on mature full-stack observability breadth;
+Parallax's evidence-context model is narrower and its value remains unproven.
+Exact evidence: [canonical report](../../validation/2026-09-04-parallax-main-competitor-verification.md).
+
+The dated pass notes below preserve historical claims; this section is the
+current version authority.
+
 > One-to-one comparison. **No pro-Parallax bias.** Where SigNoz is ahead, ahead
 > is written. Where Parallax's edge is only *planned* or *unproven*, that is
 > stated, not hidden.

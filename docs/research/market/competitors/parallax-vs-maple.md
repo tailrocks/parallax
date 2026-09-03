@@ -1,5 +1,17 @@
 # Parallax vs Maple
 
+## Current live verification — 2026-09-04
+
+Maple was tested from the official `MapleTechLabs/maple` `v0.0.21` bundle, not
+the old repository name or playground pin. Rotel delivered the shared workload;
+Maple `traces --since 10m` returned fresh data with the playground service names.
+Maple remains the
+strongest local single-binary UX reference in this set. Exact evidence and the
+Parallax tradeoff are in the [canonical report](../../validation/2026-09-04-parallax-main-competitor-verification.md).
+
+The dated pass notes below preserve historical claims; this section is the
+current version authority.
+
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 59 +
 > pass 112; **pass 139** + **pass 174** + **pass 201** re-pin). Tinybird-decoupling
 > watch **still UNFIRED** — latest tag still **v0.0.12** (2026-06-18) / **1,532★**;

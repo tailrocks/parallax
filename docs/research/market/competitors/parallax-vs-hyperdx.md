@@ -1,5 +1,16 @@
 # Parallax vs HyperDX (ClickStack)
 
+## Current live verification — 2026-09-04
+
+ClickStack AIO `2.37.0` was started and its UI/API health and source onboarding
+were verified. The current AIO image did not bind OTLP `4317/4318` after
+onboarding, so direct telemetry ingest was blocked and HyperDX was excluded
+from the sequential Rotel route. This is an integration limitation, not a
+successful telemetry comparison. Exact probe evidence: [canonical report](../../validation/2026-09-04-parallax-main-competitor-verification.md).
+
+The dated pass notes below preserve historical claims; this section is the
+current version authority.
+
 > One-to-one comparison. **No pro-Parallax bias.** Where HyperDX is ahead, ahead
 > is written. Where Parallax's edge is only *planned* or *unproven*, that is
 > stated, not hidden.

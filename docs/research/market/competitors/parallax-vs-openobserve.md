@@ -1,5 +1,18 @@
 # Parallax vs OpenObserve
 
+## Current live verification — 2026-09-04
+
+OpenObserve GA `v0.92.2` was the current stable comparison artifact; `v1.0.0-rc2`
+was excluded as a release candidate. Fresh Rotel fan-out delivered current
+playground traces/logs/metrics, and the OpenObserve search path returned fresh
+service data. OpenObserve remains ahead on shipped Rust single-binary
+observability, general query maturity, and broader platform surface. Parallax's
+live edge is its narrower derived-error/evidence/MCP workflow; bundle value is
+unproven. Exact evidence: [canonical report](../../validation/2026-09-04-parallax-main-competitor-verification.md).
+
+The dated pass notes below preserve historical claims; this section is the
+current version authority.
+
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 48
 > Cloud pricing; **pass 94** EE gates; **pass 102** pin; **pass 119** pricing;
 > **pass 155** + **pass 182** + **pass 206** pin + MCP primary docs). Still

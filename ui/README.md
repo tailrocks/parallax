@@ -36,4 +36,4 @@ bun run build
 bunx --bun --no-install shadcn add <component>
 ```
 
-Full UI conventions: [AGENTS.md](AGENTS.md).
+Full UI conventions: [root AGENTS.md](../AGENTS.md).

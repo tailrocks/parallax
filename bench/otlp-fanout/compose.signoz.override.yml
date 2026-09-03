@@ -1,0 +1,25 @@
+# Current SigNoz Foundry overlay. The base file is generated under
+# artifacts/research/<run>/signoz-pours/deployment/compose.yaml.
+# Pinned 2026-09-04 to SigNoz v0.140.0 and collector v0.144.9.
+services:
+  ingester:
+    image: signoz/signoz-otel-collector:v0.144.9@sha256:72aa1e4c1ec529f178e962c049be35cfd7abae02fe9a397edad10b4a9cba62fa
+    ports: !override
+      - "4320:4317"
+      - "4321:4318"
+    networks:
+      - signoz-network
+      - lab
+  signoz-signoz-0:
+    image: signoz/signoz:v0.140.0@sha256:7969e02eb3ea7904d6c824404ca2bc0205209527fd0fada00283156b8e78cc5c
+    ports: !override
+      - "3301:8080"
+    networks:
+      - signoz-network
+      - lab
+  signoz-telemetrystore-migrator:
+    image: signoz/signoz-otel-collector:v0.144.9@sha256:72aa1e4c1ec529f178e962c049be35cfd7abae02fe9a397edad10b4a9cba62fa
+networks:
+  lab:
+    external: true
+    name: parallax-otlp-fanout

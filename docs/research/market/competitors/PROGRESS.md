@@ -10,7 +10,26 @@
 > - 🔴 stale / missing — aged number, dead source, or absent deep-dive. Highest priority.
 > - ⚪ benchmark-dependent — needs measurement before any number is trusted.
 >
-> Today: **2026-07-17** (pass 1 — bootstrap).
+> Historical market pass board started **2026-07-17**. Current live comparison
+> restamp: **2026-09-04** — [canonical report](../../validation/2026-09-04-parallax-main-competitor-verification.md).
+
+## Current live restamp (2026-09-04)
+
+Mandatory set verified against Parallax `main` `6b3a92bc32178e6f651e06f54009b3a9646d1954`
+and playground `c6c1516e8580da632a55240613abea7b30da76ce`:
+
+| Product | Current artifact | Result |
+| --- | --- | --- |
+| OpenObserve | `v0.92.2` GA | OTLP trace/log/metric ingest and search pass |
+| Maple | `v0.0.21` official bundle | OTLP ingest, traces, services pass |
+| Sentry self-hosted | `26.8.0` | OTLP trace + grouped issue and SDK envelope pass |
+| SigNoz | `v0.140.0`, Foundry `v0.2.17` | UI/API and fresh traces/logs/metrics pass |
+| Grafana LGTM | `0.32.0` | UI/API, Tempo traces, Loki labels, Prometheus metrics pass |
+| HyperDX / ClickStack | `2.37.0` | UI/API pass; AIO OTLP listener failed to bind |
+| Rustrak | `v0.14.11` | UI and Rust/Java/JS envelope issues pass; image healthcheck red |
+
+Exact image refs/digests and feature verdicts are in the canonical report. The
+older pass log below is historical and is not the current version authority.
 
 ## Pass log
 
@@ -98,14 +117,14 @@
 | Product | Deep-dive file | State | Last verified | Next gap |
 | --- | --- | --- | --- | --- |
 | Datadog | [parallax-vs-datadog.md](parallax-vs-datadog.md) | ✅ pass 64 (Bits $) | 2026-07-17 | Bits **$500/500 annual**, **$600/500 monthly**, **$1.30/cr** OD. No self-host backend; FedRAMP High. Open: A1-vs-Bits; cost bench |
-| Sentry | [parallax-vs-sentry.md](parallax-vs-sentry.md) | ✅ pass 65 (OTLP) | 2026-07-17 | Self-host **26.7.0**. OTLP **open beta; no metrics** (pass 65). Open: OTLP-metrics GA; A1-vs-Seer |
-| Grafana Cloud/LGTM | [parallax-vs-grafana.md](parallax-vs-grafana.md) | ✅ pass 62 (pricing reconfirm) | 2026-07-17 | Pro **$19**; logs/traces/profiles **$0.05+$0.40+$0.10/GB**; Assistant **$20/AI user**. Pins: Grafana **13.1.0**, Mimir **3.1.3**, Loki **3.7.3**, Tempo **3.0.2**, Pyroscope **2.1.1**. Open: A1; self-host TCO |
+| Sentry | [parallax-vs-sentry.md](parallax-vs-sentry.md) | ✅ live restamp | 2026-09-04 | Self-host **26.8.0**. OTLP traces+logs; no OTLP metrics. Open: OTLP-metrics GA; A1-vs-Seer |
+| Grafana Cloud/LGTM | [parallax-vs-grafana.md](parallax-vs-grafana.md) | ✅ live restamp | 2026-09-04 | LGTM **0.32.0**; live UI/API, Tempo, Loki, and Prometheus checks pass. Open: A1; self-host TCO |
 | Honeycomb | [parallax-vs-honeycomb.md](parallax-vs-honeycomb.md) | ✅ pass 62 (pricing reconfirm) | 2026-07-17 | Free 20M+$100M DP; Pro **$150/50M**; Agent Timeline **Pro+**; MCP+Canvas on Free. Open: A1-vs-Auto-investigations; high-card GreptimeDB bench |
 | New Relic | [parallax-vs-new-relic.md](parallax-vs-new-relic.md) | ✅ pass 62 (seat $) | 2026-07-17 | Data **$0.40/$0.60/GB** holds. **Full Pro $349 annual / $418.80 monthly** (was wrongly ~$49). Core **$49**. Preflight free beyond ingest. Open: A1; CCU quote; SaaS-only |
-| SigNoz | [parallax-vs-signoz.md](parallax-vs-signoz.md) | ✅ pass 62 (re-pin) | 2026-07-17 | **30,254★ + v0.133.0 + MCP 41 tools**. **Noz = Cloud only**. Open: throughput **no public number**; A1 |
-| OpenObserve | [parallax-vs-openobserve.md](parallax-vs-openobserve.md) | ✅ pass 63 (pricing) | 2026-07-17 | Cloud **$0.50/$0.01** GB; EE free ≤50GB/day; AI preview 20 credits. MCP EE write-heavy. Open: A1; GreptimeDB-vs-Parquet |
+| SigNoz | [parallax-vs-signoz.md](parallax-vs-signoz.md) | ✅ live restamp | 2026-09-04 | **v0.140.0 + Foundry v0.2.17**; UI/API and fresh traces/logs/metrics pass. Open: throughput; A1 |
+| OpenObserve | [parallax-vs-openobserve.md](parallax-vs-openobserve.md) | ✅ live restamp | 2026-09-04 | GA **v0.92.2**; fresh OTLP trace/log/metric ingest and search pass. Open: A1; GreptimeDB-vs-Parquet |
 | Coroot | [parallax-vs-coroot.md](parallax-vs-coroot.md) | ✅ pass 63 (Standard $) | 2026-07-17 | **Standard $1/CPU-core** (AI RCA+SSO/RBAC); Premium custom; OSS community free. **eBPF→app-errors UNFIRED**. Open: A1-vs-Coroot-RCA |
-| Maple | [parallax-vs-maple.md](parallax-vs-maple.md) | ✅ pass 59 (Tinybird watch) | 2026-07-17 | **v0.0.12 + 1,532★**. **Tinybird-decoupling UNFIRED pass 59** (recent = Clerk/rerender perf; Tinybird still in repo). Open: A1; GreptimeDB-vs-chDB |
+| Maple | [parallax-vs-maple.md](parallax-vs-maple.md) | ✅ live restamp | 2026-09-04 | Official **MapleTechLabs/maple v0.0.21**; fresh OTLP traces/services pass. Open: A1; GreptimeDB-vs-chDB |
 | TMA1 | [parallax-vs-tma1.md](parallax-vs-tma1.md) | ✅ pass 65 (watch 16th) | 2026-07-17 | **v0.2.0-alpha12 + 109★**. **WATCH 16th UNFIRED** (install/GreptimeDB/perf only; sentry/redact/outcome commit hits 0). Open: A1-vs-TMA1 |
 | Highlight.io | [parallax-vs-highlight.md](parallax-vs-highlight.md) | 🛑 pass 33 (wound down) | 2026-07-17 | **9,331★ + Apache-2.0 + OTLP-native + ClickHouse** (historical); **🛑 TRAJECTORY RESOLVED pass 33: acquired by LaunchDarkly; standalone SaaS shut down 2026-02-28 → LaunchDarkly Observability; OSS repo unmaintained (no release since docker-v0.5.6 2025-08-08; last commit 2026-04-16 = LD-migration/allowlist work, not features; license NOASSERTION/mixed)**. No longer an active competitor — historical/reference only. Net field effect: active OSS session-replay champion vacated (NOT a Parallax win — Parallax has no replay; the bar drops, it doesn't tilt). Re-scan only if LD re-open-sources an active Highlight fork |
 | Langfuse | [parallax-vs-langfuse.md](parallax-vs-langfuse.md) | ✅ pass 61 (pricing) | 2026-07-17 | **v3.221.1 + 31,338★**. Cloud Hobby/Core **$29**/Pro **$199**/Ent **$2,499**; EE self-host **custom**. Assistant **Cloud-only**. Open: A1; prod-error watch |

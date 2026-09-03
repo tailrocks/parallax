@@ -1,5 +1,16 @@
 # Parallax vs Rustrak
 
+## Current live verification — 2026-09-04
+
+Rustrak server/UI `v0.14.11` was run with a fresh project. Rust, Java, and JS
+Sentry envelopes created three visible issues in the project UI. `/health`
+returned `{"status":"ok"}` although the container healthcheck stayed red; this
+runtime discrepancy is recorded, not hidden. Rustrak is Sentry-envelope issue
+coverage, not an OTLP fan-out sink. Exact evidence: [canonical report](../../validation/2026-09-04-parallax-main-competitor-verification.md).
+
+The dated pass notes below preserve historical claims; this section is the
+current version authority.
+
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (**pass 51**
 > first canonical deep-dive; **pass 89** + **pass 125** + **pass 180** pin
 > recheck — still **64★**, **`@rustrak/server@0.9.2` + `@rustrak/mcp@0.2.13`**

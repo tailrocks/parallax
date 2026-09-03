@@ -1,5 +1,15 @@
 # Parallax vs Grafana Cloud / LGTM
 
+## Current live verification — 2026-09-04
+
+Grafana LGTM `0.32.0` was run as the current bundled stack. Grafana API health,
+Tempo trace search, Loki labels, Prometheus metrics, and browser Explore UI all
+returned fresh workload evidence. Grafana remains the strongest generic query,
+dashboard, and visualization reference. Exact evidence: [canonical report](../../validation/2026-09-04-parallax-main-competitor-verification.md).
+
+The dated pass notes below preserve historical claims; this section is the
+current version authority.
+
 > An unbiased, one-to-one comparison. Research date: **2026-07-17**.
 > Sources: [Grafana pricing](https://grafana.com/pricing/), [Grafana Cloud docs](https://grafana.com/docs/grafana-cloud/), the in-repo [Tempo v3 architecture review](../../reference/grafana-tempo-v3-architecture-review.md) (2026-05-29), and 2026 third-party pricing analyses.
 >

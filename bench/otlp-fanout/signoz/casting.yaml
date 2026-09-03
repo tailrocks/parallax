@@ -1,0 +1,10 @@
+# SigNoz supported deployment definition pinned to Foundry v0.2.17.
+# Generated output is disposable; do not commit the generated Compose tree.
+apiVersion: v1alpha1
+kind: Installation
+metadata:
+  name: signoz
+spec:
+  deployment:
+    flavor: compose
+    mode: docker

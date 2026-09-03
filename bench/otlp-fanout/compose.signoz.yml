@@ -1,38 +1,8 @@
-# Overlay: SigNoz (its bundled ClickHouse + ZooKeeper + otel-collector + signoz).
+# Current SigNoz deployment overlay.
 #
-# Default vendor pin is v0.129.0 (setup-vendor.sh). v0.137.0+ removed
-# vendor/signoz/deploy/docker/docker-compose.yaml (Foundry-only). The include
-# below is the last working path. Do not invent a Foundry rewrite here.
-#
-# SigNoz is a multi-service stack installed from its own repo. Run setup-vendor.sh
-# first to clone it into ./vendor/signoz, then:
-#   docker compose -f compose.yml -f compose.signoz.yml up
-# and enable `signoz` in rotel.env (ROTEL_EXPORTERS + per-signal lists).
-#
-# Two overrides are essential (verify against the pinned SigNoz version):
-#   1. Drop the otel-collector's host 4317/4318 publish — those belong to Rotel.
-#   2. Put otel-collector on the `lab` network so Rotel can reach it by name, and
-#      remap the SigNoz UI to host 3301.
-name: parallax-otlp-fanout
+# Run ./setup-vendor.sh first. It uses the supported SigNoz Foundry workflow
+# and writes vendor/signoz-pours/deployment/compose.yaml. Override the output
+# with SIGNOZ_POURS_DIR for a dated evidence run.
 include:
-  - path: vendor/signoz/deploy/docker/docker-compose.yaml
-services:
-  otel-collector:
-    # Unpublish SigNoz's own OTLP host ports (collision with Rotel) and join lab.
-    # Keep signoz-net so the collector still reaches bundled ClickHouse.
-    ports: !reset []
-    networks:
-      - lab
-      - signoz-net
-  signoz:
-    # Replace (not merge) the stock `8080:8080` — 8080 collides with other lab
-    # services; publish the SigNoz UI on host 3301. `!override` swaps the whole
-    # list (a plain list merges/appends; `!reset` alone dropped it and a
-    # following list did not re-apply, leaving the UI unpublished).
-    ports: !override
-      - "3301:8080" # SigNoz UI on host 3301 (container 8080)
-networks:
-  lab:
-    name: parallax-otlp-fanout
-  signoz-net:
-    name: signoz-net
+  - path: ${SIGNOZ_POURS_DIR:-vendor/signoz-pours}/deployment/compose.yaml
+  - path: compose.signoz.override.yml

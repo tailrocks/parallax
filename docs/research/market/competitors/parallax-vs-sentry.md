@@ -1,5 +1,16 @@
 # Parallax vs Sentry
 
+## Current live verification — 2026-09-04
+
+Self-hosted Sentry `26.8.0` was bootstrapped from the official release and
+verified live: native OTLP trace ingest returned HTTP 200, five identical errors
+grouped into one issue, and current Rust/Java/JS SDK envelopes appeared in the
+issue UI. Sentry still leads issue lifecycle, SDK breadth, replay, profiling,
+and operational maturity. Exact evidence: [canonical report](../../validation/2026-09-04-parallax-main-competitor-verification.md).
+
+The dated pass notes below preserve historical claims; this section is the
+current version authority.
+
 > An unbiased, one-to-one comparison. Research date: **2026-07-17**.
 > Sources: live [Sentry pricing](https://sentry.io/pricing/) (accessed 2026-07-17),
 > [Sentry OTLP docs](https://docs.sentry.io/concepts/otlp/),
