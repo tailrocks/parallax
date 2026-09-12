@@ -29,7 +29,7 @@ metric analysis (Grafana/PromQL is not a contest — embed, don't rival), and da
 is wider than Parallax's trace explorer.
 
 **Parallax does not win everything — by design of this run.** 6 rows best=Parallax,
-3 ties, 7 rows a competitor leads (incl. service-map polish), 2 deliberate
+4 ties, 6 rows a competitor leads (incl. service-map polish), 2 deliberate
 non-rivalries, 0 outright missing capabilities in the shipped set. One process note in
 Parallax's disfavor: the initial browser walk **missed the Ecosystem surface** — the
 report first declared the service map missing, then live re-verification (GraphQL
@@ -131,7 +131,7 @@ strongest competitor implementation of that specific feature, not a fixed oppone
 | Metrics explorer | metric list + point counts | ✅ 12 metrics listed, point count in window | Grafana (Prometheus) | ✅ full PromQL explore + dashboards; far deeper metric analysis | Grafana | Parallax metric explorer is a list/browse surface, not an analysis surface | gap: PromQL-like query or per-metric dashboards; Grafana remains best-in-class — Parallax should embed/link instead of rival | parallax/10-metrics.png; grafana/04-explore-metrics.png |
 | Issues / error triage | PaymentError chaos errors | ✅ 52 groups/24h, grouped by service/message/culprit, trend sparkline, tags from attributes, open/resolved | Sentry 26.8.0 | ✅ strongest triage workflow: level, users/events, New/Regressed/Resolved, assignment, releases/env attribution, similar-issues + Autofix | Sentry | Sentry's decade of triage workflow (assignment, ownership rules, Autofix) leads; Parallax's tags-from-attributes cross-linking is unique | adopt: assignment + "regressed" state; keep attribute-tags advantage | parallax/07-issues.png; sentry/01-issues-feed.png, sentry/02-issue-detail.png |
 | Alerting (rules, incidents, destinations) | error_rate rule → incident with `sha256-jcs:` bundle hash | ✅ rules + incidents + 4 webhook destinations; incident carries agent-ready bundle | SigNoz v0.141.1 | ✅ full alert center, 10 channel kinds, alert-from-any-explorer-query | SigNoz | SigNoz breadth (channel kinds, alert-from-query) leads; Parallax's incident bundle (agent-consumable, hash-pinned) is unique | add channel breadth later; add "create alert from current query" button (SigNoz UX) | parallax/11-alerts.png; signoz alerts; sentry/03-alerts.png (Monitors rename) |
-| Service overview (RED) | services table w/ spans/errors/error-rate/p95 | ✅ 17 services, versions, env, per-service detail w/ releases | HyperDX 2.38.0 | ✅ service map (BETA) + per-service RED + trace-through | HyperDX | HyperDX couples RED to live dependency graph; Parallax table is richer per-row (runtime/version) but graph-less | ship dependency graph (see next row) | parallax/03-services.png, parallax/04-service-detail.png; hyperdx/05-service-map.png |
+| Service overview (RED) | services table w/ spans/errors/error-rate/p95 | ✅ 17 services, versions, env, per-service detail w/ releases | HyperDX 2.38.0 | ✅ service map (BETA) + per-service RED + trace-through | tie (different strengths) | HyperDX couples RED to the live graph; Parallax's per-row detail (runtime/version) is richer and its Ecosystem graph covers the dependency view | none — see next row | parallax/03-services.png, parallax/04-service-detail.png, parallax/15-ecosystem-service-map.png; hyperdx/05-service-map.png |
 | Service/dependency map | `/ecosystem` over the playground window | ✅ **shipped and live** (initially missed in the walk; re-verified): GraphQL `serviceMap` + React Flow/ELK UI — 22 services · 15 edges, typed nodes (service/queue/database/cli/**external** with derived system labels: postgresql, kafka, flagd, api.stripe.test), per-edge call/error/p50/p95, 1-hop focus + dim-outside controls | HyperDX 2.38.0 (BETA) | ✅ live node graph, latency/error/throughput legend; checkout red at 5.2% | HyperDX (by polish) | Capability present on both; HyperDX's single live view + legend is the slickest render tested; Parallax's typed-kind derivation (queue/database/external from generic signals) is deeper modeling | UX polish: per-edge traffic animation/legend parity; keep typed-kind advantage | parallax/15-ecosystem-service-map.png; hyperdx/05-service-map.png |
 | SQL console over telemetry | join `opentelemetry_traces` × `opentelemetry_logs` | ✅ read-only console, table browser, snippets, history; 4 rows in 37ms | SigNoz (ClickHouse) | ✅ raw ClickHouse console exists but is ops-grade/unsafe for users; SigNoz products **around** it | Parallax | Parallax is the only roster member exposing a safe read-only SQL product surface over telemetry | keep; publish schema docs (GreptimeDB tables) | parallax/13-sql-console.png, parallax/14-sql-results.png |
 | Story view / agent-ready incident bundles | incident bundle + trace story view | ✅ shipped (`sha256-jcs:` hash-pinned bundles; story view on trace detail) | — | none: no competitor produces agent-consumable pinned bundles (MCP exists in Parallax only) | Parallax | AI-agent-readiness is Parallax's thesis; nothing in roster competes | none — differentiator; keep bundle schema stable + versioned | parallax/06-trace-detail.png (story), parallax/11-alerts.png (incidents) |
@@ -139,10 +139,11 @@ strongest competitor implementation of that specific feature, not a fixed oppone
 | Dashboards | workspace dashboards list | ⚠️ list renders; no drag-drop builder depth | Grafana 13.2.1 | ✅ industry-reference dashboards (panels, variables, alerting integration) | Grafana | Not a contest; Grafana is the reference | do not rival — keep saved dashboard list, consider Grafana embed/link path | parallax dashboards nav; grafana/01-home.png |
 | MCP server (AI access to telemetry) | Parallax MCP stdio | ✅ shipped | — | none in roster | Parallax | Only Parallax exposes telemetry to agents via MCP + bundles | none | crates/parallax-mcp |
 
-Matrix honesty check: 6 rows best=Parallax, 3 tie, 7 best=competitor (incl. service-map
-polish), 1 n/a, 2 deliberate non-rivalries (metrics, dashboards), 0 outright missing
-capabilities among Parallax's shipped-feature set. Parallax does not win everything —
-it trails on service-map polish, triage depth, and alerting breadth.
+Matrix honesty check: 6 rows best=Parallax, 4 tie, 6 best=competitor (incl. service-map
+polish), 1 n/a, 1 deliberate non-rivalry (dashboards; metrics is scored to Grafana for
+the same reason), 0 outright missing capabilities among Parallax's shipped-feature set.
+Parallax does not win everything — it trails on service-map polish, triage depth, and
+alerting breadth.
 
 ## Parallax defects discovered (4; all fixed at root cause + regression-tested this run)
 
@@ -308,7 +309,7 @@ Parallax :4000 bearer `run20260912-lab-token`. Where a password applies:
 |---|---|
 | Can Parallax `main` ingest the full playground story? | ✅ exact parity with all 6 OTLP sinks + Sentry envelope errors |
 | Does every shipped UI surface work on a real browser? | ✅ after defect #4 fix (auth), incl. SSE live tail; verified interactively |
-| Is it competitive per shipped feature? | ✅ leads on 6 (attribute compare, bundles/MCP, SQL console, trace detail, envelope+OTLP fusion, UI auth UX), ties 3, trails 7 (incl. service-map polish), missing 0 |
+| Is it competitive per shipped feature? | ✅ leads on 6 (attribute compare, bundles/MCP, SQL console, trace detail, envelope+OTLP fusion, UI auth UX), ties 4, trails 6 (incl. service-map polish), missing 0 |
 | Do the 4 discovered defects have root-cause fixes? | ✅ all fixed + regression-tested + live re-verified (748 workspace tests + 581 UI tests green) |
 | Does the lab reproduce the comparison? | ✅ compose pins updated to current upstream versions; Foundry SigNoz replaces deprecated overlay; repro section above |
 
