@@ -305,7 +305,7 @@ CLOSED: where-clause reserved-word value | 168-176/unit-gate | parallax-ui | `se
 
 Coverage (2026-08-14T15:43Z restamp, playground PR #13 + this inventory):
 `docs/coverage-matrix.md` restamped — no `MAPPED`/`UNTESTED` data cells.
-`product:issue_context`–`product:ui_agent_verify` EXIT 0 this serve (c4 after `?fail=1` burst; c8 after JS
+`product:issue_context`–`product:ui_agent_verify` EXIT 0 this serve (product:alerting after `?fail=1` burst; sentry:envelopes after JS
 `X-Sentry-Auth`). Teaching: 18-span `5e14f8c670eb1e15`, N+1 `ae13ff562135f5e6`
 two `reviewsSlow`, consumer Links 1/1 `f22fbe511f04f149` → `05a35c01c4869f7c`,
 RUM stitch `19ace18bd8315e84` `ui.click`→checkout, a13 5×502 **2 versions**.
