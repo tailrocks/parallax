@@ -33,14 +33,18 @@ fn client_constructor_enforces_loopback_origin() {
 
 #[test]
 fn empty_token_is_normalized_to_auth_disabled() {
-    let with_value =
-        GraphqlClient::new("http://127.0.0.1:4000".to_string(), Some("secret".to_string()))
-            .expect("loopback");
+    let with_value = GraphqlClient::new(
+        "http://127.0.0.1:4000".to_string(),
+        Some("secret".to_string()),
+    )
+    .expect("loopback");
     assert_eq!(with_value.api_token.as_deref(), Some("secret"));
-    let empty =
-        GraphqlClient::new("http://127.0.0.1:4000".to_string(), Some(String::new()))
-            .expect("loopback");
-    assert_eq!(empty.api_token, None, "empty token must match no-auth server config");
+    let empty = GraphqlClient::new("http://127.0.0.1:4000".to_string(), Some(String::new()))
+        .expect("loopback");
+    assert_eq!(
+        empty.api_token, None,
+        "empty token must match no-auth server config"
+    );
 }
 
 /// One-shot loopback HTTP stub: captures the request's `Authorization` header,
@@ -65,13 +69,11 @@ async fn capture_authorization_header(
             }
         }
         let text = String::from_utf8_lossy(&buffer);
-        let authorization = text
-            .lines()
-            .find_map(|line| {
-                let (name, value) = line.split_once(':')?;
-                name.eq_ignore_ascii_case("authorization")
-                    .then(|| value.trim().to_string())
-            });
+        let authorization = text.lines().find_map(|line| {
+            let (name, value) = line.split_once(':')?;
+            name.eq_ignore_ascii_case("authorization")
+                .then(|| value.trim().to_string())
+        });
         let body = br#"{"data":{"__typename":"Query"}}"#;
         let response = format!(
             "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n",
@@ -84,7 +86,9 @@ async fn capture_authorization_header(
     });
 
     let client = GraphqlClient::new(format!("http://{addr}"), config_token)?;
-    client.graphql("{ __typename }", serde_json::json!({})).await?;
+    client
+        .graphql("{ __typename }", serde_json::json!({}))
+        .await?;
     server.await?
 }
 

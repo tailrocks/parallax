@@ -65,7 +65,9 @@ async fn main() -> anyhow::Result<()> {
     }
     let api_token = match cli.token {
         Some(token) => Some(token),
-        None => std::env::var("PARALLAX_API_TOKEN").ok().filter(|t| !t.is_empty()),
+        None => std::env::var("PARALLAX_API_TOKEN")
+            .ok()
+            .filter(|t| !t.is_empty()),
     };
     cli.url = gql::normalize_local_base_url(&cli.url)?;
     match cli.command.unwrap_or(Command::Serve) {

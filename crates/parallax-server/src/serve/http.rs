@@ -358,7 +358,11 @@ mod auth_tests {
         assert_eq!(percent_decode("plain"), "plain");
         assert_eq!(percent_decode("a%26b%2Fc"), "a&b/c");
         assert_eq!(percent_decode("%41%42"), "AB");
-        assert_eq!(percent_decode("a+b"), "a b", "+ is a space in query encoding");
+        assert_eq!(
+            percent_decode("a+b"),
+            "a b",
+            "+ is a space in query encoding"
+        );
         // Malformed escapes pass through instead of panicking or dropping data.
         assert_eq!(percent_decode("100%"), "100%");
         assert_eq!(percent_decode("%G1"), "%G1");
