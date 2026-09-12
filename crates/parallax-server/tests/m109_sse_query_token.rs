@@ -65,10 +65,17 @@ async fn stream_routes_accept_access_token_query_param() {
     let ok = stream_head(format!("{base}/v1/logs/stream?access_token={token}")).await;
     assert!(ok.status().is_success(), "status={}", ok.status());
     let ok_traces = stream_head(format!("{base}/v1/traces/stream?access_token={token}")).await;
-    assert!(ok_traces.status().is_success(), "status={}", ok_traces.status());
+    assert!(
+        ok_traces.status().is_success(),
+        "status={}",
+        ok_traces.status()
+    );
 
     // A wrong query token is still a 401.
-    let wrong = stream_head(format!("{base}/v1/logs/stream?access_token=wrong-token-value")).await;
+    let wrong = stream_head(format!(
+        "{base}/v1/logs/stream?access_token=wrong-token-value"
+    ))
+    .await;
     assert_eq!(wrong.status(), reqwest::StatusCode::UNAUTHORIZED);
 
     handle.shutdown();

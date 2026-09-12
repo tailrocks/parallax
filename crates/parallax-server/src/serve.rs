@@ -425,8 +425,7 @@ async fn start_assembled(
         }
     }));
 
-    let alerting_status =
-        spawn_alerting_loops(config, &mut tasks, store.clone(), alerts.clone());
+    let alerting_status = spawn_alerting_loops(config, &mut tasks, store.clone(), alerts.clone());
     spawn_test_flakiness_loop(&mut tasks, metadata.clone());
     spawn_ci_backfill_loop(config, &mut tasks, alerts.clone());
     spawn_deploy_backfill_loop(config, &mut tasks, alerts.clone());
