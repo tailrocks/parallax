@@ -289,6 +289,29 @@ self-hosted Parallax could undercut but that is unmeasured.
 - Ships a **single-binary / embedded-engine local mode** → closes the local wedge.
 - Adds a **redaction/PII layer** on the MCP surface.
 
+## Live verification — 2026-09-12
+
+Live run against Parallax `main` (`0.1.0+6b3a92b`) with SigNoz pinned to **v0.141.1** +
+**`signoz-otel-collector` v0.144.9** (the official pairing, taken from helm chart
+`signoz-0.141.1`) — the v0.133.0 pin in this file's header is stale, and the self-host path
+changed: since v0.130.0 the repo compose/install.sh are deprecated, so this run deployed a
+**Foundry**-generated stack (`foundryctl` v0.2.17). Layer A parity: **608 spans** in
+`signoz_traces.signoz_index_v3` — exactly Parallax's 304 traces × 2 spans. The live UI confirmed
+the explorer surface is wider than Parallax's: facet sidebar + query builder,
+List/TimeSeries/Table, saved views, funnels, **Trace Matching (Beta)**, and one-click
+"Create an Alert" / "Add to Dashboard" from any query, plus a full alert center with 10 channel
+kinds against Parallax's 4 webhook destinations. `/exceptions` exists as a separate explorer
+(2 groups in a 30 m window) but it is a query explorer, not an issue workflow — no triage or
+resolution state machine like Sentry's or Parallax's. Two live findings favor Parallax: **no
+live tail control in the v0.141 logs explorer toolbar** (verified: the toolbar offers Share /
+Only / Toggle / List / Time Series / Table / Run Query / Save view / Create Alert / Add to
+Dashboard), and raw ClickHouse access is ops-grade rather than a safe product surface —
+Parallax's read-only SQL console and its trace attribute compare have no equivalent here.
+Service map + services RED are present under `/services` (Parallax ships its own Ecosystem
+service map; SigNoz's is one more graph in a wider explorer, not a capability Parallax lacks).
+Full run:
+[2026-09-12 verification report](../../validation/2026-09-12-parallax-main-competitor-verification.md).
+
 ## Sources (checked 2026-07-17 unless noted)
 
 - [github.com/SigNoz/signoz](https://github.com/SigNoz/signoz) — README, LICENSE, releases, architecture

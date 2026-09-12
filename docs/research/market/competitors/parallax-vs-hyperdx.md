@@ -213,6 +213,29 @@ See **Pricing & economics — RESOLVED pass 44** above. HyperDX Cloud is public
 - Adds a **fix-outcome loop** or **error-issue lifecycle** (Sentry-grade).
 - **ClickStack cadence stalls** (last feature blog July 2025 — confirm alive).
 
+## Live verification — 2026-09-12
+
+Live run against Parallax `main` (`0.1.0+6b3a92b`) with **`hyperdx/hyperdx-all-in-one:2.38.0`**
+(2026-09-04) — the image moved from `clickhouse/clickstack-all-in-one`, so the `@hyperdx/app`
+2.30.1 pin in this file's header is stale. Layer A parity: **304 traces** in `otel_traces`, the
+same story Parallax stored. Live UI: **Service Map (BETA) is the slickest dependency-graph view
+tested that day** — a live node graph with a latency/error-rate/throughput legend and the
+checkout node highlighted red at 5.2% error rate. Parallax is **not** missing the capability: its
+Ecosystem view renders the same kind of graph (React Flow + ELK layout over the `serviceMap`
+query, typed nodes including derived database/queue/external systems, per-edge call/error counts
+and p50/p95 latency, verified live at 17 nodes). The honest difference against HyperDX is
+polish — one live map with at-a-glance red-node highlighting is ahead of Parallax's graph, not a
+capability Parallax lacks. **Live Tail with an interval selector sits on every search surface,
+logs and traces**, matching Parallax's SSE tail; the Lucene ↔ SQL query switch is also more
+query-surface than Parallax offers. Two warts
+were recorded: the onboarding tour ("Get Started 3/3") renders over the query UI with no visible
+skip button and had to be dismissed through the DOM, and deployment needs
+`FRONTEND_URL=http://127.0.0.1:18080` in the compose overlay or login redirects bounce to
+`localhost:8080`. Ingest stays gated by first-user OpAMP onboarding and requires the team
+**ingest token**, not the personal API key. On the agent axis nothing changed: no bundle, no
+fix-outcome surface. Full run:
+[2026-09-12 verification report](../../validation/2026-09-12-parallax-main-competitor-verification.md).
+
 ## Sources (checked 2026-07-17)
 
 - [github.com/hyperdxio/hyperdx](https://github.com/hyperdxio/hyperdx) — **9,680★**, **MIT**, full-stack + replay + ClickHouse + OTel.
