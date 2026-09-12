@@ -1,5 +1,16 @@
 # Parallax vs Sentry
 
+## Current live verification — 2026-09-04
+
+Self-hosted Sentry `26.8.0` was bootstrapped from the official release and
+verified live: native OTLP trace ingest returned HTTP 200, five identical errors
+grouped into one issue, and current Rust/Java/JS SDK envelopes appeared in the
+issue UI. Sentry still leads issue lifecycle, SDK breadth, replay, profiling,
+and operational maturity. Exact evidence: [canonical report](../../validation/2026-09-04-parallax-main-competitor-verification.md).
+
+The dated pass notes below preserve historical claims; this section is the
+current version authority.
+
 > An unbiased, one-to-one comparison. Research date: **2026-07-17**.
 > Sources: live [Sentry pricing](https://sentry.io/pricing/) (accessed 2026-07-17),
 > [Sentry OTLP docs](https://docs.sentry.io/concepts/otlp/),
@@ -206,6 +217,24 @@ Sentry's entry is cheap (free / $26) and the per-error unit is small, but volume
 - **A1 gate vs Seer:** does a Parallax evidence bundle beat Seer-as-context (or raw context) for agent fix quality, measurably? Unproven; Seer is the direct shipped competitor to the thesis.
 - **Sentry OTLP metrics timeline:** metrics are a first-class Sentry product (2026 SDK path) but still **not via OTLP** — track OTLP metrics GA. **Pass 205 UNFIRED** (same primary sentence as pass 96/143/183).
 - **Self-host cost/ops:** a measured Parallax-single-binary vs Sentry-self-hosted deploy + RAM + ops comparison at parity. Benchmark-dependent, unmeasured.
+
+## Live verification — 2026-09-12
+
+Live run against Parallax `main` (`0.1.0+6b3a92b`) with **Sentry self-hosted 26.8.0**
+(2026-08-17, full vendor compose, ~70 containers) — the 26.7.0 pin in this file is now one
+release behind. Layer A: the shared OTLP stream landed as **4,223 items** in snuba
+`eap_items_1_local` (OTLP traces go to the EAP item store; still no OTLP metrics, matching the
+docs sentence quoted above). The live UI confirmed Sentry still owns issue triage: the feed
+grouped the same c8 PaymentError chaos errors correctly across rust/java/js SDKs with level,
+events/users, New/Regressed/Resolved status and assignment, and issue detail carries
+releases/environment attribution, stack traces and similar-issues + Autofix tooling — deeper
+than Parallax's 52 attribute-tagged issue groups, which cross-link back into traces and logs but
+have no assignment or regression state. **The Alerts nav is now "Monitors"** in the 26.x rename
+(Error / Metric / Cron / Uptime monitor types) — anything still pointing users at Sentry
+"Alerts" is stale. One ingest-level finding: the 26.8.0 relay **rejects query-string DSNs**
+(header auth only), while Parallax and rustrak both accept header and query-string styles. No
+equivalent of Parallax's incident bundles, MCP projection or attribute compare appeared. Full
+run: [2026-09-12 verification report](../../validation/2026-09-12-parallax-main-competitor-verification.md).
 
 ## Sources (accessed 2026-07-17)
 

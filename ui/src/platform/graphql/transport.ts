@@ -5,6 +5,7 @@
 // The UI's only data path: GraphQL against the Parallax API (same-origin —
 // the vite dev proxy and the embedded prod build both serve /graphql).
 
+import { apiAuthHeaders } from "@/platform/auth/api-token"
 import { getBrowserQueryClient, graphqlRawQueryKey } from "@/platform/query/graphql-query"
 
 // Loaders are isomorphic (run on server AND client): relative URLs only work
@@ -19,7 +20,7 @@ export function clearGraphqlCache(): void {
 export async function graphql<T>(query: string, init?: { signal?: AbortSignal }): Promise<T> {
   const requestInit: RequestInit = {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...apiAuthHeaders() },
     body: JSON.stringify({ query }),
   }
   if (init?.signal) requestInit.signal = init.signal

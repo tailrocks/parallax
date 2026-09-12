@@ -22,7 +22,8 @@ use tokio::task::JoinHandle;
 
 mod http;
 use http::{
-    ApiAuth, GraphQlState, HostGuard, api_auth_middleware, graphql_handler, host_guard_middleware,
+    ApiAuth, GraphQlState, HostGuard, api_auth_middleware, api_auth_middleware_with_query_token,
+    graphql_handler, host_guard_middleware,
 };
 
 #[expect(missing_debug_implementations, reason = "opaque runtime handles")]
@@ -277,7 +278,7 @@ fn build_api_router(
                 .with_state(live)
                 .layer(middleware::from_fn_with_state(
                     api_auth.clone(),
-                    api_auth_middleware,
+                    api_auth_middleware_with_query_token,
                 ))
                 .layer(middleware::from_fn_with_state(
                     host_guard.clone(),
@@ -424,8 +425,7 @@ async fn start_assembled(
         }
     }));
 
-    let alerting_status =
-        spawn_alerting_loops(config, &mut tasks, store.clone(), alerts.clone(), api_addr);
+    let alerting_status = spawn_alerting_loops(config, &mut tasks, store.clone(), alerts.clone());
     spawn_test_flakiness_loop(&mut tasks, metadata.clone());
     spawn_ci_backfill_loop(config, &mut tasks, alerts.clone());
     spawn_deploy_backfill_loop(config, &mut tasks, alerts.clone());
@@ -560,7 +560,6 @@ fn spawn_alerting_loops(
     tasks: &mut Vec<JoinHandle<()>>,
     store: Arc<dyn TelemetryStore>,
     alerts: Option<Arc<TursoMetadataStore>>,
-    api_addr: SocketAddr,
 ) -> String {
     if !config.alerting.enabled {
         tracing::info!("alerting disabled by config");
@@ -574,7 +573,7 @@ fn spawn_alerting_loops(
     let evaluate_secs = config.alerting.evaluate_interval_secs.max(5);
     let deliver_secs = config.alerting.deliver_interval_secs.max(1);
     let claim_secs = config.alerting.claim_interval_secs.max(5);
-    let base_url = format!("http://{api_addr}");
+    let base_url = config.resolved_public_url();
 
     let eval_store = alert_store.clone();
     let eval_source = crate::alerting::AdapterMeasurementSource::new(store);

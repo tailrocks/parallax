@@ -1,5 +1,15 @@
 # Parallax vs Grafana Cloud / LGTM
 
+## Current live verification — 2026-09-04
+
+Grafana LGTM `0.32.0` was run as the current bundled stack. Grafana API health,
+Tempo trace search, Loki labels, Prometheus metrics, and browser Explore UI all
+returned fresh workload evidence. Grafana remains the strongest generic query,
+dashboard, and visualization reference. Exact evidence: [canonical report](../../validation/2026-09-04-parallax-main-competitor-verification.md).
+
+The dated pass notes below preserve historical claims; this section is the
+current version authority.
+
 > An unbiased, one-to-one comparison. Research date: **2026-07-17**.
 > Sources: [Grafana pricing](https://grafana.com/pricing/), [Grafana Cloud docs](https://grafana.com/docs/grafana-cloud/), the in-repo [Tempo v3 architecture review](../../reference/grafana-tempo-v3-architecture-review.md) (2026-05-29), and 2026 third-party pricing analyses.
 >
@@ -193,6 +203,24 @@ Grafana Cloud pricing is **public** ([grafana.com/pricing](https://grafana.com/p
 - **Self-host cost/ops parity:** measured single-binary Parallax vs self-hosted Mimir+Loki+Tempo+Pyroscope (deploy complexity, RAM, ops). Benchmark-dependent, unmeasured.
 - ~~Grafana latest versions~~ → pass **49**: Grafana **v13.1.0**, Mimir **3.1.3**, Loki **3.7.3**, Tempo **v3.0.2 GA**, Pyroscope **v2.1.1** (GitHub releases API). Prior “Tempo v3 not GA” claim **corrected**.
 - ~~Grafana Cloud Pro $195~~ → **RESOLVED pass 48: from $19/mo + usage** on live page.
+
+## Live verification — 2026-09-12
+
+Live run against Parallax `main` (`0.1.0+6b3a92b`) with **`grafana/otel-lgtm:0.33.0`**
+(2026-09-11; Grafana **13.2.1**, OTel collector 0.160.0) — the version table above pins Grafana
+13.1.0, now one release behind. Tempo ingested the shared fan-out stream and answered
+`/api/search?tags=service.name=telemetrygen` with the right `rootServiceName`. **The
+scoped-attribute footgun is real and was reproduced live**: this Tempo build rejects unscoped
+`{service.name="checkout"}` with `400 unknown identifier: service` and requires the scoped
+`.resource.service.name` form, while `{status=error}` worked and returned the error traces.
+TraceQL is therefore more powerful than Parallax's structured Where editor and simultaneously
+easier to get wrong — Parallax's error-proofness is a real, narrow advantage, not a rival to a
+query language. Trace detail ships a full waterfall **plus a Node graph** — a dependency view
+inside trace detail, which Parallax reaches through its separate Ecosystem service map rather
+than inside the trace. Loki Explore has a working **Live tail** button (SSE) matching
+Parallax's log tail, and Grafana's dashboards plus unified alerting remain the reference
+Parallax has explicitly chosen not to rival. Full run:
+[2026-09-12 verification report](../../validation/2026-09-12-parallax-main-competitor-verification.md).
 
 ## Sources (accessed 2026-07-17; pass 49)
 

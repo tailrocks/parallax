@@ -87,7 +87,7 @@ From repo root:
 5. `scripts/ci/source-hygiene.sh local`
 6. From `ui/`: `bun run check && bun run typecheck && bun run lint && bun run test:ci && bun run build`
 
-Add UI components with Bun's shadcn runner, not `npx` — see [ui/AGENTS.md](ui/AGENTS.md).
+Add UI components with Bun's shadcn runner, not `npx` — see [AGENTS.md](AGENTS.md).
 
 The repository-owned control plane provides the same partitions without
 duplicating policy in local scripts:

@@ -1,5 +1,18 @@
 # Parallax vs OpenObserve
 
+## Current live verification — 2026-09-04
+
+OpenObserve GA `v0.92.2` was the current stable comparison artifact; `v1.0.0-rc2`
+was excluded as a release candidate. Fresh Rotel fan-out delivered current
+playground traces/logs/metrics, and the OpenObserve search path returned fresh
+service data. OpenObserve remains ahead on shipped Rust single-binary
+observability, general query maturity, and broader platform surface. Parallax's
+live edge is its narrower derived-error/evidence/MCP workflow; bundle value is
+unproven. Exact evidence: [canonical report](../../validation/2026-09-04-parallax-main-competitor-verification.md).
+
+The dated pass notes below preserve historical claims; this section is the
+current version authority.
+
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 48
 > Cloud pricing; **pass 94** EE gates; **pass 102** pin; **pass 119** pricing;
 > **pass 155** + **pass 182** + **pass 206** pin + MCP primary docs). Still
@@ -174,6 +187,24 @@ OpenObserve pricing is **public** ([openobserve.ai/pricing](https://openobserve.
 - **Storage cost/perf:** measured GreptimeDB (Parallax) vs Parquet/DataFusion (OpenObserve) — ingest, query, cost-per-byte. Benchmark-dependent, unmeasured; ties to the GreptimeDB-vs-ClickHouse study.
 - ~~MCP-safety / read-only mode~~ → **pass 56:** docs show **no public read-only MCP product mode**; EE MCP is write-heavy (DeleteStream, CreateAlert, …). Track if O2 later ships a restricted tool profile.
 - **AGPL → Apache risk:** unlikely, but track OpenObserve's license posture.
+
+## Live verification — 2026-09-12
+
+Live run against Parallax `main` (`0.1.0+6b3a92b`) with OpenObserve pinned to
+**`openobserve/openobserve:v1.0.0`** — the first GA release (2026-09-11), which supersedes the
+0.92.x line; the **v0.91.2 pin in this file's header is stale** (the UI walk was captured on the
+0.92.x lab build before the pin bump, and Layer A was re-verified at v1.0.0). Ingest parity was
+exact: the shared rotel/telemetrygen stream returned **608 spans** via
+`POST /api/default/_search?type=traces` — the same 304 traces × 2 spans Parallax stored. The live
+UI shows the scale/stream model this file describes from the other side: a "Select a stream" gate
+before any log query (512 streams / 1.8M events on the lab instance), and a Traces view with
+Spans/Traces/Service Catalog tabs, Rate/Errors/Duration charts and a clean waterfall. Two honest
+findings cut the other way: the **stream selector is clunky** (it rendered empty until
+`stream=default` was forced through a URL param), and **no live tail control was observed** on
+the logs surface — where Parallax, Grafana and HyperDX all tail. O2's breadth (Dashboards,
+Reliability, Infra, RUM, enterprise AI nav) remains well beyond Parallax's scope, and the
+Enterprise-gated, write-capable MCP posture recorded above is unchanged. Full run:
+[2026-09-12 verification report](../../validation/2026-09-12-parallax-main-competitor-verification.md).
 
 ## Sources (accessed 2026-07-17)
 

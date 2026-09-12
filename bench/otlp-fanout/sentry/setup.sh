@@ -13,7 +13,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 ROOT="$(cd .. && pwd)"
 
-SENTRY_REF="${SENTRY_REF:-26.7.2}"   # pin a release ≥25.8.0 (native OTLP). Re-pinned 2026-08-14; first verified 26.6.0
+SENTRY_REF="${SENTRY_REF:-26.8.0}"   # pin a release ≥25.8.0 (native OTLP). Re-pinned 2026-09-04; first verified 26.6.0
 VENDOR="${ROOT}/vendor/sentry"
 
 # --- install.sh needs bash >= 4.4; macOS ships 3.2. Find a modern bash. ---

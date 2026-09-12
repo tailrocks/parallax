@@ -1,38 +1,37 @@
-# Overlay: SigNoz (its bundled ClickHouse + ZooKeeper + otel-collector + signoz).
+# SigNoz — current officially supported self-hosted architecture (2026-09).
 #
-# Default vendor pin is v0.129.0 (setup-vendor.sh). v0.137.0+ removed
-# vendor/signoz/deploy/docker/docker-compose.yaml (Foundry-only). The include
-# below is the last working path. Do not invent a Foundry rewrite here.
+# SigNoz v0.130.0 DEPRECATED the old repo-bundled compose (deploy/docker/… +
+# install.sh). The current supported self-host path is Foundry
+# (https://github.com/SigNoz/foundry): `foundryctl` generates a compose
+# deployment from `casting.yaml` (flavor: compose, mode: docker) and boots
+# `signoz/signoz` (single server image) + `signoz/signoz-otel-collector`
+# (migrator + ingester) + ClickHouse 25.12 + ClickHouse Keeper + Postgres 16
+# (metastore), all on one `signoz-network`.
 #
-# SigNoz is a multi-service stack installed from its own repo. Run setup-vendor.sh
-# first to clone it into ./vendor/signoz, then:
-#   docker compose -f compose.yml -f compose.signoz.yml up
-# and enable `signoz` in rotel.env (ROTEL_EXPORTERS + per-signal lists).
+# That architecture is a SEPARATE compose project — it cannot be an overlay of
+# this lab's compose.yml. `signoz-foundry/` in this directory is the
+# foundryctl-v0.2.17-generated deployment with images pinned to SigNoz
+# v0.141.1 (latest stable, 2026-09-09) and host ports remapped so Rotel keeps
+# 4317/4318:
+#   ingester  14327 -> 4317 (OTLP gRPC)
+#   ingester  14328 -> 4318 (OTLP HTTP)
+#   signoz    3301  -> 8080 (UI/API)
 #
-# Two overrides are essential (verify against the pinned SigNoz version):
-#   1. Drop the otel-collector's host 4317/4318 publish — those belong to Rotel.
-#   2. Put otel-collector on the `lab` network so Rotel can reach it by name, and
-#      remap the SigNoz UI to host 3301.
-name: parallax-otlp-fanout
-include:
-  - path: vendor/signoz/deploy/docker/docker-compose.yaml
-services:
-  otel-collector:
-    # Unpublish SigNoz's own OTLP host ports (collision with Rotel) and join lab.
-    # Keep signoz-net so the collector still reaches bundled ClickHouse.
-    ports: !reset []
-    networks:
-      - lab
-      - signoz-net
-  signoz:
-    # Replace (not merge) the stock `8080:8080` — 8080 collides with other lab
-    # services; publish the SigNoz UI on host 3301. `!override` swaps the whole
-    # list (a plain list merges/appends; `!reset` alone dropped it and a
-    # following list did not re-apply, leaving the UI unpublished).
-    ports: !override
-      - "3301:8080" # SigNoz UI on host 3301 (container 8080)
-networks:
-  lab:
-    name: parallax-otlp-fanout
-  signoz-net:
-    name: signoz-net
+# Boot it standalone (not as an overlay):
+#   docker compose -f signoz-foundry/compose.yaml -p signoz up -d
+#
+# Regenerate from upstream (preferred when bumping SigNoz):
+#   foundryctl gen examples
+#   cp -R docs/examples/docker/compose/pours/deployment signoz-foundry
+#   # pin signoz/signoz + signoz/signoz-otel-collector to the release tag
+#   # and remap the three host ports as above, then re-verify.
+#
+# Rotel reaches the ingester over the host bridge at
+# host.docker.internal:14327 (see rotel.env). First-run onboarding: register
+# the initial org/admin in the UI (http://localhost:3301) before ingest
+# asserts; the ingester accepts OTLP, but query APIs are auth-gated until an
+# organization exists.
+#
+# Previous integration (v0.129.0 vendor clone + overlay) is gone on purpose:
+# preserving an obsolete deployment path contradicts the lab rule that modern
+# supported upstream installation beats a stale local integration.

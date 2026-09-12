@@ -14,6 +14,7 @@ import {
 } from "@/features/dashboards/api/widget-series-schema"
 import { graphqlError } from "@/platform/graphql/error"
 import { graphqlCached } from "@/platform/graphql/transport"
+import { apiAuthHeaders } from "@/platform/auth/api-token"
 
 export type WidgetSeriesFetch = (
   query: string,
@@ -88,7 +89,7 @@ async function postOperation(
   const BASE = typeof window === "undefined" ? "http://127.0.0.1:4000" : ""
   const requestInit: RequestInit = {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...apiAuthHeaders() },
     body: JSON.stringify({
       operationName: "DashboardWidgetSeries",
       query,

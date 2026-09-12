@@ -1,3 +1,4 @@
+import { apiAuthHeaders } from "@/platform/auth/api-token"
 import {
   classifyHealth,
   DEFAULT_ENDPOINT_LABEL,
@@ -8,7 +9,7 @@ export async function loadAppStatus(signal?: AbortSignal): Promise<AppStatus> {
   try {
     const init: RequestInit = {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...apiAuthHeaders() },
       body: JSON.stringify({ query: "{ health }" }),
     }
     if (signal) init.signal = signal

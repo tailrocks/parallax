@@ -10,7 +10,7 @@
 name: parallax-otlp-fanout
 services:
   hyperdx:
-    image: clickhouse/clickstack-all-in-one:2.35.0
+    image: hyperdx/hyperdx-all-in-one:2.38.0
     container_name: pfanout-hyperdx
     restart: unless-stopped
     ports:
@@ -19,6 +19,10 @@ services:
     networks: [lab]
     # Let the image print its own app URL. A host-remapped HYPERDX_APP_URL
     # made the entrypoint emit `http://127.0.0.1:18080:8080` and then exit.
+    # FRONTEND_URL only drives absolute redirects (login/logout): without it
+    # the browser bounces to `localhost:8080`, which is the catalog service.
+    environment:
+      FRONTEND_URL: http://127.0.0.1:18080
 networks:
   lab:
     name: parallax-otlp-fanout

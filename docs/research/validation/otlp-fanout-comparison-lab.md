@@ -1,28 +1,22 @@
 # OTLP Fan-Out Comparison Lab
 
-Research date: 2026-06-22
-Status: **historical design plus live-verified comparison protocol**
-**2026-08-16 live restamp:** eight named sinks attempted on this lab.
-Write-up: [2026-08-16-fanout-eight-sink-comparison.md](2026-08-16-fanout-eight-sink-comparison.md).
-SigNoz last bootable compose is **v0.129.0** (v0.137.0 Foundry-only). highlight
-hobby **BLOCKED**. Grafana LGTM, HyperDX ClickStack, and rustrak overlays now
-live in `bench/otlp-fanout/`.
-Topology: Parallax runs on the host (Homebrew); Rotel + competitor backends run
-in Docker Compose; Rotel fans out across the host↔container boundary.
-Deep review: 2026-06-22 (two passes) — every external claim verified against live
-sources and every Parallax-side claim checked against `crates/`; corrections
-folded in. Historical gaps do not create an implementation queue here.
-**Plan 122 is DONE/deleted**; multi-backend / playground residual is active plan
-**154** (or design-only).
-Updates 2026-06-23: added the compare-mode `parallax run start` DevEx design;
-**only Parallax runs on the host — Rotel, Maple, SigNoz, OpenObserve, Sentry all
-run in Docker Compose.** Maple runs fully local as a **chDB-binary container (not
-Tinybird)**. The only Parallax-side support needed is forwarding to the collector;
-Rotel reaches the single host sink (Parallax) via `host.docker.internal:14317`.
-**All five backends are now implemented and verified live (2026-06-23):**
-OpenObserve, SigNoz, Maple (chDB), and Sentry (pin `26.7.2`, its own vendored stack
-reached over the host bridge `host.docker.internal:9000`). Sentry is no longer
-deferred — see `bench/otlp-fanout/sentry/`.
+Research origin: 2026-06-22. Current live restamp: **2026-09-04**.
+Status: **current comparison protocol plus preserved historical runs**.
+Canonical evidence: [2026-09-04-parallax-main-competitor-verification.md](2026-09-04-parallax-main-competitor-verification.md).
+
+Current topology: Parallax runs on the host at OTLP `14317/14318`; Rotel
+`v0.2.5` owns host OTLP `4317/4318`; OpenObserve, Maple, SigNoz, Grafana LGTM,
+and the Sentry self-hosted stack receive fresh evidence. Rustrak is exercised by
+Sentry envelopes. HyperDX/ClickStack `2.37.0` UI/API works, but its AIO OTLP
+listener did not bind and is excluded from the sequential Rotel route.
+
+Current supported SigNoz deployment is Foundry `v0.2.17` generating the
+`v0.140.0` Compose stack. Current pins and exact digests are in the canonical
+report and `2026-09-04-parallax-main-competitor-verification.manifest.toml`.
+Older v0.129/v0.137, v0.92.0, v0.0.18, and 26.7.x references below are
+historical evidence, not current pins.
+
+The original design, deep review, and Plan 122/154 notes remain useful history.
 
 ## Goal
 
@@ -345,24 +339,24 @@ separately on the host (see prerequisites / workflow step 0).
 | Service | Image / build | Host ports | Profile | Notes |
 |---|---|---|---|---|
 | `rotel` | `streamfold/rotel:v0.2.5` | `4317`, `4318` | default | the only published OTLP ports; config via `rotel.env`; `extra_hosts` on Linux to reach host Parallax |
-| `maple` | container running Maple's **chDB single-binary** (local mode) — small image wrapping the binary; **no Tinybird** | `8081`→UI | default | OTLP `4318` HTTP internal, **no auth**; chDB data in a named volume |
-| `signoz` | `include:` SigNoz `deploy/docker` (signoz + otel-collector + clickhouse + zookeeper) | `3301`→`8080` | default | **override to unpublish its host `4317/4318`** (see Hard rule); collector service `otel-collector` |
-| `openobserve` | `public.ecr.aws/zinclabs/openobserve:v0.92.0` | `5080` | default | OTLP `5081` gRPC internal; set `ZO_ROOT_USER_EMAIL`/`ZO_ROOT_USER_PASSWORD`; **ingest needs auth headers** (see `rotel.env`) |
-| `sentry-*` | `getsentry/self-hosted` (**~72 services**, `install.sh`) | `9000` (nginx) | own stack | **not a clean `include:` target** — runs as its **own vendored Compose stack** (`bench/otlp-fanout/sentry/setup.sh`); Rotel reaches it over the **host bridge** `host.docker.internal:9000` → nginx → relay (no network-join needed). **IMPLEMENTED + verified live 2026-06-23 on v26.6.0**; vendor pin `SENTRY_REF=26.7.2` (2026-08-14). Pin ≥ native-OTLP (`~25.8.0`) |
-| `loadgen` | small OTel SDK / `telemetrygen` container | — | `loadgen` | optional fixed-fixture emitter → `rotel:4317`; pins trace/span ids for cross-UI diffing |
+| `maple` | container running Maple's **chDB single-binary** (local mode), official `MapleTechLabs/maple:v0.0.21` bundle; **no Tinybird** | `8081`→UI | default | OTLP `4318` HTTP internal, **no auth**; chDB data in a named volume |
+| `signoz` | Foundry `v0.2.17` generated `v0.140.0` stack (signoz + OpAMP ingester + ClickHouse + Keeper + Postgres) | `3301`→`8080` | default | overlay replaces generated ports; ingester OTLP/HTTP published at host `4321` for Rotel |
+| `openobserve` | `public.ecr.aws/zinclabs/openobserve:v0.92.2` | `5080` | default | OTLP `5081` gRPC internal; set `ZO_ROOT_USER_EMAIL`/`ZO_ROOT_USER_PASSWORD`; **ingest needs auth headers** (see `rotel.env`) |
+| `sentry-*` | `getsentry/self-hosted` **26.8.0** (**~72 services**, `install.sh`) | `9000` (nginx) | own stack | **not a clean `include:` target** — runs as its **own vendored Compose stack**; Rotel reaches it over the host bridge `host.docker.internal:9000` → nginx → relay |
+| `grafana-lgtm` | `grafana/otel-lgtm:0.32.0` (Grafana + Mimir + Loki + Tempo + Alloy) | `3300` | overlay | OTLP `4317/4318` internal; fresh traces, logs, metrics queried |
+| `hyperdx` | `clickhouse/clickstack-all-in-one:2.37.0` | `18080` | overlay | UI/API healthy; AIO OTLP listener did not bind in the current run, so not routed |
+| `rustrak` | `rustrak/rustrak-server/ui:v0.14.11` | `18081/18082` | overlay | Sentry-envelope issue path; not an OTLP exporter |
+| `loadgen` | `ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.159.0` | — | `loadgen` | optional fixed-fixture emitter → `rotel:4317`; v0.160.0 image unavailable |
 
 Hard rule: **only `rotel` publishes `4317/4318` to the host.** Every competitor
 backend's OTLP receiver stays on the Compose network; UIs get unique host ports.
 Parallax (host) is reached *out* of Compose via `host.docker.internal:14317`.
 
-> **`include:` carries upstream port mappings.** SigNoz's stock compose
-> **publishes its own `4317/4318` to the host** (verified on `main`), colliding
-> with Rotel. When you `include:` it, add a Compose **override** that unpublishes
-> those (`ports: []` / drop the host side) so only Rotel keeps host `4317/4318`.
-> Same for any UI/ingest port you don't want on the host. SigNoz also now pushes
-> a "Foundry" install path; manual compose is the fallback and may add
-> PostgreSQL + ClickHouse-Keeper. Sentry self-hosted can't be `include:`d at all
-> (see its row) — separate stack joined on a shared network.
+> **Generated Compose carries upstream port mappings.** The current SigNoz
+> overlay uses `ports: !override` to replace, not append, generated host ports;
+> this keeps Rotel as the sole `4317/4318` owner and maps SigNoz OTLP/HTTP to
+> host `4321`. SigNoz's current supported path is Foundry generation. Sentry
+> self-hosted cannot be `include:`d; it remains a separate stack.
 
 ### Rotel fan-out config (`rotel.env`)
 
@@ -549,14 +543,20 @@ decision.
 
 ## Sources
 
+- Current release sources: [Rotel v0.2.5](https://github.com/streamfold/rotel/releases/tag/v0.2.5) ·
+  [MapleTechLabs/maple v0.0.21](https://github.com/MapleTechLabs/maple/releases/tag/v0.0.21) ·
+  [SigNoz v0.140.0](https://github.com/SigNoz/signoz/releases/tag/v0.140.0) ·
+  [Foundry v0.2.17](https://github.com/SigNoz/foundry/releases/tag/v0.2.17) ·
+  [Sentry self-hosted 26.8.0](https://github.com/getsentry/self-hosted/releases/tag/26.8.0) ·
+  [Grafana LGTM v0.32.0](https://github.com/grafana/docker-otel-lgtm/releases/tag/v0.32.0) ·
+  [Rustrak v0.14.11](https://github.com/rustrak/rustrak/releases/tag/v0.14.11)
 - [Rotel](https://rotel.dev) · [streamfold/rotel README](https://github.com/streamfold/rotel)
   · [streamfold/rotel-docs](https://github.com/streamfold/rotel-docs) (exporters,
   multiple-exporters, base config — env names verified 2026-06-22)
-- [maple.dev](https://maple.dev/) · [Makisuo/maple](https://github.com/Makisuo/maple)
+- [maple.dev](https://maple.dev/) · historical [Makisuo/maple](https://github.com/Makisuo/maple)
   (compose build-from-source, Tinybird, ports verified)
-- [SigNoz docker install](https://signoz.io/docs/install/docker/) ·
-  [SigNoz compose @ main](https://github.com/SigNoz/signoz/blob/main/deploy/docker/docker-compose.yaml)
-  (UI `:8080`, collector service `otel-collector`, publishes `4317/4318`)
+- [SigNoz Docker install](https://signoz.io/docs/install/docker/) ·
+  [Foundry Docker Compose example](https://github.com/SigNoz/foundry/tree/v0.2.17/docs/examples/docker/compose)
 - [OpenObserve OTLP ingestion](https://openobserve.ai/docs/ingestion/logs/otlp/) ·
   [env vars](https://openobserve.ai/docs/environment-variables/) ·
   [zinclabs/openobserve (ECR)](https://gallery.ecr.aws/zinclabs/openobserve)

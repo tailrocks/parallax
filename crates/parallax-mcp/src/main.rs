@@ -23,6 +23,11 @@ struct Cli {
     #[arg(long, default_value = "http://127.0.0.1:4000", global = true)]
     url: String,
 
+    /// Shared API bearer token (plan 109) for servers that require auth.
+    /// Defaults to env `PARALLAX_API_TOKEN` when set.
+    #[arg(long, global = true)]
+    token: Option<String>,
+
     /// Explicitly trust and start the local stdio MCP server.
     #[arg(long, global = true)]
     allow_local_stdio: bool,
@@ -58,6 +63,12 @@ async fn main() -> anyhow::Result<()> {
         // Spike: env wins when set (clap workspace lacks the env feature).
         cli.url = url;
     }
+    let api_token = match cli.token {
+        Some(token) => Some(token),
+        None => std::env::var("PARALLAX_API_TOKEN")
+            .ok()
+            .filter(|t| !t.is_empty()),
+    };
     cli.url = gql::normalize_local_base_url(&cli.url)?;
     match cli.command.unwrap_or(Command::Serve) {
         Command::Serve => {
@@ -66,7 +77,7 @@ async fn main() -> anyhow::Result<()> {
                     "local stdio MCP is disabled; re-run with --allow-local-stdio after reviewing the command and configuration"
                 );
             }
-            server::run_stdio(cli.url).await
+            server::run_stdio(cli.url, api_token).await
         }
         Command::Check {
             fingerprint,
@@ -75,6 +86,7 @@ async fn main() -> anyhow::Result<()> {
         } => {
             check::run(check::CheckArgs {
                 base_url: cli.url,
+                api_token,
                 fingerprint,
                 invocation_id,
                 parallax_bin,

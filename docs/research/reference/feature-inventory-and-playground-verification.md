@@ -15,6 +15,18 @@ Canonical deep contracts: [v1-implementation-spec.md](../architecture/v1-impleme
 [telemetry-playground-sample-project.md](../validation/telemetry-playground-sample-project.md)
 and fan-out lab [otlp-fanout-comparison-lab.md](../validation/otlp-fanout-comparison-lab.md).
 
+**Live verification 2026-09-12:** every shipped capability was re-derived from
+code at `origin/main` `6b3a92b` and exercised against the strongest competitor
+implementation of each feature (7 backends, one shared telemetry story, API
+truth before UI truth). Full evidence and verdicts:
+[../validation/2026-09-12-parallax-main-competitor-verification.md](../validation/2026-09-12-parallax-main-competitor-verification.md).
+Outcome: 4 defects found and fixed at root cause (config unknown-key rejection,
+MCP bearer auth, `public_url` links, UI auth module); headline wins
+attribute-compare / bundles / MCP / SQL console; the initially-reported "missing
+service map" was corrected on re-verification — `/ecosystem` ships it — leaving
+competitive-polish gaps (Sentry-grade triage, SigNoz-grade alert breadth) rather
+than missing capabilities.
+
 ## What Parallax is
 
 Sentry-compatible, OpenTelemetry-native, self-hosted execution-context engine:
@@ -64,7 +76,8 @@ humans and coding agents; it is the context engine, not the fixer.
   outcome records (PR ≠ success; requires review + non-recurrence).
 - MCP: local-stdio read-only `parallax-mcp`, exactly 2 tools
   (`parallax_issue_context`, `parallax_agent_session_show`), wire budgets,
-  projection-equivalence `check`.
+  projection-equivalence `check`; authenticated to the API with the configured
+  bearer token (fixed 2026-09-12 — it previously bypassed it).
 
 ### CLI (`parallax`)
 
@@ -80,7 +93,7 @@ humans and coding agents; it is the context engine, not the fixer.
 
 ### API
 
-- One canonical GraphQL surface `POST :4000/graphql` — 76 queries, 14
+- One canonical GraphQL surface `POST :4000/graphql` — 77 queries, 14
   mutations, 0 subscriptions; depth/complexity limits; SDL checked into
   `ui/graphql/schema.graphql` and drift-gated.
 - Query families: overview/signal series; services (catalog, map, RED,
@@ -117,7 +130,9 @@ humans and coding agents; it is the context engine, not the fixer.
   SQL workbench (schema browser, snippets, history, examples).
 - Cross-cutting: URL-driven shareable filters + time range everywhere, ⌘K
   palette with id-shape jump, theme system/light/dark, virtualized tables,
-  route error/pending/not-found boundaries, onboarding empty states.
+  route error/pending/not-found boundaries, onboarding empty states, bearer
+  auth (single `platform/auth` module; 401 routes to a token-entry panel —
+  fixed 2026-09-12, the shipped UI previously had no way to authenticate).
 
 ### Alerting
 
@@ -182,10 +197,11 @@ verified working, compared, and production-ready — zero known bugs.
   teaching up-down/cardinality, handled vs panic) +
   b-series chaos (error/latency breach, retries, OOM, GC pressure, consumer
   lag, poison message, sampling gap, rage click, …) +
-  c-series product surfaces (`c1`–`c11`, coverage-matrix spine).
+  c-series product surfaces (`product:issue_context`–`product:ui_agent_verify`, coverage-matrix spine).
 - Fan-out lab lives in this repo at `bench/otlp-fanout/` — Rotel hub fanning
-  identical OTLP to Parallax, OpenObserve, Maple, SigNoz, Sentry (per-signal
-  routing; Sentry has no OTLP metrics).
+  identical OTLP to Parallax, OpenObserve, Maple, SigNoz, Grafana LGTM,
+  HyperDX, Sentry (per-signal routing; Sentry has no OTLP metrics); rustrak
+  and the SDKs speak the Sentry envelope protocol side-channel.
 - `VERIFICATION.md` runbook + machine-checked `playground test-verify`;
   `TOUR.md`; corner-case matrix. Comparison is manual by design.
 
@@ -194,46 +210,50 @@ verified working, compared, and production-ready — zero known bugs.
 Bring every example/service to current ecosystem latest (Boot, OTel Java
 agent, OTel Rust, JS SDKs, Sentry SDKs); refresh `postgres:17` → 18; re-run
 `renovate`-missed surfaces; re-verify the dual OTLP+Sentry emission contract
-after upgrades; refresh the README verified matrix (stale since 2026-06-23,
-including the unresolved Java-agent→Rotel→OpenObserve delivery snag).
+after upgrades; refresh the README verified matrix (stale since 2026-06-23;
+the Java-agent→Rotel→OpenObserve delivery snag resolved 2026-08-14 — agent
+gRPC PASS on 2.30.0).
 
 ### Workstream 2 — latest backend versions, pinned
 
 Pin every backend/tool at latest stable and keep pins current (research date
-2026-08-13; pins applied 2026-08-14):
+2026-08-13; pins applied 2026-08-14, re-pinned 2026-09-12):
 
 | Tool | Deployed today | Latest stable |
 | --- | --- | --- |
-| Maple (maple.dev, Makisuo/maple) | v0.0.18 | v0.0.18 |
-| OpenObserve | `v0.92.0` | v0.92.0 |
-| SigNoz | vendored `v0.137.0` | v0.137.0 |
-| Sentry self-hosted | vendored `26.7.2` | 26.7.2 |
+| Maple (maple.dev, MapleTechLabs/maple) | v0.0.22 (official host binary `:14341`; overlay build arg `v0.0.22`) | v0.0.22 |
+| OpenObserve | `openobserve/openobserve:v1.0.0` | v1.0.0 |
+| SigNoz | Foundry stack `signoz-foundry/`: `v0.141.1` + `signoz-otel-collector:v0.144.9` | v0.141.1 |
+| Sentry self-hosted | vendored `26.8.0` | 26.8.0 |
 | Rotel hub | `streamfold/rotel:v0.2.5` | v0.2.5 |
 | OTel Collector (if added as alt hub) | — | v0.158.0 |
 | postgres | 18 | 18 |
 | Redpanda / flagd / k6 / telemetrygen | `v26.2.1` / `v0.16.1` / `2.2.0` / `v0.158.0` | same |
+| Grafana LGTM / HyperDX / rustrak | `otel-lgtm:0.33.0` / `hyperdx-all-in-one:2.38.0` / `v0.14.12` | same |
 
-SigNoz `v0.137.0` vendor pin is current-stable, but the lab overlay cannot start:
-upstream removed `deploy/docker/docker-compose.yaml` (Foundry-only). Plan 162
-STOP — do not invent a Foundry rewrite in this workstream.
+SigNoz: the `v0.137.0` vendor pin could not start (upstream removed
+`deploy/docker/docker-compose.yaml`, Foundry-only). Resolved 2026-09-12 — the
+lab runs the Foundry-generated `signoz-foundry/` deployment (host ports
+14327/14328/3301); `setup-vendor.sh` is deleted.
 
-Candidate roster additions (decide in planning; deep-dives exist under
-`market/competitors/`): Grafana LGTM v13.x, HyperDX v2.x, Uptrace v2.1.
-Roster changes must keep the fan-out lab docs + `comparison-set.md` in sync.
+Roster additions landed 2026-09-12: Grafana LGTM 0.33.0, HyperDX 2.38.0 and
+rustrak 0.14.12. Uptrace was considered and excluded (not the strongest
+reference for any capability the roster doesn't already cover better). Roster
+changes must keep the fan-out lab docs + `comparison-set.md` in sync.
 
 ### Workstream 3 — extend playground to cover missed Parallax features
 
 Every inventory item above needs a scenario that exercises it; known holes in
 the current catalog:
 
-- Evidence bundles/pins/story/agent handoff: **c1** (`issue context` +
-  GraphQL `bundle`) + **c2** (`invocation bundle`) + **c7** (Claude import).
-- Alerting end-to-end: **c4** (rule → open incident after error seed).
-- Dashboards, investigations, saved views, SQL: **c5**.
-- GitHub deploy/CI ingest: **c6** (HMAC deploy fixture). Claude Code import:
-  **c7**. Sentry envelope ingest: **c8**.
-- Live tail: **c3** (SSE). doctor/prune dry-run: **c9**.
-- Redaction canary on bundle egress: **c10**. agent-browser Overview: **c11**.
+- Evidence bundles/pins/story/agent handoff: **product:issue_context** (`issue context` +
+  GraphQL `bundle`) + **product:invocation_lifecycle** (`invocation bundle`) + **product:agent_session** (Claude import).
+- Alerting end-to-end: **product:alerting** (rule → open incident after error seed).
+- Dashboards, investigations, saved views, SQL: **product:saved_state**.
+- GitHub deploy/CI ingest: **product:github_ingest** (HMAC deploy fixture). Claude Code import:
+  **product:agent_session**. Sentry envelope ingest: **sentry:envelopes**.
+- Live tail: **product:live_tail** (SSE). doctor/prune dry-run: **product:lifecycle_ops**.
+- Redaction canary on bundle egress: **security:redaction_egress**. agent-browser Overview: **product:ui_agent_verify**.
 
 ### Workstream 4a — agent-browser UI verification
 
@@ -285,7 +305,7 @@ CLOSED: where-clause reserved-word value | 168-176/unit-gate | parallax-ui | `se
 
 Coverage (2026-08-14T15:43Z restamp, playground PR #13 + this inventory):
 `docs/coverage-matrix.md` restamped — no `MAPPED`/`UNTESTED` data cells.
-`c1`–`c11` EXIT 0 this serve (c4 after `?fail=1` burst; c8 after JS
+`product:issue_context`–`product:ui_agent_verify` EXIT 0 this serve (product:alerting after `?fail=1` burst; sentry:envelopes after JS
 `X-Sentry-Auth`). Teaching: 18-span `5e14f8c670eb1e15`, N+1 `ae13ff562135f5e6`
 two `reviewsSlow`, consumer Links 1/1 `f22fbe511f04f149` → `05a35c01c4869f7c`,
 RUM stitch `19ace18bd8315e84` `ui.click`→checkout, a13 5×502 **2 versions**.

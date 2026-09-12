@@ -63,7 +63,7 @@ git clone https://github.com/tailrocks/parallax-telemetry-playground.git
 ```
 
 Set these paths in every new terminal. Replace the parent path once. Prepending
-the formula prefix makes every terminal, including `demo.sh`, use the preview:
+the formula prefix makes every terminal, including the playground task, use the preview:
 
 ```bash
 export PARALLAX_REPO="/absolute/path/to/parallax-walkthrough/parallax"
@@ -155,7 +155,7 @@ Start the playground. Exporting the current revision overrides any stale local
 ```bash
 cd "$PLAYGROUND_DIR"
 export GIT_SHA="$(git rev-parse HEAD)"
-./demo.sh
+mise run demo:stack
 ```
 
 Wait for both browser-facing services, then stop background load so each
@@ -205,7 +205,7 @@ Terminal B:
 
 ```bash
 cd "$PLAYGROUND_DIR"
-./scenarios/run.sh a1
+mise run commerce:checkout_saga
 
 TRACE_ID=""
 for attempt in 1 2 3 4 5; do
@@ -242,7 +242,7 @@ Print the scenario contract:
 
 ```bash
 cd "$PLAYGROUND_DIR"
-./scenarios/run.sh a28
+mise run browser:rum_journey
 ```
 
 Drive the current browser with semantic locators:
@@ -319,7 +319,7 @@ Terminal B:
 
 ```bash
 cd "$PLAYGROUND_DIR"
-./scenarios/run.sh a31
+mise run errors:handled_unhandled
 parallax issue list --status open
 
 ISSUE_FP=""
@@ -362,7 +362,7 @@ Terminal B:
 
 ```bash
 cd "$PLAYGROUND_DIR"
-./scenarios/run.sh a2
+mise run metrics:exemplars
 ```
 
 Browser:
@@ -390,7 +390,7 @@ Terminal B:
 
 ```bash
 cd "$PLAYGROUND_DIR"
-./scenarios/run.sh a9
+mise run logs:field_spike
 ```
 
 Browser:
@@ -417,18 +417,18 @@ complete route walk.
 
 | Route | Present | Producer or honest boundary |
 | --- | --- | --- |
-| `/` | Volume, error rate, latency, issues, slow traces | `a1` and the core story |
-| `/issues` | Grouping, occurrences, trace/log/metric context, resolve state | `a31`; verified live |
+| `/` | Volume, error rate, latency, issues, slow traces | `commerce:checkout_saga` and the core story |
+| `/issues` | Grouping, occurrences, trace/log/metric context, resolve state | `errors:handled_unhandled`; verified live |
 | `/tests` | Run/session, cases, flaky/failure evidence | Empty state only in the base tour; the populated acceptance path requires `mise`, Rust, and Bun and is outside this Homebrew walkthrough |
-| `/traces` | Query/live modes, facets, waterfalls, story, compare | `a1`; optional `a6`, `a3`, `a23` |
+| `/traces` | Query/live modes, facets, waterfalls, story, compare | `commerce:checkout_saga`; optional `graphql:batching_errors`, `messaging:checkout_outbox`, `grpc:storefront_pricing` |
 | `/ecosystem` | Languages, SDKs, instrumentation inventory, dependency graph | Current data; use **Last 24h** |
-| `/logs` | Query/live modes, fields, patterns, trace links | `a9`; optional `c3` |
-| `/metrics` | Series, aggregation, grouping, exemplars, alert/dashboard actions | `a2`; verified live |
-| `/services` | Service inventory, dependencies, runtime context, releases | `a1`; optional `b5` or `a13` |
+| `/logs` | Query/live modes, fields, patterns, trace links | `logs:field_spike`; optional `product:live_tail` |
+| `/metrics` | Series, aggregation, grouping, exemplars, alert/dashboard actions | `metrics:exemplars`; verified live |
+| `/services` | Service inventory, dependencies, runtime context, releases | `commerce:checkout_saga`; optional `runtime:cpu_pressure` or `deploy:release_regression` |
 | `/invocations` | Wrapped CLI command, exit code, linked telemetry counts, evidence bundle | `parallax invocation start -- echo parallax-demo` proves lifecycle; its telemetry counts may be zero |
 | `/alerts` | Rules, destinations, incident state | Present setup controls only; current incident opening is not live-verified |
-| `/dashboards` | Saved telemetry view surface | `c5` creates an empty shell only; do not present it as a populated dashboard |
-| `/investigations` | Saved investigation state | `c5` creates minimal state only; do not present a full workflow claim |
+| `/dashboards` | Saved telemetry view surface | `product:saved_state` creates an empty shell only; do not present it as a populated dashboard |
+| `/investigations` | Saved investigation state | `product:saved_state` creates minimal state only; do not present a full workflow claim |
 | `/sql` | Read-only query against native telemetry tables | Query below; verified live |
 
 Useful optional producers:
@@ -437,16 +437,16 @@ Useful optional producers:
 cd "$PLAYGROUND_DIR"
 
 # GraphQL batching, N+1, partial errors, operation-name cardinality.
-./scenarios/run.sh a6
+mise run graphql:batching_errors
 
 # Async producer-to-consumer span link.
-./scenarios/run.sh a3
+mise run messaging:checkout_outbox
 
 # Rust storefront GraphQL to Java payment gRPC.
-./scenarios/run.sh a23
+mise run grpc:storefront_pricing
 
 # Saved-state shells; not populated content.
-./scenarios/run.sh c5
+mise run product:saved_state
 
 # One bounded CLI invocation.
 parallax invocation start -- echo parallax-demo
@@ -505,9 +505,9 @@ Known limits on the verified preview:
 - The page-generated propagation-break link is encoded incorrectly; use the
   direct `?nopropagate=1` URL documented above.
 - Alert rule and destination setup are visible, but current-preview incident
-  opening was not reproduced. Do not run `c4` live or claim the incident
+  opening was not reproduced. Do not run `product:alerting` live or claim the incident
   lifecycle until sustained-breach verification passes.
-- `c5` saves an empty dashboard and minimal investigation state. It proves
+- `product:saved_state` saves an empty dashboard and minimal investigation state. It proves
   persistence plumbing, not meaningful saved content.
 - The direct playground stack does not prove a live Sentry UI or flamegraph.
   Sentry envelope emission has separate coverage.
@@ -528,8 +528,8 @@ Known limits on the verified preview:
 - Install/update behavior: Homebrew documentation and tap README.
 - CLI syntax: installed preview `--help` and
   `crates/parallax-cli/src/main.rs`.
-- Ports and startup: `parallax serve` ready banner plus playground `demo.sh`
+- Ports and startup: `parallax serve` ready banner plus `mise run demo:stack`
   and `deploy/docker-compose.yml`.
 - Scenarios: `parallax-telemetry-playground/scenarios/README.md` and
-  `scenarios/run.sh`.
+  `mise tasks ls --sort name`.
 - Browser routes: `parallax/ui/src/routes/`, verified with `agent-browser`.

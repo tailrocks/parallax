@@ -1,5 +1,17 @@
 # Parallax vs Maple
 
+## Current live verification — 2026-09-04
+
+Maple was tested from the official `MapleTechLabs/maple` `v0.0.21` bundle, not
+the old repository name or playground pin. Rotel delivered the shared workload;
+Maple `traces --since 10m` returned fresh data with the playground service names.
+Maple remains the
+strongest local single-binary UX reference in this set. Exact evidence and the
+Parallax tradeoff are in the [canonical report](../../validation/2026-09-04-parallax-main-competitor-verification.md).
+
+The dated pass notes below preserve historical claims; this section is the
+current version authority.
+
 > An unbiased, one-to-one comparison. Research date: **2026-07-17** (pass 59 +
 > pass 112; **pass 139** + **pass 174** + **pass 201** re-pin). Tinybird-decoupling
 > watch **still UNFIRED** — latest tag still **v0.0.12** (2026-06-18) / **1,532★**;
@@ -148,6 +160,23 @@ Sources: [maple.dev/pricing](https://maple.dev/pricing/). Maple markets large sa
 - ~~Maple latest version~~ → **pinned v0.0.12 (2026-06-18), 1,532★** (GitHub API 2026-07-17); repo **renamed `Makisuo/maple` → `MapleTechLabs/maple`**.
 - **A1 gate vs Maple:** if a team has Maple for local-mode OTLP obs, does Parallax's bounded bundle add measurable value for production-incident agent fixes? Unproven.
 - **GreptimeDB-vs-ClickHouse/chDB** — measured cost/perf at parity (local + hosted). Benchmark-dependent, unmeasured.
+
+## Live verification — 2026-09-12
+
+Live run against Parallax `main` (`0.1.0+6b3a92b`) with Maple at **v0.0.22**
+(`maple-v0.0.22-aarch64-apple-darwin`, 2026-09-03; repo now `MapleTechLabs/maple`) — the v0.0.12
+pin in this file's header is stale. Layer A parity: **304 traces**, facet count 304 (the CLI
+local-mode warehouse query 404'd — a Maple defect candidate; the UI was unaffected). The single
+binary is genuinely pleasant live: Traces/Logs/Metrics/Services/Errors/Sessions with a facet
+sidebar (ENVIRONMENT/NAMESPACE/SERVICE with counts), errors-only toggle, and
+Waterfall/Timeline/Flow trace views with color-by-service. The **Errors view** — "root spans
+only / 1,957 errors / 1,022 affected traces / 1.78% error rate" with a time-window switcher — is
+a clean, opinionated triage surface. Two honest findings cut the other way: the **Services
+page requires the separate Maple-local backend** ("Can't reach Maple Local"), so RED-by-service
+is not available from the single binary alone — a parity gap vs the marketing claims; and there
+is **no alerting, no dashboards and no SQL console**. On that scoreboard Parallax's live-run wins
+were trace attribute compare, hash-pinned incident bundles + MCP, and the read-only SQL console.
+Full run: [2026-09-12 verification report](../../validation/2026-09-12-parallax-main-competitor-verification.md).
 
 ## Sources (accessed 2026-07-17)
 

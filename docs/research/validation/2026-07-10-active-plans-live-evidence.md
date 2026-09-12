@@ -17,25 +17,25 @@ Environment:
 
 The live playground run covered the remaining scenario-backed plan items:
 
-- A1 checkout smoke.
-- A7b gRPC stream.
-- A13 deploy regression with checkout `v1` and `v2`.
-- A14 flag flip.
-- A19 long trace.
-- A20 batch fan-in.
-- A20 compare pair.
-- A22 Tokio saturation.
-- A25 Postgres reality.
-- A28 frontend RUM journey.
-- A29 typed events.
-- B3b gRPC deadline.
-- B17b cron suite.
-- B19 JVM GC pressure.
-- B20 recommendation container OOM.
-- B21 orphan consumer.
-- B22 sampling gap.
-- B23 uncorrelated log.
-- `b-async-chaos`, `b-chaos`, and `b-degradation`.
+- `commerce:checkout_saga` checkout smoke.
+- `grpc:pricing_stream`.
+- `deploy:release_regression` with checkout `v1` and `v2`.
+- `feature_flags:checkout_variants`.
+- `traces:wide_trace`.
+- `messaging:batch_fanin`.
+- `feature_flags:topology_compare`.
+- `runtime:request_saturation`.
+- `postgres:query_pressure`.
+- `browser:rum_journey`.
+- `events:typed_business_events`.
+- `grpc:deadline_retry`.
+- `cron:duplicate_missed`.
+- `jvm:catalog_query_workload`.
+- `container:recommendation_oom_probe`.
+- `messaging:orphan_consumer`.
+- `sampling:low_sample_gap`.
+- `logs:trace_correlation`.
+- `messaging:poison_retry`, `failures:payment_latency`, and `failures:provider_degradation`.
 
 Compose proof after the run:
 
@@ -51,7 +51,7 @@ telemetry-playground-recommendation-1   Up 43 minutes
 telemetry-playground-web-1              Up About an hour
 ```
 
-B20 was rerun on 2026-07-10 after OrbStack recovered:
+`container:recommendation_oom_probe` was rerun on 2026-07-10 after OrbStack recovered:
 
 ```text
 leak round 32: 8192KiB
@@ -246,18 +246,18 @@ savedViews(page:"/logs")=[]
 - 036: trace-spine smoke and dependency note satisfied by compose run, trace IDs, and native trace-table proof.
 - 040: large waterfall/log proof satisfied by large trace browser route, logs route proof, route tests, and build.
 - 041: releases/deploy lane satisfied by checkout `v1`/`v2` release GraphQL, native trace table proof, service/issue browser proof.
-- 042: release/env/flag/catalog proof satisfied by A13/A14 and catalog/release snapshots.
+- 042: release/env/flag/catalog proof satisfied by `deploy:release_regression`/`feature_flags:checkout_variants` and catalog/release snapshots.
 - 043: service catalog satisfied by catalog GraphQL and `/services/checkout` browser route.
 - 044: runtime dashboards and metric discovery satisfied by native metric tables, metricNames, and runtime route proof.
-- 045: runtime scenarios satisfied by A22, B19, B20, native runtime/JVM metric evidence, and Docker restart proof.
+- 045: runtime scenarios satisfied by `runtime:request_saturation`, `jvm:catalog_query_workload`, `container:recommendation_oom_probe`, native runtime/JVM metric evidence, and Docker restart proof.
 - 046: field explorer satisfied by `fieldKeys`, `fieldStats`, invalid-key rejection, and traces field drawer proof.
-- 048: Postgres reality satisfied by A25 and native `db.*` span proof.
+- 048: Postgres reality satisfied by `postgres:query_pressure` and native `db.*` span proof.
 - 049: messaging/gRPC semantics satisfied by typed links, linked traces, queue-depth metric, and `rpc.message` events.
-- 050: frontend RUM journey satisfied by A28 browser journey and native route/vital telemetry from the live run.
+- 050: frontend RUM journey satisfied by `browser:rum_journey` browser journey and native route/vital telemetry from the live run.
 - 051: critical path and compare satisfied by real trace IDs, `traceCriticalPath`, and `traceCompare` proof with sibling ordinals.
 - 052: investigations satisfied by save/restore browser proof and invalid-state GraphQL rejection.
 - 053: design/a11y sweep satisfied by final browser sweep over dense routes plus UI tests/build.
-- 054: quality scenarios and tour satisfied by B17b/B21/B22/B23/chaos/degradation scenario evidence.
+- 054: quality scenarios and tour satisfied by `cron:duplicate_missed`/`messaging:orphan_consumer`/`sampling:low_sample_gap`/`logs:trace_correlation`/poison-retry/degradation scenario evidence.
 - 056: typed events/logs satisfied by native `opentelemetry_logs` event-name counts.
 - 057: logs context and saved views satisfied by `logsAround`, route tests, save/list/delete proof.
 - 061: trace view modes satisfied by errors mode, service lanes, minimap, deep links, and skew route proof.

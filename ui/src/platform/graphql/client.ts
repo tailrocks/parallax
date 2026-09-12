@@ -5,6 +5,7 @@
 import type { DocumentNode } from "graphql"
 import { Kind, print } from "graphql"
 
+import { apiAuthHeaders } from "@/platform/auth/api-token"
 import { graphqlError } from "@/platform/graphql/error"
 import type { TypedDocumentNode } from "@/platform/graphql/typed-document"
 import { encodeGraphqlVariables } from "@/platform/graphql/variables"
@@ -126,7 +127,7 @@ async function fetchAndDecode<TResult>(
   try {
     const requestInit: RequestInit = {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...apiAuthHeaders() },
       body: JSON.stringify({ operationName, query, variables }),
     }
     if (options?.signal) requestInit.signal = options.signal

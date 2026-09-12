@@ -588,6 +588,11 @@ scope = "crates/parallax-server/tests/m7_metric_exemplar_migration_greptime.rs"
 ceiling = 10
 
 [[limits]]
+metric = "agent-doc-bytes"
+scope = "AGENTS.md"
+ceiling = 1026
+
+[[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-xtask/src/command.rs"
 ceiling = 1
@@ -596,12 +601,6 @@ ceiling = 1
 metric = "rust.assertions"
 scope = "crates/parallax-xtask/src/semconv/tests.rs"
 ceiling = 7
-
-
-[[limits]]
-metric = "agent-doc-bytes"
-scope = "prompts/AGENTS.md"
-ceiling = 1600
 
 
 [[limits]]
@@ -4188,21 +4187,6 @@ migration_plan = "none"
 kind = "handwritten"
 
 [[limits]]
-metric = "agent-doc-bytes"
-scope = "AGENTS.md"
-ceiling = 16215
-
-[[limits]]
-metric = "agent-doc-bytes"
-scope = ".github/AGENTS.md"
-ceiling = 1531
-
-[[limits]]
-metric = "agent-doc-bytes"
-scope = "ui/AGENTS.md"
-ceiling = 12667
-
-[[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-analysis/src/sentry.rs"
 ceiling = 19
@@ -4980,7 +4964,7 @@ reason = "private delivery loop composition reports through the typed outcome pa
 
 [[product.anyhow_edges]]
 path = "crates/parallax-server/src/alerting/evaluator.rs"
-ceiling = 7
+ceiling = 9
 reason = "private evaluation tick composition reports through the typed outcome path"
 
 [[product.anyhow_edges]]

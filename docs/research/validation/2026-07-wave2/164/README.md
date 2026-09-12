@@ -23,9 +23,9 @@
 Prior packet: [live-graphql-assertions.md](./live-graphql-assertions.md)
 (filter narrowing, injection proofs, facet/series three-way consistency).
 
-### `f-attrs` 70/20/10 (this closure)
+### `attributes:bounded` 70/20/10 (internal fixture `f-attrs`; this closure)
 
-Playground `scenarios/run.sh f-attrs` → OTLP into `parallax serve` at
+Playground `mise run attributes:bounded` → OTLP into `parallax serve` at
 `127.0.0.1:4000` (managed GreptimeDB). Asserted:
 
 ```text
@@ -66,7 +66,7 @@ Console: no product errors on logs walk (Vite/React DevTools only).
 
 `m9_attribute_filters_greptime` remains available for isolated managed-engine
 CI; ports 24000–24003 were held by the live QA stack during this closure.
-Live GraphQL + `f-attrs` on that stack cover the same acceptance claims.
+Live GraphQL + `attributes:bounded` on that stack cover the same acceptance claims.
 
 ## Multi-select semantics
 

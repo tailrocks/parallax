@@ -16,19 +16,20 @@
 | Graduation → dashboard | `widget_metric/widget_agg/widget_group_by` params open the create dialog pre-filled; dashboard created and widget renders the grouped query (`graduate-dashboard-*.png`) |
 | Permalink reproduction | Re-opening the exact URL reproduces the filtered 1-series chart (`permalink-reload.png`) |
 | Plan-105 Step-0 contract + reconciliation | `docs/research/decisions/metric-summary-contract.md`; note added to plan 105 |
-| Playground `m-labels` / `m-shapes` | playground `2083a89`; both scenarios re-run live on 2026-07-17 |
+| Playground `metrics:labels` / `metrics:shapes` (internal fixtures `m-labels` / `m-shapes`) | playground `2083a89`; both tasks re-run live on 2026-07-17 |
 
 ## Live GraphQL assertions (operator host, 2026-07-17)
 
-Against `parallax serve` (managed GreptimeDB) with fresh `m-labels` +
-`m-shapes` scenario emissions:
+Against `parallax serve` (managed GreptimeDB) with fresh `metrics:labels` +
+`metrics:shapes` task emissions:
 
 - `metricQuery(shapes.region.load, gauge, last, groupBy: region)` →
   three series at the seeded 6/3/1 magnitudes (eu 60 / us 30 / ap 10).
 - `attributeFilters: [region = eu]` → single series, value 60 only.
 - `metricQuery(shapes.region.requests_total, sum, increase)` → zero-filled
   window with the emitted growth (400) in its bucket.
-- `metricQuery(shapes.requests_total, sum, rate)` over the m-shapes counter
+- `metricQuery(shapes.requests_total, sum, rate)` over the `metrics:shapes`
+  counter (internal fixture `m-shapes`)
   reset → all values ≥ 0 (reset clamps, never negative).
 - `metricQuery(shapes_request_duration, histogram, p95)` → 0.5 plateau
   from the seeded explicit buckets; `avg` returns an empty series because
