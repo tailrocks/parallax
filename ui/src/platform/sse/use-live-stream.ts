@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 
+import { withAccessTokenQuery } from "@/platform/auth/api-token"
 import type { RuntimeDecoder } from "@/platform/external-values/runtime-decoder"
 import { browserEventSourceFactory, type EventSourceFactory } from "@/platform/sse/event-source"
 import {
@@ -46,8 +47,11 @@ export function useLiveStream<T>({
   const visible = usePageVisible()
 
   useEffect(() => {
+    // EventSource cannot send headers; the token rides the query string
+    // (server accepts it only on the stream routes).
+    const streamUrl = url ? withAccessTokenQuery(url) : null
     const controller = createLiveStreamController<T>({
-      url,
+      url: streamUrl,
       decoder: {
         safeParse(input: unknown) {
           const current = decoderRef.current

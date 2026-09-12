@@ -5,18 +5,13 @@
 > current as the market shifts — products are added, merged, or retired on every
 > pass. Verify each still exists and still matters before relying on a row.
 >
-> Last broad market review: 2026-07-17. Current live backend verification:
-> 2026-09-04 — see the [canonical report](../../validation/2026-09-04-parallax-main-competitor-verification.md).
-
-## Current mandatory live comparison set (2026-09-04)
-
-The required self-hosted set was run against refreshed Parallax `main`
-`3c4b68d3acf8fb435102ae2beb8f184bf40b617c` and playground
-`bc3d771a386a99387fab6989ac98992d978965cc`: OpenObserve `v0.92.2`, Maple
-`v0.0.21`, Sentry self-hosted `26.8.0`, SigNoz `v0.140.0` via Foundry
-`v0.2.17`, Grafana LGTM `0.32.0`, ClickStack `2.37.0`, and Rustrak `v0.14.11`.
-The feature-oriented results, exact refs/digests, API evidence, screenshots,
-and HyperDX ingest blocker are in the canonical report.
+> Last reviewed: 2026-07-17.
+>
+> **Live verification run 2026-09-12:** seven roster products — SigNoz, OpenObserve,
+> Maple, HyperDX, Sentry self-hosted, Grafana LGTM, rustrak — were deployed at
+> versions re-derived from upstream that day and exercised live against Parallax
+> `main` (`0.1.0+6b3a92b`) on one shared telemetry stream. See the
+> [canonical verification report](../../validation/2026-09-12-parallax-main-competitor-verification.md).
 
 Legend for the **State** column:
 
@@ -33,8 +28,8 @@ Legend for the **State** column:
 | Product | What it is | License / model | Primary signal focus | State |
 | --- | --- | --- | --- | --- |
 | **Datadog** | Full-stack SaaS observability + security; broadest commercial surface (infra, APM, logs, RUM, profiling, LLM/agent obs, CI/test, incident, security). | Closed SaaS; OSS agent, proprietary backend. | All signals. | [deep-dive](parallax-vs-datadog.md) |
-| **Sentry** | Error tracking + tracing + logs + metrics + profiling + replay + Seer AI; OTLP traces+logs (no OTLP metrics); best-in-class issue lifecycle. | Source-available FSL (→Apache/MIT @2yr). | Errors + perf + replay. | [deep-dive](parallax-vs-sentry.md) |
-| **Grafana Cloud / LGTM** | Managed Mimir/Loki/Tempo/Pyroscope/Grafana; OTLP-native. Cloud Free / Pro **$19+usage** / Enterprise from **$25k/yr**. | Mixed OSS + Cloud SaaS (Grafana Labs). | Metrics + logs + traces + profiles + AI Assistant. | [deep-dive](parallax-vs-grafana.md) |
+| **Sentry** | Error tracking + tracing + logs + metrics + profiling + replay + Seer AI; OTLP traces+logs (no OTLP metrics); best-in-class issue lifecycle. Self-host **26.8.0** verified live 2026-09-12 (Alerts nav renamed **"Monitors"**: Error/Metric/Cron/Uptime). | Source-available FSL (→Apache/MIT @2yr). | Errors + perf + replay. | [deep-dive](parallax-vs-sentry.md) |
+| **Grafana Cloud / LGTM** | Managed Mimir/Loki/Tempo/Pyroscope/Grafana; OTLP-native. Cloud Free / Pro **$19+usage** / Enterprise from **$25k/yr**. `otel-lgtm` **0.33.0** (Grafana **13.2.1**) verified live 2026-09-12. | Mixed OSS + Cloud SaaS (Grafana Labs). | Metrics + logs + traces + profiles + AI Assistant. | [deep-dive](parallax-vs-grafana.md) |
 | **Honeycomb** | High-cardinality event-pipeline observability; exploratory query; **Agent Observability (2026-05-12): Agent Timeline + autonomous Auto-investigations + Canvas-agent + GenAI semconv** (ships agent-obs AND autonomous RCA). | Closed SaaS (Refinery OSS). | Events / traces (high cardinality) + agent. | [deep-dive](parallax-vs-honeycomb.md) |
 | **New Relic** | Full-platform SaaS; entity-centric; AI (NRAI + **AI Coding Obs** for Claude Code/Cursor/Copilot/Windsurf/Q); OTLP-native. | Closed SaaS (no self-host). | All signals. | [deep-dive](parallax-vs-new-relic.md) |
 | **Dynatrace** | AI-driven (Davis) full-stack; deep auto-instrumentation via OneAgent; **Perform-2026 agentic-operations platform: Dynatrace Intelligence + Smartscape truth-graph + Intelligence Agents + MCP Server = "bounded agent context" (DIRECT collision with Parallax's thesis).** | Closed SaaS. | All signals + topology + agent-context. | [deep-dive](parallax-vs-dynatrace.md) |
@@ -55,18 +50,18 @@ Legend for the **State** column:
 
 | Product | What it is | License / model | Primary signal focus | State |
 | --- | --- | --- | --- | --- |
-| **SigNoz** | OTLP-native full obs on ClickHouse; most mature MCP. | MIT-Expat core + proprietary `ee/`. | All signals. | [deep-dive](parallax-vs-signoz.md) |
-| **OpenObserve** | Rust single-binary, object-storage-native (Parquet/DataFusion); AI SRE + 140+ MCP. | AGPL-3.0 + commercial EE. | All signals. | [deep-dive](parallax-vs-openobserve.md) |
+| **SigNoz** | OTLP-native full obs on ClickHouse; most mature MCP. **v0.141.1** + collector **v0.144.9** verified live 2026-09-12 (self-host now via Foundry; repo compose deprecated since v0.130.0). | MIT-Expat core + proprietary `ee/`. | All signals. | [deep-dive](parallax-vs-signoz.md) |
+| **OpenObserve** | Rust single-binary, object-storage-native (Parquet/DataFusion); AI SRE + 140+ MCP. **v1.0.0** (first GA, 2026-09-11) verified live 2026-09-12. | AGPL-3.0 + commercial EE. | All signals. | [deep-dive](parallax-vs-openobserve.md) |
 | **Coroot** | eBPF zero-instrumentation obs + 2-stage AI RCA; safest MCP (OAuth+RBAC). | Apache-2.0 + commercial EE. | Traces/logs/profiles (eBPF). | [deep-dive](parallax-vs-coroot.md) |
 | **Highlight.io** | Session replay + error tracking + logs + traces; OTLP-native; Apache-2.0 OSS self-host. **🛑 Wound down (pass 33): acquired by LaunchDarkly; standalone SaaS shut down 2026-02-28; OSS repo unmaintained (no release since 2025-08).** Historical/reference only. | Apache-2.0 (self-host) + Cloud. | Errors + RUM + logs. | [deep-dive](parallax-vs-highlight.md) |
-| **Rustrak** | Rust **Sentry-SDK-compatible** error tracker + **mutating MCP (56 tools, source-counted pass 54)**; **GPL-3.0**; **64★**; server 0.9.2 / mcp 0.2.13. Error-only (no OTLP). | **GPL-3.0** + self-host. | Errors + agent MCP. | [deep-dive](parallax-vs-rustrak.md) |
+| **Rustrak** | Rust **Sentry-SDK-compatible** error tracker + **mutating MCP (56 tools, source-counted pass 54)**; **GPL-3.0**; **64★**; npm server 0.9.2 / mcp 0.2.13. **Server image v0.14.12** verified live 2026-09-12 — Sentry-protocol error tracker, not an OTLP sink; unique Agents view (agent runs/tokens/tools). | **GPL-3.0** + self-host. | Errors + agent MCP. | [deep-dive](parallax-vs-rustrak.md) |
 | **GlitchTip** | **MIT** Django Sentry-API-compatible error tracking (+ uptime/perf as hosted “events”); self-host free; Hosted Free **1k events/mo**; paid ~$15/100k–$250/3M (secondary-confirmed 2026); **MCP docs**. GitLab-primary; GH mirror 159★ stale. | MIT + Cloud. | Errors (+ light APM events). | [deep-dive](parallax-vs-glitchtip.md) |
 | **Bugsink** | Focused **self-hosted Sentry-SDK-compatible error-tracking server** (Python/Django; full issue lifecycle); **1,940★, v2.4.0**; Hosted EUR event tiers; self-host free. Error-only. | **PolyForm Shield 1.0.0** core (noncompete) + proprietary `ee/` + BSD-3 `sentry/` + Cloud. | Errors only (Sentry-alternative). | [deep-dive](parallax-vs-bugsink.md) |
 | **Uptrace** | OTLP tracing-first APM on ClickHouse+Postgres; Bun-author lineage. | **AGPL** (Community free) + paid editions + Cloud. | Traces + metrics + logs. | [deep-dive](parallax-vs-uptrace.md) |
-| **HyperDX** | OTLP + multi-protocol on **ClickHouse**; full-stack incl. **session replay**; = ClickHouse Inc.'s **ClickStack**. Cloud: Free 3GB / Starter **$20 + $0.40/GB**. | **MIT** + Cloud + Managed ClickStack. | All signals + RUM/replay. | [deep-dive](parallax-vs-hyperdx.md) |
+| **HyperDX** | OTLP + multi-protocol on **ClickHouse**; full-stack incl. **session replay**; = ClickHouse Inc.'s **ClickStack**. **2.38.0** (`hyperdx/hyperdx-all-in-one` — image renamed from `clickstack-all-in-one`) verified live 2026-09-12: Service Map (BETA) is the slickest single graph view in the roster (Parallax ships its own Ecosystem map — capability present on both), live tail on logs + traces. Cloud: Free 3GB / Starter **$20 + $0.40/GB**. | **MIT** + Cloud + Managed ClickStack. | All signals + RUM/replay. | [deep-dive](parallax-vs-hyperdx.md) |
 | **Odigos** | eBPF + OTel auto-instrumentation control plane (→ any backend); marketing **“Ask Production Anything” / AI SRE**; GenAI auto-instrument. OSS free; Enterprise trial then custom (**no public $/unit**). **v1.31.2, ~3.7k★.** | Apache-2.0 + Enterprise. | Instrumentation layer (complementary). | [deep-dive](parallax-vs-odigos.md) |
 | **Traceloop** (OpenLLMetry) | OSS Apache-2.0 OTel **LLM-instrumentation SDK** (auto-instrument providers/frameworks/vector-DBs/MCP → OTLP GenAI spans to any backend); drove GenAI semantic conventions into upstream OTel; **ServiceNow-acquired (~$60–80M) → AI Control Tower** (OSS project stays Apache-2.0, active v0.62.1). The LLM-instrumentation sibling of Odigos. | Apache-2.0 + Cloud (now ServiceNow). | LLM instrumentation layer (complementary). | [deep-dive](parallax-vs-traceloop.md) |
-| **Maple** | OTLP single-binary best local UX; Turso metadata sibling choice. | FSL-1.1 (TS/Bun). | All signals. | [deep-dive](parallax-vs-maple.md) |
+| **Maple** | OTLP single-binary best local UX; Turso metadata sibling choice. **v0.0.22** verified live 2026-09-12 — clean error-triage view; Services page needs the separate Maple-local backend; no alerting/dashboards/SQL. | FSL-1.1 (TS/Bun). | All signals. | [deep-dive](parallax-vs-maple.md) |
 | **TMA1** | Nearest architectural mirror: Go single binary + embedded GreptimeDB + read-only MCP context-bundle for coding agents. | Apache-2.0. | AI-agent cost/sessions/traces. | [deep-dive](parallax-vs-tma1.md) |
 | **Traceway** | MIT OTel-native full-stack self-host (logs/traces/metrics/exceptions/RUM/AI traces); **agent-first CLI + skills + MCP**. ClickHouse+Postgres or SQLite/DuckDB. **No Sentry; no portable redacted bundle.** ~1k★, v1.9.1. Cloud: Free / **$12.99** / **$24.99** / **$499.99** + GB overage. | MIT + Cloud public. | All signals + agent investigation. | [deep-dive](parallax-vs-traceway.md) |
 

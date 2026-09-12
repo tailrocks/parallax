@@ -1,8 +1,37 @@
-# Current SigNoz deployment overlay.
+# SigNoz — current officially supported self-hosted architecture (2026-09).
 #
-# Run ./setup-vendor.sh first. It uses the supported SigNoz Foundry workflow
-# and writes vendor/signoz-pours/deployment/compose.yaml. Override the output
-# with SIGNOZ_POURS_DIR for a dated evidence run.
-include:
-  - path: ${SIGNOZ_POURS_DIR:-vendor/signoz-pours}/deployment/compose.yaml
-  - path: compose.signoz.override.yml
+# SigNoz v0.130.0 DEPRECATED the old repo-bundled compose (deploy/docker/… +
+# install.sh). The current supported self-host path is Foundry
+# (https://github.com/SigNoz/foundry): `foundryctl` generates a compose
+# deployment from `casting.yaml` (flavor: compose, mode: docker) and boots
+# `signoz/signoz` (single server image) + `signoz/signoz-otel-collector`
+# (migrator + ingester) + ClickHouse 25.12 + ClickHouse Keeper + Postgres 16
+# (metastore), all on one `signoz-network`.
+#
+# That architecture is a SEPARATE compose project — it cannot be an overlay of
+# this lab's compose.yml. `signoz-foundry/` in this directory is the
+# foundryctl-v0.2.17-generated deployment with images pinned to SigNoz
+# v0.141.1 (latest stable, 2026-09-09) and host ports remapped so Rotel keeps
+# 4317/4318:
+#   ingester  14327 -> 4317 (OTLP gRPC)
+#   ingester  14328 -> 4318 (OTLP HTTP)
+#   signoz    3301  -> 8080 (UI/API)
+#
+# Boot it standalone (not as an overlay):
+#   docker compose -f signoz-foundry/compose.yaml -p signoz up -d
+#
+# Regenerate from upstream (preferred when bumping SigNoz):
+#   foundryctl gen examples
+#   cp -R docs/examples/docker/compose/pours/deployment signoz-foundry
+#   # pin signoz/signoz + signoz/signoz-otel-collector to the release tag
+#   # and remap the three host ports as above, then re-verify.
+#
+# Rotel reaches the ingester over the host bridge at
+# host.docker.internal:14327 (see rotel.env). First-run onboarding: register
+# the initial org/admin in the UI (http://localhost:3301) before ingest
+# asserts; the ingester accepts OTLP, but query APIs are auth-gated until an
+# organization exists.
+#
+# Previous integration (v0.129.0 vendor clone + overlay) is gone on purpose:
+# preserving an obsolete deployment path contradicts the lab rule that modern
+# supported upstream installation beats a stale local integration.

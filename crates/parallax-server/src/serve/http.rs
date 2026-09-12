@@ -158,6 +158,27 @@ pub(super) async fn api_auth_middleware(
     request: Request,
     next: Next,
 ) -> Response {
+    authorize(auth, request, next, false).await
+}
+
+/// Same bearer check, plus an `access_token` query fallback scoped to the SSE
+/// stream routes: browsers cannot attach headers to `EventSource`, so the live
+/// tail is otherwise unreachable on token-protected servers. Query strings are
+/// commonly logged, which is why this fallback is opt-in per route.
+pub(super) async fn api_auth_middleware_with_query_token(
+    State(auth): State<ApiAuth>,
+    request: Request,
+    next: Next,
+) -> Response {
+    authorize(auth, request, next, true).await
+}
+
+async fn authorize(
+    auth: ApiAuth,
+    request: Request,
+    next: Next,
+    allow_query_token: bool,
+) -> Response {
     let Some(expected) = auth.token.as_deref() else {
         return next.run(request).await;
     };
@@ -165,8 +186,23 @@ pub(super) async fn api_auth_middleware(
         .headers()
         .get(header::AUTHORIZATION)
         .and_then(|value| value.to_str().ok())
-        .and_then(extract_bearer);
-    match presented {
+        .and_then(extract_bearer)
+        .map(str::to_string)
+        .or_else(|| {
+            if !allow_query_token {
+                return None;
+            }
+            let raw = request.uri().query()?;
+            raw.split('&').find_map(|pair| {
+                let (key, value) = pair.split_once('=')?;
+                if key != "access_token" {
+                    return None;
+                }
+                let decoded = percent_decode(value);
+                (!decoded.is_empty()).then_some(decoded)
+            })
+        });
+    match presented.as_deref() {
         Some(candidate) if constant_time_eq(candidate.as_bytes(), expected.as_bytes()) => {
             tracing::debug!(auth.result = "ok", "api auth accepted");
             next.run(request).await
@@ -181,6 +217,39 @@ pub(super) async fn api_auth_middleware(
                 .into_response()
         }
     }
+}
+
+/// Minimal percent-decoding for the `access_token` query fallback: resolves
+/// `%XX` escapes (case-insensitive hex) and `+` as space; every other byte
+/// passes through untouched.
+fn percent_decode(value: &str) -> String {
+    let bytes = value.as_bytes();
+    let mut decoded = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        match bytes[index] {
+            b'+' => {
+                decoded.push(b' ');
+                index += 1;
+            }
+            b'%' => {
+                if let Some(hex) = bytes.get(index + 1..index + 3)
+                    && let Ok(byte) = u8::from_str_radix(&String::from_utf8_lossy(hex), 16)
+                {
+                    decoded.push(byte);
+                    index += 3;
+                } else {
+                    decoded.push(b'%');
+                    index += 1;
+                }
+            }
+            byte => {
+                decoded.push(byte);
+                index += 1;
+            }
+        }
+    }
+    String::from_utf8_lossy(&decoded).into_owned()
 }
 
 fn extract_bearer(header: &str) -> Option<&str> {
@@ -252,7 +321,7 @@ pub(super) async fn graphql_handler(
 
 #[cfg(test)]
 mod auth_tests {
-    use super::{ApiAuth, constant_time_eq, extract_bearer};
+    use super::{ApiAuth, constant_time_eq, extract_bearer, percent_decode};
 
     #[test]
     fn bearer_extraction_is_strict() {
@@ -280,5 +349,19 @@ mod auth_tests {
     fn open_mode_when_token_absent() {
         assert!(!ApiAuth::from_token(None).required());
         assert!(ApiAuth::from_token(Some("a".repeat(16))).required());
+    }
+
+    /// The `access_token` query fallback (defect #4) must decode the standard
+    /// escapes a browser's `URLSearchParams`/`encodeURIComponent` produces.
+    #[test]
+    fn percent_decode_resolves_escapes_and_plus() {
+        assert_eq!(percent_decode("plain"), "plain");
+        assert_eq!(percent_decode("a%26b%2Fc"), "a&b/c");
+        assert_eq!(percent_decode("%41%42"), "AB");
+        assert_eq!(percent_decode("a+b"), "a b", "+ is a space in query encoding");
+        // Malformed escapes pass through instead of panicking or dropping data.
+        assert_eq!(percent_decode("100%"), "100%");
+        assert_eq!(percent_decode("%G1"), "%G1");
+        assert_eq!(percent_decode("%2"), "%2");
     }
 }

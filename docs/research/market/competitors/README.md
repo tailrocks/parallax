@@ -135,8 +135,8 @@ Primary slice (OSS-adjacent peers + Datadog/Sentry):
 
 | Capability | Parallax | Datadog | Sentry | SigNoz | OpenObserve | Coroot | Langfuse |
 |---|---|---|---|---|---|---|---|
-| Context engine for autonomous agents (bounded, redacted bundle) | 🟡🧪 bundle+redaction in code (`parallax-evidence`), **A1-unproven** | ❌ (human dashboard + chat) | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Read-only / safe-by-default agent projection | ✅🧪 local-stdio MCP (`parallax-mcp`, plan 112 DONE; remote deferred) | ❌ (write-capable management) | 🟡 | ❌ write/delete | ❌ write/delete default | 🟡 1 mutating tool | 🟡 |
+| Context engine for autonomous agents (bounded, redacted bundle) | 🟡🧪 bundle+redaction shipped (`parallax-evidence`); `sha256-jcs:` hash-pinned agent-ready incident bundles produced and served live 2026-09-12 — **A1 fix-quality value still unproven** | ❌ (human dashboard + chat) | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Read-only / safe-by-default agent projection | ✅🧪 local-stdio MCP (`parallax-mcp`, plan 112 DONE; remote deferred) — MCP + bundle surface verified live 2026-09-12 | ❌ (write-capable management) | 🟡 | ❌ write/delete | ❌ write/delete default | 🟡 1 mutating tool | 🟡 |
 | AI root-cause / investigation | 🏗 planned (no shipped AI RCA) | ✅ Bits AI (Investigation) | ✅ Seer autofix | ✅ MCP RCA skill | ✅ AI SRE | ✅ 2-stage ML+LLM | ❌ |
 | AI pricing model | (self-hosted compute) | credit-metered ($500/500cr) | paid (Seer) | free (MCP) | Enterprise+BYO-key | Enterprise/Cloud | self-host or cloud |
 | LLM/agent trace evals + experiments | 🏗 planned | ✅ (Agent Observability) | ❌ | ❌ | 🟡 | ❌ | ✅ core |
@@ -221,3 +221,36 @@ lives in [`comparison-set.md`](comparison-set.md). Every product with a
 ## Sources
 
 Every deep-dive (all **33** products + layers through pass 50, verified **2026-07-17**) carries its own dated primary-source list. The matrix above is backed by those deep-dives — **no cell relies on un-reverified legacy 2026-05/06 notes**; the legacy market notes are sources/leads only, with superseded-pointers into this folder. Drift-sensitive figures (version, stars, pricing) are pinned *per deep-dive* with a date; **those** are what re-verification targets each pass (products release; numbers age). See [`PROGRESS.md`](PROGRESS.md) for the per-product verification state, open questions, and the next-gap queue.
+
+## Live verification — 2026-09-12
+
+A full live competitor run on 2026-09-12 deployed seven lab-rostered products at versions
+re-derived from upstream that day — OpenObserve v1.0.0, Maple v0.0.22, SigNoz v0.141.1
+(+ collector v0.144.9 via Foundry), Sentry self-hosted 26.8.0, Grafana `otel-lgtm` 0.33.0
+(Grafana 13.2.1), HyperDX 2.38.0, rustrak 0.14.12 — and exercised each against Parallax
+`main` (`0.1.0+6b3a92b`) on one shared telemetry stream. Canonical report:
+[`validation/2026-09-12-parallax-main-competitor-verification.md`](../../validation/2026-09-12-parallax-main-competitor-verification.md).
+
+Six findings that intersect the matrix above, all verified in a real browser rather than claimed:
+
+1. **Trace attribute compare — Parallax, unique in the roster.** Window-vs-window ranked
+   attribute diffing in the trace explorer. None of SigNoz, OpenObserve, Grafana, HyperDX,
+   Sentry or Maple ships an equivalent.
+2. **Service/dependency map — both sides ship one.** Parallax has an **Ecosystem** view
+   (`/ecosystem`: React Flow + ELK layout over the `serviceMap` GraphQL query; typed nodes —
+   service / queue / database / cli / browser / external — with per-edge call/error counts and
+   p50/p95 latency; verified live at 17 nodes, including derived `postgresql` database and
+   `api.stripe.test` external nodes). HyperDX 2.38.0's Service Map (BETA) is still the slickest
+   single view — live legend, red-node highlighting — and SigNoz, OpenObserve and Tempo also
+   ship one. Against HyperDX the gap is polish, not capability.
+3. **Live tail for logs *and* traces — Parallax has it, via SSE** on both stream routes.
+   Comparable: Grafana Loki's Live tail (logs) and HyperDX's Live Tail (logs + traces). No live
+   tail control was found in SigNoz v0.141's logs explorer or in OpenObserve v1.0.0.
+4. **Read-only SQL console over telemetry — Parallax has it** (table browser, snippets, history;
+   verified joining `opentelemetry_traces` × `opentelemetry_logs` in 37 ms). Roster peers expose
+   raw ClickHouse at best (SigNoz), which is an ops surface, not a product one.
+5. **MCP server + hash-pinned agent-ready incident bundles — Parallax, unique among the seven
+   products deployed in this lab.** Not unique in the wider market: several incumbents outside
+   this lab ship an MCP surface (see the AI-native tables above).
+6. **Sentry 26.x renamed the Alerts nav to "Monitors"** (Error / Metric / Cron / Uptime monitor
+   types). Any doc or screenshot still saying "Alerts" for current Sentry is stale.

@@ -8,7 +8,7 @@
 name: parallax-otlp-fanout
 services:
   grafana-lgtm:
-    image: grafana/otel-lgtm:0.32.0
+    image: grafana/otel-lgtm:0.33.0
     container_name: pfanout-grafana-lgtm
     restart: unless-stopped
     ports:

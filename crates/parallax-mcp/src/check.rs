@@ -9,6 +9,7 @@ use std::process::Command;
 #[derive(Debug)]
 pub(crate) struct CheckArgs {
     pub base_url: String,
+    pub api_token: Option<String>,
     pub fingerprint: Option<String>,
     pub invocation_id: Option<String>,
     /// Path to the `parallax` CLI binary (default: look up on PATH).
@@ -16,7 +17,7 @@ pub(crate) struct CheckArgs {
 }
 
 pub(crate) async fn run(args: CheckArgs) -> anyhow::Result<()> {
-    let client = GraphqlClient::new(args.base_url.clone())?;
+    let client = GraphqlClient::new(args.base_url.clone(), args.api_token.clone())?;
     let mut cases: Vec<Case> = Vec::new();
 
     if let Some(fp) = &args.fingerprint {

@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use crate::errors::{ConfigError, ConfigResult};
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct Config {
     pub server: ServerConfig,
     pub storage: StorageConfig,
@@ -27,7 +27,7 @@ pub struct Config {
 /// A Sentry public key is a routing credential, not a user secret. Remote
 /// exposure still requires plan 109 bearer auth at the API boundary.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct SentryConfig {
     /// When false, the envelope route returns 404.
     pub enabled: bool,
@@ -50,7 +50,7 @@ impl Default for SentryConfig {
 
 /// GitHub webhook receiver for `deployment` / `deployment_status` (plan 121).
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct GithubDeployConfig {
     /// When false, the webhook route returns 404.
     pub enabled: bool,
@@ -82,7 +82,7 @@ impl Default for GithubDeployConfig {
 
 /// GitHub Actions `workflow_job` webhook + optional REST backfill (plan 124).
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct GithubActionsConfig {
     /// When false, workflow-job events return 404.
     pub enabled: bool,
@@ -121,7 +121,7 @@ impl Default for GithubActionsConfig {
 /// Alert evaluator + delivery worker (plan 167). Defaults keep alerting on
 /// with 60s evaluation / 10s delivery ticks.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct AlertingConfig {
     /// When false, GraphQL CRUD still works but no background loops run.
     pub enabled: bool,
@@ -134,7 +134,7 @@ pub struct AlertingConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct ServerConfig {
     pub bind: String,
     pub api_port: u16,
@@ -148,10 +148,16 @@ pub struct ServerConfig {
     /// See `docs/research/decisions/v2-auth-and-context-contract.md`.
     #[serde(default)]
     pub api_token: String,
+    /// Operator-facing origin (e.g. `https://parallax.example.com`) used in
+    /// outbound notification links. Empty = derive from `bind`+`api_port`,
+    /// substituting loopback when the bind is a wildcard address so outbound
+    /// links are never `0.0.0.0`.
+    #[serde(default)]
+    pub public_url: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct StorageConfig {
     /// Product storage mode: `managed` or `external`.
     pub mode: String,
@@ -165,7 +171,7 @@ pub struct StorageConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct RetentionConfig {
     pub traces_ttl: String,
     pub logs_ttl: String,
@@ -177,7 +183,7 @@ pub struct RetentionConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct LimitsConfig {
     pub bundle_max_tokens: usize,
     pub graphql_max_depth: usize,
@@ -194,7 +200,7 @@ pub struct LimitsConfig {
 /// suppressed from this exporter so a sink pointed back at Parallax does not
 /// re-export what it just received.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct TelemetryConfig {
     pub self_otlp_endpoint: String,
 }
@@ -208,6 +214,7 @@ impl Default for ServerConfig {
             otlp_http_port: 4318,
             ui_dist: String::new(),
             api_token: String::new(),
+            public_url: String::new(),
         }
     }
 }
@@ -314,6 +321,32 @@ impl Config {
             std::env::var("PARALLAX_API_TOKEN").ok(),
             &self.server.api_token,
         )
+    }
+
+    /// Resolve the operator-facing UI origin used in outbound notification
+    /// links. An explicit `server.public_url` wins; otherwise derive from
+    /// `server.bind` + `server.api_port`, substituting loopback for wildcard
+    /// binds (`0.0.0.0`, `::`, empty) because outbound links pointing at a
+    /// wildcard address are never dialable.
+    #[must_use]
+    pub fn resolved_public_url(&self) -> String {
+        let configured = self.server.public_url.trim().trim_end_matches('/');
+        if !configured.is_empty() {
+            return configured.to_string();
+        }
+        let bind_host = self
+            .server
+            .bind
+            .split_once(':')
+            .map_or(self.server.bind.as_str(), |(host, _)| host)
+            .trim()
+            .trim_matches(|c| c == '[' || c == ']')
+            .to_ascii_lowercase();
+        let host = match bind_host.as_str() {
+            "" | "0.0.0.0" | "::" | "unspecified" => "127.0.0.1",
+            other => other,
+        };
+        format!("http://{host}:{}", self.server.api_port)
     }
 
     /// Resolve the Sentry public key: env `PARALLAX_SENTRY_PUBLIC_KEY` wins.

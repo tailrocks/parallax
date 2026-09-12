@@ -188,6 +188,24 @@ OpenObserve pricing is **public** ([openobserve.ai/pricing](https://openobserve.
 - ~~MCP-safety / read-only mode~~ → **pass 56:** docs show **no public read-only MCP product mode**; EE MCP is write-heavy (DeleteStream, CreateAlert, …). Track if O2 later ships a restricted tool profile.
 - **AGPL → Apache risk:** unlikely, but track OpenObserve's license posture.
 
+## Live verification — 2026-09-12
+
+Live run against Parallax `main` (`0.1.0+6b3a92b`) with OpenObserve pinned to
+**`openobserve/openobserve:v1.0.0`** — the first GA release (2026-09-11), which supersedes the
+0.92.x line; the **v0.91.2 pin in this file's header is stale** (the UI walk was captured on the
+0.92.x lab build before the pin bump, and Layer A was re-verified at v1.0.0). Ingest parity was
+exact: the shared rotel/telemetrygen stream returned **608 spans** via
+`POST /api/default/_search?type=traces` — the same 304 traces × 2 spans Parallax stored. The live
+UI shows the scale/stream model this file describes from the other side: a "Select a stream" gate
+before any log query (512 streams / 1.8M events on the lab instance), and a Traces view with
+Spans/Traces/Service Catalog tabs, Rate/Errors/Duration charts and a clean waterfall. Two honest
+findings cut the other way: the **stream selector is clunky** (it rendered empty until
+`stream=default` was forced through a URL param), and **no live tail control was observed** on
+the logs surface — where Parallax, Grafana and HyperDX all tail. O2's breadth (Dashboards,
+Reliability, Infra, RUM, enterprise AI nav) remains well beyond Parallax's scope, and the
+Enterprise-gated, write-capable MCP posture recorded above is unchanged. Full run:
+[2026-09-12 verification report](../../validation/2026-09-12-parallax-main-competitor-verification.md).
+
 ## Sources (accessed 2026-07-17)
 
 - [openobserve.ai](https://openobserve.ai/); [pricing](https://openobserve.ai/pricing/) (**pass 94:** Self-Hosted EE free ≤**50 GB/day**; AI SRE/SDR Enterprise); [AI SRE](https://openobserve.ai/ai-sre/); [MCP server](https://openobserve.ai/mcp-server/); [downloads (v0.91.2)](https://openobserve.ai/downloads); [GitHub releases](https://github.com/openobserve/openobserve/releases) — **v0.91.2 (2026-07-17), 20,196★** (pass 102).

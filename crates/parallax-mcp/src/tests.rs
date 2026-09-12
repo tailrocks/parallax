@@ -11,6 +11,15 @@ fn local_stdio_requires_explicit_cli_opt_in() {
 }
 
 #[test]
+fn api_token_flag_parses_and_defaults_to_none() {
+    let default = Cli::try_parse_from(["parallax-mcp"]).expect("parse default");
+    assert_eq!(default.token, None);
+
+    let flagged = Cli::try_parse_from(["parallax-mcp", "--token", "secret"]).expect("parse flag");
+    assert_eq!(flagged.token.as_deref(), Some("secret"));
+}
+
+#[test]
 fn api_url_is_loopback_only_until_remote_auth_lands() {
     for accepted in [
         "http://127.0.0.1:4000/",

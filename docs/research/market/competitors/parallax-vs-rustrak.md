@@ -157,6 +157,22 @@ proprietary forks.
 - "Apache is always freer than Rustrak" → **nuanced**; GPL restricts
   proprietary redistribution more, not self-host use.
 
+## Live verification — 2026-09-12
+
+Live run against Parallax `main` (`0.1.0+6b3a92b`) with **rustrak `rustrak-server` /
+`rustrak-ui` v0.14.12** (2026-09-07) — the `@rustrak/server@0.9.2` npm pin in this file's header
+is a different distribution channel and sits behind the container images. rustrak joined the run
+over the Sentry **envelope** protocol side-channel, not OTLP (unchanged): it received the same c8
+PaymentError story as an error tracker and rendered it as projects → issues → events under an
+Overview / Issues / Releases / Performance / Agents / Logs nav. Its **Agents view** (AI agent
+runs, token spend, tool usage) is unique in the roster and stays out of comparison scope —
+Parallax ships no agent-activity surface. One ingest detail worth keeping: rustrak **accepts both
+Sentry auth styles** (auth header and query-string `sentry_key`), where Sentry 26.8.0's relay
+rejects query-string DSNs — so for SDK-side flexibility rustrak is currently the more forgiving
+Sentry-protocol target. Everything recorded in the tables above still holds: no OTLP, no
+portable bundle, no outcome loop. Full run:
+[2026-09-12 verification report](../../validation/2026-09-12-parallax-main-competitor-verification.md).
+
 ## Related
 
 - [parallax-vs-bugsink.md](parallax-vs-bugsink.md) — deeper Sentry-replacement
