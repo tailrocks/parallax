@@ -3,7 +3,8 @@
 **Status:** DONE (2026-07-17)  
 **Closing commits:** backend external derivation `2dea2d2`+; ELK/layout
 `f4aeea0`/`0ad35fd`/`dcdc020`; focus URL `e83a414`; React Flow cutover
-`526ed9d`; playground `eco-external` `15de5c3`.
+`526ed9d`; playground `ecosystem:external_edge` (internal fixture `eco-external`)
+`15de5c3`.
 
 ## Closed claims
 
@@ -13,7 +14,7 @@
 | ELK layout + worker + fallback | Layout unit tests; Vite emits `ecosystem-layout.worker-*.js`; fallback &lt;100ms on host |
 | Focus / hops / dim|hide + traffic presets URL | Route search + pure topology model; browser captures |
 | React Flow renderer (AGENTS rule 24) | `@xyflow/react` mount in ecosystem graph; graph tests assert `.react-flow` |
-| `eco-external` playground scenario | playground `main` `15de5c3` + matrix row |
+| `ecosystem:external_edge` playground task | playground `main` `15de5c3` + matrix row |
 | No vendor inference | `rg hyperdrive\|planetscale ui/src crates/` → 0 |
 
 ## Live GraphQL kinds (2026-07-17 QA stack)

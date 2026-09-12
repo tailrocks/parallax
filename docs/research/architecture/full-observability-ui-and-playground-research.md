@@ -1278,26 +1278,26 @@ must explain these execution shapes, each with at least one playground scenario:
 
 ### Historical Playground Scenario Option Catalog
 
-These are design inputs (plan 122 closed), not executable tasks in this file:
+These are design inputs (plan 122 closed), not executable tasks in this file: The current playground uses semantic mise task names; a dash marks a capability without a current task.
 
-| ID | Scenario | Proves |
+| Mise task | Scenario | Proves |
 | --- | --- | --- |
-| A2b | Rust metric exemplar | chart spike jumps to exact trace. |
-| A6b | GraphQL field-level trace | resolver tree, DataLoader, N+1. |
-| A7b | gRPC per-message events | streaming explorer and mid-stream failure. |
-| A9b | Structured-field logs | Field Explorer/facets and log query DSL. |
-| A10b | Baggage-driven branch | baggage-carried business context propagation. |
-| A17b | Rust/JVM profiles | future span-scoped flamegraph surface. |
-| A19 | Long/wide trace | virtualization, grouping, minimap, critical path. |
-| A20 | Cross-trace causal chain | linked traces and causal graph. |
-| A21 | Real deploy regression | deploy/release attribution and regression lifecycle. |
-| A22 | Tokio runtime under load | runtime panels tied to slow traces. |
-| A23 | GraphQL→gRPC gateway | field tree with downstream RPC. |
-| A24 | GraphQL→GraphQL | upstream/downstream GraphQL operations. |
-| A25 | Real Postgres spans/pool metrics | DB spans, pool contention. |
-| A26 | Cache behavior without new infra | cache hit/miss, stampede, and leak using existing service-local cache paths. |
-| A27 | Daemon/child nested run | CLI→daemon→container/agent run timeline. |
-| A28 | Frontend RUM session | route/user-step/web-vitals/error story. |
+| `metrics:exemplars` | Rust metric exemplar | chart spike jumps to exact trace. |
+| `graphql:batching_errors` | GraphQL field-level trace | resolver tree, DataLoader, N+1. |
+| `grpc:pricing_stream` | gRPC per-message events | streaming explorer and mid-stream failure. |
+| `logs:field_spike` | Structured-field logs | Field Explorer/facets and log query DSL. |
+| `propagation:baggage` | Baggage-driven branch | baggage-carried business context propagation. |
+| — | Rust/JVM profiles (future; no current task) | future span-scoped flamegraph surface. |
+| `traces:wide_trace` | Long/wide trace | virtualization, grouping, minimap, critical path. |
+| `traces:cross_links` | Cross-trace causal chain | linked traces and causal graph. |
+| `deploy:release_regression` | Real deploy regression | deploy/release attribution and regression lifecycle. |
+| `runtime:request_saturation` | Tokio runtime under load | runtime panels tied to slow traces. |
+| `grpc:storefront_pricing` | GraphQL→gRPC gateway | field tree with downstream RPC. |
+| `graphql:storefront_catalog` | GraphQL→GraphQL | upstream/downstream GraphQL operations. |
+| `postgres:query_pressure` | Real Postgres spans/pool metrics | DB spans, pool contention. |
+| `cache:recommendation_stampede` | Cache behavior without new infra | cache hit/miss, stampede, and leak using existing service-local cache paths. |
+| `agent:execution_stack` | Daemon/child nested run | CLI→daemon→container/agent run timeline. |
+| `browser:rum_journey` | Frontend RUM session | route/user-step/web-vitals/error story. |
 
 Additional chaos cases:
 

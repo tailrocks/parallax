@@ -76,31 +76,31 @@ The complete shipped inventory remains in [feature-inventory-and-playground-veri
 | --- | --- |
 | OTLP traces/logs/metrics | GraphQL after workload: `1524` spans, `449` logs, `50074` metric points; service, metric, trace, and log queries returned fresh playground data. |
 | Distributed traces and correlation | Checkout → pricing/payment → catalog/inventory/recommendation and async orders/fulfillment paths were visible; current service catalog had 13 services. |
-| Error derivation and fingerprint grouping | `c1`: fingerprint `d0b552095fc3e5b3`, canonical hash `sha256-jcs:d231673da8ea36f001ed43da4a1bf3be34015236e1e973946ec00b3334a33035`. |
-| Live tails | `c3`: cold first subscription timed out before a receiver existed; source inspection showed broadcast only with active receivers. Controlled pre-opened stream and warm rerun passed (`294` bytes). This is a test-order race, not a product failure. |
-| Invocations and agent sessions | `c2` invocation `d6a31a37-7051-412d-8ae4-724f6125cf7a`; `c7` import `claude_code:c7-session-fixture:6a732c59b189defb`; MCP equivalence passed. |
-| Dashboards/investigations | `c5`: dashboard `dash_18d1e858590addc0`, investigation `case_18d1e8585d6c6ed8`. |
-| Alerting | `c4`: rule `alr_18d1e880daa98818`, incident `inc-alr_18d1e880daa98818--1788466169`, webhook and Slack destinations delivered. |
-| GitHub deploy/Actions context | `c6`: valid webhook `200`, invalid signature `401`. |
-| Sentry envelope adapters | `c8`: Rust, Java, and JS envelopes each found one current issue. |
-| Lifecycle operations | `c9`: isolated-home setup/doctor/prune/uninstall lifecycle passed. |
-| Redaction and egress controls | `c10`: canary secret did not leak; no webhook was sent. The absent canary service returned HTTP `000`, recorded as expected fixture behavior. |
-| Embedded UI | `c11`: all 13 route checks passed with `agent-browser 0.36.0`; Parallax Issues browser view showed fresh issues. |
+| Error derivation and fingerprint grouping | `product:issue_context`: fingerprint `d0b552095fc3e5b3`, canonical hash `sha256-jcs:d231673da8ea36f001ed43da4a1bf3be34015236e1e973946ec00b3334a33035`. |
+| Live tails | `product:live_tail`: cold first subscription timed out before a receiver existed; source inspection showed broadcast only with active receivers. Controlled pre-opened stream and warm rerun passed (`294` bytes). This is a test-order race, not a product failure. |
+| Invocations and agent sessions | `product:invocation_lifecycle` invocation `d6a31a37-7051-412d-8ae4-724f6125cf7a`; `product:agent_session` import `claude_code:c7-session-fixture:6a732c59b189defb`; MCP equivalence passed. |
+| Dashboards/investigations | `product:saved_state`: dashboard `dash_18d1e858590addc0`, investigation `case_18d1e8585d6c6ed8`. |
+| Alerting | `product:alerting`: rule `alr_18d1e880daa98818`, incident `inc-alr_18d1e880daa98818--1788466169`, webhook and Slack destinations delivered. |
+| GitHub deploy/Actions context | `product:github_ingest`: valid webhook `200`, invalid signature `401`. |
+| Sentry envelope adapters | `sentry:envelopes`: Rust, Java, and JS envelopes each found one current issue. |
+| Lifecycle operations | `product:lifecycle_ops`: isolated-home setup/doctor/prune/uninstall lifecycle passed. |
+| Redaction and egress controls | `security:redaction_egress`: canary secret did not leak; no webhook was sent. The absent canary service returned HTTP `000`, recorded as expected fixture behavior. |
+| Embedded UI | `product:ui_agent_verify`: all 13 route checks passed with `agent-browser 0.36.0`; Parallax Issues browser view showed fresh issues. |
 
 ## Feature-oriented comparison
 
 | Parallax feature | Scenario | Parallax result | Strongest comparator | Comparator result | Best implementation / verdict | Parallax gap or action | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| OTLP signal breadth | A1/A3/A8 + fresh workload | Traces, logs, metrics indexed in one product | OpenObserve / SigNoz / Grafana | All accepted broad OTLP; SigNoz current ClickHouse counts after fresh A1 were traces `200`, logs `84`, metrics `18036` before later smoke traffic | Comparator maturity wins; Parallax is functionally credible | Measure throughput/durability; no performance claim yet | current GraphQL and backend queries |
-| Error grouping and issue lifecycle | B1/C1/C8 | Derived error events, deterministic fingerprint, issue UI | Sentry | Native issue grouping; five identical errors grouped; UI showed `PaymentError` count 5 | Sentry clearly wins workflow maturity | Add ownership/suspect-commit depth only if in product scope | `sentry/verify.sh`; Sentry UI screenshot |
-| Error-to-context bundle | C1/C5/C7 | Bounded/redacted bundle, story, investigation, MCP projection | No direct equivalent among free self-host peers | OpenObserve MCP is broader but Enterprise-gated and write-capable; SigNoz MCP is broad; Grafana Explore is mature query UX | Parallax's safety-shaped artifact is distinctive, value unproven | Run A1 human/agent quality evaluation | C1/C5/C7 IDs; code-reality ledger |
-| Trace exploration | A1/A3/A25/A26 | Waterfall, critical path, events, links, services | Grafana Tempo + Grafana UI | Mature trace search/Explore and Tempo API returned fresh checkout traces | Grafana wins generic trace UX; Parallax wins integrated error/evidence context | Continue UI depth and query performance work | Grafana Explore screenshot/API |
-| Logs and metrics workbench | A25/A26/A30 | Filters, facets, patterns, typed metrics and derived errors | Grafana / OpenObserve | Fresh metrics, labels, Loki logs, and OpenObserve search visible | Grafana/OpenObserve win general analytics maturity | Benchmark high-cardinality queries; keep typed legality strict | GraphQL metrics/log results; Grafana APIs |
+| OTLP signal breadth | `commerce:checkout_saga`/`messaging:checkout_outbox`/`load:checkout` + fresh workload | Traces, logs, metrics indexed in one product | OpenObserve / SigNoz / Grafana | All accepted broad OTLP; SigNoz current ClickHouse counts after fresh `commerce:checkout_saga` were traces `200`, logs `84`, metrics `18036` before later smoke traffic | Comparator maturity wins; Parallax is functionally credible | Measure throughput/durability; no performance claim yet | current GraphQL and backend queries |
+| Error grouping and issue lifecycle | `failures:inventory`/`product:issue_context`/`sentry:envelopes` | Derived error events, deterministic fingerprint, issue UI | Sentry | Native issue grouping; five identical errors grouped; UI showed `PaymentError` count 5 | Sentry clearly wins workflow maturity | Add ownership/suspect-commit depth only if in product scope | `sentry/verify.sh`; Sentry UI screenshot |
+| Error-to-context bundle | `product:issue_context`/`product:saved_state`/`product:agent_session` | Bounded/redacted bundle, story, investigation, MCP projection | No direct equivalent among free self-host peers | OpenObserve MCP is broader but Enterprise-gated and write-capable; SigNoz MCP is broad; Grafana Explore is mature query UX | Parallax's safety-shaped artifact is distinctive, value unproven | Run A1 human/agent quality evaluation | semantic task names; code-reality ledger |
+| Trace exploration | `commerce:checkout_saga`/`messaging:checkout_outbox`/`postgres:query_pressure`/`cache:recommendation_stampede` | Waterfall, critical path, events, links, services | Grafana Tempo + Grafana UI | Mature trace search/Explore and Tempo API returned fresh checkout traces | Grafana wins generic trace UX; Parallax wins integrated error/evidence context | Continue UI depth and query performance work | Grafana Explore screenshot/API |
+| Logs and metrics workbench | `postgres:query_pressure`/`cache:recommendation_stampede`/`metrics:request_shapes` | Filters, facets, patterns, typed metrics and derived errors | Grafana / OpenObserve | Fresh metrics, labels, Loki logs, and OpenObserve search visible | Grafana/OpenObserve win general analytics maturity | Benchmark high-cardinality queries; keep typed legality strict | GraphQL metrics/log results; Grafana APIs |
 | Local deployment simplicity | fresh stacks | One Parallax executable plus managed GreptimeDB | Maple | Official `v0.0.21` bundle + embedded chDB gave the smallest local competitor path | Maple wins local UX today; Parallax's Rust/self-host target is not yet parity-proven | Measure setup time/RAM/recovery | Maple CLI `services` output |
-| OTel pipeline/fan-out | A1 + Rotel | Rotel hub delivered fresh traces to active sinks | Rotel/Grafana Alloy | Rotel fan-out was reliable; Grafana Alloy is a stronger production pipeline reference | Rotel is adequate lab hub, not a Parallax product feature | Keep backend readiness gating explicit | Rotel config and logs |
-| Sentry compatibility | C8 + Sentry verify | Native envelope endpoint and current SDK paths | Sentry | 30+ SDK ecosystem and mature envelope semantics | Sentry wins SDK/ecosystem; Parallax proves useful compatibility | Expand compatibility ledger | `c8`; Sentry/Rustrak issue screenshots |
-| Alerting/investigation | C4/C5 | Rule, destinations, incident, dashboard, case file | SigNoz/Grafana/Sentry | Mature alerting and dashboards; SigNoz UI/API live at v0.140.0 | Competitors win breadth; Parallax has a coherent narrow workflow | Add escalation/SLO only if scope changes | C4/C5 IDs; SigNoz/Grafana UI |
-| Agent surface | C2/C7 | Read-only MCP, CLI context, import/equivalence | SigNoz/OpenObserve/Grafana | Broader MCP/query surfaces; OpenObserve includes mutating Enterprise tools | Parallax wins safety posture, not surface breadth | Prove bundle usefulness and remote auth later | MCP equivalence result; competitor docs |
+| OTel pipeline/fan-out | `commerce:checkout_saga` + Rotel | Rotel hub delivered fresh traces to active sinks | Rotel/Grafana Alloy | Rotel fan-out was reliable; Grafana Alloy is a stronger production pipeline reference | Rotel is adequate lab hub, not a Parallax product feature | Keep backend readiness gating explicit | Rotel config and logs |
+| Sentry compatibility | `sentry:envelopes` + Sentry verify | Native envelope endpoint and current SDK paths | Sentry | 30+ SDK ecosystem and mature envelope semantics | Sentry wins SDK/ecosystem; Parallax proves useful compatibility | Expand compatibility ledger | `sentry:envelopes`; Sentry/Rustrak issue screenshots |
+| Alerting/investigation | `product:alerting`/`product:saved_state` | Rule, destinations, incident, dashboard, case file | SigNoz/Grafana/Sentry | Mature alerting and dashboards; SigNoz UI/API live at v0.140.0 | Competitors win breadth; Parallax has a coherent narrow workflow | Add escalation/SLO only if scope changes | semantic task names; SigNoz/Grafana UI |
+| Agent surface | `product:invocation_lifecycle`/`product:agent_session` | Read-only MCP, CLI context, import/equivalence | SigNoz/OpenObserve/Grafana | Broader MCP/query surfaces; OpenObserve includes mutating Enterprise tools | Parallax wins safety posture, not surface breadth | Prove bundle usefulness and remote auth later | MCP equivalence result; competitor docs |
 
 ## Best-in-class references
 
@@ -170,7 +170,7 @@ PARALLAX_VERSION_OVERRIDE=0.1.0-research.3c4b68d cargo build --release -p parall
 
 # Playground
 docker compose -p parallax-research-20260904 -f deploy/docker-compose.yml up -d --build
-./scripts/check-scenarios.sh
+mise run check:scenarios
 
 # Fan-out core and current overlays
 cd ../parallax/bench/otlp-fanout

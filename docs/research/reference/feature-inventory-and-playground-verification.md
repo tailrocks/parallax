@@ -179,15 +179,12 @@ verified working, compared, and production-ready — zero known bugs.
   traceparent), Rust `playground` CLI (runs/cron, JUnit→OTLP bridge).
   Dual emission: OTLP + Sentry SDK envelopes. Infra: postgres:18, Redpanda,
   flagd, k6.
-- ~60 scripted scenarios: a-series feature proofs (waterfall, exemplars, span
-  links, reverse-language hop, RUM error, GraphQL N+1, subscriptions/stream
-  cancel, log spike, baggage, CLI run/cron, deploy regression, flag flip,
-  PII-redaction canary, long/wide trace, trace compare, tokio saturation,
-  Postgres pathologies, cache stampede, RUM journey, business events,
-  teaching up-down/cardinality, handled vs panic) +
-  b-series chaos (error/latency breach, retries, OOM, GC pressure, consumer
-  lag, poison message, sampling gap, rage click, …) +
-  c-series product surfaces (`c1`–`c11`, coverage-matrix spine).
+- The playground exposes 89 semantic mise tasks grouped by capability: commerce,
+  browser, graphql, grpc, messaging, metrics, logs, database, postgres,
+  runtime, memory, recommendation, failures, alerts, cron, jvm, container,
+  traces, protocols, journeys, ecosystem, product, security, sentry, and
+  `corpus:all`. Public names use `group:snake_case`; numeric fixture IDs are
+  internal only.
 - Fan-out lab lives in this repo at `bench/otlp-fanout/` — Rotel hub fanning
   identical OTLP to Parallax, OpenObserve, Maple, SigNoz, Grafana, and Sentry
   (per-signal routing; Sentry has no OTLP metrics; HyperDX was probed but its
@@ -234,15 +231,16 @@ Roster changes must keep the fan-out lab docs + `comparison-set.md` in sync.
 Every inventory item above needs a scenario that exercises it; known holes in
 the current catalog:
 
-- Evidence bundles/pins/story/agent handoff: **c1** (`issue context` +
-  GraphQL `bundle`) + **c2** (`invocation bundle`) + **c7** (Claude import).
-- Alerting end-to-end: **c4** (rule → open incident after error seed).
-- Dashboards, investigations, saved views, SQL: **c5**.
-- GitHub deploy/CI ingest: **c6** (HMAC deploy fixture). Claude Code import:
-  **c7**. Sentry envelope ingest: **c8**.
-- Live tail: **c3** (SSE). doctor/prune dry-run: **c9**.
-- Redaction canary on bundle egress: **c10**. agent-browser Overview: **c11**.
-
+- Evidence bundles/pins/story/agent handoff: `product:issue_context` +
+  `product:invocation_lifecycle` + `product:agent_session`.
+- Alerting end-to-end: `product:alerting` (rule → open incident after error seed).
+- Dashboards, investigations, saved views, SQL: `product:saved_state`.
+- GitHub deploy/CI ingest: `product:github_ingest` (HMAC deploy fixture).
+  Sentry envelope ingest: `sentry:envelopes`.
+- Live tail: `product:live_tail` (SSE). doctor/prune dry-run:
+  `product:lifecycle_ops`.
+- Redaction canary on bundle egress: `security:redaction_egress`.
+  agent-browser Overview: `product:ui_agent_verify`.
 ### Workstream 4a — agent-browser UI verification
 
 Operator requirement (2026-08-13): every UI surface is additionally driven
@@ -250,7 +248,7 @@ by an agent-controlled browser (`agent-browser` CLI) — functional checks per
 route (filters, live tail, waterfall interactions, mutations, ⌘K palette,
 theme persistence) plus responsive checks (no horizontal overflow, nav
 usable) across phone/tablet/desktop viewports in light and dark themes.
-Deterministic core = playground scenario `c11-ui-agent-verify.sh`;
+Deterministic core = playground task `product:ui_agent_verify`;
 exploratory functional pass = agent-led checklist. Failures enter the same
 `DISCREPANCY:` pipeline as Workstream 5.
 
@@ -293,19 +291,22 @@ CLOSED: where-clause reserved-word value | 168-176/unit-gate | parallax-ui | `se
 
 Coverage (2026-08-14T15:43Z restamp, playground PR #13 + this inventory):
 `docs/coverage-matrix.md` restamped — no `MAPPED`/`UNTESTED` data cells.
-`c1`–`c11` EXIT 0 this serve (c4 after `?fail=1` burst; c8 after JS
-`X-Sentry-Auth`). Teaching: 18-span `5e14f8c670eb1e15`, N+1 `ae13ff562135f5e6`
+Product task sweep passed: `product:issue_context`, `product:invocation_lifecycle`,
+  `product:live_tail`, `product:alerting`, `product:saved_state`,
+  `product:github_ingest`, `product:agent_session`, `sentry:envelopes`,
+  `product:lifecycle_ops`, `security:redaction_egress`, and
+  `product:ui_agent_verify` (alerting after the error seed).
 two `reviewsSlow`, consumer Links 1/1 `f22fbe511f04f149` → `05a35c01c4869f7c`,
-RUM stitch `19ace18bd8315e84` `ui.click`→checkout, a13 5×502 **2 versions**.
+RUM stitch `19ace18bd8315e84` `ui.click`→checkout, `deploy:release_regression` 5×502 **2 versions**.
 
-CLOSED: MCP check CLI≢HTTP bundle JSON | 164/c7 | parallax-mcp | CLI omitted `maxTokens` (API default 10000) while MCP check used 4000 | FIXED 2026-08-15: CLI `--max-tokens`; check passes 4000
+CLOSED: MCP check CLI≢HTTP bundle JSON | 164/product:agent_session | parallax-mcp | CLI omitted `maxTokens` (API default 10000) while MCP check used 4000 | FIXED 2026-08-15: CLI `--max-tokens`; check passes 4000
 CLOSED: clock-skew banner | 167/display | parallax-ui | same-service parent/child used 5min threshold | FIXED 2026-08-15: all parent/child pairs use 50ms `TRACE_SKEW_THRESHOLD`
 CLOSED: exemplar click-through | 167/display | parallax-ui | metric workbench never queried `metricExemplars` | FIXED 2026-08-15: `/metrics/$name` loads exemplars and links `/traces/$traceId` (`data-has-trace-link`)
 CLOSED: ecosystem default 24h ServiceMap | 167/display | parallax-api | `serviceMap` joined `observed_invocations(MAX_ROWS)` on the window | FIXED 2026-08-15: join uses the same `max_traces` cap
 CLOSED: invocations unbounded observedInvocations | 167/display | parallax-ui | UI omitted `limit` | FIXED 2026-08-15: UI `limit: 50`; resolver already defaulted to 50
 NOTE: service detail route is `/services/$name` (not `/$name`); `/$name` is splat not-found. Runtime lanes PASS on `/services/checkout` (tokio) and `/services/catalog` (jvm).
-CLOSED: JS Sentry envelope | 164/c8 | playground | first POST is `type=session` (Parallax 415); second POST `type=event` is the exception. `c8 ok rust+java+js`. Sentry Group `plat=node Error: c8-js-sdk PaymentError`. FIXED 2026-08-14: disable session-first wait; emit type=event
+CLOSED: JS Sentry envelope | 164/sentry:envelopes | playground | first POST is `type=session` (Parallax 415); second POST `type=event` is the exception. `sentry:envelopes` Rust+Java+JS paths ok. Sentry Group `plat=node Error: c8-js-sdk PaymentError`. FIXED 2026-08-14: disable session-first wait; emit type=event
 CLOSED: empty Tests explorer | playground | test-verify rust --acceptance | FLAKY_PASS rows now visible (`tests-teach-flaky-1440-dark.png`)
 CLOSED: span-links false-PASS | playground WS5 | agent-browser | prior shot was orders producer `96339146…` Links/events 0/7 `producer_without_consumer` | expected: visible link UI | 2026-08-14 consumer `ff46e8d94be06b78` inspector Links (1) → producer span `c1e6afa8585c40e0`
-CLOSED: v1-only checkout strip | playground a13 | services UI | `/services/checkout` showed 1 version v1 | expected: v1+v2 after `RELEASE=v2` | 2026-08-14 5×502 + GraphQL releases v1+v2 + badge **2 versions**
-CLOSED: RUM shot was playground HTML | playground a5 | agent-browser | `web-rum-break-1440-dark.png` is producer HTML | expected: Parallax stitch | 2026-08-14 `/traces/19edbf0ad9f030364b4657dfc7f4f463` web `ui.click` → checkout
+CLOSED: v1-only checkout strip | playground `deploy:release_regression` | services UI | `/services/checkout` showed 1 version v1 | expected: v1+v2 after `RELEASE=v2` | 2026-08-14 5×502 + GraphQL releases v1+v2 + badge **2 versions**
+CLOSED: RUM shot was playground HTML | playground `browser:rum_error` | agent-browser | `web-rum-break-1440-dark.png` is producer HTML | expected: Parallax stitch | 2026-08-14 `/traces/19edbf0ad9f030364b4657dfc7f4f463` web `ui.click` → checkout

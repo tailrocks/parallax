@@ -1,8 +1,8 @@
 # Plan 163 evidence — trace timeline interactions
 
-Date: 2026-07-17. Live corpus traces against `parallax serve`.
+Date: 2026-07-17. Live corpus traces against `parallax serve`. Public task names are used below; evidence filenames retain internal fixture IDs.
 
-- Drag-zoom (marquee): pointer drag across 20–40% of the t-wide gesture
+- Drag-zoom (marquee): pointer drag across 20–40% of the `traces:wide` gesture
   surface produced viewport 2.038–4.076 ms, the axis relabeled to the
   zoomed window, and the URL gained `?vs=2.038&ve=4.076`
   (`t-wide-zoomed.png`).
@@ -12,9 +12,9 @@ Date: 2026-07-17. Live corpus traces against `parallax serve`.
 - Minimap controller: viewport rectangle rendered with dimmed
   outside-viewport regions; interior drag pans, edge drag resizes, click
   recenters (`trace-minimap-viewport` testid).
-- Clamp/skip: t-deep at `vs=5&ve=15` renders all 14 rows with bars clamped
+- Clamp/skip: `traces:deep` at `vs=5&ve=15` renders all 14 rows with bars clamped
   to the [-50%, 150%/200% width] envelope and no gigapixel elements
-  (`t-deep-zoomed-clamped.png`); t-skew at `vs=0&ve=50` skips the
+  (`t-deep-zoomed-clamped.png`); `traces:clock_skew` at `vs=0&ve=50` skips the
   out-of-viewport parent bar entirely while the backdated child renders at
   0% — no negative geometry.
 - Color-by: picker (service default / span kind / status / span
@@ -22,9 +22,9 @@ Date: 2026-07-17. Live corpus traces against `parallax serve`.
   INTERNAL bars violet); attribute values hash through the same identity
   palette as services.
 - Self-time: `computeSelfTimes` (children clipped to parent, overlaps
-  merged) surfaces as the duration-cell tooltip ("self 2.0ms" on t-deep)
+  merged) surfaces as the duration-cell tooltip ("self 2.0ms" on `traces:deep`)
   and as an inspector row.
-- Flamegraph: Flame tab (`?view=flame`) icicle-packs 521 t-wide spans into
+- Flamegraph: Flame tab (`?view=flame`) icicle-packs 521 `traces:wide` spans into
   greedy per-depth lanes (`t-wide-flame.png`); Shift+click focuses a
   subtree (521 → subtree), "Show whole trace" restores.
 - In-bar labels gate on rendered width (56px name / 140px +duration).

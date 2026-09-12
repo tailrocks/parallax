@@ -32,19 +32,19 @@ All three language tiers validated to build (2026-06-23):
   span (rpc semconv, via logging exporter). The Java-agent OTLP→OpenObserve
   last-mile has an env-specific snag (documented); Rust path + Java instrumentation
   both verified.
-- Verified scenarios: A1, A3 (async + span link), A7 (gRPC streaming), A10
-  (baggage), A12, A18 (canary), A13 driver, and chaos B1/B2/B3/B5/B6/B7/B8/B9/
-  B10/B11/B17. flagd, k6, compose (all services), web (`bun run build`).
+- Verified tasks: `commerce:checkout_saga`, `messaging:checkout_outbox`, `grpc:pricing_stream`, `propagation:baggage`,
+  `cli:checkout_invocation`, `security:redaction_canary`, `deploy:release_regression`, plus
+  `failures:inventory`, `grpc:deadline_retry`, `runtime:cpu_pressure`, `memory:cache_leak`, `protocols:rabbitmq_lag`, `messaging:poison_retry`, `postgres:lock_contention`, and `cron:outcomes`. flagd, k6, compose (all services), web (`bun run build`).
 
 Done since: **web** is now a full TanStack Start app with the same-origin
 `/v1/traces` proxy; payment gRPC codegen + cross-language gRPC verified; real
-Kafka (Redpanda) producer/consumer; **A7 GraphQL subscription** resolver
+Kafka (Redpanda) producer/consumer; **GraphQL subscription** resolver
 (`catalog`, long-lived streaming span over WebSocket); the **Rust tier now emits
 all three OTLP signals** (traces + metrics via `MetricsLayer` + logs via the
 appender bridge, was traces-only); all Java + web services wired into the deploy
 compose (`Dockerfile.java`/`Dockerfile.web`).
 
-**A17 profiling** is now wired on the JVM tier (Sentry continuous profiling,
+**JVM profiling** is now wired on the JVM tier (Sentry continuous profiling,
 async-profiler, `profile-lifecycle=trace`) — JVM-only by necessity:
 `sentry-rust` has no profiling and OTLP profiles have no Rust impl.
 
@@ -52,7 +52,7 @@ The 2026-06-23 snapshot recorded these **host-/SaaS-gated or hard-version
 conditions**. They are historical evidence (plan 122 closed), not deferred work owned here:
 
 - A full cross-language **live** trace through the running lab, and the
-  Sentry-envelope rendering scenarios (A15/A16 issue lifecycle, A17 flamegraph
+  Sentry-envelope rendering and issue-lifecycle checks plus the profiling flamegraph
   view) — these are **execution/verification** against a running Docker stack +
   a live self-hosted Sentry, which a headless sandbox can't provision (its node
   `fetch`/undici also has no DNS). The emitting code is implemented; only the
@@ -491,48 +491,49 @@ Storedog + Elastiflix). Each row notes the **signals** and whether it produces
 Parallax — that's expected, and flagged).
 
 ### (A) Signal-generating scenarios
+Current task names are semantic; `—` marks a historical capability without a direct task in the current catalog.
 
-| # | Scenario | Signals | Parallax-comparable |
+| Mise task | Scenario | Signals | Parallax-comparable |
 |---|---|---|---|
-| A1 | Checkout flow (browser → checkout → fan-out) | full distributed trace, all span kinds, HTTP/gRPC/GraphQL semconv | Y |
-| A2 | Slow DB query (`inventory`) | DB CLIENT span (`db.system.name`/`db.query.text`, **Stable**), latency Histogram + **exemplar** (recorded on the JVM caller path) | Y |
-| A3 | Queue publish + async consume (`checkout`→broker→`fulfillment`) | PRODUCER + CONSUMER spans, **span link**, messaging semconv, cross-language async branch | Y |
-| A4 | Reverse hop (`fulfillment` Java → `notifications` Rust) | Java→Rust W3C propagation, one trace across runtimes both directions | Y |
-| A5 | Frontend interaction → backend | browser span → server span via traceparent; web vitals; session replay; end-to-end trace | Y (OTLP) / replay = Sentry-only |
-| A6 | GraphQL query w/ nested resolvers + DataLoader (`catalog`) | per-resolver/data-fetcher spans (opt-in), GraphQL semconv, N+1 shape, partial errors | Y |
-| A7 | gRPC **server-streaming** (`pricing`) + **GraphQL subscription** (`catalog`) + **SSE/WS** (`web`←`checkout`) | long-lived streaming spans (a known backend weak spot) | Y |
-| A8 | High request volume (`loadgen`) | Counter / Histogram / UpDownCounter; cardinality-limit overflow | Y |
-| A9 | Structured logging during a request | OTLP logs + severity + trace correlation; ECS/Logstash format on JVM | Y |
-| A10 | Baggage business context | W3C baggage (`tenant.id`,`user.tier`) surfaced downstream | Y |
-| A12 | **CLI run** end-to-end | short-lived process telemetry, `process.*`, flush-on-exit, **`parallax.run.id`** resource attr tying N traces into one run | Y (Parallax-distinguishing) |
-| A13 | **Deploy + regression** (release v1 clean → v2 introduces a panic) | deploy/release marker + commit sha + CI run id + work-item ref; `deploy_precedes_regression` | Y (evidence-bundle test) |
-| A14 | Feature-flag evaluation | `feature_flag.*` events on traces + Sentry flag context | Y (OTLP) + Sentry |
-| A15 | Sentry-SDK error w/ breadcrumbs (envelope) | Sentry issue + breadcrumbs + release + source maps; regression tracking | **N — Sentry-only** |
-| A16 | Recurring → resolved error | Sentry issue lifecycle (resolve→regress) | **N — Sentry-only** |
-| A17 | CPU-heavy hot path | profiling (Sentry: Rust pprof / JVM async-profiler; OTLP profiles where alpha) | partial (OTLP profiles alpha) |
-| A18 | **Canary-redaction corpus** request | canaries in span attrs, log bodies, exception msgs, `db.query.text`, baggage, GraphQL doc → compare raw-vs-scrubbed | Y (Parallax-distinguishing) |
+| `commerce:checkout_saga` | Checkout flow (browser → checkout → fan-out) | full distributed trace, all span kinds, HTTP/gRPC/GraphQL semconv | Y |
+| `postgres:query_pressure` | Slow DB query (`inventory`) | DB CLIENT span (`db.system.name`/`db.query.text`, **Stable**), latency Histogram + **exemplar** (recorded on the JVM caller path) | Y |
+| `messaging:checkout_outbox` | Queue publish + async consume (`checkout`→broker→`fulfillment`) | PRODUCER + CONSUMER spans, **span link**, messaging semconv, cross-language async branch | Y |
+| `messaging:java_fulfillment_replay` | Reverse hop (`fulfillment` Java → `notifications` Rust) | Java→Rust W3C propagation, one trace across runtimes both directions | Y |
+| `browser:rum_journey` | Frontend interaction → backend | browser span → server span via traceparent; web vitals; session replay; end-to-end trace | Y (OTLP) / replay = Sentry-only |
+| `graphql:batching_errors` | GraphQL query w/ nested resolvers + DataLoader (`catalog`) | per-resolver/data-fetcher spans (opt-in), GraphQL semconv, N+1 shape, partial errors | Y |
+| `grpc:pricing_stream` | gRPC **server-streaming** (`pricing`) + **GraphQL subscription** (`catalog`) + **SSE/WS** (`web`←`checkout`) | long-lived streaming spans (a known backend weak spot) | Y |
+| `load:checkout` | High request volume (`loadgen`) | Counter / Histogram / UpDownCounter; cardinality-limit overflow | Y |
+| `logs:field_spike` | Structured logging during a request | OTLP logs + severity + trace correlation; ECS/Logstash format on JVM | Y |
+| `propagation:baggage` | Baggage business context | W3C baggage (`tenant.id`,`user.tier`) surfaced downstream | Y |
+| `cli:checkout_invocation` | **CLI run** end-to-end | short-lived process telemetry, `process.*`, flush-on-exit, **`parallax.run.id`** resource attr tying N traces into one run | Y (Parallax-distinguishing) |
+| `deploy:release_regression` | **Deploy + regression** (release v1 clean → v2 introduces a panic) | deploy/release marker + commit sha + CI run id + work-item ref; `deploy_precedes_regression` | Y (evidence-bundle test) |
+| `feature_flags:checkout_variants` | Feature-flag evaluation | `feature_flag.*` events on traces + Sentry flag context | Y (OTLP) + Sentry |
+| `sentry:envelopes` | Sentry-SDK error w/ breadcrumbs (envelope) | Sentry issue + breadcrumbs + release + source maps; regression tracking | **N — Sentry-only** |
+| — | Recurring → resolved error | Sentry issue lifecycle (resolve→regress) | **N — Sentry-only** |
+| — | CPU-heavy hot path | profiling (Sentry: Rust pprof / JVM async-profiler; OTLP profiles where alpha) | partial (OTLP profiles alpha) |
+| `security:redaction_canary` | **Canary-redaction corpus** request | canaries in span attrs, log bodies, exception msgs, `db.query.text`, baggage, GraphQL doc → compare raw-vs-scrubbed | Y (Parallax-distinguishing) |
 
 ### (B) Deliberate failure / chaos catalog (flag-toggled)
 
 | # | Failure (flag) | Signals / what it tests | Parallax-comparable |
 |---|---|---|---|
-| B1 | Service hard failure / 5xx (`paymentFailure`, `catalogFailure`) | error spans, exception fidelity, issue grouping | Y (OTLP) + Sentry grouping |
-| B2 | Service unreachable / conn refused (`paymentUnreachable`) | client-side error, retry behavior | Y |
-| B3 | gRPC **deadline/timeout + retry** | `rpc.grpc.status_code` propagation, retry fan in waterfall | Y |
-| B4 | **Cascading failure** (`pricing` down → `checkout` degraded → `orders` partial) | cross-service error propagation, partial degradation | Y |
-| B5 | **JVM GC pauses / high CPU** (`paymentManualGc`, `paymentHighCpu`) | JVM runtime metrics, latency spikes, profiling | Y |
-| B6 | **Memory / cache leak** (`recommendationCacheLeak`, exponential per-req) | growing metric, slow degradation over time | Y |
-| B7 | **Broker overload + consumer lag** (`brokerQueueProblems`) | queue-depth UpDownCounter, consumer-lag, span links across redelivery | Y |
-| B8 | **Poison message** (`fulfillment` fails repeatedly) | repeated CONSUMER spans, dead-letter, link to redelivery | Y |
-| B9 | **N+1 sequential calls** (`inventory`/`catalog`) | many sibling spans (HotROD pattern) | Y |
-| B10 | **Connection-pool / mutex contention** (`inventory`) | "waiting behind N" baggage, lock-wait spans | Y |
-| B11 | Injected latency knob (`*ServiceDelay`) | latency histograms, slow spans | Y |
-| B12 | **Canary/version failure** (`canaryFailure`) | release-health, regression-after-deploy | Y + Sentry release health |
-| B13 | Slow asset / endpoint (proxy fault) | frontend slowness, resource-timing spans | Y |
-| B15 | Frontend UX faults (rage-click, frustration) | RUM signals, session replay | Sentry/RUM backends |
-| B16 | Loadgen flood / traffic spike | volume metrics, sampling behavior under load | Y |
-| B17 | Cron/scheduled-job faults (success 90% / fail 5% / **stuck-missed-checkin** 5%) | CLI cron telemetry, missed-checkin | Y (Parallax cli) |
-| B18 | **Clock skew** between two services | negative/overlapping span timing — tests how each backend handles it | Y (rendering stress) |
+| `failures:inventory` | Service hard failure / 5xx (`paymentFailure`, `catalogFailure`) | error spans, exception fidelity, issue grouping | Y (OTLP) + Sentry grouping |
+| `failures:provider_degradation` | Service unreachable / conn refused (`paymentUnreachable`) | client-side error, retry behavior | Y |
+| `grpc:deadline_retry` | gRPC **deadline/timeout + retry** | `rpc.grpc.status_code` propagation, retry fan in waterfall | Y |
+| `failures:checkout_chaos` | **Cascading failure** (`pricing` down → `checkout` degraded → `orders` partial) | cross-service error propagation, partial degradation | Y |
+| `jvm:catalog_query_workload` | **JVM GC pauses / high CPU** (`paymentManualGc`, `paymentHighCpu`) | JVM runtime metrics, latency spikes, profiling | Y |
+| `memory:cache_leak` | **Memory / cache leak** (`recommendationCacheLeak`, exponential per-req) | growing metric, slow degradation over time | Y |
+| `protocols:rabbitmq_lag` | **Broker overload + consumer lag** (`brokerQueueProblems`) | queue-depth UpDownCounter, consumer-lag, span links across redelivery | Y |
+| `messaging:poison_retry` | **Poison message** (`fulfillment` fails repeatedly) | repeated CONSUMER spans, dead-letter, link to redelivery | Y |
+| `graphql:batching_errors` | **N+1 sequential calls** (`inventory`/`catalog`) | many sibling spans (HotROD pattern) | Y |
+| `postgres:lock_contention` | **Connection-pool / mutex contention** (`inventory`) | "waiting behind N" baggage, lock-wait spans | Y |
+| `failures:payment_latency` | Injected latency knob (`*ServiceDelay`) | latency histograms, slow spans | Y |
+| `deploy:release_regression` | **Canary/version failure** (`canaryFailure`) | release-health, regression-after-deploy | Y + Sentry release health |
+| `browser:rum_error` | Slow asset / endpoint (proxy fault) | frontend slowness, resource-timing spans | Y |
+| `browser:rage_click` | Frontend UX faults (rage-click, frustration) | RUM signals, session replay | Sentry/RUM backends |
+| `load:checkout` | Loadgen flood / traffic spike | volume metrics, sampling behavior under load | Y |
+| `cron:outcomes`, `cron:duplicate_missed` | Cron/scheduled-job faults (success 90% / fail 5% / **stuck-missed-checkin** 5%) | CLI cron telemetry, missed-checkin | Y (Parallax cli) |
+| `traces:clock_skew` | **Clock skew** between two services | negative/overlapping span timing — tests how each backend handles it | Y (rendering stress) |
 
 ## 12. Comparison protocol — manual by operator decision
 
@@ -554,14 +555,14 @@ authorized queue; any implementation requires **active plan 154/155** or a new
 numbered plan (plan 122 is closed and cannot retain/reject work):
 
 - **OTel Profiling signal** (4th OTLP signal, alpha) + Collector pprof receiver —
-  profiles correlated to traces; de-Sentry-izes profiling (A17).
+  profiles correlated to traces; no current playground task covers profiling.
 - **eBPF zero-code** (**OpenTelemetry eBPF Instrumentation / OBI**, ex-Beyla) —
   instrument one service *both* via SDK and via eBPF, compare breadth-no-code vs
   depth-custom-spans.
 - **Tail-based sampling + OTTL at the Collector** — `tailsamplingprocessor`
   (keep-errors/keep-slow on complete traces, two-layer topology with
   loadbalancing exporter) and **`redactionprocessor` / OTTL transforms** as the
-  real backing for canary redaction (A18) + span-name normalization.
+  real backing for canary redaction (`security:redaction_canary`) + span-name normalization.
 - **Spring Boot 4 official OTel starter** (`spring-boot-starter-opentelemetry`,
   Micrometer/Observation-based) as an A/B against the agent on one Java service;
   and a **GraalVM native-image** variant using the OTel-community starter (agent
@@ -603,8 +604,8 @@ parallax-telemetry-playground/
   deploy/
     docker-compose.yml # all services + Postgres + broker + flagd; OTLP → Rotel
     otel/              # shared resource attrs, sampling
-  scenarios/           # scripts driving A1–A18 + B1–B18
-  releases/            # v1 clean, v2 regressed (for A13/B12 regression track)
+  scenarios/           # semantic mise tasks dispatched by the Rust CLI
+  releases/            # v1 clean, v2 regressed (`deploy:release_regression`)
   README.md
 ```
 

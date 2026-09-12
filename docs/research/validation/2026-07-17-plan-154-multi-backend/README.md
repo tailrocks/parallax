@@ -67,9 +67,9 @@ For each backend:
    lab (`:4610` / OTLP gRPC `:14317`, bearer `plan154-lab-token`):
    invocation `1969ff68-0ebc-4bc0-afd5-5c7226b2662e` →
    `test-verify … rust` reported **3 traces, 95 test attempts, 2 app
-   descendants**. Wrapper script path:
-   `scripts/observable-test-session.sh rust --acceptance` (ran via cargo on
-   PATH when mise GitHub rate-limit blocked).
+   descendants**. Current task path:
+   `parallax invocation start -- mise run test:observable -- rust --acceptance`
+   (the Rust task owns the session setup).
 2. **W5 disposition rows** updated in playground `VERIFICATION.md`
    (histogram table + PaymentError table).
 3. **Workflow** remains playground `.github/workflows/ci.yml` on `main`.

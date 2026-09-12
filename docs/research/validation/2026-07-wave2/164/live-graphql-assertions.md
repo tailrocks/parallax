@@ -30,7 +30,8 @@ real GreptimeDB answer, not a memory-adapter result.
 
 Live-engine narrowing, facet counting, duration stats, histogram/filter
 consistency, and both injection proofs hold on the real engine. Remaining
-for the primary executor: the `f-attrs` 70/20/10 scenario cross-check (the
+for the primary executor: the `attributes:bounded` 70/20/10 scenario cross-check
+(internal fixture `f-attrs`; the
 scenario's spans were not in the loaded corpus window at assertion time),
 executing the ignore-gated `m9_attribute_filters_greptime` suite once the
 QA stack frees ports 24000-24003, the facet-window cap decision, and the

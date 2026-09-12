@@ -4,7 +4,8 @@ Research date: **2026-08-16**
 Lab: host Homebrew `parallax-preview` (`668b4736` at start of run) + Rotel
 `v0.2.5` on host `4317/4318` + playground compose + competitor overlays under
 `bench/otlp-fanout/`.
-Emit: playground `a1` (checkout) + `b2` (inventory 503) over OTLP; `c8`
+Emit: playground `commerce:checkout_saga` (checkout) +
+`failures:inventory` (inventory 503) over OTLP; `sentry:envelopes`
 Rust/Java/JS Sentry envelopes to Parallax, rustrak, and Sentry.
 
 Rotel is sequential. A down exporter was never left on `ROTEL_EXPORTERS`.
@@ -15,14 +16,14 @@ Reachability of the listed set is asserted by
 
 | System | Protocol judged | Running? | Proof | UI |
 |---|---|---|---|---|
-| **Parallax** (host) | OTLP 3-signal + Sentry envelopes | running | GraphQL twice: 15 recent traces, 8 logs, **68 issues**, 15 services; exemplars resolve for `http.server.request.duration` **and** listed Prom `http_server_request_duration_seconds`; b2 `out_of_stock.lastTraceId` → `logsByTrace` has `reservation failed (chaos)` | proxy `http://127.0.0.1:4000` (injects Bearer; API `:4002` token-gated) |
+| **Parallax** (host) | OTLP 3-signal + Sentry envelopes | running | GraphQL twice: 15 recent traces, 8 logs, **68 issues**, 15 services; exemplars resolve for `http.server.request.duration` **and** listed Prom `http_server_request_duration_seconds`; `failures:inventory` `out_of_stock.lastTraceId` → `logsByTrace` has `reservation failed (chaos)` | proxy `http://127.0.0.1:4000` (injects Bearer; API `:4002` token-gated) |
 | **Maple** | OTLP/HTTP | running (after volume reset) | `POST /local/query` → `traces` count **90**; checkout 36 / payment 20 / inventory 14; `error_events` **2** | `http://127.0.0.1:8081` |
 | **OpenObserve** | OTLP/gRPC | running | `/api/default/_search` traces: checkout **5478**, recommendation 2334, inventory 1645 (lab-long window) | `http://127.0.0.1:5080` (`root@example.com`) |
 | **SigNoz** | OTLP/gRPC | running on **v0.129.0** | ClickHouse `signoz_traces.distributed_signoz_index_v3`: checkout **63**, payment 53, catalog 28. **v0.137.0 Foundry-only** — last bootable community compose used. OTLP `:4317` opened only after `/api/v1/register` | `http://127.0.0.1:3301` |
 | **Grafana stack** (otel-lgtm **0.30.2**) | OTLP → Tempo + Loki + Prometheus | running | Tempo `/api/search` **20** traces; Loki query_range **20** streams; Prom `up` **success** | `http://127.0.0.1:3300` (`admin`/`admin`) |
 | **HyperDX** (ClickStack **2.35.0**) | OTLP/gRPC + ingest API key | running | ClickHouse `otel_traces`: checkout **63**, payment 24, inventory 23. `:4317` stayed closed until first team existed (`collectorAuthenticationEnforced`) | host `http://127.0.0.1:18080` (container 8080; login redirects to `localhost:8080` and hits playground catalog) |
-| **rustrak** (**v0.14.4**, Sentry protocol) | envelopes only — **no OTLP metrics** | running | project `stored_event_count=3`; issues: c8-js, c8-java, c8-rust | UI `http://127.0.0.1:18082`, ingest `http://127.0.0.1:18081` |
-| **Sentry** (**26.7.2**) | OTLP traces+logs + envelopes — **no OTLP metrics** | running | `verify.sh` A1 OTLP **200**; A15/A16 `PaymentError` **times_seen=5**; Groups: chaos PaymentError + c8-java + c8-rust | `http://127.0.0.1:9000` |
+| **rustrak** (**v0.14.4**, Sentry protocol) | envelopes only — **no OTLP metrics** | running | project `stored_event_count=3`; three SDK-specific envelope issues | UI `http://127.0.0.1:18082`, ingest `http://127.0.0.1:18081` |
+| **Sentry** (**26.7.2**) | OTLP traces+logs + envelopes — **no OTLP metrics** | running | `verify.sh` A1 OTLP **200**; A15/A16 `PaymentError` **times_seen=5**; Groups: chaos PaymentError plus Java and Rust envelope issues | `http://127.0.0.1:9000` |
 | **highlight** | last hobby self-host | **BLOCKED** | Live `docker compose -f compose.hobby.yml up backend` on `docker-v0.5.6` failed: bind `../backend/env.enc` missing (unmaintained tree). Hobby frontend publishes host **8080** (playground catalog) and start-infra ClickHouse **9000** (Sentry nginx). Hosted SaaS ended **2026-02-28**. | n/a |
 
 Scratch evidence:
@@ -42,7 +43,7 @@ agent-browser on the non-401 URL (`:4000` proxy): `/` **Overview**, `/issues`
 Search is filter chips + substring, not LogQL/TraceQL. Trace list newest-first
 is **leaf-biased** (many 1-span `payment` rows) even though checkout roots exist.
 Issue grouping **splits** the same `PaymentError` across rust/java/js
-fingerprints; Sentry groups them. `lastTraceId` links b2 chaos to stored logs;
+fingerprints; Sentry groups them. `lastTraceId` links the inventory-failure task to stored logs;
 some Kafka disconnect issues have `lastTraceId=null`. Exemplar aliases work
 (listed Prom name → stored OTel name).
 
@@ -86,7 +87,7 @@ Sentry did. No traces/logs/metrics lake. Judge only envelopes.
 
 ### Sentry
 Still the **grouping authority** in this emit: five identical chaos errors → one
-issue `times_seen=5`; c8 rust+java present. Native OTLP traces+logs 200. Cost is
+issue `times_seen=5`; `sentry:envelopes` Rust and Java paths present. Native OTLP traces+logs 200. Cost is
 ~72 containers and a 20–40 min `install.sh`. No OTLP metrics — Rotel must omit
 `sentry` from `ROTEL_EXPORTERS_METRICS` or the sequential fan-out waits on
 rejected metric exports.
@@ -102,7 +103,7 @@ Do **not** ship these in the same change as this comparison.
 2. **Trace list roots.** Prefer client/root/checkout spans in the default
    newest-first list. Grafana Tempo showed the same leaf bias — do not copy it.
 3. **Cross-language issue grouping.** Sentry won `PaymentError` collapse; Parallax
-   stored three c8 issues. Tighten fingerprinting toward Sentry’s grouping for
+   stored three SDK-specific issues. Tighten fingerprinting toward Sentry’s grouping for
    the same exception type + message across SDKs.
 4. **One-box search.** HyperDX/OpenObserve/SigNoz make “find this checkout” a
    single query. Parallax’s chips are fine for power users; a unified
@@ -117,7 +118,7 @@ Do **not** ship these in the same change as this comparison.
 7. **Availability of compare-mode sinks.** Sequential Rotel + first-org OpAMP
    (SigNoz/HyperDX) means “stack up” ≠ “ingest open”. A compare-mode preflight
    that TCP-probes listed exporters (this lab’s
-   `exporters-reachable.sh`) should be the documented gate before `a1`.
+   `exporters-reachable.sh`) should be the documented gate before `commerce:checkout_saga`.
 8. **Session replay** remains a HyperDX/historical-highlight win. Out of V1
    scope; do not pretend Parallax covers it.
 

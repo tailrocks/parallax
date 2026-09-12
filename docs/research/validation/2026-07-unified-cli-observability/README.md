@@ -13,10 +13,11 @@ Storage: managed GreptimeDB 1.1.2 + Turso (`/tmp/parallax-qa/data`).
 - Corpus: the full 24-scenario corner-case sweep (plan 161), each CLI mode
   (`drive`, `cron`, `console --seconds 30`, `daemon` incl. a held run via
   `PLAYGROUND_DAEMON_HOLD_SECONDS`), the journey scenarios
-  (`j-happy`/`j-error`/`j-outside`/`j-reattach`/`j-parallel`), real browser
+  (`journeys:happy_path`/`journeys:error_path`/`journeys:outside_screen`/
+  `journeys:reattach`/`journeys:parallel`), real browser
   sessions on `:5173` (checkout, orders, RUM error, nopropagate variant),
   and one wrapper-registered observable test session
-  (`parallax invocation start -- scripts/observable-test-session.sh rust`,
+  (`parallax invocation start -- mise run test:observable -- rust`,
   83/83 tests, invocation `cc880c5c…`). Exit codes: `corpus-run.log`.
 
 ## Machine assertions
@@ -42,24 +43,24 @@ legacy-only span mints no invocation).
 | CLI daemon | assert 1, running: `ui/a-…` | n/a | `ui/c1/c2-…` (live growth) | `ui/d-…` (live tail) | cycles p50/p95 `ui/h-…` | cycle failures | cli node |
 | Capsule layer | wrapped run `cc880c5c…` finished/exit 0 | n/a | test spans in store | wrapper logs | n/a | junit-derived issues | n/a |
 | HTTP microservice | n/a | n/a | checkout/inventory traces | service logs | service RED page | service issues | service nodes |
-| gRPC service | n/a | n/a | p-grpc-err/p-grpc-stream (plan-160 ledger) | pricing logs | RED | deadline issues | checkout→pricing edge |
-| GraphQL gateway | n/a | n/a | p-graphql-err panel (plan-160 ledger) | storefront logs | RED | partial-field issues | storefront node |
-| Kafka producer/consumer | n/a | n/a | p-kafka-lag + assert 4 | orders logs | queue metrics | dead-letter outcome=failure | orders node |
+| gRPC service | n/a | n/a | protocols:grpc_errors/protocols:grpc_stream (plan-160 ledger) | pricing logs | RED | deadline issues | checkout→pricing edge |
+| GraphQL gateway | n/a | n/a | protocols:graphql_errors panel (plan-160 ledger) | storefront logs | RED | partial-field issues | storefront node |
+| Kafka producer/consumer | n/a | n/a | protocols:rabbitmq_lag + assert 4 | orders logs | queue metrics | dead-letter outcome=failure | orders node |
 | Browser frontend | n/a | RUM session spans | web→checkout stitched trace | web logs | web vitals spans | RUM error issue | browser node `ui/i-…` |
 
 Trace-shape cells (deep/wide/multiroot/orphan/skew/zero/links/longnames/
 events) are covered cell-by-cell in `ui-defect-ledger.md` (plan 160);
-`ui/k-…` and `ui/l-…` re-capture t-wide and t-orphan on this run.
+`ui/k-…` and `ui/l-…` re-capture `traces:wide` and `traces:orphan` on this run.
 
 ## Screenshot index (`ui/`)
 
 a invocations list with the running daemon and mode badges ·
 b console-run hub overview · c1/c2 hub traces tab Live ON 14 s apart
-(29→31 rows) · d hub logs live tail · e errors tab after j-error ·
+(29→31 rows) · d hub logs live tail · e errors tab after `journeys:error_path` ·
 f Sessions & UI with the screen-visit lane · g journey with the error
 attributed to the checkout screen/widget · h Jobs & Cycles ·
 i /ecosystem with cli/browser/service kinds · j trace detail with the
-invocation back-link · k t-wide waterfall mid-scroll · l t-orphan detached
+invocation back-link · k `traces:wide` waterfall mid-scroll · l `traces:orphan` detached
 span. Browser console clean throughout (`browser-console.txt`).
 Plan-160 audit captures live under `ui/audit/`.
 
