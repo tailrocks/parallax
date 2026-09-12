@@ -131,9 +131,13 @@ pub(crate) struct SpikeServer {
 }
 
 impl SpikeServer {
-    fn new(base_url: String, authorization: LocalAuthorization) -> anyhow::Result<Self> {
+    fn new(
+        base_url: String,
+        api_token: Option<String>,
+        authorization: LocalAuthorization,
+    ) -> anyhow::Result<Self> {
         Ok(Self {
-            client: GraphqlClient::new(base_url)?,
+            client: GraphqlClient::new(base_url, api_token)?,
             authorization,
             tool_router: Self::tool_router(),
         })
@@ -430,8 +434,12 @@ impl ServerHandler for SpikeServer {
 }
 
 /// Run the stdio MCP server until the client disconnects.
-pub(crate) async fn run_stdio(base_url: String) -> anyhow::Result<()> {
-    let server = SpikeServer::new(base_url, LocalAuthorization::from_explicit_cli_trust())?;
+pub(crate) async fn run_stdio(base_url: String, api_token: Option<String>) -> anyhow::Result<()> {
+    let server = SpikeServer::new(
+        base_url,
+        api_token,
+        LocalAuthorization::from_explicit_cli_trust(),
+    )?;
     let service = server.serve(stdio()).await?;
     service.waiting().await?;
     Ok(())

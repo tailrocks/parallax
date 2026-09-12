@@ -17,6 +17,7 @@ impl ClientHandler for VersionedClient {
 fn test_server() -> SpikeServer {
     SpikeServer::new(
         "http://127.0.0.1:4000".to_string(),
+        None,
         LocalAuthorization::from_explicit_cli_trust(),
     )
     .expect("server")

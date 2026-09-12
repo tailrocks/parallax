@@ -1,6 +1,54 @@
 use super::{Config, is_loopback_bind, resolve_api_token_from};
 
 #[test]
+fn unknown_top_level_key_is_rejected_not_silently_ignored() {
+    // Regression: `bind`/`otlp_grpc_port` written at the top level (instead of
+    // under [server]) used to parse as unknown keys and fall back to defaults
+    // silently, leaving the server on loopback:4317 while the operator believed
+    // the config applied.
+    let error = toml::from_str::<Config>("bind = '0.0.0.0'\notlp_grpc_port = 14317\n")
+        .expect_err("stray top-level keys must fail the load");
+    assert!(
+        error.to_string().contains("unknown field"),
+        "unexpected error: {error}"
+    );
+}
+
+#[test]
+fn unknown_section_key_is_rejected() {
+    let error = toml::from_str::<Config>("[server]\napi_prot = 4000\n")
+        .expect_err("typo'd section key must fail the load");
+    assert!(
+        error.to_string().contains("unknown field"),
+        "unexpected error: {error}"
+    );
+}
+
+#[test]
+fn public_url_prefers_explicit_then_derives_from_bind() {
+    let mut config = Config::default();
+    assert_eq!(config.resolved_public_url(), "http://127.0.0.1:4000");
+
+    config.server.bind = "0.0.0.0".to_string();
+    config.server.api_port = 4043;
+    assert_eq!(
+        config.resolved_public_url(),
+        "http://127.0.0.1:4043",
+        "wildcard bind must not leak 0.0.0.0 into outbound links"
+    );
+
+    config.server.bind = "192.168.1.10".to_string();
+    assert_eq!(config.resolved_public_url(), "http://192.168.1.10:4043");
+
+    config.server.public_url = "https://parallax.example.com/".to_string();
+    assert_eq!(
+        config.resolved_public_url(),
+        "https://parallax.example.com",
+        "explicit public_url wins and loses its trailing slash"
+    );
+}
+
+#[test]
 fn rejects_removed_none_storage_mode() {
     let config: Config = toml::from_str("[storage]\nmode = 'none'\n").expect("parse");
     let error = config.validate().expect_err("none must be rejected");

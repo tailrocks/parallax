@@ -46,14 +46,19 @@ const AGENT_SESSION_QUERY: &str = r#"query AgentSession($invocationId: String!) 
 #[derive(Clone)]
 pub(crate) struct GraphqlClient {
     base_url: String,
+    /// Optional shared API bearer token (plan 109). `None`/empty matches the
+    /// server's auth-disabled configuration; otherwise every request must
+    /// present it or the API boundary rejects the call with 401.
+    api_token: Option<String>,
     http: reqwest::Client,
 }
 
 impl GraphqlClient {
-    pub(crate) fn new(base_url: String) -> anyhow::Result<Self> {
+    pub(crate) fn new(base_url: String, api_token: Option<String>) -> anyhow::Result<Self> {
         let base_url = normalize_local_base_url(&base_url)?;
         Ok(Self {
             base_url,
+            api_token: api_token.filter(|token| !token.is_empty()),
             http: reqwest::Client::builder()
                 .connect_timeout(Duration::from_secs(5))
                 .timeout(Duration::from_secs(30))
@@ -63,10 +68,14 @@ impl GraphqlClient {
     }
 
     pub(crate) async fn graphql(&self, query: &str, variables: Value) -> anyhow::Result<Value> {
-        let mut response = self
+        let mut request = self
             .http
             .post(format!("{}/graphql", self.base_url))
-            .header("Host", host_header_for(&self.base_url))
+            .header("Host", host_header_for(&self.base_url));
+        if let Some(token) = &self.api_token {
+            request = request.bearer_auth(token);
+        }
+        let mut response = request
             .json(&serde_json::json!({ "query": query, "variables": variables }))
             .send()
             .await
