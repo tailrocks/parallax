@@ -32,8 +32,10 @@ services:
     networks: [lab]
 
   # OTLP-native, Rust, single binary. UI on host :5080; OTLP gRPC :5081 internal.
+  # v1.0.0 is the first GA release (2026-09-11); image moved to dockerhub
+  # openobserve/openobserve (gallery.ecr.aws/zinclabs remains an alias).
   openobserve:
-    image: public.ecr.aws/zinclabs/openobserve:v0.92.0
+    image: openobserve/openobserve:v1.0.0
     container_name: pfanout-openobserve
     restart: unless-stopped
     environment:
