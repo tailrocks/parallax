@@ -3,6 +3,8 @@
 //! `EventSource`, so the live-tail routes accept the bearer token via the query
 //! string — scoped to the stream routes only, never to GraphQL.
 
+#![expect(clippy::expect_used, reason = "integration fixtures")]
+
 use parallax_server::Config;
 
 fn test_config(data_dir: &std::path::Path, token: Option<&str>) -> Config {
