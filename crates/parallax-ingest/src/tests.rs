@@ -298,6 +298,94 @@ fn normalize_traces_ignores_legacy_parallax_run_id() {
     assert_eq!(rows[0].invocation_id, None);
 }
 
+fn double_kv(key: &str, value: f64) -> KeyValue {
+    KeyValue {
+        key: key.to_string(),
+        value: Some(AnyValue {
+            value: Some(AnyValueEnum::DoubleValue(value)),
+        }),
+        key_strindex: 0,
+    }
+}
+
+/// RUM ingest contract (R3): browser payloads carry `session.id` on the
+/// resource; page-view, vital, and error spans normalize with the session
+/// intact and their `app.screen.*` / `web_vital.*` / `error.*` attributes
+/// preserved for the session projection.
+#[test]
+fn normalize_traces_preserves_rum_session_payloads() {
+    use parallax_proto::trace::Span;
+    let resource_attrs = vec![
+        string_kv("service.name", "web"),
+        string_kv(semconv::SESSION_ID, "sess-rum-1"),
+    ];
+    let request = ExportTraceServiceRequest {
+        resource_spans: vec![parallax_proto::trace::ResourceSpans {
+            resource: Some(parallax_proto::resource::Resource {
+                attributes: resource_attrs,
+                ..Default::default()
+            }),
+            scope_spans: vec![parallax_proto::trace::ScopeSpans {
+                spans: vec![
+                    Span {
+                        trace_id: vec![0xaa; 16],
+                        span_id: vec![0x01; 8],
+                        name: semconv::APP_SCREEN_NAME.into(),
+                        start_time_unix_nano: 1_000,
+                        end_time_unix_nano: 2_000,
+                        attributes: vec![
+                            string_kv(semconv::APP_SCREEN_NAME, "checkout"),
+                            string_kv(semconv::URL_PATH, "/checkout"),
+                        ],
+                        ..Default::default()
+                    },
+                    Span {
+                        trace_id: vec![0xaa; 16],
+                        span_id: vec![0x02; 8],
+                        name: semconv::BROWSER_WEB_VITAL.into(),
+                        start_time_unix_nano: 3_000,
+                        end_time_unix_nano: 4_000,
+                        attributes: vec![
+                            string_kv(semconv::WEB_VITAL_NAME, "LCP"),
+                            double_kv(semconv::WEB_VITAL_VALUE, 1200.0),
+                            string_kv(semconv::WEB_VITAL_RATING, "good"),
+                        ],
+                        ..Default::default()
+                    },
+                    Span {
+                        trace_id: vec![0xbb; 16],
+                        span_id: vec![0x03; 8],
+                        name: "web.error.handled".into(),
+                        start_time_unix_nano: 5_000,
+                        end_time_unix_nano: 6_000,
+                        status: Some(parallax_proto::trace::Status {
+                            code: 2,
+                            message: "boom".into(),
+                        }),
+                        attributes: vec![string_kv(semconv::ERROR_TYPE, "TypeError")],
+                        ..Default::default()
+                    },
+                ],
+                ..Default::default()
+            }],
+            ..Default::default()
+        }],
+    };
+    let rows = normalize_traces(&request);
+    assert_eq!(rows.len(), 3);
+    for row in &rows {
+        assert_eq!(row.service, "web");
+        assert_eq!(row.session_id.as_deref(), Some("sess-rum-1"));
+        assert_eq!(row.invocation_id, None);
+    }
+    assert_eq!(rows[0].attributes["app.screen.name"], "checkout");
+    assert_eq!(rows[0].attributes["url.path"], "/checkout");
+    assert_eq!(rows[1].attributes["web_vital.name"], "LCP");
+    assert_eq!(rows[1].attributes["web_vital.value"], 1200.0);
+    assert_eq!(rows[2].status_code, "STATUS_CODE_ERROR");
+    assert_eq!(rows[2].attributes["error.type"], "TypeError");
+}
+
 #[test]
 fn normalize_logs_resolves_session_id_signal_then_resource() {
     let signal_wins = log_request(

@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest"
 
 import {
   ALERT_RULE_TEMPLATES,
+  draftFromGraduation,
   draftFromTemplate,
+  encodeAlertGraduationSearch,
+  parseAlertGraduationSearch,
   validateAlertRuleDraft,
   type AlertRuleDraft,
 } from "@/features/alerts/model/alert-rule-form"
@@ -95,5 +98,69 @@ describe("templates", () => {
 
   it("returns null for unknown template ids", () => {
     expect(draftFromTemplate("nope", "x")).toBeNull()
+  })
+})
+
+describe("alert graduation search", () => {
+  it("encodes signal_type and omits empty optionals", () => {
+    expect(encodeAlertGraduationSearch({ signalType: "log_count" })).toEqual({
+      signal_type: "log_count",
+    })
+    expect(
+      encodeAlertGraduationSearch({
+        signalType: "error_rate",
+        service: "checkout",
+      })
+    ).toEqual({ signal_type: "error_rate", service: "checkout" })
+    expect(
+      encodeAlertGraduationSearch({
+        signalType: "metric",
+        metricName: "http.server.duration",
+        metricAggregation: "p95",
+      })
+    ).toEqual({
+      signal_type: "metric",
+      metric_name: "http.server.duration",
+      metric_aggregation: "p95",
+    })
+  })
+
+  it("parses explorer handoff params", () => {
+    expect(parseAlertGraduationSearch({ signal_type: "log_count", service: "api" })).toEqual({
+      signalType: "log_count",
+      services: ["api"],
+    })
+    expect(parseAlertGraduationSearch({ signal_type: "metric" })).toBeNull()
+    expect(parseAlertGraduationSearch({ signal_type: "nope" })).toBeNull()
+    expect(
+      parseAlertGraduationSearch({
+        signal_type: "metric",
+        metric_name: "cpu",
+        metric_aggregation: "avg",
+      })
+    ).toEqual({
+      signalType: "metric",
+      metricName: "cpu",
+      metricAggregation: "avg",
+    })
+  })
+
+  it("builds a log_count draft scoped to the filtered service", () => {
+    const draft = draftFromGraduation("checkout log burst", {
+      signalType: "log_count",
+      services: ["checkout"],
+    })
+    expect(draft.signalType).toBe("log_count")
+    expect(draft.services).toEqual(["checkout"])
+    expect(draft.threshold).toBe(50)
+    expect(validateAlertRuleDraft(draft).ok).toBe(true)
+  })
+
+  it("builds an error_rate draft from the high-error-rate template", () => {
+    const draft = draftFromGraduation("api errors", { signalType: "error_rate" })
+    expect(draft.signalType).toBe("error_rate")
+    expect(draft.threshold).toBe(0.2)
+    expect(draft.services).toBeUndefined()
+    expect(validateAlertRuleDraft(draft).ok).toBe(true)
   })
 })

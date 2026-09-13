@@ -587,3 +587,60 @@ async fn trace_facets_count_distinct_traces_per_dimension_value() {
         ]))
     );
 }
+
+#[tokio::test]
+async fn trace_dominant_db_queries_rank_normalized_sql() {
+    let store = Arc::new(MemoryStore::new());
+    let mut first = span(
+        "checkout",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "span-a",
+        1_000,
+        10,
+    );
+    first.attributes = serde_json::json!({ "db.query.text": "SELECT * FROM orders WHERE id = 1" });
+    let mut grouped = span(
+        "checkout",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "span-c",
+        1_500,
+        20,
+    );
+    grouped.attributes =
+        serde_json::json!({ "db.query.text": "SELECT * FROM orders WHERE id = 99" });
+    let mut second = span(
+        "checkout",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "span-b",
+        2_000,
+        90,
+    );
+    second.attributes = serde_json::json!({ "db.query.text": "SELECT * FROM inventory" });
+    store.push_spans(vec![first, grouped, second]);
+
+    let schema = build_schema();
+    let context = context_with_memory(store).await;
+    let request = juniper::http::GraphQLRequest::new(
+        r#"{ trace(traceId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") {
+              dominantDbQueries { example count totalNs exampleSpanId }
+            } }"#
+            .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, request).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(error_messages(&json).is_empty(), "{json}");
+    assert_eq!(
+        json.pointer("/data/trace/dominantDbQueries/0/example"),
+        Some(&serde_json::json!("SELECT * FROM inventory"))
+    );
+    assert_eq!(
+        json.pointer("/data/trace/dominantDbQueries/0/count"),
+        Some(&serde_json::json!(1))
+    );
+    assert_eq!(
+        json.pointer("/data/trace/dominantDbQueries/1/count"),
+        Some(&serde_json::json!(2))
+    );
+}

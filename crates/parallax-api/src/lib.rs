@@ -36,13 +36,14 @@ use std::{collections::HashMap, sync::Arc};
 use resolvers::{
     AgentSessionOut, AlertCheck, AlertDestination, AlertIncident, AlertRule, AlertRuleInput,
     AlertRulePreview, AlertRuleState, AttributeCompareRow, AttributeFilterInput, BundleOut,
-    CriticalPath, Dashboard, DurationStats, EvidenceGap, Facet, FieldKey, FieldStats,
-    Investigation, Invocation, Issue, IssueList, IssueSort, LogRecord, MetricExemplar,
-    ObservedInvocation, Overview, Point, ReleaseWindow, RuntimeMetric, SavedView, Series,
-    ServiceCatalogRow, ServiceMap, ServiceOverview, ServiceSummary, SignalKind, SpanRed,
-    SqlResultOut, StoryBeat, TestCaseDetail, TestConfigurationFilterInput, TestExplorerPage,
-    TestExplorerSort, TestFlakyState, TestRollup, Trace, TraceDiff, TraceEventsOut, TraceList,
-    TraceSort, TraceSummary, TrendPoint,
+    ChartAnnotation, CriticalPath, Dashboard, DurationStats, EvidenceGap, Facet, FieldKey,
+    FieldStats, Investigation, Invocation, Issue, IssueList, IssueSort, LogRecord, MetricExemplar,
+    ObservedInvocation, Overview, Point, ReleaseWindow, RumSessionDetailOut, RumSessionOut,
+    RuntimeMetric, SavedView, Series, ServiceCatalogRow, ServiceMap, ServiceOverview,
+    ServiceSummary, SignalKind, SourceMapArtifact, SpanRed, SqlResultOut, StoryBeat,
+    TestCaseDetail, TestConfigurationFilterInput, TestExplorerPage, TestExplorerSort,
+    TestFlakyState, TestRollup, Trace, TraceDiff, TraceEventsOut, TraceList, TraceSort,
+    TraceSummary, TrendPoint,
 };
 
 mod memo;
@@ -149,6 +150,11 @@ impl Query {
     /// Per-version service release windows in the selected time range.
     async fn releases(context: &ApiContext, service: String, from_nanos: String, to_nanos: String,) -> FieldResult<Vec<ReleaseWindow>> { resolvers::services::releases(context, service, from_nanos, to_nanos).await }
 
+    /// Chart markers derived from release windows (deploy/release). Same
+    /// store as `releases`. `service` optional: omit to collect every service
+    /// in the window (catalog → metric detail default path).
+    async fn chart_annotations(context: &ApiContext, from_nanos: String, to_nanos: String, service: Option<String>,) -> FieldResult<Vec<ChartAnnotation>> { resolvers::services::chart_annotations(context, from_nanos, to_nanos, service).await }
+
     /// Resource-identity catalog rows for services in the selected window.
     async fn service_catalog(context: &ApiContext, from_nanos: String, to_nanos: String,) -> FieldResult<Vec<ServiceCatalogRow>> { resolvers::services::service_catalog(context, from_nanos, to_nanos).await }
 
@@ -178,6 +184,11 @@ impl Query {
     /// Occurrence counts per bucket for one issue's sparkline, oldest
     /// first. Defaults: the last 24 hours in one-hour buckets.
     async fn issue_trend(context: &ApiContext, service: String, fingerprint: String, hours: Option<i32>, step_seconds: Option<i32>,) -> FieldResult<Vec<TrendPoint>> { resolvers::issues::issue_trend(context, service, fingerprint, hours, step_seconds).await }
+
+    /// Stored source-map artifacts for one (service, version) release, newest
+    /// first. Metadata only — map content is never exposed; frames resolve
+    /// server-side via `ErrorEvent.mappedFrames`.
+    async fn source_maps(context: &ApiContext, service: String, version: String,) -> FieldResult<Vec<SourceMapArtifact>> { resolvers::source_maps::source_maps(context, service, version).await }
 
     /// Every span of one trace, start-time ascending (cross-service).
     async fn trace(context: &ApiContext, trace_id: String) -> FieldResult<Option<Trace>> { resolvers::traces::trace(context, trace_id).await }
@@ -273,6 +284,13 @@ impl Query {
 
     /// Agent conversations (`gen_ai.conversation.id` spans) in one invocation.
     async fn conversations(context: &ApiContext, invocation_id: String) -> FieldResult<Vec<resolvers::ConversationOut>> { resolvers::journeys::conversations(context, invocation_id).await }
+
+    /// Browser RUM sessions: spans grouped by `session.id` (independent of
+    /// `cli.invocation.id`), newest activity first.
+    async fn rum_sessions(context: &ApiContext, service: Option<String>, from_nanos: String, to_nanos: String, error_only: Option<bool>, limit: Option<i32>,) -> FieldResult<Vec<RumSessionOut>> { resolvers::rum::rum_sessions(context, service, from_nanos, to_nanos, error_only, limit).await }
+
+    /// One RUM session with its timeline: page views, vitals, and errors.
+    async fn rum_session(context: &ApiContext, session_id: String, limit: Option<i32>,) -> FieldResult<Option<RumSessionDetailOut>> { resolvers::rum::rum_session(context, session_id, limit).await }
 
     /// One saved dashboard by id.
     async fn dashboard(context: &ApiContext, id: String) -> FieldResult<Option<Dashboard>> { resolvers::dashboards::dashboard(context, id).await }
@@ -412,8 +430,8 @@ pub struct Mutation;
 #[rustfmt::skip]
 #[graphql_object(context = ApiContext)]
 impl Mutation {
-    /// Set an issue's workflow status (open | resolved); returns the updated
-    /// issue (spec §8: `Issue!`).
+    /// Set an issue's workflow status (open | resolved). `regressed` is
+    /// derived on recurrence, not set by this mutation.
     async fn issue_set_status(context: &ApiContext, service: String, fingerprint: String, status: String,) -> FieldResult<Issue> { resolvers::issues::issue_set_status(context, service, fingerprint, status).await }
 
     /// Register an invocation (the CLI wrapper calls this before launching).
@@ -461,6 +479,10 @@ impl Mutation {
 
     /// Delete a notification destination.
     async fn alert_destination_delete(context: &ApiContext, id: String) -> FieldResult<bool> { resolvers::alerts::alert_destination_delete(context, id).await }
+
+    /// Upload (or replace) one source-map v3 artifact for a (service,
+    /// version, file) release file. Rejects malformed maps at the boundary.
+    async fn source_map_upload(context: &ApiContext, service: String, version: String, file: String, map: String, debug_id: Option<String>,) -> FieldResult<SourceMapArtifact> { resolvers::source_maps::source_map_upload(context, service, version, file, map, debug_id).await }
 
 }
 

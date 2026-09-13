@@ -18,6 +18,7 @@ export interface MetricDetailSearch {
   groupBy?: string | undefined
   step?: string | undefined
   kind?: string | undefined
+  service?: string | undefined
 }
 
 export interface SeriesOut {
@@ -32,11 +33,27 @@ export interface MetricExemplarLink {
   value: number
 }
 
+export interface ReleaseMarker {
+  version: string
+  firstSeenNanos: string
+  lastSeenNanos: string
+  spanCount: string
+}
+
+export interface ChartAnnotation {
+  tsNanos: string
+  kind: string
+  title: string
+  service: string
+}
+
 export interface DetailData {
   labels: string[]
   series: SeriesOut[]
   range: ResolvedRange
   exemplars: MetricExemplarLink[]
+  releases: ReleaseMarker[]
+  annotations: ChartAnnotation[]
 }
 
 export function backendKind(kind: MetricKind): "gauge" | "sum" | "histogram" {
@@ -76,6 +93,54 @@ async function loadExemplars(
   }
 }
 
+function annotationsToReleaseMarkers(annotations: ChartAnnotation[]): ReleaseMarker[] {
+  return annotations
+    .filter((row) => row.kind === "release")
+    .map((row) => ({
+      version: row.title,
+      firstSeenNanos: row.tsNanos,
+      lastSeenNanos: row.tsNanos,
+      spanCount: "0",
+    }))
+}
+
+/** GraphQL `chartAnnotations` — service optional so catalog→detail still overlays. */
+export async function loadChartAnnotations(
+  service: string | undefined,
+  range: ResolvedRange
+): Promise<ChartAnnotation[]> {
+  const serviceArg = service ? `, service: "${gqlString(service)}"` : ""
+  try {
+    const data = await graphqlCached<{ chartAnnotations: ChartAnnotation[] }>(`{
+      chartAnnotations(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}"${serviceArg}) {
+        tsNanos kind title service
+      }
+    }`)
+    return data.chartAnnotations
+  } catch {
+    return []
+  }
+}
+
+async function withAnnotations(
+  metricName: string,
+  range: ResolvedRange,
+  service: string | undefined,
+  rest: Omit<DetailData, "exemplars" | "releases" | "annotations" | "range">
+): Promise<DetailData> {
+  const [exemplars, annotations] = await Promise.all([
+    loadExemplars(metricName, range),
+    loadChartAnnotations(service, range),
+  ])
+  return {
+    ...rest,
+    range,
+    exemplars,
+    annotations,
+    releases: annotationsToReleaseMarkers(annotations),
+  }
+}
+
 function queryArguments(metricName: string, search: MetricDetailSearch) {
   const range = resolveRangeSearch(search)
   const kind = (search.kind as MetricKind) || inferMetricKind(metricName)
@@ -93,7 +158,7 @@ function queryArguments(metricName: string, search: MetricDetailSearch) {
         )
         .join(", ")}]`
     : ""
-  return { range, kind, agg, stepSeconds, name, window, groupBy, where }
+  return { range, kind, agg, stepSeconds, name, window, groupBy, where, search }
 }
 
 async function loadCanonicalDetail(
@@ -109,12 +174,10 @@ async function loadCanonicalDetail(
       kind effectiveStepSeconds series { groupValue points { tsNanos value } }
     }
   }`)
-  return {
+  return withAnnotations(metricName, args.range, args.search.service, {
     labels: data.metricLabels,
     series: data.metricQuery.series,
-    range: args.range,
-    exemplars: await loadExemplars(metricName, args.range),
-  }
+  })
 }
 
 async function loadLegacyDetail(
@@ -130,12 +193,10 @@ async function loadLegacyDetail(
       metricLabels(name: ${args.name})
       histogramQuantile(name: ${args.name}, ${args.window}, q: ${q}, stepSeconds: ${args.stepSeconds}) { tsNanos value }
     }`)
-    return {
+    return withAnnotations(metricName, args.range, args.search.service, {
       labels: data.metricLabels,
       series: [{ groupValue: null, points: data.histogramQuantile }],
-      range: args.range,
-      exemplars: await loadExemplars(metricName, args.range),
-    }
+    })
   }
   const data = await graphqlCached<{ metricLabels: string[]; metricSeries: SeriesOut[] }>(`{
     metricLabels(name: ${args.name})
@@ -143,12 +204,10 @@ async function loadLegacyDetail(
       groupValue points { tsNanos value }
     }
   }`)
-  return {
+  return withAnnotations(metricName, args.range, args.search.service, {
     labels: data.metricLabels,
     series: data.metricSeries,
-    range: args.range,
-    exemplars: await loadExemplars(metricName, args.range),
-  }
+  })
 }
 
 export async function loadMetricDetail(

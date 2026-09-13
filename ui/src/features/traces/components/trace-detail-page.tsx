@@ -80,6 +80,10 @@ import type {
   RpcStreamInfo,
   RpcTraceSpan,
 } from "@/features/traces/model/rpc-streams"
+import {
+  traceDetailQuery,
+  type DominantDbQueryRow,
+} from "@/features/traces/api/trace-detail-query"
 import { computeSelfTimes, computeWindow, detectSkew } from "@/features/traces/model/trace-tree"
 import type { SkewReport } from "@/features/traces/model/trace-tree"
 import { rangeLinkSearch, resolveRangeSearch } from "@/domain/time-range/range"
@@ -200,7 +204,7 @@ interface TraceEventsResult {
 }
 
 export type TraceDetailLoaderData = {
-  trace: { spans: TraceSpan[] } | null
+  trace: { spans: TraceSpan[]; dominantDbQueries: DominantDbQueryRow[] } | null
   logsByTrace: TraceLog[]
   linkedTraces: TraceSummary[]
   story: StoryBeat[]
@@ -209,28 +213,7 @@ export type TraceDetailLoaderData = {
 }
 
 export async function loadTraceDetail(traceId: string): Promise<TraceDetailLoaderData> {
-  const safeId = gqlString(traceId)
-  return graphqlCached<TraceDetailLoaderData>(
-    `{ trace(traceId: "${safeId}") {
-         spans { tsNanos service traceId name kind statusCode statusMessage durationNs
-                 spanId parentSpanId invocationId links typedLinks { traceId spanId attributes }
-                 events attributes resource }
-       }
-       linkedTraces(traceId: "${safeId}") {
-         traceId rootName service startNanos durationNs spanCount hasError
-       }
-       story(traceId: "${safeId}") {
-         tsNanos lane kind title traceId spanId severity durationNs
-       }
-       evidenceGaps(traceId: "${safeId}") {
-         kind subject detail
-       }
-       rpcTraceEvents: traceEvents(traceId: "${safeId}", namePrefix: "rpc", limit: 500) {
-         truncated skippedSpans
-         events { spanId spanName service name timeUnixNano attributes }
-       }
-       logsByTrace(traceId: "${safeId}") { tsNanos service severityText body spanId } }`
-  )
+  return graphqlCached<TraceDetailLoaderData>(traceDetailQuery(traceId))
 }
 
 function parseJsonRecord(json: string): JsonRecord {
@@ -366,6 +349,7 @@ export function TraceDetailPage({
     [rpcTraceEvents.events, rpcTraceEvents.truncated, spans]
   )
   const messaging = useMemo(() => messagingSummary(spans), [spans])
+  const dbQueries = trace?.dominantDbQueries ?? []
   const skewReport = useMemo(() => detectSkew(spans), [spans])
   const window = useMemo(() => computeWindow(spans), [spans])
 
@@ -553,6 +537,30 @@ export function TraceDetailPage({
 
       <ClockSkewBanner report={skewReport} />
 
+      {dbQueries.length > 0 ? (
+        <Card data-testid="dominant-db-queries">
+          <CardHeader>
+            <CardTitle className="text-sm">Dominant database queries</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {dbQueries.map((query) => (
+              <button
+                key={query.normalized}
+                type="button"
+                className="flex w-full flex-col gap-1 rounded-md border px-3 py-2 text-left text-xs hover:bg-muted/40"
+                onClick={() => setSelectedId(query.exampleSpanId)}
+              >
+                <span className="font-mono break-all">{query.example}</span>
+                <span className="text-muted-foreground">
+                  {query.count} span{query.count === 1 ? "" : "s"} · {query.service} ·{" "}
+                  {(Number(query.totalNs) / 1_000_000).toFixed(1)}ms total
+                </span>
+              </button>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
+
       <EvidenceGapsCard gaps={evidenceGaps} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -617,7 +625,7 @@ export function TraceDetailPage({
                       </span>
                       <Link
                         to="/logs"
-                        search={{ trace: traceId }}
+                        search={{ ...detailRangeSearch, trace: traceId }}
                         className="inline-flex items-center gap-1 font-normal text-muted-foreground hover:text-foreground"
                       >
                         View in Logs
@@ -1390,7 +1398,7 @@ function TraceInspector({
             </ul>
             <Link
               to="/logs"
-              search={{ trace: traceId }}
+              search={{ ...rangeSearch, trace: traceId }}
               className="mt-2 inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
             >
               View in Logs

@@ -4,10 +4,11 @@
 
 Research date: 2026-06-03
 
-**Historical status, 2026-07-17:** this note preserves the baseline and early design reasoning.
-Parallax V1 now ships the CLI, API, UI, GreptimeDB telemetry, and Turso metadata shape proposed
-here. The speculative storage tiers and “UI later” language below are superseded: GreptimeDB +
-Turso are mandatory in every product profile, with no fallback engine, and the full UI is shipped.
+**Historical status, 2026-09-13:** this note preserves the baseline world (Sentry + Tempo/Jaeger
++ Loki/ES + Prometheus + Grafana). That *is* the stack Parallax now aims to replace for
+developers — not merely sit beside as an evidence sidecar. V1 ships CLI, API, UI, GreptimeDB
+telemetry, and Turso metadata. “UI later” is superseded. GreptimeDB + Turso are mandatory in
+every product profile. The 2026-06 design reasoning below is historical.
 
 ## Current World
 

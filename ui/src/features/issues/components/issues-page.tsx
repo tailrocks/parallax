@@ -106,12 +106,16 @@ export function IssuesContent({
             {...(search.status ? { value: search.status } : {})}
             onChange={(status) =>
               onSearch({
-                status: status === "open" || status === "resolved" ? status : undefined,
+                status:
+                  status === "open" || status === "resolved" || status === "regressed"
+                    ? status
+                    : undefined,
               })
             }
             placeholder="Any status"
             options={[
               { value: "open", label: "Open" },
+              { value: "regressed", label: "Regressed" },
               { value: "resolved", label: "Resolved" },
             ]}
           />

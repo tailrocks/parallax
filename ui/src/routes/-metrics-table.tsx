@@ -21,6 +21,13 @@ export interface MetricsTableRow {
   lastDatapointNanos?: string | null
 }
 
+export function metricCatalogDetailSearch(row: MetricsTableRow): {
+  kind: MetricKind
+  service: string | undefined
+} {
+  return { kind: row.kind, service: row.services?.[0] }
+}
+
 export function MetricsTable({ rows }: { rows: MetricsTableRow[] }) {
   return (
     <Table>
@@ -41,7 +48,7 @@ export function MetricsTable({ rows }: { rows: MetricsTableRow[] }) {
               <Link
                 to="/metrics/$metricName"
                 params={{ metricName: row.name }}
-                search={{ kind: row.kind }}
+                search={metricCatalogDetailSearch(row)}
                 className="hover:underline"
               >
                 {row.name}

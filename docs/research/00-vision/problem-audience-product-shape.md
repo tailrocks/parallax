@@ -8,22 +8,27 @@ who it is for, and what shape the product takes.** The operator's standing instr
 this framing sharp as the vision evolves — when a pass changes the answer to any of the three
 questions, this file is updated in the same change.
 
-**Implementation status, 2026-07-17:** V1 has shipped this shape: the Rust CLI/server, OTLP
-gRPC/HTTP ingest, GraphQL API, mandatory GreptimeDB + Turso storage, bounded redacted evidence,
-alerting/live streaming, and the full TanStack Start investigation UI are implemented. Sentry
-envelope HTTP ingest is implemented; its migration residual closed as plan 118 (DONE). Local-stdio MCP
-(`parallax-mcp`) graduated plan 112 (DONE); remote MCP deferred to Plan 109. Historical build-order statements below are
+**Thesis restamp, 2026-09-13 (GOAL.md operator intent):** the product shape is a
+**complete developer observability replacement** (errors, logs, traces, metrics, CLI,
+backend, frontend, macOS, alerts, agent context). “Execution-context engine” is the
+*differentiator* (bundles, CLI runs, redaction, one API), not a permission to stay
+narrow. Still not a fixer, status-page product, or multi-region SaaS.
+
+**Implementation status, 2026-09-13:** V1 shape shipped plus HEAD P0 slices on
+`goal/final-p0-hotfix`: service-scoped issue identity, occurrence→trace→logs correlation,
+typed `rate`/`increase`, `/rum` vitals projection, exp-histogram conversion. Sentry
+envelope HTTP ingest shipped (plan 118 DONE). Local-stdio MCP graduated plan 112 (DONE);
+remote MCP deferred to Plan 109. Historical build-order statements below are
 preserved as the record that led to V1.
 
 > **One paragraph.** Parallax is for developers — human and AI — who can now build and ship
-> software fast but lose all of that speed the moment something breaks at runtime. It combines
-> the best concept from three worlds — **OpenTelemetry** (how data is collected, as an open
-> standard), **Sentry** (how collected failures are organized into grouped, workflow-ready
-> issues), and **Grafana** (how humans see across signals to understand what is going on) — into
-> one open-source Rust engine that is **agent-first**: the same evidence that renders in a UI for
-> a human is served as bounded, redacted, citable context for a separate coding agent to assess. It
-> starts on one developer's laptop and scales, by topology change rather than rewrite, to
-> companies that fix this month's bugs next quarter.
+> software fast but lose all of that speed the moment something breaks at runtime. It is meant
+> to **replace** the Sentry + Grafana/LGTM + logs + traces combo for day-to-day investigation,
+> combining **OpenTelemetry** (how data is collected), **Sentry** (how failures become grouped
+> issues), and **Grafana** (how humans see across signals) into one open-source Rust engine that
+> is **agent-ready**: the same evidence that renders in a UI is served as bounded, redacted,
+> citable context for a separate coding agent. It starts on one developer's laptop and scales,
+> by topology change rather than rewrite, to companies that fix this month's bugs next quarter.
 
 ## 1. The problem
 

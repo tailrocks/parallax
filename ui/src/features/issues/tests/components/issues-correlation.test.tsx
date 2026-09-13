@@ -23,6 +23,12 @@ afterEach(() => {
   vi.mocked(loadIssueCorrelation).mockReset()
 })
 
+// M5: heavy IssueDetailContent + router first render already takes ~0.8-1s in
+// isolation; under full-suite worker contention it exceeds testing-library's
+// 1s default findBy timeout. Explicit timeout keeps the wait deterministic
+// (waitFor still resolves immediately once the element appears).
+const FIND_TIMEOUT = 5000
+
 const range = resolvePreset("24h", 1_720_000_000_000)
 
 const issuesFixture: IssuesData = {
@@ -62,6 +68,8 @@ const detailFixture = {
         source: "exception",
         traceId: "trace-a",
         spanId: "span-a",
+        serviceVersion: null,
+        mappedFrames: [],
         attributes: "{}",
       },
       {
@@ -73,6 +81,8 @@ const detailFixture = {
         source: "exception",
         traceId: "trace-b",
         spanId: "span-b",
+        serviceVersion: null,
+        mappedFrames: [],
         attributes: '{"order":{"id":',
       },
       {
@@ -83,6 +93,8 @@ const detailFixture = {
         source: "exception",
         traceId: "",
         spanId: "span-c",
+        serviceVersion: null,
+        mappedFrames: [],
         attributes: "{}",
       },
     ],
@@ -152,7 +164,7 @@ function renderWithRouter(component: React.ReactNode, path = "/issues") {
   return renderTestRouter(component, {
     componentPaths: ["/issues", "/issues/$service/$fingerprint"],
     initialPath: path,
-    targetPaths: ["/traces/$traceId", "/invocations/$invocationId"],
+    targetPaths: ["/traces/$traceId", "/invocations/$invocationId", "/logs"],
   })
 }
 
@@ -164,11 +176,13 @@ describe("Issue correlation failures", () => {
       <IssueDetailContent data={detailFixture} range={range} onRange={() => {}} />,
       "/issues/checkout/panic-a"
     )
-    await screen.findByRole("link", { name: "invocation" })
+    await screen.findByRole("link", { name: "invocation" }, { timeout: FIND_TIMEOUT })
 
     await user.click(screen.getByRole("button", { name: /checkout overflowed without a trace/ }))
 
-    expect(await screen.findByText("No trace linked to this event.")).toBeTruthy()
+    expect(
+      await screen.findByText("No trace linked to this event.", {}, { timeout: FIND_TIMEOUT })
+    ).toBeTruthy()
     expect(vi.mocked(loadIssueCorrelation).mock.calls).toEqual([["trace-a"]])
   })
 
@@ -180,14 +194,18 @@ describe("Issue correlation failures", () => {
       "/issues/checkout/panic-a"
     )
 
-    expect(await screen.findByText("Trace is unavailable.")).toBeTruthy()
+    expect(
+      await screen.findByText("Trace is unavailable.", {}, { timeout: FIND_TIMEOUT })
+    ).toBeTruthy()
     expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy()
 
     deferPendingCorrelation("trace-a")
     await user.click(screen.getByRole("button", { name: "Retry" }))
     pendingCorrelations.get("trace-a")!.reject(new Error("correlation failed"))
 
-    expect(await screen.findByText("correlation failed")).toBeTruthy()
+    expect(
+      await screen.findByText("correlation failed", {}, { timeout: FIND_TIMEOUT })
+    ).toBeTruthy()
     expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy()
     expect(vi.mocked(loadIssueCorrelation).mock.calls).toEqual([["trace-a"], ["trace-a"]])
   })

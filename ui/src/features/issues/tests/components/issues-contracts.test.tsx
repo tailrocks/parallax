@@ -61,6 +61,8 @@ const detailFixture = {
         source: "exception",
         traceId: "trace-a",
         spanId: "span-a",
+        serviceVersion: null,
+        mappedFrames: [],
         attributes: "{}",
       },
       {
@@ -72,6 +74,8 @@ const detailFixture = {
         source: "exception",
         traceId: "trace-b",
         spanId: "span-b",
+        serviceVersion: null,
+        mappedFrames: [],
         attributes: '{"order":{"id":',
       },
       {
@@ -82,6 +86,8 @@ const detailFixture = {
         source: "exception",
         traceId: "",
         spanId: "span-c",
+        serviceVersion: null,
+        mappedFrames: [],
         attributes: "{}",
       },
     ],
@@ -151,7 +157,7 @@ function renderWithRouter(component: React.ReactNode, path = "/issues") {
   return renderTestRouter(component, {
     componentPaths: ["/issues", "/issues/$service/$fingerprint"],
     initialPath: path,
-    targetPaths: ["/traces/$traceId", "/invocations/$invocationId"],
+    targetPaths: ["/traces/$traceId", "/invocations/$invocationId", "/logs"],
   })
 }
 

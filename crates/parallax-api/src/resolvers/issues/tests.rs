@@ -149,14 +149,14 @@ async fn issues_filter_by_service_and_query() {
 }
 
 #[tokio::test]
-async fn issues_status_must_be_open_or_resolved() {
+async fn issues_status_must_be_open_resolved_or_regressed() {
     let store = Arc::new(MemoryStore::new());
     let context = context_with_memory(Arc::clone(&store)).await;
     let json = gql(&context, r#"{ issues(status: "nope") { total } }"#).await;
     assert!(
         error_messages(&json)
             .iter()
-            .any(|m| m.contains("status must be open or resolved")),
+            .any(|m| m.contains("status must be open, resolved, or regressed")),
         "{json}"
     );
 }
@@ -272,6 +272,93 @@ async fn issue_set_status_rejects_unknown() {
             .iter()
             .any(|m| m.contains("status must be open or resolved")),
         "{json}"
+    );
+}
+
+#[tokio::test]
+async fn issue_set_status_rejects_derived_regressed() {
+    let store = Arc::new(MemoryStore::new());
+    let context = context_with_memory(Arc::clone(&store)).await;
+    seed_issue(&store, &context, "a", "checkout", 10, "alpha").await;
+    let json = gql(
+        &context,
+        r#"mutation { issueSetStatus(service: "checkout", fingerprint: "a", status: "regressed") { fingerprint } }"#,
+    )
+    .await;
+    assert!(
+        error_messages(&json)
+            .iter()
+            .any(|m| m.contains("status must be open or resolved")),
+        "{json}"
+    );
+}
+
+#[tokio::test]
+async fn resolved_issue_regresses_on_new_occurrence() {
+    let store = Arc::new(MemoryStore::new());
+    let context = context_with_memory(Arc::clone(&store)).await;
+    let attributes = serde_json::json!({"env": "test"});
+    context
+        .metadata
+        .upsert_issue_occurrence(&IssueOccurrence {
+            occurrence_id: "a-1".into(),
+            fingerprint: "a",
+            title: "Error a".to_string(),
+            error_type: "test::Boom",
+            culprit: None,
+            service: "checkout",
+            ts_nanos: 10,
+            trace_id: None,
+            attributes: &attributes,
+        })
+        .await
+        .unwrap();
+    let resolved = gql(
+        &context,
+        r#"mutation { issueSetStatus(service: "checkout", fingerprint: "a", status: "resolved") { status } }"#,
+    )
+    .await;
+    assert_eq!(
+        resolved
+            .pointer("/data/issueSetStatus/status")
+            .and_then(serde_json::Value::as_str),
+        Some("resolved")
+    );
+    context
+        .metadata
+        .upsert_issue_occurrence(&IssueOccurrence {
+            occurrence_id: "a-2".into(),
+            fingerprint: "a",
+            title: "Error a".to_string(),
+            error_type: "test::Boom",
+            culprit: None,
+            service: "checkout",
+            ts_nanos: 20,
+            trace_id: None,
+            attributes: &attributes,
+        })
+        .await
+        .unwrap();
+    let json = gql(
+        &context,
+        r#"{ issues(status: "regressed") { items { fingerprint status eventCount } } issue(service: "checkout", fingerprint: "a") { status eventCount } }"#,
+    )
+    .await;
+    assert!(error_messages(&json).is_empty(), "{json}");
+    assert_eq!(
+        json.pointer("/data/issue/status")
+            .and_then(serde_json::Value::as_str),
+        Some("regressed")
+    );
+    assert_eq!(
+        json.pointer("/data/issue/eventCount")
+            .and_then(serde_json::Value::as_i64),
+        Some(2)
+    );
+    assert_eq!(
+        json.pointer("/data/issues/items/0/fingerprint")
+            .and_then(serde_json::Value::as_str),
+        Some("a")
     );
 }
 

@@ -64,6 +64,29 @@ impl ServiceSummary {
 
 pub(crate) struct ReleaseWindow(pub(crate) StorageReleaseWindow);
 
+pub(crate) struct ChartAnnotation {
+    pub(crate) ts_nanos: u128,
+    pub(crate) kind: String,
+    pub(crate) title: String,
+    pub(crate) service: String,
+}
+
+#[graphql_object(context = ApiContext)]
+impl ChartAnnotation {
+    fn ts_nanos(&self) -> String {
+        nanos_string(self.ts_nanos)
+    }
+    fn kind(&self) -> &str {
+        &self.kind
+    }
+    fn title(&self) -> &str {
+        &self.title
+    }
+    fn service(&self) -> &str {
+        &self.service
+    }
+}
+
 #[graphql_object(context = ApiContext)]
 impl ReleaseWindow {
     fn version(&self) -> &str {

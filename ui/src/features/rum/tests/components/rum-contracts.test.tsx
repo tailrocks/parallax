@@ -5,7 +5,14 @@ import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { resolvePreset } from "@/domain/time-range/range"
-import { RumContent, type RumData, type RumTraceData, type RumVitalData } from "@/features/rum"
+import {
+  RumContent,
+  type RumData,
+  type RumSessionDetailData,
+  type RumSessionRow,
+  type RumTraceData,
+  type RumVitalData,
+} from "@/features/rum"
 import { renderTestRouter } from "@/test/router"
 
 afterEach(() => {
@@ -110,6 +117,59 @@ const traceFixture: RumTraceData = {
   ],
 }
 
+const sessionRowFixture: RumSessionRow = {
+  sessionId: "sess-1",
+  service: "web-shop",
+  startNanos: "1719999900000000000",
+  endNanos: "1719999990000000000",
+  spanCount: 4,
+  traceCount: 2,
+  viewCount: 2,
+  vitalCount: 1,
+  errorCount: 1,
+  hasError: true,
+}
+
+const sessionFixture: RumSessionDetailData = {
+  session: sessionRowFixture,
+  views: [
+    {
+      tsNanos: "1719999900000000000",
+      screen: "home",
+      path: "/",
+      traceId: "trace-v",
+      spanId: "span-v",
+    },
+    {
+      tsNanos: "1719999950000000000",
+      screen: "checkout",
+      path: "/checkout",
+      traceId: "trace-v2",
+      spanId: "span-v2",
+    },
+  ],
+  vitals: [
+    {
+      tsNanos: "1719999920000000000",
+      name: "LCP",
+      value: 1200,
+      rating: "good",
+      traceId: "trace-v",
+      spanId: "span-lcp",
+    },
+  ],
+  errors: [
+    {
+      tsNanos: "1719999990000000000",
+      name: "web.error.handled",
+      errorType: "TypeError",
+      message: "boom",
+      traceId: "trace-e",
+      spanId: "span-e",
+    },
+  ],
+}
+
 function renderRum(
   ui: React.ReactNode,
   path = "/rum?service=web-shop&vital=browser.lcp&traceId=trace-a"
@@ -129,6 +189,8 @@ describe("RUM route", () => {
         data={rumFixture}
         vital={vitalFixture}
         trace={traceFixture}
+        sessions={[sessionRowFixture]}
+        session={null}
         search={{ service: "web-shop", vital: "browser.lcp", traceId: "trace-a" }}
         range={range}
         onSearch={onSearch}
@@ -148,6 +210,8 @@ describe("RUM route", () => {
         data={rumFixture}
         vital={vitalFixture}
         trace={traceFixture}
+        sessions={[sessionRowFixture]}
+        session={null}
         search={{ service: "web-shop", vital: "browser.lcp", traceId: "trace-a" }}
         range={range}
         onSearch={onSearch}
@@ -172,6 +236,8 @@ describe("RUM route", () => {
         data={rumFixture}
         vital={null}
         trace={null}
+        sessions={[sessionRowFixture]}
+        session={null}
         search={{ service: "web-shop" }}
         range={range}
         onSearch={onSearch}
@@ -180,6 +246,34 @@ describe("RUM route", () => {
 
     await user.click(await screen.findByTestId("trace-row-trace-j"))
     expect(onSearch).toHaveBeenCalledWith({ traceId: "trace-j" })
+  })
+
+  it("toggles a session on row click and renders its timeline", async () => {
+    const user = userEvent.setup()
+    const onSearch = vi.fn()
+    renderRum(
+      <RumContent
+        data={rumFixture}
+        vital={null}
+        trace={null}
+        sessions={[sessionRowFixture]}
+        session={sessionFixture}
+        search={{ service: "web-shop", sessionId: "sess-1" }}
+        range={range}
+        onSearch={onSearch}
+      />
+    )
+
+    await user.click(await screen.findByTestId("session-row-sess-1"))
+    expect(onSearch).toHaveBeenCalledWith({ sessionId: undefined })
+    expect(screen.getByText(/Session timeline/)).toBeTruthy()
+    expect(screen.getByText("checkout")).toBeTruthy()
+    // Vitals table + session timeline both render LCP.
+    expect(screen.getAllByText("LCP")).toHaveLength(2)
+    expect(screen.getByText("boom")).toBeTruthy()
+    expect(
+      screen.getByTestId("trace-link-trace-e").getAttribute("href")
+    ).toContain("/traces/trace-e")
   })
 
   it("explains an empty backend honestly", async () => {
@@ -200,6 +294,8 @@ describe("RUM route", () => {
         data={empty}
         vital={null}
         trace={null}
+        sessions={[]}
+        session={null}
         search={{}}
         range={range}
         onSearch={onSearch}
@@ -208,6 +304,7 @@ describe("RUM route", () => {
     )
 
     expect(await screen.findByText("No web vitals yet")).toBeTruthy()
+    expect(screen.getByText("No sessions")).toBeTruthy()
     expect(screen.getByText("No issues")).toBeTruthy()
     expect(screen.getByText("No journeys")).toBeTruthy()
   })

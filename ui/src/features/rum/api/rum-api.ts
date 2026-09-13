@@ -20,6 +20,18 @@ import {
   type RumJourneysQueryVariables,
 } from "@/features/rum/api/rum-journeys.generated"
 import {
+  RumSessionDocument,
+  RumSessionQuerySchema,
+  type RumSessionQuery,
+  type RumSessionQueryVariables,
+} from "@/features/rum/api/rum-session.generated"
+import {
+  RumSessionsDocument,
+  RumSessionsQuerySchema,
+  type RumSessionsQuery,
+  type RumSessionsQueryVariables,
+} from "@/features/rum/api/rum-sessions.generated"
+import {
   RumTraceDocument,
   RumTraceQuerySchema,
   type RumTraceQuery,
@@ -44,13 +56,21 @@ import {
   mapIssues,
   mapJourneys,
   mapLinkedTraces,
+  mapRumSession,
+  mapRumSessions,
   mapTraceLogs,
   mapVitalRow,
   mapVitalTrend,
   type CatalogVital,
 } from "@/features/rum/api/rum-mapper"
 import { RumError } from "@/features/rum/model/rum-error"
-import type { RumData, RumTraceData, RumVitalData } from "@/features/rum/model/rum-overview"
+import type {
+  RumData,
+  RumSessionDetailData,
+  RumSessionRow,
+  RumTraceData,
+  RumVitalData,
+} from "@/features/rum/model/rum-overview"
 import type { RumSearch } from "@/features/rum/model/rum-search"
 import {
   executeCachedGraphqlOperation,
@@ -222,6 +242,41 @@ export async function loadRumVital(
       trend: mapVitalTrend(stats),
       exemplars: mapExemplars(detail),
     }
+  } catch (error) {
+    mapBoundary(error, "load")
+  }
+}
+
+export async function loadRumSessions(
+  search: RumSearch,
+  range: ResolvedRange
+): Promise<RumSessionRow[]> {
+  try {
+    const data = await executeCachedGraphqlOperation<RumSessionsQuery, RumSessionsQueryVariables>(
+      brandDocument(RumSessionsDocument),
+      brandSchema(RumSessionsQuerySchema),
+      {
+        service: search.service ?? null,
+        fromNanos: range.fromNanos,
+        toNanos: range.toNanos,
+        errorOnly: null,
+        limit: 20,
+      }
+    )
+    return mapRumSessions(data)
+  } catch (error) {
+    mapBoundary(error, "load")
+  }
+}
+
+export async function loadRumSession(sessionId: string): Promise<RumSessionDetailData | null> {
+  try {
+    const data = await executeCachedGraphqlOperation<RumSessionQuery, RumSessionQueryVariables>(
+      brandDocument(RumSessionDocument),
+      brandSchema(RumSessionQuerySchema),
+      { sessionId, limit: 200 }
+    )
+    return mapRumSession(data)
   } catch (error) {
     mapBoundary(error, "load")
   }

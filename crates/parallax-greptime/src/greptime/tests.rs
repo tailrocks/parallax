@@ -451,3 +451,64 @@ fn exp_catalog_and_bucket_arms_match_output_contract() {
     assert!(buckets.contains(r#""service" = 'checkout'"#));
     assert!(buckets.contains("AS \"bucket_ms\""));
 }
+
+#[test]
+fn error_events_ranked_sql_outer_projection_matches_subquery_aliases() {
+    // P0 regression (2026-09-13): the outer SELECT reused the base-table
+    // projection referencing `"ts"`, which the ranked subquery does not
+    // expose → `issue.events` failed live with `No field named ts` while
+    // mocked contract tests stayed green.
+    let sql = error_events_ranked_sql("('checkout', 'fp1')", 0, 10, 5);
+    let (outer, inner) = sql.split_once("FROM (").expect("ranked subquery");
+    assert!(
+        outer.contains("\"ts_nanos\""),
+        "outer projection must read the subquery alias: {outer}"
+    );
+    assert!(
+        !outer.contains("\"ts\""),
+        "outer projection must not reference base-table ts: {outer}"
+    );
+    for ident in [
+        "ts_nanos",
+        "service",
+        "fingerprint",
+        "error_type",
+        "message",
+        "stacktrace",
+        "source",
+        "trace_id",
+        "span_id",
+        "invocation_id",
+        "session_id",
+        "service_version",
+        "environment",
+        "attributes",
+    ] {
+        assert!(
+            inner.contains(&format!("AS \"{ident}\"")) || inner.contains(&format!("\"{ident}\",")),
+            "subquery must expose {ident}: {inner}"
+        );
+    }
+    assert_eq!(
+        error_event_from_row(&[
+            serde_json::json!(7u64),
+            serde_json::json!("svc"),
+            serde_json::json!("fp"),
+            serde_json::json!("E"),
+            serde_json::json!("m"),
+            serde_json::json!(null),
+            serde_json::json!("LogRecord"),
+            serde_json::json!("t"),
+            serde_json::json!("s"),
+            serde_json::json!("run"),
+            serde_json::json!("sess"),
+            serde_json::json!("v1"),
+            serde_json::json!("prod"),
+            serde_json::json!({"k": "v"}),
+        ])
+        .service_version
+        .as_deref(),
+        Some("v1"),
+        "ranked projection order must match the shared decoder"
+    );
+}

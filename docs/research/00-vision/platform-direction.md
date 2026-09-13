@@ -4,11 +4,18 @@
 
 Research date: 2026-05-25
 
-**Implementation status, 2026-07-17:** Stage 1's evidence-engine floor has shipped: OTLP and
-Sentry-envelope ingest, grouping/correlation and analysis, bounded redacted bundles, CLI, GraphQL,
-alerting/live streaming, mandatory GreptimeDB + Turso, a full UI, and graduated local-stdio
-MCP (`parallax-mcp`, plan 112 DONE). Remote MCP remains deferred (Plan 109). Stage 2/3 adoption
-and outcome-loop gates remain future direction.
+**Thesis restamp, 2026-09-13:** Stage 1 is no longer “narrow evidence engine only.”
+Operator intent is a **developer observability replacement** (four signals + four app
+classes + alerts + agent context) *while remaining* the context/evidence substrate
+rather than a fixer. Stage 3 (intelligence layer / schema standard) is still gated
+on A1/A2/A3. Do not market Stage 3. Do not build status pages, SOC2, HA multi-region,
+or a built-in fixer LLM.
+
+**Implementation status, 2026-09-13:** Stage 1 floor has shipped and is expanding
+toward replacement workflows: OTLP and Sentry-envelope ingest, grouping/correlation,
+bounded redacted bundles, CLI, GraphQL, alerting/live streaming, mandatory GreptimeDB
++ Turso, full UI (incl. `/rum`), local-stdio MCP (plan 112 DONE). Remote MCP remains
+deferred (Plan 109). Stage 2/3 adoption and outcome-loop gates remain future direction.
 
 ## Purpose
 

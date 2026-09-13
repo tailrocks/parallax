@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { ErrorState } from "@/shared/console/error-state"
 import { setApiToken } from "@/platform/auth/api-token"
+import { apiEndpointLabel } from "@/platform/graphql/transport"
 
 export { RouteNotFoundPanel } from "@/shared/route-not-found"
 
@@ -99,7 +100,7 @@ export function RouteErrorPanel({ error, reset }: ErrorComponentProps) {
           The app shell is running, but this route could not load data from the local API. Verify
           the server at{" "}
           <code className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
-            127.0.0.1:4000
+            {apiEndpointLabel()}
           </code>
           <pre className="mt-3 max-h-48 w-full overflow-auto rounded-2xl bg-muted p-3 text-left font-mono text-xs text-rose-600 dark:text-rose-300">
             {safeErrorMessage(error)}

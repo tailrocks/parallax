@@ -52,7 +52,7 @@ describe("domain color records (plan 172)", () => {
   })
 
   it("covers issue and incident status tone slots", () => {
-    expectExhaustive(ISSUE_STATUS, ["open", "resolved"])
+    expectExhaustive(ISSUE_STATUS, ["open", "regressed", "resolved"])
     expectExhaustive(INCIDENT_STATUS, ["open", "resolved"])
     expect(ISSUE_STATUS.open.color).toBe("var(--severity-error)")
     expect(INCIDENT_STATUS.resolved.color).toBe("var(--success)")

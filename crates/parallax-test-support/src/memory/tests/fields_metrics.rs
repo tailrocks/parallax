@@ -333,9 +333,9 @@ async fn metric_labels_values_and_runtime_snapshot_derive_from_points() {
     assert_eq!(values, vec!["card".to_string()]);
 
     let mut capped_points = Vec::new();
-    for index in 0..110 {
+    for index in 0..METRIC_LABEL_VALUES_CAP + 50 {
         capped_points.push(MetricPointRow {
-            ts_nanos: 4_000_000_000 + index,
+            ts_nanos: 4_000_000_000 + index as u128,
             service: "checkout".into(),
             name: "process.cpu.utilization".into(),
             value: index as f64,
@@ -361,7 +361,11 @@ async fn metric_labels_values_and_runtime_snapshot_derive_from_points() {
         .metric_label_values("process.cpu.utilization", "runtime.name", 0..=5_000_000_000)
         .await
         .unwrap();
-    assert_eq!(capped.len(), 100);
+    assert_eq!(capped.len(), METRIC_LABEL_VALUES_CAP);
+    assert!(
+        capped.contains(&"runtime-199".to_string()),
+        "200-series cardinality proof must fit under the cap"
+    );
 
     let runtime = store
         .runtime_snapshot(Some("checkout"), None, 0..=3_000_000_000, 1_000_000_000)

@@ -2,7 +2,13 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { clearGraphqlCache, gqlString, graphql, graphqlCached } from "@/platform/graphql/transport"
+import {
+  apiEndpointLabel,
+  clearGraphqlCache,
+  gqlString,
+  graphql,
+  graphqlCached,
+} from "@/platform/graphql/transport"
 import { createAppQueryClient } from "@/platform/query/client"
 import { installBrowserQueryClient } from "@/platform/query/graphql-query"
 
@@ -74,5 +80,12 @@ describe("graphqlCached (TanStack Query)", () => {
     await graphql(query)
     await graphql(query)
     expect(fetch).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe("apiEndpointLabel", () => {
+  it("reports the same-origin host in the browser", () => {
+    expect(apiEndpointLabel()).toBe(window.location.host)
+    expect(apiEndpointLabel()).not.toBe("127.0.0.1:4000")
   })
 })

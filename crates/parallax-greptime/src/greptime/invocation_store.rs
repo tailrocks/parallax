@@ -45,24 +45,11 @@ impl crate::adapter::InvocationStore for GreptimeStore {
             .collect::<Vec<_>>()
             .join(", ");
         let rows = self
-            .sql(&format!(
-                r#"SELECT {ERROR_EVENT_PROJECTION}
-                   FROM (
-                     SELECT CAST("ts" AS BIGINT) AS "ts_nanos", "service", "fingerprint",
-                            "error_type", "message", "stacktrace", "source", "trace_id",
-                            "span_id", "invocation_id", "session_id", "service_version",
-                            "environment", json_to_string("attributes") AS "attributes",
-                            ROW_NUMBER() OVER (
-                              PARTITION BY "service", "fingerprint" ORDER BY "ts" DESC
-                            ) AS "event_rank"
-                     FROM error_events
-                     WHERE ("service", "fingerprint") IN ({issue_keys_sql})
-                       AND "ts" >= {} AND "ts" <= {}
-                   ) WHERE "event_rank" <= {}
-                   ORDER BY "service", "fingerprint", "ts_nanos" DESC"#,
-                sql_ts(*range.start()),
-                sql_ts(*range.end()),
-                limit_per_issue.min(MAX_ROWS),
+            .sql(&error_events_ranked_sql(
+                &issue_keys_sql,
+                *range.start(),
+                *range.end(),
+                limit_per_issue,
             ))
             .await?;
         for row in &rows {

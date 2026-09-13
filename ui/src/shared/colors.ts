@@ -211,6 +211,7 @@ export const TEST_FLAKY = {
 
 export const ISSUE_STATUS = {
   open: TONE.error,
+  regressed: TONE.warning,
   resolved: TONE.success,
 } as const satisfies Record<string, DomainTone>
 

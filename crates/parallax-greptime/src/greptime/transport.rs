@@ -224,6 +224,16 @@ impl GreptimeStore {
         Ok(found)
     }
 
+    /// Resolve one metric name to its native table + groupable labels.
+    ///
+    /// Precision contract (pinned by `metric_precision_greptime`): every
+    /// native-metric read binds millisecond `greptime_timestamp` bounds, which
+    /// is exactly what the OTLP-forward path creates (`TimestampMillisecond`,
+    /// any timestamp magnitude). Nanosecond tables — creatable only by
+    /// foreign writers (line protocol always auto-creates `TimestampNanosecond`;
+    /// the `precision` param scales values, not the column type; or explicit
+    /// `TIMESTAMP(9)` DDL) — match no ms window and read back empty, never
+    /// garbage.
     pub(super) async fn resolved_metric_table(
         &self,
         name: &str,

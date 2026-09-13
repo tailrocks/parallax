@@ -235,6 +235,14 @@ export type ChangedSpan = {
   readonly statusChanged: Scalars["Boolean"]["output"]
 }
 
+export type ChartAnnotation = {
+  readonly __typename?: "ChartAnnotation"
+  readonly kind: Scalars["String"]["output"]
+  readonly service: Scalars["String"]["output"]
+  readonly title: Scalars["String"]["output"]
+  readonly tsNanos: Scalars["String"]["output"]
+}
+
 export type Conversation = {
   readonly __typename?: "Conversation"
   readonly agentName: Maybe<Scalars["String"]["output"]>
@@ -286,6 +294,17 @@ export type DiffSpan = {
   readonly statusCode: Scalars["String"]["output"]
 }
 
+export type DominantDbQuery = {
+  readonly __typename?: "DominantDbQuery"
+  readonly count: Scalars["Int"]["output"]
+  readonly example: Scalars["String"]["output"]
+  readonly exampleSpanId: Scalars["String"]["output"]
+  readonly maxNs: Scalars["String"]["output"]
+  readonly normalized: Scalars["String"]["output"]
+  readonly service: Scalars["String"]["output"]
+  readonly totalNs: Scalars["String"]["output"]
+}
+
 export type DurationStats = {
   readonly __typename?: "DurationStats"
   /** Median representative-span duration, milliseconds. */
@@ -308,6 +327,12 @@ export type ErrorEvent = {
    * signal carried one — the anchor for error → run navigation.
    */
   readonly invocationId: Maybe<Scalars["String"]["output"]>
+  /**
+   * V8 frames resolved against the stored source maps for this event's
+   * (service, version). Empty for non-JS stacks; `resolved` is false per
+   * frame when no artifact matches.
+   */
+  readonly mappedFrames: ReadonlyArray<MappedFrame>
   readonly message: Scalars["String"]["output"]
   readonly service: Scalars["String"]["output"]
   /** `service.version` of the emitting resource (release context). */
@@ -550,6 +575,27 @@ export type LogRecord = {
   readonly tsNanos: Scalars["String"]["output"]
 }
 
+export type MappedFrame = {
+  readonly __typename?: "MappedFrame"
+  /** Generated 0-based column. */
+  readonly column: Scalars["Int"]["output"]
+  /** Generated (minified) file. */
+  readonly file: Scalars["String"]["output"]
+  /** Generated 1-based line. */
+  readonly line: Scalars["Int"]["output"]
+  /** Original symbol name, when the segment carries one. */
+  readonly name: Maybe<Scalars["String"]["output"]>
+  /** The raw `at …` frame line, for display fallback and copy. */
+  readonly raw: Scalars["String"]["output"]
+  readonly resolved: Scalars["Boolean"]["output"]
+  /** Original source file, when resolved. */
+  readonly source: Maybe<Scalars["String"]["output"]>
+  /** Original 0-based column, when resolved. */
+  readonly sourceColumn: Maybe<Scalars["Int"]["output"]>
+  /** Original 1-based line, when resolved. */
+  readonly sourceLine: Maybe<Scalars["Int"]["output"]>
+}
+
 export type MetricCatalogRow = {
   readonly __typename?: "MetricCatalogRow"
   /** gauge | sum | histogram — bounds legal aggregations client-side. */
@@ -618,14 +664,19 @@ export type Mutation = {
   /** Register an invocation (the CLI wrapper calls this before launching). */
   readonly invocationStart: Scalars["Boolean"]["output"]
   /**
-   * Set an issue's workflow status (open | resolved); returns the updated
-   * issue (spec §8: `Issue!`).
+   * Set an issue's workflow status (open | resolved). `regressed` is
+   * derived on recurrence, not set by this mutation.
    */
   readonly issueSetStatus: Issue
   /** Delete a named saved page state. */
   readonly savedViewDelete: Scalars["Boolean"]["output"]
   /** Create or update a named saved page state. */
   readonly savedViewSave: SavedView
+  /**
+   * Upload (or replace) one source-map v3 artifact for a (service,
+   * version, file) release file. Rejects malformed maps at the boundary.
+   */
+  readonly sourceMapUpload: SourceMapArtifact
 }
 
 export type MutationAlertDestinationDeleteArgs = {
@@ -707,6 +758,14 @@ export type MutationSavedViewSaveArgs = {
   state: Scalars["String"]["input"]
 }
 
+export type MutationSourceMapUploadArgs = {
+  debugId: InputMaybe<Scalars["String"]["input"]>
+  file: Scalars["String"]["input"]
+  map: Scalars["String"]["input"]
+  service: Scalars["String"]["input"]
+  version: Scalars["String"]["input"]
+}
+
 export type ObservedInvocation = {
   readonly __typename?: "ObservedInvocation"
   /** `app.mode` seen on this invocation's root spans. */
@@ -765,6 +824,12 @@ export type Query = {
   readonly backgroundCycles: ReadonlyArray<BackgroundCycle>
   /** Bounded redacted evidence bundle. Exactly one of fingerprint, invocationId, traceId, alertIncidentId. */
   readonly bundle: Maybe<BundleOut>
+  /**
+   * Chart markers derived from release windows (deploy/release). Same
+   * store as `releases`. `service` optional: omit to collect every service
+   * in the window (catalog → metric detail default path).
+   */
+  readonly chartAnnotations: ReadonlyArray<ChartAnnotation>
   /** Agent conversations (`gen_ai.conversation.id` spans) in one invocation. */
   readonly conversations: ReadonlyArray<Conversation>
   /** One saved dashboard by id. */
@@ -882,6 +947,13 @@ export type Query = {
   readonly recentTraces: ReadonlyArray<TraceSummary>
   /** Per-version service release windows in the selected time range. */
   readonly releases: ReadonlyArray<ReleaseWindow>
+  /** One RUM session with its timeline: page views, vitals, and errors. */
+  readonly rumSession: Maybe<RumSessionDetail>
+  /**
+   * Browser RUM sessions: spans grouped by `session.id` (independent of
+   * `cli.invocation.id`), newest activity first.
+   */
+  readonly rumSessions: ReadonlyArray<RumSession>
   /** Runtime metric lanes, scoped to exactly one service or run. */
   readonly runtimeSnapshot: ReadonlyArray<RuntimeMetric>
   /** Named saved page states, most recently updated first. */
@@ -911,6 +983,12 @@ export type Query = {
   readonly sessions: ReadonlyArray<Session>
   /** Per-signal count series for overview trend charts. */
   readonly signalCountSeries: ReadonlyArray<Point>
+  /**
+   * Stored source-map artifacts for one (service, version) release, newest
+   * first. Metadata only — map content is never exposed; frames resolve
+   * server-side via `ErrorEvent.mappedFrames`.
+   */
+  readonly sourceMaps: ReadonlyArray<SourceMapArtifact>
   /**
    * Raw read-only SQL against the telemetry engine (`GreptimeDB`) — the
    * engine's full query power over logs, traces, and metrics tables.
@@ -1021,6 +1099,12 @@ export type QueryBundleArgs = {
   maxTokens: InputMaybe<Scalars["Int"]["input"]>
   service: InputMaybe<Scalars["String"]["input"]>
   traceId: InputMaybe<Scalars["String"]["input"]>
+}
+
+export type QueryChartAnnotationsArgs = {
+  fromNanos: Scalars["String"]["input"]
+  service: InputMaybe<Scalars["String"]["input"]>
+  toNanos: Scalars["String"]["input"]
 }
 
 export type QueryConversationsArgs = {
@@ -1251,6 +1335,19 @@ export type QueryReleasesArgs = {
   toNanos: Scalars["String"]["input"]
 }
 
+export type QueryRumSessionArgs = {
+  limit: InputMaybe<Scalars["Int"]["input"]>
+  sessionId: Scalars["String"]["input"]
+}
+
+export type QueryRumSessionsArgs = {
+  errorOnly: InputMaybe<Scalars["Boolean"]["input"]>
+  fromNanos: Scalars["String"]["input"]
+  limit: InputMaybe<Scalars["Int"]["input"]>
+  service: InputMaybe<Scalars["String"]["input"]>
+  toNanos: Scalars["String"]["input"]
+}
+
 export type QueryRuntimeSnapshotArgs = {
   fromNanos: Scalars["String"]["input"]
   invocationId: InputMaybe<Scalars["String"]["input"]>
@@ -1308,6 +1405,11 @@ export type QuerySignalCountSeriesArgs = {
   service: InputMaybe<Scalars["String"]["input"]>
   stepSeconds: InputMaybe<Scalars["Int"]["input"]>
   toNanos: Scalars["String"]["input"]
+}
+
+export type QuerySourceMapsArgs = {
+  service: Scalars["String"]["input"]
+  version: Scalars["String"]["input"]
 }
 
 export type QuerySqlArgs = {
@@ -1422,6 +1524,58 @@ export type ReleaseWindow = {
   readonly version: Scalars["String"]["output"]
 }
 
+export type RumSession = {
+  readonly __typename?: "RumSession"
+  /** Last activity in the session (browsers emit no explicit session end). */
+  readonly endNanos: Scalars["String"]["output"]
+  readonly errorCount: Scalars["Int"]["output"]
+  readonly hasError: Scalars["Boolean"]["output"]
+  readonly service: Scalars["String"]["output"]
+  readonly sessionId: Scalars["String"]["output"]
+  readonly spanCount: Scalars["Int"]["output"]
+  readonly startNanos: Scalars["String"]["output"]
+  readonly traceCount: Scalars["Int"]["output"]
+  readonly viewCount: Scalars["Int"]["output"]
+  readonly vitalCount: Scalars["Int"]["output"]
+}
+
+export type RumSessionDetail = {
+  readonly __typename?: "RumSessionDetail"
+  readonly errors: ReadonlyArray<RumSessionError>
+  readonly session: RumSession
+  readonly views: ReadonlyArray<RumSessionPageView>
+  readonly vitals: ReadonlyArray<RumSessionVital>
+}
+
+export type RumSessionError = {
+  readonly __typename?: "RumSessionError"
+  readonly errorType: Maybe<Scalars["String"]["output"]>
+  readonly message: Scalars["String"]["output"]
+  readonly name: Scalars["String"]["output"]
+  readonly spanId: Scalars["String"]["output"]
+  readonly traceId: Scalars["String"]["output"]
+  readonly tsNanos: Scalars["String"]["output"]
+}
+
+export type RumSessionPageView = {
+  readonly __typename?: "RumSessionPageView"
+  readonly path: Maybe<Scalars["String"]["output"]>
+  readonly screen: Scalars["String"]["output"]
+  readonly spanId: Scalars["String"]["output"]
+  readonly traceId: Scalars["String"]["output"]
+  readonly tsNanos: Scalars["String"]["output"]
+}
+
+export type RumSessionVital = {
+  readonly __typename?: "RumSessionVital"
+  readonly name: Scalars["String"]["output"]
+  readonly rating: Maybe<Scalars["String"]["output"]>
+  readonly spanId: Scalars["String"]["output"]
+  readonly traceId: Scalars["String"]["output"]
+  readonly tsNanos: Scalars["String"]["output"]
+  readonly value: Scalars["Float"]["output"]
+}
+
 export type RuntimeMetric = {
   readonly __typename?: "RuntimeMetric"
   readonly family: Scalars["String"]["output"]
@@ -1534,6 +1688,17 @@ export type Session = {
 }
 
 export type SignalKind = "ERRORS" | "LOGS" | "METRIC_POINTS" | "SPANS" | "TRACES"
+
+export type SourceMapArtifact = {
+  readonly __typename?: "SourceMapArtifact"
+  readonly debugId: Maybe<Scalars["String"]["output"]>
+  readonly file: Scalars["String"]["output"]
+  readonly mapBytes: Scalars["Int"]["output"]
+  readonly mapSha256: Scalars["String"]["output"]
+  readonly service: Scalars["String"]["output"]
+  readonly uploadedAtNanos: Scalars["String"]["output"]
+  readonly version: Scalars["String"]["output"]
+}
 
 export type Span = {
   readonly __typename?: "Span"
@@ -1702,6 +1867,8 @@ export type TestVariantDetail = {
 
 export type Trace = {
   readonly __typename?: "Trace"
+  /** Ranked database queries in this trace, grouped by normalized SQL. */
+  readonly dominantDbQueries: ReadonlyArray<DominantDbQuery>
   readonly spans: ReadonlyArray<Span>
   readonly traceId: Scalars["String"]["output"]
 }
