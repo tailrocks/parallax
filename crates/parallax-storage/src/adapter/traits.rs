@@ -493,6 +493,28 @@ pub trait RawSqlStore: Send + Sync {
     async fn raw_sql(&self, query: &str) -> StorageResult<SqlResult>;
 }
 
+#[async_trait::async_trait]
+pub trait RumSessionStore: Send + Sync {
+    /// Browser RUM sessions: spans grouped by `session.id` inside `range`,
+    /// newest activity first. `service` matches spans of that service;
+    /// `error_only` keeps sessions with at least one error span.
+    async fn rum_sessions(
+        &self,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        error_only: bool,
+        limit: usize,
+    ) -> StorageResult<Vec<RumSession>>;
+    /// One RUM session with its timeline (page views, vitals, errors), each
+    /// list time ascending and truncated to `limit`. `None` when no span
+    /// carries the session id.
+    async fn rum_session_detail(
+        &self,
+        session_id: &str,
+        limit: usize,
+    ) -> StorageResult<Option<RumSessionDetail>>;
+}
+
 pub trait TelemetryStore:
     IngestStore
     + TraceStore
@@ -507,6 +529,7 @@ pub trait TelemetryStore:
     + ErrorAnalyticsStore
     + LogCountStore
     + RawSqlStore
+    + RumSessionStore
 {
 }
 
@@ -524,5 +547,6 @@ impl<T> TelemetryStore for T where
         + ErrorAnalyticsStore
         + LogCountStore
         + RawSqlStore
+        + RumSessionStore
 {
 }
