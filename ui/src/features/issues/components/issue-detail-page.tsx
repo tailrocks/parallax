@@ -635,7 +635,7 @@ function CorrelationCard({
                           style={token ? { color: severityColor(token) } : undefined}
                           className="font-medium"
                         >
-                          {log.severityText}
+                          {log.severityText || "log"}
                         </span>
                         <span className="break-words whitespace-pre-wrap">{log.body}</span>
                       </li>

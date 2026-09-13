@@ -7,18 +7,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { customRange, resolvePreset } from "@/domain/time-range/range"
 import { IssueDetailContent, IssuesContent, type IssuesData } from "@/features/issues"
+import type * as IssuesApi from "@/features/issues/api/issues-api"
 import { loadIssueCorrelation } from "@/features/issues/api/issues-api"
 import { renderTestRouter } from "@/test/router"
 
 vi.mock("@/features/issues/api/issues-api", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/issues/api/issues-api")>()
+  const actual = await importOriginal<typeof IssuesApi>()
   return {
     ...actual,
     loadIssueCorrelation: vi.fn(),
   }
 })
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.mocked(loadIssueCorrelation).mockReset()
+})
 
 const range = resolvePreset("24h", 1_720_000_000_000)
 const custom = customRange("1500000000", "4000000000")
@@ -149,10 +153,6 @@ beforeEach(() => {
     if (!deferred) throw new Error(`missing correlation for ${traceId}`)
     return deferred.promise
   })
-})
-
-afterEach(() => {
-  vi.mocked(loadIssueCorrelation).mockReset()
 })
 
 function renderWithRouter(component: React.ReactNode, path = "/issues") {
