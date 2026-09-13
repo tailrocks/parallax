@@ -135,6 +135,14 @@ pub trait ServiceAnalyticsStore: Send + Sync {
         service: &str,
         range: RangeInclusive<u128>,
     ) -> StorageResult<Vec<ReleaseWindow>>;
+    /// Per-version crash-free health for one service, ordered by first
+    /// sighting (see [`ReleaseHealth`] for the rollup contract and
+    /// [`crate::projections::flag_suspect_releases`] for the suspect rule).
+    async fn release_health(
+        &self,
+        service: &str,
+        range: RangeInclusive<u128>,
+    ) -> StorageResult<Vec<ReleaseHealth>>;
     /// Resource-identity catalog rows, one per service in the window.
     async fn service_catalog(
         &self,

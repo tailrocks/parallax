@@ -693,6 +693,12 @@ type Query {
   "Per-version service release windows in the selected time range."
   releases(service: String!, fromNanos: String!, toNanos: String!): [ReleaseWindow!]!
   """
+    Per-version crash-free session/user health in the selected time
+    range. A release is `suspectRelease` when its session crash rate
+    strictly regresses versus the previous release (first-seen order).
+  """
+  releaseHealth(service: String!, fromNanos: String!, toNanos: String!): [ReleaseHealth!]!
+  """
     Chart markers derived from release windows (deploy/release). Same
     store as `releases`. `service` optional: omit to collect every service
     in the window (catalog → metric detail default path).
@@ -906,6 +912,21 @@ type Query {
     retention: last 500 per rule).
   """
   alertChecks(ruleId: String!, limit: Int): [AlertCheck!]!
+}
+
+type ReleaseHealth {
+  version: String!
+  firstSeenNanos: String!
+  lastSeenNanos: String!
+  spanCount: String!
+  sessionCount: String!
+  crashedSessionCount: String!
+  crashFreeSessionRate: Float!
+  userCount: String!
+  crashedUserCount: String!
+  crashFreeUserRate: Float!
+  errorCount: String!
+  suspectRelease: Boolean!
 }
 
 type ReleaseWindow {

@@ -7,8 +7,9 @@ P0 freeze: finite list in scratch `p0-freeze.txt` (same 14 items; not grown).
 **Parallax-today** is HEAD `544e5a3d83fd7662c9849526225880a49c7e2317`
 (`goal/final-p0-hotfix`), not origin/main and not 2026-07 ledger prose. Pointers:
 
-- GraphQL SDL `ui/graphql/schema.graphql` (78 Query / 14 Mutation, recounted
-  2026-09-13 audit M1: `chartAnnotations` new in PR71 — same count as ledger)
+- GraphQL SDL `ui/graphql/schema.graphql` (79 Query / 14 Mutation, recounted
+  2026-09-14 R5: `releaseHealth` new — same count as ledger; 2026-09-13 audit
+  M1: `chartAnnotations` new in PR71)
 - Issues: `(service, fingerprint)` PK (`crates/parallax-metadata/src/turso/connection.rs`);
   UI `/issues/$service/$fingerprint`; occurrence selection + `CorrelationCard`
   (`ui/src/features/issues/`)
@@ -33,7 +34,7 @@ deliberate not-compete · `watch` = drift.
 | Issue/error inbox | list + trend sparkline, open/resolved/regressed badge, service-scoped identity, sort LAST_SEEN/FIRST_SEEN/EVENTS/TREND; titles wrap (no `table-fixed` truncate) | Issue stream w/ for-review/new/regressed tabs, saved searches, Cmd+K triage | Sentry 26.8.0 | fewer clicks to a verdict; tabs encode lifecycle | P0 | none for derived `regressed` | triage tabs, bulk ops | `product:issue_context`, `sentry:envelopes` | keep (tabs P1) |
 | Grouping + fingerprints | deterministic `fp-v1` (`parallax-analysis/src/fingerprint.rs`); grouping explanation on Issue | server grouping + custom fingerprint rules + grouping preview | Sentry 26.8.0 | adjustable when deterministic is wrong | P1 | fingerprint rule overrides | grouping preview + merge/split | `issues:burst`, `issues:multi_language` | adopt |
 | Occurrence timeline | per-occurrence selection + trace correlation (HEAD) | event timeline w/ volume graph + per-event drill | Sentry 26.8.0 | richer per-occurrence forensics | P1 | none major | volume graph on detail | c8 | adopt |
-| Regression detection | **shipped:** resolved issue + new occurrence → `regressed` (keep `resolved_at`); GraphQL filter; UI badge. No crash-free/suspect-release rollup | auto-regress on resolved-issue recurrence + release suspect | Sentry 26.8.0 | suspect-release answers “which release broke it” | P0 | first/last release rollup remaining | suspect-release remaining | `product:issue_regression`, `deploy:release_regression` | keep core / remaining release-health |
+| Regression detection | **shipped:** resolved issue + new occurrence → `regressed` (keep `resolved_at`); GraphQL filter; UI badge. **R5 shipped:** crash-free session/user rollup + suspect-release flag (`releaseHealth`, strip badge) | auto-regress on resolved-issue recurrence + release suspect | Sentry 26.8.0 | suspect-release answers “which release broke it” | P0 | first/last release rollup remaining | first/last release rollup | `product:issue_regression`, `deploy:release_regression` | keep |
 | New/resolved states | `issueSetStatus` open/resolve; derived `regressed` on recurrence; `resolved_at` kept | resolved-in-release, ignored/archived, auto-resolve | Sentry 26.8.0 | ignored/archived + resolved-in-release still missing | P0 | none for derived `regressed` | ignored/archived P1 | `product:issue_context` | keep |
 | Assignment + ownership | none (no assignee column) | assignee + CODEOWNERS + Slack assign | Sentry 26.8.0 | triage ends in an owner | **P1** (dropped from freeze) | assignee store | assign control | none | adopt |
 | Severity | severity words + ramp | level + issue priority | Sentry 26.8.0 | priority ≠ level | P2 | priority score | priority sort | none | watch |
@@ -44,7 +45,7 @@ deliberate not-compete · `watch` = drift.
 | Tags/dimensions | tags JSON + cross-links | tag distribution facets per issue | Sentry 26.8.0 | Parallax cross-link unique; Sentry distribution deeper | P1 | none | distribution bars | c8 | keep |
 | Users/sessions | `sessionId` on ErrorEvent; no user rollup | user tab: count, identity, affected-user trend | Sentry 26.8.0 | “how many users” is the triage question | P1 | user identity rollup | users tab | RUM partial | adopt |
 | Environment | `environment` on ErrorEvent | env filter + per-env release health | Sentry 26.8.0 | env-scoped verdicts | P1 | env rollup | env filter | a13 (2 versions) | adopt |
-| Release/build/deploy | `serviceVersion` on events; `releases()` windows; GitHub deploy ingest; service release strip | release health: adoption, crash-free, suspect commits | Sentry 26.8.0 | release *verdict*, not a strip | P0 | crash-free/session rollup | release health panel | a13, `product:github_ingest` | remaining |
+| Release/build/deploy | `serviceVersion` on events; `releases()` windows; GitHub deploy ingest; service release strip; **R5 shipped:** `releaseHealth` crash-free session/user rollup + suspect-release flag on strip | release health: adoption, crash-free, suspect commits | Sentry 26.8.0 | release *verdict*, not a strip | P0 | adoption + suspect commits | adoption/suspect-commit depth | a13, `product:github_ingest` | keep (crash-free/suspect) / remaining (adoption, suspect commits) |
 | First/last seen, frequency | firstSeen/lastSeen/eventCount + trend | seen-stats + lifetime sparklines | Sentry 26.8.0 | polish gap only | P2 | none | stats polish | c8 | keep |
 | Trace association | selected occurrence → `traceId`; CorrelationCard loads `trace` + `logsByTrace` | trace link + waterline on issue | Sentry 26.8.0 | tie on association; Sentry waterline denser | P0 | none | waterline embed optional | c8, `product:ui_agent_verify` | keep |
 | Logs around error | CorrelationCard shows logs for selected occurrence’s trace | logs-on-issue + events-around | HyperDX 2.38.0 / Sentry | HyperDX log↔trace stitch is one gesture from any log | P0 | none (data present) | keep; also jump from log row → issue | `logs:trace_correlation`, c8 | keep |
@@ -171,7 +172,7 @@ deliberate not-compete · `watch` = drift.
 
 Seed freeze validated against live pins + HEAD code. Later discoveries stay P1 / P0-next.
 
-1. **Error triage lifecycle** — identity, occurrence, open/resolve, **derived `regressed` shipped**. Remaining: crash-free / first-last release rollup.
+1. **Error triage lifecycle** — identity, occurrence, open/resolve, **derived `regressed` shipped**, **crash-free session/user + suspect-release shipped (R5)**. Remaining: first-last release rollup.
 2. **Cross-signal navigation** — issue↔trace↔logs↔invocation↔exemplar↔peak-window traces **shipped**. Remaining: RUM session model (not a remix).
 3. **Logs** — surrounding + span/trace correlation **shipped**; explorer is not rows-only; **alert-from-log shipped** (`log_count`).
 4. **Traces** — waterfall/tree **keep**; **`dominantDbQueries` shipped**; **alert-from-trace shipped** (`error_rate`/`p95_latency`).

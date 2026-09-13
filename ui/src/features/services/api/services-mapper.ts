@@ -2,6 +2,7 @@ import type { ServiceDetailQuery } from "@/features/services/api/service-detail.
 import type { ServicesListQuery } from "@/features/services/api/services-list.generated"
 import type {
   MetricExemplar,
+  ReleaseHealth,
   ReleaseWindow,
   SeriesPoint,
   ServiceDetailData,
@@ -102,6 +103,23 @@ function mapRelease(row: {
   }
 }
 
+function mapReleaseHealth(row: ServiceDetailQuery["releaseHealth"][number]): ReleaseHealth {
+  return {
+    version: row.version,
+    firstSeenNanos: row.firstSeenNanos,
+    lastSeenNanos: row.lastSeenNanos,
+    spanCount: row.spanCount,
+    sessionCount: row.sessionCount,
+    crashedSessionCount: row.crashedSessionCount,
+    crashFreeSessionRate: row.crashFreeSessionRate,
+    userCount: row.userCount,
+    crashedUserCount: row.crashedUserCount,
+    crashFreeUserRate: row.crashFreeUserRate,
+    errorCount: row.errorCount,
+    suspectRelease: row.suspectRelease,
+  }
+}
+
 function mapExemplar(row: {
   readonly tsNanos: string
   readonly service: string
@@ -165,6 +183,7 @@ export function mapServiceDetail(data: ServiceDetailQuery): ServiceDetailData {
     red: mapRed(data.red),
     overview: mapOverview(data.overview),
     releases: data.releases.map(mapRelease),
+    releaseHealth: data.releaseHealth.map(mapReleaseHealth),
     serviceCatalog: data.serviceCatalog.map(mapCatalogRow),
     httpDurationExemplars: data.httpDurationExemplars.map(mapExemplar),
     rpcDurationExemplars: data.rpcDurationExemplars.map(mapExemplar),

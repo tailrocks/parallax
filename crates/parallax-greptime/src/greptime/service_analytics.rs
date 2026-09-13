@@ -267,6 +267,74 @@ impl crate::adapter::ServiceAnalyticsStore for GreptimeStore {
             .collect())
     }
 
+    async fn release_health(
+        &self,
+        service: &str,
+        range: RangeInclusive<u128>,
+    ) -> StorageResult<Vec<ReleaseHealth>> {
+        // Identity columns only exist after a span carrying the attribute
+        // arrives; probe once so the builders degrade absent columns to
+        // NULL (no sessions/users) instead of failing the whole read.
+        let schema = self
+            .sql_with_schema_lenient("SELECT * FROM opentelemetry_traces LIMIT 0")
+            .await?;
+        let sql = release_health_sql(service, *range.start(), *range.end(), &schema.columns);
+        let universe = match self.sql(&sql.universe).await {
+            Err(error) if is_missing_table(&error) || is_missing_column(&error) => Vec::new(),
+            other => other?,
+        };
+        // A missing `error_events` table means no derived errors yet: the
+        // universe still reports (1.0 rates), it must not vanish.
+        let crashes = match self.sql(&sql.crashes).await {
+            Err(error) if is_missing_table(&error) || is_missing_column(&error) => Vec::new(),
+            other => other?,
+        };
+        let crashed_users = match self.sql(&sql.crashed_users).await {
+            Err(error) if is_missing_table(&error) || is_missing_column(&error) => Vec::new(),
+            other => other?,
+        };
+
+        let crash_by_version: BTreeMap<String, (u64, u64)> = crashes
+            .iter()
+            .map(|row| {
+                (
+                    str_at(row, 0),
+                    (u128_at(row, 1) as u64, u128_at(row, 2) as u64),
+                )
+            })
+            .collect();
+        let crashed_users_by_version: BTreeMap<String, u64> = crashed_users
+            .iter()
+            .map(|row| (str_at(row, 0), u128_at(row, 1) as u64))
+            .collect();
+        let mut rows: Vec<ReleaseHealth> = universe
+            .iter()
+            .filter_map(|row| {
+                let version = str_at(row, 0);
+                if version.is_empty() {
+                    return None;
+                }
+                let (crashed_sessions, error_count) =
+                    crash_by_version.get(&version).copied().unwrap_or((0, 0));
+                Some(ReleaseHealth::from_counts(
+                    version.clone(),
+                    u128_at(row, 1),
+                    u128_at(row, 2),
+                    u128_at(row, 3) as u64,
+                    u128_at(row, 4) as u64,
+                    crashed_sessions,
+                    u128_at(row, 5) as u64,
+                    crashed_users_by_version.get(&version).copied().unwrap_or(0),
+                    error_count,
+                ))
+            })
+            .collect();
+        // `universe` already arrives in (first_seen, version) order; the
+        // flag pass requires it.
+        parallax_storage::projections::flag_suspect_releases(&mut rows);
+        Ok(rows)
+    }
+
     async fn service_catalog(
         &self,
         range: RangeInclusive<u128>,

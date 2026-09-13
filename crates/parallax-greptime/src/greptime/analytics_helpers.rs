@@ -508,6 +508,121 @@ pub(super) fn error_event_from_row(row: &[serde_json::Value]) -> ErrorEventRow {
     }
 }
 
+/// The three release-health reads: per-version span/session/user universe,
+/// per-version crashed sessions + error counts, and per-version crashed
+/// users (span↔error join on service/version/session).
+pub(super) struct ReleaseHealthSql {
+    pub universe: String,
+    pub crashes: String,
+    pub crashed_users: String,
+}
+
+/// Identity expression over the probed trace columns: each key span-attr
+/// first, then resource-attr; keys in precedence order. Absent columns
+/// degrade to NULL (no sessions/users), never to a failed query.
+/// Precedence mirrors the memory rollup (`RELEASE_HEALTH_USER_ATTRS`).
+fn release_health_identity_expr(columns: &[String], attrs: &[&str], alias: &str) -> String {
+    let mut idents = Vec::new();
+    for attr in attrs {
+        if columns
+            .iter()
+            .any(|column| column == &semconv::span_column(attr))
+        {
+            idents.push(format!("{alias}.{}", span_attr_ident(attr)));
+        }
+        if columns
+            .iter()
+            .any(|column| column == &semconv::resource_column(attr))
+        {
+            idents.push(format!("{alias}.{}", resource_attr_ident(attr)));
+        }
+    }
+    if idents.is_empty() {
+        return "NULL".to_string();
+    }
+    format!("NULLIF(COALESCE({}), '')", idents.join(", "))
+}
+
+/// Pure SQL builders (unit-tested) for [`ReleaseHealth`](crate::adapter::ReleaseHealth):
+/// the universe groups the same spans as `release_windows`; crashes read
+/// the derived `error_events` table; crashed users join the two.
+pub(super) fn release_health_sql(
+    service: &str,
+    start_nanos: u128,
+    end_nanos: u128,
+    trace_columns: &[String],
+) -> ReleaseHealthSql {
+    let version_column = resource_attr_ident(semconv::SERVICE_VERSION);
+    let start = sql_ts(start_nanos);
+    let end = sql_ts(end_nanos);
+    let service_escaped = escape(service);
+    let universe = format!(
+        r#"SELECT {version_column} AS "version",
+                  MIN(CAST("timestamp" AS BIGINT)) AS "first_seen_nanos",
+                  MAX(CAST("timestamp" AS BIGINT)) AS "last_seen_nanos",
+                  COUNT(*) AS "span_count",
+                  COUNT(DISTINCT {session}) AS "sessions",
+                  COUNT(DISTINCT {user}) AS "users"
+           FROM opentelemetry_traces
+           WHERE "service_name" = '{service_escaped}'
+             AND "timestamp" >= {start}
+             AND "timestamp" <= {end}
+             AND {version_column} IS NOT NULL
+             AND {version_column} != ''
+           GROUP BY {version_column}
+           ORDER BY "first_seen_nanos" ASC, "version" ASC"#,
+        session = release_health_identity_expr(
+            trace_columns,
+            &[semconv::SESSION_ID],
+            "opentelemetry_traces"
+        ),
+        user = release_health_identity_expr(
+            trace_columns,
+            RELEASE_HEALTH_USER_ATTRS,
+            "opentelemetry_traces"
+        ),
+    );
+    let crashes = format!(
+        r#"SELECT "service_version" AS "version",
+                  COUNT(DISTINCT NULLIF("session_id", '')) AS "crashed",
+                  COUNT(*) AS "errors"
+           FROM error_events
+           WHERE "service" = '{service_escaped}'
+             AND "ts" >= {start}
+             AND "ts" <= {end}
+             AND "service_version" IS NOT NULL
+             AND "service_version" != ''
+           GROUP BY "service_version""#,
+    );
+    let crashed_users = format!(
+        r#"SELECT t.{version_column} AS "version",
+                  COUNT(DISTINCT {user}) AS "crashed_users"
+           FROM opentelemetry_traces t
+           JOIN error_events e
+             ON e."service" = t."service_name"
+             AND e."service_version" = t.{version_column}
+             AND e."session_id" = {session}
+           WHERE t."service_name" = '{service_escaped}'
+             AND t."timestamp" >= {start}
+             AND t."timestamp" <= {end}
+             AND t.{version_column} IS NOT NULL
+             AND t.{version_column} != ''
+             AND e."ts" >= {start}
+             AND e."ts" <= {end}
+             AND e."service" = '{service_escaped}'
+             AND e."session_id" IS NOT NULL
+             AND e."session_id" != ''
+           GROUP BY t.{version_column}"#,
+        session = release_health_identity_expr(trace_columns, &[semconv::SESSION_ID], "t"),
+        user = release_health_identity_expr(trace_columns, RELEASE_HEALTH_USER_ATTRS, "t"),
+    );
+    ReleaseHealthSql {
+        universe,
+        crashes,
+        crashed_users,
+    }
+}
+
 /// Decode one extension-table row. The bucket JSON arrays are ingest-written
 /// and well-formed; anything else decodes to empty (no mass → skipped by the
 /// series builders, never an error).

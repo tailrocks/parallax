@@ -182,6 +182,9 @@ Living section. Re-verify on the next major redesign.
   Workspace nav; `EmptyState action`; legend `aria-pressed`.
 - 2026-09-13 — `ISSUE_STATUS.regressed` (warning tone); skip-link on
   `app-shell` `#main-content`; `LogsLink` carries `trace`.
+- 2026-09-14 — R5: release strip renders crash-free session % per
+  version from `releaseHealth`; suspect releases get destructive tone +
+  `N suspect` badge (word, not color alone).
 
 ## 8. Interaction contract
 

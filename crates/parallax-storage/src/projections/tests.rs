@@ -245,3 +245,43 @@ fn conversations_sum_tokens_where_present() {
     assert_eq!(conversations[0].input_tokens, Some(150.0));
     assert_eq!(conversations[0].output_tokens, Some(50.0));
 }
+
+fn health_row(version: &str, first_seen: u128, sessions: u64, crashed: u64) -> ReleaseHealth {
+    ReleaseHealth::from_counts(
+        version.to_string(),
+        first_seen,
+        first_seen + 10,
+        sessions * 3,
+        sessions,
+        crashed,
+        sessions,
+        crashed,
+        crashed,
+    )
+}
+
+#[test]
+fn suspect_flag_marks_crash_regression_only() {
+    let mut rows = vec![
+        health_row("v1", 10, 10, 0),
+        health_row("v2", 20, 10, 5),
+        health_row("v3", 30, 10, 5),
+        health_row("v4", 40, 10, 1),
+    ];
+    flag_suspect_releases(&mut rows);
+    assert!(!rows[0].suspect_release, "first release never suspect");
+    assert!(rows[1].suspect_release, "0% -> 50% crash regresses");
+    assert!(
+        !rows[2].suspect_release,
+        "flat 50% crash rate is not a regression"
+    );
+    assert!(!rows[3].suspect_release, "improvement is not a regression");
+}
+
+#[test]
+fn suspect_flag_ignores_sessionless_releases() {
+    let mut rows = vec![health_row("v1", 10, 0, 0), health_row("v2", 20, 0, 0)];
+    flag_suspect_releases(&mut rows);
+    assert!(rows.iter().all(|row| !row.suspect_release));
+    assert!((rows[0].crash_free_session_rate - 1.0).abs() < f64::EPSILON);
+}

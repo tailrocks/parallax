@@ -38,8 +38,8 @@ use resolvers::{
     AlertRulePreview, AlertRuleState, AttributeCompareRow, AttributeFilterInput, BundleOut,
     ChartAnnotation, CriticalPath, Dashboard, DurationStats, EvidenceGap, Facet, FieldKey,
     FieldStats, Investigation, Invocation, Issue, IssueList, IssueSort, LogRecord, MetricExemplar,
-    ObservedInvocation, Overview, Point, ReleaseWindow, RuntimeMetric, SavedView, Series,
-    ServiceCatalogRow, ServiceMap, ServiceOverview, ServiceSummary, SignalKind, SpanRed,
+    ObservedInvocation, Overview, Point, ReleaseHealth, ReleaseWindow, RuntimeMetric, SavedView,
+    Series, ServiceCatalogRow, ServiceMap, ServiceOverview, ServiceSummary, SignalKind, SpanRed,
     SqlResultOut, StoryBeat, TestCaseDetail, TestConfigurationFilterInput, TestExplorerPage,
     TestExplorerSort, TestFlakyState, TestRollup, Trace, TraceDiff, TraceEventsOut, TraceList,
     TraceSort, TraceSummary, TrendPoint,
@@ -148,6 +148,11 @@ impl Query {
 
     /// Per-version service release windows in the selected time range.
     async fn releases(context: &ApiContext, service: String, from_nanos: String, to_nanos: String,) -> FieldResult<Vec<ReleaseWindow>> { resolvers::services::releases(context, service, from_nanos, to_nanos).await }
+
+    /// Per-version crash-free session/user health in the selected time
+    /// range. A release is `suspectRelease` when its session crash rate
+    /// strictly regresses versus the previous release (first-seen order).
+    async fn release_health(context: &ApiContext, service: String, from_nanos: String, to_nanos: String,) -> FieldResult<Vec<ReleaseHealth>> { resolvers::services::release_health(context, service, from_nanos, to_nanos).await }
 
     /// Chart markers derived from release windows (deploy/release). Same
     /// store as `releases`. `service` optional: omit to collect every service

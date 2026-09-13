@@ -57,6 +57,20 @@ export type ServiceDetailQuery = {
     readonly lastSeenNanos: string
     readonly spanCount: string
   }>
+  readonly releaseHealth: ReadonlyArray<{
+    readonly version: string
+    readonly firstSeenNanos: string
+    readonly lastSeenNanos: string
+    readonly spanCount: string
+    readonly sessionCount: string
+    readonly crashedSessionCount: string
+    readonly crashFreeSessionRate: number
+    readonly userCount: string
+    readonly crashedUserCount: string
+    readonly crashFreeUserRate: number
+    readonly errorCount: string
+    readonly suspectRelease: boolean
+  }>
   readonly serviceCatalog: ReadonlyArray<{
     readonly name: string
     readonly serviceVersion: string | null
@@ -390,6 +404,44 @@ export const ServiceDetailDocument = {
                 { kind: "Field", name: { kind: "Name", value: "firstSeenNanos" } },
                 { kind: "Field", name: { kind: "Name", value: "lastSeenNanos" } },
                 { kind: "Field", name: { kind: "Name", value: "spanCount" } },
+              ],
+            },
+          },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "releaseHealth" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "service" },
+                value: { kind: "Variable", name: { kind: "Name", value: "service" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "fromNanos" },
+                value: { kind: "Variable", name: { kind: "Name", value: "fromNanos" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "toNanos" },
+                value: { kind: "Variable", name: { kind: "Name", value: "toNanos" } },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "version" } },
+                { kind: "Field", name: { kind: "Name", value: "firstSeenNanos" } },
+                { kind: "Field", name: { kind: "Name", value: "lastSeenNanos" } },
+                { kind: "Field", name: { kind: "Name", value: "spanCount" } },
+                { kind: "Field", name: { kind: "Name", value: "sessionCount" } },
+                { kind: "Field", name: { kind: "Name", value: "crashedSessionCount" } },
+                { kind: "Field", name: { kind: "Name", value: "crashFreeSessionRate" } },
+                { kind: "Field", name: { kind: "Name", value: "userCount" } },
+                { kind: "Field", name: { kind: "Name", value: "crashedUserCount" } },
+                { kind: "Field", name: { kind: "Name", value: "crashFreeUserRate" } },
+                { kind: "Field", name: { kind: "Name", value: "errorCount" } },
+                { kind: "Field", name: { kind: "Name", value: "suspectRelease" } },
               ],
             },
           },
@@ -785,6 +837,22 @@ export const ServiceDetailQuerySchema: z.ZodType<ServiceDetailQuery> = z.object(
       firstSeenNanos: z.string(),
       lastSeenNanos: z.string(),
       spanCount: z.string(),
+    })
+  ),
+  releaseHealth: z.array(
+    z.object({
+      version: z.string(),
+      firstSeenNanos: z.string(),
+      lastSeenNanos: z.string(),
+      spanCount: z.string(),
+      sessionCount: z.string(),
+      crashedSessionCount: z.string(),
+      crashFreeSessionRate: z.number(),
+      userCount: z.string(),
+      crashedUserCount: z.string(),
+      crashFreeUserRate: z.number(),
+      errorCount: z.string(),
+      suspectRelease: z.boolean(),
     })
   ),
   serviceCatalog: z.array(

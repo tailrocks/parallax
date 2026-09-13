@@ -45,6 +45,21 @@ export interface ReleaseWindow {
   readonly spanCount: string
 }
 
+export interface ReleaseHealth {
+  readonly version: string
+  readonly firstSeenNanos: string
+  readonly lastSeenNanos: string
+  readonly spanCount: string
+  readonly sessionCount: string
+  readonly crashedSessionCount: string
+  readonly crashFreeSessionRate: number
+  readonly userCount: string
+  readonly crashedUserCount: string
+  readonly crashFreeUserRate: number
+  readonly errorCount: string
+  readonly suspectRelease: boolean
+}
+
 export interface TraceSummary {
   readonly traceId: string
   readonly rootName: string
@@ -59,6 +74,7 @@ export interface ServiceDetailData {
   readonly red: SpanRed
   readonly overview: ServiceOverview
   readonly releases: readonly ReleaseWindow[]
+  readonly releaseHealth: readonly ReleaseHealth[]
   readonly serviceCatalog: readonly ServiceCatalogRow[]
   readonly httpDurationExemplars: readonly MetricExemplar[]
   readonly rpcDurationExemplars: readonly MetricExemplar[]

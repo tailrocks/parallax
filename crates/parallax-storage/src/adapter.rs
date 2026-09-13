@@ -194,6 +194,92 @@ pub struct ReleaseWindow {
     pub span_count: u64,
 }
 
+/// Span/resource attribute keys identifying the end user behind a span, in
+/// precedence order: OTel `user.id` wins over legacy `enduser.id`. Both
+/// engines build the user rollup from this one list so precedence cannot
+/// diverge.
+pub const RELEASE_HEALTH_USER_ATTRS: &[&str] = &["user.id", "enduser.id"];
+
+/// Crash-free health of one (service, version) release inside a window.
+///
+/// Universe: in-range spans of the service whose resource carries a
+/// non-empty `service.version` — the same universe as [`ReleaseWindow`].
+/// A session (span/resource `session.id`) or user ([`RELEASE_HEALTH_USER_ATTRS`]
+/// on span, else resource) counts once per release. A session *crashes* in
+/// release V when an in-range error event carries
+/// `(service, service_version = V, session_id)`; a user crashes in V when
+/// one of their V spans rides a session crashed in V. Error events without
+/// a session still count in `error_count` but crash no session/user.
+/// Rates are `1 − crashed / total` (`1.0` when the total is zero).
+/// `suspect_release` is set by [`crate::projections::flag_suspect_releases`].
+#[derive(Debug, Clone, PartialEq)]
+pub struct ReleaseHealth {
+    pub version: String,
+    pub first_seen_nanos: u128,
+    pub last_seen_nanos: u128,
+    pub span_count: u64,
+    pub session_count: u64,
+    pub crashed_session_count: u64,
+    pub crash_free_session_rate: f64,
+    pub user_count: u64,
+    pub crashed_user_count: u64,
+    pub crash_free_user_rate: f64,
+    pub error_count: u64,
+    pub suspect_release: bool,
+}
+
+impl ReleaseHealth {
+    /// Build one row from raw counts. Both engines funnel through here so
+    /// the rate formula is identical bit-for-bit; the suspect flag is
+    /// applied later by [`crate::projections::flag_suspect_releases`].
+    #[must_use]
+    #[expect(
+        clippy::too_many_arguments,
+        clippy::cast_precision_loss,
+        reason = "one row, one call site per engine; ratios over bounded session/user counts"
+    )]
+    pub fn from_counts(
+        version: String,
+        first_seen_nanos: u128,
+        last_seen_nanos: u128,
+        span_count: u64,
+        session_count: u64,
+        crashed_session_count: u64,
+        user_count: u64,
+        crashed_user_count: u64,
+        error_count: u64,
+    ) -> Self {
+        fn crash_free(total: u64, crashed: u64) -> f64 {
+            if total == 0 {
+                1.0
+            } else {
+                1.0 - (crashed.min(total) as f64 / total as f64)
+            }
+        }
+        Self {
+            version,
+            first_seen_nanos,
+            last_seen_nanos,
+            span_count,
+            session_count,
+            crashed_session_count,
+            crash_free_session_rate: crash_free(session_count, crashed_session_count),
+            user_count,
+            crashed_user_count,
+            crash_free_user_rate: crash_free(user_count, crashed_user_count),
+            error_count,
+            suspect_release: false,
+        }
+    }
+
+    /// Session crash rate (`1 − crash_free_session_rate`), the regression
+    /// signal [`crate::projections::flag_suspect_releases`] compares.
+    #[must_use]
+    pub fn crash_rate(&self) -> f64 {
+        1.0 - self.crash_free_session_rate
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ServiceCatalogRow {
     pub name: String,
