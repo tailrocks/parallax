@@ -880,6 +880,8 @@ export type Query = {
    * legality (gauge→avg|min|max|last, sum→sum|rate|increase, histogram→p50|p95|p99|avg),
    * optional service filter and group-by, contract step rounding (≤120
    * buckets, minimum 1s). Explorer, dashboards, and alerts all consume this.
+   * `shiftSeconds` slides the window back by N seconds for previous-period
+   * compare (same length, so buckets align with the unshifted query).
    */
   readonly metricQuery: MetricQueryOut
   /**
@@ -1255,6 +1257,7 @@ export type QueryMetricQueryArgs = {
   kind: Scalars["String"]["input"]
   name: Scalars["String"]["input"]
   service: InputMaybe<Scalars["String"]["input"]>
+  shiftSeconds: InputMaybe<Scalars["Int"]["input"]>
   stepSeconds: InputMaybe<Scalars["Int"]["input"]>
   toNanos: Scalars["String"]["input"]
 }
