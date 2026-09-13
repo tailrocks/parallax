@@ -205,8 +205,9 @@ impl parallax_storage::metadata::MetadataStore for TursoMetadataStore {
         ended: u128,
         code: i32,
         outcome: Option<&str>,
+        output: Option<&parallax_model::InvocationOutput>,
     ) -> MetadataResult<()> {
-        Self::finish_invocation(self, id, ended, code, outcome)
+        Self::finish_invocation(self, id, ended, code, outcome, output)
             .await
             .map_err(MetadataError::internal)
     }

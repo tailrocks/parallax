@@ -1,5 +1,6 @@
 //! Invocation lifecycle, inspection, bundle, and agent-session commands.
 
+use super::capture::{CapturedStream, redact_command_line, tee_bounded};
 use super::forwarding::*;
 use super::output::*;
 use crate::OutputFormat;
@@ -128,7 +129,9 @@ pub(crate) async fn invocation_start(
         return Ok(0);
     }
 
-    let command_str = (!command.is_empty()).then(|| command.join(" "));
+    // Secrets are redacted in the stored command line at capture: the span
+    // attribute and the invocation record below both use this copy.
+    let command_str = (!command.is_empty()).then(|| redact_command_line(&command));
     let session = InvocationSessionSpan::start(
         &fwd.endpoint,
         fwd.protocol,
@@ -191,43 +194,132 @@ async fn execute_child(
     println!("live: parallax invocation watch {invocation_id}");
     let mut cmd = tokio::process::Command::new(&command[0]);
     cmd.args(&command[1..]);
+    cmd.stdout(std::process::Stdio::piped());
+    cmd.stderr(std::process::Stdio::piped());
     for (key, value) in pairs {
         cmd.env(key, value);
     }
     // Always attempt invocationFinish even when the child fails to spawn, so
     // the invocation does not stay stuck in `running` forever.
-    let status = cmd.status().await;
+    let mut child = match cmd.spawn() {
+        Ok(child) => child,
+        Err(error) => {
+            // Side effect first (close the invocation), then report the
+            // spawn failure — same precedence as the old `status?; finish?`.
+            if let Err(finish_error) = finish_invocation(client, invocation_id, -1, None).await {
+                tracing::warn!(%finish_error, "invocationFinish failed after spawn error");
+            }
+            session.finish(-1);
+            return Err(error.into());
+        }
+    };
+    // The child's streams flow to the terminal live while bounded heads are
+    // retained for telemetry (flat memory: cap + one chunk per stream).
+    let stdout_task = tokio::spawn(capture_pipe(child.stdout.take(), tokio::io::stdout()));
+    let stderr_task = tokio::spawn(capture_pipe(child.stderr.take(), tokio::io::stderr()));
+    let status = child.wait().await;
     let exit_code = match &status {
         Ok(status) => status.code().unwrap_or(-1),
         Err(_) => -1,
     };
+    let (stdout_cap, stderr_cap) = tokio::join!(stdout_task, stderr_task);
+    let output = status.is_ok().then(|| {
+        (
+            settle_capture("stdout", stdout_cap),
+            settle_capture("stderr", stderr_cap),
+        )
+    });
 
-    let outcome = if exit_code == 0 { "success" } else { "failure" };
-    let finish = client
-        .graphql(&format!(
-            r#"mutation {{ invocationFinish(invocationId: "{}", endedAtNanos: "{}", exitCode: {exit_code}, outcome: "{outcome}") }}"#,
-            gql_str(invocation_id),
-            now_nanos()
-        ))
-        .await;
+    let finish = finish_invocation(
+        client,
+        invocation_id,
+        exit_code,
+        output.as_ref().map(|(stdout, stderr)| (stdout, stderr)),
+    )
+    .await;
 
     session.finish(exit_code);
 
-    status?; // propagate spawn error AFTER finishing the invocation
+    status?; // propagate spawn/wait error AFTER finishing the invocation
     finish?;
     println!("Parallax invocation {invocation_id} finished with exit code {exit_code}");
     println!("inspect: parallax invocation inspect {invocation_id}   issues: parallax issue list");
     Ok(exit_code)
 }
 
-pub(crate) async fn invocation_finish(c: &Client, id: &str, code: i32) -> anyhow::Result<()> {
-    let outcome = if code == 0 { "success" } else { "failure" };
-    c.graphql(&format!(
-        r#"mutation {{ invocationFinish(invocationId: "{}", endedAtNanos: "{}", exitCode: {code}, outcome: "{outcome}") }}"#,
-        gql_str(id),
+/// Tee one child pipe to its terminal counterpart, retaining the bounded
+/// head. A missing pipe (never happens after an explicit `piped()` setup)
+/// yields an empty capture.
+async fn capture_pipe<R, W>(pipe: Option<R>, writer: W) -> std::io::Result<CapturedStream>
+where
+    R: tokio::io::AsyncRead + Unpin + Send + 'static,
+    W: tokio::io::AsyncWrite + Unpin + Send + 'static,
+{
+    match pipe {
+        Some(pipe) => tee_bounded(pipe, writer).await,
+        None => Ok(CapturedStream::empty()),
+    }
+}
+
+/// A failed capture must not lose the invocation record: warn and store an
+/// empty head. The exit code stays the source of truth for the outcome.
+fn settle_capture(
+    stream: &str,
+    joined: Result<std::io::Result<CapturedStream>, tokio::task::JoinError>,
+) -> CapturedStream {
+    match joined {
+        Ok(Ok(captured)) => captured,
+        Ok(Err(error)) => {
+            tracing::warn!(%error, stream, "child output capture failed; storing empty head");
+            CapturedStream::empty()
+        }
+        Err(error) => {
+            tracing::warn!(%error, stream, "capture task failed; storing empty head");
+            CapturedStream::empty()
+        }
+    }
+}
+
+/// Build the `invocationFinish` mutation. `output` carries the bounded
+/// child-output heads (wrapper mode only); bare finishes pass `None` and
+/// leave any stored output untouched.
+fn finish_mutation(
+    invocation_id: &str,
+    exit_code: i32,
+    output: Option<(&CapturedStream, &CapturedStream)>,
+) -> String {
+    let outcome = if exit_code == 0 { "success" } else { "failure" };
+    let output_args = match output {
+        Some((stdout, stderr)) => format!(
+            r#", stdoutText: "{}", stdoutTruncatedBytes: {}, stderrText: "{}", stderrTruncatedBytes: {}"#,
+            gql_str(&stdout.text),
+            stdout.truncated_i32(),
+            gql_str(&stderr.text),
+            stderr.truncated_i32(),
+        ),
+        None => String::new(),
+    };
+    format!(
+        r#"mutation {{ invocationFinish(invocationId: "{}", endedAtNanos: "{}", exitCode: {exit_code}, outcome: "{outcome}"{output_args}) }}"#,
+        gql_str(invocation_id),
         now_nanos()
-    ))
-    .await?;
+    )
+}
+
+async fn finish_invocation(
+    client: &Client,
+    invocation_id: &str,
+    exit_code: i32,
+    output: Option<(&CapturedStream, &CapturedStream)>,
+) -> anyhow::Result<()> {
+    client
+        .graphql(&finish_mutation(invocation_id, exit_code, output))
+        .await?;
+    Ok(())
+}
+
+pub(crate) async fn invocation_finish(c: &Client, id: &str, code: i32) -> anyhow::Result<()> {
+    finish_invocation(c, id, code, None).await?;
     println!("invocation {id} finished ({code})");
     Ok(())
 }
@@ -271,6 +363,7 @@ pub(crate) async fn invocation_inspect(client: &Client, invocation_id: &str) -> 
     let response = client
         .graphql(&format!(
             r#"{{ invocation(invocationId: "{}") {{ invocationId command status exitCode startedAtNanos endedAtNanos
+                 stdoutText stdoutTruncatedBytes stderrText stderrTruncatedBytes
                  errorCount traceCount issues {{ fingerprint title }} }} }}"#,
             gql_str(invocation_id)
         ))
@@ -290,6 +383,20 @@ pub(crate) async fn invocation_inspect(client: &Client, invocation_id: &str) -> 
     );
     if let Some(code) = run["exitCode"].as_i64() {
         println!("  exit:    {code}");
+    }
+    if let Some(stdout) = run["stdoutText"].as_str() {
+        println!(
+            "  stdout:  {} bytes stored (+{} truncated)",
+            stdout.len(),
+            run["stdoutTruncatedBytes"].as_i64().unwrap_or(0)
+        );
+    }
+    if let Some(stderr) = run["stderrText"].as_str() {
+        println!(
+            "  stderr:  {} bytes stored (+{} truncated)",
+            stderr.len(),
+            run["stderrTruncatedBytes"].as_i64().unwrap_or(0)
+        );
     }
     println!("  traces:  {}", run["traceCount"].as_i64().unwrap_or(0));
     println!("  errors:  {}", run["errorCount"].as_i64().unwrap_or(0));
@@ -372,4 +479,34 @@ pub(crate) async fn invocation_agent_session(
     print!("{stdout}");
     eprint!("{stderr}");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn finish_mutation_escapes_multiline_output() {
+        let stdout = CapturedStream {
+            text: "a\nb\"c\\d".into(),
+            truncated_bytes: 7,
+        };
+        let stderr = CapturedStream::empty();
+        let mutation = finish_mutation("run-1", 1, Some((&stdout, &stderr)));
+        assert!(
+            mutation.contains(r#"stdoutText: "a\nb\"c\\d""#),
+            "{mutation}"
+        );
+        assert!(mutation.contains("stdoutTruncatedBytes: 7"), "{mutation}");
+        assert!(mutation.contains(r#"stderrText: """#), "{mutation}");
+        assert!(mutation.contains(r#"outcome: "failure""#), "{mutation}");
+    }
+
+    #[test]
+    fn bare_finish_omits_output_args() {
+        let mutation = finish_mutation("run-1", 0, None);
+        assert!(!mutation.contains("stdoutText"), "{mutation}");
+        assert!(!mutation.contains("stderrText"), "{mutation}");
+        assert!(mutation.contains(r#"outcome: "success""#), "{mutation}");
+    }
 }

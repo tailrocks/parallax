@@ -173,6 +173,28 @@ pub struct InvocationRecord {
     pub exit_code: Option<i32>,
     pub outcome: Option<String>,
     pub status: String,
+    /// Bounded head of child stdout captured by the CLI wrapper (`None` =
+    /// never captured: bare/external/pre-capture runs).
+    #[serde(default)]
+    pub stdout_text: Option<String>,
+    /// Stdout bytes omitted past the capture cap.
+    #[serde(default)]
+    pub stdout_truncated_bytes: u64,
+    /// Bounded head of child stderr captured by the CLI wrapper.
+    #[serde(default)]
+    pub stderr_text: Option<String>,
+    /// Stderr bytes omitted past the capture cap.
+    #[serde(default)]
+    pub stderr_truncated_bytes: u64,
+}
+
+/// Bounded child-output payload attached at `invocationFinish`.
+#[derive(Debug, Clone, Default)]
+pub struct InvocationOutput {
+    pub stdout_text: Option<String>,
+    pub stdout_truncated_bytes: u64,
+    pub stderr_text: Option<String>,
+    pub stderr_truncated_bytes: u64,
 }
 
 /// One aggregated point of a metric series.

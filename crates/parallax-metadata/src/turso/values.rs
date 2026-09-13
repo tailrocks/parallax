@@ -17,6 +17,15 @@ pub(super) fn millis_to_nanos(millis: i64) -> u128 {
     u128::try_from(millis.max(0)).unwrap_or(0) * 1_000_000
 }
 
+/// Truncation byte counts are exact u64 in memory, saturated i64 on disk.
+pub(super) fn bytes_to_db(bytes: u64) -> i64 {
+    i64::try_from(bytes).unwrap_or(i64::MAX)
+}
+
+pub(super) fn bytes_from_db(value: i64) -> u64 {
+    u64::try_from(value.max(0)).unwrap_or(0)
+}
+
 /// Bounds for the per-issue tag-values cache (`issues.tags`).
 pub(super) const TAGS_MAX_KEYS: usize = 16;
 pub(super) const TAGS_MAX_VALUES_PER_KEY: usize = 8;

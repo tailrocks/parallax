@@ -60,6 +60,7 @@ pub(crate) struct Invocation {
 struct InvocationErrorEvent {
     ts_nanos: String,
     title: String,
+    service: String,
     fingerprint: String,
     trace_id: Option<String>,
 }
@@ -231,6 +232,23 @@ impl Invocation {
     fn exit_code(&self) -> Option<i32> {
         self.record.exit_code
     }
+    /// Bounded head of child stdout captured by the CLI wrapper; null when
+    /// never captured (bare, external, or pre-capture runs).
+    fn stdout_text(&self) -> Option<&str> {
+        self.record.stdout_text.as_deref()
+    }
+    /// Stdout bytes omitted past the capture cap.
+    fn stdout_truncated_bytes(&self) -> i32 {
+        saturate_i32(self.record.stdout_truncated_bytes)
+    }
+    /// Bounded head of child stderr captured by the CLI wrapper.
+    fn stderr_text(&self) -> Option<&str> {
+        self.record.stderr_text.as_deref()
+    }
+    /// Stderr bytes omitted past the capture cap.
+    fn stderr_truncated_bytes(&self) -> i32 {
+        saturate_i32(self.record.stderr_truncated_bytes)
+    }
     /// cli (wrapper-registered) | external (auto-registered from telemetry).
     fn registration(&self) -> &str {
         if self.record.status == "external" {
@@ -333,6 +351,7 @@ impl Invocation {
             .map(|event| InvocationErrorEvent {
                 ts_nanos: nanos_string(event.ts_nanos),
                 title: parallax_analysis::derive::issue_title(&event.error_type, &event.message),
+                service: event.service.clone(),
                 fingerprint: event.fingerprint.clone(),
                 trace_id: (!event.trace_id.is_empty()).then(|| event.trace_id.clone()),
             })
@@ -491,13 +510,41 @@ pub(crate) async fn invocation_finish(
     ended_at_nanos: String,
     exit_code: i32,
     outcome: Option<String>,
+    stdout_text: Option<String>,
+    stdout_truncated_bytes: Option<i32>,
+    stderr_text: Option<String>,
+    stderr_truncated_bytes: Option<i32>,
 ) -> FieldResult<bool> {
     let nanos: u128 = ended_at_nanos
         .parse()
         .map_err(|_| field_err("invalid nanos"))?;
+    for count in [stdout_truncated_bytes, stderr_truncated_bytes]
+        .into_iter()
+        .flatten()
+    {
+        if count < 0 {
+            return Err(field_err("invalid truncated-bytes count"));
+        }
+    }
+    let output = (stdout_text.is_some()
+        || stdout_truncated_bytes.is_some()
+        || stderr_text.is_some()
+        || stderr_truncated_bytes.is_some())
+    .then(|| model::InvocationOutput {
+        stdout_text,
+        stdout_truncated_bytes: u64::try_from(stdout_truncated_bytes.unwrap_or(0)).unwrap_or(0),
+        stderr_text,
+        stderr_truncated_bytes: u64::try_from(stderr_truncated_bytes.unwrap_or(0)).unwrap_or(0),
+    });
     context
         .metadata
-        .finish_invocation(&invocation_id, nanos, exit_code, outcome.as_deref())
+        .finish_invocation(
+            &invocation_id,
+            nanos,
+            exit_code,
+            outcome.as_deref(),
+            output.as_ref(),
+        )
         .await
         .map_err(crate::internal_field_err)?;
     Ok(true)

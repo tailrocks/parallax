@@ -435,7 +435,7 @@ impl Mutation {
     async fn saved_view_delete(context: &ApiContext, id: String) -> FieldResult<bool> { resolvers::investigations::saved_view_delete(context, id).await }
 
     /// Close an invocation with the wrapped command's exit code and outcome.
-    async fn invocation_finish(context: &ApiContext, invocation_id: String, ended_at_nanos: String, exit_code: i32, outcome: Option<String>,) -> FieldResult<bool> { resolvers::invocations::invocation_finish(context, invocation_id, ended_at_nanos, exit_code, outcome).await }
+    async fn invocation_finish(context: &ApiContext, invocation_id: String, ended_at_nanos: String, exit_code: i32, outcome: Option<String>, stdout_text: Option<String>, stdout_truncated_bytes: Option<i32>, stderr_text: Option<String>, stderr_truncated_bytes: Option<i32>,) -> FieldResult<bool> { resolvers::invocations::invocation_finish(context, invocation_id, ended_at_nanos, exit_code, outcome, stdout_text, stdout_truncated_bytes, stderr_text, stderr_truncated_bytes).await }
 
     /// Create or update an alert rule (plan 167); optional knobs default per
     /// the plan contract.

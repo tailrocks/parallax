@@ -2,10 +2,10 @@
 
 use async_trait::async_trait;
 use parallax_model::{
-    Dashboard, Investigation, InvocationRecord, Issue, IssueQuery, IssueSortKey, SavedView,
-    TestCaseDetailBundle, TestCaseRecord, TestExplorerPage, TestExplorerQuery, TestExplorerSort,
-    TestFlakyCandidatePage, TestFlakyCursor, TestFlakyStateRecord, TestResultRecord,
-    TestResultWindow, TestVariantRecord, TrendPoint,
+    Dashboard, Investigation, InvocationOutput, InvocationRecord, Issue, IssueQuery, IssueSortKey,
+    SavedView, TestCaseDetailBundle, TestCaseRecord, TestExplorerPage, TestExplorerQuery,
+    TestExplorerSort, TestFlakyCandidatePage, TestFlakyCursor, TestFlakyStateRecord,
+    TestResultRecord, TestResultWindow, TestVariantRecord, TrendPoint,
 };
 use thiserror::Error;
 
@@ -133,6 +133,7 @@ pub trait MetadataStore: Send + Sync {
         ended_at_nanos: u128,
         exit_code: i32,
         outcome: Option<&str>,
+        output: Option<&InvocationOutput>,
     ) -> MetadataResult<()>;
     async fn invocations(&self, limit: usize) -> MetadataResult<Vec<InvocationRecord>>;
     async fn invocation(&self, invocation_id: &str) -> MetadataResult<Option<InvocationRecord>>;
