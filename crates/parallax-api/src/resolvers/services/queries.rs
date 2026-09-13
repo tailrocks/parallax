@@ -85,6 +85,24 @@ pub(crate) async fn releases(
     Ok(windows.into_iter().map(ReleaseWindow).collect())
 }
 
+pub(crate) async fn chart_annotations(
+    context: &ApiContext,
+    service: String,
+    from_nanos: String,
+    to_nanos: String,
+) -> FieldResult<Vec<ChartAnnotation>> {
+    let windows = releases(context, service.clone(), from_nanos, to_nanos).await?;
+    Ok(windows
+        .into_iter()
+        .map(|window| ChartAnnotation {
+            ts_nanos: window.0.first_seen_nanos,
+            kind: "release".into(),
+            title: window.0.version.clone(),
+            service: service.clone(),
+        })
+        .collect())
+}
+
 pub(crate) async fn service_catalog(
     context: &ApiContext,
     from_nanos: String,

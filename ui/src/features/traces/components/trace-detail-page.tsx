@@ -643,7 +643,7 @@ export function TraceDetailPage({
                       </span>
                       <Link
                         to="/logs"
-                        search={{ trace: traceId }}
+                        search={{ ...detailRangeSearch, trace: traceId }}
                         className="inline-flex items-center gap-1 font-normal text-muted-foreground hover:text-foreground"
                       >
                         View in Logs
@@ -1416,7 +1416,7 @@ function TraceInspector({
             </ul>
             <Link
               to="/logs"
-              search={{ trace: traceId }}
+              search={{ ...rangeSearch, trace: traceId }}
               className="mt-2 inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
             >
               View in Logs

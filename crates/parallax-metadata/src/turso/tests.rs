@@ -1515,7 +1515,7 @@ async fn same_fingerprint_in_two_services_stays_two_issues() {
 }
 
 #[tokio::test]
-async fn new_occurrence_reopens_resolved_issue() {
+async fn new_occurrence_regresses_resolved_issue() {
     let (_directory, path) = temp_db();
     let store = MetadataStore::open(path).await.expect("open");
     let attrs = serde_json::json!({});

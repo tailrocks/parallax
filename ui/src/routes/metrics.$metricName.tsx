@@ -28,6 +28,7 @@ import {
   type MetricAggregation,
   type MetricKind,
 } from "@/features/runtime-metrics"
+import { ServiceReleaseStrip } from "@/features/services/components/service-release-strip"
 import { mergeRangeSearch, rangeSearchSchema } from "@/domain/time-range/range"
 import {
   backendKind,
@@ -63,6 +64,7 @@ export const Route = createFileRoute("/metrics/$metricName")({
     groupBy: searchString(search["groupBy"]),
     step: searchString(search["step"]),
     kind: searchString(search["kind"]),
+    service: searchString(search["service"]),
   }),
   loaderDeps: ({ search }) => search,
   loader: ({ params, deps }) => loadMetricDetail(params.metricName, deps),
@@ -71,7 +73,7 @@ export const Route = createFileRoute("/metrics/$metricName")({
 
 function MetricDetailPage() {
   const { metricName } = Route.useParams()
-  const { labels, series, range, exemplars } = Route.useLoaderData()
+  const { labels, series, range, exemplars, releases } = Route.useLoaderData()
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
 
@@ -242,6 +244,7 @@ function MetricDetailPage() {
           Create alert
         </Button>
       </div>
+      {releases.length > 0 ? <ServiceReleaseStrip releases={releases} range={range} /> : null}
       <Card>
         <CardHeader>
           <CardTitle className="text-sm">

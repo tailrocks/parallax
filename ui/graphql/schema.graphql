@@ -274,6 +274,13 @@ type ChangedSpan {
   statusChanged: Boolean!
 }
 
+type ChartAnnotation {
+  tsNanos: String!
+  kind: String!
+  title: String!
+  service: String!
+}
+
 type Conversation {
   conversationId: String!
   agentName: String
@@ -685,6 +692,11 @@ type Query {
   serviceList(fromNanos: String!, toNanos: String!): [ServiceSummary!]!
   "Per-version service release windows in the selected time range."
   releases(service: String!, fromNanos: String!, toNanos: String!): [ReleaseWindow!]!
+  """
+    Chart markers derived from release windows (deploy/release). Same
+    store as `releases`; not a second annotation table.
+  """
+  chartAnnotations(service: String!, fromNanos: String!, toNanos: String!): [ChartAnnotation!]!
   "Resource-identity catalog rows for services in the selected window."
   serviceCatalog(fromNanos: String!, toNanos: String!): [ServiceCatalogRow!]!
   "Trace-path service graph over a bounded set of traces in the window."

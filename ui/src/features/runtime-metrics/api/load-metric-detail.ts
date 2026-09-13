@@ -18,6 +18,7 @@ export interface MetricDetailSearch {
   groupBy?: string | undefined
   step?: string | undefined
   kind?: string | undefined
+  service?: string | undefined
 }
 
 export interface SeriesOut {
@@ -32,11 +33,19 @@ export interface MetricExemplarLink {
   value: number
 }
 
+export interface ReleaseMarker {
+  version: string
+  firstSeenNanos: string
+  lastSeenNanos: string
+  spanCount: string
+}
+
 export interface DetailData {
   labels: string[]
   series: SeriesOut[]
   range: ResolvedRange
   exemplars: MetricExemplarLink[]
+  releases: ReleaseMarker[]
 }
 
 export function backendKind(kind: MetricKind): "gauge" | "sum" | "histogram" {
@@ -76,6 +85,23 @@ async function loadExemplars(
   }
 }
 
+async function loadReleaseMarkers(
+  service: string | undefined,
+  range: ResolvedRange
+): Promise<ReleaseMarker[]> {
+  if (!service) return []
+  try {
+    const data = await graphqlCached<{ releases: ReleaseMarker[] }>(`{
+      releases(service: "${gqlString(service)}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") {
+        version firstSeenNanos lastSeenNanos spanCount
+      }
+    }`)
+    return data.releases
+  } catch {
+    return []
+  }
+}
+
 function queryArguments(metricName: string, search: MetricDetailSearch) {
   const range = resolveRangeSearch(search)
   const kind = (search.kind as MetricKind) || inferMetricKind(metricName)
@@ -93,7 +119,7 @@ function queryArguments(metricName: string, search: MetricDetailSearch) {
         )
         .join(", ")}]`
     : ""
-  return { range, kind, agg, stepSeconds, name, window, groupBy, where }
+  return { range, kind, agg, stepSeconds, name, window, groupBy, where, search }
 }
 
 async function loadCanonicalDetail(
@@ -114,6 +140,7 @@ async function loadCanonicalDetail(
     series: data.metricQuery.series,
     range: args.range,
     exemplars: await loadExemplars(metricName, args.range),
+    releases: await loadReleaseMarkers(args.search.service, args.range),
   }
 }
 
@@ -135,6 +162,7 @@ async function loadLegacyDetail(
       series: [{ groupValue: null, points: data.histogramQuantile }],
       range: args.range,
       exemplars: await loadExemplars(metricName, args.range),
+      releases: await loadReleaseMarkers(args.search.service, args.range),
     }
   }
   const data = await graphqlCached<{ metricLabels: string[]; metricSeries: SeriesOut[] }>(`{
@@ -148,6 +176,7 @@ async function loadLegacyDetail(
     series: data.metricSeries,
     range: args.range,
     exemplars: await loadExemplars(metricName, args.range),
+    releases: await loadReleaseMarkers(args.search.service, args.range),
   }
 }
 

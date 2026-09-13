@@ -182,6 +182,42 @@ async fn releases_resolver_returns_service_windows() {
 }
 
 #[tokio::test]
+async fn chart_annotations_are_release_windows() {
+    let store = Arc::new(MemoryStore::new());
+    store.push_spans(vec![
+        span_with_release("checkout", "t1", "a", 10, "v1"),
+        span_with_release("checkout", "t2", "a", 50, "v2"),
+    ]);
+    let schema = build_schema();
+    let context = context_with_memory(store).await;
+    let request = juniper::http::GraphQLRequest::new(
+        r#"{
+          chartAnnotations(service: "checkout", fromNanos: "0", toNanos: "100") {
+            tsNanos kind title service
+          }
+        }"#
+        .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, request).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(error_messages(&json).is_empty(), "{json}");
+    assert_eq!(
+        json.pointer("/data/chartAnnotations/0/kind"),
+        Some(&serde_json::json!("release"))
+    );
+    assert_eq!(
+        json.pointer("/data/chartAnnotations/0/title"),
+        Some(&serde_json::json!("v1"))
+    );
+    assert_eq!(
+        json.pointer("/data/chartAnnotations/0/tsNanos"),
+        Some(&serde_json::json!("10"))
+    );
+}
+
+#[tokio::test]
 async fn service_catalog_resolver_returns_identity_rows() {
     let store = Arc::new(MemoryStore::new());
     let mut checkout = span("checkout", "t1", "root", 10, 1_000);
