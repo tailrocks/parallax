@@ -141,8 +141,14 @@ pub(crate) async fn metric_query(
     attribute_filters: Option<Vec<AttributeFilterInput>>,
     group_by: Option<String>,
     step_seconds: Option<i32>,
+    shift_seconds: Option<i32>,
 ) -> FieldResult<MetricQueryOut> {
     validate_metric_name(&name)?;
+    let shift_nanos = match shift_seconds {
+        None | Some(0) => 0,
+        Some(shift) if shift > 0 => u128::try_from(shift).unwrap_or(0) * 1_000_000_000,
+        _ => return Err(field_err("shiftSeconds must be >= 0")),
+    };
     let filters = attribute_filters
         .unwrap_or_default()
         .into_iter()
@@ -151,6 +157,13 @@ pub(crate) async fn metric_query(
     let kind = model::MetricKind::parse(&kind)
         .ok_or_else(|| field_err("kind must be gauge|sum|histogram"))?;
     let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+    // Previous-period compare: slide the whole window back by the shift.
+    // Window length is unchanged, so step rounding matches the unshifted
+    // query bucket-for-bucket.
+    let (from, to) = (
+        from.saturating_sub(shift_nanos),
+        to.saturating_sub(shift_nanos),
+    );
     let agg = agg.to_ascii_lowercase();
     if !legal_aggregations(kind).contains(&agg.as_str()) {
         return Err(field_err(format!(

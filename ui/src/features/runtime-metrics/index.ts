@@ -30,3 +30,14 @@ export {
   type ChartAnnotationMark,
   type PeakWindow,
 } from "@/features/runtime-metrics/model/peak-window"
+
+export {
+  buildCompareRows,
+  compareGroupKey,
+  previousWindowShiftSeconds,
+  shiftSeriesForward,
+  COMPARE_PREVIOUS,
+  type ChartRow,
+  type TimeshiftPoint,
+  type TimeshiftSeries,
+} from "@/features/runtime-metrics/model/timeshift"

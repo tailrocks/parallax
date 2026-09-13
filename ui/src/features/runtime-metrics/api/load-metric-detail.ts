@@ -1,8 +1,10 @@
 import { resolveRangeSearch, type ResolvedRange } from "@/domain/time-range/range"
 import {
   coerceAggregation,
+  COMPARE_PREVIOUS,
   inferMetricKind,
   legalAggregations,
+  previousWindowShiftSeconds,
   type MetricAggregation,
   type MetricKind,
 } from "@/features/runtime-metrics"
@@ -19,6 +21,7 @@ export interface MetricDetailSearch {
   step?: string | undefined
   kind?: string | undefined
   service?: string | undefined
+  compare?: string | undefined
 }
 
 export interface SeriesOut {
@@ -50,6 +53,8 @@ export interface ChartAnnotation {
 export interface DetailData {
   labels: string[]
   series: SeriesOut[]
+  /** Previous-window series (original stamps; align with shiftSeriesForward). Empty unless compare=previous. */
+  previous: SeriesOut[]
   range: ResolvedRange
   exemplars: MetricExemplarLink[]
   releases: ReleaseMarker[]
@@ -125,12 +130,21 @@ export async function loadChartAnnotations(
 async function withAnnotations(
   metricName: string,
   range: ResolvedRange,
-  service: string | undefined,
-  rest: Omit<DetailData, "exemplars" | "releases" | "annotations" | "range">
+  search: MetricDetailSearch,
+  rest: Omit<DetailData, "exemplars" | "releases" | "annotations" | "range" | "previous">,
+  previousArgs?: ReturnType<typeof queryArguments>
 ): Promise<DetailData> {
-  const [exemplars, annotations] = await Promise.all([
-    loadExemplars(metricName, range),
-    loadChartAnnotations(service, range),
+  // Kick off in a fixed order (exemplars, annotations, previous) so cached
+  // transports and test doubles observe a stable call sequence.
+  const exemplarsPromise = loadExemplars(metricName, range)
+  const annotationsPromise = loadChartAnnotations(search.service, range)
+  const previousPromise = previousArgs
+    ? loadPreviousSeries(previousArgs)
+    : Promise.resolve([] as SeriesOut[])
+  const [exemplars, annotations, previous] = await Promise.all([
+    exemplarsPromise,
+    annotationsPromise,
+    previousPromise,
   ])
   return {
     ...rest,
@@ -138,6 +152,7 @@ async function withAnnotations(
     exemplars,
     annotations,
     releases: annotationsToReleaseMarkers(annotations),
+    previous,
   }
 }
 
@@ -161,6 +176,22 @@ function queryArguments(metricName: string, search: MetricDetailSearch) {
   return { range, kind, agg, stepSeconds, name, window, groupBy, where, search }
 }
 
+/** Same query shifted back one window; empty when compare is off or the fetch fails. */
+async function loadPreviousSeries(args: ReturnType<typeof queryArguments>): Promise<SeriesOut[]> {
+  if (args.search.compare !== COMPARE_PREVIOUS) return []
+  const shiftSeconds = previousWindowShiftSeconds(args.range)
+  try {
+    const data = await graphqlCached<{ metricQuery: { series: SeriesOut[] } }>(`{
+      metricQuery(name: ${args.name}, kind: "${gqlString(backendKind(args.kind))}", agg: "${gqlString(args.agg)}", ${args.window}, stepSeconds: ${args.stepSeconds}${args.groupBy}${args.where}, shiftSeconds: ${shiftSeconds}) {
+        series { groupValue points { tsNanos value } }
+      }
+    }`)
+    return data.metricQuery.series
+  } catch {
+    return []
+  }
+}
+
 async function loadCanonicalDetail(
   metricName: string,
   args: ReturnType<typeof queryArguments>
@@ -174,10 +205,16 @@ async function loadCanonicalDetail(
       kind effectiveStepSeconds series { groupValue points { tsNanos value } }
     }
   }`)
-  return withAnnotations(metricName, args.range, args.search.service, {
-    labels: data.metricLabels,
-    series: data.metricQuery.series,
-  })
+  return withAnnotations(
+    metricName,
+    args.range,
+    args.search,
+    {
+      labels: data.metricLabels,
+      series: data.metricQuery.series,
+    },
+    args
+  )
 }
 
 async function loadLegacyDetail(
@@ -193,7 +230,7 @@ async function loadLegacyDetail(
       metricLabels(name: ${args.name})
       histogramQuantile(name: ${args.name}, ${args.window}, q: ${q}, stepSeconds: ${args.stepSeconds}) { tsNanos value }
     }`)
-    return withAnnotations(metricName, args.range, args.search.service, {
+    return withAnnotations(metricName, args.range, args.search, {
       labels: data.metricLabels,
       series: [{ groupValue: null, points: data.histogramQuantile }],
     })
@@ -204,7 +241,8 @@ async function loadLegacyDetail(
       groupValue points { tsNanos value }
     }
   }`)
-  return withAnnotations(metricName, args.range, args.search.service, {
+  // Legacy primitives predate shiftSeconds: compare stays empty on this path.
+  return withAnnotations(metricName, args.range, args.search, {
     labels: data.metricLabels,
     series: data.metricSeries,
   })

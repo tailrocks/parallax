@@ -849,3 +849,103 @@ async fn metric_query_serves_converted_exp_histograms() {
     assert_eq!(catalog[0]["kind"], "histogram");
     assert_eq!(catalog[0]["pointCount"], "1");
 }
+
+#[tokio::test]
+async fn metric_query_shift_seconds_returns_previous_window() {
+    let store = Arc::new(MemoryStore::new());
+    store
+        .ingest_metrics(
+            vec![
+                MetricPointRow {
+                    ts_nanos: 3_600_000_000_000,
+                    service: "checkout".into(),
+                    name: "shapes.region.latency".into(),
+                    value: 111.0,
+                    is_monotonic: false,
+                    invocation_id: None,
+                    attributes: serde_json::json!({}),
+                },
+                MetricPointRow {
+                    ts_nanos: 7_200_000_000_000,
+                    service: "checkout".into(),
+                    name: "shapes.region.latency".into(),
+                    value: 222.0,
+                    is_monotonic: false,
+                    invocation_id: None,
+                    attributes: serde_json::json!({}),
+                },
+            ],
+            Vec::new(),
+            Vec::new(),
+            Vec::new(),
+            Default::default(),
+        )
+        .await
+        .unwrap();
+    let schema = build_schema();
+    let context = context_with_memory(store).await;
+
+    // Unshifted: current window holds only the 222 sample.
+    let current = juniper::http::GraphQLRequest::new(
+        r#"{ metricQuery(name: "shapes.region.latency", kind: "gauge", agg: "avg", fromNanos: "7050000000000", toNanos: "7350000000000", stepSeconds: 60) {
+            effectiveStepSeconds series { points { tsNanos value } }
+        } }"#
+            .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, current).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(error_messages(&json).is_empty(), "current window: {json}");
+    let points = json
+        .pointer("/data/metricQuery/series/0/points")
+        .and_then(|v| v.as_array())
+        .unwrap();
+    assert_eq!(points.len(), 1, "one current bucket: {json}");
+    assert_eq!(points[0].get("value").unwrap().as_f64().unwrap(), 222.0);
+    let current_step = json
+        .pointer("/data/metricQuery/effectiveStepSeconds")
+        .unwrap()
+        .clone();
+
+    // Shifted by one window (3600s): previous window holds only the 111 sample.
+    let shifted = juniper::http::GraphQLRequest::new(
+        r#"{ metricQuery(name: "shapes.region.latency", kind: "gauge", agg: "avg", fromNanos: "7050000000000", toNanos: "7350000000000", stepSeconds: 60, shiftSeconds: 3600) {
+            effectiveStepSeconds series { points { tsNanos value } }
+        } }"#
+            .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, shifted).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(error_messages(&json).is_empty(), "shifted window: {json}");
+    assert_eq!(
+        json.pointer("/data/metricQuery/effectiveStepSeconds")
+            .unwrap(),
+        &current_step,
+        "shift preserves step rounding: {json}"
+    );
+    let points = json
+        .pointer("/data/metricQuery/series/0/points")
+        .and_then(|v| v.as_array())
+        .unwrap();
+    assert_eq!(points.len(), 1, "one previous bucket: {json}");
+    assert_eq!(points[0].get("value").unwrap().as_f64().unwrap(), 111.0);
+
+    // Negative shifts are rejected, not silently clamped.
+    let negative = juniper::http::GraphQLRequest::new(
+        r#"{ metricQuery(name: "shapes.region.latency", kind: "gauge", agg: "avg", fromNanos: "7050000000000", toNanos: "7350000000000", shiftSeconds: -60) { kind } }"#
+            .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, negative).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(
+        error_messages(&json)
+            .iter()
+            .any(|message| message.contains("shiftSeconds must be >= 0")),
+        "negative shift rejected: {json}"
+    );
+}

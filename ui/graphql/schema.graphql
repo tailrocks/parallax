@@ -948,8 +948,10 @@ type Query {
     legality (gauge→avg|min|max|last, sum→sum|rate|increase, histogram→p50|p95|p99|avg),
     optional service filter and group-by, contract step rounding (≤120
     buckets, minimum 1s). Explorer, dashboards, and alerts all consume this.
+    `shiftSeconds` slides the window back by N seconds for previous-period
+    compare (same length, so buckets align with the unshifted query).
   """
-  metricQuery(name: String!, kind: String!, agg: String!, fromNanos: String!, toNanos: String!, service: String, attributeFilters: [AttributeFilterInput!], groupBy: String, stepSeconds: Int): MetricQueryOut!
+  metricQuery(name: String!, kind: String!, agg: String!, fromNanos: String!, toNanos: String!, service: String, attributeFilters: [AttributeFilterInput!], groupBy: String, stepSeconds: Int, shiftSeconds: Int): MetricQueryOut!
   """
     Distinct metric names seen by the store (drives the dashboard
     builder), optionally prefix-filtered.

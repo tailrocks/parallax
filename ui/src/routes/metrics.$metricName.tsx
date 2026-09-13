@@ -24,9 +24,13 @@ import {
 } from "@/components/ui/select"
 import { WhereClauseEditor } from "@/shared/console/where-clause-editor"
 import {
+  buildCompareRows,
   chartAnnotationMarks,
+  compareGroupKey,
+  COMPARE_PREVIOUS,
   inferMetricKind,
   peakWindowFromSeries,
+  previousWindowShiftSeconds,
   tracesAroundPeakSearch,
   type MetricAggregation,
   type MetricKind,
@@ -68,6 +72,7 @@ export const Route = createFileRoute("/metrics/$metricName")({
     step: searchString(search["step"]),
     kind: searchString(search["kind"]),
     service: searchString(search["service"]),
+    compare: searchString(search["compare"]),
   }),
   loaderDeps: ({ search }) => search,
   loader: ({ params, deps }) => loadMetricDetail(params.metricName, deps),
@@ -76,41 +81,32 @@ export const Route = createFileRoute("/metrics/$metricName")({
 
 function MetricDetailPage() {
   const { metricName } = Route.useParams()
-  const { labels, series, range, exemplars, releases, annotations } = Route.useLoaderData()
+  const { labels, series, previous, range, exemplars, releases, annotations } =
+    Route.useLoaderData()
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
 
   const kind = (search.kind as MetricKind) || inferMetricKind(metricName)
   const legal = supportedAggregations(kind)
   const agg = resolveAggregation(kind, search.agg)
+  const compareOn = search.compare === COMPARE_PREVIOUS
+  const shiftNanos = useMemo(() => BigInt(previousWindowShiftSeconds(range)) * 1_000_000n, [range])
 
   const groups = useMemo(
     () => series.map((entry, index) => entry.groupValue ?? `series-${index + 1}`),
     [series]
   )
-  const rows = useMemo(() => {
-    const byTime = new Map<string, Record<string, string | number>>()
-    series.forEach((entry, index) => {
-      const key = entry.groupValue ?? `series-${index + 1}`
-      // The newest bucket is usually incomplete: render its segment as a
-      // dashed continuation series instead of a confident solid drop.
-      const tailStart = Math.max(entry.points.length - 2, 0)
-      entry.points.forEach((point, pointIndex) => {
-        const time = new Date(Number(BigInt(point.tsNanos) / 1_000_000n)).toLocaleTimeString()
-        const row = byTime.get(point.tsNanos) ?? { time, tsNanos: point.tsNanos }
-        if (pointIndex < entry.points.length - 1) {
-          row[key] = point.value
-        }
-        if (pointIndex >= tailStart && entry.points.length > 1) {
-          row[`${key}__tail`] = point.value
-        }
-        byTime.set(point.tsNanos, row)
-      })
-    })
-    return Array.from(byTime.entries())
-      .sort(([a], [b]) => (BigInt(a) < BigInt(b) ? -1 : 1))
-      .map(([, row]) => row)
-  }, [series])
+  const compareGroups = useMemo(
+    () =>
+      compareOn
+        ? previous.map((entry, index) => compareGroupKey(entry.groupValue ?? `series-${index + 1}`))
+        : [],
+    [compareOn, previous]
+  )
+  const rows = useMemo(
+    () => buildCompareRows(series, compareOn ? previous : [], shiftNanos),
+    [series, compareOn, previous, shiftNanos]
+  )
 
   const peak = useMemo(() => peakWindowFromSeries(series), [series])
   const annotationMarks = useMemo(
@@ -212,6 +208,14 @@ function MetricDetailPage() {
             ))}
           </SelectContent>
         </Select>
+        <Button
+          size="sm"
+          variant={compareOn ? "default" : "outline"}
+          onClick={() => setSearch({ compare: compareOn ? undefined : COMPARE_PREVIOUS })}
+          data-testid="compare-previous-toggle"
+        >
+          Compare previous
+        </Button>
         <WhereClauseEditor
           filters={whereFilters}
           onApply={applyWhere}
@@ -274,6 +278,7 @@ function MetricDetailPage() {
         <CardHeader>
           <CardTitle className="text-sm">
             {agg} · {groups.length} series
+            {compareGroups.length > 0 ? " · vs previous period" : ""}
           </CardTitle>
           {search.groupBy ? (
             <div className="flex flex-wrap gap-1 pt-1">
@@ -313,6 +318,15 @@ function MetricDetailPage() {
                   strokeDasharray="4 4"
                   dot={false}
                   legendType="none"
+                />
+              ))}
+              {compareGroups.map((group) => (
+                <Line
+                  key={group}
+                  dataKey={group}
+                  stroke="var(--color-muted-foreground)"
+                  strokeDasharray="4 4"
+                  dot={false}
                 />
               ))}
               {annotationMarks.map((mark) => (
