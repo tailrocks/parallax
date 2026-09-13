@@ -42,6 +42,7 @@ export type IssueOccurrencesQuery = {
       readonly source: string
       readonly traceId: string
       readonly spanId: string
+      readonly environment: string | null
       readonly attributes: string
     }>
   } | null
@@ -139,6 +140,7 @@ export const IssueOccurrencesDocument = {
                       { kind: "Field", name: { kind: "Name", value: "source" } },
                       { kind: "Field", name: { kind: "Name", value: "traceId" } },
                       { kind: "Field", name: { kind: "Name", value: "spanId" } },
+                      { kind: "Field", name: { kind: "Name", value: "environment" } },
                       { kind: "Field", name: { kind: "Name", value: "attributes" } },
                     ],
                   },
@@ -250,6 +252,7 @@ export const IssueOccurrencesQuerySchema: z.ZodType<IssueOccurrencesQuery> = z.o
           source: z.string(),
           traceId: z.string(),
           spanId: z.string(),
+          environment: z.string().nullable(),
           attributes: z.string(),
         })
       ),

@@ -344,6 +344,11 @@ type DurationStats {
   p95Ms: Float
 }
 
+type EnvironmentCount {
+  environment: String!
+  count: Int!
+}
+
 type ErrorEvent {
   tsNanos: String!
   service: String!
@@ -521,9 +526,14 @@ type Issue {
   latestEvent: ErrorEvent
   """
     Recent occurrences of this issue, newest first, optionally
-    range-bounded (`fromNanos`/`toNanos`).
+    range-bounded (`fromNanos`/`toNanos`) and environment-filtered.
   """
-  events(limit: Int, fromNanos: String, toNanos: String): [ErrorEvent!]!
+  events(limit: Int, fromNanos: String, toNanos: String, environment: String): [ErrorEvent!]!
+  """
+    Per-environment occurrence counts, count descending then name
+    ascending. Events without an environment are not counted.
+  """
+  environmentCounts: [EnvironmentCount!]!
 }
 
 type IssueList {
@@ -708,9 +718,10 @@ type Query {
     Grouped errors: filtered, sorted, paged (spec §8 `issues`). The
     `query` argument substring-matches title, error type, and fingerprint;
     `fromNanos`/`toNanos` window on last-seen; `tagKey`+`tagValue` filter
-    on the cached tags.
+    on the cached tags; `environment` keeps issues seen in that
+    deployment environment.
   """
-  issues(service: String, status: String, query: String, fromNanos: String, toNanos: String, tagKey: String, tagValue: String, sort: IssueSort, limit: Int, offset: Int): IssueList!
+  issues(service: String, status: String, query: String, fromNanos: String, toNanos: String, tagKey: String, tagValue: String, environment: String, sort: IssueSort, limit: Int, offset: Int): IssueList!
   issue(service: String!, fingerprint: String!): Issue
   """
     Variant-scoped test explorer. Attempt rollups preserve fail-then-pass as

@@ -19,6 +19,7 @@ struct IssueEventQuery {
     from_nanos: u128,
     to_nanos: u128,
     limit: usize,
+    environment: Option<String>,
 }
 
 impl ApiContext {
@@ -34,12 +35,14 @@ impl ApiContext {
         from_nanos: u128,
         to_nanos: u128,
         limit: usize,
+        environment: Option<&str>,
     ) -> FieldResult<Vec<model::ErrorEventRow>> {
         let key = IssueEventQuery {
             issue_keys: issue_keys.to_vec(),
             from_nanos,
             to_nanos,
             limit,
+            environment: environment.map(str::to_string),
         };
         let issue_key = (service.to_string(), fingerprint.to_string());
         let mut cache = self.memo.issue_events.lock().await;
@@ -48,7 +51,7 @@ impl ApiContext {
         }
         let events = Arc::new(
             self.store
-                .error_events_by_fingerprints(issue_keys, from_nanos..=to_nanos, limit)
+                .error_events_by_fingerprints(issue_keys, from_nanos..=to_nanos, limit, environment)
                 .await
                 .map_err(internal_field_err)?,
         );

@@ -8,6 +8,7 @@ export interface IssuesSearch {
   q?: string
   service?: string
   status?: "open" | "resolved" | "regressed"
+  environment?: string
   sort?: IssueSort
   range?: string
   from?: string
@@ -24,6 +25,7 @@ const issuesSearchSchema = rangeSearchSchema.extend({
   q: z.unknown().optional(),
   service: z.unknown().optional(),
   status: z.unknown().optional(),
+  environment: z.unknown().optional(),
   sort: z.unknown().optional(),
 })
 
@@ -34,12 +36,11 @@ export function validateIssuesSearch(search: Record<string, unknown>): IssuesSea
   if (typeof parsed.service === "string" && parsed.service) {
     result.service = parsed.service
   }
-  if (
-    parsed.status === "open" ||
-    parsed.status === "resolved" ||
-    parsed.status === "regressed"
-  ) {
+  if (parsed.status === "open" || parsed.status === "resolved" || parsed.status === "regressed") {
     result.status = parsed.status
+  }
+  if (typeof parsed.environment === "string" && parsed.environment) {
+    result.environment = parsed.environment
   }
   if (SORTS.includes(parsed.sort as IssueSort)) {
     result.sort = parsed.sort as IssueSort

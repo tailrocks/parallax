@@ -23,6 +23,7 @@ fn occurrence<'a>(
         ts_nanos,
         trace_id: None,
         attributes,
+        environment: None,
     }
 }
 

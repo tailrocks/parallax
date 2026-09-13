@@ -86,6 +86,7 @@ export async function loadIssues(search: IssuesSearch, range: ResolvedRange): Pr
         query: search.q ?? null,
         fromNanos: range.fromNanos,
         toNanos: range.toNanos,
+        environment: search.environment ?? null,
         sort: search.sort ?? "LAST_SEEN",
         limit: 100,
       }

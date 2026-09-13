@@ -102,6 +102,7 @@ pub(crate) async fn issues(
     to_nanos: Option<String>,
     tag_key: Option<String>,
     tag_value: Option<String>,
+    environment: Option<String>,
     sort: Option<IssueSort>,
     limit: Option<i32>,
     offset: Option<i32>,
@@ -125,6 +126,7 @@ pub(crate) async fn issues(
         },
         tag_key,
         tag_value,
+        environment,
     };
     let offset = usize::try_from(offset.unwrap_or(0).max(0)).unwrap_or(0);
     let (items, total) = context
@@ -227,7 +229,7 @@ pub(crate) async fn bundle(
         };
         let events = context
             .store
-            .error_events_by_fingerprint(service, &fingerprint, 0..=u128::MAX, 5)
+            .error_events_by_fingerprint(service, &fingerprint, 0..=u128::MAX, 5, None)
             .await
             .map_err(internal_field_err)?;
         let (trace_spans, trace_logs) = match issue.last_trace_id.as_deref() {

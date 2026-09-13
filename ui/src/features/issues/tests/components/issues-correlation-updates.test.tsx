@@ -58,6 +58,7 @@ const detailFixture = {
   issue: {
     ...issuesFixture.issues.items[0]!,
     groupingExplanation: null,
+    environmentCounts: [{ environment: "production", count: 7 }],
     events: [
       {
         tsNanos: "1719999990000000000",
@@ -68,6 +69,7 @@ const detailFixture = {
         source: "exception",
         traceId: "trace-a",
         spanId: "span-a",
+        environment: "production",
         attributes: "{}",
       },
       {
@@ -79,6 +81,7 @@ const detailFixture = {
         source: "exception",
         traceId: "trace-b",
         spanId: "span-b",
+        environment: "production",
         attributes: '{"order":{"id":',
       },
       {
@@ -89,6 +92,7 @@ const detailFixture = {
         source: "exception",
         traceId: "",
         spanId: "span-c",
+        environment: "production",
         attributes: "{}",
       },
     ],

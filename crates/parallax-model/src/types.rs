@@ -133,6 +133,10 @@ pub struct Issue {
     /// Bounded top-tag-values cache as JSON: `{key: {value: count}}`.
     #[serde(default = "default_tags")]
     pub tags: String,
+    /// Per-environment occurrence counts as JSON: `{env: count}`. Events
+    /// without an environment are not counted here.
+    #[serde(default = "default_tags")]
+    pub environments: String,
 }
 
 fn default_tags() -> String {
@@ -161,6 +165,8 @@ pub struct IssueQuery {
     pub to_nanos: Option<u128>,
     pub tag_key: Option<String>,
     pub tag_value: Option<String>,
+    /// Keep issues with at least one occurrence in this environment.
+    pub environment: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -405,4 +411,6 @@ pub struct IssueOccurrence<'a> {
     pub trace_id: Option<&'a str>,
     /// The event's attributes — merged into the issue's bounded tag cache.
     pub attributes: &'a serde_json::Value,
+    /// `deployment.environment.name` — merged into the issue's per-env counts.
+    pub environment: Option<&'a str>,
 }

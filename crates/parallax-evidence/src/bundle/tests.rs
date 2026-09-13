@@ -15,6 +15,7 @@ fn test_issue() -> Issue {
         event_count: 1,
         last_trace_id: Some("trace".to_string()),
         tags: "{}".to_string(),
+        environments: "{}".to_string(),
     }
 }
 
@@ -482,6 +483,7 @@ fn sentry_event_cannot_bypass_canonical_bundle_redaction() {
         event_count: 1,
         last_trace_id: Some(event.trace_id.clone()),
         tags: "{}".into(),
+        environments: "{}".into(),
     };
     let bundle = assemble(
         BundleInputs {

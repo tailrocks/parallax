@@ -38,6 +38,7 @@ export function mapIssueEvents(
     readonly source: string
     readonly traceId: string
     readonly spanId: string
+    readonly environment: string | null
     readonly attributes: string
   }>
 ): IssueEvent[] {
@@ -49,6 +50,7 @@ export function mapIssueEvents(
     source: event.source,
     traceId: event.traceId,
     spanId: event.spanId,
+    environment: event.environment,
     attributes: event.attributes,
   }))
 }
@@ -77,6 +79,10 @@ export function mapIssueDetail(data: IssueDetailQuery): IssueDetailData {
         eventCount: data.issue.eventCount,
         lastTraceId: data.issue.lastTraceId,
         tags: data.issue.tags,
+        environmentCounts: data.issue.environmentCounts.map((row) => ({
+          environment: row.environment,
+          count: row.count,
+        })),
         groupingExplanation: data.issue.groupingExplanation,
         events: mapIssueEvents(data.issue.events),
       }

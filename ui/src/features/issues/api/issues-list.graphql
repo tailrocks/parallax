@@ -4,6 +4,7 @@ query IssuesList(
   $query: String
   $fromNanos: String
   $toNanos: String
+  $environment: String
   $sort: IssueSort
   $limit: Int
 ) {
@@ -13,6 +14,7 @@ query IssuesList(
     query: $query
     fromNanos: $fromNanos
     toNanos: $toNanos
+    environment: $environment
     sort: $sort
     limit: $limit
   ) {

@@ -69,7 +69,7 @@ export function IssuesContent({
   onSearch: (patch: IssuesSearchPatch) => void
   onIssue: (issue: IssueRow) => void
 }) {
-  const hasFilters = Boolean(search.q || search.service || search.status)
+  const hasFilters = Boolean(search.q || search.service || search.status || search.environment)
   const sort = search.sort ?? "LAST_SEEN"
 
   return (
@@ -99,6 +99,11 @@ export function IssuesContent({
               value: service,
               label: service,
             }))}
+          />
+          <SearchInput
+            value={search.environment ?? ""}
+            onChange={(environment) => onSearch({ environment })}
+            placeholder="Environment"
           />
         </QueryBarRow>
         <QueryBarRow>
@@ -137,6 +142,7 @@ export function IssuesContent({
                   q: undefined,
                   service: undefined,
                   status: undefined,
+                  environment: undefined,
                 })
               }
             />
@@ -151,7 +157,9 @@ export function IssuesContent({
         <EmptyState
           icon={IconTerminal2}
           title={hasFilters ? "No issues match filters" : "No issues ingested yet"}
-          description={hasFilters ? "Loosen query, service, status, or range." : <SnippetTabs />}
+          description={
+            hasFilters ? "Loosen query, service, status, environment, or range." : <SnippetTabs />
+          }
         />
       ) : (
         <IssuesTable

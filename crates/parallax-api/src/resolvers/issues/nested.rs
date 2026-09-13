@@ -127,6 +127,7 @@ impl Issue {
                 0,
                 u128::MAX,
                 1,
+                None,
             )
             .await?
             .into_iter()
@@ -175,19 +176,21 @@ impl Issue {
                 0,
                 u128::MAX,
                 1,
+                None,
             )
             .await?;
         Ok(events.into_iter().next().map(ErrorEvent))
     }
 
     /// Recent occurrences of this issue, newest first, optionally
-    /// range-bounded (`fromNanos`/`toNanos`).
+    /// range-bounded (`fromNanos`/`toNanos`) and environment-filtered.
     async fn events(
         &self,
         context: &ApiContext,
         limit: Option<i32>,
         from_nanos: Option<String>,
         to_nanos: Option<String>,
+        environment: Option<String>,
     ) -> FieldResult<Vec<ErrorEvent>> {
         let from = match from_nanos {
             Some(s) => s.parse().map_err(|_| field_err("invalid fromNanos"))?,
@@ -205,9 +208,27 @@ impl Issue {
                 from,
                 to,
                 clamp_limit(limit, 50),
+                environment.as_deref(),
             )
             .await?;
         Ok(events.into_iter().map(ErrorEvent).collect())
+    }
+
+    /// Per-environment occurrence counts, count descending then name
+    /// ascending. Events without an environment are not counted.
+    fn environment_counts(&self) -> Vec<EnvironmentCount> {
+        let counts: std::collections::BTreeMap<String, u64> =
+            serde_json::from_str(&self.row.environments).unwrap_or_default();
+        let mut counts: Vec<EnvironmentCount> = counts
+            .into_iter()
+            .map(|(environment, count)| EnvironmentCount { environment, count })
+            .collect();
+        counts.sort_by(|a, b| {
+            b.count
+                .cmp(&a.count)
+                .then(a.environment.cmp(&b.environment))
+        });
+        counts
     }
 }
 
@@ -322,6 +343,22 @@ impl ErrorEvent {
     }
     fn attributes(&self) -> String {
         self.0.attributes.to_string()
+    }
+}
+
+/// One environment's share of an issue's occurrences.
+pub(crate) struct EnvironmentCount {
+    environment: String,
+    count: u64,
+}
+
+#[graphql_object(context = ApiContext)]
+impl EnvironmentCount {
+    fn environment(&self) -> &str {
+        &self.environment
+    }
+    fn count(&self) -> i32 {
+        i32::try_from(self.count).unwrap_or(i32::MAX)
     }
 }
 

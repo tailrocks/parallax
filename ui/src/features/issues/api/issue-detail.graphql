@@ -17,6 +17,10 @@ query IssueDetail(
     eventCount
     lastTraceId
     tags
+    environmentCounts {
+      environment
+      count
+    }
     groupingExplanation {
       algorithmVersion
       errorType
@@ -33,6 +37,7 @@ query IssueDetail(
       source
       traceId
       spanId
+      environment
       attributes
     }
   }
