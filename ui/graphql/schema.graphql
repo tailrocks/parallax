@@ -838,6 +838,13 @@ type Query {
   jobs(invocationId: String, fromNanos: String!, toNanos: String!): [Job!]!
   "Agent conversations (`gen_ai.conversation.id` spans) in one invocation."
   conversations(invocationId: String!): [Conversation!]!
+  """
+    Browser RUM sessions: spans grouped by `session.id` (independent of
+    `cli.invocation.id`), newest activity first.
+  """
+  rumSessions(service: String, fromNanos: String!, toNanos: String!, errorOnly: Boolean, limit: Int): [RumSession!]!
+  "One RUM session with its timeline: page views, vitals, and errors."
+  rumSession(sessionId: String!, limit: Int): RumSessionDetail
   "One saved dashboard by id."
   dashboard(id: String!): Dashboard
   "One saved investigation by id."
@@ -950,6 +957,53 @@ type ReleaseWindow {
   firstSeenNanos: String!
   lastSeenNanos: String!
   spanCount: String!
+}
+
+type RumSession {
+  sessionId: String!
+  service: String!
+  startNanos: String!
+  "Last activity in the session (browsers emit no explicit session end)."
+  endNanos: String!
+  spanCount: Int!
+  traceCount: Int!
+  viewCount: Int!
+  vitalCount: Int!
+  errorCount: Int!
+  hasError: Boolean!
+}
+
+type RumSessionDetail {
+  session: RumSession!
+  views: [RumSessionPageView!]!
+  vitals: [RumSessionVital!]!
+  errors: [RumSessionError!]!
+}
+
+type RumSessionError {
+  tsNanos: String!
+  name: String!
+  errorType: String
+  message: String!
+  traceId: String!
+  spanId: String!
+}
+
+type RumSessionPageView {
+  tsNanos: String!
+  screen: String!
+  path: String
+  traceId: String!
+  spanId: String!
+}
+
+type RumSessionVital {
+  tsNanos: String!
+  name: String!
+  value: Float!
+  rating: String
+  traceId: String!
+  spanId: String!
 }
 
 type RuntimeMetric {

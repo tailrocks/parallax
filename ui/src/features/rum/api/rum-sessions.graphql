@@ -1,0 +1,26 @@
+query RumSessions(
+  $service: String
+  $fromNanos: String!
+  $toNanos: String!
+  $errorOnly: Boolean
+  $limit: Int
+) {
+  rumSessions(
+    service: $service
+    fromNanos: $fromNanos
+    toNanos: $toNanos
+    errorOnly: $errorOnly
+    limit: $limit
+  ) {
+    sessionId
+    service
+    startNanos
+    endNanos
+    spanCount
+    traceCount
+    viewCount
+    vitalCount
+    errorCount
+    hasError
+  }
+}
