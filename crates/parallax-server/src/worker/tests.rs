@@ -303,7 +303,12 @@ async fn otlp_and_sentry_echo_share_one_occurrence() {
     assert_eq!(issues.len(), 1);
     assert_eq!(issues[0].event_count, 1);
     let events = store
-        .error_events_by_fingerprint(&issues[0].service, &issues[0].fingerprint, 0..=u128::MAX, 10)
+        .error_events_by_fingerprint(
+            &issues[0].service,
+            &issues[0].fingerprint,
+            0..=u128::MAX,
+            10,
+        )
         .await
         .expect("error events");
     assert_eq!(events.len(), 1);

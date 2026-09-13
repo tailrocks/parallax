@@ -21,10 +21,14 @@ pub trait IngestStore: Send + Sync {
     /// Ingest a metrics batch: forward the raw OTLP bytes to the native
     /// `/v1/otlp/v1/metrics` endpoint (per-metric metric-engine tables), then
     /// persist the run-scoped subset of `points` into `invocation_metric_points`.
+    /// `exp_histograms` are ingest-converted exponential histograms: the native
+    /// engine has no exp type, so stores persist them separately (never merged
+    /// with native explicit-histogram tables).
     async fn ingest_metrics(
         &self,
         points: Vec<MetricPointRow>,
         histograms: Vec<HistogramRow>,
+        exp_histograms: Vec<HistogramRow>,
         exemplars: Vec<MetricExemplarRow>,
         raw: bytes::Bytes,
     ) -> StorageResult<()>;
@@ -255,8 +259,13 @@ pub trait InvocationStore: Send + Sync {
         for (service, fingerprint) in issue_keys {
             events.insert(
                 (service.clone(), fingerprint.clone()),
-                self.error_events_by_fingerprint(service, fingerprint, range.clone(), limit_per_issue)
-                    .await?,
+                self.error_events_by_fingerprint(
+                    service,
+                    fingerprint,
+                    range.clone(),
+                    limit_per_issue,
+                )
+                .await?,
             );
         }
         Ok(events)

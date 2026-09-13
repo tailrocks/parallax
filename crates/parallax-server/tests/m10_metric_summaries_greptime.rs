@@ -261,6 +261,7 @@ async fn metric_summaries_conform_on_live_engine() {
         rows,
         Vec::new(),
         Vec::new(),
+        Vec::new(),
         Default::default(),
     )
     .await

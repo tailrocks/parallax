@@ -60,15 +60,56 @@ impl crate::adapter::IngestStore for GreptimeStore {
         &self,
         points: Vec<MetricPointRow>,
         _histograms: Vec<HistogramRow>,
+        exp_histograms: Vec<HistogramRow>,
         exemplars: Vec<MetricExemplarRow>,
         raw: bytes::Bytes,
     ) -> StorageResult<()> {
         // Forward all metrics to the native metric engine (one table per metric
-        // name; histograms split into `_bucket`/`_count`/`_sum`).
+        // name; histograms split into `_bucket`/`_count`/`_sum`). The worker
+        // strips exponential histograms from `raw` first — the engine has no
+        // exp type, so converted rows persist to the extension table below.
         let hints = format!("ttl={}", self.metrics_ttl);
         self.forward_otlp("v1/metrics", &[("x-greptime-hints", &hints)], raw)
             .await
             .map_err(StorageError::transport)?;
+        // Converted exp rows: explicit-histogram tables are native-managed, so
+        // these live in their own table (never merged with native `_bucket`
+        // rows, which would double-count mixed-encoding metrics).
+        let values = exp_histograms
+            .iter()
+            .map(|r| {
+                // A bare NaN/inf literal breaks the whole INSERT batch; the
+                // count survives and the sum degrades to 0 rather than
+                // dropping every sibling row (same poison-batch precedent as
+                // scalar points, which filter instead — a histogram row carries
+                // buckets worth keeping even when its sum is junk).
+                let sum = if r.sum.is_finite() { r.sum } else { 0.0 };
+                let counts =
+                    serde_json::Value::Array(r.bucket_counts.iter().map(|c| (*c).into()).collect());
+                let bounds = serde_json::Value::Array(
+                    r.bounds
+                        .iter()
+                        .map(|b| {
+                            serde_json::Number::from_f64(*b)
+                                .map_or(serde_json::Value::Null, serde_json::Value::Number)
+                        })
+                        .collect(),
+                );
+                format!(
+                    "({},'{}','{}',{},{},{},{},{})",
+                    r.ts_nanos,
+                    escape(&r.service),
+                    escape(&r.name),
+                    r.count.min(i64::MAX as u64),
+                    sum,
+                    json_literal(&counts),
+                    json_literal(&bounds),
+                    json_literal(&r.attributes),
+                )
+            })
+            .collect();
+        self.insert(EXP_HISTOGRAMS_TABLE, EXP_HISTOGRAM_COLUMNS, values)
+            .await?;
         // Run-scoped points (Q6, Approach 2): the metric engine cannot hold a
         // high-card `invocation_id` tag, so persist those points to `invocation_metric_points`
         // where `invocation_id` is an indexed column.

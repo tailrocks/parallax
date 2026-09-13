@@ -66,31 +66,13 @@ pub(super) fn quantile_from_histograms(rows: &[HistogramRow], q: f64) -> f64 {
     for row in rows {
         for (index, count) in row.bucket_counts.iter().enumerate() {
             if let Some(slot) = counts.get_mut(index) {
-                *slot += count;
+                *slot = slot.saturating_add(*count);
             }
         }
     }
-    let total: u64 = counts.iter().sum();
-    if total == 0 {
-        return 0.0;
-    }
-    let target = q.clamp(0.0, 1.0) * total as f64;
-    let mut cumulative = 0u64;
-    for (index, count) in counts.iter().enumerate() {
-        let next = cumulative + count;
-        if next as f64 >= target {
-            let lower = if index == 0 { 0.0 } else { bounds[index - 1] };
-            let upper = bounds.get(index).copied().unwrap_or(lower);
-            let within = if *count == 0 {
-                0.0
-            } else {
-                (target - cumulative as f64) / *count as f64
-            };
-            return lower + (upper - lower) * within;
-        }
-        cumulative = next;
-    }
-    bounds.last().copied().unwrap_or(0.0)
+    // Shared interpolation core: the Greptime converted-exp path calls the
+    // same function, so both stores agree bucket-for-bucket.
+    parallax_storage::adapter::explicit_bucket_quantile(bounds, &counts, q)
 }
 
 pub(super) fn quantile_from_sorted(values: &[u128], q: f64) -> f64 {

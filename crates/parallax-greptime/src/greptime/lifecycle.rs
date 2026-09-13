@@ -136,6 +136,19 @@ impl GreptimeStore {
         Ok(())
     }
 
+    pub(super) fn exp_histograms_ddl(table: &str, metrics_ttl: &str) -> String {
+        format!(
+            r#"CREATE TABLE IF NOT EXISTS {table} (
+                   "ts" TIMESTAMP(9) NOT NULL,
+                   "service" STRING, "name" STRING,
+                   "count" BIGINT, "sum" DOUBLE,
+                   "bucket_counts" JSON, "bounds" JSON, "attributes" JSON,
+                   TIME INDEX ("ts"), PRIMARY KEY ("service", "name")
+                 ) WITH (append_mode = 'true', ttl = '{}')"#,
+            escape(metrics_ttl)
+        )
+    }
+
     pub(super) fn metric_exemplars_ddl(table: &str, metrics_ttl: &str) -> String {
         format!(
             r#"CREATE TABLE IF NOT EXISTS {table} (
@@ -191,6 +204,8 @@ impl GreptimeStore {
             metrics_ttl,
         ))
         .await?;
+        self.sql(&Self::exp_histograms_ddl(EXP_HISTOGRAMS_TABLE, metrics_ttl))
+            .await?;
         Ok(())
     }
 
@@ -205,6 +220,7 @@ impl GreptimeStore {
             ("error_events", error_events_ttl),
             ("invocation_metric_points", metrics_ttl),
             (METRIC_EXEMPLARS_TABLE, metrics_ttl),
+            (EXP_HISTOGRAMS_TABLE, metrics_ttl),
         ]
         .into_iter()
         .map(|(table, ttl)| (table.to_string(), ttl))

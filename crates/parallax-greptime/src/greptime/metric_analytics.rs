@@ -113,7 +113,19 @@ impl MetricAnalyticsStore for GreptimeStore {
             return Ok(Vec::new());
         }
         let Some(bucket_table) = self.metric_table_for_name(name, Some("_bucket")).await? else {
-            return Ok(vec![Vec::new(); quantiles.len()]);
+            // No native explicit-histogram table: serve ingest-converted exp
+            // rows. Native wins when present (mixed encodings are pathological;
+            // the explicit tables are authoritative there).
+            return self
+                .exp_quantile_series(
+                    name,
+                    service,
+                    attribute_filters,
+                    range,
+                    step_nanos,
+                    quantiles,
+                )
+                .await;
         };
         // Server-side date_bin + MAX per (window, le) = latest cumulative (plan 085).
         let mut service_clause = service
@@ -167,6 +179,15 @@ impl MetricAnalyticsStore for GreptimeStore {
     ) -> StorageResult<Vec<SeriesPoint>> {
         // Latest cumulative `_sum`/`_count` per bucket (MAX merge, plan 085
         // shape), Δsum/Δcount computed client-side with reset clamping.
+        // Missing siblings mean "no native explicit histogram": serve
+        // ingest-converted exp rows (native wins when present).
+        let sum_table = self.metric_table_for_name(name, Some("_sum")).await?;
+        let count_table = self.metric_table_for_name(name, Some("_count")).await?;
+        let (Some(_), Some(_)) = (sum_table.as_ref(), count_table.as_ref()) else {
+            return self
+                .exp_avg_series(name, service, attribute_filters, range, step_nanos)
+                .await;
+        };
         let step_secs = (step_nanos / 1_000_000_000).max(1);
         let mut service_clause = service
             .map(|svc| format!(r#" AND "service_name" = '{}'"#, escape(svc)))
@@ -175,10 +196,7 @@ impl MetricAnalyticsStore for GreptimeStore {
             service_clause.push_str(&format!(" AND {filters}"));
         }
         let mut stat_series: Vec<Vec<SeriesPoint>> = Vec::with_capacity(2);
-        for suffix in ["_sum", "_count"] {
-            let Some(table) = self.metric_table_for_name(name, Some(suffix)).await? else {
-                return Ok(Vec::new());
-            };
+        for table in [sum_table, count_table].into_iter().flatten() {
             let rows = self
                 .sql_arrow_lenient(&format!(
                     r#"SELECT CAST(date_bin(INTERVAL '{step_secs} seconds', "greptime_timestamp") AS BIGINT)
@@ -302,6 +320,89 @@ impl MetricAnalyticsStore for GreptimeStore {
                 invocation_id: opt_str_at(row, 6),
                 attributes: json_at(row, 7),
             })
+            .collect())
+    }
+}
+
+impl GreptimeStore {
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "mirrors the native quantile signature argument-for-argument"
+    )]
+    async fn exp_quantile_series(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        attribute_filters: &[AttributeFilter],
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+        quantiles: &[f64],
+    ) -> StorageResult<Vec<Vec<SeriesPoint>>> {
+        let rows = self
+            .select_exp_histograms(name, service, attribute_filters, range)
+            .await?;
+        Ok(exp_quantiles_from_rows(&rows, step_nanos, quantiles))
+    }
+
+    async fn exp_avg_series(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        attribute_filters: &[AttributeFilter],
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+    ) -> StorageResult<Vec<SeriesPoint>> {
+        let rows = self
+            .select_exp_histograms(name, service, attribute_filters, range)
+            .await?;
+        Ok(exp_avg_from_rows(&rows, step_nanos))
+    }
+
+    pub(super) async fn exp_count_series(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        range: RangeInclusive<u128>,
+        step_nanos: u128,
+    ) -> StorageResult<Vec<SeriesPoint>> {
+        let rows = self
+            .select_exp_histograms(name, service, &[], range)
+            .await?;
+        Ok(exp_counts_from_rows(&rows, step_nanos))
+    }
+
+    /// Converted-exp rows for one metric, ts ascending, attribute filters
+    /// applied client-side (the extension table stores attributes as one JSON
+    /// column — there are no per-attribute tag columns to compile filters
+    /// against, unlike native metric tables).
+    async fn select_exp_histograms(
+        &self,
+        name: &str,
+        service: Option<&str>,
+        attribute_filters: &[AttributeFilter],
+        range: RangeInclusive<u128>,
+    ) -> StorageResult<Vec<HistogramRow>> {
+        let service_clause = service
+            .map(|svc| format!(r#" AND "service" = '{}'"#, escape(svc)))
+            .unwrap_or_default();
+        let name_filter = metric_name_sql_filter(r#""name""#, name);
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT CAST("ts" AS BIGINT) AS "ts_nanos", "service", "name",
+                          CAST("count" AS BIGINT) AS "count", "sum",
+                          json_to_string("bucket_counts"), json_to_string("bounds"),
+                          json_to_string("attributes")
+                   FROM "{EXP_HISTOGRAMS_TABLE}"
+                   WHERE {name_filter} AND "ts" >= {} AND "ts" <= {}{service_clause}
+                   ORDER BY "ts" ASC"#,
+                sql_ts(*range.start()),
+                sql_ts(*range.end()),
+            ))
+            .await?;
+        Ok(rows
+            .iter()
+            .map(|row| exp_histogram_from_row(row))
+            .filter(|row| exp_row_matches(attribute_filters, &row.service, &row.attributes))
             .collect())
     }
 }
