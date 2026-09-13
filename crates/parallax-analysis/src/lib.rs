@@ -2,6 +2,7 @@
 
 pub mod derive;
 pub mod fingerprint;
+mod identity;
 pub mod junit_reconcile;
 pub mod log_patterns;
 pub mod nextest_adapter;

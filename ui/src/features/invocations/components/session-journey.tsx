@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils"
 export interface JourneyError {
   tsNanos: string
   title: string
+  service: string
   fingerprint: string | null
   traceId: string | null
 }
@@ -246,8 +247,8 @@ function JourneyEntryBody({ entry }: { entry: JourneyEntry }) {
           <IconAlertTriangleFilled className="size-4 text-rose-500" />
           {entry.error.fingerprint ? (
             <Link
-              to="/issues/$fingerprint"
-              params={{ fingerprint: entry.error.fingerprint }}
+              to="/issues/$service/$fingerprint"
+              params={{ service: entry.error.service, fingerprint: entry.error.fingerprint }}
               className="min-w-0 truncate font-medium hover:underline"
             >
               {entry.error.title}

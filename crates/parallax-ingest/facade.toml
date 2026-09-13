@@ -2,10 +2,17 @@ schema_version = 1
 
 [roots]
 "lib.rs" = [
+    "fn environment",
+    "fn invocation_id",
     "fn resource_invocation_ids",
+    "fn root_span_attrs",
+    "fn service_version",
+    "fn session_id",
+    "mod exp_histogram",
     "mod sentry_envelope",
+    "use exp_histogram::ConvertedHistogram",
     "use logs::{normalize_logs, promote_log_identity_attributes}",
-    "use metrics::{NormalizedMetrics, normalize_metrics}",
+    "use metrics::{NormalizedMetrics, normalize_metrics, strip_exp_histograms}",
     "use sentry_envelope::{EnvelopeOutcome, RejectReason, UnsupportedItem, parse_envelope}",
     "use traces::normalize_traces",
 ]

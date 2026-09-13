@@ -53,7 +53,7 @@ not override code.
 
 | Claim | Status | In-repo pointer | Notes |
 | --- | --- | --- | --- |
-| GraphQL query API | **shipped** | `crates/parallax-api/`; exported schema `ui/graphql/schema.graphql` | **76** Query fields, **14** Mutation fields. **Count method (SoT):** walk `type Query` / `type Mutation` in the generated SDL; **skip `"""…"""` description blocks** (and single-line `"` descriptions); then match `fieldName(` or `fieldName:`. A naive line regex that does **not** skip descriptions falsely reports **80/15** by treating prose tokens (`registration`, `kind`, `legality`, `retention`, …) as fields. Re-count before changing this row. |
+| GraphQL query API | **shipped** | `crates/parallax-api/`; exported schema `ui/graphql/schema.graphql` | **77** Query fields, **14** Mutation fields (recounted 2026-09-13; was 76 — one Query field added since 2026-07-17). **Count method (SoT):** walk `type Query` / `type Mutation` in the generated SDL; **skip `"""…"""` description blocks** (and single-line `"` descriptions); then match `fieldName(` or `fieldName:`. A naive line regex that does **not** skip descriptions falsely reports **80/15** (re-confirmed 2026-09-13) by treating prose tokens (`registration`, `kind`, `legality`, `retention`, …) as fields. Re-count before changing this row. |
 | CLI (`parallax serve` + client commands) | **shipped** | `crates/parallax-cli/src/main.rs` | serve, invocation, issue, trace, metrics, logs, traces, sql, doctor, prune, uninstall, context |
 | TanStack Start UI | **shipped** | `ui/src/routes/`, `ui/src/features/` | Issues, traces, logs, metrics, services, invocations, investigations, dashboards, ecosystem, SQL, alerts, tests, … (~16 feature modules) |
 | Local-stdio read-only MCP | **shipped** | `crates/parallax-mcp/`; [validation/2026-07-plan-112-product-mcp](validation/2026-07-plan-112-product-mcp/README.md) | Plan **112 DONE**. Tools: `parallax_issue_context`, `parallax_agent_session_show` |
@@ -128,3 +128,4 @@ not override code.
 | --- | --- |
 | 2026-07-17 | Initial ledger from workspace + schema + plans inventory (research code-reality audit). |
 | 2026-07-17 | Re-verify: plan **123 DONE** offline — fixer row → partial + validation path (dead `plans/123-*` link removed). |
+| 2026-09-13 | GraphQL row recounted per its own method: Query **76→77** (one field added since 2026-07-17), Mutation 14 holds; naive-regex 80/15 warning re-confirmed. |

@@ -65,8 +65,11 @@ function renderWithRouter(component: React.ReactNode, initialPath = "/") {
       "/traces",
       "/traces/$traceId",
       "/invocations/$invocationId",
-      "/issues/$fingerprint",
+      "/issues/$service/$fingerprint",
       "/services/$service",
+      "/tests",
+      "/metrics",
+      "/alerts",
     ],
     initialPath,
     layout: true,
@@ -100,6 +103,26 @@ describe("CommandPalette", () => {
     await user.click(await screen.findByText("Logs"))
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/logs"))
+  })
+
+  it("navigates to every listed page, including tests, metrics, and alerts", async () => {
+    const user = userEvent.setup()
+    mockPaletteData()
+    const { router } = renderWithRouter(<PaletteHarness />)
+
+    await act(async () => {})
+    for (const [label, pathname] of [
+      ["Tests", "/tests"],
+      ["Metrics", "/metrics"],
+      ["Alerts", "/alerts"],
+    ] as const) {
+      await user.keyboard("{Control>}k{/Control}")
+      const input = await screen.findByPlaceholderText(/search pages/i)
+      await user.type(input, label)
+      await user.click(await screen.findByText(label))
+
+      await waitFor(() => expect(router.state.location.pathname).toBe(pathname))
+    }
   })
 })
 

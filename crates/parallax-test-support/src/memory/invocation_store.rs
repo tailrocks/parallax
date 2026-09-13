@@ -4,6 +4,7 @@ use super::*;
 impl adapter::InvocationStore for MemoryStore {
     async fn error_events_by_fingerprint(
         &self,
+        service: &str,
         fingerprint: &str,
         range: RangeInclusive<u128>,
         limit: usize,
@@ -13,7 +14,9 @@ impl adapter::InvocationStore for MemoryStore {
             .lock()
             .error_events
             .iter()
-            .filter(|e| e.fingerprint == fingerprint && range.contains(&e.ts_nanos))
+            .filter(|e| {
+                e.service == service && e.fingerprint == fingerprint && range.contains(&e.ts_nanos)
+            })
             .cloned()
             .collect();
         events.sort_by_key(|e| std::cmp::Reverse(e.ts_nanos));
@@ -23,27 +26,25 @@ impl adapter::InvocationStore for MemoryStore {
 
     async fn error_events_by_fingerprints(
         &self,
-        fingerprints: &[String],
+        issue_keys: &[(String, String)],
         range: RangeInclusive<u128>,
-        limit_per_fingerprint: usize,
-    ) -> StorageResult<HashMap<String, Vec<ErrorEventRow>>> {
+        limit_per_issue: usize,
+    ) -> StorageResult<HashMap<(String, String), Vec<ErrorEventRow>>> {
         self.error_event_read_calls.fetch_add(1, Ordering::Relaxed);
-        let wanted: HashSet<_> = fingerprints.iter().map(String::as_str).collect();
-        let mut events: HashMap<String, Vec<ErrorEventRow>> = fingerprints
+        let wanted: HashSet<_> = issue_keys.iter().cloned().collect();
+        let mut events: HashMap<(String, String), Vec<ErrorEventRow>> = issue_keys
             .iter()
-            .map(|fingerprint| (fingerprint.clone(), Vec::new()))
+            .map(|key| (key.clone(), Vec::new()))
             .collect();
         for event in &self.lock().error_events {
-            if wanted.contains(event.fingerprint.as_str()) && range.contains(&event.ts_nanos) {
-                events
-                    .entry(event.fingerprint.clone())
-                    .or_default()
-                    .push(event.clone());
+            let key = (event.service.clone(), event.fingerprint.clone());
+            if wanted.contains(&key) && range.contains(&event.ts_nanos) {
+                events.entry(key).or_default().push(event.clone());
             }
         }
         for rows in events.values_mut() {
             rows.sort_by_key(|event| std::cmp::Reverse(event.ts_nanos));
-            rows.truncate(limit_per_fingerprint);
+            rows.truncate(limit_per_issue);
         }
         Ok(events)
     }

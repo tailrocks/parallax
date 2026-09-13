@@ -105,6 +105,15 @@ pub struct ErrorEventRow {
     pub source: ErrorSource,
     pub trace_id: String,
     pub span_id: String,
+    /// `cli.invocation.id` — the run this error belongs to. `None` when the
+    /// source signal carried no invocation identity.
+    pub invocation_id: Option<String>,
+    /// `session.id` — the interactive session this error belongs to.
+    pub session_id: Option<String>,
+    /// `service.version` — the release identity of the emitting resource.
+    pub service_version: Option<String>,
+    /// `deployment.environment.name` (falling back to `deployment.environment`).
+    pub environment: Option<String>,
     pub attributes: serde_json::Value,
 }
 
@@ -164,6 +173,28 @@ pub struct InvocationRecord {
     pub exit_code: Option<i32>,
     pub outcome: Option<String>,
     pub status: String,
+    /// Bounded head of child stdout captured by the CLI wrapper (`None` =
+    /// never captured: bare/external/pre-capture runs).
+    #[serde(default)]
+    pub stdout_text: Option<String>,
+    /// Stdout bytes omitted past the capture cap.
+    #[serde(default)]
+    pub stdout_truncated_bytes: u64,
+    /// Bounded head of child stderr captured by the CLI wrapper.
+    #[serde(default)]
+    pub stderr_text: Option<String>,
+    /// Stderr bytes omitted past the capture cap.
+    #[serde(default)]
+    pub stderr_truncated_bytes: u64,
+}
+
+/// Bounded child-output payload attached at `invocationFinish`.
+#[derive(Debug, Clone, Default)]
+pub struct InvocationOutput {
+    pub stdout_text: Option<String>,
+    pub stdout_truncated_bytes: u64,
+    pub stderr_text: Option<String>,
+    pub stderr_truncated_bytes: u64,
 }
 
 /// One aggregated point of a metric series.

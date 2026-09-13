@@ -116,7 +116,7 @@ function zeroFixture(): OverviewData {
 
 function renderWithRouter(component: React.ReactNode) {
   return renderTestRouter(component, {
-    targetPaths: ["/issues/$fingerprint", "/traces/$traceId", "/services/$service"],
+    targetPaths: ["/issues/$service/$fingerprint", "/traces/$traceId", "/services/$service"],
   })
 }
 
@@ -154,7 +154,7 @@ describe("Overview route", () => {
     expect(invertedDelta).toBeTruthy()
     expect(
       (await screen.findByRole("link", { name: /checkout timeout/i })).getAttribute("href")
-    ).toBe("/issues/issue-a?range=24h")
+    ).toBe("/issues/checkout/issue-a?range=24h")
     expect(
       (
         await screen.findByRole("link", {

@@ -79,6 +79,7 @@ interface InvocationRecordData {
   errorEvents: Array<{
     tsNanos: string
     title: string
+    service: string
     fingerprint: string
     traceId: string | null
   }>
@@ -107,8 +108,8 @@ const RECORD_QUERY = (escaped: string) =>
   `{ invocation(invocationId: "${escaped}") {
        invocationId command appMode outcome status exitCode
        startedAtNanos endedAtNanos errorCount traceCount sessionCount
-       issues { fingerprint title errorType status eventCount lastSeenNanos lastTraceId }
-       errorEvents { tsNanos title fingerprint traceId }
+       issues { service fingerprint title errorType status eventCount lastSeenNanos lastTraceId }
+       errorEvents { tsNanos title service fingerprint traceId }
      } }`
 
 export async function loadInvocationHub(invocationId: string, nowMs = Date.now()) {
@@ -309,6 +310,7 @@ export function InvocationHubContent({
   const journeyErrors: JourneyError[] = (record?.errorEvents ?? []).map((event) => ({
     tsNanos: event.tsNanos,
     title: event.title,
+    service: event.service,
     fingerprint: event.fingerprint,
     traceId: event.traceId ?? null,
   }))

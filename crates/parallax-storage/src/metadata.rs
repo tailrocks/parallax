@@ -2,10 +2,10 @@
 
 use async_trait::async_trait;
 use parallax_model::{
-    Dashboard, Investigation, InvocationRecord, Issue, IssueQuery, IssueSortKey, SavedView,
-    TestCaseDetailBundle, TestCaseRecord, TestExplorerPage, TestExplorerQuery, TestExplorerSort,
-    TestFlakyCandidatePage, TestFlakyCursor, TestFlakyStateRecord, TestResultRecord,
-    TestResultWindow, TestVariantRecord, TrendPoint,
+    Dashboard, Investigation, InvocationOutput, InvocationRecord, Issue, IssueQuery, IssueSortKey,
+    SavedView, TestCaseDetailBundle, TestCaseRecord, TestExplorerPage, TestExplorerQuery,
+    TestExplorerSort, TestFlakyCandidatePage, TestFlakyCursor, TestFlakyStateRecord,
+    TestResultRecord, TestResultWindow, TestVariantRecord, TrendPoint,
 };
 use thiserror::Error;
 
@@ -95,13 +95,17 @@ pub trait MetadataStore: Send + Sync {
     ) -> MetadataResult<()>;
     async fn issue_trend(
         &self,
+        service: &str,
         fingerprint: &str,
         since_nanos: u128,
         step_seconds: u32,
     ) -> MetadataResult<Vec<TrendPoint>>;
     async fn issues(&self, limit: usize) -> MetadataResult<Vec<Issue>>;
-    async fn issue(&self, fingerprint: &str) -> MetadataResult<Option<Issue>>;
-    async fn issues_by_fingerprints(&self, fingerprints: &[String]) -> MetadataResult<Vec<Issue>>;
+    async fn issue(&self, service: &str, fingerprint: &str) -> MetadataResult<Option<Issue>>;
+    async fn issues_by_fingerprints(
+        &self,
+        issue_keys: &[(String, String)],
+    ) -> MetadataResult<Vec<Issue>>;
     async fn issues_filtered(
         &self,
         filter: &IssueQuery,
@@ -111,6 +115,7 @@ pub trait MetadataStore: Send + Sync {
     ) -> MetadataResult<(Vec<Issue>, usize)>;
     async fn set_issue_status(
         &self,
+        service: &str,
         fingerprint: &str,
         status: &str,
         changed_at_nanos: u128,
@@ -128,6 +133,7 @@ pub trait MetadataStore: Send + Sync {
         ended_at_nanos: u128,
         exit_code: i32,
         outcome: Option<&str>,
+        output: Option<&InvocationOutput>,
     ) -> MetadataResult<()>;
     async fn invocations(&self, limit: usize) -> MetadataResult<Vec<InvocationRecord>>;
     async fn invocation(&self, invocation_id: &str) -> MetadataResult<Option<InvocationRecord>>;

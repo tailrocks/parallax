@@ -170,11 +170,11 @@ async fn issue_discovery_uses_persisted_resolution_time_and_preserves_open_issue
             .expect("seed issue");
     }
     store
-        .set_issue_status("eligible", "resolved", 20_000_000)
+        .set_issue_status("svc", "eligible", "resolved", 20_000_000)
         .await
         .expect("resolve eligible");
     store
-        .set_issue_status("not-expired", "resolved", 30_000_000)
+        .set_issue_status("svc", "not-expired", "resolved", 30_000_000)
         .await
         .expect("resolve recent");
 
@@ -207,7 +207,7 @@ async fn issue_discovery_uses_persisted_resolution_time_and_preserves_open_issue
     );
 
     store
-        .set_issue_status("eligible", "open", 40_000_000)
+        .set_issue_status("svc", "eligible", "open", 40_000_000)
         .await
         .expect("reopen eligible");
     let reopened = store
@@ -230,7 +230,7 @@ async fn invocation_discovery_counts_eligible_active_and_not_expired_rows() {
         .await
         .expect("start eligible");
     store
-        .finish_invocation("eligible", 20_000_000, 0, Some("success"))
+        .finish_invocation("eligible", 20_000_000, 0, Some("success"), None)
         .await
         .expect("finish eligible");
     store
@@ -238,7 +238,7 @@ async fn invocation_discovery_counts_eligible_active_and_not_expired_rows() {
         .await
         .expect("start recent");
     store
-        .finish_invocation("not-expired", 30_000_000, 0, Some("success"))
+        .finish_invocation("not-expired", 30_000_000, 0, Some("success"), None)
         .await
         .expect("finish recent");
     store
@@ -278,7 +278,7 @@ async fn discovery_excludes_live_pins_from_owners_and_issue_dependents() {
         .await
         .expect("seed issue");
     store
-        .set_issue_status("pinned-issue", "resolved", 10_000_000)
+        .set_issue_status("svc", "pinned-issue", "resolved", 10_000_000)
         .await
         .expect("resolve issue");
     store
@@ -286,7 +286,7 @@ async fn discovery_excludes_live_pins_from_owners_and_issue_dependents() {
         .await
         .expect("start invocation");
     store
-        .finish_invocation("pinned-invocation", 10_000_000, 0, Some("success"))
+        .finish_invocation("pinned-invocation", 10_000_000, 0, Some("success"), None)
         .await
         .expect("finish invocation");
     store
@@ -343,7 +343,7 @@ async fn execute_invocation_prune_deletes_only_eligible_terminal_rows() {
         .await
         .expect("start eligible");
     store
-        .finish_invocation("eligible", 20_000_000, 0, Some("success"))
+        .finish_invocation("eligible", 20_000_000, 0, Some("success"), None)
         .await
         .expect("finish eligible");
     store
@@ -355,7 +355,7 @@ async fn execute_invocation_prune_deletes_only_eligible_terminal_rows() {
         .await
         .expect("start recent");
     store
-        .finish_invocation("keep-recent", 30_000_000, 0, Some("success"))
+        .finish_invocation("keep-recent", 30_000_000, 0, Some("success"), None)
         .await
         .expect("finish recent");
 
@@ -404,7 +404,7 @@ async fn execute_issue_prune_cascades_and_preserves_unresolved() {
             .expect("seed issue");
     }
     store
-        .set_issue_status("eligible", "resolved", 20_000_000)
+        .set_issue_status("svc", "eligible", "resolved", 20_000_000)
         .await
         .expect("resolve eligible");
 
@@ -453,7 +453,7 @@ async fn execution_preserves_pins_created_after_discovery() {
         .await
         .expect("seed issue");
     store
-        .set_issue_status("late-pin", "resolved", 10_000_000)
+        .set_issue_status("svc", "late-pin", "resolved", 10_000_000)
         .await
         .expect("resolve issue");
     let discovered = store
@@ -474,5 +474,11 @@ async fn execution_preserves_pins_created_after_discovery() {
             .expect("execute with defense in depth"),
         0
     );
-    assert!(store.issue("late-pin").await.expect("read issue").is_some());
+    assert!(
+        store
+            .issue("svc", "late-pin")
+            .await
+            .expect("read issue")
+            .is_some()
+    );
 }

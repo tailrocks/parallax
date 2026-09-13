@@ -26,17 +26,7 @@ import { graphql } from "@/platform/graphql/transport"
 import { guessId } from "@/features/quick-navigation"
 import type { IdGuess } from "@/features/quick-navigation"
 
-type StaticRoute =
-  | "/"
-  | "/issues"
-  | "/traces"
-  | "/ecosystem"
-  | "/logs"
-  | "/services"
-  | "/invocations"
-  | "/dashboards"
-  | "/investigations"
-  | "/sql"
+type StaticRoute = (typeof nav)[number]["href"]
 
 interface RecentTrace {
   traceId: string
@@ -68,21 +58,7 @@ function isCommandK(event: KeyboardEvent) {
 }
 
 function pageRoute(href: string): StaticRoute | null {
-  switch (href) {
-    case "/":
-    case "/issues":
-    case "/traces":
-    case "/ecosystem":
-    case "/logs":
-    case "/services":
-    case "/invocations":
-    case "/dashboards":
-    case "/investigations":
-    case "/sql":
-      return href
-    default:
-      return null
-  }
+  return nav.some((item) => item.href === href) ? (href as StaticRoute) : null
 }
 
 function idLabel(guess: IdGuess) {
@@ -239,8 +215,8 @@ export function CommandPalette({
         break
       case "fingerprint":
         void navigate({
-          to: "/issues/$fingerprint",
-          params: { fingerprint: guess.id },
+          to: "/issues",
+          search: { q: guess.id },
         })
         break
       case "span-in-trace":

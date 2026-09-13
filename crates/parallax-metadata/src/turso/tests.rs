@@ -62,7 +62,11 @@ async fn occurrence_claim_survives_restart_concurrency_and_prunes() {
     for delivery in deliveries {
         delivery.await.expect("delivery task").expect("delivery");
     }
-    let issue = store.issue("fp").await.expect("issue").expect("present");
+    let issue = store
+        .issue("svc", "fp")
+        .await
+        .expect("issue")
+        .expect("present");
     assert_eq!(issue.event_count, 1);
 
     let beyond_retention =
@@ -103,12 +107,12 @@ async fn batch_upsert_merges_shared_fingerprint_tags_once() {
         .expect("batch upsert");
 
     let shared = store
-        .issue("fp-shared")
+        .issue("checkout", "fp-shared")
         .await
         .expect("issue")
         .expect("present");
     let other_issue = store
-        .issue("fp-other")
+        .issue("checkout", "fp-other")
         .await
         .expect("issue")
         .expect("present");
@@ -126,10 +130,16 @@ async fn batch_upsert_merges_shared_fingerprint_tags_once() {
         serde_json::from_str(&other_issue.tags).expect("other tags");
     assert_eq!(other_tags["http.route"]["/cart"], 1);
 
-    let trend = store.issue_trend("fp-shared", 0, 60).await.expect("trend");
+    let trend = store
+        .issue_trend("checkout", "fp-shared", 0, 60)
+        .await
+        .expect("trend");
     let total: u64 = trend.iter().map(|p| p.count).sum();
     assert_eq!(total, 2);
-    let other_trend = store.issue_trend("fp-other", 0, 60).await.expect("trend");
+    let other_trend = store
+        .issue_trend("checkout", "fp-other", 0, 60)
+        .await
+        .expect("trend");
     let other_total: u64 = other_trend.iter().map(|p| p.count).sum();
     assert_eq!(other_total, 1);
 }
@@ -150,7 +160,11 @@ async fn tags_accumulate_bounded() {
             .await
             .expect("upsert");
     }
-    let issue = store.issue("fp1").await.expect("issue").expect("present");
+    let issue = store
+        .issue("svc", "fp1")
+        .await
+        .expect("issue")
+        .expect("present");
     let tags: serde_json::Value = serde_json::from_str(&issue.tags).expect("tags json");
     assert_eq!(tags["http.route"]["/checkout"], 2);
     assert_eq!(tags["attempt"]["3"], 2);
@@ -184,7 +198,7 @@ async fn first_seen_lowers_on_out_of_order_occurrence() {
         .await
         .expect("upsert earlier");
     let issue = store
-        .issue("fp-order")
+        .issue("svc", "fp-order")
         .await
         .expect("issue")
         .expect("present");
@@ -1226,7 +1240,7 @@ async fn issue_title_and_culprit_are_sanitized_at_rest() {
         .expect("upsert");
 
     let issue = store
-        .issue("fp-secret")
+        .issue("svc", "fp-secret")
         .await
         .expect("read")
         .expect("present");
@@ -1350,7 +1364,11 @@ async fn migration_adopts_v0_with_runs_table() {
             SCHEMA_USER_VERSION
         );
     }
-    let issue = store.issue("kept").await.expect("issue").expect("present");
+    let issue = store
+        .issue("svc", "kept")
+        .await
+        .expect("issue")
+        .expect("present");
     assert_eq!(issue.title, "title");
 }
 
@@ -1436,4 +1454,170 @@ async fn migration_stamps_user_version_on_fresh_open() {
         i32::try_from(integer(&row, 0)).expect("user_version fits i32"),
         SCHEMA_USER_VERSION
     );
+}
+
+#[tokio::test]
+async fn same_fingerprint_in_two_services_stays_two_issues() {
+    // Issue identity is (service, fingerprint): one service's regression must
+    // never merge into (or freeze the service of) another's.
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(path).await.expect("open");
+    let attrs = serde_json::json!({});
+    store
+        .upsert_issue_occurrences(&[
+            occurrence("fp-dup", "checkout", 1_000_000_000, &attrs),
+            occurrence("fp-dup", "billing", 2_000_000_000, &attrs),
+        ])
+        .await
+        .expect("batch upsert");
+
+    let checkout = store
+        .issue("checkout", "fp-dup")
+        .await
+        .expect("issue")
+        .expect("checkout issue");
+    let billing = store
+        .issue("billing", "fp-dup")
+        .await
+        .expect("issue")
+        .expect("billing issue");
+    assert_eq!(checkout.service, "checkout");
+    assert_eq!(checkout.event_count, 1);
+    assert_eq!(billing.service, "billing");
+    assert_eq!(billing.event_count, 1);
+
+    // Cross-service batch upserts keep both counts independent.
+    store
+        .upsert_issue_occurrence(&occurrence("fp-dup", "checkout", 3_000_000_000, &attrs))
+        .await
+        .expect("second checkout occurrence");
+    let checkout = store
+        .issue("checkout", "fp-dup")
+        .await
+        .expect("issue")
+        .expect("checkout issue");
+    assert_eq!(checkout.event_count, 2);
+    assert_eq!(
+        store
+            .issue("billing", "fp-dup")
+            .await
+            .expect("issue")
+            .expect("billing issue")
+            .event_count,
+        1
+    );
+
+    let trend = store
+        .issue_trend("billing", "fp-dup", 0, 60)
+        .await
+        .expect("trend");
+    assert_eq!(trend.iter().map(|p| p.count).sum::<u64>(), 1);
+}
+
+#[tokio::test]
+async fn new_occurrence_reopens_resolved_issue() {
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(path).await.expect("open");
+    let attrs = serde_json::json!({});
+    store
+        .upsert_issue_occurrence(&occurrence("fp-reopen", "svc", 1_000_000_000, &attrs))
+        .await
+        .expect("first occurrence");
+    store
+        .set_issue_status("svc", "fp-reopen", "resolved", 2_000_000_000)
+        .await
+        .expect("resolve");
+    let resolved = store
+        .issue("svc", "fp-reopen")
+        .await
+        .expect("issue")
+        .expect("resolved issue");
+    assert_eq!(resolved.status, "resolved");
+
+    // A fresh occurrence is a regression: status returns to open and the
+    // resolution timestamp clears, while counts keep accumulating.
+    store
+        .upsert_issue_occurrence(&occurrence("fp-reopen", "svc", 3_000_000_000, &attrs))
+        .await
+        .expect("regression occurrence");
+    let reopened = store
+        .issue("svc", "fp-reopen")
+        .await
+        .expect("issue")
+        .expect("reopened issue");
+    assert_eq!(reopened.status, "open");
+    assert_eq!(reopened.event_count, 2);
+    assert_eq!(reopened.last_seen_nanos, 3_000_000_000);
+}
+
+#[tokio::test]
+async fn finish_persists_bounded_child_output_round_trip() {
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(path).await.expect("open");
+    store
+        .start_invocation(
+            "run-cap",
+            Some("make build"),
+            Some("one_shot"),
+            1_000_000_000,
+        )
+        .await
+        .expect("start");
+    // Pre-finish: no capture stored.
+    let running = store
+        .invocation("run-cap")
+        .await
+        .expect("read")
+        .expect("present");
+    assert_eq!(running.stdout_text, None);
+    assert_eq!(running.stdout_truncated_bytes, 0);
+    assert_eq!(running.stderr_text, None);
+    assert_eq!(running.stderr_truncated_bytes, 0);
+
+    store
+        .finish_invocation(
+            "run-cap",
+            2_000_000_000,
+            1,
+            Some("failure"),
+            Some(&InvocationOutput {
+                stdout_text: Some("line1\nline2\n".into()),
+                stdout_truncated_bytes: 128,
+                stderr_text: Some("boom\n".into()),
+                stderr_truncated_bytes: 0,
+            }),
+        )
+        .await
+        .expect("finish");
+    let finished = store
+        .invocation("run-cap")
+        .await
+        .expect("read")
+        .expect("present");
+    assert_eq!(finished.status, "finished");
+    assert_eq!(finished.stdout_text.as_deref(), Some("line1\nline2\n"));
+    assert_eq!(finished.stdout_truncated_bytes, 128);
+    assert_eq!(finished.stderr_text.as_deref(), Some("boom\n"));
+    assert_eq!(finished.stderr_truncated_bytes, 0);
+    // The list path carries the same fields.
+    let listed = store.invocations(10).await.expect("list");
+    assert_eq!(listed.len(), 1);
+    assert_eq!(listed[0].stdout_text.as_deref(), Some("line1\nline2\n"));
+    assert_eq!(listed[0].stdout_truncated_bytes, 128);
+    assert_eq!(listed[0].stderr_text.as_deref(), Some("boom\n"));
+    assert_eq!(listed[0].stderr_truncated_bytes, 0);
+
+    // A bare finish (no output) leaves stored output untouched.
+    store
+        .finish_invocation("run-cap", 3_000_000_000, 0, Some("success"), None)
+        .await
+        .expect("bare finish");
+    let kept = store
+        .invocation("run-cap")
+        .await
+        .expect("read")
+        .expect("present");
+    assert_eq!(kept.exit_code, Some(0));
+    assert_eq!(kept.stdout_text.as_deref(), Some("line1\nline2\n"));
+    assert_eq!(kept.stdout_truncated_bytes, 128);
 }

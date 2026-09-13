@@ -498,9 +498,7 @@ impl crate::adapter::TraceAnalyticsStore for GreptimeStore {
             .join(",");
         let rows = self
             .sql(&format!(
-                r#"SELECT CAST("ts" AS BIGINT) AS "ts_nanos", "service", "fingerprint", "error_type",
-                          "message", "stacktrace", "source", "trace_id", "span_id",
-                          json_to_string("attributes")
+                r#"SELECT {ERROR_EVENT_PROJECTION}
                    FROM error_events WHERE "trace_id" IN ({id_list})
                    ORDER BY "ts" DESC LIMIT {limit}"#
             ))

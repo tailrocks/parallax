@@ -1,14 +1,12 @@
-import { useNavigate, useRouterState } from "@tanstack/react-router"
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router"
 import {
   IconArticleFilled,
-  IconBookmark,
   IconColumns,
   IconDeviceFloppy,
   IconHistory,
   IconPlayerPlayFilled,
   IconPlayerStopFilled,
   IconRefresh,
-  IconTrash,
   IconX,
 } from "@tabler/icons-react"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -19,6 +17,10 @@ import { useDelayedLoading } from "@/shared/console/hooks"
 import { TableSkeleton } from "@/shared/console/skeletons"
 import { useChartBrush } from "@/shared/console/use-chart-brush"
 import { WhereClauseChips, WhereClauseEditor } from "@/shared/console/where-clause-editor"
+import { SavedViewsMenu, type SavedView } from "@/features/logs/components/saved-views-menu"
+import { QueryBar, QueryBarRow } from "@/shared/console/query-bar"
+import { SectionError } from "@/shared/console/error-state"
+import { useFilterFocusShortcut } from "@/shared/keyboard"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
@@ -35,9 +37,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
-  DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
@@ -54,7 +54,8 @@ import {
   parseLogColumns,
   serializeLogColumns,
 } from "@/features/logs/components/logs-table"
-import type { LogDoc, OptionalLogColumn } from "@/features/logs/components/logs-table"
+import type { LogDoc } from "@/features/logs/model/log-fields"
+import type { OptionalLogColumn } from "@/features/logs/components/logs-table"
 import { contextWindow, stepSecondsForRange } from "@/features/logs/model/logs-range"
 import { logStreamBatchDecoder } from "@/features/logs/api/log-stream-schema"
 import { mergeLiveLogs } from "@/features/logs/model/merge-live-logs"
@@ -92,14 +93,6 @@ export interface LogsData {
   logFacets: LogFacet[]
   logPatterns: LogPatternRow[]
   savedViews: SavedView[]
-}
-
-export interface SavedView {
-  id: string
-  name: string
-  page: string
-  state: string
-  updatedAtNanos: string
 }
 
 interface LogPatternRow {
@@ -144,6 +137,9 @@ export async function loadLogs(search: LogsSearch): Promise<LogsData> {
     search.q ? `query: "${gqlString(search.q)}"` : "",
     logAttributeFilters(search.where) ?? "",
   ].filter(Boolean)
+  // traceId scopes only the log list: logCountSeries/logFacets/logPatterns
+  // do not accept it yet (backend gap — histogram stays window-scoped).
+  const traceFilter = search.trace ? `traceId: "${gqlString(search.trace)}"` : ""
   if (search.live) {
     return graphqlCached<LogsData>(
       `{ services savedViews(page: "/logs") { id name page state updatedAtNanos } logs(limit: 0) { ${LOG_FIELDS} } logCountSeries(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}", stepSeconds: ${stepSeconds}) { tsNanos value } logFacets(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") { dimension values { value count } } }`
@@ -154,13 +150,16 @@ export async function loadLogs(search: LogsSearch): Promise<LogsData> {
     }))
   }
   const logsQuery = search.anchor
-    ? `logs: logsAround(anchorNanos: "${search.anchor}", windowSeconds: 30, ${search.service ? `service: "${gqlString(search.service)}", ` : ""}limit: ${PAGE_SIZE}) { ${LOG_FIELDS} }`
+    ? `logs: logsAround(anchorNanos: "${search.anchor}", windowSeconds: 30, ${search.service ? `service: "${gqlString(search.service)}", ` : ""}${traceFilter ? `${traceFilter}, ` : ""}limit: ${PAGE_SIZE}) { ${LOG_FIELDS} }`
     : `logs(${[
         `fromNanos: "${range.fromNanos}"`,
         `toNanos: "${range.toNanos}"`,
         ...filters,
+        traceFilter,
         `limit: ${PAGE_SIZE}`,
-      ].join(", ")}) { ${LOG_FIELDS} }`
+      ]
+        .filter(Boolean)
+        .join(", ")}) { ${LOG_FIELDS} }`
   const seriesArgs = [
     `fromNanos: "${range.fromNanos}"`,
     `toNanos: "${range.toNanos}"`,
@@ -223,23 +222,7 @@ export function LogsPage({ data, search }: { data: LogsData; search: LogsSearch 
 
   useEffect(() => setPendingQuery(search.q ?? ""), [search.q])
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "f" && event.key !== "F") return
-      if (event.metaKey || event.ctrlKey || event.altKey) return
-      const target = event.target
-      if (
-        target instanceof HTMLElement &&
-        target.closest("input, textarea, select, [contenteditable]")
-      ) {
-        return
-      }
-      event.preventDefault()
-      setWhereFocusKey((current) => current + 1)
-    }
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [])
+  useFilterFocusShortcut(() => setWhereFocusKey((current) => current + 1))
 
   const streamUrl = useMemo(() => {
     if (!live) return null
@@ -247,8 +230,9 @@ export function LogsPage({ data, search }: { data: LogsData; search: LogsSearch 
     if (search.service) params.set("service", search.service)
     if (search.sev) params.set("severity_min", String(search.sev))
     if (search.q) params.set("q", search.q)
+    if (search.trace) params.set("trace_id", search.trace)
     return `/v1/logs/stream?${params}`
-  }, [live, search.service, search.sev, search.q])
+  }, [live, search.service, search.sev, search.q, search.trace])
 
   const streamStatus = useLiveStream<LogDoc>({
     url: streamUrl,
@@ -379,6 +363,7 @@ export function LogsPage({ data, search }: { data: LogsData; search: LogsSearch 
         search.service ? `service: "${gqlString(search.service)}"` : "",
         search.sev ? `severityMin: ${search.sev}` : "",
         search.q ? `query: "${gqlString(search.q)}"` : "",
+        search.trace ? `traceId: "${gqlString(search.trace)}"` : "",
         logAttributeFilters(search.where) ?? "",
         `limit: ${PAGE_SIZE}`,
       ]
@@ -422,101 +407,103 @@ export function LogsPage({ data, search }: { data: LogsData; search: LogsSearch 
         }
       />
 
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-muted/20 p-3">
-        <Select
-          value={search.service ?? "all"}
-          onValueChange={(value) =>
-            update({
-              service: !value || value === "all" ? undefined : value,
-            })
-          }
-        >
-          <SelectTrigger className="w-48" aria-label="All services">
-            <SelectValue placeholder="All services" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All services</SelectItem>
-            {data.services.map((service) => (
-              <SelectItem key={service} value={service}>
-                {service}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={String(search.sev ?? 0)}
-          onValueChange={(value) => update({ sev: Number(value) || undefined })}
-        >
-          <SelectTrigger className="w-36" aria-label="Minimum severity">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {SEVERITIES.map((severity) => (
-              <SelectItem key={severity.value ?? 0} value={String(severity.value ?? 0)}>
-                {severity.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <form
-          className="flex min-w-64 flex-1 gap-2"
-          onSubmit={(event) => {
-            event.preventDefault()
-            update({ q: pendingQuery.trim() || undefined })
-          }}
-        >
-          <Input
-            value={pendingQuery}
-            onChange={(event) => setPendingQuery(event.target.value)}
-            placeholder="Filter log bodies"
+      <QueryBar>
+        <QueryBarRow>
+          <form
+            className="flex min-w-64 flex-1 gap-2"
+            onSubmit={(event) => {
+              event.preventDefault()
+              update({ q: pendingQuery.trim() || undefined })
+            }}
+          >
+            <Input
+              value={pendingQuery}
+              onChange={(event) => setPendingQuery(event.target.value)}
+              placeholder="Filter log bodies"
+            />
+          </form>
+          <WhereClauseEditor
+            key={whereFocusKey}
+            autoFocus={whereFocusKey > 0}
+            className="min-w-72 flex-1"
+            filters={whereFilters}
+            onApply={applyWhereFilters}
+            keySuggestions={
+              facets.length > 0
+                ? facets.map((facet) => facet.dimension)
+                : ["service", "severity", "body"]
+            }
+            valueSuggestionsFor={facetValueSuggestions}
           />
-        </form>
-        <WhereClauseEditor
-          key={whereFocusKey}
-          autoFocus={whereFocusKey > 0}
-          className="min-w-72 flex-1"
-          filters={whereFilters}
-          onApply={applyWhereFilters}
-          keySuggestions={
-            facets.length > 0
-              ? facets.map((facet) => facet.dimension)
-              : ["service", "severity", "body"]
-          }
-          valueSuggestionsFor={facetValueSuggestions}
-        />
-        <ColumnMenu
-          columns={columns}
-          onChange={(next) => update({ cols: serializeLogColumns(next) })}
-        />
-        <Button
-          type="button"
-          variant={search.patterns ? "secondary" : "outline"}
-          size="sm"
-          onClick={() => update({ patterns: search.patterns ? undefined : true })}
-        >
-          Patterns
-        </Button>
-        <SavedViewsMenu
-          views={savedViews}
-          onSelect={selectSavedView}
-          onDelete={(id) => void deleteSavedView(id)}
-          onSave={() => {
-            setSaveName("")
-            setSaveOpen(true)
-          }}
-        />
-        <Button type="button" variant="outline" size="sm" onClick={() => update({})}>
-          <IconRefresh />
-          Refresh
-        </Button>
-      </div>
+          <Select
+            value={search.service ?? "all"}
+            onValueChange={(value) =>
+              update({
+                service: !value || value === "all" ? undefined : value,
+              })
+            }
+          >
+            <SelectTrigger className="w-48" aria-label="All services">
+              <SelectValue placeholder="All services" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All services</SelectItem>
+              {data.services.map((service) => (
+                <SelectItem key={service} value={service}>
+                  {service}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={String(search.sev ?? 0)}
+            onValueChange={(value) => update({ sev: Number(value) || undefined })}
+          >
+            <SelectTrigger className="w-36" aria-label="Minimum severity">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SEVERITIES.map((severity) => (
+                <SelectItem key={severity.value ?? 0} value={String(severity.value ?? 0)}>
+                  {severity.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <ColumnMenu
+            columns={columns}
+            onChange={(next) => update({ cols: serializeLogColumns(next) })}
+          />
+          <Button
+            type="button"
+            variant={search.patterns ? "secondary" : "outline"}
+            size="sm"
+            onClick={() => update({ patterns: search.patterns ? undefined : true })}
+          >
+            Patterns
+          </Button>
+          <SavedViewsMenu
+            views={savedViews}
+            onSelect={selectSavedView}
+            onDelete={(id) => void deleteSavedView(id)}
+            onSave={() => {
+              setSaveName("")
+              setSaveOpen(true)
+            }}
+          />
+          <Button type="button" variant="outline" size="sm" onClick={() => update({})}>
+            <IconRefresh />
+            Refresh
+          </Button>
+        </QueryBarRow>
+      </QueryBar>
 
       <WhereClauseChips
         filters={whereFilters}
         onRemove={(index) => applyWhereFilters(whereFilters.filter((_, i) => i !== index))}
       />
 
-      {viewError ? <p className="text-sm text-destructive">{viewError}</p> : null}
+      {viewError ? <SectionError message={viewError} /> : null}
 
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
         <DialogContent>
@@ -559,6 +546,30 @@ export function LogsPage({ data, search }: { data: LogsData; search: LogsSearch 
           >
             <IconX />
             Reset
+          </Button>
+        </div>
+      ) : null}
+
+      {search.trace ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/70 bg-accent/25 px-3 py-2">
+          <div className="flex min-w-0 items-center gap-2 text-sm">
+            <span className="shrink-0 text-muted-foreground">Trace</span>
+            <Link
+              to="/traces/$traceId"
+              params={{ traceId: search.trace }}
+              className="min-w-0 truncate font-mono text-xs hover:underline"
+            >
+              {search.trace}
+            </Link>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => update({ trace: undefined })}
+          >
+            <IconX />
+            Clear trace
           </Button>
         </div>
       ) : null}
@@ -628,14 +639,16 @@ export function LogsPage({ data, search }: { data: LogsData; search: LogsSearch 
           ) : logs.length === 0 ? (
             <EmptyState
               title={
-                search.q || search.service || search.sev || search.where
+                search.q || search.service || search.sev || search.where || search.trace
                   ? "No matching logs"
                   : "No logs yet"
               }
               description={
-                search.q || search.service || search.sev || search.where
-                  ? "Clear filters or widen the time range."
-                  : "No log records in this window — send OTLP logs to 127.0.0.1:4317/4318 or wrap a command with parallax invocation start."
+                search.trace
+                  ? "This trace emitted no log records in range."
+                  : search.q || search.service || search.sev || search.where
+                    ? "Clear filters or widen the time range."
+                    : "No log records in this window — send OTLP logs to 127.0.0.1:4317/4318 or wrap a command with parallax invocation start."
               }
               icon={IconArticleFilled}
               className="rounded-xl border border-dashed"
@@ -669,7 +682,7 @@ export function LogsPage({ data, search }: { data: LogsData; search: LogsSearch 
               {!live && !search.anchor && !exhausted ? (
                 <div className="flex flex-col gap-2 border-t border-border/70 p-2">
                   {olderError ? (
-                    <p className="px-2 text-sm text-destructive">{olderError}</p>
+                    <SectionError message={olderError} onRetry={() => void loadOlder()} />
                   ) : null}
                   <Button
                     type="button"
@@ -809,66 +822,6 @@ export function ColumnMenu({
   )
 }
 
-export function SavedViewsMenu({
-  views,
-  onSelect,
-  onDelete,
-  onSave,
-}: {
-  views: SavedView[]
-  onSelect: (view: SavedView) => void
-  onDelete: (id: string) => void
-  onSave: () => void
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger render={<Button type="button" variant="outline" size="sm" />}>
-        <IconBookmark />
-        Views
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel>Saved views</DropdownMenuLabel>
-        <DropdownMenuGroup>
-          {views.length === 0 ? (
-            <DropdownMenuItem disabled>No saved views</DropdownMenuItem>
-          ) : (
-            views.map((view) => (
-              <DropdownMenuItem key={view.id} onClick={() => onSelect(view)}>
-                <IconBookmark />
-                <span className="truncate">{view.name}</span>
-              </DropdownMenuItem>
-            ))
-          )}
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onSave}>
-          <IconDeviceFloppy />
-          Save current view
-        </DropdownMenuItem>
-        {views.length > 0 ? (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Delete view</DropdownMenuLabel>
-            {views.map((view) => (
-              <DropdownMenuItem
-                key={`delete-${view.id}`}
-                variant="destructive"
-                onClick={(event) => {
-                  event.preventDefault()
-                  onDelete(view.id)
-                }}
-              >
-                <IconTrash />
-                <span className="truncate">{view.name}</span>
-              </DropdownMenuItem>
-            ))}
-          </>
-        ) : null}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-
 export { contextWindow, stepSecondsForRange } from "@/features/logs/model/logs-range"
 export { parseSavedViewState, validateLogsSearch } from "@/features/logs/model/logs-search"
 export type { LogsSearch } from "@/features/logs/model/logs-search"
@@ -878,4 +831,5 @@ export {
   parseLogColumns,
   serializeLogColumns,
 } from "@/features/logs/components/logs-table"
-export type { LogDoc, OptionalLogColumn } from "@/features/logs/components/logs-table"
+export type { LogDoc } from "@/features/logs/model/log-fields"
+export type { OptionalLogColumn } from "@/features/logs/components/logs-table"

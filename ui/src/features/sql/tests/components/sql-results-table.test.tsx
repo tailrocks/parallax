@@ -13,7 +13,7 @@ function renderWithRouter(component: React.ReactNode) {
     targetPaths: [
       "/traces/$traceId",
       "/invocations/$invocationId",
-      "/issues/$fingerprint",
+      "/issues/$service/$fingerprint",
       "/services/$service",
     ],
   })
@@ -44,7 +44,7 @@ describe("SqlResultBody", () => {
       "/traces/trace-a",
       "/invocations/run-a",
       "/services/checkout",
-      "/issues/fp-a",
+      "/issues/checkout/fp-a",
       "/traces/trace-a",
     ])
     expect(screen.getByText("null").closest("a")).toBeNull()

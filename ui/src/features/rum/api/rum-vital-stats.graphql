@@ -1,0 +1,20 @@
+query RumVitalStats(
+  $name: String!
+  $fromNanos: String!
+  $toNanos: String!
+  $q: Float!
+  $service: String
+  $stepSeconds: Int
+) {
+  histogramQuantile(
+    name: $name
+    fromNanos: $fromNanos
+    toNanos: $toNanos
+    q: $q
+    service: $service
+    stepSeconds: $stepSeconds
+  ) {
+    tsNanos
+    value
+  }
+}

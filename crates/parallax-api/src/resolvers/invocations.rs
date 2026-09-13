@@ -5,6 +5,8 @@
 
 //! GraphQL CLI-invocation domain types and resolvers.
 
+mod stats;
+
 use juniper::{FieldResult, graphql_object};
 use parallax_storage::model;
 use std::collections::{HashMap, HashSet};
@@ -60,6 +62,7 @@ pub(crate) struct Invocation {
 struct InvocationErrorEvent {
     ts_nanos: String,
     title: String,
+    service: String,
     fingerprint: String,
     trace_id: Option<String>,
 }
@@ -77,7 +80,7 @@ struct InvocationStats {
 const STALE_AFTER_NANOS: u128 = 5 * 60 * 1_000_000_000;
 
 impl Invocation {
-    fn new(record: model::InvocationRecord) -> Self {
+    pub(crate) fn new(record: model::InvocationRecord) -> Self {
         Self {
             record,
             stats: tokio::sync::OnceCell::new(),
@@ -130,79 +133,7 @@ impl Invocation {
     }
 }
 
-fn invocation_stats_from_spans(
-    spans: &[model::SpanRow],
-    events_by_trace: &HashMap<String, Vec<model::ErrorEventRow>>,
-) -> InvocationStats {
-    let mut trace_ids: Vec<String> = Vec::new();
-    let mut seen_trace_ids = HashSet::new();
-    let mut last_span_nanos = 0;
-    for span in spans {
-        last_span_nanos = last_span_nanos.max(span.ts_nanos);
-        let trace_id = span.trace_id.clone();
-        if seen_trace_ids.insert(trace_id.clone()) {
-            trace_ids.push(trace_id);
-        }
-    }
-    let mut events: Vec<model::ErrorEventRow> = Vec::new();
-    for trace_id in &trace_ids {
-        if let Some(trace_events) = events_by_trace.get(trace_id) {
-            events.extend(trace_events.iter().cloned());
-        }
-    }
-    events.sort_by_key(|event| std::cmp::Reverse(event.ts_nanos));
-    events.truncate(MAX_ROWS);
-    InvocationStats {
-        trace_ids,
-        events,
-        last_span_nanos,
-        command_completion: command_completion(spans),
-    }
-}
-
-/// Latest completed root `cli.command` span carrying an `outcome` attribute:
-/// the observed end of an external (non-wrapper-registered) invocation. The
-/// outcome attribute is recorded at span completion, so its presence means
-/// the command finished.
-fn command_completion(spans: &[model::SpanRow]) -> Option<(u128, String)> {
-    // A daemon's lifecycle is not command-derived: its capsule children
-    // complete root command spans while the daemon keeps running, so any
-    // daemon-mode signal disables the derivation (wrapper registration or
-    // staleness closes daemons).
-    let daemon = spans.iter().any(|span| {
-        span.attributes
-            .get(parallax_analysis::semconv::APP_MODE)
-            .and_then(|value| value.as_str())
-            == Some("daemon")
-    });
-    if daemon {
-        return None;
-    }
-    spans
-        .iter()
-        .filter(|span| {
-            span.name == parallax_analysis::semconv::CLI_COMMAND_SPAN_NAME
-                && span.parent_span_id.as_deref().is_none_or(str::is_empty)
-        })
-        .filter_map(|span| {
-            // A capsule child is wrapped INSIDE another invocation; its
-            // completion never closes the surrounding invocation.
-            if span
-                .attributes
-                .get(parallax_analysis::semconv::APP_MODE)
-                .and_then(|value| value.as_str())
-                == Some("capsule")
-            {
-                return None;
-            }
-            let outcome = span
-                .attributes
-                .get(parallax_analysis::semconv::OUTCOME)
-                .and_then(|value| value.as_str())?;
-            Some((span.ts_nanos + span.duration_ns, outcome.to_string()))
-        })
-        .max_by_key(|(end, _)| *end)
-}
+use stats::{command_completion, invocation_stats_from_spans};
 
 #[graphql_object(context = ApiContext)]
 impl Invocation {
@@ -230,6 +161,23 @@ impl Invocation {
     }
     fn exit_code(&self) -> Option<i32> {
         self.record.exit_code
+    }
+    /// Bounded head of child stdout captured by the CLI wrapper; null when
+    /// never captured (bare, external, or pre-capture runs).
+    fn stdout_text(&self) -> Option<&str> {
+        self.record.stdout_text.as_deref()
+    }
+    /// Stdout bytes omitted past the capture cap.
+    fn stdout_truncated_bytes(&self) -> i32 {
+        saturate_i32(self.record.stdout_truncated_bytes)
+    }
+    /// Bounded head of child stderr captured by the CLI wrapper.
+    fn stderr_text(&self) -> Option<&str> {
+        self.record.stderr_text.as_deref()
+    }
+    /// Stderr bytes omitted past the capture cap.
+    fn stderr_truncated_bytes(&self) -> i32 {
+        saturate_i32(self.record.stderr_truncated_bytes)
     }
     /// cli (wrapper-registered) | external (auto-registered from telemetry).
     fn registration(&self) -> &str {
@@ -333,6 +281,7 @@ impl Invocation {
             .map(|event| InvocationErrorEvent {
                 ts_nanos: nanos_string(event.ts_nanos),
                 title: parallax_analysis::derive::issue_title(&event.error_type, &event.message),
+                service: event.service.clone(),
                 fingerprint: event.fingerprint.clone(),
                 trace_id: (!event.trace_id.is_empty()).then(|| event.trace_id.clone()),
             })
@@ -341,17 +290,17 @@ impl Invocation {
     /// Grouped issues whose events fell inside this run's traces.
     async fn issues(&self, context: &ApiContext) -> FieldResult<Vec<Issue>> {
         let stats = self.stats(context).await?;
-        let mut fingerprints: Vec<String> = Vec::new();
-        let mut seen_fingerprints = HashSet::new();
+        let mut issue_keys: Vec<(String, String)> = Vec::new();
+        let mut seen_keys = HashSet::new();
         for event in &stats.events {
-            let fingerprint = event.fingerprint.clone();
-            if seen_fingerprints.insert(fingerprint.clone()) {
-                fingerprints.push(fingerprint);
+            let key = (event.service.clone(), event.fingerprint.clone());
+            if seen_keys.insert(key.clone()) {
+                issue_keys.push(key);
             }
         }
         let issues = context
             .metadata
-            .issues_by_fingerprints(&fingerprints)
+            .issues_by_fingerprints(&issue_keys)
             .await
             .map_err(crate::internal_field_err)?;
         Ok(Issue::from_rows(issues))
@@ -485,19 +434,51 @@ pub(crate) async fn invocation_start(
     Ok(true)
 }
 
+#[expect(
+    clippy::too_many_arguments,
+    reason = "run lifecycle and bounded output fields form the wrapper mutation contract"
+)]
 pub(crate) async fn invocation_finish(
     context: &ApiContext,
     invocation_id: String,
     ended_at_nanos: String,
     exit_code: i32,
     outcome: Option<String>,
+    stdout_text: Option<String>,
+    stdout_truncated_bytes: Option<i32>,
+    stderr_text: Option<String>,
+    stderr_truncated_bytes: Option<i32>,
 ) -> FieldResult<bool> {
     let nanos: u128 = ended_at_nanos
         .parse()
         .map_err(|_| field_err("invalid nanos"))?;
+    for count in [stdout_truncated_bytes, stderr_truncated_bytes]
+        .into_iter()
+        .flatten()
+    {
+        if count < 0 {
+            return Err(field_err("invalid truncated-bytes count"));
+        }
+    }
+    let output = (stdout_text.is_some()
+        || stdout_truncated_bytes.is_some()
+        || stderr_text.is_some()
+        || stderr_truncated_bytes.is_some())
+    .then(|| model::InvocationOutput {
+        stdout_text,
+        stdout_truncated_bytes: u64::try_from(stdout_truncated_bytes.unwrap_or(0)).unwrap_or(0),
+        stderr_text,
+        stderr_truncated_bytes: u64::try_from(stderr_truncated_bytes.unwrap_or(0)).unwrap_or(0),
+    });
     context
         .metadata
-        .finish_invocation(&invocation_id, nanos, exit_code, outcome.as_deref())
+        .finish_invocation(
+            &invocation_id,
+            nanos,
+            exit_code,
+            outcome.as_deref(),
+            output.as_ref(),
+        )
         .await
         .map_err(crate::internal_field_err)?;
     Ok(true)

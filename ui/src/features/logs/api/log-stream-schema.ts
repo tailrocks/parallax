@@ -1,7 +1,7 @@
 // Plan 147 — unknown-first runtime schema for /v1/logs/stream frames.
 
 import type { RuntimeDecoder } from "@/platform/external-values/runtime-decoder"
-import type { LogDoc } from "@/features/logs/components/logs-table"
+import type { LogDoc } from "@/features/logs/model/log-fields"
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)

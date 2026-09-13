@@ -226,3 +226,78 @@ fn issue_title_collapses_repeated_error_type_prefixes() {
     );
     assert_eq!(issue_title("E", "boom"), "E: boom");
 }
+
+#[test]
+fn otlp_resource_identity_reaches_error_rows() {
+    // Resource attrs carry release identity; the root span's attributes carry
+    // run/session. Every error row derived from this resource must retain all
+    // four — no values invented, missing attrs stay None.
+    let mut span = test_span(status::StatusCode::Ok as i32, true);
+    span.parent_span_id = Vec::new();
+    span.attributes = vec![
+        string_kv("cli.invocation.id", "run-m11"),
+        string_kv("session.id", "sess-m11"),
+    ];
+    let mut request = span_request(span);
+    request.resource_spans[0]
+        .resource
+        .as_mut()
+        .expect("resource")
+        .attributes
+        .extend([
+            string_kv("service.version", "2.0.0"),
+            string_kv("deployment.environment.name", "prod"),
+        ]);
+
+    let events = derive_from_traces(&request);
+
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].invocation_id.as_deref(), Some("run-m11"));
+    assert_eq!(events[0].session_id.as_deref(), Some("sess-m11"));
+    assert_eq!(events[0].service_version.as_deref(), Some("2.0.0"));
+    assert_eq!(events[0].environment.as_deref(), Some("prod"));
+}
+
+#[test]
+fn resource_identity_falls_back_to_deprecated_environment_key() {
+    let span = test_span(status::StatusCode::Ok as i32, true);
+    let mut request = span_request(span);
+    request.resource_spans[0]
+        .resource
+        .as_mut()
+        .expect("resource")
+        .attributes
+        .extend([
+            string_kv("service.version", "0.9.1"),
+            string_kv("deployment.environment", "staging"),
+        ]);
+
+    let events = derive_from_traces(&request);
+
+    assert_eq!(events[0].service_version.as_deref(), Some("0.9.1"));
+    assert_eq!(events[0].environment.as_deref(), Some("staging"));
+    assert_eq!(events[0].invocation_id, None);
+    assert_eq!(events[0].session_id, None);
+}
+
+#[test]
+fn log_derived_error_without_trace_retains_invocation_and_session() {
+    let mut row = log_row("boom", json!({}));
+    row.trace_id = String::new();
+    row.span_id = String::new();
+    row.invocation_id = Some("run-log".to_string());
+    row.session_id = Some("sess-log".to_string());
+    row.resource = json!({
+        "service.version": "3.1.4",
+        "deployment.environment.name": "prod"
+    });
+
+    let events = derive_from_logs(&[row]);
+
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].trace_id, String::new());
+    assert_eq!(events[0].invocation_id.as_deref(), Some("run-log"));
+    assert_eq!(events[0].session_id.as_deref(), Some("sess-log"));
+    assert_eq!(events[0].service_version.as_deref(), Some("3.1.4"));
+    assert_eq!(events[0].environment.as_deref(), Some("prod"));
+}

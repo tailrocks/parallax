@@ -31,8 +31,13 @@ import {
   type IssuesListQueryVariables,
 } from "@/features/issues/api/issues-list.generated"
 import { mapIssueDetail, mapIssueEvents, mapIssuesList } from "@/features/issues/api/issues-mapper"
-import { rangeHours } from "@/features/issues/model/issue-detail"
-import type { IssueDetailData, IssueEvent } from "@/features/issues/model/issue-detail"
+import {
+  rangeHours,
+  type IssueCorrelationLog,
+  type IssueCorrelationResult,
+  type IssueDetailData,
+  type IssueEvent,
+} from "@/features/issues/model/issue-detail"
 import type { IssuesData } from "@/features/issues/model/issue-summary"
 import type { IssuesSearch } from "@/features/issues/model/issues-search"
 import { IssuesError } from "@/features/issues/model/issues-error"
@@ -92,6 +97,7 @@ export async function loadIssues(search: IssuesSearch, range: ResolvedRange): Pr
 }
 
 export async function loadIssueDetail(
+  service: string,
   fingerprint: string,
   range: ResolvedRange
 ): Promise<IssueDetailData> {
@@ -100,6 +106,7 @@ export async function loadIssueDetail(
       brandDocument(IssueDetailDocument),
       brandSchema(IssueDetailQuerySchema),
       {
+        service,
         fingerprint,
         fromNanos: range.fromNanos,
         toNanos: range.toNanos,
@@ -107,50 +114,50 @@ export async function loadIssueDetail(
       }
     )
 
-    let resource: Record<string, unknown> = {}
-    let breadcrumbs: IssueDetailData["breadcrumbs"] = []
-    let traceRunId: string | null = null
-    let releaseVersion: string | null = null
-    const traceId = data.issue?.lastTraceId
-    if (traceId) {
-      try {
-        const correlated = await executeCachedGraphqlOperation<
-          IssueCorrelationQuery,
-          IssueCorrelationQueryVariables
-        >(brandDocument(IssueCorrelationDocument), brandSchema(IssueCorrelationQuerySchema), {
-          traceId,
-        })
-        const resourceRaw = correlated.trace?.spans[0]?.resource ?? "{}"
-        try {
-          resource = JSON.parse(resourceRaw) as Record<string, unknown>
-        } catch {
-          resource = {}
-        }
-        const version = resource["service.version"]
-        releaseVersion = typeof version === "string" && version.trim() ? version.trim() : null
-        breadcrumbs = correlated.logsByTrace.slice(-12).map((log) => ({
-          tsNanos: log.tsNanos,
-          severityText: log.severityText,
-          body: log.body,
-        }))
-        traceRunId = correlated.trace?.spans.find((s) => s.invocationId)?.invocationId ?? null
-      } catch {
-        // Trace may have aged out; issue detail still renders.
-      }
-    }
+    return mapIssueDetail(data)
+  } catch (error) {
+    mapBoundary(error, "load")
+  }
+}
 
-    return mapIssueDetail(data, {
-      resource,
-      breadcrumbs,
-      traceRunId,
-      releaseVersion,
+export async function loadIssueCorrelation(traceId: string): Promise<IssueCorrelationResult> {
+  try {
+    const correlated = await executeCachedGraphqlOperation<
+      IssueCorrelationQuery,
+      IssueCorrelationQueryVariables
+    >(brandDocument(IssueCorrelationDocument), brandSchema(IssueCorrelationQuerySchema), {
+      traceId,
     })
+    if (!correlated.trace) return { status: "trace-unavailable" }
+
+    let resource: Record<string, unknown> = {}
+    const resourceRaw = correlated.trace.spans[0]?.resource ?? "{}"
+    try {
+      resource = JSON.parse(resourceRaw) as Record<string, unknown>
+    } catch {
+      // Invalid trace resource JSON must not take down the selected event.
+      resource = {}
+    }
+    const version = resource["service.version"]
+    const logs: IssueCorrelationLog[] = correlated.logsByTrace.map((log) => ({ ...log }))
+
+    return {
+      status: "ready",
+      correlation: {
+        invocationId:
+          correlated.trace.spans.find((span) => span.invocationId)?.invocationId ?? null,
+        resource,
+        releaseVersion: typeof version === "string" && version.trim() ? version.trim() : null,
+        logs,
+      },
+    }
   } catch (error) {
     mapBoundary(error, "load")
   }
 }
 
 export async function setIssueStatus(
+  service: string,
   fingerprint: string,
   status: "open" | "resolved"
 ): Promise<void> {
@@ -158,7 +165,7 @@ export async function setIssueStatus(
     await executeGraphqlOperation<IssueSetStatusMutation, IssueSetStatusMutationVariables>(
       brandDocument(IssueSetStatusDocument),
       brandSchema(IssueSetStatusMutationSchema),
-      { fingerprint, status }
+      { service, fingerprint, status }
     )
   } catch (error) {
     mapBoundary(error, "mutation")
@@ -166,6 +173,7 @@ export async function setIssueStatus(
 }
 
 export async function loadIssueOccurrences(
+  service: string,
   fingerprint: string,
   fromNanos: string,
   toNanos: string
@@ -175,6 +183,7 @@ export async function loadIssueOccurrences(
       IssueOccurrencesQuery,
       IssueOccurrencesQueryVariables
     >(brandDocument(IssueOccurrencesDocument), brandSchema(IssueOccurrencesQuerySchema), {
+      service,
       fingerprint,
       fromNanos,
       toNanos,

@@ -28,6 +28,7 @@ cross-release-vendored = [
 
 [dependencies]
 parallax-semconv = { workspace = true }
+parallax-redaction = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true }
 parallax-server = { workspace = true }

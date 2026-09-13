@@ -125,6 +125,7 @@ describe("errorTypeBreakdown", () => {
     const breakdown = errorTypeBreakdown([
       {
         fingerprint: "a",
+        service: "checkout",
         title: "x",
         status: "open",
         eventCount: 2,
@@ -132,12 +133,13 @@ describe("errorTypeBreakdown", () => {
       },
       {
         fingerprint: "b",
+        service: "checkout",
         title: "y",
         status: "open",
         eventCount: 5,
         errorType: "jk::AttachFailed",
       },
-      { fingerprint: "c", title: "z", status: "open", eventCount: 1 },
+      { fingerprint: "c", service: "checkout", title: "z", status: "open", eventCount: 1 },
     ])
     expect(breakdown).toEqual([
       { errorType: "jk::AttachFailed", count: 5 },

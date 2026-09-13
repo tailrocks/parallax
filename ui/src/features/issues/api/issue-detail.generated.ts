@@ -26,6 +26,7 @@ import type {
 } from "@/platform/graphql/generated/schema-types.generated"
 import type { TypedDocumentNode as DocumentNode } from "@/platform/graphql/typed-document"
 export type IssueDetailQueryVariables = Exact<{
+  service: string
   fingerprint: string
   fromNanos: string
   toNanos: string
@@ -77,6 +78,14 @@ export const IssueDetailDocument = {
       variableDefinitions: [
         {
           kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "service" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
+        {
+          kind: "VariableDefinition",
           variable: { kind: "Variable", name: { kind: "Name", value: "fingerprint" } },
           type: {
             kind: "NonNullType",
@@ -115,6 +124,11 @@ export const IssueDetailDocument = {
             kind: "Field",
             name: { kind: "Name", value: "issue" },
             arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "service" },
+                value: { kind: "Variable", name: { kind: "Name", value: "service" } },
+              },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "fingerprint" },
@@ -191,6 +205,11 @@ export const IssueDetailDocument = {
             kind: "Field",
             name: { kind: "Name", value: "issueTrend" },
             arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "service" },
+                value: { kind: "Variable", name: { kind: "Name", value: "service" } },
+              },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "fingerprint" },

@@ -29,6 +29,10 @@ fn test_event() -> ErrorEventRow {
         source: parallax_model::ErrorSource::SpanException,
         trace_id: "trace".to_string(),
         span_id: "span-error".to_string(),
+        invocation_id: None,
+        session_id: None,
+        service_version: None,
+        environment: None,
         attributes: serde_json::Value::Null,
     }
 }
@@ -315,6 +319,10 @@ fn assembled_bundle_conforms_to_bundle_v1_schema() {
         app_mode: Some("one_shot".into()),
         outcome: Some("failure".into()),
         status: "failed".into(),
+        stdout_text: None,
+        stdout_truncated_bytes: 0,
+        stderr_text: None,
+        stderr_truncated_bytes: 0,
     };
 
     let log = LogRow {

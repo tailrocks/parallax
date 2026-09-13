@@ -25,7 +25,7 @@ describe("investigation state helpers", () => {
 
   it("captures window params from hrefs", () => {
     expect(windowFromHref("/traces/abc?range=1h")).toEqual({ range: "1h" })
-    expect(windowFromHref("/issues/fp?range=custom&from=10&to=20")).toEqual({
+    expect(windowFromHref("/issues/checkout/fp?range=custom&from=10&to=20")).toEqual({
       range: "custom",
       from: "10",
       to: "20",
@@ -36,7 +36,7 @@ describe("investigation state helpers", () => {
     const state = emptyInvestigationState()
     const withPin = appendInvestigationPin(
       state,
-      buildInvestigationPin("issue", "panic", "/issues/fp")
+      buildInvestigationPin("issue", "panic", "/issues/checkout/fp")
     )
     const parsed = parseInvestigationState(
       serializeInvestigationState({

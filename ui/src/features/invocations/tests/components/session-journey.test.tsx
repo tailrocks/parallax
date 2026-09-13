@@ -63,6 +63,7 @@ describe("buildJourney", () => {
       {
         tsNanos: "3500",
         title: "boom on home",
+        service: "browser",
         fingerprint: "fp-1",
         traceId: null,
       },
@@ -77,6 +78,7 @@ describe("buildJourney", () => {
       {
         tsNanos: "4500",
         title: "between screens",
+        service: "browser",
         fingerprint: null,
         traceId: "trace-9",
       },
@@ -91,6 +93,7 @@ describe("buildJourney", () => {
       {
         tsNanos: "99000",
         title: "later error",
+        service: "browser",
         fingerprint: null,
         traceId: null,
       },

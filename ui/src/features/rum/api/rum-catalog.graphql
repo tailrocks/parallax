@@ -1,0 +1,11 @@
+query RumCatalog($fromNanos: String!, $toNanos: String!, $limit: Int) {
+  metricCatalog(fromNanos: $fromNanos, toNanos: $toNanos, limit: $limit) {
+    name
+    kind
+    unit
+    services
+    lastDatapointNanos
+    pointCount
+  }
+  services
+}

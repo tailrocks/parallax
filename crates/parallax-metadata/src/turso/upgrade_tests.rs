@@ -42,7 +42,11 @@ async fn upgrade_v0_issue_row_survives_current_schema() {
         .expect("row");
     }
     let store = TursoMetadataStore::open(&path).await.expect("adopt");
-    let issue = store.issue("old").await.expect("read").expect("present");
+    let issue = store
+        .issue("svc", "old")
+        .await
+        .expect("read")
+        .expect("present");
     assert_eq!(issue.title, "kept-title");
     assert_eq!(issue.service, "svc");
     let pin = EvidencePinRecord {

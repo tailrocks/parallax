@@ -3,7 +3,7 @@ schema_version = 1
 package = "parallax-cli"
 class = "product"
 tier = 5
-dependencies = ["parallax-evidence", "parallax-metadata", "parallax-model", "parallax-semconv", "parallax-server", "parallax-spool", "parallax-storage"]
+dependencies = ["parallax-evidence", "parallax-metadata", "parallax-model", "parallax-redaction", "parallax-semconv", "parallax-server", "parallax-spool", "parallax-storage"]
 facade_roots = ["main.rs"]
 +++
 

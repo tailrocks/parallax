@@ -254,6 +254,37 @@ fn normalize_traces_accepts_resource_only_cli_invocation_id() {
 }
 
 #[test]
+fn normalize_traces_serializes_span_events() {
+    let mut request = trace_request(vec![string_kv("service.name", "checkout")], vec![]);
+    request.resource_spans[0].scope_spans[0].spans[0].events =
+        vec![parallax_proto::trace::span::Event {
+            name: "exception".into(),
+            time_unix_nano: 1_500,
+            attributes: vec![string_kv("exception.type", "boom")],
+            ..Default::default()
+        }];
+    let rows = normalize_traces(&request);
+    assert_eq!(rows.len(), 1);
+    let events = rows[0].events.as_deref().expect("events serialized");
+    let parsed: serde_json::Value = serde_json::from_str(events).expect("valid JSON");
+    assert_eq!(
+        parsed,
+        serde_json::json!([{
+            "name": "exception",
+            "time_unix_nano": 1_500,
+            "attributes": {"exception.type": "boom"},
+        }])
+    );
+}
+
+#[test]
+fn normalize_traces_omits_events_when_span_has_none() {
+    let request = trace_request(vec![string_kv("service.name", "checkout")], vec![]);
+    let rows = normalize_traces(&request);
+    assert_eq!(rows[0].events, None);
+}
+
+#[test]
 fn normalize_traces_ignores_legacy_parallax_run_id() {
     // Operator 2026-07-17: parallax.run.id is never read.
     let request = trace_request(
@@ -479,24 +510,139 @@ fn metric_request(metric: Metric) -> ExportMetricsServiceRequest {
     }
 }
 
-#[test]
-fn exponential_histogram_is_dropped_today() {
-    // Plan 166 owns whether this drop stays. This test pins current behavior.
-    let request = metric_request(Metric {
-        name: "exp.hist".into(),
-        data: Some(Data::ExponentialHistogram(ExponentialHistogram::default())),
+fn exp_point() -> parallax_proto::metrics::ExponentialHistogramDataPoint {
+    use parallax_proto::metrics::exponential_histogram_data_point::Buckets;
+    parallax_proto::metrics::ExponentialHistogramDataPoint {
+        time_unix_nano: 2_000_000_000,
+        count: 10,
+        sum: Some(42.0),
+        scale: 0,
+        positive: Some(Buckets {
+            offset: 0,
+            bucket_counts: vec![3, 5],
+        }),
         ..Default::default()
+    }
+}
+
+fn exp_request(
+    point: parallax_proto::metrics::ExponentialHistogramDataPoint,
+) -> ExportMetricsServiceRequest {
+    metric_request(Metric {
+        name: "exp.hist".into(),
+        data: Some(Data::ExponentialHistogram(ExponentialHistogram {
+            data_points: vec![point],
+            ..Default::default()
+        })),
+        ..Default::default()
+    })
+}
+
+#[test]
+fn exponential_histogram_converts_to_explicit_buckets() {
+    // scale 0 → base 2; offset 0 counts [3, 5] → uppers 2^1, 2^2.
+    let normalized = normalize_metrics(&exp_request(exp_point()));
+    assert_eq!(normalized.dropped_unsupported, 0);
+    assert!(normalized.histograms.is_empty());
+    assert_eq!(normalized.exp_histograms.len(), 1);
+    let row = &normalized.exp_histograms[0];
+    assert_eq!(row.name, "exp.hist");
+    assert_eq!(row.service, "checkout");
+    assert_eq!(row.ts_nanos, 2_000_000_000);
+    assert_eq!(row.count, 10);
+    assert_eq!(row.sum, 42.0);
+    assert_eq!(row.bounds, vec![2.0, 4.0]);
+    assert_eq!(row.bucket_counts, vec![3, 5]);
+}
+
+#[test]
+fn exponential_histogram_orders_negative_zero_positive() {
+    use parallax_proto::metrics::exponential_histogram_data_point::Buckets;
+    let mut point = exp_point();
+    point.positive = None;
+    point.negative = Some(Buckets {
+        offset: 1,
+        bucket_counts: vec![7],
     });
-    let normalized = normalize_metrics(&request);
-    assert_eq!(
-        (
-            normalized.points.len(),
-            normalized.histograms.len(),
-            normalized.exemplars.len(),
-            normalized.dropped_unsupported
-        ),
-        (0, 0, 0, 1)
-    );
+    point.zero_count = 2;
+    point.zero_threshold = 0.0;
+    let normalized = normalize_metrics(&exp_request(point));
+    let row = &normalized.exp_histograms[0];
+    // Negative index 1 → upper -2^1; zero bucket at +threshold.
+    assert_eq!(row.bounds, vec![-2.0, 0.0]);
+    assert_eq!(row.bucket_counts, vec![7, 2]);
+}
+
+#[test]
+fn exponential_histogram_merges_clamped_overflow_bounds() {
+    use parallax_proto::metrics::exponential_histogram_data_point::Buckets;
+    let mut point = exp_point();
+    point.scale = -10;
+    point.positive = Some(Buckets {
+        offset: 100,
+        bucket_counts: vec![1, 1],
+    });
+    let normalized = normalize_metrics(&exp_request(point));
+    let row = &normalized.exp_histograms[0];
+    assert!(row.bounds.iter().all(|b| b.is_finite()));
+    assert_eq!(row.bounds, vec![f64::MAX]);
+    assert_eq!(row.bucket_counts, vec![2]);
+}
+
+#[test]
+fn exponential_histogram_preserves_exemplars() {
+    let mut point = exp_point();
+    point.exemplars = vec![exemplar(ExemplarValue::AsDouble(1.5), 2_000_000_000)];
+    let normalized = normalize_metrics(&exp_request(point));
+    assert_eq!(normalized.exemplars.len(), 1);
+    assert_eq!(normalized.exemplars[0].name, "exp.hist");
+    assert_eq!(normalized.exemplars[0].value, 1.5);
+}
+
+#[test]
+fn exponential_histogram_degenerate_scale_is_dropped_and_counted() {
+    let mut point = exp_point();
+    point.scale = i32::MIN;
+    let normalized = normalize_metrics(&exp_request(point));
+    assert!(normalized.exp_histograms.is_empty());
+    assert_eq!(normalized.dropped_unsupported, 1);
+}
+
+#[test]
+fn strip_exp_histograms_removes_only_exp_metrics() {
+    let mut request = ExportMetricsServiceRequest {
+        resource_metrics: vec![parallax_proto::metrics::ResourceMetrics {
+            resource: None,
+            scope_metrics: vec![parallax_proto::metrics::ScopeMetrics {
+                metrics: vec![
+                    Metric {
+                        name: "exp.hist".into(),
+                        data: Some(Data::ExponentialHistogram(ExponentialHistogram::default())),
+                        ..Default::default()
+                    },
+                    Metric {
+                        name: "gauge".into(),
+                        data: Some(Data::Gauge(Gauge::default())),
+                        ..Default::default()
+                    },
+                ],
+                ..Default::default()
+            }],
+            ..Default::default()
+        }],
+    };
+    assert!(strip_exp_histograms(&mut request));
+    let metrics = &request.resource_metrics[0].scope_metrics[0].metrics;
+    assert_eq!(metrics.len(), 1);
+    assert_eq!(metrics[0].name, "gauge");
+    assert!(!strip_exp_histograms(&mut request));
+}
+
+#[test]
+fn strip_exp_histograms_prunes_emptied_scopes() {
+    let mut request = exp_request(exp_point());
+    assert!(strip_exp_histograms(&mut request));
+    assert!(request.resource_metrics.is_empty());
 }
 
 #[test]

@@ -1,5 +1,6 @@
 //! CLI command facade grouped by product responsibility.
 
+mod capture;
 mod filters;
 mod forwarding;
 mod import_claude;

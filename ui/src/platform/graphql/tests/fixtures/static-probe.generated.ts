@@ -29,7 +29,7 @@ export type GraphqlContractStaticProbeQueryVariables = Exact<{
   fromNanos: string
   toNanos: string
   fingerprint: string
-  service?: string | null | undefined
+  service: string
   limit?: number | null | undefined
 }>
 
@@ -87,7 +87,10 @@ export const GraphqlContractStaticProbeDocument = {
         {
           kind: "VariableDefinition",
           variable: { kind: "Variable", name: { kind: "Name", value: "service" } },
-          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
         },
         {
           kind: "VariableDefinition",
@@ -130,6 +133,11 @@ export const GraphqlContractStaticProbeDocument = {
             kind: "Field",
             name: { kind: "Name", value: "issue" },
             arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "service" },
+                value: { kind: "Variable", name: { kind: "Name", value: "service" } },
+              },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "fingerprint" },

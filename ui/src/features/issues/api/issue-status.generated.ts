@@ -26,6 +26,7 @@ import type {
 } from "@/platform/graphql/generated/schema-types.generated"
 import type { TypedDocumentNode as DocumentNode } from "@/platform/graphql/typed-document"
 export type IssueSetStatusMutationVariables = Exact<{
+  service: string
   fingerprint: string
   status: string
 }>
@@ -40,6 +41,14 @@ export const IssueSetStatusDocument = {
       operation: "mutation",
       name: { kind: "Name", value: "IssueSetStatus" },
       variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "service" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
         {
           kind: "VariableDefinition",
           variable: { kind: "Variable", name: { kind: "Name", value: "fingerprint" } },
@@ -64,6 +73,11 @@ export const IssueSetStatusDocument = {
             kind: "Field",
             name: { kind: "Name", value: "issueSetStatus" },
             arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "service" },
+                value: { kind: "Variable", name: { kind: "Name", value: "service" } },
+              },
               {
                 kind: "Argument",
                 name: { kind: "Name", value: "fingerprint" },

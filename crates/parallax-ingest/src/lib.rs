@@ -17,14 +17,16 @@ use parallax_proto::metrics::metric::Data;
 use parallax_proto::metrics::number_data_point::Value as NumberValue;
 use parallax_semconv as semconv;
 
+pub mod exp_histogram;
 mod logs;
 mod metrics;
 pub mod sentry_envelope;
 mod traces;
 mod values;
 
+pub use exp_histogram::ConvertedHistogram;
 pub use logs::{normalize_logs, promote_log_identity_attributes};
-pub use metrics::{NormalizedMetrics, normalize_metrics};
+pub use metrics::{NormalizedMetrics, normalize_metrics, strip_exp_histograms};
 pub use sentry_envelope::{EnvelopeOutcome, RejectReason, UnsupportedItem, parse_envelope};
 pub use traces::normalize_traces;
 
@@ -39,7 +41,7 @@ fn service_name(resource_attrs: &[KeyValue]) -> String {
 /// Resolve the CLI invocation id. Priority: explicit span/log attribute
 /// (the jackin shape — ids never live on Resource there), then resource
 /// attribute (generic wrapped emitters). No legacy key is consulted.
-fn invocation_id(signal_attrs: &[KeyValue], resource_attrs: &[KeyValue]) -> Option<String> {
+pub fn invocation_id(signal_attrs: &[KeyValue], resource_attrs: &[KeyValue]) -> Option<String> {
     attr_str(signal_attrs, semconv::CLI_INVOCATION_ID)
         .or_else(|| attr_str(resource_attrs, semconv::CLI_INVOCATION_ID))
         .map(str::to_string)
@@ -47,15 +49,28 @@ fn invocation_id(signal_attrs: &[KeyValue], resource_attrs: &[KeyValue]) -> Opti
 
 /// Resolve the interactive session id with the same signal-then-resource
 /// priority as [`invocation_id`].
-fn session_id(signal_attrs: &[KeyValue], resource_attrs: &[KeyValue]) -> Option<String> {
+pub fn session_id(signal_attrs: &[KeyValue], resource_attrs: &[KeyValue]) -> Option<String> {
     attr_str(signal_attrs, semconv::SESSION_ID)
         .or_else(|| attr_str(resource_attrs, semconv::SESSION_ID))
         .map(str::to_string)
 }
 
+/// `service.version` — the release identity of the emitting resource.
+pub fn service_version(resource_attrs: &[KeyValue]) -> Option<String> {
+    attr_str(resource_attrs, semconv::SERVICE_VERSION).map(str::to_string)
+}
+
+/// `deployment.environment.name`, falling back to `deployment.environment`
+/// when the producer has not adopted the newer key.
+pub fn environment(resource_attrs: &[KeyValue]) -> Option<String> {
+    attr_str(resource_attrs, semconv::DEPLOYMENT_ENVIRONMENT_NAME)
+        .or_else(|| attr_str(resource_attrs, semconv::DEPLOYMENT_ENVIRONMENT))
+        .map(str::to_string)
+}
+
 /// Attributes of the root span (no parent) in one resource-spans group; the
 /// group's identity source when ids are stamped on root spans, not Resource.
-fn root_span_attrs(rs: &parallax_proto::trace::ResourceSpans) -> &[KeyValue] {
+pub fn root_span_attrs(rs: &parallax_proto::trace::ResourceSpans) -> &[KeyValue] {
     rs.scope_spans
         .iter()
         .flat_map(|ss| ss.spans.iter())

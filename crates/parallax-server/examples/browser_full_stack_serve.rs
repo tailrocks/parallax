@@ -401,7 +401,9 @@ async fn handle_control(stream: TcpStream, state: ControlState) -> Result<()> {
         "snapshot" => {
             let fp = state.issue_fingerprint.lock().await.clone();
             let issue = if let Some(fp) = fp {
-                issue_by_fingerprint(&state.base_url, &fp).await.ok()
+                issue_by_fingerprint(&state.base_url, &state.ids.service, &fp)
+                    .await
+                    .ok()
             } else {
                 None
             };
@@ -553,10 +555,11 @@ async fn handle_control(stream: TcpStream, state: ControlState) -> Result<()> {
     Ok(())
 }
 
-async fn issue_by_fingerprint(base_url: &str, fingerprint: &str) -> Result<Value> {
+async fn issue_by_fingerprint(base_url: &str, service: &str, fingerprint: &str) -> Result<Value> {
     let client = reqwest::Client::new();
     let q = format!(
-        r#"{{ issue(fingerprint: "{}") {{ fingerprint title status service errorType }} }}"#,
+        r#"{{ issue(service: "{}", fingerprint: "{}") {{ fingerprint title status service errorType }} }}"#,
+        service.replace('"', ""),
         fingerprint.replace('"', "")
     );
     let body = gql(&client, &format!("{base_url}/graphql"), &q).await?;

@@ -21,10 +21,14 @@ pub trait IngestStore: Send + Sync {
     /// Ingest a metrics batch: forward the raw OTLP bytes to the native
     /// `/v1/otlp/v1/metrics` endpoint (per-metric metric-engine tables), then
     /// persist the run-scoped subset of `points` into `invocation_metric_points`.
+    /// `exp_histograms` are ingest-converted exponential histograms: the native
+    /// engine has no exp type, so stores persist them separately (never merged
+    /// with native explicit-histogram tables).
     async fn ingest_metrics(
         &self,
         points: Vec<MetricPointRow>,
         histograms: Vec<HistogramRow>,
+        exp_histograms: Vec<HistogramRow>,
         exemplars: Vec<MetricExemplarRow>,
         raw: bytes::Bytes,
     ) -> StorageResult<()>;
@@ -232,28 +236,36 @@ pub trait MetricAnalyticsStore: Send + Sync {
 
 #[async_trait::async_trait]
 pub trait InvocationStore: Send + Sync {
-    /// Error events for a fingerprint within a time range, newest first.
+    /// Error events for one `(service, fingerprint)` issue identity within a
+    /// time range, newest first.
     async fn error_events_by_fingerprint(
         &self,
+        service: &str,
         fingerprint: &str,
         range: RangeInclusive<u128>,
         limit: usize,
     ) -> StorageResult<Vec<ErrorEventRow>>;
-    /// Error events for multiple fingerprints, newest first per fingerprint.
-    /// Adapters override this with one physical query; the default preserves
-    /// compatibility for capability implementations while migration completes.
+    /// Error events for multiple `(service, fingerprint)` issue identities,
+    /// newest first per identity. Adapters override this with one physical
+    /// query; the default preserves compatibility for capability
+    /// implementations while migration completes.
     async fn error_events_by_fingerprints(
         &self,
-        fingerprints: &[String],
+        issue_keys: &[(String, String)],
         range: RangeInclusive<u128>,
-        limit_per_fingerprint: usize,
-    ) -> StorageResult<HashMap<String, Vec<ErrorEventRow>>> {
-        let mut events = HashMap::with_capacity(fingerprints.len());
-        for fingerprint in fingerprints {
+        limit_per_issue: usize,
+    ) -> StorageResult<HashMap<(String, String), Vec<ErrorEventRow>>> {
+        let mut events = HashMap::with_capacity(issue_keys.len());
+        for (service, fingerprint) in issue_keys {
             events.insert(
-                fingerprint.clone(),
-                self.error_events_by_fingerprint(fingerprint, range.clone(), limit_per_fingerprint)
-                    .await?,
+                (service.clone(), fingerprint.clone()),
+                self.error_events_by_fingerprint(
+                    service,
+                    fingerprint,
+                    range.clone(),
+                    limit_per_issue,
+                )
+                .await?,
             );
         }
         Ok(events)

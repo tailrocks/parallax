@@ -145,7 +145,7 @@ export function investigationWindowSearch(window: InvestigationWindow): {
 export function hrefForPin(pin: InvestigationPin): string {
   if (pin.ref.startsWith("/")) return pin.ref
   if (pin.kind === "trace") return `/traces/${encodeURIComponent(pin.ref)}`
-  if (pin.kind === "issue") return `/issues/${encodeURIComponent(pin.ref)}`
+  if (pin.kind === "issue") return `/issues?q=${encodeURIComponent(pin.ref)}`
   if (pin.kind === "run") return `/runs/${encodeURIComponent(pin.ref)}`
   return pin.ref
 }

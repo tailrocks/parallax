@@ -72,4 +72,9 @@ describe("semantic series detection", () => {
   it("falls back to golden-angle for unknown series", () => {
     expect(seriesColor("custom-series", 7)).toBe(goldenAngleColor(7))
   })
+
+  it("never spends severity-ramp tokens on generic sentiment", () => {
+    expect(seriesColor("ok", 0)).toBe("var(--success)")
+    expect(seriesColor("success", 1)).toBe("var(--success)")
+  })
 })

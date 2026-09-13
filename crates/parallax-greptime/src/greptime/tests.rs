@@ -329,3 +329,125 @@ fn external_dependency_sql_supports_partial_schemas() {
     assert!(!sql.contains("server.address"));
     assert!(sql.contains("CAST(NULL AS STRING)"));
 }
+
+fn exp_row(ts_nanos: u128, count: u64, sum: f64, attrs: serde_json::Value) -> HistogramRow {
+    HistogramRow {
+        ts_nanos,
+        service: "checkout".to_string(),
+        name: "http.duration".to_string(),
+        count,
+        sum,
+        bucket_counts: vec![3, 5],
+        bounds: vec![2.0, 4.0],
+        attributes: attrs,
+    }
+}
+
+#[test]
+fn exp_histograms_ddl_has_append_ttl_contract() {
+    let ddl = GreptimeStore::exp_histograms_ddl(EXP_HISTOGRAMS_TABLE, "30d");
+    assert!(ddl.contains(r#""bucket_counts" JSON"#));
+    assert!(ddl.contains(r#""bounds" JSON"#));
+    assert!(ddl.contains(r#"PRIMARY KEY ("service", "name")"#));
+    assert!(ddl.contains("append_mode = 'true'"));
+    assert!(ddl.contains("ttl = '30d'"));
+}
+
+#[test]
+fn exp_histogram_from_row_decodes_buckets() {
+    let row = vec![
+        serde_json::json!(2_000_000_000u64),
+        serde_json::json!("checkout"),
+        serde_json::json!("http.duration"),
+        serde_json::json!(10u64),
+        serde_json::json!(42.0),
+        serde_json::json!("[3,5]"),
+        serde_json::json!("[2.0,4.0]"),
+        serde_json::json!(r#"{"route":"/pay"}"#),
+    ];
+    let decoded = exp_histogram_from_row(&row);
+    assert_eq!(decoded.ts_nanos, 2_000_000_000);
+    assert_eq!(decoded.count, 10);
+    assert_eq!(decoded.sum, 42.0);
+    assert_eq!(decoded.bucket_counts, vec![3, 5]);
+    assert_eq!(decoded.bounds, vec![2.0, 4.0]);
+    assert_eq!(decoded.attributes, serde_json::json!({"route": "/pay"}));
+}
+
+#[test]
+fn exp_quantiles_use_latest_export_per_window() {
+    let rows = vec![
+        exp_row(1_000, 8, 20.0, serde_json::json!({})),
+        exp_row(1_500, 8, 20.0, serde_json::json!({})),
+        exp_row(61_000_000_000, 16, 40.0, serde_json::json!({})),
+    ];
+    let series = exp_quantiles_from_rows(&rows, 60_000_000_000, &[0.5]);
+    assert_eq!(series.len(), 1);
+    // bounds [2,4] counts [3,5]: total 8, p50 target 4 → 2 + 2*(1/5) = 2.4.
+    assert_eq!(series[0].len(), 2);
+    assert!((series[0][0].value - 2.4).abs() < 1e-9);
+    assert!((series[0][1].value - 2.4).abs() < 1e-9);
+}
+
+#[test]
+fn exp_avg_is_delta_sum_over_delta_count() {
+    let rows = vec![
+        exp_row(1_000, 8, 20.0, serde_json::json!({})),
+        exp_row(61_000_000_000, 16, 44.0, serde_json::json!({})),
+    ];
+    let series = exp_avg_from_rows(&rows, 60_000_000_000);
+    assert_eq!(series.len(), 1);
+    assert!((series[0].value - 3.0).abs() < 1e-9);
+}
+
+#[test]
+fn exp_counts_sum_per_series_deltas() {
+    let rows = vec![
+        exp_row(1_000, 10, 0.0, serde_json::json!({"route": "/a"})),
+        exp_row(2_000, 20, 0.0, serde_json::json!({"route": "/b"})),
+        exp_row(61_000_000_000, 15, 0.0, serde_json::json!({"route": "/a"})),
+        exp_row(62_000_000_000, 30, 0.0, serde_json::json!({"route": "/b"})),
+    ];
+    let series = exp_counts_from_rows(&rows, 60_000_000_000);
+    // Window stocks 30 → 45; first window omitted (no baseline), delta 15.
+    assert_eq!(series.len(), 1);
+    assert!((series[0].value - 15.0).abs() < 1e-9);
+}
+
+#[test]
+fn exp_row_matches_reads_service_and_attributes() {
+    use crate::adapter::{AttributeFilter, AttributeFilterOp};
+    let attrs = serde_json::json!({"route": "/pay"});
+    let eq = AttributeFilter {
+        key: "route".to_string(),
+        op: AttributeFilterOp::Eq,
+        value: "/pay".to_string(),
+    };
+    assert!(exp_row_matches(&[eq], "checkout", &attrs));
+    let svc = AttributeFilter {
+        key: "service.name".to_string(),
+        op: AttributeFilterOp::Eq,
+        value: "other".to_string(),
+    };
+    assert!(!exp_row_matches(&[svc], "checkout", &attrs));
+    let missing = AttributeFilter {
+        key: "absent".to_string(),
+        op: AttributeFilterOp::Eq,
+        value: "x".to_string(),
+    };
+    assert!(!exp_row_matches(&[missing], "checkout", &attrs));
+}
+
+#[test]
+fn exp_catalog_and_bucket_arms_match_output_contract() {
+    let range = 0u128..=10u128;
+    let arm = exp_catalog_arm("http.duration", "http.duration", &range);
+    assert!(arm.contains("FROM \"exp_histograms\""));
+    assert!(arm.contains("AS \"last_ms\""));
+    assert!(arm.contains("COUNT(*) AS \"cnt\""));
+    assert!(arm.contains("GROUP BY \"service\""));
+    let buckets = exp_point_buckets_arm("http.duration", 60, &range, Some("checkout"));
+    assert!(buckets.contains("FROM \"exp_histograms\""));
+    assert!(buckets.contains(r#""service" = 'checkout'"#));
+    assert!(buckets.contains("AS \"bucket_ms\""));
+}

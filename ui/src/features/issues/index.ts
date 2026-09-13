@@ -1,6 +1,7 @@
 // Public facade for issues (Plan 139). Named exports only.
 
-export { IssuesContent, IssuesPage, MiniSparkline } from "@/features/issues/components/issues-page"
+export { MiniSparkline } from "@/features/issues/components/issues-table"
+export { IssuesContent, IssuesPage } from "@/features/issues/components/issues-page"
 export {
   IssueDetailContent,
   IssueDetailRoutePage,
@@ -25,10 +26,17 @@ export type {
   IssuesSearchPatch,
 } from "@/features/issues/model/issues-search"
 export type {
-  BreadcrumbLog,
+  IssueAttributeEntry,
+  IssueCorrelation,
+  IssueCorrelationLog,
+  IssueCorrelationResult,
   IssueDetail,
   IssueDetailData,
   IssueEvent,
+} from "@/features/issues/model/issue-detail"
+export {
+  parseIssueAttributes,
+  type ParsedIssueAttributes,
 } from "@/features/issues/model/issue-detail"
 export { parseStacktrace, structuredFrameCount } from "@/features/issues/model/stacktrace"
 export type { Frame } from "@/features/issues/model/stacktrace"

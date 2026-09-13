@@ -95,6 +95,10 @@ pub fn seed_memory(store: &MemoryStore) {
         source: ErrorSource::SpanStatus,
         trace_id: TRACE_ID.into(),
         span_id: SPAN_ID.into(),
+        invocation_id: Some("run-conformance".into()),
+        session_id: Some("sess-conformance".into()),
+        service_version: Some("9.9.9".into()),
+        environment: Some("conformance-env".into()),
         attributes: serde_json::json!({}),
     }]);
 }
@@ -126,6 +130,10 @@ pub async fn assert_empty(
     Ok(())
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "one assertion flow proves all signal fields across storage adapters"
+)]
 pub async fn assert_seeded(
     store: &dyn TelemetryStore,
     metric_name: &str,
@@ -193,20 +201,48 @@ pub async fn assert_seeded(
     );
     let trace_events = store.error_events_by_traces(&[TRACE_ID.into()], 1).await?;
     anyhow::ensure!(!trace_events.is_empty());
-    let fingerprint = trace_events[0].fingerprint.clone();
-    let fingerprints = vec![fingerprint.clone(), "absent-fingerprint".to_string()];
+    let issue_key = (
+        trace_events[0].service.clone(),
+        trace_events[0].fingerprint.clone(),
+    );
+    let issue_keys = vec![
+        issue_key.clone(),
+        ("absent-service".into(), "absent-fp".into()),
+    ];
     let batched = store
-        .error_events_by_fingerprints(&fingerprints, window, 1)
+        .error_events_by_fingerprints(&issue_keys, window.clone(), 1)
         .await?;
     anyhow::ensure!(
         batched
-            .get(&fingerprint)
+            .get(&issue_key)
             .is_some_and(|events| events.len() == 1),
-        "batched fingerprint events: {batched:?}"
+        "batched issue events: {batched:?}"
+    );
+    let event = &batched[&issue_key][0];
+    anyhow::ensure!(
+        event.invocation_id.as_deref() == Some("run-conformance")
+            && event.session_id.as_deref() == Some("sess-conformance")
+            && event.service_version.as_deref() == Some("9.9.9")
+            && event.environment.as_deref() == Some("conformance-env"),
+        "error row lost identity in round-trip: {event:?}"
+    );
+    let single = store
+        .error_events_by_fingerprint(
+            issue_key.0.as_str(),
+            issue_key.1.as_str(),
+            window.clone(),
+            1,
+        )
+        .await?;
+    anyhow::ensure!(
+        single.len() == 1 && single[0].service == event.service,
+        "service-scoped fingerprint read: {single:?}"
     );
     anyhow::ensure!(
-        batched.get("absent-fingerprint").is_some_and(Vec::is_empty),
-        "batched missing fingerprint: {batched:?}"
+        batched
+            .get(&("absent-service".to_string(), "absent-fp".to_string()))
+            .is_some_and(Vec::is_empty),
+        "batched missing issue: {batched:?}"
     );
     Ok(())
 }

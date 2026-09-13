@@ -3,8 +3,8 @@
 
 use parallax_model::IssueOccurrence;
 use parallax_model::{
-    Dashboard, Investigation, InvocationRecord, Issue, IssueQuery, IssueSortKey, SavedView,
-    TrendPoint,
+    Dashboard, Investigation, InvocationOutput, InvocationRecord, Issue, IssueQuery, IssueSortKey,
+    SavedView, TrendPoint,
 };
 use parallax_semconv as semconv;
 use std::{collections::BTreeMap, path::Path};
@@ -43,22 +43,23 @@ use row::*;
 use values::*;
 
 /// Current `PRAGMA user_version`. v0 = pre-versioning DBs.
-pub(crate) const SCHEMA_USER_VERSION: i32 = 3;
+pub(crate) const SCHEMA_USER_VERSION: i32 = 5;
 
 const SCHEMA: &str = "
 CREATE TABLE IF NOT EXISTS issues (
-  fingerprint   TEXT PRIMARY KEY,
+  service       TEXT NOT NULL,
+  fingerprint   TEXT NOT NULL,
   title         TEXT NOT NULL,
   error_type    TEXT NOT NULL,
   culprit       TEXT,
-  service       TEXT NOT NULL,
   status        TEXT NOT NULL DEFAULT 'open',
   resolved_at   INTEGER,
   first_seen    INTEGER NOT NULL,
   last_seen     INTEGER NOT NULL,
   event_count   INTEGER NOT NULL DEFAULT 0,
   last_trace_id TEXT,
-  tags          TEXT NOT NULL DEFAULT '{}'
+  tags          TEXT NOT NULL DEFAULT '{}',
+  PRIMARY KEY (service, fingerprint)
 );
 CREATE TABLE IF NOT EXISTS invocations (
   invocation_id TEXT PRIMARY KEY,
@@ -68,7 +69,11 @@ CREATE TABLE IF NOT EXISTS invocations (
   ended_at      INTEGER,
   exit_code     INTEGER,
   outcome       TEXT,
-  status        TEXT NOT NULL DEFAULT 'running'
+  status        TEXT NOT NULL DEFAULT 'running',
+  stdout_text   TEXT,
+  stdout_truncated_bytes INTEGER NOT NULL DEFAULT 0,
+  stderr_text   TEXT,
+  stderr_truncated_bytes INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS dashboards (
   id          TEXT PRIMARY KEY,
@@ -93,13 +98,15 @@ CREATE TABLE IF NOT EXISTS saved_views (
   updated_at  INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS issue_buckets (
+  service     TEXT NOT NULL,
   fingerprint TEXT NOT NULL,
   bucket_ts   INTEGER NOT NULL,
   count       INTEGER NOT NULL DEFAULT 0,
-  PRIMARY KEY (fingerprint, bucket_ts)
+  PRIMARY KEY (service, fingerprint, bucket_ts)
 );
 CREATE TABLE IF NOT EXISTS issue_occurrences (
   occurrence_id TEXT PRIMARY KEY,
+  service       TEXT NOT NULL,
   fingerprint   TEXT NOT NULL,
   observed_at   INTEGER NOT NULL
 );
@@ -361,7 +368,6 @@ CREATE INDEX IF NOT EXISTS evidence_pins_expires
 #[cfg(test)]
 use occurrences::OCCURRENCE_RETENTION_MILLIS;
 /// Trend rollups count occurrences per fingerprint per minute.
-use occurrences::{claim_occurrence, prune_occurrence_ledger};
 
 #[derive(Debug)]
 pub struct TursoMetadataStore {
@@ -381,11 +387,6 @@ impl TursoMetadataStore {
     }
 
     /// Record many occurrences under a single connection lock.
-    ///
-    /// Tag-cache read-merge-write is grouped by fingerprint: one SELECT, merge
-    /// every attribute set for that fingerprint, one UPDATE. Preserves the
-    /// turso constraint that the SELECT statement must drop before UPDATE
-    /// (same connection reports success but does not persist otherwise).
     pub async fn upsert_issue_occurrences(
         &self,
         occurrences: &[IssueOccurrence<'_>],
@@ -394,107 +395,12 @@ impl TursoMetadataStore {
             return Ok(());
         }
         let mut conn = self.conn.lock().await;
-        let tx = conn
-            .transaction_with_behavior(turso::transaction::TransactionBehavior::Immediate)
-            .await?;
-        prune_occurrence_ledger(&tx, occurrences).await?;
-        // Fingerprints that received at least one insert, in first-seen order,
-        // so tag merge can SELECT once per fingerprint after all inserts.
-        let mut tag_order: Vec<&str> = Vec::new();
-        let mut tag_attrs: BTreeMap<&str, Vec<&serde_json::Value>> = BTreeMap::new();
-
-        for occurrence in occurrences {
-            let millis = nanos_to_millis(occurrence.ts_nanos);
-            if !claim_occurrence(&tx, occurrence, millis).await? {
-                continue;
-            }
-            // Plan 111: never persist raw title/culprit — sanitize at the write
-            // boundary so every caller (worker, tests, migrations) is covered.
-            let safe_title = parallax_redaction::sanitize_text(occurrence.title.as_str());
-            let safe_culprit = occurrence
-                .culprit
-                .as_deref()
-                .map(parallax_redaction::sanitize_text);
-            tx.execute(
-                "INSERT INTO issues
-                       (fingerprint, title, error_type, culprit, service,
-                        first_seen, last_seen, event_count, last_trace_id)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6, 1, ?7)
-                     ON CONFLICT(fingerprint) DO UPDATE SET
-                       title = excluded.title,
-                       error_type = excluded.error_type,
-                       culprit = COALESCE(excluded.culprit, culprit),
-                       first_seen = MIN(first_seen, excluded.first_seen),
-                       last_seen = MAX(last_seen, excluded.last_seen),
-                       event_count = event_count + 1,
-                       last_trace_id = COALESCE(excluded.last_trace_id, last_trace_id)",
-                (
-                    occurrence.fingerprint,
-                    safe_title.as_str(),
-                    occurrence.error_type,
-                    safe_culprit,
-                    occurrence.service,
-                    millis,
-                    occurrence.trace_id.map(str::to_string),
-                ),
-            )
-            .await?;
-            tx.execute(
-                "INSERT INTO issue_buckets (fingerprint, bucket_ts, count)
-                 VALUES (?1, ?2, 1)
-                 ON CONFLICT(fingerprint, bucket_ts) DO UPDATE SET count = count + 1",
-                (
-                    occurrence.fingerprint,
-                    millis / BUCKET_MILLIS * BUCKET_MILLIS,
-                ),
-            )
-            .await?;
-            if !tag_attrs.contains_key(occurrence.fingerprint) {
-                tag_order.push(occurrence.fingerprint);
-            }
-            tag_attrs
-                .entry(occurrence.fingerprint)
-                .or_default()
-                .push(occurrence.attributes);
-        }
-
-        for fingerprint in tag_order {
-            let attrs = tag_attrs
-                .remove(fingerprint)
-                .ok_or_else(|| anyhow::anyhow!("tag attrs missing for ordered fingerprint"))?;
-            // Tag cache: read-merge-write under the same connection lock. The
-            // SELECT's statement must be dropped before the UPDATE — an UPDATE
-            // executed while another statement is open on the same turso
-            // connection reports success but does not persist.
-            let existing = {
-                let mut rows = tx
-                    .query(
-                        "SELECT tags FROM issues WHERE fingerprint = ?1",
-                        (fingerprint,),
-                    )
-                    .await?;
-                rows.next().await?.map(|row| text(&row, 0))
-            };
-            if let Some(existing) = existing {
-                let mut merged = existing;
-                for attributes in attrs {
-                    merged = merge_tags(&merged, attributes);
-                }
-                tx.execute(
-                    "UPDATE issues SET tags = ?1 WHERE fingerprint = ?2",
-                    (merged, fingerprint),
-                )
-                .await?;
-            }
-        }
-        tx.commit().await?;
-        Ok(())
+        occurrences::upsert_issue_occurrences(&mut conn, occurrences).await
     }
 
-    /// Occurrence counts per step bucket since a timestamp, oldest first.
-    /// Rollups are minute-grained; coarser steps are summed in SQL.
     pub async fn issue_trend(
         &self,
+        service: &str,
         fingerprint: &str,
         since_nanos: u128,
         step_seconds: u32,
@@ -503,11 +409,16 @@ impl TursoMetadataStore {
         let conn = self.conn.lock().await;
         let mut rows = conn
             .query(
-                "SELECT bucket_ts / ?3 * ?3 AS step_ts, SUM(count)
+                "SELECT bucket_ts / ?4 * ?4 AS step_ts, SUM(count)
                  FROM issue_buckets
-                 WHERE fingerprint = ?1 AND bucket_ts >= ?2
+                 WHERE service = ?1 AND fingerprint = ?2 AND bucket_ts >= ?3
                  GROUP BY step_ts ORDER BY step_ts ASC",
-                (fingerprint, nanos_to_millis(since_nanos), step_millis),
+                (
+                    service,
+                    fingerprint,
+                    nanos_to_millis(since_nanos),
+                    step_millis,
+                ),
             )
             .await?;
         let mut points = Vec::new();
@@ -561,15 +472,15 @@ impl TursoMetadataStore {
         Ok(issues)
     }
 
-    pub async fn issue(&self, fingerprint: &str) -> anyhow::Result<Option<Issue>> {
+    pub async fn issue(&self, service: &str, fingerprint: &str) -> anyhow::Result<Option<Issue>> {
         let conn = self.conn.lock().await;
         let mut rows = conn
             .query(
                 &format!(
-                    "SELECT {} FROM issues WHERE fingerprint = ?1",
+                    "SELECT {} FROM issues WHERE service = ?1 AND fingerprint = ?2",
                     Self::ISSUE_COLUMNS
                 ),
-                (fingerprint,),
+                (service, fingerprint),
             )
             .await?;
         Ok(rows.next().await?.map(|row| Self::issue_from_row(&row)))
@@ -577,24 +488,31 @@ impl TursoMetadataStore {
 
     pub async fn issues_by_fingerprints(
         &self,
-        fingerprints: &[String],
+        issue_keys: &[(String, String)],
     ) -> anyhow::Result<Vec<Issue>> {
-        if fingerprints.is_empty() {
+        if issue_keys.is_empty() {
             return Ok(Vec::new());
         }
-        let placeholders = (1..=fingerprints.len())
-            .map(|i| format!("?{i}"))
-            .collect::<Vec<_>>()
-            .join(",");
-        let params: Vec<Value> = fingerprints
+        let tuples = issue_keys
             .iter()
-            .map(|f| Value::Text(f.clone()))
+            .enumerate()
+            .map(|(i, _)| format!("(?{}, ?{})", i * 2 + 1, i * 2 + 2))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let params: Vec<Value> = issue_keys
+            .iter()
+            .flat_map(|(service, fingerprint)| {
+                [
+                    Value::Text(service.clone()),
+                    Value::Text(fingerprint.clone()),
+                ]
+            })
             .collect();
         let conn = self.conn.lock().await;
         let mut rows = conn
             .query(
                 &format!(
-                    "SELECT {} FROM issues WHERE fingerprint IN ({placeholders})
+                    "SELECT {} FROM issues WHERE (service, fingerprint) IN ({tuples})
                      ORDER BY last_seen DESC",
                     Self::ISSUE_COLUMNS
                 ),
@@ -667,7 +585,8 @@ impl TursoMetadataStore {
                 let p = bind(&mut params, Value::Integer(since));
                 format!(
                     "(SELECT COALESCE(SUM(count), 0) FROM issue_buckets b
-                      WHERE b.fingerprint = issues.fingerprint AND b.bucket_ts >= {p}) DESC"
+                      WHERE b.service = issues.service AND b.fingerprint = issues.fingerprint
+                        AND b.bucket_ts >= {p}) DESC"
                 )
             }
         };
@@ -705,6 +624,7 @@ impl TursoMetadataStore {
 
     pub async fn set_issue_status(
         &self,
+        service: &str,
         fingerprint: &str,
         status: &str,
         changed_at_nanos: u128,
@@ -714,10 +634,15 @@ impl TursoMetadataStore {
             .await
             .execute(
                 "UPDATE issues
-                 SET status = ?2,
-                     resolved_at = CASE WHEN ?2 = 'resolved' THEN ?3 ELSE NULL END
-                 WHERE fingerprint = ?1",
-                (fingerprint, status, nanos_to_millis(changed_at_nanos)),
+                 SET status = ?3,
+                     resolved_at = CASE WHEN ?3 = 'resolved' THEN ?4 ELSE NULL END
+                 WHERE service = ?1 AND fingerprint = ?2",
+                (
+                    service,
+                    fingerprint,
+                    status,
+                    nanos_to_millis(changed_at_nanos),
+                ),
             )
             .await?;
         Ok(())

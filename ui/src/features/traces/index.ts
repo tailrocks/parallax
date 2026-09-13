@@ -2,15 +2,18 @@
 
 export {
   TracesPage,
-  TraceTable,
-  loadTraces,
   validateTracesSearch,
   patchTracesSearch,
   paramToTraceSort,
   traceSortToParam,
   traceDetailSearch,
+  serializeTracesSearch,
+  parseTracesViewState,
 } from "@/features/traces/components/traces-page"
-export type { TracesSearch, TracesLoaderData } from "@/features/traces/components/traces-page"
+export type { TraceSort, TracesSearch } from "@/features/traces/components/traces-query"
+export { TraceTable } from "@/features/traces/components/trace-table"
+export { loadTraces } from "@/features/traces/components/traces-query"
+export type { TracesLoaderData } from "@/features/traces/components/traces-query"
 
 export {
   TraceDetailPage,
@@ -22,7 +25,6 @@ export {
   TraceViewModeToggle,
   ClockSkewBanner,
   TraceCompareResult,
-  LinkedTraceEdges,
   TraceErrorCallout,
   InspectorEventList,
   InspectorLinksList,
@@ -33,6 +35,7 @@ export type {
   SpanEvent,
 } from "@/features/traces/components/trace-detail-page"
 
+export { LinkedTraceEdges } from "@/features/traces/components/linked-trace-edges"
 export { TraceWaterfall, WHOLE_TRACE_ID } from "@/features/traces/components/trace-waterfall"
 export type { TraceViewMode, WaterfallSpan } from "@/features/traces/components/trace-waterfall"
 export { TraceFlamegraph } from "@/features/traces/components/trace-flamegraph"

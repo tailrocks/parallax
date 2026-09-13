@@ -215,6 +215,7 @@ async fn metric_exemplars_filters_by_metric_service_range_and_limit() {
         .ingest_metrics(
             Vec::new(),
             Vec::new(),
+            Vec::new(),
             vec![
                 MetricExemplarRow {
                     ts_nanos: 20,
@@ -271,7 +272,10 @@ async fn metric_exemplars_filters_by_metric_service_range_and_limit() {
 }
 
 #[tokio::test]
-#[expect(clippy::too_many_lines, reason = "one seeded end-to-end metric scenario")]
+#[expect(
+    clippy::too_many_lines,
+    reason = "one seeded end-to-end metric scenario"
+)]
 async fn metric_labels_values_and_runtime_snapshot_derive_from_points() {
     let store = MemoryStore::new();
     store
@@ -302,6 +306,7 @@ async fn metric_labels_values_and_runtime_snapshot_derive_from_points() {
                     }),
                 },
             ],
+            Vec::new(),
             Vec::new(),
             Vec::new(),
             bytes::Bytes::new(),
@@ -342,7 +347,13 @@ async fn metric_labels_values_and_runtime_snapshot_derive_from_points() {
         });
     }
     store
-        .ingest_metrics(capped_points, Vec::new(), Vec::new(), bytes::Bytes::new())
+        .ingest_metrics(
+            capped_points,
+            Vec::new(),
+            Vec::new(),
+            Vec::new(),
+            bytes::Bytes::new(),
+        )
         .await
         .unwrap();
 

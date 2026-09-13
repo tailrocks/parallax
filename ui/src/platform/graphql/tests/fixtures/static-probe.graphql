@@ -5,7 +5,7 @@ query GraphqlContractStaticProbe(
   $fromNanos: String!
   $toNanos: String!
   $fingerprint: String!
-  $service: String
+  $service: String!
   $limit: Int
 ) {
   health
@@ -17,7 +17,7 @@ query GraphqlContractStaticProbe(
     errorRate
     activeServices
   }
-  issue(fingerprint: $fingerprint) {
+  issue(service: $service, fingerprint: $fingerprint) {
     fingerprint
     title
     eventCount

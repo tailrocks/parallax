@@ -6,6 +6,7 @@ import {
   IconArticleFilled,
   IconBell,
   IconBellFilled,
+  IconBrowser,
   IconBug,
   IconBugFilled,
   IconChartLine,
@@ -51,14 +52,6 @@ export const primaryNav: NavItem[] = [
       "bg-rose-100 dark:bg-rose-950 rounded-xl p-0.5 corner-squircle text-rose-500 shadow-[inset_0_0_0_1px_rgba(244,63,94,0.14),0_2px_6px_-2px_rgba(244,63,94,0.25)] dark:shadow-(--custom-shadow)",
   },
   {
-    href: "/tests",
-    label: "Tests",
-    icon: IconFlask,
-    activeIcon: IconFlask2Filled,
-    iconClassName:
-      "bg-violet-100 dark:bg-violet-950 rounded-xl p-0.5 corner-squircle text-violet-500 shadow-[inset_0_0_0_1px_rgba(139,92,246,0.14),0_2px_6px_-2px_rgba(139,92,246,0.25)] dark:shadow-(--custom-shadow)",
-  },
-  {
     href: "/traces",
     label: "Traces",
     icon: IconAffiliate,
@@ -98,9 +91,25 @@ export const primaryNav: NavItem[] = [
     iconClassName:
       "bg-emerald-100 dark:bg-emerald-950 rounded-xl p-0.5 corner-squircle text-emerald-500 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.14),0_2px_6px_-2px_rgba(16,185,129,0.25)] dark:shadow-(--custom-shadow)",
   },
+  {
+    href: "/rum",
+    label: "RUM",
+    icon: IconBrowser,
+    activeIcon: IconBrowser,
+    iconClassName:
+      "bg-teal-100 dark:bg-teal-950 rounded-xl p-0.5 corner-squircle text-teal-600 shadow-[inset_0_0_0_1px_rgba(20,184,166,0.14),0_2px_6px_-2px_rgba(20,184,166,0.25)] dark:shadow-(--custom-shadow)",
+  },
 ]
 
 export const workspaceNav: NavItem[] = [
+  {
+    href: "/tests",
+    label: "Tests",
+    icon: IconFlask,
+    activeIcon: IconFlask2Filled,
+    iconClassName:
+      "bg-violet-100 dark:bg-violet-950 rounded-xl p-0.5 corner-squircle text-violet-500 shadow-[inset_0_0_0_1px_rgba(139,92,246,0.14),0_2px_6px_-2px_rgba(139,92,246,0.25)] dark:shadow-(--custom-shadow)",
+  },
   {
     href: "/invocations",
     label: "CLI Apps",

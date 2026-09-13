@@ -27,6 +27,9 @@ was copied; do not add NOTICE attribution for ideas.
   respects `prefers-reduced-motion`. Content replacing a skeleton uses
   `.content-enter` (150ms). Hard load uses `.page-fade` (75ms, once).
   Never animate row height. No spinner for a sub-second load.
+- **Structure is shared.** Query bars, detail layouts, correlation links,
+  error states, and shortcuts come from `shared/` (§8). Pages own state
+  and data, never structure.
 
 ## 2. Tokens
 
@@ -123,6 +126,8 @@ Normative module: `src/shared/colors.ts`.
 | `TEST_ROLLUP` | `PASSED` `FLAKY_PASS` `FAILED` `BROKEN` `SKIPPED` `UNKNOWN` | test explorer |
 | `TEST_RESULT` | `PASSED` `FAILED` `BROKEN` `SKIPPED` `UNKNOWN` | attempt status |
 | `TEST_FLAKY` | `HEALTHY` `FLAKY` `FIXED` `BROKEN` | flaky state |
+| `ISSUE_STATUS` | `open` `resolved` | issue state |
+| `INCIDENT_STATUS` | `open` `resolved` | alert incident state |
 
 Each domain record is a `DomainTone`: `color` (CSS var) + `badge` /
 `bar` / `chip` / `icon` (Tailwind classes). One record drives every
@@ -139,7 +144,12 @@ Waterfall color-by (`shared/color-by.ts`) reads `SPAN_STATUS.*.color`.
 | Buttons | shadcn `Button`; primary actions already `active:scale-[0.97]`; Base UI `render` not `asChild` | `components/ui/button.tsx` |
 | Badges | status/type from the domain record, never a one-off `text-rose-600` | `TEST_ROLLUP[rollup].badge` |
 | Tables | TanStack Table + shadcn `<Table>` split; `table-fixed` on logs/traces/issues; borders stay | `components/ui/table.tsx` |
-| Empty states | dashed frame + 40% icon + what is missing and what would produce it; zero-data overview/issues use `SnippetTabs` | `shared/console/empty-state.tsx`, `snippet-tabs.tsx` |
+| Empty states | dashed frame + 40% icon + what is missing and what would produce it; zero-data overview/issues use `SnippetTabs`; inline next step via `action` | `shared/console/empty-state.tsx`, `snippet-tabs.tsx` |
+| Error states | `ErrorState` (section) / `SectionError` (inline row); `role=alert`; retry when the fetch is user-repeatable; never bare destructive text | `shared/console/error-state.tsx` |
+| Query bars | `QueryBar` → `QueryBarRow` × ≤2 → `QueryBarCount`; order in §8.1 | `shared/console/query-bar.tsx` |
+| Detail pages | `PageHeader back` → `DetailSummary` → tabs → `SectionCard`s; structure in §8.2 | `shared/console/detail-layout.tsx` |
+| Correlation links | range-carrying `TraceLink` `IssueLink` `ServiceLink` `LogsLink` `InvocationLink` `MetricLink`; never hand-build `Link` + `rangeLinkSearch` | `shared/console/entity-links.tsx` |
+| Shortcuts | registry in `shared/keyboard.ts`; `?` dialog renders from it; rules in §8.4 | `shared/keyboard.ts`, `shared/console/shortcuts-dialog.tsx` |
 | Detail panels | `Card` at `--elevation-1`; charts in `ChartContainer` with `--chart-*` | `shared/console/stat-card.tsx` |
 | Stat cards | Volume → Health → Performance → Cost; ticker respects reduced-motion; sparkline dashes the incomplete last bucket; delta badges invert for error-rate/latency | `stat-card.tsx` |
 | Nav | per-section hue chip + outline→filled 100ms crossfade (`NavIcon`); AA contrast held by the existing chip tints | `shared/navigation.ts`, `layout/nav-icon.tsx` |
@@ -165,14 +175,78 @@ Living section. Re-verify on the next major redesign.
 
 - 2026-08-14 — plan 172: first published guide; elevation tokens;
   snippet tabs; domain records on `colors.ts`.
+- 2026-09-13 — workstream D: §8 interaction contract (`QueryBar`,
+  `DetailSummary`/`SectionCard`, entity links, `ErrorState`,
+  keyboard registry); `ISSUE_STATUS`/`INCIDENT_STATUS` records;
+  `seriesColor("ok"|"success")` fixed to `--success`; Tests moved to
+  Workspace nav; `EmptyState action`; legend `aria-pressed`.
+
+## 8. Interaction contract
+
+### 8.1 Query bars
+
+Every list page composes `QueryBar` with at most two `QueryBarRow`s at
+1280px. Order, fixed:
+
+1. Primary row: one free-text search, then the structured filter
+   (`WhereClauseEditor` where the signal has one).
+2. Secondary row: faceted selects → toggles → view actions (columns,
+   patterns, saved views) → `QueryBarCount` pinned right.
+
+Exactly one free-text input per page. Range stays in `PageHeader actions`.
+
+### 8.2 Detail pages and progressive disclosure
+
+Order, fixed: `PageHeader` (with `back`) → `DetailSummary` (the answer:
+counts, first/last seen, status, release — above the fold) → tabs →
+`SectionCard`s with stable `id` anchors. Power panels (attribute compare,
+field explorer, metric strips) live on their tab, never crowd the primary
+answer. `PageHeader` descriptions must carry a non-obvious hint or be
+omitted — never restate the nav label.
+
+### 8.3 Loading, error, and live states
+
+- Table skeletons MUST pass mirror `columns` widths for the real table;
+  the 4-column default is a placeholder, not a mirror.
+- Every user-triggered fetch (retry, load-older, saved-view IO, live
+  reconnect) renders `SectionError` on failure; section loads render
+  `ErrorState`. Never bare destructive text.
+- Live surfaces converge on `LiveStreamPanel`; the connect/reconnect badge
+  carries `role=status`. Pulse dots use `motion-safe:`.
+
+### 8.4 Keyboard
+
+- All shortcuts live in the `shared/keyboard.ts` registry; no per-page
+  `keydown` handlers. Registry additions update `SHORTCUT_LIST` (the `?`
+  dialog renders from it) and this section.
+- Canonical set: `⌘K` palette, `/` search, `F` structured filter, `?`
+  help, `Esc` clear/close. Plain-letter shortcuts never fire while
+  typing; mod/Esc fire everywhere.
+- Suggestion lists must not hijack `Tab`: `Tab` moves focus. `Enter`
+  applies/accepts; arrow keys move the highlight.
+- List rows open via keyboard (`Enter` on the focused row; `j/k` move
+  between rows where virtualized lists support it). Shell provides a skip
+  link to main content.
+
+### 8.5 Encoding and text accessibility
+
+- Toggle legends set `aria-pressed` (`trend.tsx` does this when `selected`
+  is provided).
+- No sub-100%-alpha `muted-foreground` text below `text-sm`, except
+  decorative marks that are `aria-hidden` or redundant with adjacent text.
+- `ToggleChip` tone must come from the domain record for the toggled
+  concept; the hardcoded rose is error-only.
+- Nav hue chips are under review (see `docs/research/ux/05`): chrome must
+  not out-color telemetry. Decision pending visual sign-off.
 
 ## Browser verification checklist
 
 Every UI change against playground data before the next step:
 
 1. **Data correctness** — values match GraphQL/source for the visible window.
-2. **Links** — every row/chip navigates to a real detail surface.
-3. **States** — empty, loading (skeleton), error, and live/polling each render.
+2. **Links** — every row/chip navigates to a real detail surface; range survives.
+3. **States** — empty, loading (skeleton), error (with retry), and live/polling each render.
 4. **Layout** — no overflow/clip at default density; table numerals align.
 5. **Theme** — light and dark both readable (severity words + contrast).
 6. **Motion** — no layout shift on refresh; reduced-motion stays usable.
+7. **Keyboard** — `?` lists working shortcuts; rows open via keyboard; no `Tab` traps.

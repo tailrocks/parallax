@@ -19,6 +19,26 @@ fn status_code_name(code: i32) -> &'static str {
     }
 }
 
+/// OTel span events → `[{name, time_unix_nano, attributes}]` JSON, the shape
+/// `parallax-analysis::span_events` parses. `None` when the span carries no
+/// events (indistinguishable from "source projects no events").
+fn events_to_json(events: &[parallax_proto::trace::span::Event]) -> Option<String> {
+    if events.is_empty() {
+        return None;
+    }
+    let array = events
+        .iter()
+        .map(|event| {
+            serde_json::json!({
+                "name": event.name,
+                "time_unix_nano": event.time_unix_nano,
+                "attributes": attributes_to_json(&event.attributes),
+            })
+        })
+        .collect::<serde_json::Value>();
+    Some(array.to_string())
+}
+
 /// OTel span links → `[{traceId, spanId, attributes}]` JSON. Links are the
 /// standard cross-trace correlation: a span references spans in other
 /// traces (batch/async sub-operations) without a parent/child edge.
@@ -80,7 +100,7 @@ pub fn normalize_traces(request: &ExportTraceServiceRequest) -> Vec<SpanRow> {
                     invocation_id: invocation_id.clone(),
                     session_id: session_id.clone(),
                     scope_name: scope_name.clone(),
-                    events: None,
+                    events: events_to_json(&span.events),
                     links: links_to_json(&span.links),
                     attributes: attributes_to_json(&span.attributes),
                     resource: resource_json.clone(),

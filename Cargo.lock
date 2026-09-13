@@ -3306,6 +3306,7 @@ dependencies = [
  "parallax-evidence",
  "parallax-metadata",
  "parallax-model",
+ "parallax-redaction",
  "parallax-semconv",
  "parallax-server",
  "parallax-spool",

@@ -58,6 +58,11 @@ const METRIC_EXEMPLARS_REPLACEMENT: &str = "metric_exemplars_v2";
 const METRIC_EXEMPLARS_LEGACY: &str = "metric_exemplars_v1_legacy";
 const METRIC_EXEMPLAR_COLUMNS: &str =
     r#""ts", "service", "name", "value", "trace_id", "span_id", "invocation_id", "attributes""#;
+/// Ingest-converted exponential histograms (the native metric engine has no
+/// exp type): one row per export with explicit bucket grids as JSON.
+const EXP_HISTOGRAMS_TABLE: &str = "exp_histograms";
+const EXP_HISTOGRAM_COLUMNS: &str =
+    r#""ts", "service", "name", "count", "sum", "bucket_counts", "bounds", "attributes""#;
 
 #[derive(Debug)]
 pub struct GreptimeStore {

@@ -15,6 +15,7 @@ export function ChartLegend({
         <button
           key={item.key}
           type="button"
+          {...(selected !== undefined ? { "aria-pressed": selected === item.key } : {})}
           className={cn(
             "flex items-center gap-1.5 text-xs",
             selected && selected !== item.key && "opacity-30"

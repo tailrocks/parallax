@@ -1,9 +1,10 @@
 query IssueOccurrences(
+  $service: String!
   $fingerprint: String!
   $fromNanos: String!
   $toNanos: String!
 ) {
-  issue(fingerprint: $fingerprint) {
+  issue(service: $service, fingerprint: $fingerprint) {
     events(limit: 50, fromNanos: $fromNanos, toNanos: $toNanos) {
       tsNanos
       service

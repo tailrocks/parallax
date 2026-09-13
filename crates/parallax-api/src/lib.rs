@@ -165,7 +165,7 @@ impl Query {
     #[expect(clippy::too_many_arguments, reason = "GraphQL issue filters are the public query contract")]
     async fn issues(context: &ApiContext, service: Option<String>, status: Option<String>, query: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, tag_key: Option<String>, tag_value: Option<String>, sort: Option<IssueSort>, limit: Option<i32>, offset: Option<i32>,) -> FieldResult<IssueList> { resolvers::issues::issues(context, service, status, query, from_nanos, to_nanos, tag_key, tag_value, sort, limit, offset).await }
 
-    async fn issue(context: &ApiContext, fingerprint: String) -> FieldResult<Option<Issue>> { resolvers::issues::issue(context, fingerprint).await }
+    async fn issue(context: &ApiContext, service: String, fingerprint: String) -> FieldResult<Option<Issue>> { resolvers::issues::issue(context, service, fingerprint).await }
 
     /// Variant-scoped test explorer. Attempt rollups preserve fail-then-pass as
     /// flaky-pass; every row references its latest native test span.
@@ -177,7 +177,7 @@ impl Query {
 
     /// Occurrence counts per bucket for one issue's sparkline, oldest
     /// first. Defaults: the last 24 hours in one-hour buckets.
-    async fn issue_trend(context: &ApiContext, fingerprint: String, hours: Option<i32>, step_seconds: Option<i32>,) -> FieldResult<Vec<TrendPoint>> { resolvers::issues::issue_trend(context, fingerprint, hours, step_seconds).await }
+    async fn issue_trend(context: &ApiContext, service: String, fingerprint: String, hours: Option<i32>, step_seconds: Option<i32>,) -> FieldResult<Vec<TrendPoint>> { resolvers::issues::issue_trend(context, service, fingerprint, hours, step_seconds).await }
 
     /// Every span of one trace, start-time ascending (cross-service).
     async fn trace(context: &ApiContext, trace_id: String) -> FieldResult<Option<Trace>> { resolvers::traces::trace(context, trace_id).await }
@@ -320,7 +320,11 @@ impl Query {
     async fn trace_facets(context: &ApiContext, service: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, error_only: Option<bool>, query: Option<String>, attribute_filters: Option<Vec<AttributeFilterInput>>,) -> FieldResult<Vec<Facet>> { resolvers::traces::trace_facets(context, service, from_nanos, to_nanos, error_only, query, attribute_filters).await }
 
     /// Bounded redacted evidence bundle. Exactly one of fingerprint, invocationId, traceId, alertIncidentId.
-    async fn bundle(context: &ApiContext, fingerprint: Option<String>, invocation_id: Option<String>, trace_id: Option<String>, alert_incident_id: Option<String>, max_tokens: Option<i32>,) -> FieldResult<Option<BundleOut>> { resolvers::issues::bundle(context, fingerprint, invocation_id, trace_id, alert_incident_id, max_tokens).await }
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "one-of anchor arguments form the public GraphQL contract"
+    )]
+    async fn bundle(context: &ApiContext, service: Option<String>, fingerprint: Option<String>, invocation_id: Option<String>, trace_id: Option<String>, alert_incident_id: Option<String>, max_tokens: Option<i32>,) -> FieldResult<Option<BundleOut>> { resolvers::issues::bundle(context, service, fingerprint, invocation_id, trace_id, alert_incident_id, max_tokens).await }
 
     /// Invocation-scoped metric family summaries (plan 105).
     async fn invocation_metrics(context: &ApiContext, invocation_id: String, from_nanos: Option<String>, to_nanos: Option<String>, limit: Option<i32>,) -> FieldResult<Vec<resolvers::metrics::InvocationMetricRow>> { resolvers::metrics::invocation_metrics(context, invocation_id, from_nanos, to_nanos, limit).await }
@@ -410,7 +414,7 @@ pub struct Mutation;
 impl Mutation {
     /// Set an issue's workflow status (open | resolved); returns the updated
     /// issue (spec §8: `Issue!`).
-    async fn issue_set_status(context: &ApiContext, fingerprint: String, status: String,) -> FieldResult<Issue> { resolvers::issues::issue_set_status(context, fingerprint, status).await }
+    async fn issue_set_status(context: &ApiContext, service: String, fingerprint: String, status: String,) -> FieldResult<Issue> { resolvers::issues::issue_set_status(context, service, fingerprint, status).await }
 
     /// Register an invocation (the CLI wrapper calls this before launching).
     async fn invocation_start(context: &ApiContext, invocation_id: String, command: Option<String>, app_mode: Option<String>, started_at_nanos: String,) -> FieldResult<bool> { resolvers::invocations::invocation_start(context, invocation_id, command, app_mode, started_at_nanos).await }
@@ -435,7 +439,11 @@ impl Mutation {
     async fn saved_view_delete(context: &ApiContext, id: String) -> FieldResult<bool> { resolvers::investigations::saved_view_delete(context, id).await }
 
     /// Close an invocation with the wrapped command's exit code and outcome.
-    async fn invocation_finish(context: &ApiContext, invocation_id: String, ended_at_nanos: String, exit_code: i32, outcome: Option<String>,) -> FieldResult<bool> { resolvers::invocations::invocation_finish(context, invocation_id, ended_at_nanos, exit_code, outcome).await }
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "run lifecycle and bounded output fields form the wrapper mutation contract"
+    )]
+    async fn invocation_finish(context: &ApiContext, invocation_id: String, ended_at_nanos: String, exit_code: i32, outcome: Option<String>, stdout_text: Option<String>, stdout_truncated_bytes: Option<i32>, stderr_text: Option<String>, stderr_truncated_bytes: Option<i32>,) -> FieldResult<bool> { resolvers::invocations::invocation_finish(context, invocation_id, ended_at_nanos, exit_code, outcome, stdout_text, stdout_truncated_bytes, stderr_text, stderr_truncated_bytes).await }
 
     /// Create or update an alert rule (plan 167); optional knobs default per
     /// the plan contract.

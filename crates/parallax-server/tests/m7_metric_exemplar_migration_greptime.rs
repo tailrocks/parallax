@@ -121,6 +121,7 @@ async fn forward_only_bootstrap_drops_legacy_exemplar_shapes() {
         .ingest_metrics(
             Vec::new(),
             Vec::new(),
+            Vec::new(),
             vec![MetricExemplarRow {
                 ts_nanos: 1_741_437_296_123_456_791,
                 service: "payments".to_string(),

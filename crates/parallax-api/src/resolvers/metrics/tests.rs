@@ -101,6 +101,7 @@ async fn metric_label_and_runtime_resolvers_query_memory_store() {
             },
             Vec::new(),
             Vec::new(),
+            Vec::new(),
             Default::default(),
         )
         .await
@@ -172,6 +173,7 @@ async fn metric_exemplars_resolver_returns_trace_links() {
     let store = Arc::new(MemoryStore::new());
     store
         .ingest_metrics(
+            Vec::new(),
             Vec::new(),
             Vec::new(),
             vec![MetricExemplarRow {
@@ -328,6 +330,7 @@ async fn metric_catalog_classifies_kinds_and_counts_finite_window_samples() {
                 attributes: serde_json::json!({}),
             }],
             Vec::new(),
+            Vec::new(),
             Default::default(),
         )
         .await
@@ -463,6 +466,7 @@ async fn metric_query_enforces_typed_aggregation_legality() {
             ],
             Vec::new(),
             Vec::new(),
+            Vec::new(),
             Default::default(),
         )
         .await
@@ -570,6 +574,7 @@ async fn metric_query_supports_last_and_increase_aggregations() {
             ],
             Vec::new(),
             Vec::new(),
+            Vec::new(),
             Default::default(),
         )
         .await
@@ -644,6 +649,7 @@ async fn metric_query_applies_attribute_where_filters() {
                     attributes: serde_json::json!({"region": "ap"}),
                 },
             ],
+            Vec::new(),
             Vec::new(),
             Vec::new(),
             Default::default(),
@@ -734,6 +740,7 @@ async fn invocation_metrics_project_canonical_bounded_summaries() {
             ],
             Vec::new(),
             Vec::new(),
+            Vec::new(),
             Default::default(),
         )
         .await
@@ -779,4 +786,60 @@ async fn invocation_metrics_project_canonical_bounded_summaries() {
         0,
         "known-empty invocation returns an empty list: {json}"
     );
+}
+
+#[tokio::test]
+async fn metric_query_serves_converted_exp_histograms() {
+    use parallax_storage::model::HistogramRow;
+    // Ingest-converted exp row (explicit buckets): the memory store files it
+    // with explicit histograms, so the histogram query path serves it.
+    let store = Arc::new(MemoryStore::new());
+    store
+        .ingest_metrics(
+            Vec::new(),
+            Vec::new(),
+            vec![HistogramRow {
+                ts_nanos: 1_500_000_000,
+                service: "checkout".into(),
+                name: "exp.converted".into(),
+                count: 8,
+                sum: 20.0,
+                bucket_counts: vec![3, 5],
+                bounds: vec![2.0, 4.0],
+                attributes: serde_json::json!({}),
+            }],
+            Vec::new(),
+            Default::default(),
+        )
+        .await
+        .unwrap();
+    let schema = build_schema();
+    let context = context_with_memory(store).await;
+    let request = juniper::http::GraphQLRequest::new(
+        r#"{
+          metricQuery(name: "exp.converted", kind: "histogram", agg: "p50", fromNanos: "0", toNanos: "120000000000") {
+            kind effectiveStepSeconds series { points { tsNanos value } }
+          }
+          metricCatalog(fromNanos: "0", toNanos: "120000000000") { name kind pointCount }
+        }"#
+            .into(),
+        None,
+        None,
+    );
+    let response = execute(&schema, &context, request).await;
+    let json = serde_json::to_value(response).unwrap();
+    assert!(error_messages(&json).is_empty(), "exp query: {json}");
+    let value = json
+        .pointer("/data/metricQuery/series/0/points/0/value")
+        .and_then(|v| v.as_f64())
+        .unwrap();
+    // bounds [2,4] counts [3,5]: total 8, p50 target 4 → 2 + 2*(1/5) = 2.4.
+    assert!((value - 2.4).abs() < 1e-9, "p50 over converted row: {json}");
+    let catalog = json
+        .pointer("/data/metricCatalog")
+        .and_then(|v| v.as_array())
+        .unwrap();
+    assert_eq!(catalog.len(), 1);
+    assert_eq!(catalog[0]["kind"], "histogram");
+    assert_eq!(catalog[0]["pointCount"], "1");
 }

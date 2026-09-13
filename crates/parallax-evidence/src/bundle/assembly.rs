@@ -243,9 +243,9 @@ fn primary_from_events(events: &[ErrorEventRow], issues: &[Issue]) -> Option<Iss
     events
         .first()
         .and_then(|event| {
-            issues
-                .iter()
-                .find(|issue| issue.fingerprint == event.fingerprint)
+            issues.iter().find(|issue| {
+                issue.service == event.service && issue.fingerprint == event.fingerprint
+            })
         })
         .or_else(|| issues.first())
         .cloned()

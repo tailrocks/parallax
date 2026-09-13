@@ -54,7 +54,9 @@ test.describe("full-stack telemetry discovery @storage", () => {
       timeout: SURFACE_TIMEOUT_MS,
     })
 
-    await page.goto(`/issues/${manifest.issue_fingerprint}`)
+    await page.goto(
+      `/issues/${encodeURIComponent(manifest.service)}/${encodeURIComponent(manifest.issue_fingerprint)}`
+    )
     await expect(page.getByText(manifest.service, { exact: false }).first()).toBeVisible()
     await expect(page.getByText("open", { exact: false }).first()).toBeVisible()
 

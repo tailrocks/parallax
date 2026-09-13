@@ -97,7 +97,7 @@ export function seriesColor(name: string, index: number): string {
     return "var(--chart-p50)"
   }
   if (normalized === "ok" || normalized === "success") {
-    return "var(--severity-info)"
+    return "var(--success)"
   }
   if (normalized === "p50") return "var(--chart-p50)"
   if (normalized === "p95") return "var(--chart-p95)"
@@ -207,6 +207,16 @@ export const TEST_FLAKY = {
   FLAKY: TONE.warning,
   FIXED: TONE.info,
   BROKEN: TONE.error,
+} as const satisfies Record<string, DomainTone>
+
+export const ISSUE_STATUS = {
+  open: TONE.error,
+  resolved: TONE.success,
+} as const satisfies Record<string, DomainTone>
+
+export const INCIDENT_STATUS = {
+  open: TONE.error,
+  resolved: TONE.success,
 } as const satisfies Record<string, DomainTone>
 
 export function errorCountTone(count: number): string {

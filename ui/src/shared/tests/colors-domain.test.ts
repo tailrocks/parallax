@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  INCIDENT_STATUS,
   INVOCATION_OUTCOME,
   INVOCATION_STATUS,
+  ISSUE_STATUS,
   SPAN_STATUS,
   TEST_FLAKY,
   TEST_RESULT,
@@ -47,5 +49,12 @@ describe("domain color records (plan 172)", () => {
     expectExhaustive(TEST_FLAKY, ["HEALTHY", "FLAKY", "FIXED", "BROKEN"])
     expect(errorCountTone(0)).toBe("text-muted-foreground/40")
     expect(errorCountTone(2)).toBe(SPAN_STATUS.error.icon)
+  })
+
+  it("covers issue and incident status tone slots", () => {
+    expectExhaustive(ISSUE_STATUS, ["open", "resolved"])
+    expectExhaustive(INCIDENT_STATUS, ["open", "resolved"])
+    expect(ISSUE_STATUS.open.color).toBe("var(--severity-error)")
+    expect(INCIDENT_STATUS.resolved.color).toBe("var(--success)")
   })
 })

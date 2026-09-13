@@ -318,12 +318,22 @@ impl Worker {
             let normalized = normalize::normalize_metrics(request);
             self.health
                 .unsupported_metric(normalized.dropped_unsupported);
+            // Converted exp rows persist from `normalized`; strip the originals
+            // from the native forward (engines that accept exp histograms would
+            // double-store, engines that reject them would poison the batch).
+            let mut forwarded = request.clone();
+            let raw = if normalize::strip_exp_histograms(&mut forwarded) {
+                bytes::Bytes::from(forwarded.encode_to_vec())
+            } else {
+                raw.clone()
+            };
             self.store
                 .ingest_metrics(
                     normalized.points,
                     normalized.histograms,
+                    normalized.exp_histograms,
                     normalized.exemplars,
-                    raw.clone(),
+                    raw,
                 )
                 .await?;
             progress.mark_completed(EffectStage::TelemetryStorage);

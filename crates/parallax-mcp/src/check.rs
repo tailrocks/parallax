@@ -10,6 +10,7 @@ use std::process::Command;
 pub(crate) struct CheckArgs {
     pub base_url: String,
     pub api_token: Option<String>,
+    pub service: Option<String>,
     pub fingerprint: Option<String>,
     pub invocation_id: Option<String>,
     /// Path to the `parallax` CLI binary (default: look up on PATH).
@@ -21,9 +22,15 @@ pub(crate) async fn run(args: CheckArgs) -> anyhow::Result<()> {
     let mut cases: Vec<Case> = Vec::new();
 
     if let Some(fp) = &args.fingerprint {
+        let Some(service) = &args.service else {
+            anyhow::bail!(
+                "--service is required with --fingerprint: issue identity is (service, fingerprint)"
+            );
+        };
         cases.push(Case {
             label: "issue bundle",
             kind: CaseKind::IssueBundle {
+                service: service.clone(),
                 fingerprint: fp.clone(),
             },
         });
@@ -69,28 +76,35 @@ struct Case {
 }
 
 enum CaseKind {
-    IssueBundle { fingerprint: String },
-    RunBundle { invocation_id: String },
+    IssueBundle {
+        service: String,
+        fingerprint: String,
+    },
+    RunBundle {
+        invocation_id: String,
+    },
 }
 
 async fn check_one(client: &GraphqlClient, args: &CheckArgs, case: &Case) -> anyhow::Result<()> {
     // 1) MCP tool path = shared fetch used by tools (raw GraphQL json string).
     let mcp = match &case.kind {
-        CaseKind::IssueBundle { fingerprint } => {
-            gql::fetch_bundle(client, Some(fingerprint), None).await?
-        }
+        CaseKind::IssueBundle {
+            service,
+            fingerprint,
+        } => gql::fetch_bundle(client, Some(service), Some(fingerprint), None).await?,
         CaseKind::RunBundle { invocation_id } => {
-            gql::fetch_bundle(client, None, Some(invocation_id)).await?
+            gql::fetch_bundle(client, None, None, Some(invocation_id)).await?
         }
     };
 
     // 2) Plain HTTP GraphQL (same client — second call; proves stability).
     let http = match &case.kind {
-        CaseKind::IssueBundle { fingerprint } => {
-            gql::fetch_bundle(client, Some(fingerprint), None).await?
-        }
+        CaseKind::IssueBundle {
+            service,
+            fingerprint,
+        } => gql::fetch_bundle(client, Some(service), Some(fingerprint), None).await?,
         CaseKind::RunBundle { invocation_id } => {
-            gql::fetch_bundle(client, None, Some(invocation_id)).await?
+            gql::fetch_bundle(client, None, None, Some(invocation_id)).await?
         }
     };
 
@@ -98,11 +112,16 @@ async fn check_one(client: &GraphqlClient, args: &CheckArgs, case: &Case) -> any
     // Same maxTokens as MCP fetch_bundle so the three projections bound equally.
     let max_tokens = MCP_BUNDLE_MAX_TOKENS.to_string();
     let cli_json = match &case.kind {
-        CaseKind::IssueBundle { fingerprint } => run_cli_json(
+        CaseKind::IssueBundle {
+            service,
+            fingerprint,
+        } => run_cli_json(
             &args.parallax_bin,
             &[
                 "issue",
                 "context",
+                "--service",
+                service,
                 fingerprint,
                 "--format",
                 "json",

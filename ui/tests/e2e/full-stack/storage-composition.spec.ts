@@ -9,14 +9,15 @@ import { SURFACE_TIMEOUT_MS } from "../support/timeouts"
 test.describe("full-stack storage composition @storage", () => {
   test.afterEach(async ({ fullStack }) => {
     const fingerprint = fullStack.issue_fingerprint
+    const service = fullStack.service
     const current = await graphqlQuery<{
       issue: { fingerprint: string; status: string }
-    }>(`{ issue(fingerprint: "${fingerprint}") { fingerprint status } }`)
+    }>(`{ issue(service: "${service}", fingerprint: "${fingerprint}") { fingerprint status } }`)
     if (current.issue.status !== "open") {
       await graphqlQuery(
-        `mutation { issueSetStatus(fingerprint: "${fingerprint}", status: "open") { fingerprint status } }`
+        `mutation { issueSetStatus(service: "${service}", fingerprint: "${fingerprint}", status: "open") { fingerprint status } }`
       )
-      await pollIssueStatus(fingerprint, "open")
+      await pollIssueStatus(service, fingerprint, "open")
     }
   })
 
@@ -27,25 +28,26 @@ test.describe("full-stack storage composition @storage", () => {
   }) => {
     const manifest = readFullStackManifest()
     const fingerprint = fullStack.issue_fingerprint
+    const service = fullStack.service
     expect(fingerprint).toBeTruthy()
 
     const before = await graphqlQuery<{
       issue: { fingerprint: string; status: string }
-    }>(`{ issue(fingerprint: "${fingerprint}") { fingerprint status } }`)
+    }>(`{ issue(service: "${service}", fingerprint: "${fingerprint}") { fingerprint status } }`)
     expect(before.issue.status).toBe("open")
 
-    await page.goto(`/issues/${fingerprint}`)
+    await page.goto(`/issues/${encodeURIComponent(service)}/${encodeURIComponent(fingerprint)}`)
     await expect(page.getByRole("button", { name: "Resolve" })).toBeVisible({
       timeout: SURFACE_TIMEOUT_MS,
     })
     await page.getByRole("button", { name: "Resolve" }).click()
 
-    const afterUi = await pollIssueStatus(fingerprint, "resolved")
+    const afterUi = await pollIssueStatus(service, fingerprint, "resolved")
     expect(afterUi.status).toBe("resolved")
 
     const context = await browser.newContext()
     const fresh = await context.newPage()
-    await fresh.goto(`/issues/${fingerprint}`)
+    await fresh.goto(`/issues/${encodeURIComponent(service)}/${encodeURIComponent(fingerprint)}`)
     await expect(fresh.getByText("resolved", { exact: false }).first()).toBeVisible({
       timeout: SURFACE_TIMEOUT_MS,
     })
@@ -53,7 +55,7 @@ test.describe("full-stack storage composition @storage", () => {
 
     const afterFresh = await graphqlQuery<{
       issue: { fingerprint: string; status: string }
-    }>(`{ issue(fingerprint: "${fingerprint}") { fingerprint status } }`)
+    }>(`{ issue(service: "${service}", fingerprint: "${fingerprint}") { fingerprint status } }`)
     expect(afterFresh.issue.status).toBe("resolved")
     await context.close()
 

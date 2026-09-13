@@ -93,12 +93,13 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
     // Poll GraphQL until the pipeline lands the issue (spec §8: issues
     // returns IssueList { items, total }).
     let client = reqwest::Client::new();
+    let mut service = String::new();
     let mut fingerprint = String::new();
     for _ in 0..50 {
         let response = graphql(
             &client,
             handle.api_addr,
-            r"{ issues { total items { fingerprint errorType eventCount status } } }",
+            r"{ issues { total items { service fingerprint errorType eventCount status } } }",
         )
         .await;
         if let Some(issue) = response
@@ -106,6 +107,7 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
             .and_then(|v| v.as_array())
             .and_then(|a| a.iter().find(|i| i["errorType"] == "test::ApiSurface"))
         {
+            service = issue["service"].as_str().unwrap_or_default().to_string();
             fingerprint = issue["fingerprint"]
                 .as_str()
                 .unwrap_or_default()
@@ -114,6 +116,7 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
         }
         tokio::time::sleep(Duration::from_millis(100)).await;
     }
+    assert!(!service.is_empty(), "issue service visible through GraphQL");
     assert!(!fingerprint.is_empty(), "issue visible through GraphQL");
 
     // Filtered listing: the issue's service matches, a wrong service does
@@ -121,7 +124,7 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
     let response = graphql(
         &client,
         handle.api_addr,
-        r#"{ issues(query: "ApiSurface", sort: EVENTS) { total items { fingerprint } }
+        r#"{ issues(query: "ApiSurface", sort: EVENTS) { total items { service fingerprint } }
              none: issues(service: "no-such-service") { total } }"#,
     )
     .await;
@@ -142,7 +145,7 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
         &client,
         handle.api_addr,
         &format!(
-            r#"{{ issue(fingerprint: "{fingerprint}") {{
+            r#"{{ issue(service: "{service}", fingerprint: "{fingerprint}") {{
                  title status tags trend {{ count }}
                  latestEvent {{ traceId }}
                  events {{ message traceId source }}
@@ -184,7 +187,9 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
     let response = graphql(
         &client,
         handle.api_addr,
-        &format!(r#"{{ issueTrend(fingerprint: "{fingerprint}") {{ tsNanos count }} }}"#),
+        &format!(
+            r#"{{ issueTrend(service: "{service}", fingerprint: "{fingerprint}") {{ tsNanos count }} }}"#
+        ),
     )
     .await;
     let trend = response
@@ -229,7 +234,7 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
         &client,
         handle.api_addr,
         &format!(
-            r#"mutation {{ issueSetStatus(fingerprint: "{fingerprint}", status: "resolved") {{ fingerprint status }} }}"#
+            r#"mutation {{ issueSetStatus(service: "{service}", fingerprint: "{fingerprint}", status: "resolved") {{ fingerprint status }} }}"#
         ),
     )
     .await;
@@ -243,7 +248,7 @@ async fn graphql_surface_answers_over_ingested_telemetry() {
     let response = graphql(
         &client,
         handle.api_addr,
-        &format!(r#"{{ issue(fingerprint: "{fingerprint}") {{ status }} }}"#),
+        &format!(r#"{{ issue(service: "{service}", fingerprint: "{fingerprint}") {{ status }} }}"#),
     )
     .await;
     assert_eq!(

@@ -337,6 +337,19 @@ type ErrorEvent {
   source: String!
   traceId: String!
   spanId: String!
+  """
+    `cli.invocation.id` of the run this error belongs to, when the source
+    signal carried one — the anchor for error → run navigation.
+  """
+  invocationId: String
+  "`session.id` of the interactive session this error belongs to."
+  sessionId: String
+  "`service.version` of the emitting resource (release context)."
+  serviceVersion: String
+  "`deployment.environment.name` of the emitting resource."
+  environment: String
+  "The run record for this error's invocation, when the run is registered."
+  invocation: Invocation
   attributes: String!
 }
 
@@ -411,6 +424,17 @@ type Invocation {
   """
   endedAtNanos: String
   exitCode: Int
+  """
+    Bounded head of child stdout captured by the CLI wrapper; null when
+    never captured (bare, external, or pre-capture runs).
+  """
+  stdoutText: String
+  "Stdout bytes omitted past the capture cap."
+  stdoutTruncatedBytes: Int!
+  "Bounded head of child stderr captured by the CLI wrapper."
+  stderrText: String
+  "Stderr bytes omitted past the capture cap."
+  stderrTruncatedBytes: Int!
   "cli (wrapper-registered) | external (auto-registered from telemetry)."
   registration: String!
   "one_shot | interactive | daemon | capsule, when registered."
@@ -447,6 +471,7 @@ type Invocation {
 type InvocationErrorEvent {
   tsNanos: String!
   title: String!
+  service: String!
   fingerprint: String!
   traceId: String
 }
@@ -568,7 +593,7 @@ type Mutation {
     Set an issue's workflow status (open | resolved); returns the updated
     issue (spec §8: `Issue!`).
   """
-  issueSetStatus(fingerprint: String!, status: String!): Issue!
+  issueSetStatus(service: String!, fingerprint: String!, status: String!): Issue!
   "Register an invocation (the CLI wrapper calls this before launching)."
   invocationStart(invocationId: String!, command: String, appMode: String, startedAtNanos: String!): Boolean!
   """
@@ -587,7 +612,7 @@ type Mutation {
   "Delete a named saved page state."
   savedViewDelete(id: String!): Boolean!
   "Close an invocation with the wrapped command's exit code and outcome."
-  invocationFinish(invocationId: String!, endedAtNanos: String!, exitCode: Int!, outcome: String): Boolean!
+  invocationFinish(invocationId: String!, endedAtNanos: String!, exitCode: Int!, outcome: String, stdoutText: String, stdoutTruncatedBytes: Int, stderrText: String, stderrTruncatedBytes: Int): Boolean!
   """
     Create or update an alert rule (plan 167); optional knobs default per
     the plan contract.
@@ -663,7 +688,7 @@ type Query {
     on the cached tags.
   """
   issues(service: String, status: String, query: String, fromNanos: String, toNanos: String, tagKey: String, tagValue: String, sort: IssueSort, limit: Int, offset: Int): IssueList!
-  issue(fingerprint: String!): Issue
+  issue(service: String!, fingerprint: String!): Issue
   """
     Variant-scoped test explorer. Attempt rollups preserve fail-then-pass as
     flaky-pass; every row references its latest native test span.
@@ -675,7 +700,7 @@ type Query {
     Occurrence counts per bucket for one issue's sparkline, oldest
     first. Defaults: the last 24 hours in one-hour buckets.
   """
-  issueTrend(fingerprint: String!, hours: Int, stepSeconds: Int): [TrendPoint!]!
+  issueTrend(service: String!, fingerprint: String!, hours: Int, stepSeconds: Int): [TrendPoint!]!
   "Every span of one trace, start-time ascending (cross-service)."
   trace(traceId: String!): Trace
   """
@@ -797,7 +822,7 @@ type Query {
   """
   traceFacets(service: String, fromNanos: String, toNanos: String, errorOnly: Boolean, query: String, attributeFilters: [AttributeFilterInput!]): [Facet!]!
   "Bounded redacted evidence bundle. Exactly one of fingerprint, invocationId, traceId, alertIncidentId."
-  bundle(fingerprint: String, invocationId: String, traceId: String, alertIncidentId: String, maxTokens: Int): BundleOut
+  bundle(service: String, fingerprint: String, invocationId: String, traceId: String, alertIncidentId: String, maxTokens: Int): BundleOut
   "Invocation-scoped metric family summaries (plan 105)."
   invocationMetrics(invocationId: String!, fromNanos: String, toNanos: String, limit: Int): [InvocationMetricRow!]!
   "Metric catalog; `q` substring, `kind` one kind."

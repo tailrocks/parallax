@@ -759,8 +759,8 @@ function RecentIssuesCard({ issues, range }: { issues: IssueRow[]; range: Resolv
               {issues.map((issue) => (
                 <Link
                   key={issue.fingerprint}
-                  to="/issues/$fingerprint"
-                  params={{ fingerprint: issue.fingerprint }}
+                  to="/issues/$service/$fingerprint"
+                  params={{ service: issue.service, fingerprint: issue.fingerprint }}
                   search={rangeLinkSearch(range)}
                   className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 py-3 text-sm hover:bg-muted/40"
                 >

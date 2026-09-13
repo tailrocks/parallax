@@ -32,11 +32,30 @@ impl TursoMetadataStore {
         ended_at_nanos: u128,
         exit_code: i32,
         outcome: Option<&str>,
+        output: Option<&InvocationOutput>,
     ) -> anyhow::Result<()> {
-        self.conn
-            .lock()
-            .await
-            .execute(
+        let conn = self.conn.lock().await;
+        if let Some(output) = output {
+            conn.execute(
+                "UPDATE invocations
+                 SET ended_at = ?2, exit_code = ?3, outcome = ?4, status = 'finished',
+                     stdout_text = ?5, stdout_truncated_bytes = ?6,
+                     stderr_text = ?7, stderr_truncated_bytes = ?8
+                 WHERE invocation_id = ?1",
+                (
+                    invocation_id,
+                    nanos_to_millis(ended_at_nanos),
+                    i64::from(exit_code),
+                    outcome.map(str::to_string),
+                    output.stdout_text.clone(),
+                    bytes_to_db(output.stdout_truncated_bytes),
+                    output.stderr_text.clone(),
+                    bytes_to_db(output.stderr_truncated_bytes),
+                ),
+            )
+            .await?;
+        } else {
+            conn.execute(
                 "UPDATE invocations
                  SET ended_at = ?2, exit_code = ?3, outcome = ?4, status = 'finished'
                  WHERE invocation_id = ?1",
@@ -48,6 +67,7 @@ impl TursoMetadataStore {
                 ),
             )
             .await?;
+        }
         Ok(())
     }
 
@@ -56,7 +76,8 @@ impl TursoMetadataStore {
         let mut rows = conn
             .query(
                 "SELECT invocation_id, command, app_mode, started_at, ended_at, exit_code,
-                        outcome, status
+                        outcome, status, stdout_text, stdout_truncated_bytes,
+                        stderr_text, stderr_truncated_bytes
                  FROM invocations ORDER BY started_at DESC LIMIT ?1",
                 [Value::Integer(i64::try_from(limit).unwrap_or(i64::MAX))],
             )
@@ -78,6 +99,10 @@ impl TursoMetadataStore {
             exit_code: opt_integer(row, 5).and_then(|v| i32::try_from(v).ok()),
             outcome: opt_text(row, 6),
             status: text(row, 7),
+            stdout_text: opt_text(row, 8),
+            stdout_truncated_bytes: bytes_from_db(integer(row, 9)),
+            stderr_text: opt_text(row, 10),
+            stderr_truncated_bytes: bytes_from_db(integer(row, 11)),
         }
     }
 
@@ -89,7 +114,8 @@ impl TursoMetadataStore {
         let mut rows = conn
             .query(
                 "SELECT invocation_id, command, app_mode, started_at, ended_at, exit_code,
-                        outcome, status
+                        outcome, status, stdout_text, stdout_truncated_bytes,
+                        stderr_text, stderr_truncated_bytes
                  FROM invocations WHERE invocation_id = ?1",
                 (invocation_id,),
             )

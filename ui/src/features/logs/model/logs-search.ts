@@ -4,6 +4,7 @@ export interface LogsSearch {
   q?: string | undefined
   service?: string | undefined
   sev?: number | undefined
+  trace?: string | undefined
   where?: string | undefined
   range?: string | undefined
   from?: string | undefined
@@ -22,6 +23,7 @@ const logsSearchSchema = z.object({
   q: z.unknown().optional(),
   service: z.unknown().optional(),
   sev: z.unknown().optional(),
+  trace: z.unknown().optional(),
   where: z.unknown().optional(),
   range: z.unknown().optional(),
   from: z.unknown().optional(),
@@ -44,6 +46,7 @@ export function validateLogsSearch(search: Record<string, unknown>): LogsSearch 
     q: typeof parsed.q === "string" && parsed.q ? parsed.q : undefined,
     service: typeof parsed.service === "string" && parsed.service ? parsed.service : undefined,
     sev: parseSeverity(parsed.sev),
+    trace: typeof parsed.trace === "string" && parsed.trace ? parsed.trace : undefined,
     where: typeof parsed.where === "string" && parsed.where ? parsed.where : undefined,
     range: typeof parsed.range === "string" ? parsed.range : undefined,
     from: typeof parsed.from === "string" ? parsed.from : undefined,
@@ -73,6 +76,7 @@ export function serializeLogsSearch(search: LogsSearch): string {
   if (search.q) params.set("q", search.q)
   if (search.service) params.set("service", search.service)
   if (search.sev) params.set("sev", String(search.sev))
+  if (search.trace) params.set("trace", search.trace)
   if (search.where) params.set("where", search.where)
   if (search.range) params.set("range", search.range)
   if (search.from) params.set("from", search.from)

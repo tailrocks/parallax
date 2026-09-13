@@ -1,6 +1,6 @@
 use super::*;
 
-type IssueEvents = HashMap<String, Vec<model::ErrorEventRow>>;
+type IssueEvents = HashMap<(String, String), Vec<model::ErrorEventRow>>;
 type IssueEventCache = HashMap<IssueEventQuery, Arc<IssueEvents>>;
 
 /// Request-scoped memo for the highest-fan-in anchored reads. Built fresh on
@@ -15,38 +15,44 @@ pub struct RequestMemo {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct IssueEventQuery {
-    fingerprints: Vec<String>,
+    issue_keys: Vec<(String, String)>,
     from_nanos: u128,
     to_nanos: u128,
     limit: usize,
 }
 
 impl ApiContext {
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "identity and window fields keep the memo key explicit at callsites"
+    )]
     pub(crate) async fn issue_events_for(
         &self,
-        fingerprints: &[String],
+        issue_keys: &[(String, String)],
+        service: &str,
         fingerprint: &str,
         from_nanos: u128,
         to_nanos: u128,
         limit: usize,
     ) -> FieldResult<Vec<model::ErrorEventRow>> {
         let key = IssueEventQuery {
-            fingerprints: fingerprints.to_vec(),
+            issue_keys: issue_keys.to_vec(),
             from_nanos,
             to_nanos,
             limit,
         };
+        let issue_key = (service.to_string(), fingerprint.to_string());
         let mut cache = self.memo.issue_events.lock().await;
         if let Some(events) = cache.get(&key) {
-            return Ok(events.get(fingerprint).cloned().unwrap_or_default());
+            return Ok(events.get(&issue_key).cloned().unwrap_or_default());
         }
         let events = Arc::new(
             self.store
-                .error_events_by_fingerprints(fingerprints, from_nanos..=to_nanos, limit)
+                .error_events_by_fingerprints(issue_keys, from_nanos..=to_nanos, limit)
                 .await
                 .map_err(internal_field_err)?,
         );
-        let result = events.get(fingerprint).cloned().unwrap_or_default();
+        let result = events.get(&issue_key).cloned().unwrap_or_default();
         cache.insert(key, events);
         Ok(result)
     }

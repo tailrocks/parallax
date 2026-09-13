@@ -250,8 +250,11 @@ export function TestCaseDetailContent({
                           <TableCell className="max-w-[10rem] truncate text-sm">
                             {attempt.failureFingerprint ? (
                               <Link
-                                to="/issues/$fingerprint"
-                                params={{ fingerprint: attempt.failureFingerprint }}
+                                to="/issues/$service/$fingerprint"
+                                params={{
+                                  service: attempt.service,
+                                  fingerprint: attempt.failureFingerprint,
+                                }}
                                 className="text-primary hover:underline"
                               >
                                 {attempt.failureFingerprint}

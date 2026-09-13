@@ -37,6 +37,16 @@ pub fn derive_from_sentry_event(event: &Value) -> Option<ErrorEventRow> {
     let (trace_id, span_id) = trace_ids(object);
     let ts_nanos = timestamp_nanos(object);
     let attributes = bounded_attributes(object);
+    // Sentry's native release/environment fields are the envelope's resource
+    // identity; absent fields stay absent (never invented).
+    let str_field = |key: &str| {
+        object
+            .get(key)
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string)
+    };
 
     Some(ErrorEventRow {
         ts_nanos,
@@ -48,6 +58,10 @@ pub fn derive_from_sentry_event(event: &Value) -> Option<ErrorEventRow> {
         source: ErrorSource::SentryEnvelope,
         trace_id,
         span_id,
+        invocation_id: None,
+        session_id: None,
+        service_version: str_field("release"),
+        environment: str_field("environment"),
         attributes,
     })
 }
