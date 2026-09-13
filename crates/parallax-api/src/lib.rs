@@ -36,8 +36,8 @@ use std::{collections::HashMap, sync::Arc};
 use resolvers::{
     AgentSessionOut, AlertCheck, AlertDestination, AlertIncident, AlertRule, AlertRuleInput,
     AlertRulePreview, AlertRuleState, AttributeCompareRow, AttributeFilterInput, BundleOut,
-    CriticalPath, Dashboard, DurationStats, EvidenceGap, Facet, FieldKey, FieldStats,
-    Investigation, Invocation, Issue, IssueList, IssueSort, LogRecord, MetricExemplar,
+    ChartAnnotation, CriticalPath, Dashboard, DurationStats, EvidenceGap, Facet, FieldKey,
+    FieldStats, Investigation, Invocation, Issue, IssueList, IssueSort, LogRecord, MetricExemplar,
     ObservedInvocation, Overview, Point, ReleaseWindow, RuntimeMetric, SavedView, Series,
     ServiceCatalogRow, ServiceMap, ServiceOverview, ServiceSummary, SignalKind, SpanRed,
     SqlResultOut, StoryBeat, TestCaseDetail, TestConfigurationFilterInput, TestExplorerPage,
@@ -148,6 +148,11 @@ impl Query {
 
     /// Per-version service release windows in the selected time range.
     async fn releases(context: &ApiContext, service: String, from_nanos: String, to_nanos: String,) -> FieldResult<Vec<ReleaseWindow>> { resolvers::services::releases(context, service, from_nanos, to_nanos).await }
+
+    /// Chart markers derived from release windows (deploy/release). Same
+    /// store as `releases`. `service` optional: omit to collect every service
+    /// in the window (catalog → metric detail default path).
+    async fn chart_annotations(context: &ApiContext, from_nanos: String, to_nanos: String, service: Option<String>,) -> FieldResult<Vec<ChartAnnotation>> { resolvers::services::chart_annotations(context, from_nanos, to_nanos, service).await }
 
     /// Resource-identity catalog rows for services in the selected window.
     async fn service_catalog(context: &ApiContext, from_nanos: String, to_nanos: String,) -> FieldResult<Vec<ServiceCatalogRow>> { resolvers::services::service_catalog(context, from_nanos, to_nanos).await }
@@ -412,8 +417,8 @@ pub struct Mutation;
 #[rustfmt::skip]
 #[graphql_object(context = ApiContext)]
 impl Mutation {
-    /// Set an issue's workflow status (open | resolved); returns the updated
-    /// issue (spec §8: `Issue!`).
+    /// Set an issue's workflow status (open | resolved). `regressed` is
+    /// derived on recurrence, not set by this mutation.
     async fn issue_set_status(context: &ApiContext, service: String, fingerprint: String, status: String,) -> FieldResult<Issue> { resolvers::issues::issue_set_status(context, service, fingerprint, status).await }
 
     /// Register an invocation (the CLI wrapper calls this before launching).

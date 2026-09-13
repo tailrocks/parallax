@@ -274,6 +274,13 @@ type ChangedSpan {
   statusChanged: Boolean!
 }
 
+type ChartAnnotation {
+  tsNanos: String!
+  kind: String!
+  title: String!
+  service: String!
+}
+
 type Conversation {
   conversationId: String!
   agentName: String
@@ -318,6 +325,16 @@ type DiffSpan {
   durationNs: String!
   depth: Int!
   matchKey: String!
+}
+
+type DominantDbQuery {
+  normalized: String!
+  example: String!
+  count: Int!
+  totalNs: String!
+  maxNs: String!
+  exampleSpanId: String!
+  service: String!
 }
 
 type DurationStats {
@@ -590,8 +607,8 @@ type MetricQueryOut {
 
 type Mutation {
   """
-    Set an issue's workflow status (open | resolved); returns the updated
-    issue (spec §8: `Issue!`).
+    Set an issue's workflow status (open | resolved). `regressed` is
+    derived on recurrence, not set by this mutation.
   """
   issueSetStatus(service: String!, fingerprint: String!, status: String!): Issue!
   "Register an invocation (the CLI wrapper calls this before launching)."
@@ -675,6 +692,12 @@ type Query {
   serviceList(fromNanos: String!, toNanos: String!): [ServiceSummary!]!
   "Per-version service release windows in the selected time range."
   releases(service: String!, fromNanos: String!, toNanos: String!): [ReleaseWindow!]!
+  """
+    Chart markers derived from release windows (deploy/release). Same
+    store as `releases`. `service` optional: omit to collect every service
+    in the window (catalog → metric detail default path).
+  """
+  chartAnnotations(fromNanos: String!, toNanos: String!, service: String): [ChartAnnotation!]!
   "Resource-identity catalog rows for services in the selected window."
   serviceCatalog(fromNanos: String!, toNanos: String!): [ServiceCatalogRow!]!
   "Trace-path service graph over a bounded set of traces in the window."
@@ -1132,6 +1155,8 @@ type TestVariantDetail {
 type Trace {
   traceId: String!
   spans: [Span!]!
+  "Ranked database queries in this trace, grouped by normalized SQL."
+  dominantDbQueries: [DominantDbQuery!]!
 }
 
 type TraceDiff {

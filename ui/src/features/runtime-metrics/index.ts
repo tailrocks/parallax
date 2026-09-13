@@ -20,3 +20,13 @@ export {
   type MetricKind,
   type MetricQuerySpec,
 } from "@/features/runtime-metrics/model/metric-aggregation"
+
+export {
+  chartAnnotationMarks,
+  nearestChartTime,
+  peakWindowFromSeries,
+  tracesAroundPeakSearch,
+  PEAK_WINDOW_PAD_NS,
+  type ChartAnnotationMark,
+  type PeakWindow,
+} from "@/features/runtime-metrics/model/peak-window"

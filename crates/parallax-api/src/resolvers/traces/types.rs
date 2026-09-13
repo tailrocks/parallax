@@ -145,6 +145,33 @@ pub(crate) struct Trace {
     pub(super) spans: Vec<model::SpanRow>,
 }
 
+pub(crate) struct DominantDbQuery(pub(crate) trace_analysis::DominantDbQuery);
+
+#[graphql_object(context = ApiContext)]
+impl DominantDbQuery {
+    fn normalized(&self) -> &str {
+        &self.0.normalized
+    }
+    fn example(&self) -> &str {
+        &self.0.example
+    }
+    fn count(&self) -> i32 {
+        saturate_i32(self.0.count)
+    }
+    fn total_ns(&self) -> String {
+        nanos_string(self.0.total_ns)
+    }
+    fn max_ns(&self) -> String {
+        nanos_string(self.0.max_ns)
+    }
+    fn example_span_id(&self) -> &str {
+        &self.0.example_span_id
+    }
+    fn service(&self) -> &str {
+        &self.0.service
+    }
+}
+
 #[graphql_object(context = ApiContext)]
 impl Trace {
     fn trace_id(&self) -> &str {
@@ -152,6 +179,13 @@ impl Trace {
     }
     fn spans(&self) -> Vec<Span> {
         self.spans.iter().cloned().map(Span).collect()
+    }
+    /// Ranked database queries in this trace, grouped by normalized SQL.
+    fn dominant_db_queries(&self) -> Vec<DominantDbQuery> {
+        trace_analysis::dominant_db_queries(&self.spans, 8)
+            .into_iter()
+            .map(DominantDbQuery)
+            .collect()
     }
 }
 

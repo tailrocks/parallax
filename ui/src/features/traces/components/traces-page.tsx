@@ -1,7 +1,8 @@
-import { useNavigate, useRouter, useRouterState } from "@tanstack/react-router"
+import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router"
 import {
   IconAffiliateFilled,
   IconAlertTriangle,
+  IconBellPlus,
   IconDeviceFloppy,
   IconPlayerPlayFilled,
   IconPlayerStopFilled,
@@ -60,6 +61,7 @@ import { RangePicker } from "@/features/time-range"
 import { TableSkeleton } from "@/shared/console/skeletons"
 
 import { gqlString, graphql } from "@/platform/graphql/transport"
+import { encodeTracesAlertGraduation } from "@/features/traces/model/alert-graduation"
 import { mergeLiveSpans } from "@/features/traces/model/merge-live-spans"
 import type { LiveSpan } from "@/features/traces/model/wire"
 import { rangeLinkSearch, resolveRangeSearch, updateRangeSearch } from "@/domain/time-range/range"
@@ -489,6 +491,14 @@ export function TracesPage({ data, search }: { data: TracesLoaderData; search: T
               setSaveOpen(true)
             }}
           />
+          <Button
+            size="sm"
+            variant="outline"
+            render={<Link to="/alerts" search={encodeTracesAlertGraduation(search)} />}
+          >
+            <IconBellPlus data-icon="inline-start" />
+            Create alert
+          </Button>
           {hasFilters ? (
             <ClearFiltersButton
               onClick={() =>

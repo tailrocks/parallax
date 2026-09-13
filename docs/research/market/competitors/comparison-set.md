@@ -5,7 +5,7 @@
 > current as the market shifts — products are added, merged, or retired on every
 > pass. Verify each still exists and still matters before relying on a row.
 >
-> Last reviewed: 2026-07-17.
+> Last reviewed: 2026-09-13 (pass 68 pins restamp).
 >
 > **Live verification run 2026-09-12:** seven roster products — SigNoz, OpenObserve,
 > Maple, HyperDX, Sentry self-hosted, Grafana LGTM, rustrak — were deployed at
@@ -21,7 +21,7 @@ Legend for the **State** column:
 
 ## A. Parallax (the reference, not a competitor)
 
-- **Parallax** — open-source (Apache-2.0), Rust-first, self-hosted **execution-context engine**: ingests OTLP traces/logs/metrics + CLI/agent execution traces, derives owned `error_event`s, fingerprints, correlates into a typed evidence graph, and serves bounded, redacted, schema-valid **evidence bundles** to humans and coding agents (CLI/HTTP first, read-only local-stdio MCP graduated (plan 112 DONE; remote deferred)). Storage: GreptimeDB (telemetry native OTLP tables) + Turso (metadata). Pre-release. **It is the reference design the rest are measured against, not the assumed winner.**
+- **Parallax** — open-source (Apache-2.0), Rust-first, self-hosted **developer observability replacement**: ingests OTLP traces/logs/metrics + Sentry envelopes + CLI/agent execution traces, derives owned `error_event`s keyed by `(service, fingerprint)`, correlates into a typed evidence graph, and serves bounded, redacted, schema-valid **evidence bundles** to humans and coding agents (CLI/HTTP first, read-only local-stdio MCP graduated (plan 112 DONE; remote deferred)). Storage: GreptimeDB (telemetry native OTLP tables) + Turso (metadata). Pre-release. Bundles/CLI-runs/redaction are differentiators, not a scope cap. **It is the reference design the rest are measured against, not the assumed winner.**
 
 ## B. Closed-source / commercial observability platforms
 
@@ -39,6 +39,7 @@ Legend for the **State** column:
 | **Chronosphere** | Scale metrics on M3/Cube + Control Plane + Telemetry Pipeline; Gartner #1 cost control. **Palo Alto Networks–owned (acq. closed 2026-01-29, ~$3.35B).** Quote-based retained-data pricing (no public rate card). | Closed SaaS (PANW). | Metrics (high scale) + pipeline. | [deep-dive](parallax-vs-chronosphere.md) |
 | **Observe** | Data-/SQL-centric observability on Snowflake (acquired ~$1B Jan 2026); O11y Knowledge Graph + AI SRE/o11y.ai agents. | Closed SaaS (Snowflake). | All signals (relational). | [deep-dive](parallax-vs-observe.md) |
 | **Axiom** | Serverless **full-stack** observability (logs/traces/**metrics GA**/events) **+ AI Engineering** (agent-workflow tracing, evals, cost/latency); OTel-native; **4-part usage pricing** ($25 platform + data-loading + query + storage + add-ons; perpetual 1 TB Always-Free; no egress/seat). | Closed SaaS (OSS SDKs). | Full signals + AI/agent (was logs+events). | [deep-dive](parallax-vs-axiom.md) |
+| **Better Stack** | Closed SaaS ClickHouse platform: OTel logs/traces/metrics, Sentry-SDK errors, RUM+replay, eBPF collector, **uptime + incidents + status pages**. Best adjacent impl of uptime/on-call/status-page loop. Not self-hostable. | Closed SaaS. | Logs + traces + metrics + RUM + uptime + incidents. | [deep-dive](parallax-vs-betterstack.md) (2026-09-13) |
 | **Mezmo** | Telemetry data pipeline + log analysis (ex-LogDNA); Mezmo Flow; route/optimize/govern in flight. | Closed SaaS. | Logs + pipelines (cost-governance layer). | [deep-dive](parallax-vs-mezmo.md) |
 
 > **Roster correction (pass 31):** the legacy "**Tracelo**" row was removed —
@@ -59,7 +60,7 @@ Legend for the **State** column:
 | **Bugsink** | Focused **self-hosted Sentry-SDK-compatible error-tracking server** (Python/Django; full issue lifecycle); **1,940★, v2.4.0**; Hosted EUR event tiers; self-host free. Error-only. | **PolyForm Shield 1.0.0** core (noncompete) + proprietary `ee/` + BSD-3 `sentry/` + Cloud. | Errors only (Sentry-alternative). | [deep-dive](parallax-vs-bugsink.md) |
 | **Uptrace** | OTLP tracing-first APM on ClickHouse+Postgres; Bun-author lineage. | **AGPL** (Community free) + paid editions + Cloud. | Traces + metrics + logs. | [deep-dive](parallax-vs-uptrace.md) |
 | **HyperDX** | OTLP + multi-protocol on **ClickHouse**; full-stack incl. **session replay**; = ClickHouse Inc.'s **ClickStack**. **2.38.0** (`hyperdx/hyperdx-all-in-one` — image renamed from `clickstack-all-in-one`) verified live 2026-09-12: Service Map (BETA) is the slickest single graph view in the roster (Parallax ships its own Ecosystem map — capability present on both), live tail on logs + traces. Cloud: Free 3GB / Starter **$20 + $0.40/GB**. | **MIT** + Cloud + Managed ClickStack. | All signals + RUM/replay. | [deep-dive](parallax-vs-hyperdx.md) |
-| **Odigos** | eBPF + OTel auto-instrumentation control plane (→ any backend); marketing **“Ask Production Anything” / AI SRE**; GenAI auto-instrument. OSS free; Enterprise trial then custom (**no public $/unit**). **v1.31.2, ~3.7k★.** | Apache-2.0 + Enterprise. | Instrumentation layer (complementary). | [deep-dive](parallax-vs-odigos.md) |
+| **Odigos** | eBPF + OTel auto-instrumentation control plane (→ any backend); marketing **“Ask Production Anything” / AI SRE**; GenAI auto-instrument. OSS free; Enterprise trial then custom (**no public $/unit**). **Stable `v1.36.0` (2026-09-06)**; `v1.37`/`v1.38` prerelease only. | Apache-2.0 + Enterprise. | Instrumentation layer (complementary). | [deep-dive](parallax-vs-odigos.md) |
 | **Traceloop** (OpenLLMetry) | OSS Apache-2.0 OTel **LLM-instrumentation SDK** (auto-instrument providers/frameworks/vector-DBs/MCP → OTLP GenAI spans to any backend); drove GenAI semantic conventions into upstream OTel; **ServiceNow-acquired (~$60–80M) → AI Control Tower** (OSS project stays Apache-2.0, active v0.62.1). The LLM-instrumentation sibling of Odigos. | Apache-2.0 + Cloud (now ServiceNow). | LLM instrumentation layer (complementary). | [deep-dive](parallax-vs-traceloop.md) |
 | **Maple** | OTLP single-binary best local UX; Turso metadata sibling choice. **v0.0.22** verified live 2026-09-12 — clean error-triage view; Services page needs the separate Maple-local backend; no alerting/dashboards/SQL. | FSL-1.1 (TS/Bun). | All signals. | [deep-dive](parallax-vs-maple.md) |
 | **TMA1** | Nearest architectural mirror: Go single binary + embedded GreptimeDB + read-only MCP context-bundle for coding agents. | Apache-2.0. | AI-agent cost/sessions/traces. | [deep-dive](parallax-vs-tma1.md) |

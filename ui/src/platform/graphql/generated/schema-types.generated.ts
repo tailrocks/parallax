@@ -235,6 +235,14 @@ export type ChangedSpan = {
   readonly statusChanged: Scalars["Boolean"]["output"]
 }
 
+export type ChartAnnotation = {
+  readonly __typename?: "ChartAnnotation"
+  readonly kind: Scalars["String"]["output"]
+  readonly service: Scalars["String"]["output"]
+  readonly title: Scalars["String"]["output"]
+  readonly tsNanos: Scalars["String"]["output"]
+}
+
 export type Conversation = {
   readonly __typename?: "Conversation"
   readonly agentName: Maybe<Scalars["String"]["output"]>
@@ -284,6 +292,17 @@ export type DiffSpan = {
   readonly service: Scalars["String"]["output"]
   readonly spanId: Scalars["String"]["output"]
   readonly statusCode: Scalars["String"]["output"]
+}
+
+export type DominantDbQuery = {
+  readonly __typename?: "DominantDbQuery"
+  readonly count: Scalars["Int"]["output"]
+  readonly example: Scalars["String"]["output"]
+  readonly exampleSpanId: Scalars["String"]["output"]
+  readonly maxNs: Scalars["String"]["output"]
+  readonly normalized: Scalars["String"]["output"]
+  readonly service: Scalars["String"]["output"]
+  readonly totalNs: Scalars["String"]["output"]
 }
 
 export type DurationStats = {
@@ -618,8 +637,8 @@ export type Mutation = {
   /** Register an invocation (the CLI wrapper calls this before launching). */
   readonly invocationStart: Scalars["Boolean"]["output"]
   /**
-   * Set an issue's workflow status (open | resolved); returns the updated
-   * issue (spec §8: `Issue!`).
+   * Set an issue's workflow status (open | resolved). `regressed` is
+   * derived on recurrence, not set by this mutation.
    */
   readonly issueSetStatus: Issue
   /** Delete a named saved page state. */
@@ -765,6 +784,12 @@ export type Query = {
   readonly backgroundCycles: ReadonlyArray<BackgroundCycle>
   /** Bounded redacted evidence bundle. Exactly one of fingerprint, invocationId, traceId, alertIncidentId. */
   readonly bundle: Maybe<BundleOut>
+  /**
+   * Chart markers derived from release windows (deploy/release). Same
+   * store as `releases`. `service` optional: omit to collect every service
+   * in the window (catalog → metric detail default path).
+   */
+  readonly chartAnnotations: ReadonlyArray<ChartAnnotation>
   /** Agent conversations (`gen_ai.conversation.id` spans) in one invocation. */
   readonly conversations: ReadonlyArray<Conversation>
   /** One saved dashboard by id. */
@@ -1021,6 +1046,12 @@ export type QueryBundleArgs = {
   maxTokens: InputMaybe<Scalars["Int"]["input"]>
   service: InputMaybe<Scalars["String"]["input"]>
   traceId: InputMaybe<Scalars["String"]["input"]>
+}
+
+export type QueryChartAnnotationsArgs = {
+  fromNanos: Scalars["String"]["input"]
+  service: InputMaybe<Scalars["String"]["input"]>
+  toNanos: Scalars["String"]["input"]
 }
 
 export type QueryConversationsArgs = {
@@ -1702,6 +1733,8 @@ export type TestVariantDetail = {
 
 export type Trace = {
   readonly __typename?: "Trace"
+  /** Ranked database queries in this trace, grouped by normalized SQL. */
+  readonly dominantDbQueries: ReadonlyArray<DominantDbQuery>
   readonly spans: ReadonlyArray<Span>
   readonly traceId: Scalars["String"]["output"]
 }

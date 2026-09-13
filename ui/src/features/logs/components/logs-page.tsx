@@ -1,6 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router"
 import {
   IconArticleFilled,
+  IconBellPlus,
   IconColumns,
   IconDeviceFloppy,
   IconHistory,
@@ -59,6 +60,7 @@ import type { OptionalLogColumn } from "@/features/logs/components/logs-table"
 import { contextWindow, stepSecondsForRange } from "@/features/logs/model/logs-range"
 import { logStreamBatchDecoder } from "@/features/logs/api/log-stream-schema"
 import { mergeLiveLogs } from "@/features/logs/model/merge-live-logs"
+import { encodeLogsAlertGraduation } from "@/features/logs/model/alert-graduation"
 import {
   parseSavedViewState,
   serializeLogsSearch,
@@ -491,6 +493,14 @@ export function LogsPage({ data, search }: { data: LogsData; search: LogsSearch 
               setSaveOpen(true)
             }}
           />
+          <Button
+            size="sm"
+            variant="outline"
+            render={<Link to="/alerts" search={encodeLogsAlertGraduation(search)} />}
+          >
+            <IconBellPlus data-icon="inline-start" />
+            Create alert
+          </Button>
           <Button type="button" variant="outline" size="sm" onClick={() => update({})}>
             <IconRefresh />
             Refresh

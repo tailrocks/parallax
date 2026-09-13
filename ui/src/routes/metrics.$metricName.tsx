@@ -1,7 +1,7 @@
 import { Link, createFileRoute } from "@tanstack/react-router"
 import { useMemo } from "react"
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
-import { IconBellPlus, IconChartLine, IconLayoutDashboard } from "@tabler/icons-react"
+import { CartesianGrid, Line, LineChart, ReferenceLine, XAxis, YAxis } from "recharts"
+import { IconBellPlus, IconChartLine, IconLayoutDashboard, IconRoute } from "@tabler/icons-react"
 
 import { Button } from "@/components/ui/button"
 
@@ -24,10 +24,14 @@ import {
 } from "@/components/ui/select"
 import { WhereClauseEditor } from "@/shared/console/where-clause-editor"
 import {
+  chartAnnotationMarks,
   inferMetricKind,
+  peakWindowFromSeries,
+  tracesAroundPeakSearch,
   type MetricAggregation,
   type MetricKind,
 } from "@/features/runtime-metrics"
+import { ServiceReleaseStrip } from "@/features/services/components/service-release-strip"
 import { mergeRangeSearch, rangeSearchSchema } from "@/domain/time-range/range"
 import {
   backendKind,
@@ -63,6 +67,7 @@ export const Route = createFileRoute("/metrics/$metricName")({
     groupBy: searchString(search["groupBy"]),
     step: searchString(search["step"]),
     kind: searchString(search["kind"]),
+    service: searchString(search["service"]),
   }),
   loaderDeps: ({ search }) => search,
   loader: ({ params, deps }) => loadMetricDetail(params.metricName, deps),
@@ -71,7 +76,7 @@ export const Route = createFileRoute("/metrics/$metricName")({
 
 function MetricDetailPage() {
   const { metricName } = Route.useParams()
-  const { labels, series, range, exemplars } = Route.useLoaderData()
+  const { labels, series, range, exemplars, releases, annotations } = Route.useLoaderData()
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
 
@@ -92,7 +97,7 @@ function MetricDetailPage() {
       const tailStart = Math.max(entry.points.length - 2, 0)
       entry.points.forEach((point, pointIndex) => {
         const time = new Date(Number(BigInt(point.tsNanos) / 1_000_000n)).toLocaleTimeString()
-        const row = byTime.get(point.tsNanos) ?? { time }
+        const row = byTime.get(point.tsNanos) ?? { time, tsNanos: point.tsNanos }
         if (pointIndex < entry.points.length - 1) {
           row[key] = point.value
         }
@@ -106,6 +111,12 @@ function MetricDetailPage() {
       .sort(([a], [b]) => (BigInt(a) < BigInt(b) ? -1 : 1))
       .map(([, row]) => row)
   }, [series])
+
+  const peak = useMemo(() => peakWindowFromSeries(series), [series])
+  const annotationMarks = useMemo(
+    () => chartAnnotationMarks(rows, annotations),
+    [rows, annotations]
+  )
 
   const config = Object.fromEntries(
     groups.map((group, index) => [
@@ -241,7 +252,24 @@ function MetricDetailPage() {
           <IconBellPlus data-icon="inline-start" />
           Create alert
         </Button>
+        {peak ? (
+          <Button
+            size="sm"
+            variant="outline"
+            render={
+              <Link
+                to="/traces"
+                search={tracesAroundPeakSearch(peak, search.service)}
+                data-testid="traces-around-peak"
+              />
+            }
+          >
+            <IconRoute data-icon="inline-start" />
+            Traces around peak
+          </Button>
+        ) : null}
       </div>
+      {releases.length > 0 ? <ServiceReleaseStrip releases={releases} range={range} /> : null}
       <Card>
         <CardHeader>
           <CardTitle className="text-sm">
@@ -287,8 +315,30 @@ function MetricDetailPage() {
                   legendType="none"
                 />
               ))}
+              {annotationMarks.map((mark) => (
+                <ReferenceLine
+                  key={mark.key}
+                  x={mark.time}
+                  stroke="var(--color-muted-foreground)"
+                  strokeDasharray="3 3"
+                  label={{ value: mark.title, position: "top", fontSize: 11 }}
+                />
+              ))}
             </LineChart>
           </ChartContainer>
+          {annotationMarks.length > 0 ? (
+            <ul
+              className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground"
+              data-testid="chart-annotations"
+            >
+              {annotationMarks.map((mark) => (
+                <li key={mark.key}>
+                  {mark.kind} {mark.title}
+                  {mark.service ? ` · ${mark.service}` : ""}
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </CardContent>
       </Card>
       <Card>

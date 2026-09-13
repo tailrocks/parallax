@@ -261,7 +261,7 @@ pub(crate) enum InvocationCommand {
 pub(crate) enum IssueCommand {
     /// List grouped errors (newest activity first).
     List {
-        /// Filter by workflow status (open | resolved).
+        /// Filter by workflow status (open | resolved | regressed).
         #[arg(long)]
         status: Option<String>,
         /// Only issues whose events fell inside this invocation's traces.

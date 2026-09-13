@@ -2,11 +2,42 @@
 
 <!-- markdownlint-disable -->
 
+## Current thesis (2026-09-13, GOAL restamp)
+
+**Parallax is a complete developer observability replacement** — one self-hosted
+Rust binary that can replace the *combination* of Sentry + Grafana/LGTM + a
+logs product + a traces product for a developer investigating failures — not a
+narrow “execution-context engine.”
+
+Scope that must be as good or better than the best known workflow: errors,
+logs, traces, metrics, CLI/app execution, backend services, frontend/RUM,
+native macOS, alerts/investigations/dashboards, coding-agent context.
+
+Differentiators that stay (these are *how*, not a scope cap):
+
+- OTLP-native + Sentry-compatible ingest
+- CLI runs and coding-agent sessions as first-class
+- bounded/redacted evidence bundles + one canonical GraphQL API
+- read-only MCP (context engine, **not** a fixer LLM)
+- Apache-2.0 single-binary self-host (GreptimeDB + Turso)
+
+Still **out**: status pages, SOC2/HIPAA, HA multi-region, built-in fixer LLM,
+Windows/Linux desktop native, session replay and continuous profiling unless a
+later freeze promotes them.
+
+The original idea-validation text below (flaky-test-first, “UI later”, “not
+replace Sentry as a first-order goal”) is **historical**. It does not govern
+product shape. Canonical living docs: [problem-audience-product-shape.md](problem-audience-product-shape.md),
+[platform-direction.md](platform-direction.md),
+[gap-matrix-2026-09-13.md](../market/competitors/gap-matrix-2026-09-13.md).
+
+---
+
 ## AI-Native Debugging System
 
 ### Open Source, CLI-First Observability & Flaky Test Investigation
 
-**Status:** historical idea-validation document; V1 shipped
+**Status:** historical idea-validation document; V1 shipped; **scope superseded 2026-09-13** (developer observability replacement, not execution-context-only)
 
 **Purpose:** share with engineers, founders, investors, and observability/SRE practitioners to collect critical feedback.
 

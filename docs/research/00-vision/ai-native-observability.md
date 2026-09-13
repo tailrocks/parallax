@@ -4,11 +4,13 @@
 
 Research date: 2026-05-25
 
-**Parallax status, 2026-07-17:** the narrow evidence engine recommended here is now shipped, not a
-proposal: OTLP and Sentry-envelope ingest, deterministic issue/trace/log analysis, bounded redacted
-bundles, GraphQL/CLI, alerting, SSE, and a 19-route cross-signal UI run on mandatory GreptimeDB +
-Turso. Local-stdio MCP (`parallax-mcp`) graduated plan 112 (2026-07-17); remote deferred. The market survey and prescriptive language below retain
-their research-date meaning.
+**Parallax status, 2026-09-13:** the evidence engine recommended here is shipped *and* the
+product scope is now a developer observability replacement (GOAL.md). Do not read “narrow
+evidence engine” as a cap. Still do **not** compete as a generic AI SRE / fixer: Seer, Bits,
+Davis, Honeycomb Auto-investigations, HolmesGPT already occupy that cell. Parallax remains
+the self-hosted OTLP+Sentry context substrate (bundles, redaction, read-only MCP) **plus**
+best-in-class investigation UX for errors/logs/traces/metrics. Local-stdio MCP graduated
+plan 112; remote deferred. The 2026-05 market survey below retains its research-date meaning.
 
 ## Purpose
 

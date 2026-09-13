@@ -12,10 +12,16 @@ export {
 } from "@/features/alerts/model/alert-incident-timeline"
 export {
   ALERT_RULE_TEMPLATES,
+  alertTemplateIdForSignal,
+  draftFromGraduation,
   draftFromTemplate,
+  encodeAlertGraduationSearch,
   metricGraduationDraft,
+  parseAlertGraduationSearch,
   validateAlertRuleDraft,
   type AlertComparator,
+  type AlertGraduation,
+  type AlertGraduationSearch,
   type AlertRuleDraft,
   type AlertRuleTemplate,
   type AlertRuleValidation,

@@ -178,6 +178,12 @@ export function ParallaxShell({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider className="relative h-svh min-h-0 overflow-hidden">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-2 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:shadow-md"
+      >
+        Skip to content
+      </a>
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
       <ShortcutsDialog open={shortcuts.open} onOpenChange={shortcuts.setOpen} />
       <Sidebar variant="inset" collapsible="icon">
@@ -234,7 +240,7 @@ export function ParallaxShell({ children }: { children: React.ReactNode }) {
       </Sidebar>
 
       <SidebarInset className="min-h-0 overflow-hidden">
-        <main className="min-h-0 flex-1 overflow-y-auto">
+        <main id="main-content" className="min-h-0 flex-1 overflow-y-auto">
           <ShellMain>{children}</ShellMain>
         </main>
       </SidebarInset>

@@ -1,15 +1,23 @@
 # Parallax vs Competitors — Unbiased Comparison
 
-## Current live comparison (2026-09-04)
+## Current pins (2026-09-13 pass 68)
+
+Version authority: [version-pins-2026-09-13.md](version-pins-2026-09-13.md).
+Workflow gap matrix: [gap-matrix-2026-09-13.md](gap-matrix-2026-09-13.md).
+PromQL decision: [promql-decision-2026-09-13.md](promql-decision-2026-09-13.md).
+Investigation-surface restamp: [investigation-surfaces-2026-09-13.md](investigation-surfaces-2026-09-13.md).
+Lab exercise remains the 2026-09-12 report (pass 66). **Do not use the 2026-09-04
+versions below as current.**
+
+## Historical live comparison (2026-09-04) — superseded
 
 The mandatory self-hosted set was refreshed and exercised against Parallax
 `main` `3c4b68d3acf8fb435102ae2beb8f184bf40b617c` and playground
-`bc3d771a386a99387fab6989ac98992d978965cc`. Current refs: OpenObserve `v0.92.2`,
+`bc3d771a386a99387fab6989ac98992d978965cc`. Then-current refs: OpenObserve `v0.92.2`,
 Maple `v0.0.21`, Sentry `26.8.0`, SigNoz `v0.140.0`/Foundry `v0.2.17`, Grafana
 LGTM `0.32.0`, ClickStack `2.37.0`, and Rustrak `v0.14.11`. See the [canonical
 feature-oriented report](../../validation/2026-09-04-parallax-main-competitor-verification.md)
-for exact digests, evidence, best-in-class verdicts, and blockers. Older rows
-below retain their research dates.
+for that day's digests. Older rows below retain their research dates.
 
 > Canonical comparison of Parallax to every relevant observability / debugging /
 > investigation product on the market — open and closed source. **No pro-Parallax

@@ -76,7 +76,13 @@ describe("entity links", () => {
 
   it("merges logs context over the range", async () => {
     renderLink(
-      <LogsLink range={range} service="checkout" q="panic" anchor="1500">
+      <LogsLink
+        range={range}
+        service="checkout"
+        q="panic"
+        trace="abc123"
+        anchor="1500"
+      >
         surrounding logs
       </LogsLink>
     )
@@ -86,6 +92,7 @@ describe("entity links", () => {
     expect(href).toContain("/logs?")
     expect(href).toContain("service=checkout")
     expect(href).toContain("q=panic")
+    expect(href).toContain("trace=abc123")
     expect(href).toContain('anchor="1500"')
     expect(href).toContain("range=custom")
   })

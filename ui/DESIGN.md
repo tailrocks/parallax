@@ -180,6 +180,8 @@ Living section. Re-verify on the next major redesign.
   keyboard registry); `ISSUE_STATUS`/`INCIDENT_STATUS` records;
   `seriesColor("ok"|"success")` fixed to `--success`; Tests moved to
   Workspace nav; `EmptyState action`; legend `aria-pressed`.
+- 2026-09-13 — `ISSUE_STATUS.regressed` (warning tone); skip-link on
+  `app-shell` `#main-content`; `LogsLink` carries `trace`.
 
 ## 8. Interaction contract
 

@@ -7,7 +7,7 @@ export type IssueSort = "LAST_SEEN" | "FIRST_SEEN" | "EVENTS" | "TREND"
 export interface IssuesSearch {
   q?: string
   service?: string
-  status?: "open" | "resolved"
+  status?: "open" | "resolved" | "regressed"
   sort?: IssueSort
   range?: string
   from?: string
@@ -34,7 +34,11 @@ export function validateIssuesSearch(search: Record<string, unknown>): IssuesSea
   if (typeof parsed.service === "string" && parsed.service) {
     result.service = parsed.service
   }
-  if (parsed.status === "open" || parsed.status === "resolved") {
+  if (
+    parsed.status === "open" ||
+    parsed.status === "resolved" ||
+    parsed.status === "regressed"
+  ) {
     result.status = parsed.status
   }
   if (SORTS.includes(parsed.sort as IssueSort)) {

@@ -173,6 +173,41 @@ proptest::proptest! {
     }
 }
 
+fn db_span(id: &str, query: &str, duration: u128) -> SpanRow {
+    let mut row = span(id, None, 0, duration);
+    row.kind = "SPAN_KIND_CLIENT".into();
+    row.attributes = serde_json::json!({ "db.query.text": query });
+    row
+}
+
+#[test]
+fn dominant_db_queries_groups_by_normalized_sql_and_ranks_by_total_time() {
+    let spans = vec![
+        db_span("a", "SELECT * FROM orders WHERE id = 1", 10),
+        db_span("b", "SELECT * FROM orders WHERE id = 99", 20),
+        db_span("c", "SELECT * FROM inventory", 100),
+        span("http", None, 0, 50),
+    ];
+    let ranked = dominant_db_queries(&spans, 8);
+    assert_eq!(ranked.len(), 2);
+    assert_eq!(ranked[0].example, "SELECT * FROM inventory");
+    assert_eq!(ranked[0].count, 1);
+    assert_eq!(ranked[0].total_ns, 100);
+    assert_eq!(ranked[1].count, 2);
+    assert_eq!(ranked[1].total_ns, 30);
+    assert_eq!(ranked[1].example_span_id, "b");
+    assert!(ranked[1].normalized.contains("SELECT * FROM orders"));
+}
+
+#[test]
+fn dominant_db_queries_reads_db_statement_and_respects_limit() {
+    let mut statement = db_span("s", "unused", 5);
+    statement.attributes = serde_json::json!({ "db.statement": "INSERT INTO carts VALUES (1)" });
+    let ranked = dominant_db_queries(&[statement, db_span("q", "SELECT 1", 1)], 1);
+    assert_eq!(ranked.len(), 1);
+    assert_eq!(ranked[0].example, "INSERT INTO carts VALUES (1)");
+}
+
 #[test]
 fn compare_identical_traces_has_empty_diff() {
     let spans = vec![named(

@@ -165,7 +165,78 @@ export const ALERT_RULE_TEMPLATES: readonly AlertRuleTemplate[] = [
   },
 ] as const
 
-/** Apply a template into a named draft. */
+const ALERT_SIGNAL_TYPES: readonly AlertSignalType[] = [
+  "error_rate",
+  "p95_latency",
+  "p99_latency",
+  "throughput",
+  "log_count",
+  "metric",
+]
+
+const TEMPLATE_BY_SIGNAL: Record<Exclude<AlertSignalType, "metric">, string> = {
+  error_rate: "high-error-rate",
+  p95_latency: "slow-p95",
+  p99_latency: "slow-p99",
+  throughput: "throughput-drop",
+  log_count: "log-error-burst",
+}
+
+/** /alerts search params for NewRuleDialog graduation. */
+export interface AlertGraduationSearch {
+  signal_type: AlertSignalType
+  service?: string
+  metric_name?: string
+  metric_aggregation?: string
+}
+
+/** Parsed graduation handoff consumed by NewRuleDialog. */
+export interface AlertGraduation {
+  signalType: AlertSignalType
+  services?: string[]
+  metricName?: string
+  metricAggregation?: string
+}
+
+export function isAlertSignalType(value: string | undefined): value is AlertSignalType {
+  return value != null && (ALERT_SIGNAL_TYPES as readonly string[]).includes(value)
+}
+
+/** Build /alerts search from an explorer query. Omits empty optional keys. */
+export function encodeAlertGraduationSearch(input: {
+  signalType: AlertSignalType
+  service?: string | undefined
+  metricName?: string | undefined
+  metricAggregation?: string | undefined
+}): AlertGraduationSearch {
+  const search: AlertGraduationSearch = { signal_type: input.signalType }
+  if (input.service) search.service = input.service
+  if (input.metricName) search.metric_name = input.metricName
+  if (input.metricAggregation) search.metric_aggregation = input.metricAggregation
+  return search
+}
+
+export function parseAlertGraduationSearch(search: {
+  signal_type?: string | undefined
+  service?: string | undefined
+  metric_name?: string | undefined
+  metric_aggregation?: string | undefined
+}): AlertGraduation | null {
+  if (!isAlertSignalType(search.signal_type)) return null
+  if (search.signal_type === "metric" && !search.metric_name) return null
+  return {
+    signalType: search.signal_type,
+    ...(search.service ? { services: [search.service] } : {}),
+    ...(search.metric_name ? { metricName: search.metric_name } : {}),
+    ...(search.metric_aggregation ? { metricAggregation: search.metric_aggregation } : {}),
+  }
+}
+
+export function alertTemplateIdForSignal(signalType: AlertSignalType): string | undefined {
+  if (signalType === "metric") return undefined
+  return TEMPLATE_BY_SIGNAL[signalType]
+}
+
 /** Draft for a metric-explorer graduation handoff (plan 168 → 167):
  * signal_type=metric with the explored metric/aggregation pre-filled. */
 export function metricGraduationDraft(
@@ -188,6 +259,44 @@ export function metricGraduationDraft(
     metricName,
     metricAggregation,
   }
+}
+
+function withServices(draft: AlertRuleDraft, services?: string[]): AlertRuleDraft {
+  return services?.length ? { ...draft, services } : draft
+}
+
+/** Prefill a create-rule draft from /alerts graduation search. */
+export function draftFromGraduation(name: string, graduation: AlertGraduation): AlertRuleDraft {
+  if (graduation.signalType === "metric") {
+    return withServices(
+      metricGraduationDraft(
+        name,
+        graduation.metricName ?? "",
+        graduation.metricAggregation ?? "avg"
+      ),
+      graduation.services
+    )
+  }
+  const draft = draftFromTemplate(TEMPLATE_BY_SIGNAL[graduation.signalType], name)
+  if (!draft) {
+    return withServices(
+      {
+        name,
+        enabled: true,
+        signalType: graduation.signalType,
+        comparator: "gt",
+        threshold: 0,
+        windowMinutes: 5,
+        minimumSampleCount: 1,
+        consecutiveBreachesRequired: 2,
+        consecutiveHealthyRequired: 2,
+        severity: "warning",
+        renotifyIntervalMinutes: 30,
+      },
+      graduation.services
+    )
+  }
+  return withServices(draft, graduation.services)
 }
 
 export function draftFromTemplate(templateId: string, name: string): AlertRuleDraft | null {

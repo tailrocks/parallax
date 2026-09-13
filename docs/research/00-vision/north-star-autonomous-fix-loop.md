@@ -4,6 +4,12 @@
 
 Research date: 2026-06-11. Operator vision statement recorded 2026-06-11.
 
+**Thesis restamp, 2026-09-13:** the moonshot (autonomous fix loop) still sits *outside*
+Parallax — context engine, not fixer. The *product* Parallax ships toward is now a
+developer observability replacement, not a narrow wedge that waits to earn a UI.
+The 2026-06 operator vision below remains the north-star *for the loop*, not a
+scope cap on investigation UX.
+
 **Implementation status, 2026-07-17:** the evidence substrate this moonshot requires has shipped:
 ingest, deterministic analysis, bounded/redacted v1/v2 bundles, alerting, live delivery, and durable
 storage are product code. `poc/evidence-loop` provides executable concept kernels, but no autonomous

@@ -13,6 +13,7 @@ export { severityVariant } from "@/features/logs/model/log-fields"
 export type { LogDoc } from "@/features/logs/model/log-fields"
 export type { OptionalLogColumn } from "@/features/logs/components/logs-table"
 export { contextWindow, stepSecondsForRange } from "@/features/logs/model/logs-range"
+export { encodeLogsAlertGraduation } from "@/features/logs/model/alert-graduation"
 export {
   parseSavedViewState,
   serializeLogsSearch,

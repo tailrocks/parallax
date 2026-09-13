@@ -14,6 +14,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { topTags, trendEvents, type IssueRow } from "@/features/issues/model/issue-summary"
+import {
+  issueNeedsAttention,
+  issueStatusBadgeVariant,
+} from "@/features/issues/model/issue-status"
 import type { IssueSort, IssuesSearchPatch } from "@/features/issues/model/issues-search"
 import type { ResolvedRange } from "@/domain/time-range/range"
 import { rangeLinkSearch } from "@/domain/time-range/range"
@@ -152,7 +156,7 @@ export function IssuesTable({
         </tr>
       ) : null}
       {rows.map((issue, index) => {
-        const recentOpen = issue.status === "open" && trendEvents(issue) > 0
+        const recentOpen = issueNeedsAttention(issue.status) && trendEvents(issue) > 0
         const tags = topTags(issue.tags)
         return (
           <TableRow
@@ -171,13 +175,13 @@ export function IssuesTable({
                   to="/issues/$service/$fingerprint"
                   params={{ service: issue.service, fingerprint: issue.fingerprint }}
                   search={rangeLinkSearch(range)}
-                  className="block truncate font-medium hover:underline"
+                  className="block font-medium hover:underline"
                   onClick={(event) => event.stopPropagation()}
                 >
                   {issue.errorType || issue.title}
                 </Link>
                 <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                  <span className="min-w-0 truncate">{issue.title}</span>
+                  <span className="min-w-0 break-words">{issue.title}</span>
                   {issue.lastTraceId ? (
                     <Link
                       to="/traces/$traceId"
@@ -267,7 +271,7 @@ export function IssuesTable({
               </div>
             </TableCell>
             <TableCell>
-              <Badge variant={issue.status === "open" ? "rose" : "emerald"}>{issue.status}</Badge>
+              <Badge variant={issueStatusBadgeVariant(issue.status)}>{issue.status}</Badge>
             </TableCell>
           </TableRow>
         )
@@ -287,7 +291,7 @@ export function IssuesTable({
   if (!virtualize) {
     return (
       <div className="overflow-hidden rounded-lg border bg-card">
-        <Table className="table-fixed">
+        <Table>
           {header}
           {body}
         </Table>
