@@ -40,12 +40,20 @@ export interface ReleaseMarker {
   spanCount: string
 }
 
+export interface ChartAnnotation {
+  tsNanos: string
+  kind: string
+  title: string
+  service: string
+}
+
 export interface DetailData {
   labels: string[]
   series: SeriesOut[]
   range: ResolvedRange
   exemplars: MetricExemplarLink[]
   releases: ReleaseMarker[]
+  annotations: ChartAnnotation[]
 }
 
 export function backendKind(kind: MetricKind): "gauge" | "sum" | "histogram" {
@@ -85,20 +93,51 @@ async function loadExemplars(
   }
 }
 
-async function loadReleaseMarkers(
+function annotationsToReleaseMarkers(annotations: ChartAnnotation[]): ReleaseMarker[] {
+  return annotations
+    .filter((row) => row.kind === "release")
+    .map((row) => ({
+      version: row.title,
+      firstSeenNanos: row.tsNanos,
+      lastSeenNanos: row.tsNanos,
+      spanCount: "0",
+    }))
+}
+
+/** GraphQL `chartAnnotations` — service optional so catalog→detail still overlays. */
+export async function loadChartAnnotations(
   service: string | undefined,
   range: ResolvedRange
-): Promise<ReleaseMarker[]> {
-  if (!service) return []
+): Promise<ChartAnnotation[]> {
+  const serviceArg = service ? `, service: "${gqlString(service)}"` : ""
   try {
-    const data = await graphqlCached<{ releases: ReleaseMarker[] }>(`{
-      releases(service: "${gqlString(service)}", fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}") {
-        version firstSeenNanos lastSeenNanos spanCount
+    const data = await graphqlCached<{ chartAnnotations: ChartAnnotation[] }>(`{
+      chartAnnotations(fromNanos: "${range.fromNanos}", toNanos: "${range.toNanos}"${serviceArg}) {
+        tsNanos kind title service
       }
     }`)
-    return data.releases
+    return data.chartAnnotations
   } catch {
     return []
+  }
+}
+
+async function withAnnotations(
+  metricName: string,
+  range: ResolvedRange,
+  service: string | undefined,
+  rest: Omit<DetailData, "exemplars" | "releases" | "annotations" | "range">
+): Promise<DetailData> {
+  const [exemplars, annotations] = await Promise.all([
+    loadExemplars(metricName, range),
+    loadChartAnnotations(service, range),
+  ])
+  return {
+    ...rest,
+    range,
+    exemplars,
+    annotations,
+    releases: annotationsToReleaseMarkers(annotations),
   }
 }
 
@@ -135,13 +174,10 @@ async function loadCanonicalDetail(
       kind effectiveStepSeconds series { groupValue points { tsNanos value } }
     }
   }`)
-  return {
+  return withAnnotations(metricName, args.range, args.search.service, {
     labels: data.metricLabels,
     series: data.metricQuery.series,
-    range: args.range,
-    exemplars: await loadExemplars(metricName, args.range),
-    releases: await loadReleaseMarkers(args.search.service, args.range),
-  }
+  })
 }
 
 async function loadLegacyDetail(
@@ -157,13 +193,10 @@ async function loadLegacyDetail(
       metricLabels(name: ${args.name})
       histogramQuantile(name: ${args.name}, ${args.window}, q: ${q}, stepSeconds: ${args.stepSeconds}) { tsNanos value }
     }`)
-    return {
+    return withAnnotations(metricName, args.range, args.search.service, {
       labels: data.metricLabels,
       series: [{ groupValue: null, points: data.histogramQuantile }],
-      range: args.range,
-      exemplars: await loadExemplars(metricName, args.range),
-      releases: await loadReleaseMarkers(args.search.service, args.range),
-    }
+    })
   }
   const data = await graphqlCached<{ metricLabels: string[]; metricSeries: SeriesOut[] }>(`{
     metricLabels(name: ${args.name})
@@ -171,13 +204,10 @@ async function loadLegacyDetail(
       groupValue points { tsNanos value }
     }
   }`)
-  return {
+  return withAnnotations(metricName, args.range, args.search.service, {
     labels: data.metricLabels,
     series: data.metricSeries,
-    range: args.range,
-    exemplars: await loadExemplars(metricName, args.range),
-    releases: await loadReleaseMarkers(args.search.service, args.range),
-  }
+  })
 }
 
 export async function loadMetricDetail(

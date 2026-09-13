@@ -30,11 +30,11 @@ deliberate not-compete · `watch` = drift.
 
 | Workflow / capability | Parallax today | Best implementation found | Product | Why it is better | P0/P1/P2/Reject | Backend gap | UI gap | Playground coverage | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Issue/error inbox | list + trend sparkline, open/resolve, service-scoped identity, sort LAST_SEEN/FIRST_SEEN/EVENTS/TREND | Issue stream w/ for-review/new/regressed tabs, saved searches, Cmd+K triage | Sentry 26.8.0 | fewer clicks to a verdict; tabs encode lifecycle | P0 | no regressed derivation | triage tabs, bulk ops | `product:issue_context`, `sentry:envelopes` | remaining |
+| Issue/error inbox | list + trend sparkline, open/resolved/regressed badge, service-scoped identity, sort LAST_SEEN/FIRST_SEEN/EVENTS/TREND; titles wrap (no `table-fixed` truncate) | Issue stream w/ for-review/new/regressed tabs, saved searches, Cmd+K triage | Sentry 26.8.0 | fewer clicks to a verdict; tabs encode lifecycle | P0 | none for derived `regressed` | triage tabs, bulk ops | `product:issue_context`, `sentry:envelopes` | keep (tabs P1) |
 | Grouping + fingerprints | deterministic `fp-v1` (`parallax-analysis/src/fingerprint.rs`); grouping explanation on Issue | server grouping + custom fingerprint rules + grouping preview | Sentry 26.8.0 | adjustable when deterministic is wrong | P1 | fingerprint rule overrides | grouping preview + merge/split | `issues:burst`, `issues:multi_language` | adopt |
 | Occurrence timeline | per-occurrence selection + trace correlation (HEAD) | event timeline w/ volume graph + per-event drill | Sentry 26.8.0 | richer per-occurrence forensics | P1 | none major | volume graph on detail | c8 | adopt |
-| Regression detection | none (status is `open`/`resolved` only; Turso `issues.status`) | auto-regress on resolved-issue recurrence + release suspect | Sentry 26.8.0 | answers “which release broke it” without a human | P0 | recurrence-vs-release detector | regressed badge + suspect release | `deploy:release_regression` | remaining |
-| New/resolved states | `issueSetStatus` open/resolve; `resolved_at` column | resolved-in-release, ignored/archived, auto-resolve | Sentry 26.8.0 | lifecycle matches real triage | P0 | state machine extension (regressed) | state transitions beyond resolve | `product:issue_context` | remaining |
+| Regression detection | **shipped:** resolved issue + new occurrence → `regressed` (keep `resolved_at`); GraphQL filter; UI badge. No crash-free/suspect-release rollup | auto-regress on resolved-issue recurrence + release suspect | Sentry 26.8.0 | suspect-release answers “which release broke it” | P0 | first/last release rollup remaining | suspect-release remaining | `product:issue_regression`, `deploy:release_regression` | keep core / remaining release-health |
+| New/resolved states | `issueSetStatus` open/resolve; derived `regressed` on recurrence; `resolved_at` kept | resolved-in-release, ignored/archived, auto-resolve | Sentry 26.8.0 | ignored/archived + resolved-in-release still missing | P0 | none for derived `regressed` | ignored/archived P1 | `product:issue_context` | keep |
 | Assignment + ownership | none (no assignee column) | assignee + CODEOWNERS + Slack assign | Sentry 26.8.0 | triage ends in an owner | **P1** (dropped from freeze) | assignee store | assign control | none | adopt |
 | Severity | severity words + ramp | level + issue priority | Sentry 26.8.0 | priority ≠ level | P2 | priority score | priority sort | none | watch |
 | Stack traces + frames | culprit frames; `parseStacktrace` | frame collapsing, in-app, suspect frames | Sentry 26.8.0 | faster to the guilty line | P1 | in-app classifier | frame collapse UX | c8 | adopt |
@@ -60,7 +60,7 @@ deliberate not-compete · `watch` = drift.
 
 | Workflow / capability | Parallax today | Best implementation found | Product | Why it is better | P0/P1/P2/Reject | Backend gap | UI gap | Playground coverage | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Log explorer | histogram brush + Where chips + facets + patterns + live tail + saved views | Explore Logs w/ patterns-first + search→chart→alert | Grafana Loki 3.7.7 / HyperDX 2.38.0 | tighter loop from “weird line” to alert | P0 (usable explorer, not rows-only) | none major | alert-from-log (metric path exists) | `logs:field_spike`, patterns, live tail | keep / remaining alert-from-log |
+| Log explorer | histogram brush + Where chips + facets + patterns + live tail + saved views + **Create alert** (`log_count`) | Explore Logs w/ patterns-first + search→chart→alert | Grafana Loki 3.7.7 / HyperDX 2.38.0 | tighter loop from “weird line” to alert | P0 (usable explorer, not rows-only) | none major | keep | `logs:field_spike`, patterns, live tail | keep |
 | Full-text search | `query` substring on body | LogQL line filters + parsed-field search | Grafana Loki 3.7.7 | language power at scale | P1 | text index depth | syntax help | log spike | adopt |
 | Structured field search | Where-clause chips + columns | Lucene/ES\|QL | Elastic 9.5.3 | search-engine recall | P1 | none major | saved-field sets | structured bodies | keep |
 | Facets / field discovery | `logFacets` + field stats | facet sidebar + cardinality hints | Datadog / SigNoz v0.141.1 | Datadog facet density is the reference | P1 | cardinality hints | facet density | facets | adopt |
@@ -90,14 +90,14 @@ deliberate not-compete · `watch` = drift.
 | Critical path | `traceCriticalPath` | critical-path + contribution rank | Datadog / Parallax | tie | P0 | none | keep | critical path | keep |
 | Duration visualization | minimap + `traceDurationStats` | latency histogram + span breakdown | Honeycomb / Jaeger 2.20.0 | distribution-first | P2 | surface duration stats | duration panel | duration filter | adopt |
 | Errors/status/attrs/events/links | all shipped; `traceEvents` persisted HEAD | span links + baggage | Grafana Tempo 3.0.3 | tie | P2 | none | keep | span events, links, baggage | keep |
-| DB/external ops | typed ecosystem nodes | query-level aggregation | Datadog APM / New Relic | query stats, not just nodes | P1 | span-derived query stats | query panel | `postgres:query_pressure` | adopt |
+| DB/external ops | typed ecosystem nodes + **`Trace.dominantDbQueries`** (normalized SQL rank) | query-level aggregation | Datadog APM / New Relic | Datadog still has explain/pool | P0 (freeze: DB dominance) | none for rank | keep | `postgres:query_pressure` | keep |
 | Service boundaries | color-by-attribute + lanes | topology-in-trace | Dynatrace / HyperDX | overlay | P2 | none major | overlay toggle | service boundaries | watch |
 | Parent/child navigation | shipped | keyboard span walk | Jaeger 2.20.0 / Tempo | tie | P2 | none | keep | span index | keep |
 | Cross-trace/run relations | invocation stitching + `linkedTraces` | session stitching of multi-trace agent flows | Honeycomb Agent Timeline GA 2026-06-18 | reconstructs multi-trace conversations | P1 | multi-trace session view | session lane | links, RUM stitch | adopt |
 | Compare traces | `traceCompare` + attribute-compare | — | Parallax | unique window-vs-window ranked diff | — | none | keep | trace compare | keep |
 | Slow/anomalous spans | duration filter | anomaly-flagged spans | Dynatrace Davis / Honeycomb | automatic “weird span” | P2 | baseline model | anomaly badges | slow traces | adopt |
 | Trace-derived RED | `serviceRed` | auto-dashboards per endpoint | SigNoz / Grafana | SigNoz endpoint auto-views deeper | P1 | endpoint rollup | endpoint tab | RED | adopt |
-| Trace→logs/metrics/errors | correlated logs inline; exemplars; issue links | one-click pivots + **alert-from-query** | HyperDX / SigNoz | insight → monitor without leaving the pivot | P0 | none (data present) | alert-from-trace/log (metric workbench already has Create alert) | correlated logs | remaining (alert-from-non-metric) |
+| Trace→logs/metrics/errors | correlated logs inline; exemplars; issue links; **Create alert** from traces (`error_rate`/`p95_latency`) and logs (`log_count`) | one-click pivots + **alert-from-query** | HyperDX / SigNoz | insight → monitor without leaving the pivot | P0 | none | keep | correlated logs | keep |
 | Exemplars | `metricExemplars` + click-through | exemplar dots on every chart | Grafana / Parallax | tie | P2 | none | keep | `metrics:exemplars` | keep |
 | Frontend→backend | RUM stitch + `/rum` journeys over `tracesPage` | session→trace waterfall | Sentry / HyperDX | Sentry session-linked traces deeper | P0 | session model | session lane polish | `browser:rum_journey` | remaining |
 | CLI→backend | TRACEPARENT injection + `otlp-forward` | — | Parallax | CLI run as first-class trace root | P0 | none | keep | `cli:checkout_invocation` | keep |
@@ -116,7 +116,7 @@ deliberate not-compete · `watch` = drift.
 | Query power | typed `metricQuery`; SQL escape hatch | PromQL Explore | Grafana/Prometheus 3.14.0 | full language | P0 **decision: keep typed builder** | none | do not add PromQL box | workbench | keep (decision) |
 | Grouping/comparison | attribute compare (traces); metric timeshift absent | timeshift overlays | Grafana / Datadog | “vs last week” one click | P1 | timeshift fn | compare control | none | adopt |
 | Exemplar links | dots + trace click-through | exemplar on every panel | Grafana / Parallax | tie | P2 | none | keep | exemplars | keep |
-| Metric→trace/log/error | exemplar→trace; RED→services; **no auto spike→traces** | spike window auto-surfaces related traces | Datadog / New Relic | correlation without manual pivot | P0 | spike-window trace lookup | spike action | none | remaining |
+| Metric→trace/log/error | exemplar→trace; RED→services; **Traces around peak** (`peakWindowFromSeries` ±60s → `/traces`) | spike window auto-surfaces related traces | Datadog / New Relic | Datadog still denser auto-surface; Parallax now has the pivot | P0 | none for peak window | keep | metric detail | keep |
 | RED/service/runtime/DB | `serviceRed` + `runtimeSnapshot` | APM auto metric sets + host maps | Datadog / Coroot v1.26.0 | out-of-box breadth | P1 | metric set breadth | auto-panels | tokio/jvm | adopt |
 | Frontend Web Vitals | `/rum` p75 via `histogramQuantile`; rating good/NI/poor | dedicated Web Vitals + RUM perf | Sentry / Datadog RUM / Better Stack | vitals need their own lens | P0 | vitals rollup exists as query | session-level UX still thin | `browser:rum_journey`, web-vitals | remaining |
 | Cardinality visibility | field stats | cardinality explorer + top-k | Mimir 3.2.1 / Honeycomb | names the death | P1 | per-label accounting | cardinality panel | cardinality stress | adopt |
@@ -129,14 +129,14 @@ deliberate not-compete · `watch` = drift.
 | Workflow / capability | Parallax today | Best implementation found | Product | Why it is better | P0/P1/P2/Reject | Backend gap | UI gap | Playground coverage | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Dashboards | gallery + widget grid + brush-to-zoom; graduate from metric | dashboards + variables + folders + alerting | Grafana 13.2.1 | reference depth; embed beats rival | P1 | variables | builder depth **not** Grafana-embed | `product:saved_state` | non-rivalry |
-| Alerting rules | error_rate/p95/p99/throughput/log_count/metric + hysteresis; metric workbench **Create alert** | alert-from-any-query | SigNoz v0.141.1 | rule created at the point of insight | P0 | none for metric path; logs/traces missing | alert-from-log/trace | `product:alerting`, error-rate/p95 breach | remaining (non-metric) |
+| Alerting rules | error_rate/p95/p99/throughput/log_count/metric + hysteresis; **Create alert** from metric, logs (`log_count`), traces (`error_rate`/`p95_latency`) | alert-from-any-query | SigNoz v0.141.1 | SigNoz still graduates any query shape | P0 | none for freeze path | keep | `product:alerting`, error-rate/p95 breach | keep |
 | Alert channels | webhook + Slack shipped; **email deferred** (`delivery_worker.rs`); schema comment still lists `email` | 10 channel kinds | SigNoz v0.141.1 | on-call reach | P0 freeze: “existing webhook/Slack; extend if missing” → **webhook/Slack is the core path**; email = P1 | email worker | destination UX | `product:alerting` | keep core / email P1 |
 | Incidents | incidents + bundle hash | incident timeline + tasks + postmortem | Datadog / Sentry / Better Stack | collaboration depth | P1 | activity model | timeline UX | `product:alerting` | keep |
 | On-call rotations | none | rotations + escalations | Better Stack / PagerDuty | Parallax stops at incident | P2 | rotation model | schedule UX | none | adopt |
 | SLOs/error budgets | none | SLO + burn-rate alerts | Datadog / Grafana / Sentry | burn-rate is the alerting unit | P1 | SLI/SLO store | SLO view | none | adopt |
 | Service catalog | heat catalog + RED + runtime | catalog + ownership + docs | New Relic / Datadog | ownership turns catalog into map | P1 | ownership metadata | owner/docs | heat catalog | adopt |
 | Service/dependency maps | Ecosystem typed graph | live map + legend + animation | HyperDX 2.38.0 BETA | polish | P1 | none (model deeper) | legend + traffic animation | 17-node / `ecosystem:full` | adopt |
-| Deploy/release markers | release strip + GitHub deploy ingest | markers on **every chart** | Sentry / Datadog / Grafana annotations | markers where eyes already are | P0 | annotation store | markers on charts | a13, `product:github_ingest` | remaining |
+| Deploy/release markers | release strip + GitHub deploy ingest + `chartAnnotations` overlay on metric detail | markers on **every chart** | Sentry / Datadog / Grafana annotations | markers where eyes already are | P0 | none for release windows | other-chart overlays P1 | a13, `product:github_ingest` | keep (metric) |
 | CI/test context | JUnit/nextest + flaky explorer | CI Test Optimization + quarantine | Datadog | quarantine + owner routing | P1 | quarantine state | quarantine UX | flaky detection | keep |
 | Database monitoring | derived nodes + wrapper spans | query stats + explain + pool | Datadog DBM / New Relic | query-level | P1 | query aggregation | query view | Postgres pathologies | adopt |
 | Infra/runtime telemetry | runtime snapshot tokio/jvm | host/container/K8s + eBPF | Datadog / Coroot v1.26.0 | zero-instrument breadth | P1 | host inventory | infra view | tokio saturation | adopt |
@@ -150,7 +150,7 @@ deliberate not-compete · `watch` = drift.
 | Log/metric pattern detection | Drain logs; metric none | pattern-insights + metric anomaly | Datadog | patterns wired to alerts | P1 | metric pattern scan | pattern alerts | patterns | adopt |
 | Query history | SQL history; others partial | full recent + starred | SigNoz / Grafana | recall | P2 | history store | history UX | `product:saved_state` | adopt |
 | Sharing/permalinks | URL-driven filters everywhere | — | Parallax | share-by-URL is reference-grade | — | none | keep | all routes | keep |
-| Annotations | release strip only; **no chart annotations** | annotations on every chart | Grafana / Datadog | deploys visible in the data | P0 | annotation store + API | annotation render | none | remaining |
+| Annotations | GraphQL `chartAnnotations` (service optional) + metric `ReferenceLine` overlay + release strip | annotations on every chart | Grafana / Datadog | Grafana still annotates every panel type | P0 | none for release markers | overlay on metric detail; other charts P1 | a13 | keep (metric) |
 | Feature-flag correlation | playground flagd; product join unclear | flag evals on timeline | Sentry / Honeycomb | “flag flip caused it” | P2 | flag-eval join | flag lane | `feature_flags:checkout_variants` | adopt |
 | Cost/cardinality visibility | field stats; self-host no metering | usage metering + guardrails | Mimir / Honeycomb / Datadog | metering irrelevant; guardrails matter | P2 | cardinality guardrails | guardrail UX | cardinality | adopt |
 | Retention controls | TTLs + pin-aware prune | tiered retention + downsample | Grafana / Elastic / OpenObserve | cold-tier economics | P1 | object-store tier | retention UX | `product:lifecycle_ops` | adopt |
@@ -171,20 +171,20 @@ deliberate not-compete · `watch` = drift.
 
 Seed freeze validated against live pins + HEAD code. Later discoveries stay P1 / P0-next.
 
-1. **Error triage lifecycle** — service-scoped identity **shipped**; occurrence selection **shipped**; open/resolve **shipped**; **regressed + release-health remaining**.
-2. **Cross-signal navigation** — issue↔trace↔logs↔invocation **shipped**; metric/exemplar/RUM/service still has dead-end risk. Remaining: no dead ends on the full chain.
-3. **Logs** — surrounding + span/trace correlation **shipped**; explorer is not rows-only. Remaining: alert-from-log.
-4. **Traces** — waterfall/tree **keep** (already densest). Remaining: DB-query dominance panel; alert-from-trace.
-5. **Metrics** — counter-safe rate/increase **shipped**; exemplars **shipped**. Remaining: spike → related traces.
-6. **Alert-from-query + core notify** — metric Create alert **shipped**; webhook/Slack **shipped**; email deferred (P1, not freeze). Remaining: alert from logs/traces.
-7. **Deploy/release markers + chart annotations** — release strip **shipped**; **chart annotations remaining**.
+1. **Error triage lifecycle** — identity, occurrence, open/resolve, **derived `regressed` shipped**. Remaining: crash-free / first-last release rollup.
+2. **Cross-signal navigation** — issue↔trace↔logs↔invocation↔exemplar↔peak-window traces **shipped**. Remaining: RUM session model (not a remix).
+3. **Logs** — surrounding + span/trace correlation **shipped**; explorer is not rows-only; **alert-from-log shipped** (`log_count`).
+4. **Traces** — waterfall/tree **keep**; **`dominantDbQueries` shipped**; **alert-from-trace shipped** (`error_rate`/`p95_latency`).
+5. **Metrics** — rate/increase **shipped**; exemplars **shipped**; **spike → traces around peak shipped**.
+6. **Alert-from-query + core notify** — metric/logs/traces Create alert **shipped**; webhook/Slack **shipped**; email deferred (P1, not freeze).
+7. **Deploy/release markers + chart annotations** — release strip **shipped**; GraphQL `chartAnnotations` + metric overlay **shipped**.
 8. **RUM sessions + Web Vitals UX** — `/rum` projection **shipped**. Remaining: real session model, not remix.
 9. **Browser source maps** — **honest remaining-gap** (no artifact store).
 10. **Sentry multi-SDK** — playground rust/java/js envelopes exist; **public ledger unproven**.
 11. **High-volume guardrails / sampling** — **honest remaining-gap**.
 12. **PromQL** — **decided: keep typed builder** (see §H). Implementation = existing `metricQuery` + shipped rate/increase. No Grafana-embed.
 13. **Four app classes** — CLI reconstructable **shipped**; backend HTTP/gRPC/DB/cache/messaging **playground-covered**; browser FE→BE **partial** (`/rum`); native macOS **harness proven**, product symbolication remaining.
-14. **Named GOAL §7 questions** — answerable only when 1–13 close the dead ends.
+14. **Named GOAL §7 questions** — checkout fail / logs-around / DB dominance / spike traces / release markers answerable from shipped UI/API. Remaining: source maps, sampling, RUM sessions, Sentry SDK ledger, release-health.
 
 ## G. Differentiators to defend (GOAL §13)
 

@@ -694,9 +694,10 @@ type Query {
   releases(service: String!, fromNanos: String!, toNanos: String!): [ReleaseWindow!]!
   """
     Chart markers derived from release windows (deploy/release). Same
-    store as `releases`; not a second annotation table.
+    store as `releases`. `service` optional: omit to collect every service
+    in the window (catalog → metric detail default path).
   """
-  chartAnnotations(service: String!, fromNanos: String!, toNanos: String!): [ChartAnnotation!]!
+  chartAnnotations(fromNanos: String!, toNanos: String!, service: String): [ChartAnnotation!]!
   "Resource-identity catalog rows for services in the selected window."
   serviceCatalog(fromNanos: String!, toNanos: String!): [ServiceCatalogRow!]!
   "Trace-path service graph over a bounded set of traces in the window."

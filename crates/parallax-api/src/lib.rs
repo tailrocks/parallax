@@ -150,8 +150,9 @@ impl Query {
     async fn releases(context: &ApiContext, service: String, from_nanos: String, to_nanos: String,) -> FieldResult<Vec<ReleaseWindow>> { resolvers::services::releases(context, service, from_nanos, to_nanos).await }
 
     /// Chart markers derived from release windows (deploy/release). Same
-    /// store as `releases`; not a second annotation table.
-    async fn chart_annotations(context: &ApiContext, service: String, from_nanos: String, to_nanos: String,) -> FieldResult<Vec<ChartAnnotation>> { resolvers::services::chart_annotations(context, service, from_nanos, to_nanos).await }
+    /// store as `releases`. `service` optional: omit to collect every service
+    /// in the window (catalog → metric detail default path).
+    async fn chart_annotations(context: &ApiContext, from_nanos: String, to_nanos: String, service: Option<String>,) -> FieldResult<Vec<ChartAnnotation>> { resolvers::services::chart_annotations(context, from_nanos, to_nanos, service).await }
 
     /// Resource-identity catalog rows for services in the selected window.
     async fn service_catalog(context: &ApiContext, from_nanos: String, to_nanos: String,) -> FieldResult<Vec<ServiceCatalogRow>> { resolvers::services::service_catalog(context, from_nanos, to_nanos).await }

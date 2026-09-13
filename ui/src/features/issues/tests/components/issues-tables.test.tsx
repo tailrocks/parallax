@@ -88,6 +88,47 @@ describe("Issues route", () => {
     ).toBe(true)
   })
 
+  it("shows TimeoutError and regressed without truncating the title", async () => {
+    const data: IssuesData = {
+      services: ["checkout"],
+      issues: {
+        total: 1,
+        items: [
+          {
+            fingerprint: "d0b552095fc3e5b3",
+            title: "TimeoutError: checkout timed out waiting for inventory",
+            errorType: "TimeoutError",
+            culprit: "checkout::cart::submit",
+            service: "checkout",
+            status: "regressed",
+            firstSeenNanos: "1719999900000000000",
+            lastSeenNanos: "1719999990000000000",
+            eventCount: 2,
+            lastTraceId: "3ea75694466645c200000000000000c1",
+            tags: '{"route":{"/checkout":2}}',
+            trend: [{ tsNanos: "1719999900000000000", count: 2 }],
+          },
+        ],
+      },
+    }
+    renderWithRouter(
+      <IssuesContent
+        data={data}
+        search={{}}
+        range={range}
+        onSearch={() => {}}
+        onIssue={() => {}}
+      />
+    )
+
+    expect(await screen.findByText("TimeoutError")).toBeTruthy()
+    expect(screen.getByText("TimeoutError: checkout timed out waiting for inventory")).toBeTruthy()
+    expect(screen.getByText("regressed")).toBeTruthy()
+    const titleLink = screen.getByRole("link", { name: "TimeoutError" })
+    expect(titleLink.className).not.toMatch(/\btruncate\b/)
+    expect(document.querySelector("table")?.className).not.toMatch(/\btable-fixed\b/)
+  })
+
   it("preserves custom ranges in rendered drilldown links", async () => {
     renderWithRouter(
       <IssuesContent

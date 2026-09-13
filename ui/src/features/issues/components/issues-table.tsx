@@ -175,13 +175,13 @@ export function IssuesTable({
                   to="/issues/$service/$fingerprint"
                   params={{ service: issue.service, fingerprint: issue.fingerprint }}
                   search={rangeLinkSearch(range)}
-                  className="block truncate font-medium hover:underline"
+                  className="block font-medium hover:underline"
                   onClick={(event) => event.stopPropagation()}
                 >
                   {issue.errorType || issue.title}
                 </Link>
                 <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                  <span className="min-w-0 truncate">{issue.title}</span>
+                  <span className="min-w-0 break-words">{issue.title}</span>
                   {issue.lastTraceId ? (
                     <Link
                       to="/traces/$traceId"
@@ -291,7 +291,7 @@ export function IssuesTable({
   if (!virtualize) {
     return (
       <div className="overflow-hidden rounded-lg border bg-card">
-        <Table className="table-fixed">
+        <Table>
           {header}
           {body}
         </Table>
