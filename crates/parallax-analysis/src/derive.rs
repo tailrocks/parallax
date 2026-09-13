@@ -94,7 +94,9 @@ fn persist_operation(
 
 /// Derive error events from a trace export request (span exceptions + span
 /// ERROR statuses). Works on the raw request so exception span *events* are
-/// visible (they are not part of `SpanRow`).
+/// visible (they are not part of `SpanRow`). Identity resolution reuses the
+/// normalizer's rules so error rows carry exactly the invocation/session/
+/// release context that the same resource's spans carry.
 #[must_use]
 pub fn derive_from_traces(request: &ExportTraceServiceRequest) -> Vec<ErrorEventRow> {
     let mut events = Vec::new();
@@ -107,6 +109,11 @@ pub fn derive_from_traces(request: &ExportTraceServiceRequest) -> Vec<ErrorEvent
         let service = attr_str(resource_attrs, semconv::SERVICE_NAME)
             .unwrap_or("unknown")
             .to_string();
+        let signal_attrs = parallax_ingest::root_span_attrs(rs);
+        let invocation_id = parallax_ingest::invocation_id(signal_attrs, resource_attrs);
+        let session_id = parallax_ingest::session_id(signal_attrs, resource_attrs);
+        let service_version = parallax_ingest::service_version(resource_attrs);
+        let environment = parallax_ingest::environment(resource_attrs);
         for ss in &rs.scope_spans {
             for span in &ss.spans {
                 let is_error = span.status.as_ref().is_some_and(|s| s.code == 2);
@@ -182,6 +189,10 @@ pub fn derive_from_traces(request: &ExportTraceServiceRequest) -> Vec<ErrorEvent
                     source,
                     trace_id: hex(&span.trace_id),
                     span_id: hex(&span.span_id),
+                    invocation_id: invocation_id.clone(),
+                    session_id: session_id.clone(),
+                    service_version: service_version.clone(),
+                    environment: environment.clone(),
                     attributes: persist_operation(
                         attributes_to_json(&span.attributes),
                         operation.as_deref(),
@@ -236,6 +247,11 @@ pub fn derive_from_logs(rows: &[LogRow]) -> Vec<ErrorEventRow> {
         };
         let fp =
             fingerprint_with_operation(&error_type, &message, stacktrace.as_deref(), operation);
+        // Release identity rides on the source log's Resource attributes; the
+        // run/session ids are already normalized onto the row.
+        let resource_version = json_attr_str(&row.resource, semconv::SERVICE_VERSION);
+        let resource_environment = json_attr_str(&row.resource, semconv::DEPLOYMENT_ENVIRONMENT_NAME)
+            .or_else(|| json_attr_str(&row.resource, semconv::DEPLOYMENT_ENVIRONMENT));
         events.push(ErrorEventRow {
             ts_nanos: row.ts_nanos,
             service: row.service.clone(),
@@ -246,6 +262,10 @@ pub fn derive_from_logs(rows: &[LogRow]) -> Vec<ErrorEventRow> {
             source,
             trace_id: row.trace_id.clone(),
             span_id: row.span_id.clone(),
+            invocation_id: row.invocation_id.clone(),
+            session_id: row.session_id.clone(),
+            service_version: resource_version.map(str::to_string),
+            environment: resource_environment.map(str::to_string),
             attributes: row.attributes.clone(),
         });
     }

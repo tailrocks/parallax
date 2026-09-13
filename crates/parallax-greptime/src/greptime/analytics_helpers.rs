@@ -361,6 +361,8 @@ pub(super) fn quantile_from_cumulative(bounds: &BTreeMap<OrderedF64, f64>, q: f6
 }
 
 /// Shared row → `ErrorEventRow` projection (fingerprint + trace-set reads).
+/// Column order is the shared error-event projection: identity columns sit
+/// between the span ids and the attributes.
 pub(super) fn error_event_from_row(row: &[serde_json::Value]) -> ErrorEventRow {
     ErrorEventRow {
         ts_nanos: u128_at(row, 0),
@@ -373,6 +375,10 @@ pub(super) fn error_event_from_row(row: &[serde_json::Value]) -> ErrorEventRow {
             .unwrap_or(ErrorSource::LogRecord),
         trace_id: str_at(row, 7),
         span_id: str_at(row, 8),
-        attributes: json_at(row, 9),
+        invocation_id: opt_str_at(row, 9),
+        session_id: opt_str_at(row, 10),
+        service_version: opt_str_at(row, 11),
+        environment: opt_str_at(row, 12),
+        attributes: json_at(row, 13),
     }
 }

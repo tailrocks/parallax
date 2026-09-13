@@ -105,6 +105,15 @@ pub struct ErrorEventRow {
     pub source: ErrorSource,
     pub trace_id: String,
     pub span_id: String,
+    /// `cli.invocation.id` — the run this error belongs to. `None` when the
+    /// source signal carried no invocation identity.
+    pub invocation_id: Option<String>,
+    /// `session.id` — the interactive session this error belongs to.
+    pub session_id: Option<String>,
+    /// `service.version` — the release identity of the emitting resource.
+    pub service_version: Option<String>,
+    /// `deployment.environment.name` (falling back to `deployment.environment`).
+    pub environment: Option<String>,
     pub attributes: serde_json::Value,
 }
 
