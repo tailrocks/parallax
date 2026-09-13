@@ -21,8 +21,17 @@ await page.screenshot({ path: "/tmp/rum-verify/issues-index.png" })
 await page.goto(`${BASE}/issues/web-shop/370796ba0ea6ec2e?range=24h`, {
   waitUntil: "networkidle",
 })
-await page.getByText(/did not answer|not found|Retry/i).first().waitFor({ timeout: 15000 })
-console.log("issue detail state:", await page.locator("body").innerText().then((t) => t.slice(t.indexOf("Local") + 5, t.indexOf("Local") + 160).replace(/\n/g, " | ")))
+await page
+  .getByText(/did not answer|not found|Retry/i)
+  .first()
+  .waitFor({ timeout: 15000 })
+console.log(
+  "issue detail state:",
+  await page
+    .locator("body")
+    .innerText()
+    .then((t) => t.slice(t.indexOf("Local") + 5, t.indexOf("Local") + 160).replace(/\n/g, " | "))
+)
 await page.screenshot({ path: "/tmp/rum-verify/issue-detail.png" })
 
 // 3. RUM route: vitals + errors + journeys live.

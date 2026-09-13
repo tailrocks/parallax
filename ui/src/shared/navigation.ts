@@ -7,7 +7,6 @@ import {
   IconBell,
   IconBellFilled,
   IconBrowser,
-  IconBrowserFilled,
   IconBug,
   IconBugFilled,
   IconChartLine,
@@ -96,7 +95,7 @@ export const primaryNav: NavItem[] = [
     href: "/rum",
     label: "RUM",
     icon: IconBrowser,
-    activeIcon: IconBrowserFilled,
+    activeIcon: IconBrowser,
     iconClassName:
       "bg-teal-100 dark:bg-teal-950 rounded-xl p-0.5 corner-squircle text-teal-600 shadow-[inset_0_0_0_1px_rgba(20,184,166,0.14),0_2px_6px_-2px_rgba(20,184,166,0.25)] dark:shadow-(--custom-shadow)",
   },

@@ -5,8 +5,7 @@ const browser = await chromium.launch()
 const page = await browser.newPage()
 page.on("pageerror", (e) => console.log("PAGEERROR:", e.message.slice(0, 300)))
 page.on("response", (r) => {
-  if (r.url().includes("/graphql") && r.status() !== 200)
-    console.log("GQL non-200:", r.status())
+  if (r.url().includes("/graphql") && r.status() !== 200) console.log("GQL non-200:", r.status())
 })
 await page.goto(`${BASE}/issues/web-shop/370796ba0ea6ec2e?range=24h`, {
   waitUntil: "networkidle",
