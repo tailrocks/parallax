@@ -3266,7 +3266,6 @@ dependencies = [
 name = "parallax-analysis"
 version = "0.1.0"
 dependencies = [
- "parallax-ingest",
  "parallax-model",
  "parallax-proto",
  "parallax-semconv",

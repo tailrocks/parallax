@@ -4,6 +4,7 @@ schema_version = 1
 "lib.rs" = [
     "mod derive",
     "mod fingerprint",
+    "mod identity",
     "mod junit_reconcile",
     "mod log_patterns",
     "mod nextest_adapter",

@@ -113,11 +113,11 @@ pub fn derive_from_traces(request: &ExportTraceServiceRequest) -> Vec<ErrorEvent
         let service = attr_str(resource_attrs, semconv::SERVICE_NAME)
             .unwrap_or("unknown")
             .to_string();
-        let signal_attrs = parallax_ingest::root_span_attrs(rs);
-        let invocation_id = parallax_ingest::invocation_id(signal_attrs, resource_attrs);
-        let session_id = parallax_ingest::session_id(signal_attrs, resource_attrs);
-        let service_version = parallax_ingest::service_version(resource_attrs);
-        let environment = parallax_ingest::environment(resource_attrs);
+        let signal_attrs = crate::identity::root_span_attrs(rs);
+        let invocation_id = crate::identity::invocation_id(signal_attrs, resource_attrs);
+        let session_id = crate::identity::session_id(signal_attrs, resource_attrs);
+        let service_version = crate::identity::service_version(resource_attrs);
+        let environment = crate::identity::environment(resource_attrs);
         for ss in &rs.scope_spans {
             for span in &ss.spans {
                 let is_error = span.status.as_ref().is_some_and(|s| s.code == 2);

@@ -13,7 +13,6 @@ publish = false
 workspace = true
 
 [dependencies]
-parallax-ingest = { workspace = true }
 parallax-model = { workspace = true }
 parallax-proto = { workspace = true }
 parallax-semconv = { workspace = true }
