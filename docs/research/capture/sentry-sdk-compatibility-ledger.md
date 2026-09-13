@@ -1,6 +1,7 @@
 # Sentry multi-SDK compatibility ledger
 
 **Status: unproven on default Parallax serve.** Frozen P0 #10.
+Public matrix (3 SDK legs, 2026-09-13): [sentry-sdk-compat-matrix.md](sentry-sdk-compat-matrix.md).
 
 ## Product blocker (concrete)
 
@@ -22,7 +23,7 @@ A public “SDK X version Y fingerprints as Z” ledger cannot be proven on the 
 | --- | --- | --- |
 | Rust `sentry` 0.49 (`playground/Cargo.toml`) | `playground-telemetry` example `c8_sentry_emit` | `c8-rust-sdk` |
 | Java `io.sentry:sentry-spring-boot-4-starter:8.53.0` | Gradle `c8SentryEmit` in `services/catalog` | `c8-java-sdk` |
-| JavaScript `@sentry/tanstackstart-react` ^10.70.0 | `scenarios/c8-emit-js.ts` | `c8-js-sdk` |
+| JavaScript `@sentry/node` 10.70.0 (`web/bun.lock`) | `web/scenarios/c8-emit-js.ts` (cwd `web/`) | `c8-js-sdk` |
 
 The scenario polls `{ issues(limit: 50) { items { title errorType } } }` until all three needles appear (30s). That is ingest→issue derivation, not a versioned fingerprint table.
 
