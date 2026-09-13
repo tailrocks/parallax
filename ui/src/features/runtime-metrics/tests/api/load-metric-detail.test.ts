@@ -2,9 +2,10 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { loadMetricDetail } from "@/features/runtime-metrics/api/load-metric-detail"
 import { graphqlCached } from "@/platform/graphql/transport"
+import type * as GraphqlTransport from "@/platform/graphql/transport"
 
 vi.mock("@/platform/graphql/transport", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/platform/graphql/transport")>()
+  const actual = await importOriginal<typeof GraphqlTransport>()
   return {
     ...actual,
     graphqlCached: vi.fn(),
