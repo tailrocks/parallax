@@ -62,7 +62,7 @@ async fn occurrence_claim_survives_restart_concurrency_and_prunes() {
     for delivery in deliveries {
         delivery.await.expect("delivery task").expect("delivery");
     }
-    let issue = store.issue("fp").await.expect("issue").expect("present");
+    let issue = store.issue("svc", "fp").await.expect("issue").expect("present");
     assert_eq!(issue.event_count, 1);
 
     let beyond_retention =
@@ -103,12 +103,12 @@ async fn batch_upsert_merges_shared_fingerprint_tags_once() {
         .expect("batch upsert");
 
     let shared = store
-        .issue("fp-shared")
+        .issue("checkout", "fp-shared")
         .await
         .expect("issue")
         .expect("present");
     let other_issue = store
-        .issue("fp-other")
+        .issue("checkout", "fp-other")
         .await
         .expect("issue")
         .expect("present");
@@ -126,10 +126,10 @@ async fn batch_upsert_merges_shared_fingerprint_tags_once() {
         serde_json::from_str(&other_issue.tags).expect("other tags");
     assert_eq!(other_tags["http.route"]["/cart"], 1);
 
-    let trend = store.issue_trend("fp-shared", 0, 60).await.expect("trend");
+    let trend = store.issue_trend("checkout", "fp-shared", 0, 60).await.expect("trend");
     let total: u64 = trend.iter().map(|p| p.count).sum();
     assert_eq!(total, 2);
-    let other_trend = store.issue_trend("fp-other", 0, 60).await.expect("trend");
+    let other_trend = store.issue_trend("checkout", "fp-other", 0, 60).await.expect("trend");
     let other_total: u64 = other_trend.iter().map(|p| p.count).sum();
     assert_eq!(other_total, 1);
 }
@@ -150,7 +150,7 @@ async fn tags_accumulate_bounded() {
             .await
             .expect("upsert");
     }
-    let issue = store.issue("fp1").await.expect("issue").expect("present");
+    let issue = store.issue("svc", "fp1").await.expect("issue").expect("present");
     let tags: serde_json::Value = serde_json::from_str(&issue.tags).expect("tags json");
     assert_eq!(tags["http.route"]["/checkout"], 2);
     assert_eq!(tags["attempt"]["3"], 2);
@@ -184,7 +184,7 @@ async fn first_seen_lowers_on_out_of_order_occurrence() {
         .await
         .expect("upsert earlier");
     let issue = store
-        .issue("fp-order")
+        .issue("svc", "fp-order")
         .await
         .expect("issue")
         .expect("present");
@@ -1226,7 +1226,7 @@ async fn issue_title_and_culprit_are_sanitized_at_rest() {
         .expect("upsert");
 
     let issue = store
-        .issue("fp-secret")
+        .issue("svc", "fp-secret")
         .await
         .expect("read")
         .expect("present");
@@ -1350,7 +1350,7 @@ async fn migration_adopts_v0_with_runs_table() {
             SCHEMA_USER_VERSION
         );
     }
-    let issue = store.issue("kept").await.expect("issue").expect("present");
+    let issue = store.issue("svc", "kept").await.expect("issue").expect("present");
     assert_eq!(issue.title, "title");
 }
 

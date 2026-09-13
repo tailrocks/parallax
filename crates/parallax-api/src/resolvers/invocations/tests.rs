@@ -220,6 +220,10 @@ fn run_error(
         source: ErrorSource::SpanStatus,
         trace_id: trace_id.into(),
         span_id: span_id.into(),
+        invocation_id: None,
+        session_id: None,
+        service_version: None,
+        environment: None,
         attributes: serde_json::Value::Null,
     }
 }

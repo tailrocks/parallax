@@ -30,6 +30,10 @@ fn error_event(source: ErrorSource, span_id: &str, fingerprint: &str) -> ErrorEv
         source,
         trace_id: "trace".to_string(),
         span_id: span_id.to_string(),
+        invocation_id: Some("run-failure-oracle".to_string()),
+        session_id: None,
+        service_version: None,
+        environment: None,
         attributes: json!({}),
     }
 }
@@ -178,7 +182,7 @@ async fn characterize_failure_after(
     let issue_count = issues.first().map_or(0, |issue| issue.event_count);
     let errors = if let Some(issue) = issues.first() {
         store
-            .error_events_by_fingerprint(&issue.fingerprint, 0..=u128::MAX, 10)
+            .error_events_by_fingerprint(&issue.service, &issue.fingerprint, 0..=u128::MAX, 10)
             .await
             .expect("error events")
             .len()
@@ -250,7 +254,7 @@ async fn record_errors_counts_one_occurrence_after_dedup() {
     assert_eq!(issues.len(), 1);
     assert_eq!(issues[0].event_count, 1);
     let events = store
-        .error_events_by_fingerprint("fp", 0..=u128::MAX, 10)
+        .error_events_by_fingerprint("checkout", "fp", 0..=u128::MAX, 10)
         .await
         .expect("error events");
     assert_eq!(events.len(), 1);
@@ -299,7 +303,7 @@ async fn otlp_and_sentry_echo_share_one_occurrence() {
     assert_eq!(issues.len(), 1);
     assert_eq!(issues[0].event_count, 1);
     let events = store
-        .error_events_by_fingerprint(&issues[0].fingerprint, 0..=u128::MAX, 10)
+        .error_events_by_fingerprint(&issues[0].service, &issues[0].fingerprint, 0..=u128::MAX, 10)
         .await
         .expect("error events");
     assert_eq!(events.len(), 1);
@@ -509,7 +513,13 @@ async fn trace_worker_persists_test_result_with_shared_issue_fingerprint() {
         .failure_fingerprint
         .as_deref()
         .expect("shared fingerprint");
-    assert!(metadata.issue(fingerprint).await.expect("issue").is_some());
+    assert!(
+        metadata
+            .issue("checkout", fingerprint)
+            .await
+            .expect("issue")
+            .is_some()
+    );
     let variant = port
         .test_variant(results[0].key.variant_key.as_str())
         .await

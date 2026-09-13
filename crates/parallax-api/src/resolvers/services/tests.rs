@@ -45,6 +45,10 @@ async fn overview_service_analytics_queries_execute_against_memory_store() {
             source: ErrorSource::SpanStatus,
             trace_id: "t1".into(),
             span_id: "b".into(),
+            invocation_id: None,
+            session_id: None,
+            service_version: None,
+            environment: None,
             attributes: serde_json::Value::Null,
         }])
         .await

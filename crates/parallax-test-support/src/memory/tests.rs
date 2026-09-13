@@ -51,6 +51,10 @@ fn error_event(service: &str, ts: u128) -> ErrorEventRow {
         source: ErrorSource::SpanStatus,
         trace_id: format!("{service}-trace"),
         span_id: format!("{service}-span"),
+        invocation_id: None,
+        session_id: None,
+        service_version: None,
+        environment: None,
         attributes: serde_json::Value::Null,
     }
 }

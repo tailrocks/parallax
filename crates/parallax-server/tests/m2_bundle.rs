@@ -43,6 +43,10 @@ async fn seed_issue(
             source: ErrorSource::LogRecord,
             trace_id: "abababababababababababababababab".to_string(),
             span_id: format!("span-{fingerprint}"),
+            invocation_id: None,
+            session_id: None,
+            service_version: None,
+            environment: None,
             attributes: serde_json::Value::Null,
         }])
         .await

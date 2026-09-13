@@ -101,7 +101,7 @@ async fn error_telemetry_becomes_a_grouped_issue() {
         {
             events = handle
                 .store
-                .error_events_by_fingerprint(&issue.fingerprint, 0..=u128::MAX, 10)
+                .error_events_by_fingerprint(&issue.service, &issue.fingerprint, 0..=u128::MAX, 10)
                 .await
                 .expect("error events read");
             if events.len() >= 2 {
@@ -150,7 +150,7 @@ async fn error_telemetry_becomes_a_grouped_issue() {
     // Rollups: both occurrences counted into the trend.
     let trend = handle
         .metadata
-        .issue_trend(&exception_issue.fingerprint, 0, 60)
+        .issue_trend(&exception_issue.service, &exception_issue.fingerprint, 0, 60)
         .await
         .expect("trend read");
     assert_eq!(

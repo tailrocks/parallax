@@ -39,6 +39,10 @@ fn failure(span: &SpanRow, error_type: &str, fingerprint: &str) -> ErrorEventRow
         source: ErrorSource::SpanException,
         trace_id: span.trace_id.clone(),
         span_id: span.span_id.clone(),
+        invocation_id: span.invocation_id.clone(),
+        session_id: span.session_id.clone(),
+        service_version: None,
+        environment: None,
         attributes: Value::Null,
     }
 }

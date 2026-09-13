@@ -38,6 +38,10 @@ async fn assert_nested_issue_reads_are_batched(page_size: usize) {
                 source: ErrorSource::LogRecord,
                 trace_id: String::new(),
                 span_id: String::new(),
+                invocation_id: None,
+                session_id: None,
+                service_version: None,
+                environment: None,
                 attributes: attributes.clone(),
             });
         }
@@ -104,6 +108,10 @@ async fn seed_issue(
             source: ErrorSource::LogRecord,
             trace_id: String::new(),
             span_id: String::new(),
+            invocation_id: None,
+            session_id: None,
+            service_version: None,
+            environment: None,
             attributes,
         }])
         .await
@@ -374,6 +382,10 @@ async fn grouping_explanation_uses_derive_operation() {
             source: ErrorSource::LogRecord,
             trace_id: String::new(),
             span_id: String::new(),
+            invocation_id: None,
+            session_id: None,
+            service_version: None,
+            environment: None,
             attributes,
         }])
         .await
