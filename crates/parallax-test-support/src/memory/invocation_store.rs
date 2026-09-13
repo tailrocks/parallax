@@ -8,6 +8,7 @@ impl adapter::InvocationStore for MemoryStore {
         fingerprint: &str,
         range: RangeInclusive<u128>,
         limit: usize,
+        environment: Option<&str>,
     ) -> StorageResult<Vec<ErrorEventRow>> {
         self.error_event_read_calls.fetch_add(1, Ordering::Relaxed);
         let mut events: Vec<ErrorEventRow> = self
@@ -15,7 +16,10 @@ impl adapter::InvocationStore for MemoryStore {
             .error_events
             .iter()
             .filter(|e| {
-                e.service == service && e.fingerprint == fingerprint && range.contains(&e.ts_nanos)
+                e.service == service
+                    && e.fingerprint == fingerprint
+                    && range.contains(&e.ts_nanos)
+                    && environment.is_none_or(|env| e.environment.as_deref() == Some(env))
             })
             .cloned()
             .collect();
@@ -29,6 +33,7 @@ impl adapter::InvocationStore for MemoryStore {
         issue_keys: &[(String, String)],
         range: RangeInclusive<u128>,
         limit_per_issue: usize,
+        environment: Option<&str>,
     ) -> StorageResult<HashMap<(String, String), Vec<ErrorEventRow>>> {
         self.error_event_read_calls.fetch_add(1, Ordering::Relaxed);
         let wanted: HashSet<_> = issue_keys.iter().cloned().collect();
@@ -38,7 +43,10 @@ impl adapter::InvocationStore for MemoryStore {
             .collect();
         for event in &self.lock().error_events {
             let key = (event.service.clone(), event.fingerprint.clone());
-            if wanted.contains(&key) && range.contains(&event.ts_nanos) {
+            if wanted.contains(&key)
+                && range.contains(&event.ts_nanos)
+                && environment.is_none_or(|env| event.environment.as_deref() == Some(env))
+            {
                 events.entry(key).or_default().push(event.clone());
             }
         }

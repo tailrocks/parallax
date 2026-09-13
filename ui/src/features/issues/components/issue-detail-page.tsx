@@ -304,6 +304,7 @@ export function IssueDetailContent({
       ) : null}
 
       <TagsTable tags={currentIssue.tags} />
+      <EnvironmentsCard counts={currentIssue.environmentCounts} />
       <CorrelationCard
         state={correlation}
         traceId={selectedTraceId}
@@ -529,6 +530,31 @@ function AttributesCard({ event }: { event: IssueEvent }) {
             ))}
           </dl>
         )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function EnvironmentsCard({
+  counts,
+}: {
+  counts: readonly { readonly environment: string; readonly count: number }[]
+}) {
+  if (counts.length === 0) return null
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">Environments</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-wrap gap-1">
+          {counts.map((row) => (
+            <Badge key={row.environment} variant="secondary">
+              {row.environment}
+              <span className="ml-1 text-muted-foreground">x{row.count}</span>
+            </Badge>
+          ))}
+        </div>
       </CardContent>
     </Card>
   )

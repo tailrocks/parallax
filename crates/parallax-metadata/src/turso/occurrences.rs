@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 
+use super::merge_environments;
 use super::merge_tags;
 use super::row::text;
 use super::values::BUCKET_MILLIS;
@@ -14,9 +15,10 @@ pub(super) async fn upsert_issue_occurrences(
         .await?;
     prune_occurrence_ledger(&tx, occurrences).await?;
     // Issues that received at least one insert, in first-seen order, so
-    // tag merge can SELECT once per issue after all inserts.
+    // tag/env merge can SELECT once per issue after all inserts.
     let mut tag_order: Vec<(&str, &str)> = Vec::new();
     let mut tag_attrs: BTreeMap<(&str, &str), Vec<&serde_json::Value>> = BTreeMap::new();
+    let mut env_attrs: BTreeMap<(&str, &str), Vec<Option<&str>>> = BTreeMap::new();
 
     for occurrence in occurrences {
         let millis = nanos_to_millis(occurrence.ts_nanos);
@@ -77,38 +79,59 @@ pub(super) async fn upsert_issue_occurrences(
             .entry(issue_key)
             .or_default()
             .push(occurrence.attributes);
+        env_attrs
+            .entry(issue_key)
+            .or_default()
+            .push(occurrence.environment);
     }
 
+    merge_issue_caches(&tx, tag_order, tag_attrs, env_attrs).await?;
+    tx.commit().await?;
+    Ok(())
+}
+
+/// Read-merge-write the per-issue tag and environment caches, one SELECT per
+/// issue after all inserts. The SELECT's statement must be dropped before
+/// the UPDATE — an UPDATE executed while another statement is open on the
+/// same turso connection reports success but does not persist.
+async fn merge_issue_caches<'a>(
+    tx: &turso::transaction::Transaction<'_>,
+    tag_order: Vec<(&'a str, &'a str)>,
+    mut tag_attrs: BTreeMap<(&'a str, &'a str), Vec<&'a serde_json::Value>>,
+    mut env_attrs: BTreeMap<(&'a str, &'a str), Vec<Option<&'a str>>>,
+) -> anyhow::Result<()> {
     for (service, fingerprint) in tag_order {
         let attrs = tag_attrs
             .remove(&(service, fingerprint))
             .ok_or_else(|| anyhow::anyhow!("tag attrs missing for ordered issue"))?;
-        // Tag cache: read-merge-write under the same connection lock. The
-        // SELECT's statement must be dropped before the UPDATE — an UPDATE
-        // executed while another statement is open on the same turso
-        // connection reports success but does not persist.
+        let envs = env_attrs
+            .remove(&(service, fingerprint))
+            .ok_or_else(|| anyhow::anyhow!("env attrs missing for ordered issue"))?;
         let existing = {
             let mut rows = tx
                 .query(
-                    "SELECT tags FROM issues WHERE service = ?1 AND fingerprint = ?2",
+                    "SELECT tags, environments FROM issues WHERE service = ?1 AND fingerprint = ?2",
                     (service, fingerprint),
                 )
                 .await?;
-            rows.next().await?.map(|row| text(&row, 0))
+            rows.next().await?.map(|row| (text(&row, 0), text(&row, 1)))
         };
-        if let Some(existing) = existing {
-            let mut merged = existing;
+        if let Some((existing_tags, existing_envs)) = existing {
+            let mut merged_tags = existing_tags;
             for attributes in attrs {
-                merged = merge_tags(&merged, attributes);
+                merged_tags = merge_tags(&merged_tags, attributes);
+            }
+            let mut merged_envs = existing_envs;
+            for environment in envs {
+                merged_envs = merge_environments(&merged_envs, environment);
             }
             tx.execute(
-                "UPDATE issues SET tags = ?1 WHERE service = ?2 AND fingerprint = ?3",
-                (merged, service, fingerprint),
+                "UPDATE issues SET tags = ?1, environments = ?2 WHERE service = ?3 AND fingerprint = ?4",
+                (merged_tags, merged_envs, service, fingerprint),
             )
             .await?;
         }
     }
-    tx.commit().await?;
     Ok(())
 }
 

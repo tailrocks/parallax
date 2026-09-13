@@ -14,6 +14,7 @@ query IssueOccurrences(
       source
       traceId
       spanId
+      environment
       attributes
       mappedFrames {
         raw

@@ -68,6 +68,9 @@ export function Occurrences({
                         {formatTimeInRange(event.tsNanos, range)}
                       </HeatCell>
                       <Badge variant="outline">{event.service}</Badge>
+                      {event.environment ? (
+                        <Badge variant="secondary">{event.environment}</Badge>
+                      ) : null}
                     </span>
                   </button>
                   <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">

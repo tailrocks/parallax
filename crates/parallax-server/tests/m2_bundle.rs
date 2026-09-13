@@ -63,6 +63,7 @@ async fn seed_issue(
             ts_nanos: 1_000,
             trace_id: Some("abababababababababababababababab"),
             attributes: &attrs,
+            environment: None,
         })
         .await
         .expect("seed issue");
