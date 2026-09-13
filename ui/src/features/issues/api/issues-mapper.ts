@@ -1,11 +1,6 @@
 import type { IssueDetailQuery } from "@/features/issues/api/issue-detail.generated"
 import type { IssuesListQuery } from "@/features/issues/api/issues-list.generated"
-import type {
-  BreadcrumbLog,
-  IssueDetail,
-  IssueDetailData,
-  IssueEvent,
-} from "@/features/issues/model/issue-detail"
+import type { IssueDetail, IssueDetailData, IssueEvent } from "@/features/issues/model/issue-detail"
 import type { IssueRow, IssuesData, TrendPoint } from "@/features/issues/model/issue-summary"
 
 function mapTrend(
@@ -68,15 +63,7 @@ export function mapIssuesList(data: IssuesListQuery): IssuesData {
   }
 }
 
-export function mapIssueDetail(
-  data: IssueDetailQuery,
-  extras: {
-    resource: Record<string, unknown>
-    breadcrumbs: readonly BreadcrumbLog[]
-    traceRunId: string | null
-    releaseVersion: string | null
-  }
-): IssueDetailData {
+export function mapIssueDetail(data: IssueDetailQuery): IssueDetailData {
   const issue: IssueDetail | null = data.issue
     ? {
         fingerprint: data.issue.fingerprint,
@@ -97,9 +84,5 @@ export function mapIssueDetail(
   return {
     issue,
     issueTrend: mapTrend(data.issueTrend),
-    resource: extras.resource,
-    breadcrumbs: extras.breadcrumbs,
-    traceRunId: extras.traceRunId,
-    releaseVersion: extras.releaseVersion,
   }
 }

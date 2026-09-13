@@ -37,19 +37,55 @@ export interface IssueDetail {
   readonly events: readonly IssueEvent[]
 }
 
-export interface BreadcrumbLog {
+export interface IssueCorrelationLog {
   readonly tsNanos: string
   readonly severityText: string
   readonly body: string
 }
 
+export interface IssueCorrelation {
+  readonly invocationId: string | null
+  readonly resource: Record<string, unknown>
+  readonly releaseVersion: string | null
+  readonly logs: readonly IssueCorrelationLog[]
+}
+
+export type IssueCorrelationResult =
+  | { readonly status: "ready"; readonly correlation: IssueCorrelation }
+  | { readonly status: "trace-unavailable" }
+
 export interface IssueDetailData {
   readonly issue: IssueDetail | null
   readonly issueTrend: readonly TrendPoint[]
-  readonly resource: Record<string, unknown>
-  readonly breadcrumbs: readonly BreadcrumbLog[]
-  readonly traceRunId: string | null
-  readonly releaseVersion: string | null
+}
+
+export type ParsedIssueAttributes =
+  | { readonly kind: "empty" }
+  | { readonly kind: "entries"; readonly entries: readonly IssueAttributeEntry[] }
+  | { readonly kind: "raw"; readonly raw: string }
+
+export interface IssueAttributeEntry {
+  readonly key: string
+  readonly value: string
+}
+
+/** Event attributes arrive as opaque JSON. Invalid JSON remains visible as
+ * raw text instead of being silently discarded. */
+export function parseIssueAttributes(raw: string): ParsedIssueAttributes {
+  if (!raw.trim()) return { kind: "empty" }
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return { kind: "raw", raw }
+    }
+    const entries = Object.entries(parsed).map(([key, value]) => ({
+      key,
+      value: typeof value === "string" ? value : JSON.stringify(value),
+    }))
+    return entries.length === 0 ? { kind: "empty" } : { kind: "entries", entries }
+  } catch {
+    return { kind: "raw", raw }
+  }
 }
 
 export function rangeHours(range: ResolvedRange): number {

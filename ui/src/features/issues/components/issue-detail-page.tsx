@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Link, useNavigate, useRouter } from "@tanstack/react-router"
 import { IconArrowUpRight, IconBug, IconClock, IconHash, IconHistory } from "@tabler/icons-react"
 
@@ -11,13 +11,19 @@ import { navItem } from "@/shared/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { loadIssueOccurrences, setIssueStatus } from "@/features/issues/api/issues-api"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  loadIssueCorrelation,
+  loadIssueOccurrences,
+  setIssueStatus,
+} from "@/features/issues/api/issues-api"
 import {
   issueDelta,
   shortRunId,
-  type BreadcrumbLog,
+  parseIssueAttributes,
   type IssueDetailData,
   type IssueEvent,
+  type IssueCorrelationResult,
 } from "@/features/issues/model/issue-detail"
 import {
   parseStacktrace,
@@ -30,6 +36,7 @@ import { PinButton } from "@/features/investigations"
 import { MetricStrip } from "@/features/runtime-metrics"
 import { RangePicker } from "@/features/time-range"
 import { formatCount, formatDateTime, formatTimeInRange } from "@/shared/format"
+import { severityColor, severityToken } from "@/shared/colors"
 import {
   mergeRangeSearch,
   rangeLinkSearch,
@@ -39,6 +46,16 @@ import {
 import { cn } from "@/lib/utils"
 import { PageHeader } from "@/shared/components/page-header"
 import type { IssuesSearch } from "@/features/issues/model/issues-search"
+
+type IssueCorrelationState =
+  | { readonly status: "loading" }
+  | { readonly status: "no-trace" }
+  | IssueCorrelationResult
+  | { readonly status: "error"; readonly message: string }
+
+function eventKey(event: IssueEvent): string {
+  return `${event.tsNanos}:${event.spanId}`
+}
 
 export function IssueDetailRoutePage({
   data,
@@ -71,15 +88,51 @@ export function IssueDetailContent({
   range: ResolvedRange
   onRange: (range: ResolvedRange) => void
 }) {
-  const { issue, issueTrend, resource, breadcrumbs, traceRunId, releaseVersion } = data
+  const { issue, issueTrend } = data
   const router = useRouter()
   const [mutating, setMutating] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [bucket, setBucket] = useState<string | null>(null)
   const [bucketEvents, setBucketEvents] = useState<IssueEvent[] | null>(null)
+  const [selectedEventKey, setSelectedEventKey] = useState<string | null>(null)
+  const [correlation, setCorrelation] = useState<IssueCorrelationState>({ status: "loading" })
+  const [correlationAttempt, setCorrelationAttempt] = useState(0)
   const occurrencesRef = useRef<HTMLDivElement>(null)
   const bucketRequestRef = useRef<string | null>(null)
   const issuesBack = navItem("/issues")
+
+  const latest = issue?.events[0]
+  const shownEvents = bucketEvents ?? issue?.events ?? []
+  const selectedEvent = shownEvents.find((event) => eventKey(event) === selectedEventKey) ?? latest
+  const selectedTraceId = selectedEvent?.traceId ?? ""
+  const correlationInvocationId =
+    correlation.status === "ready" ? correlation.correlation.invocationId : null
+
+  useEffect(() => {
+    if (!selectedTraceId) {
+      setCorrelation({ status: "no-trace" })
+      return
+    }
+
+    let active = true
+    setCorrelation({ status: "loading" })
+    loadIssueCorrelation(selectedTraceId)
+      .then((result) => {
+        if (active) setCorrelation(result)
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setCorrelation({
+            status: "error",
+            message: error instanceof Error ? error.message : String(error),
+          })
+        }
+      })
+
+    return () => {
+      active = false
+    }
+  }, [correlationAttempt, selectedTraceId])
 
   if (!issue) {
     return (
@@ -92,8 +145,6 @@ export function IssueDetailContent({
   }
 
   const currentIssue = issue
-  const latest = currentIssue.events[0]
-  const shownEvents = bucketEvents ?? currentIssue.events
   const command = `parallax issue context ${currentIssue.fingerprint}`
 
   async function setStatus(status: "open" | "resolved") {
@@ -163,29 +214,30 @@ export function IssueDetailContent({
       <div className="flex flex-wrap items-center gap-2">
         <Link
           to="/services/$service"
-          params={{ service: issue.service }}
+          params={{ service: currentIssue.service }}
           search={rangeLinkSearch(range)}
           className="inline-flex"
         >
-          <Badge variant="outline">{issue.service}</Badge>
+          <Badge variant="outline">{currentIssue.service}</Badge>
         </Link>
-        {traceRunId ? (
+        {correlationInvocationId ? (
           <Link
             to="/invocations/$invocationId"
-            params={{ invocationId: traceRunId }}
+            params={{ invocationId: correlationInvocationId }}
             search={rangeLinkSearch(range)}
             className="inline-flex"
           >
-            <Badge variant="secondary">run {shortRunId(traceRunId)}</Badge>
+            <Badge variant="secondary">run {shortRunId(correlationInvocationId)}</Badge>
           </Link>
         ) : null}
-        {releaseVersion ? <Badge variant="secondary">release {releaseVersion}</Badge> : null}
-        <Badge variant={issue.status === "open" ? "rose" : "emerald"}>{issue.status}</Badge>
-        <Badge variant="secondary">
-          first <RelativeTime nanos={issue.firstSeenNanos} />
+        <Badge variant={currentIssue.status === "open" ? "rose" : "emerald"}>
+          {currentIssue.status}
         </Badge>
         <Badge variant="secondary">
-          last <RelativeTime nanos={issue.lastSeenNanos} />
+          first <RelativeTime nanos={currentIssue.firstSeenNanos} />
+        </Badge>
+        <Badge variant="secondary">
+          last <RelativeTime nanos={currentIssue.lastSeenNanos} />
         </Badge>
       </div>
 
@@ -195,21 +247,21 @@ export function IssueDetailContent({
         <StatCard
           icon={IconHash}
           label="Events"
-          value={formatCount(issue.eventCount)}
+          value={formatCount(currentIssue.eventCount)}
           hint="total occurrences"
           chart={<CardSparkline data={issueTrend.map((p) => ({ value: p.count }))} />}
         />
         <StatCard
           icon={IconClock}
           label="First seen"
-          value={<RelativeTime nanos={issue.firstSeenNanos} />}
-          hint={formatDateTime(issue.firstSeenNanos)}
+          value={<RelativeTime nanos={currentIssue.firstSeenNanos} />}
+          hint={formatDateTime(currentIssue.firstSeenNanos)}
         />
         <StatCard
           icon={IconHistory}
           label="Last seen"
-          value={<RelativeTime nanos={issue.lastSeenNanos} />}
-          hint={formatDateTime(issue.lastSeenNanos)}
+          value={<RelativeTime nanos={currentIssue.lastSeenNanos} />}
+          hint={formatDateTime(currentIssue.lastSeenNanos)}
         />
         <StatCard
           icon={IconBug}
@@ -226,21 +278,32 @@ export function IssueDetailContent({
         onBucket={(tsNanos) => void filterBucket(tsNanos)}
         activeBucket={bucket}
       />
-      {latest ? <StacktraceCard event={latest} culprit={issue.culprit} range={range} /> : null}
-      {latest ? (
+      {selectedEvent ? <AttributesCard event={selectedEvent} /> : null}
+      {selectedEvent ? (
+        <StacktraceCard event={selectedEvent} culprit={currentIssue.culprit} range={range} />
+      ) : null}
+      {selectedEvent ? (
         <MetricStrip
-          title="Metrics around latest event"
-          service={issue.service}
-          invocationId={traceRunId ?? undefined}
-          fromNanos={(BigInt(latest.tsNanos) - 300_000_000_000n).toString()}
-          toNanos={(BigInt(latest.tsNanos) + 300_000_000_000n).toString()}
+          title="Metrics around selected event"
+          service={currentIssue.service}
+          invocationId={
+            correlation.status === "ready"
+              ? (correlation.correlation.invocationId ?? undefined)
+              : undefined
+          }
+          fromNanos={(BigInt(selectedEvent.tsNanos) - 300_000_000_000n).toString()}
+          toNanos={(BigInt(selectedEvent.tsNanos) + 300_000_000_000n).toString()}
           stepSeconds={30}
         />
       ) : null}
 
-      <TagsTable tags={issue.tags} />
-      <ContextSections resource={resource} />
-      <Breadcrumbs logs={breadcrumbs} range={range} />
+      <TagsTable tags={currentIssue.tags} />
+      <CorrelationCard
+        state={correlation}
+        traceId={selectedTraceId}
+        range={range}
+        onRetry={() => setCorrelationAttempt((attempt) => attempt + 1)}
+      />
 
       <Card>
         <CardHeader className="flex-row items-center justify-between">
@@ -254,7 +317,14 @@ export function IssueDetailContent({
         </CardContent>
       </Card>
 
-      <Occurrences refEl={occurrencesRef} events={shownEvents} bucket={bucket} range={range} />
+      <Occurrences
+        refEl={occurrencesRef}
+        events={shownEvents}
+        selectedEvent={selectedEvent ?? null}
+        onSelect={(event) => setSelectedEventKey(eventKey(event))}
+        bucket={bucket}
+        range={range}
+      />
     </div>
   )
 }
@@ -277,7 +347,7 @@ function StacktraceCard({
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="text-sm">Latest event stacktrace</CardTitle>
+        <CardTitle className="text-sm">Selected occurrence stacktrace</CardTitle>
         {event.stacktrace ? <CopyButton value={event.stacktrace} /> : null}
       </CardHeader>
       <CardContent className="space-y-3">
@@ -353,41 +423,51 @@ function FrameRow({ frame, culprit }: { frame: Frame; culprit: string | null }) 
   )
 }
 
-const CONTEXT_SECTIONS: [string, (key: string) => boolean][] = [
-  ["Runtime", (key) => key.startsWith("process.runtime.")],
-  ["Process", (key) => key.startsWith("process.") && !key.startsWith("process.runtime.")],
-  ["OS / Host", (key) => key.startsWith("os.") || key.startsWith("host.")],
-  ["SDK", (key) => key.startsWith("telemetry.")],
-]
+const LONG_VALUE_LENGTH = 48
 
-function ContextSections({ resource }: { resource: Record<string, unknown> }) {
-  const entries = Object.entries(resource).map(
-    ([key, value]) => [key, typeof value === "string" ? value : JSON.stringify(value)] as const
+function LongValue({ value }: { value: string }) {
+  const copyable = value.length >= LONG_VALUE_LENGTH
+
+  return (
+    <span className="flex min-w-0 items-start gap-1">
+      <span title={value} className="block min-w-0 font-mono break-all">
+        {value}
+      </span>
+      {copyable ? <CopyButton value={value} /> : null}
+    </span>
   )
-  const sections = CONTEXT_SECTIONS.map(([title, match]) => ({
-    title,
-    rows: entries.filter(([key]) => match(key)),
-  })).filter((section) => section.rows.length > 0)
-  if (sections.length === 0) return null
+}
+
+function AttributesCard({ event }: { event: IssueEvent }) {
+  const attributes = parseIssueAttributes(event.attributes)
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm">Runtime context</CardTitle>
+        <CardTitle className="text-sm">Attributes</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-4 sm:grid-cols-2">
-        {sections.map((section) => (
-          <div key={section.title}>
-            <p className="mb-1 text-xs font-medium text-muted-foreground">{section.title}</p>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
-              {section.rows.map(([key, value]) => (
-                <div key={key} className="contents">
-                  <dt className="font-mono text-muted-foreground">{key}</dt>
-                  <dd className="font-mono break-all">{value}</dd>
-                </div>
-              ))}
-            </dl>
+      <CardContent>
+        {attributes.kind === "empty" ? (
+          <p className="text-sm text-muted-foreground">No attributes captured.</p>
+        ) : attributes.kind === "raw" ? (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">Attributes could not be parsed.</p>
+            <LongValue value={attributes.raw} />
           </div>
-        ))}
+        ) : (
+          <dl className="grid gap-x-4 gap-y-1 text-xs md:grid-cols-[minmax(0,180px)_minmax(0,1fr)]">
+            {attributes.entries.map((entry) => (
+              <div key={entry.key} className="contents">
+                <dt title={entry.key} className="min-w-0 truncate font-mono text-muted-foreground">
+                  {entry.key}
+                </dt>
+                <dd className="min-w-0">
+                  <LongValue value={entry.value} />
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
       </CardContent>
     </Card>
   )
@@ -430,23 +510,152 @@ function TagsTable({ tags }: { tags: string }) {
   )
 }
 
-function Breadcrumbs({ logs, range }: { logs: readonly BreadcrumbLog[]; range: ResolvedRange }) {
-  if (logs.length === 0) return null
+function CorrelationCard({
+  state,
+  traceId,
+  range,
+  onRetry,
+}: {
+  state: IssueCorrelationState
+  traceId: string
+  range: ResolvedRange
+  onRetry: () => void
+}) {
+  const [showAllLogs, setShowAllLogs] = useState(false)
+
+  useEffect(() => {
+    setShowAllLogs(false)
+  }, [state])
+
+  const ready = state.status === "ready" ? state.correlation : null
+  const resourceEntries =
+    ready === null
+      ? []
+      : Object.entries(ready.resource).map(
+          ([key, value]) =>
+            [key, typeof value === "string" ? value : JSON.stringify(value)] as const
+        )
+  const logs = ready?.logs ?? []
+  const visibleLogs = showAllLogs ? logs : logs.slice(0, 12)
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-sm">Logs around latest event</CardTitle>
+      <CardHeader className="flex-row items-start justify-between gap-3">
+        <CardTitle className="text-sm">Correlation</CardTitle>
+        {ready ? (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {ready.invocationId ? (
+              <Link
+                to="/invocations/$invocationId"
+                params={{ invocationId: ready.invocationId }}
+                search={rangeLinkSearch(range)}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+              >
+                invocation
+                <IconArrowUpRight className="size-3" />
+              </Link>
+            ) : (
+              <span className="text-xs text-muted-foreground">No invocation span</span>
+            )}
+            <CopyButton value={traceId} />
+          </div>
+        ) : null}
       </CardHeader>
-      <CardContent>
-        <ul className="space-y-1 font-mono text-xs">
-          {logs.map((log, index) => (
-            <li key={`${log.tsNanos}-${index}`} className="grid gap-2 sm:grid-cols-[90px_80px_1fr]">
-              <span className="text-muted-foreground">{formatTimeInRange(log.tsNanos, range)}</span>
-              <Badge variant="secondary">{log.severityText}</Badge>
-              <span className="break-all">{log.body}</span>
-            </li>
-          ))}
-        </ul>
+      <CardContent className="space-y-3">
+        {state.status === "loading" ? (
+          <div className="space-y-2" aria-live="polite">
+            <p className="text-sm text-muted-foreground">Loading trace correlation…</p>
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        ) : state.status === "no-trace" || !traceId ? (
+          <p className="text-sm text-muted-foreground">No trace linked to this event.</p>
+        ) : state.status === "trace-unavailable" ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm text-muted-foreground">Trace is unavailable.</p>
+            <Button size="xs" variant="outline" type="button" onClick={onRetry}>
+              Retry
+            </Button>
+          </div>
+        ) : state.status === "error" ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm text-destructive">{state.message}</p>
+            <Button size="xs" variant="outline" type="button" onClick={onRetry}>
+              Retry
+            </Button>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <Link
+                to="/traces/$traceId"
+                params={{ traceId }}
+                search={rangeLinkSearch(range)}
+                className="inline-flex items-center gap-1 hover:text-foreground"
+              >
+                Open trace {traceId.slice(0, 16)}
+                <IconArrowUpRight className="size-3" />
+              </Link>
+              {ready?.releaseVersion ? (
+                <Badge variant="secondary">release {ready.releaseVersion}</Badge>
+              ) : null}
+            </div>
+
+            {resourceEntries.length > 0 ? (
+              <dl className="grid gap-x-4 gap-y-1 text-xs md:grid-cols-[minmax(0,180px)_minmax(0,1fr)]">
+                {resourceEntries.map(([key, value]) => (
+                  <div key={key} className="contents">
+                    <dt title={key} className="min-w-0 truncate font-mono text-muted-foreground">
+                      {key}
+                    </dt>
+                    <dd className="min-w-0">
+                      <LongValue value={value} />
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ) : null}
+
+            {logs.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No logs in this trace.</p>
+            ) : (
+              <div className="space-y-2">
+                <ul className="space-y-1 font-mono text-xs">
+                  {visibleLogs.map((log, index) => {
+                    const token = severityToken(log.severityText)
+                    return (
+                      <li
+                        key={`${log.tsNanos}-${index}`}
+                        className="grid gap-2 rounded-md px-2 py-1 sm:grid-cols-[100px_72px_minmax(0,1fr)]"
+                      >
+                        <span className="text-muted-foreground">
+                          {formatTimeInRange(log.tsNanos, range)}
+                        </span>
+                        <span
+                          style={token ? { color: severityColor(token) } : undefined}
+                          className="font-medium"
+                        >
+                          {log.severityText}
+                        </span>
+                        <span className="break-words whitespace-pre-wrap">{log.body}</span>
+                      </li>
+                    )
+                  })}
+                </ul>
+                {logs.length > 12 ? (
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    type="button"
+                    onClick={() => setShowAllLogs((value) => !value)}
+                  >
+                    {showAllLogs ? "Show fewer" : `Show all (${logs.length})`}
+                  </Button>
+                ) : null}
+              </div>
+            )}
+          </>
+        )}
       </CardContent>
     </Card>
   )
@@ -455,11 +664,15 @@ function Breadcrumbs({ logs, range }: { logs: readonly BreadcrumbLog[]; range: R
 function Occurrences({
   refEl,
   events,
+  selectedEvent,
+  onSelect,
   bucket,
   range,
 }: {
   refEl: React.RefObject<HTMLDivElement | null>
   events: readonly IssueEvent[]
+  selectedEvent: IssueEvent | null
+  onSelect: (event: IssueEvent) => void
   bucket: string | null
   range: ResolvedRange
 }) {
@@ -482,31 +695,48 @@ function Occurrences({
           <p className="text-sm text-muted-foreground">No occurrences in this window.</p>
         ) : (
           <ul className="space-y-2 text-sm">
-            {events.map((event) => (
-              <li
-                key={`${event.tsNanos}-${event.spanId}`}
-                className="grid gap-2 rounded-lg border bg-muted/20 px-3 py-2 md:grid-cols-[minmax(0,1fr)_auto]"
-              >
-                <span className="min-w-0 truncate">{event.message}</span>
-                <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-                  <HeatCell value={Number(event.tsNanos)} scale={scale}>
-                    {formatTimeInRange(event.tsNanos, range)}
-                  </HeatCell>
-                  <Badge variant="outline">{event.service}</Badge>
-                  {event.traceId ? (
-                    <Link
-                      to="/traces/$traceId"
-                      params={{ traceId: event.traceId }}
-                      search={rangeLinkSearch(range)}
-                      className="inline-flex items-center gap-1 hover:text-foreground"
-                    >
-                      trace
-                      <IconArrowUpRight className="size-3" />
-                    </Link>
-                  ) : null}
-                </span>
-              </li>
-            ))}
+            {events.map((event) => {
+              const selected =
+                selectedEvent?.tsNanos === event.tsNanos && selectedEvent?.spanId === event.spanId
+              return (
+                <li
+                  key={`${event.tsNanos}-${event.spanId}`}
+                  className="grid gap-2 rounded-lg border bg-muted/20 px-2 py-1.5 md:grid-cols-[minmax(0,1fr)_auto]"
+                >
+                  <button
+                    type="button"
+                    aria-current={selected ? "true" : undefined}
+                    onClick={() => onSelect(event)}
+                    className={cn(
+                      "flex min-w-0 flex-col gap-1 rounded-md px-2 py-1 text-left transition outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring",
+                      selected && "bg-primary/5 ring-1 ring-primary/30"
+                    )}
+                  >
+                    <span className="min-w-0 truncate font-medium">{event.message}</span>
+                    <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+                      <HeatCell value={Number(event.tsNanos)} scale={scale}>
+                        {formatTimeInRange(event.tsNanos, range)}
+                      </HeatCell>
+                      <Badge variant="outline">{event.service}</Badge>
+                    </span>
+                  </button>
+                  <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+                    <CopyButton value={event.message} />
+                    {event.traceId ? (
+                      <Link
+                        to="/traces/$traceId"
+                        params={{ traceId: event.traceId }}
+                        search={rangeLinkSearch(range)}
+                        className="inline-flex items-center gap-1 hover:text-foreground"
+                      >
+                        trace
+                        <IconArrowUpRight className="size-3" />
+                      </Link>
+                    ) : null}
+                  </span>
+                </li>
+              )
+            })}
           </ul>
         )}
       </CardContent>
