@@ -5,7 +5,7 @@
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
     "test_cases": 686,
-    "test_files": 181
+    "test_files": 184
   },
   "private_route_imports": [],
   "entries": [
@@ -555,13 +555,8 @@
       "layer": "component",
       "test_file": "ui/src/features/issues/tests/components/issues-contracts.test.tsx",
       "test_ids": [
-        "preserves custom ranges in rendered drilldown links",
-        "renders no-trace correlation for an event without a trace",
         "renders parsed stack frames and issue context",
-        "renders retry for unavailable and failed trace correlation",
-        "renders trend and event cells as detail links",
-        "selects the latest occurrence and renders ready trace correlation",
-        "updates selected occurrence data and correlation"
+        "selects the latest occurrence and renders ready trace correlation"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -3479,6 +3474,50 @@
         "passes URLs through untouched without a token",
         "returns null when nothing stored and trims stored values",
         "setApiToken stores, and empty string clears"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-issues-correlation",
+      "surface": "features/features",
+      "risk": "Issue correlation updates can bind stale occurrence or trace evidence",
+      "scenario_owner": "features/features",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/features/issues/tests/components/issues-correlation.test.tsx",
+      "test_ids": [
+        "renders no-trace correlation for an event without a trace",
+        "renders retry for unavailable and failed trace correlation"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-200",
+      "surface": "features/features",
+      "risk": "Decomposed investigation evidence can diverge from page behavior",
+      "scenario_owner": "features/features",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/features/issues/tests/components/issues-correlation-updates.test.tsx",
+      "test_ids": [
+        "updates selected occurrence data and correlation"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-split-001",
+      "surface": "features/features",
+      "risk": "Decomposed investigation evidence can diverge from page behavior",
+      "scenario_owner": "features/features",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/features/issues/tests/components/issues-tables.test.tsx",
+      "test_ids": [
+        "preserves custom ranges in rendered drilldown links",
+        "renders trend and event cells as detail links"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"

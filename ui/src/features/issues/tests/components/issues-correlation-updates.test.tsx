@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { cleanup, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { resolvePreset } from "@/domain/time-range/range"
@@ -155,45 +156,39 @@ function renderWithRouter(component: React.ReactNode, path = "/issues") {
   })
 }
 
-describe("Issues detail", () => {
-  it("renders parsed stack frames and issue context", async () => {
-    deferCorrelation("trace-a", { status: "trace-unavailable" })
-    renderWithRouter(
-      <IssueDetailContent data={detailFixture} range={range} onRange={() => {}} />,
-      "/issues/checkout/panic-a"
-    )
-
-    expect(await screen.findByText("src/cart.rs:99:5")).toBeTruthy()
-    expect(screen.getByText("checkout::cart::total")).toBeTruthy()
-    expect(screen.getByText("parallax issue context panic-a")).toBeTruthy()
-    expect(
-      screen
-        .getAllByRole("link", { name: /open trace trace-a/i })
-        .some((link) => link.getAttribute("href") === "/traces/trace-a?range=24h")
-    ).toBe(true)
-  })
-
-  it("selects the latest occurrence and renders ready trace correlation", async () => {
+describe("Issue correlation updates", () => {
+  it("updates selected occurrence data and correlation", async () => {
+    const user = userEvent.setup()
     deferCorrelation("trace-a")
+    deferCorrelation("trace-b")
     renderWithRouter(
       <IssueDetailContent data={detailFixture} range={range} onRange={() => {}} />,
       "/issues/checkout/panic-a"
     )
+    await screen.findByRole("link", { name: "invocation" })
 
+    await user.click(screen.getByRole("button", { name: /checkout overflowed while charging/ }))
+
+    expect(await screen.findByText("src/charge.rs:42:7")).toBeTruthy()
+    expect(screen.getByText("Attributes could not be parsed.")).toBeTruthy()
+    expect(screen.getByText('{"order":{"id":')).toBeTruthy()
     expect(
       await screen.findByRole("link", { name: "invocation" }).then((link) => link)
     ).toBeTruthy()
     expect(screen.getByRole("link", { name: "invocation" }).getAttribute("href")).toBe(
-      "/invocations/invocation-a?range=24h"
+      "/invocations/invocation-b?range=24h"
     )
+    expect(screen.getByText("release-b")).toBeTruthy()
+    expect(screen.getByText("ERROR")).toBeTruthy()
+    expect(screen.getByText("second log body")).toBeTruthy()
+    expect(vi.mocked(loadIssueCorrelation).mock.calls).toEqual([["trace-a"], ["trace-b"]])
+
+    const selected = screen.getByRole("button", {
+      name: /checkout overflowed while charging/,
+    })
+    expect(selected.getAttribute("aria-current")).toBe("true")
     expect(
-      screen
-        .getAllByRole("link", { name: /open trace trace-a/i })
-        .some((link) => link.getAttribute("href") === "/traces/trace-a?range=24h")
-    ).toBe(true)
-    expect(screen.getByText("release-a")).toBeTruthy()
-    expect(screen.getByText("WARN")).toBeTruthy()
-    expect(screen.getByText("latest log body")).toBeTruthy()
-    expect(vi.mocked(loadIssueCorrelation).mock.calls).toEqual([["trace-a"]])
+      screen.getByRole("button", { name: /checkout total overflowed/ }).getAttribute("aria-current")
+    ).toBeNull()
   })
 })
