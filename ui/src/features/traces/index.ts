@@ -2,8 +2,6 @@
 
 export {
   TracesPage,
-  TraceTable,
-  loadTraces,
   validateTracesSearch,
   patchTracesSearch,
   paramToTraceSort,
@@ -12,7 +10,10 @@ export {
   serializeTracesSearch,
   parseTracesViewState,
 } from "@/features/traces/components/traces-page"
-export type { TracesSearch, TracesLoaderData } from "@/features/traces/components/traces-page"
+export type { TraceSort, TracesSearch } from "@/features/traces/components/traces-query"
+export { TraceTable } from "@/features/traces/components/trace-table"
+export { loadTraces } from "@/features/traces/components/traces-query"
+export type { TracesLoaderData } from "@/features/traces/components/traces-query"
 
 export {
   TraceDetailPage,

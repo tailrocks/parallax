@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link, useNavigate, useRouter } from "@tanstack/react-router"
 import { IconArrowUpRight, IconBug, IconClock, IconHash, IconHistory } from "@tabler/icons-react"
 
 import { CopyButton } from "@/shared/console/copy-button"
 import { EmptyState } from "@/shared/console/empty-state"
-import { HeatCell, buildHeatScale } from "@/shared/console/heat-cell"
 import { RelativeTime } from "@/shared/console/relative-time"
 import { SectionError } from "@/shared/console/error-state"
 import { CardSparkline, StatCard } from "@/shared/console/stat-card"
@@ -12,7 +11,6 @@ import { navItem } from "@/shared/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
 import {
   loadIssueCorrelation,
   loadIssueOccurrences,
@@ -24,7 +22,6 @@ import {
   parseIssueAttributes,
   type IssueDetailData,
   type IssueEvent,
-  type IssueCorrelationResult,
 } from "@/features/issues/model/issue-detail"
 import {
   parseStacktrace,
@@ -32,12 +29,17 @@ import {
   type Frame,
 } from "@/features/issues/model/stacktrace"
 import { issueGroupingCard } from "@/features/issues/components/grouping-card"
+import {
+  CorrelationCard,
+  type IssueCorrelationState,
+} from "@/features/issues/components/correlation-card"
+import { Occurrences } from "@/features/issues/components/occurrences"
+import { LongValue } from "@/features/issues/components/long-value"
 import { TrendChart } from "@/features/issues/components/issue-trend-chart"
 import { PinButton } from "@/features/investigations"
 import { MetricStrip } from "@/features/runtime-metrics"
 import { RangePicker } from "@/features/time-range"
-import { formatCount, formatDateTime, formatTimeInRange } from "@/shared/format"
-import { severityColor, severityToken } from "@/shared/colors"
+import { formatCount, formatDateTime } from "@/shared/format"
 import {
   mergeRangeSearch,
   rangeLinkSearch,
@@ -47,12 +49,6 @@ import {
 import { cn } from "@/lib/utils"
 import { PageHeader } from "@/shared/components/page-header"
 import type { IssuesSearch } from "@/features/issues/model/issues-search"
-
-type IssueCorrelationState =
-  | { readonly status: "loading" }
-  | { readonly status: "no-trace" }
-  | IssueCorrelationResult
-  | { readonly status: "error"; readonly message: string }
 
 function eventKey(event: IssueEvent): string {
   return `${event.tsNanos}:${event.spanId}`
@@ -425,21 +421,6 @@ function FrameRow({ frame, culprit }: { frame: Frame; culprit: string | null }) 
   )
 }
 
-const LONG_VALUE_LENGTH = 48
-
-function LongValue({ value }: { value: string }) {
-  const copyable = value.length >= LONG_VALUE_LENGTH
-
-  return (
-    <span className="flex min-w-0 items-start gap-1">
-      <span title={value} className="block min-w-0 font-mono break-all">
-        {value}
-      </span>
-      {copyable ? <CopyButton value={value} /> : null}
-    </span>
-  )
-}
-
 function AttributesCard({ event }: { event: IssueEvent }) {
   const attributes = parseIssueAttributes(event.attributes)
 
@@ -507,248 +488,6 @@ function TagsTable({ tags }: { tags: string }) {
             </div>
           ))}
         </dl>
-      </CardContent>
-    </Card>
-  )
-}
-
-function CorrelationCard({
-  state,
-  traceId,
-  range,
-  onRetry,
-}: {
-  state: IssueCorrelationState
-  traceId: string
-  range: ResolvedRange
-  onRetry: () => void
-}) {
-  const [showAllLogs, setShowAllLogs] = useState(false)
-
-  useEffect(() => {
-    setShowAllLogs(false)
-  }, [state])
-
-  const ready = state.status === "ready" ? state.correlation : null
-  const resourceEntries =
-    ready === null
-      ? []
-      : Object.entries(ready.resource).map(
-          ([key, value]) =>
-            [key, typeof value === "string" ? value : JSON.stringify(value)] as const
-        )
-  const logs = ready?.logs ?? []
-  const visibleLogs = showAllLogs ? logs : logs.slice(0, 12)
-
-  return (
-    <Card>
-      <CardHeader className="flex-row items-start justify-between gap-3">
-        <CardTitle className="text-sm">Correlation</CardTitle>
-        {ready ? (
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            {ready.invocationId ? (
-              <Link
-                to="/invocations/$invocationId"
-                params={{ invocationId: ready.invocationId }}
-                search={rangeLinkSearch(range)}
-                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-              >
-                invocation
-                <IconArrowUpRight className="size-3" />
-              </Link>
-            ) : (
-              <span className="text-xs text-muted-foreground">No invocation span</span>
-            )}
-            <CopyButton value={traceId} />
-          </div>
-        ) : null}
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {state.status === "loading" ? (
-          <div className="space-y-2" aria-live="polite">
-            <p className="text-sm text-muted-foreground">Loading trace correlation…</p>
-            <Skeleton className="h-4 w-48" />
-            <Skeleton className="h-12 w-full" />
-          </div>
-        ) : state.status === "no-trace" || !traceId ? (
-          <p className="text-sm text-muted-foreground">No trace linked to this event.</p>
-        ) : state.status === "trace-unavailable" ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm text-muted-foreground">Trace is unavailable.</p>
-            <Button size="xs" variant="outline" type="button" onClick={onRetry}>
-              Retry
-            </Button>
-          </div>
-        ) : state.status === "error" ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm text-destructive">{state.message}</p>
-            <Button size="xs" variant="outline" type="button" onClick={onRetry}>
-              Retry
-            </Button>
-          </div>
-        ) : (
-          <>
-            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <Link
-                to="/traces/$traceId"
-                params={{ traceId }}
-                search={rangeLinkSearch(range)}
-                className="inline-flex items-center gap-1 hover:text-foreground"
-              >
-                Open trace {traceId.slice(0, 16)}
-                <IconArrowUpRight className="size-3" />
-              </Link>
-              <Link
-                to="/logs"
-                search={{ trace: traceId }}
-                className="inline-flex items-center gap-1 hover:text-foreground"
-              >
-                Open in Logs
-                <IconArrowUpRight className="size-3" />
-              </Link>
-              {ready?.releaseVersion ? (
-                <Badge variant="secondary">release {ready.releaseVersion}</Badge>
-              ) : null}
-            </div>
-
-            {resourceEntries.length > 0 ? (
-              <dl className="grid gap-x-4 gap-y-1 text-xs md:grid-cols-[minmax(0,180px)_minmax(0,1fr)]">
-                {resourceEntries.map(([key, value]) => (
-                  <div key={key} className="contents">
-                    <dt title={key} className="min-w-0 truncate font-mono text-muted-foreground">
-                      {key}
-                    </dt>
-                    <dd className="min-w-0">
-                      <LongValue value={value} />
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            ) : null}
-
-            {logs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No logs in this trace.</p>
-            ) : (
-              <div className="space-y-2">
-                <ul className="space-y-1 font-mono text-xs">
-                  {visibleLogs.map((log, index) => {
-                    const token = severityToken(log.severityText)
-                    return (
-                      <li
-                        key={`${log.tsNanos}-${index}`}
-                        className="grid gap-2 rounded-md px-2 py-1 sm:grid-cols-[100px_72px_minmax(0,1fr)]"
-                      >
-                        <span className="text-muted-foreground">
-                          {formatTimeInRange(log.tsNanos, range)}
-                        </span>
-                        <span
-                          style={token ? { color: severityColor(token) } : undefined}
-                          className="font-medium"
-                        >
-                          {log.severityText || "log"}
-                        </span>
-                        <span className="break-words whitespace-pre-wrap">{log.body}</span>
-                      </li>
-                    )
-                  })}
-                </ul>
-                {logs.length > 12 ? (
-                  <Button
-                    size="xs"
-                    variant="ghost"
-                    type="button"
-                    onClick={() => setShowAllLogs((value) => !value)}
-                  >
-                    {showAllLogs ? "Show fewer" : `Show all (${logs.length})`}
-                  </Button>
-                ) : null}
-              </div>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
-function Occurrences({
-  refEl,
-  events,
-  selectedEvent,
-  onSelect,
-  bucket,
-  range,
-}: {
-  refEl: React.RefObject<HTMLDivElement | null>
-  events: readonly IssueEvent[]
-  selectedEvent: IssueEvent | null
-  onSelect: (event: IssueEvent) => void
-  bucket: string | null
-  range: ResolvedRange
-}) {
-  const durations = events.map((event) => Number(event.tsNanos))
-  const scale = useMemo(() => buildHeatScale(durations), [durations])
-  return (
-    <Card ref={refEl}>
-      <CardHeader>
-        <CardTitle className="text-sm">
-          Occurrences
-          {bucket ? (
-            <span className="ml-2 font-normal text-muted-foreground">
-              selected hour ({events.length})
-            </span>
-          ) : null}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {events.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No occurrences in this window.</p>
-        ) : (
-          <ul className="space-y-2 text-sm">
-            {events.map((event) => {
-              const selected =
-                selectedEvent?.tsNanos === event.tsNanos && selectedEvent?.spanId === event.spanId
-              return (
-                <li
-                  key={`${event.tsNanos}-${event.spanId}`}
-                  className="grid gap-2 rounded-lg border bg-muted/20 px-2 py-1.5 md:grid-cols-[minmax(0,1fr)_auto]"
-                >
-                  <button
-                    type="button"
-                    aria-current={selected ? "true" : undefined}
-                    onClick={() => onSelect(event)}
-                    className={cn(
-                      "flex min-w-0 flex-col gap-1 rounded-md px-2 py-1 text-left transition outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring",
-                      selected && "bg-primary/5 ring-1 ring-primary/30"
-                    )}
-                  >
-                    <span className="min-w-0 truncate font-medium">{event.message}</span>
-                    <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-                      <HeatCell value={Number(event.tsNanos)} scale={scale}>
-                        {formatTimeInRange(event.tsNanos, range)}
-                      </HeatCell>
-                      <Badge variant="outline">{event.service}</Badge>
-                    </span>
-                  </button>
-                  <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-                    <CopyButton value={event.message} />
-                    {event.traceId ? (
-                      <Link
-                        to="/traces/$traceId"
-                        params={{ traceId: event.traceId }}
-                        search={rangeLinkSearch(range)}
-                        className="inline-flex items-center gap-1 hover:text-foreground"
-                      >
-                        trace
-                        <IconArrowUpRight className="size-3" />
-                      </Link>
-                    ) : null}
-                  </span>
-                </li>
-              )
-            })}
-          </ul>
-        )}
       </CardContent>
     </Card>
   )
