@@ -12,7 +12,9 @@ test.describe("full-stack issues @issues", () => {
     await expect(page.getByText(manifest.error_type, { exact: false }).first()).toBeVisible({
       timeout: SURFACE_TIMEOUT_MS,
     })
-    await page.goto(`/issues/${fullStack.issue_fingerprint}`)
+    await page.goto(
+      `/issues/${encodeURIComponent(fullStack.service)}/${encodeURIComponent(fullStack.issue_fingerprint)}`
+    )
     await expect(page.getByText(manifest.service, { exact: false }).first()).toBeVisible({
       timeout: 15_000,
     })

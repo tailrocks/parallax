@@ -1,10 +1,11 @@
 query IssueDetail(
+  $service: String!
   $fingerprint: String!
   $fromNanos: String!
   $toNanos: String!
   $hours: Int!
 ) {
-  issue(fingerprint: $fingerprint) {
+  issue(service: $service, fingerprint: $fingerprint) {
     fingerprint
     title
     errorType
@@ -35,7 +36,7 @@ query IssueDetail(
       attributes
     }
   }
-  issueTrend(fingerprint: $fingerprint, hours: $hours) {
+  issueTrend(service: $service, fingerprint: $fingerprint, hours: $hours) {
     tsNanos
     count
   }

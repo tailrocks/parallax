@@ -6,6 +6,7 @@ import { CopyButton } from "@/shared/console/copy-button"
 import { EmptyState } from "@/shared/console/empty-state"
 import { HeatCell, buildHeatScale } from "@/shared/console/heat-cell"
 import { RelativeTime } from "@/shared/console/relative-time"
+import { SectionError } from "@/shared/console/error-state"
 import { CardSparkline, StatCard } from "@/shared/console/stat-card"
 import { navItem } from "@/shared/navigation"
 import { Badge } from "@/components/ui/badge"
@@ -64,7 +65,7 @@ export function IssueDetailRoutePage({
   data: IssueDetailData
   search: IssuesSearch
 }) {
-  const navigate = useNavigate({ from: "/issues/$fingerprint" })
+  const navigate = useNavigate({ from: "/issues/$service/$fingerprint" })
   const range = resolveRangeSearch(search)
   return (
     <IssueDetailContent
@@ -151,7 +152,7 @@ export function IssueDetailContent({
     setMutating(true)
     setActionError(null)
     try {
-      await setIssueStatus(currentIssue.fingerprint, status)
+      await setIssueStatus(currentIssue.service, currentIssue.fingerprint, status)
       await router.invalidate()
     } catch (err) {
       setActionError(err instanceof Error ? err.message : String(err))
@@ -173,6 +174,7 @@ export function IssueDetailContent({
       const from = BigInt(tsNanos)
       const to = from + 3_600_000_000_000n
       const events = await loadIssueOccurrences(
+        currentIssue.service,
         currentIssue.fingerprint,
         from.toString(),
         to.toString()
@@ -241,7 +243,7 @@ export function IssueDetailContent({
         </Badge>
       </div>
 
-      {actionError ? <p className="text-sm text-destructive">{actionError}</p> : null}
+      {actionError ? <SectionError message={actionError} /> : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
@@ -594,6 +596,14 @@ function CorrelationCard({
                 className="inline-flex items-center gap-1 hover:text-foreground"
               >
                 Open trace {traceId.slice(0, 16)}
+                <IconArrowUpRight className="size-3" />
+              </Link>
+              <Link
+                to="/logs"
+                search={{ trace: traceId }}
+                className="inline-flex items-center gap-1 hover:text-foreground"
+              >
+                Open in Logs
                 <IconArrowUpRight className="size-3" />
               </Link>
               {ready?.releaseVersion ? (

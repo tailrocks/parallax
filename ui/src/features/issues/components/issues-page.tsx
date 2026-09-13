@@ -8,9 +8,9 @@ import {
   FilterSelect,
   SearchInput,
   SortableHead,
-  Toolbar,
 } from "@/shared/console/data-table"
 import { EmptyState } from "@/shared/console/empty-state"
+import { QueryBar, QueryBarCount, QueryBarRow } from "@/shared/console/query-bar"
 import { SnippetTabs } from "@/shared/console/snippet-tabs"
 import { useDelayedLoading } from "@/shared/console/hooks"
 import { RelativeTime } from "@/shared/console/relative-time"
@@ -45,6 +45,7 @@ import {
   type ResolvedRange,
 } from "@/domain/time-range/range"
 import { cn } from "@/lib/utils"
+import { rowKeyboardAttrs, useRowKeyboardNav } from "@/lib/row-keyboard-nav"
 import { PageHeader } from "@/shared/components/page-header"
 
 const VIRTUALIZE_THRESHOLD = 30
@@ -113,10 +114,10 @@ export function IssuesPage({ data, search }: { data: IssuesData; search: IssuesS
       range={range}
       loading={loading}
       onSearch={setSearch}
-      onIssue={(fingerprint) =>
+      onIssue={(issue) =>
         void navigate({
-          to: "/issues/$fingerprint",
-          params: { fingerprint },
+          to: "/issues/$service/$fingerprint",
+          params: { service: issue.service, fingerprint: issue.fingerprint },
           search: rangeLinkSearch(range),
         })
       }
@@ -137,7 +138,7 @@ export function IssuesContent({
   range: ResolvedRange
   loading?: boolean
   onSearch: (patch: IssuesSearchPatch) => void
-  onIssue: (fingerprint: string) => void
+  onIssue: (issue: IssueRow) => void
 }) {
   const hasFilters = Boolean(search.q || search.service || search.status)
   const sort = search.sort ?? "LAST_SEEN"
@@ -154,8 +155,8 @@ export function IssuesContent({
         }
       />
 
-      <Toolbar className="justify-between">
-        <div className="flex flex-wrap items-center gap-2">
+      <QueryBar>
+        <QueryBarRow>
           <SearchInput
             value={search.q ?? ""}
             onChange={(q) => onSearch({ q })}
@@ -170,6 +171,8 @@ export function IssuesContent({
               label: service,
             }))}
           />
+        </QueryBarRow>
+        <QueryBarRow>
           <FilterSelect
             {...(search.status ? { value: search.status } : {})}
             onChange={(status) =>
@@ -205,11 +208,9 @@ export function IssuesContent({
               }
             />
           ) : null}
-        </div>
-        <span className="text-xs text-muted-foreground">
-          {formatCount(data.issues.items.length)} of {formatCount(data.issues.total)}
-        </span>
-      </Toolbar>
+          <QueryBarCount shown={data.issues.items.length} total={data.issues.total} unit="issues" />
+        </QueryBarRow>
+      </QueryBar>
 
       {loading ? (
         <TableSkeleton rows={8} />
@@ -243,7 +244,7 @@ function IssuesTable({
   range: ResolvedRange
   sort: IssueSort
   onSearch: (patch: IssuesSearchPatch) => void
-  onIssue: (fingerprint: string) => void
+  onIssue: (issue: IssueRow) => void
 }) {
   const parentRef = useRef<HTMLDivElement | null>(null)
   const virtualize = items.length > VIRTUALIZE_THRESHOLD
@@ -263,6 +264,14 @@ function IssuesTable({
   const rows = virtualize
     ? (virtualItems ?? []).map((item) => items[item.index]!).filter(Boolean)
     : items
+  const activeRow = useRowKeyboardNav({
+    scope: "issues",
+    count: rows.length,
+    onOpen: (index) => {
+      const issue = rows[index]
+      if (issue) onIssue(issue)
+    },
+  })
 
   const header = (
     <TableHeader className={virtualize ? "sticky top-0 z-10 bg-card" : undefined}>
@@ -306,23 +315,25 @@ function IssuesTable({
           />
         </tr>
       ) : null}
-      {rows.map((issue) => {
+      {rows.map((issue, index) => {
         const recentOpen = issue.status === "open" && trendEvents(issue) > 0
         const tags = topTags(issue.tags)
         return (
           <TableRow
             key={issue.fingerprint}
+            {...rowKeyboardAttrs("issues", index)}
             className={cn(
               "cursor-pointer",
-              recentOpen && "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]"
+              recentOpen && "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]",
+              activeRow === index && "bg-accent/60"
             )}
-            onClick={() => onIssue(issue.fingerprint)}
+            onClick={() => onIssue(issue)}
           >
             <TableCell className="max-w-xl">
               <div className="min-w-0 space-y-1">
                 <Link
-                  to="/issues/$fingerprint"
-                  params={{ fingerprint: issue.fingerprint }}
+                  to="/issues/$service/$fingerprint"
+                  params={{ service: issue.service, fingerprint: issue.fingerprint }}
                   search={rangeLinkSearch(range)}
                   className="block truncate font-medium hover:underline"
                   onClick={(event) => event.stopPropagation()}
@@ -368,8 +379,8 @@ function IssuesTable({
             </TableCell>
             <TableCell>
               <Link
-                to="/issues/$fingerprint"
-                params={{ fingerprint: issue.fingerprint }}
+                to="/issues/$service/$fingerprint"
+                params={{ service: issue.service, fingerprint: issue.fingerprint }}
                 search={rangeLinkSearch(range)}
                 className="block text-rose-500"
                 onClick={(event) => event.stopPropagation()}
@@ -384,8 +395,8 @@ function IssuesTable({
             </TableCell>
             <TableCell className="text-right tabular-nums">
               <Link
-                to="/issues/$fingerprint"
-                params={{ fingerprint: issue.fingerprint }}
+                to="/issues/$service/$fingerprint"
+                params={{ service: issue.service, fingerprint: issue.fingerprint }}
                 search={rangeLinkSearch(range)}
                 className="hover:underline"
                 onClick={(event) => event.stopPropagation()}

@@ -221,6 +221,7 @@ export async function graphqlQuery<T>(query: string): Promise<T> {
 }
 
 export async function pollIssueStatus(
+  service: string,
   fingerprint: string,
   expected: string,
   deadlineMs = 15_000
@@ -230,7 +231,9 @@ export async function pollIssueStatus(
   while (Date.now() - started < deadlineMs) {
     const data = await graphqlQuery<{
       issue: FullStackIssueSnapshot
-    }>(`{ issue(fingerprint: "${fingerprint}") { fingerprint title status service errorType } }`)
+    }>(
+      `{ issue(service: "${service}", fingerprint: "${fingerprint}") { fingerprint title status service errorType } }`
+    )
     last = data.issue
     if (last?.status === expected) {
       return last

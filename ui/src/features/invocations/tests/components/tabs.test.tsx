@@ -15,7 +15,7 @@ afterEach(cleanup)
 
 function renderTab(component: React.ReactNode) {
   return renderTestRouter(component, {
-    targetPaths: ["/traces/$traceId", "/issues/$fingerprint"],
+    targetPaths: ["/traces/$traceId", "/issues/$service/$fingerprint"],
   })
 }
 

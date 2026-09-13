@@ -23,14 +23,15 @@ import { Route as InvestigationsInvestigationIdRouteImport } from './routes/inve
 import { Route as InvocationsIndexRouteImport } from './routes/invocations.index'
 import { Route as InvocationsInvocationIdRouteImport } from './routes/invocations.$invocationId'
 import { Route as IssuesIndexRouteImport } from './routes/issues.index'
-import { Route as IssuesFingerprintRouteImport } from './routes/issues.$fingerprint'
 import { Route as MetricsIndexRouteImport } from './routes/metrics.index'
 import { Route as MetricsMetricNameRouteImport } from './routes/metrics.$metricName'
+import { Route as RumIndexRouteImport } from './routes/rum.index'
 import { Route as ServicesServiceRouteImport } from './routes/services.$service'
 import { Route as TestsIndexRouteImport } from './routes/tests.index'
 import { Route as TestsCaseKeyRouteImport } from './routes/tests.$caseKey'
 import { Route as TracesIndexRouteImport } from './routes/traces.index'
 import { Route as TracesTraceIdRouteImport } from './routes/traces.$traceId'
+import { Route as IssuesServiceFingerprintRouteImport } from './routes/issues.$service.$fingerprint'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -103,11 +104,6 @@ const IssuesIndexRoute = IssuesIndexRouteImport.update({
   path: '/issues/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IssuesFingerprintRoute = IssuesFingerprintRouteImport.update({
-  id: '/issues/$fingerprint',
-  path: '/issues/$fingerprint',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const MetricsIndexRoute = MetricsIndexRouteImport.update({
   id: '/metrics/',
   path: '/metrics/',
@@ -116,6 +112,11 @@ const MetricsIndexRoute = MetricsIndexRouteImport.update({
 const MetricsMetricNameRoute = MetricsMetricNameRouteImport.update({
   id: '/metrics/$metricName',
   path: '/metrics/$metricName',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RumIndexRoute = RumIndexRouteImport.update({
+  id: '/rum/',
+  path: '/rum/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ServicesServiceRoute = ServicesServiceRouteImport.update({
@@ -143,6 +144,12 @@ const TracesTraceIdRoute = TracesTraceIdRouteImport.update({
   path: '/traces/$traceId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IssuesServiceFingerprintRoute =
+  IssuesServiceFingerprintRouteImport.update({
+    id: '/issues/$service/$fingerprint',
+    path: '/issues/$service/$fingerprint',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -154,7 +161,6 @@ export interface FileRoutesByFullPath {
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/investigations/$investigationId': typeof InvestigationsInvestigationIdRoute
   '/invocations/$invocationId': typeof InvocationsInvocationIdRoute
-  '/issues/$fingerprint': typeof IssuesFingerprintRoute
   '/metrics/$metricName': typeof MetricsMetricNameRoute
   '/services/$service': typeof ServicesServiceRoute
   '/tests/$caseKey': typeof TestsCaseKeyRoute
@@ -165,8 +171,10 @@ export interface FileRoutesByFullPath {
   '/invocations/': typeof InvocationsIndexRoute
   '/issues/': typeof IssuesIndexRoute
   '/metrics/': typeof MetricsIndexRoute
+  '/rum/': typeof RumIndexRoute
   '/tests/': typeof TestsIndexRoute
   '/traces/': typeof TracesIndexRoute
+  '/issues/$service/$fingerprint': typeof IssuesServiceFingerprintRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -178,7 +186,6 @@ export interface FileRoutesByTo {
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/investigations/$investigationId': typeof InvestigationsInvestigationIdRoute
   '/invocations/$invocationId': typeof InvocationsInvocationIdRoute
-  '/issues/$fingerprint': typeof IssuesFingerprintRoute
   '/metrics/$metricName': typeof MetricsMetricNameRoute
   '/services/$service': typeof ServicesServiceRoute
   '/tests/$caseKey': typeof TestsCaseKeyRoute
@@ -189,8 +196,10 @@ export interface FileRoutesByTo {
   '/invocations': typeof InvocationsIndexRoute
   '/issues': typeof IssuesIndexRoute
   '/metrics': typeof MetricsIndexRoute
+  '/rum': typeof RumIndexRoute
   '/tests': typeof TestsIndexRoute
   '/traces': typeof TracesIndexRoute
+  '/issues/$service/$fingerprint': typeof IssuesServiceFingerprintRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -203,7 +212,6 @@ export interface FileRoutesById {
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
   '/investigations/$investigationId': typeof InvestigationsInvestigationIdRoute
   '/invocations/$invocationId': typeof InvocationsInvocationIdRoute
-  '/issues/$fingerprint': typeof IssuesFingerprintRoute
   '/metrics/$metricName': typeof MetricsMetricNameRoute
   '/services/$service': typeof ServicesServiceRoute
   '/tests/$caseKey': typeof TestsCaseKeyRoute
@@ -214,8 +222,10 @@ export interface FileRoutesById {
   '/invocations/': typeof InvocationsIndexRoute
   '/issues/': typeof IssuesIndexRoute
   '/metrics/': typeof MetricsIndexRoute
+  '/rum/': typeof RumIndexRoute
   '/tests/': typeof TestsIndexRoute
   '/traces/': typeof TracesIndexRoute
+  '/issues/$service/$fingerprint': typeof IssuesServiceFingerprintRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -229,7 +239,6 @@ export interface FileRouteTypes {
     | '/dashboards/$dashboardId'
     | '/investigations/$investigationId'
     | '/invocations/$invocationId'
-    | '/issues/$fingerprint'
     | '/metrics/$metricName'
     | '/services/$service'
     | '/tests/$caseKey'
@@ -240,8 +249,10 @@ export interface FileRouteTypes {
     | '/invocations/'
     | '/issues/'
     | '/metrics/'
+    | '/rum/'
     | '/tests/'
     | '/traces/'
+    | '/issues/$service/$fingerprint'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -253,7 +264,6 @@ export interface FileRouteTypes {
     | '/dashboards/$dashboardId'
     | '/investigations/$investigationId'
     | '/invocations/$invocationId'
-    | '/issues/$fingerprint'
     | '/metrics/$metricName'
     | '/services/$service'
     | '/tests/$caseKey'
@@ -264,8 +274,10 @@ export interface FileRouteTypes {
     | '/invocations'
     | '/issues'
     | '/metrics'
+    | '/rum'
     | '/tests'
     | '/traces'
+    | '/issues/$service/$fingerprint'
   id:
     | '__root__'
     | '/'
@@ -277,7 +289,6 @@ export interface FileRouteTypes {
     | '/dashboards/$dashboardId'
     | '/investigations/$investigationId'
     | '/invocations/$invocationId'
-    | '/issues/$fingerprint'
     | '/metrics/$metricName'
     | '/services/$service'
     | '/tests/$caseKey'
@@ -288,8 +299,10 @@ export interface FileRouteTypes {
     | '/invocations/'
     | '/issues/'
     | '/metrics/'
+    | '/rum/'
     | '/tests/'
     | '/traces/'
+    | '/issues/$service/$fingerprint'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -302,7 +315,6 @@ export interface RootRouteChildren {
   DashboardsDashboardIdRoute: typeof DashboardsDashboardIdRoute
   InvestigationsInvestigationIdRoute: typeof InvestigationsInvestigationIdRoute
   InvocationsInvocationIdRoute: typeof InvocationsInvocationIdRoute
-  IssuesFingerprintRoute: typeof IssuesFingerprintRoute
   MetricsMetricNameRoute: typeof MetricsMetricNameRoute
   TestsCaseKeyRoute: typeof TestsCaseKeyRoute
   TracesTraceIdRoute: typeof TracesTraceIdRoute
@@ -312,8 +324,10 @@ export interface RootRouteChildren {
   InvocationsIndexRoute: typeof InvocationsIndexRoute
   IssuesIndexRoute: typeof IssuesIndexRoute
   MetricsIndexRoute: typeof MetricsIndexRoute
+  RumIndexRoute: typeof RumIndexRoute
   TestsIndexRoute: typeof TestsIndexRoute
   TracesIndexRoute: typeof TracesIndexRoute
+  IssuesServiceFingerprintRoute: typeof IssuesServiceFingerprintRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -416,13 +430,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IssuesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/issues/$fingerprint': {
-      id: '/issues/$fingerprint'
-      path: '/issues/$fingerprint'
-      fullPath: '/issues/$fingerprint'
-      preLoaderRoute: typeof IssuesFingerprintRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/metrics/': {
       id: '/metrics/'
       path: '/metrics'
@@ -435,6 +442,13 @@ declare module '@tanstack/react-router' {
       path: '/metrics/$metricName'
       fullPath: '/metrics/$metricName'
       preLoaderRoute: typeof MetricsMetricNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rum/': {
+      id: '/rum/'
+      path: '/rum'
+      fullPath: '/rum/'
+      preLoaderRoute: typeof RumIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/services/$service': {
@@ -472,6 +486,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TracesTraceIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/issues/$service/$fingerprint': {
+      id: '/issues/$service/$fingerprint'
+      path: '/issues/$service/$fingerprint'
+      fullPath: '/issues/$service/$fingerprint'
+      preLoaderRoute: typeof IssuesServiceFingerprintRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -497,7 +518,6 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardsDashboardIdRoute: DashboardsDashboardIdRoute,
   InvestigationsInvestigationIdRoute: InvestigationsInvestigationIdRoute,
   InvocationsInvocationIdRoute: InvocationsInvocationIdRoute,
-  IssuesFingerprintRoute: IssuesFingerprintRoute,
   MetricsMetricNameRoute: MetricsMetricNameRoute,
   TestsCaseKeyRoute: TestsCaseKeyRoute,
   TracesTraceIdRoute: TracesTraceIdRoute,
@@ -507,8 +527,10 @@ const rootRouteChildren: RootRouteChildren = {
   InvocationsIndexRoute: InvocationsIndexRoute,
   IssuesIndexRoute: IssuesIndexRoute,
   MetricsIndexRoute: MetricsIndexRoute,
+  RumIndexRoute: RumIndexRoute,
   TestsIndexRoute: TestsIndexRoute,
   TracesIndexRoute: TracesIndexRoute,
+  IssuesServiceFingerprintRoute: IssuesServiceFingerprintRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

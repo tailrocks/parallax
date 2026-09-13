@@ -10,6 +10,7 @@ import type { ResolvedRange } from "@/domain/time-range/range"
 
 export interface InvocationIssue {
   fingerprint: string
+  service: string
   title: string
   status: string
   eventCount: number
@@ -94,8 +95,8 @@ export function InvocationErrorsTab({
                 className="grid gap-2 rounded-lg border bg-muted/20 px-3 py-2 md:grid-cols-[minmax(0,1fr)_auto]"
               >
                 <Link
-                  to="/issues/$fingerprint"
-                  params={{ fingerprint: issue.fingerprint }}
+                  to="/issues/$service/$fingerprint"
+                  params={{ service: issue.service, fingerprint: issue.fingerprint }}
                   search={rangeLinkSearch(range)}
                   className="min-w-0 truncate font-medium hover:underline"
                 >

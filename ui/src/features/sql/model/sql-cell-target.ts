@@ -4,7 +4,7 @@ import { normalizeColumn } from "@/features/sql/model/sql-row"
 export type SqlCellTarget =
   | { to: "/traces/$traceId"; params: { traceId: string } }
   | { to: "/invocations/$invocationId"; params: { invocationId: string } }
-  | { to: "/issues/$fingerprint"; params: { fingerprint: string } }
+  | { to: "/issues/$service/$fingerprint"; params: { service: string; fingerprint: string } }
   | { to: "/services/$service"; params: { service: string } }
 
 function cellValue(row: Record<string, string>, keys: readonly string[]): string | null {
@@ -38,7 +38,10 @@ export function targetForCell(
     return { to: "/invocations/$invocationId", params: { invocationId: value } }
   }
   if (normalized === "fingerprint") {
-    return { to: "/issues/$fingerprint", params: { fingerprint: value } }
+    const service = cellValue(row, ["service", "service_name"])
+    return service
+      ? { to: "/issues/$service/$fingerprint", params: { service, fingerprint: value } }
+      : null
   }
   if (normalized === "service" || normalized === "service_name") {
     return { to: "/services/$service", params: { service: value } }

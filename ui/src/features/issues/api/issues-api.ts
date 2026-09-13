@@ -97,6 +97,7 @@ export async function loadIssues(search: IssuesSearch, range: ResolvedRange): Pr
 }
 
 export async function loadIssueDetail(
+  service: string,
   fingerprint: string,
   range: ResolvedRange
 ): Promise<IssueDetailData> {
@@ -105,6 +106,7 @@ export async function loadIssueDetail(
       brandDocument(IssueDetailDocument),
       brandSchema(IssueDetailQuerySchema),
       {
+        service,
         fingerprint,
         fromNanos: range.fromNanos,
         toNanos: range.toNanos,
@@ -155,6 +157,7 @@ export async function loadIssueCorrelation(traceId: string): Promise<IssueCorrel
 }
 
 export async function setIssueStatus(
+  service: string,
   fingerprint: string,
   status: "open" | "resolved"
 ): Promise<void> {
@@ -162,7 +165,7 @@ export async function setIssueStatus(
     await executeGraphqlOperation<IssueSetStatusMutation, IssueSetStatusMutationVariables>(
       brandDocument(IssueSetStatusDocument),
       brandSchema(IssueSetStatusMutationSchema),
-      { fingerprint, status }
+      { service, fingerprint, status }
     )
   } catch (error) {
     mapBoundary(error, "mutation")
@@ -170,6 +173,7 @@ export async function setIssueStatus(
 }
 
 export async function loadIssueOccurrences(
+  service: string,
   fingerprint: string,
   fromNanos: string,
   toNanos: string
@@ -179,6 +183,7 @@ export async function loadIssueOccurrences(
       IssueOccurrencesQuery,
       IssueOccurrencesQueryVariables
     >(brandDocument(IssueOccurrencesDocument), brandSchema(IssueOccurrencesQuerySchema), {
+      service,
       fingerprint,
       fromNanos,
       toNanos,

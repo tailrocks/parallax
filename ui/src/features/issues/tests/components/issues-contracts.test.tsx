@@ -157,7 +157,7 @@ beforeEach(() => {
 
 function renderWithRouter(component: React.ReactNode, path = "/issues") {
   return renderTestRouter(component, {
-    componentPaths: ["/issues", "/issues/$fingerprint"],
+    componentPaths: ["/issues", "/issues/$service/$fingerprint"],
     initialPath: path,
     targetPaths: ["/traces/$traceId", "/invocations/$invocationId"],
   })
@@ -184,9 +184,9 @@ describe("Issues route", () => {
       "/traces/trace-a?range=24h"
     )
     const links = screen.getAllByRole("link")
-    expect(links.some((link) => link.getAttribute("href") === "/issues/panic-a?range=24h")).toBe(
-      true
-    )
+    expect(
+      links.some((link) => link.getAttribute("href") === "/issues/checkout/panic-a?range=24h")
+    ).toBe(true)
   })
 
   it("preserves custom ranges in rendered drilldown links", async () => {
@@ -203,7 +203,7 @@ describe("Issues route", () => {
     expect(await screen.findByText("panic")).toBeTruthy()
     const urls = screen.getAllByRole("link").map((link) => parseHref(link.getAttribute("href")!))
 
-    for (const pathname of ["/services/checkout", "/traces/trace-a", "/issues/panic-a"]) {
+    for (const pathname of ["/services/checkout", "/traces/trace-a", "/issues/checkout/panic-a"]) {
       const match = urls.find((candidate) => candidate.url.pathname === pathname)
       expect(match).toBeTruthy()
       expect(match?.search).toMatchObject({
@@ -218,7 +218,7 @@ describe("Issues route", () => {
     deferCorrelation("trace-a", { status: "trace-unavailable" })
     renderWithRouter(
       <IssueDetailContent data={detailFixture} range={range} onRange={() => {}} />,
-      "/issues/panic-a"
+      "/issues/checkout/panic-a"
     )
 
     expect(await screen.findByText("src/cart.rs:99:5")).toBeTruthy()
@@ -235,7 +235,7 @@ describe("Issues route", () => {
     deferCorrelation("trace-a")
     renderWithRouter(
       <IssueDetailContent data={detailFixture} range={range} onRange={() => {}} />,
-      "/issues/panic-a"
+      "/issues/checkout/panic-a"
     )
 
     expect(
@@ -261,7 +261,7 @@ describe("Issues route", () => {
     deferCorrelation("trace-b")
     renderWithRouter(
       <IssueDetailContent data={detailFixture} range={range} onRange={() => {}} />,
-      "/issues/panic-a"
+      "/issues/checkout/panic-a"
     )
     await screen.findByRole("link", { name: "invocation" })
 
@@ -295,7 +295,7 @@ describe("Issues route", () => {
     deferCorrelation("trace-a")
     renderWithRouter(
       <IssueDetailContent data={detailFixture} range={range} onRange={() => {}} />,
-      "/issues/panic-a"
+      "/issues/checkout/panic-a"
     )
     await screen.findByRole("link", { name: "invocation" })
 
@@ -310,7 +310,7 @@ describe("Issues route", () => {
     deferCorrelation("trace-a", { status: "trace-unavailable" })
     renderWithRouter(
       <IssueDetailContent data={detailFixture} range={range} onRange={() => {}} />,
-      "/issues/panic-a"
+      "/issues/checkout/panic-a"
     )
 
     expect(await screen.findByText("Trace is unavailable.")).toBeTruthy()

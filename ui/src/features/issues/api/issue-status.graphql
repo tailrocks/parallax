@@ -1,5 +1,5 @@
-mutation IssueSetStatus($fingerprint: String!, $status: String!) {
-  issueSetStatus(fingerprint: $fingerprint, status: $status) {
+mutation IssueSetStatus($service: String!, $fingerprint: String!, $status: String!) {
+  issueSetStatus(service: $service, fingerprint: $fingerprint, status: $status) {
     status
   }
 }

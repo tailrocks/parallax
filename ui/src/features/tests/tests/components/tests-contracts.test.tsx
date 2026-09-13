@@ -81,7 +81,11 @@ function renderWithRouter(component: React.ReactNode, path = "/tests") {
   return renderTestRouter(component, {
     componentPaths: ["/tests", "/tests/$caseKey"],
     initialPath: path,
-    targetPaths: ["/traces/$traceId", "/issues/$fingerprint", "/invocations/$invocationId"],
+    targetPaths: [
+      "/traces/$traceId",
+      "/issues/$service/$fingerprint",
+      "/invocations/$invocationId",
+    ],
   })
 }
 
