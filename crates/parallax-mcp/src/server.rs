@@ -413,10 +413,7 @@ fn bundle_tool_result(bundle: gql::BundleProjection) -> Result<CallToolResult, M
     )
 }
 
-#[allow(
-    clippy::unused_async_trait_impl,
-    reason = "rmcp's tool handler macro requires the async trait shape"
-)]
+#[allow(unknown_lints, clippy::unused_async_trait_impl)]
 #[tool_handler]
 impl ServerHandler for SpikeServer {
     fn get_info(&self) -> ServerInfo {
@@ -429,10 +426,7 @@ impl ServerHandler for SpikeServer {
             )
     }
 
-    #[allow(
-        clippy::unused_async_trait_impl,
-        reason = "ServerHandler requires the async signature despite no await points"
-    )]
+    #[allow(unknown_lints, clippy::unused_async_trait_impl)]
     async fn initialize(
         &self,
         request: rmcp::model::InitializeRequestParams,
