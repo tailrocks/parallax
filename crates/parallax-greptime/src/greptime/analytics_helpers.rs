@@ -466,7 +466,11 @@ pub(super) fn error_events_ranked_sql(
     start_nanos: u128,
     end_nanos: u128,
     limit_per_issue: usize,
+    environment: Option<&str>,
 ) -> String {
+    let env_clause = environment
+        .map(|env| format!(r#" AND "environment" = '{}'"#, escape(env)))
+        .unwrap_or_default();
     format!(
         r#"SELECT {ERROR_EVENT_RANKED_PROJECTION}
                    FROM (
@@ -479,7 +483,7 @@ pub(super) fn error_events_ranked_sql(
                             ) AS "event_rank"
                      FROM error_events
                      WHERE ("service", "fingerprint") IN ({issue_keys_sql})
-                       AND "ts" >= {} AND "ts" <= {}
+                       AND "ts" >= {} AND "ts" <= {}{env_clause}
                    ) WHERE "event_rank" <= {}
                    ORDER BY "service", "fingerprint", "ts_nanos" DESC"#,
         sql_ts(start_nanos),

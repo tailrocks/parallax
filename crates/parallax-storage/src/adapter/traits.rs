@@ -246,13 +246,15 @@ pub trait MetricAnalyticsStore: Send + Sync {
 #[async_trait::async_trait]
 pub trait InvocationStore: Send + Sync {
     /// Error events for one `(service, fingerprint)` issue identity within a
-    /// time range, newest first.
+    /// time range, newest first. `environment` keeps only events emitted
+    /// from that deployment environment.
     async fn error_events_by_fingerprint(
         &self,
         service: &str,
         fingerprint: &str,
         range: RangeInclusive<u128>,
         limit: usize,
+        environment: Option<&str>,
     ) -> StorageResult<Vec<ErrorEventRow>>;
     /// Error events for multiple `(service, fingerprint)` issue identities,
     /// newest first per identity. Adapters override this with one physical
@@ -263,6 +265,7 @@ pub trait InvocationStore: Send + Sync {
         issue_keys: &[(String, String)],
         range: RangeInclusive<u128>,
         limit_per_issue: usize,
+        environment: Option<&str>,
     ) -> StorageResult<HashMap<(String, String), Vec<ErrorEventRow>>> {
         let mut events = HashMap::with_capacity(issue_keys.len());
         for (service, fingerprint) in issue_keys {
@@ -273,6 +276,7 @@ pub trait InvocationStore: Send + Sync {
                     fingerprint,
                     range.clone(),
                     limit_per_issue,
+                    environment,
                 )
                 .await?,
             );

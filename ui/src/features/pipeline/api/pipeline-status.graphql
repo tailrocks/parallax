@@ -1,0 +1,23 @@
+query PipelineStatus {
+  samplingPolicy {
+    signal
+    service
+    rule
+    rate
+    enforcedBy
+    description
+  }
+  ingestDrops {
+    signal
+    reason
+    count
+    detail
+  }
+  ingestQueues {
+    signal
+    depth
+    capacity
+    highWater
+    accepted
+  }
+}

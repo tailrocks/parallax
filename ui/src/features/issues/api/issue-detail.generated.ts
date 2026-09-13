@@ -46,6 +46,10 @@ export type IssueDetailQuery = {
     readonly eventCount: number
     readonly lastTraceId: string | null
     readonly tags: string
+    readonly environmentCounts: ReadonlyArray<{
+      readonly environment: string
+      readonly count: number
+    }>
     readonly groupingExplanation: {
       readonly algorithmVersion: string
       readonly errorType: string
@@ -63,6 +67,7 @@ export type IssueDetailQuery = {
       readonly source: string
       readonly traceId: string
       readonly spanId: string
+      readonly environment: string | null
       readonly attributes: string
       readonly mappedFrames: ReadonlyArray<{
         readonly raw: string
@@ -163,6 +168,17 @@ export const IssueDetailDocument = {
                 { kind: "Field", name: { kind: "Name", value: "tags" } },
                 {
                   kind: "Field",
+                  name: { kind: "Name", value: "environmentCounts" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "environment" } },
+                      { kind: "Field", name: { kind: "Name", value: "count" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
                   name: { kind: "Name", value: "groupingExplanation" },
                   selectionSet: {
                     kind: "SelectionSet",
@@ -207,6 +223,7 @@ export const IssueDetailDocument = {
                       { kind: "Field", name: { kind: "Name", value: "source" } },
                       { kind: "Field", name: { kind: "Name", value: "traceId" } },
                       { kind: "Field", name: { kind: "Name", value: "spanId" } },
+                      { kind: "Field", name: { kind: "Name", value: "environment" } },
                       { kind: "Field", name: { kind: "Name", value: "attributes" } },
                       {
                         kind: "Field",
@@ -366,6 +383,12 @@ export const IssueDetailQuerySchema: z.ZodType<IssueDetailQuery> = z.object({
       eventCount: z.number(),
       lastTraceId: z.string().nullable(),
       tags: z.string(),
+      environmentCounts: z.array(
+        z.object({
+          environment: z.string(),
+          count: z.number(),
+        })
+      ),
       groupingExplanation: z.object({
         algorithmVersion: z.string(),
         errorType: z.string(),
@@ -384,6 +407,7 @@ export const IssueDetailQuerySchema: z.ZodType<IssueDetailQuery> = z.object({
           source: z.string(),
           traceId: z.string(),
           spanId: z.string(),
+          environment: z.string().nullable(),
           attributes: z.string(),
           mappedFrames: z.array(
             z.object({

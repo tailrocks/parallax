@@ -188,6 +188,23 @@ async fn apply_schema_migrations(conn: &turso::Connection) -> anyhow::Result<()>
         )
         .await?;
     }
+    if version < 7 {
+        // Per-environment occurrence counts on issues. Fresh databases
+        // already bootstrap the shape via SCHEMA.
+        let mut columns = conn.query("PRAGMA table_info(issues)", ()).await?;
+        let mut has_environments = false;
+        while let Some(row) = columns.next().await? {
+            has_environments |= text(&row, 1) == "environments";
+        }
+        drop(columns);
+        if !has_environments {
+            conn.execute(
+                "ALTER TABLE issues ADD COLUMN environments TEXT NOT NULL DEFAULT '{}'",
+                (),
+            )
+            .await?;
+        }
+    }
     conn.execute(&format!("PRAGMA user_version = {SCHEMA_USER_VERSION}"), ())
         .await?;
     Ok(())

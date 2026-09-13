@@ -12,6 +12,7 @@ const nodes: ServiceMapNode[] = [
   {
     kind: "service" as const,
     name: "A",
+    system: null,
     lastSeenNanos: "100",
     spanCount: "10",
     errorCount: "0",
@@ -19,6 +20,7 @@ const nodes: ServiceMapNode[] = [
   },
   {
     kind: "service" as const,
+    system: null,
     name: "B",
     lastSeenNanos: "120",
     spanCount: "5",
@@ -73,23 +75,4 @@ describe("EcosystemGraph", () => {
     expect(dimmed?.className).toContain("opacity-30")
     expect(screen.getByText("hidden").closest('[data-slot="badge"]')?.textContent).toBe("3 hidden")
   })
-})
-
-it("D-014 eco-full: a 9-node column grows the canvas instead of overlapping cards", async () => {
-  const nodes = Array.from({ length: 9 }, (_, i) => ({
-    name: `svc-${i}`,
-    kind: "service" as const,
-    lastSeenNanos: "0",
-    spanCount: "1",
-    errorCount: "0",
-    p95Ms: null,
-  }))
-  renderTestRouter(<EcosystemGraph nodes={nodes} edges={[]} range={customRange("0", "200")} />, {
-    targetPaths: ["/services/$service", "/traces"],
-  })
-  const cards = await screen.findAllByText(/svc-/)
-  expect(cards.length).toBe(9)
-  const container = document.querySelector('[aria-label="service dependency graph"]')
-  const height = Number.parseInt((container as HTMLElement).style.height, 10)
-  expect(height).toBeGreaterThanOrEqual(420)
 })

@@ -48,6 +48,7 @@ use resolvers::{
 
 mod memo;
 pub use memo::RequestMemo;
+pub use resolvers::pipeline::{IngestDrop, IngestQueue, PipelineSnapshot, SamplingPolicy};
 
 /// Request context: shared storage adapters plus a per-request memo layer.
 /// Constructed once per GraphQL request in the server handler — do not put a
@@ -64,6 +65,9 @@ pub struct ApiContext {
     /// Server-wired preview runner (plan 171). None in unit harnesses that
     /// do not exercise `alertRulePreview`.
     pub alert_previewer: Option<Arc<dyn AlertPreviewer>>,
+    /// Live pipeline readout (R2 sampling policy + drop reasons). `None` in
+    /// unit harnesses without an ingest pipeline; the server always wires it.
+    pub pipeline: Option<Arc<dyn PipelineSnapshot>>,
     pub otlp_grpc_port: u16,
     pub otlp_http_port: u16,
     pub memo: RequestMemo,
@@ -137,6 +141,20 @@ impl Query {
         i32::from(context.otlp_http_port)
     }
 
+    /// Declared sampling policy per ingest signal (R2). Rows are global
+    /// (`service` null = applies to all services); optional filters narrow
+    /// the readout. Empty when no pipeline is wired (unit harnesses).
+    async fn sampling_policy(context: &ApiContext, service: Option<String>, signal: Option<String>,) -> FieldResult<Vec<SamplingPolicy>> { resolvers::pipeline::sampling_policy(context, service, signal).await }
+
+    /// Dropped/batch-loss counts by named reason (R2). Per-signal rows carry
+    /// `signal`; pipeline-global reasons (unsupported metrics, live-tail lag)
+    /// have a null signal. Empty when no pipeline is wired.
+    async fn ingest_drops(context: &ApiContext, signal: Option<String>,) -> FieldResult<Vec<IngestDrop>> { resolvers::pipeline::ingest_drops(context, signal).await }
+
+    /// Per-signal ingest queue watermarks plus accepted batch counts (R2 rate
+    /// attribution: accepted vs dropped-by-reason). Empty when no pipeline.
+    async fn ingest_queues(context: &ApiContext) -> FieldResult<Vec<IngestQueue>> { resolvers::pipeline::ingest_queues(context).await }
+
     /// Whole-system counters for an inclusive time window. Counts are strings
     /// so large telemetry volumes never saturate GraphQL Int.
     async fn overview(context: &ApiContext, from_nanos: String, to_nanos: String,) -> FieldResult<Overview> { resolvers::services::overview(context, from_nanos, to_nanos).await }
@@ -172,9 +190,10 @@ impl Query {
     /// Grouped errors: filtered, sorted, paged (spec §8 `issues`). The
     /// `query` argument substring-matches title, error type, and fingerprint;
     /// `fromNanos`/`toNanos` window on last-seen; `tagKey`+`tagValue` filter
-    /// on the cached tags.
+    /// on the cached tags; `environment` keeps issues seen in that
+    /// deployment environment.
     #[expect(clippy::too_many_arguments, reason = "GraphQL issue filters are the public query contract")]
-    async fn issues(context: &ApiContext, service: Option<String>, status: Option<String>, query: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, tag_key: Option<String>, tag_value: Option<String>, sort: Option<IssueSort>, limit: Option<i32>, offset: Option<i32>,) -> FieldResult<IssueList> { resolvers::issues::issues(context, service, status, query, from_nanos, to_nanos, tag_key, tag_value, sort, limit, offset).await }
+    async fn issues(context: &ApiContext, service: Option<String>, status: Option<String>, query: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, tag_key: Option<String>, tag_value: Option<String>, environment: Option<String>, sort: Option<IssueSort>, limit: Option<i32>, offset: Option<i32>,) -> FieldResult<IssueList> { resolvers::issues::issues(context, service, status, query, from_nanos, to_nanos, tag_key, tag_value, environment, sort, limit, offset).await }
 
     async fn issue(context: &ApiContext, service: String, fingerprint: String) -> FieldResult<Option<Issue>> { resolvers::issues::issue(context, service, fingerprint).await }
 

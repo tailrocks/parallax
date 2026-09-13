@@ -334,6 +334,64 @@
   }
 }
 
+/* Service-map traffic encoding: width is set inline; dash cadence reinforces
+ * the band. Animation is traffic evidence, never decoration. */
+.service-map-edge--traffic-low {
+  stroke-dasharray: 3 7;
+}
+
+.service-map-edge--traffic-medium {
+  stroke-dasharray: 7 7;
+  animation: service-map-edge-flow 1.8s linear infinite;
+}
+
+.service-map-edge--traffic-high {
+  stroke-dasharray: 10 6;
+  animation: service-map-edge-flow 0.9s linear infinite;
+}
+
+@keyframes service-map-edge-flow {
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .service-map-edge--traffic-medium,
+  .service-map-edge--traffic-high {
+    animation: none;
+  }
+}
+
+/* Service-map traffic encoding: width is set inline; dash cadence reinforces
+ * the band. Animation is traffic evidence, never decoration. */
+.service-map-edge--traffic-low {
+  stroke-dasharray: 3 7;
+}
+
+.service-map-edge--traffic-medium {
+  stroke-dasharray: 7 7;
+  animation: service-map-edge-flow 1.8s linear infinite;
+}
+
+.service-map-edge--traffic-high {
+  stroke-dasharray: 10 6;
+  animation: service-map-edge-flow 0.9s linear infinite;
+}
+
+@keyframes service-map-edge-flow {
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .service-map-edge--traffic-medium,
+  .service-map-edge--traffic-high {
+    animation: none;
+  }
+}
+
 .page-fade {
   animation: page-fade 75ms ease-out both;
 }

@@ -24,6 +24,7 @@ async fn assert_nested_issue_reads_are_batched(page_size: usize) {
                 ts_nanos: 100 + index as u128,
                 trace_id: None,
                 attributes: &attributes,
+                environment: None,
             })
             .await
             .unwrap();
@@ -94,6 +95,7 @@ async fn seed_issue(
             ts_nanos: ts,
             trace_id: None,
             attributes: &attributes,
+            environment: None,
         })
         .await
         .unwrap();
@@ -310,6 +312,7 @@ async fn resolved_issue_regresses_on_new_occurrence() {
             ts_nanos: 10,
             trace_id: None,
             attributes: &attributes,
+            environment: None,
         })
         .await
         .unwrap();
@@ -336,6 +339,7 @@ async fn resolved_issue_regresses_on_new_occurrence() {
             ts_nanos: 20,
             trace_id: None,
             attributes: &attributes,
+            environment: None,
         })
         .await
         .unwrap();
@@ -459,6 +463,7 @@ async fn grouping_explanation_uses_derive_operation() {
             ts_nanos: 10,
             trace_id: None,
             attributes: &attributes,
+            environment: None,
         })
         .await
         .unwrap();

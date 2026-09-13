@@ -313,6 +313,12 @@ export type DurationStats = {
   readonly p95Ms: Maybe<Scalars["Float"]["output"]>
 }
 
+export type EnvironmentCount = {
+  readonly __typename?: "EnvironmentCount"
+  readonly count: Scalars["Int"]["output"]
+  readonly environment: Scalars["String"]["output"]
+}
+
 export type ErrorEvent = {
   readonly __typename?: "ErrorEvent"
   readonly attributes: Scalars["String"]["output"]
@@ -399,6 +405,23 @@ export type GroupingExplanation = {
   readonly inputsPresent: ReadonlyArray<Scalars["String"]["output"]>
   readonly messageTemplate: Scalars["String"]["output"]
   readonly operation: Maybe<Scalars["String"]["output"]>
+}
+
+export type IngestDrop = {
+  readonly __typename?: "IngestDrop"
+  readonly count: Scalars["String"]["output"]
+  readonly detail: Scalars["String"]["output"]
+  readonly reason: Scalars["String"]["output"]
+  readonly signal: Maybe<Scalars["String"]["output"]>
+}
+
+export type IngestQueue = {
+  readonly __typename?: "IngestQueue"
+  readonly accepted: Scalars["String"]["output"]
+  readonly capacity: Scalars["Int"]["output"]
+  readonly depth: Scalars["Int"]["output"]
+  readonly highWater: Scalars["Int"]["output"]
+  readonly signal: Scalars["String"]["output"]
 }
 
 export type Investigation = {
@@ -490,11 +513,16 @@ export type InvocationMetricRow = {
 export type Issue = {
   readonly __typename?: "Issue"
   readonly culprit: Maybe<Scalars["String"]["output"]>
+  /**
+   * Per-environment occurrence counts, count descending then name
+   * ascending. Events without an environment are not counted.
+   */
+  readonly environmentCounts: ReadonlyArray<EnvironmentCount>
   readonly errorType: Scalars["String"]["output"]
   readonly eventCount: Scalars["Int"]["output"]
   /**
    * Recent occurrences of this issue, newest first, optionally
-   * range-bounded (`fromNanos`/`toNanos`).
+   * range-bounded (`fromNanos`/`toNanos`) and environment-filtered.
    */
   readonly events: ReadonlyArray<ErrorEvent>
   readonly fingerprint: Scalars["String"]["output"]
@@ -514,6 +542,7 @@ export type Issue = {
 }
 
 export type IssueEventsArgs = {
+  environment: InputMaybe<Scalars["String"]["input"]>
   fromNanos: InputMaybe<Scalars["String"]["input"]>
   limit: InputMaybe<Scalars["Int"]["input"]>
   toNanos: InputMaybe<Scalars["String"]["input"]>
@@ -845,6 +874,17 @@ export type Query = {
   readonly health: Scalars["String"]["output"]
   /** Approximate quantile series from a histogram metric (q in 0..=1). */
   readonly histogramQuantile: ReadonlyArray<Point>
+  /**
+   * Dropped/batch-loss counts by named reason (R2). Per-signal rows carry
+   * `signal`; pipeline-global reasons (unsupported metrics, live-tail lag)
+   * have a null signal. Empty when no pipeline is wired.
+   */
+  readonly ingestDrops: ReadonlyArray<IngestDrop>
+  /**
+   * Per-signal ingest queue watermarks plus accepted batch counts (R2 rate
+   * attribution: accepted vs dropped-by-reason). Empty when no pipeline.
+   */
+  readonly ingestQueues: ReadonlyArray<IngestQueue>
   /** One saved investigation by id. */
   readonly investigation: Maybe<Investigation>
   /** Saved investigations/cases, most recently updated first. */
@@ -871,7 +911,8 @@ export type Query = {
    * Grouped errors: filtered, sorted, paged (spec §8 `issues`). The
    * `query` argument substring-matches title, error type, and fingerprint;
    * `fromNanos`/`toNanos` window on last-seen; `tagKey`+`tagValue` filter
-   * on the cached tags.
+   * on the cached tags; `environment` keeps issues seen in that
+   * deployment environment.
    */
   readonly issues: IssueList
   /** Detached jobs (producer/consumer span pairs sharing `job.id`). */
@@ -962,6 +1003,12 @@ export type Query = {
   readonly rumSessions: ReadonlyArray<RumSession>
   /** Runtime metric lanes, scoped to exactly one service or run. */
   readonly runtimeSnapshot: ReadonlyArray<RuntimeMetric>
+  /**
+   * Declared sampling policy per ingest signal (R2). Rows are global
+   * (`service` null = applies to all services); optional filters narrow
+   * the readout. Empty when no pipeline is wired (unit harnesses).
+   */
+  readonly samplingPolicy: ReadonlyArray<SamplingPolicy>
   /** Named saved page states, most recently updated first. */
   readonly savedViews: ReadonlyArray<SavedView>
   /** Screen visits (entered/exited event pairs) for an invocation or session. */
@@ -1147,6 +1194,10 @@ export type QueryHistogramQuantileArgs = {
   toNanos: Scalars["String"]["input"]
 }
 
+export type QueryIngestDropsArgs = {
+  signal: InputMaybe<Scalars["String"]["input"]>
+}
+
 export type QueryInvestigationArgs = {
   id: Scalars["String"]["input"]
 }
@@ -1184,6 +1235,7 @@ export type QueryIssueTrendArgs = {
 }
 
 export type QueryIssuesArgs = {
+  environment: InputMaybe<Scalars["String"]["input"]>
   fromNanos: InputMaybe<Scalars["String"]["input"]>
   limit: InputMaybe<Scalars["Int"]["input"]>
   offset: InputMaybe<Scalars["Int"]["input"]>
@@ -1366,6 +1418,11 @@ export type QueryRuntimeSnapshotArgs = {
   service: InputMaybe<Scalars["String"]["input"]>
   stepSeconds: Scalars["Int"]["input"]
   toNanos: Scalars["String"]["input"]
+}
+
+export type QuerySamplingPolicyArgs = {
+  service: InputMaybe<Scalars["String"]["input"]>
+  signal: InputMaybe<Scalars["String"]["input"]>
 }
 
 export type QuerySavedViewsArgs = {
@@ -1610,6 +1667,16 @@ export type RuntimeMetric = {
   readonly metric: Scalars["String"]["output"]
   readonly points: ReadonlyArray<Point>
   readonly unit: Maybe<Scalars["String"]["output"]>
+}
+
+export type SamplingPolicy = {
+  readonly __typename?: "SamplingPolicy"
+  readonly description: Scalars["String"]["output"]
+  readonly enforcedBy: Scalars["String"]["output"]
+  readonly rate: Scalars["Float"]["output"]
+  readonly rule: Scalars["String"]["output"]
+  readonly service: Maybe<Scalars["String"]["output"]>
+  readonly signal: Scalars["String"]["output"]
 }
 
 export type SavedView = {

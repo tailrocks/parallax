@@ -36,6 +36,7 @@ export type ServiceMapQuery = {
     readonly nodes: ReadonlyArray<{
       readonly name: string
       readonly kind: string
+      readonly system: string | null
       readonly lastSeenNanos: string
       readonly spanCount: string
       readonly errorCount: string
@@ -116,6 +117,7 @@ export const ServiceMapDocument = {
                     selections: [
                       { kind: "Field", name: { kind: "Name", value: "name" } },
                       { kind: "Field", name: { kind: "Name", value: "kind" } },
+                      { kind: "Field", name: { kind: "Name", value: "system" } },
                       { kind: "Field", name: { kind: "Name", value: "lastSeenNanos" } },
                       { kind: "Field", name: { kind: "Name", value: "spanCount" } },
                       { kind: "Field", name: { kind: "Name", value: "errorCount" } },
@@ -239,6 +241,7 @@ export const ServiceMapQuerySchema: z.ZodType<ServiceMapQuery> = z.object({
       z.object({
         name: z.string(),
         kind: z.string(),
+        system: z.string().nullable(),
         lastSeenNanos: z.string(),
         spanCount: z.string(),
         errorCount: z.string(),

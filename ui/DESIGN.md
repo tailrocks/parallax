@@ -190,6 +190,10 @@ Living section. Re-verify on the next major redesign.
 - 2026-09-14 — R5: release strip renders crash-free session % per
   version from `releaseHealth`; suspect releases get destructive tone +
   `N suspect` badge (word, not color alone).
+- 2026-09-13 — R2 `/pipeline` route (workspace nav): sampling-policy,
+  drop-reason, and queue-watermark cards; uncached loader (live counters);
+  exact-count `bigint` mappers (`formatCount`, `totalDropped`).
+
 
 ## 8. Interaction contract
 
