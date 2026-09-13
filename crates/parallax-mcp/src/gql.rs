@@ -189,24 +189,26 @@ pub(crate) struct AgentStepProjection {
     pub output_tokens: Option<String>,
 }
 
-/// Fetch issue- or invocation-anchored bundle. Exactly one anchor is required.
+/// Fetch issue- or invocation-anchored bundle. Issue anchors are
+/// `(service, fingerprint)` pairs; invocation anchors stand alone.
 pub(crate) async fn fetch_bundle(
     client: &GraphqlClient,
+    service: Option<&str>,
     fingerprint: Option<&str>,
     invocation_id: Option<&str>,
 ) -> Result<BundleProjection, FetchError> {
-    let (query, variables) = match (fingerprint, invocation_id) {
-        (Some(fingerprint), None) => (
-            "query Bundle($anchor: String!, $maxTokens: Int!) { bundle(fingerprint: $anchor, maxTokens: $maxTokens) { json markdown canonicalHash } }",
-            serde_json::json!({ "anchor": fingerprint, "maxTokens": MCP_BUNDLE_MAX_TOKENS }),
+    let (query, variables) = match (service, fingerprint, invocation_id) {
+        (Some(service), Some(fingerprint), None) => (
+            "query Bundle($service: String!, $anchor: String!, $maxTokens: Int!) { bundle(service: $service, fingerprint: $anchor, maxTokens: $maxTokens) { json markdown canonicalHash } }",
+            serde_json::json!({ "service": service, "anchor": fingerprint, "maxTokens": MCP_BUNDLE_MAX_TOKENS }),
         ),
-        (None, Some(invocation_id)) => (
+        (None, None, Some(invocation_id)) => (
             "query Bundle($anchor: String!, $maxTokens: Int!) { bundle(invocationId: $anchor, maxTokens: $maxTokens) { json markdown canonicalHash } }",
             serde_json::json!({ "anchor": invocation_id, "maxTokens": MCP_BUNDLE_MAX_TOKENS }),
         ),
         _ => {
             return Err(FetchError::Other(anyhow::anyhow!(
-                "fetch_bundle requires exactly one of fingerprint or invocation_id"
+                "fetch_bundle requires a service with the fingerprint anchor, or exactly one of fingerprint or invocation_id"
             )));
         }
     };

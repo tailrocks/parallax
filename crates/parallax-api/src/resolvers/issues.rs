@@ -17,12 +17,14 @@ mod incident_bundle;
 mod nested;
 pub(crate) use nested::{Issue, IssueList, IssueSort, TrendPoint};
 
-fn unique_fingerprints(events: &[model::ErrorEventRow]) -> Vec<String> {
+fn issue_keys(events: &[model::ErrorEventRow]) -> Vec<(String, String)> {
     let mut seen = HashSet::new();
     events
         .iter()
-        .filter(|event| seen.insert(event.fingerprint.clone()))
-        .map(|event| event.fingerprint.clone())
+        .filter(|event| {
+            seen.insert((event.service.clone(), event.fingerprint.clone()))
+        })
+        .map(|event| (event.service.clone(), event.fingerprint.clone()))
         .collect()
 }
 
@@ -256,10 +258,14 @@ pub(crate) async fn issues(
     Ok(IssueList::new(items, total))
 }
 
-pub(crate) async fn issue(context: &ApiContext, fingerprint: String) -> FieldResult<Option<Issue>> {
+pub(crate) async fn issue(
+    context: &ApiContext,
+    service: String,
+    fingerprint: String,
+) -> FieldResult<Option<Issue>> {
     Ok(context
         .metadata
-        .issue(&fingerprint)
+        .issue(&service, &fingerprint)
         .await
         .map_err(internal_field_err)?
         .map(Issue::single))
@@ -267,6 +273,7 @@ pub(crate) async fn issue(context: &ApiContext, fingerprint: String) -> FieldRes
 
 pub(crate) async fn issue_trend(
     context: &ApiContext,
+    service: String,
     fingerprint: String,
     hours: Option<i32>,
     step_seconds: Option<i32>,
@@ -280,7 +287,7 @@ pub(crate) async fn issue_trend(
     let since = now.saturating_sub(u128::from(hours) * 3_600_000_000_000);
     let points = context
         .metadata
-        .issue_trend(&fingerprint, since, step)
+        .issue_trend(&service, &fingerprint, since, step)
         .await
         .map_err(internal_field_err)?;
     Ok(points.into_iter().map(TrendPoint).collect())
@@ -298,6 +305,7 @@ fn validate_bundle_anchors(present: usize) -> FieldResult<()> {
 
 pub(crate) async fn bundle(
     context: &ApiContext,
+    service: Option<String>,
     fingerprint: Option<String>,
     invocation_id: Option<String>,
     trace_id: Option<String>,
@@ -318,9 +326,14 @@ pub(crate) async fn bundle(
     }
 
     let mut inputs = if let Some(fingerprint) = fingerprint {
+        let Some(service) = service.as_deref() else {
+            return Err(field_err(
+                "service is required when bundling by fingerprint: issue identity is (service, fingerprint)",
+            ));
+        };
         let Some(issue) = context
             .metadata
-            .issue(&fingerprint)
+            .issue(service, &fingerprint)
             .await
             .map_err(internal_field_err)?
         else {
@@ -328,7 +341,7 @@ pub(crate) async fn bundle(
         };
         let events = context
             .store
-            .error_events_by_fingerprint(&fingerprint, 0..=u128::MAX, 5)
+            .error_events_by_fingerprint(service, &fingerprint, 0..=u128::MAX, 5)
             .await
             .map_err(internal_field_err)?;
         let (trace_spans, trace_logs) = match issue.last_trace_id.as_deref() {
@@ -375,7 +388,7 @@ pub(crate) async fn bundle(
             .error_events_by_traces(&trace_ids, 50)
             .await
             .map_err(internal_field_err)?;
-        let fingerprints = unique_fingerprints(&events);
+        let fingerprints = issue_keys(&events);
         let issues = context
             .metadata
             .issues_by_fingerprints(&fingerprints)
@@ -421,7 +434,7 @@ pub(crate) async fn bundle(
             .error_events_by_traces(std::slice::from_ref(&trace_id), 50)
             .await
             .map_err(internal_field_err)?;
-        let fingerprints = unique_fingerprints(&events);
+        let fingerprints = issue_keys(&events);
         let issues = context
             .metadata
             .issues_by_fingerprints(&fingerprints)
@@ -445,6 +458,7 @@ pub(crate) async fn bundle(
 
 pub(crate) async fn issue_set_status(
     context: &ApiContext,
+    service: String,
     fingerprint: String,
     status: String,
 ) -> FieldResult<Issue> {
@@ -457,16 +471,16 @@ pub(crate) async fn issue_set_status(
         .as_nanos();
     context
         .metadata
-        .set_issue_status(&fingerprint, &status, changed_at_nanos)
+        .set_issue_status(&service, &fingerprint, &status, changed_at_nanos)
         .await
         .map_err(internal_field_err)?;
     context
         .metadata
-        .issue(&fingerprint)
+        .issue(&service, &fingerprint)
         .await
         .map_err(internal_field_err)?
         .map(Issue::single)
-        .ok_or_else(|| field_err(format!("issue {fingerprint} not found")))
+        .ok_or_else(|| field_err(format!("issue {service}/{fingerprint} not found")))
 }
 
 #[cfg(test)]

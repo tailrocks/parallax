@@ -29,6 +29,10 @@ fn test_event() -> ErrorEventRow {
         source: parallax_model::ErrorSource::SpanException,
         trace_id: "trace".to_string(),
         span_id: "span-error".to_string(),
+        invocation_id: None,
+        session_id: None,
+        service_version: None,
+        environment: None,
         attributes: serde_json::Value::Null,
     }
 }

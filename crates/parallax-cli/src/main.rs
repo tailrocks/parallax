@@ -270,6 +270,9 @@ pub(crate) enum IssueCommand {
     },
     /// The agent handoff: Markdown evidence for one issue (`--format json` for canonical JSON).
     Context {
+        /// Owning service of the issue (issue identity is service + fingerprint).
+        #[arg(long)]
+        service: String,
         fingerprint: String,
         #[arg(long = "format", value_enum, default_value = "markdown")]
         format: OutputFormat,
@@ -278,7 +281,12 @@ pub(crate) enum IssueCommand {
         max_tokens: Option<u32>,
     },
     /// Mark an issue resolved.
-    Resolve { fingerprint: String },
+    Resolve {
+        /// Owning service of the issue (issue identity is service + fingerprint).
+        #[arg(long)]
+        service: String,
+        fingerprint: String,
+    },
 }
 
 #[derive(Subcommand)]

@@ -212,7 +212,7 @@ impl AlertIncident {
         &self,
         ctx: &ApiContext,
     ) -> FieldResult<Option<crate::resolvers::issues::BundleOut>> {
-        crate::resolvers::issues::bundle(ctx, None, None, None, Some(self.0.id.clone()), None).await
+        crate::resolvers::issues::bundle(ctx, None, None, None, None, Some(self.0.id.clone()), None).await
     }
 }
 

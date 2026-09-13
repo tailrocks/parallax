@@ -171,13 +171,17 @@ async fn issue(
             commands::issue_list(&client()?, status.as_deref(), invocation.as_deref()).await
         }
         IssueCommand::Context {
+            service,
             fingerprint,
             format,
             max_tokens,
-        } => commands::issue_context(&client()?, &fingerprint, format, max_tokens).await,
-        IssueCommand::Resolve { fingerprint } => {
-            client()?.graphql(&format!(r#"mutation {{ issueSetStatus(fingerprint: "{}", status: "resolved") {{ status }} }}"#, gql_str(&fingerprint))).await?;
-            println!("issue {fingerprint} resolved");
+        } => {
+            commands::issue_context(&client()?, &service, &fingerprint, format, max_tokens)
+                .await
+        }
+        IssueCommand::Resolve { service, fingerprint } => {
+            client()?.graphql(&format!(r#"mutation {{ issueSetStatus(service: "{}", fingerprint: "{}", status: "resolved") {{ status }} }}"#, gql_str(&service), gql_str(&fingerprint))).await?;
+            println!("issue {service}/{fingerprint} resolved");
             Ok(())
         }
     }

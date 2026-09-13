@@ -77,7 +77,7 @@ struct InvocationStats {
 const STALE_AFTER_NANOS: u128 = 5 * 60 * 1_000_000_000;
 
 impl Invocation {
-    fn new(record: model::InvocationRecord) -> Self {
+    pub(crate) fn new(record: model::InvocationRecord) -> Self {
         Self {
             record,
             stats: tokio::sync::OnceCell::new(),
@@ -341,17 +341,17 @@ impl Invocation {
     /// Grouped issues whose events fell inside this run's traces.
     async fn issues(&self, context: &ApiContext) -> FieldResult<Vec<Issue>> {
         let stats = self.stats(context).await?;
-        let mut fingerprints: Vec<String> = Vec::new();
-        let mut seen_fingerprints = HashSet::new();
+        let mut issue_keys: Vec<(String, String)> = Vec::new();
+        let mut seen_keys = HashSet::new();
         for event in &stats.events {
-            let fingerprint = event.fingerprint.clone();
-            if seen_fingerprints.insert(fingerprint.clone()) {
-                fingerprints.push(fingerprint);
+            let key = (event.service.clone(), event.fingerprint.clone());
+            if seen_keys.insert(key.clone()) {
+                issue_keys.push(key);
             }
         }
         let issues = context
             .metadata
-            .issues_by_fingerprints(&fingerprints)
+            .issues_by_fingerprints(&issue_keys)
             .await
             .map_err(crate::internal_field_err)?;
         Ok(Issue::from_rows(issues))

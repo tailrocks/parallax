@@ -72,6 +72,7 @@ pub(crate) async fn issue_list(
 /// redacted, hypothesis-ranked evidence bundle, rendered by the server.
 pub(crate) async fn issue_context(
     client: &Client,
+    service: &str,
     fingerprint: &str,
     format: OutputFormat,
     max_tokens: Option<u32>,
@@ -79,15 +80,16 @@ pub(crate) async fn issue_context(
     let tokens = max_tokens
         .map(|n| format!(", maxTokens: {n}"))
         .unwrap_or_default();
+    let anchor = format!(
+        r#"service: "{}", fingerprint: "{}"{tokens}"#,
+        gql_str(service),
+        gql_str(fingerprint)
+    );
     let query = match format {
-        OutputFormat::Markdown => format!(
-            r#"{{ bundle(fingerprint: "{}"{tokens}) {{ markdown canonicalHash }} }}"#,
-            gql_str(fingerprint)
-        ),
-        OutputFormat::Json => format!(
-            r#"{{ bundle(fingerprint: "{}"{tokens}) {{ json canonicalHash }} }}"#,
-            gql_str(fingerprint)
-        ),
+        OutputFormat::Markdown => {
+            format!(r#"{{ bundle({anchor}) {{ markdown canonicalHash }} }}"#)
+        }
+        OutputFormat::Json => format!(r#"{{ bundle({anchor}) {{ json canonicalHash }} }}"#),
     };
     let response = client.graphql(&query).await?;
     let Some(bundle) = response.pointer("/data/bundle").filter(|v| !v.is_null()) else {

@@ -52,19 +52,23 @@ impl GroupingExplanationOut {
 
 pub(crate) struct Issue {
     row: model::Issue,
-    cohort: Arc<Vec<String>>,
+    cohort: Arc<Vec<(String, String)>>,
 }
 
 impl Issue {
     pub(crate) fn single(row: model::Issue) -> Self {
         Self {
-            cohort: Arc::new(vec![row.fingerprint.clone()]),
+            cohort: Arc::new(vec![(row.service.clone(), row.fingerprint.clone())]),
             row,
         }
     }
 
     pub(crate) fn from_rows(rows: Vec<model::Issue>) -> Vec<Self> {
-        let cohort = Arc::new(rows.iter().map(|issue| issue.fingerprint.clone()).collect());
+        let cohort = Arc::new(
+            rows.iter()
+                .map(|issue| (issue.service.clone(), issue.fingerprint.clone()))
+                .collect(),
+        );
         rows.into_iter()
             .map(|row| Self {
                 row,
@@ -116,7 +120,7 @@ impl Issue {
         context: &ApiContext,
     ) -> FieldResult<GroupingExplanationOut> {
         let latest = context
-            .issue_events_for(&self.cohort, &self.row.fingerprint, 0, u128::MAX, 1)
+            .issue_events_for(&self.cohort, &self.row.service, &self.row.fingerprint, 0, u128::MAX, 1)
             .await?
             .into_iter()
             .next();
@@ -148,7 +152,7 @@ impl Issue {
         let since = now.saturating_sub(24 * 3_600_000_000_000);
         let points = context
             .metadata
-            .issue_trend(&self.row.fingerprint, since, 3600)
+            .issue_trend(&self.row.service, &self.row.fingerprint, since, 3600)
             .await
             .map_err(internal_field_err)?;
         Ok(points.into_iter().map(TrendPoint).collect())
@@ -157,7 +161,7 @@ impl Issue {
     /// The most recent stored occurrence.
     async fn latest_event(&self, context: &ApiContext) -> FieldResult<Option<ErrorEvent>> {
         let events = context
-            .issue_events_for(&self.cohort, &self.row.fingerprint, 0, u128::MAX, 1)
+            .issue_events_for(&self.cohort, &self.row.service, &self.row.fingerprint, 0, u128::MAX, 1)
             .await?;
         Ok(events.into_iter().next().map(ErrorEvent))
     }
@@ -182,6 +186,7 @@ impl Issue {
         let events = context
             .issue_events_for(
                 &self.cohort,
+                &self.row.service,
                 &self.row.fingerprint,
                 from,
                 to,
@@ -268,6 +273,38 @@ impl ErrorEvent {
     }
     fn span_id(&self) -> &str {
         &self.0.span_id
+    }
+    /// `cli.invocation.id` of the run this error belongs to, when the source
+    /// signal carried one — the anchor for error → run navigation.
+    fn invocation_id(&self) -> Option<&str> {
+        self.0.invocation_id.as_deref()
+    }
+    /// `session.id` of the interactive session this error belongs to.
+    fn session_id(&self) -> Option<&str> {
+        self.0.session_id.as_deref()
+    }
+    /// `service.version` of the emitting resource (release context).
+    fn service_version(&self) -> Option<&str> {
+        self.0.service_version.as_deref()
+    }
+    /// `deployment.environment.name` of the emitting resource.
+    fn environment(&self) -> Option<&str> {
+        self.0.environment.as_deref()
+    }
+    /// The run record for this error's invocation, when the run is registered.
+    async fn invocation(
+        &self,
+        context: &ApiContext,
+    ) -> FieldResult<Option<crate::resolvers::Invocation>> {
+        match &self.0.invocation_id {
+            Some(invocation_id) => Ok(context
+                .metadata
+                .invocation(invocation_id)
+                .await
+                .map_err(internal_field_err)?
+                .map(crate::resolvers::Invocation::new)),
+            None => Ok(None),
+        }
     }
     fn attributes(&self) -> String {
         self.0.attributes.to_string()

@@ -502,7 +502,3 @@ impl GreptimeStore {
         }
     }
 }
-
-fn error_event_row(row: &[serde_json::Value]) -> ErrorEventRow {
-    error_event_from_row(row)
-}

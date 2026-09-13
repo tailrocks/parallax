@@ -42,6 +42,9 @@ enum Command {
     Serve,
     /// Prove CLI ≡ HTTP ≡ MCP raw canonical JSON for the given anchors.
     Check {
+        /// Owning service for the fingerprint anchor.
+        #[arg(long)]
+        service: Option<String>,
         /// Issue fingerprint for `parallax issue context` / `parallax_issue_context`.
         #[arg(long)]
         fingerprint: Option<String>,
@@ -80,6 +83,7 @@ async fn main() -> anyhow::Result<()> {
             server::run_stdio(cli.url, api_token).await
         }
         Command::Check {
+            service,
             fingerprint,
             invocation_id,
             parallax_bin,
@@ -87,6 +91,7 @@ async fn main() -> anyhow::Result<()> {
             check::run(check::CheckArgs {
                 base_url: cli.url,
                 api_token,
+                service,
                 fingerprint,
                 invocation_id,
                 parallax_bin,

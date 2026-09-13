@@ -80,6 +80,9 @@ fn validate_bundle_contract(bundle: &Value) -> Result<(), McpError> {
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct IssueContextArgs {
+    /// Owning service of the issue (issue identity is service + fingerprint).
+    #[schemars(length(min = 1, max = 256))]
+    pub service: String,
     /// Issue fingerprint (canonical issue anchor).
     #[schemars(length(min = 1, max = 256))]
     pub fingerprint: String,
@@ -175,7 +178,7 @@ impl SpikeServer {
             guard.finish_err(&crate::audit::error_code(&error));
             return Err(error);
         }
-        let bundle = match gql::fetch_bundle(&self.client, Some(&args.fingerprint), None).await {
+        let bundle = match gql::fetch_bundle(&self.client, Some(&args.service), Some(&args.fingerprint), None).await {
             Ok(bundle) => bundle,
             Err(error) => {
                 let mapped = map_fetch_error(error, "bundle_unavailable");
