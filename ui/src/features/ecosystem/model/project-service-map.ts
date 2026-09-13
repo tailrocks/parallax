@@ -31,6 +31,7 @@ export function projectServiceMap(
     id: node.name,
     name: node.name,
     kind: node.kind,
+    system: node.system ?? undefined,
     data: node,
   }))
   const edges: GraphEdge[] = serviceMap.edges.map((edge, index) => ({

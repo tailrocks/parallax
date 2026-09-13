@@ -3,7 +3,7 @@ import type { ElkNode } from "elkjs/lib/elk-api"
 import type { ServiceMapEdge, ServiceMapNode } from "@/features/ecosystem/model/service-map"
 
 export const ECOSYSTEM_NODE_WIDTH = 150
-export const ECOSYSTEM_NODE_HEIGHT = 58
+export const ECOSYSTEM_NODE_HEIGHT = 78
 
 export interface EcosystemPosition {
   id: string

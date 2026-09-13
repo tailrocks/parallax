@@ -3658,6 +3658,13 @@ migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
+path = "ui/src/features/ecosystem/components/ecosystem-legend.tsx"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
 path = "ui/src/features/ecosystem/components/ecosystem-page.tsx"
 current_owner = "features/ecosystem"
 target_owner = "features/ecosystem"
@@ -3722,7 +3729,28 @@ migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
+path = "ui/src/features/ecosystem/model/service-map-presentation.ts"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
 path = "ui/src/features/ecosystem/tests/components/ecosystem-graph.test.tsx"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/tests/components/ecosystem-render.test.tsx"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/tests/components/ecosystem-layout.test.tsx"
 current_owner = "features/ecosystem"
 target_owner = "features/ecosystem"
 migration_plan = "none"
@@ -3751,6 +3779,13 @@ kind = "handwritten"
 
 [[ui.ownership]]
 path = "ui/src/features/ecosystem/tests/model/service-map-layout.test.ts"
+current_owner = "features/ecosystem"
+target_owner = "features/ecosystem"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/ecosystem/tests/model/service-map.test.ts"
 current_owner = "features/ecosystem"
 target_owner = "features/ecosystem"
 migration_plan = "none"
@@ -5117,7 +5152,22 @@ ceiling = 14
 [[limits]]
 metric = "typescript.assertions"
 scope = "ui/src/features/ecosystem/tests/components/ecosystem-graph.test.tsx"
-ceiling = 9
+ceiling = 7
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/ecosystem/tests/components/ecosystem-layout.test.tsx"
+ceiling = 1
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/ecosystem/tests/components/ecosystem-render.test.tsx"
+ceiling = 4
+
+[[limits]]
+metric = "typescript.assertions"
+scope = "ui/src/features/ecosystem/tests/model/service-map.test.ts"
+ceiling = 2
 
 [[limits]]
 metric = "typescript.assertions"
@@ -5758,11 +5808,6 @@ ceiling = 22
 
 [[limits]]
 metric = "typescript.function-cognitive-complexity"
-scope = "ui/src/features/ecosystem/model/ecosystem-topology.ts:70"
-ceiling = 17
-
-[[limits]]
-metric = "typescript.function-cognitive-complexity"
 scope = "ui/src/features/ecosystem/model/service-map-layout-engine.ts:92"
 ceiling = 36
 
@@ -6119,8 +6164,13 @@ ceiling = 72
 
 [[limits]]
 metric = "typescript.function-lines"
-scope = "ui/src/features/ecosystem/components/ecosystem-graph.tsx:120"
-ceiling = 118
+scope = "ui/src/features/ecosystem/components/ecosystem-graph.tsx:163"
+ceiling = 93
+
+[[limits]]
+metric = "typescript.function-lines"
+scope = "ui/src/features/ecosystem/tests/components/ecosystem-render.test.tsx:25"
+ceiling = 76
 
 [[limits]]
 metric = "typescript.function-lines"
@@ -8693,4 +8743,3 @@ current_owner = "features/traces"
 target_owner = "features/traces"
 migration_plan = "none"
 kind = "handwritten"
-
