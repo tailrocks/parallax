@@ -182,6 +182,93 @@ async fn releases_resolver_returns_service_windows() {
 }
 
 #[tokio::test]
+async fn release_health_reports_rates_and_suspect_flag() {
+    let store = Arc::new(MemoryStore::new());
+    let mut healthy = span_with_release("checkout", "t1", "a", 10, "v1");
+    healthy.attributes = serde_json::json!({"session.id": "s1", "user.id": "u1"});
+    let mut doomed = span_with_release("checkout", "t2", "a", 50, "v2");
+    doomed.attributes = serde_json::json!({"session.id": "s2", "user.id": "u2"});
+    let mut survivor = span_with_release("checkout", "t3", "a", 60, "v2");
+    survivor.attributes = serde_json::json!({"session.id": "s3", "user.id": "u3"});
+    store.push_spans(vec![healthy, doomed, survivor]);
+    store
+        .write_error_events(vec![ErrorEventRow {
+            ts_nanos: 55,
+            service: "checkout".into(),
+            fingerprint: "fp".into(),
+            error_type: "Error".into(),
+            message: "boom".into(),
+            stacktrace: None,
+            source: ErrorSource::SpanStatus,
+            trace_id: "t2".into(),
+            span_id: "a".into(),
+            invocation_id: None,
+            session_id: Some("s2".into()),
+            service_version: Some("v2".into()),
+            environment: None,
+            attributes: serde_json::Value::Null,
+        }])
+        .await
+        .unwrap();
+    let schema = build_schema();
+    let context = context_with_memory(store).await;
+    let request = juniper::http::GraphQLRequest::new(
+        r#"
+        {
+          releaseHealth(service: "checkout", fromNanos: "0", toNanos: "100") {
+            version sessionCount crashedSessionCount crashFreeSessionRate
+            userCount crashedUserCount crashFreeUserRate errorCount suspectRelease
+          }
+        }
+        "#
+        .into(),
+        None,
+        None,
+    );
+
+    let response = execute(&schema, &context, request).await;
+    let json = serde_json::to_value(response).unwrap();
+
+    assert!(error_messages(&json).is_empty(), "releaseHealth: {json}");
+    assert_eq!(
+        json.pointer("/data/releaseHealth/0/version"),
+        Some(&serde_json::json!("v1"))
+    );
+    assert_eq!(
+        json.pointer("/data/releaseHealth/0/crashFreeSessionRate"),
+        Some(&serde_json::json!(1.0))
+    );
+    assert_eq!(
+        json.pointer("/data/releaseHealth/0/suspectRelease"),
+        Some(&serde_json::json!(false))
+    );
+    assert_eq!(
+        json.pointer("/data/releaseHealth/1/sessionCount"),
+        Some(&serde_json::json!("2"))
+    );
+    assert_eq!(
+        json.pointer("/data/releaseHealth/1/crashedSessionCount"),
+        Some(&serde_json::json!("1"))
+    );
+    assert_eq!(
+        json.pointer("/data/releaseHealth/1/crashFreeSessionRate"),
+        Some(&serde_json::json!(0.5))
+    );
+    assert_eq!(
+        json.pointer("/data/releaseHealth/1/crashedUserCount"),
+        Some(&serde_json::json!("1"))
+    );
+    assert_eq!(
+        json.pointer("/data/releaseHealth/1/errorCount"),
+        Some(&serde_json::json!("1"))
+    );
+    assert_eq!(
+        json.pointer("/data/releaseHealth/1/suspectRelease"),
+        Some(&serde_json::json!(true))
+    );
+}
+
+#[tokio::test]
 async fn chart_annotations_are_release_windows() {
     let store = Arc::new(MemoryStore::new());
     store.push_spans(vec![

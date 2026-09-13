@@ -74,6 +74,20 @@ query ServiceDetail(
     lastSeenNanos
     spanCount
   }
+  releaseHealth(service: $service, fromNanos: $fromNanos, toNanos: $toNanos) {
+    version
+    firstSeenNanos
+    lastSeenNanos
+    spanCount
+    sessionCount
+    crashedSessionCount
+    crashFreeSessionRate
+    userCount
+    crashedUserCount
+    crashFreeUserRate
+    errorCount
+    suspectRelease
+  }
   serviceCatalog(fromNanos: $fromNanos, toNanos: $toNanos) {
     name
     serviceVersion

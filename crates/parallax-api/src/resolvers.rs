@@ -67,6 +67,7 @@ pub(crate) use rum::RumSessionDetailOut;
 pub(crate) use rum::RumSessionOut;
 pub(crate) use services::ChartAnnotation;
 pub(crate) use services::Overview;
+pub(crate) use services::ReleaseHealth;
 pub(crate) use services::ReleaseWindow;
 pub(crate) use services::ServiceCatalogRow;
 pub(crate) use services::ServiceMap;

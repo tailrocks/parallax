@@ -374,8 +374,8 @@ mod tests {
     use std::sync::Mutex;
 
     use parallax_storage::adapter::{
-        OverviewTotals, ReleaseWindow, ServiceCatalogRow, ServiceSummary, SignalKind, SpanRed,
-        StorageResult,
+        OverviewTotals, ReleaseHealth, ReleaseWindow, ServiceCatalogRow, ServiceSummary,
+        SignalKind, SpanRed, StorageResult,
     };
     use parallax_storage::model::{MetricExemplarRow, SeriesPoint};
 
@@ -435,6 +435,13 @@ mod tests {
             _service: &str,
             _range: RangeInclusive<u128>,
         ) -> StorageResult<Vec<ReleaseWindow>> {
+            unimplemented!("not used by the measurement shim")
+        }
+        async fn release_health(
+            &self,
+            _service: &str,
+            _range: RangeInclusive<u128>,
+        ) -> StorageResult<Vec<ReleaseHealth>> {
             unimplemented!("not used by the measurement shim")
         }
         async fn service_catalog(

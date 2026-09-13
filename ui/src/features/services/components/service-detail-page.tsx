@@ -136,7 +136,7 @@ export function ServiceDetailContent({
         }
       />
 
-      <ServiceReleaseStrip releases={data.releases} range={range} />
+      <ServiceReleaseStrip releases={data.releases} health={data.releaseHealth} range={range} />
       <ServiceIdentityCard identity={identity} fallbackLastSeen={lastSeen} />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

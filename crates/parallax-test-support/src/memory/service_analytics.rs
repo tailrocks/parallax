@@ -247,6 +247,38 @@ impl adapter::ServiceAnalyticsStore for MemoryStore {
         Ok(windows)
     }
 
+    async fn release_health(
+        &self,
+        service: &str,
+        range: RangeInclusive<u128>,
+    ) -> StorageResult<Vec<ReleaseHealth>> {
+        let inner = self.lock();
+        let mut by_version: BTreeMap<String, ReleaseHealthAgg> = BTreeMap::new();
+        for span in inner
+            .spans
+            .iter()
+            .filter(|s| s.service == service && range.contains(&s.ts_nanos))
+        {
+            ReleaseHealthAgg::observe_span(&mut by_version, span);
+        }
+        for event in inner.error_events.iter().filter(|e| {
+            e.service == service
+                && range.contains(&e.ts_nanos)
+                && e.service_version
+                    .as_deref()
+                    .is_some_and(|v| !v.trim().is_empty())
+        }) {
+            ReleaseHealthAgg::observe_crash(&mut by_version, event);
+        }
+        let mut rows: Vec<ReleaseHealth> = by_version
+            .into_iter()
+            .map(|(version, agg)| agg.finish(version))
+            .collect();
+        rows.sort_by_key(|row| (row.first_seen_nanos, row.version.clone()));
+        parallax_storage::projections::flag_suspect_releases(&mut rows);
+        Ok(rows)
+    }
+
     async fn service_catalog(
         &self,
         range: RangeInclusive<u128>,
@@ -348,5 +380,106 @@ impl adapter::ServiceAnalyticsStore for MemoryStore {
             });
         }
         Ok(red)
+    }
+}
+
+fn release_identity_string(value: &serde_json::Value, key: &str) -> Option<String> {
+    value
+        .get(key)
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+}
+
+fn release_optional_string(value: &Option<String>) -> Option<String> {
+    value
+        .clone()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+}
+
+#[derive(Default)]
+struct ReleaseHealthAgg {
+    first_seen_nanos: u128,
+    last_seen_nanos: u128,
+    span_count: u64,
+    sessions: BTreeSet<String>,
+    users: BTreeSet<String>,
+    session_users: BTreeMap<String, BTreeSet<String>>,
+    crashed_sessions: BTreeSet<String>,
+    error_count: u64,
+}
+
+impl ReleaseHealthAgg {
+    fn observe_span(by_version: &mut BTreeMap<String, Self>, span: &SpanRow) {
+        let Some(version) = release_identity_string(&span.resource, semconv::SERVICE_VERSION)
+        else {
+            return;
+        };
+        let agg = by_version.entry(version).or_default();
+        if agg.span_count == 0 {
+            agg.first_seen_nanos = span.ts_nanos;
+            agg.last_seen_nanos = span.ts_nanos;
+        } else {
+            agg.first_seen_nanos = agg.first_seen_nanos.min(span.ts_nanos);
+            agg.last_seen_nanos = agg.last_seen_nanos.max(span.ts_nanos);
+        }
+        agg.span_count += 1;
+        // The decoded field is the span-attribute session on real data
+        // (Greptime decodes `span_attributes.session.id` into it); fall
+        // back to span-then-resource JSON like `identity.rs`.
+        let session = release_optional_string(&span.session_id)
+            .or_else(|| release_identity_string(&span.attributes, semconv::SESSION_ID))
+            .or_else(|| release_identity_string(&span.resource, semconv::SESSION_ID));
+        let user = RELEASE_HEALTH_USER_ATTRS.iter().find_map(|key| {
+            release_identity_string(&span.attributes, key)
+                .or_else(|| release_identity_string(&span.resource, key))
+        });
+        if let Some(session) = session.as_deref() {
+            agg.sessions.insert(session.to_string());
+            if let Some(user) = user.as_deref() {
+                agg.session_users
+                    .entry(session.to_string())
+                    .or_default()
+                    .insert(user.to_string());
+            }
+        }
+        if let Some(user) = user {
+            agg.users.insert(user);
+        }
+    }
+
+    fn observe_crash(by_version: &mut BTreeMap<String, Self>, event: &ErrorEventRow) {
+        let version = release_optional_string(&event.service_version).unwrap_or_default();
+        // Crashes attach to span-observed releases only: the universe is
+        // spans (same as `release_windows`), never errors alone.
+        let Some(agg) = by_version.get_mut(&version) else {
+            return;
+        };
+        agg.error_count += 1;
+        if let Some(session) = release_optional_string(&event.session_id) {
+            agg.crashed_sessions.insert(session);
+        }
+    }
+
+    fn finish(self, version: String) -> ReleaseHealth {
+        let mut crashed_users: BTreeSet<&str> = BTreeSet::new();
+        for session in &self.crashed_sessions {
+            if let Some(users) = self.session_users.get(session) {
+                crashed_users.extend(users.iter().map(String::as_str));
+            }
+        }
+        ReleaseHealth::from_counts(
+            version,
+            self.first_seen_nanos,
+            self.last_seen_nanos,
+            self.span_count,
+            self.sessions.len() as u64,
+            self.crashed_sessions.len() as u64,
+            self.users.len() as u64,
+            crashed_users.len() as u64,
+            self.error_count,
+        )
     }
 }

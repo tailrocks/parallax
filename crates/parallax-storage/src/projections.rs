@@ -8,8 +8,8 @@
 
 use crate::adapter::{
     BackgroundCycleSummary, ConversationSummary, InvocationSession, JobAttempt, JobSummary,
-    RumSession, RumSessionDetail, RumSessionError, RumSessionPageView, RumSessionVital,
-    ScreenVisit, UiAction,
+    ReleaseHealth, RumSession, RumSessionDetail, RumSessionError, RumSessionPageView,
+    RumSessionVital, ScreenVisit, UiAction,
 };
 use parallax_model::{LogRow, SpanRow};
 use parallax_semconv as semconv;
@@ -314,6 +314,22 @@ pub fn summarize_conversations(spans: &[SpanRow], limit: usize) -> Vec<Conversat
     conversations.sort_by_key(|conversation| std::cmp::Reverse(conversation.last_nanos));
     conversations.truncate(limit);
     conversations
+}
+
+/// Flag suspect releases: row `i > 0` is suspect when its session crash
+/// rate strictly regresses versus the previous release. Rows must arrive
+/// ordered oldest-first (both engines sort by `(first_seen, version)`,
+/// the `release_windows` order); the first release is never suspect.
+/// Shared so the in-memory and GreptimeDB adapters cannot diverge.
+pub fn flag_suspect_releases(rows: &mut [ReleaseHealth]) {
+    let mut previous_rate = 0.0f64;
+    let mut first = true;
+    for row in rows {
+        let rate = row.crash_rate();
+        row.suspect_release = !first && rate > previous_rate;
+        previous_rate = rate;
+        first = false;
+    }
 }
 
 fn rum_session_id(span: &SpanRow) -> Option<&str> {
