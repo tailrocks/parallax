@@ -1,10 +1,13 @@
 // Wire-to-model mapping for the RUM surface. All data comes from live
 // Parallax GraphQL primitives (metricCatalog, histogramQuantile,
-// metricExemplars, issues, tracesPage, linkedTraces, logsByTrace).
+// metricExemplars, issues, tracesPage, linkedTraces, logsByTrace,
+// rumSessions, rumSession).
 
 import type { RumCatalogQuery } from "@/features/rum/api/rum-catalog.generated"
 import type { RumErrorsQuery } from "@/features/rum/api/rum-errors.generated"
 import type { RumJourneysQuery } from "@/features/rum/api/rum-journeys.generated"
+import type { RumSessionQuery } from "@/features/rum/api/rum-session.generated"
+import type { RumSessionsQuery } from "@/features/rum/api/rum-sessions.generated"
 import type { RumTraceQuery } from "@/features/rum/api/rum-trace.generated"
 import type { RumVitalDetailQuery } from "@/features/rum/api/rum-vital-detail.generated"
 import type { RumVitalStatsQuery } from "@/features/rum/api/rum-vital-stats.generated"
@@ -13,6 +16,8 @@ import type {
   RumIssueRow,
   RumLogRow,
   RumPoint,
+  RumSessionDetailData,
+  RumSessionRow,
   RumTraceRow,
   RumVitalRow,
 } from "@/features/rum/model/rum-overview"
@@ -103,4 +108,19 @@ export function mapLinkedTraces(data: RumTraceQuery): RumTraceRow[] {
 
 export function mapTraceLogs(data: RumTraceQuery): RumLogRow[] {
   return data.logsByTrace.map((log) => ({ ...log }))
+}
+
+export function mapRumSessions(data: RumSessionsQuery): RumSessionRow[] {
+  return data.rumSessions.map((row) => ({ ...row }))
+}
+
+export function mapRumSession(data: RumSessionQuery): RumSessionDetailData | null {
+  const detail = data.rumSession
+  if (!detail) return null
+  return {
+    session: { ...detail.session },
+    views: detail.views.map((view) => ({ ...view })),
+    vitals: detail.vitals.map((vital) => ({ ...vital })),
+    errors: detail.errors.map((error) => ({ ...error })),
+  }
 }

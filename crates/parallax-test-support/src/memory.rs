@@ -9,6 +9,7 @@ mod math;
 mod metric_analytics;
 mod metric_store;
 mod raw_sql;
+mod rum_sessions;
 mod runtime_metrics;
 mod seed;
 mod service_analytics;
