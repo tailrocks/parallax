@@ -93,7 +93,7 @@ humans and coding agents; it is the context engine, not the fixer.
 
 ### API
 
-- One canonical GraphQL surface `POST :4000/graphql` — 78 queries, 14
+- One canonical GraphQL surface `POST :4000/graphql` — 81 queries, 14
   mutations, 0 subscriptions; depth/complexity limits; SDL checked into
   `ui/graphql/schema.graphql` and drift-gated.
 - Query families: overview/signal series; services (catalog, map, RED,
@@ -105,7 +105,8 @@ humans and coding agents; it is the context engine, not the fixer.
   (sessions, screen visits, UI actions, background cycles, jobs,
   conversations); evidence (`bundle`, `story`, `agentSession`,
   `evidenceGaps`); field stats + `attributeCompare`; test cases; dashboards /
-  investigations / saved views; alerting; raw `sql`.
+  investigations / saved views; alerting; pipeline (`samplingPolicy`,
+  `ingestDrops`, `ingestQueues`); raw `sql`.
 - Live tail is SSE: `GET /v1/logs/stream`, `/v1/traces/stream` (per-row
   predicates, broadcast lag-drop).
 

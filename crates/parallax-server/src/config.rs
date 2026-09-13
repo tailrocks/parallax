@@ -14,6 +14,8 @@ pub struct Config {
     pub limits: LimitsConfig,
     pub telemetry: TelemetryConfig,
     pub alerting: AlertingConfig,
+    /// Declared sampling policy surfaced for visibility (R2).
+    pub sampling: SamplingConfig,
     /// Sentry envelope migration adapter (plan 118). Disabled by default.
     pub sentry: SentryConfig,
     /// GitHub deploy/change webhook adapter (plan 121). Disabled by default.
@@ -192,6 +194,48 @@ pub struct LimitsConfig {
     pub ingest_queue_batches: usize,
 }
 
+/// Declared effective sampling policy, surfaced read-only via GraphQL
+/// (`samplingPolicy`) and the pipeline page (R2). The server ingest leg keeps
+/// every batch it receives; a rate below 1.0 declares producer-side sampling
+/// the operator knows about (for example an SDK sample ratio) so volume gaps
+/// are attributable instead of silent. This section never drops data.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct SamplingConfig {
+    /// Decision-point label: `head` (default) or `tail`.
+    pub rule: String,
+    /// Declared end-to-end keep rate per signal, 0.0–1.0 (default 1.0).
+    pub traces_rate: f64,
+    pub logs_rate: f64,
+    pub metrics_rate: f64,
+    pub sentry_rate: f64,
+}
+
+impl Default for SamplingConfig {
+    fn default() -> Self {
+        Self {
+            rule: "head".to_string(),
+            traces_rate: 1.0,
+            logs_rate: 1.0,
+            metrics_rate: 1.0,
+            sentry_rate: 1.0,
+        }
+    }
+}
+
+impl SamplingConfig {
+    /// Declared keep rate for one ingest signal.
+    #[must_use]
+    pub fn rate_for(&self, signal: parallax_spool::Signal) -> f64 {
+        match signal {
+            parallax_spool::Signal::Traces => self.traces_rate,
+            parallax_spool::Signal::Logs => self.logs_rate,
+            parallax_spool::Signal::Metrics => self.metrics_rate,
+            parallax_spool::Signal::Sentry => self.sentry_rate,
+        }
+    }
+}
+
 /// Self-telemetry: where `parallax serve` exports its **own** spans/logs. Empty
 /// (the default) keeps Parallax silent about itself — it only receives. Set an
 /// OTLP/gRPC endpoint (e.g. the lab's Rotel `http://localhost:4317`) and serve
@@ -309,6 +353,24 @@ impl Config {
                 "non-loopback server.bind requires an API token                  (set PARALLAX_API_TOKEN or [server] api_token);                  see docs/research/decisions/v2-auth-and-context-contract.md"
                     .to_string(),
             ));
+        }
+        if !matches!(self.sampling.rule.as_str(), "head" | "tail") {
+            return Err(ConfigError::Invalid(format!(
+                "unsupported sampling.rule {:?}; supported values are \"head\" and \"tail\"",
+                self.sampling.rule
+            )));
+        }
+        for (name, rate) in [
+            ("traces_rate", self.sampling.traces_rate),
+            ("logs_rate", self.sampling.logs_rate),
+            ("metrics_rate", self.sampling.metrics_rate),
+            ("sentry_rate", self.sampling.sentry_rate),
+        ] {
+            if !rate.is_finite() || !(0.0..=1.0).contains(&rate) {
+                return Err(ConfigError::Invalid(format!(
+                    "sampling.{name} must be a finite rate in 0.0–1.0, got {rate}"
+                )));
+            }
         }
         Ok(())
     }

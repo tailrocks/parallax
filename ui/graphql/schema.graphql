@@ -419,6 +419,21 @@ type GroupingExplanation {
   inputsPresent: [String!]!
 }
 
+type IngestDrop {
+  signal: String
+  reason: String!
+  count: String!
+  detail: String!
+}
+
+type IngestQueue {
+  signal: String!
+  depth: Int!
+  capacity: Int!
+  highWater: Int!
+  accepted: String!
+}
+
 type Investigation {
   id: String!
   name: String!
@@ -682,6 +697,23 @@ type Query {
   otlpGrpcPort: Int!
   otlpHttpPort: Int!
   """
+    Declared sampling policy per ingest signal (R2). Rows are global
+    (`service` null = applies to all services); optional filters narrow
+    the readout. Empty when no pipeline is wired (unit harnesses).
+  """
+  samplingPolicy(service: String, signal: String): [SamplingPolicy!]!
+  """
+    Dropped/batch-loss counts by named reason (R2). Per-signal rows carry
+    `signal`; pipeline-global reasons (unsupported metrics, live-tail lag)
+    have a null signal. Empty when no pipeline is wired.
+  """
+  ingestDrops(signal: String): [IngestDrop!]!
+  """
+    Per-signal ingest queue watermarks plus accepted batch counts (R2 rate
+    attribution: accepted vs dropped-by-reason). Empty when no pipeline.
+  """
+  ingestQueues: [IngestQueue!]!
+  """
     Whole-system counters for an inclusive time window. Counts are strings
     so large telemetry volumes never saturate GraphQL Int.
   """
@@ -920,6 +952,15 @@ type RuntimeMetric {
   metric: String!
   unit: String
   points: [Point!]!
+}
+
+type SamplingPolicy {
+  signal: String!
+  service: String
+  rule: String!
+  rate: Float!
+  enforcedBy: String!
+  description: String!
 }
 
 type SavedView {

@@ -21,6 +21,7 @@ struct SignalState {
     unavailable: AtomicU64,
     rejects: AtomicU64,
     spool_fails: AtomicU64,
+    accepted: AtomicU64,
     capacity: usize,
     attributes: [KeyValue; 1],
     accepted_attributes: [KeyValue; 2],
@@ -38,6 +39,7 @@ impl SignalState {
             unavailable: AtomicU64::new(0),
             rejects: AtomicU64::new(0),
             spool_fails: AtomicU64::new(0),
+            accepted: AtomicU64::new(0),
             capacity,
             attributes: [KeyValue::new("signal", signal)],
             accepted_attributes: [
@@ -60,6 +62,44 @@ pub(crate) struct QueueSnapshot {
     pub high_water: usize,
     pub retries: u64,
     pub drops: u64,
+}
+
+/// One drop-reason counter row. `signal` is `None` for pipeline-global
+/// reasons (unsupported metrics, live-tail lag).
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct DropCount {
+    pub signal: Option<Signal>,
+    pub reason: &'static str,
+    pub count: u64,
+}
+
+/// Canonical ingest-signal name for API/UI surfaces.
+pub(crate) fn signal_name(signal: Signal) -> &'static str {
+    match signal {
+        Signal::Traces => "traces",
+        Signal::Logs => "logs",
+        Signal::Metrics => "metrics",
+        Signal::Sentry => "sentry",
+    }
+}
+
+/// Operator-facing explanation for each named drop reason.
+pub(crate) fn drop_reason_detail(reason: &str) -> &'static str {
+    match reason {
+        "queue_unavailable" => {
+            "batch arrived while the ingest worker was unavailable (queue sender closed)"
+        }
+        "terminal_drop" => {
+            "batch dropped after worker retries were exhausted (storage/metadata failure)"
+        }
+        "ingress_reject" => {
+            "batch rejected at ingress: malformed protobuf or invalid trace IDs (HTTP 400)"
+        }
+        "spool_write" => "batch lost: durable spool append failed before queueing",
+        "unsupported_metric" => "metric points dropped: unsupported aggregation type (Summary)",
+        "live_tail_lag" => "live-tail batches skipped: SSE consumer lagged past the buffer",
+        _ => "unrecognized drop reason",
+    }
 }
 
 #[derive(Debug)]
@@ -178,6 +218,7 @@ impl IngestHealth {
             return enqueued_at;
         }
         let state = self.state(signal);
+        state.accepted.fetch_add(1, Ordering::Relaxed);
         let depth = state.depth.fetch_add(1, Ordering::AcqRel) + 1;
         state
             .queue_times
@@ -297,6 +338,57 @@ impl IngestHealth {
         }
     }
 
+    /// Accepted (kept) batch count for one signal — the kept leg of R2 rate
+    /// attribution (accepted vs dropped-by-reason).
+    pub(crate) fn accepted(&self, signal: Signal) -> u64 {
+        self.state(signal).accepted.load(Ordering::Relaxed)
+    }
+
+    /// Every drop-reason counter: per-signal rows first (pipeline order),
+    /// then pipeline-global rows (`signal` None).
+    pub(crate) fn drop_counts(&self) -> Vec<DropCount> {
+        let mut rows = Vec::with_capacity(4 * 4 + 2);
+        for signal in [
+            Signal::Traces,
+            Signal::Logs,
+            Signal::Metrics,
+            Signal::Sentry,
+        ] {
+            let state = self.state(signal);
+            rows.push(DropCount {
+                signal: Some(signal),
+                reason: "queue_unavailable",
+                count: state.unavailable.load(Ordering::Relaxed),
+            });
+            rows.push(DropCount {
+                signal: Some(signal),
+                reason: "terminal_drop",
+                count: state.drops.load(Ordering::Relaxed),
+            });
+            rows.push(DropCount {
+                signal: Some(signal),
+                reason: "ingress_reject",
+                count: state.rejects.load(Ordering::Relaxed),
+            });
+            rows.push(DropCount {
+                signal: Some(signal),
+                reason: "spool_write",
+                count: state.spool_fails.load(Ordering::Relaxed),
+            });
+        }
+        rows.push(DropCount {
+            signal: None,
+            reason: "unsupported_metric",
+            count: self.unsupported_metric.load(Ordering::Relaxed),
+        });
+        rows.push(DropCount {
+            signal: None,
+            reason: "live_tail_lag",
+            count: self.live_tail_lag.load(Ordering::Relaxed),
+        });
+        rows
+    }
+
     pub(crate) fn degradation(&self) -> Option<String> {
         let mut reasons = Vec::new();
         let full = [
@@ -323,15 +415,44 @@ impl IngestHealth {
     }
 
     pub(crate) fn loss_json(&self) -> String {
-        format!(
-            "{{\"queue_unavailable\":{},\"terminal_drop\":{},\"ingress_reject\":{},\"spool_write\":{},\"unsupported_metric\":{},\"live_tail_lag\":{}}}",
+        // R2 adds `accepted` + `by_signal` after the original six keys; the
+        // original keys keep their names, order, and semantics.
+        let mut out = format!(
+            "{{\"queue_unavailable\":{},\"terminal_drop\":{},\"ingress_reject\":{},\"spool_write\":{},\"unsupported_metric\":{},\"live_tail_lag\":{},\"accepted\":{}",
             self.sum_signal(|state| state.unavailable.load(Ordering::Relaxed)),
             self.sum_signal(|state| state.drops.load(Ordering::Relaxed)),
             self.sum_signal(|state| state.rejects.load(Ordering::Relaxed)),
             self.sum_signal(|state| state.spool_fails.load(Ordering::Relaxed)),
             self.unsupported_metric.load(Ordering::Relaxed),
             self.live_tail_lag.load(Ordering::Relaxed),
-        )
+            self.sum_signal(|state| state.accepted.load(Ordering::Relaxed)),
+        );
+        out.push_str(",\"by_signal\":{");
+        for (index, signal) in [
+            Signal::Traces,
+            Signal::Logs,
+            Signal::Metrics,
+            Signal::Sentry,
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let state = self.state(signal);
+            if index > 0 {
+                out.push(',');
+            }
+            out.push_str(&format!(
+                "\"{}\":{{\"accepted\":{},\"queue_unavailable\":{},\"terminal_drop\":{},\"ingress_reject\":{},\"spool_write\":{}}}",
+                signal_name(signal),
+                state.accepted.load(Ordering::Relaxed),
+                state.unavailable.load(Ordering::Relaxed),
+                state.drops.load(Ordering::Relaxed),
+                state.rejects.load(Ordering::Relaxed),
+                state.spool_fails.load(Ordering::Relaxed),
+            ));
+        }
+        out.push_str("}}");
+        out
     }
 
     fn sum_signal(&self, read: impl Fn(&SignalState) -> u64) -> u64 {
