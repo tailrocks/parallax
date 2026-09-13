@@ -308,3 +308,59 @@ async fn daemon_invocation_never_derives_completion_from_child_capsules() {
     assert_eq!(inv["outcome"], serde_json::Value::Null);
     assert_eq!(inv["endedAtNanos"], serde_json::Value::Null);
 }
+
+#[tokio::test]
+async fn finish_mutation_round_trips_captured_output() {
+    let store = Arc::new(MemoryStore::new());
+    let context = context_with_memory(store).await;
+    let schema = build_schema();
+    let run = async |query: &str| {
+        let request = juniper::http::GraphQLRequest::new(query.to_string(), None, None);
+        serde_json::to_value(execute(&schema, &context, request).await).unwrap()
+    };
+    let started = run(
+        r#"mutation { invocationStart(invocationId: "run-cap", command: "make build", appMode: "one_shot", startedAtNanos: "1000000000") }"#,
+    )
+    .await;
+    assert!(error_messages(&started).is_empty(), "{started}");
+    // Multiline + quoted payload exercises GraphQL string decoding.
+    let finished = run(
+        r#"mutation { invocationFinish(invocationId: "run-cap", endedAtNanos: "2000000000", exitCode: 1, outcome: "failure", stdoutText: "line1\nline2 \"quoted\"", stdoutTruncatedBytes: 128, stderrText: "boom\n", stderrTruncatedBytes: 0) }"#,
+    )
+    .await;
+    assert!(error_messages(&finished).is_empty(), "{finished}");
+    let json = run(
+        r#"{ invocation(invocationId: "run-cap") { status exitCode stdoutText stdoutTruncatedBytes stderrText stderrTruncatedBytes } }"#,
+    )
+    .await;
+    assert!(error_messages(&json).is_empty(), "{json}");
+    let inv = json.pointer("/data/invocation").unwrap();
+    assert_eq!(inv["status"], "failed");
+    assert_eq!(inv["exitCode"], 1);
+    assert_eq!(inv["stdoutText"], "line1\nline2 \"quoted\"");
+    assert_eq!(inv["stdoutTruncatedBytes"], 128);
+    assert_eq!(inv["stderrText"], "boom\n");
+    assert_eq!(inv["stderrTruncatedBytes"], 0);
+}
+
+#[tokio::test]
+async fn finish_mutation_rejects_negative_truncation_counts() {
+    let store = Arc::new(MemoryStore::new());
+    let context = context_with_memory(store).await;
+    context
+        .metadata
+        .start_invocation("run-neg", None, None, 1_000_000_000)
+        .await
+        .unwrap();
+    let schema = build_schema();
+    let request = juniper::http::GraphQLRequest::new(
+        r#"mutation { invocationFinish(invocationId: "run-neg", endedAtNanos: "2000000000", exitCode: 0, stdoutTruncatedBytes: -1) }"#.into(),
+        None,
+        None,
+    );
+    let json = serde_json::to_value(execute(&schema, &context, request).await).unwrap();
+    assert!(
+        !error_messages(&json).is_empty(),
+        "negative count must fail: {json}"
+    );
+}
