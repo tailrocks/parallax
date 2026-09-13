@@ -1,6 +1,6 @@
 import { useState } from "react"
 import type { ErrorComponentProps } from "@tanstack/react-router"
-import { IconAlertTriangleFilled, IconKey } from "@tabler/icons-react"
+import { IconKey } from "@tabler/icons-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
+import { ErrorState } from "@/shared/console/error-state"
 import { setApiToken } from "@/platform/auth/api-token"
 
 export { RouteNotFoundPanel } from "@/shared/route-not-found"
@@ -90,33 +91,23 @@ export function RouteErrorPanel({ error, reset }: ErrorComponentProps) {
     return <ApiTokenPanel onRetry={reset} />
   }
   return (
-    <Empty className="max-w-3xl">
-      <EmptyHeader>
-        <EmptyMedia
-          variant="icon"
-          className="bg-rose-500/10 text-rose-600 shadow-[var(--custom-shadow-rose)] dark:bg-rose-500/15 dark:text-rose-300"
-        >
-          <IconAlertTriangleFilled />
-        </EmptyMedia>
-        <EmptyTitle>Parallax API did not answer</EmptyTitle>
-        <EmptyDescription>
+    <ErrorState
+      className="max-w-3xl"
+      title="Parallax API did not answer"
+      message={
+        <>
           The app shell is running, but this route could not load data from the local API. Verify
           the server at{" "}
           <code className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
             127.0.0.1:4000
           </code>
-          .
-        </EmptyDescription>
-      </EmptyHeader>
-      <EmptyContent>
-        <pre className="max-h-48 w-full overflow-auto rounded-2xl bg-muted p-3 text-left font-mono text-xs text-rose-600 dark:text-rose-300">
-          {safeErrorMessage(error)}
-        </pre>
-        <Button variant="outline" onClick={reset}>
-          Retry route
-        </Button>
-      </EmptyContent>
-    </Empty>
+          <pre className="mt-3 max-h-48 w-full overflow-auto rounded-2xl bg-muted p-3 text-left font-mono text-xs text-rose-600 dark:text-rose-300">
+            {safeErrorMessage(error)}
+          </pre>
+        </>
+      }
+      onRetry={reset}
+    />
   )
 }
 

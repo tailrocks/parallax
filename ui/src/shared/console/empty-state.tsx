@@ -14,11 +14,14 @@ export function EmptyState({
   title,
   description,
   icon: Icon,
+  action,
   className,
 }: {
   title: string
   description?: React.ReactNode
   icon?: Icon
+  /** Inline next step: clear-filters, retry, or docs link. */
+  action?: React.ReactNode
   className?: string
 }) {
   return (
@@ -32,7 +35,7 @@ export function EmptyState({
         <EmptyTitle>{title}</EmptyTitle>
         {description ? <EmptyDescription>{description}</EmptyDescription> : null}
       </EmptyHeader>
-      <EmptyContent />
+      <EmptyContent>{action}</EmptyContent>
     </Empty>
   )
 }

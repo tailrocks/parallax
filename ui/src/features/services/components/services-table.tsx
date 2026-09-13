@@ -24,6 +24,7 @@ import type {
 import { formatCount, formatDurationNs, formatPercent } from "@/shared/format"
 import { rangeLinkSearch, type ResolvedRange } from "@/domain/time-range/range"
 import { cn } from "@/lib/utils"
+import { rowKeyboardAttrs, useRowKeyboardNav } from "@/lib/row-keyboard-nav"
 
 export function ServicesTable({
   rows,
@@ -32,6 +33,7 @@ export function ServicesTable({
   p95Scale,
   errorRateScale,
   onSearch,
+  onOpen,
 }: {
   rows: ServiceTableRow[]
   search: ServicesSearch
@@ -39,9 +41,19 @@ export function ServicesTable({
   p95Scale: HeatScale
   errorRateScale: HeatScale
   onSearch: (patch: ServicesSearchPatch) => void
+  onOpen?: (service: string) => void
 }) {
   const sortProps = search.sort ? { sort: search.sort } : {}
   const onSort = (sort: string | undefined) => onSearch({ sort: sort as ServiceSort | undefined })
+  const activeRow = useRowKeyboardNav({
+    scope: "services",
+    count: rows.length,
+    enabled: onOpen !== undefined,
+    onOpen: (index) => {
+      const row = rows[index]
+      if (row) onOpen?.(row.name)
+    },
+  })
 
   return (
     <div className="overflow-hidden rounded-lg border bg-card">
@@ -92,16 +104,19 @@ export function ServicesTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((row) => {
+          {rows.map((row, index) => {
             const errors = Number(row.errorCount)
             const rate = serviceErrorRate(row)
             return (
               <TableRow
                 key={row.name}
+                {...rowKeyboardAttrs("services", index)}
                 className={cn(
                   "cursor-pointer",
-                  errors > 0 && "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]"
+                  errors > 0 && "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]",
+                  activeRow === index && "bg-accent/60"
                 )}
+                onClick={() => onOpen?.(row.name)}
               >
                 <TableCell>
                   <Link
@@ -109,6 +124,7 @@ export function ServicesTable({
                     params={{ service: row.name }}
                     search={rangeLinkSearch(range)}
                     className="flex min-w-0 items-center gap-2 font-medium"
+                    onClick={(event) => event.stopPropagation()}
                   >
                     <ServiceDot name={row.name} />
                     <span className="truncate">{row.name}</span>
@@ -138,6 +154,7 @@ export function ServicesTable({
                     to="/traces"
                     search={{ service: row.name, ...rangeLinkSearch(range) }}
                     className="hover:underline"
+                    onClick={(event) => event.stopPropagation()}
                   >
                     {formatCount(Number(row.spanCount))}
                   </Link>
@@ -151,6 +168,7 @@ export function ServicesTable({
                       ...rangeLinkSearch(range),
                     }}
                     className="hover:underline"
+                    onClick={(event) => event.stopPropagation()}
                   >
                     {formatCount(errors)}
                   </Link>

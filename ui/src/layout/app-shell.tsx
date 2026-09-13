@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 
 import { CommandPalette } from "@/layout/command-palette"
 import { NavIcon } from "@/layout/nav-icon"
+import { ShortcutsDialog, useShortcutsDialog } from "@/shared/console/shortcuts-dialog"
 import { PageFade } from "@/shared/page-fade"
 import { primaryNav, workspaceNav } from "@/shared/navigation"
 import type { NavItem } from "@/shared/navigation"
@@ -155,6 +156,7 @@ export function ParallaxShell({ children }: { children: React.ReactNode }) {
   const [dashboards, setDashboards] = useState<DashboardNavigationItem[]>([])
   const [dashboardNavError, setDashboardNavError] = useState<string | null>(null)
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const shortcuts = useShortcutsDialog()
 
   useEffect(() => {
     if (!pathname.startsWith("/dashboards")) {
@@ -177,6 +179,7 @@ export function ParallaxShell({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider className="relative h-svh min-h-0 overflow-hidden">
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+      <ShortcutsDialog open={shortcuts.open} onOpenChange={shortcuts.setOpen} />
       <Sidebar variant="inset" collapsible="icon">
         <SidebarHeader className="px-3 py-4">
           <div className="flex h-9 items-center gap-2">

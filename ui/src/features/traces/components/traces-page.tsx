@@ -2,12 +2,17 @@ import { useNavigate, useRouter, useRouterState } from "@tanstack/react-router"
 import {
   IconAffiliateFilled,
   IconAlertTriangle,
+  IconDeviceFloppy,
   IconPlayerPlayFilled,
   IconPlayerStopFilled,
   IconRefresh,
 } from "@tabler/icons-react"
 import { useEffect, useMemo, useState } from "react"
 import { z } from "zod"
+import { SavedViewsMenu, type SavedView } from "@/features/logs"
+import { QueryBar, QueryBarRow } from "@/shared/console/query-bar"
+import { SectionError } from "@/shared/console/error-state"
+import { useFilterFocusShortcut } from "@/shared/keyboard"
 import { AttributeComparePanel } from "@/features/traces/components/trace-attribute-compare"
 import { ServiceDot } from "@/shared/console/service-dot"
 import { PageHeader } from "@/shared/components/page-header"
@@ -17,6 +22,13 @@ import { FieldExplorer } from "@/features/traces/components/trace-field-explorer
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import {
   Table,
@@ -50,12 +62,13 @@ import { RangePicker } from "@/features/time-range"
 import { RelativeTime } from "@/shared/console/relative-time"
 import { TableSkeleton } from "@/shared/console/skeletons"
 import { formatCount, formatDurationNs, formatTimeInRange } from "@/shared/format"
-import { gqlString, graphqlCached } from "@/platform/graphql/transport"
+import { gqlString, graphql, graphqlCached } from "@/platform/graphql/transport"
 import { mergeLiveSpans } from "@/features/traces/model/merge-live-spans"
 import type { AttributeCompareRow, LiveSpan, TraceSummary } from "@/features/traces/model/wire"
 import { rangeLinkSearch, resolveRangeSearch, updateRangeSearch } from "@/domain/time-range/range"
 import type { ResolvedRange } from "@/domain/time-range/range"
 import { cn } from "@/lib/utils"
+import { rowKeyboardAttrs, useRowKeyboardNav } from "@/lib/row-keyboard-nav"
 
 type SpanDoc = LiveSpan
 
@@ -262,13 +275,40 @@ export type TracesLoaderData = {
   attributeCompare: AttributeCompareRow[]
   traceFacets: TraceFacet[]
   traceDurationStats: { p50Ms: number | null; p95Ms: number | null }
+  savedViews: SavedView[]
+}
+
+export function serializeTracesSearch(search: TracesSearch): string {
+  const params = new URLSearchParams()
+  if (search.q) params.set("q", search.q)
+  if (search.service) params.set("service", search.service)
+  if (search.errors) params.set("errors", "1")
+  if (search.minMs !== undefined) params.set("minMs", String(search.minMs))
+  if (search.maxMs !== undefined) params.set("maxMs", String(search.maxMs))
+  if (search.where) params.set("where", search.where)
+  if (search.sort) params.set("sort", search.sort)
+  if (search.range) params.set("range", search.range)
+  if (search.from) params.set("from", search.from)
+  if (search.to) params.set("to", search.to)
+  const value = params.toString()
+  return value ? `?${value}` : ""
+}
+
+export function parseTracesViewState(state: string): TracesSearch {
+  const params = new URLSearchParams(state.startsWith("?") ? state.slice(1) : state)
+  const raw: Record<string, unknown> = {}
+  params.forEach((value, key) => {
+    raw[key] = value
+  })
+  return validateTracesSearch(raw)
 }
 
 export async function loadTraces(search: TracesSearch): Promise<TracesLoaderData> {
   if (search.live) {
-    return graphqlCached<{ services: string[] }>(`
+    return graphqlCached<{ services: string[]; savedViews: SavedView[] }>(`
       {
         services
+        savedViews(page: "/traces") { id name page state updatedAtNanos }
       }
     `).then((data) => ({
       services: data.services,
@@ -276,6 +316,7 @@ export async function loadTraces(search: TracesSearch): Promise<TracesLoaderData
       attributeCompare: [],
       traceFacets: [],
       traceDurationStats: { p50Ms: null, p95Ms: null },
+      savedViews: data.savedViews,
     }))
   }
   const range = resolveRangeSearch(search)
@@ -288,9 +329,11 @@ export async function loadTraces(search: TracesSearch): Promise<TracesLoaderData
     attributeCompare: AttributeCompareRow[]
     traceFacets: TraceFacet[]
     traceDurationStats: { p50Ms: number | null; p95Ms: number | null }
+    savedViews: SavedView[]
   }>(`
     {
       services
+      savedViews(page: "/traces") { id name page state updatedAtNanos }
       tracesPage(${args}) {
         total
         items {
@@ -332,23 +375,14 @@ export function TracesPage({ data, search }: { data: TracesLoaderData; search: T
   const showSkeleton = useDelayedLoading(pending)
   const [lookup, setLookup] = useState("")
   const [whereFocusKey, setWhereFocusKey] = useState(0)
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "f" && event.key !== "F") return
-      if (event.metaKey || event.ctrlKey || event.altKey) return
-      const target = event.target
-      if (
-        target instanceof HTMLElement &&
-        target.closest("input, textarea, select, [contenteditable]")
-      ) {
-        return
-      }
-      event.preventDefault()
-      setWhereFocusKey((current) => current + 1)
-    }
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [])
+  const [savedViews, setSavedViews] = useState(data.savedViews)
+  const [viewError, setViewError] = useState<string | null>(null)
+  const [saveOpen, setSaveOpen] = useState(false)
+  const [saveName, setSaveName] = useState("")
+  const [savingView, setSavingView] = useState(false)
+
+  useEffect(() => setSavedViews(data.savedViews), [data.savedViews])
+  useFilterFocusShortcut(() => setWhereFocusKey((current) => current + 1))
   const [spans, setSpans] = useState<SpanDoc[]>([])
   const live = search.live === true
   const page = search.page ?? 1
@@ -406,6 +440,48 @@ export function TracesPage({ data, search }: { data: TracesLoaderData; search: T
   }))
   const update = (patch: TraceSearchPatch, replace = true) => {
     void navigate({ search: patchTracesSearch(search, patch), replace })
+  }
+  const selectSavedView = (view: SavedView) => {
+    setViewError(null)
+    try {
+      const next = parseTracesViewState(view.state)
+      void navigate({ search: () => next })
+    } catch (err) {
+      setViewError(err instanceof Error ? err.message : String(err))
+    }
+  }
+  const deleteSavedView = async (id: string) => {
+    setViewError(null)
+    try {
+      await graphql<{
+        savedViewDelete: boolean
+      }>(`mutation { savedViewDelete(id: "${gqlString(id)}") }`)
+      setSavedViews((current) => current.filter((view) => view.id !== id))
+    } catch (err) {
+      setViewError(err instanceof Error ? err.message : String(err))
+    }
+  }
+  const saveCurrentView = async () => {
+    const name = saveName.trim()
+    if (!name) return
+    setSavingView(true)
+    setViewError(null)
+    try {
+      const state = serializeTracesSearch(search)
+      const result = await graphql<{
+        savedViewSave: SavedView
+      }>(`mutation { savedViewSave(name: "${gqlString(name)}", page: "/traces", state: "${gqlString(state)}") { id name page state updatedAtNanos } }`)
+      setSavedViews((current) => [
+        result.savedViewSave,
+        ...current.filter((view) => view.id !== result.savedViewSave.id),
+      ])
+      setSaveOpen(false)
+      setSaveName("")
+    } catch (err) {
+      setViewError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setSavingView(false)
+    }
   }
   const sortParam = traceSortToParam(search.sort)
   const setSortParam = (next: string | undefined) =>
@@ -508,13 +584,25 @@ export function TracesPage({ data, search }: { data: TracesLoaderData; search: T
         }
       />
 
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-2">
+      <QueryBar>
+        <QueryBarRow>
           <SearchInput
             value={search.q ?? ""}
             onChange={(value) => update({ q: value || undefined })}
             placeholder="Search root span..."
           />
+          {!live ? (
+            <WhereClauseEditor
+              key={whereFocusKey}
+              autoFocus={whereFocusKey > 0}
+              filters={whereFilters}
+              onApply={applyWhereFilters}
+              keySuggestions={facets.map((facet) => facet.dimension)}
+              valueSuggestionsFor={facetValueSuggestions}
+            />
+          ) : null}
+        </QueryBarRow>
+        <QueryBarRow>
           <FilterSelect
             onChange={(value) => update({ service: value })}
             options={serviceOptions}
@@ -555,6 +643,15 @@ export function TracesPage({ data, search }: { data: TracesLoaderData; search: T
               onApplyService={(service) => update({ service })}
             />
           ) : null}
+          <SavedViewsMenu
+            views={savedViews}
+            onSelect={selectSavedView}
+            onDelete={(id) => void deleteSavedView(id)}
+            onSave={() => {
+              setSaveName("")
+              setSaveOpen(true)
+            }}
+          />
           {hasFilters ? (
             <ClearFiltersButton
               onClick={() =>
@@ -588,23 +685,42 @@ export function TracesPage({ data, search }: { data: TracesLoaderData; search: T
               </span>
             )}
           </div>
-        </div>
+        </QueryBarRow>
+
+        {viewError ? <SectionError message={viewError} /> : null}
+
+        <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Save view</DialogTitle>
+            </DialogHeader>
+            <Input
+              value={saveName}
+              onChange={(event) => setSaveName(event.target.value)}
+              placeholder="View name"
+              autoFocus
+            />
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setSaveOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void saveCurrentView()}
+                disabled={savingView || !saveName.trim()}
+              >
+                <IconDeviceFloppy />
+                Save
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {!live ? (
-          <div className="space-y-2">
-            <WhereClauseEditor
-              key={whereFocusKey}
-              autoFocus={whereFocusKey > 0}
-              filters={whereFilters}
-              onApply={applyWhereFilters}
-              keySuggestions={facets.map((facet) => facet.dimension)}
-              valueSuggestionsFor={facetValueSuggestions}
-            />
-            <WhereClauseChips
-              filters={whereFilters}
-              onRemove={(index) => applyWhereFilters(whereFilters.filter((_, i) => i !== index))}
-            />
-          </div>
+          <WhereClauseChips
+            filters={whereFilters}
+            onRemove={(index) => applyWhereFilters(whereFilters.filter((_, i) => i !== index))}
+          />
         ) : null}
 
         <div className="flex items-start gap-4">
@@ -731,7 +847,7 @@ export function TracesPage({ data, search }: { data: TracesLoaderData; search: T
             )}
           </div>
         </div>
-      </div>
+      </QueryBar>
     </div>
   )
 }
@@ -752,6 +868,14 @@ export function TraceTable({
   onOpen: (traceId: string) => void
 }) {
   const durationScale = useMemo(() => buildHeatScale(durationValues), [durationValues])
+  const activeRow = useRowKeyboardNav({
+    scope: "traces",
+    count: rows.length,
+    onOpen: (index) => {
+      const trace = rows[index]
+      if (trace) onOpen(trace.traceId)
+    },
+  })
   return (
     <Table density="compact" className="table-fixed">
       <TableHeader>
@@ -775,12 +899,16 @@ export function TraceTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {rows.map((trace) => (
+        {rows.map((trace, index) => (
           <TableRow
             key={`${trace.traceId}-${trace.startNanos}`}
             interactive
+            {...rowKeyboardAttrs("traces", index)}
             onClick={() => onOpen(trace.traceId)}
-            className={cn(trace.hasError && "shadow-[inset_1px_0_0_0_var(--color-rose-500)]")}
+            className={cn(
+              trace.hasError && "shadow-[inset_1px_0_0_0_var(--color-rose-500)]",
+              activeRow === index && "bg-accent/60"
+            )}
           >
             <TableCell>
               <div className="flex min-w-0 flex-col gap-1">

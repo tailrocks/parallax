@@ -22,6 +22,7 @@ import {
 } from "@/features/services/model/services-search"
 import { formatCount } from "@/shared/format"
 import {
+  rangeLinkSearch,
   resolveRangeSearch,
   updateRangeSearch,
   type ResolvedRange,
@@ -59,6 +60,13 @@ export function ServicesPage({ data, search }: { data: ServicesData; search: Ser
       range={range}
       loading={pending}
       onSearch={setSearch}
+      onOpen={(service) =>
+        void navigate({
+          to: "/services/$service",
+          params: { service },
+          search: rangeLinkSearch(range),
+        })
+      }
     />
   )
 }
@@ -69,12 +77,14 @@ export function ServicesIndexContent({
   range,
   loading = false,
   onSearch,
+  onOpen,
 }: {
   data: ServicesData
   search: ServicesSearch
   range: ResolvedRange
   loading?: boolean
   onSearch: (patch: ServicesSearchPatch) => void
+  onOpen?: (service: string) => void
 }) {
   const query = search.q?.toLowerCase() ?? ""
   const catalogRows = servicesWithCatalog(data)
@@ -135,6 +145,7 @@ export function ServicesIndexContent({
           p95Scale={p95Scale}
           errorRateScale={errorRateScale}
           onSearch={onSearch}
+          {...(onOpen ? { onOpen } : {})}
         />
       )}
     </div>
