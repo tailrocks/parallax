@@ -301,6 +301,10 @@ fn validate_bundle_anchors(present: usize) -> FieldResult<()> {
     }
 }
 
+#[expect(
+    clippy::too_many_arguments,
+    reason = "one-of anchor arguments form the public GraphQL contract"
+)]
 pub(crate) async fn bundle(
     context: &ApiContext,
     service: Option<String>,

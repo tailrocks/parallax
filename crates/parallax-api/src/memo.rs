@@ -22,6 +22,10 @@ struct IssueEventQuery {
 }
 
 impl ApiContext {
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "identity and window fields keep the memo key explicit at callsites"
+    )]
     pub(crate) async fn issue_events_for(
         &self,
         issue_keys: &[(String, String)],

@@ -15,12 +15,10 @@ fn test_config(data_dir: &std::path::Path, token: Option<&str>) -> Config {
 }
 
 fn env_token_present() -> bool {
-    std::env::var("PARALLAX_API_TOKEN")
-        .ok()
-        .is_some_and(|value| {
-            let trimmed = value.trim();
-            !trimmed.is_empty() && !trimmed.eq_ignore_ascii_case("off")
-        })
+    std::env::var("PARALLAX_API_TOKEN").is_ok_and(|value| {
+        let trimmed = value.trim();
+        !trimmed.is_empty() && !trimmed.eq_ignore_ascii_case("off")
+    })
 }
 
 #[tokio::test(flavor = "multi_thread")]

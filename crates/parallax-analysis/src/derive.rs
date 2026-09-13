@@ -98,6 +98,10 @@ fn persist_operation(
 /// normalizer's rules so error rows carry exactly the invocation/session/
 /// release context that the same resource's spans carry.
 #[must_use]
+#[expect(
+    clippy::too_many_lines,
+    reason = "one pass keeps trace/log/sentry identity rules side by side"
+)]
 pub fn derive_from_traces(request: &ExportTraceServiceRequest) -> Vec<ErrorEventRow> {
     let mut events = Vec::new();
     for rs in &request.resource_spans {

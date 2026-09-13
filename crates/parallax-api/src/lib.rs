@@ -320,6 +320,10 @@ impl Query {
     async fn trace_facets(context: &ApiContext, service: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, error_only: Option<bool>, query: Option<String>, attribute_filters: Option<Vec<AttributeFilterInput>>,) -> FieldResult<Vec<Facet>> { resolvers::traces::trace_facets(context, service, from_nanos, to_nanos, error_only, query, attribute_filters).await }
 
     /// Bounded redacted evidence bundle. Exactly one of fingerprint, invocationId, traceId, alertIncidentId.
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "one-of anchor arguments form the public GraphQL contract"
+    )]
     async fn bundle(context: &ApiContext, service: Option<String>, fingerprint: Option<String>, invocation_id: Option<String>, trace_id: Option<String>, alert_incident_id: Option<String>, max_tokens: Option<i32>,) -> FieldResult<Option<BundleOut>> { resolvers::issues::bundle(context, service, fingerprint, invocation_id, trace_id, alert_incident_id, max_tokens).await }
 
     /// Invocation-scoped metric family summaries (plan 105).
@@ -435,6 +439,10 @@ impl Mutation {
     async fn saved_view_delete(context: &ApiContext, id: String) -> FieldResult<bool> { resolvers::investigations::saved_view_delete(context, id).await }
 
     /// Close an invocation with the wrapped command's exit code and outcome.
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "run lifecycle and bounded output fields form the wrapper mutation contract"
+    )]
     async fn invocation_finish(context: &ApiContext, invocation_id: String, ended_at_nanos: String, exit_code: i32, outcome: Option<String>, stdout_text: Option<String>, stdout_truncated_bytes: Option<i32>, stderr_text: Option<String>, stderr_truncated_bytes: Option<i32>,) -> FieldResult<bool> { resolvers::invocations::invocation_finish(context, invocation_id, ended_at_nanos, exit_code, outcome, stdout_text, stdout_truncated_bytes, stderr_text, stderr_truncated_bytes).await }
 
     /// Create or update an alert rule (plan 167); optional knobs default per

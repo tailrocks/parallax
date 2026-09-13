@@ -382,8 +382,7 @@ impl GreptimeStore {
                    LIMIT 1"#,
             )
             .await
-            .ok()
-            .is_some_and(|rows| !rows.is_empty());
+            .is_ok_and(|rows| !rows.is_empty());
         if !present {
             return;
         }

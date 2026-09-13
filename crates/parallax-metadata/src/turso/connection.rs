@@ -1,5 +1,9 @@
 use super::*;
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "ordered migration statements document the complete schema lifecycle"
+)]
 async fn apply_schema_migrations(conn: &turso::Connection) -> anyhow::Result<()> {
     let version = {
         let mut rows = conn.query("PRAGMA user_version", ()).await?;

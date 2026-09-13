@@ -504,6 +504,10 @@ pub(crate) async fn invocation_start(
     Ok(true)
 }
 
+#[expect(
+    clippy::too_many_arguments,
+    reason = "run lifecycle and bounded output fields form the wrapper mutation contract"
+)]
 pub(crate) async fn invocation_finish(
     context: &ApiContext,
     invocation_id: String,

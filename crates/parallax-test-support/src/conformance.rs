@@ -130,6 +130,10 @@ pub async fn assert_empty(
     Ok(())
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "one assertion flow proves all signal fields across storage adapters"
+)]
 pub async fn assert_seeded(
     store: &dyn TelemetryStore,
     metric_name: &str,
