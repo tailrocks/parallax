@@ -3067,13 +3067,6 @@ migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/routes/issues.$fingerprint.tsx"
-current_owner = "routes"
-target_owner = "features/issues"
-migration_plan = "none"
-kind = "handwritten"
-
-[[ui.ownership]]
 path = "ui/src/routes/issues.index.tsx"
 current_owner = "routes"
 target_owner = "features/issues"
@@ -7992,3 +7985,245 @@ ceiling = 3
 metric = "rust.inline-test-modules"
 scope = "crates/parallax-server/src/serve.rs"
 ceiling = 1
+
+# Plan: coordinate RUM, shared console, auth, and keyboard ownership
+
+[[ui.ownership]]
+path = "ui/src/features/logs/tests/model/logs-search-trace.test.ts"
+current_owner = "features/logs"
+target_owner = "features/logs"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/rum/api/rum-api.ts"
+current_owner = "features/rum"
+target_owner = "features/rum"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/rum/api/rum-catalog.generated.ts"
+current_owner = "features/rum"
+target_owner = "features/rum"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/rum/api/rum-errors.generated.ts"
+current_owner = "features/rum"
+target_owner = "features/rum"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/rum/api/rum-journeys.generated.ts"
+current_owner = "features/rum"
+target_owner = "features/rum"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/rum/api/rum-mapper.ts"
+current_owner = "features/rum"
+target_owner = "features/rum"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/rum/api/rum-trace.generated.ts"
+current_owner = "features/rum"
+target_owner = "features/rum"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/rum/api/rum-vital-detail.generated.ts"
+current_owner = "features/rum"
+target_owner = "features/rum"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/rum/api/rum-vital-stats.generated.ts"
+current_owner = "features/rum"
+target_owner = "features/rum"
+migration_plan = "none"
+kind = "generated"
+
+[[ui.ownership]]
+path = "ui/src/features/rum/components/rum-page.tsx"
+current_owner = "features/rum"
+target_owner = "features/rum"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/rum/index.ts"
+current_owner = "features/rum"
+target_owner = "features/rum"
+migration_plan = "none"
+kind = "handwritten"
+facade = true
+
+[[ui.ownership]]
+path = "ui/src/features/rum/model/rum-error.ts"
+current_owner = "features/rum"
+target_owner = "features/rum"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/rum/model/rum-overview.ts"
+current_owner = "features/rum"
+target_owner = "features/rum"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/rum/model/rum-search.ts"
+current_owner = "features/rum"
+target_owner = "features/rum"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/rum/model/rum-vitals.ts"
+current_owner = "features/rum"
+target_owner = "features/rum"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/rum/tests/components/rum-contracts.test.tsx"
+current_owner = "features/rum"
+target_owner = "features/rum"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/features/rum/tests/model/rum-vitals.test.ts"
+current_owner = "features/rum"
+target_owner = "features/rum"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/row-keyboard-nav.test.tsx"
+current_owner = "shared/ui"
+target_owner = "shared/ui"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/lib/row-keyboard-nav.ts"
+current_owner = "shared/ui"
+target_owner = "shared/ui"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/auth/api-token.ts"
+current_owner = "platform/auth"
+target_owner = "platform/auth"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/platform/auth/tests/api-token.test.ts"
+current_owner = "platform/auth"
+target_owner = "platform/auth"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/issues.$service.$fingerprint.tsx"
+current_owner = "routes"
+target_owner = "features/issues"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/routes/rum.index.tsx"
+current_owner = "routes"
+target_owner = "features/rum"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/shared/console/detail-layout.tsx"
+current_owner = "shared/console"
+target_owner = "shared/console"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/shared/console/entity-links.tsx"
+current_owner = "shared/console"
+target_owner = "shared/console"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/shared/console/error-state.tsx"
+current_owner = "shared/console"
+target_owner = "shared/console"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/shared/console/query-bar.tsx"
+current_owner = "shared/console"
+target_owner = "shared/console"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/shared/console/shortcuts-dialog.tsx"
+current_owner = "shared/console"
+target_owner = "shared/console"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/shared/console/tests/detail-layout.test.tsx"
+current_owner = "shared/console"
+target_owner = "shared/console"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/shared/console/tests/entity-links.test.tsx"
+current_owner = "shared/console"
+target_owner = "shared/console"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/shared/console/tests/error-state.test.tsx"
+current_owner = "shared/console"
+target_owner = "shared/console"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/shared/console/tests/shortcuts-dialog.test.tsx"
+current_owner = "shared/console"
+target_owner = "shared/console"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/shared/keyboard.ts"
+current_owner = "shared/ui"
+target_owner = "shared/ui"
+migration_plan = "none"
+kind = "handwritten"
+
+[[ui.ownership]]
+path = "ui/src/shared/tests/keyboard.test.tsx"
+current_owner = "shared/ui"
+target_owner = "shared/ui"
+migration_plan = "none"
+kind = "handwritten"
+
