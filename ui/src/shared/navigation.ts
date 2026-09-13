@@ -1,5 +1,6 @@
 import type { Icon } from "@tabler/icons-react"
 import {
+  IconActivity,
   IconAffiliate,
   IconAffiliateFilled,
   IconArticle,
@@ -149,6 +150,14 @@ export const workspaceNav: NavItem[] = [
     activeIcon: IconDatabaseFilled,
     iconClassName:
       "bg-yellow-100 dark:bg-yellow-950 rounded-xl p-0.5 corner-squircle text-yellow-500 shadow-[inset_0_0_0_1px_rgba(234,179,8,0.14),0_2px_6px_-2px_rgba(234,179,8,0.25)] dark:shadow-(--custom-shadow)",
+  },
+  {
+    href: "/pipeline",
+    label: "Pipeline",
+    icon: IconActivity,
+    activeIcon: IconActivity,
+    iconClassName:
+      "bg-stone-200 dark:bg-stone-800 rounded-xl p-0.5 corner-squircle text-stone-500 shadow-[inset_0_0_0_1px_rgba(120,113,108,0.14),0_2px_6px_-2px_rgba(120,113,108,0.25)] dark:shadow-(--custom-shadow)",
   },
 ]
 

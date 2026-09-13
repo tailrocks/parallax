@@ -182,7 +182,13 @@ async fn characterize_failure_after(
     let issue_count = issues.first().map_or(0, |issue| issue.event_count);
     let errors = if let Some(issue) = issues.first() {
         store
-            .error_events_by_fingerprint(&issue.service, &issue.fingerprint, 0..=u128::MAX, 10)
+            .error_events_by_fingerprint(
+                &issue.service,
+                &issue.fingerprint,
+                0..=u128::MAX,
+                10,
+                None,
+            )
             .await
             .expect("error events")
             .len()
@@ -254,7 +260,7 @@ async fn record_errors_counts_one_occurrence_after_dedup() {
     assert_eq!(issues.len(), 1);
     assert_eq!(issues[0].event_count, 1);
     let events = store
-        .error_events_by_fingerprint("checkout", "fp", 0..=u128::MAX, 10)
+        .error_events_by_fingerprint("checkout", "fp", 0..=u128::MAX, 10, None)
         .await
         .expect("error events");
     assert_eq!(events.len(), 1);
@@ -308,6 +314,7 @@ async fn otlp_and_sentry_echo_share_one_occurrence() {
             &issues[0].fingerprint,
             0..=u128::MAX,
             10,
+            None,
         )
         .await
         .expect("error events");

@@ -46,6 +46,7 @@ function detailWithMappedFrames(): IssueDetailData {
       eventCount: 2,
       lastTraceId: null,
       tags: "{}",
+      environmentCounts: [{ environment: "production", count: 2 }],
       groupingExplanation: null,
       events: [
         {
@@ -58,6 +59,7 @@ function detailWithMappedFrames(): IssueDetailData {
           source: "exception",
           traceId: "",
           spanId: "span-js",
+          environment: "production",
           attributes: "{}",
           mappedFrames: [
             {

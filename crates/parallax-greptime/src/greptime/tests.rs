@@ -458,7 +458,7 @@ fn error_events_ranked_sql_outer_projection_matches_subquery_aliases() {
     // projection referencing `"ts"`, which the ranked subquery does not
     // expose → `issue.events` failed live with `No field named ts` while
     // mocked contract tests stayed green.
-    let sql = error_events_ranked_sql("('checkout', 'fp1')", 0, 10, 5);
+    let sql = error_events_ranked_sql("('checkout', 'fp1')", 0, 10, 5, None);
     let (outer, inner) = sql.split_once("FROM (").expect("ranked subquery");
     assert!(
         outer.contains("\"ts_nanos\""),

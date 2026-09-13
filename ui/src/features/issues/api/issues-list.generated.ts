@@ -34,6 +34,7 @@ export type IssuesListQueryVariables = Exact<{
   query?: string | null | undefined
   fromNanos?: string | null | undefined
   toNanos?: string | null | undefined
+  environment?: string | null | undefined
   sort?: Types.IssueSort | null | undefined
   limit?: number | null | undefined
 }>
@@ -94,6 +95,11 @@ export const IssuesListDocument = {
         },
         {
           kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "environment" } },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+        },
+        {
+          kind: "VariableDefinition",
           variable: { kind: "Variable", name: { kind: "Name", value: "sort" } },
           type: { kind: "NamedType", name: { kind: "Name", value: "IssueSort" } },
         },
@@ -134,6 +140,11 @@ export const IssuesListDocument = {
                 kind: "Argument",
                 name: { kind: "Name", value: "toNanos" },
                 value: { kind: "Variable", name: { kind: "Name", value: "toNanos" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "environment" },
+                value: { kind: "Variable", name: { kind: "Name", value: "environment" } },
               },
               {
                 kind: "Argument",

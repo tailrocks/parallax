@@ -140,3 +140,68 @@ fn queue_unavailable_is_counted() {
     health.unavailable(Signal::Metrics, Duration::ZERO);
     assert!(health.loss_json().contains("\"queue_unavailable\":1"));
 }
+
+#[test]
+fn accepted_counts_observed_enqueues_only() {
+    let health = IngestHealth::new(4);
+    health.enqueued(Signal::Traces, Duration::ZERO, true);
+    health.enqueued(Signal::Traces, Duration::ZERO, false);
+    health.enqueued(Signal::Logs, Duration::ZERO, true);
+    assert_eq!(health.accepted(Signal::Traces), 1);
+    assert_eq!(health.accepted(Signal::Logs), 1);
+    assert_eq!(health.accepted(Signal::Metrics), 0);
+}
+
+#[test]
+fn drop_counts_cover_every_reason() {
+    let health = IngestHealth::new(4);
+    health.ingress_reject(Signal::Logs);
+    health.ingress_reject(Signal::Logs);
+    health.terminal_drop(Signal::Traces);
+    health.unsupported_metric(5);
+    let rows = health.drop_counts();
+    assert_eq!(rows.len(), 4 * 4 + 2);
+    let find = |signal: Option<Signal>, reason: &str| {
+        rows.iter()
+            .find(|row| row.signal == signal && row.reason == reason)
+            .map(|row| row.count)
+    };
+    assert_eq!(find(Some(Signal::Logs), "ingress_reject"), Some(2));
+    assert_eq!(find(Some(Signal::Traces), "terminal_drop"), Some(1));
+    assert_eq!(find(Some(Signal::Traces), "ingress_reject"), Some(0));
+    assert_eq!(find(None, "unsupported_metric"), Some(5));
+    assert_eq!(find(None, "live_tail_lag"), Some(0));
+    for row in &rows {
+        assert_ne!(drop_reason_detail(row.reason), "unrecognized drop reason");
+    }
+}
+
+#[test]
+fn loss_json_keeps_original_keys_and_adds_signal_breakdown() {
+    let health = IngestHealth::new(4);
+    health.enqueued(Signal::Traces, Duration::ZERO, true);
+    health.ingress_reject(Signal::Logs);
+    let json = health.loss_json();
+    for key in [
+        "\"queue_unavailable\":0",
+        "\"terminal_drop\":0",
+        "\"ingress_reject\":1",
+        "\"spool_write\":0",
+        "\"unsupported_metric\":0",
+        "\"live_tail_lag\":0",
+        "\"accepted\":1",
+    ] {
+        assert!(json.contains(key), "missing {key} in {json}");
+    }
+    assert!(json.contains("\"by_signal\":{\"traces\":{\"accepted\":1"));
+    assert!(json.contains("\"logs\":{\"accepted\":0"));
+    assert!(json.contains("\"metrics\":{\"accepted\":0"));
+    assert!(json.contains("\"sentry\":{\"accepted\":0"));
+    // Still valid JSON with the original leading keys intact.
+    let parsed: serde_json::Value = serde_json::from_str(&json).expect("loss json parses");
+    assert_eq!(parsed["accepted"], serde_json::Value::from(1));
+    assert_eq!(
+        parsed["by_signal"]["logs"]["ingress_reject"],
+        serde_json::Value::from(1)
+    );
+}

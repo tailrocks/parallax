@@ -257,6 +257,10 @@ fn build_api_router(
         store: state.store,
         metadata: state.metadata,
         alerts: alerts.clone(),
+        pipeline: Arc::new(crate::pipeline_probe::PipelineProbe {
+            health: ingest.health.clone(),
+            sampling: config.sampling.clone(),
+        }),
         otlp_grpc_port: state.grpc_port,
         otlp_http_port: state.http_port,
         limits: config.limits.clone(),

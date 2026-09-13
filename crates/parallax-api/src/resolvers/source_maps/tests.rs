@@ -42,6 +42,7 @@ async fn seed_issue_with_stack(
             ts_nanos: 100,
             trace_id: None,
             attributes: &attributes,
+            environment: None,
         })
         .await
         .unwrap();

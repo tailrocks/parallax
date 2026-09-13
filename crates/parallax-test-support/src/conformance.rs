@@ -210,7 +210,7 @@ pub async fn assert_seeded(
         ("absent-service".into(), "absent-fp".into()),
     ];
     let batched = store
-        .error_events_by_fingerprints(&issue_keys, window.clone(), 1)
+        .error_events_by_fingerprints(&issue_keys, window.clone(), 1, None)
         .await?;
     anyhow::ensure!(
         batched
@@ -232,6 +232,7 @@ pub async fn assert_seeded(
             issue_key.1.as_str(),
             window.clone(),
             1,
+            None,
         )
         .await?;
     anyhow::ensure!(

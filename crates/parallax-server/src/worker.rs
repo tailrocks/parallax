@@ -396,6 +396,7 @@ impl Worker {
                         && event.trace_id.chars().any(|c| c != '0'))
                     .then_some(event.trace_id.as_str()),
                     attributes: &event.attributes,
+                    environment: event.environment.as_deref(),
                 },
             )
             .collect();
