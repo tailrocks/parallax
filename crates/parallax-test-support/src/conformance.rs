@@ -95,6 +95,10 @@ pub fn seed_memory(store: &MemoryStore) {
         source: ErrorSource::SpanStatus,
         trace_id: TRACE_ID.into(),
         span_id: SPAN_ID.into(),
+        invocation_id: Some("run-conformance".into()),
+        session_id: None,
+        service_version: None,
+        environment: None,
         attributes: serde_json::json!({}),
     }]);
 }
@@ -193,20 +197,25 @@ pub async fn assert_seeded(
     );
     let trace_events = store.error_events_by_traces(&[TRACE_ID.into()], 1).await?;
     anyhow::ensure!(!trace_events.is_empty());
-    let fingerprint = trace_events[0].fingerprint.clone();
-    let fingerprints = vec![fingerprint.clone(), "absent-fingerprint".to_string()];
+    let issue_key = (
+        trace_events[0].service.clone(),
+        trace_events[0].fingerprint.clone(),
+    );
+    let issue_keys = vec![issue_key.clone(), ("absent-service".into(), "absent-fp".into())];
     let batched = store
-        .error_events_by_fingerprints(&fingerprints, window, 1)
+        .error_events_by_fingerprints(&issue_keys, window, 1)
         .await?;
     anyhow::ensure!(
         batched
-            .get(&fingerprint)
+            .get(&issue_key)
             .is_some_and(|events| events.len() == 1),
-        "batched fingerprint events: {batched:?}"
+        "batched issue events: {batched:?}"
     );
     anyhow::ensure!(
-        batched.get("absent-fingerprint").is_some_and(Vec::is_empty),
-        "batched missing fingerprint: {batched:?}"
+        batched
+            .get(&("absent-service".to_string(), "absent-fp".to_string()))
+            .is_some_and(Vec::is_empty),
+        "batched missing issue: {batched:?}"
     );
     Ok(())
 }
