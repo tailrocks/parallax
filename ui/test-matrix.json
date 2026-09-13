@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "ratchets": {
-    "fire_event_calls": 28,
+    "fire_event_calls": 47,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 632,
-    "test_files": 171
+    "test_cases": 686,
+    "test_files": 181
   },
   "private_route_imports": [],
   "entries": [
@@ -17,7 +17,9 @@
       "lane_owner": "vitest/component",
       "layer": "component",
       "test_file": "ui/src/features/runtime-metrics/tests/components/metric-strip.test.tsx",
-      "test_ids": ["aborts stale requests and ignores late responses"],
+      "test_ids": [
+        "aborts stale requests and ignores late responses"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -31,9 +33,9 @@
       "test_file": "ui/src/layout/tests/application-shell.test.tsx",
       "test_ids": [
         "defines icons for every nav item",
+        "keeps the sidebar shortcut independent from the command palette shortcut",
         "keeps the styled error fallback inside the shell",
-        "surfaces dashboard navigation load failures",
-        "keeps the sidebar shortcut independent from the command palette shortcut"
+        "surfaces dashboard navigation load failures"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -47,8 +49,8 @@
       "layer": "component",
       "test_file": "ui/src/shared/console/tests/agent-session.test.tsx",
       "test_ids": [
-        "renders step timeline with trace links and token totals",
-        "hides token totals when both totals are zero"
+        "hides token totals when both totals are zero",
+        "renders step timeline with trace links and token totals"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -62,8 +64,8 @@
       "layer": "component",
       "test_file": "ui/src/features/traces/tests/components/trace-attribute-compare.test.tsx",
       "test_ids": [
-        "renders ranked BubbleUp rows with paired percentages",
-        "renders an empty state"
+        "renders an empty state",
+        "renders ranked BubbleUp rows with paired percentages"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -77,11 +79,12 @@
       "layer": "component",
       "test_file": "ui/src/layout/tests/command-palette-composition.test.tsx",
       "test_ids": [
-        "opens with Cmd/Ctrl+K and closes with Escape",
         "filters pages and navigates on selection",
-        "shows id jump entries for trace and ambiguous 16-hex ids",
+        "keeps pages available when entity fetches fail",
         "navigates from logs to a pasted trace id",
-        "keeps pages available when entity fetches fail"
+        "navigates to every listed page, including tests, metrics, and alerts",
+        "opens with Cmd/Ctrl+K and closes with Escape",
+        "shows id jump entries for trace and ambiguous 16-hex ids"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -95,9 +98,9 @@
       "layer": "component",
       "test_file": "ui/src/features/ecosystem/tests/components/ecosystem-graph.test.tsx",
       "test_ids": [
-        "renders trace-path graph nodes and edge links",
+        "D-014 eco-full: a 9-node column grows the canvas instead of overlapping cards",
         "dims outside-focus nodes and reports hidden topology",
-        "D-014 eco-full: a 9-node column grows the canvas instead of overlapping cards"
+        "renders trace-path graph nodes and edge links"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -110,7 +113,10 @@
       "lane_owner": "vitest/component",
       "layer": "component",
       "test_file": "ui/src/features/traces/tests/components/trace-evidence-gaps.test.tsx",
-      "test_ids": ["renders gaps when present", "renders nothing for clean evidence"],
+      "test_ids": [
+        "renders gaps when present",
+        "renders nothing for clean evidence"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -122,7 +128,9 @@
       "lane_owner": "vitest/component",
       "layer": "component",
       "test_file": "ui/src/features/traces/tests/components/trace-field-explorer.test.tsx",
-      "test_ids": ["loads field keys, stats, service filters, and SQL pivots"],
+      "test_ids": [
+        "loads field keys, stats, service filters, and SQL pivots"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -135,8 +143,8 @@
       "layer": "component",
       "test_file": "ui/src/features/traces/tests/components/trace-graphql-operations.test.tsx",
       "test_ids": [
-        "renders operation badges and selects the backing span",
-        "renders nothing for non-graphql traces"
+        "renders nothing for non-graphql traces",
+        "renders operation badges and selects the backing span"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -150,10 +158,10 @@
       "layer": "model",
       "test_file": "ui/src/shared/console/tests/heat-cell.test.tsx",
       "test_ids": [
-        "handles empty and single-value scales",
-        "filters non-finite values",
-        "keeps ties at the first matching rank",
         "clamps below min and above max",
+        "filters non-finite values",
+        "handles empty and single-value scales",
+        "keeps ties at the first matching rank",
         "preserves exact bucket boundaries"
       ],
       "required_environment": "jsdom-or-bun",
@@ -168,12 +176,12 @@
       "layer": "component",
       "test_file": "ui/src/shared/console/tests/kit.test.tsx",
       "test_ids": [
-        "sorts rows nulls-last and cycles sort params",
-        "creates pagination windows",
-        "resolves range search",
         "covers span kind palette and error override",
+        "creates pagination windows",
         "renders StatCard and RelativeTime",
-        "shares one relative-time ticker across mounted instances"
+        "resolves range search",
+        "shares one relative-time ticker across mounted instances",
+        "sorts rows nulls-last and cycles sort params"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -186,7 +194,9 @@
       "lane_owner": "vitest/component",
       "layer": "component",
       "test_file": "ui/src/features/time-range/tests/components/range-picker.test.tsx",
-      "test_ids": ["emits preset and custom calendar ranges"],
+      "test_ids": [
+        "emits preset and custom calendar ranges"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -213,7 +223,9 @@
       "lane_owner": "vitest/component",
       "layer": "component",
       "test_file": "ui/src/features/story/tests/components/story-timeline.test.tsx",
-      "test_ids": ["renders time ordered lanes with linked error beats"],
+      "test_ids": [
+        "renders time ordered lanes with linked error beats"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -227,8 +239,8 @@
       "test_file": "ui/src/shared/console/tests/top-movers.test.tsx",
       "test_ids": [
         "applies threshold edges and ranking",
-        "caps movers at six",
         "builds deterministic sentences",
+        "caps movers at six",
         "renders mover links with the current window",
         "renders the empty state"
       ],
@@ -285,9 +297,9 @@
       "layer": "component",
       "test_file": "ui/src/components/ui/__tests__/primitives.test.tsx",
       "test_ids": [
-        "keeps the reference button shape",
         "keeps badge hue variants",
-        "keeps card, empty, and kbd squircle recipes"
+        "keeps card, empty, and kbd squircle recipes",
+        "keeps the reference button shape"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented",
@@ -309,12 +321,12 @@
       "test_file": "ui/src/platform/sse/tests/use-live-stream.test.tsx",
       "test_ids": [
         "buffers frames and flushes after flushMs via onBatch",
-        "skips malformed frames when decoder rejects without killing the stream",
+        "closes the source and clears the interval on unmount",
+        "closes the stream while the tab is hidden and reconnects on visible",
         "maps onerror after open to reconnecting, then open again",
         "maps onerror during connecting to error",
-        "closes the source and clears the interval on unmount",
-        "stays idle and constructs no EventSource when url is null",
-        "closes the stream while the tab is hidden and reconnects on visible"
+        "skips malformed frames when decoder rejects without killing the stream",
+        "stays idle and constructs no EventSource when url is null"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -328,15 +340,15 @@
       "layer": "platform-contract",
       "test_file": "ui/src/platform/graphql/tests/transport.test.ts",
       "test_ids": [
-        "escapes backslash, quote, newline, and tab",
-        "strips carriage returns",
-        "escapes form-feed as a unicode escape",
-        "escapes NUL as a unicode escape",
-        "leaves plain ASCII unchanged",
         "dedupes concurrent identical queries into one fetch",
-        "serves a second call from Query cache within staleTime",
+        "escapes NUL as a unicode escape",
+        "escapes backslash, quote, newline, and tab",
+        "escapes form-feed as a unicode escape",
+        "leaves plain ASCII unchanged",
+        "raw graphql always hits the network",
         "refetches after invalidate",
-        "raw graphql always hits the network"
+        "serves a second call from Query cache within staleTime",
+        "strips carriage returns"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -392,9 +404,9 @@
       "layer": "model",
       "test_file": "ui/src/features/investigations/tests/model/investigation-state.test.ts",
       "test_ids": [
-        "serializes the current route as a restorable pin",
         "captures window params from hrefs",
-        "parses and caps investigation state"
+        "parses and caps investigation state",
+        "serializes the current route as a restorable pin"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -408,10 +420,10 @@
       "layer": "model",
       "test_file": "ui/src/features/quick-navigation/tests/quick-jump.test.ts",
       "test_ids": [
-        "routes 32-hex OTel trace ids directly to traces",
+        "does not route arbitrary words",
         "keeps 16-hex ids ambiguous across run, fingerprint, and span",
         "recognizes real-shaped non-hex run ids from fixtures and playground",
-        "does not route arbitrary words"
+        "routes 32-hex OTel trace ids directly to traces"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -426,9 +438,9 @@
       "test_file": "ui/src/domain/time-range/tests/range.test.ts",
       "test_ids": [
         "clears explicit bounds for preset windows",
-        "pins custom windows",
         "lets a preset range win over stale absolute bounds",
-        "mirrors update shape for cross-route links"
+        "mirrors update shape for cross-route links",
+        "pins custom windows"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -443,8 +455,8 @@
       "test_file": "ui/src/features/traces/tests/model/rpc-streams.test.ts",
       "test_ids": [
         "builds ordered message timelines for multi-message RPC spans",
-        "maps deadline outcomes and labels",
         "excludes unary and non-rpc spans",
+        "maps deadline outcomes and labels",
         "summarizes messaging producers consumers and max batch size"
       ],
       "required_environment": "jsdom-or-bun",
@@ -459,13 +471,13 @@
       "layer": "model",
       "test_file": "ui/src/features/issues/tests/model/stacktrace.test.ts",
       "test_ids": [
-        "parses Rust frames",
-        "parses compact Rust-style frames",
-        "parses Python frames",
-        "parses Node/V8 frames and marks libraries",
+        "keeps garbage as raw passthrough",
         "parses Go frames",
         "parses Java frames",
-        "keeps garbage as raw passthrough"
+        "parses Node/V8 frames and marks libraries",
+        "parses Python frames",
+        "parses Rust frames",
+        "parses compact Rust-style frames"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -493,7 +505,7 @@
         "t-orphan: a child whose parent never arrives renders as a detached root",
         "t-skew: a cross-service child starting 120ms before its CLIENT parent flags skew with non-negative geometry",
         "t-wide: 521 spans fanning from one root all render with finite geometry",
-        "t-zero: zero-duration next to a 1\u00b5s span never yields NaN layout",
+        "t-zero: zero-duration next to a 1µs span never yields NaN layout",
         "terminates a two-node parent cycle containing an error span",
         "terminates when an error span is its own parent",
         "treats missing parents as orphan roots"
@@ -509,7 +521,9 @@
       "lane_owner": "vitest/unit",
       "layer": "platform-contract",
       "test_file": "ui/src/platform/browser/tests/use-page-visible.test.tsx",
-      "test_ids": ["tracks document.visibilitychange"],
+      "test_ids": [
+        "tracks document.visibilitychange"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -522,12 +536,12 @@
       "layer": "route-contract",
       "test_file": "ui/src/features/dashboards/tests/components/dashboard-contracts.test.tsx",
       "test_ids": [
-        "preserves dashboard widget unknown fields",
-        "round-trips dashboard label choices without breaking old layouts",
         "does not propagate stale dashboard bounds for preset ranges",
-        "renders dashboard links with custom ranges",
         "loads N widget series with one aliased GraphQL document",
-        "passes custom ranges through dashboard create navigation"
+        "passes custom ranges through dashboard create navigation",
+        "preserves dashboard widget unknown fields",
+        "renders dashboard links with custom ranges",
+        "round-trips dashboard label choices without breaking old layouts"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -541,9 +555,13 @@
       "layer": "component",
       "test_file": "ui/src/features/issues/tests/components/issues-contracts.test.tsx",
       "test_ids": [
-        "renders trend and event cells as detail links",
         "preserves custom ranges in rendered drilldown links",
-        "renders parsed stack frames and timestamped breadcrumbs"
+        "renders no-trace correlation for an event without a trace",
+        "renders parsed stack frames and issue context",
+        "renders retry for unavailable and failed trace correlation",
+        "renders trend and event cells as detail links",
+        "selects the latest occurrence and renders ready trace correlation",
+        "updates selected occurrence data and correlation"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -557,24 +575,26 @@
       "layer": "component",
       "test_file": "ui/src/features/logs/tests/components/logs-contracts.test.tsx",
       "test_ids": [
-        "computes bucket and drag windows",
-        "round-trips optional column params",
         "builds context windows and strips unknown saved-view params",
+        "computes bucket and drag windows",
+        "drops empty where values",
+        "highlights the anchor row and exposes the context action",
+        "keeps existing row DOM nodes when live logs prepend",
         "maps all severity bands",
         "offers the event column in the menu",
-        "skips virtualizer overhead for capped log sets",
-        "virtualizes log sets over the threshold",
-        "keeps existing row DOM nodes when live logs prepend",
-        "renders date-aware time for multi-day ranges and opens the sheet",
-        "round-trips the where search param through validateLogsSearch",
-        "drops empty where values",
-        "preserves custom ranges in trace drilldown links",
+        "opens the doc viewer for the row selected with j + Enter",
         "opens the document sheet from keyboard row activation",
-        "highlights the anchor row and exposes the context action",
-        "renders saved views and dispatches select/delete/save actions"
+        "preserves custom ranges in trace drilldown links",
+        "renders date-aware time for multi-day ranges and opens the sheet",
+        "renders saved views and dispatches select/delete/save actions",
+        "round-trips optional column params",
+        "round-trips the where search param through validateLogsSearch",
+        "skips virtualizer overhead for capped log sets",
+        "virtualizes log sets over the threshold"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented"
+      "status": "implemented",
+      "fire_event_reason": "fireEvent dispatches the exact native DOM event against the focused implementation because the behavior under test depends on event propagation"
     },
     {
       "id": "vitest-033",
@@ -585,10 +605,10 @@
       "layer": "component",
       "test_file": "ui/src/features/overview/tests/components/overview-contracts.test.tsx",
       "test_ids": [
+        "guards negative stacked latency bands",
         "loads the one-document overview query",
         "renders KPIs and linked recent lists",
-        "renders onboarding when there is no telemetry",
-        "guards negative stacked latency bands"
+        "renders onboarding when there is no telemetry"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -602,12 +622,12 @@
       "layer": "component",
       "test_file": "ui/src/features/invocations/tests/components/invocations-contracts.test.tsx",
       "test_ids": [
-        "renders merged rows with mode, status, outcome, and links",
-        "toggles live mode through the search params",
-        "shows the empty state when nothing matches",
         "keeps rows overlapping the window and open-ended running rows",
+        "prepends unseen live traces and aggregates spans per trace",
+        "renders merged rows with mode, status, outcome, and links",
+        "shows the empty state when nothing matches",
         "sums event counts per stable error type, sorted",
-        "prepends unseen live traces and aggregates spans per trace"
+        "toggles live mode through the search params"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -622,11 +642,11 @@
       "test_file": "ui/src/features/services/tests/components/services-contracts.test.tsx",
       "test_ids": [
         "derives error rates and encoded detail hrefs",
-        "renders index rows with detail links",
+        "opens trace exemplar popovers from latency markers",
+        "preserves custom ranges in detail drilldown links",
         "preserves custom ranges in index drilldown links",
         "renders detail stats and hides infra band without CPU/memory",
-        "preserves custom ranges in detail drilldown links",
-        "opens trace exemplar popovers from latency markers"
+        "renders index rows with detail links"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -639,7 +659,9 @@
       "lane_owner": "vitest/route",
       "layer": "route-contract",
       "test_file": "ui/src/features/traces/tests/components/trace-graphql-section.test.tsx",
-      "test_ids": ["renders the GraphQL card only when operations exist"],
+      "test_ids": [
+        "renders the GraphQL card only when operations exist"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -652,8 +674,8 @@
       "layer": "route-contract",
       "test_file": "ui/src/features/traces/tests/components/trace-links.test.tsx",
       "test_ids": [
-        "renders resolved link targets as causal edge cards",
-        "renders added removed and changed sections"
+        "renders added removed and changed sections",
+        "renders resolved link targets as causal edge cards"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -669,8 +691,8 @@
       "test_ids": [
         "caps inspector events and expands on demand",
         "caps inspector links and expands on demand",
-        "surfaces deadline and cancel grpc status labels",
-        "renders the RPC card only for stream data"
+        "renders the RPC card only for stream data",
+        "surfaces deadline and cancel grpc status labels"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -684,9 +706,9 @@
       "layer": "route-contract",
       "test_file": "ui/src/features/traces/tests/components/trace-view-modes.test.tsx",
       "test_ids": [
-        "validates the trace view search param",
         "dispatches view changes from the mode toggle",
-        "renders skew warnings only for suspect pairs"
+        "renders skew warnings only for suspect pairs",
+        "validates the trace view search param"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -700,15 +722,19 @@
       "layer": "route-contract",
       "test_file": "ui/src/features/traces/tests/model/traces-search.test.tsx",
       "test_ids": [
-        "tolerates garbage and keeps valid params",
-        "resets page when filters change",
-        "clears pinned bounds when a preset range is picked",
-        "round-trips sort params",
         "builds trace detail links for preset and custom ranges",
-        "renders a compact trace table from a mocked payload"
+        "clears pinned bounds when a preset range is picked",
+        "opens the row selected with j + Enter",
+        "renders a compact trace table from a mocked payload",
+        "resets page when filters change",
+        "round-trips search state through serialize and parse",
+        "round-trips sort params",
+        "skips pagination and live mode",
+        "tolerates garbage and keeps valid params"
       ],
       "required_environment": "jsdom-or-bun",
-      "status": "implemented"
+      "status": "implemented",
+      "fire_event_reason": "fireEvent dispatches the exact native DOM event against the focused implementation because the behavior under test depends on event propagation"
     },
     {
       "id": "vitest-042",
@@ -720,10 +746,10 @@
       "test_file": "ui/tests/harness/diagnostics.test.ts",
       "test_ids": [
         "accepts exact ordered diagnostics",
-        "rejects unexpected, missing, reordered, and substring-only matches",
+        "owns browser rejections exactly",
         "owns page errors exactly",
-        "treats WebKit unused modulepreload as engine noise",
-        "owns browser rejections exactly"
+        "rejects unexpected, missing, reordered, and substring-only matches",
+        "treats WebKit unused modulepreload as engine noise"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -737,10 +763,10 @@
       "layer": "model",
       "test_file": "ui/tests/harness/boundaries.test.ts",
       "test_ids": [
-        "reports exact network escape targets",
         "provides UTC time and deterministic isolated identifiers",
-        "runs registered state resets without retaining removed owners",
+        "reports exact network escape targets",
         "reports pending timer classes exactly",
+        "runs registered state resets without retaining removed owners",
         "tracks and clears pending timer handles exactly"
       ],
       "required_environment": "bun",
@@ -786,9 +812,9 @@
       "test_file": "ui/src/features/invocations/tests/model/invocation.test.ts",
       "test_ids": [
         "derives the full matrix",
-        "uses now while running and end when finished",
         "labels one_shot readably and passes the rest through",
-        "prefers registered rows while keeping observed telemetry counts"
+        "prefers registered rows while keeping observed telemetry counts",
+        "uses now while running and end when finished"
       ],
       "required_environment": "bun",
       "status": "implemented"
@@ -802,10 +828,10 @@
       "layer": "component",
       "test_file": "ui/src/features/invocations/tests/components/session-journey.test.tsx",
       "test_ids": [
-        "interleaves entries chronologically",
         "attributes errors to the screen whose visit interval contains them",
-        "keeps unattributable errors in an outside-any-screen bucket",
         "drops errors outside the session window",
+        "interleaves entries chronologically",
+        "keeps unattributable errors in an outside-any-screen bucket",
         "marks an open session without a session-end entry"
       ],
       "required_environment": "jsdom-or-bun",
@@ -820,10 +846,10 @@
       "layer": "component",
       "test_file": "ui/src/features/invocations/tests/components/tabs.test.tsx",
       "test_ids": [
-        "renders the explicit empty state",
         "renders cycle aggregates and job attempt chips with trace links",
-        "renders the explicit empty state for a one-shot invocation",
-        "renders sessions, visits, actions, and conversations"
+        "renders sessions, visits, actions, and conversations",
+        "renders the explicit empty state",
+        "renders the explicit empty state for a one-shot invocation"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -915,7 +941,7 @@
       "layer": "model",
       "test_file": "ui/src/features/traces/tests/hooks/use-timeline-interactions.test.tsx",
       "test_ids": [
-        "commits a marquee drag as ZOOM_TO_RANGE with px\u2192ms payload",
+        "commits a marquee drag as ZOOM_TO_RANGE with px→ms payload",
         "ctrl-wheel zooms anchored at the cursor",
         "keeps pointer travel under 4px a click, not a zoom",
         "keyboard: +/- zoom around the viewport center, 0 fits",
@@ -983,6 +1009,7 @@
         "is deterministic: same name, same color, case/space-insensitive",
         "keeps 32 series pairwise distinguishable",
         "maps severities, status classes, and percentiles",
+        "never spends severity-ramp tokens on generic sentiment",
         "normalizes aliases onto the six tokens",
         "resolves ramp tokens to theme variables",
         "snaps hues to 15-degree slots so neighbors stay readable"
@@ -999,12 +1026,12 @@
       "layer": "model",
       "test_file": "ui/src/features/ecosystem/tests/model/service-map-layout.test.ts",
       "test_ids": [
-        "is stable across input order and metric changes",
         "changes with topology",
+        "handles an empty graph",
         "is deterministic across fallback runs and input order",
+        "is stable across input order and metric changes",
         "lays a directed chain from left to right",
-        "memoizes identical topology",
-        "handles an empty graph"
+        "memoizes identical topology"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1018,9 +1045,9 @@
       "layer": "model",
       "test_file": "ui/src/features/ecosystem/tests/model/service-map-layout-engine.test.ts",
       "test_ids": [
-        "runElkLayout is deterministic",
-        "runElkLayout boxes do not overlap",
         "fallback is deterministic and non-overlapping",
+        "runElkLayout boxes do not overlap",
+        "runElkLayout is deterministic",
         "topology key ignores metrics"
       ],
       "required_environment": "jsdom-or-bun",
@@ -1035,13 +1062,13 @@
       "layer": "model",
       "test_file": "ui/src/features/services/tests/model/service-detail.test.ts",
       "test_ids": [
+        "exemplarMarkers clamp x/y",
+        "exemplarMarkers empty on zero span",
+        "latencyBands stack non-negative deltas",
+        "latestErrorRate reads the last point",
         "stepSeconds clamps below 30 min",
         "stepSeconds is 60 for one hour",
-        "latestErrorRate reads the last point",
-        "latencyBands stack non-negative deltas",
-        "toLineData sorts and maps values",
-        "exemplarMarkers empty on zero span",
-        "exemplarMarkers clamp x/y"
+        "toLineData sorts and maps values"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1055,8 +1082,8 @@
       "layer": "model",
       "test_file": "ui/src/features/services/tests/model/services-search.test.ts",
       "test_ids": [
-        "keeps known sort and query",
         "drops unknown sort",
+        "keeps known sort and query",
         "patchServicesSearch removes empty",
         "rejects empty q"
       ],
@@ -1072,9 +1099,9 @@
       "layer": "model",
       "test_file": "ui/src/features/tests/tests/model/test-summary.test.ts",
       "test_ids": [
-        "suiteLabel empty and joined",
+        "flakyLabel every variant",
         "rollupLabel every variant",
-        "flakyLabel every variant"
+        "suiteLabel empty and joined"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1089,8 +1116,8 @@
       "test_file": "ui/src/features/overview/tests/model/overview-chart-helpers.test.ts",
       "test_ids": [
         "mergeSignalSeries unions timestamps",
-        "sampleSignalData has 6 points",
-        "sampleLatencyData bands non-negative"
+        "sampleLatencyData bands non-negative",
+        "sampleSignalData has 6 points"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1104,23 +1131,23 @@
       "layer": "model",
       "test_file": "ui/src/features/ecosystem/tests/model/ecosystem-topology.test.ts",
       "test_ids": [
-        "includes only the focus at 0 hops",
-        "expands 1-hop undirected neighborhood",
-        "reaches kafka at 2 hops from checkout",
-        "hide mode drops outside nodes and edges",
-        "dim mode keeps full graph and tags outside",
-        "null focus keeps everything in-focus",
-        "stale focus keeps the graph visible",
-        "all preset hides nothing",
         "1% preset hides the low-rate CLI edge",
         "5% keeps edges at exactly the threshold, hides below",
-        "prefers db.system.name ladder for database nodes",
-        "falls back to legacy db.system and server.address name",
-        "resolves messaging as queue",
-        "resolves bare server.address as external HTTP",
-        "returns null without external attributes",
+        "all preset hides nothing",
         "computes error rate from counts",
-        "scales width with log2(callCount)"
+        "dim mode keeps full graph and tags outside",
+        "expands 1-hop undirected neighborhood",
+        "falls back to legacy db.system and server.address name",
+        "hide mode drops outside nodes and edges",
+        "includes only the focus at 0 hops",
+        "null focus keeps everything in-focus",
+        "prefers db.system.name ladder for database nodes",
+        "reaches kafka at 2 hops from checkout",
+        "resolves bare server.address as external HTTP",
+        "resolves messaging as queue",
+        "returns null without external attributes",
+        "scales width with log2(callCount)",
+        "stale focus keeps the graph visible"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1289,7 +1316,7 @@
         "AND chain with mixed operators",
         "CONTAINS and NOT CONTAINS",
         "NOT without CONTAINS rejected",
-        "OR rejected \u2014 grammar is AND-only",
+        "OR rejected — grammar is AND-only",
         "bare literal value",
         "bare-safe values stay unquoted",
         "case-insensitive keywords",
@@ -1318,10 +1345,10 @@
       "layer": "model",
       "test_file": "ui/src/shared/tests/where-clause-reserved.test.ts",
       "test_ids": [
-        "reserved words in value position keep original spelling",
         "reserved words in key position stay keys",
+        "reserved words in value position keep original spelling",
         "reserved-word values quoted (case-insensitive)",
-        "serialize\u2192parse reserved-word keys and values"
+        "serialize→parse reserved-word keys and values"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1335,8 +1362,8 @@
       "layer": "model",
       "test_file": "ui/src/features/ecosystem/tests/model/ecosystem-search.test.ts",
       "test_ids": [
-        "preserves valid focus controls",
-        "canonicalizes defaults and rejects invalid values"
+        "canonicalizes defaults and rejects invalid values",
+        "preserves valid focus controls"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1350,11 +1377,11 @@
       "layer": "model",
       "test_file": "ui/src/features/alerts/tests/model/alert-incident-timeline.test.ts",
       "test_ids": [
-        "orders open \u2192 renotify \u2192 resolved with deliveries and checks",
         "adds renotify when open and last > first",
         "marks failed deliveries",
-        "sums to 100 with largest remainder",
-        "returns empty for zero total"
+        "orders open → renotify → resolved with deliveries and checks",
+        "returns empty for zero total",
+        "sums to 100 with largest remainder"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1368,12 +1395,12 @@
       "layer": "model",
       "test_file": "ui/src/features/ecosystem/tests/model/ecosystem-url.test.ts",
       "test_ids": [
+        "clamps hops and focusMode",
         "defaults when empty",
-        "round-trips focus, hops, mode, traffic preset",
+        "encodeMinTraffic prefers preset labels",
         "omits default hops/mode/traffic from encode",
         "parses traffic presets and percent strings",
-        "clamps hops and focusMode",
-        "encodeMinTraffic prefers preset labels"
+        "round-trips focus, hops, mode, traffic preset"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1403,12 +1430,12 @@
       "layer": "model",
       "test_file": "ui/src/features/logs/tests/model/log-pattern-match.test.ts",
       "test_ids": [
+        "escapes regex metacharacters in stable tokens",
+        "keeps only matching bodies in order",
         "matches parameter churn on the same skeleton",
         "rejects a different stable skeleton",
         "requires full-line alignment",
-        "returns longest contiguous stable run",
-        "keeps only matching bodies in order",
-        "escapes regex metacharacters in stable tokens"
+        "returns longest contiguous stable run"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1423,11 +1450,11 @@
       "test_file": "ui/src/features/logs/tests/model/log-patterns-url.test.ts",
       "test_ids": [
         "defaults when empty",
-        "parses patterns flag variants",
-        "round-trips patterns + template",
-        "omits defaults from encode",
         "does not encode template when patterns is off",
-        "merges onto existing params without clobbering unrelated keys"
+        "merges onto existing params without clobbering unrelated keys",
+        "omits defaults from encode",
+        "parses patterns flag variants",
+        "round-trips patterns + template"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1442,12 +1469,12 @@
       "layer": "route-contract",
       "test_file": "ui/src/routes/__tests__/-alerts.test.tsx",
       "test_ids": [
-        "serializes a template draft into an input-object mutation",
         "escapes quotes and includes optional fields",
         "floors minimumSampleCount at 1 for the API contract",
-        "wraps the url into escaped config JSON",
+        "labels rule conditions incl. ranges",
         "parses opaque JSON string arrays defensively",
-        "labels rule conditions incl. ranges"
+        "serializes a template draft into an input-object mutation",
+        "wraps the url into escaped config JSON"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented",
@@ -1467,7 +1494,9 @@
       "lane_owner": "playwright/foundation",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/smoke/foundation.spec.ts",
-      "test_ids": ["root shell exposes brand and primary navigation @pw-foundation-shell"],
+      "test_ids": [
+        "root shell exposes brand and primary navigation @pw-foundation-shell"
+      ],
       "required_environment": "chromium-foundation",
       "status": "implemented",
       "dataset_id": "foundation-default",
@@ -1482,7 +1511,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
-      "test_ids": ["root readiness and primary navigation @pw-shell-root-nav"],
+      "test_ids": [
+        "root readiness and primary navigation @pw-shell-root-nav"
+      ],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "shell-empty",
@@ -1497,7 +1528,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
-      "test_ids": ["workspace navigation and deep-link refresh @pw-shell-workspace-deeplink"],
+      "test_ids": [
+        "workspace navigation and deep-link refresh @pw-shell-workspace-deeplink"
+      ],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "shell-empty",
@@ -1512,7 +1545,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
-      "test_ids": ["invalid route shows not-found surface @pw-shell-not-found"],
+      "test_ids": [
+        "invalid route shows not-found surface @pw-shell-not-found"
+      ],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "shell-empty",
@@ -1527,7 +1562,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
-      "test_ids": ["theme choice persists across reload @pw-shell-theme"],
+      "test_ids": [
+        "theme choice persists across reload @pw-shell-theme"
+      ],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "shell-empty",
@@ -1542,7 +1579,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/shell.spec.ts",
-      "test_ids": ["recoverable API failure surfaces error panel @pw-shell-api-failure"],
+      "test_ids": [
+        "recoverable API failure surfaces error panel @pw-shell-api-failure"
+      ],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "shell-empty",
@@ -1557,7 +1596,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/investigations.spec.ts",
-      "test_ids": ["lists seeded investigation and opens detail @pw-investigations-list-detail"],
+      "test_ids": [
+        "lists seeded investigation and opens detail @pw-investigations-list-detail"
+      ],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "investigations-pilot",
@@ -1572,7 +1613,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/investigations.spec.ts",
-      "test_ids": ["create edit delete pin note and persist @pw-investigations-crud-pilot"],
+      "test_ids": [
+        "create edit delete pin note and persist @pw-investigations-crud-pilot"
+      ],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "investigations-pilot",
@@ -1587,7 +1630,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/sql.spec.ts",
-      "test_ids": ["run query snippet save and delete @pw-sql-crud"],
+      "test_ids": [
+        "run query snippet save and delete @pw-sql-crud"
+      ],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "sql-pilot",
@@ -1602,7 +1647,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/ecosystem.spec.ts",
-      "test_ids": ["reserved @ecosystem browser contracts"],
+      "test_ids": [
+        "reserved @ecosystem browser contracts"
+      ],
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "ecosystem-default",
@@ -1617,7 +1664,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/dashboards.spec.ts",
-      "test_ids": ["create widget persist and delete @pw-dashboards-crud"],
+      "test_ids": [
+        "create widget persist and delete @pw-dashboards-crud"
+      ],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "dashboards-pilot",
@@ -1632,7 +1681,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/services.spec.ts",
-      "test_ids": ["reserved @services browser contracts"],
+      "test_ids": [
+        "reserved @services browser contracts"
+      ],
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "services-default",
@@ -1647,7 +1698,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/issues.spec.ts",
-      "test_ids": ["reserved @issues browser contracts"],
+      "test_ids": [
+        "reserved @issues browser contracts"
+      ],
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "issues-default",
@@ -1662,7 +1715,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/runs.spec.ts",
-      "test_ids": ["reserved @runs browser contracts"],
+      "test_ids": [
+        "reserved @runs browser contracts"
+      ],
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "runs-default",
@@ -1677,7 +1732,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/logs.spec.ts",
-      "test_ids": ["lists seeded log body across services @pw-logs-pilot-body"],
+      "test_ids": [
+        "lists seeded log body across services @pw-logs-pilot-body"
+      ],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "logs-pilot",
@@ -1692,7 +1749,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/alerts.spec.ts",
-      "test_ids": ["destination rule toggle and delete @pw-alerts-crud"],
+      "test_ids": [
+        "destination rule toggle and delete @pw-alerts-crud"
+      ],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "alerts-pilot",
@@ -1707,7 +1766,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/metrics.spec.ts",
-      "test_ids": ["lists seeded gauge and histogram @pw-metrics-pilot-catalog"],
+      "test_ids": [
+        "lists seeded gauge and histogram @pw-metrics-pilot-catalog"
+      ],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "metrics-pilot",
@@ -1722,7 +1783,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/logs-views.spec.ts",
-      "test_ids": ["filter save restore and delete view @pw-logs-views-crud"],
+      "test_ids": [
+        "filter save restore and delete view @pw-logs-views-crud"
+      ],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "logs-pilot",
@@ -1737,7 +1800,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/traces.spec.ts",
-      "test_ids": ["reserved @traces browser contracts"],
+      "test_ids": [
+        "reserved @traces browser contracts"
+      ],
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "traces-default",
@@ -1752,7 +1817,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/overview.spec.ts",
-      "test_ids": ["reserved @overview browser contracts"],
+      "test_ids": [
+        "reserved @overview browser contracts"
+      ],
       "required_environment": "chromium-fixture",
       "status": "reserved",
       "dataset_id": "overview-default",
@@ -1768,8 +1835,8 @@
       "test_file": "ui/src/domain/runtime-metrics/tests/runtime-metric.test.ts",
       "scenario_owner": "features/runtime-metrics",
       "test_ids": [
-        "accepts empty points and null unit",
-        "accepts byte and ratio units with ordered points"
+        "accepts byte and ratio units with ordered points",
+        "accepts empty points and null unit"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1782,7 +1849,10 @@
       "lane_owner": "vitest/unit",
       "test_file": "ui/src/domain/story/tests/story-beat.test.ts",
       "scenario_owner": "features/story",
-      "test_ids": ["accepts full and sparse beat shapes", "keeps nanosecond timestamps as strings"],
+      "test_ids": [
+        "accepts full and sparse beat shapes",
+        "keeps nanosecond timestamps as strings"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -1796,8 +1866,8 @@
       "scenario_owner": "features/runtime-metrics",
       "test_ids": [
         "maps cpu ratio to percent and preserves empty series",
-        "prefers invocationId over service and uses raw transport",
         "passes service when invocationId is absent",
+        "prefers invocationId over service and uses raw transport",
         "recognizes GraphQL abort and DOM AbortError"
       ],
       "required_environment": "jsdom-or-bun",
@@ -1857,14 +1927,14 @@
       "test_file": "ui/src/features/dashboards/tests/api/widget-series-contract.test.ts",
       "scenario_owner": "features/dashboards",
       "test_ids": [
-        "returns no chunks for an empty widget list",
         "builds one document for up to 24 widgets with series_<ordinal> aliases",
-        "splits at 24 and preserves order across chunks",
-        "uses only Variable argument nodes",
+        "makes no request for an empty widget list",
         "preserves result order for multi-chunk loads",
         "rejects alias set mismatch",
         "rejects malformed series values without leaking payload",
-        "makes no request for an empty widget list"
+        "returns no chunks for an empty widget list",
+        "splits at 24 and preserves order across chunks",
+        "uses only Variable argument nodes"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1877,7 +1947,9 @@
       "lane_owner": "vitest/unit",
       "test_file": "ui/src/platform/external-values/tests/boundary-diagnostic.test.ts",
       "scenario_owner": "platform/graphql",
-      "test_ids": ["renders only stable fields and caps length"],
+      "test_ids": [
+        "renders only stable fields and caps length"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -1891,11 +1963,11 @@
       "scenario_owner": "platform/graphql",
       "test_ids": [
         "decodes a valid JSON string through one decoder",
-        "rejects non-string input kinds without throwing",
-        "rejects invalid JSON",
-        "rejects schema failures",
         "defends against throwing decoders",
-        "never puts payload sentinels into diagnostics"
+        "never puts payload sentinels into diagnostics",
+        "rejects invalid JSON",
+        "rejects non-string input kinds without throwing",
+        "rejects schema failures"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1909,16 +1981,16 @@
       "test_file": "ui/src/platform/graphql/tests/client.test.ts",
       "scenario_owner": "platform/graphql",
       "test_ids": [
-        "sends operationName, query, and variables",
+        "cached form dedupes concurrent identical operations",
+        "cached form serves Query hit and refetches after invalidate",
         "decodes a valid operation result",
-        "rejects non-empty errors even when data is present",
-        "rejects missing data",
-        "rejects schema-invalid operation data with bounded paths",
         "maps HTTP failures",
         "maps abort",
-        "cached form dedupes concurrent identical operations",
+        "rejects missing data",
+        "rejects non-empty errors even when data is present",
         "rejects non-object envelopes",
-        "cached form serves Query hit and refetches after invalidate"
+        "rejects schema-invalid operation data with bounded paths",
+        "sends operationName, query, and variables"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1932,8 +2004,8 @@
       "test_file": "ui/src/platform/graphql/tests/generation-contract.test.ts",
       "scenario_owner": "platform/graphql",
       "test_ids": [
-        "probe document is a named TypedDocumentNode with Zod result schema",
-        "generated modules export the probe operation schema"
+        "generated modules export the probe operation schema",
+        "probe document is a named TypedDocumentNode with Zod result schema"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1947,11 +2019,11 @@
       "test_file": "ui/src/platform/graphql/tests/variables.test.ts",
       "scenario_owner": "platform/graphql",
       "test_ids": [
-        "sorts object keys and preserves array order",
         "omits undefined object properties",
-        "rejects undefined root",
+        "rejects cycles",
         "rejects non-finite numbers",
-        "rejects cycles"
+        "rejects undefined root",
+        "sorts object keys and preserves array order"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1965,10 +2037,10 @@
       "test_file": "ui/src/platform/sse/tests/live-stream-controller.test.ts",
       "scenario_owner": "platform/live",
       "test_ids": [
+        "aborts via signal",
         "buffers decoded frames and flushes on interval",
-        "skips malformed frames without closing",
         "disposes source and timer; ignores late events",
-        "aborts via signal"
+        "skips malformed frames without closing"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1982,8 +2054,8 @@
       "test_file": "ui/src/platform/storage/tests/browser-storage-client.test.ts",
       "scenario_owner": "platform/browser",
       "test_ids": [
-        "reads and writes through injected storage",
-        "maps security/quota exceptions to typed failures"
+        "maps security/quota exceptions to typed failures",
+        "reads and writes through injected storage"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -1997,9 +2069,9 @@
       "test_file": "ui/src/platform/storage/tests/versioned-storage-codec.test.ts",
       "scenario_owner": "platform/browser",
       "test_ids": [
-        "round-trips versioned values",
+        "does not delete corrupt or unsupported-version data",
         "returns null for missing keys without rewriting",
-        "does not delete corrupt or unsupported-version data"
+        "round-trips versioned values"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -2013,8 +2085,8 @@
       "test_file": "ui/src/platform/url/tests/decode-search-value.test.ts",
       "scenario_owner": "platform/browser",
       "test_ids": [
-        "returns decoded value on success",
-        "rejects primitives/objects/arrays that fail the feature schema"
+        "rejects primitives/objects/arrays that fail the feature schema",
+        "returns decoded value on success"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -2027,7 +2099,9 @@
       "lane_owner": "vitest/component",
       "test_file": "ui/src/platform/visibility/tests/use-page-visible.test.tsx",
       "scenario_owner": "platform/browser",
-      "test_ids": ["tracks document.visibilitychange"],
+      "test_ids": [
+        "tracks document.visibilitychange"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -2055,9 +2129,9 @@
       "layer": "model",
       "test_file": "ui/src/features/sql/tests/model/sql-history.test.ts",
       "test_ids": [
-        "returns empty for absent, malformed, and non-array wire",
+        "dedupes, orders most-recent-first, and caps at 20",
         "preserves mixed-array members without filtering",
-        "dedupes, orders most-recent-first, and caps at 20"
+        "returns empty for absent, malformed, and non-array wire"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -2100,7 +2174,9 @@
       "lane_owner": "vitest/component",
       "layer": "component",
       "test_file": "ui/src/features/sql/tests/components/sql-results-table.test.tsx",
-      "test_ids": ["renders truncation notice and linkified cells"],
+      "test_ids": [
+        "renders truncation notice and linkified cells"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -2112,7 +2188,9 @@
       "lane_owner": "vitest/component",
       "layer": "component",
       "test_file": "ui/src/features/sql/tests/components/snippets-menu.test.tsx",
-      "test_ids": ["dispatches select, save, and delete actions"],
+      "test_ids": [
+        "dispatches select, save, and delete actions"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -2124,7 +2202,9 @@
       "lane_owner": "vitest/route",
       "layer": "route-contract",
       "test_file": "ui/src/routes/tests/-sql-route.test.tsx",
-      "test_ids": ["renders SQL keyboard hint and examples menu"],
+      "test_ids": [
+        "renders SQL keyboard hint and examples menu"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented",
       "raw_router_reason": "Composes the public SqlPage behind a private memory router for route chrome assertions without importing Route.options.component"
@@ -2137,7 +2217,9 @@
       "lane_owner": "vitest/route",
       "layer": "route-contract",
       "test_file": "ui/src/routes/tests/-services-routes.test.tsx",
-      "test_ids": ["exposes public search and loaders for thin route wiring"],
+      "test_ids": [
+        "exposes public search and loaders for thin route wiring"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -2149,7 +2231,9 @@
       "lane_owner": "vitest/route",
       "layer": "route-contract",
       "test_file": "ui/src/routes/tests/-issues-routes.test.tsx",
-      "test_ids": ["exposes public search and loaders for thin route wiring"],
+      "test_ids": [
+        "exposes public search and loaders for thin route wiring"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -2161,7 +2245,9 @@
       "lane_owner": "vitest/route",
       "layer": "route-contract",
       "test_file": "ui/src/routes/tests/-logs-routes.test.tsx",
-      "test_ids": ["exposes public search and loader for thin route wiring"],
+      "test_ids": [
+        "exposes public search and loader for thin route wiring"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -2173,7 +2259,9 @@
       "lane_owner": "vitest/route",
       "layer": "route-contract",
       "test_file": "ui/src/routes/tests/-invocations-routes.test.tsx",
-      "test_ids": ["exposes public search and loaders for thin route wiring"],
+      "test_ids": [
+        "exposes public search and loaders for thin route wiring"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -2185,7 +2273,9 @@
       "lane_owner": "vitest/route",
       "layer": "route-contract",
       "test_file": "ui/src/routes/tests/-overview-routes.test.tsx",
-      "test_ids": ["exposes public loader helpers for thin route wiring"],
+      "test_ids": [
+        "exposes public loader helpers for thin route wiring"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -2199,7 +2289,9 @@
       "risk": "Traces route wiring can lose public search/loader facade contracts",
       "scenario_owner": "features/traces",
       "test_file": "ui/src/routes/tests/-traces-routes.test.tsx",
-      "test_ids": ["exposes public search and loaders for thin route wiring"]
+      "test_ids": [
+        "exposes public search and loaders for thin route wiring"
+      ]
     },
     {
       "id": "pw-full-stack-investigations",
@@ -2209,7 +2301,9 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/investigations.spec.ts",
-      "test_ids": ["investigations surface mounts on managed stack @pw-full-stack-investigations"],
+      "test_ids": [
+        "investigations surface mounts on managed stack @pw-full-stack-investigations"
+      ],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "investigations-full-stack",
@@ -2223,7 +2317,9 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/sql.spec.ts",
-      "test_ids": ["sql surface mounts on managed stack @pw-full-stack-sql"],
+      "test_ids": [
+        "sql surface mounts on managed stack @pw-full-stack-sql"
+      ],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "sql-full-stack",
@@ -2237,7 +2333,9 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/ecosystem.spec.ts",
-      "test_ids": ["ecosystem surface mounts on managed stack @pw-full-stack-ecosystem"],
+      "test_ids": [
+        "ecosystem surface mounts on managed stack @pw-full-stack-ecosystem"
+      ],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "ecosystem-full-stack",
@@ -2251,7 +2349,9 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/dashboards.spec.ts",
-      "test_ids": ["dashboards surface mounts on managed stack @pw-full-stack-dashboards"],
+      "test_ids": [
+        "dashboards surface mounts on managed stack @pw-full-stack-dashboards"
+      ],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "dashboards-full-stack",
@@ -2265,7 +2365,9 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/services.spec.ts",
-      "test_ids": ["seeded service visible on services list @pw-full-stack-services"],
+      "test_ids": [
+        "seeded service visible on services list @pw-full-stack-services"
+      ],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "services-full-stack",
@@ -2279,7 +2381,9 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/issues.spec.ts",
-      "test_ids": ["seeded issue open on issues list and detail @pw-full-stack-issues"],
+      "test_ids": [
+        "seeded issue open on issues list and detail @pw-full-stack-issues"
+      ],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "issues-full-stack",
@@ -2293,7 +2397,9 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/tests.spec.ts",
-      "test_ids": ["tests explorer loads product chrome @pw-full-stack-tests"],
+      "test_ids": [
+        "tests explorer loads product chrome @pw-full-stack-tests"
+      ],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "tests-full-stack",
@@ -2307,7 +2413,9 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/runs.spec.ts",
-      "test_ids": ["invocations list loads seeded invocation @pw-full-stack-runs"],
+      "test_ids": [
+        "invocations list loads seeded invocation @pw-full-stack-runs"
+      ],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "runs-full-stack",
@@ -2321,7 +2429,9 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/logs.spec.ts",
-      "test_ids": ["logs surface loads for seeded service @pw-full-stack-logs"],
+      "test_ids": [
+        "logs surface loads for seeded service @pw-full-stack-logs"
+      ],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "logs-full-stack",
@@ -2335,7 +2445,9 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/traces.spec.ts",
-      "test_ids": ["traces surface loads for seeded stack @pw-full-stack-traces"],
+      "test_ids": [
+        "traces surface loads for seeded stack @pw-full-stack-traces"
+      ],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "traces-full-stack",
@@ -2349,7 +2461,9 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/trace-detail.spec.ts",
-      "test_ids": ["deep-link tree flame and critical path @pw-trace-detail"],
+      "test_ids": [
+        "deep-link tree flame and critical path @pw-trace-detail"
+      ],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "traces-full-stack",
@@ -2364,7 +2478,9 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/service-detail.spec.ts",
-      "test_ids": ["RED charts and prefiltered links @pw-service-detail"],
+      "test_ids": [
+        "RED charts and prefiltered links @pw-service-detail"
+      ],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "services-full-stack",
@@ -2379,7 +2495,9 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/metrics.spec.ts",
-      "test_ids": ["catalog workbench and add-to-dashboard @pw-metrics-workbench"],
+      "test_ids": [
+        "catalog workbench and add-to-dashboard @pw-metrics-workbench"
+      ],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "metrics-full-stack",
@@ -2394,7 +2512,9 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/tests-detail.spec.ts",
-      "test_ids": ["case route renders explorer or empty @pw-tests-detail"],
+      "test_ids": [
+        "case route renders explorer or empty @pw-tests-detail"
+      ],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "tests-full-stack",
@@ -2409,7 +2529,9 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/invocation-hub.spec.ts",
-      "test_ids": ["six hub tabs render seeded invocation @pw-invocation-hub"],
+      "test_ids": [
+        "six hub tabs render seeded invocation @pw-invocation-hub"
+      ],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "runs-full-stack",
@@ -2424,7 +2546,9 @@
       "lane_owner": "playwright/contracts",
       "layer": "browser-contract",
       "test_file": "ui/tests/e2e/contracts/command-palette.spec.ts",
-      "test_ids": ["paste seeded trace id lands on detail @pw-command-palette-trace"],
+      "test_ids": [
+        "paste seeded trace id lands on detail @pw-command-palette-trace"
+      ],
       "required_environment": "chromium-fixture",
       "status": "implemented",
       "dataset_id": "traces-pilot",
@@ -2439,7 +2563,9 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/shell.spec.ts",
-      "test_ids": ["shell nav and brand against managed stack @pw-full-stack-shell"],
+      "test_ids": [
+        "shell nav and brand against managed stack @pw-full-stack-shell"
+      ],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "shell-full-stack",
@@ -2453,7 +2579,9 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/overview.spec.ts",
-      "test_ids": ["overview renders for seeded stack @pw-full-stack-overview"],
+      "test_ids": [
+        "overview renders for seeded stack @pw-full-stack-overview"
+      ],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "overview-full-stack",
@@ -2499,7 +2627,9 @@
       "lane_owner": "playwright/full-stack",
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/live-transport.spec.ts",
-      "test_ids": ["one post-open log appears once through live path @pw-storage-live-transport"],
+      "test_ids": [
+        "one post-open log appears once through live path @pw-storage-live-transport"
+      ],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
       "dataset_id": "pw-storage",
@@ -2513,7 +2643,9 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/cross/shell-cross.spec.ts",
-      "test_ids": ["root readiness on alternate engine @pw-shell-cross-root-nav"],
+      "test_ids": [
+        "root readiness on alternate engine @pw-shell-cross-root-nav"
+      ],
       "required_environment": "cross-firefox-webkit",
       "status": "implemented",
       "dataset_id": "shell-empty",
@@ -2527,7 +2659,9 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/mobile/shell-mobile.spec.ts",
-      "test_ids": ["device settings active and nav without horizontal overflow @pw-shell-mobile"],
+      "test_ids": [
+        "device settings active and nav without horizontal overflow @pw-shell-mobile"
+      ],
       "required_environment": "mobile-chromium-webkit",
       "status": "implemented",
       "dataset_id": "shell-empty",
@@ -2542,8 +2676,8 @@
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/accessibility/shell-accessibility.spec.ts",
       "test_ids": [
-        "root shell passes axe and keyboard focus @pw-shell-a11y",
-        "investigations list keyboard and axe @pw-investigations-a11y"
+        "investigations list keyboard and axe @pw-investigations-a11y",
+        "root shell passes axe and keyboard focus @pw-shell-a11y"
       ],
       "required_environment": "accessibility-chromium",
       "status": "implemented",
@@ -2558,7 +2692,9 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/accessibility/investigations-accessibility.spec.ts",
-      "test_ids": ["list detail and dialog axe keyboard focus @pw-investigations-a11y-detail"],
+      "test_ids": [
+        "list detail and dialog axe keyboard focus @pw-investigations-a11y-detail"
+      ],
       "required_environment": "accessibility-chromium",
       "status": "implemented",
       "dataset_id": "investigations-pilot",
@@ -2572,7 +2708,9 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/mobile/investigations-mobile.spec.ts",
-      "test_ids": ["list open detail and dialog on mobile @pw-investigations-mobile"],
+      "test_ids": [
+        "list open detail and dialog on mobile @pw-investigations-mobile"
+      ],
       "required_environment": "mobile-chromium-webkit",
       "status": "implemented",
       "dataset_id": "investigations-pilot",
@@ -2586,7 +2724,9 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/accessibility/surfaces-accessibility.spec.ts",
-      "test_ids": ["logs list axe @pw-a11y-logs"],
+      "test_ids": [
+        "logs list axe @pw-a11y-logs"
+      ],
       "required_environment": "accessibility-chromium",
       "status": "implemented",
       "dataset_id": "logs-pilot",
@@ -2600,7 +2740,9 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/accessibility/surfaces-accessibility.spec.ts",
-      "test_ids": ["traces list axe @pw-a11y-traces"],
+      "test_ids": [
+        "traces list axe @pw-a11y-traces"
+      ],
       "required_environment": "accessibility-chromium",
       "status": "implemented",
       "dataset_id": "traces-pilot",
@@ -2614,7 +2756,9 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/accessibility/surfaces-accessibility.spec.ts",
-      "test_ids": ["issues list axe @pw-a11y-issues"],
+      "test_ids": [
+        "issues list axe @pw-a11y-issues"
+      ],
       "required_environment": "accessibility-chromium",
       "status": "implemented",
       "dataset_id": "traces-pilot",
@@ -2628,7 +2772,9 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/accessibility/surfaces-accessibility.spec.ts",
-      "test_ids": ["services list axe @pw-a11y-services"],
+      "test_ids": [
+        "services list axe @pw-a11y-services"
+      ],
       "required_environment": "accessibility-chromium",
       "status": "implemented",
       "dataset_id": "traces-pilot",
@@ -2642,7 +2788,9 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/accessibility/surfaces-accessibility.spec.ts",
-      "test_ids": ["dashboards list axe @pw-a11y-dashboards"],
+      "test_ids": [
+        "dashboards list axe @pw-a11y-dashboards"
+      ],
       "required_environment": "accessibility-chromium",
       "status": "implemented",
       "dataset_id": "dashboards-pilot",
@@ -2656,7 +2804,9 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/mobile/surfaces-mobile.spec.ts",
-      "test_ids": ["logs list no horizontal overflow @pw-mobile-logs"],
+      "test_ids": [
+        "logs list no horizontal overflow @pw-mobile-logs"
+      ],
       "required_environment": "mobile-chromium-webkit",
       "status": "implemented",
       "dataset_id": "logs-pilot",
@@ -2670,7 +2820,9 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/mobile/surfaces-mobile.spec.ts",
-      "test_ids": ["traces list no horizontal overflow @pw-mobile-traces"],
+      "test_ids": [
+        "traces list no horizontal overflow @pw-mobile-traces"
+      ],
       "required_environment": "mobile-chromium-webkit",
       "status": "implemented",
       "dataset_id": "traces-pilot",
@@ -2684,7 +2836,9 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/mobile/surfaces-mobile.spec.ts",
-      "test_ids": ["issues list no horizontal overflow @pw-mobile-issues"],
+      "test_ids": [
+        "issues list no horizontal overflow @pw-mobile-issues"
+      ],
       "required_environment": "mobile-chromium-webkit",
       "status": "implemented",
       "dataset_id": "traces-pilot",
@@ -2698,7 +2852,9 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/mobile/surfaces-mobile.spec.ts",
-      "test_ids": ["services list no horizontal overflow @pw-mobile-services"],
+      "test_ids": [
+        "services list no horizontal overflow @pw-mobile-services"
+      ],
       "required_environment": "mobile-chromium-webkit",
       "status": "implemented",
       "dataset_id": "traces-pilot",
@@ -2712,7 +2868,9 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/mobile/surfaces-mobile.spec.ts",
-      "test_ids": ["dashboards list no horizontal overflow @pw-mobile-dashboards"],
+      "test_ids": [
+        "dashboards list no horizontal overflow @pw-mobile-dashboards"
+      ],
       "required_environment": "mobile-chromium-webkit",
       "status": "implemented",
       "dataset_id": "dashboards-pilot",
@@ -2726,7 +2884,9 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/visual/shell.visual.spec.ts",
-      "test_ids": ["root shell dark reduced-motion snapshot @pw-shell-visual"],
+      "test_ids": [
+        "root shell dark reduced-motion snapshot @pw-shell-visual"
+      ],
       "required_environment": "visual-chromium-linux",
       "status": "implemented",
       "dataset_id": "shell-empty",
@@ -2740,7 +2900,9 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/visual/investigations.visual.spec.ts",
-      "test_ids": ["investigations list snapshot @pw-investigations-visual"],
+      "test_ids": [
+        "investigations list snapshot @pw-investigations-visual"
+      ],
       "required_environment": "visual-chromium-linux",
       "status": "implemented",
       "dataset_id": "investigations-pilot",
@@ -2754,7 +2916,9 @@
       "lane_owner": "playwright/breadth",
       "layer": "browser-breadth",
       "test_file": "ui/tests/e2e/cross/investigations-cross.spec.ts",
-      "test_ids": ["list and open detail on alternate engine @pw-investigations-cross-list-detail"],
+      "test_ids": [
+        "list and open detail on alternate engine @pw-investigations-cross-list-detail"
+      ],
       "required_environment": "cross-firefox-webkit",
       "status": "implemented",
       "dataset_id": "investigations-pilot",
@@ -2769,8 +2933,8 @@
       "layer": "model",
       "test_file": "ui/src/features/logs/tests/model/merge-live-logs.test.ts",
       "test_ids": [
-        "prepends ordered fresh items without mutating incoming",
-        "dedupes by identity and respects capacity"
+        "dedupes by identity and respects capacity",
+        "prepends ordered fresh items without mutating incoming"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -2783,7 +2947,9 @@
       "lane_owner": "vitest/platform",
       "layer": "platform-contract",
       "test_file": "ui/src/platform/sse/tests/bounded-frame-buffer.test.ts",
-      "test_ids": ["drops oldest on overflow and reports diagnostics"],
+      "test_ids": [
+        "drops oldest on overflow and reports diagnostics"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -2796,9 +2962,9 @@
       "layer": "model",
       "test_file": "ui/src/features/logs/tests/api/log-stream-schema.test.ts",
       "test_ids": [
+        "decodeLogStreamRow requires tsNanos and body",
         "decodes valid rows and drops incomplete ones",
-        "rejects non-array frames",
-        "decodeLogStreamRow requires tsNanos and body"
+        "rejects non-array frames"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -2827,9 +2993,9 @@
       "layer": "model",
       "test_file": "ui/src/features/traces/tests/api/span-stream-schema.test.ts",
       "test_ids": [
+        "decodeSpanStreamRow requires spanId",
         "decodes spans with spanId and drops others",
-        "rejects non-array frames",
-        "decodeSpanStreamRow requires spanId"
+        "rejects non-array frames"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -2844,8 +3010,8 @@
       "test_file": "ui/src/features/traces/tests/model/merge-live-spans.test.ts",
       "test_ids": [
         "dedupes by spanId and prepends freshest",
-        "enforces capacity drop from the tail",
         "does not mutate incoming",
+        "enforces capacity drop from the tail",
         "merges 10k current + 1k incoming under 16ms p95 (canonical Bun)"
       ],
       "required_environment": "jsdom-or-bun",
@@ -2860,9 +3026,9 @@
       "layer": "platform-contract",
       "test_file": "ui/src/platform/sse/tests/stream-state.test.ts",
       "test_ids": [
-        "starts connecting then opens",
-        "marks reconnecting after open transport error",
         "marks error when connect fails before open",
+        "marks reconnecting after open transport error",
+        "starts connecting then opens",
         "stops to idle"
       ],
       "required_environment": "jsdom-or-bun",
@@ -2896,8 +3062,8 @@
       "layer": "browser-full-stack",
       "test_file": "ui/tests/e2e/full-stack/traces-live-performance.spec.ts",
       "test_ids": [
-        "live span appears once by name @pw-live-traces-identity",
-        "duplicate spanId does not double-render @pw-live-traces-dedup"
+        "duplicate spanId does not double-render @pw-live-traces-dedup",
+        "live span appears once by name @pw-live-traces-identity"
       ],
       "required_environment": "chromium-full-stack",
       "status": "implemented",
@@ -2951,9 +3117,9 @@
       "layer": "platform-contract",
       "test_file": "ui/src/platform/query/tests/graphql-query-key.test.ts",
       "test_ids": [
-        "is stable for identical operation + variables key",
-        "differs when operation name or variables change",
         "canonical variable encoding is order-stable for object keys",
+        "differs when operation name or variables change",
+        "is stable for identical operation + variables key",
         "keys by exact query string"
       ],
       "required_environment": "jsdom-or-bun",
@@ -2968,8 +3134,8 @@
       "layer": "model",
       "test_file": "ui/src/features/logs/tests/model/logs-search.property.test.ts",
       "test_ids": [
-        "serialize\u2192parse round-trips every accepted search",
-        "never throws and is idempotent on arbitrary junk records"
+        "never throws and is idempotent on arbitrary junk records",
+        "serialize→parse round-trips every accepted search"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -2983,8 +3149,8 @@
       "layer": "model",
       "test_file": "ui/src/features/logs/tests/model/merge-live-logs.property.test.ts",
       "test_ids": [
-        "keeps newest-first order, uniqueness, and the capacity bound",
-        "is a no-op for an empty incoming batch"
+        "is a no-op for an empty incoming batch",
+        "keeps newest-first order, uniqueness, and the capacity bound"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -2998,8 +3164,8 @@
       "layer": "model",
       "test_file": "ui/src/shared/tests/where-clause.property.test.ts",
       "test_ids": [
-        "serialize\u2192parse round-trips arbitrary filter lists",
-        "parses arbitrary input totally \u2014 a typed result, never a throw"
+        "parses arbitrary input totally — a typed result, never a throw",
+        "serialize→parse round-trips arbitrary filter lists"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -3013,8 +3179,8 @@
       "layer": "model",
       "test_file": "ui/src/features/investigations/tests/queries/keys.property.test.ts",
       "test_ids": [
-        "is deterministic and prefix-hierarchical for arbitrary ids",
-        "distinct ids never collide"
+        "distinct ids never collide",
+        "is deterministic and prefix-hierarchical for arbitrary ids"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -3028,8 +3194,8 @@
       "layer": "component",
       "test_file": "ui/src/features/tests/tests/components/tests-contracts.test.tsx",
       "test_ids": [
-        "renders explorer rows with rollup and flaky evidence",
-        "renders detail attempt chain with cross-links"
+        "renders detail attempt chain with cross-links",
+        "renders explorer rows with rollup and flaky evidence"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -3042,7 +3208,9 @@
       "lane_owner": "vitest/route",
       "layer": "route-contract",
       "test_file": "ui/src/routes/tests/-tests-routes.test.tsx",
-      "test_ids": ["exposes public search and loaders for thin route wiring"],
+      "test_ids": [
+        "exposes public search and loaders for thin route wiring"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     },
@@ -3057,7 +3225,8 @@
       "test_ids": [
         "covers every invocation status and outcome tone slot",
         "covers every span status tone slot",
-        "covers every test rollup, result, and flaky tone slot"
+        "covers every test rollup, result, and flaky tone slot",
+        "covers issue and incident status tone slots"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
@@ -3134,7 +3303,183 @@
       "lane_owner": "vitest/component",
       "layer": "component",
       "test_file": "ui/src/features/issues/tests/components/grouping-card.test.tsx",
-      "test_ids": ["renders type, template, and frame"],
+      "test_ids": [
+        "renders type, template, and frame"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-079",
+      "surface": "shared/ui",
+      "risk": "Keyboard row selection can focus the wrong row or silently stop row navigation",
+      "scenario_owner": "shared/ui",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/shared/tests/row-keyboard-nav.test.tsx",
+      "test_ids": [
+        "clamps when rows shrink",
+        "clears with Escape and stays inert when disabled",
+        "ignores keystrokes from inputs and modified shortcuts",
+        "moves with j/k and opens with Enter"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented",
+      "fire_event_reason": "fireEvent dispatches the exact native DOM event against the focused implementation because the behavior under test depends on event propagation"
+    },
+    {
+      "id": "vitest-080",
+      "surface": "shared/ui",
+      "risk": "Shared keyboard semantics can regress platform-specific event handling",
+      "scenario_owner": "shared/ui",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/shared/tests/keyboard.test.tsx",
+      "test_ids": [
+        "covers the five canonical shortcuts with renderable keys",
+        "detects typing targets",
+        "fires mod shortcuts even while typing",
+        "fires plain-letter shortcuts outside inputs, skips inside",
+        "honors enabled=false",
+        "matches mod, shift, and bare keys exactly",
+        "requests focus through the registry shortcut"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-081",
+      "surface": "shared/console",
+      "risk": "Cross-signal links can dead-end or carry stale entity identity",
+      "scenario_owner": "shared/console",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/shared/console/tests/entity-links.test.tsx",
+      "test_ids": [
+        "carries range on trace, issue, service, and metric links",
+        "merges logs context over the range",
+        "shortens trace ids and invocation ids"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-082",
+      "surface": "shared/console",
+      "risk": "Shortcut help can diverge from actual keyboard behavior",
+      "scenario_owner": "shared/console",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/shared/console/tests/shortcuts-dialog.test.tsx",
+      "test_ids": [
+        "ignores ? while typing",
+        "lists every registry shortcut",
+        "opens on ? through the registry"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-083",
+      "surface": "shared/console",
+      "risk": "Investigation errors can be presented as empty results without recovery context",
+      "scenario_owner": "shared/console",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/shared/console/tests/error-state.test.tsx",
+      "test_ids": [
+        "announces ErrorState and retries",
+        "omits retry when no handler is given",
+        "renders SectionError as one announced row"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-084",
+      "surface": "shared/console",
+      "risk": "Dense detail layouts can clip actions or break keyboard reading order",
+      "scenario_owner": "shared/console",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/shared/console/tests/detail-layout.test.tsx",
+      "test_ids": [
+        "anchors sections with title and action",
+        "composes rows with a right-pinned count",
+        "renders label/value pairs with tabular numerals",
+        "renders placeholders while loading",
+        "renders the inline next step"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-085",
+      "surface": "features/features",
+      "risk": "Trace-scoped log search can lose span identity or leak filters across navigation",
+      "scenario_owner": "features/features",
+      "lane_owner": "vitest/model",
+      "layer": "model",
+      "test_file": "ui/src/features/logs/tests/model/logs-search-trace.test.ts",
+      "test_ids": [
+        "drops empty trace values",
+        "keeps a trace id through validate and serialize"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-086",
+      "surface": "features/features",
+      "risk": "RUM investigation surfaces can hide failures or navigate to the wrong signal",
+      "scenario_owner": "features/features",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/features/rum/tests/components/rum-contracts.test.tsx",
+      "test_ids": [
+        "explains an empty backend honestly",
+        "links errors to service-scoped issue detail and correlates the trace",
+        "renders vitals with ratings and exemplar trace links",
+        "selects a journey trace on row click"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-087",
+      "surface": "features/features",
+      "risk": "RUM derived vitals can misbucket page, resource, or error evidence",
+      "scenario_owner": "features/features",
+      "lane_owner": "vitest/model",
+      "layer": "model",
+      "test_file": "ui/src/features/rum/tests/model/rum-vitals.test.ts",
+      "test_ids": [
+        "formats time vitals and CLS scores",
+        "matches bare vital names",
+        "matches browser-prefixed and spelled-out names",
+        "rates CLS as a unitless score",
+        "rates LCP against web.dev thresholds",
+        "rejects non-vital metrics",
+        "scales seconds to milliseconds"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-088",
+      "surface": "platform/auth",
+      "risk": "API-token presentation can leak context or break compact-shell layout",
+      "scenario_owner": "platform/auth",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/platform/auth/tests/api-token.test.ts",
+      "test_ids": [
+        "appends with the right separator and percent-encodes",
+        "emits bearer headers only when a token is stored",
+        "passes URLs through untouched without a token",
+        "returns null when nothing stored and trims stored values",
+        "setApiToken stores, and empty string clears"
+      ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
     }

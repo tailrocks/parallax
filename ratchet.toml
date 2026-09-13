@@ -8109,7 +8109,7 @@ migration_plan = "none"
 kind = "handwritten"
 
 [[ui.ownership]]
-path = "ui/src/lib/row-keyboard-nav.test.tsx"
+path = "ui/src/shared/tests/row-keyboard-nav.test.tsx"
 current_owner = "shared/ui"
 target_owner = "shared/ui"
 migration_plan = "none"
