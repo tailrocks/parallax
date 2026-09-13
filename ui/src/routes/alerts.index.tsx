@@ -50,6 +50,7 @@ import { gqlString, graphql } from "@/platform/graphql/transport"
 import {
   ALERTS_INDEX_QUERY,
   alertDestinationSaveMutation,
+  parseAlertGraduationSearch,
   parseStringArray,
   ruleConditionLabel,
 } from "@/features/alerts"
@@ -72,6 +73,7 @@ interface AlertsSearch {
   signal_type?: string | undefined
   metric_name?: string | undefined
   metric_aggregation?: string | undefined
+  service?: string | undefined
 }
 
 function searchString(value: unknown) {
@@ -83,6 +85,7 @@ export const Route = createFileRoute("/alerts/")({
     signal_type: searchString(search["signal_type"]),
     metric_name: searchString(search["metric_name"]),
     metric_aggregation: searchString(search["metric_aggregation"]),
+    service: searchString(search["service"]),
   }),
   loader: () => graphql<LoaderData>(ALERTS_INDEX_QUERY),
   component: AlertsPage,
@@ -95,13 +98,7 @@ function SeverityBadge({ severity }: { severity: string }) {
 function AlertsPage() {
   const { alertRules, alertIncidents, alertDestinations } = Route.useLoaderData()
   const search = Route.useSearch()
-  const graduation =
-    search.signal_type === "metric" && search.metric_name
-      ? {
-          metricName: search.metric_name,
-          metricAggregation: search.metric_aggregation ?? "avg",
-        }
-      : null
+  const graduation = parseAlertGraduationSearch(search)
   const router = useRouter()
   const [actionError, setActionError] = useState<string | null>(null)
 

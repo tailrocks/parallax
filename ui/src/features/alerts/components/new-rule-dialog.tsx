@@ -26,10 +26,12 @@ import {
   ALERT_RULE_TEMPLATES,
   alertRulePreviewQuery,
   alertRuleSaveMutation,
+  alertTemplateIdForSignal,
+  draftFromGraduation,
   draftFromTemplate,
-  metricGraduationDraft,
   validateAlertRuleDraft,
   type AlertDestinationRow,
+  type AlertGraduation,
 } from "@/features/alerts"
 
 export function NewRuleDialog({
@@ -38,13 +40,17 @@ export function NewRuleDialog({
   onSaved,
 }: {
   destinations: AlertDestinationRow[]
-  graduation?: { metricName: string; metricAggregation: string } | null
+  graduation?: AlertGraduation | null
   onSaved: () => void
 }) {
-  // A metric-explorer graduation handoff opens the dialog pre-filled.
+  // Explorer graduation (metrics/logs/traces) opens the dialog pre-filled.
   const [open, setOpen] = useState(Boolean(graduation))
   const [name, setName] = useState("")
-  const [templateId, setTemplateId] = useState(ALERT_RULE_TEMPLATES[0]?.id ?? "high-error-rate")
+  const [templateId, setTemplateId] = useState(
+    (graduation ? alertTemplateIdForSignal(graduation.signalType) : undefined) ??
+      ALERT_RULE_TEMPLATES[0]?.id ??
+      "high-error-rate"
+  )
   const [threshold, setThreshold] = useState("")
   const [selectedDestinations, setSelectedDestinations] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -54,7 +60,7 @@ export function NewRuleDialog({
 
   function currentDraft() {
     const draft = graduation
-      ? metricGraduationDraft(name, graduation.metricName, graduation.metricAggregation)
+      ? draftFromGraduation(name, graduation)
       : draftFromTemplate(templateId, name)
     if (!draft) return { draft: null, error: "unknown template" }
     if (threshold.trim()) {
@@ -150,12 +156,21 @@ export function NewRuleDialog({
               placeholder="Checkout error rate"
             />
           </div>
-          {graduation ? (
+          {graduation?.signalType === "metric" ? (
             <div className="flex flex-col gap-1.5">
               <Label>Metric</Label>
               <p className="text-sm text-muted-foreground">
                 <span className="font-mono">{graduation.metricName}</span> ·{" "}
                 {graduation.metricAggregation}
+              </p>
+            </div>
+          ) : graduation ? (
+            <div className="flex flex-col gap-1.5">
+              <Label>Signal</Label>
+              <p className="text-sm text-muted-foreground">
+                <span className="font-mono">{graduation.signalType}</span>
+                {" · "}
+                {graduation.services?.length ? graduation.services.join(", ") : "all services"}
               </p>
             </div>
           ) : (

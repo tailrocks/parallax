@@ -14,6 +14,7 @@ export type { TraceSort, TracesSearch } from "@/features/traces/components/trace
 export { TraceTable } from "@/features/traces/components/trace-table"
 export { loadTraces } from "@/features/traces/components/traces-query"
 export type { TracesLoaderData } from "@/features/traces/components/traces-query"
+export { encodeTracesAlertGraduation } from "@/features/traces/model/alert-graduation"
 
 export {
   TraceDetailPage,
