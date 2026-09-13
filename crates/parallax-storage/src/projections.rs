@@ -8,11 +8,12 @@
 
 use crate::adapter::{
     BackgroundCycleSummary, ConversationSummary, InvocationSession, JobAttempt, JobSummary,
-    ReleaseHealth, ScreenVisit, UiAction,
+    ReleaseHealth, RumSession, RumSessionDetail, RumSessionError, RumSessionPageView,
+    RumSessionVital, ScreenVisit, UiAction,
 };
 use parallax_model::{LogRow, SpanRow};
 use parallax_semconv as semconv;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 fn attr_str<'a>(attributes: &'a serde_json::Value, key: &str) -> Option<&'a str> {
     attributes.get(key).and_then(|value| value.as_str())
@@ -329,6 +330,152 @@ pub fn flag_suspect_releases(rows: &mut [ReleaseHealth]) {
         previous_rate = rate;
         first = false;
     }
+}
+
+fn rum_session_id(span: &SpanRow) -> Option<&str> {
+    span.session_id
+        .as_deref()
+        .or_else(|| attr_str(&span.attributes, semconv::SESSION_ID))
+        .filter(|value| !value.is_empty())
+}
+
+/// Browser RUM sessions: spans grouped by `session.id`, newest activity
+/// first. `service` matches spans of that service before grouping;
+/// `error_only` keeps sessions with at least one error span.
+#[must_use]
+pub fn summarize_rum_sessions(
+    spans: &[SpanRow],
+    service: Option<&str>,
+    error_only: bool,
+    limit: usize,
+) -> Vec<RumSession> {
+    let mut groups: BTreeMap<&str, Vec<&SpanRow>> = BTreeMap::new();
+    for span in spans {
+        if service.is_some_and(|service| span.service != service) {
+            continue;
+        }
+        if let Some(session_id) = rum_session_id(span) {
+            groups.entry(session_id).or_default().push(span);
+        }
+    }
+    let mut sessions: Vec<RumSession> = groups
+        .into_iter()
+        .map(|(session_id, spans)| {
+            let mut traces: BTreeSet<&str> = BTreeSet::new();
+            let mut service_name = String::new();
+            let mut start_nanos = u128::MAX;
+            let mut end_nanos = 0;
+            let mut view_count = 0u64;
+            let mut vital_count = 0u64;
+            let mut error_count = 0u64;
+            for span in &spans {
+                traces.insert(span.trace_id.as_str());
+                if span.service > service_name {
+                    service_name.clone_from(&span.service);
+                }
+                start_nanos = start_nanos.min(span.ts_nanos);
+                end_nanos = end_nanos.max(span.ts_nanos);
+                if span.name == semconv::APP_SCREEN_NAME {
+                    view_count += 1;
+                }
+                if span.name == semconv::BROWSER_WEB_VITAL {
+                    vital_count += 1;
+                }
+                if span_has_error(span) {
+                    error_count += 1;
+                }
+            }
+            RumSession {
+                session_id: session_id.to_string(),
+                service: service_name,
+                start_nanos,
+                end_nanos,
+                span_count: spans.len() as u64,
+                trace_count: traces.len() as u64,
+                view_count,
+                vital_count,
+                error_count,
+                has_error: error_count > 0,
+            }
+        })
+        .filter(|session| !error_only || session.has_error)
+        .collect();
+    sessions.sort_by_key(|session| std::cmp::Reverse(session.end_nanos));
+    sessions.truncate(limit);
+    sessions
+}
+
+/// One RUM session's timeline from its spans: page views (`app.screen.name`
+/// spans), vitals (`browser.web_vital` spans), and errors (ERROR-status
+/// spans), each time ascending and truncated to `limit`. `None` when no
+/// span carries the session id.
+#[must_use]
+pub fn project_rum_session_detail(
+    spans: &[SpanRow],
+    session_id: &str,
+    limit: usize,
+) -> Option<RumSessionDetail> {
+    let scoped: Vec<&SpanRow> = spans
+        .iter()
+        .filter(|span| rum_session_id(span) == Some(session_id))
+        .collect();
+    if scoped.is_empty() {
+        return None;
+    }
+    let mut views: Vec<RumSessionPageView> = Vec::new();
+    let mut vitals: Vec<RumSessionVital> = Vec::new();
+    let mut errors: Vec<RumSessionError> = Vec::new();
+    for span in &scoped {
+        if span.name == semconv::APP_SCREEN_NAME {
+            views.push(RumSessionPageView {
+                ts_nanos: span.ts_nanos,
+                screen: attr_str(&span.attributes, semconv::APP_SCREEN_NAME)
+                    .unwrap_or_default()
+                    .to_string(),
+                path: attr_str(&span.attributes, semconv::URL_PATH).map(str::to_string),
+                trace_id: span.trace_id.clone(),
+                span_id: span.span_id.clone(),
+            });
+        } else if span.name == semconv::BROWSER_WEB_VITAL {
+            vitals.push(RumSessionVital {
+                ts_nanos: span.ts_nanos,
+                name: attr_str(&span.attributes, semconv::WEB_VITAL_NAME)
+                    .unwrap_or_default()
+                    .to_string(),
+                value: attr_f64(&span.attributes, semconv::WEB_VITAL_VALUE).unwrap_or(0.0),
+                rating: attr_str(&span.attributes, semconv::WEB_VITAL_RATING).map(str::to_string),
+                trace_id: span.trace_id.clone(),
+                span_id: span.span_id.clone(),
+            });
+        }
+        if span_has_error(span) {
+            errors.push(RumSessionError {
+                ts_nanos: span.ts_nanos,
+                name: span.name.clone(),
+                error_type: attr_str(&span.attributes, semconv::ERROR_TYPE)
+                    .or_else(|| attr_str(&span.attributes, semconv::EXCEPTION_TYPE))
+                    .map(str::to_string),
+                message: span.status_message.clone(),
+                trace_id: span.trace_id.clone(),
+                span_id: span.span_id.clone(),
+            });
+        }
+    }
+    views.sort_by_key(|view| view.ts_nanos);
+    views.truncate(limit);
+    vitals.sort_by_key(|vital| vital.ts_nanos);
+    vitals.truncate(limit);
+    errors.sort_by_key(|error| error.ts_nanos);
+    errors.truncate(limit);
+    let summary = summarize_rum_sessions(spans, None, false, usize::MAX)
+        .into_iter()
+        .find(|session| session.session_id == session_id)?;
+    Some(RumSessionDetail {
+        session: summary,
+        views,
+        vitals,
+        errors,
+    })
 }
 
 #[cfg(test)]

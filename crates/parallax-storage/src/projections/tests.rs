@@ -285,3 +285,126 @@ fn suspect_flag_ignores_sessionless_releases() {
     assert!(rows.iter().all(|row| !row.suspect_release));
     assert!((rows[0].crash_free_session_rate - 1.0).abs() < f64::EPSILON);
 }
+
+fn rum_span(
+    ts: u128,
+    trace: &str,
+    name: &str,
+    status: &str,
+    session: Option<&str>,
+    attributes: serde_json::Value,
+) -> SpanRow {
+    let mut row = span(ts, name, "SPAN_KIND_CLIENT", None, status, attributes);
+    row.service = "web".to_string();
+    row.trace_id = trace.to_string();
+    row.session_id = session.map(str::to_string);
+    row
+}
+
+fn rum_fixture() -> Vec<SpanRow> {
+    vec![
+        rum_span(
+            10,
+            "trace-a",
+            "app.screen.name",
+            "STATUS_CODE_UNSET",
+            Some("sess-1"),
+            serde_json::json!({"app.screen.name": "home", "url.path": "/"}),
+        ),
+        rum_span(
+            20,
+            "trace-a",
+            "browser.web_vital",
+            "STATUS_CODE_UNSET",
+            Some("sess-1"),
+            serde_json::json!({"web_vital.name": "LCP", "web_vital.value": 1200.0, "web_vital.rating": "good"}),
+        ),
+        rum_span(
+            30,
+            "trace-b",
+            "app.screen.name",
+            "STATUS_CODE_UNSET",
+            Some("sess-1"),
+            serde_json::json!({"app.screen.name": "checkout", "url.path": "/checkout"}),
+        ),
+        rum_span(
+            40,
+            "trace-b",
+            "web.error.handled",
+            "STATUS_CODE_ERROR",
+            Some("sess-1"),
+            serde_json::json!({"error.type": "TypeError"}),
+        ),
+        rum_span(
+            50,
+            "trace-c",
+            "app.screen.name",
+            "STATUS_CODE_UNSET",
+            Some("sess-2"),
+            serde_json::json!({"app.screen.name": "home", "url.path": "/"}),
+        ),
+        rum_span(
+            60,
+            "trace-d",
+            "fetch",
+            "STATUS_CODE_UNSET",
+            None,
+            serde_json::json!({}),
+        ),
+    ]
+}
+
+#[test]
+fn rum_sessions_group_by_session_id_newest_first() {
+    let sessions = summarize_rum_sessions(&rum_fixture(), None, false, 10);
+    assert_eq!(sessions.len(), 2);
+    assert_eq!(sessions[0].session_id, "sess-2");
+    assert_eq!(sessions[0].start_nanos, 50);
+    assert_eq!(sessions[0].end_nanos, 50);
+    assert_eq!(sessions[1].session_id, "sess-1");
+    assert_eq!(sessions[1].service, "web");
+    assert_eq!(sessions[1].start_nanos, 10);
+    assert_eq!(sessions[1].end_nanos, 40);
+    assert_eq!(sessions[1].span_count, 4);
+    assert_eq!(sessions[1].trace_count, 2);
+    assert_eq!(sessions[1].view_count, 2);
+    assert_eq!(sessions[1].vital_count, 1);
+    assert_eq!(sessions[1].error_count, 1);
+    assert!(sessions[1].has_error);
+    assert!(!sessions[0].has_error);
+}
+
+#[test]
+fn rum_sessions_filter_service_and_error_only() {
+    let spans = rum_fixture();
+    assert!(summarize_rum_sessions(&spans, Some("api"), false, 10).is_empty());
+    assert_eq!(
+        summarize_rum_sessions(&spans, Some("web"), false, 10).len(),
+        2
+    );
+    let errored = summarize_rum_sessions(&spans, None, true, 10);
+    assert_eq!(errored.len(), 1);
+    assert_eq!(errored[0].session_id, "sess-1");
+}
+
+#[test]
+fn rum_session_detail_links_views_vitals_errors() {
+    let spans = rum_fixture();
+    let detail = project_rum_session_detail(&spans, "sess-1", 10).expect("detail");
+    assert_eq!(detail.session.session_id, "sess-1");
+    assert_eq!(detail.session.view_count, 2);
+    assert_eq!(detail.views.len(), 2);
+    assert_eq!(detail.views[0].screen, "home");
+    assert_eq!(detail.views[0].path.as_deref(), Some("/"));
+    assert_eq!(detail.views[0].trace_id, "trace-a");
+    assert_eq!(detail.views[1].screen, "checkout");
+    assert_eq!(detail.vitals.len(), 1);
+    assert_eq!(detail.vitals[0].name, "LCP");
+    assert!((detail.vitals[0].value - 1200.0).abs() < f64::EPSILON);
+    assert_eq!(detail.vitals[0].rating.as_deref(), Some("good"));
+    assert_eq!(detail.errors.len(), 1);
+    assert_eq!(detail.errors[0].name, "web.error.handled");
+    assert_eq!(detail.errors[0].error_type.as_deref(), Some("TypeError"));
+    assert_eq!(detail.errors[0].trace_id, "trace-b");
+    assert!(project_rum_session_detail(&spans, "sess-unknown", 10).is_none());
+}

@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router"
-import { IconAffiliate, IconBug, IconWorld } from "@tabler/icons-react"
+import { IconAffiliate, IconBug, IconUsers, IconWorld } from "@tabler/icons-react"
 import { useMemo } from "react"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 
@@ -29,6 +29,11 @@ import {
 import type {
   RumData,
   RumIssueRow,
+  RumSessionDetailData,
+  RumSessionErrorRow,
+  RumSessionRow,
+  RumSessionVitalRow,
+  RumSessionViewRow,
   RumTraceData,
   RumTraceRow,
   RumVitalData,
@@ -73,11 +78,15 @@ export function RumPage({
   data,
   vital,
   trace,
+  sessions,
+  session,
   search,
 }: {
   data: RumData
   vital: RumVitalData | null
   trace: RumTraceData | null
+  sessions: readonly RumSessionRow[]
+  session: RumSessionDetailData | null
   search: RumSearch
 }) {
   const navigate = useNavigate({ from: "/rum/" })
@@ -95,6 +104,8 @@ export function RumPage({
       data={data}
       vital={vital}
       trace={trace}
+      sessions={sessions}
+      session={session}
       search={search}
       range={range}
       loading={loading}
@@ -107,6 +118,8 @@ export function RumContent({
   data,
   vital,
   trace,
+  sessions,
+  session,
   search,
   range,
   loading,
@@ -115,6 +128,8 @@ export function RumContent({
   data: RumData
   vital: RumVitalData | null
   trace: RumTraceData | null
+  sessions: readonly RumSessionRow[]
+  session: RumSessionDetailData | null
   search: RumSearch
   range: ResolvedRange
   loading?: boolean
@@ -142,7 +157,7 @@ export function RumContent({
         icon={IconWorld}
         iconClassName="text-sky-500"
         title="RUM"
-        description="Browser vitals, errors, and journeys over live spans, logs, metrics, and issues."
+        description="Browser sessions, vitals, errors, and journeys over live spans, logs, metrics, and issues."
         actions={
           <RangePicker value={range} onChange={(next) => onSearch(updateRangeSearch(next))} />
         }
@@ -152,7 +167,9 @@ export function RumContent({
         <div className="flex flex-wrap items-center gap-2">
           <FilterSelect
             {...(search.service ? { value: search.service } : {})}
-            onChange={(service) => onSearch({ service, vital: undefined, traceId: undefined })}
+            onChange={(service) =>
+              onSearch({ service, vital: undefined, traceId: undefined, sessionId: undefined })
+            }
             placeholder="All services"
             options={data.services.map((service) => ({
               value: service,
@@ -172,6 +189,7 @@ export function RumContent({
                   where: undefined,
                   vital: undefined,
                   traceId: undefined,
+                  sessionId: undefined,
                 })
               }
             />
@@ -269,6 +287,41 @@ export function RumContent({
                 icon={IconWorld}
                 title="Vital not found"
                 description={`No vital metric named ${search.vital} in this range.`}
+              />
+            )
+          ) : null}
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">
+                Sessions · {formatCount(sessions.length)}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {sessions.length === 0 ? (
+                <EmptyState
+                  icon={IconUsers}
+                  title="No sessions"
+                  description="Browser sessions grouped by session.id appear here once RUM spans arrive."
+                />
+              ) : (
+                <SessionTable
+                  rows={sessions}
+                  selected={search.sessionId}
+                  onSelect={(sessionId) => onSearch({ sessionId })}
+                />
+              )}
+            </CardContent>
+          </Card>
+
+          {search.sessionId ? (
+            session ? (
+              <SessionDetailCard session={session} range={range} />
+            ) : (
+              <EmptyState
+                icon={IconUsers}
+                title="Session unavailable"
+                description={`No timeline data for ${search.sessionId}.`}
               />
             )
           ) : null}
@@ -454,6 +507,189 @@ function VitalDetailCard({
       </CardContent>
     </Card>
   )
+}
+
+function sessionDurationNs(row: RumSessionRow): string {
+  const duration = BigInt(row.endNanos) - BigInt(row.startNanos)
+  return (duration < 0n ? 0n : duration).toString()
+}
+
+function SessionTable({
+  rows,
+  selected,
+  onSelect,
+}: {
+  rows: readonly RumSessionRow[]
+  selected: string | undefined
+  onSelect: (sessionId: string | undefined) => void
+}) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Session</TableHead>
+          <TableHead>Duration</TableHead>
+          <TableHead>Views</TableHead>
+          <TableHead>Vitals</TableHead>
+          <TableHead>Errors</TableHead>
+          <TableHead>Started</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {rows.map((row) => (
+          <TableRow
+            key={row.sessionId}
+            data-testid={`session-row-${row.sessionId}`}
+            className={selected === row.sessionId ? "bg-muted/50" : "cursor-pointer"}
+            onClick={() => onSelect(selected === row.sessionId ? undefined : row.sessionId)}
+          >
+            <TableCell>
+              <span className="font-mono text-xs">{row.sessionId}</span>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <span>{row.service}</span>
+                {row.hasError ? <Badge variant="rose">error</Badge> : null}
+              </div>
+            </TableCell>
+            <TableCell className="tabular-nums">{formatDurationNs(sessionDurationNs(row))}</TableCell>
+            <TableCell className="tabular-nums">{formatCount(row.viewCount)}</TableCell>
+            <TableCell className="tabular-nums">{formatCount(row.vitalCount)}</TableCell>
+            <TableCell className="tabular-nums">{formatCount(row.errorCount)}</TableCell>
+            <TableCell className="text-xs text-muted-foreground">
+              <RelativeTime nanos={row.startNanos} />
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
+
+type SessionTimelineEntry =
+  | { kind: "view"; tsNanos: string; row: RumSessionViewRow }
+  | { kind: "vital"; tsNanos: string; row: RumSessionVitalRow }
+  | { kind: "error"; tsNanos: string; row: RumSessionErrorRow }
+
+function SessionDetailCard({
+  session,
+  range,
+}: {
+  session: RumSessionDetailData
+  range: ResolvedRange
+}) {
+  const timeline = useMemo(() => {
+    const entries: SessionTimelineEntry[] = [
+      ...session.views.map((row): SessionTimelineEntry => ({ kind: "view", tsNanos: row.tsNanos, row })),
+      ...session.vitals.map((row): SessionTimelineEntry => ({ kind: "vital", tsNanos: row.tsNanos, row })),
+      ...session.errors.map((row): SessionTimelineEntry => ({ kind: "error", tsNanos: row.tsNanos, row })),
+    ]
+    entries.sort((a, b) => (BigInt(a.tsNanos) < BigInt(b.tsNanos) ? -1 : 1))
+    return entries
+  }, [session])
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">
+          Session timeline · <span className="font-mono">{session.session.sessionId}</span>
+          {session.session.hasError ? (
+            <Badge variant="rose" className="ml-2">
+              {formatCount(session.session.errorCount)} errors
+            </Badge>
+          ) : null}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {timeline.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No page views, vitals, or errors in this session.
+          </p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Time</TableHead>
+                <TableHead>Event</TableHead>
+                <TableHead>Detail</TableHead>
+                <TableHead>Trace</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {timeline.map((entry, index) => (
+                <TableRow key={`${entry.kind}-${entry.tsNanos}-${index}`}>
+                  <TableCell className="text-xs text-muted-foreground">
+                    <RelativeTime nanos={entry.tsNanos} />
+                  </TableCell>
+                  <TableCell>
+                    <SessionTimelineKind entry={entry} />
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    <SessionTimelineDetail entry={entry} />
+                  </TableCell>
+                  <TableCell>
+                    <Link
+                      to="/traces/$traceId"
+                      params={{ traceId: entry.row.traceId }}
+                      search={rangeLinkSearch(range)}
+                      data-testid={`trace-link-${entry.row.traceId}`}
+                      className="font-mono text-xs"
+                    >
+                      {entry.row.traceId.slice(0, 12)}
+                    </Link>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function SessionTimelineKind({ entry }: { entry: SessionTimelineEntry }) {
+  switch (entry.kind) {
+    case "view":
+      return <Badge variant="outline">view</Badge>
+    case "vital":
+      return <Badge variant="blue">vital</Badge>
+    case "error":
+      return <Badge variant="rose">error</Badge>
+  }
+}
+
+function SessionTimelineDetail({ entry }: { entry: SessionTimelineEntry }) {
+  switch (entry.kind) {
+    case "view":
+      return (
+        <span>
+          <span className="font-medium">{entry.row.screen}</span>
+          {entry.row.path ? (
+            <span className="ml-2 font-mono text-xs text-muted-foreground">{entry.row.path}</span>
+          ) : null}
+        </span>
+      )
+    case "vital":
+      return (
+        <span>
+          <span className="font-medium">{entry.row.name}</span>
+          <span className="ml-2 tabular-nums">{entry.row.value}</span>
+          {entry.row.rating ? (
+            <span className="ml-2 text-xs text-muted-foreground">{entry.row.rating}</span>
+          ) : null}
+        </span>
+      )
+    case "error":
+      return (
+        <span>
+          <span className="font-medium">{entry.row.errorType || entry.row.name}</span>
+          {entry.row.message ? (
+            <span className="ml-2 max-w-64 truncate text-xs text-muted-foreground">
+              {entry.row.message}
+            </span>
+          ) : null}
+        </span>
+      )
+  }
 }
 
 function IssueRow({ issue, range }: { issue: RumIssueRow; range: ResolvedRange }) {

@@ -913,6 +913,13 @@ export type Query = {
   readonly releaseHealth: ReadonlyArray<ReleaseHealth>
   /** Per-version service release windows in the selected time range. */
   readonly releases: ReadonlyArray<ReleaseWindow>
+  /** One RUM session with its timeline: page views, vitals, and errors. */
+  readonly rumSession: Maybe<RumSessionDetail>
+  /**
+   * Browser RUM sessions: spans grouped by `session.id` (independent of
+   * `cli.invocation.id`), newest activity first.
+   */
+  readonly rumSessions: ReadonlyArray<RumSession>
   /** Runtime metric lanes, scoped to exactly one service or run. */
   readonly runtimeSnapshot: ReadonlyArray<RuntimeMetric>
   /** Named saved page states, most recently updated first. */
@@ -1294,6 +1301,19 @@ export type QueryReleasesArgs = {
   toNanos: Scalars["String"]["input"]
 }
 
+export type QueryRumSessionArgs = {
+  limit: InputMaybe<Scalars["Int"]["input"]>
+  sessionId: Scalars["String"]["input"]
+}
+
+export type QueryRumSessionsArgs = {
+  errorOnly: InputMaybe<Scalars["Boolean"]["input"]>
+  fromNanos: Scalars["String"]["input"]
+  limit: InputMaybe<Scalars["Int"]["input"]>
+  service: InputMaybe<Scalars["String"]["input"]>
+  toNanos: Scalars["String"]["input"]
+}
+
 export type QueryRuntimeSnapshotArgs = {
   fromNanos: Scalars["String"]["input"]
   invocationId: InputMaybe<Scalars["String"]["input"]>
@@ -1479,6 +1499,58 @@ export type ReleaseWindow = {
   readonly lastSeenNanos: Scalars["String"]["output"]
   readonly spanCount: Scalars["String"]["output"]
   readonly version: Scalars["String"]["output"]
+}
+
+export type RumSession = {
+  readonly __typename?: "RumSession"
+  /** Last activity in the session (browsers emit no explicit session end). */
+  readonly endNanos: Scalars["String"]["output"]
+  readonly errorCount: Scalars["Int"]["output"]
+  readonly hasError: Scalars["Boolean"]["output"]
+  readonly service: Scalars["String"]["output"]
+  readonly sessionId: Scalars["String"]["output"]
+  readonly spanCount: Scalars["Int"]["output"]
+  readonly startNanos: Scalars["String"]["output"]
+  readonly traceCount: Scalars["Int"]["output"]
+  readonly viewCount: Scalars["Int"]["output"]
+  readonly vitalCount: Scalars["Int"]["output"]
+}
+
+export type RumSessionDetail = {
+  readonly __typename?: "RumSessionDetail"
+  readonly errors: ReadonlyArray<RumSessionError>
+  readonly session: RumSession
+  readonly views: ReadonlyArray<RumSessionPageView>
+  readonly vitals: ReadonlyArray<RumSessionVital>
+}
+
+export type RumSessionError = {
+  readonly __typename?: "RumSessionError"
+  readonly errorType: Maybe<Scalars["String"]["output"]>
+  readonly message: Scalars["String"]["output"]
+  readonly name: Scalars["String"]["output"]
+  readonly spanId: Scalars["String"]["output"]
+  readonly traceId: Scalars["String"]["output"]
+  readonly tsNanos: Scalars["String"]["output"]
+}
+
+export type RumSessionPageView = {
+  readonly __typename?: "RumSessionPageView"
+  readonly path: Maybe<Scalars["String"]["output"]>
+  readonly screen: Scalars["String"]["output"]
+  readonly spanId: Scalars["String"]["output"]
+  readonly traceId: Scalars["String"]["output"]
+  readonly tsNanos: Scalars["String"]["output"]
+}
+
+export type RumSessionVital = {
+  readonly __typename?: "RumSessionVital"
+  readonly name: Scalars["String"]["output"]
+  readonly rating: Maybe<Scalars["String"]["output"]>
+  readonly spanId: Scalars["String"]["output"]
+  readonly traceId: Scalars["String"]["output"]
+  readonly tsNanos: Scalars["String"]["output"]
+  readonly value: Scalars["Float"]["output"]
 }
 
 export type RuntimeMetric = {

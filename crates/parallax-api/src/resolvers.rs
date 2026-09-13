@@ -12,6 +12,7 @@ pub(crate) mod issues;
 pub(crate) mod journeys;
 pub(crate) mod logs;
 pub(crate) mod metrics;
+pub(crate) mod rum;
 #[expect(
     clippy::cast_precision_loss,
     clippy::excessive_nesting,
@@ -60,6 +61,8 @@ pub(crate) use metrics::MetricExemplar;
 pub(crate) use metrics::MetricQueryOut;
 pub(crate) use metrics::RuntimeMetric;
 pub(crate) use metrics::Series;
+pub(crate) use rum::RumSessionDetailOut;
+pub(crate) use rum::RumSessionOut;
 pub(crate) use services::ChartAnnotation;
 pub(crate) use services::Overview;
 pub(crate) use services::ReleaseHealth;

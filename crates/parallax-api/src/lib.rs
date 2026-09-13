@@ -38,11 +38,11 @@ use resolvers::{
     AlertRulePreview, AlertRuleState, AttributeCompareRow, AttributeFilterInput, BundleOut,
     ChartAnnotation, CriticalPath, Dashboard, DurationStats, EvidenceGap, Facet, FieldKey,
     FieldStats, Investigation, Invocation, Issue, IssueList, IssueSort, LogRecord, MetricExemplar,
-    ObservedInvocation, Overview, Point, ReleaseHealth, ReleaseWindow, RuntimeMetric, SavedView,
-    Series, ServiceCatalogRow, ServiceMap, ServiceOverview, ServiceSummary, SignalKind, SpanRed,
-    SqlResultOut, StoryBeat, TestCaseDetail, TestConfigurationFilterInput, TestExplorerPage,
-    TestExplorerSort, TestFlakyState, TestRollup, Trace, TraceDiff, TraceEventsOut, TraceList,
-    TraceSort, TraceSummary, TrendPoint,
+    ObservedInvocation, Overview, Point, ReleaseHealth, ReleaseWindow, RumSessionDetailOut,
+    RumSessionOut, RuntimeMetric, SavedView, Series, ServiceCatalogRow, ServiceMap, ServiceOverview,
+    ServiceSummary, SignalKind, SpanRed, SqlResultOut, StoryBeat, TestCaseDetail,
+    TestConfigurationFilterInput, TestExplorerPage, TestExplorerSort, TestFlakyState, TestRollup,
+    Trace, TraceDiff, TraceEventsOut, TraceList, TraceSort, TraceSummary, TrendPoint,
 };
 
 mod memo;
@@ -283,6 +283,13 @@ impl Query {
 
     /// Agent conversations (`gen_ai.conversation.id` spans) in one invocation.
     async fn conversations(context: &ApiContext, invocation_id: String) -> FieldResult<Vec<resolvers::ConversationOut>> { resolvers::journeys::conversations(context, invocation_id).await }
+
+    /// Browser RUM sessions: spans grouped by `session.id` (independent of
+    /// `cli.invocation.id`), newest activity first.
+    async fn rum_sessions(context: &ApiContext, service: Option<String>, from_nanos: String, to_nanos: String, error_only: Option<bool>, limit: Option<i32>,) -> FieldResult<Vec<RumSessionOut>> { resolvers::rum::rum_sessions(context, service, from_nanos, to_nanos, error_only, limit).await }
+
+    /// One RUM session with its timeline: page views, vitals, and errors.
+    async fn rum_session(context: &ApiContext, session_id: String, limit: Option<i32>,) -> FieldResult<Option<RumSessionDetailOut>> { resolvers::rum::rum_session(context, session_id, limit).await }
 
     /// One saved dashboard by id.
     async fn dashboard(context: &ApiContext, id: String) -> FieldResult<Option<Dashboard>> { resolvers::dashboards::dashboard(context, id).await }

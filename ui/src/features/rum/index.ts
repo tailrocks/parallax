@@ -1,7 +1,13 @@
 // Public facade for rum. Named exports only.
 
 export { RumContent, RumPage } from "@/features/rum/components/rum-page"
-export { loadRum, loadRumTrace, loadRumVital } from "@/features/rum/api/rum-api"
+export {
+  loadRum,
+  loadRumSession,
+  loadRumSessions,
+  loadRumTrace,
+  loadRumVital,
+} from "@/features/rum/api/rum-api"
 export {
   formatVitalValue,
   matchVital,
@@ -17,6 +23,11 @@ export type {
   RumIssueRow,
   RumLogRow,
   RumPoint,
+  RumSessionDetailData,
+  RumSessionErrorRow,
+  RumSessionRow,
+  RumSessionVitalRow,
+  RumSessionViewRow,
   RumTraceData,
   RumTraceRow,
   RumVitalData,
