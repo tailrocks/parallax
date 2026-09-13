@@ -128,7 +128,7 @@ impl crate::adapter::IngestStore for GreptimeStore {
             .map(|r| {
                 let source = serde_json::to_string(&r.source).unwrap_or_default();
                 format!(
-                    "({},'{}','{}','{}','{}',{},'{}','{}','{}',{})",
+                    "({},'{}','{}','{}','{}',{},'{}','{}','{}',{},{},{},{},{})",
                     r.ts_nanos,
                     escape(&r.service),
                     escape(&r.fingerprint),
@@ -138,13 +138,17 @@ impl crate::adapter::IngestStore for GreptimeStore {
                     source.trim_matches('"'),
                     escape(&r.trace_id),
                     escape(&r.span_id),
+                    opt_literal(&r.invocation_id),
+                    opt_literal(&r.session_id),
+                    opt_literal(&r.service_version),
+                    opt_literal(&r.environment),
                     json_literal(&r.attributes),
                 )
             })
             .collect();
         self.insert(
             "error_events",
-            "\"ts\", \"service\", \"fingerprint\", \"error_type\", \"message\", \"stacktrace\", \"source\", \"trace_id\", \"span_id\", \"attributes\"",
+            "\"ts\", \"service\", \"fingerprint\", \"error_type\", \"message\", \"stacktrace\", \"source\", \"trace_id\", \"span_id\", \"invocation_id\", \"session_id\", \"service_version\", \"environment\", \"attributes\"",
             values,
         )
         .await

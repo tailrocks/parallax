@@ -4,68 +4,71 @@ use super::*;
 impl crate::adapter::InvocationStore for GreptimeStore {
     async fn error_events_by_fingerprint(
         &self,
+        service: &str,
         fingerprint: &str,
         range: RangeInclusive<u128>,
         limit: usize,
     ) -> StorageResult<Vec<ErrorEventRow>> {
         let rows = self
             .sql(&format!(
-                r#"SELECT CAST("ts" AS BIGINT) AS "ts_nanos", "service", "fingerprint", "error_type",
-                          "message", "stacktrace", "source", "trace_id", "span_id",
-                          json_to_string("attributes")
-                   FROM error_events WHERE "fingerprint" = '{}' AND "ts" >= {} AND "ts" <= {}
+                r#"SELECT {ERROR_EVENT_PROJECTION}
+                   FROM error_events WHERE "service" = '{}' AND "fingerprint" = '{}'
+                     AND "ts" >= {} AND "ts" <= {}
                    ORDER BY "ts" DESC LIMIT {limit}"#,
+                escape(service),
                 escape(fingerprint),
                 sql_ts(*range.start()),
                 sql_ts(*range.end())
             ))
             .await?;
-        Ok(rows.iter().map(|row| error_event_row(row)).collect())
+        Ok(rows.iter().map(|row| error_event_from_row(row)).collect())
     }
 
     async fn error_events_by_fingerprints(
         &self,
-        fingerprints: &[String],
+        issue_keys: &[(String, String)],
         range: RangeInclusive<u128>,
-        limit_per_fingerprint: usize,
-    ) -> StorageResult<HashMap<String, Vec<ErrorEventRow>>> {
-        let mut events: HashMap<String, Vec<ErrorEventRow>> = fingerprints
+        limit_per_issue: usize,
+    ) -> StorageResult<HashMap<(String, String), Vec<ErrorEventRow>>> {
+        let mut events: HashMap<(String, String), Vec<ErrorEventRow>> = issue_keys
             .iter()
-            .map(|fingerprint| (fingerprint.clone(), Vec::new()))
+            .map(|key| (key.clone(), Vec::new()))
             .collect();
-        if fingerprints.is_empty() || limit_per_fingerprint == 0 {
+        if issue_keys.is_empty() || limit_per_issue == 0 {
             return Ok(events);
         }
-        let fingerprints_sql = fingerprints
+        let issue_keys_sql = issue_keys
             .iter()
-            .map(|fingerprint| format!("'{}'", escape(fingerprint)))
+            .map(|(service, fingerprint)| {
+                format!("('{}', '{}')", escape(service), escape(fingerprint))
+            })
             .collect::<Vec<_>>()
             .join(", ");
         let rows = self
             .sql(&format!(
-                r#"SELECT "ts_nanos", "service", "fingerprint", "error_type", "message",
-                          "stacktrace", "source", "trace_id", "span_id", "attributes"
+                r#"SELECT {ERROR_EVENT_PROJECTION}
                    FROM (
                      SELECT CAST("ts" AS BIGINT) AS "ts_nanos", "service", "fingerprint",
                             "error_type", "message", "stacktrace", "source", "trace_id",
-                            "span_id", json_to_string("attributes") AS "attributes",
+                            "span_id", "invocation_id", "session_id", "service_version",
+                            "environment", json_to_string("attributes") AS "attributes",
                             ROW_NUMBER() OVER (
-                              PARTITION BY "fingerprint" ORDER BY "ts" DESC
+                              PARTITION BY "service", "fingerprint" ORDER BY "ts" DESC
                             ) AS "event_rank"
                      FROM error_events
-                     WHERE "fingerprint" IN ({fingerprints_sql})
+                     WHERE ("service", "fingerprint") IN ({issue_keys_sql})
                        AND "ts" >= {} AND "ts" <= {}
                    ) WHERE "event_rank" <= {}
-                   ORDER BY "fingerprint", "ts_nanos" DESC"#,
+                   ORDER BY "service", "fingerprint", "ts_nanos" DESC"#,
                 sql_ts(*range.start()),
                 sql_ts(*range.end()),
-                limit_per_fingerprint.min(MAX_ROWS),
+                limit_per_issue.min(MAX_ROWS),
             ))
             .await?;
         for row in &rows {
-            let event = error_event_row(row);
+            let event = error_event_from_row(row);
             events
-                .entry(event.fingerprint.clone())
+                .entry((event.service.clone(), event.fingerprint.clone()))
                 .or_default()
                 .push(event);
         }
@@ -501,17 +504,5 @@ impl GreptimeStore {
 }
 
 fn error_event_row(row: &[serde_json::Value]) -> ErrorEventRow {
-    ErrorEventRow {
-        ts_nanos: u128_at(row, 0),
-        service: str_at(row, 1),
-        fingerprint: str_at(row, 2),
-        error_type: str_at(row, 3),
-        message: str_at(row, 4),
-        stacktrace: opt_str_at(row, 5),
-        source: serde_json::from_value(serde_json::Value::String(str_at(row, 6)))
-            .unwrap_or(ErrorSource::LogRecord),
-        trace_id: str_at(row, 7),
-        span_id: str_at(row, 8),
-        attributes: json_at(row, 9),
-    }
+    error_event_from_row(row)
 }

@@ -89,7 +89,9 @@ impl GreptimeStore {
                 r#"CREATE TABLE IF NOT EXISTS error_events (
                    "ts" TIMESTAMP(9) NOT NULL, "service" STRING, "fingerprint" STRING,
                    "error_type" STRING, "message" STRING, "stacktrace" STRING, "source" STRING,
-                   "trace_id" STRING, "span_id" STRING, "attributes" JSON,
+                   "trace_id" STRING, "span_id" STRING,
+                   "invocation_id" STRING SKIPPING INDEX, "session_id" STRING SKIPPING INDEX,
+                   "service_version" STRING, "environment" STRING, "attributes" JSON,
                    TIME INDEX ("ts"), PRIMARY KEY ("service", "fingerprint")
                  ) WITH (ttl = '{error_events_ttl}')"#
             ),
@@ -115,6 +117,18 @@ impl GreptimeStore {
             .await
         {
             tracing::warn!("canonical_name widen skipped: {error}");
+        }
+        // Older installs predate error-event canonical identity: widen in
+        // place; new rows fill the columns at ingest.
+        for column in [
+            r#"ALTER TABLE error_events ADD COLUMN IF NOT EXISTS "invocation_id" STRING"#,
+            r#"ALTER TABLE error_events ADD COLUMN IF NOT EXISTS "session_id" STRING"#,
+            r#"ALTER TABLE error_events ADD COLUMN IF NOT EXISTS "service_version" STRING"#,
+            r#"ALTER TABLE error_events ADD COLUMN IF NOT EXISTS "environment" STRING"#,
+        ] {
+            if let Err(error) = self.sql(column).await {
+                tracing::warn!("error_events identity widen skipped: {error}");
+            }
         }
         self.ensure_metric_exemplars(metrics_ttl).await?;
         self.try_logs_deviations().await;
