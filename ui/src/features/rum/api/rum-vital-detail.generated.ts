@@ -7,7 +7,7 @@ type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] }
 export type Incremental<T> =
   | T
   | { [P in keyof T]?: P extends " $fragmentName" | "__typename" ? T[P] : never }
-import type * as Types from "../../generated/schema-types.generated"
+import type * as Types from "../../../platform/graphql/generated/schema-types.generated"
 
 import * as z from "zod"
 import type {
@@ -22,44 +22,45 @@ import type {
   IssueSort,
   AttributeFilterInput,
   AlertRuleInput,
-  GraphqlContractStaticProbeQuery,
+  RumVitalDetailQuery,
 } from "@/platform/graphql/generated/schema-types.generated"
 import type { TypedDocumentNode as DocumentNode } from "@/platform/graphql/typed-document"
-export type GraphqlContractStaticProbeQueryVariables = Exact<{
+export type RumVitalDetailQueryVariables = Exact<{
+  name: string
   fromNanos: string
   toNanos: string
-  fingerprint: string
-  service: string
+  service?: string | null | undefined
   limit?: number | null | undefined
 }>
 
-export type GraphqlContractStaticProbeQuery = {
-  readonly health: string
-  readonly version: string
-  readonly otlpGrpcPort: number
-  readonly otlpHttpPort: number
-  readonly metricNames: ReadonlyArray<string>
-  readonly overview: {
-    readonly spanCount: string
-    readonly errorRate: number
-    readonly activeServices: number
-  }
-  readonly issue: {
-    readonly fingerprint: string
-    readonly title: string
-    readonly eventCount: number
-  } | null
-  readonly signalCountSeries: ReadonlyArray<{ readonly tsNanos: string; readonly value: number }>
+export type RumVitalDetailQuery = {
+  readonly metricExemplars: ReadonlyArray<{
+    readonly tsNanos: string
+    readonly service: string
+    readonly name: string
+    readonly value: number
+    readonly traceId: string
+    readonly spanId: string
+    readonly attributes: string
+  }>
 }
 
-export const GraphqlContractStaticProbeDocument = {
+export const RumVitalDetailDocument = {
   kind: "Document",
   definitions: [
     {
       kind: "OperationDefinition",
       operation: "query",
-      name: { kind: "Name", value: "GraphqlContractStaticProbe" },
+      name: { kind: "Name", value: "RumVitalDetail" },
       variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "name" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+          },
+        },
         {
           kind: "VariableDefinition",
           variable: { kind: "Variable", name: { kind: "Name", value: "fromNanos" } },
@@ -78,19 +79,8 @@ export const GraphqlContractStaticProbeDocument = {
         },
         {
           kind: "VariableDefinition",
-          variable: { kind: "Variable", name: { kind: "Name", value: "fingerprint" } },
-          type: {
-            kind: "NonNullType",
-            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
-          },
-        },
-        {
-          kind: "VariableDefinition",
           variable: { kind: "Variable", name: { kind: "Name", value: "service" } },
-          type: {
-            kind: "NonNullType",
-            type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
-          },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
         },
         {
           kind: "VariableDefinition",
@@ -101,82 +91,14 @@ export const GraphqlContractStaticProbeDocument = {
       selectionSet: {
         kind: "SelectionSet",
         selections: [
-          { kind: "Field", name: { kind: "Name", value: "health" } },
-          { kind: "Field", name: { kind: "Name", value: "version" } },
-          { kind: "Field", name: { kind: "Name", value: "otlpGrpcPort" } },
-          { kind: "Field", name: { kind: "Name", value: "otlpHttpPort" } },
           {
             kind: "Field",
-            name: { kind: "Name", value: "overview" },
+            name: { kind: "Name", value: "metricExemplars" },
             arguments: [
               {
                 kind: "Argument",
-                name: { kind: "Name", value: "fromNanos" },
-                value: { kind: "Variable", name: { kind: "Name", value: "fromNanos" } },
-              },
-              {
-                kind: "Argument",
-                name: { kind: "Name", value: "toNanos" },
-                value: { kind: "Variable", name: { kind: "Name", value: "toNanos" } },
-              },
-            ],
-            selectionSet: {
-              kind: "SelectionSet",
-              selections: [
-                { kind: "Field", name: { kind: "Name", value: "spanCount" } },
-                { kind: "Field", name: { kind: "Name", value: "errorRate" } },
-                { kind: "Field", name: { kind: "Name", value: "activeServices" } },
-              ],
-            },
-          },
-          {
-            kind: "Field",
-            name: { kind: "Name", value: "issue" },
-            arguments: [
-              {
-                kind: "Argument",
-                name: { kind: "Name", value: "service" },
-                value: { kind: "Variable", name: { kind: "Name", value: "service" } },
-              },
-              {
-                kind: "Argument",
-                name: { kind: "Name", value: "fingerprint" },
-                value: { kind: "Variable", name: { kind: "Name", value: "fingerprint" } },
-              },
-            ],
-            selectionSet: {
-              kind: "SelectionSet",
-              selections: [
-                { kind: "Field", name: { kind: "Name", value: "fingerprint" } },
-                { kind: "Field", name: { kind: "Name", value: "title" } },
-                { kind: "Field", name: { kind: "Name", value: "eventCount" } },
-              ],
-            },
-          },
-          {
-            kind: "Field",
-            name: { kind: "Name", value: "metricNames" },
-            arguments: [
-              {
-                kind: "Argument",
-                name: { kind: "Name", value: "prefix" },
-                value: { kind: "Variable", name: { kind: "Name", value: "service" } },
-              },
-            ],
-          },
-          {
-            kind: "Field",
-            name: { kind: "Name", value: "signalCountSeries" },
-            arguments: [
-              {
-                kind: "Argument",
-                name: { kind: "Name", value: "kind" },
-                value: { kind: "EnumValue", value: "LOGS" },
-              },
-              {
-                kind: "Argument",
-                name: { kind: "Name", value: "service" },
-                value: { kind: "Variable", name: { kind: "Name", value: "service" } },
+                name: { kind: "Name", value: "name" },
+                value: { kind: "Variable", name: { kind: "Name", value: "name" } },
               },
               {
                 kind: "Argument",
@@ -190,7 +112,12 @@ export const GraphqlContractStaticProbeDocument = {
               },
               {
                 kind: "Argument",
-                name: { kind: "Name", value: "stepSeconds" },
+                name: { kind: "Name", value: "service" },
+                value: { kind: "Variable", name: { kind: "Name", value: "service" } },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "limit" },
                 value: { kind: "Variable", name: { kind: "Name", value: "limit" } },
               },
             ],
@@ -198,7 +125,12 @@ export const GraphqlContractStaticProbeDocument = {
               kind: "SelectionSet",
               selections: [
                 { kind: "Field", name: { kind: "Name", value: "tsNanos" } },
+                { kind: "Field", name: { kind: "Name", value: "service" } },
+                { kind: "Field", name: { kind: "Name", value: "name" } },
                 { kind: "Field", name: { kind: "Name", value: "value" } },
+                { kind: "Field", name: { kind: "Name", value: "traceId" } },
+                { kind: "Field", name: { kind: "Name", value: "spanId" } },
+                { kind: "Field", name: { kind: "Name", value: "attributes" } },
               ],
             },
           },
@@ -206,10 +138,7 @@ export const GraphqlContractStaticProbeDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<
-  GraphqlContractStaticProbeQuery,
-  GraphqlContractStaticProbeQueryVariables
->
+} as unknown as DocumentNode<RumVitalDetailQuery, RumVitalDetailQueryVariables>
 
 type Properties<T> = {
   [K in keyof T]: z.ZodType<T[K], T[K] | undefined>
@@ -297,29 +226,16 @@ export const AlertRuleInputSchema: z.ZodObject<Properties<AlertRuleInput>> = z.o
   windowMinutes: z.number(),
 })
 
-export const GraphqlContractStaticProbeQuerySchema: z.ZodType<GraphqlContractStaticProbeQuery> =
-  z.object({
-    health: z.string(),
-    version: z.string(),
-    otlpGrpcPort: z.number(),
-    otlpHttpPort: z.number(),
-    overview: z.object({
-      spanCount: z.string(),
-      errorRate: z.number(),
-      activeServices: z.number(),
-    }),
-    issue: z
-      .object({
-        fingerprint: z.string(),
-        title: z.string(),
-        eventCount: z.number(),
-      })
-      .nullable(),
-    metricNames: z.array(z.string()),
-    signalCountSeries: z.array(
-      z.object({
-        tsNanos: z.string(),
-        value: z.number(),
-      })
-    ),
-  })
+export const RumVitalDetailQuerySchema: z.ZodType<RumVitalDetailQuery> = z.object({
+  metricExemplars: z.array(
+    z.object({
+      tsNanos: z.string(),
+      service: z.string(),
+      name: z.string(),
+      value: z.number(),
+      traceId: z.string(),
+      spanId: z.string(),
+      attributes: z.string(),
+    })
+  ),
+})

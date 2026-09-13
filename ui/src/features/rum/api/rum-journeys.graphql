@@ -1,0 +1,27 @@
+query RumJourneys(
+  $service: String
+  $fromNanos: String
+  $toNanos: String
+  $attributeFilters: [AttributeFilterInput!]
+  $limit: Int
+) {
+  tracesPage(
+    service: $service
+    fromNanos: $fromNanos
+    toNanos: $toNanos
+    attributeFilters: $attributeFilters
+    limit: $limit
+    sort: START_DESC
+  ) {
+    total
+    items {
+      traceId
+      rootName
+      service
+      startNanos
+      durationNs
+      spanCount
+      hasError
+    }
+  }
+}

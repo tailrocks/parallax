@@ -423,6 +423,7 @@ export type Invocation = {
 export type InvocationErrorEvent = {
   readonly __typename?: "InvocationErrorEvent"
   readonly fingerprint: Scalars["String"]["output"]
+  readonly service: Scalars["String"]["output"]
   readonly title: Scalars["String"]["output"]
   readonly traceId: Maybe<Scalars["String"]["output"]>
   readonly tsNanos: Scalars["String"]["output"]
@@ -663,6 +664,7 @@ export type MutationInvocationStartArgs = {
 
 export type MutationIssueSetStatusArgs = {
   fingerprint: Scalars["String"]["input"]
+  service: Scalars["String"]["input"]
   status: Scalars["String"]["input"]
 }
 
@@ -989,6 +991,7 @@ export type QueryBundleArgs = {
   fingerprint: InputMaybe<Scalars["String"]["input"]>
   invocationId: InputMaybe<Scalars["String"]["input"]>
   maxTokens: InputMaybe<Scalars["Int"]["input"]>
+  service: InputMaybe<Scalars["String"]["input"]>
   traceId: InputMaybe<Scalars["String"]["input"]>
 }
 
@@ -1052,11 +1055,13 @@ export type QueryInvocationsArgs = {
 
 export type QueryIssueArgs = {
   fingerprint: Scalars["String"]["input"]
+  service: Scalars["String"]["input"]
 }
 
 export type QueryIssueTrendArgs = {
   fingerprint: Scalars["String"]["input"]
   hours: InputMaybe<Scalars["Int"]["input"]>
+  service: Scalars["String"]["input"]
   stepSeconds: InputMaybe<Scalars["Int"]["input"]>
 }
 

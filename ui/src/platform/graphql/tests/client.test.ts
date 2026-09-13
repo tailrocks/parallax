@@ -19,7 +19,7 @@ const probeVariables = {
   fromNanos: "0",
   toNanos: "1",
   fingerprint: "abc",
-  service: null,
+  service: "svc",
   limit: 60,
 }
 

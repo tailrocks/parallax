@@ -1,0 +1,23 @@
+query RumVitalDetail(
+  $name: String!
+  $fromNanos: String!
+  $toNanos: String!
+  $service: String
+  $limit: Int
+) {
+  metricExemplars(
+    name: $name
+    fromNanos: $fromNanos
+    toNanos: $toNanos
+    service: $service
+    limit: $limit
+  ) {
+    tsNanos
+    service
+    name
+    value
+    traceId
+    spanId
+    attributes
+  }
+}

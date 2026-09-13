@@ -1,0 +1,18 @@
+query RumTrace($traceId: String!) {
+  linkedTraces(traceId: $traceId) {
+    traceId
+    rootName
+    service
+    startNanos
+    durationNs
+    spanCount
+    hasError
+  }
+  logsByTrace(traceId: $traceId) {
+    tsNanos
+    severityText
+    body
+    service
+    spanId
+  }
+}

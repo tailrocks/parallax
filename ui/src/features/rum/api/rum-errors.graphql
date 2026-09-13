@@ -1,0 +1,46 @@
+query RumErrors(
+  $service: String
+  $fromNanos: String
+  $toNanos: String
+  $limit: Int
+) {
+  issues(
+    service: $service
+    fromNanos: $fromNanos
+    toNanos: $toNanos
+    sort: LAST_SEEN
+    limit: $limit
+  ) {
+    total
+    items {
+      fingerprint
+      title
+      errorType
+      culprit
+      service
+      status
+      lastSeenNanos
+      eventCount
+      lastTraceId
+    }
+  }
+  tracesPage(
+    service: $service
+    fromNanos: $fromNanos
+    toNanos: $toNanos
+    errorOnly: true
+    limit: $limit
+    sort: START_DESC
+  ) {
+    total
+    items {
+      traceId
+      rootName
+      service
+      startNanos
+      durationNs
+      spanCount
+      hasError
+    }
+  }
+}
