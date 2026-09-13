@@ -7,8 +7,8 @@ P0 freeze: finite list in scratch `p0-freeze.txt` (same 14 items; not grown).
 **Parallax-today** is HEAD `544e5a3d83fd7662c9849526225880a49c7e2317`
 (`goal/final-p0-hotfix`), not origin/main and not 2026-07 ledger prose. Pointers:
 
-- GraphQL SDL `ui/graphql/schema.graphql` (81 Query / 14 Mutation, recounted
-  2026-09-13 R2: `samplingPolicy` + `ingestDrops` + `ingestQueues` new — same count as ledger)
+- GraphQL SDL `ui/graphql/schema.graphql` (84 Query / 15 Mutation, recounted
+  R2 merge: R3 `rumSessions` + `rumSession`, R1 `sourceMaps` + `sourceMapUpload`, R2 `samplingPolicy` + `ingestDrops` + `ingestQueues` — same count as ledger)
 - Issues: `(service, fingerprint)` PK (`crates/parallax-metadata/src/turso/connection.rs`);
   UI `/issues/$service/$fingerprint`; occurrence selection + `CorrelationCard`
   (`ui/src/features/issues/`)
@@ -40,7 +40,7 @@ deliberate not-compete · `watch` = drift.
 | Stack traces + frames | culprit frames; `parseStacktrace` | frame collapsing, in-app, suspect frames | Sentry 26.8.0 | faster to the guilty line | P1 | in-app classifier | frame collapse UX | c8 | adopt |
 | Source context | none (no code fetch) | inline source + suspect commits | Sentry 26.8.0 | guilty line + commit together | P1 | repo-link adapter | code frame | none | adopt |
 | Exception chains | partial (derive from spans/logs) | chained exceptions + mechanism + threads | Sentry 26.8.0 | async/threaded failures readable | P1 | chain model | chained render | none | adopt |
-| Breadcrumbs | shipped on Sentry envelopes | breadcrumbs + touch trail + replay | Sentry 26.8.0 | pre-crash story denser | P1 | none major | trail density | c8 | adopt |
+| Breadcrumbs | none (Sentry `breadcrumbs` dropped at derive) | breadcrumbs + touch trail + replay | Sentry 26.8.0 | pre-crash story denser | P1 | crumb store | trail density | R4 matrix | adopt |
 | Tags/dimensions | tags JSON + cross-links | tag distribution facets per issue | Sentry 26.8.0 | Parallax cross-link unique; Sentry distribution deeper | P1 | none | distribution bars | c8 | keep |
 | Users/sessions | `sessionId` on ErrorEvent; no user rollup | user tab: count, identity, affected-user trend | Sentry 26.8.0 | “how many users” is the triage question | P1 | user identity rollup | users tab | RUM partial | adopt |
 | Environment | `environment` on ErrorEvent | env filter + per-env release health | Sentry 26.8.0 | env-scoped verdicts | P1 | env rollup | env filter | a13 (2 versions) | adopt |

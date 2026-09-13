@@ -93,7 +93,7 @@ humans and coding agents; it is the context engine, not the fixer.
 
 ### API
 
-- One canonical GraphQL surface `POST :4000/graphql` — 81 queries, 14
+- One canonical GraphQL surface `POST :4000/graphql` — 84 queries, 15
   mutations, 0 subscriptions; depth/complexity limits; SDL checked into
   `ui/graphql/schema.graphql` and drift-gated.
 - Query families: overview/signal series; services (catalog, map, RED,

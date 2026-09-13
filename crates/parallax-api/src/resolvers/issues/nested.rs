@@ -276,6 +276,15 @@ impl ErrorEvent {
     fn stacktrace(&self) -> Option<&str> {
         self.0.stacktrace.as_deref()
     }
+    /// V8 frames resolved against the stored source maps for this event's
+    /// (service, version). Empty for non-JS stacks; `resolved` is false per
+    /// frame when no artifact matches.
+    async fn mapped_frames(
+        &self,
+        context: &ApiContext,
+    ) -> FieldResult<Vec<crate::resolvers::MappedFrame>> {
+        crate::resolvers::source_maps::mapped_frames_for(context, &self.0).await
+    }
     fn source(&self) -> String {
         serde_json::to_string(&self.0.source)
             .unwrap_or_default()

@@ -34,6 +34,7 @@ mod lifecycle;
 mod metric_analytics;
 mod query_sql;
 mod row_decode;
+mod rum_sessions;
 mod service_analytics;
 mod signal_analytics;
 mod signal_queries;

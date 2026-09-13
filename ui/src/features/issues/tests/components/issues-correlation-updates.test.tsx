@@ -68,6 +68,8 @@ const detailFixture = {
         source: "exception",
         traceId: "trace-a",
         spanId: "span-a",
+        serviceVersion: null,
+        mappedFrames: [],
         attributes: "{}",
       },
       {
@@ -79,6 +81,8 @@ const detailFixture = {
         source: "exception",
         traceId: "trace-b",
         spanId: "span-b",
+        serviceVersion: null,
+        mappedFrames: [],
         attributes: '{"order":{"id":',
       },
       {
@@ -89,6 +93,8 @@ const detailFixture = {
         source: "exception",
         traceId: "",
         spanId: "span-c",
+        serviceVersion: null,
+        mappedFrames: [],
         attributes: "{}",
       },
     ],

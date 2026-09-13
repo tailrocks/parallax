@@ -13,12 +13,14 @@ pub(crate) mod journeys;
 pub(crate) mod logs;
 pub(crate) mod metrics;
 pub(crate) mod pipeline;
+pub(crate) mod rum;
 #[expect(
     clippy::cast_precision_loss,
     clippy::excessive_nesting,
     reason = "telemetry analytics"
 )]
 pub(crate) mod services;
+pub(crate) mod source_maps;
 pub(crate) mod sql;
 pub(crate) mod story;
 pub(crate) mod tests;
@@ -61,6 +63,8 @@ pub(crate) use metrics::MetricExemplar;
 pub(crate) use metrics::MetricQueryOut;
 pub(crate) use metrics::RuntimeMetric;
 pub(crate) use metrics::Series;
+pub(crate) use rum::RumSessionDetailOut;
+pub(crate) use rum::RumSessionOut;
 pub(crate) use services::ChartAnnotation;
 pub(crate) use services::Overview;
 pub(crate) use services::ReleaseWindow;
@@ -70,6 +74,8 @@ pub(crate) use services::ServiceOverview;
 pub(crate) use services::ServiceSummary;
 pub(crate) use services::SignalKind;
 pub(crate) use services::SpanRed;
+pub(crate) use source_maps::MappedFrame;
+pub(crate) use source_maps::SourceMapArtifact;
 pub(crate) use sql::SqlResultOut;
 pub(crate) use story::AgentSessionOut;
 pub(crate) use story::StoryBeat;

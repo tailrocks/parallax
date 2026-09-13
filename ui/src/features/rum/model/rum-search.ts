@@ -6,6 +6,7 @@ export interface RumSearch {
   service?: string
   vital?: string
   traceId?: string
+  sessionId?: string
   where?: string
   range?: string
   from?: string
@@ -20,6 +21,7 @@ const rumSearchSchema = rangeSearchSchema.extend({
   service: z.unknown().optional(),
   vital: z.unknown().optional(),
   traceId: z.unknown().optional(),
+  sessionId: z.unknown().optional(),
   where: z.unknown().optional(),
 })
 
@@ -33,10 +35,12 @@ export function validateRumSearch(search: Record<string, unknown>): RumSearch {
   const service = searchString(parsed.service)
   const vital = searchString(parsed.vital)
   const traceId = searchString(parsed.traceId)
+  const sessionId = searchString(parsed.sessionId)
   const where = searchString(parsed.where)
   if (service) result.service = service
   if (vital) result.vital = vital
   if (traceId) result.traceId = traceId
+  if (sessionId) result.sessionId = sessionId
   if (where) result.where = where
   if (parsed.range) result.range = parsed.range
   if (parsed.from) result.from = parsed.from

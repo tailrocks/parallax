@@ -80,3 +80,49 @@ export interface RumTraceData {
   readonly linked: readonly RumTraceRow[]
   readonly logs: readonly RumLogRow[]
 }
+
+export interface RumSessionRow {
+  readonly sessionId: string
+  readonly service: string
+  readonly startNanos: string
+  readonly endNanos: string
+  readonly spanCount: number
+  readonly traceCount: number
+  readonly viewCount: number
+  readonly vitalCount: number
+  readonly errorCount: number
+  readonly hasError: boolean
+}
+
+export interface RumSessionViewRow {
+  readonly tsNanos: string
+  readonly screen: string
+  readonly path: string | null
+  readonly traceId: string
+  readonly spanId: string
+}
+
+export interface RumSessionVitalRow {
+  readonly tsNanos: string
+  readonly name: string
+  readonly value: number
+  readonly rating: string | null
+  readonly traceId: string
+  readonly spanId: string
+}
+
+export interface RumSessionErrorRow {
+  readonly tsNanos: string
+  readonly name: string
+  readonly errorType: string | null
+  readonly message: string
+  readonly traceId: string
+  readonly spanId: string
+}
+
+export interface RumSessionDetailData {
+  readonly session: RumSessionRow
+  readonly views: readonly RumSessionViewRow[]
+  readonly vitals: readonly RumSessionVitalRow[]
+  readonly errors: readonly RumSessionErrorRow[]
+}

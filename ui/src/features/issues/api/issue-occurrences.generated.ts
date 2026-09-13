@@ -37,12 +37,24 @@ export type IssueOccurrencesQuery = {
     readonly events: ReadonlyArray<{
       readonly tsNanos: string
       readonly service: string
+      readonly serviceVersion: string | null
       readonly message: string
       readonly stacktrace: string | null
       readonly source: string
       readonly traceId: string
       readonly spanId: string
       readonly attributes: string
+      readonly mappedFrames: ReadonlyArray<{
+        readonly raw: string
+        readonly file: string
+        readonly line: number
+        readonly column: number
+        readonly resolved: boolean
+        readonly source: string | null
+        readonly sourceLine: number | null
+        readonly sourceColumn: number | null
+        readonly name: string | null
+      }>
     }>
   } | null
 }
@@ -134,12 +146,31 @@ export const IssueOccurrencesDocument = {
                     selections: [
                       { kind: "Field", name: { kind: "Name", value: "tsNanos" } },
                       { kind: "Field", name: { kind: "Name", value: "service" } },
+                      { kind: "Field", name: { kind: "Name", value: "serviceVersion" } },
                       { kind: "Field", name: { kind: "Name", value: "message" } },
                       { kind: "Field", name: { kind: "Name", value: "stacktrace" } },
                       { kind: "Field", name: { kind: "Name", value: "source" } },
                       { kind: "Field", name: { kind: "Name", value: "traceId" } },
                       { kind: "Field", name: { kind: "Name", value: "spanId" } },
                       { kind: "Field", name: { kind: "Name", value: "attributes" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "mappedFrames" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            { kind: "Field", name: { kind: "Name", value: "raw" } },
+                            { kind: "Field", name: { kind: "Name", value: "file" } },
+                            { kind: "Field", name: { kind: "Name", value: "line" } },
+                            { kind: "Field", name: { kind: "Name", value: "column" } },
+                            { kind: "Field", name: { kind: "Name", value: "resolved" } },
+                            { kind: "Field", name: { kind: "Name", value: "source" } },
+                            { kind: "Field", name: { kind: "Name", value: "sourceLine" } },
+                            { kind: "Field", name: { kind: "Name", value: "sourceColumn" } },
+                            { kind: "Field", name: { kind: "Name", value: "name" } },
+                          ],
+                        },
+                      },
                     ],
                   },
                 },
@@ -245,12 +276,26 @@ export const IssueOccurrencesQuerySchema: z.ZodType<IssueOccurrencesQuery> = z.o
         z.object({
           tsNanos: z.string(),
           service: z.string(),
+          serviceVersion: z.string().nullable(),
           message: z.string(),
           stacktrace: z.string().nullable(),
           source: z.string(),
           traceId: z.string(),
           spanId: z.string(),
           attributes: z.string(),
+          mappedFrames: z.array(
+            z.object({
+              raw: z.string(),
+              file: z.string(),
+              line: z.number(),
+              column: z.number(),
+              resolved: z.boolean(),
+              source: z.string().nullable(),
+              sourceLine: z.number().nullable(),
+              sourceColumn: z.number().nullable(),
+              name: z.string().nullable(),
+            })
+          ),
         })
       ),
     })

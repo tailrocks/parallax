@@ -1,9 +1,10 @@
 use crate::TursoMetadataStore;
 use parallax_model::{
     Dashboard, Investigation, InvocationRecord, Issue, IssueOccurrence, IssueQuery, IssueSortKey,
-    SavedView, TestCaseDetailBundle, TestCaseRecord, TestExplorerPage, TestExplorerQuery,
-    TestExplorerSort, TestFlakyCandidatePage, TestFlakyCursor, TestFlakyStateRecord,
-    TestResultRecord, TestResultWindow, TestVariantKey, TestVariantRecord, TrendPoint,
+    SavedView, SourceMapRecord, SourceMapUpload, TestCaseDetailBundle, TestCaseRecord,
+    TestExplorerPage, TestExplorerQuery, TestExplorerSort, TestFlakyCandidatePage, TestFlakyCursor,
+    TestFlakyStateRecord, TestResultRecord, TestResultWindow, TestVariantKey, TestVariantRecord,
+    TrendPoint,
 };
 use parallax_storage::metadata::{
     MetadataError, MetadataResult, TEST_CASE_VARIANTS_MAX_LIMIT, TEST_EXPLORER_MAX_LIMIT,
@@ -454,6 +455,28 @@ impl parallax_storage::metadata::MetadataStore for TursoMetadataStore {
     }
     async fn saved_view(&self, id: &str) -> MetadataResult<Option<SavedView>> {
         Self::saved_view(self, id)
+            .await
+            .map_err(MetadataError::internal)
+    }
+    async fn source_map_save(
+        &self,
+        upload: &SourceMapUpload<'_>,
+    ) -> MetadataResult<SourceMapRecord> {
+        Self::source_map_save(self, upload)
+            .await
+            .map_err(MetadataError::internal)
+    }
+    async fn source_maps(
+        &self,
+        service: &str,
+        version: &str,
+    ) -> MetadataResult<Vec<SourceMapRecord>> {
+        Self::source_maps(self, service, version)
+            .await
+            .map_err(MetadataError::internal)
+    }
+    async fn source_map_releases(&self, service: &str) -> MetadataResult<Vec<String>> {
+        Self::source_map_releases(self, service)
             .await
             .map_err(MetadataError::internal)
     }

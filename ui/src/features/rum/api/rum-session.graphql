@@ -1,0 +1,39 @@
+query RumSession($sessionId: String!, $limit: Int) {
+  rumSession(sessionId: $sessionId, limit: $limit) {
+    session {
+      sessionId
+      service
+      startNanos
+      endNanos
+      spanCount
+      traceCount
+      viewCount
+      vitalCount
+      errorCount
+      hasError
+    }
+    views {
+      tsNanos
+      screen
+      path
+      traceId
+      spanId
+    }
+    vitals {
+      tsNanos
+      name
+      value
+      rating
+      traceId
+      spanId
+    }
+    errors {
+      tsNanos
+      name
+      errorType
+      message
+      traceId
+      spanId
+    }
+  }
+}

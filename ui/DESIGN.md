@@ -182,6 +182,11 @@ Living section. Re-verify on the next major redesign.
   Workspace nav; `EmptyState action`; legend `aria-pressed`.
 - 2026-09-13 — `ISSUE_STATUS.regressed` (warning tone); skip-link on
   `app-shell` `#main-content`; `LogsLink` carries `trace`.
+- 2026-09-13 — R1 source maps: issue-detail stacktrace renders
+  server-resolved `mappedFrames` with an `N/M frames mapped` badge
+  (generated position kept as fallback/title); `SourceMapCard`
+  lists artifacts + uploads `.map` files for the event's
+  `(service, version)` when frames are unmapped.
 - 2026-09-13 — R2 `/pipeline` route (workspace nav): sampling-policy,
   drop-reason, and queue-watermark cards; uncached loader (live counters);
   exact-count `bigint` mappers (`formatCount`, `totalDropped`).

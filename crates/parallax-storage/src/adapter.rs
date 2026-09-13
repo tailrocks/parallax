@@ -127,6 +127,68 @@ pub struct ConversationSummary {
     pub output_tokens: Option<f64>,
 }
 
+/// One browser RUM session: spans grouped by `session.id`, independent of
+/// `cli.invocation.id`. Browsers emit no `session.start`/`session.end`, so
+/// `end_nanos` is last activity, not an explicit close.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RumSession {
+    pub session_id: String,
+    /// Display service: the lexicographic max over the session's spans
+    /// (sessions are single-service in practice; both adapters agree).
+    pub service: String,
+    pub start_nanos: u128,
+    pub end_nanos: u128,
+    pub span_count: u64,
+    pub trace_count: u64,
+    pub view_count: u64,
+    pub vital_count: u64,
+    pub error_count: u64,
+    pub has_error: bool,
+}
+
+/// One page view inside a RUM session: a span named `app.screen.name`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RumSessionPageView {
+    pub ts_nanos: u128,
+    pub screen: String,
+    pub path: Option<String>,
+    pub trace_id: String,
+    pub span_id: String,
+}
+
+/// One Web Vital sample inside a RUM session: a span named
+/// `browser.web_vital` carrying `web_vital.*` attributes.
+#[derive(Debug, Clone, PartialEq)]
+pub struct RumSessionVital {
+    pub ts_nanos: u128,
+    pub name: String,
+    pub value: f64,
+    pub rating: Option<String>,
+    pub trace_id: String,
+    pub span_id: String,
+}
+
+/// One error inside a RUM session: a span with an ERROR status.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RumSessionError {
+    pub ts_nanos: u128,
+    pub name: String,
+    pub error_type: Option<String>,
+    pub message: String,
+    pub trace_id: String,
+    pub span_id: String,
+}
+
+/// A RUM session with its timeline: page views, vitals, and errors, each
+/// time ascending and bounded by the query limit.
+#[derive(Debug, Clone, PartialEq)]
+pub struct RumSessionDetail {
+    pub session: RumSession,
+    pub views: Vec<RumSessionPageView>,
+    pub vitals: Vec<RumSessionVital>,
+    pub errors: Vec<RumSessionError>,
+}
+
 /// Result of a raw read-only SQL query against the engine (the GreptimeDB
 /// power feature surfaced through API/CLI/UI).
 #[derive(Debug, Clone)]
