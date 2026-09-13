@@ -143,6 +143,7 @@ export function LogsLink({
   range,
   service,
   q,
+  trace,
   anchor,
   children,
   className,
@@ -150,6 +151,7 @@ export function LogsLink({
   range: ResolvedRange
   service?: string
   q?: string
+  trace?: string
   anchor?: string
   children: ReactNode
   className?: string
@@ -161,6 +163,7 @@ export function LogsLink({
         ...rangeLinkSearch(range),
         ...(service ? { service } : {}),
         ...(q ? { q } : {}),
+        ...(trace ? { trace } : {}),
         ...(anchor ? { anchor } : {}),
       }}
       className={cn(toneClass.muted, className)}

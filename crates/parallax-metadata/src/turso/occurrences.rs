@@ -43,10 +43,10 @@ pub(super) async fn upsert_issue_occurrences(
                        last_seen = MAX(last_seen, excluded.last_seen),
                        event_count = event_count + 1,
                        last_trace_id = COALESCE(excluded.last_trace_id, last_trace_id),
-                       -- Regression: a new occurrence reopens a resolved issue.
+                       -- Recurrence of a resolved issue is a regression, not a
+                       -- silent reopen. Keep resolved_at as last-resolved time.
                        -- (All RHS expressions read the pre-update row.)
-                       status = CASE WHEN status = 'resolved' THEN 'open' ELSE status END,
-                       resolved_at = CASE WHEN status = 'resolved' THEN NULL ELSE resolved_at END",
+                       status = CASE WHEN status = 'resolved' THEN 'regressed' ELSE status END",
             (
                 occurrence.service,
                 occurrence.fingerprint,

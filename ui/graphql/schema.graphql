@@ -320,6 +320,16 @@ type DiffSpan {
   matchKey: String!
 }
 
+type DominantDbQuery {
+  normalized: String!
+  example: String!
+  count: Int!
+  totalNs: String!
+  maxNs: String!
+  exampleSpanId: String!
+  service: String!
+}
+
 type DurationStats {
   "Median representative-span duration, milliseconds."
   p50Ms: Float
@@ -590,8 +600,8 @@ type MetricQueryOut {
 
 type Mutation {
   """
-    Set an issue's workflow status (open | resolved); returns the updated
-    issue (spec §8: `Issue!`).
+    Set an issue's workflow status (open | resolved). `regressed` is
+    derived on recurrence, not set by this mutation.
   """
   issueSetStatus(service: String!, fingerprint: String!, status: String!): Issue!
   "Register an invocation (the CLI wrapper calls this before launching)."
@@ -1132,6 +1142,8 @@ type TestVariantDetail {
 type Trace {
   traceId: String!
   spans: [Span!]!
+  "Ranked database queries in this trace, grouped by normalized SQL."
+  dominantDbQueries: [DominantDbQuery!]!
 }
 
 type TraceDiff {

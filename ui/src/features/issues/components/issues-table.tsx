@@ -14,6 +14,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { topTags, trendEvents, type IssueRow } from "@/features/issues/model/issue-summary"
+import {
+  issueNeedsAttention,
+  issueStatusBadgeVariant,
+} from "@/features/issues/model/issue-status"
 import type { IssueSort, IssuesSearchPatch } from "@/features/issues/model/issues-search"
 import type { ResolvedRange } from "@/domain/time-range/range"
 import { rangeLinkSearch } from "@/domain/time-range/range"
@@ -152,7 +156,7 @@ export function IssuesTable({
         </tr>
       ) : null}
       {rows.map((issue, index) => {
-        const recentOpen = issue.status === "open" && trendEvents(issue) > 0
+        const recentOpen = issueNeedsAttention(issue.status) && trendEvents(issue) > 0
         const tags = topTags(issue.tags)
         return (
           <TableRow
@@ -267,7 +271,7 @@ export function IssuesTable({
               </div>
             </TableCell>
             <TableCell>
-              <Badge variant={issue.status === "open" ? "rose" : "emerald"}>{issue.status}</Badge>
+              <Badge variant={issueStatusBadgeVariant(issue.status)}>{issue.status}</Badge>
             </TableCell>
           </TableRow>
         )

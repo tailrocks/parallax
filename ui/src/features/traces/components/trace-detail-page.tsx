@@ -80,6 +80,7 @@ import type {
   RpcStreamInfo,
   RpcTraceSpan,
 } from "@/features/traces/model/rpc-streams"
+import { dominantDbQueries } from "@/features/traces/model/dominant-db"
 import { computeSelfTimes, computeWindow, detectSkew } from "@/features/traces/model/trace-tree"
 import type { SkewReport } from "@/features/traces/model/trace-tree"
 import { rangeLinkSearch, resolveRangeSearch } from "@/domain/time-range/range"
@@ -366,6 +367,7 @@ export function TraceDetailPage({
     [rpcTraceEvents.events, rpcTraceEvents.truncated, spans]
   )
   const messaging = useMemo(() => messagingSummary(spans), [spans])
+  const dbQueries = useMemo(() => dominantDbQueries(spans), [spans])
   const skewReport = useMemo(() => detectSkew(spans), [spans])
   const window = useMemo(() => computeWindow(spans), [spans])
 
@@ -552,6 +554,30 @@ export function TraceDetailPage({
       ) : null}
 
       <ClockSkewBanner report={skewReport} />
+
+      {dbQueries.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Dominant database queries</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {dbQueries.map((query) => (
+              <button
+                key={query.normalized}
+                type="button"
+                className="flex w-full flex-col gap-1 rounded-md border px-3 py-2 text-left text-xs hover:bg-muted/40"
+                onClick={() => setSelectedId(query.exampleSpanId)}
+              >
+                <span className="font-mono break-all">{query.example}</span>
+                <span className="text-muted-foreground">
+                  {query.count} span{query.count === 1 ? "" : "s"} · {query.service} ·{" "}
+                  {(Number(query.totalNs) / 1_000_000).toFixed(1)}ms total
+                </span>
+              </button>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <EvidenceGapsCard gaps={evidenceGaps} />
 

@@ -412,8 +412,8 @@ pub struct Mutation;
 #[rustfmt::skip]
 #[graphql_object(context = ApiContext)]
 impl Mutation {
-    /// Set an issue's workflow status (open | resolved); returns the updated
-    /// issue (spec §8: `Issue!`).
+    /// Set an issue's workflow status (open | resolved). `regressed` is
+    /// derived on recurrence, not set by this mutation.
     async fn issue_set_status(context: &ApiContext, service: String, fingerprint: String, status: String,) -> FieldResult<Issue> { resolvers::issues::issue_set_status(context, service, fingerprint, status).await }
 
     /// Register an invocation (the CLI wrapper calls this before launching).

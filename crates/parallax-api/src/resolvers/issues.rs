@@ -107,9 +107,9 @@ pub(crate) async fn issues(
     offset: Option<i32>,
 ) -> FieldResult<IssueList> {
     if let Some(status) = status.as_deref()
-        && !matches!(status, "open" | "resolved")
+        && !matches!(status, "open" | "resolved" | "regressed")
     {
-        return Err(field_err("status must be open or resolved"));
+        return Err(field_err("status must be open, resolved, or regressed"));
     }
     let filter = model::IssueQuery {
         service,

@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router"
 import { IconArrowUpRight } from "@tabler/icons-react"
 
 import { CopyButton } from "@/shared/console/copy-button"
+import { LogsLink, TraceLink } from "@/shared/console/entity-links"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -96,23 +97,14 @@ export function CorrelationCard({
         ) : (
           <>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <Link
-                to="/traces/$traceId"
-                params={{ traceId }}
-                search={rangeLinkSearch(range)}
-                className="inline-flex items-center gap-1 hover:text-foreground"
-              >
-                Open trace {traceId.slice(0, 16)}
+              <span className="inline-flex items-center gap-1">
+                Open trace <TraceLink traceId={traceId} range={range} short />
                 <IconArrowUpRight className="size-3" />
-              </Link>
-              <Link
-                to="/logs"
-                search={{ trace: traceId }}
-                className="inline-flex items-center gap-1 hover:text-foreground"
-              >
+              </span>
+              <LogsLink range={range} trace={traceId} className="inline-flex items-center gap-1">
                 Open in Logs
                 <IconArrowUpRight className="size-3" />
-              </Link>
+              </LogsLink>
               {ready?.releaseVersion ? (
                 <Badge variant="secondary">release {ready.releaseVersion}</Badge>
               ) : null}

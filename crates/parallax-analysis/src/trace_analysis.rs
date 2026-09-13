@@ -405,6 +405,74 @@ fn normalize_operation_name(name: &str) -> String {
     normalize_message(name)
 }
 
+/// Ranked database queries in one trace, grouped by normalized SQL.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DominantDbQuery {
+    pub normalized: String,
+    pub example: String,
+    pub count: u64,
+    pub total_ns: u128,
+    pub max_ns: u128,
+    pub example_span_id: String,
+    pub service: String,
+}
+
+fn db_query_text(attributes: &serde_json::Value) -> Option<&str> {
+    let object = attributes.as_object()?;
+    object
+        .get("db.query.text")
+        .or_else(|| object.get("db.statement"))
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|query| !query.is_empty())
+}
+
+/// Group `db.query.text` / `db.statement` spans by normalized query text.
+/// Sorted by total duration, then count, then normalized text. `limit` caps
+/// the returned rows (0 means none).
+#[must_use]
+pub fn dominant_db_queries(spans: &[SpanRow], limit: usize) -> Vec<DominantDbQuery> {
+    if limit == 0 {
+        return Vec::new();
+    }
+    let mut groups: BTreeMap<String, DominantDbQuery> = BTreeMap::new();
+    for span in spans {
+        let Some(example) = db_query_text(&span.attributes) else {
+            continue;
+        };
+        let normalized = normalize_message(example);
+        let entry = groups
+            .entry(normalized.clone())
+            .or_insert_with(|| DominantDbQuery {
+                normalized,
+                example: example.to_string(),
+                count: 0,
+                total_ns: 0,
+                max_ns: 0,
+                example_span_id: span.span_id.clone(),
+                service: span.service.clone(),
+            });
+        entry.count += 1;
+        entry.total_ns = entry.total_ns.saturating_add(span.duration_ns);
+        if span.duration_ns > entry.max_ns {
+            entry.max_ns = span.duration_ns;
+            entry.example_span_id = span.span_id.clone();
+            entry.example = example.to_string();
+            entry.service = span.service.clone();
+        }
+    }
+    let mut ranked: Vec<DominantDbQuery> = groups.into_values().collect();
+    ranked.sort_by(|left, right| {
+        right
+            .total_ns
+            .cmp(&left.total_ns)
+            .then_with(|| right.count.cmp(&left.count))
+            .then_with(|| left.normalized.cmp(&right.normalized))
+    });
+    ranked.truncate(limit);
+    ranked
+}
+
 fn diff_span(entry: &MatchEntry<'_>) -> DiffSpan {
     DiffSpan {
         span_id: entry.span.span_id.clone(),

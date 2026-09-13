@@ -28,6 +28,7 @@ import {
   structuredFrameCount,
   type Frame,
 } from "@/features/issues/model/stacktrace"
+import { issueNeedsAttention, issueStatusBadgeVariant } from "@/features/issues/model/issue-status"
 import { issueGroupingCard } from "@/features/issues/components/grouping-card"
 import {
   CorrelationCard,
@@ -200,9 +201,11 @@ export function IssueDetailContent({
               size="sm"
               variant="outline"
               disabled={mutating}
-              onClick={() => void setStatus(currentIssue.status === "open" ? "resolved" : "open")}
+              onClick={() =>
+                void setStatus(issueNeedsAttention(currentIssue.status) ? "resolved" : "open")
+              }
             >
-              {currentIssue.status === "open" ? "Resolve" : "Reopen"}
+              {issueNeedsAttention(currentIssue.status) ? "Resolve" : "Reopen"}
             </Button>
             <RangePicker value={range} onChange={onRange} />
           </>
@@ -228,7 +231,7 @@ export function IssueDetailContent({
             <Badge variant="secondary">run {shortRunId(correlationInvocationId)}</Badge>
           </Link>
         ) : null}
-        <Badge variant={currentIssue.status === "open" ? "rose" : "emerald"}>
+        <Badge variant={issueStatusBadgeVariant(currentIssue.status)}>
           {currentIssue.status}
         </Badge>
         <Badge variant="secondary">

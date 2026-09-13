@@ -1534,8 +1534,8 @@ async fn new_occurrence_reopens_resolved_issue() {
         .expect("resolved issue");
     assert_eq!(resolved.status, "resolved");
 
-    // A fresh occurrence is a regression: status returns to open and the
-    // resolution timestamp clears, while counts keep accumulating.
+    // A fresh occurrence is a regression: status becomes regressed and
+    // last-resolved time is kept, while counts keep accumulating.
     store
         .upsert_issue_occurrence(&occurrence("fp-reopen", "svc", 3_000_000_000, &attrs))
         .await
@@ -1545,7 +1545,7 @@ async fn new_occurrence_reopens_resolved_issue() {
         .await
         .expect("issue")
         .expect("reopened issue");
-    assert_eq!(reopened.status, "open");
+    assert_eq!(reopened.status, "regressed");
     assert_eq!(reopened.event_count, 2);
     assert_eq!(reopened.last_seen_nanos, 3_000_000_000);
 }

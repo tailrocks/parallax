@@ -151,7 +151,7 @@ function renderWithRouter(component: React.ReactNode, path = "/issues") {
   return renderTestRouter(component, {
     componentPaths: ["/issues", "/issues/$service/$fingerprint"],
     initialPath: path,
-    targetPaths: ["/traces/$traceId", "/invocations/$invocationId"],
+    targetPaths: ["/traces/$traceId", "/invocations/$invocationId", "/logs"],
   })
 }
 
