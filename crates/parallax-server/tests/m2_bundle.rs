@@ -166,11 +166,14 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
 
     // Find the issue, then fetch its bundle.
     let client = reqwest::Client::new();
+    let mut service = String::new();
     let mut fingerprint = String::new();
     for _ in 0..50 {
         let response: serde_json::Value = client
             .post(format!("http://{}/graphql", handle.api_addr))
-            .json(&serde_json::json!({"query": "{ issues { items { fingerprint errorType } } }"}))
+            .json(&serde_json::json!(
+                {"query": "{ issues { items { service fingerprint errorType } } }"}
+            ))
             .send()
             .await
             .expect("issues request")
@@ -189,16 +192,18 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
                 .as_str()
                 .unwrap_or_default()
                 .to_string();
+            service = issue["service"].as_str().unwrap_or_default().to_string();
             break;
         }
         tokio::time::sleep(Duration::from_millis(100)).await;
     }
+    assert!(!service.is_empty());
     assert!(!fingerprint.is_empty());
 
     let response: serde_json::Value = client
         .post(format!("http://{}/graphql", handle.api_addr))
         .json(&serde_json::json!({"query": format!(
-            r#"{{ bundle(fingerprint: "{fingerprint}") {{ json markdown canonicalHash }} }}"#
+            r#"{{ bundle(service: "{service}", fingerprint: "{fingerprint}") {{ json markdown canonicalHash }} }}"#
         )}))
         .send()
         .await
@@ -280,7 +285,7 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
         let response: serde_json::Value = client
             .post(format!("http://{}/graphql", handle.api_addr))
             .json(&serde_json::json!({"query": format!(
-                r#"{{ bundle(fingerprint: "{fingerprint}", maxTokens: {max_tokens}) {{ json }} }}"#
+                r#"{{ bundle(service: "{service}", fingerprint: "{fingerprint}", maxTokens: {max_tokens}) {{ json }} }}"#
             )}))
             .send()
             .await
@@ -315,7 +320,7 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
         let response: serde_json::Value = client
             .post(format!("http://{}/graphql", handle.api_addr))
             .json(&serde_json::json!({"query": format!(
-                r#"{{ bundle(fingerprint: "{fingerprint}") {{ json markdown }} }}"#
+                r#"{{ bundle(service: "{service}", fingerprint: "{fingerprint}") {{ json markdown }} }}"#
             )}))
             .send()
             .await
@@ -356,7 +361,7 @@ async fn bundle_is_bounded_redacted_and_hypothesis_ranked() {
     let response: serde_json::Value = client
         .post(format!("http://{}/graphql", handle.api_addr))
         .json(&serde_json::json!({"query": format!(
-            r#"{{ bundle(fingerprint: "{fingerprint}", maxTokens: 500) {{ json }} }}"#
+            r#"{{ bundle(service: "{service}", fingerprint: "{fingerprint}", maxTokens: 500) {{ json }} }}"#
         )}))
         .send()
         .await
@@ -400,7 +405,7 @@ async fn bundle_redacts_issue_title_culprit_and_run_command() {
     let response = graphql(
         &client,
         handle.api_addr,
-        r#"{ bundle(fingerprint: "fp-bearer") { json markdown } }"#.to_string(),
+        r#"{ bundle(service: "api", fingerprint: "fp-bearer") { json markdown } }"#.to_string(),
     )
     .await;
     let json = response
@@ -427,7 +432,7 @@ async fn bundle_redacts_issue_title_culprit_and_run_command() {
     let response = graphql(
         &client,
         handle.api_addr,
-        r#"{ bundle(fingerprint: "fp-password") { json markdown } }"#.to_string(),
+        r#"{ bundle(service: "api", fingerprint: "fp-password") { json markdown } }"#.to_string(),
     )
     .await;
     let json = response

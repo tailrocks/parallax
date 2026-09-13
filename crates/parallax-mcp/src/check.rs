@@ -23,7 +23,9 @@ pub(crate) async fn run(args: CheckArgs) -> anyhow::Result<()> {
 
     if let Some(fp) = &args.fingerprint {
         let Some(service) = &args.service else {
-            anyhow::bail!("--service is required with --fingerprint: issue identity is (service, fingerprint)");
+            anyhow::bail!(
+                "--service is required with --fingerprint: issue identity is (service, fingerprint)"
+            );
         };
         cases.push(Case {
             label: "issue bundle",
@@ -74,8 +76,13 @@ struct Case {
 }
 
 enum CaseKind {
-    IssueBundle { service: String, fingerprint: String },
-    RunBundle { invocation_id: String },
+    IssueBundle {
+        service: String,
+        fingerprint: String,
+    },
+    RunBundle {
+        invocation_id: String,
+    },
 }
 
 async fn check_one(client: &GraphqlClient, args: &CheckArgs, case: &Case) -> anyhow::Result<()> {
@@ -84,9 +91,7 @@ async fn check_one(client: &GraphqlClient, args: &CheckArgs, case: &Case) -> any
         CaseKind::IssueBundle {
             service,
             fingerprint,
-        } => {
-            gql::fetch_bundle(client, Some(service), Some(fingerprint), None).await?
-        }
+        } => gql::fetch_bundle(client, Some(service), Some(fingerprint), None).await?,
         CaseKind::RunBundle { invocation_id } => {
             gql::fetch_bundle(client, None, None, Some(invocation_id)).await?
         }
@@ -97,9 +102,7 @@ async fn check_one(client: &GraphqlClient, args: &CheckArgs, case: &Case) -> any
         CaseKind::IssueBundle {
             service,
             fingerprint,
-        } => {
-            gql::fetch_bundle(client, Some(service), Some(fingerprint), None).await?
-        }
+        } => gql::fetch_bundle(client, Some(service), Some(fingerprint), None).await?,
         CaseKind::RunBundle { invocation_id } => {
             gql::fetch_bundle(client, None, None, Some(invocation_id)).await?
         }

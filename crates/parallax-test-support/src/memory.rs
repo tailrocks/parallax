@@ -140,12 +140,16 @@ impl adapter::IngestStore for MemoryStore {
         &self,
         points: Vec<MetricPointRow>,
         histograms: Vec<HistogramRow>,
+        exp_histograms: Vec<HistogramRow>,
         exemplars: Vec<MetricExemplarRow>,
         _raw: bytes::Bytes,
     ) -> StorageResult<()> {
         let mut inner = self.lock();
         inner.metric_points.extend(points);
         inner.histograms.extend(histograms);
+        // Converted exp rows are explicit-bucket rows by the time they arrive:
+        // one query path serves both encodings.
+        inner.histograms.extend(exp_histograms);
         inner.metric_exemplars.extend(exemplars);
         Ok(())
     }

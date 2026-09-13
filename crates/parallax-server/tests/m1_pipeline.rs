@@ -150,7 +150,12 @@ async fn error_telemetry_becomes_a_grouped_issue() {
     // Rollups: both occurrences counted into the trend.
     let trend = handle
         .metadata
-        .issue_trend(&exception_issue.service, &exception_issue.fingerprint, 0, 60)
+        .issue_trend(
+            &exception_issue.service,
+            &exception_issue.fingerprint,
+            0,
+            60,
+        )
         .await
         .expect("trend read");
     assert_eq!(

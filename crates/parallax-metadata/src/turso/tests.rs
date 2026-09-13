@@ -62,7 +62,11 @@ async fn occurrence_claim_survives_restart_concurrency_and_prunes() {
     for delivery in deliveries {
         delivery.await.expect("delivery task").expect("delivery");
     }
-    let issue = store.issue("svc", "fp").await.expect("issue").expect("present");
+    let issue = store
+        .issue("svc", "fp")
+        .await
+        .expect("issue")
+        .expect("present");
     assert_eq!(issue.event_count, 1);
 
     let beyond_retention =
@@ -126,10 +130,16 @@ async fn batch_upsert_merges_shared_fingerprint_tags_once() {
         serde_json::from_str(&other_issue.tags).expect("other tags");
     assert_eq!(other_tags["http.route"]["/cart"], 1);
 
-    let trend = store.issue_trend("checkout", "fp-shared", 0, 60).await.expect("trend");
+    let trend = store
+        .issue_trend("checkout", "fp-shared", 0, 60)
+        .await
+        .expect("trend");
     let total: u64 = trend.iter().map(|p| p.count).sum();
     assert_eq!(total, 2);
-    let other_trend = store.issue_trend("checkout", "fp-other", 0, 60).await.expect("trend");
+    let other_trend = store
+        .issue_trend("checkout", "fp-other", 0, 60)
+        .await
+        .expect("trend");
     let other_total: u64 = other_trend.iter().map(|p| p.count).sum();
     assert_eq!(other_total, 1);
 }
@@ -150,7 +160,11 @@ async fn tags_accumulate_bounded() {
             .await
             .expect("upsert");
     }
-    let issue = store.issue("svc", "fp1").await.expect("issue").expect("present");
+    let issue = store
+        .issue("svc", "fp1")
+        .await
+        .expect("issue")
+        .expect("present");
     let tags: serde_json::Value = serde_json::from_str(&issue.tags).expect("tags json");
     assert_eq!(tags["http.route"]["/checkout"], 2);
     assert_eq!(tags["attempt"]["3"], 2);
@@ -1350,7 +1364,11 @@ async fn migration_adopts_v0_with_runs_table() {
             SCHEMA_USER_VERSION
         );
     }
-    let issue = store.issue("svc", "kept").await.expect("issue").expect("present");
+    let issue = store
+        .issue("svc", "kept")
+        .await
+        .expect("issue")
+        .expect("present");
     assert_eq!(issue.title, "title");
 }
 
@@ -1494,4 +1512,112 @@ async fn same_fingerprint_in_two_services_stays_two_issues() {
         .await
         .expect("trend");
     assert_eq!(trend.iter().map(|p| p.count).sum::<u64>(), 1);
+}
+
+#[tokio::test]
+async fn new_occurrence_reopens_resolved_issue() {
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(path).await.expect("open");
+    let attrs = serde_json::json!({});
+    store
+        .upsert_issue_occurrence(&occurrence("fp-reopen", "svc", 1_000_000_000, &attrs))
+        .await
+        .expect("first occurrence");
+    store
+        .set_issue_status("svc", "fp-reopen", "resolved", 2_000_000_000)
+        .await
+        .expect("resolve");
+    let resolved = store
+        .issue("svc", "fp-reopen")
+        .await
+        .expect("issue")
+        .expect("resolved issue");
+    assert_eq!(resolved.status, "resolved");
+
+    // A fresh occurrence is a regression: status returns to open and the
+    // resolution timestamp clears, while counts keep accumulating.
+    store
+        .upsert_issue_occurrence(&occurrence("fp-reopen", "svc", 3_000_000_000, &attrs))
+        .await
+        .expect("regression occurrence");
+    let reopened = store
+        .issue("svc", "fp-reopen")
+        .await
+        .expect("issue")
+        .expect("reopened issue");
+    assert_eq!(reopened.status, "open");
+    assert_eq!(reopened.event_count, 2);
+    assert_eq!(reopened.last_seen_nanos, 3_000_000_000);
+}
+
+#[tokio::test]
+async fn finish_persists_bounded_child_output_round_trip() {
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(path).await.expect("open");
+    store
+        .start_invocation(
+            "run-cap",
+            Some("make build"),
+            Some("one_shot"),
+            1_000_000_000,
+        )
+        .await
+        .expect("start");
+    // Pre-finish: no capture stored.
+    let running = store
+        .invocation("run-cap")
+        .await
+        .expect("read")
+        .expect("present");
+    assert_eq!(running.stdout_text, None);
+    assert_eq!(running.stdout_truncated_bytes, 0);
+    assert_eq!(running.stderr_text, None);
+    assert_eq!(running.stderr_truncated_bytes, 0);
+
+    store
+        .finish_invocation(
+            "run-cap",
+            2_000_000_000,
+            1,
+            Some("failure"),
+            Some(&InvocationOutput {
+                stdout_text: Some("line1\nline2\n".into()),
+                stdout_truncated_bytes: 128,
+                stderr_text: Some("boom\n".into()),
+                stderr_truncated_bytes: 0,
+            }),
+        )
+        .await
+        .expect("finish");
+    let finished = store
+        .invocation("run-cap")
+        .await
+        .expect("read")
+        .expect("present");
+    assert_eq!(finished.status, "finished");
+    assert_eq!(finished.stdout_text.as_deref(), Some("line1\nline2\n"));
+    assert_eq!(finished.stdout_truncated_bytes, 128);
+    assert_eq!(finished.stderr_text.as_deref(), Some("boom\n"));
+    assert_eq!(finished.stderr_truncated_bytes, 0);
+    // The list path carries the same fields.
+    let listed = store.invocations(10).await.expect("list");
+    assert_eq!(listed.len(), 1);
+    assert_eq!(listed[0].stdout_text.as_deref(), Some("line1\nline2\n"));
+    assert_eq!(listed[0].stdout_truncated_bytes, 128);
+    assert_eq!(listed[0].stderr_text.as_deref(), Some("boom\n"));
+    assert_eq!(listed[0].stderr_truncated_bytes, 0);
+
+    // A bare finish (no output) leaves stored output untouched.
+    store
+        .finish_invocation("run-cap", 3_000_000_000, 0, Some("success"), None)
+        .await
+        .expect("bare finish");
+    let kept = store
+        .invocation("run-cap")
+        .await
+        .expect("read")
+        .expect("present");
+    assert_eq!(kept.exit_code, Some(0));
+    assert_eq!(kept.stdout_text.as_deref(), Some("line1\nline2\n"));
+    assert_eq!(kept.stdout_truncated_bytes, 128);
 }

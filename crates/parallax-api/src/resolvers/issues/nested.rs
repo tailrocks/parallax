@@ -120,7 +120,14 @@ impl Issue {
         context: &ApiContext,
     ) -> FieldResult<GroupingExplanationOut> {
         let latest = context
-            .issue_events_for(&self.cohort, &self.row.service, &self.row.fingerprint, 0, u128::MAX, 1)
+            .issue_events_for(
+                &self.cohort,
+                &self.row.service,
+                &self.row.fingerprint,
+                0,
+                u128::MAX,
+                1,
+            )
             .await?
             .into_iter()
             .next();
@@ -161,7 +168,14 @@ impl Issue {
     /// The most recent stored occurrence.
     async fn latest_event(&self, context: &ApiContext) -> FieldResult<Option<ErrorEvent>> {
         let events = context
-            .issue_events_for(&self.cohort, &self.row.service, &self.row.fingerprint, 0, u128::MAX, 1)
+            .issue_events_for(
+                &self.cohort,
+                &self.row.service,
+                &self.row.fingerprint,
+                0,
+                u128::MAX,
+                1,
+            )
             .await?;
         Ok(events.into_iter().next().map(ErrorEvent))
     }

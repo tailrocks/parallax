@@ -201,7 +201,10 @@ pub async fn assert_seeded(
         trace_events[0].service.clone(),
         trace_events[0].fingerprint.clone(),
     );
-    let issue_keys = vec![issue_key.clone(), ("absent-service".into(), "absent-fp".into())];
+    let issue_keys = vec![
+        issue_key.clone(),
+        ("absent-service".into(), "absent-fp".into()),
+    ];
     let batched = store
         .error_events_by_fingerprints(&issue_keys, window.clone(), 1)
         .await?;

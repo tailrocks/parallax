@@ -175,11 +175,11 @@ async fn issue(
             fingerprint,
             format,
             max_tokens,
+        } => commands::issue_context(&client()?, &service, &fingerprint, format, max_tokens).await,
+        IssueCommand::Resolve {
+            service,
+            fingerprint,
         } => {
-            commands::issue_context(&client()?, &service, &fingerprint, format, max_tokens)
-                .await
-        }
-        IssueCommand::Resolve { service, fingerprint } => {
             client()?.graphql(&format!(r#"mutation {{ issueSetStatus(service: "{}", fingerprint: "{}", status: "resolved") {{ status }} }}"#, gql_str(&service), gql_str(&fingerprint))).await?;
             println!("issue {service}/{fingerprint} resolved");
             Ok(())

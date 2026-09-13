@@ -15,9 +15,7 @@ impl adapter::InvocationStore for MemoryStore {
             .error_events
             .iter()
             .filter(|e| {
-                e.service == service
-                    && e.fingerprint == fingerprint
-                    && range.contains(&e.ts_nanos)
+                e.service == service && e.fingerprint == fingerprint && range.contains(&e.ts_nanos)
             })
             .cloned()
             .collect();

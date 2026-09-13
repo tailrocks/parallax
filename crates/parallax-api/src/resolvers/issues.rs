@@ -21,9 +21,7 @@ fn issue_keys(events: &[model::ErrorEventRow]) -> Vec<(String, String)> {
     let mut seen = HashSet::new();
     events
         .iter()
-        .filter(|event| {
-            seen.insert((event.service.clone(), event.fingerprint.clone()))
-        })
+        .filter(|event| seen.insert((event.service.clone(), event.fingerprint.clone())))
         .map(|event| (event.service.clone(), event.fingerprint.clone()))
         .collect()
 }

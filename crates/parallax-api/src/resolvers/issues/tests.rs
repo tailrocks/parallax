@@ -211,7 +211,7 @@ async fn issue_lookup_miss_is_null() {
     let context = context_with_memory(Arc::clone(&store)).await;
     let json = gql(
         &context,
-        r#"{ issue(fingerprint: "missing") { fingerprint } }"#,
+        r#"{ issue(service: "checkout", fingerprint: "missing") { fingerprint } }"#,
     )
     .await;
     assert!(error_messages(&json).is_empty(), "{json}");
@@ -228,7 +228,7 @@ async fn issue_trend_returns_points() {
     seed_issue(&store, &context, "a", "checkout", 10, "alpha").await;
     let json = gql(
         &context,
-        r#"{ issueTrend(fingerprint: "a", hours: 1, stepSeconds: 3600) { count } }"#,
+        r#"{ issueTrend(service: "checkout", fingerprint: "a", hours: 1, stepSeconds: 3600) { count } }"#,
     )
     .await;
     assert!(error_messages(&json).is_empty(), "{json}");
@@ -247,7 +247,7 @@ async fn issue_set_status_persists() {
     seed_issue(&store, &context, "a", "checkout", 10, "alpha").await;
     let json = gql(
         &context,
-        r#"mutation { issueSetStatus(fingerprint: "a", status: "resolved") { fingerprint status } }"#,
+        r#"mutation { issueSetStatus(service: "checkout", fingerprint: "a", status: "resolved") { fingerprint status } }"#,
     )
     .await;
     assert!(error_messages(&json).is_empty(), "{json}");
@@ -264,7 +264,7 @@ async fn issue_set_status_rejects_unknown() {
     let context = context_with_memory(Arc::clone(&store)).await;
     let json = gql(
         &context,
-        r#"mutation { issueSetStatus(fingerprint: "a", status: "nope") { fingerprint } }"#,
+        r#"mutation { issueSetStatus(service: "checkout", fingerprint: "a", status: "nope") { fingerprint } }"#,
     )
     .await;
     assert!(
@@ -280,7 +280,11 @@ async fn issues_bundle_markdown_has_stable_headers() {
     let store = Arc::new(MemoryStore::new());
     let context = context_with_memory(Arc::clone(&store)).await;
     seed_issue(&store, &context, "a", "checkout", 10, "alpha").await;
-    let json = gql(&context, r#"{ bundle(fingerprint: "a") { markdown } }"#).await;
+    let json = gql(
+        &context,
+        r#"{ bundle(service: "checkout", fingerprint: "a") { markdown } }"#,
+    )
+    .await;
     assert!(error_messages(&json).is_empty(), "{json}");
     let markdown = json
         .pointer("/data/bundle/markdown")
@@ -297,7 +301,7 @@ async fn issues_bundle_json_is_byte_stable_across_repeated_reads() -> anyhow::Re
     let store = Arc::new(MemoryStore::new());
     let context = context_with_memory(Arc::clone(&store)).await;
     seed_issue(&store, &context, "stable-fp", "checkout", 10, "alpha").await;
-    let query = r#"{ bundle(fingerprint: "stable-fp", maxTokens: 4000) { json canonicalHash } }"#;
+    let query = r#"{ bundle(service: "checkout", fingerprint: "stable-fp", maxTokens: 4000) { json canonicalHash } }"#;
     let first = gql(&context, query).await;
     let second = gql(&context, query).await;
     anyhow::ensure!(error_messages(&first).is_empty(), "{first}");
@@ -394,7 +398,7 @@ async fn grouping_explanation_uses_derive_operation() {
     let json = gql(
         &context,
         &format!(
-            r#"{{ issue(fingerprint: "{fingerprint}") {{ fingerprint groupingExplanation {{ operation inputsPresent }} }} }}"#
+            r#"{{ issue(service: "checkout", fingerprint: "{fingerprint}") {{ fingerprint groupingExplanation {{ operation inputsPresent }} }} }}"#
         ),
     )
     .await;

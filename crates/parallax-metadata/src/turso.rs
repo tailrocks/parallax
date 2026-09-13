@@ -3,8 +3,8 @@
 
 use parallax_model::IssueOccurrence;
 use parallax_model::{
-    Dashboard, Investigation, InvocationRecord, Issue, IssueQuery, IssueSortKey, SavedView,
-    TrendPoint,
+    Dashboard, Investigation, InvocationOutput, InvocationRecord, Issue, IssueQuery, IssueSortKey,
+    SavedView, TrendPoint,
 };
 use parallax_semconv as semconv;
 use std::{collections::BTreeMap, path::Path};
@@ -43,7 +43,7 @@ use row::*;
 use values::*;
 
 /// Current `PRAGMA user_version`. v0 = pre-versioning DBs.
-pub(crate) const SCHEMA_USER_VERSION: i32 = 4;
+pub(crate) const SCHEMA_USER_VERSION: i32 = 5;
 
 const SCHEMA: &str = "
 CREATE TABLE IF NOT EXISTS issues (
@@ -69,7 +69,11 @@ CREATE TABLE IF NOT EXISTS invocations (
   ended_at      INTEGER,
   exit_code     INTEGER,
   outcome       TEXT,
-  status        TEXT NOT NULL DEFAULT 'running'
+  status        TEXT NOT NULL DEFAULT 'running',
+  stdout_text   TEXT,
+  stdout_truncated_bytes INTEGER NOT NULL DEFAULT 0,
+  stderr_text   TEXT,
+  stderr_truncated_bytes INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS dashboards (
   id          TEXT PRIMARY KEY,
@@ -430,7 +434,11 @@ impl TursoMetadataStore {
                        first_seen = MIN(first_seen, excluded.first_seen),
                        last_seen = MAX(last_seen, excluded.last_seen),
                        event_count = event_count + 1,
-                       last_trace_id = COALESCE(excluded.last_trace_id, last_trace_id)",
+                       last_trace_id = COALESCE(excluded.last_trace_id, last_trace_id),
+                       -- Regression: a new occurrence reopens a resolved issue.
+                       -- (All RHS expressions read the pre-update row.)
+                       status = CASE WHEN status = 'resolved' THEN 'open' ELSE status END,
+                       resolved_at = CASE WHEN status = 'resolved' THEN NULL ELSE resolved_at END",
                 (
                     occurrence.service,
                     occurrence.fingerprint,
@@ -602,7 +610,10 @@ impl TursoMetadataStore {
         let params: Vec<Value> = issue_keys
             .iter()
             .flat_map(|(service, fingerprint)| {
-                [Value::Text(service.clone()), Value::Text(fingerprint.clone())]
+                [
+                    Value::Text(service.clone()),
+                    Value::Text(fingerprint.clone()),
+                ]
             })
             .collect();
         let conn = self.conn.lock().await;

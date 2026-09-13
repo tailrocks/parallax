@@ -213,12 +213,19 @@ fn tool_catalog_is_exact_and_inputs_are_closed() {
             "{} input must reject unknown fields",
             tool.name
         );
+        // Issue identity is (service, fingerprint): its tool requires both
+        // anchor parts; the invocation-anchored tool requires one.
+        let required = match tool.name.as_ref() {
+            "parallax_issue_context" => 2,
+            "parallax_agent_session_show" => 1,
+            other => panic!("unexpected tool {other}"),
+        };
         assert_eq!(
             tool.input_schema
                 .get("required")
                 .and_then(Value::as_array)
                 .map(Vec::len),
-            Some(1),
+            Some(required),
             "{} input must require its anchor",
             tool.name
         );
@@ -227,9 +234,10 @@ fn tool_catalog_is_exact_and_inputs_are_closed() {
             .get("properties")
             .and_then(Value::as_object)
             .expect("input properties");
-        let anchor = properties.values().next().expect("anchor property");
-        assert_eq!(anchor.get("minLength"), Some(&json!(1)));
-        assert_eq!(anchor.get("maxLength"), Some(&json!(256)));
+        for anchor in properties.values() {
+            assert_eq!(anchor.get("minLength"), Some(&json!(1)));
+            assert_eq!(anchor.get("maxLength"), Some(&json!(256)));
+        }
         let annotations = tool.annotations.as_ref().expect("tool annotations");
         assert_eq!(annotations.read_only_hint, Some(true));
         assert_eq!(annotations.destructive_hint, Some(false));

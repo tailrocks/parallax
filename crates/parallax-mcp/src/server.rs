@@ -178,7 +178,14 @@ impl SpikeServer {
             guard.finish_err(&crate::audit::error_code(&error));
             return Err(error);
         }
-        let bundle = match gql::fetch_bundle(&self.client, Some(&args.service), Some(&args.fingerprint), None).await {
+        let bundle = match gql::fetch_bundle(
+            &self.client,
+            Some(&args.service),
+            Some(&args.fingerprint),
+            None,
+        )
+        .await
+        {
             Ok(bundle) => bundle,
             Err(error) => {
                 let mapped = map_fetch_error(error, "bundle_unavailable");

@@ -250,8 +250,9 @@ pub fn derive_from_logs(rows: &[LogRow]) -> Vec<ErrorEventRow> {
         // Release identity rides on the source log's Resource attributes; the
         // run/session ids are already normalized onto the row.
         let resource_version = json_attr_str(&row.resource, semconv::SERVICE_VERSION);
-        let resource_environment = json_attr_str(&row.resource, semconv::DEPLOYMENT_ENVIRONMENT_NAME)
-            .or_else(|| json_attr_str(&row.resource, semconv::DEPLOYMENT_ENVIRONMENT));
+        let resource_environment =
+            json_attr_str(&row.resource, semconv::DEPLOYMENT_ENVIRONMENT_NAME)
+                .or_else(|| json_attr_str(&row.resource, semconv::DEPLOYMENT_ENVIRONMENT));
         events.push(ErrorEventRow {
             ts_nanos: row.ts_nanos,
             service: row.service.clone(),

@@ -239,8 +239,12 @@ fn otlp_resource_identity_reaches_error_rows() {
         string_kv("session.id", "sess-m11"),
     ];
     let mut request = span_request(span);
-    request.resource_spans[0].resource.as_mut().expect("resource")
-        .attributes.extend([
+    request.resource_spans[0]
+        .resource
+        .as_mut()
+        .expect("resource")
+        .attributes
+        .extend([
             string_kv("service.version", "2.0.0"),
             string_kv("deployment.environment.name", "prod"),
         ]);
@@ -258,8 +262,12 @@ fn otlp_resource_identity_reaches_error_rows() {
 fn resource_identity_falls_back_to_deprecated_environment_key() {
     let span = test_span(status::StatusCode::Ok as i32, true);
     let mut request = span_request(span);
-    request.resource_spans[0].resource.as_mut().expect("resource")
-        .attributes.extend([
+    request.resource_spans[0]
+        .resource
+        .as_mut()
+        .expect("resource")
+        .attributes
+        .extend([
             string_kv("service.version", "0.9.1"),
             string_kv("deployment.environment", "staging"),
         ]);
