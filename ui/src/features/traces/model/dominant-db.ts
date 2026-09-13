@@ -41,9 +41,11 @@ export function normalizeDbQuery(query: string): string {
   return query.replace(/\d+/g, "<n>").replace(/\s+/g, " ").trim()
 }
 
+type MutableDbQuery = { -readonly [K in keyof DominantDbQuery]: DominantDbQuery[K] }
+
 export function dominantDbQueries(spans: readonly DominantDbSpan[], limit = 8): DominantDbQuery[] {
   if (limit <= 0) return []
-  const groups = new Map<string, DominantDbQuery>()
+  const groups = new Map<string, MutableDbQuery>()
   for (const span of spans) {
     const example = dbQueryText(parseAttributes(span.attributes))
     if (!example) continue

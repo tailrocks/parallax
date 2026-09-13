@@ -456,9 +456,9 @@ pub fn dominant_db_queries(spans: &[SpanRow], limit: usize) -> Vec<DominantDbQue
         entry.total_ns = entry.total_ns.saturating_add(span.duration_ns);
         if span.duration_ns > entry.max_ns {
             entry.max_ns = span.duration_ns;
-            entry.example_span_id = span.span_id.clone();
+            entry.example_span_id.clone_from(&span.span_id);
             entry.example = example.to_string();
-            entry.service = span.service.clone();
+            entry.service.clone_from(&span.service);
         }
     }
     let mut ranked: Vec<DominantDbQuery> = groups.into_values().collect();
