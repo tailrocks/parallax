@@ -39,8 +39,8 @@ use resolvers::{
     ChartAnnotation, CriticalPath, Dashboard, DurationStats, EvidenceGap, Facet, FieldKey,
     FieldStats, Investigation, Invocation, Issue, IssueList, IssueSort, LogRecord, MetricExemplar,
     ObservedInvocation, Overview, Point, ReleaseHealth, ReleaseWindow, RumSessionDetailOut,
-    RumSessionOut, RuntimeMetric, SavedView, Series, ServiceCatalogRow, ServiceMap, ServiceOverview,
-    ServiceSummary, SignalKind, SpanRed, SqlResultOut, StoryBeat, TestCaseDetail,
+    RumSessionOut, RuntimeMetric, SavedView, Series, ServiceCatalogRow, ServiceMap,
+    ServiceOverview, ServiceSummary, SignalKind, SpanRed, SqlResultOut, StoryBeat, TestCaseDetail,
     TestConfigurationFilterInput, TestExplorerPage, TestExplorerSort, TestFlakyState, TestRollup,
     Trace, TraceDiff, TraceEventsOut, TraceList, TraceSort, TraceSummary, TrendPoint,
 };
