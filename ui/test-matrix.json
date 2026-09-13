@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "ratchets": {
-    "fire_event_calls": 47,
+    "fire_event_calls": 52,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 691,
-    "test_files": 187
+    "test_cases": 736,
+    "test_files": 200
   },
   "private_route_imports": [],
   "entries": [
@@ -682,6 +682,8 @@
       "test_ids": [
         "derives error rates and encoded detail hrefs",
         "opens trace exemplar popovers from latency markers",
+        "renders windows only without health rows",
+        "flags suspect releases from health rows",
         "preserves custom ranges in detail drilldown links",
         "preserves custom ranges in index drilldown links",
         "renders detail stats and hides infra band without CPU/memory",

@@ -85,6 +85,21 @@ pub(crate) async fn releases(
     Ok(windows.into_iter().map(ReleaseWindow).collect())
 }
 
+pub(crate) async fn release_health(
+    context: &ApiContext,
+    service: String,
+    from_nanos: String,
+    to_nanos: String,
+) -> FieldResult<Vec<ReleaseHealth>> {
+    let (from, to) = parse_range(&from_nanos, &to_nanos)?;
+    let rows = context
+        .store
+        .release_health(&service, from..=to)
+        .await
+        .map_err(crate::internal_field_err)?;
+    Ok(rows.into_iter().map(ReleaseHealth).collect())
+}
+
 pub(crate) async fn chart_annotations(
     context: &ApiContext,
     from_nanos: String,

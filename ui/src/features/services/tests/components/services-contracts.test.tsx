@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from "vitest"
 
 import { ServicesIndexContent } from "@/features/services/components/services-page"
 import { ServiceDetailContent } from "@/features/services/components/service-detail-page"
+import { ServiceReleaseStrip } from "@/features/services/components/service-release-strip"
 import type { ServiceDetailData } from "@/features/services/model/service-detail"
 import {
   serviceErrorRate,
@@ -92,6 +93,42 @@ const detailFixture: ServiceDetailData = {
       firstSeenNanos: "1719999900000000000",
       lastSeenNanos: "1719999980000000000",
       spanCount: "10",
+    },
+    {
+      version: "v2",
+      firstSeenNanos: "1719999980000000000",
+      lastSeenNanos: "1719999990000000000",
+      spanCount: "8",
+    },
+  ],
+  releaseHealth: [
+    {
+      version: "v1",
+      firstSeenNanos: "1719999900000000000",
+      lastSeenNanos: "1719999980000000000",
+      spanCount: "10",
+      sessionCount: "4",
+      crashedSessionCount: "0",
+      crashFreeSessionRate: 1,
+      userCount: "3",
+      crashedUserCount: "0",
+      crashFreeUserRate: 1,
+      errorCount: "0",
+      suspectRelease: false,
+    },
+    {
+      version: "v2",
+      firstSeenNanos: "1719999980000000000",
+      lastSeenNanos: "1719999990000000000",
+      spanCount: "8",
+      sessionCount: "4",
+      crashedSessionCount: "2",
+      crashFreeSessionRate: 0.5,
+      userCount: "3",
+      crashedUserCount: "1",
+      crashFreeUserRate: 0.6667,
+      errorCount: "2",
+      suspectRelease: true,
     },
   ],
   serviceCatalog: servicesFixture.serviceCatalog,
@@ -193,7 +230,10 @@ describe("Service detail feature", () => {
 
     expect((await screen.findAllByText("Requests")).length).toBeGreaterThan(0)
     expect(screen.getByText("Releases")).toBeTruthy()
-    expect(screen.getAllByText("v1").length).toBeGreaterThan(1)
+    expect(screen.getByText("v1 · 100%")).toBeTruthy()
+    expect(screen.getByText("v2 · 50%")).toBeTruthy()
+    expect(screen.getByText("1 suspect")).toBeTruthy()
+    expect(screen.getAllByText("v1").length).toBeGreaterThan(0)
     expect(screen.getByText("Identity")).toBeTruthy()
     expect(screen.getByText("edge")).toBeTruthy()
     expect(screen.getByText("opentelemetry 0.32.1")).toBeTruthy()
@@ -296,5 +336,34 @@ describe("Service detail feature", () => {
     expect(screen.getByRole("link", { name: /open trace/i }).getAttribute("href")).toBe(
       "/traces/trace-exemplar?range=24h"
     )
+  })
+})
+
+describe("Release strip health", () => {
+  it("renders windows only without health rows", async () => {
+    renderWithRouter(
+      <ServiceReleaseStrip releases={detailFixture.releases} range={range} />,
+      "/services/api%20gateway"
+    )
+
+    expect(await screen.findByText("v1")).toBeTruthy()
+    expect(screen.getByText("v2")).toBeTruthy()
+    expect(screen.queryByText(/suspect/)).toBeNull()
+  })
+
+  it("flags suspect releases from health rows", async () => {
+    renderWithRouter(
+      <ServiceReleaseStrip
+        releases={detailFixture.releases}
+        health={detailFixture.releaseHealth}
+        range={range}
+      />,
+      "/services/api%20gateway"
+    )
+
+    expect(await screen.findByText("v1 · 100%")).toBeTruthy()
+    expect(screen.getByText("v2 · 50%")).toBeTruthy()
+    expect(screen.getByText("1 suspect")).toBeTruthy()
+    expect(screen.getByTitle(/SUSPECT/)).toBeTruthy()
   })
 })

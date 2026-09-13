@@ -8,7 +8,7 @@ use crate::{ApiContext, nanos_string, saturate_i32};
 use crate::resolvers::common::Point;
 use parallax_analysis::semconv;
 use parallax_storage::adapter::{
-    OverviewTotals, ReleaseWindow as StorageReleaseWindow,
+    OverviewTotals, ReleaseHealth as StorageReleaseHealth, ReleaseWindow as StorageReleaseWindow,
     ServiceCatalogRow as StorageServiceCatalogRow, ServiceEdge as StorageServiceEdge,
     ServiceSummary as StorageServiceSummary, SpanRed as StorageSpanRed,
 };
@@ -100,6 +100,48 @@ impl ReleaseWindow {
     }
     fn span_count(&self) -> String {
         self.0.span_count.to_string()
+    }
+}
+
+pub(crate) struct ReleaseHealth(pub(crate) StorageReleaseHealth);
+
+#[graphql_object(context = ApiContext)]
+impl ReleaseHealth {
+    fn version(&self) -> &str {
+        &self.0.version
+    }
+    fn first_seen_nanos(&self) -> String {
+        nanos_string(self.0.first_seen_nanos)
+    }
+    fn last_seen_nanos(&self) -> String {
+        nanos_string(self.0.last_seen_nanos)
+    }
+    fn span_count(&self) -> String {
+        self.0.span_count.to_string()
+    }
+    fn session_count(&self) -> String {
+        self.0.session_count.to_string()
+    }
+    fn crashed_session_count(&self) -> String {
+        self.0.crashed_session_count.to_string()
+    }
+    fn crash_free_session_rate(&self) -> f64 {
+        self.0.crash_free_session_rate
+    }
+    fn user_count(&self) -> String {
+        self.0.user_count.to_string()
+    }
+    fn crashed_user_count(&self) -> String {
+        self.0.crashed_user_count.to_string()
+    }
+    fn crash_free_user_rate(&self) -> f64 {
+        self.0.crash_free_user_rate
+    }
+    fn error_count(&self) -> String {
+        self.0.error_count.to_string()
+    }
+    fn suspect_release(&self) -> bool {
+        self.0.suspect_release
     }
 }
 

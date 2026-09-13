@@ -478,3 +478,102 @@ async fn attribute_compare_is_deterministic() {
 
     assert_eq!(first, second);
 }
+
+fn release_health_span(
+    trace: &str,
+    span_id: &str,
+    ts: u128,
+    version: &str,
+    session: Option<&str>,
+    user: Option<&str>,
+) -> SpanRow {
+    let mut row = span_with_release(trace, span_id, ts, version);
+    let mut attrs = serde_json::Map::new();
+    if let Some(session) = session {
+        attrs.insert(
+            "session.id".to_string(),
+            serde_json::Value::String(session.to_string()),
+        );
+    }
+    if let Some(user) = user {
+        attrs.insert(
+            "user.id".to_string(),
+            serde_json::Value::String(user.to_string()),
+        );
+    }
+    row.attributes = serde_json::Value::Object(attrs);
+    row
+}
+
+#[tokio::test]
+async fn release_health_reports_crash_free_rates_and_suspect_release() {
+    let store = MemoryStore::new();
+    store.push_spans(vec![
+        release_health_span("t1", "a", 10, "v1", Some("s1"), Some("u1")),
+        release_health_span("t2", "a", 20, "v1", Some("s2"), Some("u2")),
+        release_health_span("t3", "a", 30, "v1", Some("s3"), Some("u1")),
+        release_health_span("t4", "a", 50, "v2", Some("s4"), Some("u3")),
+        release_health_span("t5", "a", 60, "v2", Some("s5"), Some("u4")),
+        release_health_span("t6", "a", 90, "v3", Some("s6"), Some("u5")),
+    ]);
+    let mut crashed = error_event("checkout", 55);
+    crashed.session_id = Some("s4".into());
+    crashed.service_version = Some("v2".into());
+    let mut sessionless = error_event("checkout", 57);
+    sessionless.session_id = None;
+    sessionless.service_version = Some("v2".into());
+    let mut ghost = error_event("checkout", 58);
+    ghost.session_id = Some("sx".into());
+    ghost.service_version = Some("v9".into());
+    store.push_error_events(vec![crashed, sessionless, ghost]);
+
+    let rows = store.release_health("checkout", 0..=80).await.unwrap();
+
+    assert_eq!(rows.len(), 2, "v3 out of range, v9 has no spans: {rows:?}");
+    let v1 = &rows[0];
+    assert_eq!(v1.version, "v1");
+    assert_eq!(v1.session_count, 3);
+    assert_eq!(v1.crashed_session_count, 0);
+    assert!((v1.crash_free_session_rate - 1.0).abs() < f64::EPSILON);
+    assert_eq!(v1.user_count, 2);
+    assert_eq!(v1.crashed_user_count, 0);
+    assert!((v1.crash_free_user_rate - 1.0).abs() < f64::EPSILON);
+    assert_eq!(v1.error_count, 0);
+    assert!(!v1.suspect_release);
+    let v2 = &rows[1];
+    assert_eq!(v2.version, "v2");
+    assert_eq!(v2.session_count, 2);
+    assert_eq!(v2.crashed_session_count, 1);
+    assert!((v2.crash_free_session_rate - 0.5).abs() < f64::EPSILON);
+    assert_eq!(v2.user_count, 2);
+    assert_eq!(v2.crashed_user_count, 1);
+    assert!((v2.crash_free_user_rate - 0.5).abs() < f64::EPSILON);
+    assert_eq!(v2.error_count, 2, "sessionless errors still count");
+    assert!(v2.suspect_release, "0% -> 50% crash regresses");
+}
+
+#[tokio::test]
+async fn release_health_honors_identity_precedence() {
+    let store = MemoryStore::new();
+    // Legacy `enduser.id` counts when `user.id` is absent …
+    let mut legacy = span_with_release("t1", "a", 10, "v1");
+    legacy.attributes = serde_json::json!({"session.id": "s1", "enduser.id": "legacy-u"});
+    // … but `user.id` wins when both are present …
+    let mut modern = span_with_release("t2", "a", 20, "v1");
+    modern.attributes =
+        serde_json::json!({"session.id": "s2", "user.id": "u", "enduser.id": "legacy-u"});
+    // … and resource-level identity is the fallback, not the winner.
+    let mut resource = span_with_release("t3", "a", 30, "v1");
+    resource.resource =
+        serde_json::json!({"service.version": "v1", "session.id": "s3", "user.id": "ru"});
+    let mut decoded = span_with_release("t4", "a", 40, "v1");
+    decoded.session_id = Some("s4".into());
+    decoded.attributes = serde_json::json!({"user.id": "du"});
+    store.push_spans(vec![legacy, modern, resource, decoded]);
+
+    let rows = store.release_health("checkout", 0..=100).await.unwrap();
+
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].session_count, 4);
+    assert_eq!(rows[0].user_count, 4, "{:?}", rows[0]);
+}

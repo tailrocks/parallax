@@ -988,6 +988,12 @@ export type Query = {
   readonly overview: Overview
   /** Recent traces (root span + aggregates), newest first. */
   readonly recentTraces: ReadonlyArray<TraceSummary>
+  /**
+   * Per-version crash-free session/user health in the selected time
+   * range. A release is `suspectRelease` when its session crash rate
+   * strictly regresses versus the previous release (first-seen order).
+   */
+  readonly releaseHealth: ReadonlyArray<ReleaseHealth>
   /** Per-version service release windows in the selected time range. */
   readonly releases: ReadonlyArray<ReleaseWindow>
   /** One RUM session with its timeline: page views, vitals, and errors. */
@@ -1384,6 +1390,12 @@ export type QueryRecentTracesArgs = {
   limit: InputMaybe<Scalars["Int"]["input"]>
 }
 
+export type QueryReleaseHealthArgs = {
+  fromNanos: Scalars["String"]["input"]
+  service: Scalars["String"]["input"]
+  toNanos: Scalars["String"]["input"]
+}
+
 export type QueryReleasesArgs = {
   fromNanos: Scalars["String"]["input"]
   service: Scalars["String"]["input"]
@@ -1574,6 +1586,22 @@ export type QueryTracesPageArgs = {
 export type QueryUiActionsArgs = {
   invocationId: Scalars["String"]["input"]
   limit: InputMaybe<Scalars["Int"]["input"]>
+}
+
+export type ReleaseHealth = {
+  readonly __typename?: "ReleaseHealth"
+  readonly crashFreeSessionRate: Scalars["Float"]["output"]
+  readonly crashFreeUserRate: Scalars["Float"]["output"]
+  readonly crashedSessionCount: Scalars["String"]["output"]
+  readonly crashedUserCount: Scalars["String"]["output"]
+  readonly errorCount: Scalars["String"]["output"]
+  readonly firstSeenNanos: Scalars["String"]["output"]
+  readonly lastSeenNanos: Scalars["String"]["output"]
+  readonly sessionCount: Scalars["String"]["output"]
+  readonly spanCount: Scalars["String"]["output"]
+  readonly suspectRelease: Scalars["Boolean"]["output"]
+  readonly userCount: Scalars["String"]["output"]
+  readonly version: Scalars["String"]["output"]
 }
 
 export type ReleaseWindow = {

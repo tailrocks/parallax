@@ -512,3 +512,108 @@ fn error_events_ranked_sql_outer_projection_matches_subquery_aliases() {
         "ranked projection order must match the shared decoder"
     );
 }
+
+#[test]
+fn release_health_sql_groups_universe_like_release_windows() {
+    let columns = [
+        "service_name",
+        "resource_attributes.service.version",
+        "span_attributes.session.id",
+        "span_attributes.user.id",
+    ]
+    .map(str::to_string)
+    .to_vec();
+    let sql = release_health_sql("checkout", 0, 80, &columns);
+    for fragment in [
+        "FROM opentelemetry_traces",
+        r#"GROUP BY "resource_attributes.service.version""#,
+        r#"ORDER BY "first_seen_nanos" ASC, "version" ASC"#,
+        "COUNT(DISTINCT",
+        r#"AS "sessions""#,
+        r#"AS "users""#,
+        r#""service_name" = 'checkout'"#,
+    ] {
+        assert!(
+            sql.universe.contains(fragment),
+            "universe must contain {fragment}: {}",
+            sql.universe
+        );
+    }
+    assert!(
+        sql.universe
+            .contains(r#"opentelemetry_traces."span_attributes.session.id""#),
+        "session rollup reads the span column: {}",
+        sql.universe
+    );
+}
+
+#[test]
+fn release_health_identity_precedence_matches_memory_rollup() {
+    let columns = [
+        "resource_attributes.enduser.id",
+        "span_attributes.enduser.id",
+        "resource_attributes.user.id",
+        "span_attributes.user.id",
+        "resource_attributes.session.id",
+        "span_attributes.session.id",
+    ]
+    .map(str::to_string)
+    .to_vec();
+    let sql = release_health_sql("checkout", 0, 80, &columns);
+    // user.id (span, resource) wins over enduser.id (span, resource).
+    let user_expr = "NULLIF(COALESCE(t.\"span_attributes.user.id\", \
+         t.\"resource_attributes.user.id\", t.\"span_attributes.enduser.id\", \
+         t.\"resource_attributes.enduser.id\"), '')";
+    assert!(
+        sql.crashed_users.contains(user_expr),
+        "user precedence must be span→resource per key: {}",
+        sql.crashed_users
+    );
+    let session_expr = "NULLIF(COALESCE(t.\"span_attributes.session.id\", \
+         t.\"resource_attributes.session.id\"), '')";
+    assert!(
+        sql.crashed_users.contains(session_expr),
+        "session precedence must be span→resource: {}",
+        sql.crashed_users
+    );
+}
+
+#[test]
+fn release_health_sql_degrades_missing_identity_to_null() {
+    let sql = release_health_sql("checkout", 0, 80, &[]);
+    assert!(
+        sql.universe.contains("COUNT(DISTINCT NULL)"),
+        "absent identity columns must read as NULL, not fail: {}",
+        sql.universe
+    );
+}
+
+#[test]
+fn release_health_crash_reads_join_errors_on_service_version_session() {
+    let columns = ["span_attributes.session.id".to_string()];
+    let sql = release_health_sql("o'hara", 0, 80, &columns);
+    for fragment in [
+        "FROM error_events",
+        r#"GROUP BY "service_version""#,
+        r#"COUNT(DISTINCT NULLIF("session_id", '')) AS "crashed""#,
+        r#""service" = 'o''hara'"#,
+    ] {
+        assert!(
+            sql.crashes.contains(fragment),
+            "crashes must contain {fragment}: {}",
+            sql.crashes
+        );
+    }
+    for fragment in [
+        "JOIN error_events e",
+        r#"e."service" = t."service_name""#,
+        r#"e."service_version" = t."resource_attributes.service.version""#,
+        "e.\"session_id\" = NULLIF(COALESCE(t.\"span_attributes.session.id\"), '')",
+    ] {
+        assert!(
+            sql.crashed_users.contains(fragment),
+            "crashed-users join must contain {fragment}: {}",
+            sql.crashed_users
+        );
+    }
+}
