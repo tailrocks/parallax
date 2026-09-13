@@ -25,7 +25,6 @@ export {
   TraceViewModeToggle,
   ClockSkewBanner,
   TraceCompareResult,
-  LinkedTraceEdges,
   TraceErrorCallout,
   InspectorEventList,
   InspectorLinksList,
@@ -36,6 +35,7 @@ export type {
   SpanEvent,
 } from "@/features/traces/components/trace-detail-page"
 
+export { LinkedTraceEdges } from "@/features/traces/components/linked-trace-edges"
 export { TraceWaterfall, WHOLE_TRACE_ID } from "@/features/traces/components/trace-waterfall"
 export type { TraceViewMode, WaterfallSpan } from "@/features/traces/components/trace-waterfall"
 export { TraceFlamegraph } from "@/features/traces/components/trace-flamegraph"

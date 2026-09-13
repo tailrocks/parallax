@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { cleanup, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { resolvePreset } from "@/domain/time-range/range"
@@ -155,45 +156,39 @@ function renderWithRouter(component: React.ReactNode, path = "/issues") {
   })
 }
 
-describe("Issues detail", () => {
-  it("renders parsed stack frames and issue context", async () => {
+describe("Issue correlation failures", () => {
+  it("renders no-trace correlation for an event without a trace", async () => {
+    const user = userEvent.setup()
+    deferCorrelation("trace-a")
+    renderWithRouter(
+      <IssueDetailContent data={detailFixture} range={range} onRange={() => {}} />,
+      "/issues/checkout/panic-a"
+    )
+    await screen.findByRole("link", { name: "invocation" })
+
+    await user.click(screen.getByRole("button", { name: /checkout overflowed without a trace/ }))
+
+    expect(await screen.findByText("No trace linked to this event.")).toBeTruthy()
+    expect(vi.mocked(loadIssueCorrelation).mock.calls).toEqual([["trace-a"]])
+  })
+
+  it("renders retry for unavailable and failed trace correlation", async () => {
+    const user = userEvent.setup()
     deferCorrelation("trace-a", { status: "trace-unavailable" })
     renderWithRouter(
       <IssueDetailContent data={detailFixture} range={range} onRange={() => {}} />,
       "/issues/checkout/panic-a"
     )
 
-    expect(await screen.findByText("src/cart.rs:99:5")).toBeTruthy()
-    expect(screen.getByText("checkout::cart::total")).toBeTruthy()
-    expect(screen.getByText("parallax issue context panic-a")).toBeTruthy()
-    expect(
-      screen
-        .getAllByRole("link", { name: /open trace trace-a/i })
-        .some((link) => link.getAttribute("href") === "/traces/trace-a?range=24h")
-    ).toBe(true)
-  })
+    expect(await screen.findByText("Trace is unavailable.")).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy()
 
-  it("selects the latest occurrence and renders ready trace correlation", async () => {
-    deferCorrelation("trace-a")
-    renderWithRouter(
-      <IssueDetailContent data={detailFixture} range={range} onRange={() => {}} />,
-      "/issues/checkout/panic-a"
-    )
+    deferPendingCorrelation("trace-a")
+    await user.click(screen.getByRole("button", { name: "Retry" }))
+    pendingCorrelations.get("trace-a")!.reject(new Error("correlation failed"))
 
-    expect(
-      await screen.findByRole("link", { name: "invocation" }).then((link) => link)
-    ).toBeTruthy()
-    expect(screen.getByRole("link", { name: "invocation" }).getAttribute("href")).toBe(
-      "/invocations/invocation-a?range=24h"
-    )
-    expect(
-      screen
-        .getAllByRole("link", { name: /open trace trace-a/i })
-        .some((link) => link.getAttribute("href") === "/traces/trace-a?range=24h")
-    ).toBe(true)
-    expect(screen.getByText("release-a")).toBeTruthy()
-    expect(screen.getByText("WARN")).toBeTruthy()
-    expect(screen.getByText("latest log body")).toBeTruthy()
-    expect(vi.mocked(loadIssueCorrelation).mock.calls).toEqual([["trace-a"]])
+    expect(await screen.findByText("correlation failed")).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy()
+    expect(vi.mocked(loadIssueCorrelation).mock.calls).toEqual([["trace-a"], ["trace-a"]])
   })
 })
