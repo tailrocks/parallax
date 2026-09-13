@@ -48,7 +48,9 @@ fn normalized_telemetry_serde_shapes_are_stable() -> anyhow::Result<()> {
     round_trip::<ErrorEventRow>(json!({
         "ts_nanos": 8, "service": "svc", "fingerprint": "fp", "error_type": "Error",
         "message": "failed", "stacktrace": null, "source": "span_exception",
-        "trace_id": "trace", "span_id": "span", "attributes": {}
+        "trace_id": "trace", "span_id": "span", "invocation_id": null,
+        "session_id": null, "service_version": null, "environment": null,
+        "attributes": {}
     }))?;
     Ok(())
 }
