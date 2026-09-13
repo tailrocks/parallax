@@ -12,6 +12,7 @@ pub(crate) mod issues;
 pub(crate) mod journeys;
 pub(crate) mod logs;
 pub(crate) mod metrics;
+pub(crate) mod pipeline;
 pub(crate) mod rum;
 #[expect(
     clippy::cast_precision_loss,

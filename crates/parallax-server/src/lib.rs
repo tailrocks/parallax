@@ -49,6 +49,7 @@ mod otlp_grpc;
 mod otlp_http;
 mod otlp_validation;
 mod outcomes;
+mod pipeline_probe;
 mod self_telemetry;
 mod sentry_http;
 mod serve;
@@ -57,7 +58,7 @@ mod worker;
 
 pub use config::{
     AlertingConfig, Config, GithubActionsConfig, GithubDeployConfig, LimitsConfig, RetentionConfig,
-    SentryConfig, ServerConfig, StorageConfig, TelemetryConfig,
+    SamplingConfig, SentryConfig, ServerConfig, StorageConfig, TelemetryConfig,
 };
 pub use errors::{
     ConfigError, ConfigErrorKind, ConfigResult, ServerError, ServerErrorKind, ServerResult,

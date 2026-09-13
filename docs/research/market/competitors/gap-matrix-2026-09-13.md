@@ -7,8 +7,8 @@ P0 freeze: finite list in scratch `p0-freeze.txt` (same 14 items; not grown).
 **Parallax-today** is HEAD `544e5a3d83fd7662c9849526225880a49c7e2317`
 (`goal/final-p0-hotfix`), not origin/main and not 2026-07 ledger prose. Pointers:
 
-- GraphQL SDL `ui/graphql/schema.graphql` (80 Query / 14 Mutation, recounted
-  2026-09-14 R3: `rumSessions` + `rumSession` new — same count as ledger)
+- GraphQL SDL `ui/graphql/schema.graphql` (84 Query / 15 Mutation, recounted
+  R2 merge: R3 `rumSessions` + `rumSession`, R1 `sourceMaps` + `sourceMapUpload`, R2 `samplingPolicy` + `ingestDrops` + `ingestQueues` — same count as ledger)
 - Issues: `(service, fingerprint)` PK (`crates/parallax-metadata/src/turso/connection.rs`);
   UI `/issues/$service/$fingerprint`; occurrence selection + `CorrelationCard`
   (`ui/src/features/issues/`)
@@ -77,7 +77,7 @@ deliberate not-compete · `watch` = drift.
 | Metric correlation | weak on logs surface | split-chart log↔metric | Datadog | generate metrics from patterns | P1 | log-derived metric defs | metric-from-log | none | adopt |
 | Saved views + history | saved views + SQL history | recent history + share | SigNoz v0.141.1 | recall beats rebuild | P2 | query history store | history dropdown | `product:saved_state` | adopt |
 | Live tail | SSE logs+traces | Live Tail on every search | HyperDX / Loki | tie; Parallax unique in trace tail | — | reconnect hardening | keep | `product:live_tail` | keep |
-| High-volume usability | virtualized tables; `logs:burst` 5k; **no sampling policy** | stream mgmt (OO) / Refinery (Honeycomb) | OpenObserve v1.0.0 / Honeycomb | signal not silently lost at volume | P0 | sampling policy + drop reasons | volume guardrails | `sampling:low_sample_gap` (gap demo) | remaining |
+| High-volume usability | virtualized tables; `logs:burst` 5k; **sampling policy + drop reasons shipped (R2)** | stream mgmt (OO) / Refinery (Honeycomb) | OpenObserve v1.0.0 / Honeycomb | signal not silently lost at volume | P0 | none for visibility (no enforcement) | keep | `sampling:low_sample_gap` (gap demo) | keep |
 | Keyboard navigation | ⌘K + zoom; row-nav partial | j/k triage | Sentry / Honeycomb | mouseless operable | P1 | none | row keyboard map | `product:ui_agent_verify` | adopt |
 | CLI-oriented logs | `parallax logs --follow`; bounded child stdout on invocations | — | Parallax | unique agent fix-verification | — | none | keep | CLI runs | keep |
 
@@ -102,7 +102,7 @@ deliberate not-compete · `watch` = drift.
 | Frontend→backend | RUM stitch + `/rum` journeys over `tracesPage` | session→trace waterfall | Sentry / HyperDX | Sentry session-linked traces deeper | P0 | session model | session lane polish | `browser:rum_journey` | remaining |
 | CLI→backend | TRACEPARENT injection + `otlp-forward` | — | Parallax | CLI run as first-class trace root | P0 | none | keep | `cli:checkout_invocation` | keep |
 | macOS→backend | playground harness injects `traceparent`; Parallax joins `trace_id` | Apple SDK crash↔trace | Sentry Cocoa | no native product SDK | P0 (four-app-class) | native OTel Swift path | client span lane | `macos/` harness | remaining |
-| Sampling/tail sampling | none (head ingest) | Refinery adaptive tail sampling | Honeycomb | cost+completeness at volume | P0 (high-volume guardrails) | sampling policy + rate attribution | sampling controls | `sampling:low_sample_gap` | remaining |
+| Sampling/tail sampling | **declared policy + rate attribution shipped (R2)**; head keep-all server leg | Refinery adaptive tail sampling | Honeycomb | cost+completeness at volume | P0 (high-volume guardrails) | none for visibility; enforcement/controls future | sampling controls | `sampling:low_sample_gap` | keep (visibility) |
 
 ## D. Metrics (GOAL §4)
 
@@ -155,7 +155,7 @@ deliberate not-compete · `watch` = drift.
 | Cost/cardinality visibility | field stats; self-host no metering | usage metering + guardrails | Mimir / Honeycomb / Datadog | metering irrelevant; guardrails matter | P2 | cardinality guardrails | guardrail UX | cardinality | adopt |
 | Retention controls | TTLs + pin-aware prune | tiered retention + downsample | Grafana / Elastic / OpenObserve | cold-tier economics | P1 | object-store tier | retention UX | `product:lifecycle_ops` | adopt |
 | Pipeline health | `/health` 503 + self-OTLP; loss JSON | per-stage lag/drop dashboards | Mezmo / Datadog Pipelines | per-stage truth | P1 | stage counters | health view | ingest health | adopt |
-| Dropped-data diagnostics | loss counters (`unsupported_metric`, exp drop counted) | named drop reasons | OTel Collector / Honeycomb Refinery | named reasons, not silent gaps | P0 (pairs with sampling) | drop reason codes | drop panel | sampling gap | remaining |
+| Dropped-data diagnostics | **named drop reasons shipped (R2)**: 6 reasons × signal + `/pipeline` drop panel | named drop reasons | OTel Collector / Honeycomb Refinery | named reasons, not silent gaps | P0 (pairs with sampling) | none | keep | sampling gap | keep |
 | eBPF zero-instrumentation | none | eBPF → any backend | Odigos v1.36.0 / Coroot v1.26.0 | zero-code adoption | **Reject building**; watch integrate | none | source badges | none | reject-now |
 | Sentry SDK compatibility | envelope ingest shipped; playground Rust/Java/JS envelopes; **public multi-SDK ledger unproven** | native protocol | Sentry 26.8.0 / rustrak v0.14.12 | compat breadth decides migration | P0 | SDK matrix harness + dual-auth | compat ledger | `sentry:envelopes` | remaining |
 | MCP/agent breadth | **2 read-only tools** (`parallax_issue_context`, `parallax_agent_session_show`); issue tool now requires `service` | 41+ (SigNoz MCP v0.14.0) / 140+ OO EE / 56 mutating (Rustrak) | SigNoz MCP | breadth vs safety: Parallax safest, narrowest | P1 | more **read-only** tools | none | MCP checks | adopt |
@@ -181,10 +181,10 @@ Seed freeze validated against live pins + HEAD code. Later discoveries stay P1 /
 8. **RUM sessions + Web Vitals UX** — `/rum` projection **shipped**. Remaining: real session model, not remix.
 9. **Browser source maps** — **honest remaining-gap** (no artifact store).
 10. **Sentry multi-SDK** — playground rust/java/js envelopes exist; **public ledger unproven**.
-11. **High-volume guardrails / sampling** — **honest remaining-gap**.
+11. **High-volume guardrails / sampling** — visibility slice **shipped (R2)**: declared policy + drop reasons + `/pipeline`. Remaining: enforcement / sampling controls.
 12. **PromQL** — **decided: keep typed builder** (see §H). Implementation = existing `metricQuery` + shipped rate/increase. No Grafana-embed.
 13. **Four app classes** — CLI reconstructable **shipped**; backend HTTP/gRPC/DB/cache/messaging **playground-covered**; browser FE→BE **partial** (`/rum`); native macOS **harness proven**, product symbolication remaining.
-14. **Named GOAL §7 questions** — checkout fail / logs-around / DB dominance / spike traces / release markers answerable from shipped UI/API. Remaining: source maps, sampling, RUM sessions, Sentry SDK ledger, release-health.
+14. **Named GOAL §7 questions** — checkout fail / logs-around / DB dominance / spike traces / release markers answerable from shipped UI/API. Remaining: source maps, sampling enforcement, RUM sessions, Sentry SDK ledger, release-health.
 
 ## G. Differentiators to defend (GOAL §13)
 

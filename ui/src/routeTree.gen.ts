@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as EcosystemRouteImport } from './routes/ecosystem'
 import { Route as LogsRouteImport } from './routes/logs'
+import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as SqlRouteImport } from './routes/sql'
 import { Route as AlertsIndexRouteImport } from './routes/alerts.index'
@@ -51,6 +52,11 @@ const EcosystemRoute = EcosystemRouteImport.update({
 const LogsRoute = LogsRouteImport.update({
   id: '/logs',
   path: '/logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PipelineRoute = PipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ServicesRoute = ServicesRouteImport.update({
@@ -156,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/$': typeof SplatRoute
   '/ecosystem': typeof EcosystemRoute
   '/logs': typeof LogsRoute
+  '/pipeline': typeof PipelineRoute
   '/services': typeof ServicesRouteWithChildren
   '/sql': typeof SqlRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
@@ -181,6 +188,7 @@ export interface FileRoutesByTo {
   '/$': typeof SplatRoute
   '/ecosystem': typeof EcosystemRoute
   '/logs': typeof LogsRoute
+  '/pipeline': typeof PipelineRoute
   '/services': typeof ServicesRouteWithChildren
   '/sql': typeof SqlRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
@@ -207,6 +215,7 @@ export interface FileRoutesById {
   '/$': typeof SplatRoute
   '/ecosystem': typeof EcosystemRoute
   '/logs': typeof LogsRoute
+  '/pipeline': typeof PipelineRoute
   '/services': typeof ServicesRouteWithChildren
   '/sql': typeof SqlRoute
   '/dashboards/$dashboardId': typeof DashboardsDashboardIdRoute
@@ -234,6 +243,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/ecosystem'
     | '/logs'
+    | '/pipeline'
     | '/services'
     | '/sql'
     | '/dashboards/$dashboardId'
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/ecosystem'
     | '/logs'
+    | '/pipeline'
     | '/services'
     | '/sql'
     | '/dashboards/$dashboardId'
@@ -284,6 +295,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/ecosystem'
     | '/logs'
+    | '/pipeline'
     | '/services'
     | '/sql'
     | '/dashboards/$dashboardId'
@@ -310,6 +322,7 @@ export interface RootRouteChildren {
   SplatRoute: typeof SplatRoute
   EcosystemRoute: typeof EcosystemRoute
   LogsRoute: typeof LogsRoute
+  PipelineRoute: typeof PipelineRoute
   ServicesRoute: typeof ServicesRouteWithChildren
   SqlRoute: typeof SqlRoute
   DashboardsDashboardIdRoute: typeof DashboardsDashboardIdRoute
@@ -358,6 +371,13 @@ declare module '@tanstack/react-router' {
       path: '/logs'
       fullPath: '/logs'
       preLoaderRoute: typeof LogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pipeline': {
+      id: '/pipeline'
+      path: '/pipeline'
+      fullPath: '/pipeline'
+      preLoaderRoute: typeof PipelineRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/services': {
@@ -513,6 +533,7 @@ const rootRouteChildren: RootRouteChildren = {
   SplatRoute: SplatRoute,
   EcosystemRoute: EcosystemRoute,
   LogsRoute: LogsRoute,
+  PipelineRoute: PipelineRoute,
   ServicesRoute: ServicesRouteWithChildren,
   SqlRoute: SqlRoute,
   DashboardsDashboardIdRoute: DashboardsDashboardIdRoute,
