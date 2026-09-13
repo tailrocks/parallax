@@ -28,12 +28,24 @@ query IssueDetail(
     events(limit: 20, fromNanos: $fromNanos, toNanos: $toNanos) {
       tsNanos
       service
+      serviceVersion
       message
       stacktrace
       source
       traceId
       spanId
       attributes
+      mappedFrames {
+        raw
+        file
+        line
+        column
+        resolved
+        source
+        sourceLine
+        sourceColumn
+        name
+      }
     }
   }
   issueTrend(service: $service, fingerprint: $fingerprint, hours: $hours) {
