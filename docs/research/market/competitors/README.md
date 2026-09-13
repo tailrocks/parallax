@@ -5,6 +5,7 @@
 Version authority: [version-pins-2026-09-13.md](version-pins-2026-09-13.md).
 Workflow gap matrix: [gap-matrix-2026-09-13.md](gap-matrix-2026-09-13.md).
 PromQL decision: [promql-decision-2026-09-13.md](promql-decision-2026-09-13.md).
+Investigation-surface restamp: [investigation-surfaces-2026-09-13.md](investigation-surfaces-2026-09-13.md).
 Lab exercise remains the 2026-09-12 report (pass 66). **Do not use the 2026-09-04
 versions below as current.**
 

@@ -87,7 +87,7 @@ deliberate not-compete · `watch` = drift.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Trace search + list | `tracesPage` + facets + duration + errors-only | explorer w/ funnels, List/TimeSeries/Table | SigNoz v0.141.1 | wider analytical surface | **P1** (not freeze; freeze is “understandable waterfall”) | funnel queries | result-view switcher | checkout queries | adopt |
 | Waterfall + span tree | waterfall/tree/errors/lanes/flame + minimap | — | Parallax | densest single-trace detail in roster (09-12 live) | P0 | none | keep | waterfall, wide, deep | keep |
-| Critical path | `traceCriticalPath` | critical-path + contribution rank | Datadog / Parallax | tie | P0 | none | keep | critical path | keep |
+| Critical path | `traceCriticalPath` | one-click isolate of the longest dependent sequence | Grafana Tempo 3.0.3 | Tempo pill hides non-path spans; Datadog’s documented critical path is CI Visibility, not APM | P0 | none | keep (isolate toggle still thinner than Tempo) | critical path | keep |
 | Duration visualization | minimap + `traceDurationStats` | latency histogram + span breakdown | Honeycomb / Jaeger 2.20.0 | distribution-first | P2 | surface duration stats | duration panel | duration filter | adopt |
 | Errors/status/attrs/events/links | all shipped; `traceEvents` persisted HEAD | span links + baggage | Grafana Tempo 3.0.3 | tie | P2 | none | keep | span events, links, baggage | keep |
 | DB/external ops | typed ecosystem nodes + **`Trace.dominantDbQueries`** (normalized SQL rank) | query-level aggregation | Datadog APM / New Relic | Datadog still has explain/pool | P0 (freeze: DB dominance) | none for rank | keep | `postgres:query_pressure` | keep |
