@@ -4,8 +4,8 @@ Living comparison. Versions: [version-pins-2026-09-13.md](version-pins-2026-09-1
 PromQL: [promql-decision-2026-09-13.md](promql-decision-2026-09-13.md).
 P0 freeze: finite list in scratch `p0-freeze.txt` (same 14 items; not grown).
 
-**Parallax-today** is HEAD `1cad2a509cfaf76a10d29d320559131584943201`, not
-origin/main and not 2026-07 ledger prose. Pointers:
+**Parallax-today** is HEAD `544e5a3d83fd7662c9849526225880a49c7e2317`
+(`goal/final-p0-hotfix`), not origin/main and not 2026-07 ledger prose. Pointers:
 
 - GraphQL SDL `ui/graphql/schema.graphql` (77 Query / 14 Mutation, recounted
   2026-09-13 pass 68 — same count as ledger)
