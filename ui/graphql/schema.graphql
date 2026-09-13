@@ -351,6 +351,12 @@ type ErrorEvent {
   errorType: String!
   message: String!
   stacktrace: String
+  """
+    V8 frames resolved against the stored source maps for this event's
+    (service, version). Empty for non-JS stacks; `resolved` is false per
+    frame when no artifact matches.
+  """
+  mappedFrames: [MappedFrame!]!
   source: String!
   traceId: String!
   spanId: String!
@@ -574,6 +580,26 @@ type LogRecord {
   resource: String!
 }
 
+type MappedFrame {
+  "The raw `at …` frame line, for display fallback and copy."
+  raw: String!
+  "Generated (minified) file."
+  file: String!
+  "Generated 1-based line."
+  line: Int!
+  "Generated 0-based column."
+  column: Int!
+  resolved: Boolean!
+  "Original source file, when resolved."
+  source: String
+  "Original 1-based line, when resolved."
+  sourceLine: Int
+  "Original 0-based column, when resolved."
+  sourceColumn: Int
+  "Original symbol name, when the segment carries one."
+  name: String
+}
+
 type MetricCatalogRow {
   "Canonical native-table display name (metric-summary contract)."
   name: String!
@@ -646,6 +672,11 @@ type Mutation {
   alertDestinationSave(name: String!, kind: String!, config: String!, id: String): AlertDestination!
   "Delete a notification destination."
   alertDestinationDelete(id: String!): Boolean!
+  """
+    Upload (or replace) one source-map v3 artifact for a (service,
+    version, file) release file. Rejects malformed maps at the boundary.
+  """
+  sourceMapUpload(service: String!, version: String!, file: String!, map: String!, debugId: String): SourceMapArtifact!
 }
 
 type ObservedInvocation {
@@ -724,6 +755,12 @@ type Query {
     first. Defaults: the last 24 hours in one-hour buckets.
   """
   issueTrend(service: String!, fingerprint: String!, hours: Int, stepSeconds: Int): [TrendPoint!]!
+  """
+    Stored source-map artifacts for one (service, version) release, newest
+    first. Metadata only — map content is never exposed; frames resolve
+    server-side via `ErrorEvent.mappedFrames`.
+  """
+  sourceMaps(service: String!, version: String!): [SourceMapArtifact!]!
   "Every span of one trace, start-time ascending (cross-service)."
   trace(traceId: String!): Trace
   """
@@ -1067,6 +1104,16 @@ type Session {
   startNanos: String!
   "Null while the session is still open."
   endNanos: String
+}
+
+type SourceMapArtifact {
+  service: String!
+  version: String!
+  file: String!
+  debugId: String
+  uploadedAtNanos: String!
+  mapBytes: Int!
+  mapSha256: String!
 }
 
 type Span {

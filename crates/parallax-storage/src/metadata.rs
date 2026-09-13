@@ -3,9 +3,9 @@
 use async_trait::async_trait;
 use parallax_model::{
     Dashboard, Investigation, InvocationOutput, InvocationRecord, Issue, IssueQuery, IssueSortKey,
-    SavedView, TestCaseDetailBundle, TestCaseRecord, TestExplorerPage, TestExplorerQuery,
-    TestExplorerSort, TestFlakyCandidatePage, TestFlakyCursor, TestFlakyStateRecord,
-    TestResultRecord, TestResultWindow, TestVariantRecord, TrendPoint,
+    SavedView, SourceMapRecord, SourceMapUpload, TestCaseDetailBundle, TestCaseRecord,
+    TestExplorerPage, TestExplorerQuery, TestExplorerSort, TestFlakyCandidatePage, TestFlakyCursor,
+    TestFlakyStateRecord, TestResultRecord, TestResultWindow, TestVariantRecord, TrendPoint,
 };
 use thiserror::Error;
 
@@ -227,6 +227,23 @@ pub trait MetadataStore: Send + Sync {
     async fn saved_view_delete(&self, id: &str) -> MetadataResult<bool>;
     async fn saved_views(&self, page: Option<&str>) -> MetadataResult<Vec<SavedView>>;
     async fn saved_view(&self, id: &str) -> MetadataResult<Option<SavedView>>;
+    /// Upsert one source map keyed by (service, version, file). Re-upload
+    /// replaces the stored map.
+    async fn source_map_save(
+        &self,
+        upload: &SourceMapUpload<'_>,
+    ) -> MetadataResult<SourceMapRecord>;
+    /// Every stored map for one (service, version) release, newest first.
+    /// The resolver matches frames against these; GraphQL exposes metadata
+    /// only, never the map JSON.
+    async fn source_maps(
+        &self,
+        service: &str,
+        version: &str,
+    ) -> MetadataResult<Vec<SourceMapRecord>>;
+    /// Every stored (service, version) release with at least one map, for
+    /// the artifact inventory query.
+    async fn source_map_releases(&self, service: &str) -> MetadataResult<Vec<String>>;
 }
 
 #[cfg(test)]

@@ -118,6 +118,34 @@ pub struct ErrorEventRow {
 }
 
 /// Mutable issue state (metadata store; spec §6).
+/// A stored JS source map (R1 artifact store). The map JSON itself is
+/// private: GraphQL exposes this metadata only, never `map_json` —
+/// clients receive server-resolved frames instead.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SourceMapRecord {
+    pub service: String,
+    pub version: String,
+    /// Minified file this map describes, as uploaded (basename or URL).
+    pub file: String,
+    /// Optional Debug-ID-like artifact identifier for exact binding.
+    pub debug_id: Option<String>,
+    pub uploaded_at_nanos: u128,
+    pub map_bytes: u64,
+    pub map_sha256: String,
+    pub map_json: String,
+}
+
+/// Upload payload for the metadata store's `source_map_save`.
+#[derive(Debug, Clone)]
+pub struct SourceMapUpload<'a> {
+    pub service: &'a str,
+    pub version: &'a str,
+    pub file: &'a str,
+    pub debug_id: Option<&'a str>,
+    pub map_json: &'a str,
+    pub uploaded_at_nanos: u128,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Issue {
     pub fingerprint: String,
