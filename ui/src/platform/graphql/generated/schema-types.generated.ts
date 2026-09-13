@@ -297,10 +297,23 @@ export type DurationStats = {
 export type ErrorEvent = {
   readonly __typename?: "ErrorEvent"
   readonly attributes: Scalars["String"]["output"]
+  /** `deployment.environment.name` of the emitting resource. */
+  readonly environment: Maybe<Scalars["String"]["output"]>
   readonly errorType: Scalars["String"]["output"]
   readonly fingerprint: Scalars["String"]["output"]
+  /** The run record for this error's invocation, when the run is registered. */
+  readonly invocation: Maybe<Invocation>
+  /**
+   * `cli.invocation.id` of the run this error belongs to, when the source
+   * signal carried one — the anchor for error → run navigation.
+   */
+  readonly invocationId: Maybe<Scalars["String"]["output"]>
   readonly message: Scalars["String"]["output"]
   readonly service: Scalars["String"]["output"]
+  /** `service.version` of the emitting resource (release context). */
+  readonly serviceVersion: Maybe<Scalars["String"]["output"]>
+  /** `session.id` of the interactive session this error belongs to. */
+  readonly sessionId: Maybe<Scalars["String"]["output"]>
   readonly source: Scalars["String"]["output"]
   readonly spanId: Scalars["String"]["output"]
   readonly stacktrace: Maybe<Scalars["String"]["output"]>
@@ -415,6 +428,17 @@ export type Invocation = {
    * invocation with no signal newer than five minutes.
    */
   readonly status: Scalars["String"]["output"]
+  /** Bounded head of child stderr captured by the CLI wrapper. */
+  readonly stderrText: Maybe<Scalars["String"]["output"]>
+  /** Stderr bytes omitted past the capture cap. */
+  readonly stderrTruncatedBytes: Scalars["Int"]["output"]
+  /**
+   * Bounded head of child stdout captured by the CLI wrapper; null when
+   * never captured (bare, external, or pre-capture runs).
+   */
+  readonly stdoutText: Maybe<Scalars["String"]["output"]>
+  /** Stdout bytes omitted past the capture cap. */
+  readonly stdoutTruncatedBytes: Scalars["Int"]["output"]
   /** Distinct traces this run produced. */
   readonly traceCount: Scalars["Int"]["output"]
 }
@@ -653,6 +677,10 @@ export type MutationInvocationFinishArgs = {
   exitCode: Scalars["Int"]["input"]
   invocationId: Scalars["String"]["input"]
   outcome: InputMaybe<Scalars["String"]["input"]>
+  stderrText: InputMaybe<Scalars["String"]["input"]>
+  stderrTruncatedBytes: InputMaybe<Scalars["Int"]["input"]>
+  stdoutText: InputMaybe<Scalars["String"]["input"]>
+  stdoutTruncatedBytes: InputMaybe<Scalars["Int"]["input"]>
 }
 
 export type MutationInvocationStartArgs = {

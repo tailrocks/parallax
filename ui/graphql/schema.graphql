@@ -337,6 +337,19 @@ type ErrorEvent {
   source: String!
   traceId: String!
   spanId: String!
+  """
+    `cli.invocation.id` of the run this error belongs to, when the source
+    signal carried one — the anchor for error → run navigation.
+  """
+  invocationId: String
+  "`session.id` of the interactive session this error belongs to."
+  sessionId: String
+  "`service.version` of the emitting resource (release context)."
+  serviceVersion: String
+  "`deployment.environment.name` of the emitting resource."
+  environment: String
+  "The run record for this error's invocation, when the run is registered."
+  invocation: Invocation
   attributes: String!
 }
 
@@ -411,6 +424,17 @@ type Invocation {
   """
   endedAtNanos: String
   exitCode: Int
+  """
+    Bounded head of child stdout captured by the CLI wrapper; null when
+    never captured (bare, external, or pre-capture runs).
+  """
+  stdoutText: String
+  "Stdout bytes omitted past the capture cap."
+  stdoutTruncatedBytes: Int!
+  "Bounded head of child stderr captured by the CLI wrapper."
+  stderrText: String
+  "Stderr bytes omitted past the capture cap."
+  stderrTruncatedBytes: Int!
   "cli (wrapper-registered) | external (auto-registered from telemetry)."
   registration: String!
   "one_shot | interactive | daemon | capsule, when registered."
@@ -588,7 +612,7 @@ type Mutation {
   "Delete a named saved page state."
   savedViewDelete(id: String!): Boolean!
   "Close an invocation with the wrapped command's exit code and outcome."
-  invocationFinish(invocationId: String!, endedAtNanos: String!, exitCode: Int!, outcome: String): Boolean!
+  invocationFinish(invocationId: String!, endedAtNanos: String!, exitCode: Int!, outcome: String, stdoutText: String, stdoutTruncatedBytes: Int, stderrText: String, stderrTruncatedBytes: Int): Boolean!
   """
     Create or update an alert rule (plan 167); optional knobs default per
     the plan contract.

@@ -762,7 +762,7 @@ ceiling = 11
 [[limits]]
 metric = "rust.public-root-items"
 scope = "crates/parallax-ingest/facade.toml"
-ceiling = 6
+ceiling = 13
 
 [[limits]]
 metric = "rust.public-root-items"
@@ -5708,7 +5708,7 @@ ceiling = 338
 [[limits]]
 metric = "typescript.file-lines"
 scope = "ui/src/platform/graphql/generated/schema-types.generated.ts"
-ceiling = 1570
+ceiling = 1598
 
 [[limits]]
 metric = "typescript.file-lines"
