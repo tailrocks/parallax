@@ -599,6 +599,15 @@ async fn trace_dominant_db_queries_rank_normalized_sql() {
         10,
     );
     first.attributes = serde_json::json!({ "db.query.text": "SELECT * FROM orders WHERE id = 1" });
+    let mut grouped = span(
+        "checkout",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "span-c",
+        1_500,
+        20,
+    );
+    grouped.attributes =
+        serde_json::json!({ "db.query.text": "SELECT * FROM orders WHERE id = 99" });
     let mut second = span(
         "checkout",
         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -607,7 +616,7 @@ async fn trace_dominant_db_queries_rank_normalized_sql() {
         90,
     );
     second.attributes = serde_json::json!({ "db.query.text": "SELECT * FROM inventory" });
-    store.push_spans(vec![first, second]);
+    store.push_spans(vec![first, grouped, second]);
 
     let schema = build_schema();
     let context = context_with_memory(store).await;
@@ -629,5 +638,9 @@ async fn trace_dominant_db_queries_rank_normalized_sql() {
     assert_eq!(
         json.pointer("/data/trace/dominantDbQueries/0/count"),
         Some(&serde_json::json!(1))
+    );
+    assert_eq!(
+        json.pointer("/data/trace/dominantDbQueries/1/count"),
+        Some(&serde_json::json!(2))
     );
 }

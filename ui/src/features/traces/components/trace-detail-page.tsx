@@ -80,7 +80,10 @@ import type {
   RpcStreamInfo,
   RpcTraceSpan,
 } from "@/features/traces/model/rpc-streams"
-import { dominantDbQueries } from "@/features/traces/model/dominant-db"
+import {
+  traceDetailQuery,
+  type DominantDbQueryRow,
+} from "@/features/traces/api/trace-detail-query"
 import { computeSelfTimes, computeWindow, detectSkew } from "@/features/traces/model/trace-tree"
 import type { SkewReport } from "@/features/traces/model/trace-tree"
 import { rangeLinkSearch, resolveRangeSearch } from "@/domain/time-range/range"
@@ -201,7 +204,7 @@ interface TraceEventsResult {
 }
 
 export type TraceDetailLoaderData = {
-  trace: { spans: TraceSpan[] } | null
+  trace: { spans: TraceSpan[]; dominantDbQueries: DominantDbQueryRow[] } | null
   logsByTrace: TraceLog[]
   linkedTraces: TraceSummary[]
   story: StoryBeat[]
@@ -210,28 +213,7 @@ export type TraceDetailLoaderData = {
 }
 
 export async function loadTraceDetail(traceId: string): Promise<TraceDetailLoaderData> {
-  const safeId = gqlString(traceId)
-  return graphqlCached<TraceDetailLoaderData>(
-    `{ trace(traceId: "${safeId}") {
-         spans { tsNanos service traceId name kind statusCode statusMessage durationNs
-                 spanId parentSpanId invocationId links typedLinks { traceId spanId attributes }
-                 events attributes resource }
-       }
-       linkedTraces(traceId: "${safeId}") {
-         traceId rootName service startNanos durationNs spanCount hasError
-       }
-       story(traceId: "${safeId}") {
-         tsNanos lane kind title traceId spanId severity durationNs
-       }
-       evidenceGaps(traceId: "${safeId}") {
-         kind subject detail
-       }
-       rpcTraceEvents: traceEvents(traceId: "${safeId}", namePrefix: "rpc", limit: 500) {
-         truncated skippedSpans
-         events { spanId spanName service name timeUnixNano attributes }
-       }
-       logsByTrace(traceId: "${safeId}") { tsNanos service severityText body spanId } }`
-  )
+  return graphqlCached<TraceDetailLoaderData>(traceDetailQuery(traceId))
 }
 
 function parseJsonRecord(json: string): JsonRecord {
@@ -367,7 +349,7 @@ export function TraceDetailPage({
     [rpcTraceEvents.events, rpcTraceEvents.truncated, spans]
   )
   const messaging = useMemo(() => messagingSummary(spans), [spans])
-  const dbQueries = useMemo(() => dominantDbQueries(spans), [spans])
+  const dbQueries = trace?.dominantDbQueries ?? []
   const skewReport = useMemo(() => detectSkew(spans), [spans])
   const window = useMemo(() => computeWindow(spans), [spans])
 
@@ -556,7 +538,7 @@ export function TraceDetailPage({
       <ClockSkewBanner report={skewReport} />
 
       {dbQueries.length > 0 ? (
-        <Card>
+        <Card data-testid="dominant-db-queries">
           <CardHeader>
             <CardTitle className="text-sm">Dominant database queries</CardTitle>
           </CardHeader>

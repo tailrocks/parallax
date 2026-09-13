@@ -15,6 +15,8 @@ export { TraceTable } from "@/features/traces/components/trace-table"
 export { loadTraces } from "@/features/traces/components/traces-query"
 export type { TracesLoaderData } from "@/features/traces/components/traces-query"
 export { encodeTracesAlertGraduation } from "@/features/traces/model/alert-graduation"
+export { traceDetailQuery } from "@/features/traces/api/trace-detail-query"
+export type { DominantDbQueryRow } from "@/features/traces/api/trace-detail-query"
 
 export {
   TraceDetailPage,

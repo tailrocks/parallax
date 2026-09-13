@@ -1,3 +1,6 @@
+/** Client grouping contract. Authoritative ranking is GraphQL
+ * `Trace.dominantDbQueries` (see `traceDetailQuery`). */
+
 export interface DominantDbSpan {
   readonly attributes: string
   readonly durationNs: string
