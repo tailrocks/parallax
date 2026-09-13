@@ -117,7 +117,7 @@ Status: `keep` = Parallax leads/tie, defend; `adopt` = gap to close;
 | On-call rotations | none | rotations + escalations + schedules | Better Stack / PagerDuty-class | Parallax stops at incident creation | P2 | rotation model | schedule UX | none | adopt |
 | SLOs/error budgets | none (`inv:L164`) | SLO + burn-rate alerts + budget policy | Datadog / Grafana / Sentry | burn-rate is the alerting unit teams use | P1 | SLI/SLO store + burn calc | SLO view | none | adopt |
 | Service catalog | heat catalog + RED + runtime (`inv:L123`) | catalog + entity graph + ownership + docs | New Relic / Datadog / Backstage-class | ownership+docs turn catalog into map | P1 | ownership metadata | owner/docs fields | heat catalog | adopt |
-| Service/dependency maps | Ecosystem typed graph, ships (`09-12:L135`) | live map + legend + red-node highlight (slickest) | HyperDX 2.38.0 BETA | polish: animation/legend/readability | P1 | none (model deeper) | legend + traffic animation | 17-node render | adopt |
+| Service/dependency maps | typed six-kind graph with system labels; UI preserves kinds; edge p50/p95/error rate, log-scaled width, low/medium/high dash flow, and investigation legend (HEAD `goal/next-investigation-slice`) | live map + legend + red-node highlight (slickest) | HyperDX 2.38.0 BETA | render parity reached; HyperDX keeps slicker live interaction | P1 | none (model deeper) | edge-scoped issue/log/metric pane; interactive edge polish | `ecosystem:service_map` | keep |
 | Deploy/release markers | release strip + GitHub deploy ingest (`inv:L46`) | deploy markers on every chart + release compare | Sentry / Datadog / Grafana annotations | markers where eyes already are | P0 | annotation store | markers on all charts | a13, `product:github_ingest` | adopt |
 | CI/test context | JUnit/nextest + flaky + explorer (`inv:L146`) | CI Test Optimization + flaky quarantine | Datadog / Currents-class | quarantine + owner routing | P1 | quarantine state | quarantine UX | flaky detection | keep |
 | Database monitoring | derived nodes + wrapper-span conventions | query stats + explain + pool pressure | Datadog DBM / New Relic | query-level, not span-level | P1 | query aggregation | query view | Postgres pathologies | adopt |
@@ -167,4 +167,3 @@ Attribute-compare · hash-pinned evidence bundles · read-only SQL console ·
 CLI runs as first-class traces · investigations case files · MCP read-only safety ·
 URL-shareability · single-binary self-host · Apache-2.0 · Sentry+OTLP dual ingest ·
 Rust-first GreptimeDB+Turso stack. None of the P0–P2 adoptions may regress these.
-

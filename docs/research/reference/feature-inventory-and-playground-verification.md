@@ -121,8 +121,9 @@ humans and coding agents; it is the context engine, not the fixer.
   context-around anchor), Metrics (catalog; per-metric workbench with legal
   aggregations, group-by, step; graduate to dashboard widget or alert rule),
   Services (heat catalog; detail with RED charts, exemplar dots, release
-  strip, runtime snapshot), Ecosystem (React Flow + ELK service map: focus,
-  hops, dim/hide, traffic threshold), CLI Apps (invocation list + 6-tab hub
+  strip, runtime snapshot), Ecosystem (React Flow + ELK service map: six typed
+  node kinds and systems, focus, hops, dim/hide, traffic threshold, error edges,
+  investigation legend), CLI Apps (invocation list + 6-tab hub
   incl. sessions/screens/UI actions/conversations/jobs/cycles), Tests
   (variant explorer, flaky states, attempt chains), Alerts (rules/incidents/
   destinations tabs, template rule dialog), Dashboards (gallery + widget
@@ -192,6 +193,7 @@ verified working, compared, and production-ready — zero known bugs.
 - ~60 scripted scenarios: a-series feature proofs (waterfall, exemplars, span
   links, reverse-language hop, RUM error, GraphQL N+1, subscriptions/stream
   cancel, log spike, baggage, CLI run/cron, deploy regression, flag flip,
+  ecosystem service-map dependency mix,
   PII-redaction canary, long/wide trace, trace compare, tokio saturation,
   Postgres pathologies, cache stampede, RUM journey, business events,
   teaching up-down/cardinality, handled vs panic) +
