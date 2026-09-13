@@ -441,11 +441,52 @@ pub(super) fn quantile_from_cumulative(bounds: &BTreeMap<OrderedF64, f64>, q: f6
 
 /// Shared row → `ErrorEventRow` projection (fingerprint + trace-set reads).
 /// Column order is the shared error-event projection: identity columns sit
-/// between the span ids and the attributes.
+/// between the span ids and the attributes. Valid ONLY over the base
+/// `error_events` table (references `"ts"`); the ranked multi-key subquery
+/// below must use [`ERROR_EVENT_RANKED_PROJECTION`] instead.
 pub(super) const ERROR_EVENT_PROJECTION: &str = r#"CAST("ts" AS BIGINT) AS "ts_nanos", "service",
                           "fingerprint", "error_type", "message", "stacktrace", "source",
                           "trace_id", "span_id", "invocation_id", "session_id",
                           "service_version", "environment", json_to_string("attributes")"#;
+
+/// Outer projection for the ranked multi-key read
+/// ([`error_events_ranked_sql`]). Same column order/shape as
+/// [`ERROR_EVENT_PROJECTION`] (decoded by the same `error_event_from_row`),
+/// but every identifier must be an alias the ranked subquery exposes —
+/// notably `"ts_nanos"`, never the base-table `"ts"`.
+pub(super) const ERROR_EVENT_RANKED_PROJECTION: &str = r#""ts_nanos", "service", "fingerprint", "error_type", "message", "stacktrace", "source",
+                          "trace_id", "span_id", "invocation_id", "session_id",
+                          "service_version", "environment", "attributes""#;
+
+/// Ranked multi-key error-event read: newest `limit` events per
+/// (service, fingerprint). Pure SQL builder (unit-tested) so the
+/// outer-projection ↔ subquery-alias contract cannot silently regress.
+pub(super) fn error_events_ranked_sql(
+    issue_keys_sql: &str,
+    start_nanos: u128,
+    end_nanos: u128,
+    limit_per_issue: usize,
+) -> String {
+    format!(
+        r#"SELECT {ERROR_EVENT_RANKED_PROJECTION}
+                   FROM (
+                     SELECT CAST("ts" AS BIGINT) AS "ts_nanos", "service", "fingerprint",
+                            "error_type", "message", "stacktrace", "source", "trace_id",
+                            "span_id", "invocation_id", "session_id", "service_version",
+                            "environment", json_to_string("attributes") AS "attributes",
+                            ROW_NUMBER() OVER (
+                              PARTITION BY "service", "fingerprint" ORDER BY "ts" DESC
+                            ) AS "event_rank"
+                     FROM error_events
+                     WHERE ("service", "fingerprint") IN ({issue_keys_sql})
+                       AND "ts" >= {} AND "ts" <= {}
+                   ) WHERE "event_rank" <= {}
+                   ORDER BY "service", "fingerprint", "ts_nanos" DESC"#,
+        sql_ts(start_nanos),
+        sql_ts(end_nanos),
+        limit_per_issue.min(MAX_ROWS),
+    )
+}
 
 pub(super) fn error_event_from_row(row: &[serde_json::Value]) -> ErrorEventRow {
     ErrorEventRow {

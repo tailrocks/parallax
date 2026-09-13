@@ -28,10 +28,10 @@ use parallax_semconv as semconv;
 use parallax_storage::adapter::{
     self, ATTRIBUTE_COMPARE_KEY_SCAN_LIMIT, ATTRIBUTE_COMPARE_TOP_N_CAP, AttributeCompareRow,
     FIELD_KEYS_CAP, FIELD_TOP_VALUES_CAP, FieldKey, FieldSource, FieldStats, FieldValueCount,
-    MAX_ROWS, MetricAnalyticsStore, MetricStore, OverviewTotals, ReleaseWindow,
-    RuntimeMetricSeries, SERVICE_MAP_TRACE_CAP, ServiceCatalogRow, ServiceEdge, ServiceSummary,
-    SignalKind, SpanRed, StorageResult, attribute_compare_key_allowed, attribute_compare_score,
-    field_key_identifier_like, field_key_namespace, field_value_display,
+    MAX_ROWS, METRIC_LABEL_VALUES_CAP, MetricAnalyticsStore, MetricStore, OverviewTotals,
+    ReleaseWindow, RuntimeMetricSeries, SERVICE_MAP_TRACE_CAP, ServiceCatalogRow, ServiceEdge,
+    ServiceSummary, SignalKind, SpanRed, StorageResult, attribute_compare_key_allowed,
+    attribute_compare_score, field_key_identifier_like, field_key_namespace, field_value_display,
     metric_group_label_allowed, runtime_metric_family, runtime_metric_unit, span_field_key_allowed,
 };
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};

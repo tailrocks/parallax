@@ -7,7 +7,7 @@
 
 use crate::resolvers::test_support::*;
 use crate::{build_schema, execute};
-use parallax_storage::adapter::IngestStore;
+use parallax_storage::adapter::{IngestStore, METRIC_LABEL_VALUES_CAP};
 use parallax_test_support::builders::MemoryStore;
 
 use parallax_storage::model::{MetricExemplarRow, MetricPointRow};
@@ -84,9 +84,9 @@ async fn metric_label_and_runtime_resolvers_query_memory_store() {
                         }),
                     },
                 ];
-                for index in 0..110 {
+                for index in 0..METRIC_LABEL_VALUES_CAP + 50 {
                     points.push(MetricPointRow {
-                        ts_nanos: 2_100_000_000 + index,
+                        ts_nanos: 2_100_000_000 + index as u128,
                         service: "checkout".into(),
                         name: "process.cpu.utilization".into(),
                         value: index as f64,
@@ -142,7 +142,13 @@ async fn metric_label_and_runtime_resolvers_query_memory_store() {
         json.pointer("/data/cappedMetricLabelValues")
             .and_then(|value| value.as_array())
             .map(Vec::len),
-        Some(100)
+        Some(METRIC_LABEL_VALUES_CAP)
+    );
+    assert!(
+        json.pointer("/data/cappedMetricLabelValues")
+            .and_then(|value| value.as_array())
+            .is_some_and(|values| values.iter().any(|v| v == "runtime-199")),
+        "200-series cardinality proof must fit under the cap: {json}"
     );
     let runtime = json
         .pointer("/data/runtimeSnapshot")

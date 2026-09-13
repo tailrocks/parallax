@@ -421,6 +421,11 @@ pub const TRACE_FACET_DIMENSIONS: &[&str] =
 /// Values shown per facet dimension before the sidebar's "Show N more".
 pub const FACET_VALUES_CAP: usize = 24;
 
+/// Distinct label values returned per metric label (native, converted-exp,
+/// and memory stores alike). Sized for the 200-series cardinality proof with
+/// headroom; identifier labels stay denylisted upstream.
+pub const METRIC_LABEL_VALUES_CAP: usize = 1000;
+
 /// Bounded log facet dimensions (plan 164). Counts are log-row counts;
 /// dimension names double as where-clause keys.
 pub const LOG_FACET_DIMENSIONS: &[&str] =

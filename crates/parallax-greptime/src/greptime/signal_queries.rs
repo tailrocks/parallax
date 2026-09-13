@@ -74,7 +74,7 @@ impl MetricStore for GreptimeStore {
                    FROM "{}"
                    WHERE "greptime_timestamp" >= {} AND "greptime_timestamp" <= {}
                      AND {label_ident} IS NOT NULL
-                   ORDER BY "value" LIMIT 100"#,
+                   ORDER BY "value" LIMIT {METRIC_LABEL_VALUES_CAP}"#,
                 escape_ident(&table),
                 sql_ts(range.start() / 1_000_000),
                 sql_ts(range.end() / 1_000_000),
@@ -214,8 +214,8 @@ impl GreptimeStore {
     }
 
     /// Label values for converted-exp metrics: bounded newest-first attribute
-    /// sample, filtered client-side (same unknown-label error and 100-value
-    /// cap as the native path).
+    /// sample, filtered client-side (same unknown-label error and
+    /// [`METRIC_LABEL_VALUES_CAP`] as the native path).
     async fn exp_metric_label_values(
         &self,
         name: &str,
@@ -246,7 +246,7 @@ impl GreptimeStore {
             };
             if attribute_compare_value_allowed(&value) {
                 values.insert(value);
-                if values.len() >= 100 {
+                if values.len() >= METRIC_LABEL_VALUES_CAP {
                     break;
                 }
             }

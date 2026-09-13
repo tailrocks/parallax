@@ -10,7 +10,17 @@ import { getBrowserQueryClient, graphqlRawQueryKey } from "@/platform/query/grap
 
 // Loaders are isomorphic (run on server AND client): relative URLs only work
 // in the browser, so SSR/loader calls target the API directly.
-const BASE = typeof window === "undefined" ? "http://127.0.0.1:4000" : ""
+const SSR_API_BASE = "http://127.0.0.1:4000"
+const BASE = typeof window === "undefined" ? SSR_API_BASE : ""
+
+/**
+ * Human label for the API this UI talks to: the same-origin host in the
+ * browser (fetch uses a relative URL), the direct SSR base on the server.
+ */
+export function apiEndpointLabel(): string {
+  if (typeof window === "undefined") return SSR_API_BASE
+  return window.location.host || SSR_API_BASE
+}
 
 /** Test-only: clear the Query-backed raw GraphQL cache. */
 export function clearGraphqlCache(): void {
