@@ -44,11 +44,10 @@ impl MetricStore for GreptimeStore {
     }
 
     async fn metric_labels(&self, name: &str) -> StorageResult<Vec<String>> {
-        Ok(self
-            .resolved_metric_table(name)
-            .await?
-            .map(|(_, labels)| labels)
-            .unwrap_or_default())
+        if let Some((_, labels)) = self.resolved_metric_table(name).await? {
+            return Ok(labels);
+        }
+        Ok(self.exp_metric_labels(name).await?)
     }
 
     async fn metric_label_values(
@@ -63,7 +62,7 @@ impl MetricStore for GreptimeStore {
             )));
         }
         let Some((table, labels)) = self.resolved_metric_table(name).await? else {
-            return Ok(Vec::new());
+            return self.exp_metric_label_values(name, label, range).await;
         };
         if !labels.iter().any(|known| known == label) {
             return Err(StorageError::query(anyhow::anyhow!("unknown metric label")));
@@ -118,6 +117,9 @@ impl MetricStore for GreptimeStore {
         let arms: Vec<String> = selected
             .iter()
             .map(|family| {
+                if let Some(exp_name) = family.exp_name.as_deref() {
+                    return exp_catalog_arm(exp_name, &family.display, &range);
+                }
                 format!(
                     r#"SELECT '{}' AS "name", CAST("service_name" AS STRING) AS "service",
                               CAST(MAX("greptime_timestamp") AS BIGINT) AS "last_ms",
@@ -176,5 +178,79 @@ impl MetricStore for GreptimeStore {
             entry.services.sort();
         }
         Ok(out)
+    }
+}
+
+impl GreptimeStore {
+    /// Labels for converted-exp metrics: the extension table has no
+    /// per-attribute tag columns, so keys come from a bounded sample of
+    /// stored attribute objects (same scalar-only rule as native tables).
+    async fn exp_metric_labels(&self, name: &str) -> StorageResult<Vec<String>> {
+        let name_filter = metric_name_sql_filter(r#""name""#, name);
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT json_to_string("attributes") FROM "{EXP_HISTOGRAMS_TABLE}"
+                   WHERE {name_filter} ORDER BY "ts" DESC LIMIT 500"#,
+            ))
+            .await?;
+        let mut labels = BTreeSet::new();
+        for row in &rows {
+            if let Some(object) = json_at(row, 0).as_object() {
+                for (key, value) in object {
+                    if metric_group_label_allowed(key)
+                        && matches!(
+                            value,
+                            serde_json::Value::String(_)
+                                | serde_json::Value::Bool(_)
+                                | serde_json::Value::Number(_)
+                        )
+                    {
+                        labels.insert(key.clone());
+                    }
+                }
+            }
+        }
+        Ok(labels.into_iter().collect())
+    }
+
+    /// Label values for converted-exp metrics: bounded newest-first attribute
+    /// sample, filtered client-side (same unknown-label error and 100-value
+    /// cap as the native path).
+    async fn exp_metric_label_values(
+        &self,
+        name: &str,
+        label: &str,
+        range: RangeInclusive<u128>,
+    ) -> StorageResult<Vec<String>> {
+        let labels = self.exp_metric_labels(name).await?;
+        if !labels.iter().any(|known| known == label) {
+            return Err(StorageError::query(anyhow::anyhow!("unknown metric label")));
+        }
+        let name_filter = metric_name_sql_filter(r#""name""#, name);
+        let rows = self
+            .sql_lenient(&format!(
+                r#"SELECT json_to_string("attributes") FROM "{EXP_HISTOGRAMS_TABLE}"
+                   WHERE {name_filter} AND "ts" >= {} AND "ts" <= {}
+                   ORDER BY "ts" DESC LIMIT 2000"#,
+                sql_ts(*range.start()),
+                sql_ts(*range.end()),
+            ))
+            .await?;
+        let mut values = BTreeSet::new();
+        for row in &rows {
+            let value = match json_at(row, 0).get(label) {
+                Some(serde_json::Value::String(value)) => value.clone(),
+                Some(serde_json::Value::Bool(value)) => value.to_string(),
+                Some(serde_json::Value::Number(value)) => value.to_string(),
+                _ => continue,
+            };
+            if attribute_compare_value_allowed(&value) {
+                values.insert(value);
+                if values.len() >= 100 {
+                    break;
+                }
+            }
+        }
+        Ok(values.into_iter().collect())
     }
 }

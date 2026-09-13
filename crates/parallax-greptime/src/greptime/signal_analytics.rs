@@ -220,8 +220,12 @@ impl crate::adapter::RuntimeMetricStore for GreptimeStore {
             .unwrap_or_default();
         // Resolve the real count sibling table (dotted OTel names → underscore
         // native table + `_count` suffix), same as histogram_quantile.
+        // Missing table means "no native explicit histogram": serve
+        // ingest-converted exp rows (native wins when present).
         let Some(count_table) = self.metric_table_for_name(name, Some("_count")).await? else {
-            return Ok(Vec::new());
+            return self
+                .exp_count_series(name, service, range, step_nanos)
+                .await;
         };
         // native: the `<name>_count` sibling table holds the per-sample count
         // as `greptime_value`; sum it per window for the request-rate numerator.

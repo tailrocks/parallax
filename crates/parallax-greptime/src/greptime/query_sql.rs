@@ -386,3 +386,25 @@ pub(super) fn opt_literal(value: &Option<String>) -> String {
         None => "NULL".to_string(),
     }
 }
+
+/// Catalog stats arm over the converted-exp extension table. Same output
+/// contract as the native arm (`name`, `service`, `last_ms`, `cnt`): the
+/// nanos `ts` folds to ms, and one export counts once.
+pub(super) fn exp_catalog_arm(
+    exp_name: &str,
+    display: &str,
+    range: &RangeInclusive<u128>,
+) -> String {
+    let name_filter = metric_name_sql_filter(r#""name""#, exp_name);
+    format!(
+        r#"SELECT '{}' AS "name", CAST("service" AS STRING) AS "service",
+                  CAST(CAST(MAX("ts") AS BIGINT) / 1000000 AS BIGINT) AS "last_ms",
+                  COUNT(*) AS "cnt"
+           FROM "{EXP_HISTOGRAMS_TABLE}"
+           WHERE "ts" >= {} AND "ts" <= {} AND {name_filter}
+           GROUP BY "service""#,
+        escape(display),
+        sql_ts(*range.start()),
+        sql_ts(*range.end()),
+    )
+}
