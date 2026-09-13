@@ -1,14 +1,12 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router"
 import {
   IconArticleFilled,
-  IconBookmark,
   IconColumns,
   IconDeviceFloppy,
   IconHistory,
   IconPlayerPlayFilled,
   IconPlayerStopFilled,
   IconRefresh,
-  IconTrash,
   IconX,
 } from "@tabler/icons-react"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -19,6 +17,7 @@ import { useDelayedLoading } from "@/shared/console/hooks"
 import { TableSkeleton } from "@/shared/console/skeletons"
 import { useChartBrush } from "@/shared/console/use-chart-brush"
 import { WhereClauseChips, WhereClauseEditor } from "@/shared/console/where-clause-editor"
+import { SavedViewsMenu, type SavedView } from "@/features/logs/components/saved-views-menu"
 import { QueryBar, QueryBarRow } from "@/shared/console/query-bar"
 import { SectionError } from "@/shared/console/error-state"
 import { useFilterFocusShortcut } from "@/shared/keyboard"
@@ -38,9 +37,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
-  DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
@@ -57,7 +54,8 @@ import {
   parseLogColumns,
   serializeLogColumns,
 } from "@/features/logs/components/logs-table"
-import type { LogDoc, OptionalLogColumn } from "@/features/logs/components/logs-table"
+import type { LogDoc } from "@/features/logs/model/log-fields"
+import type { OptionalLogColumn } from "@/features/logs/components/logs-table"
 import { contextWindow, stepSecondsForRange } from "@/features/logs/model/logs-range"
 import { logStreamBatchDecoder } from "@/features/logs/api/log-stream-schema"
 import { mergeLiveLogs } from "@/features/logs/model/merge-live-logs"
@@ -95,14 +93,6 @@ export interface LogsData {
   logFacets: LogFacet[]
   logPatterns: LogPatternRow[]
   savedViews: SavedView[]
-}
-
-export interface SavedView {
-  id: string
-  name: string
-  page: string
-  state: string
-  updatedAtNanos: string
 }
 
 interface LogPatternRow {
@@ -832,66 +822,6 @@ export function ColumnMenu({
   )
 }
 
-export function SavedViewsMenu({
-  views,
-  onSelect,
-  onDelete,
-  onSave,
-}: {
-  views: SavedView[]
-  onSelect: (view: SavedView) => void
-  onDelete: (id: string) => void
-  onSave: () => void
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger render={<Button type="button" variant="outline" size="sm" />}>
-        <IconBookmark />
-        Views
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel>Saved views</DropdownMenuLabel>
-        <DropdownMenuGroup>
-          {views.length === 0 ? (
-            <DropdownMenuItem disabled>No saved views</DropdownMenuItem>
-          ) : (
-            views.map((view) => (
-              <DropdownMenuItem key={view.id} onClick={() => onSelect(view)}>
-                <IconBookmark />
-                <span className="truncate">{view.name}</span>
-              </DropdownMenuItem>
-            ))
-          )}
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onSave}>
-          <IconDeviceFloppy />
-          Save current view
-        </DropdownMenuItem>
-        {views.length > 0 ? (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Delete view</DropdownMenuLabel>
-            {views.map((view) => (
-              <DropdownMenuItem
-                key={`delete-${view.id}`}
-                variant="destructive"
-                onClick={(event) => {
-                  event.preventDefault()
-                  onDelete(view.id)
-                }}
-              >
-                <IconTrash />
-                <span className="truncate">{view.name}</span>
-              </DropdownMenuItem>
-            ))}
-          </>
-        ) : null}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-
 export { contextWindow, stepSecondsForRange } from "@/features/logs/model/logs-range"
 export { parseSavedViewState, validateLogsSearch } from "@/features/logs/model/logs-search"
 export type { LogsSearch } from "@/features/logs/model/logs-search"
@@ -901,4 +831,5 @@ export {
   parseLogColumns,
   serializeLogColumns,
 } from "@/features/logs/components/logs-table"
-export type { LogDoc, OptionalLogColumn } from "@/features/logs/components/logs-table"
+export type { LogDoc } from "@/features/logs/model/log-fields"
+export type { OptionalLogColumn } from "@/features/logs/components/logs-table"

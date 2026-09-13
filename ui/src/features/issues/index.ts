@@ -1,6 +1,7 @@
 // Public facade for issues (Plan 139). Named exports only.
 
-export { IssuesContent, IssuesPage, MiniSparkline } from "@/features/issues/components/issues-page"
+export { MiniSparkline } from "@/features/issues/components/issues-table"
+export { IssuesContent, IssuesPage } from "@/features/issues/components/issues-page"
 export {
   IssueDetailContent,
   IssueDetailRoutePage,

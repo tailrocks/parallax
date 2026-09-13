@@ -1,20 +1,17 @@
 // Public facade for logs (Plan 141). Named exports only.
 
-export {
-  ColumnMenu,
-  LogsPage,
-  SavedViewsMenu,
-  loadLogs,
-} from "@/features/logs/components/logs-page"
-export type { SavedView } from "@/features/logs/components/logs-page"
+export { ColumnMenu, LogsPage, loadLogs } from "@/features/logs/components/logs-page"
+export { SavedViewsMenu } from "@/features/logs/components/saved-views-menu"
+export type { SavedView } from "@/features/logs/components/saved-views-menu"
 export {
   LogsTable,
   OPTIONAL_LOG_COLUMNS,
   parseLogColumns,
   serializeLogColumns,
-  severityVariant,
 } from "@/features/logs/components/logs-table"
-export type { LogDoc, OptionalLogColumn } from "@/features/logs/components/logs-table"
+export { severityVariant } from "@/features/logs/model/log-fields"
+export type { LogDoc } from "@/features/logs/model/log-fields"
+export type { OptionalLogColumn } from "@/features/logs/components/logs-table"
 export { contextWindow, stepSecondsForRange } from "@/features/logs/model/logs-range"
 export {
   parseSavedViewState,
