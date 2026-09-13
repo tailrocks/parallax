@@ -1437,3 +1437,61 @@ async fn migration_stamps_user_version_on_fresh_open() {
         SCHEMA_USER_VERSION
     );
 }
+
+#[tokio::test]
+async fn same_fingerprint_in_two_services_stays_two_issues() {
+    // Issue identity is (service, fingerprint): one service's regression must
+    // never merge into (or freeze the service of) another's.
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(path).await.expect("open");
+    let attrs = serde_json::json!({});
+    store
+        .upsert_issue_occurrences(&[
+            occurrence("fp-dup", "checkout", 1_000_000_000, &attrs),
+            occurrence("fp-dup", "billing", 2_000_000_000, &attrs),
+        ])
+        .await
+        .expect("batch upsert");
+
+    let checkout = store
+        .issue("checkout", "fp-dup")
+        .await
+        .expect("issue")
+        .expect("checkout issue");
+    let billing = store
+        .issue("billing", "fp-dup")
+        .await
+        .expect("issue")
+        .expect("billing issue");
+    assert_eq!(checkout.service, "checkout");
+    assert_eq!(checkout.event_count, 1);
+    assert_eq!(billing.service, "billing");
+    assert_eq!(billing.event_count, 1);
+
+    // Cross-service batch upserts keep both counts independent.
+    store
+        .upsert_issue_occurrence(&occurrence("fp-dup", "checkout", 3_000_000_000, &attrs))
+        .await
+        .expect("second checkout occurrence");
+    let checkout = store
+        .issue("checkout", "fp-dup")
+        .await
+        .expect("issue")
+        .expect("checkout issue");
+    assert_eq!(checkout.event_count, 2);
+    assert_eq!(
+        store
+            .issue("billing", "fp-dup")
+            .await
+            .expect("issue")
+            .expect("billing issue")
+            .event_count,
+        1
+    );
+
+    let trend = store
+        .issue_trend("billing", "fp-dup", 0, 60)
+        .await
+        .expect("trend");
+    assert_eq!(trend.iter().map(|p| p.count).sum::<u64>(), 1);
+}
