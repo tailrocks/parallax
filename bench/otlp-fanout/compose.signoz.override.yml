@@ -1,6 +1,6 @@
 # Current SigNoz Foundry overlay. The base file is generated under
 # artifacts/research/<run>/signoz-pours/deployment/compose.yaml.
-# Pinned 2026-09-04 to SigNoz v0.140.0 and collector v0.144.9.
+# Pinned 2026-09-13 to SigNoz v0.141.1 and collector v0.144.9.
 services:
   ingester:
     image: signoz/signoz-otel-collector:v0.144.9@sha256:72aa1e4c1ec529f178e962c049be35cfd7abae02fe9a397edad10b4a9cba62fa
@@ -11,7 +11,7 @@ services:
       - signoz-network
       - lab
   signoz-signoz-0:
-    image: signoz/signoz:v0.140.0@sha256:7969e02eb3ea7904d6c824404ca2bc0205209527fd0fada00283156b8e78cc5c
+    image: signoz/signoz:v0.141.1@sha256:c10fa03e103c76bba2d67452bd26925f08a69f2a7b8d0f7982cea0e4f81ce88e
     ports: !override
       - "3301:8080"
     networks:
