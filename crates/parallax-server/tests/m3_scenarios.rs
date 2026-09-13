@@ -269,19 +269,21 @@ async fn stack_scenarios_cross_service_db_and_graphql_spans() {
         let issues = graphql(
             &client,
             handle.api_addr,
-            r"{ issues { items { fingerprint errorType } } }",
+            r"{ issues { items { service fingerprint errorType } } }",
         )
         .await;
-        if let Some(fp) = issues
+        if let Some((service, fp)) = issues
             .pointer("/data/issues/items")
             .and_then(|v| v.as_array())
             .and_then(|a| a.iter().find(|i| i["errorType"] == "tonic::Status"))
-            .and_then(|i| i["fingerprint"].as_str())
+            .and_then(|i| Some((i["service"].as_str()?, i["fingerprint"].as_str()?)))
         {
             let bundle = graphql(
                 &client,
                 handle.api_addr,
-                &format!(r#"{{ bundle(fingerprint: "{fp}") {{ markdown }} }}"#),
+                &format!(
+                    r#"{{ bundle(service: "{service}", fingerprint: "{fp}") {{ markdown }} }}"#
+                ),
             )
             .await;
             bundle_markdown = bundle
