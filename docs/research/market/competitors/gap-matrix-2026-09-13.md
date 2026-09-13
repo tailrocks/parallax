@@ -7,9 +7,10 @@ P0 freeze: finite list in scratch `p0-freeze.txt` (same 14 items; not grown).
 **Parallax-today** is HEAD `544e5a3d83fd7662c9849526225880a49c7e2317`
 (`goal/final-p0-hotfix`), not origin/main and not 2026-07 ledger prose. Pointers:
 
-- GraphQL SDL `ui/graphql/schema.graphql` (81 Query / 14 Mutation, recounted
-  2026-09-14 R3+R5: `rumSessions` + `rumSession` + `releaseHealth` new —
-  same count as ledger; 2026-09-13 audit M1: `chartAnnotations` new in PR71)
+- GraphQL SDL `ui/graphql/schema.graphql` (82 Query / 15 Mutation, recounted
+  2026-09-14 R1+R3+R5: `rumSessions` + `rumSession` + `sourceMaps` +
+  `releaseHealth` new, `sourceMapUpload` new — same count as ledger;
+  2026-09-13 audit M1: `chartAnnotations` new in PR71)
 - Issues: `(service, fingerprint)` PK (`crates/parallax-metadata/src/turso/connection.rs`);
   UI `/issues/$service/$fingerprint`; occurrence selection + `CorrelationCard`
   (`ui/src/features/issues/`)

@@ -163,6 +163,31 @@ async fn apply_schema_migrations(conn: &turso::Connection) -> anyhow::Result<()>
             }
         }
     }
+    if version < 6 {
+        // R1 artifact store: fresh databases already bootstrap the shape via
+        // SCHEMA; this adopts pre-v6 databases.
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS source_maps (
+               service     TEXT NOT NULL,
+               version     TEXT NOT NULL,
+               file        TEXT NOT NULL,
+               debug_id    TEXT,
+               uploaded_at INTEGER NOT NULL,
+               map_bytes   INTEGER NOT NULL DEFAULT 0,
+               map_sha256  TEXT NOT NULL DEFAULT '',
+               map_json    TEXT NOT NULL,
+               PRIMARY KEY (service, version, file)
+             )",
+            (),
+        )
+        .await?;
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS source_maps_service_version
+             ON source_maps(service, version)",
+            (),
+        )
+        .await?;
+    }
     conn.execute(&format!("PRAGMA user_version = {SCHEMA_USER_VERSION}"), ())
         .await?;
     Ok(())

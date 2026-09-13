@@ -2,6 +2,7 @@ use super::*;
 
 type IssueEvents = HashMap<(String, String), Vec<model::ErrorEventRow>>;
 type IssueEventCache = HashMap<IssueEventQuery, Arc<IssueEvents>>;
+type SourceMapCache = HashMap<(String, String), Arc<Vec<model::SourceMapRecord>>>;
 
 /// Request-scoped memo for the highest-fan-in anchored reads. Built fresh on
 /// every GraphQL request so sibling fields share one store round-trip per
@@ -11,6 +12,7 @@ pub struct RequestMemo {
     spans: tokio::sync::Mutex<HashMap<String, Arc<Vec<model::SpanRow>>>>,
     logs: tokio::sync::Mutex<HashMap<String, Arc<Vec<model::LogRow>>>>,
     issue_events: tokio::sync::Mutex<IssueEventCache>,
+    source_maps: tokio::sync::Mutex<SourceMapCache>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -84,6 +86,32 @@ impl ApiContext {
             cache
                 .entry(trace_id.to_string())
                 .or_insert_with(|| Arc::clone(&rows)),
+        ))
+    }
+
+    /// Stored maps for one (service, version) release, shared across an
+    /// issue's events within one request (the detail page reads 20 events).
+    pub async fn source_maps_for(
+        &self,
+        service: &str,
+        version: &str,
+    ) -> FieldResult<Arc<Vec<model::SourceMapRecord>>> {
+        let key = (service.to_string(), version.to_string());
+        {
+            let cache = self.memo.source_maps.lock().await;
+            if let Some(records) = cache.get(&key) {
+                return Ok(Arc::clone(records));
+            }
+        }
+        let records = Arc::new(
+            self.metadata
+                .source_maps(service, version)
+                .await
+                .map_err(internal_field_err)?,
+        );
+        let mut cache = self.memo.source_maps.lock().await;
+        Ok(Arc::clone(
+            cache.entry(key).or_insert_with(|| Arc::clone(&records)),
         ))
     }
 

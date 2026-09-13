@@ -22,6 +22,7 @@ import {
   parseIssueAttributes,
   type IssueDetailData,
   type IssueEvent,
+  type MappedFrame,
 } from "@/features/issues/model/issue-detail"
 import {
   parseStacktrace,
@@ -35,6 +36,7 @@ import {
   type IssueCorrelationState,
 } from "@/features/issues/components/correlation-card"
 import { Occurrences } from "@/features/issues/components/occurrences"
+import { SourceMapCard } from "@/features/issues/components/source-map-card"
 import { LongValue } from "@/features/issues/components/long-value"
 import { TrendChart } from "@/features/issues/components/issue-trend-chart"
 import { PinButton } from "@/features/investigations"
@@ -231,9 +233,7 @@ export function IssueDetailContent({
             <Badge variant="secondary">run {shortRunId(correlationInvocationId)}</Badge>
           </Link>
         ) : null}
-        <Badge variant={issueStatusBadgeVariant(currentIssue.status)}>
-          {currentIssue.status}
-        </Badge>
+        <Badge variant={issueStatusBadgeVariant(currentIssue.status)}>{currentIssue.status}</Badge>
         <Badge variant="secondary">
           first <RelativeTime nanos={currentIssue.firstSeenNanos} />
         </Badge>
@@ -281,7 +281,12 @@ export function IssueDetailContent({
       />
       {selectedEvent ? <AttributesCard event={selectedEvent} /> : null}
       {selectedEvent ? (
-        <StacktraceCard event={selectedEvent} culprit={currentIssue.culprit} range={range} />
+        <StacktraceCard
+          event={selectedEvent}
+          culprit={currentIssue.culprit}
+          range={range}
+          onSourceMapUploaded={() => void router.invalidate()}
+        />
       ) : null}
       {selectedEvent ? (
         <MetricStrip
@@ -334,22 +339,33 @@ function StacktraceCard({
   event,
   culprit,
   range,
+  onSourceMapUploaded,
 }: {
   event: IssueEvent
   culprit: string | null
   range: ResolvedRange
+  onSourceMapUploaded: () => void
 }) {
   const [showLibraries, setShowLibraries] = useState(false)
+  const mapped = event.mappedFrames
   const frames = parseStacktrace(event.stacktrace)
   const structured = structuredFrameCount(frames)
   const libraryCount = frames.filter((frame) => frame.isApp === false).length
   const visibleFrames = showLibraries ? frames : frames.filter((frame) => frame.isApp !== false)
+  const resolvedCount = mapped.filter((frame) => frame.resolved).length
 
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="text-sm">Selected occurrence stacktrace</CardTitle>
-        {event.stacktrace ? <CopyButton value={event.stacktrace} /> : null}
+        <div className="flex items-center gap-2">
+          {mapped.length > 0 ? (
+            <Badge variant={resolvedCount === mapped.length ? "default" : "secondary"}>
+              {resolvedCount}/{mapped.length} frames mapped
+            </Badge>
+          ) : null}
+          {event.stacktrace ? <CopyButton value={event.stacktrace} /> : null}
+        </div>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm">{event.message}</p>
@@ -364,7 +380,22 @@ function StacktraceCard({
             <IconArrowUpRight className="size-3.5" />
           </Link>
         ) : null}
-        {event.stacktrace && structured >= 2 ? (
+        {mapped.length > 0 ? (
+          <div className="overflow-hidden rounded-lg border">
+            {mapped.map((frame, index) => (
+              <MappedFrameRow key={`${frame.raw}-${index}`} frame={frame} culprit={culprit} />
+            ))}
+          </div>
+        ) : null}
+        {mapped.length > 0 && resolvedCount < mapped.length ? (
+          <SourceMapCard
+            service={event.service}
+            version={event.serviceVersion}
+            frameFile={mapped.find((frame) => !frame.resolved)?.file ?? null}
+            onUploaded={onSourceMapUploaded}
+          />
+        ) : null}
+        {mapped.length === 0 && event.stacktrace && structured >= 2 ? (
           <div className="overflow-hidden rounded-lg border">
             {visibleFrames.map((frame, index) => (
               <FrameRow key={`${frame.raw}-${index}`} frame={frame} culprit={culprit} />
@@ -379,15 +410,59 @@ function StacktraceCard({
               </button>
             ) : null}
           </div>
-        ) : event.stacktrace ? (
+        ) : mapped.length === 0 && event.stacktrace ? (
           <pre className="max-h-96 overflow-auto rounded-md border bg-muted/30 p-3 text-xs leading-relaxed">
             {event.stacktrace}
           </pre>
-        ) : (
+        ) : mapped.length === 0 ? (
           <p className="text-sm text-muted-foreground">No stacktrace captured.</p>
-        )}
+        ) : null}
       </CardContent>
     </Card>
+  )
+}
+
+function MappedFrameRow({ frame, culprit }: { frame: MappedFrame; culprit: string | null }) {
+  const highlighted =
+    Boolean(culprit) &&
+    Boolean(
+      frame.raw.includes(culprit ?? "") ||
+      frame.file.includes(culprit ?? "") ||
+      (frame.source ?? "").includes(culprit ?? "") ||
+      (frame.name ?? "").includes(culprit ?? "")
+    )
+  const generated = `${frame.file}:${frame.line}:${frame.column}`
+  return (
+    <div
+      className={cn(
+        "grid gap-1 border-b px-3 py-2 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]",
+        !frame.resolved && "text-muted-foreground",
+        frame.resolved && "font-medium",
+        highlighted && "shadow-[inset_3px_0_0_rgba(244,63,94,0.85)]"
+      )}
+    >
+      <span className="truncate font-mono text-xs" title={generated}>
+        {frame.resolved && frame.source ? (
+          <>
+            {frame.source}
+            {frame.sourceLine ? `:${frame.sourceLine}` : ""}
+            {frame.sourceColumn ? `:${frame.sourceColumn}` : ""}
+          </>
+        ) : (
+          generated
+        )}
+      </span>
+      <span className="truncate text-xs text-muted-foreground" title={frame.raw}>
+        {frame.resolved ? (
+          <>
+            {frame.name ? `${frame.name} · ` : ""}
+            {generated}
+          </>
+        ) : (
+          frame.raw
+        )}
+      </span>
+    </div>
   )
 }
 

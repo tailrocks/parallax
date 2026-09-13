@@ -327,6 +327,12 @@ export type ErrorEvent = {
    * signal carried one — the anchor for error → run navigation.
    */
   readonly invocationId: Maybe<Scalars["String"]["output"]>
+  /**
+   * V8 frames resolved against the stored source maps for this event's
+   * (service, version). Empty for non-JS stacks; `resolved` is false per
+   * frame when no artifact matches.
+   */
+  readonly mappedFrames: ReadonlyArray<MappedFrame>
   readonly message: Scalars["String"]["output"]
   readonly service: Scalars["String"]["output"]
   /** `service.version` of the emitting resource (release context). */
@@ -569,6 +575,27 @@ export type LogRecord = {
   readonly tsNanos: Scalars["String"]["output"]
 }
 
+export type MappedFrame = {
+  readonly __typename?: "MappedFrame"
+  /** Generated 0-based column. */
+  readonly column: Scalars["Int"]["output"]
+  /** Generated (minified) file. */
+  readonly file: Scalars["String"]["output"]
+  /** Generated 1-based line. */
+  readonly line: Scalars["Int"]["output"]
+  /** Original symbol name, when the segment carries one. */
+  readonly name: Maybe<Scalars["String"]["output"]>
+  /** The raw `at …` frame line, for display fallback and copy. */
+  readonly raw: Scalars["String"]["output"]
+  readonly resolved: Scalars["Boolean"]["output"]
+  /** Original source file, when resolved. */
+  readonly source: Maybe<Scalars["String"]["output"]>
+  /** Original 0-based column, when resolved. */
+  readonly sourceColumn: Maybe<Scalars["Int"]["output"]>
+  /** Original 1-based line, when resolved. */
+  readonly sourceLine: Maybe<Scalars["Int"]["output"]>
+}
+
 export type MetricCatalogRow = {
   readonly __typename?: "MetricCatalogRow"
   /** gauge | sum | histogram — bounds legal aggregations client-side. */
@@ -645,6 +672,11 @@ export type Mutation = {
   readonly savedViewDelete: Scalars["Boolean"]["output"]
   /** Create or update a named saved page state. */
   readonly savedViewSave: SavedView
+  /**
+   * Upload (or replace) one source-map v3 artifact for a (service,
+   * version, file) release file. Rejects malformed maps at the boundary.
+   */
+  readonly sourceMapUpload: SourceMapArtifact
 }
 
 export type MutationAlertDestinationDeleteArgs = {
@@ -724,6 +756,14 @@ export type MutationSavedViewSaveArgs = {
   name: Scalars["String"]["input"]
   page: Scalars["String"]["input"]
   state: Scalars["String"]["input"]
+}
+
+export type MutationSourceMapUploadArgs = {
+  debugId: InputMaybe<Scalars["String"]["input"]>
+  file: Scalars["String"]["input"]
+  map: Scalars["String"]["input"]
+  service: Scalars["String"]["input"]
+  version: Scalars["String"]["input"]
 }
 
 export type ObservedInvocation = {
@@ -949,6 +989,12 @@ export type Query = {
   readonly sessions: ReadonlyArray<Session>
   /** Per-signal count series for overview trend charts. */
   readonly signalCountSeries: ReadonlyArray<Point>
+  /**
+   * Stored source-map artifacts for one (service, version) release, newest
+   * first. Metadata only — map content is never exposed; frames resolve
+   * server-side via `ErrorEvent.mappedFrames`.
+   */
+  readonly sourceMaps: ReadonlyArray<SourceMapArtifact>
   /**
    * Raw read-only SQL against the telemetry engine (`GreptimeDB`) — the
    * engine's full query power over logs, traces, and metrics tables.
@@ -1373,6 +1419,11 @@ export type QuerySignalCountSeriesArgs = {
   toNanos: Scalars["String"]["input"]
 }
 
+export type QuerySourceMapsArgs = {
+  service: Scalars["String"]["input"]
+  version: Scalars["String"]["input"]
+}
+
 export type QuerySqlArgs = {
   query: Scalars["String"]["input"]
 }
@@ -1665,6 +1716,17 @@ export type Session = {
 }
 
 export type SignalKind = "ERRORS" | "LOGS" | "METRIC_POINTS" | "SPANS" | "TRACES"
+
+export type SourceMapArtifact = {
+  readonly __typename?: "SourceMapArtifact"
+  readonly debugId: Maybe<Scalars["String"]["output"]>
+  readonly file: Scalars["String"]["output"]
+  readonly mapBytes: Scalars["Int"]["output"]
+  readonly mapSha256: Scalars["String"]["output"]
+  readonly service: Scalars["String"]["output"]
+  readonly uploadedAtNanos: Scalars["String"]["output"]
+  readonly version: Scalars["String"]["output"]
+}
 
 export type Span = {
   readonly __typename?: "Span"

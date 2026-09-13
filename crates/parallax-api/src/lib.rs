@@ -40,9 +40,10 @@ use resolvers::{
     FieldStats, Investigation, Invocation, Issue, IssueList, IssueSort, LogRecord, MetricExemplar,
     ObservedInvocation, Overview, Point, ReleaseHealth, ReleaseWindow, RumSessionDetailOut,
     RumSessionOut, RuntimeMetric, SavedView, Series, ServiceCatalogRow, ServiceMap,
-    ServiceOverview, ServiceSummary, SignalKind, SpanRed, SqlResultOut, StoryBeat, TestCaseDetail,
-    TestConfigurationFilterInput, TestExplorerPage, TestExplorerSort, TestFlakyState, TestRollup,
-    Trace, TraceDiff, TraceEventsOut, TraceList, TraceSort, TraceSummary, TrendPoint,
+    ServiceOverview, ServiceSummary, SignalKind, SourceMapArtifact, SpanRed, SqlResultOut,
+    StoryBeat, TestCaseDetail, TestConfigurationFilterInput, TestExplorerPage, TestExplorerSort,
+    TestFlakyState, TestRollup, Trace, TraceDiff, TraceEventsOut, TraceList, TraceSort,
+    TraceSummary, TrendPoint,
 };
 
 mod memo;
@@ -188,6 +189,11 @@ impl Query {
     /// Occurrence counts per bucket for one issue's sparkline, oldest
     /// first. Defaults: the last 24 hours in one-hour buckets.
     async fn issue_trend(context: &ApiContext, service: String, fingerprint: String, hours: Option<i32>, step_seconds: Option<i32>,) -> FieldResult<Vec<TrendPoint>> { resolvers::issues::issue_trend(context, service, fingerprint, hours, step_seconds).await }
+
+    /// Stored source-map artifacts for one (service, version) release, newest
+    /// first. Metadata only — map content is never exposed; frames resolve
+    /// server-side via `ErrorEvent.mappedFrames`.
+    async fn source_maps(context: &ApiContext, service: String, version: String,) -> FieldResult<Vec<SourceMapArtifact>> { resolvers::source_maps::source_maps(context, service, version).await }
 
     /// Every span of one trace, start-time ascending (cross-service).
     async fn trace(context: &ApiContext, trace_id: String) -> FieldResult<Option<Trace>> { resolvers::traces::trace(context, trace_id).await }
@@ -478,6 +484,10 @@ impl Mutation {
 
     /// Delete a notification destination.
     async fn alert_destination_delete(context: &ApiContext, id: String) -> FieldResult<bool> { resolvers::alerts::alert_destination_delete(context, id).await }
+
+    /// Upload (or replace) one source-map v3 artifact for a (service,
+    /// version, file) release file. Rejects malformed maps at the boundary.
+    async fn source_map_upload(context: &ApiContext, service: String, version: String, file: String, map: String, debug_id: Option<String>,) -> FieldResult<SourceMapArtifact> { resolvers::source_maps::source_map_upload(context, service, version, file, map, debug_id).await }
 
 }
 

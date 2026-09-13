@@ -19,6 +19,7 @@ pub(crate) mod rum;
     reason = "telemetry analytics"
 )]
 pub(crate) mod services;
+pub(crate) mod source_maps;
 pub(crate) mod sql;
 pub(crate) mod story;
 pub(crate) mod tests;
@@ -73,6 +74,8 @@ pub(crate) use services::ServiceOverview;
 pub(crate) use services::ServiceSummary;
 pub(crate) use services::SignalKind;
 pub(crate) use services::SpanRed;
+pub(crate) use source_maps::MappedFrame;
+pub(crate) use source_maps::SourceMapArtifact;
 pub(crate) use sql::SqlResultOut;
 pub(crate) use story::AgentSessionOut;
 pub(crate) use story::StoryBeat;
