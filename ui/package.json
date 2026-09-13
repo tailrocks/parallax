@@ -6,16 +6,19 @@
   "trustedDependencies": [],
   "overrides": {
     "@hono/node-server": "2.0.11",
+    "baseline-browser-mapping": "2.11.0",
     "body-parser": "2.3.0",
     "brace-expansion": "5.0.9",
-    "fast-uri": "4.1.2",
+    "browserslist": "4.28.7",
+    "fast-uri": "4.1.3",
     "graphql": "16.14.2",
-    "hono": "4.13.1",
+    "hono": "4.13.5",
     "ip-address": "10.5.0",
     "js-yaml": "5.2.3",
     "nanoid": "3.3.18",
     "postcss": "8.5.26",
     "shell-quote": "1.10.0",
+    "qs": "6.16.0",
     "undici": "7.29.0"
   },
   "scripts": {
@@ -101,6 +104,6 @@
     "shadcn": "^4.13.0",
     "typescript": "7.0.2",
     "vite": "^8.1.4",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   }
 }
