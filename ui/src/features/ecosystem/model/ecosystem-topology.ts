@@ -14,8 +14,8 @@ export type TopologyNodeKind = "service" | "cli" | "browser" | "database" | "que
 export interface TopologyNode {
   id: string
   name: string
-  kind?: TopologyNodeKind
-  system?: string
+  kind?: string
+  system?: string | null | undefined
 }
 
 export interface TopologyEdge {
@@ -77,14 +77,12 @@ export function neighborhoodIds(
   if (hops <= 0) return result
   let frontier = new Set<string>([focus])
   for (let h = 0; h < hops; h++) {
+    const candidates = [...frontier].flatMap((id) => [...(adj.get(id) ?? [])])
     const next = new Set<string>()
-    for (const id of frontier) {
-      for (const n of adj.get(id) ?? []) {
-        if (!result.has(n)) {
-          result.add(n)
-          next.add(n)
-        }
-      }
+    for (const n of candidates) {
+      if (result.has(n)) continue
+      result.add(n)
+      next.add(n)
     }
     frontier = next
     if (frontier.size === 0) break
@@ -233,4 +231,32 @@ export function edgeWidthFromCalls(callCount: number, minW = 1, maxW = 8): numbe
   if (callCount <= 0) return minW
   const t = Math.log2(callCount + 1) / Math.log2(1_000 + 1)
   return minW + (maxW - minW) * Math.min(1, Math.max(0, t))
+}
+
+export type EdgeTrafficBand = "low" | "medium" | "high"
+
+/** Stable bands for width, dash cadence, and legend explanation. */
+export function edgeTrafficBand(callCount: number): EdgeTrafficBand {
+  if (callCount >= 100) return "high"
+  if (callCount >= 10) return "medium"
+  return "low"
+}
+
+export function serviceMapEdgePresentation(edge: {
+  callCount: number | string
+  errorCount: number | string
+}): {
+  band: EdgeTrafficBand
+  className: string
+  hasError: boolean
+  width: number
+} {
+  const calls = Math.max(0, Number(edge.callCount) || 0)
+  const band = edgeTrafficBand(calls)
+  return {
+    band,
+    className: `service-map-edge--traffic-${band}`,
+    hasError: (Number(edge.errorCount) || 0) > 0,
+    width: edgeWidthFromCalls(calls),
+  }
 }

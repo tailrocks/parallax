@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate } from "@tanstack/react-router"
-import { IconTerminal2, IconWorld } from "@tabler/icons-react"
 import { Background, Handle, MarkerType, Position, ReactFlow } from "@xyflow/react"
 import type { Edge, Node, NodeProps } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
@@ -8,6 +7,8 @@ import "@xyflow/react/dist/style.css"
 import { ServiceDot } from "@/shared/console/service-dot"
 import { Badge } from "@/components/ui/badge"
 import type { ServiceMapEdge, ServiceMapNode } from "@/features/ecosystem/model/service-map"
+import { serviceMapEdgePresentation } from "@/features/ecosystem/model/ecosystem-topology"
+import { nodePresentation } from "@/features/ecosystem/model/service-map-presentation"
 import {
   ECOSYSTEM_NODE_HEIGHT,
   ECOSYSTEM_NODE_WIDTH,
@@ -20,6 +21,7 @@ import { formatCount, formatDurationNs, formatPercent } from "@/shared/format"
 import { rangeLinkSearch } from "@/domain/time-range/range"
 import type { ResolvedRange } from "@/domain/time-range/range"
 import { cn } from "@/lib/utils"
+import { EcosystemLegend } from "@/features/ecosystem/components/ecosystem-legend"
 
 const MIN_HEIGHT = 420
 const NODE_WIDTH = ECOSYSTEM_NODE_WIDTH
@@ -71,6 +73,7 @@ interface ServiceNodeData extends Record<string, unknown> {
 function ServiceGraphNode({ data }: NodeProps<Node<ServiceNodeData>>) {
   const { node, dimmed, range } = data
   const errors = count(node.errorCount)
+  const { Icon, color } = nodePresentation(node.kind)
   const className = cn(
     "flex h-full w-full flex-col justify-center gap-1 rounded-lg border bg-card px-3 py-2 text-sm shadow-sm hover:bg-muted/50",
     errors > 0 && "border-rose-500/50",
@@ -79,16 +82,16 @@ function ServiceGraphNode({ data }: NodeProps<Node<ServiceNodeData>>) {
   const body = (
     <>
       <span className="inline-flex min-w-0 items-center gap-1.5 font-medium">
-        {node.kind === "cli" ? (
-          <IconTerminal2 className="size-3.5 shrink-0 text-violet-500" />
-        ) : node.kind === "browser" ? (
-          <IconWorld className="size-3.5 shrink-0 text-sky-500" />
-        ) : null}
+        <Icon className={cn("size-3.5 shrink-0", color)} />
         <ServiceDot name={node.name} />
         <span className="truncate">{node.name}</span>
       </span>
+      <span className="truncate text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+        {node.kind}
+        {node.system && node.system !== node.name ? ` · ${node.system}` : ""}
+      </span>
       <span className="text-xs text-muted-foreground tabular-nums">
-        {formatCount(count(node.spanCount))} spans
+        {formatCount(count(node.spanCount))} spans · {formatCount(errors)} errors
         {node.p95Ms != null ? ` · p95 ${formatDurationNs(node.p95Ms * 1_000_000)}` : ""}
       </span>
     </>
@@ -100,7 +103,7 @@ function ServiceGraphNode({ data }: NodeProps<Node<ServiceNodeData>>) {
         <Link to="/invocations" search={{ q: node.name }} className={className}>
           {body}
         </Link>
-      ) : (
+      ) : node.kind === "service" || node.kind === "browser" ? (
         <Link
           to="/services/$service"
           params={{ service: node.name }}
@@ -109,6 +112,18 @@ function ServiceGraphNode({ data }: NodeProps<Node<ServiceNodeData>>) {
         >
           {body}
         </Link>
+      ) : (
+        <div
+          className={cn(
+            className,
+            "cursor-default focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          )}
+          role="group"
+          tabIndex={0}
+          aria-label={`${node.kind} dependency ${node.name}${node.system ? `, system ${node.system}` : ""}`}
+        >
+          {body}
+        </div>
       )}
       <Handle type="source" position={Position.Right} className="!opacity-0" />
     </div>
@@ -116,6 +131,34 @@ function ServiceGraphNode({ data }: NodeProps<Node<ServiceNodeData>>) {
 }
 
 const nodeTypes = { service: ServiceGraphNode }
+
+function toFlowEdges(edges: ServiceMapEdge[], dimmedNodeIds: ReadonlySet<string>): Edge[] {
+  return edges.map((edge) => {
+    const dimmed = dimmedNodeIds.has(edge.source) || dimmedNodeIds.has(edge.target)
+    const presentation = serviceMapEdgePresentation(edge)
+    const summary = `${formatCount(count(edge.callCount))} calls · ${formatPercent(edgeRate(edge))} errors · p50 ${formatDurationNs(edge.p50Ms * 1_000_000)} · p95 ${formatDurationNs(edge.p95Ms * 1_000_000)}`
+    return {
+      id: `${edge.source}->${edge.target}`,
+      source: edge.source,
+      target: edge.target,
+      label: summary,
+      ariaLabel: `${edge.source} → ${edge.target}: ${summary}`,
+      className: presentation.className,
+      labelStyle: { fill: "var(--muted-foreground)", fontSize: 10 },
+      labelBgStyle: { fill: "var(--background)", fillOpacity: 0.9 },
+      labelBgPadding: [5, 2],
+      style: {
+        stroke: presentation.hasError ? "var(--chart-error)" : "var(--border)",
+        strokeWidth: presentation.width,
+        opacity: dimmed ? 0.25 : 1,
+      },
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        color: presentation.hasError ? "var(--chart-error)" : "var(--muted-foreground)",
+      },
+    }
+  })
+}
 
 export function EcosystemGraph({
   nodes,
@@ -154,27 +197,7 @@ export function EcosystemGraph({
     }
   })
 
-  const flowEdges: Edge[] = edges.map((edge) => {
-    const dimmed = dimmedNodeIds.has(edge.source) || dimmedNodeIds.has(edge.target)
-    const hasError = count(edge.errorCount) > 0
-    return {
-      id: `${edge.source}->${edge.target}`,
-      source: edge.source,
-      target: edge.target,
-      label: `${formatCount(count(edge.callCount))} calls · ${formatPercent(edgeRate(edge))} errors · p95 ${formatDurationNs(edge.p95Ms * 1_000_000)}`,
-      labelStyle: { fill: "var(--muted-foreground)", fontSize: 10 },
-      labelBgStyle: { fill: "var(--background)", fillOpacity: 0.9 },
-      style: {
-        stroke: hasError ? "var(--chart-error)" : "var(--border)",
-        strokeWidth: 1.5,
-        opacity: dimmed ? 0.25 : 1,
-      },
-      markerEnd: {
-        type: MarkerType.ArrowClosed,
-        color: hasError ? "var(--chart-error)" : "var(--muted-foreground)",
-      },
-    }
-  })
+  const flowEdges = toFlowEdges(edges, dimmedNodeIds)
 
   if (nodes.length === 0) {
     return (
@@ -189,7 +212,7 @@ export function EcosystemGraph({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm text-muted-foreground">
-          {formatCount(nodes.length)} services · {formatCount(edges.length)} edges
+          {formatCount(nodes.length)} nodes · {formatCount(edges.length)} edges
           {hiddenNodeCount + hiddenEdgeCount > 0 ? (
             <Badge variant="secondary" className="ml-2">
               {formatCount(hiddenNodeCount + hiddenEdgeCount)} hidden
@@ -197,12 +220,6 @@ export function EcosystemGraph({
           ) : null}
         </span>
         <span className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <IconTerminal2 className="size-3.5 text-violet-500" /> cli
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <IconWorld className="size-3.5 text-sky-500" /> browser
-          </span>
           <Badge variant="secondary">trace-path</Badge>
         </span>
       </div>
@@ -210,7 +227,7 @@ export function EcosystemGraph({
         className="overflow-hidden rounded-lg border bg-background"
         style={{ height }}
         aria-label="service dependency graph"
-        role="img"
+        role="group"
       >
         <ReactFlow
           nodes={flowNodes}
@@ -232,6 +249,7 @@ export function EcosystemGraph({
           <Background gap={24} className="!bg-background" />
         </ReactFlow>
       </div>
+      <EcosystemLegend />
     </div>
   )
 }

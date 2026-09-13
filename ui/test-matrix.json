@@ -4,8 +4,8 @@
     "fire_event_calls": 47,
     "legacy_handoffs": 2,
     "raw_router_builders": 1,
-    "test_cases": 686,
-    "test_files": 184
+    "test_cases": 691,
+    "test_files": 187
   },
   "private_route_imports": [],
   "entries": [
@@ -98,9 +98,53 @@
       "layer": "component",
       "test_file": "ui/src/features/ecosystem/tests/components/ecosystem-graph.test.tsx",
       "test_ids": [
-        "D-014 eco-full: a 9-node column grows the canvas instead of overlapping cards",
         "dims outside-focus nodes and reports hidden topology",
         "renders trace-path graph nodes and edge links"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-service-map-render",
+      "surface": "features/ecosystem",
+      "risk": "Typed service-map render can lose dependency kinds, systems, traffic/error encoding, or long-value readability",
+      "scenario_owner": "features/ecosystem",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/features/ecosystem/tests/components/ecosystem-render.test.tsx",
+      "test_ids": [
+        "keeps long dependency identities and metrics readable",
+        "keeps the empty state actionable",
+        "renders traffic bands, error encoding, and the complete legend"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-ecosystem-layout",
+      "surface": "features/ecosystem",
+      "risk": "A large ecosystem column can overlap cards or fail to grow the canvas",
+      "scenario_owner": "features/ecosystem",
+      "lane_owner": "vitest/component",
+      "layer": "component",
+      "test_file": "ui/src/features/ecosystem/tests/components/ecosystem-layout.test.tsx",
+      "test_ids": [
+        "D-014 eco-full: a 9-node column grows the canvas instead of overlapping cards"
+      ],
+      "required_environment": "jsdom-or-bun",
+      "status": "implemented"
+    },
+    {
+      "id": "vitest-service-map-wire",
+      "surface": "features/ecosystem",
+      "risk": "Wire mapping can downgrade backend dependency kinds or discard dependency systems",
+      "scenario_owner": "features/ecosystem",
+      "lane_owner": "vitest/model",
+      "layer": "model",
+      "test_file": "ui/src/features/ecosystem/tests/model/service-map.test.ts",
+      "test_ids": [
+        "encodes traffic bands and errors deterministically",
+        "preserves every backend kind and system without downgrades"
       ],
       "required_environment": "jsdom-or-bun",
       "status": "implemented"
