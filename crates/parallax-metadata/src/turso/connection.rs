@@ -39,6 +39,92 @@ async fn apply_schema_migrations(conn: &turso::Connection) -> anyhow::Result<()>
             drop(conn.execute(column, ()).await);
         }
     }
+    if version < 4 {
+        // Issue identity becomes (service, fingerprint): rebuild the issue
+        // tables from their fingerprint-keyed shapes. Pre-v4 rows carry one
+        // service per fingerprint (first-writer freeze), so the copy is 1:1
+        // for issues; buckets and occurrences inherit the parent's service.
+        // Fresh databases already bootstrap the new shape — rebuild only when
+        // `service` is not yet part of the issues primary key.
+        let mut columns = conn.query("PRAGMA table_info(issues)", ()).await?;
+        let mut service_in_pk = false;
+        while let Some(row) = columns.next().await? {
+            service_in_pk |= text(&row, 1) == "service" && integer(&row, 5) > 0;
+        }
+        drop(columns);
+        if !service_in_pk {
+        conn.execute(
+            "CREATE TABLE issues_identity (
+              service       TEXT NOT NULL,
+              fingerprint   TEXT NOT NULL,
+              title         TEXT NOT NULL,
+              error_type    TEXT NOT NULL,
+              culprit       TEXT,
+              status        TEXT NOT NULL DEFAULT 'open',
+              resolved_at   INTEGER,
+              first_seen    INTEGER NOT NULL,
+              last_seen     INTEGER NOT NULL,
+              event_count   INTEGER NOT NULL DEFAULT 0,
+              last_trace_id TEXT,
+              tags          TEXT NOT NULL DEFAULT '{}',
+              PRIMARY KEY (service, fingerprint)
+            )",
+            (),
+        )
+        .await?;
+        conn.execute(
+            "INSERT OR REPLACE INTO issues_identity
+               (service, fingerprint, title, error_type, culprit, status,
+                resolved_at, first_seen, last_seen, event_count, last_trace_id, tags)
+             SELECT service, fingerprint, title, error_type, culprit, status,
+                    resolved_at, first_seen, last_seen, event_count, last_trace_id, tags
+             FROM issues",
+            (),
+        )
+        .await?;
+        conn.execute("DROP TABLE issues", ()).await?;
+        conn.execute("ALTER TABLE issues_identity RENAME TO issues", ())
+            .await?;
+        conn.execute(
+            "CREATE TABLE issue_buckets_identity (
+              service     TEXT NOT NULL,
+              fingerprint TEXT NOT NULL,
+              bucket_ts   INTEGER NOT NULL,
+              count       INTEGER NOT NULL DEFAULT 0,
+              PRIMARY KEY (service, fingerprint, bucket_ts)
+            )",
+            (),
+        )
+        .await?;
+        conn.execute(
+            "INSERT OR REPLACE INTO issue_buckets_identity
+               (service, fingerprint, bucket_ts, count)
+             SELECT i.service, b.fingerprint, b.bucket_ts, b.count
+             FROM issue_buckets b JOIN issues i USING (fingerprint)",
+            (),
+        )
+        .await?;
+        conn.execute("DROP TABLE issue_buckets", ()).await?;
+        conn.execute(
+            "ALTER TABLE issue_buckets_identity RENAME TO issue_buckets",
+            (),
+        )
+        .await?;
+        drop(conn.execute(
+            "ALTER TABLE issue_occurrences ADD COLUMN service TEXT NOT NULL DEFAULT ''",
+            (),
+        )
+        .await);
+        conn.execute(
+            "UPDATE issue_occurrences
+             SET service = (SELECT i.service FROM issues i
+                            WHERE i.fingerprint = issue_occurrences.fingerprint)
+             WHERE service = ''",
+            (),
+        )
+        .await?;
+        }
+    }
     conn.execute(&format!("PRAGMA user_version = {SCHEMA_USER_VERSION}"), ())
         .await?;
     Ok(())

@@ -118,11 +118,13 @@ impl TursoMetadataStore {
         let mut rows = conn
             .query(
                 "SELECT
-                   (SELECT COUNT(*) FROM issue_buckets b JOIN issues i USING (fingerprint)
+                   (SELECT COUNT(*) FROM issue_buckets b JOIN issues i
+                      ON i.service = b.service AND i.fingerprint = b.fingerprint
                     WHERE i.status = 'resolved' AND i.resolved_at IS NOT NULL AND i.resolved_at <= ?1
                       AND NOT EXISTS (SELECT 1 FROM evidence_pins p WHERE p.anchor_kind = 'issue'
                         AND p.anchor_id = i.fingerprint AND (p.expires_at IS NULL OR p.expires_at > ?2))),
-                   (SELECT COUNT(*) FROM issue_occurrences o JOIN issues i USING (fingerprint)
+                   (SELECT COUNT(*) FROM issue_occurrences o JOIN issues i
+                      ON i.service = o.service AND i.fingerprint = o.fingerprint
                     WHERE i.status = 'resolved' AND i.resolved_at IS NOT NULL AND i.resolved_at <= ?1
                       AND NOT EXISTS (SELECT 1 FROM evidence_pins p WHERE p.anchor_kind = 'issue'
                         AND p.anchor_id = i.fingerprint AND (p.expires_at IS NULL OR p.expires_at > ?2)))",
@@ -297,8 +299,8 @@ impl TursoMetadataStore {
         // Dependents first so a partial failure never leaves orphan parents
         // while dropping owned rows (owner-cascade only).
         tx.execute(
-            "DELETE FROM issue_buckets WHERE fingerprint IN (
-               SELECT fingerprint FROM issues
+            "DELETE FROM issue_buckets WHERE (service, fingerprint) IN (
+               SELECT service, fingerprint FROM issues
                WHERE status = 'resolved' AND resolved_at IS NOT NULL AND resolved_at <= ?1
                  AND NOT EXISTS (SELECT 1 FROM evidence_pins p WHERE p.anchor_kind = 'issue'
                    AND p.anchor_id = issues.fingerprint AND (p.expires_at IS NULL OR p.expires_at > ?2))
@@ -307,8 +309,8 @@ impl TursoMetadataStore {
         )
         .await?;
         tx.execute(
-            "DELETE FROM issue_occurrences WHERE fingerprint IN (
-               SELECT fingerprint FROM issues
+            "DELETE FROM issue_occurrences WHERE (service, fingerprint) IN (
+               SELECT service, fingerprint FROM issues
                WHERE status = 'resolved' AND resolved_at IS NOT NULL AND resolved_at <= ?1
                  AND NOT EXISTS (SELECT 1 FROM evidence_pins p WHERE p.anchor_kind = 'issue'
                    AND p.anchor_id = issues.fingerprint AND (p.expires_at IS NULL OR p.expires_at > ?2))

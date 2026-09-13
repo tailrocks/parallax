@@ -26,10 +26,11 @@ pub(super) async fn claim_occurrence(
 ) -> anyhow::Result<bool> {
     let claimed = tx
         .execute(
-            "INSERT INTO issue_occurrences (occurrence_id, fingerprint, observed_at)
-             VALUES (?1, ?2, ?3) ON CONFLICT(occurrence_id) DO NOTHING",
+            "INSERT INTO issue_occurrences (occurrence_id, service, fingerprint, observed_at)
+             VALUES (?1, ?2, ?3, ?4) ON CONFLICT(occurrence_id) DO NOTHING",
             (
                 occurrence.occurrence_id.as_ref(),
+                occurrence.service,
                 occurrence.fingerprint,
                 millis,
             ),

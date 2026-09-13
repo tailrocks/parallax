@@ -139,11 +139,12 @@ impl parallax_storage::metadata::MetadataStore for TursoMetadataStore {
     }
     async fn issue_trend(
         &self,
-        id: &str,
+        service: &str,
+        fingerprint: &str,
         since: u128,
         step: u32,
     ) -> MetadataResult<Vec<TrendPoint>> {
-        Self::issue_trend(self, id, since, step)
+        Self::issue_trend(self, service, fingerprint, since, step)
             .await
             .map_err(MetadataError::internal)
     }
@@ -152,11 +153,16 @@ impl parallax_storage::metadata::MetadataStore for TursoMetadataStore {
             .await
             .map_err(MetadataError::internal)
     }
-    async fn issue(&self, id: &str) -> MetadataResult<Option<Issue>> {
-        Self::issue(self, id).await.map_err(MetadataError::internal)
+    async fn issue(&self, service: &str, fingerprint: &str) -> MetadataResult<Option<Issue>> {
+        Self::issue(self, service, fingerprint)
+            .await
+            .map_err(MetadataError::internal)
     }
-    async fn issues_by_fingerprints(&self, ids: &[String]) -> MetadataResult<Vec<Issue>> {
-        Self::issues_by_fingerprints(self, ids)
+    async fn issues_by_fingerprints(
+        &self,
+        issue_keys: &[(String, String)],
+    ) -> MetadataResult<Vec<Issue>> {
+        Self::issues_by_fingerprints(self, issue_keys)
             .await
             .map_err(MetadataError::internal)
     }
@@ -173,11 +179,12 @@ impl parallax_storage::metadata::MetadataStore for TursoMetadataStore {
     }
     async fn set_issue_status(
         &self,
-        id: &str,
+        service: &str,
+        fingerprint: &str,
         status: &str,
         changed_at_nanos: u128,
     ) -> MetadataResult<()> {
-        Self::set_issue_status(self, id, status, changed_at_nanos)
+        Self::set_issue_status(self, service, fingerprint, status, changed_at_nanos)
             .await
             .map_err(MetadataError::internal)
     }
