@@ -6,6 +6,7 @@ export {
   SavedViewsMenu,
   loadLogs,
 } from "@/features/logs/components/logs-page"
+export type { SavedView } from "@/features/logs/components/logs-page"
 export {
   LogsTable,
   OPTIONAL_LOG_COLUMNS,

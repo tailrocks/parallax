@@ -29,6 +29,8 @@ import { formatDateTime, formatLogBodyPreview, stripAnsi } from "@/shared/format
 import { LogTimeCell, LogTraceCell } from "@/features/logs/components/log-row-cells"
 import { rangeLinkSearch, resolvePreset } from "@/domain/time-range/range"
 import type { ResolvedRange } from "@/domain/time-range/range"
+import { rowKeyboardAttrs, useRowKeyboardNav } from "@/lib/row-keyboard-nav"
+import { cn } from "@/lib/utils"
 
 /** One log row, with every field the doc viewer needs. Shared by the Logs page
  * and the run detail page so both render logs identically. */
@@ -170,7 +172,7 @@ function VirtualizedLogTable({
   logs: LogDoc[]
   columnCount: number
   headerRows: ReactNode
-  renderRow: (log: LogDoc) => ReactNode
+  renderRow: (log: LogDoc, index: number) => ReactNode
 }) {
   const parentRef = useRef<HTMLDivElement | null>(null)
   const virtualizer = useVirtualizer({
@@ -207,7 +209,7 @@ function VirtualizedLogTable({
           ) : null}
           {virtualItems.map((virtualItem) => {
             const log = logs[virtualItem.index]
-            return log ? renderRow(log) : null
+            return log ? renderRow(log, virtualItem.index) : null
           })}
           {paddingBottom > 0 ? (
             <tr aria-hidden="true">
@@ -231,15 +233,26 @@ export function LogsTable({
   columns = ["service", "trace"],
   anchorNanos,
   onShowContext,
+  keyboardScope = "logs",
 }: {
   logs: LogDoc[]
   range?: ResolvedRange
   columns?: OptionalLogColumn[]
   anchorNanos?: string | undefined
   onShowContext?: (log: LogDoc) => void
+  keyboardScope?: string
 }) {
   const [selected, setSelected] = useState<LogDoc | null>(null)
   const [fieldSearch, setFieldSearch] = useState("")
+  const activeRow = useRowKeyboardNav({
+    scope: keyboardScope,
+    count: logs.length,
+    enabled: selected === null,
+    onOpen: (index) => {
+      const log = logs[index]
+      if (log) openLog(log)
+    },
+  })
   const visible = new Set(columns)
   const detailSearch = rangeLinkSearch(range)
   const columnCount =
@@ -277,14 +290,15 @@ export function LogsTable({
     setFieldSearch("")
   }
 
-  const renderRow = (log: LogDoc) => {
+  const renderRow = (log: LogDoc, index: number) => {
     const isAnchor = String(anchorNanos ?? "") === log.tsNanos
     return (
       <TableRow
         key={logKey(log)}
         data-anchor={isAnchor ? "true" : undefined}
         data-state={isAnchor ? "selected" : undefined}
-        className="cursor-pointer"
+        {...rowKeyboardAttrs(keyboardScope, index)}
+        className={cn("cursor-pointer", activeRow === index && "bg-accent/60")}
         onClick={() => openLog(log)}
       >
         <LogTimeCell tsNanos={log.tsNanos} range={range} onOpen={() => openLog(log)} />

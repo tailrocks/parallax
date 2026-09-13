@@ -9,6 +9,8 @@ export {
   paramToTraceSort,
   traceSortToParam,
   traceDetailSearch,
+  serializeTracesSearch,
+  parseTracesViewState,
 } from "@/features/traces/components/traces-page"
 export type { TracesSearch, TracesLoaderData } from "@/features/traces/components/traces-page"
 

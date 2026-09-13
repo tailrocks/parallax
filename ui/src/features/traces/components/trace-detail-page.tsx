@@ -6,6 +6,7 @@ import { Link, useNavigate } from "@tanstack/react-router"
 import {
   IconAlertTriangle,
   IconAffiliate,
+  IconArrowUpRight,
   IconArticle,
   IconClock,
   IconExternalLink,
@@ -606,11 +607,21 @@ export function TraceDetailPage({
               {orderedLogs.length > 0 ? (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-sm">
-                      Trace logs{" "}
-                      <span className="font-normal text-muted-foreground">
-                        ({orderedLogs.length})
+                    <CardTitle className="flex items-center justify-between gap-2 text-sm">
+                      <span>
+                        Trace logs{" "}
+                        <span className="font-normal text-muted-foreground">
+                          ({orderedLogs.length})
+                        </span>
                       </span>
+                      <Link
+                        to="/logs"
+                        search={{ trace: traceId }}
+                        className="inline-flex items-center gap-1 font-normal text-muted-foreground hover:text-foreground"
+                      >
+                        View in Logs
+                        <IconArrowUpRight className="size-3.5" />
+                      </Link>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -1438,6 +1449,14 @@ function TraceInspector({
                 </li>
               ))}
             </ul>
+            <Link
+              to="/logs"
+              search={{ trace: traceId }}
+              className="mt-2 inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+            >
+              View in Logs
+              <IconArrowUpRight className="size-3.5" />
+            </Link>
           </InspectorSection>
         ) : null}
 

@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react"
-import { describe, expect, it, vi } from "vitest"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import type { TraceSummary } from "@/features/traces/model/wire"
 import { customRange, resolvePreset, updateRangeSearch } from "@/domain/time-range/range"
@@ -9,7 +9,9 @@ import {
   TraceTable,
   traceDetailSearch,
   paramToTraceSort,
+  parseTracesViewState,
   patchTracesSearch,
+  serializeTracesSearch,
   traceSortToParam,
   validateTracesSearch,
 } from "@/features/traces"
@@ -114,5 +116,69 @@ describe("TraceTable", () => {
     expect(screen.getByText("GET /checkout")).toBeTruthy()
     expect(screen.getByText("payments")).toBeTruthy()
     expect(screen.getByText("errors")).toBeTruthy()
+  })
+})
+
+describe("traces saved views", () => {
+  it("round-trips search state through serialize and parse", () => {
+    const search = {
+      q: "checkout",
+      service: "api",
+      errors: true,
+      minMs: 25,
+      sort: "DURATION_DESC" as const,
+      range: "1h",
+    }
+    const state = serializeTracesSearch(search)
+    expect(state.startsWith("?")).toBe(true)
+    expect(parseTracesViewState(state)).toEqual(search)
+  })
+
+  it("skips pagination and live mode", () => {
+    expect(serializeTracesSearch({ live: true, page: 3, q: "x" })).toBe("?q=x")
+    expect(parseTracesViewState("?sort=NOPE&page=bad")).toEqual({})
+  })
+})
+
+describe("TraceTable keyboard nav", () => {
+  afterEach(cleanup)
+
+  const rows: TraceSummary[] = [
+    {
+      traceId: "trace-a",
+      rootName: "GET /checkout",
+      service: "api",
+      startNanos: "2000000000",
+      durationNs: "10000000",
+      spanCount: 3,
+      hasError: false,
+    },
+    {
+      traceId: "trace-b",
+      rootName: "POST /pay",
+      service: "payments",
+      startNanos: "3000000000",
+      durationNs: "90000000",
+      spanCount: 7,
+      hasError: true,
+    },
+  ]
+
+  it("opens the row selected with j + Enter", () => {
+    const onOpen = vi.fn()
+    render(
+      <TraceTable
+        rows={rows}
+        durationValues={rows.map((row) => Number(row.durationNs))}
+        range={range}
+        sort={undefined}
+        onSort={vi.fn()}
+        onOpen={onOpen}
+      />
+    )
+    fireEvent.keyDown(window, { key: "j" })
+    fireEvent.keyDown(window, { key: "j" })
+    fireEvent.keyDown(window, { key: "Enter" })
+    expect(onOpen).toHaveBeenCalledWith("trace-b")
   })
 })

@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react"
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { defaultParseSearch } from "@tanstack/react-router"
 import { afterEach, describe, expect, it, vi } from "vitest"
@@ -207,6 +207,14 @@ describe("LogsTable", () => {
     expect(screen.getByRole("link", { name: /run run-a/i }).getAttribute("href")).toBe(
       "/invocations/run-a?range=7d"
     )
+  })
+
+  it("opens the doc viewer for the row selected with j + Enter", async () => {
+    renderWithRouter(<LogsTable logs={[log]} range={range} columns={["service"]} />)
+    await screen.findByText("checkout failed")
+    fireEvent.keyDown(window, { key: "j" })
+    fireEvent.keyDown(window, { key: "Enter" })
+    expect(await screen.findByText("Log document")).toBeTruthy()
   })
 })
 
