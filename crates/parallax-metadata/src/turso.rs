@@ -23,6 +23,7 @@ mod prune;
 mod row;
 mod saved_state;
 mod sentry_ack;
+mod source_maps;
 mod test_reporting;
 mod values;
 
@@ -43,7 +44,7 @@ use row::*;
 use values::*;
 
 /// Current `PRAGMA user_version`. v0 = pre-versioning DBs.
-pub(crate) const SCHEMA_USER_VERSION: i32 = 6;
+pub(crate) const SCHEMA_USER_VERSION: i32 = 7;
 
 const SCHEMA: &str = "
 CREATE TABLE IF NOT EXISTS issues (
@@ -98,6 +99,19 @@ CREATE TABLE IF NOT EXISTS saved_views (
   created_at  INTEGER NOT NULL,
   updated_at  INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS source_maps (
+  service     TEXT NOT NULL,
+  version     TEXT NOT NULL,
+  file        TEXT NOT NULL,
+  debug_id    TEXT,
+  uploaded_at INTEGER NOT NULL,
+  map_bytes   INTEGER NOT NULL DEFAULT 0,
+  map_sha256  TEXT NOT NULL DEFAULT '',
+  map_json    TEXT NOT NULL,
+  PRIMARY KEY (service, version, file)
+);
+CREATE INDEX IF NOT EXISTS source_maps_service_version
+  ON source_maps(service, version);
 CREATE TABLE IF NOT EXISTS issue_buckets (
   service     TEXT NOT NULL,
   fingerprint TEXT NOT NULL,

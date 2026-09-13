@@ -8,6 +8,7 @@ query IssueOccurrences(
     events(limit: 50, fromNanos: $fromNanos, toNanos: $toNanos) {
       tsNanos
       service
+      serviceVersion
       message
       stacktrace
       source
@@ -15,6 +16,17 @@ query IssueOccurrences(
       spanId
       environment
       attributes
+      mappedFrames {
+        raw
+        file
+        line
+        column
+        resolved
+        source
+        sourceLine
+        sourceColumn
+        name
+      }
     }
   }
 }

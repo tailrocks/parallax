@@ -1,0 +1,35 @@
+query SourceMaps($service: String!, $version: String!) {
+  sourceMaps(service: $service, version: $version) {
+    service
+    version
+    file
+    debugId
+    uploadedAtNanos
+    mapBytes
+    mapSha256
+  }
+}
+
+mutation SourceMapUpload(
+  $service: String!
+  $version: String!
+  $file: String!
+  $map: String!
+  $debugId: String
+) {
+  sourceMapUpload(
+    service: $service
+    version: $version
+    file: $file
+    map: $map
+    debugId: $debugId
+  ) {
+    service
+    version
+    file
+    debugId
+    uploadedAtNanos
+    mapBytes
+    mapSha256
+  }
+}

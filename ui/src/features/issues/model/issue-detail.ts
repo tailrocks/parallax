@@ -3,9 +3,22 @@ import type { ResolvedRange } from "@/domain/time-range/range"
 
 import type { TrendPoint } from "@/features/issues/model/issue-summary"
 
+export interface MappedFrame {
+  readonly raw: string
+  readonly file: string
+  readonly line: number
+  readonly column: number
+  readonly resolved: boolean
+  readonly source: string | null
+  readonly sourceLine: number | null
+  readonly sourceColumn: number | null
+  readonly name: string | null
+}
+
 export interface IssueEvent {
   readonly tsNanos: string
   readonly service: string
+  readonly serviceVersion: string | null
   readonly message: string
   readonly stacktrace: string | null
   readonly source: string
@@ -13,6 +26,7 @@ export interface IssueEvent {
   readonly spanId: string
   readonly environment: string | null
   readonly attributes: string
+  readonly mappedFrames: readonly MappedFrame[]
 }
 
 export interface IssueEnvironmentCount {

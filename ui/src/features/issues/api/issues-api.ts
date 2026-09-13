@@ -30,6 +30,16 @@ import {
   type IssuesListQuery,
   type IssuesListQueryVariables,
 } from "@/features/issues/api/issues-list.generated"
+import {
+  SourceMapUploadDocument,
+  SourceMapUploadMutationSchema,
+  SourceMapsDocument,
+  SourceMapsQuerySchema,
+  type SourceMapUploadMutation,
+  type SourceMapUploadMutationVariables,
+  type SourceMapsQuery,
+  type SourceMapsQueryVariables,
+} from "@/features/issues/api/source-maps.generated"
 import { mapIssueDetail, mapIssueEvents, mapIssuesList } from "@/features/issues/api/issues-mapper"
 import {
   rangeHours,
@@ -168,6 +178,56 @@ export async function setIssueStatus(
       brandSchema(IssueSetStatusMutationSchema),
       { service, fingerprint, status }
     )
+  } catch (error) {
+    mapBoundary(error, "mutation")
+  }
+}
+
+export interface SourceMapArtifactInfo {
+  readonly service: string
+  readonly version: string
+  readonly file: string
+  readonly debugId: string | null
+  readonly uploadedAtNanos: string
+  readonly mapBytes: number
+  readonly mapSha256: string
+}
+
+export async function loadSourceMaps(
+  service: string,
+  version: string
+): Promise<readonly SourceMapArtifactInfo[]> {
+  try {
+    const data = await executeGraphqlOperation<SourceMapsQuery, SourceMapsQueryVariables>(
+      brandDocument(SourceMapsDocument),
+      brandSchema(SourceMapsQuerySchema),
+      { service, version }
+    )
+    return [...data.sourceMaps]
+  } catch (error) {
+    mapBoundary(error, "load")
+  }
+}
+
+export async function uploadSourceMap(input: {
+  service: string
+  version: string
+  file: string
+  map: string
+  debugId?: string | null
+}): Promise<SourceMapArtifactInfo> {
+  try {
+    const data = await executeGraphqlOperation<
+      SourceMapUploadMutation,
+      SourceMapUploadMutationVariables
+    >(brandDocument(SourceMapUploadDocument), brandSchema(SourceMapUploadMutationSchema), {
+      service: input.service,
+      version: input.version,
+      file: input.file,
+      map: input.map,
+      debugId: input.debugId ?? null,
+    })
+    return data.sourceMapUpload
   } catch (error) {
     mapBoundary(error, "mutation")
   }

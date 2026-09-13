@@ -75,6 +75,8 @@ const detailFixture: IssueDetailData = {
         traceId: "",
         spanId: "span-a",
         environment: "production",
+        serviceVersion: null,
+        mappedFrames: [],
         attributes: "{}",
       },
     ],

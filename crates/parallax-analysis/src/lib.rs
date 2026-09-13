@@ -8,6 +8,7 @@ pub mod log_patterns;
 pub mod nextest_adapter;
 pub mod semconv;
 pub mod sentry;
+pub mod sourcemap;
 pub mod span_events;
 pub mod test_adapter_export;
 pub mod test_flakiness;

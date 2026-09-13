@@ -1622,3 +1622,72 @@ async fn finish_persists_bounded_child_output_round_trip() {
     assert_eq!(kept.stdout_text.as_deref(), Some("line1\nline2\n"));
     assert_eq!(kept.stdout_truncated_bytes, 128);
 }
+
+#[tokio::test]
+async fn source_map_save_get_and_releases_round_trip() {
+    use parallax_model::SourceMapUpload;
+    let (_directory, path) = temp_db();
+    let store = MetadataStore::open(&path).await.expect("open");
+    let map = r#"{"version":3,"sources":["a.js"],"names":[],"mappings":"AAAA"}"#;
+    let saved = store
+        .source_map_save(&SourceMapUpload {
+            service: "web",
+            version: "1.2.3",
+            file: "app.min.js",
+            debug_id: Some("debug-1"),
+            map_json: map,
+            uploaded_at_nanos: 1_700_000_000_000_000_000,
+        })
+        .await
+        .expect("save");
+    assert_eq!(saved.service, "web");
+    assert_eq!(saved.debug_id.as_deref(), Some("debug-1"));
+    assert_eq!(saved.map_bytes, u64::try_from(map.len()).expect("len"));
+    assert_eq!(saved.map_json, map);
+    assert_eq!(saved.map_sha256.len(), 64);
+
+    // Re-upload replaces the stored map.
+    let map2 = r#"{"version":3,"sources":["b.js"],"names":[],"mappings":"AAAA"}"#;
+    store
+        .source_map_save(&SourceMapUpload {
+            service: "web",
+            version: "1.2.3",
+            file: "app.min.js",
+            debug_id: None,
+            map_json: map2,
+            uploaded_at_nanos: 1_700_000_001_000_000_000,
+        })
+        .await
+        .expect("re-upload");
+    let maps = store.source_maps("web", "1.2.3").await.expect("list");
+    assert_eq!(maps.len(), 1);
+    assert_eq!(maps[0].map_json, map2);
+    assert_eq!(maps[0].debug_id, None);
+
+    // Other releases are isolated; unknown pairs read empty.
+    assert!(
+        store
+            .source_maps("web", "9.9.9")
+            .await
+            .expect("read")
+            .is_empty()
+    );
+    assert!(
+        store
+            .source_maps("other", "1.2.3")
+            .await
+            .expect("read")
+            .is_empty()
+    );
+    assert_eq!(
+        store.source_map_releases("web").await.expect("releases"),
+        vec!["1.2.3".to_string()]
+    );
+    assert!(
+        store
+            .source_map_releases("other")
+            .await
+            .expect("releases")
+            .is_empty()
+    );
+}

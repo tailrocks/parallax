@@ -33,6 +33,7 @@ export function mapIssueEvents(
   events: ReadonlyArray<{
     readonly tsNanos: string
     readonly service: string
+    readonly serviceVersion: string | null
     readonly message: string
     readonly stacktrace: string | null
     readonly source: string
@@ -40,11 +41,23 @@ export function mapIssueEvents(
     readonly spanId: string
     readonly environment: string | null
     readonly attributes: string
+    readonly mappedFrames: ReadonlyArray<{
+      readonly raw: string
+      readonly file: string
+      readonly line: number
+      readonly column: number
+      readonly resolved: boolean
+      readonly source: string | null
+      readonly sourceLine: number | null
+      readonly sourceColumn: number | null
+      readonly name: string | null
+    }>
   }>
 ): IssueEvent[] {
   return events.map((event) => ({
     tsNanos: event.tsNanos,
     service: event.service,
+    serviceVersion: event.serviceVersion,
     message: event.message,
     stacktrace: event.stacktrace,
     source: event.source,
@@ -52,6 +65,7 @@ export function mapIssueEvents(
     spanId: event.spanId,
     environment: event.environment,
     attributes: event.attributes,
+    mappedFrames: event.mappedFrames.map((frame) => ({ ...frame })),
   }))
 }
 

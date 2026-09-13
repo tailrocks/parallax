@@ -63,6 +63,8 @@ const detailFixture = {
         traceId: "trace-a",
         spanId: "span-a",
         environment: "production",
+        serviceVersion: null,
+        mappedFrames: [],
         attributes: "{}",
       },
       {
@@ -75,6 +77,8 @@ const detailFixture = {
         traceId: "trace-b",
         spanId: "span-b",
         environment: "production",
+        serviceVersion: null,
+        mappedFrames: [],
         attributes: '{"order":{"id":',
       },
       {
@@ -86,6 +90,8 @@ const detailFixture = {
         traceId: "",
         spanId: "span-c",
         environment: "production",
+        serviceVersion: null,
+        mappedFrames: [],
         attributes: "{}",
       },
     ],
