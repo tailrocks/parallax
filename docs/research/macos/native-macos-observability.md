@@ -34,10 +34,16 @@ logs over gRPC (stable) and HTTP (experimental).
 **Metrics.** App-level counters/histograms via OTLP (MetricKit payloads are
 daily aggregates, not real-time telemetry). Hang/slow-op durations belong in a
 histogram with scenario/thread attributes, exemplars pointing at traces.
+The harness now emits those exemplars (OTLP HistogramDataPoint field 8 and
+NumberDataPoint field 5) so metric → trace is the same `trace_id` as the
+span and logs.
 
 **Lifecycle.** `NSApplication`/`UIScene`-phase notifications mapped to spans
 (cold/warm start, foreground/background) and session IDs. Embrace maps
-sessions to OTel spans; crashes to OTel logs.
+sessions to OTel spans; crashes to OTel logs. The CLI harness cannot receive
+AppKit scene notifications; it emits the equivalent `macos.app.session` span,
+cold-start child, and `lifecycle.*` events, joined to operations via
+`session.id` + span links.
 
 **Hangs/perf.** MetricKit `MXHangDiagnostic` (main-thread stalls, delayed);
 real-time watchdogs (main-thread ping) for in-app detection; `os_signpost` /
@@ -57,7 +63,7 @@ Thermal/memory explain hangs that code cannot.
 | SDK | Transport | Crashes | Hangs | Symbolication | macOS | Notes |
 |---|---|---|---|---|---|---|
 | `opentelemetry-swift` | OTLP gRPC stable, HTTP experimental | via MetricKit mapping (`exception.stacktrace` = callStackTree JSON) | same | none (needs backend) | yes | README still marks HTTP experimental; has Persistence + MetricKit instrumentation |
-| `sentry-cocoa` (v9) | Sentry envelope | in-process Mach/signal handlers | MetricKit + watchdog | server-side via dSYM upload; v9 **removed** unsafe local symbolication (deadlock #6560) | yes | reference error workflow; proven crash pipeline |
+| `sentry-cocoa` **9.28.0** (2026-09-10) | Sentry envelope | in-process Mach/signal handlers | MetricKit + watchdog | server-side via dSYM upload; v9 **removed** unsafe local symbolication (deadlock #6560; still gone in 9.28) | yes | reference error workflow; proven crash pipeline |
 | Embrace Apple SDK | OTel-native | crash → OTel log | yes | via OTel backend | yes | sessions-as-spans; portable vendor-agnostic data |
 | MetricKit (Apple) | OS-delivered payloads, ~daily | `MXCrashDiagnostic` (incl. OOM) | `MXHangDiagnostic` | none (offsets only) | 12+ | delayed hours; complements, never replaces, a reporter |
 
@@ -97,12 +103,15 @@ link from issue → build UUID → dSYM status ("symbols missing" banner is part
 of Sentry's workflow and prevents silent unsymbolicated groups).
 
 **P1-1 — Hang workflow.** Long-span detection + `macos.hang.suspected`
-attributes exist in the harness; productize: hang inbox grouped by blocking
-frame, main-thread attribution, thermal/memory context auto-attached.
+attributes + `macos.hang.stack` event exist in the harness; productize: hang
+inbox grouped by blocking frame, main-thread attribution, thermal/memory
+context auto-attached.
 
 **P1-2 — Session model.** Adopt sessions-as-spans (Embrace pattern): session
-span + lifecycle events + crash/hang links. Extends Parallax's
-execution-context differentiator to native clients.
+span + lifecycle events + crash/hang links. The harness now emits
+`macos.app.session` + cold-start child + shared `session.id` + span links
+from failure/slow-op → session. Extends Parallax's execution-context
+differentiator to native clients (backend derivation + UI still missing).
 
 **P1-3 — OTLP/HTTP JSON.** Parallax accepts protobuf only. Apple's background
 upload constraints and minimal native clients favor small JSON payloads;
@@ -118,8 +127,11 @@ Proven by `parallax-telemetry-playground/macos/tools/verify.py`:
 3. Real `fatalError` in a stripped copy → ReportCrash writes `.ips`
    (one-line JSON header + JSON body; frames: `imageIndex`+`imageOffset`).
 4. `atos -o <DWARF object> -arch arm64 -l <base> <base+offset>` resolves
-   `static Harness.main() (Harness.swift:58)` — the DWARF object itself, so
+   `static Harness.main() (Harness.swift:60)` — the DWARF object itself, so
    the proof cannot lean on binary symbols.
+5. Resource `macos.build_uuid` / `process.executable.build_id` is the same
+   `LC_UUID` (`dwarfdump --uuid` match), so a future upload API has a join
+   key on every live signal, not just crash reports.
 
 Parallax's missing half: steps for upload, keyed storage, and resolving
 frames inside issue grouping (§3 P0-1). No Parallax code was touched by this

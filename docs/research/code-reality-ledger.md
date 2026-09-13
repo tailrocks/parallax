@@ -32,7 +32,7 @@ not override code.
 | OTLP traces/logs/metrics (gRPC + HTTP) | **shipped** | `crates/parallax-server/src/otlp_grpc.rs`, `otlp_http.rs`; normalize in `crates/parallax-ingest/src/{traces,logs,metrics}.rs` | Ports/config in server serve path |
 | Sentry envelope HTTP ingest | **shipped** | `crates/parallax-server/src/sentry_http.rs` (router merge in `serve.rs`); parse `crates/parallax-ingest/src/sentry_envelope.rs`; derive `crates/parallax-analysis/src/sentry.rs` | Plan **118 DONE** — residual multi-SDK compatibility ledger still **unproven** ([validation/2026-07-plan-118-sentry-envelope](validation/2026-07-plan-118-sentry-envelope/README.md)); not a "future adapter" |
 | Durable raw-frame spool | **shipped** | `crates/parallax-spool/` | OTLP + Sentry frames; forensic PSPL1 trail |
-| Error derivation from OTLP (exception spans, ERROR/FATAL logs) | **shipped** | `crates/parallax-analysis/src/derive.rs`, `fingerprint.rs` | Deterministic fingerprints |
+| Error derivation from OTLP (exception spans, ERROR/FATAL logs) | **shipped** | `crates/parallax-analysis/src/derive.rs`, `fingerprint.rs`, `identity.rs` | Deterministic fingerprints; issue identity is `(service, fingerprint)` (Turso PK + GraphQL `issue(service, fingerprint)`). Occurrence events carry `invocationId`/`sessionId`/`serviceVersion`/`environment`. **No `regressed` state.** |
 | Ingest-time PII scrub of all raw signals | **planned / unproven gate (A6)** | design [capture/redaction.md](capture/redaction.md); product redaction is bundle/metadata path today | Do not claim full ingest scrub as shipped |
 
 ---
@@ -53,13 +53,16 @@ not override code.
 
 | Claim | Status | In-repo pointer | Notes |
 | --- | --- | --- | --- |
-| GraphQL query API | **shipped** | `crates/parallax-api/`; exported schema `ui/graphql/schema.graphql` | **77** Query fields, **14** Mutation fields (recounted 2026-09-13; was 76 — one Query field added since 2026-07-17). **Count method (SoT):** walk `type Query` / `type Mutation` in the generated SDL; **skip `"""…"""` description blocks** (and single-line `"` descriptions); then match `fieldName(` or `fieldName:`. A naive line regex that does **not** skip descriptions falsely reports **80/15** (re-confirmed 2026-09-13) by treating prose tokens (`registration`, `kind`, `legality`, `retention`, …) as fields. Re-count before changing this row. |
+| GraphQL query API | **shipped** | `crates/parallax-api/`; exported schema `ui/graphql/schema.graphql` | **77** Query fields, **14** Mutation fields (recounted 2026-09-13 pass 68 on HEAD `1cad2a50`; still 77/14). **Count method (SoT):** walk `type Query` / `type Mutation` in the generated SDL; **skip `"""…"""` description blocks** (and single-line `"` descriptions); then match `fieldName(` or `fieldName:`. A naive line regex that does **not** skip descriptions falsely reports **80/15** (re-confirmed 2026-09-13) by treating prose tokens (`registration`, `kind`, `legality`, `retention`, …) as fields. Re-count before changing this row. |
 | CLI (`parallax serve` + client commands) | **shipped** | `crates/parallax-cli/src/main.rs` | serve, invocation, issue, trace, metrics, logs, traces, sql, doctor, prune, uninstall, context |
-| TanStack Start UI | **shipped** | `ui/src/routes/`, `ui/src/features/` | Issues, traces, logs, metrics, services, invocations, investigations, dashboards, ecosystem, SQL, alerts, tests, … (~16 feature modules) |
+| TanStack Start UI | **shipped** | `ui/src/routes/`, `ui/src/features/` | Issues (`/issues/$service/$fingerprint`), traces, logs, metrics, services, invocations, investigations, dashboards, ecosystem, SQL, alerts, tests, **RUM `/rum`**, … (~17 feature modules). Issue identity is `(service, fingerprint)`. |
 | Local-stdio read-only MCP | **shipped** | `crates/parallax-mcp/`; [validation/2026-07-plan-112-product-mcp](validation/2026-07-plan-112-product-mcp/README.md) | Plan **112 DONE**. Tools: `parallax_issue_context`, `parallax_agent_session_show` |
 | Remote MCP / protected transport | **planned** | Plan 109 residual in [validation/2026-07-plan-109-v2-auth](validation/2026-07-plan-109-v2-auth/); design [decisions/agent-access-surface.md](decisions/agent-access-surface.md) | Not product until transport lands |
 | Live SSE / alerting | **shipped** (V1-scope) | `crates/parallax-server/src/live/`, `alerting/` | Not on-call suite |
 | Read-only SQL against GreptimeDB | **shipped** | GraphQL `sql` + CLI `parallax sql` | SELECT-shaped only |
+| Typed metric `rate`/`increase` | **shipped** | `crates/parallax-storage/src/adapter_math.rs`; GraphQL `metricQuery` agg `rate`\|`increase` | Reset-clamped; kind-legal. **No PromQL UI** (2026-09-13 decision: keep typed builder). |
+| Browser RUM surface | **partial** | `ui/src/features/rum/`, route `/rum/` | Projection over `tracesPage` / `histogramQuantile` / `issues` — not a session store. No source maps. |
+| Chart annotations / sampling policy / source maps / issue `regressed` | **absent** | — | Freeze P0 remaining-gaps. Do not claim shipped. |
 
 ---
 
@@ -129,3 +132,4 @@ not override code.
 | 2026-07-17 | Initial ledger from workspace + schema + plans inventory (research code-reality audit). |
 | 2026-07-17 | Re-verify: plan **123 DONE** offline — fixer row → partial + validation path (dead `plans/123-*` link removed). |
 | 2026-09-13 | GraphQL row recounted per its own method: Query **76→77** (one field added since 2026-07-17), Mutation 14 holds; naive-regex 80/15 warning re-confirmed. |
+| 2026-09-13 | Pass 68 (GOAL restamp, HEAD `1cad2a50`): issue identity `(service, fingerprint)` shipped; `rate`/`increase` reset-clamped shipped (`parallax-storage/src/adapter_math.rs`); exp histograms converted at ingest; `/rum` UI is a projection over traces/metrics/issues (not a session store); source maps / sampling / chart annotations / `regressed` **absent**. GraphQL still 77/14. |
