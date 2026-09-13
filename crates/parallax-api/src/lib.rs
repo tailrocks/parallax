@@ -185,9 +185,10 @@ impl Query {
     /// Grouped errors: filtered, sorted, paged (spec §8 `issues`). The
     /// `query` argument substring-matches title, error type, and fingerprint;
     /// `fromNanos`/`toNanos` window on last-seen; `tagKey`+`tagValue` filter
-    /// on the cached tags.
+    /// on the cached tags; `environment` keeps issues seen in that
+    /// deployment environment.
     #[expect(clippy::too_many_arguments, reason = "GraphQL issue filters are the public query contract")]
-    async fn issues(context: &ApiContext, service: Option<String>, status: Option<String>, query: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, tag_key: Option<String>, tag_value: Option<String>, sort: Option<IssueSort>, limit: Option<i32>, offset: Option<i32>,) -> FieldResult<IssueList> { resolvers::issues::issues(context, service, status, query, from_nanos, to_nanos, tag_key, tag_value, sort, limit, offset).await }
+    async fn issues(context: &ApiContext, service: Option<String>, status: Option<String>, query: Option<String>, from_nanos: Option<String>, to_nanos: Option<String>, tag_key: Option<String>, tag_value: Option<String>, environment: Option<String>, sort: Option<IssueSort>, limit: Option<i32>, offset: Option<i32>,) -> FieldResult<IssueList> { resolvers::issues::issues(context, service, status, query, from_nanos, to_nanos, tag_key, tag_value, environment, sort, limit, offset).await }
 
     async fn issue(context: &ApiContext, service: String, fingerprint: String) -> FieldResult<Option<Issue>> { resolvers::issues::issue(context, service, fingerprint).await }
 

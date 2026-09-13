@@ -18,6 +18,7 @@ fn issue_occurrence<'a>(
         ts_nanos: 1_000_000,
         trace_id: None,
         attributes,
+        environment: None,
     }
 }
 

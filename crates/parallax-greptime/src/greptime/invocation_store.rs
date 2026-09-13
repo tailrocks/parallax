@@ -8,12 +8,16 @@ impl crate::adapter::InvocationStore for GreptimeStore {
         fingerprint: &str,
         range: RangeInclusive<u128>,
         limit: usize,
+        environment: Option<&str>,
     ) -> StorageResult<Vec<ErrorEventRow>> {
+        let env_clause = environment
+            .map(|env| format!(r#" AND "environment" = '{}'"#, escape(env)))
+            .unwrap_or_default();
         let rows = self
             .sql(&format!(
                 r#"SELECT {ERROR_EVENT_PROJECTION}
                    FROM error_events WHERE "service" = '{}' AND "fingerprint" = '{}'
-                     AND "ts" >= {} AND "ts" <= {}
+                     AND "ts" >= {} AND "ts" <= {}{env_clause}
                    ORDER BY "ts" DESC LIMIT {limit}"#,
                 escape(service),
                 escape(fingerprint),
@@ -29,6 +33,7 @@ impl crate::adapter::InvocationStore for GreptimeStore {
         issue_keys: &[(String, String)],
         range: RangeInclusive<u128>,
         limit_per_issue: usize,
+        environment: Option<&str>,
     ) -> StorageResult<HashMap<(String, String), Vec<ErrorEventRow>>> {
         let mut events: HashMap<(String, String), Vec<ErrorEventRow>> = issue_keys
             .iter()
@@ -50,6 +55,7 @@ impl crate::adapter::InvocationStore for GreptimeStore {
                 *range.start(),
                 *range.end(),
                 limit_per_issue,
+                environment,
             ))
             .await?;
         for row in &rows {

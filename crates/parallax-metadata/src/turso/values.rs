@@ -67,3 +67,25 @@ pub(super) fn merge_tags(existing: &str, attributes: &serde_json::Value) -> Stri
     }
     serde_json::to_string(&tags).unwrap_or_else(|_| "{}".to_string())
 }
+
+/// Bounds for the per-issue environment-counts cache
+/// (`issues.environments`).
+pub(super) const ENVIRONMENTS_MAX_VALUES: usize = 16;
+pub(super) const ENVIRONMENTS_MAX_VALUE_LEN: usize = 64;
+
+/// Merge one occurrence's environment into the `{env: count}` cache.
+/// Events without an environment leave the cache untouched.
+pub(super) fn merge_environments(existing: &str, environment: Option<&str>) -> String {
+    let Some(environment) = environment.filter(|env| !env.is_empty()) else {
+        return existing.to_string();
+    };
+    if environment.len() > ENVIRONMENTS_MAX_VALUE_LEN {
+        return existing.to_string();
+    }
+    let mut counts: BTreeMap<String, u64> = serde_json::from_str(existing).unwrap_or_default();
+    if !counts.contains_key(environment) && counts.len() >= ENVIRONMENTS_MAX_VALUES {
+        return existing.to_string();
+    }
+    *counts.entry(environment.to_string()).or_insert(0) += 1;
+    serde_json::to_string(&counts).unwrap_or_else(|_| "{}".to_string())
+}

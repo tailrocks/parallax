@@ -313,6 +313,12 @@ export type DurationStats = {
   readonly p95Ms: Maybe<Scalars["Float"]["output"]>
 }
 
+export type EnvironmentCount = {
+  readonly __typename?: "EnvironmentCount"
+  readonly count: Scalars["Int"]["output"]
+  readonly environment: Scalars["String"]["output"]
+}
+
 export type ErrorEvent = {
   readonly __typename?: "ErrorEvent"
   readonly attributes: Scalars["String"]["output"]
@@ -507,11 +513,16 @@ export type InvocationMetricRow = {
 export type Issue = {
   readonly __typename?: "Issue"
   readonly culprit: Maybe<Scalars["String"]["output"]>
+  /**
+   * Per-environment occurrence counts, count descending then name
+   * ascending. Events without an environment are not counted.
+   */
+  readonly environmentCounts: ReadonlyArray<EnvironmentCount>
   readonly errorType: Scalars["String"]["output"]
   readonly eventCount: Scalars["Int"]["output"]
   /**
    * Recent occurrences of this issue, newest first, optionally
-   * range-bounded (`fromNanos`/`toNanos`).
+   * range-bounded (`fromNanos`/`toNanos`) and environment-filtered.
    */
   readonly events: ReadonlyArray<ErrorEvent>
   readonly fingerprint: Scalars["String"]["output"]
@@ -531,6 +542,7 @@ export type Issue = {
 }
 
 export type IssueEventsArgs = {
+  environment: InputMaybe<Scalars["String"]["input"]>
   fromNanos: InputMaybe<Scalars["String"]["input"]>
   limit: InputMaybe<Scalars["Int"]["input"]>
   toNanos: InputMaybe<Scalars["String"]["input"]>
@@ -899,7 +911,8 @@ export type Query = {
    * Grouped errors: filtered, sorted, paged (spec §8 `issues`). The
    * `query` argument substring-matches title, error type, and fingerprint;
    * `fromNanos`/`toNanos` window on last-seen; `tagKey`+`tagValue` filter
-   * on the cached tags.
+   * on the cached tags; `environment` keeps issues seen in that
+   * deployment environment.
    */
   readonly issues: IssueList
   /** Detached jobs (producer/consumer span pairs sharing `job.id`). */
@@ -1216,6 +1229,7 @@ export type QueryIssueTrendArgs = {
 }
 
 export type QueryIssuesArgs = {
+  environment: InputMaybe<Scalars["String"]["input"]>
   fromNanos: InputMaybe<Scalars["String"]["input"]>
   limit: InputMaybe<Scalars["Int"]["input"]>
   offset: InputMaybe<Scalars["Int"]["input"]>

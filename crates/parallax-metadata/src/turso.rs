@@ -44,7 +44,7 @@ use row::*;
 use values::*;
 
 /// Current `PRAGMA user_version`. v0 = pre-versioning DBs.
-pub(crate) const SCHEMA_USER_VERSION: i32 = 6;
+pub(crate) const SCHEMA_USER_VERSION: i32 = 7;
 
 const SCHEMA: &str = "
 CREATE TABLE IF NOT EXISTS issues (
@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS issues (
   event_count   INTEGER NOT NULL DEFAULT 0,
   last_trace_id TEXT,
   tags          TEXT NOT NULL DEFAULT '{}',
+  environments  TEXT NOT NULL DEFAULT '{}',
   PRIMARY KEY (service, fingerprint)
 );
 CREATE TABLE IF NOT EXISTS invocations (
@@ -447,7 +448,7 @@ impl TursoMetadataStore {
 
     /// The shared projection for every issue read.
     const ISSUE_COLUMNS: &'static str = "fingerprint, title, error_type, culprit, service, status,
-         first_seen, last_seen, event_count, last_trace_id, tags";
+         first_seen, last_seen, event_count, last_trace_id, tags, environments";
 
     fn issue_from_row(row: &turso::Row) -> Issue {
         Issue {
@@ -463,6 +464,10 @@ impl TursoMetadataStore {
             last_trace_id: opt_text(row, 9),
             tags: match opt_text(row, 10) {
                 Some(tags) if !tags.is_empty() => tags,
+                _ => "{}".to_string(),
+            },
+            environments: match opt_text(row, 11) {
+                Some(environments) if !environments.is_empty() => environments,
                 _ => "{}".to_string(),
             },
         }
@@ -624,6 +629,14 @@ impl TursoMetadataStore {
                 serde_json::from_str::<serde_json::Value>(&issue.tags)
                     .ok()
                     .and_then(|tags| tags.get(key).and_then(|values| values.get(value)).cloned())
+                    .is_some()
+            });
+        }
+        if let Some(environment) = &filter.environment {
+            matched.retain(|issue| {
+                serde_json::from_str::<serde_json::Value>(&issue.environments)
+                    .ok()
+                    .and_then(|environments| environments.get(environment).cloned())
                     .is_some()
             });
         }

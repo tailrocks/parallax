@@ -24,8 +24,14 @@ export interface IssueEvent {
   readonly source: string
   readonly traceId: string
   readonly spanId: string
+  readonly environment: string | null
   readonly attributes: string
   readonly mappedFrames: readonly MappedFrame[]
+}
+
+export interface IssueEnvironmentCount {
+  readonly environment: string
+  readonly count: number
 }
 
 export interface IssueDetail {
@@ -40,6 +46,7 @@ export interface IssueDetail {
   readonly eventCount: number
   readonly lastTraceId: string | null
   readonly tags: string
+  readonly environmentCounts: readonly IssueEnvironmentCount[]
   readonly groupingExplanation: {
     readonly algorithmVersion: string
     readonly errorType: string
