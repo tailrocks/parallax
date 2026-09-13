@@ -40,7 +40,7 @@ deliberate not-compete · `watch` = drift.
 | Stack traces + frames | culprit frames; `parseStacktrace` | frame collapsing, in-app, suspect frames | Sentry 26.8.0 | faster to the guilty line | P1 | in-app classifier | frame collapse UX | c8 | adopt |
 | Source context | none (no code fetch) | inline source + suspect commits | Sentry 26.8.0 | guilty line + commit together | P1 | repo-link adapter | code frame | none | adopt |
 | Exception chains | partial (derive from spans/logs) | chained exceptions + mechanism + threads | Sentry 26.8.0 | async/threaded failures readable | P1 | chain model | chained render | none | adopt |
-| Breadcrumbs | shipped on Sentry envelopes | breadcrumbs + touch trail + replay | Sentry 26.8.0 | pre-crash story denser | P1 | none major | trail density | c8 | adopt |
+| Breadcrumbs | none (Sentry `breadcrumbs` dropped at derive) | breadcrumbs + touch trail + replay | Sentry 26.8.0 | pre-crash story denser | P1 | crumb store | trail density | R4 matrix | adopt |
 | Tags/dimensions | tags JSON + cross-links | tag distribution facets per issue | Sentry 26.8.0 | Parallax cross-link unique; Sentry distribution deeper | P1 | none | distribution bars | c8 | keep |
 | Users/sessions | `sessionId` on ErrorEvent; no user rollup | user tab: count, identity, affected-user trend | Sentry 26.8.0 | “how many users” is the triage question | P1 | user identity rollup | users tab | RUM partial | adopt |
 | Environment | `environment` on ErrorEvent | env filter + per-env release health | Sentry 26.8.0 | env-scoped verdicts | P1 | env rollup | env filter | a13 (2 versions) | adopt |
