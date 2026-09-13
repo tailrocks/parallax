@@ -413,7 +413,11 @@ fn bundle_tool_result(bundle: gql::BundleProjection) -> Result<CallToolResult, M
     )
 }
 
-#[allow(unknown_lints, clippy::unused_async_trait_impl)]
+#[allow(
+    unknown_lints,
+    clippy::unused_async_trait_impl,
+    reason = "the rmcp tool_handler macro supplies the trait method body while this source declares its async signature"
+)]
 #[tool_handler]
 impl ServerHandler for SpikeServer {
     fn get_info(&self) -> ServerInfo {
@@ -426,7 +430,11 @@ impl ServerHandler for SpikeServer {
             )
     }
 
-    #[allow(unknown_lints, clippy::unused_async_trait_impl)]
+    #[allow(
+        unknown_lints,
+        clippy::unused_async_trait_impl,
+        reason = "the rmcp tool_handler macro supplies the trait method body while this source declares its async signature"
+    )]
     async fn initialize(
         &self,
         request: rmcp::model::InitializeRequestParams,
