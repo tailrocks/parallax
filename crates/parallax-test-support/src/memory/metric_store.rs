@@ -92,7 +92,7 @@ impl MetricStore for MemoryStore {
         {
             if let Some(value) = scalar_attribute_value(attributes, label) {
                 values.insert(value);
-                if values.len() >= 100 {
+                if values.len() >= METRIC_LABEL_VALUES_CAP {
                     break;
                 }
             }

@@ -89,7 +89,8 @@ pub trait MetricStore: Send + Sync {
     async fn metric_names(&self, range: RangeInclusive<u128>) -> StorageResult<Vec<String>>;
     /// Discover groupable metric label/tag keys for one metric.
     async fn metric_labels(&self, name: &str) -> StorageResult<Vec<String>>;
-    /// Distinct scalar values for one metric label inside an inclusive window.
+    /// Distinct scalar values for one metric label inside an inclusive window,
+    /// capped at [`METRIC_LABEL_VALUES_CAP`](super::METRIC_LABEL_VALUES_CAP).
     async fn metric_label_values(
         &self,
         name: &str,
