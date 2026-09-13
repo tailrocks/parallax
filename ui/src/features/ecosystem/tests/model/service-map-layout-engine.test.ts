@@ -28,6 +28,7 @@ import {
 const node = (name: string, spanCount = "1"): ServiceMapNode => ({
   name,
   kind: "service",
+  system: null,
   lastSeenNanos: "0",
   spanCount,
   errorCount: "0",
