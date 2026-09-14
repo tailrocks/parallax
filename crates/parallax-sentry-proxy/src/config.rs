@@ -1,6 +1,6 @@
 //! Typed TOML configuration: ingress project/key → destination DSNs.
 
-use std::collections::HashMap;
+use std::collections::HashSet;
 use std::path::Path;
 
 use anyhow::{Context, Result};
@@ -61,20 +61,20 @@ impl DestinationsConfig {
     #[must_use]
     pub fn enabled(&self) -> Vec<(DestinationKind, ParsedDsn)> {
         let mut out = Vec::new();
-        if let Some(dest) = self.sentry.as_ref().filter(|d| d.enabled) {
-            if let Ok(parsed) = ParsedDsn::parse(&dest.dsn) {
-                out.push((DestinationKind::Sentry, parsed));
-            }
+        if let Some(dest) = self.sentry.as_ref().filter(|d| d.enabled)
+            && let Ok(parsed) = ParsedDsn::parse(&dest.dsn)
+        {
+            out.push((DestinationKind::Sentry, parsed));
         }
-        if let Some(dest) = self.rustrak.as_ref().filter(|d| d.enabled) {
-            if let Ok(parsed) = ParsedDsn::parse(&dest.dsn) {
-                out.push((DestinationKind::Rustrak, parsed));
-            }
+        if let Some(dest) = self.rustrak.as_ref().filter(|d| d.enabled)
+            && let Ok(parsed) = ParsedDsn::parse(&dest.dsn)
+        {
+            out.push((DestinationKind::Rustrak, parsed));
         }
-        if let Some(dest) = self.parallax.as_ref().filter(|d| d.enabled) {
-            if let Ok(parsed) = ParsedDsn::parse(&dest.dsn) {
-                out.push((DestinationKind::Parallax, parsed));
-            }
+        if let Some(dest) = self.parallax.as_ref().filter(|d| d.enabled)
+            && let Ok(parsed) = ParsedDsn::parse(&dest.dsn)
+        {
+            out.push((DestinationKind::Parallax, parsed));
         }
         out
     }
@@ -122,11 +122,11 @@ impl Config {
 
     /// Union of destination kinds enabled on any ingress row.
     #[must_use]
-    pub fn active_destinations(&self) -> HashMap<DestinationKind, ()> {
-        let mut kinds = HashMap::new();
+    pub fn active_destinations(&self) -> HashSet<DestinationKind> {
+        let mut kinds = HashSet::new();
         for entry in &self.ingress {
             for (kind, _) in entry.destinations.enabled() {
-                kinds.insert(kind, ());
+                kinds.insert(kind);
             }
         }
         kinds

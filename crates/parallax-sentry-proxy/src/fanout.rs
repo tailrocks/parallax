@@ -46,16 +46,13 @@ pub struct FanOut {
 
 impl FanOut {
     pub fn spawn(config: &Config) -> Self {
-        let client = Client::builder()
-            .user_agent("parallax-sentry-proxy/0.1.0")
-            .build()
-            .expect("reqwest client");
+        let client = Client::new();
         let capacity = config.fanout.channel_capacity;
         let active = config.active_destinations();
         let mut senders = HashMap::new();
         let mut workers = Vec::new();
 
-        for kind in active.keys() {
+        for kind in &active {
             let (tx, rx) = mpsc::channel(capacity);
             let worker_client = client.clone();
             let worker_kind = *kind;
@@ -64,7 +61,7 @@ impl FanOut {
                 rx,
                 worker_client,
             )));
-            senders.insert(*kind, tx);
+            senders.insert(worker_kind, tx);
         }
 
         Self {
