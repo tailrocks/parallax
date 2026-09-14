@@ -28,9 +28,7 @@ impl ParsedDsn {
         if raw.is_empty() {
             return Err(DsnError::Empty);
         }
-        let (scheme, rest) = raw
-            .split_once("://")
-            .ok_or(DsnError::Malformed)?;
+        let (scheme, rest) = raw.split_once("://").ok_or(DsnError::Malformed)?;
         let (credentials, path) = rest.split_once('/').ok_or(DsnError::Malformed)?;
         let public_key = credentials
             .split_once('@')
@@ -83,8 +81,8 @@ pub fn rewrite_envelope_dsn(envelope: &[u8], destination: &ParsedDsn) -> Result<
         return Err(DsnError::MissingHeader);
     };
     let header_line = &envelope[..newline];
-    let mut header: serde_json::Value = serde_json::from_slice(header_line)
-        .map_err(|_| DsnError::MalformedHeader)?;
+    let mut header: serde_json::Value =
+        serde_json::from_slice(header_line).map_err(|_| DsnError::MalformedHeader)?;
     let Some(obj) = header.as_object_mut() else {
         return Err(DsnError::MalformedHeader);
     };
@@ -144,7 +142,8 @@ mod tests {
 
     #[test]
     fn rewrites_envelope_header_dsn() {
-        let envelope = br#"{"event_id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","dsn":"https://old@proxy.example/1"}
+        let envelope =
+            br#"{"event_id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","dsn":"https://old@proxy.example/1"}
 {"type":"event","length":2}
 {}
 "#;

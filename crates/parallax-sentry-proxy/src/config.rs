@@ -90,7 +90,10 @@ impl Config {
     }
 
     fn validate(&self) -> Result<()> {
-        anyhow::ensure!(!self.ingress.is_empty(), "at least one [[ingress]] entry is required");
+        anyhow::ensure!(
+            !self.ingress.is_empty(),
+            "at least one [[ingress]] entry is required"
+        );
         for entry in &self.ingress {
             anyhow::ensure!(
                 !entry.project_id.is_empty(),
@@ -112,9 +115,9 @@ impl Config {
     /// Lookup ingress by `(project_id, public_key)`.
     #[must_use]
     pub fn resolve_ingress(&self, project_id: &str, public_key: &str) -> Option<&IngressConfig> {
-        self.ingress.iter().find(|entry| {
-            entry.project_id == project_id && entry.public_key == public_key
-        })
+        self.ingress
+            .iter()
+            .find(|entry| entry.project_id == project_id && entry.public_key == public_key)
     }
 
     /// Union of destination kinds enabled on any ingress row.

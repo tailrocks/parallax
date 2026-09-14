@@ -3,8 +3,8 @@
 use std::collections::HashMap;
 
 use bytes::Bytes;
-use reqwest::header::{HeaderMap, HeaderName, HeaderValue, CONTENT_TYPE};
 use reqwest::Client;
+use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderName, HeaderValue};
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 use tracing::warn;
@@ -105,10 +105,7 @@ async fn destination_worker(
                 HeaderValue::from_static("Sentry sentry_version=7, sentry_key=invalid")
             }),
         );
-        headers.insert(
-            CONTENT_TYPE,
-            HeaderValue::from_static(job.content_type),
-        );
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static(job.content_type));
 
         match client
             .post(&job.url)

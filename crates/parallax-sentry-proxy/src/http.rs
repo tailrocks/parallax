@@ -135,7 +135,11 @@ fn build_envelope_jobs(
         .collect()
 }
 
-fn build_store_jobs(ingress: &IngressConfig, auth_template: &str, body: &Bytes) -> Vec<DeliveryJob> {
+fn build_store_jobs(
+    ingress: &IngressConfig,
+    auth_template: &str,
+    body: &Bytes,
+) -> Vec<DeliveryJob> {
     ingress
         .destinations
         .enabled()
@@ -183,10 +187,7 @@ fn extract_sentry_key(headers: &HeaderMap) -> Option<String> {
 }
 
 fn extract_sentry_auth(headers: &HeaderMap) -> Option<String> {
-    if let Some(value) = headers
-        .get("x-sentry-auth")
-        .and_then(|v| v.to_str().ok())
-    {
+    if let Some(value) = headers.get("x-sentry-auth").and_then(|v| v.to_str().ok()) {
         return Some(value.to_string());
     }
     if let Some(value) = headers
@@ -236,13 +237,16 @@ mod tests {
     use crate::config::Config;
 
     fn sample_envelope() -> Vec<u8> {
-        let event = br#"{"event_id":"9ec79c33ec9942ab8353589fcb2e04dc","message":"hello","level":"error"}"#;
+        let event =
+            br#"{"event_id":"9ec79c33ec9942ab8353589fcb2e04dc","message":"hello","level":"error"}"#;
         let mut body = Vec::new();
         body.extend_from_slice(
             br#"{"event_id":"9ec79c33ec9942ab8353589fcb2e04dc","dsn":"https://proxy-public-key@proxy/1"}"#,
         );
         body.push(b'\n');
-        body.extend_from_slice(format!(r#"{{"type":"event","length":{}}}"#, event.len()).as_bytes());
+        body.extend_from_slice(
+            format!(r#"{{"type":"event","length":{}}}"#, event.len()).as_bytes(),
+        );
         body.push(b'\n');
         body.extend_from_slice(event);
         body.push(b'\n');
