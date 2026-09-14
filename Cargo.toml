@@ -13,6 +13,7 @@ members = [
     "crates/parallax-redaction",
     "crates/parallax-semconv",
     "crates/parallax-server",
+    "crates/parallax-sentry-proxy",
     "crates/parallax-spool",
     "crates/parallax-storage",
     "crates/parallax-test-support",
@@ -48,6 +49,7 @@ parallax-proto = { path = "crates/parallax-proto" }
 parallax-redaction = { path = "crates/parallax-redaction" }
 parallax-semconv = { path = "crates/parallax-semconv" }
 parallax-server = { path = "crates/parallax-server" }
+parallax-sentry-proxy = { path = "crates/parallax-sentry-proxy" }
 parallax-spool = { path = "crates/parallax-spool" }
 parallax-storage = { path = "crates/parallax-storage" }
 parallax-test-support = { path = "crates/parallax-test-support" }
