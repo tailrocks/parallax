@@ -65,7 +65,7 @@ fn host_target() -> anyhow::Result<&'static str> {
 /// GitHub API). Parallax's whole storage path is native-OTLP, so this fallback
 /// tracks the latest verified stable release instead of freezing the original
 /// native-capable floor.
-const FALLBACK_VERSION: &str = "1.1.2";
+const FALLBACK_VERSION: &str = "1.2.0";
 
 /// Resolve "latest" to a concrete release tag via the GitHub API, falling back
 /// to the pinned native-capable floor when the API is unreachable. An explicit
