@@ -101,7 +101,13 @@ pub fn rewrite_envelope_dsn(envelope: &[u8], destination: &ParsedDsn) -> Result<
 /// Replace `sentry_key` in an inbound `X-Sentry-Auth` / `Authorization: Sentry …` value.
 #[must_use]
 pub fn rewrite_sentry_auth(raw: &str, public_key: &str) -> String {
-    let mut parts: Vec<String> = raw
+    let stripped = raw
+        .trim()
+        .strip_prefix("Sentry ")
+        .or_else(|| raw.trim().strip_prefix("sentry "))
+        .unwrap_or(raw.trim());
+
+    let mut parts: Vec<String> = stripped
         .split(',')
         .map(str::trim)
         .filter(|part| !part.is_empty())
@@ -116,7 +122,7 @@ pub fn rewrite_sentry_auth(raw: &str, public_key: &str) -> String {
     if !parts.iter().any(|part| part.starts_with("sentry_key=")) {
         parts.push(format!("sentry_key={public_key}"));
     }
-    parts.join(", ")
+    format!("Sentry {}", parts.join(", "))
 }
 
 #[cfg(test)]
@@ -163,5 +169,11 @@ mod tests {
     fn rewrite_sentry_auth_adds_missing_key() {
         let out = rewrite_sentry_auth("Sentry sentry_version=7", "k");
         assert!(out.contains("sentry_key=k"));
+    }
+
+    #[test]
+    fn rewrite_sentry_auth_replaces_key_when_only_segment_has_sentry_prefix() {
+        let out = rewrite_sentry_auth("Sentry sentry_key=proxy-key", "dest-key");
+        assert_eq!(out, "Sentry sentry_key=dest-key");
     }
 }
