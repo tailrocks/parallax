@@ -49,7 +49,7 @@ pub(super) struct HostGuard {
 }
 
 impl HostGuard {
-    pub(super) fn for_listener(bind: &str, api_addr: SocketAddr) -> Self {
+    pub(super) fn for_listener(bind: &str, api_addr: SocketAddr, public_url: &str) -> Self {
         let mut allowed = vec![
             "localhost".to_string(),
             "127.0.0.1".to_string(),
@@ -57,6 +57,9 @@ impl HostGuard {
         ];
         add_allowed_host(&mut allowed, bind);
         add_allowed_host(&mut allowed, &api_addr.ip().to_string());
+        if let Some(host) = host_from_public_url(public_url) {
+            add_allowed_host(&mut allowed, &host);
+        }
         allowed.sort();
         allowed.dedup();
         Self {
@@ -68,6 +71,19 @@ impl HostGuard {
         normalize_host_header(host)
             .is_some_and(|host| self.allowed_hosts.iter().any(|allowed| allowed == &host))
     }
+}
+
+fn host_from_public_url(url: &str) -> Option<String> {
+    let url = url.trim();
+    if url.is_empty() {
+        return None;
+    }
+    let without_scheme = match url.split_once("://") {
+        Some((_, rest)) => rest,
+        None => url,
+    };
+    let hostport = without_scheme.split('/').next().unwrap_or("");
+    normalize_host_header(hostport)
 }
 
 fn add_allowed_host(allowed: &mut Vec<String>, host: &str) {
@@ -129,6 +145,72 @@ pub(super) async fn host_guard_middleware(
     } else {
         Err(StatusCode::FORBIDDEN)
     }
+}
+
+#[derive(Clone)]
+pub(super) struct LoginState {
+    pub(super) enabled: bool,
+    pub(super) username: String,
+    pub(super) token: Option<Arc<str>>,
+}
+
+#[derive(Debug, serde::Serialize)]
+pub(super) struct LoginStatus {
+    login_enabled: bool,
+    username: Option<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub(super) struct LoginRequest {
+    username: String,
+    password: String,
+}
+
+#[derive(Debug, serde::Serialize)]
+pub(super) struct LoginResponse {
+    token: String,
+    username: String,
+}
+
+pub(super) async fn login_status_handler(State(state): State<LoginState>) -> Json<LoginStatus> {
+    Json(LoginStatus {
+        login_enabled: state.enabled,
+        username: state
+            .enabled
+            .then(|| state.username.clone())
+            .filter(|name| !name.is_empty()),
+    })
+}
+
+pub(super) async fn login_handler(
+    State(state): State<LoginState>,
+    Json(request): Json<LoginRequest>,
+) -> Result<Json<LoginResponse>, StatusCode> {
+    authenticate_login(&state, &request).map(Json)
+}
+
+fn authenticate_login(
+    state: &LoginState,
+    request: &LoginRequest,
+) -> Result<LoginResponse, StatusCode> {
+    if !state.enabled {
+        return Err(StatusCode::NOT_FOUND);
+    }
+    let Some(expected) = state.token.as_deref() else {
+        return Err(StatusCode::NOT_FOUND);
+    };
+    let username = request.username.trim();
+    let password = request.password.trim();
+    let user_ok =
+        !state.username.is_empty() && username.eq_ignore_ascii_case(state.username.trim());
+    let pass_ok = constant_time_eq(password.as_bytes(), expected.as_bytes());
+    if user_ok && pass_ok {
+        return Ok(LoginResponse {
+            token: expected.to_string(),
+            username: state.username.clone(),
+        });
+    }
+    Err(StatusCode::UNAUTHORIZED)
 }
 
 /// Shared operator bearer token for protected developer API routes (plan 109).
@@ -323,7 +405,9 @@ pub(super) async fn graphql_handler(
 
 #[cfg(test)]
 mod auth_tests {
-    use super::{ApiAuth, constant_time_eq, extract_bearer, percent_decode};
+    use super::{
+        ApiAuth, HostGuard, constant_time_eq, extract_bearer, host_from_public_url, percent_decode,
+    };
 
     #[test]
     fn bearer_extraction_is_strict() {
@@ -351,6 +435,80 @@ mod auth_tests {
     fn open_mode_when_token_absent() {
         assert!(!ApiAuth::from_token(None).required());
         assert!(ApiAuth::from_token(Some("a".repeat(16))).required());
+    }
+
+    #[test]
+    fn public_url_host_is_allowed_and_foreign_hosts_are_not() {
+        use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+        let guard = HostGuard::for_listener(
+            "0.0.0.0",
+            SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 4000),
+            "https://parallax.chainargos.com",
+        );
+        assert!(guard.allows("parallax.chainargos.com"));
+        assert!(guard.allows("parallax.chainargos.com:443"));
+        assert!(guard.allows("127.0.0.1"));
+        assert!(!guard.allows("evil.example.com"));
+    }
+
+    #[test]
+    fn login_disabled_is_not_found_even_with_valid_credentials() {
+        let state = super::LoginState {
+            enabled: false,
+            username: "operator@example.com".into(),
+            token: Some(std::sync::Arc::from("sixteen-chars-ok")),
+        };
+        let request = super::LoginRequest {
+            username: "operator@example.com".into(),
+            password: "sixteen-chars-ok".into(),
+        };
+        assert_eq!(
+            super::authenticate_login(&state, &request).unwrap_err(),
+            axum::http::StatusCode::NOT_FOUND
+        );
+    }
+
+    #[test]
+    fn login_accepts_operator_and_rejects_bad_password() {
+        let state = super::LoginState {
+            enabled: true,
+            username: "operator@example.com".into(),
+            token: Some(std::sync::Arc::from("sixteen-chars-ok")),
+        };
+        let ok = super::authenticate_login(
+            &state,
+            &super::LoginRequest {
+                username: "Operator@example.com".into(),
+                password: "sixteen-chars-ok".into(),
+            },
+        )
+        .expect("valid operator login");
+        assert_eq!(ok.token, "sixteen-chars-ok");
+        assert_eq!(ok.username, "operator@example.com");
+        assert_eq!(
+            super::authenticate_login(
+                &state,
+                &super::LoginRequest {
+                    username: "operator@example.com".into(),
+                    password: "wrong-password-ok".into(),
+                },
+            )
+            .unwrap_err(),
+            axum::http::StatusCode::UNAUTHORIZED
+        );
+    }
+
+    #[test]
+    fn host_from_public_url_strips_scheme_path_and_port() {
+        assert_eq!(
+            host_from_public_url("https://parallax.example.com/app"),
+            Some("parallax.example.com".into())
+        );
+        assert_eq!(
+            host_from_public_url("https://parallax.example.com:8443/"),
+            Some("parallax.example.com".into())
+        );
+        assert_eq!(host_from_public_url(""), None);
     }
 
     /// The `access_token` query fallback (defect #4) must decode the standard

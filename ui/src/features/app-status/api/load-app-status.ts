@@ -1,28 +1,19 @@
-import { apiAuthHeaders } from "@/platform/auth/api-token"
-import {
-  classifyHealth,
-  DEFAULT_ENDPOINT_LABEL,
-  type AppStatus,
-} from "@/features/app-status/model/app-status"
+import { apiEndpointLabel } from "@/platform/graphql/transport"
+import { classifyHealth, type AppStatus } from "@/features/app-status/model/app-status"
 
 export async function loadAppStatus(signal?: AbortSignal): Promise<AppStatus> {
+  const endpointLabel = apiEndpointLabel()
   try {
-    const init: RequestInit = {
-      method: "POST",
-      headers: { "content-type": "application/json", ...apiAuthHeaders() },
-      body: JSON.stringify({ query: "{ health }" }),
+    const response = await fetch("/health", { signal })
+    if (response.ok) {
+      const text = (await response.text()).trim().toLowerCase()
+      return {
+        healthy: text === "ok" || text.length === 0 || classifyHealth(text),
+        endpointLabel,
+      }
     }
-    if (signal) init.signal = signal
-    const response = await fetch("/graphql", init)
-    const body = (await response.json()) as { data?: { health?: unknown } }
-    return {
-      healthy: classifyHealth(body.data?.health),
-      endpointLabel: DEFAULT_ENDPOINT_LABEL,
-    }
+    return { healthy: false, endpointLabel }
   } catch {
-    return {
-      healthy: false,
-      endpointLabel: DEFAULT_ENDPOINT_LABEL,
-    }
+    return { healthy: false, endpointLabel }
   }
 }

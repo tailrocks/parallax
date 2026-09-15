@@ -30,6 +30,8 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { loadAppStatus } from "@/features/app-status"
+import { getApiToken, setApiToken } from "@/platform/auth/api-token"
+import { loadAuthStatus } from "@/platform/auth/status"
 import { loadDashboardNavigation, type DashboardNavigationItem } from "@/features/dashboards"
 import { cn } from "@/lib/utils"
 
@@ -119,6 +121,43 @@ function NavGroup({
   )
 }
 
+function AccountControls() {
+  const [signedIn, setSignedIn] = useState(false)
+  const [loginEnabled, setLoginEnabled] = useState(false)
+
+  useEffect(() => {
+    setSignedIn(Boolean(getApiToken()))
+    const controller = new AbortController()
+    void loadAuthStatus(controller.signal).then((status) => {
+      setLoginEnabled(status.loginEnabled)
+    })
+    return () => controller.abort()
+  }, [])
+
+  if (!loginEnabled) return null
+  if (!signedIn) {
+    return (
+      <Button render={<Link to="/login" />} variant="outline" size="sm" className="w-full">
+        Sign in
+      </Button>
+    )
+  }
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className="w-full"
+      onClick={() => {
+        setApiToken("")
+        window.location.assign("/login")
+      }}
+    >
+      Sign out
+    </Button>
+  )
+}
+
 function StatusPill() {
   const [online, setOnline] = useState<boolean | null>(null)
   const [endpoint, setEndpoint] = useState("127.0.0.1:4000")
@@ -137,7 +176,7 @@ function StatusPill() {
   return (
     <div className="flex h-8 items-center gap-2 rounded-full bg-background px-3 text-xs text-muted-foreground shadow-(--custom-shadow) group-data-[collapsible=icon]:hidden">
       <span className={cn("size-1.5 rounded-full", healthy ? "bg-green-500" : "bg-rose-500")} />
-      <span className="font-medium text-foreground">{healthy ? "Local" : "Offline"}</span>
+      <span className="font-medium text-foreground">{healthy ? "Online" : "Offline"}</span>
       <span className="font-mono">{endpoint}</span>
     </div>
   )
@@ -233,6 +272,9 @@ export function ParallaxShell({ children }: { children: React.ReactNode }) {
             </Button>
           </div>
           <StatusPill />
+          <div className="group-data-[collapsible=icon]:hidden">
+            <AccountControls />
+          </div>
           <div className="group-data-[collapsible=icon]:hidden">
             <ThemeSwitcher />
           </div>

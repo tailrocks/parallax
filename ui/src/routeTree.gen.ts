@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as EcosystemRouteImport } from './routes/ecosystem'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as LogsRouteImport } from './routes/logs'
 import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as ServicesRouteImport } from './routes/services'
@@ -47,6 +48,11 @@ const SplatRoute = SplatRouteImport.update({
 const EcosystemRoute = EcosystemRouteImport.update({
   id: '/ecosystem',
   path: '/ecosystem',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LogsRoute = LogsRouteImport.update({
@@ -161,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/ecosystem': typeof EcosystemRoute
+  '/login': typeof LoginRoute
   '/logs': typeof LogsRoute
   '/pipeline': typeof PipelineRoute
   '/services': typeof ServicesRouteWithChildren
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/ecosystem': typeof EcosystemRoute
+  '/login': typeof LoginRoute
   '/logs': typeof LogsRoute
   '/pipeline': typeof PipelineRoute
   '/services': typeof ServicesRouteWithChildren
@@ -214,6 +222,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/ecosystem': typeof EcosystemRoute
+  '/login': typeof LoginRoute
   '/logs': typeof LogsRoute
   '/pipeline': typeof PipelineRoute
   '/services': typeof ServicesRouteWithChildren
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/ecosystem'
+    | '/login'
     | '/logs'
     | '/pipeline'
     | '/services'
@@ -268,6 +278,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/ecosystem'
+    | '/login'
     | '/logs'
     | '/pipeline'
     | '/services'
@@ -294,6 +305,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/ecosystem'
+    | '/login'
     | '/logs'
     | '/pipeline'
     | '/services'
@@ -321,6 +333,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
   EcosystemRoute: typeof EcosystemRoute
+  LoginRoute: typeof LoginRoute
   LogsRoute: typeof LogsRoute
   PipelineRoute: typeof PipelineRoute
   ServicesRoute: typeof ServicesRouteWithChildren
@@ -364,6 +377,13 @@ declare module '@tanstack/react-router' {
       path: '/ecosystem'
       fullPath: '/ecosystem'
       preLoaderRoute: typeof EcosystemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/logs': {
@@ -532,6 +552,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
   EcosystemRoute: EcosystemRoute,
+  LoginRoute: LoginRoute,
   LogsRoute: LogsRoute,
   PipelineRoute: PipelineRoute,
   ServicesRoute: ServicesRouteWithChildren,

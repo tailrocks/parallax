@@ -4,6 +4,8 @@ import {
   Outlet,
   Scripts,
   createRootRouteWithContext,
+  redirect,
+  useRouterState,
 } from "@tanstack/react-router"
 import { ThemeProvider } from "next-themes"
 
@@ -11,8 +13,18 @@ import appCss from "../styles.css?url"
 import { ParallaxShell, RouteErrorPanel, RouteNotFoundPanel, RoutePendingPanel } from "@/layout"
 import { AppQueryProvider } from "@/platform/query/provider"
 import type { AppRouterContext } from "@/router-context"
+import { getApiToken } from "@/platform/auth/api-token"
+import { loadAuthStatus } from "@/platform/auth/status"
 
 export const Route = createRootRouteWithContext<AppRouterContext>()({
+  beforeLoad: async ({ location }) => {
+    if (typeof window === "undefined") return
+    if (location.pathname === "/login") return
+    const status = await loadAuthStatus()
+    if (status.loginEnabled && !getApiToken()) {
+      throw redirect({ to: "/login" })
+    }
+  },
   head: () => ({
     meta: [
       {
@@ -44,11 +56,12 @@ export const Route = createRootRouteWithContext<AppRouterContext>()({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   const { queryClient } = Route.useRouteContext()
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
   return (
     <RootDocument>
       <AppQueryProvider client={queryClient}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          <ParallaxShell>{children}</ParallaxShell>
+          {pathname === "/login" ? children : <ParallaxShell>{children}</ParallaxShell>}
         </ThemeProvider>
       </AppQueryProvider>
     </RootDocument>

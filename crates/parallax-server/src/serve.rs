@@ -22,8 +22,9 @@ use tokio::task::JoinHandle;
 
 mod http;
 use http::{
-    ApiAuth, GraphQlState, HostGuard, api_auth_middleware, api_auth_middleware_with_query_token,
-    graphql_handler, host_guard_middleware,
+    ApiAuth, GraphQlState, HostGuard, LoginState, api_auth_middleware,
+    api_auth_middleware_with_query_token, graphql_handler, host_guard_middleware, login_handler,
+    login_status_handler,
 };
 
 #[expect(missing_debug_implementations, reason = "opaque runtime handles")]
@@ -265,8 +266,19 @@ fn build_api_router(
         otlp_http_port: state.http_port,
         limits: config.limits.clone(),
     };
-    let host_guard = HostGuard::for_listener(&config.server.bind, state.api_addr);
+    let host_guard = HostGuard::for_listener(
+        &config.server.bind,
+        state.api_addr,
+        &config.resolved_public_url(),
+    );
     let api_auth = ApiAuth::from_token(config.resolved_api_token());
+    let login_state = LoginState {
+        enabled: config.resolved_login_enabled(),
+        username: config.resolved_login_username().unwrap_or_default(),
+        token: config
+            .resolved_api_token()
+            .map(|value| Arc::from(value.into_boxed_str())),
+    };
     let router = Router::new()
         .merge(
             Router::new()
@@ -275,6 +287,16 @@ fn build_api_router(
                 .with_state(ingest_health),
         )
         .route("/version", get(|| async { env!("CARGO_PKG_VERSION") }))
+        .merge(
+            Router::new()
+                .route("/api/auth/status", get(login_status_handler))
+                .route("/api/auth/login", post(login_handler))
+                .with_state(login_state)
+                .layer(middleware::from_fn_with_state(
+                    host_guard.clone(),
+                    host_guard_middleware,
+                )),
+        )
         .merge(
             Router::new()
                 .route("/v1/logs/stream", get(crate::live::stream_logs))
