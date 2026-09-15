@@ -53,7 +53,7 @@ fi
 
 config=$(cd "$ui" && bun ./node_modules/oxlint/bin/oxlint --print-config)
 config_hash=$(printf '%s\n' "$config" | hash_stream)
-if [[ "$config_hash" != f1796585c8362b98be550755de4b4bb27bfb6aba286e0f041ebfbb0e7410cf7e ]]; then
+if [[ "$config_hash" != 1fbaaef24c37719a44ab749d807489ab9d01d59757ba222e1b63edda1a0a04fd ]]; then
   printf 'oxlint --print-config hash=%s\n' "$config_hash" >&2
   exit 1
 fi
