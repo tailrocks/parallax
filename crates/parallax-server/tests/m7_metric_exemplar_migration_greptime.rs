@@ -56,7 +56,7 @@ async fn forward_only_bootstrap_drops_legacy_exemplar_shapes() {
             std::fs::copy(cached, bin_dir.join("greptime")).expect("seed cached GreptimeDB");
         }
     }
-    let binary = ensure_greptime_binary(&bin_dir, "1.1.2", true)
+    let binary = ensure_greptime_binary(&bin_dir, "1.2.0", true)
         .await
         .expect("resolve GreptimeDB");
     let engine = GreptimeSupervisor::start(binary, tmp.path())

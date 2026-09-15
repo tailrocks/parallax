@@ -1,0 +1,26 @@
+# Selene Sentry fan-out proxy — example configuration.
+#
+# SDKs point at this proxy once; the proxy rewrites DSN metadata and auth,
+# then fans out to allowlisted Sentry-compatible destinations.
+
+listen = "0.0.0.0:8080"
+
+[fanout]
+# Bounded queue depth per destination worker (§11: independent workers).
+channel_capacity = 256
+
+[[ingress]]
+project_id = "1"
+public_key = "proxy-public-key"
+
+[ingress.destinations.sentry]
+enabled = true
+dsn = "https://sentry-key@sentry.chainargos.com/2"
+
+[ingress.destinations.rustrak]
+enabled = true
+dsn = "https://rustrak-key@selene-rustrak/1"
+
+[ingress.destinations.parallax]
+enabled = true
+dsn = "https://parallax-key@selene-parallax/1"

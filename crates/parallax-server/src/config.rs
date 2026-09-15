@@ -164,7 +164,7 @@ pub struct StorageConfig {
     /// Product storage mode: `managed` or `external`.
     pub mode: String,
     pub greptime_url: String,
-    /// Pinned `GreptimeDB` version to install. Defaults to v1.1.2, the latest
+    /// Pinned `GreptimeDB` version to install. Defaults to v1.2.0, the latest
     /// stable native-OTLP-capable release verified by Parallax. `"latest"`
     /// resolves the newest GitHub stable release at install instead (see
     /// `resolve_version`).
@@ -268,7 +268,7 @@ impl Default for StorageConfig {
         Self {
             mode: "managed".to_string(),
             greptime_url: String::new(),
-            greptime_version: "1.1.2".to_string(),
+            greptime_version: "1.2.0".to_string(),
             data_dir: "~/.parallax".to_string(),
         }
     }

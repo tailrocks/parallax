@@ -3447,6 +3447,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "parallax-sentry-proxy"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "bytes",
+ "clap",
+ "parallax-ingest",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "toml",
+ "tower",
+ "tower-http 0.7.0",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "parallax-server"
 version = "0.1.0"
 dependencies = [
