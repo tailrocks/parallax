@@ -54,7 +54,7 @@ describe("shell integration", () => {
     expect(await screen.findByPlaceholderText(/search pages/i)).toBeTruthy()
     expect(screen.getByText("Parallax API did not answer")).toBeTruthy()
     expect(screen.getByText("offline")).toBeTruthy()
-    expect(screen.getByText("ui-test-host:4321")).toBeTruthy()
+    expect(screen.getByText(/Verify the server at/)).toBeTruthy()
   })
 
   it("surfaces dashboard navigation load failures", async () => {

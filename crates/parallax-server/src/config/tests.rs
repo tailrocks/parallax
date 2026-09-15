@@ -99,6 +99,24 @@ fn api_token_length_bounds() {
 }
 
 #[test]
+fn login_defaults_off_and_requires_token_plus_username() {
+    let mut config = Config::default();
+    assert!(!config.resolved_login_enabled());
+    config.server.login_enabled = true;
+    let error = config.validate().expect_err("login needs token");
+    assert!(
+        error
+            .to_string()
+            .contains("login_enabled requires an API token")
+    );
+    config.server.api_token = "a".repeat(16);
+    let error = config.validate().expect_err("login needs username");
+    assert!(error.to_string().contains("login_username"));
+    config.server.login_username = "operator@example.com".to_string();
+    config.validate().unwrap();
+}
+
+#[test]
 fn env_off_disables_config_token() {
     assert_eq!(
         resolve_api_token_from(Some("off".to_string()), "configured-token-value"),

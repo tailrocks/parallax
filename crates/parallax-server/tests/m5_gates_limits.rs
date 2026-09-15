@@ -124,5 +124,36 @@ async fn m5_gates_limits_enforce_graphql_depth_complexity_and_host_guard() {
 
     handle.shutdown();
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn host_guard_allows_configured_public_url_host() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let mut config = test_config(tmp.path());
+    config.server.public_url = "https://parallax.example.com".to_string();
+    let handle = support::start(&config).await.expect("server starts");
+    let client = reqwest::Client::new();
+
+    let (status, json) = graphql(
+        &client,
+        handle.api_addr,
+        Some("parallax.example.com"),
+        "{ version }",
+    )
+    .await;
+    assert_eq!(status, reqwest::StatusCode::OK);
+    assert!(json.pointer("/data/version").is_some());
+
+    let (status, _) = graphql(
+        &client,
+        handle.api_addr,
+        Some("evil.example.com"),
+        "{ version }",
+    )
+    .await;
+    assert_eq!(status, reqwest::StatusCode::FORBIDDEN);
+
+    handle.shutdown();
+}
+
 #[path = "support/harness.rs"]
 mod support;

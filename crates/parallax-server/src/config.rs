@@ -153,9 +153,18 @@ pub struct ServerConfig {
     /// Operator-facing origin (e.g. `https://parallax.example.com`) used in
     /// outbound notification links. Empty = derive from `bind`+`api_port`,
     /// substituting loopback when the bind is a wildcard address so outbound
-    /// links are never `0.0.0.0`.
+    /// links are never `0.0.0.0`. Also added to HostGuard so the public
+    /// hostname can reach `/graphql` (not only loopback).
     #[serde(default)]
     pub public_url: String,
+    /// When false (default) the UI stays guest/open: no login page. Set true
+    /// to require the operator account (username + API token as password).
+    #[serde(default)]
+    pub login_enabled: bool,
+    /// Operator username shown on the login page. Required when
+    /// `login_enabled` is true. Env `PARALLAX_LOGIN_USERNAME` wins.
+    #[serde(default)]
+    pub login_username: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -259,6 +268,8 @@ impl Default for ServerConfig {
             ui_dist: String::new(),
             api_token: String::new(),
             public_url: String::new(),
+            login_enabled: false,
+            login_username: String::new(),
         }
     }
 }
@@ -354,6 +365,18 @@ impl Config {
                     .to_string(),
             ));
         }
+        if self.resolved_login_enabled() {
+            if token.is_none() {
+                return Err(ConfigError::Invalid(
+                    "server.login_enabled requires an API token (PARALLAX_API_TOKEN or [server] api_token)".to_string(),
+                ));
+            }
+            if self.resolved_login_username().is_none() {
+                return Err(ConfigError::Invalid(
+                    "server.login_enabled requires login_username (PARALLAX_LOGIN_USERNAME or [server] login_username)".to_string(),
+                ));
+            }
+        }
         if !matches!(self.sampling.rule.as_str(), "head" | "tail") {
             return Err(ConfigError::Invalid(format!(
                 "unsupported sampling.rule {:?}; supported values are \"head\" and \"tail\"",
@@ -382,6 +405,24 @@ impl Config {
         resolve_api_token_from(
             std::env::var("PARALLAX_API_TOKEN").ok(),
             &self.server.api_token,
+        )
+    }
+
+    /// Login page is off unless `PARALLAX_LOGIN_ENABLED` or `[server] login_enabled`.
+    #[must_use]
+    pub fn resolved_login_enabled(&self) -> bool {
+        resolve_login_enabled_from(
+            std::env::var("PARALLAX_LOGIN_ENABLED").ok(),
+            self.server.login_enabled,
+        )
+    }
+
+    /// Operator username for the optional login page.
+    #[must_use]
+    pub fn resolved_login_username(&self) -> Option<String> {
+        resolve_login_username_from(
+            std::env::var("PARALLAX_LOGIN_USERNAME").ok(),
+            &self.server.login_username,
         )
     }
 
@@ -489,6 +530,32 @@ impl Config {
         }
         PathBuf::from(raw)
     }
+}
+
+fn env_flag_enabled(value: &str) -> bool {
+    matches!(
+        value.trim().to_ascii_lowercase().as_str(),
+        "1" | "true" | "yes" | "on"
+    )
+}
+
+pub(crate) fn resolve_login_enabled_from(env: Option<String>, config_enabled: bool) -> bool {
+    match env {
+        Some(value) => env_flag_enabled(&value),
+        None => config_enabled,
+    }
+}
+
+pub(crate) fn resolve_login_username_from(
+    env: Option<String>,
+    config_username: &str,
+) -> Option<String> {
+    let candidate = match env {
+        Some(value) => value,
+        None => config_username.to_string(),
+    };
+    let trimmed = candidate.trim();
+    (!trimmed.is_empty()).then(|| trimmed.to_string())
 }
 
 /// Env override (even empty/`off`) wins over the config key.

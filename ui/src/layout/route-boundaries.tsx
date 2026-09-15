@@ -15,8 +15,9 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { ErrorState } from "@/shared/console/error-state"
-import { setApiToken } from "@/platform/auth/api-token"
+import { getApiToken, setApiToken } from "@/platform/auth/api-token"
 import { apiEndpointLabel } from "@/platform/graphql/transport"
+import { loadAuthStatus } from "@/platform/auth/status"
 
 export { RouteNotFoundPanel } from "@/shared/route-not-found"
 
@@ -28,6 +29,13 @@ function safeErrorMessage(error: unknown): string {
     return error
   }
   return "Route failed before Parallax could load this surface."
+}
+
+export function isForbiddenError(error: unknown): boolean {
+  if (typeof error === "object" && error !== null && "status" in error) {
+    if ((error as { status: unknown }).status === 403) return true
+  }
+  return /403|forbidden/i.test(safeErrorMessage(error))
 }
 
 /** The API rejected the request as unauthenticated (plan 109 bearer token). */
@@ -88,8 +96,17 @@ function ApiTokenPanel({ onRetry }: { onRetry: () => void }) {
 }
 
 export function RouteErrorPanel({ error, reset }: ErrorComponentProps) {
-  if (isUnauthorizedError(error)) {
-    return <ApiTokenPanel onRetry={reset} />
+  if (isForbiddenError(error) || isUnauthorizedError(error)) {
+    if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+      void loadAuthStatus().then((status) => {
+        if (status.loginEnabled && !getApiToken()) {
+          window.location.assign("/login")
+        }
+      })
+    }
+    if (isUnauthorizedError(error)) {
+      return <ApiTokenPanel onRetry={reset} />
+    }
   }
   return (
     <ErrorState
