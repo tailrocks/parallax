@@ -126,8 +126,10 @@
     },
     {
       "files": [
+        "src/routes/__root.tsx",
         "src/routes/dashboards.$dashboardId.tsx",
-        "src/routes/investigations.$investigationId.tsx"
+        "src/routes/investigations.$investigationId.tsx",
+        "src/routes/login.tsx"
       ],
       "rules": {
         "typescript/only-throw-error": "off"
