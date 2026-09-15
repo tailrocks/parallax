@@ -19,8 +19,6 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate()
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
 
@@ -36,6 +34,9 @@ function LoginPage() {
         className="grid gap-4"
         onSubmit={(event) => {
           event.preventDefault()
+          const form = new FormData(event.currentTarget)
+          const username = String(form.get("username") ?? "").trim()
+          const password = String(form.get("password") ?? "")
           setPending(true)
           setError(null)
           void loginWithPassword(username, password)
@@ -53,9 +54,8 @@ function LoginPage() {
           <span className="font-medium">Username</span>
           <Input
             type="email"
+            name="username"
             autoComplete="username"
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
             placeholder="operator@example.com"
             required
             autoFocus
@@ -63,16 +63,10 @@ function LoginPage() {
         </label>
         <label className="grid gap-1.5 text-sm">
           <span className="font-medium">Password</span>
-          <Input
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
+          <Input type="password" name="password" autoComplete="current-password" required />
         </label>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        <Button type="submit" disabled={pending || !username.trim() || !password}>
+        <Button type="submit" disabled={pending}>
           {pending ? "Signing in…" : "Sign in"}
         </Button>
       </form>
