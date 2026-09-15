@@ -20,13 +20,30 @@ pub struct NormalizedMetrics {
 /// histograms and poison the whole batch on engines that reject them.
 /// Prunes emptied scopes/resources. Returns whether anything was removed.
 pub fn strip_exp_histograms(request: &mut ExportMetricsServiceRequest) -> bool {
-    use parallax_proto::metrics::metric::Data as MetricData;
+    strip_metrics_matching(request, |data| {
+        matches!(data, Data::ExponentialHistogram(_))
+    })
+}
+
+/// Remove explicit-histogram metrics from a request before a native OTLP
+/// forward. GreptimeDB's metric engine creates `_bucket`/`_count`/`_sum`
+/// siblings in one batch DDL; an empty `_sum` table (no `greptime_value`)
+/// fails with "No field column found" and rolls back sibling gauge/sum
+/// tables in the same request. Returns whether anything was removed.
+pub fn strip_explicit_histograms(request: &mut ExportMetricsServiceRequest) -> bool {
+    strip_metrics_matching(request, |data| matches!(data, Data::Histogram(_)))
+}
+
+fn strip_metrics_matching(
+    request: &mut ExportMetricsServiceRequest,
+    drop: impl Fn(&Data) -> bool,
+) -> bool {
     let mut changed = false;
     for rm in &mut request.resource_metrics {
         for sm in &mut rm.scope_metrics {
             let before = sm.metrics.len();
             sm.metrics
-                .retain(|metric| !matches!(metric.data, Some(MetricData::ExponentialHistogram(_))));
+                .retain(|metric| !metric.data.as_ref().is_some_and(&drop));
             changed |= sm.metrics.len() != before;
         }
         rm.scope_metrics.retain(|sm| !sm.metrics.is_empty());

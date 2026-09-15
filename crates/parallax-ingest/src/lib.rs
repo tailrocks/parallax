@@ -26,7 +26,9 @@ mod values;
 
 pub use exp_histogram::ConvertedHistogram;
 pub use logs::{normalize_logs, promote_log_identity_attributes};
-pub use metrics::{NormalizedMetrics, normalize_metrics, strip_exp_histograms};
+pub use metrics::{
+    NormalizedMetrics, normalize_metrics, strip_exp_histograms, strip_explicit_histograms,
+};
 pub use sentry_envelope::{EnvelopeOutcome, RejectReason, UnsupportedItem, parse_envelope};
 pub use traces::normalize_traces;
 

@@ -18,9 +18,12 @@ pub trait IngestStore: Send + Sync {
         request: &parallax_proto::collector_logs::ExportLogsServiceRequest,
         raw: bytes::Bytes,
     ) -> StorageResult<()>;
-    /// Ingest a metrics batch: forward the raw OTLP bytes to the native
+    /// Ingest a metrics batch: forward gauge/sum OTLP bytes to the native
     /// `/v1/otlp/v1/metrics` endpoint (per-metric metric-engine tables), then
     /// persist the run-scoped subset of `points` into `invocation_metric_points`.
+    /// Explicit histograms are forwarded in a separate native request so a
+    /// failed `_sum` sibling create cannot roll back gauge/sum tables; on
+    /// native failure they persist to the extension histogram table.
     /// `exp_histograms` are ingest-converted exponential histograms: the native
     /// engine has no exp type, so stores persist them separately (never merged
     /// with native explicit-histogram tables).
