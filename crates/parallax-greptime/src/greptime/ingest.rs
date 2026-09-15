@@ -227,7 +227,8 @@ impl GreptimeStore {
             }
             return Ok(());
         }
-        Err(last_error.unwrap_or_else(|| anyhow::anyhow!("greptime per-metric metrics forward failed")))
+        Err(last_error
+            .unwrap_or_else(|| anyhow::anyhow!("greptime per-metric metrics forward failed")))
     }
 
     async fn insert_histogram_extension_rows(&self, rows: Vec<HistogramRow>) -> StorageResult<()> {
