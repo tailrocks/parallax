@@ -1,0 +1,26 @@
+# Generated ownership state; do not edit.
+schema = 2
+[inputs]
+config	75e4d66847432d7d
+scan	073e04b64f741aa5
+generator	37
+[outputs]
+.github/actionlint.yaml	8213392218757fe3
+.github/actions/report-velnor-ci-outcomes/action.yml	b6d1fd4a90eecb12
+.github/ci/project.toml	185df9c0b26cd4b8
+.github/workflows/ci-main.yml	6f8c094a3a482991
+.github/workflows/ci-policy.yml	2dca577cd974cfb6
+.github/workflows/ci-pr.yml	135b6475e167e376
+.github/workflows/ci-unit-bun.yml	5b1d2393131e0e33
+.github/workflows/ci-unit-docker.yml	c05576001a5e1f48
+.github/workflows/ci-unit-rust.yml	5efac50b813b59ba
+.github/workflows/dependency-discovery.yml	96433b994ebbb9f4
+.github/workflows/footprint.yml	f87ea256a5733a5e
+.github/workflows/maintenance.yml	23c81838f37cf2cd
+.github/workflows/mcp-evals.yml	035611c104a82064
+.github/workflows/nightly.yml	f3e9c2543c806483
+.github/workflows/preview.yml	052d35bc47219cd3
+.github/workflows/release.yml	51a5223d923661d2
+.github/workflows/scheduled-measurement.yml	9c164269e48248f5
+.github/workflows/storage-integration.yml	a930e59021733011
+.github/workflows/upgrade-harness.yml	080ce67ee451ff2d
