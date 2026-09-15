@@ -734,6 +734,47 @@ fn strip_exp_histograms_prunes_emptied_scopes() {
 }
 
 #[test]
+fn strip_explicit_histograms_removes_only_histograms() {
+    let mut request = ExportMetricsServiceRequest {
+        resource_metrics: vec![parallax_proto::metrics::ResourceMetrics {
+            resource: None,
+            scope_metrics: vec![parallax_proto::metrics::ScopeMetrics {
+                metrics: vec![
+                    Metric {
+                        name: "latency".into(),
+                        data: Some(Data::Histogram(Histogram::default())),
+                        ..Default::default()
+                    },
+                    Metric {
+                        name: "gauge".into(),
+                        data: Some(Data::Gauge(Gauge::default())),
+                        ..Default::default()
+                    },
+                ],
+                ..Default::default()
+            }],
+            ..Default::default()
+        }],
+    };
+    assert!(strip_explicit_histograms(&mut request));
+    let metrics = &request.resource_metrics[0].scope_metrics[0].metrics;
+    assert_eq!(metrics.len(), 1);
+    assert_eq!(metrics[0].name, "gauge");
+    assert!(!strip_explicit_histograms(&mut request));
+}
+
+#[test]
+fn strip_explicit_histograms_prunes_emptied_scopes() {
+    let mut request = metric_request(Metric {
+        name: "latency".into(),
+        data: Some(Data::Histogram(Histogram::default())),
+        ..Default::default()
+    });
+    assert!(strip_explicit_histograms(&mut request));
+    assert!(request.resource_metrics.is_empty());
+}
+
+#[test]
 fn summary_is_dropped_today() {
     let request = metric_request(Metric {
         name: "summary".into(),

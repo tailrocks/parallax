@@ -12,7 +12,7 @@ schema_version = 1
     "mod sentry_envelope",
     "use exp_histogram::ConvertedHistogram",
     "use logs::{normalize_logs, promote_log_identity_attributes}",
-    "use metrics::{NormalizedMetrics, normalize_metrics, strip_exp_histograms}",
+    "use metrics::{NormalizedMetrics, normalize_metrics, strip_exp_histograms, strip_explicit_histograms}",
     "use sentry_envelope::{EnvelopeOutcome, RejectReason, UnsupportedItem, parse_envelope}",
     "use traces::normalize_traces",
 ]
