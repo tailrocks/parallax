@@ -23,6 +23,8 @@ pull_request_on_velnor = true
 # static-workflow is unsupported on this generator revision; exclude them
 # from policy and own their bytes as static files so --force cannot wipe them.
 [policy]
+ruleset_required_status_checks = ["ci-required"]
+ruleset_external_status_checks = ["DCO"]
 exclude_workflows = [
   "dependency-discovery.yml",
   "footprint.yml",
