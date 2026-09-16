@@ -2,6 +2,7 @@ schema = 1
 
 [generator]
 repository = "tailrocks/parallax"
+revision = "e05aee6de1d1614d752b4d1b1d26a49ac2c5ef91"
 
 [scan]
 exclude = ["crates/parallax-xtask/src/release/tests.rs"]
@@ -16,6 +17,6 @@ default_branch = "main"
 pull_request_on_velnor = true
 
 [policy]
-ruleset_required_status_checks = ["ci-required"]
-ruleset_external_status_checks = ["DCO"]
+ci_required = true
+dco_required = true
 actionlint_config_variables_null = true
