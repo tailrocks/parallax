@@ -17,6 +17,8 @@ default_branch = "main"
 pull_request_on_velnor = true
 
 [policy]
+ruleset_external_status_checks = ["DCO"]
+ruleset_required_status_checks = ["ci-required"]
 ci_required = true
 dco_required = true
 actionlint_config_variables_null = true
