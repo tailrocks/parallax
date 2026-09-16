@@ -2,7 +2,7 @@ schema = 1
 
 [generator]
 repository = "tailrocks/parallax"
-revision = "03f9409b3f649a8973169dde0ebba3fe58a92ac9"
+revision = "e13bce4dba15ed5927effde5eb62e8ba453bf100"
 
 # xtask release tests include_str! the handcrafted preview/release workflows.
 # Those paths are generator output, not scan evidence, so the include check
