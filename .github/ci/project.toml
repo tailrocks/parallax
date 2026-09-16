@@ -15,7 +15,7 @@ limitations = ["Project code, build scripts, task runners, and commands are neve
 github_runner = "ubuntu-26.04"
 velnor_labels = ["self-hosted", "velnor-target-mvp"]
 files = ["ci-main.yml", "ci-policy.yml", "ci-pr.yml", "ci-unit-bun.yml", "ci-unit-docker.yml", "ci-unit-rust.yml", "maintenance.yml", "nightly.yml"]
-notes = ["Rust verification uses Mr. Boxington 1.8.3 by default on both lanes. GitHub-hosted jobs use its GitHub cache backend with bounded snapshot keys (a key names the toolchain/image/linker compatibility class and the hashed source state, so a new source state saves a new snapshot and retention keeps generations bounded). Velnor jobs use an explicit local-backend setup step against the image/runner-provided local store."]
+notes = ["Rust verification uses Mr. Boxington 1.11.1 by default on both lanes. GitHub-hosted jobs use its GitHub cache backend with bounded snapshot keys (a key names the toolchain/image/linker compatibility class and the hashed source state, so a new source state saves a new snapshot and retention keeps generations bounded). Velnor jobs use an explicit local-backend setup step against the image/runner-provided local store."]
 
 [release]
 enabled = false
@@ -32,7 +32,6 @@ github_full_commands = ["cd -- 'ui' && bun install --frozen-lockfile", "cd -- 'u
 velnor_pr_commands = ["cd -- 'ui' && bun install --frozen-lockfile", "cd -- 'ui' && bun run lint", "cd -- 'ui' && bun run typecheck", "cd -- 'ui' && bun run build", "cd -- 'ui' && bun run test"]
 velnor_full_commands = ["cd -- 'ui' && bun install --frozen-lockfile", "cd -- 'ui' && bun run lint", "cd -- 'ui' && bun run typecheck", "cd -- 'ui' && bun run build", "cd -- 'ui' && bun run test"]
 tool_version = "1.3.14"
-workflow_file = "ci-unit-bun.yml"
 [unit.cache]
 key_files = ["ui/package.json", "ui/bun.lock"]
 paths = ["~/.bun/install/cache"]
@@ -47,7 +46,6 @@ github_pr_commands = ["docker build --file 'bench/otlp-fanout/maple/Dockerfile' 
 github_full_commands = ["docker build --file 'bench/otlp-fanout/maple/Dockerfile' --tag local-ci:bench-otlp-fanout-maple-dockerfile 'bench/otlp-fanout/maple'"]
 velnor_pr_commands = ["docker build --file 'bench/otlp-fanout/maple/Dockerfile' --tag local-ci:bench-otlp-fanout-maple-dockerfile 'bench/otlp-fanout/maple'"]
 velnor_full_commands = ["docker build --file 'bench/otlp-fanout/maple/Dockerfile' --tag local-ci:bench-otlp-fanout-maple-dockerfile 'bench/otlp-fanout/maple'"]
-workflow_file = "ci-unit-docker.yml"
 
 [[unit]]
 id = "docker-crates-parallax-sentry-proxy"
@@ -59,7 +57,6 @@ github_pr_commands = ["docker build --file 'crates/parallax-sentry-proxy/Dockerf
 github_full_commands = ["docker build --file 'crates/parallax-sentry-proxy/Dockerfile' --tag local-ci:crates-parallax-sentry-proxy-dockerfile 'crates/parallax-sentry-proxy'"]
 velnor_pr_commands = ["docker build --file 'crates/parallax-sentry-proxy/Dockerfile' --tag local-ci:crates-parallax-sentry-proxy-dockerfile 'crates/parallax-sentry-proxy'"]
 velnor_full_commands = ["docker build --file 'crates/parallax-sentry-proxy/Dockerfile' --tag local-ci:crates-parallax-sentry-proxy-dockerfile 'crates/parallax-sentry-proxy'"]
-workflow_file = "ci-unit-docker.yml"
 
 [[unit]]
 id = "rust-nextest-evidence-fixture"
@@ -71,9 +68,8 @@ github_pr_commands = ["cd -- 'scripts/fixtures/nextest-evidence' && mbx fmt --ma
 github_full_commands = ["cd -- 'scripts/fixtures/nextest-evidence' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'scripts/fixtures/nextest-evidence' && mbx nextest run --locked --all-features --package 'nextest-evidence-fixture' --no-tests pass", "cd -- 'scripts/fixtures/nextest-evidence' && mbx clippy --locked --profile test --all-targets --all-features --package 'nextest-evidence-fixture' -- -D warnings"]
 velnor_pr_commands = ["cd -- 'scripts/fixtures/nextest-evidence' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'scripts/fixtures/nextest-evidence' && mbx nextest run --locked --all-features --package 'nextest-evidence-fixture' --no-tests pass", "cd -- 'scripts/fixtures/nextest-evidence' && mbx clippy --locked --profile test --all-targets --all-features --package 'nextest-evidence-fixture' -- -D warnings"]
 velnor_full_commands = ["cd -- 'scripts/fixtures/nextest-evidence' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'scripts/fixtures/nextest-evidence' && mbx nextest run --locked --all-features --package 'nextest-evidence-fixture' --no-tests pass", "cd -- 'scripts/fixtures/nextest-evidence' && mbx clippy --locked --profile test --all-targets --all-features --package 'nextest-evidence-fixture' -- -D warnings"]
-workflow_file = "ci-unit-rust.yml"
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "scripts/fixtures/nextest-evidence/Cargo.toml", "scripts/fixtures/nextest-evidence/Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
+key_files = [".cargo/**", "scripts/fixtures/nextest-evidence/Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
 
 [[unit]]
@@ -87,9 +83,8 @@ github_full_commands = ["cd -- 'crates/parallax-analysis' && mbx fmt --manifest-
 velnor_pr_commands = ["cd -- 'crates/parallax-analysis' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-analysis' && mbx nextest run --locked --all-features --package 'parallax-analysis' --no-tests pass", "cd -- 'crates/parallax-analysis' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-analysis' -- -D warnings"]
 velnor_full_commands = ["cd -- 'crates/parallax-analysis' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-analysis' && mbx nextest run --locked --all-features --package 'parallax-analysis' --no-tests pass", "cd -- 'crates/parallax-analysis' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-analysis' -- -D warnings"]
 depends_on = ["rust-parallax-model", "rust-parallax-proto", "rust-parallax-semconv"]
-workflow_file = "ci-unit-rust.yml"
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "crates/parallax-analysis/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
+key_files = [".cargo/**", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
 
 [[unit]]
@@ -103,9 +98,8 @@ github_full_commands = ["cd -- 'crates/parallax-api' && mbx fmt --manifest-path 
 velnor_pr_commands = ["cd -- 'crates/parallax-api' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-api' && mbx nextest run --locked --all-features --package 'parallax-api' --no-tests pass", "cd -- 'crates/parallax-api' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-api' -- -D warnings"]
 velnor_full_commands = ["cd -- 'crates/parallax-api' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-api' && mbx nextest run --locked --all-features --package 'parallax-api' --no-tests pass", "cd -- 'crates/parallax-api' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-api' -- -D warnings"]
 depends_on = ["rust-parallax-analysis", "rust-parallax-evidence", "rust-parallax-metadata", "rust-parallax-storage", "rust-parallax-test-support"]
-workflow_file = "ci-unit-rust.yml"
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "crates/parallax-api/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
+key_files = [".cargo/**", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
 
 [[unit]]
@@ -119,9 +113,8 @@ github_full_commands = ["cd -- 'crates/parallax-cli' && mbx fmt --manifest-path 
 velnor_pr_commands = ["cd -- 'crates/parallax-cli' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-cli' && mbx nextest run --locked --all-features --package 'parallax-cli' --no-tests pass", "cd -- 'crates/parallax-cli' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-cli' -- -D warnings"]
 velnor_full_commands = ["cd -- 'crates/parallax-cli' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-cli' && mbx nextest run --locked --all-features --package 'parallax-cli' --no-tests pass", "cd -- 'crates/parallax-cli' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-cli' -- -D warnings"]
 depends_on = ["rust-parallax-evidence", "rust-parallax-metadata", "rust-parallax-model", "rust-parallax-redaction", "rust-parallax-semconv", "rust-parallax-server", "rust-parallax-spool", "rust-parallax-storage"]
-workflow_file = "ci-unit-rust.yml"
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "crates/parallax-cli/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
+key_files = [".cargo/**", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
 
 [[unit]]
@@ -135,9 +128,8 @@ github_full_commands = ["cd -- 'crates/parallax-evidence' && mbx fmt --manifest-
 velnor_pr_commands = ["cd -- 'crates/parallax-evidence' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-evidence' && mbx nextest run --locked --all-features --package 'parallax-evidence' --no-tests pass", "cd -- 'crates/parallax-evidence' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-evidence' -- -D warnings"]
 velnor_full_commands = ["cd -- 'crates/parallax-evidence' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-evidence' && mbx nextest run --locked --all-features --package 'parallax-evidence' --no-tests pass", "cd -- 'crates/parallax-evidence' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-evidence' -- -D warnings"]
 depends_on = ["rust-parallax-analysis", "rust-parallax-model", "rust-parallax-redaction"]
-workflow_file = "ci-unit-rust.yml"
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "crates/parallax-evidence/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
+key_files = [".cargo/**", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
 
 [[unit]]
@@ -150,10 +142,9 @@ github_pr_commands = ["cd -- 'crates/parallax-greptime' && mbx fmt --manifest-pa
 github_full_commands = ["cd -- 'crates/parallax-greptime' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-greptime' && mbx nextest run --locked --all-features --package 'parallax-greptime' --no-tests pass", "cd -- 'crates/parallax-greptime' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-greptime' -- -D warnings"]
 velnor_pr_commands = ["cd -- 'crates/parallax-greptime' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-greptime' && mbx nextest run --locked --all-features --package 'parallax-greptime' --no-tests pass", "cd -- 'crates/parallax-greptime' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-greptime' -- -D warnings"]
 velnor_full_commands = ["cd -- 'crates/parallax-greptime' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-greptime' && mbx nextest run --locked --all-features --package 'parallax-greptime' --no-tests pass", "cd -- 'crates/parallax-greptime' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-greptime' -- -D warnings"]
-depends_on = ["rust-parallax-model", "rust-parallax-proto", "rust-parallax-semconv", "rust-parallax-storage"]
-workflow_file = "ci-unit-rust.yml"
+depends_on = ["rust-parallax-ingest", "rust-parallax-model", "rust-parallax-proto", "rust-parallax-semconv", "rust-parallax-storage"]
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "crates/parallax-greptime/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
+key_files = [".cargo/**", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
 
 [[unit]]
@@ -167,9 +158,8 @@ github_full_commands = ["cd -- 'crates/parallax-ingest' && mbx fmt --manifest-pa
 velnor_pr_commands = ["cd -- 'crates/parallax-ingest' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-ingest' && mbx nextest run --locked --all-features --package 'parallax-ingest' --no-tests pass", "cd -- 'crates/parallax-ingest' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-ingest' -- -D warnings"]
 velnor_full_commands = ["cd -- 'crates/parallax-ingest' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-ingest' && mbx nextest run --locked --all-features --package 'parallax-ingest' --no-tests pass", "cd -- 'crates/parallax-ingest' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-ingest' -- -D warnings"]
 depends_on = ["rust-parallax-model", "rust-parallax-proto", "rust-parallax-semconv"]
-workflow_file = "ci-unit-rust.yml"
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "crates/parallax-ingest/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
+key_files = [".cargo/**", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
 
 [[unit]]
@@ -183,9 +173,8 @@ github_full_commands = ["cd -- 'crates/parallax-mcp' && mbx fmt --manifest-path 
 velnor_pr_commands = ["cd -- 'crates/parallax-mcp' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-mcp' && mbx nextest run --locked --all-features --package 'parallax-mcp' --no-tests pass", "cd -- 'crates/parallax-mcp' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-mcp' -- -D warnings"]
 velnor_full_commands = ["cd -- 'crates/parallax-mcp' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-mcp' && mbx nextest run --locked --all-features --package 'parallax-mcp' --no-tests pass", "cd -- 'crates/parallax-mcp' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-mcp' -- -D warnings"]
 depends_on = ["rust-parallax-evidence"]
-workflow_file = "ci-unit-rust.yml"
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "crates/parallax-mcp/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
+key_files = [".cargo/**", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
 
 [[unit]]
@@ -199,9 +188,8 @@ github_full_commands = ["cd -- 'crates/parallax-metadata' && mbx fmt --manifest-
 velnor_pr_commands = ["cd -- 'crates/parallax-metadata' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-metadata' && mbx nextest run --locked --all-features --package 'parallax-metadata' --no-tests pass", "cd -- 'crates/parallax-metadata' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-metadata' -- -D warnings"]
 velnor_full_commands = ["cd -- 'crates/parallax-metadata' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-metadata' && mbx nextest run --locked --all-features --package 'parallax-metadata' --no-tests pass", "cd -- 'crates/parallax-metadata' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-metadata' -- -D warnings"]
 depends_on = ["rust-parallax-model", "rust-parallax-redaction", "rust-parallax-semconv", "rust-parallax-storage"]
-workflow_file = "ci-unit-rust.yml"
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "crates/parallax-metadata/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
+key_files = [".cargo/**", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
 
 [[unit]]
@@ -214,9 +202,8 @@ github_pr_commands = ["cd -- 'crates/parallax-model' && mbx fmt --manifest-path 
 github_full_commands = ["cd -- 'crates/parallax-model' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-model' && mbx nextest run --locked --all-features --package 'parallax-model' --no-tests pass", "cd -- 'crates/parallax-model' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-model' -- -D warnings"]
 velnor_pr_commands = ["cd -- 'crates/parallax-model' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-model' && mbx nextest run --locked --all-features --package 'parallax-model' --no-tests pass", "cd -- 'crates/parallax-model' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-model' -- -D warnings"]
 velnor_full_commands = ["cd -- 'crates/parallax-model' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-model' && mbx nextest run --locked --all-features --package 'parallax-model' --no-tests pass", "cd -- 'crates/parallax-model' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-model' -- -D warnings"]
-workflow_file = "ci-unit-rust.yml"
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "crates/parallax-model/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
+key_files = [".cargo/**", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
 
 [[unit]]
@@ -230,9 +217,8 @@ github_full_commands = ["cd -- 'crates/parallax-proto' && mbx fmt --manifest-pat
 velnor_pr_commands = ["cd -- 'crates/parallax-proto' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-proto' && mbx nextest run --locked --all-features --package 'parallax-proto' --no-tests pass", "cd -- 'crates/parallax-proto' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-proto' -- -D warnings"]
 velnor_full_commands = ["cd -- 'crates/parallax-proto' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-proto' && mbx nextest run --locked --all-features --package 'parallax-proto' --no-tests pass", "cd -- 'crates/parallax-proto' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-proto' -- -D warnings"]
 depends_on = ["rust-parallax-semconv"]
-workflow_file = "ci-unit-rust.yml"
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "crates/parallax-proto/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
+key_files = [".cargo/**", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
 
 [[unit]]
@@ -245,9 +231,8 @@ github_pr_commands = ["cd -- 'crates/parallax-redaction' && mbx fmt --manifest-p
 github_full_commands = ["cd -- 'crates/parallax-redaction' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-redaction' && mbx nextest run --locked --all-features --package 'parallax-redaction' --no-tests pass", "cd -- 'crates/parallax-redaction' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-redaction' -- -D warnings"]
 velnor_pr_commands = ["cd -- 'crates/parallax-redaction' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-redaction' && mbx nextest run --locked --all-features --package 'parallax-redaction' --no-tests pass", "cd -- 'crates/parallax-redaction' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-redaction' -- -D warnings"]
 velnor_full_commands = ["cd -- 'crates/parallax-redaction' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-redaction' && mbx nextest run --locked --all-features --package 'parallax-redaction' --no-tests pass", "cd -- 'crates/parallax-redaction' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-redaction' -- -D warnings"]
-workflow_file = "ci-unit-rust.yml"
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "crates/parallax-redaction/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
+key_files = [".cargo/**", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
 
 [[unit]]
@@ -260,9 +245,8 @@ github_pr_commands = ["cd -- 'crates/parallax-semconv' && mbx fmt --manifest-pat
 github_full_commands = ["cd -- 'crates/parallax-semconv' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-semconv' && mbx nextest run --locked --all-features --package 'parallax-semconv' --no-tests pass", "cd -- 'crates/parallax-semconv' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-semconv' -- -D warnings"]
 velnor_pr_commands = ["cd -- 'crates/parallax-semconv' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-semconv' && mbx nextest run --locked --all-features --package 'parallax-semconv' --no-tests pass", "cd -- 'crates/parallax-semconv' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-semconv' -- -D warnings"]
 velnor_full_commands = ["cd -- 'crates/parallax-semconv' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-semconv' && mbx nextest run --locked --all-features --package 'parallax-semconv' --no-tests pass", "cd -- 'crates/parallax-semconv' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-semconv' -- -D warnings"]
-workflow_file = "ci-unit-rust.yml"
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "crates/parallax-semconv/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
+key_files = [".cargo/**", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
 
 [[unit]]
@@ -276,9 +260,8 @@ github_full_commands = ["cd -- 'crates/parallax-sentry-proxy' && mbx fmt --manif
 velnor_pr_commands = ["cd -- 'crates/parallax-sentry-proxy' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-sentry-proxy' && mbx nextest run --locked --all-features --package 'parallax-sentry-proxy' --no-tests pass", "cd -- 'crates/parallax-sentry-proxy' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-sentry-proxy' -- -D warnings"]
 velnor_full_commands = ["cd -- 'crates/parallax-sentry-proxy' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-sentry-proxy' && mbx nextest run --locked --all-features --package 'parallax-sentry-proxy' --no-tests pass", "cd -- 'crates/parallax-sentry-proxy' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-sentry-proxy' -- -D warnings"]
 depends_on = ["rust-parallax-ingest"]
-workflow_file = "ci-unit-rust.yml"
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "crates/parallax-sentry-proxy/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
+key_files = [".cargo/**", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
 
 [[unit]]
@@ -292,9 +275,8 @@ github_full_commands = ["cd -- 'crates/parallax-server' && mbx fmt --manifest-pa
 velnor_pr_commands = ["cd -- 'crates/parallax-server' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-server' && mbx nextest run --locked --all-features --package 'parallax-server' --no-tests pass", "cd -- 'crates/parallax-server' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-server' -- -D warnings"]
 velnor_full_commands = ["cd -- 'crates/parallax-server' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-server' && mbx nextest run --locked --all-features --package 'parallax-server' --no-tests pass", "cd -- 'crates/parallax-server' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-server' -- -D warnings"]
 depends_on = ["rust-parallax-analysis", "rust-parallax-api", "rust-parallax-evidence", "rust-parallax-greptime", "rust-parallax-ingest", "rust-parallax-metadata", "rust-parallax-proto", "rust-parallax-semconv", "rust-parallax-spool", "rust-parallax-storage", "rust-parallax-test-support"]
-workflow_file = "ci-unit-rust.yml"
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "crates/parallax-server/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
+key_files = [".cargo/**", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
 
 [[unit]]
@@ -307,9 +289,8 @@ github_pr_commands = ["cd -- 'crates/parallax-spool' && mbx fmt --manifest-path 
 github_full_commands = ["cd -- 'crates/parallax-spool' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-spool' && mbx nextest run --locked --all-features --package 'parallax-spool' --no-tests pass", "cd -- 'crates/parallax-spool' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-spool' -- -D warnings"]
 velnor_pr_commands = ["cd -- 'crates/parallax-spool' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-spool' && mbx nextest run --locked --all-features --package 'parallax-spool' --no-tests pass", "cd -- 'crates/parallax-spool' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-spool' -- -D warnings"]
 velnor_full_commands = ["cd -- 'crates/parallax-spool' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-spool' && mbx nextest run --locked --all-features --package 'parallax-spool' --no-tests pass", "cd -- 'crates/parallax-spool' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-spool' -- -D warnings"]
-workflow_file = "ci-unit-rust.yml"
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "crates/parallax-spool/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
+key_files = [".cargo/**", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
 
 [[unit]]
@@ -323,9 +304,8 @@ github_full_commands = ["cd -- 'crates/parallax-storage' && mbx fmt --manifest-p
 velnor_pr_commands = ["cd -- 'crates/parallax-storage' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-storage' && mbx nextest run --locked --all-features --package 'parallax-storage' --no-tests pass", "cd -- 'crates/parallax-storage' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-storage' -- -D warnings"]
 velnor_full_commands = ["cd -- 'crates/parallax-storage' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-storage' && mbx nextest run --locked --all-features --package 'parallax-storage' --no-tests pass", "cd -- 'crates/parallax-storage' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-storage' -- -D warnings"]
 depends_on = ["rust-parallax-model", "rust-parallax-proto", "rust-parallax-semconv"]
-workflow_file = "ci-unit-rust.yml"
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "crates/parallax-storage/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
+key_files = [".cargo/**", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
 
 [[unit]]
@@ -339,9 +319,8 @@ github_full_commands = ["cd -- 'crates/parallax-test-support' && mbx fmt --manif
 velnor_pr_commands = ["cd -- 'crates/parallax-test-support' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-test-support' && mbx nextest run --locked --all-features --package 'parallax-test-support' --no-tests pass", "cd -- 'crates/parallax-test-support' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-test-support' -- -D warnings"]
 velnor_full_commands = ["cd -- 'crates/parallax-test-support' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-test-support' && mbx nextest run --locked --all-features --package 'parallax-test-support' --no-tests pass", "cd -- 'crates/parallax-test-support' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-test-support' -- -D warnings"]
 depends_on = ["rust-parallax-metadata", "rust-parallax-model", "rust-parallax-proto", "rust-parallax-semconv", "rust-parallax-storage"]
-workflow_file = "ci-unit-rust.yml"
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "crates/parallax-test-support/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
+key_files = [".cargo/**", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
 
 [[unit]]
@@ -355,9 +334,8 @@ github_full_commands = ["cd -- 'crates/parallax-xtask' && mbx fmt --manifest-pat
 velnor_pr_commands = ["cd -- 'crates/parallax-xtask' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-xtask' && mbx nextest run --locked --all-features --package 'parallax-xtask' --no-tests pass", "cd -- 'crates/parallax-xtask' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-xtask' -- -D warnings"]
 velnor_full_commands = ["cd -- 'crates/parallax-xtask' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-xtask' && mbx nextest run --locked --all-features --package 'parallax-xtask' --no-tests pass", "cd -- 'crates/parallax-xtask' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-xtask' -- -D warnings"]
 depends_on = ["rust-parallax-api"]
-workflow_file = "ci-unit-rust.yml"
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "crates/parallax-xtask/Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
+key_files = [".cargo/**", "Cargo.lock", "rust-toolchain.toml", "rust-toolchain"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
 
 [[unit]]
@@ -370,7 +348,6 @@ github_pr_commands = ["mbx deny check"]
 github_full_commands = ["mbx deny check"]
 velnor_pr_commands = ["mbx deny check"]
 velnor_full_commands = ["mbx deny check"]
-workflow_file = "ci-unit-rust.yml"
 [unit.cache]
-key_files = [".cargo/**", "Cargo.toml", "Cargo.lock"]
+key_files = [".cargo/**", "Cargo.lock", "deny.toml"]
 paths = ["~/.cargo/registry", "~/.cargo/git"]
