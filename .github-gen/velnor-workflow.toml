@@ -2,6 +2,7 @@ schema = 1
 
 [generator]
 repository = "tailrocks/parallax"
+revision = "03f9409b3f649a8973169dde0ebba3fe58a92ac9"
 
 # xtask release tests include_str! the handcrafted preview/release workflows.
 # Those paths are generator output, not scan evidence, so the include check
@@ -22,6 +23,8 @@ pull_request_on_velnor = true
 # static-workflow is unsupported on this generator revision; exclude them
 # from policy and own their bytes as static files so --force cannot wipe them.
 [policy]
+ruleset_required_status_checks = ["ci-required"]
+ruleset_external_status_checks = ["DCO"]
 exclude_workflows = [
   "dependency-discovery.yml",
   "footprint.yml",
