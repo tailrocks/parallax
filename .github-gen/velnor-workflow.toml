@@ -3,18 +3,17 @@ schema = 1
 [generator]
 repository = "tailrocks/parallax"
 
+[scan]
+exclude = ["crates/parallax-xtask/src/release/tests.rs"]
+
 [workflow]
 runners = "both"
 automatic_lanes = "github"
 default_dispatch_runner = "github"
-github_runner = "ubuntu-24.04"
+github_runner = "ubuntu-26.04"
 velnor_labels = ["self-hosted", "velnor-target-mvp"]
 default_branch = "main"
-github_runner = "ubuntu-26.04"
 pull_request_on_velnor = true
-
-[scan]
-exclude = ["crates/parallax-xtask/src/release/tests.rs"]
 
 [policy]
 ruleset_required_status_checks = ["ci-required"]
