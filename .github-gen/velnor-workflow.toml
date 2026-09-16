@@ -2,69 +2,21 @@ schema = 1
 
 [generator]
 repository = "tailrocks/parallax"
-revision = "e13bce4dba15ed5927effde5eb62e8ba453bf100"
 
-# xtask release tests include_str! the handcrafted preview/release workflows.
-# Those paths are generator output, not scan evidence, so the include check
-# fails closed unless this file stays outside the scan.
+[workflow]
+runners = "both"
+automatic_lanes = "github"
+default_dispatch_runner = "github"
+github_runner = "ubuntu-24.04"
+velnor_labels = ["self-hosted", "velnor-target-mvp"]
+default_branch = "main"
+github_runner = "ubuntu-26.04"
+pull_request_on_velnor = true
+
 [scan]
 exclude = ["crates/parallax-xtask/src/release/tests.rs"]
 
-# Runner placement: both backends exist, and both lanes fire on PR/push
-# automatically (GitHub-hosted + Velnor in parallel).
-[workflow]
-runners = "both"
-automatic = "both"
-github_runner = "ubuntu-26.04"
-velnor_labels = ["self-hosted", "velnor-target-mvp"]
-pull_request_on_velnor = true
-
-# Handcrafted product workflows stay outside the generated CI surface.
-# static-workflow is unsupported on this generator revision; exclude them
-# from policy and own their bytes as static files so --force cannot wipe them.
 [policy]
 ruleset_required_status_checks = ["ci-required"]
 ruleset_external_status_checks = ["DCO"]
-exclude_workflows = [
-  "dependency-discovery.yml",
-  "footprint.yml",
-  "mcp-evals.yml",
-  "preview.yml",
-  "release.yml",
-  "scheduled-measurement.yml",
-  "storage-integration.yml",
-  "upgrade-harness.yml",
-]
 actionlint_config_variables_null = true
-
-[[static_files]]
-file = ".github/workflows/dependency-discovery.yml"
-source = ".github/workflows/dependency-discovery.yml"
-
-[[static_files]]
-file = ".github/workflows/footprint.yml"
-source = ".github/workflows/footprint.yml"
-
-[[static_files]]
-file = ".github/workflows/mcp-evals.yml"
-source = ".github/workflows/mcp-evals.yml"
-
-[[static_files]]
-file = ".github/workflows/preview.yml"
-source = ".github/workflows/preview.yml"
-
-[[static_files]]
-file = ".github/workflows/release.yml"
-source = ".github/workflows/release.yml"
-
-[[static_files]]
-file = ".github/workflows/scheduled-measurement.yml"
-source = ".github/workflows/scheduled-measurement.yml"
-
-[[static_files]]
-file = ".github/workflows/storage-integration.yml"
-source = ".github/workflows/storage-integration.yml"
-
-[[static_files]]
-file = ".github/workflows/upgrade-harness.yml"
-source = ".github/workflows/upgrade-harness.yml"
