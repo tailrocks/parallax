@@ -4,18 +4,18 @@ repository = "tailrocks/parallax"
 profile = "generic"
 verified = true
 default_branch = "main"
-runners = "both"
+runners = "github"
 
 [analysis]
 method = "static-filesystem-and-manifest-inspection"
-detected = ["cargo-deny-policy", "cargo-lockfile", "cargo-nextest-policy", "mise-present", "package-manager:bun:ui", "package-script:ui:build", "package-script:ui:lint", "package-script:ui:test", "package-script:ui:typecheck", "rust-binaries:parallax-cli:1", "rust-binaries:parallax-mcp:1", "rust-binaries:parallax-sentry-proxy:1", "rust-build-script:parallax-cli", "rust-features:parallax-cli:2", "rust-features:parallax-greptime:1", "rust-features:parallax-server:2", "rust-test-targets:parallax-api:1", "rust-test-targets:parallax-cli:1", "rust-test-targets:parallax-evidence:1", "rust-test-targets:parallax-greptime:1", "rust-test-targets:parallax-ingest:1", "rust-test-targets:parallax-model:1", "rust-test-targets:parallax-server:1", "rust-test-targets:parallax-spool:1", "rust-test-targets:parallax-xtask:1", "rust-workspace-members:19"]
+detected = ["cargo-deny-policy", "cargo-lockfile", "cargo-nextest-policy", "mise-present", "package-manager:bun:ui", "package-script:ui:build", "package-script:ui:lint", "package-script:ui:test", "package-script:ui:typecheck", "rust-binaries:parallax-cli:1", "rust-binaries:parallax-mcp:1", "rust-binaries:parallax-sentry-proxy:1", "rust-build-script:parallax-cli", "rust-build-script:parallax-server", "rust-features:parallax-cli:2", "rust-features:parallax-greptime:1", "rust-features:parallax-server:2", "rust-test-targets:parallax-api:1", "rust-test-targets:parallax-cli:1", "rust-test-targets:parallax-evidence:1", "rust-test-targets:parallax-greptime:1", "rust-test-targets:parallax-ingest:1", "rust-test-targets:parallax-model:1", "rust-test-targets:parallax-server:1", "rust-test-targets:parallax-spool:1", "rust-test-targets:parallax-xtask:1", "rust-workspace-members:19"]
 limitations = ["Project code, build scripts, task runners, and commands are never executed during analysis.", "Release, signing, registry, deployment, branch-protection, and runner-capability contracts remain explicit manual inputs.", "Rust build scripts are watched but their system dependencies and generated outputs are not inferred."]
 
 [workflow]
 github_runner = "ubuntu-26.04"
 velnor_labels = ["self-hosted", "velnor-target-mvp"]
 files = ["ci-main.yml", "ci-policy.yml", "ci-pr.yml", "ci-unit-bun.yml", "ci-unit-docker.yml", "ci-unit-rust.yml", "maintenance.yml", "nightly.yml"]
-notes = ["Rust verification uses Mr. Boxington 1.11.1 by default on both lanes. GitHub-hosted jobs use its GitHub cache backend with bounded snapshot keys (a key names the toolchain/image/linker compatibility class and the hashed source state, so a new source state saves a new snapshot and retention keeps generations bounded). Velnor jobs use an explicit local-backend setup step against the image/runner-provided local store."]
+notes = ["Rust verification uses Mr. Boxington 1.11.1 with its GitHub cache backend and bounded snapshot keys (a key names the toolchain/image/linker compatibility class and the hashed source state, so a new source state saves a new snapshot and retention keeps generations bounded)."]
 
 [release]
 enabled = false
@@ -107,7 +107,7 @@ id = "rust-parallax-cli"
 label = "Rust crate (parallax-cli)"
 kind = "rust"
 root = "crates/parallax-cli"
-watch = [".cargo/**", "Cargo.lock", "Cargo.toml", "crates/parallax-cli/**/*.rs", "crates/parallax-cli/Cargo.toml", "crates/parallax-cli/benches/**", "crates/parallax-cli/build.rs", "crates/parallax-cli/examples/**", "crates/parallax-cli/src/**", "crates/parallax-cli/tests/**", "mise.lock", "mise.toml", "rust-toolchain", "rust-toolchain.toml"]
+watch = [".cargo/**", "Cargo.lock", "Cargo.toml", "crates/parallax-cli/**/*.rs", "crates/parallax-cli/Cargo.toml", "crates/parallax-cli/benches/**", "crates/parallax-cli/build.rs", "crates/parallax-cli/examples/**", "crates/parallax-cli/src/**", "crates/parallax-cli/tests/**", "mise.lock", "mise.toml", "rust-toolchain", "rust-toolchain.toml", "ui/**/*.js", "ui/**/*.json", "ui/**/*.jsx", "ui/**/*.ts", "ui/**/*.tsx", "ui/bun.lock", "ui/bun.lockb", "ui/package-lock.json", "ui/package.json"]
 github_pr_commands = ["cd -- 'crates/parallax-cli' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-cli' && mbx nextest run --locked --all-features --package 'parallax-cli' --no-tests pass", "cd -- 'crates/parallax-cli' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-cli' -- -D warnings"]
 github_full_commands = ["cd -- 'crates/parallax-cli' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-cli' && mbx nextest run --locked --all-features --package 'parallax-cli' --no-tests pass", "cd -- 'crates/parallax-cli' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-cli' -- -D warnings"]
 velnor_pr_commands = ["cd -- 'crates/parallax-cli' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-cli' && mbx nextest run --locked --all-features --package 'parallax-cli' --no-tests pass", "cd -- 'crates/parallax-cli' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-cli' -- -D warnings"]
@@ -269,7 +269,7 @@ id = "rust-parallax-server"
 label = "Rust crate (parallax-server)"
 kind = "rust"
 root = "crates/parallax-server"
-watch = [".cargo/**", "Cargo.lock", "Cargo.toml", "crates/parallax-server/**/*.rs", "crates/parallax-server/Cargo.toml", "crates/parallax-server/benches/**", "crates/parallax-server/examples/**", "crates/parallax-server/facade.toml", "crates/parallax-server/src/**", "crates/parallax-server/src/ingest_health.rs", "crates/parallax-server/tests/**", "mise.lock", "mise.toml", "rust-toolchain", "rust-toolchain.toml"]
+watch = [".cargo/**", "Cargo.lock", "Cargo.toml", "crates/parallax-server/**/*.rs", "crates/parallax-server/Cargo.toml", "crates/parallax-server/benches/**", "crates/parallax-server/build.rs", "crates/parallax-server/examples/**", "crates/parallax-server/facade.toml", "crates/parallax-server/src/**", "crates/parallax-server/src/ingest_health.rs", "crates/parallax-server/tests/**", "mise.lock", "mise.toml", "rust-toolchain", "rust-toolchain.toml", "ui/**/*.js", "ui/**/*.json", "ui/**/*.jsx", "ui/**/*.ts", "ui/**/*.tsx", "ui/bun.lock", "ui/bun.lockb", "ui/package-lock.json", "ui/package.json"]
 github_pr_commands = ["cd -- 'crates/parallax-server' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-server' && mbx nextest run --locked --all-features --package 'parallax-server' --no-tests pass", "cd -- 'crates/parallax-server' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-server' -- -D warnings"]
 github_full_commands = ["cd -- 'crates/parallax-server' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-server' && mbx nextest run --locked --all-features --package 'parallax-server' --no-tests pass", "cd -- 'crates/parallax-server' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-server' -- -D warnings"]
 velnor_pr_commands = ["cd -- 'crates/parallax-server' && mbx fmt --manifest-path 'Cargo.toml' -- --check", "cd -- 'crates/parallax-server' && mbx nextest run --locked --all-features --package 'parallax-server' --no-tests pass", "cd -- 'crates/parallax-server' && mbx clippy --locked --profile test --all-targets --all-features --package 'parallax-server' -- -D warnings"]

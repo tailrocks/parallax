@@ -2,19 +2,19 @@ schema = 1
 
 [generator]
 repository = "tailrocks/parallax"
-revision = "b9c3156cdb88e63c11b9e595a3e694b02238c09a"
+revision = "048a7bdaed8240cf652127c94434e60528633dec"
 
 [scan]
 exclude = ["crates/parallax-xtask/src/release/tests.rs"]
 
 [workflow]
-runners = "both"
+runners = "github"
 automatic_lanes = "github"
 default_dispatch_runner = "github"
 github_runner = "ubuntu-26.04"
 velnor_labels = ["self-hosted", "velnor-target-mvp"]
 default_branch = "main"
-pull_request_on_velnor = true
+pull_request_on_velnor = false
 
 [policy]
 ruleset_external_status_checks = ["DCO"]
@@ -22,3 +22,16 @@ ruleset_required_status_checks = ["ci-required"]
 ci_required = true
 dco_required = true
 actionlint_config_variables_null = true
+
+[[units]]
+id = "bun-ui"
+
+[[units]]
+id = "rust-parallax-cli"
+mise_tools = ["bun"]
+watch = [".cargo/**", "Cargo.lock", "Cargo.toml", "crates/parallax-cli/**/*.rs", "crates/parallax-cli/Cargo.toml", "crates/parallax-cli/benches/**", "crates/parallax-cli/build.rs", "crates/parallax-cli/examples/**", "crates/parallax-cli/src/**", "crates/parallax-cli/tests/**", "mise.lock", "mise.toml", "rust-toolchain", "rust-toolchain.toml", "ui/**/*.js", "ui/**/*.json", "ui/**/*.jsx", "ui/**/*.ts", "ui/**/*.tsx", "ui/bun.lock", "ui/bun.lockb", "ui/package-lock.json", "ui/package.json"]
+
+[[units]]
+id = "rust-parallax-server"
+mise_tools = ["bun"]
+watch = [".cargo/**", "Cargo.lock", "Cargo.toml", "crates/parallax-server/**/*.rs", "crates/parallax-server/Cargo.toml", "crates/parallax-server/benches/**", "crates/parallax-server/build.rs", "crates/parallax-server/examples/**", "crates/parallax-server/facade.toml", "crates/parallax-server/src/**", "crates/parallax-server/src/ingest_health.rs", "crates/parallax-server/tests/**", "mise.lock", "mise.toml", "rust-toolchain", "rust-toolchain.toml", "ui/**/*.js", "ui/**/*.json", "ui/**/*.jsx", "ui/**/*.ts", "ui/**/*.tsx", "ui/bun.lock", "ui/bun.lockb", "ui/package-lock.json", "ui/package.json"]

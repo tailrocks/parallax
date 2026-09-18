@@ -9,12 +9,10 @@ on:
       runner:
         description: Execution backend
         required: false
-        default: both
+        default: github
         type: choice
         options:
-          - velnor
           - github
-          - both
       scope:
         description: Verification scope
         required: true
@@ -58,12 +56,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Set up Velnor workflow runtime
+        id: runtime
         if: ${{ runner.environment == 'github-hosted' }}
-        uses: tailrocks/velnor/.github/actions/setup-velnor-workflow@b9c3156cdb88e63c11b9e595a3e694b02238c09a
+        uses: tailrocks/velnor/.github/actions/setup-velnor-workflow@048a7bdaed8240cf652127c94434e60528633dec
         with:
-          rev: b9c3156cdb88e63c11b9e595a3e694b02238c09a
+          rev: 048a7bdaed8240cf652127c94434e60528633dec
       - name: Set trusted workflow policy revision
-        run: echo "VELNOR_WORKFLOW_POLICY_REVISION=b9c3156cdb88e63c11b9e595a3e694b02238c09a" >> "$GITHUB_ENV"
+        run: echo "VELNOR_WORKFLOW_POLICY_REVISION=048a7bdaed8240cf652127c94434e60528633dec" >> "$GITHUB_ENV"
       - name: Select affected units
         id: plan
         env:
@@ -71,7 +70,6 @@ jobs:
           CI_SCOPE_OVERRIDE: ${{ github.event.inputs.scope || '' }}
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.inputs.base_sha || github.event.before || 'refs/heads/main' }}
           HEAD_SHA: ${{ github.sha }}
-          VELNOR_LANES: ${{ github.event.inputs.runner || 'both' }}
         run: |
           set -euo pipefail
           if [[ -z "${CI_SCOPE_OVERRIDE:-}" ]]; then unset CI_SCOPE_OVERRIDE; fi
@@ -80,7 +78,7 @@ jobs:
       - name: Prepare Velnor workflow runtime
         shell: bash
         env:
-          EXPECTED_REVISION: b9c3156cdb88e63c11b9e595a3e694b02238c09a
+          EXPECTED_REVISION: 048a7bdaed8240cf652127c94434e60528633dec
         run: |
           set -euo pipefail
           stage="$RUNNER_TEMP/velnor-workflow-runtime"
@@ -92,28 +90,20 @@ jobs:
           policy_src="${VELNOR_WORKFLOW_PINNED_BINARY:-$src}"
           install -m 0755 "$policy_src" "$stage/velnor-workflow-policy"
           policy_revision="$("$stage/velnor-workflow-policy" --revision)"
-          [[ "$policy_revision" == "$EXPECTED_REVISION" ]] || { echo "::error::policy runtime reports revision $policy_revision, expected $EXPECTED_REVISION" >&2; exit 1; }
+          policy_closure="$("$stage/velnor-workflow-policy" --closure)"
+          [[ "$policy_closure" == "${{ steps.runtime.outputs.closure }}" ]] || { echo "::error::policy runtime reports closure $policy_closure, expected ${{ steps.runtime.outputs.closure }}" >&2; exit 1; }
           policy_digest="$(sha256sum "$stage/velnor-workflow-policy" | awk '{print $1}')"
-          jq -n --arg repository "$GITHUB_REPOSITORY" --arg revision "$EXPECTED_REVISION" --arg head_branch "${{ github.ref_name }}" --arg platform "${{ runner.os }}-${{ runner.arch }}" --arg run_id "$GITHUB_RUN_ID" --arg job_id "${{ github.job }}" --arg binary_sha256 "$digest" --arg policy_revision "$policy_revision" --arg policy_binary_sha256 "$policy_digest" '{repository: $repository, revision: $revision, head_branch: $head_branch, platform: $platform, run_id: $run_id, job_id: $job_id, binary_sha256: $binary_sha256, policy_revision: $policy_revision, policy_binary_sha256: $policy_binary_sha256}' > "$stage/manifest.json"
+          jq -n --arg repository "$GITHUB_REPOSITORY" --arg revision "$EXPECTED_REVISION" --arg closure "${{ steps.runtime.outputs.closure }}" --arg head_branch "${{ github.ref_name }}" --arg platform "${{ runner.os }}-${{ runner.arch }}" --arg run_id "$GITHUB_RUN_ID" --arg job_id "${{ github.job }}" --arg binary_sha256 "$digest" --arg policy_revision "$policy_revision" --arg policy_closure "$policy_closure" --arg policy_binary_sha256 "$policy_digest" '{repository: $repository, revision: $revision, closure: $closure, head_branch: $head_branch, platform: $platform, run_id: $run_id, job_id: $job_id, binary_sha256: $binary_sha256, policy_revision: $policy_revision, policy_closure: $policy_closure, policy_binary_sha256: $policy_binary_sha256}' > "$stage/manifest.json"
       - name: Publish Velnor workflow runtime
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: velnor-workflow-runtime-b9c3156cdb88e63c11b9e595a3e694b02238c09a-${{ runner.os }}-${{ runner.arch }}
+          name: velnor-workflow-runtime-048a7bdaed8240cf652127c94434e60528633dec-${{ runner.os }}-${{ runner.arch }}
           path: ${{ runner.temp }}/velnor-workflow-runtime
           if-no-files-found: error
           retention-days: 7
-  velnor-lane-admission:
-    name: "Control / Velnor admission"
-    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
-    runs-on: ubuntu-26.04
-    timeout-minutes: 5
-    steps:
-      - name: Velnor lane omitted for fork
-        run: |
-          echo '::notice::Velnor lane omitted for fork pull request; validating GitHub lane only.'
   github-bun-ui:
     name: "Bun · Bun package (ui)"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',bun-ui,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',bun-ui,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-bun.yml
     with:
@@ -129,23 +119,10 @@ jobs:
       cache_key_files: |
         ui/package.json
         ui/bun.lock
-  velnor-bun-ui:
-    name: "Bun · Bun package (ui)"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',bun-ui,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan]
-    uses: ./.github/workflows/ci-unit-bun.yml
-    with:
-      unit: bun-ui
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      host_warm_layers: cargo
+      unit_admission: github
   github-docker-bench-otlp-fanout-maple:
     name: "Docker · Docker (bench/otlp-fanout/maple)"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',docker-bench-otlp-fanout-maple,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',docker-bench-otlp-fanout-maple,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-docker.yml
     with:
@@ -156,22 +133,10 @@ jobs:
       full_units: ${{ needs.plan.outputs.full_units }}
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
-  velnor-docker-bench-otlp-fanout-maple:
-    name: "Docker · Docker (bench/otlp-fanout/maple)"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',docker-bench-otlp-fanout-maple,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan]
-    uses: ./.github/workflows/ci-unit-docker.yml
-    with:
-      unit: docker-bench-otlp-fanout-maple
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
+      unit_admission: github
   github-docker-crates-parallax-sentry-proxy:
     name: "Docker · Docker (crates/parallax-sentry-proxy)"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',docker-crates-parallax-sentry-proxy,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',docker-crates-parallax-sentry-proxy,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-docker.yml
     with:
@@ -182,35 +147,10 @@ jobs:
       full_units: ${{ needs.plan.outputs.full_units }}
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
-  velnor-docker-crates-parallax-sentry-proxy:
-    name: "Docker · Docker (crates/parallax-sentry-proxy)"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',docker-crates-parallax-sentry-proxy,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan]
-    uses: ./.github/workflows/ci-unit-docker.yml
-    with:
-      unit: docker-crates-parallax-sentry-proxy
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-  prepare-cargo:
-    name: "Control / Prepare Cargo"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-nextest-evidence-fixture,') }}
-    needs: [plan]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-nextest-evidence-fixture
-      lane: control
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
+      unit_admission: github
   github-rust-nextest-evidence-fixture:
     name: "Rust · nextest-evidence-fixture"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-nextest-evidence-fixture,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-nextest-evidence-fixture,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -246,25 +186,10 @@ jobs:
         rust-toolchain
       cargo_root: "scripts/fixtures/nextest-evidence"
       cargo_net_offline: true
-  velnor-rust-nextest-evidence-fixture:
-    name: "Rust · nextest-evidence-fixture"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-nextest-evidence-fixture,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-nextest-evidence-fixture
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      cargo_net_offline: true
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_admission: github
   github-rust-parallax-analysis:
     name: "Rust · parallax-analysis"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-analysis,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-analysis,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -314,25 +239,11 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-analysis"
       cargo_net_offline: true
-  velnor-rust-parallax-analysis:
-    name: "Rust · parallax-analysis"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-analysis,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-parallax-analysis
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      cargo_net_offline: true
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_dependencies: "rust-parallax-model,rust-parallax-proto,rust-parallax-semconv"
+      unit_admission: github
   github-rust-parallax-api:
     name: "Rust · parallax-api"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-api,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-api,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -416,25 +327,11 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-api"
       cargo_net_offline: true
-  velnor-rust-parallax-api:
-    name: "Rust · parallax-api"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-api,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-parallax-api
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      cargo_net_offline: true
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_dependencies: "rust-parallax-analysis,rust-parallax-evidence,rust-parallax-metadata,rust-parallax-storage,rust-parallax-test-support"
+      unit_admission: github
   github-rust-parallax-cli:
     name: "Rust · parallax-cli"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-cli,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-cli,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -445,7 +342,7 @@ jobs:
       full_units: ${{ needs.plan.outputs.full_units }}
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
+      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest bun"
       mbx_compat: "44dbc02f83da"
       mbx_dependency_files: |
         .cargo/**
@@ -513,6 +410,7 @@ jobs:
         crates/parallax-semconv/tests/**
         crates/parallax-server/**/*.rs
         crates/parallax-server/benches/**
+        crates/parallax-server/build.rs
         crates/parallax-server/examples/**
         crates/parallax-server/src/**
         crates/parallax-server/src/ingest_health.rs
@@ -536,6 +434,15 @@ jobs:
         mise.lock
         schema/evidence-bundle.v1.schema.json
         schema/evidence-bundle.v2.schema.json
+        ui/**/*.js
+        ui/**/*.json
+        ui/**/*.jsx
+        ui/**/*.ts
+        ui/**/*.tsx
+        ui/bun.lock
+        ui/bun.lockb
+        ui/package-lock.json
+        ui/package.json
       cache_paths: |
         ~/.cargo/registry
         ~/.cargo/git
@@ -546,25 +453,11 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-cli"
       cargo_net_offline: true
-  velnor-rust-parallax-cli:
-    name: "Rust · parallax-cli"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-cli,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-parallax-cli
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      cargo_net_offline: true
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_dependencies: "rust-parallax-evidence,rust-parallax-metadata,rust-parallax-model,rust-parallax-redaction,rust-parallax-semconv,rust-parallax-server,rust-parallax-spool,rust-parallax-storage"
+      unit_admission: github
   github-rust-parallax-evidence:
     name: "Rust · parallax-evidence"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-evidence,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-evidence,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -627,25 +520,11 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-evidence"
       cargo_net_offline: true
-  velnor-rust-parallax-evidence:
-    name: "Rust · parallax-evidence"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-evidence,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-parallax-evidence
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      cargo_net_offline: true
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_dependencies: "rust-parallax-analysis,rust-parallax-model,rust-parallax-redaction"
+      unit_admission: github
   github-rust-parallax-greptime:
     name: "Rust · parallax-greptime"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-greptime,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-greptime,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -705,25 +584,11 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-greptime"
       cargo_net_offline: true
-  velnor-rust-parallax-greptime:
-    name: "Rust · parallax-greptime"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-greptime,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-parallax-greptime
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      cargo_net_offline: true
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_dependencies: "rust-parallax-ingest,rust-parallax-model,rust-parallax-proto,rust-parallax-semconv,rust-parallax-storage"
+      unit_admission: github
   github-rust-parallax-ingest:
     name: "Rust · parallax-ingest"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-ingest,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-ingest,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -773,25 +638,11 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-ingest"
       cargo_net_offline: true
-  velnor-rust-parallax-ingest:
-    name: "Rust · parallax-ingest"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-ingest,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-parallax-ingest
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      cargo_net_offline: true
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_dependencies: "rust-parallax-model,rust-parallax-proto,rust-parallax-semconv"
+      unit_admission: github
   github-rust-parallax-mcp:
     name: "Rust · parallax-mcp"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-mcp,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-mcp,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -859,25 +710,11 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-mcp"
       cargo_net_offline: true
-  velnor-rust-parallax-mcp:
-    name: "Rust · parallax-mcp"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-mcp,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-parallax-mcp
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      cargo_net_offline: true
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_dependencies: rust-parallax-evidence
+      unit_admission: github
   github-rust-parallax-metadata:
     name: "Rust · parallax-metadata"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-metadata,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-metadata,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -937,25 +774,11 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-metadata"
       cargo_net_offline: true
-  velnor-rust-parallax-metadata:
-    name: "Rust · parallax-metadata"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-metadata,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-parallax-metadata
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      cargo_net_offline: true
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_dependencies: "rust-parallax-model,rust-parallax-redaction,rust-parallax-semconv,rust-parallax-storage"
+      unit_admission: github
   github-rust-parallax-model:
     name: "Rust · parallax-model"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-model,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-model,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -990,25 +813,10 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-model"
       cargo_net_offline: true
-  velnor-rust-parallax-model:
-    name: "Rust · parallax-model"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-model,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-parallax-model
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      cargo_net_offline: true
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_admission: github
   github-rust-parallax-proto:
     name: "Rust · parallax-proto"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-proto,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-proto,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -1048,25 +856,11 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-proto"
       cargo_net_offline: true
-  velnor-rust-parallax-proto:
-    name: "Rust · parallax-proto"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-proto,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-parallax-proto
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      cargo_net_offline: true
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_dependencies: rust-parallax-semconv
+      unit_admission: github
   github-rust-parallax-redaction:
     name: "Rust · parallax-redaction"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-redaction,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-redaction,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -1101,25 +895,10 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-redaction"
       cargo_net_offline: true
-  velnor-rust-parallax-redaction:
-    name: "Rust · parallax-redaction"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-redaction,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-parallax-redaction
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      cargo_net_offline: true
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_admission: github
   github-rust-parallax-semconv:
     name: "Rust · parallax-semconv"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-semconv,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-semconv,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -1154,25 +933,10 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-semconv"
       cargo_net_offline: true
-  velnor-rust-parallax-semconv:
-    name: "Rust · parallax-semconv"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-semconv,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-parallax-semconv
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      cargo_net_offline: true
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_admission: github
   github-rust-parallax-sentry-proxy:
     name: "Rust · parallax-sentry-proxy"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-sentry-proxy,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-sentry-proxy,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -1227,25 +991,11 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-sentry-proxy"
       cargo_net_offline: true
-  velnor-rust-parallax-sentry-proxy:
-    name: "Rust · parallax-sentry-proxy"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-sentry-proxy,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-parallax-sentry-proxy
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      cargo_net_offline: true
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_dependencies: rust-parallax-ingest
+      unit_admission: github
   github-rust-parallax-server:
     name: "Rust · parallax-server"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-server,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-server,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -1256,7 +1006,7 @@ jobs:
       full_units: ${{ needs.plan.outputs.full_units }}
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
+      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest bun"
       mbx_compat: "4ddd8b62751d"
       mbx_dependency_files: |
         .cargo/**
@@ -1318,6 +1068,7 @@ jobs:
         crates/parallax-semconv/tests/**
         crates/parallax-server/**/*.rs
         crates/parallax-server/benches/**
+        crates/parallax-server/build.rs
         crates/parallax-server/examples/**
         crates/parallax-server/src/**
         crates/parallax-server/src/ingest_health.rs
@@ -1341,6 +1092,15 @@ jobs:
         mise.lock
         schema/evidence-bundle.v1.schema.json
         schema/evidence-bundle.v2.schema.json
+        ui/**/*.js
+        ui/**/*.json
+        ui/**/*.jsx
+        ui/**/*.ts
+        ui/**/*.tsx
+        ui/bun.lock
+        ui/bun.lockb
+        ui/package-lock.json
+        ui/package.json
       cache_paths: |
         ~/.cargo/registry
         ~/.cargo/git
@@ -1351,25 +1111,11 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-server"
       cargo_net_offline: true
-  velnor-rust-parallax-server:
-    name: "Rust · parallax-server"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-server,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-parallax-server
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      cargo_net_offline: true
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_dependencies: "rust-parallax-analysis,rust-parallax-api,rust-parallax-evidence,rust-parallax-greptime,rust-parallax-ingest,rust-parallax-metadata,rust-parallax-proto,rust-parallax-semconv,rust-parallax-spool,rust-parallax-storage,rust-parallax-test-support"
+      unit_admission: github
   github-rust-parallax-spool:
     name: "Rust · parallax-spool"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-spool,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-spool,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -1405,25 +1151,10 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-spool"
       cargo_net_offline: true
-  velnor-rust-parallax-spool:
-    name: "Rust · parallax-spool"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-spool,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-parallax-spool
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      cargo_net_offline: true
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_admission: github
   github-rust-parallax-storage:
     name: "Rust · parallax-storage"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-storage,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-storage,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -1473,25 +1204,11 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-storage"
       cargo_net_offline: true
-  velnor-rust-parallax-storage:
-    name: "Rust · parallax-storage"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-storage,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-parallax-storage
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      cargo_net_offline: true
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_dependencies: "rust-parallax-model,rust-parallax-proto,rust-parallax-semconv"
+      unit_admission: github
   github-rust-parallax-test-support:
     name: "Rust · parallax-test-support"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-test-support,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-test-support,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -1556,25 +1273,11 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-test-support"
       cargo_net_offline: true
-  velnor-rust-parallax-test-support:
-    name: "Rust · parallax-test-support"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-test-support,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-parallax-test-support
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      cargo_net_offline: true
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_dependencies: "rust-parallax-metadata,rust-parallax-model,rust-parallax-proto,rust-parallax-semconv,rust-parallax-storage"
+      unit_admission: github
   github-rust-parallax-xtask:
     name: "Rust · parallax-xtask"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-xtask,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-xtask,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -1665,25 +1368,11 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-xtask"
       cargo_net_offline: true
-  velnor-rust-parallax-xtask:
-    name: "Rust · parallax-xtask"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-xtask,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-parallax-xtask
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      cargo_net_offline: true
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_dependencies: rust-parallax-api
+      unit_admission: github
   github-rust-policy:
     name: "Rust · Rust dependency policy"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-policy,') }}
+    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-policy,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
     needs: [plan]
     uses: ./.github/workflows/ci-unit-rust.yml
     with:
@@ -1714,25 +1403,11 @@ jobs:
         Cargo.lock
         rust-toolchain.toml
         rust-toolchain
-  velnor-rust-policy:
-    name: "Rust · Rust dependency policy"
-    if: ${{ always() && needs.plan.result == 'success' && (needs.prepare-cargo.result == 'success' || needs.prepare-cargo.result == 'skipped') && contains(format(',{0},', needs.plan.outputs.units), ',rust-policy,') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: [plan, prepare-cargo]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-policy
-      lane: velnor
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "cargo:cargo-deny"
-      host_warm_layers: "rustup,mold,mbx,cargo"
+      unit_admission: github
   ci-required:
     name: ci-required
     if: ${{ always() }}
-    needs: [plan, velnor-lane-admission, github-bun-ui, velnor-bun-ui, github-docker-bench-otlp-fanout-maple, velnor-docker-bench-otlp-fanout-maple, github-docker-crates-parallax-sentry-proxy, velnor-docker-crates-parallax-sentry-proxy, prepare-cargo, github-rust-nextest-evidence-fixture, velnor-rust-nextest-evidence-fixture, github-rust-parallax-analysis, velnor-rust-parallax-analysis, github-rust-parallax-api, velnor-rust-parallax-api, github-rust-parallax-cli, velnor-rust-parallax-cli, github-rust-parallax-evidence, velnor-rust-parallax-evidence, github-rust-parallax-greptime, velnor-rust-parallax-greptime, github-rust-parallax-ingest, velnor-rust-parallax-ingest, github-rust-parallax-mcp, velnor-rust-parallax-mcp, github-rust-parallax-metadata, velnor-rust-parallax-metadata, github-rust-parallax-model, velnor-rust-parallax-model, github-rust-parallax-proto, velnor-rust-parallax-proto, github-rust-parallax-redaction, velnor-rust-parallax-redaction, github-rust-parallax-semconv, velnor-rust-parallax-semconv, github-rust-parallax-sentry-proxy, velnor-rust-parallax-sentry-proxy, github-rust-parallax-server, velnor-rust-parallax-server, github-rust-parallax-spool, velnor-rust-parallax-spool, github-rust-parallax-storage, velnor-rust-parallax-storage, github-rust-parallax-test-support, velnor-rust-parallax-test-support, github-rust-parallax-xtask, velnor-rust-parallax-xtask, github-rust-policy, velnor-rust-policy]
+    needs: [plan, github-bun-ui, github-docker-bench-otlp-fanout-maple, github-docker-crates-parallax-sentry-proxy, github-rust-nextest-evidence-fixture, github-rust-parallax-analysis, github-rust-parallax-api, github-rust-parallax-cli, github-rust-parallax-evidence, github-rust-parallax-greptime, github-rust-parallax-ingest, github-rust-parallax-mcp, github-rust-parallax-metadata, github-rust-parallax-model, github-rust-parallax-proto, github-rust-parallax-redaction, github-rust-parallax-semconv, github-rust-parallax-sentry-proxy, github-rust-parallax-server, github-rust-parallax-spool, github-rust-parallax-storage, github-rust-parallax-test-support, github-rust-parallax-xtask, github-rust-policy]
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
@@ -1740,7 +1415,7 @@ jobs:
         env:
           NEEDS_JSON: ${{ toJSON(needs) }}
           SELECTED_UNITS: ${{ needs.plan.outputs.units }}
-          FORK_PR: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+          LANE_ADMITTED_GITHUB: ${{ github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == '')) }}
         shell: bash
         run: |
           set -euo pipefail
@@ -1752,18 +1427,20 @@ jobs:
             echo "required CI prerequisite plan did not pass: $result" >&2
             exit 1
           fi
-          result="$(result_for_job velnor-lane-admission)"
-          case "$result" in
-            success|skipped) ;;
-            *) echo "required CI prerequisite velnor-lane-admission did not pass: $result" >&2; exit 1 ;;
-          esac
           selected=",$SELECTED_UNITS,"
           if [[ "$selected" == *",bun-ui,"* ]]; then
             result="$(result_for_job github-bun-ui)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-bun-ui did not pass: $result" >&2; exit 1 ;;
-            esac
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
+              case "$result" in
+                success) ;;
+                *) echo "selected CI job github-bun-ui did not pass: $result" >&2; exit 1 ;;
+              esac
+            else
+              case "$result" in
+                skipped) ;;
+                *) echo "selected CI job github-bun-ui ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
+              esac
+            fi
           else
             result="$(result_for_job github-bun-ui)"
             case "$result" in
@@ -1771,32 +1448,19 @@ jobs:
               *) echo "unselected CI job github-bun-ui failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",bun-ui,"* ]]; then
-            result="$(result_for_job velnor-bun-ui)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",docker-bench-otlp-fanout-maple,"* ]]; then
+            result="$(result_for_job github-docker-bench-otlp-fanout-maple)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-bun-ui did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-docker-bench-otlp-fanout-maple did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-bun-ui did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-docker-bench-otlp-fanout-maple ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-bun-ui)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-bun-ui failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",docker-bench-otlp-fanout-maple,"* ]]; then
-            result="$(result_for_job github-docker-bench-otlp-fanout-maple)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-docker-bench-otlp-fanout-maple did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-docker-bench-otlp-fanout-maple)"
             case "$result" in
@@ -1804,32 +1468,19 @@ jobs:
               *) echo "unselected CI job github-docker-bench-otlp-fanout-maple failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",docker-bench-otlp-fanout-maple,"* ]]; then
-            result="$(result_for_job velnor-docker-bench-otlp-fanout-maple)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",docker-crates-parallax-sentry-proxy,"* ]]; then
+            result="$(result_for_job github-docker-crates-parallax-sentry-proxy)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-docker-bench-otlp-fanout-maple did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-docker-crates-parallax-sentry-proxy did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-docker-bench-otlp-fanout-maple did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-docker-crates-parallax-sentry-proxy ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-docker-bench-otlp-fanout-maple)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-docker-bench-otlp-fanout-maple failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",docker-crates-parallax-sentry-proxy,"* ]]; then
-            result="$(result_for_job github-docker-crates-parallax-sentry-proxy)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-docker-crates-parallax-sentry-proxy did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-docker-crates-parallax-sentry-proxy)"
             case "$result" in
@@ -1837,45 +1488,19 @@ jobs:
               *) echo "unselected CI job github-docker-crates-parallax-sentry-proxy failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",docker-crates-parallax-sentry-proxy,"* ]]; then
-            result="$(result_for_job velnor-docker-crates-parallax-sentry-proxy)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-nextest-evidence-fixture,"* ]]; then
+            result="$(result_for_job github-rust-nextest-evidence-fixture)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-docker-crates-parallax-sentry-proxy did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-nextest-evidence-fixture did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-docker-crates-parallax-sentry-proxy did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-nextest-evidence-fixture ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-docker-crates-parallax-sentry-proxy)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-docker-crates-parallax-sentry-proxy failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-nextest-evidence-fixture,"* ]]; then
-            result="$(result_for_job prepare-cargo)"
-            if [[ "$result" != success ]]; then
-              echo "selected CI prerequisite prepare-cargo did not pass: $result" >&2
-              exit 1
-            fi
-          else
-            result="$(result_for_job prepare-cargo)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI prerequisite prepare-cargo failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-nextest-evidence-fixture,"* ]]; then
-            result="$(result_for_job github-rust-nextest-evidence-fixture)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-nextest-evidence-fixture did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-nextest-evidence-fixture)"
             case "$result" in
@@ -1883,32 +1508,19 @@ jobs:
               *) echo "unselected CI job github-rust-nextest-evidence-fixture failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",rust-nextest-evidence-fixture,"* ]]; then
-            result="$(result_for_job velnor-rust-nextest-evidence-fixture)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-parallax-analysis,"* ]]; then
+            result="$(result_for_job github-rust-parallax-analysis)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-nextest-evidence-fixture did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-parallax-analysis did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-nextest-evidence-fixture did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-parallax-analysis ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-rust-nextest-evidence-fixture)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-nextest-evidence-fixture failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-parallax-analysis,"* ]]; then
-            result="$(result_for_job github-rust-parallax-analysis)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-parallax-analysis did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-parallax-analysis)"
             case "$result" in
@@ -1916,32 +1528,19 @@ jobs:
               *) echo "unselected CI job github-rust-parallax-analysis failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",rust-parallax-analysis,"* ]]; then
-            result="$(result_for_job velnor-rust-parallax-analysis)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-parallax-api,"* ]]; then
+            result="$(result_for_job github-rust-parallax-api)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-parallax-analysis did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-parallax-api did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-parallax-analysis did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-parallax-api ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-rust-parallax-analysis)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-parallax-analysis failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-parallax-api,"* ]]; then
-            result="$(result_for_job github-rust-parallax-api)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-parallax-api did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-parallax-api)"
             case "$result" in
@@ -1949,32 +1548,19 @@ jobs:
               *) echo "unselected CI job github-rust-parallax-api failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",rust-parallax-api,"* ]]; then
-            result="$(result_for_job velnor-rust-parallax-api)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-parallax-cli,"* ]]; then
+            result="$(result_for_job github-rust-parallax-cli)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-parallax-api did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-parallax-cli did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-parallax-api did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-parallax-cli ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-rust-parallax-api)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-parallax-api failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-parallax-cli,"* ]]; then
-            result="$(result_for_job github-rust-parallax-cli)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-parallax-cli did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-parallax-cli)"
             case "$result" in
@@ -1982,32 +1568,19 @@ jobs:
               *) echo "unselected CI job github-rust-parallax-cli failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",rust-parallax-cli,"* ]]; then
-            result="$(result_for_job velnor-rust-parallax-cli)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-parallax-evidence,"* ]]; then
+            result="$(result_for_job github-rust-parallax-evidence)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-parallax-cli did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-parallax-evidence did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-parallax-cli did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-parallax-evidence ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-rust-parallax-cli)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-parallax-cli failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-parallax-evidence,"* ]]; then
-            result="$(result_for_job github-rust-parallax-evidence)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-parallax-evidence did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-parallax-evidence)"
             case "$result" in
@@ -2015,32 +1588,19 @@ jobs:
               *) echo "unselected CI job github-rust-parallax-evidence failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",rust-parallax-evidence,"* ]]; then
-            result="$(result_for_job velnor-rust-parallax-evidence)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-parallax-greptime,"* ]]; then
+            result="$(result_for_job github-rust-parallax-greptime)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-parallax-evidence did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-parallax-greptime did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-parallax-evidence did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-parallax-greptime ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-rust-parallax-evidence)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-parallax-evidence failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-parallax-greptime,"* ]]; then
-            result="$(result_for_job github-rust-parallax-greptime)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-parallax-greptime did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-parallax-greptime)"
             case "$result" in
@@ -2048,32 +1608,19 @@ jobs:
               *) echo "unselected CI job github-rust-parallax-greptime failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",rust-parallax-greptime,"* ]]; then
-            result="$(result_for_job velnor-rust-parallax-greptime)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-parallax-ingest,"* ]]; then
+            result="$(result_for_job github-rust-parallax-ingest)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-parallax-greptime did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-parallax-ingest did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-parallax-greptime did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-parallax-ingest ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-rust-parallax-greptime)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-parallax-greptime failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-parallax-ingest,"* ]]; then
-            result="$(result_for_job github-rust-parallax-ingest)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-parallax-ingest did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-parallax-ingest)"
             case "$result" in
@@ -2081,32 +1628,19 @@ jobs:
               *) echo "unselected CI job github-rust-parallax-ingest failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",rust-parallax-ingest,"* ]]; then
-            result="$(result_for_job velnor-rust-parallax-ingest)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-parallax-mcp,"* ]]; then
+            result="$(result_for_job github-rust-parallax-mcp)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-parallax-ingest did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-parallax-mcp did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-parallax-ingest did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-parallax-mcp ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-rust-parallax-ingest)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-parallax-ingest failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-parallax-mcp,"* ]]; then
-            result="$(result_for_job github-rust-parallax-mcp)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-parallax-mcp did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-parallax-mcp)"
             case "$result" in
@@ -2114,32 +1648,19 @@ jobs:
               *) echo "unselected CI job github-rust-parallax-mcp failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",rust-parallax-mcp,"* ]]; then
-            result="$(result_for_job velnor-rust-parallax-mcp)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-parallax-metadata,"* ]]; then
+            result="$(result_for_job github-rust-parallax-metadata)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-parallax-mcp did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-parallax-metadata did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-parallax-mcp did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-parallax-metadata ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-rust-parallax-mcp)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-parallax-mcp failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-parallax-metadata,"* ]]; then
-            result="$(result_for_job github-rust-parallax-metadata)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-parallax-metadata did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-parallax-metadata)"
             case "$result" in
@@ -2147,32 +1668,19 @@ jobs:
               *) echo "unselected CI job github-rust-parallax-metadata failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",rust-parallax-metadata,"* ]]; then
-            result="$(result_for_job velnor-rust-parallax-metadata)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-parallax-model,"* ]]; then
+            result="$(result_for_job github-rust-parallax-model)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-parallax-metadata did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-parallax-model did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-parallax-metadata did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-parallax-model ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-rust-parallax-metadata)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-parallax-metadata failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-parallax-model,"* ]]; then
-            result="$(result_for_job github-rust-parallax-model)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-parallax-model did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-parallax-model)"
             case "$result" in
@@ -2180,32 +1688,19 @@ jobs:
               *) echo "unselected CI job github-rust-parallax-model failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",rust-parallax-model,"* ]]; then
-            result="$(result_for_job velnor-rust-parallax-model)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-parallax-proto,"* ]]; then
+            result="$(result_for_job github-rust-parallax-proto)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-parallax-model did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-parallax-proto did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-parallax-model did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-parallax-proto ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-rust-parallax-model)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-parallax-model failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-parallax-proto,"* ]]; then
-            result="$(result_for_job github-rust-parallax-proto)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-parallax-proto did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-parallax-proto)"
             case "$result" in
@@ -2213,32 +1708,19 @@ jobs:
               *) echo "unselected CI job github-rust-parallax-proto failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",rust-parallax-proto,"* ]]; then
-            result="$(result_for_job velnor-rust-parallax-proto)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-parallax-redaction,"* ]]; then
+            result="$(result_for_job github-rust-parallax-redaction)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-parallax-proto did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-parallax-redaction did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-parallax-proto did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-parallax-redaction ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-rust-parallax-proto)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-parallax-proto failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-parallax-redaction,"* ]]; then
-            result="$(result_for_job github-rust-parallax-redaction)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-parallax-redaction did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-parallax-redaction)"
             case "$result" in
@@ -2246,32 +1728,19 @@ jobs:
               *) echo "unselected CI job github-rust-parallax-redaction failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",rust-parallax-redaction,"* ]]; then
-            result="$(result_for_job velnor-rust-parallax-redaction)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-parallax-semconv,"* ]]; then
+            result="$(result_for_job github-rust-parallax-semconv)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-parallax-redaction did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-parallax-semconv did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-parallax-redaction did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-parallax-semconv ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-rust-parallax-redaction)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-parallax-redaction failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-parallax-semconv,"* ]]; then
-            result="$(result_for_job github-rust-parallax-semconv)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-parallax-semconv did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-parallax-semconv)"
             case "$result" in
@@ -2279,32 +1748,19 @@ jobs:
               *) echo "unselected CI job github-rust-parallax-semconv failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",rust-parallax-semconv,"* ]]; then
-            result="$(result_for_job velnor-rust-parallax-semconv)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-parallax-sentry-proxy,"* ]]; then
+            result="$(result_for_job github-rust-parallax-sentry-proxy)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-parallax-semconv did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-parallax-sentry-proxy did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-parallax-semconv did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-parallax-sentry-proxy ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-rust-parallax-semconv)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-parallax-semconv failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-parallax-sentry-proxy,"* ]]; then
-            result="$(result_for_job github-rust-parallax-sentry-proxy)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-parallax-sentry-proxy did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-parallax-sentry-proxy)"
             case "$result" in
@@ -2312,32 +1768,19 @@ jobs:
               *) echo "unselected CI job github-rust-parallax-sentry-proxy failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",rust-parallax-sentry-proxy,"* ]]; then
-            result="$(result_for_job velnor-rust-parallax-sentry-proxy)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-parallax-server,"* ]]; then
+            result="$(result_for_job github-rust-parallax-server)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-parallax-sentry-proxy did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-parallax-server did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-parallax-sentry-proxy did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-parallax-server ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-rust-parallax-sentry-proxy)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-parallax-sentry-proxy failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-parallax-server,"* ]]; then
-            result="$(result_for_job github-rust-parallax-server)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-parallax-server did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-parallax-server)"
             case "$result" in
@@ -2345,32 +1788,19 @@ jobs:
               *) echo "unselected CI job github-rust-parallax-server failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",rust-parallax-server,"* ]]; then
-            result="$(result_for_job velnor-rust-parallax-server)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-parallax-spool,"* ]]; then
+            result="$(result_for_job github-rust-parallax-spool)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-parallax-server did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-parallax-spool did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-parallax-server did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-parallax-spool ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-rust-parallax-server)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-parallax-server failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-parallax-spool,"* ]]; then
-            result="$(result_for_job github-rust-parallax-spool)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-parallax-spool did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-parallax-spool)"
             case "$result" in
@@ -2378,32 +1808,19 @@ jobs:
               *) echo "unselected CI job github-rust-parallax-spool failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",rust-parallax-spool,"* ]]; then
-            result="$(result_for_job velnor-rust-parallax-spool)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-parallax-storage,"* ]]; then
+            result="$(result_for_job github-rust-parallax-storage)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-parallax-spool did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-parallax-storage did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-parallax-spool did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-parallax-storage ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-rust-parallax-spool)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-parallax-spool failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-parallax-storage,"* ]]; then
-            result="$(result_for_job github-rust-parallax-storage)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-parallax-storage did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-parallax-storage)"
             case "$result" in
@@ -2411,32 +1828,19 @@ jobs:
               *) echo "unselected CI job github-rust-parallax-storage failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",rust-parallax-storage,"* ]]; then
-            result="$(result_for_job velnor-rust-parallax-storage)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-parallax-test-support,"* ]]; then
+            result="$(result_for_job github-rust-parallax-test-support)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-parallax-storage did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-parallax-test-support did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-parallax-storage did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-parallax-test-support ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-rust-parallax-storage)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-parallax-storage failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-parallax-test-support,"* ]]; then
-            result="$(result_for_job github-rust-parallax-test-support)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-parallax-test-support did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-parallax-test-support)"
             case "$result" in
@@ -2444,32 +1848,19 @@ jobs:
               *) echo "unselected CI job github-rust-parallax-test-support failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",rust-parallax-test-support,"* ]]; then
-            result="$(result_for_job velnor-rust-parallax-test-support)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-parallax-xtask,"* ]]; then
+            result="$(result_for_job github-rust-parallax-xtask)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-parallax-test-support did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-parallax-xtask did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-parallax-test-support did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-parallax-xtask ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-rust-parallax-test-support)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-parallax-test-support failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-parallax-xtask,"* ]]; then
-            result="$(result_for_job github-rust-parallax-xtask)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-parallax-xtask did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-parallax-xtask)"
             case "$result" in
@@ -2477,57 +1868,24 @@ jobs:
               *) echo "unselected CI job github-rust-parallax-xtask failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
-          if [[ "$selected" == *",rust-parallax-xtask,"* ]]; then
-            result="$(result_for_job velnor-rust-parallax-xtask)"
-            if [[ "$FORK_PR" == true ]]; then
+          if [[ "$selected" == *",rust-policy,"* ]]; then
+            result="$(result_for_job github-rust-policy)"
+            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
               case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-parallax-xtask did not pass: $result" >&2; exit 1 ;;
+                success) ;;
+                *) echo "selected CI job github-rust-policy did not pass: $result" >&2; exit 1 ;;
               esac
             else
               case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-parallax-xtask did not pass: $result" >&2; exit 1 ;;
+                skipped) ;;
+                *) echo "selected CI job github-rust-policy ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
               esac
             fi
-          else
-            result="$(result_for_job velnor-rust-parallax-xtask)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-parallax-xtask failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-policy,"* ]]; then
-            result="$(result_for_job github-rust-policy)"
-            case "$result" in
-              success) ;;
-              *) echo "selected CI job github-rust-policy did not pass: $result" >&2; exit 1 ;;
-            esac
           else
             result="$(result_for_job github-rust-policy)"
             case "$result" in
               success|skipped) ;;
               *) echo "unselected CI job github-rust-policy failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-policy,"* ]]; then
-            result="$(result_for_job velnor-rust-policy)"
-            if [[ "$FORK_PR" == true ]]; then
-              case "$result" in
-                success|skipped) ;;
-                *) echo "selected CI job velnor-rust-policy did not pass: $result" >&2; exit 1 ;;
-              esac
-            else
-              case "$result" in
-                success) ;;
-                *) echo "selected CI job velnor-rust-policy did not pass: $result" >&2; exit 1 ;;
-              esac
-            fi
-          else
-            result="$(result_for_job velnor-rust-policy)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job velnor-rust-policy failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
   required:
