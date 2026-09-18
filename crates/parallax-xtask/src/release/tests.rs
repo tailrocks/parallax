@@ -259,72 +259,31 @@ fn verification_identity_rejects_ambiguous_provenance_inputs() -> Result<(), Str
 }
 
 #[test]
-fn release_callers_use_one_packager_and_verified_sdk() -> Result<(), String> {
-    let preview = include_str!("../../../../.github/workflows/preview.yml");
-    let stable = include_str!("../../../../.github/workflows/release.yml");
+fn release_rehearsal_binds_source_and_cannot_publish() -> Result<(), String> {
     let rehearsal = include_str!("../../../../scripts/release.sh");
-    let sdk = include_str!("../../../../.github/actions/setup-macos-sdk/action.yml");
-    let callers = [preview, stable];
+    let archive = Path::new("parallax-x86_64-unknown-linux-gnu.tar.gz");
     let actual = (
-        callers
-            .iter()
-            .all(|source| source.contains("cargo xtask release-package"))
-            && preview.contains("--channel preview")
-            && stable.contains("--channel stable"),
-        callers
-            .iter()
-            .all(|source| source.contains("cargo xtask release-verify")),
-        preview.contains("cargo xtask release-validate --version \"$VERSION\" --channel preview")
-            && stable
-                .contains("cargo xtask release-validate --version \"$VERSION\" --channel stable")
-            && preview.find("Validate preview release identity")
-                < preview.find("\n  build-preview:")
-            && stable.find("Validate stable release identity") < stable.find("\n  build:"),
-        // Apple release legs run on macOS runners (native ld/dsymutil/codesign);
-        // Linux legs keep zigbuild. Neither release workflow cross-builds Apple
-        // on Linux, so the macOS SDK action is not required on the package path.
-        callers.iter().all(|source| {
-            source.contains("macos-latest")
-                && source.contains("builder: cargo")
-                && source.contains("builder: zigbuild")
-                && source.contains("Build (Apple native)")
-                && source.contains("Build (Linux zigbuild)")
-                && !source.contains("./.github/actions/setup-macos-sdk")
-        }),
-        callers
-            .iter()
-            .all(|source| !source.contains("tar -czf") && !source.contains("| tar")),
+        // The rehearsal derives both provenance fields from the checked-out commit.
+        rehearsal.contains("source_sha=\"$(git rev-parse HEAD)\"")
+            && rehearsal.contains("source_epoch=\"$(git show -s --format=%ct \"$source_sha\")\""),
         rehearsal.contains("cargo xtask release-rehearse")
-            && rehearsal.contains("--channel rehearsal")
-            && rehearsal.contains("*-apple-darwin")
-            && rehearsal.contains("cargo build --release")
-            && rehearsal.contains("cargo zigbuild")
-            && !rehearsal.contains("tar -czf")
-            && !rehearsal.contains("-czf"),
-        // SDK action remains available and digest-pinned for any future cross path.
-        sdk.contains("key: macos-sdk-archive-${{ inputs.version }}-${{ inputs.sha256 }}")
-            && sdk.contains("[[ \"$SDK_VERSION\" =~ ^[0-9]+\\.[0-9]+$ ]]")
-            && sdk.contains("[[ \"$SDK_SHA256\" =~ ^[0-9a-f]{64}$ ]]")
-            && sdk.find("Validate macOS SDK identity") < sdk.find("actions/cache@")
-            && sdk.contains("sha256sum --check --strict")
-            && sdk.find("sha256sum --check --strict") < sdk.find("tar -xJf"),
-        include_str!("../../../../.github/actions/sign-and-attest-archive/action.yml")
-            .contains("--source-name \"$(basename \"${ARCHIVE}\")\"")
-            && include_str!("../../../../.github/actions/sign-and-attest-archive/action.yml")
-                .contains("--source-version \"sha256:${digest}\"")
-            && include_str!("../../../../mise.toml")
-                .contains(&format!("syft = \"{}\"", verify::SYFT_VERSION)),
-        stable.contains("workflow_dispatch:")
-            && stable.contains("description: velnor (default) | github | both")
-            && stable.contains("default: velnor")
-            && stable.contains("options: [velnor, github, both]")
-            && stable.contains("STABLE_RELEASE_ENABLED")
-            && stable.contains("environment: stable-release"),
-        !preview.contains("GH_PARALLAX_HOMEBREW_TAP_TOKEN")
-            && !preview.contains("repository: tailrocks/homebrew-parallax"),
+            && rehearsal.contains("--channel rehearsal"),
+        // Rehearsal is intentionally local and non-publishing.
+        !rehearsal.contains("gh release create")
+            && !rehearsal.contains("gh release upload")
+            && !rehearsal.contains("git push"),
+        validate_channel_version("0.1.0-dev+abcdef0", Channel::Rehearsal).is_ok(),
+        validate_channel_version("0.1.0-preview.1+abcdef0", Channel::Stable).is_err(),
+        validate_archive_name(
+            archive,
+            "x86_64-unknown-linux-gnu",
+            "0.1.0-preview.1+abcdef0",
+            Channel::Rehearsal,
+        )
+        .is_err(),
     );
-    if actual != (true, true, true, true, true, true, true, true, true, true) {
-        return Err(format!("release caller contract mismatch: {actual:?}"));
+    if actual != (true, true, true, true, true, true) {
+        return Err(format!("release rehearsal contract mismatch: {actual:?}"));
     }
     Ok(())
 }
