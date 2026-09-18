@@ -2,7 +2,7 @@ schema = 1
 
 [generator]
 repository = "tailrocks/parallax"
-revision = "b9c3156cdb88e63c11b9e595a3e694b02238c09a"
+revision = "05980b7a4ce5ecd392956a01cd2292cca5944f0d"
 
 [scan]
 exclude = ["crates/parallax-xtask/src/release/tests.rs"]
@@ -22,3 +22,26 @@ ruleset_required_status_checks = ["ci-required"]
 ci_required = true
 dco_required = true
 actionlint_config_variables_null = true
+
+[[units]]
+id = "bun-ui"
+
+[[units.products]]
+name = "embedded-ui"
+task = "build-ui-for-rust"
+
+[[units]]
+id = "rust-parallax-server"
+mise_tools = ["bun"]
+
+[[units.prerequisites]]
+producer = "bun-ui"
+product = "embedded-ui"
+
+[[units]]
+id = "rust-parallax-cli"
+mise_tools = ["bun"]
+
+[[units.prerequisites]]
+producer = "bun-ui"
+product = "embedded-ui"
