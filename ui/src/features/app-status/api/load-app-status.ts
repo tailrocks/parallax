@@ -4,7 +4,9 @@ import { classifyHealth, type AppStatus } from "@/features/app-status/model/app-
 export async function loadAppStatus(signal?: AbortSignal): Promise<AppStatus> {
   const endpointLabel = apiEndpointLabel()
   try {
-    const response = await fetch("/health", { signal })
+    const requestInit: RequestInit = {}
+    if (signal !== undefined) requestInit.signal = signal
+    const response = await fetch("/health", requestInit)
     if (response.ok) {
       const text = (await response.text()).trim().toLowerCase()
       return {

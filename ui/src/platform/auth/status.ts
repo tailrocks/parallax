@@ -5,7 +5,9 @@ export type AuthStatus = {
 
 export async function loadAuthStatus(signal?: AbortSignal): Promise<AuthStatus> {
   try {
-    const response = await fetch("/api/auth/status", { signal })
+    const requestInit: RequestInit = {}
+    if (signal !== undefined) requestInit.signal = signal
+    const response = await fetch("/api/auth/status", requestInit)
     if (!response.ok) {
       return { loginEnabled: false, username: null }
     }
