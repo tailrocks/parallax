@@ -301,7 +301,7 @@ fn velnor_generator_pin_is_the_published_048_runtime() -> Result<(), String> {
     let source = include_str!("../../../../.github-gen/velnor-workflow.toml");
     let policy = include_str!("../../../../.github/workflows/ci-policy.yml");
     let project = include_str!("../../../../.github/ci/project.toml");
-    let actual = (
+    let actual = [
         source.contains(&format!("revision = \"{PIN}\"")),
         source.contains("runners = \"github\""),
         source.contains("scripts/fixtures/nextest-evidence/**"),
@@ -311,8 +311,22 @@ fn velnor_generator_pin_is_the_published_048_runtime() -> Result<(), String> {
         !project.contains("id = \"rust-nextest-evidence-fixture\""),
         !project.contains("id = \"docker-crates-parallax-sentry-proxy\""),
         project.contains("id = \"docker-bench-otlp-fanout-maple\""),
-    );
-    if actual != (true, true, true, true, true, true, true, true, true) {
+        source.contains("[[units.products]]")
+            && source.contains("name = \"embedded-ui\"")
+            && source.contains("task = \"build-ui-for-rust\"")
+            && source.contains("producer = \"bun-ui\"")
+            && source.contains("product = \"embedded-ui\""),
+        include_str!("../../../../mise.toml").contains("[tasks.build-ui-for-rust]"),
+        project.contains("id = \"rust-parallax-cli\"")
+            && project.contains(
+                "github_pr_commands = [\"mise run build-ui-for-rust\", \"cd -- 'crates/parallax-cli'",
+            ),
+        project.contains("id = \"rust-parallax-server\"")
+            && project.contains(
+                "github_pr_commands = [\"mise run build-ui-for-rust\", \"cd -- 'crates/parallax-server'",
+            ),
+    ];
+    if actual != [true; 13] {
         return Err(format!(
             "published Velnor pin contract mismatch: {actual:?}"
         ));
