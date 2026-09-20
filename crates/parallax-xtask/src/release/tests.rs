@@ -360,11 +360,12 @@ fn release_workflows_stay_absent_while_release_is_fail_closed() -> Result<(), St
 }
 
 #[test]
-fn velnor_generator_pin_is_the_published_048_runtime() -> Result<(), String> {
-    const PIN: &str = "048a7bdaed8240cf652127c94434e60528633dec";
+fn velnor_generator_pin_is_the_published_4fa_runtime() -> Result<(), String> {
+    const PIN: &str = "4fa7a3a85f141a6bb95bc9bdf0eef9e3ddde165d";
     let source = include_str!("../../../../.github-gen/velnor-workflow.toml");
     let policy = include_str!("../../../../.github/workflows/ci-policy.yml");
     let project = include_str!("../../../../.github/ci/project.toml");
+    let rust_workflow = include_str!("../../../../.github/workflows/ci-unit-rust.yml");
     let actual = [
         source.contains(&format!("revision = \"{PIN}\"")),
         source.contains("runners = \"github\""),
@@ -396,8 +397,12 @@ fn velnor_generator_pin_is_the_published_048_runtime() -> Result<(), String> {
             .contains("TMPDIR: \"/home/runner/work/_temp\"")
             && include_str!("../../../../.github/workflows/ci-unit-rust.yml")
                 .contains("MBX_GC_AUTO: \"0\""),
+        rust_workflow.contains("jdx/mr-boxington-action@867fc530102eec5b756075d70d850dc8330d2272"),
+        rust_workflow.contains("version: 1.12.0")
+            && rust_workflow.contains("github-cache-mode: objects")
+            && !rust_workflow.contains("version: 1.11.1"),
     ];
-    if actual != [true; 16] {
+    if actual != [true; 18] {
         return Err(format!(
             "published Velnor pin contract mismatch: {actual:?}"
         ));

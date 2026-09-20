@@ -2,7 +2,7 @@ schema = 1
 
 [generator]
 repository = "tailrocks/parallax"
-revision = "048a7bdaed8240cf652127c94434e60528633dec"
+revision = "4fa7a3a85f141a6bb95bc9bdf0eef9e3ddde165d"
 
 [scan]
 exclude = [
@@ -46,10 +46,10 @@ mise_tools = ["bun"]
 # context). ubuntu-26.04 github-hosted RUNNER_TEMP is this path.
 TMPDIR = "/home/runner/work/_temp"
 TMP = "/home/runner/work/_temp"
-# 048 pins mr-boxington-action v1.3.0, which auto-GCs on hosted runners.
-# A 12GiB budget is below embed-ui server/cli stores (~27GiB), so GC evicts
-# action results and post-step export fails. Disable the sweep; do not bump
-# to e94/v1.3.1.
+# Keep the hosted-runner temp and GC safeguards while validating the v1.4
+# directory transport and the 12GiB store budget against the embed-ui
+# server/cli stores (~27GiB). Directory import removes the old second tar
+# unpack, but does not by itself prove that other temporary work or GC is safe.
 MBX_GC_AUTO = "0"
 
 [[units.prerequisites]]
