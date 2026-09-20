@@ -46,6 +46,7 @@ the agent that created the commit:
 Co-authored-by: Codex <codex@openai.com>
 Co-authored-by: Claude <noreply@anthropic.com>
 Co-authored-by: Amp <amp@ampcode.com>
+Co-authored-by: Grok <grok@x.ai>
 ```
 
 Use only one of those on a normal commit. If the agent is unclear, ask before

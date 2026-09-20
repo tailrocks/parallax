@@ -21,6 +21,16 @@ describe("loadAuthStatus", () => {
       username: null,
     })
   })
+
+  it("omits RequestInit.signal when the caller passes no abort signal", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ login_enabled: false, username: null }),
+    })
+    vi.stubGlobal("fetch", fetchMock)
+    await loadAuthStatus()
+    expect(fetchMock).toHaveBeenCalledWith("/api/auth/status", {})
+  })
 })
 
 describe("loginWithPassword", () => {
