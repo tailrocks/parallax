@@ -29,19 +29,8 @@ actionlint_config_variables_null = true
 
 [[units]]
 id = "bun-ui"
-watch = [
-  "ui/**/*.js",
-  "ui/**/*.json",
-  "ui/**/*.jsx",
-  "ui/**/*.ts",
-  "ui/**/*.tsx",
-  "ui/**/*.css",
-  "ui/public/**",
-  "ui/bun.lock",
-  "ui/bun.lockb",
-  "ui/package-lock.json",
-  "ui/package.json",
-]
+# Package scripts can read configs and assets beyond a fixed extension list.
+watch = ["ui/**"]
 
 [[units.products]]
 name = "embedded-ui"

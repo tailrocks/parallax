@@ -265,6 +265,66 @@ fn workspace_root() -> Result<PathBuf, String> {
         .map_err(|error| error.to_string())
 }
 
+fn compile_embedded_ui_build_script(temp: &Path) -> Result<PathBuf, Box<dyn std::error::Error>> {
+    let binary = temp.join("build-script");
+    let compile = std::process::Command::new("rustc")
+        .arg("--edition=2024")
+        .arg(workspace_root()?.join("crates/parallax-server/build.rs"))
+        .arg("-o")
+        .arg(&binary)
+        .output()?;
+    if !compile.status.success() {
+        return Err(format!("build-script fixture compilation failed: {compile:?}").into());
+    }
+    Ok(binary)
+}
+
+fn run_embedded_ui_build_script(
+    binary: &Path,
+    manifest: Option<&Path>,
+    enabled: bool,
+) -> Result<std::process::Output, std::io::Error> {
+    let mut command = std::process::Command::new(binary);
+    command.env_remove("CARGO_MANIFEST_DIR");
+    command.env_remove("CARGO_FEATURE_EMBED_UI");
+    if let Some(manifest) = manifest {
+        command.env("CARGO_MANIFEST_DIR", manifest);
+    }
+    if enabled {
+        command.env("CARGO_FEATURE_EMBED_UI", "1");
+    }
+    command.output()
+}
+
+#[cfg(unix)]
+fn run_embedded_ui_build_script_with_timeout(
+    binary: &Path,
+    manifest: &Path,
+) -> Result<std::process::Output, Box<dyn std::error::Error>> {
+    use std::process::Stdio;
+    use std::time::{Duration, Instant};
+
+    let mut command = std::process::Command::new(binary);
+    command
+        .env("CARGO_MANIFEST_DIR", manifest)
+        .env("CARGO_FEATURE_EMBED_UI", "1")
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    let mut child = command.spawn()?;
+    let deadline = Instant::now() + Duration::from_secs(2);
+    loop {
+        if child.try_wait()?.is_some() {
+            return Ok(child.wait_with_output()?);
+        }
+        if Instant::now() >= deadline {
+            child.kill()?;
+            let _ = child.wait()?;
+            return Err("embedded UI validation timed out on a special file".into());
+        }
+        std::thread::park_timeout(Duration::from_millis(10));
+    }
+}
+
 #[test]
 fn release_workflows_stay_absent_while_release_is_fail_closed() -> Result<(), String> {
     let root = workspace_root()?;
@@ -329,12 +389,158 @@ fn velnor_generator_pin_is_the_published_048_runtime() -> Result<(), String> {
             && project.contains(
                 "github_pr_commands = [\"mise run build-ui-for-rust\", \"cd -- 'crates/parallax-server'",
             ),
-        project.contains("\"ui/**/*.css\"") && project.contains("\"ui/public/**\""),
+        project.contains("\"ui/**\""),
     ];
     if actual != [true; 14] {
         return Err(format!(
             "published Velnor pin contract mismatch: {actual:?}"
         ));
+    }
+    Ok(())
+}
+
+#[test]
+fn embedded_ui_build_requires_a_product_without_creating_one()
+-> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let manifest = temp.path().join("checkout/crates/parallax-server");
+    std::fs::create_dir_all(&manifest)?;
+    let shell = temp.path().join("checkout/ui/dist/client/_shell.html");
+    let binary = compile_embedded_ui_build_script(temp.path())?;
+    let run = |enabled: bool| run_embedded_ui_build_script(&binary, Some(&manifest), enabled);
+    let disabled = run(false)?;
+    if !disabled.status.success() || shell.exists() {
+        return Err("feature-disabled build must not require or create a UI product".into());
+    }
+    let missing = run(true)?;
+    if missing.status.success() || shell.exists() {
+        return Err("missing embedded UI must fail without fabricating a product".into());
+    }
+    std::fs::create_dir_all(shell.parent().ok_or("fixture parent missing")?)?;
+    for bytes in [
+        b"".as_slice(),
+        b"<!doctype html><title>parallax embed-ui stub</title>\n".as_slice(),
+    ] {
+        std::fs::write(&shell, bytes)?;
+        if run(true)?.status.success() || std::fs::read(&shell)? != bytes {
+            return Err("invalid embedded UI must fail without changing its inputs".into());
+        }
+    }
+    let product = b"<!doctype html><html><body>fixture UI</body></html>";
+    std::fs::write(&shell, product)?;
+    if !run(true)?.status.success() || std::fs::read(&shell)? != product {
+        return Err("existing embedded UI must be accepted without mutation".into());
+    }
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn embedded_ui_build_rejects_markers_and_symlinked_product_paths()
+-> Result<(), Box<dyn std::error::Error>> {
+    use std::os::unix::fs::symlink;
+
+    let temp = tempfile::tempdir()?;
+    let checkout = temp.path().join("checkout");
+    let manifest = checkout.join("crates/parallax-server");
+    let product = checkout.join("ui/dist/client");
+    std::fs::create_dir_all(&manifest)?;
+    std::fs::create_dir_all(&product)?;
+    let binary = compile_embedded_ui_build_script(temp.path())?;
+    let shell = product.join("_shell.html");
+    let valid = b"<!doctype html><html><body>fixture UI</body></html>";
+
+    std::fs::write(&shell, b"prefix parallax embed-ui stub suffix")?;
+    if run_embedded_ui_build_script(&binary, Some(&manifest), true)?
+        .status
+        .success()
+    {
+        return Err("legacy marker with appended bytes must fail".into());
+    }
+
+    std::fs::write(&shell, valid)?;
+    let external_shell = temp.path().join("external-shell.html");
+    std::fs::write(&external_shell, valid)?;
+    std::fs::remove_file(&shell)?;
+    symlink(&external_shell, &shell)?;
+    if run_embedded_ui_build_script(&binary, Some(&manifest), true)?
+        .status
+        .success()
+    {
+        return Err("symlinked shell must fail".into());
+    }
+
+    std::fs::remove_file(&shell)?;
+    std::fs::write(&shell, valid)?;
+    let external_assets = temp.path().join("external-assets");
+    std::fs::create_dir_all(&external_assets)?;
+    std::fs::write(external_assets.join("app.js"), b"external asset")?;
+    symlink(&external_assets, product.join("assets"))?;
+    if run_embedded_ui_build_script(&binary, Some(&manifest), true)?
+        .status
+        .success()
+    {
+        return Err("nested external asset symlink must fail".into());
+    }
+
+    std::fs::remove_file(product.join("assets"))?;
+    std::fs::remove_dir_all(checkout.join("ui"))?;
+    let external_ui = temp.path().join("external-ui");
+    let external_product = external_ui.join("dist/client");
+    std::fs::create_dir_all(&external_product)?;
+    std::fs::write(external_product.join("_shell.html"), valid)?;
+    symlink(&external_ui, checkout.join("ui"))?;
+    if run_embedded_ui_build_script(&binary, Some(&manifest), true)?
+        .status
+        .success()
+    {
+        return Err("external UI root symlink must fail".into());
+    }
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn embedded_ui_build_rejects_socket_and_fifo_entries() -> Result<(), Box<dyn std::error::Error>> {
+    use std::os::unix::net::UnixListener;
+    use std::process::Command;
+
+    let temp = tempfile::tempdir()?;
+    let checkout = temp.path().join("checkout");
+    let manifest = checkout.join("crates/parallax-server");
+    let product = checkout.join("ui/dist/client");
+    std::fs::create_dir_all(&product)?;
+    let binary = compile_embedded_ui_build_script(temp.path())?;
+    let shell = product.join("_shell.html");
+    let valid = b"<!doctype html><html><body>fixture UI</body></html>";
+    std::fs::write(&shell, valid)?;
+
+    let socket = product.join("socket");
+    let listener = UnixListener::bind(&socket)?;
+    let socket_result = run_embedded_ui_build_script(&binary, Some(&manifest), true)?;
+    drop(listener);
+    if socket_result.status.success()
+        || !String::from_utf8_lossy(&socket_result.stderr).contains("special file")
+    {
+        return Err("embedded UI socket entry was accepted".into());
+    }
+
+    std::fs::remove_file(&socket)?;
+    std::fs::remove_file(&shell)?;
+    let fifo = shell.clone();
+    let fifo_status = Command::new("mkfifo").arg(&fifo).status()?;
+    if !fifo_status.success() {
+        return Err("mkfifo fixture setup failed".into());
+    }
+    let fifo_result = run_embedded_ui_build_script_with_timeout(&binary, &manifest);
+    if let Ok(output) = fifo_result {
+        if output.status.success()
+            || !String::from_utf8_lossy(&output.stderr).contains("special file")
+        {
+            return Err("embedded UI FIFO entry was accepted".into());
+        }
+    } else {
+        return Err("embedded UI FIFO validation did not terminate".into());
     }
     Ok(())
 }
