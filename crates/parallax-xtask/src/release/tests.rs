@@ -325,8 +325,9 @@ fn velnor_generator_pin_is_the_published_048_runtime() -> Result<(), String> {
             && project.contains(
                 "github_pr_commands = [\"mise run build-ui-for-rust\", \"cd -- 'crates/parallax-server'",
             ),
+        project.contains("\"ui/**/*.css\"") && project.contains("\"ui/public/**\""),
     ];
-    if actual != [true; 13] {
+    if actual != [true; 14] {
         return Err(format!(
             "published Velnor pin contract mismatch: {actual:?}"
         ));

@@ -383,6 +383,7 @@ jobs:
         mise.lock
         schema/evidence-bundle.v1.schema.json
         schema/evidence-bundle.v2.schema.json
+        ui/**/*.css
         ui/**/*.js
         ui/**/*.json
         ui/**/*.jsx
@@ -392,6 +393,7 @@ jobs:
         ui/bun.lockb
         ui/package-lock.json
         ui/package.json
+        ui/public/**
       cache_paths: |
         ~/.cargo/registry
         ~/.cargo/git
@@ -1043,6 +1045,7 @@ jobs:
         mise.lock
         schema/evidence-bundle.v1.schema.json
         schema/evidence-bundle.v2.schema.json
+        ui/**/*.css
         ui/**/*.js
         ui/**/*.json
         ui/**/*.jsx
@@ -1052,6 +1055,7 @@ jobs:
         ui/bun.lockb
         ui/package-lock.json
         ui/package.json
+        ui/public/**
       cache_paths: |
         ~/.cargo/registry
         ~/.cargo/git
