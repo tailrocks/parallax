@@ -1,5 +1,6 @@
 [package]
 name = "parallax-server"
+build = "build.rs"
 description = "Parallax server: OTLP ingest, workers, API host, engine supervision"
 version.workspace = true
 edition.workspace = true
@@ -57,7 +58,8 @@ mime_guess = { workspace = true, optional = true }
 
 [features]
 # Compile the built web UI (ui/dist/client) into the binary for single-file
-# distribution. Requires `bun run build` in ui/ first; scripts/release.sh does.
+# distribution. The build script creates a compile stub when dist is absent;
+# scripts/release.sh and `bun run build` replace it with the real UI.
 embed-ui = ["dep:rust-embed", "dep:mime_guess"]
 cross-release-vendored = [
     "reqwest/native-tls-vendored",

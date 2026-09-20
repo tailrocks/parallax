@@ -285,7 +285,9 @@ fn release_workflows_stay_absent_while_release_is_fail_closed() -> Result<(), St
             && !rehearsal.contains("git push"),
         include_str!("../../../../mise.toml")
             .contains(&format!("syft = \"{}\"", verify::SYFT_VERSION)),
-        !root.join("crates/parallax-server/build.rs").exists(),
+        root.join("crates/parallax-server/build.rs").exists()
+            && include_str!("../../../../crates/parallax-server/build.rs").contains("_shell.html")
+            && !include_str!("../../../../crates/parallax-server/build.rs").contains("bun"),
     );
     if actual != (true, true, true, true, true, true) {
         return Err(format!("fail-closed release contract mismatch: {actual:?}"));
@@ -298,12 +300,19 @@ fn velnor_generator_pin_is_the_published_048_runtime() -> Result<(), String> {
     const PIN: &str = "048a7bdaed8240cf652127c94434e60528633dec";
     let source = include_str!("../../../../.github-gen/velnor-workflow.toml");
     let policy = include_str!("../../../../.github/workflows/ci-policy.yml");
+    let project = include_str!("../../../../.github/ci/project.toml");
     let actual = (
         source.contains(&format!("revision = \"{PIN}\"")),
+        source.contains("runners = \"github\""),
+        source.contains("scripts/fixtures/nextest-evidence/**"),
+        source.contains("crates/parallax-sentry-proxy/Dockerfile"),
         policy.contains(PIN),
         !policy.contains("b9c3156cdb88e63c11b9e595a3e694b02238c09a"),
+        !project.contains("id = \"rust-nextest-evidence-fixture\""),
+        !project.contains("id = \"docker-crates-parallax-sentry-proxy\""),
+        project.contains("id = \"docker-bench-otlp-fanout-maple\""),
     );
-    if actual != (true, true, true) {
+    if actual != (true, true, true, true, true, true, true, true, true) {
         return Err(format!(
             "published Velnor pin contract mismatch: {actual:?}"
         ));
