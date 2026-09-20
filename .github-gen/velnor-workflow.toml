@@ -5,7 +5,11 @@ repository = "tailrocks/parallax"
 revision = "048a7bdaed8240cf652127c94434e60528633dec"
 
 [scan]
-exclude = ["crates/parallax-xtask/src/release/tests.rs"]
+exclude = [
+  "crates/parallax-xtask/src/release/tests.rs",
+  "scripts/fixtures/nextest-evidence/**",
+  "crates/parallax-sentry-proxy/Dockerfile",
+]
 
 [workflow]
 runners = "github"

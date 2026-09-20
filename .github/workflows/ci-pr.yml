@@ -134,59 +134,6 @@ jobs:
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
       unit_admission: github
-  github-docker-crates-parallax-sentry-proxy:
-    name: "Docker · Docker (crates/parallax-sentry-proxy)"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',docker-crates-parallax-sentry-proxy,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
-    needs: [plan]
-    uses: ./.github/workflows/ci-unit-docker.yml
-    with:
-      unit: docker-crates-parallax-sentry-proxy
-      lane: github
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      unit_admission: github
-  github-rust-nextest-evidence-fixture:
-    name: "Rust · nextest-evidence-fixture"
-    if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-nextest-evidence-fixture,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
-    needs: [plan]
-    uses: ./.github/workflows/ci-unit-rust.yml
-    with:
-      unit: rust-nextest-evidence-fixture
-      lane: github
-      selected_units: ${{ needs.plan.outputs.units }}
-      scope: ${{ needs.plan.outputs.scope }}
-      full_units: ${{ needs.plan.outputs.full_units }}
-      base_sha: ${{ needs.plan.outputs.base_sha }}
-      head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      mbx_compat: f6a2f84d2622
-      mbx_dependency_files: |
-        .cargo/**
-        rust-toolchain
-        rust-toolchain.toml
-        scripts/fixtures/nextest-evidence/Cargo.lock
-      mbx_freshness_files: |
-        mise.lock
-        scripts/fixtures/nextest-evidence/**/*.rs
-        scripts/fixtures/nextest-evidence/Cargo.lock
-        scripts/fixtures/nextest-evidence/benches/**
-        scripts/fixtures/nextest-evidence/examples/**
-        scripts/fixtures/nextest-evidence/src/**
-        scripts/fixtures/nextest-evidence/tests/**
-      cache_paths: |
-        ~/.cargo/registry
-        ~/.cargo/git
-      cache_key_files: |
-        .cargo/**
-        scripts/fixtures/nextest-evidence/Cargo.lock
-        rust-toolchain.toml
-        rust-toolchain
-      cargo_root: "scripts/fixtures/nextest-evidence"
-      cargo_net_offline: true
-      unit_admission: github
   github-rust-parallax-analysis:
     name: "Rust · parallax-analysis"
     if: ${{ always() && needs.plan.result == 'success' && contains(format(',{0},', needs.plan.outputs.units), ',rust-parallax-analysis,') && (github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.runner == 'github' || github.event.inputs.runner == 'both' || github.event.inputs.runner == ''))) }}
@@ -1387,7 +1334,7 @@ jobs:
   ci-required:
     name: ci-required
     if: ${{ always() }}
-    needs: [plan, github-bun-ui, github-docker-bench-otlp-fanout-maple, github-docker-crates-parallax-sentry-proxy, github-rust-nextest-evidence-fixture, github-rust-parallax-analysis, github-rust-parallax-api, github-rust-parallax-cli, github-rust-parallax-evidence, github-rust-parallax-greptime, github-rust-parallax-ingest, github-rust-parallax-mcp, github-rust-parallax-metadata, github-rust-parallax-model, github-rust-parallax-proto, github-rust-parallax-redaction, github-rust-parallax-semconv, github-rust-parallax-sentry-proxy, github-rust-parallax-server, github-rust-parallax-spool, github-rust-parallax-storage, github-rust-parallax-test-support, github-rust-parallax-xtask, github-rust-policy]
+    needs: [plan, github-bun-ui, github-docker-bench-otlp-fanout-maple, github-rust-parallax-analysis, github-rust-parallax-api, github-rust-parallax-cli, github-rust-parallax-evidence, github-rust-parallax-greptime, github-rust-parallax-ingest, github-rust-parallax-mcp, github-rust-parallax-metadata, github-rust-parallax-model, github-rust-parallax-proto, github-rust-parallax-redaction, github-rust-parallax-semconv, github-rust-parallax-sentry-proxy, github-rust-parallax-server, github-rust-parallax-spool, github-rust-parallax-storage, github-rust-parallax-test-support, github-rust-parallax-xtask, github-rust-policy]
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
@@ -1446,46 +1393,6 @@ jobs:
             case "$result" in
               success|skipped) ;;
               *) echo "unselected CI job github-docker-bench-otlp-fanout-maple failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",docker-crates-parallax-sentry-proxy,"* ]]; then
-            result="$(result_for_job github-docker-crates-parallax-sentry-proxy)"
-            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
-              case "$result" in
-                success) ;;
-                *) echo "selected CI job github-docker-crates-parallax-sentry-proxy did not pass: $result" >&2; exit 1 ;;
-              esac
-            else
-              case "$result" in
-                skipped) ;;
-                *) echo "selected CI job github-docker-crates-parallax-sentry-proxy ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
-              esac
-            fi
-          else
-            result="$(result_for_job github-docker-crates-parallax-sentry-proxy)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job github-docker-crates-parallax-sentry-proxy failed unexpectedly: $result" >&2; exit 1 ;;
-            esac
-          fi
-          if [[ "$selected" == *",rust-nextest-evidence-fixture,"* ]]; then
-            result="$(result_for_job github-rust-nextest-evidence-fixture)"
-            if [[ "$LANE_ADMITTED_GITHUB" == true ]]; then
-              case "$result" in
-                success) ;;
-                *) echo "selected CI job github-rust-nextest-evidence-fixture did not pass: $result" >&2; exit 1 ;;
-              esac
-            else
-              case "$result" in
-                skipped) ;;
-                *) echo "selected CI job github-rust-nextest-evidence-fixture ran outside its lane admission (LANE_ADMITTED_GITHUB=$LANE_ADMITTED_GITHUB): $result" >&2; exit 1 ;;
-              esac
-            fi
-          else
-            result="$(result_for_job github-rust-nextest-evidence-fixture)"
-            case "$result" in
-              success|skipped) ;;
-              *) echo "unselected CI job github-rust-nextest-evidence-fixture failed unexpectedly: $result" >&2; exit 1 ;;
             esac
           fi
           if [[ "$selected" == *",rust-parallax-analysis,"* ]]; then
