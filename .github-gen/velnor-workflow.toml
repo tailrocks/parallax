@@ -26,3 +26,26 @@ ruleset_required_status_checks = ["ci-required"]
 ci_required = true
 dco_required = true
 actionlint_config_variables_null = true
+
+[[units]]
+id = "bun-ui"
+
+[[units.products]]
+name = "embedded-ui"
+task = "build-ui-for-rust"
+
+[[units]]
+id = "rust-parallax-server"
+mise_tools = ["bun"]
+
+[[units.prerequisites]]
+producer = "bun-ui"
+product = "embedded-ui"
+
+[[units]]
+id = "rust-parallax-cli"
+mise_tools = ["bun"]
+
+[[units.prerequisites]]
+producer = "bun-ui"
+product = "embedded-ui"
