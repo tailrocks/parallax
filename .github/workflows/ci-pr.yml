@@ -58,11 +58,11 @@ jobs:
       - name: Set up Velnor workflow runtime
         id: runtime
         if: ${{ runner.environment == 'github-hosted' }}
-        uses: tailrocks/velnor/.github/actions/setup-velnor-workflow@048a7bdaed8240cf652127c94434e60528633dec
+        uses: tailrocks/velnor/.github/actions/setup-velnor-workflow@4fa7a3a85f141a6bb95bc9bdf0eef9e3ddde165d
         with:
-          rev: 048a7bdaed8240cf652127c94434e60528633dec
+          rev: 4fa7a3a85f141a6bb95bc9bdf0eef9e3ddde165d
       - name: Set trusted workflow policy revision
-        run: echo "VELNOR_WORKFLOW_POLICY_REVISION=048a7bdaed8240cf652127c94434e60528633dec" >> "$GITHUB_ENV"
+        run: echo "VELNOR_WORKFLOW_POLICY_REVISION=4fa7a3a85f141a6bb95bc9bdf0eef9e3ddde165d" >> "$GITHUB_ENV"
       - name: Select affected units
         id: plan
         env:
@@ -78,7 +78,7 @@ jobs:
       - name: Prepare Velnor workflow runtime
         shell: bash
         env:
-          EXPECTED_REVISION: 048a7bdaed8240cf652127c94434e60528633dec
+          EXPECTED_REVISION: 4fa7a3a85f141a6bb95bc9bdf0eef9e3ddde165d
         run: |
           set -euo pipefail
           stage="$RUNNER_TEMP/velnor-workflow-runtime"
@@ -97,7 +97,7 @@ jobs:
       - name: Publish Velnor workflow runtime
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: velnor-workflow-runtime-048a7bdaed8240cf652127c94434e60528633dec-${{ runner.os }}-${{ runner.arch }}
+          name: velnor-workflow-runtime-4fa7a3a85f141a6bb95bc9bdf0eef9e3ddde165d-${{ runner.os }}-${{ runner.arch }}
           path: ${{ runner.temp }}/velnor-workflow-runtime
           if-no-files-found: error
           retention-days: 7
@@ -148,7 +148,8 @@ jobs:
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
       mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      mbx_compat: "0608828f8c40"
+      mbx_enabled: true
+      mbx_compat: "9e9e859222c8"
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
@@ -202,7 +203,8 @@ jobs:
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
       mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      mbx_compat: f3985e0bc9ec
+      mbx_enabled: true
+      mbx_compat: "8d18921ca21b"
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
@@ -290,7 +292,8 @@ jobs:
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
       mise_tools: "aqua:nextest-rs/nextest/cargo-nextest bun"
-      mbx_compat: "16a3dc14ec9b"
+      mbx_enabled: true
+      mbx_compat: "6a95e9a17968"
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
@@ -410,7 +413,8 @@ jobs:
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
       mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      mbx_compat: "9a1122e680ad"
+      mbx_enabled: true
+      mbx_compat: c0588403b4f2
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
@@ -477,7 +481,8 @@ jobs:
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
       mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      mbx_compat: d9e5d184613f
+      mbx_enabled: true
+      mbx_compat: "4efb3dea8aae"
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
@@ -541,7 +546,8 @@ jobs:
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
       mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      mbx_compat: "834d212e549d"
+      mbx_enabled: true
+      mbx_compat: "50597d3159c8"
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
@@ -595,7 +601,8 @@ jobs:
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
       mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      mbx_compat: "1ca81ba98ca5"
+      mbx_enabled: true
+      mbx_compat: "4eab7c599ad8"
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
@@ -667,7 +674,8 @@ jobs:
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
       mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      mbx_compat: b8949224db12
+      mbx_enabled: true
+      mbx_compat: "3a38f32f323b"
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
@@ -731,7 +739,8 @@ jobs:
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
       mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      mbx_compat: "7dc22289a8c1"
+      mbx_enabled: true
+      mbx_compat: e3d28bda60dd
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
@@ -769,7 +778,8 @@ jobs:
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
       mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      mbx_compat: "95e31dd6a94c"
+      mbx_enabled: true
+      mbx_compat: ac060068447d
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
@@ -813,7 +823,8 @@ jobs:
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
       mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      mbx_compat: bfcc9ed57d06
+      mbx_enabled: true
+      mbx_compat: "20d35ef21a1a"
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
@@ -851,7 +862,8 @@ jobs:
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
       mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      mbx_compat: "12018cba1b55"
+      mbx_enabled: true
+      mbx_compat: "95682127ffc5"
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
@@ -889,7 +901,8 @@ jobs:
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
       mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      mbx_compat: "7ea2e01a6cd7"
+      mbx_enabled: true
+      mbx_compat: "5a5877194aa8"
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
@@ -948,7 +961,8 @@ jobs:
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
       mise_tools: "aqua:nextest-rs/nextest/cargo-nextest bun"
-      mbx_compat: "00b89c5a6da9"
+      mbx_enabled: true
+      mbx_compat: "9dfe4e01e200"
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
@@ -1062,7 +1076,8 @@ jobs:
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
       mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      mbx_compat: "3ce68aa7bbc1"
+      mbx_enabled: true
+      mbx_compat: b09c09c4815f
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
@@ -1101,7 +1116,8 @@ jobs:
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
       mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      mbx_compat: "9cb0ee61a919"
+      mbx_enabled: true
+      mbx_compat: "3a965928cb0e"
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
@@ -1155,7 +1171,8 @@ jobs:
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
       mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      mbx_compat: "7e0523cf938f"
+      mbx_enabled: true
+      mbx_compat: "734d7464ba27"
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
@@ -1224,7 +1241,8 @@ jobs:
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
       mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      mbx_compat: "34b7cc65effa"
+      mbx_enabled: true
+      mbx_compat: d81dc52dca0f
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
@@ -1318,7 +1336,8 @@ jobs:
       full_units: ${{ needs.plan.outputs.full_units }}
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
-      mbx_compat: "575720bf05a8"
+      mbx_enabled: true
+      mbx_compat: d7808dbcb6bc
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
