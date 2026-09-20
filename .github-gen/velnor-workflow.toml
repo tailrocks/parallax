@@ -12,13 +12,13 @@ exclude = [
 ]
 
 [workflow]
-runners = "github"
+runners = "both"
 automatic_lanes = "github"
 default_dispatch_runner = "github"
 github_runner = "ubuntu-26.04"
 velnor_labels = ["self-hosted", "velnor-target-mvp"]
 default_branch = "main"
-pull_request_on_velnor = false
+pull_request_on_velnor = true
 
 [policy]
 ruleset_external_status_checks = ["DCO"]

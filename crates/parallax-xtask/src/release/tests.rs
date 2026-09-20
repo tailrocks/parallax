@@ -303,7 +303,7 @@ fn velnor_generator_pin_is_the_published_048_runtime() -> Result<(), String> {
     let project = include_str!("../../../../.github/ci/project.toml");
     let actual = [
         source.contains(&format!("revision = \"{PIN}\"")),
-        source.contains("runners = \"github\""),
+        source.contains("runners = \"both\""),
         source.contains("scripts/fixtures/nextest-evidence/**"),
         source.contains("crates/parallax-sentry-proxy/Dockerfile"),
         policy.contains(PIN),
