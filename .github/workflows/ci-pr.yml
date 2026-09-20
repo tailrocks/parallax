@@ -357,6 +357,7 @@ jobs:
         crates/parallax-semconv/tests/**
         crates/parallax-server/**/*.rs
         crates/parallax-server/benches/**
+        crates/parallax-server/build.rs
         crates/parallax-server/examples/**
         crates/parallax-server/src/**
         crates/parallax-server/src/ingest_health.rs
@@ -1005,6 +1006,7 @@ jobs:
         crates/parallax-semconv/tests/**
         crates/parallax-server/**/*.rs
         crates/parallax-server/benches/**
+        crates/parallax-server/build.rs
         crates/parallax-server/examples/**
         crates/parallax-server/src/**
         crates/parallax-server/src/ingest_health.rs
