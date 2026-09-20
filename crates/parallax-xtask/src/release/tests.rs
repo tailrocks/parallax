@@ -274,14 +274,18 @@ fn release_workflows_stay_absent_while_release_is_fail_closed() -> Result<(), St
         project.contains("enabled = false"),
         !root.join(".github/workflows/preview.yml").exists(),
         !root.join(".github/workflows/release.yml").exists(),
-        rehearsal.contains("cargo xtask release-rehearse")
+        rehearsal.contains("source_sha=\"$(git rev-parse HEAD)\"")
+            && rehearsal.contains("source_epoch=\"$(git show -s --format=%ct \"$source_sha\")\"")
+            && rehearsal.contains("cargo xtask release-rehearse")
             && rehearsal.contains("--channel rehearsal")
+            && rehearsal.contains("--source-epoch \"$source_epoch\"")
             && rehearsal.contains("*-apple-darwin")
             && rehearsal.contains("cargo build --release")
             && rehearsal.contains("cargo zigbuild")
             && !rehearsal.contains("tar -czf")
             && !rehearsal.contains("-czf")
             && !rehearsal.contains("gh release create")
+            && !rehearsal.contains("gh release upload")
             && !rehearsal.contains("git push"),
         include_str!("../../../../mise.toml")
             .contains(&format!("syft = \"{}\"", verify::SYFT_VERSION)),
