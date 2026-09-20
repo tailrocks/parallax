@@ -272,13 +272,7 @@ fn build_api_router(
         &config.resolved_public_url(),
     );
     let api_auth = ApiAuth::from_token(config.resolved_api_token());
-    let login_state = LoginState {
-        enabled: config.resolved_login_enabled(),
-        username: config.resolved_login_username().unwrap_or_default(),
-        token: config
-            .resolved_api_token()
-            .map(|value| Arc::from(value.into_boxed_str())),
-    };
+    let login_state = login_state(config);
     let router = Router::new()
         .merge(
             Router::new()
@@ -345,6 +339,20 @@ fn build_api_router(
                 metadata: alerts,
             },
         ));
+    serve_ui(router, config)
+}
+
+fn login_state(config: &Config) -> LoginState {
+    LoginState {
+        enabled: config.resolved_login_enabled(),
+        username: config.resolved_login_username().unwrap_or_default(),
+        token: config
+            .resolved_api_token()
+            .map(|value| Arc::from(value.into_boxed_str())),
+    }
+}
+
+fn serve_ui(router: Router, config: &Config) -> Router {
     let ui_dist = if config.server.ui_dist.is_empty() {
         ["ui/dist/client", "../ui/dist/client"]
             .iter()
