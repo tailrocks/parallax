@@ -40,6 +40,18 @@ task = "build-ui-for-rust"
 id = "rust-parallax-server"
 mise_tools = ["bun"]
 
+[units.env]
+# GitHub-hosted /tmp is quota-capped; mbx cache import unpacks via tempfile
+# into TMPDIR. Job-level ${{ runner.temp }} is Policy-forbidden (runner
+# context). ubuntu-26.04 github-hosted RUNNER_TEMP is this path.
+TMPDIR = "/home/runner/work/_temp"
+TMP = "/home/runner/work/_temp"
+# 048 pins mr-boxington-action v1.3.0, which auto-GCs on hosted runners.
+# A 12GiB budget is below embed-ui server/cli stores (~27GiB), so GC evicts
+# action results and post-step export fails. Disable the sweep; do not bump
+# to e94/v1.3.1.
+MBX_GC_AUTO = "0"
+
 [[units.prerequisites]]
 producer = "bun-ui"
 product = "embedded-ui"
@@ -47,6 +59,11 @@ product = "embedded-ui"
 [[units]]
 id = "rust-parallax-cli"
 mise_tools = ["bun"]
+
+[units.env]
+TMPDIR = "/home/runner/work/_temp"
+TMP = "/home/runner/work/_temp"
+MBX_GC_AUTO = "0"
 
 [[units.prerequisites]]
 producer = "bun-ui"

@@ -390,8 +390,14 @@ fn velnor_generator_pin_is_the_published_048_runtime() -> Result<(), String> {
                 "github_pr_commands = [\"mise run build-ui-for-rust\", \"cd -- 'crates/parallax-server'",
             ),
         project.contains("\"ui/**\""),
+        source.contains("TMPDIR = \"/home/runner/work/_temp\"")
+            && source.contains("MBX_GC_AUTO = \"0\""),
+        include_str!("../../../../.github/workflows/ci-unit-rust.yml")
+            .contains("TMPDIR: \"/home/runner/work/_temp\"")
+            && include_str!("../../../../.github/workflows/ci-unit-rust.yml")
+                .contains("MBX_GC_AUTO: \"0\""),
     ];
-    if actual != [true; 14] {
+    if actual != [true; 16] {
         return Err(format!(
             "published Velnor pin contract mismatch: {actual:?}"
         ));
