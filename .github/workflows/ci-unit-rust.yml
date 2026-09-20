@@ -113,6 +113,11 @@ on:
         type: string
         default: ""
 
+env:
+  MBX_GC_AUTO: "0"
+  TMP: "/home/runner/work/_temp"
+  TMPDIR: "/home/runner/work/_temp"
+
 jobs:
   verify-github:
     name: GitHub
