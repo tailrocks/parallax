@@ -400,13 +400,15 @@ jobs:
       full_units: ${{ needs.plan.outputs.full_units }}
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      mbx_compat: "44dbc02f83da"
+      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest bun"
+      mbx_compat: "16a3dc14ec9b"
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
         rust-toolchain
         rust-toolchain.toml
+        ui/bun.lock
+        ui/package.json
       mbx_freshness_files: |
         crates/parallax-analysis/**/*.rs
         crates/parallax-analysis/benches/**
@@ -492,6 +494,17 @@ jobs:
         mise.lock
         schema/evidence-bundle.v1.schema.json
         schema/evidence-bundle.v2.schema.json
+        ui/**/*.css
+        ui/**/*.js
+        ui/**/*.json
+        ui/**/*.jsx
+        ui/**/*.ts
+        ui/**/*.tsx
+        ui/bun.lock
+        ui/bun.lockb
+        ui/package-lock.json
+        ui/package.json
+        ui/public/**
       cache_paths: |
         ~/.cargo/registry
         ~/.cargo/git
@@ -502,7 +515,7 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-cli"
       cargo_net_offline: true
-      unit_dependencies: "rust-parallax-evidence,rust-parallax-metadata,rust-parallax-model,rust-parallax-redaction,rust-parallax-semconv,rust-parallax-server,rust-parallax-spool,rust-parallax-storage"
+      unit_dependencies: "rust-parallax-evidence,rust-parallax-metadata,rust-parallax-model,rust-parallax-redaction,rust-parallax-semconv,rust-parallax-server,rust-parallax-spool,rust-parallax-storage,bun-ui"
       unit_admission: github
   github-rust-parallax-evidence:
     name: "Rust · parallax-evidence"
@@ -1055,13 +1068,15 @@ jobs:
       full_units: ${{ needs.plan.outputs.full_units }}
       base_sha: ${{ needs.plan.outputs.base_sha }}
       head_sha: ${{ needs.plan.outputs.head_sha }}
-      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest"
-      mbx_compat: "4ddd8b62751d"
+      mise_tools: "aqua:nextest-rs/nextest/cargo-nextest bun"
+      mbx_compat: "00b89c5a6da9"
       mbx_dependency_files: |
         .cargo/**
         Cargo.lock
         rust-toolchain
         rust-toolchain.toml
+        ui/bun.lock
+        ui/package.json
       mbx_freshness_files: |
         crates/parallax-analysis/**/*.rs
         crates/parallax-analysis/benches/**
@@ -1141,6 +1156,17 @@ jobs:
         mise.lock
         schema/evidence-bundle.v1.schema.json
         schema/evidence-bundle.v2.schema.json
+        ui/**/*.css
+        ui/**/*.js
+        ui/**/*.json
+        ui/**/*.jsx
+        ui/**/*.ts
+        ui/**/*.tsx
+        ui/bun.lock
+        ui/bun.lockb
+        ui/package-lock.json
+        ui/package.json
+        ui/public/**
       cache_paths: |
         ~/.cargo/registry
         ~/.cargo/git
@@ -1151,7 +1177,7 @@ jobs:
         rust-toolchain
       cargo_root: "crates/parallax-server"
       cargo_net_offline: true
-      unit_dependencies: "rust-parallax-analysis,rust-parallax-api,rust-parallax-evidence,rust-parallax-greptime,rust-parallax-ingest,rust-parallax-metadata,rust-parallax-proto,rust-parallax-semconv,rust-parallax-spool,rust-parallax-storage,rust-parallax-test-support"
+      unit_dependencies: "rust-parallax-analysis,rust-parallax-api,rust-parallax-evidence,rust-parallax-greptime,rust-parallax-ingest,rust-parallax-metadata,rust-parallax-proto,rust-parallax-semconv,rust-parallax-spool,rust-parallax-storage,rust-parallax-test-support,bun-ui"
       unit_admission: github
   github-rust-parallax-spool:
     name: "Rust · parallax-spool"
