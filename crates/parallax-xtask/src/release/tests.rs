@@ -258,73 +258,55 @@ fn verification_identity_rejects_ambiguous_provenance_inputs() -> Result<(), Str
     Ok(())
 }
 
+fn workspace_root() -> Result<PathBuf, String> {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .canonicalize()
+        .map_err(|error| error.to_string())
+}
+
 #[test]
-fn release_callers_use_one_packager_and_verified_sdk() -> Result<(), String> {
-    let preview = include_str!("../../../../.github/workflows/preview.yml");
-    let stable = include_str!("../../../../.github/workflows/release.yml");
+fn release_workflows_stay_absent_while_release_is_fail_closed() -> Result<(), String> {
+    let root = workspace_root()?;
+    let project = include_str!("../../../../.github/ci/project.toml");
     let rehearsal = include_str!("../../../../scripts/release.sh");
-    let sdk = include_str!("../../../../.github/actions/setup-macos-sdk/action.yml");
-    let callers = [preview, stable];
     let actual = (
-        callers
-            .iter()
-            .all(|source| source.contains("cargo xtask release-package"))
-            && preview.contains("--channel preview")
-            && stable.contains("--channel stable"),
-        callers
-            .iter()
-            .all(|source| source.contains("cargo xtask release-verify")),
-        preview.contains("cargo xtask release-validate --version \"$VERSION\" --channel preview")
-            && stable
-                .contains("cargo xtask release-validate --version \"$VERSION\" --channel stable")
-            && preview.find("Validate preview release identity")
-                < preview.find("\n  build-preview:")
-            && stable.find("Validate stable release identity") < stable.find("\n  build:"),
-        // Apple release legs run on macOS runners (native ld/dsymutil/codesign);
-        // Linux legs keep zigbuild. Neither release workflow cross-builds Apple
-        // on Linux, so the macOS SDK action is not required on the package path.
-        callers.iter().all(|source| {
-            source.contains("macos-latest")
-                && source.contains("builder: cargo")
-                && source.contains("builder: zigbuild")
-                && source.contains("Build (Apple native)")
-                && source.contains("Build (Linux zigbuild)")
-                && !source.contains("./.github/actions/setup-macos-sdk")
-        }),
-        callers
-            .iter()
-            .all(|source| !source.contains("tar -czf") && !source.contains("| tar")),
+        project.contains("enabled = false"),
+        !root.join(".github/workflows/preview.yml").exists(),
+        !root.join(".github/workflows/release.yml").exists(),
         rehearsal.contains("cargo xtask release-rehearse")
             && rehearsal.contains("--channel rehearsal")
             && rehearsal.contains("*-apple-darwin")
             && rehearsal.contains("cargo build --release")
             && rehearsal.contains("cargo zigbuild")
             && !rehearsal.contains("tar -czf")
-            && !rehearsal.contains("-czf"),
-        // SDK action remains available and digest-pinned for any future cross path.
-        sdk.contains("key: macos-sdk-archive-${{ inputs.version }}-${{ inputs.sha256 }}")
-            && sdk.contains("[[ \"$SDK_VERSION\" =~ ^[0-9]+\\.[0-9]+$ ]]")
-            && sdk.contains("[[ \"$SDK_SHA256\" =~ ^[0-9a-f]{64}$ ]]")
-            && sdk.find("Validate macOS SDK identity") < sdk.find("actions/cache@")
-            && sdk.contains("sha256sum --check --strict")
-            && sdk.find("sha256sum --check --strict") < sdk.find("tar -xJf"),
-        include_str!("../../../../.github/actions/sign-and-attest-archive/action.yml")
-            .contains("--source-name \"$(basename \"${ARCHIVE}\")\"")
-            && include_str!("../../../../.github/actions/sign-and-attest-archive/action.yml")
-                .contains("--source-version \"sha256:${digest}\"")
-            && include_str!("../../../../mise.toml")
-                .contains(&format!("syft = \"{}\"", verify::SYFT_VERSION)),
-        stable.contains("workflow_dispatch:")
-            && stable.contains("description: velnor (default) | github | both")
-            && stable.contains("default: velnor")
-            && stable.contains("options: [velnor, github, both]")
-            && stable.contains("STABLE_RELEASE_ENABLED")
-            && stable.contains("environment: stable-release"),
-        !preview.contains("GH_PARALLAX_HOMEBREW_TAP_TOKEN")
-            && !preview.contains("repository: tailrocks/homebrew-parallax"),
+            && !rehearsal.contains("-czf")
+            && !rehearsal.contains("gh release create")
+            && !rehearsal.contains("git push"),
+        include_str!("../../../../mise.toml")
+            .contains(&format!("syft = \"{}\"", verify::SYFT_VERSION)),
+        !root.join("crates/parallax-server/build.rs").exists(),
     );
-    if actual != (true, true, true, true, true, true, true, true, true, true) {
-        return Err(format!("release caller contract mismatch: {actual:?}"));
+    if actual != (true, true, true, true, true, true) {
+        return Err(format!("fail-closed release contract mismatch: {actual:?}"));
+    }
+    Ok(())
+}
+
+#[test]
+fn velnor_generator_pin_is_the_published_048_runtime() -> Result<(), String> {
+    const PIN: &str = "048a7bdaed8240cf652127c94434e60528633dec";
+    let source = include_str!("../../../../.github-gen/velnor-workflow.toml");
+    let policy = include_str!("../../../../.github/workflows/ci-policy.yml");
+    let actual = (
+        source.contains(&format!("revision = \"{PIN}\"")),
+        policy.contains(PIN),
+        !policy.contains("b9c3156cdb88e63c11b9e595a3e694b02238c09a"),
+    );
+    if actual != (true, true, true) {
+        return Err(format!(
+            "published Velnor pin contract mismatch: {actual:?}"
+        ));
     }
     Ok(())
 }
