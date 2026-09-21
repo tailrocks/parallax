@@ -360,15 +360,15 @@ fn release_workflows_stay_absent_while_release_is_fail_closed() -> Result<(), St
 }
 
 #[test]
-fn velnor_generator_pin_is_the_published_4fa_runtime() -> Result<(), String> {
-    const PIN: &str = "4fa7a3a85f141a6bb95bc9bdf0eef9e3ddde165d";
+fn velnor_generator_pin_is_the_published_wave_runtime() -> Result<(), String> {
+    const PIN: &str = "4dec6b9ec28b0d51cb370fd8f5d5401c6186adf0";
     let source = include_str!("../../../../.github-gen/velnor-workflow.toml");
     let policy = include_str!("../../../../.github/workflows/ci-policy.yml");
     let project = include_str!("../../../../.github/ci/project.toml");
     let rust_workflow = include_str!("../../../../.github/workflows/ci-unit-rust.yml");
     let actual = [
         source.contains(&format!("revision = \"{PIN}\"")),
-        source.contains("runners = \"github\""),
+        source.contains("providers = [\"github-hosted\"]"),
         source.contains("scripts/fixtures/nextest-evidence/**"),
         source.contains("crates/parallax-sentry-proxy/Dockerfile"),
         policy.contains(PIN),
@@ -384,11 +384,11 @@ fn velnor_generator_pin_is_the_published_4fa_runtime() -> Result<(), String> {
         include_str!("../../../../mise.toml").contains("[tasks.build-ui-for-rust]"),
         project.contains("id = \"rust-parallax-cli\"")
             && project.contains(
-                "github_pr_commands = [\"mise run build-ui-for-rust\", \"cd -- 'crates/parallax-cli'",
+                "pr_commands = [\"mise run build-ui-for-rust\", \"cd -- 'crates/parallax-cli'",
             ),
         project.contains("id = \"rust-parallax-server\"")
             && project.contains(
-                "github_pr_commands = [\"mise run build-ui-for-rust\", \"cd -- 'crates/parallax-server'",
+                "pr_commands = [\"mise run build-ui-for-rust\", \"cd -- 'crates/parallax-server'",
             ),
         project.contains("\"ui/**\""),
         source.contains("TMPDIR = \"/home/runner/work/_temp\"")
