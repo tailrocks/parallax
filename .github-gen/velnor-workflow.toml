@@ -2,7 +2,7 @@ schema = 2
 
 [generator]
 repository = "tailrocks/parallax"
-revision = "eed474c4a1d9b071fd1b5de00c769c8997398e5a"
+revision = "45ba3841fe9fbbfa0cbdfcfd81d1667a9ab3e7b2"
 
 [scan]
 exclude = [
