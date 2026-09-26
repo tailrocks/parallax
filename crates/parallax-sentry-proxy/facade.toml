@@ -1,0 +1,12 @@
+schema_version = 1
+
+[roots]
+"lib.rs" = [
+    "mod config",
+    "mod dsn",
+    "mod fanout",
+    "mod http",
+    "use config::Config",
+    "use fanout::FanOut",
+]
+"main.rs" = []

@@ -513,6 +513,10 @@ class = "aux"
 name = "parallax-test-support"
 class = "test-support"
 
+[[architecture.packages]]
+name = "parallax-sentry-proxy"
+class = "aux"
+
 [[limits]]
 metric = "rust.assertions"
 scope = "crates/parallax-evidence/tests/plan_093_baseline.rs"

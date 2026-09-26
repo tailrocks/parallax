@@ -360,8 +360,8 @@ fn release_workflows_stay_absent_while_release_is_fail_closed() -> Result<(), St
 }
 
 #[test]
-fn velnor_generator_pin_is_the_published_wave_runtime() -> Result<(), String> {
-    const PIN: &str = "4dec6b9ec28b0d51cb370fd8f5d5401c6186adf0";
+fn velnor_generator_pin_is_the_published_runtime() -> Result<(), String> {
+    const PIN: &str = "45ba3841fe9fbbfa0cbdfcfd81d1667a9ab3e7b2";
     let source = include_str!("../../../../.github-gen/velnor-workflow.toml");
     let policy = include_str!("../../../../.github/workflows/ci-policy.yml");
     let project = include_str!("../../../../.github/ci/project.toml");
