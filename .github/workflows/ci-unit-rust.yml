@@ -330,9 +330,11 @@ jobs:
           cache: true
           cache_save: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') }}
       - name: Bound the Mr. Boxington store
+        if: ${{ inputs.mbx_enabled }}
         shell: bash
         run: echo "MBX_GC_MAX_SIZE=12GiB" >> "$GITHUB_ENV"
       - name: Set up Mr. Boxington
+        if: ${{ inputs.mbx_enabled }}
         id: mbx-cache
         uses: jdx/mr-boxington-action@867fc530102eec5b756075d70d850dc8330d2272 # v1.4.0
         with:
@@ -344,6 +346,19 @@ jobs:
             velnor-mbx-v3-${{ inputs.mbx_compat }}-${{ runner.os }}-${{ runner.arch }}-${{ inputs.provider }}-${{ inputs.unit_platform }}-${{ inputs.unit_trust }}-${{ inputs.unit }}-${{ hashFiles(inputs.mbx_dependency_files) }}-
             velnor-mbx-v3-${{ inputs.mbx_compat }}-${{ runner.os }}-${{ runner.arch }}-${{ inputs.provider }}-${{ inputs.unit_platform }}-${{ inputs.unit_trust }}-${{ inputs.unit }}-
           save-on-workflow-dispatch: true
+      - name: Set up sccache
+        if: ${{ inputs.mbx_enabled == false }}
+        uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+        with:
+          version: v0.16.0
+      - name: Configure sccache environment
+        if: ${{ inputs.mbx_enabled == false }}
+        run: |
+          {
+            echo 'CARGO_INCREMENTAL=0'
+            echo 'RUSTC_WRAPPER=sccache'
+            echo 'SCCACHE_GHA_ENABLED=true'
+          } >> "$GITHUB_ENV"
       - name: Restore cargo bin toolchain
         if: ${{ inputs.cargo_bin_tools != '' }}
         id: cargo-bin-toolchain
