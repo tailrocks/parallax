@@ -42,6 +42,7 @@ task = "build-ui-for-rust"
 
 [[units]]
 id = "rust-parallax-server"
+mbx = false
 mise_tools = ["bun"]
 
 [units.env]
