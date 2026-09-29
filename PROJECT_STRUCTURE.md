@@ -15,7 +15,6 @@ and active implementation plans remain plain Markdown.
 | Path | Ownership |
 | --- | --- |
 | `AGENTS.md` | Canonical repository-specific agent rules |
-| `BRANCHING.md` | Branch and pull-request policy |
 | `COMMITS.md` | Commit format and agent attribution |
 | `PROJECT_STRUCTURE.md` | This stable top-level map |
 | `Cargo.toml` / `Cargo.lock` | Rust workspace and sole Rust lockfile |
