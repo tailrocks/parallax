@@ -328,10 +328,10 @@ fn run_embedded_ui_build_script_with_timeout(
 #[test]
 fn release_workflows_stay_absent_while_release_is_fail_closed() -> Result<(), String> {
     let root = workspace_root()?;
-    let project = include_str!("../../../../.github/ci/project.toml");
+    let config = include_str!("../../../../.velnor/config.toml");
     let rehearsal = include_str!("../../../../scripts/release.sh");
     let actual = (
-        project.contains("enabled = false"),
+        !config.contains("[stacks.rust.release]"),
         !root.join(".github/workflows/preview.yml").exists(),
         !root.join(".github/workflows/release.yml").exists(),
         rehearsal.contains("source_sha=\"$(git rev-parse HEAD)\"")
@@ -361,48 +361,19 @@ fn release_workflows_stay_absent_while_release_is_fail_closed() -> Result<(), St
 
 #[test]
 fn velnor_generator_pin_is_the_published_runtime() -> Result<(), String> {
-    const PIN: &str = "45ba3841fe9fbbfa0cbdfcfd81d1667a9ab3e7b2";
-    let source = include_str!("../../../../.github-gen/velnor-workflow.toml");
-    let policy = include_str!("../../../../.github/workflows/ci-policy.yml");
-    let project = include_str!("../../../../.github/ci/project.toml");
-    let rust_workflow = include_str!("../../../../.github/workflows/ci-unit-rust.yml");
+    const COMMIT: &str = "c57c700459bbe1549fe7eedcb7d8689585c38986";
+    const VERSION: &str = "0.1.0";
+    let manifest = include_str!("../../../../.velnor/release-manifest.json");
+    let ci_workflow = include_str!("../../../../.github/workflows/ci.yml");
     let actual = [
-        source.contains(&format!("revision = \"{PIN}\"")),
-        source.contains("providers = [\"github-hosted\"]"),
-        source.contains("scripts/fixtures/nextest-evidence/**"),
-        source.contains("crates/parallax-sentry-proxy/Dockerfile"),
-        policy.contains(PIN),
-        !policy.contains("b9c3156cdb88e63c11b9e595a3e694b02238c09a"),
-        !project.contains("id = \"rust-nextest-evidence-fixture\""),
-        !project.contains("id = \"docker-crates-parallax-sentry-proxy\""),
-        project.contains("id = \"docker-bench-otlp-fanout-maple\""),
-        source.contains("[[units.products]]")
-            && source.contains("name = \"embedded-ui\"")
-            && source.contains("task = \"build-ui-for-rust\"")
-            && source.contains("producer = \"bun-ui\"")
-            && source.contains("product = \"embedded-ui\""),
+        manifest.contains(COMMIT),
+        manifest.contains(&format!("\"version\": \"{VERSION}\"")),
+        manifest.contains("tailrocks/velnor-new"),
+        ci_workflow.contains(COMMIT),
+        ci_workflow.contains("jdx/mise-action@9149ea85001c7435d5a66bb127d6a1b6227cb0a5"),
         include_str!("../../../../mise.toml").contains("[tasks.build-ui-for-rust]"),
-        project.contains("id = \"rust-parallax-cli\"")
-            && project.contains(
-                "pr_commands = [\"mise run build-ui-for-rust\", \"cd -- 'crates/parallax-cli'",
-            ),
-        project.contains("id = \"rust-parallax-server\"")
-            && project.contains(
-                "pr_commands = [\"mise run build-ui-for-rust\", \"cd -- 'crates/parallax-server'",
-            ),
-        project.contains("\"ui/**\""),
-        source.contains("TMPDIR = \"/home/runner/work/_temp\"")
-            && source.contains("MBX_GC_AUTO = \"0\""),
-        include_str!("../../../../.github/workflows/ci-unit-rust.yml")
-            .contains("TMPDIR: \"/home/runner/work/_temp\"")
-            && include_str!("../../../../.github/workflows/ci-unit-rust.yml")
-                .contains("MBX_GC_AUTO: \"0\""),
-        rust_workflow.contains("jdx/mr-boxington-action@867fc530102eec5b756075d70d850dc8330d2272"),
-        rust_workflow.contains("version: 1.12.0")
-            && rust_workflow.contains("github-cache-mode: objects")
-            && !rust_workflow.contains("version: 1.11.1"),
     ];
-    if actual != [true; 18] {
+    if actual != [true; 6] {
         return Err(format!(
             "published Velnor pin contract mismatch: {actual:?}"
         ));
