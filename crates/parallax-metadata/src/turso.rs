@@ -547,7 +547,7 @@ impl TursoMetadataStore {
 
     /// Filtered, sorted, paged issue listing. One scan path: the SQL filters
     /// and orders, the tag filter applies in Rust, and the page is sliced from
-    /// a window capped at [`ISSUE_SCAN_CAP`] rows — `total` is therefore exact
+    /// a window capped at `ISSUE_SCAN_CAP` rows — `total` is therefore exact
     /// up to that cap (plenty for a single developer machine).
     pub async fn issues_filtered(
         &self,
