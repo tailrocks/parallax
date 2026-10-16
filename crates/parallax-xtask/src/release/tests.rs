@@ -361,8 +361,9 @@ fn release_workflows_stay_absent_while_release_is_fail_closed() -> Result<(), St
 
 #[test]
 fn velnor_generator_pin_is_the_published_runtime() -> Result<(), String> {
-    const COMMIT: &str = "c57c700459bbe1549fe7eedcb7d8689585c38986";
-    const VERSION: &str = "0.1.0";
+    // Tracks the published velnor-actions v0.1.10 release manifest; update on every migration.
+    const COMMIT: &str = "906d3e5cd715076c3663f8e811e39a16e4a2d3ca";
+    const VERSION: &str = "0.1.10";
     let manifest = include_str!("../../../../.velnor/release-manifest.json");
     let ci_workflow = include_str!("../../../../.github/workflows/ci.yml");
     let actual = [
@@ -370,7 +371,7 @@ fn velnor_generator_pin_is_the_published_runtime() -> Result<(), String> {
         manifest.contains(&format!("\"version\": \"{VERSION}\"")),
         manifest.contains("tailrocks/velnor-new"),
         ci_workflow.contains(COMMIT),
-        ci_workflow.contains("jdx/mise-action@9149ea85001c7435d5a66bb127d6a1b6227cb0a5"),
+        ci_workflow.contains("jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8"),
         include_str!("../../../../mise.toml").contains("[tasks.build-ui-for-rust]"),
     ];
     if actual != [true; 6] {
