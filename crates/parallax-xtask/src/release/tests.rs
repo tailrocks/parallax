@@ -361,9 +361,9 @@ fn release_workflows_stay_absent_while_release_is_fail_closed() -> Result<(), St
 
 #[test]
 fn velnor_generator_pin_is_the_published_runtime() -> Result<(), String> {
-    // Tracks the published velnor-actions v0.1.10 release manifest; update on every migration.
-    const COMMIT: &str = "906d3e5cd715076c3663f8e811e39a16e4a2d3ca";
-    const VERSION: &str = "0.1.10";
+    // Tracks the published velnor-actions v0.1.12 release manifest; update on every migration.
+    const COMMIT: &str = "f1b044a606b6bc469f9718644f5c0ed88bf965b6";
+    const VERSION: &str = "0.1.12";
     let manifest = include_str!("../../../../.velnor/release-manifest.json");
     let ci_workflow = include_str!("../../../../.github/workflows/ci.yml");
     let actual = [
